@@ -122,7 +122,7 @@ Feel free to add new topics in case that you don't find one that you like from t
 * TODO: [098-the-cut-command.md](ebook/en/content/098-the-cut-command.md)
 * TODO: [099-the-sed-command.md](ebook/en/content/099-the-sed-command.md)
 * TODO: [100-the-lynx-command.md](ebook/en/content/100-the-lynx-command.md)
-[101-the-chown-command.md](ebook/en/content/100-the-chown-command.md)
+* [101-the-chown-command.md](ebook/en/content/101-the-chown-command.md)
 
 ## 🔗 Links
 
