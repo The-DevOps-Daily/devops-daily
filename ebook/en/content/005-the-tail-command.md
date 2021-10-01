@@ -37,3 +37,14 @@ Syntax:
 ```
 tail -n <~number> foo.txt
 ```
+
+### Refresh the output on any new entry in a file
+
+Its possible to let tail output any new line added to the file your are looking into. So if a new log entry is written to the file, it will immediately be shown in your output. This can be done via `--follow` or `-f` as option.
+
+Example:
+
+```
+tail -f foo.txt
+```
+
