@@ -14,7 +14,7 @@ Note that to specify a wall message you must specify a time argument, too.
 If the time argument is used, 5 minutes before the system goes down the /run/nologin file is created to ensure that further logins
        shall not be allowed.
 
-####Examples :
+Examples :
 1.   To simply poweroff the machine immediately we need not pass any argument.
 
 ```
