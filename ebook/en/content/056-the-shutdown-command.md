@@ -46,11 +46,11 @@ The following options are understood :
  > Halt the machine
 3.    -P, --poweroff
 > Power-off the machine (the default).
-4.  -r, --reboot
+4. -r, --reboot
  > Reboot the machine.
-5.       -h
+5.-h
 > Equivalent to --poweroff, unless --halt is specified.
-6.       -k
+6.-k
 > Do not halt, power-off, reboot, just write wall message.
 7. --no-wall
 >Do not send wall message before halt, power-off, reboot.
