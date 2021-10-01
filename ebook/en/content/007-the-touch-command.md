@@ -1,9 +1,9 @@
-#The `touch` Command.
+# The `touch` Command.
 
 Using `touch` Command A FILE argument that does not exist is created empty, unless -c or -h is supplied.
 
 ---
-###Examples
+### Examples
 1. To make a new text file use the following command, and if it does not already exist a new file will be created or overwritten otherwise.
 
 ```
@@ -20,9 +20,9 @@ touch File1_name File2_name File3_name
 ---
 
 
-####**A  FILE  argument string of - is handled specially and causes touch to change the times of the file associated with standard output.**
+#### **A  FILE  argument string of - is handled specially and causes touch to change the times of the file associated with standard output.**
 
-####Mandatory arguments to long options are mandatory for short options too.
+#### Mandatory arguments to long options are mandatory for short options too.
 
 1.   -a     
 >change only the access time
