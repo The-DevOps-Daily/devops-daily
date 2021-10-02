@@ -14,6 +14,8 @@
 
 This is an open-source eBook with 101 Linux commands that everyone should know. No matter if you are a DevOps/SysOps engineer, developer, or just a Linux enthusiast, you will most likely have to use the terminal at some point in your career.
 
+**Make sure to star the repository** ⭐
+
 ## List of commands:
 
 If you want to contribute, feel free to pick up a topic marked as `TODO` and submit a pull request 🙌
@@ -34,7 +36,7 @@ Feel free to add new topics in case that you don't find one that you like from t
 * TODO: [010-the-df-command.md](ebook/en/content/010-the-df-command.md)
 * TODO: [011-the-help-command.md](ebook/en/content/011-the-help-command.md)
 * TODO: [012-the-factor-command.md](ebook/en/content/012-the-factor-command.md)
-* TODO: [013-the-uname-command.md](ebook/en/content/013-the-uname-command.md)
+* [013-the-uname-command.md](ebook/en/content/013-the-uname-command.md)
 * [014-the-mkdir-command.md](ebook/en/content/014-the-mkdir-command.md)
 * TODO: [015-the-gzip-command.md](ebook/en/content/015-the-gzip-command.md)
 * TODO: [016-the-whatis-command.md](ebook/en/content/016-the-whatis-command.md)
@@ -45,11 +47,11 @@ Feel free to add new topics in case that you don't find one that you like from t
 * TODO: [021-the-echo-command.md](ebook/en/content/021-the-echo-command.md)
 * TODO: [022-the-finger-command.md](ebook/en/content/022-the-finger-command.md)
 * TODO: [023-the-groups-command.md](ebook/en/content/023-the-groups-command.md)
-* TODO: [024-the-man-command.md](ebook/en/content/024-the-man-command.md)
+* [024-the-man-command.md](ebook/en/content/024-the-man-command.md)
 * TODO: [025-the-passwd-command.md](ebook/en/content/025-the-passwd-command.md)
 * TODO: [026-the-w-command.md](ebook/en/content/026-the-w-command.md)
 * TODO: [027-the-whoami-command.md](ebook/en/content/027-the-whoami-command.md)
-* TODO: [028-the-history-command.md](ebook/en/content/028-the-history-command.md)
+[028-the-history-command.md](ebook/en/content/028-the-history-command.md)
 * TODO: [029-the-login-command.md](ebook/en/content/029-the-login-command.md)
 * TODO: [030-the-lscpu-command.md](ebook/en/content/030-the-lscpu-command.md)
 * TODO: [031-the-cp-command.md](ebook/en/content/031-the-cp-command.md)
@@ -122,6 +124,7 @@ Feel free to add new topics in case that you don't find one that you like from t
 * TODO: [098-the-cut-command.md](ebook/en/content/098-the-cut-command.md)
 * TODO: [099-the-sed-command.md](ebook/en/content/099-the-sed-command.md)
 * TODO: [100-the-lynx-command.md](ebook/en/content/100-the-lynx-command.md)
+* [101-the-chown-command.md](ebook/en/content/101-the-chown-command.md)
 
 ## 🔗 Links
 
