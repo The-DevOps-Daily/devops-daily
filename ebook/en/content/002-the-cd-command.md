@@ -44,7 +44,7 @@ cd [OPTIONS] directory
 ```
 
 ### Additional Flags and their Functionalities:
-`-a`
+
 |**Short Flag**   |**Long Flag**   |**Description**   |
 |:---|:---|:---|
 |`-L`|<center>-</center>|Follow symbolic links. By default,`cd` behaves as if the `-L` option is specified.|
