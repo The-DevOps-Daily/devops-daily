@@ -1,6 +1,6 @@
 # `whoami `
 
-- `whoami` command  used in Unix/Linux to the current user info of the machine. in other words its just prints the effective username of the current user when invoked. 
+- `whoami` command  used in Unix/Linux to the get current username info of the machine. in other words its just prints the effective username of the current user when invoked. 
  For example: 
    ```
    manish@godsmack:~$ whoami 
