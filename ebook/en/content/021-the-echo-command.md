@@ -10,12 +10,14 @@ It is a built in commannd that is mostly used in scripts to output status text.
 ```
 echo "I am a echo"
 ```
+Output: I am a echo
 
-2. Text output with backslash interpretation:
+2. Text output with esacpe characters enabled:
 
 ```
 echo -e "I \bam \ba echo"
 ```
+Output: Iama echo
 
 3. Print all folders/files:
 
@@ -29,9 +31,9 @@ echo *
 echo [OPTIONS] [STRING]
 ```
 
-### Available backslash values
+### Available esacpe characters:
 
-|**Value** |**Description**   |
+|**Esacpe character** |**Description**   |
 |:---|:---|
 |`\\`|Displays a backslash character|
 |`\a`|Plays a sound alert|
@@ -49,6 +51,6 @@ echo [OPTIONS] [STRING]
 
 |**Short Flag**   |**Long Flag**   |**Description**   |
 |:---|:---|:---|
-|`-e`|<center>-</center>|Enables backslash interpretation|
+|`-e`|<center>-</center>|Enables esacpe character|
 |`-n`|<center>-</center>|Omitting the newline after the text|
-|`-E`|<center>-</center>|Disables backslash interpretation|
+|`-E`|<center>-</center>|Disables esacpe character|
