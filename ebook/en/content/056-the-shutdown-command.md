@@ -19,7 +19,7 @@ sudo shutdown now
 sudo shutdown +10
 ```
 
-2. Shut down your system with a message after 5 minutes:
+3. Shut down your system with a message after 5 minutes:
 
 ```
 sudo shutdown +5 "System will shutdown in 5 minutes"
