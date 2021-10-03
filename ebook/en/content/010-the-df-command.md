@@ -1,24 +1,85 @@
 # The `df` command
+The `df` command in Linux/Unix is used to show the disk usage & information.
+`df` is an abbreviation for "disk free".
+# Usage
 
-The `df` command is an abbreviation for "disk free" and lets you check how much disk space
-is available across your devices, drives or disk.
-By default it gives detailed information, however mostly it is used with the option "-h" which
-shows the available in more human readable sizes (i.e. gigabytes).
-### Examples:
+## Show available disk space
 
-1. To show all mounted drives with the size, usage, available space and percentage of capacity used (sizes are in bytes)
+**Action:**
+--- Output the available disk space and where the directory is mounted
 
+**Details:**
+--- Outputted values are not human-readable (are in bytes)
+
+**Command:**
 ```
 df
 ```
 
-2. To show all mounted drives with the size, usage, available space and percentage of capacity used (sizes are converted into human readable sizes)
+## Show available disk space in human readable form
 
+**Action:**
+--- Output the available disk space and where the directory is mounted
+
+**Details:**
+--- Outputted values ARE human-readable (are in GBs/MBs)
+
+**Command:**
 ```
 df -h
 ```
 
-3. Show
+## Show available disk space for specific file system
+
+**Action:**
+--- Output the available disk space and where the directory is mounted
+
+**Details:**
+--- Outputted values are only for the selected file system
+
+**Command:**
+```
+df -hT file_system_name
+```
+
+## Show available inodes
+
+**Action:**
+--- Output the available inodes for all file systems
+
+**Details:**
+--- Outputted values are for inodes and not available space
+
+**Command:**
+```
+df -i
+```
+
+## Show file system type
+
+**Action:**
+--- Output the file system types
+
+**Details:**
+--- Outputted values are for all file systems
+
+**Command:**
+```
+df -T
+```
+
+## Exclude file system type from the output
+
+**Action:**
+--- Output the information while excluding the chosen file system type
+
+**Details:**
+--- Outputted values are for all file systems EXCEPT the chosen file system type
+
+**Command:**
+```
+df -x file_system_type
+```
 
 ### Syntax:
 
