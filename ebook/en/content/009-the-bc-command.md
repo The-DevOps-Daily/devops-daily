@@ -2,7 +2,7 @@
 
 The `bc` command provides the functionality of being able to perform mathematical calculations through the command line.
 
-### Examples of uses:
+### Examples:
 
 
 1 . Arithmetic:
