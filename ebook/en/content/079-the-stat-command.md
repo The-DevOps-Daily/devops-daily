@@ -3,7 +3,7 @@
 The `stat` command lets you display file or file system status. It gives you useful information
 about the file (or directory) on which you use it.
 
-### Examples
+### Examples:
 
 1. Basic command usage
 
@@ -18,13 +18,13 @@ total size, in bytes)
 stat file.txt -c %s
 ```
 
-### Syntax
+### Syntax:
 
 ```
 stat [OPTION] [FILE]
 ```
 
-### Additional Flags and their Functionalities
+### Additional Flags and their Functionalities:
 
 | Short Flag | Long Flag         | Description                                                                   |
 | ---------- | ----------------- | ----------------------------------------------------------------------------- |
@@ -38,7 +38,7 @@ stat [OPTION] [FILE]
 | -          | `--version`       | Output version information and exit                                           |
 
 
-### Example of Valid Format Sequences for Files
+### Example of Valid Format Sequences for Files:
 
 | Format | Description                                          |
 | ------ | ---------------------------------------------------- |
