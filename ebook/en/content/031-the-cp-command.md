@@ -36,13 +36,16 @@ cp -RT folderName1 folderName2
 
 ### Syntax:
 
+The general syntax for the cp command is as follows:
+
 ```
 cp [OPTION] SOURCE DESTINATION
 cp [OPTION] SOURCE DIRECTORY
 cp [OPTION] SOURCE-1 SOURCE-2 SOURCE-3 SOURCE-n DIRECTORY
 ```
-First and second syntax is used to copy Source file to Destination file or Directory.
-Third syntax is used to copy multiple Sources(files) to Directory.
+
+The first and second syntax is used to copy Source file to Destination file or Directory.
+The third syntax is used to copy multiple Sources(files) to Directory.
 
 #### Some useful options
 
