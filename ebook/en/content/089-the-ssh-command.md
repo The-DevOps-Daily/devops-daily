@@ -10,16 +10,16 @@ The `ssh` command in Linux stands for "Secure Shell" Its is a protocal used to s
 ssh test.server.com -p 3322
 ```
 
-2. -H option omits the lengthy legal disclaimers that many domain registries deliver along with the domain information.
+2. -i ssh to remote server using a private key?
 
 ```
-whois -H {Domain_name}
+ssh -i private.key user_name@host
 ```
 
-3. Use a Different Port Number for SSH Connection: 	
+3. -l ssh speecifying a different user name
 
 ```
-ssh test.server.com -p 3322
+ssh -l alternative-username sample.ssh.com
 ```
 
 ### Syntax:
@@ -31,9 +31,6 @@ ssh user_name@host(IP/Domain_Name)
 ssh -i private.key user_name@host
 ```
 ```
-ssh -l alternative-username sample.ssh.com
-```
-```
 ssh sample.ssh.com  ls /tmp/doc
 ```
 
@@ -42,12 +39,12 @@ ssh sample.ssh.com  ls /tmp/doc
 
 |**Flag**   |**Description**   |
 |:---|:---|
-|`-1|Forces ssh to use protocol SSH-1 only.|
-|`-2|Forces ssh to use protocol SSH-2 only.|
-|`-4|Allows IPv4 addresses only.|
-|`-A|Authentication agent connection forwarding is enabled..|
-|`-a|Authentication agent connection forwarding is disabled.|
-|`-C|Compresses all data (including stdin, stdout, stderr, and data for forwarded X11 and TCP connections) for a faster transfer of data.|
+|`-1`|Forces ssh to use protocol SSH-1 only.|
+|`-2`|Forces ssh to use protocol SSH-2 only.|
+|`-4`|Allows IPv4 addresses only.|
+|`-A`|Authentication agent connection forwarding is enabled..|
+|`-a`|Authentication agent connection forwarding is disabled.|
+|`-C`|Compresses all data (including stdin, stdout, stderr, and data for forwarded X11 and TCP connections) for a faster transfer of data.|
 |`-f`|Requests ssh to go to background just before command execution.|
 |`-g`|Allows remote hosts to connect to local forwarded ports.|
 |`-n`|Prevents reading from stdin.|
@@ -57,5 +54,5 @@ ssh sample.ssh.com  ls /tmp/doc
 |`-q`|Suppresses all errors and warnings|
 |`-V`|Display the version number.|
 |`-v`|Verbose mode. It echoes everything it is doing while establishing a connection. It is very useful in the debugging of connection failures.|
-|`-v`|Enables X11 forwarding (GUI Forwarding).|
-|`-v`|Selects the cipher specification for encrypting the session. Specific cipher algorithm will be selected only if both the client and the server support it.|
+|`-X`|Enables X11 forwarding (GUI Forwarding).|
+|`-c cipher_spec`|Selects the cipher specification for encrypting the session. Specific cipher algorithm will be selected only if both the client and the server support it.|
