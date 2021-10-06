@@ -32,7 +32,7 @@ lsblk /dev/sda
 Here is a table that show some of the useful flags that can be used with lsblk
 
 | Flag                       | Interpretation                               |
-|:--------- ----------------:|:---------------------------------------------|
+|:--------------------------:|:---------------------------------------------|
 | ``-f`` or ``fs``           | Displays information about filesystem.       |
 | ``-J`` or ``--json``       | Displays all the information in JSON Format. |
 | ``-l`` or ``--list``       | Displays all the information in List Format. |
