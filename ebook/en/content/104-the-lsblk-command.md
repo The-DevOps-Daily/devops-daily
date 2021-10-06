@@ -1,7 +1,7 @@
 # The ``lsblk`` command
 
 ## Summary
-The ``lsblk`` command displays the block and loop devices on the system. Is is especially useful when you want to format disks, write filesystems, check the filesystem and know the mount point of a device.
+The ``lsblk`` command displays the block and loop devices on the system. It is especially useful when you want to format disks, write filesystems, check the filesystem and know the mount point of a device.
 
 ## Syntax
 ```
@@ -10,7 +10,7 @@ lsblk [options] [<device> ...]
 
 ## Reading information given by ``lsblk``
 On running ``lsblk`` with no flags or command-line arguments, it writes general disk information to the STDOUT.
-Here is a table that interpret that information:
+Here is a table that interpretes that information:
 
 | Column Name | Meaning                           | Interpretation                                              |
 |:-----------:|:----------------------------------|:------------------------------------------------------------|
@@ -19,11 +19,11 @@ Here is a table that interpret that information:
 | SIZE        | Size of the device.               | Shows size of the device.                                   |
 | RO          | Read-Only.                        | Shows 1 if read-only, 0 if not.                             |
 | TYPE        | The type of block or loop device. | Shows ``disk`` for entire disk and ``part`` for partitions. |
-| MOUNTPOINTS | Where the device is mounted.      | Shows where the device is mounted. Empty is not mounted.    |
+| MOUNTPOINTS | Where the device is mounted.      | Shows where the device is mounted. Empty if not mounted.    |
 
 ## Reading information of a specific device
 ``lsblk`` can display information of a specific device when the device's absolute path is passed to it.
-For example: ``lsblk`` command for displaying the information of the ``sda`` disk.
+For example, ``lsblk`` command for displaying the information of the ``sda`` disk is:
 ```
 lsblk /dev/sda
 ```
@@ -31,19 +31,19 @@ lsblk /dev/sda
 ## Useful flags for ``lsblk``
 Here is a table that show some of the useful flags that can be used with lsblk
 
-| Flag                      | Interpretation                               |
-|:-------------------------:|:---------------------------------------------|
-| ``-f`` / ``fs``           | Displays information about filesystem.       |
-| ``-J`` / ``--json``       | Displays all the information in JSON Format. |
-| ``-l`` / ``--list``       | Displays all the information in List Format. |
-| ``-T`` / ``--tree``       | Displays all the information in Tree Format. |
-| ``-m`` / ``--perms``      | Displays device permissions.                 |
-| ``-p`` / ``--paths``      | Displays absolute device paths.              |
-| ``-o`` / ``--output-all`` | Displays all available columns.              |
-| ``-s`` / ``--scsi``       | Displays SCSI devices only                   |
+| Flag                       | Interpretation                               |
+|:--------- ----------------:|:---------------------------------------------|
+| ``-f`` or ``fs``           | Displays information about filesystem.       |
+| ``-J`` or ``--json``       | Displays all the information in JSON Format. |
+| ``-l`` or ``--list``       | Displays all the information in List Format. |
+| ``-T`` or ``--tree``       | Displays all the information in Tree Format. |
+| ``-m`` or ``--perms``      | Displays device permissions.                 |
+| ``-p`` or ``--paths``      | Displays absolute device paths.              |
+| ``-o`` or ``--output-all`` | Displays all available columns.              |
+| ``-s`` or ``--scsi``       | Displays SCSI devices only                   |
 
 ## Exit Codes
-Like every UNIX / Linux Program, ``lslbk`` returns an exit code to the environment.
+Like every Unix / Linux Program, ``lslbk`` returns an exit code to the environment.
 Here is a table of all the exit codes.
 
 | Exit Code | Meaning                                                    |
