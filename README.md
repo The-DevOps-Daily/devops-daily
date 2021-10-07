@@ -88,7 +88,7 @@ Feel free to add new topics in case that you don't find one that you like from t
 * [062-the-diff-sdiff-command.md](ebook/en/content/062-the-diff-sdiff-command.md)
 * [063-the-tar-command.md](ebook/en/content/063-the-tar-command.md)
 * [064-the-gunzip-command.md](ebook/en/content/064-the-gunzip-command.md)
-* TODO: [065-the-hostnamectl-command.md](ebook/en/content/065-the-hostnamectl-command.md)
+* [065-the-hostnamectl-command.md](ebook/en/content/065-the-hostnamectl-command.md)
 * [066-the-iptable-command.md](ebook/en/content/066-the-iptable-command.md)
 * [067-the-netstat-command.md](ebook/en/content/067-the-netstat-command.md)
 * [068-the-lsof-command.md](ebook/en/content/068-the-lsof-command.md)
