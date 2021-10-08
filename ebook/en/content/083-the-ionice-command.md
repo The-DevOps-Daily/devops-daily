@@ -1,9 +1,9 @@
-`ionice`
+# `ionice`
 
-Desc : 
-	this program sets/gets I/O scheduling class and priority for the program If none argument is given , `ionice` will query the current I/O scheduling class and priority for that process
+## Description 
+This program sets/gets I/O scheduling class and priority for the program If none argument is given , `ionice` will query the current I/O scheduling class and priority for that process
 
-Usage:
+## Usage
 
  `ionice [options] -p <pid>...`
  
@@ -12,10 +12,6 @@ Usage:
 ` ionice [options] -u <uid>...`
 
 ` ionice [options] <command>`
-
-
-$ `ionice` 
-none: prio 4
 
 
 A process can be of three scheduling classes:
@@ -41,7 +37,7 @@ A process can be of three scheduling classes:
 		As with the best effort class, 8 priority levels are defined denoting how big a time slice a given process will receive on each scheduling window.	
 		This scheduling class is not permitted for an ordinary user(non-root).
 
-
+## Options
 | Options | Description |
 |---|---|
 | -c, --class <class>   | name or number of scheduling class, 0: none, 1: realtime, 2: best-effort, 3: idle|
@@ -56,48 +52,21 @@ A process can be of three scheduling classes:
 For more details see ionice(1).
 
 
-$ ionice -p 101
-  
-none : prio 4
-  
-class : priority
-
-$ `ionice` -p 2
-  
-none: prio 4
-
-$ `ionice`    -c2			-n0 		-p2
-  
-	     2 ( best-effort )	priority 0	process 2
-
-Explanation :	 Runs process 2 as a best-effort program with highest priority
-
-$ `ionice` -p 2
-  
-best-effort : prio 0
-  
-class	       : priority
-
-$ `ionice` /bin/ls
-
-$ `ionice` -n4 -p2
-  
-$ `ionice` -p 2
-  
-best-effort: prio 4
-  
-Change priority of process to 4
-  
-$ `ionice` -c0 -n4 -p2
-  
-ionice: ignoring given class data for none class
-  
-(Note that before kernel 2.6.26  a process that has not asked for an I/O priority formally uses “None” as scheduling class , but the io schedular will treat such processes as if it were in the best effort class. )
-
--t option : ignore failure
-  
-$ `ionice` -c0 -n4 -p2 -t
-  
-$ `ionice` -p 2
-  
-none: prio 0
+## Examples
+| Command | O/P |
+|---|---|	
+|`$ ionice` |*none: prio 4*|
+|`$ ionice -p 101`|*none : prio 4* *class : priority*|
+|`$ ionice -p 2` |*none: prio 4*|
+|`$ ionice    -c2    -n0    -p2`|2 ( best-effort )	priority 0	process 2 |
+||Explanation :	 Runs process 2 as a best-effort program with highest priority|
+|$ `ionice` -p 2|best-effort : prio 0|
+|$ `ionice` /bin/ls|get priority and class info of bin/ls |
+|$ `ionice` -n4 -p2|priority 4	process 2 |
+|$ `ionice` -p 2|  best-effort: prio 4|
+|$ `ionice` -c0 -n4 -p2|ionice: ignoring given class data for none class|
+||(Note that before kernel 2.6.26  a process that has not asked for an I/O priority formally uses “None” as scheduling class , |
+||but the io schedular will treat such processes as if it were in the best effort class. )|
+|-t option : ignore failure||
+|$ `ionice` -c0 -n4 -p2 -t| | 
+|$ `ionice` -p 2|none: prio 0|
