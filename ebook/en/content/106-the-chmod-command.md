@@ -58,8 +58,8 @@ chmod [OPTIONS] MODE FILE(s)
 
 - **numeric mode explained**:
 
-- 4 stands for "read",
-- 2 stands for "write",
-- 1 stands for "execute", and
-- 0 stands for "no permission."
-- example 7 mean read + write + execute
+  - 4 stands for "read",
+  - 2 stands for "write",
+  - 1 stands for "execute", and
+  - 0 stands for "no permission."
+  - example 7 mean read + write + execute
