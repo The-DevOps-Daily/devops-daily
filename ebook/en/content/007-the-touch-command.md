@@ -1,4 +1,4 @@
-# The `touch` Command.
+# The `touch` Command
 
 Using `touch` Command A FILE argument that does not exist is created empty, unless -c or -h is supplied.
 
