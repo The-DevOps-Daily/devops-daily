@@ -40,29 +40,9 @@ clean-letter:
 #### 5. Execute ```make touch-letter``` - This creates a text file named `letter.txt` and populates a line in it.
 #### 6. Execute ```make clean-letter```
 
-```bash
-$ nc -p 1337 -w 5 host.ip 80
-```
 
 
+### References to lenghtier and more contentful tutorials:
 
-### Flags and their Functionalities:
-
-| **Short Flag** | **Description**                                                   |
-| -------------- | ----------------------------------------------------------------- |
-| `-4`           | Forces nc to use IPv4 addresses                                   |
-| `-6`           | Forces nc to use IPv6 addresses                                   |
-| `-b`           | Allow broadcast                                                   |
-| `-D`           | Enable debugging on the socket                                    |
-| `-i`           | Specify time interval delay between lines sent and received       |
-| `-k`           | Stay listening for another connection after current is over       |
-| `-l`           | Listen for incoming connection instead of initiate one to remote  |
-| `-T`           | Specify length of TCP                                             |
-| `-p`           | Specify source port to be used                                    |
-| `-r`           | Specify source and/or destination ports randomly                  |
-| `-s`           | Specify IP of interface which is used to send the packets         |
-| `-U`           | Use UNIX-domain sockets                                           |
-| `-u`           | Use UDP instead of TCP as protocol                                |
-| `-w`           | Declare a timeout threshold for idle or unestablished connections |
-| `-x`           | Should use specified protocol when talking to proxy server        |
-| `-z`           | Specify to scan for listening daemons, without sending any data   |
+(linoxide - linux make command examples)[https://linoxide.com/linux-make-command-examples/]
+(makefiletutorial.com - the name itself gives it out)[https://makefiletutorial.com/]
