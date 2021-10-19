@@ -1,6 +1,6 @@
 # The `bzip2` command
 
-The `bzip2` command lets you compress and decompress the files i.e. it helps in binding the files into a single file which takes less storage space as the original file use to take.
+The `bzip2` command lets you compress and decompress the files i.e. it helps in binding the files into a single file which takes less storage space than the original file use to take.
 
 ### Syntax:
 
@@ -8,7 +8,7 @@ The `bzip2` command lets you compress and decompress the files i.e. it helps in 
 bzip2 [OPTIONS] filenames ...
 ```
 
-#### Note : Each file is replaced by a compressed version of itself, with the name original name of the file followed by extension bz2.
+#### Note: Each file is replaced by a compressed version of itself, with the name original name of the file followed by extension bz2.
 
 ### Options and their Functionalities:
 
@@ -26,7 +26,7 @@ bzip2 [OPTIONS] filenames ...
 |`-z`|`--compress`|to enable file compression, but deletes the original input file|
 
 
-> #### By default, when bzip2 compresses a file, it deletes the original (or input) file. However, if you don't want that to happen, use the -k command line option.
+> #### By default, when bzip2 compresses a file, it delete the original (or input) file. However, if you don't want that to happen, use the -k command line option.
 
 ### Examples:
 
