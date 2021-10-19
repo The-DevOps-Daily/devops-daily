@@ -36,7 +36,7 @@ This program sets/gets I/O scheduling class and priority for the program If none
 	The priority within best effort class will be dynamically derived form the CPU nice level of the process : io_priority = ( cpu_nice + 20 ) / 5/
 	for kernels after 2.6.26 with CFQ I/O schedular a process that has not asked for sn io priority inherits CPU scheduling class.
 	
-	The I/O priority is derived from the CPU nice level of the process ( smr sd before kernel 2.6.26 ).
+	`The I/O priority is derived from the CPU nice level of the process` ( smr sd before kernel 2.6.26 ).
 
 - ### Real Time
 		
