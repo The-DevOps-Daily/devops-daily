@@ -78,6 +78,6 @@ For more details see ionice(1).
 |$ `ionice` -c0 -n4 -p2|ionice: ignoring given class data for none class|
 ||(Note that before kernel 2.6.26  a process that has not asked for an I/O priority formally uses “None” as scheduling class , |
 ||but the io schedular will treat such processes as if it were in the best effort class. )|
-|-t option : ignore failure||
+||-t option : ignore failure|
 |$ `ionice` -c0 -n4 -p2 -t| | 
 |$ `ionice` -p 2|none: prio 0|
