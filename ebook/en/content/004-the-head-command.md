@@ -1,19 +1,16 @@
 # The `head` command
 
-The `head` command prints the first 10 lines by default of a file.  
-  
+The `head` command prints the first 10 lines of a file.
+
 Example:
+```
+head filename.txt
+```
 
+Syntax:
 ```
-head filename.txt  
+head [OPTION] [FILENAME]
 ```
-
-Syntax: 
-
-```
-head [OPTION] [FILENAME]  
-```
-  
 
 ### Get a specific number of lines:
 
@@ -21,13 +18,12 @@ Use the `-n` option with a number(should be an integer) of lines to display.
 
 Example:
 ```
-head -n 10 foo.txt  
+head -n 10 foo.txt
 ```
 
-This command will display the first 10 lines of file `foo.txt` .
-  
+This command will display the first 10 lines of file `foo.txt`.
+
 Syntax:
-
 ```
-head -n <~number> foo.txt
+head -n <number> foo.txt
 ```
