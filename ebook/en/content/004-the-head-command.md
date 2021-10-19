@@ -1,6 +1,6 @@
 # The `head` command
 
-The `head` command prints the first 10 lines of a file.
+The `head` command prints the first ten lines of a file.
 
 Example:
 ```
@@ -21,7 +21,7 @@ Example:
 head -n 10 foo.txt
 ```
 
-This command will display the first 10 lines of file `foo.txt`.
+This command will display the first ten lines of the file `foo.txt`.
 
 Syntax:
 ```
