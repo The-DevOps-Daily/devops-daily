@@ -1,6 +1,5 @@
 # `ionice`
 
-## Description 
 This program sets/gets I/O scheduling class and priority for the program If none argument is given , `ionice` will query the current I/O scheduling class and priority for that process
 
 ## Usage
@@ -14,28 +13,40 @@ This program sets/gets I/O scheduling class and priority for the program If none
 ` ionice [options] <command>`
 
 
-A process can be of three scheduling classes:
-    • Idle
-		A program with idle  I/O priority will only get disk time when no other program has asked for disk I/O for a defined grace period.
-		The impact of idle processes on normal system actively should be zero.
-		This scheduling class doesn’t take priority argument.
-		Presently this scheduling class is permitted for an ordinary user (since kernel 2.6.25).
-    
-   Best Effort
-		This is effective scheduling class for any process that has not asked for a specific I/O priority.
-		This class takes priority argument from 0-7, with lower number being higher priority.
-		Programs running at the same best effort priority are served in round- robbin fashion
-		Note that before kernel 2.6.26  a process that has not asked for an I/O priority formally uses “None” as scheduling class , but the io schedular will treat such processes as if it were in the best effort class. 
-		The priority within best effort class will be dynamically derived form the CPU nice level of the process : io_priority = ( cpu_nice + 20 ) / 5/
-		for kernels after 2.6.26 with CFQ I/O schedular a process that has not asked for sn io priority inherits CPU scheduling class.
-		The I/O priority is derived from the CPU nice level of the process ( smr sd before kernel 2.6.26 ).
+## A process can be of three scheduling classes:
+- ### Idle
+		
+	A program with idle I/O priority will only get disk time when `no other program has asked for disk I/O for a defined grace period`.
+	
+	The impact of idle processes on normal system actively should be `zero`.
+	
+	This scheduling class `doesn’t take priority` argument.
+	
+	Presently this scheduling class is permitted for an `ordinary user (since kernel 2.6.25)`.
+- ### Best Effort
+		
+	This is `effective` scheduling class for any process that has `not asked for a specific I/O priority`.
+	
+	This class `takes priority argument from 0-7`, with `lower` number being `higher priority`.
+	
+	Programs running at the same best effort priority are served in `round- robbin fashion`.
+	
+	Note that before kernel 2.6.26  a process that has not asked for an I/O priority formally uses “None” as scheduling class , but the io schedular will treat such processes as if it were in the best effort class. 
+	
+	The priority within best effort class will be dynamically derived form the CPU nice level of the process : io_priority = ( cpu_nice + 20 ) / 5/
+	for kernels after 2.6.26 with CFQ I/O schedular a process that has not asked for sn io priority inherits CPU scheduling class.
+	
+	The I/O priority is derived from the CPU nice level of the process ( smr sd before kernel 2.6.26 ).
 
-
-  Real Time
-		the real time schedular class is given first access to disk, regardless of what else is going on in the system.
-		Thus the real time class needs to be used with some care, as it cans tarve other processes .
-		As with the best effort class, 8 priority levels are defined denoting how big a time slice a given process will receive on each scheduling window.	
-		This scheduling class is not permitted for an ordinary user(non-root).
+- ### Real Time
+		
+	The real time schedular class is `given first access to disk, regardless of what else is going on in the system`.
+	
+	Thus the real time class needs to be used with some care, as it cans tarve other processes .
+	
+	As with the best effort class, `8 priority levels are defined denoting how big a time slice a given process will receive on each scheduling window`.	
+	
+	This scheduling class is `not permitted for an ordinary user(non-root)`.
 
 ## Options
 | Options | Description |
