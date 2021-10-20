@@ -50,7 +50,7 @@ cd [OPTIONS] directory
 
 ### Additional Flags and Their Functionalities
 
-|**Short Flag**   |**Long Flag**   |**Description**   |
+|**Short flag**   |**Long flag**   |**Description**   |
 |:---|:---|:---|
 |`-L`|<center>-</center>|Follow symbolic links. By default,`cd` behaves as if the `-L` option is specified.|
 |`-P`|<center>-</center>|Don’t follow symbolic links.|

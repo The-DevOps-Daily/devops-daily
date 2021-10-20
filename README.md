@@ -22,13 +22,651 @@ This is an open-source eBook with 101 Linux commands that everyone should know. 
 
 - [Light mode](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/export/101-linux-commands-ebook-light.pdf)
 
-## 📃 List of commands:
+---
+# Content <!-- omit in toc -->
+- [Basics](#basics)
+  - [File Hierarchy Standard (FHS)](#file-hierarchy-standard-fhs)
+  - [Commands](#commands)
+  - [Globs (Wildcards)](#globs-wildcards)
+  - [Regex](#regex)
+  - [Stream redirection](#stream-redirection)
+- [Disk and File System Management](#disk-and-file-system-management)
+  - [General Disk Manipulation (non-LVM)](#general-disk-manipulation-non-lvm)
+- [Text Readers & Editors](#text-readers--editors)
+  - [Less](#less)
+  - [VI](#vi)
+- [User and Group Management](#user-and-group-management)
+- [File System Permissions](#file-system-permissions)
+- [SSH](#ssh)
+- [Cronjobs](#cronjobs)
+- [Package Management](#package-management)
+  - [RPM](#rpm)
+  - [YUM](#yum)
+- [📃List of commands by category](#list-of-commands-by-category)
+- [📃List of commands by chapter](#list-of-commands-by-chapter)
+- [🔗Links](#links)
+- [📖Other E-Books](#other-ebooks)
+- [🤲Contributing](#contributing)
+---
+# Basics
+## File Hierarchy Standard (FHS)
+| Path     | Content                             |
+| -------- | ----------------------------------- |
+| `/bin`   | Binaries (User)                     |
+| `/boot`  | Static boot loader files            |
+| `/etc`   | Host specific configs               |
+| `/lib`   | Shared libraries and kernel modules |
+| `/sbin`  | Binaries (System/root)              |
+| `/var`   | Varying files (e.g. Logs)           |
+| `/usr`   | 3rd party software                  |
+| `/proc`  | Pseudo file system                  |
+| `/sys`   | Pseudo file system                  |
+| `/mnt`   | Mountpoint for internal drives      |
+| `/media` | Mountpoint for external drives      |
+| `/home`  | User homes                          |
+| `/run`   | PID files of running processes      |
+
+---
+## Commands
+**File System Commands**
+
+| Command | Options            | Description                                       |
+| ------- | ---------------- | ------------------------------------------------- |
+| [`cd`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/002-the-cd-command.md)    | `-`              | Navigate to last dir                              |
+|         | `~`              | Navigate to home                                  |
+|         | `~username`      | Navigate to home of specified user                |
+| [`pwd`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/006-the-pwd-command.md)   |                  | Print working dir                                 |
+| [`ls`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/001-the-ls-command.md)    |                  | Print dir content                                 |
+|         | `-l`             | Format as list                                    |
+|         | `-a`             | Show hidden items (`-A` without `.` and `..`)     |
+|         | `-r`             | Invert order                                      |
+|         | `-R`             | Recurse                                           |
+|         | `-S`             | Sort by size                                      |
+|         | `-t`             | Sort by date modified                             |
+| [`mkdir`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/014-the-mkdir-command.md) | `-p`             | Create dir with parents                           |
+| [`cp`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/031-the-cp-command.md)    | `-r`             | Copy dir                                          |
+| [`rmdir`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/103-the-rmdir-command.md) | `-p`             | Remove dir and empty parents                      |
+| [`rm`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/040-the-rm-command.md)    | `-rf`            | Remove dir recursively, `-f` without confirmation |
+| [`mv`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/032-the-mv-command.md)    |                  | Move recursively                                  |
+| [`find`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/102-the-find-command.md)  | `-iname pattern` | Search dir/file case-insensitive                  |
+|         | `-mmin n`        | Last modified n minutes ago                       |
+|         | `-mtime n`       | Last modified n days ago                          |
+|         | `-regex pattern` | Path matches pattern                              |
+|         | `-size n[kMG]`   | By file size (`-n` less than; `+n` greater than)  |
+|         | `! searchparams` | Invert search                                     |
+
+---
+**File Manipulation**
+
+| Command | Options                                      | Description                                |
+| ------- | ------------------------------------------ | ------------------------------------------ |
+| [`cat`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/003-the-cat-tac-command.md)   | `file`                                     | Print content                              |
+| [`tac`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/003-the-cat-tac-command.md)   | `file`                                     | Print content inverted                     |
+| [`sort`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/059-the-sort-command.md)  | `file`                                     | Print sorted                               |
+|         | `file -r -u`                               | Print sorted descending without dublicates |
+| [`head`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/004-the-head-command.md)  | `-n10 file`                            | Print lines 5-10                           |
+| [`tail`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/005-the-tail-command.md)  | `-f file`                                  | Print new lines automatically              |
+| [`cut`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/098-the-cut-command.md)   | `-f -4,7-10,12,15- file`                   | Print selected fields (tab delimited)      |
+|         | `-c -4,7-10,12,15- file`                   | Print selected characters positions        |
+|         | `-f 2,4 -d, --output-delimiter=$'\t' file` | Change delimiter (but use tab for output)  |
+| [`uniq`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/074-the-uniq-command.md)  | `file`                                     | Hide consecutive identical lines           |
+|         | `file -c`                                  | Show consecutive identical line count      |
+|         | `file -u`                                  | Hide consecutive identical lines           |
+| `file`  | `file`                                     | Get file type                              |
+| `wc`    | `file`                                     | Count Lines, Words, Chars (Bytes)          |
+
+---
+**Archiving**
+
+| Command          | Options                          | Description                                              |
+| ---------------- | -------------------------------- | -------------------------------------------------------- |
+| [`tar`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/063-the-tar-command.md)            | `cfv archiv.tar file1 file2`     | Create archive / add or overwrite content  |
+|                  | `tfv archiv.tar`                 | Show content                                             |
+|                  | `xf archiv.tar [-C ~/extracted]` | Extract (and decompress) archive (to ~ / extracted)      |
+|                  | `cfvj archiv.tar.bz2 file`       | Create bzip2 compressed archive                          |
+|                  | `cfvz archiv.tar.gz file`        | Create gzip compressed archive                           |
+|                  | `cfa archiv.tar.[komp] file`     | create compressed archive (auto type based on name)      |
+| [`bzip2`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/069-the-bzip2-command.md) | `file1 file2`                    | Dateien (einzeln) komprimieren                           |
+|                  | `-d file1 file2`                 | Compress files (one at a time)                           |
+| [`gzip`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/015-the-gzip-command.md) | `file1 file2`                    | Dateien (einzeln) komprimieren                           |
+|                  | `-d file1 file2`                 | Decompress files                                   |
+
+---
+
+# Disk and File System Management
+
+## General Disk Manipulation (non-LVM)
+Creating physical partitions is **not required**! You can create PVs directly!
+
+| Command        | Options                     | Description                          |
+| ---------------|---------------------------- | ------------------------------------ |
+| `fdisk`        |  `-l`                       | List physical disks and partitions   |
+|         	 |  `/dev/sdb`<br>`n`          | Create new partition                 |
+|        	 |  `/dev/sdb`<br>`t`<br>`8e`  | Change partition type to *Linux LVM* |
+| `mkfs.xfs`     |  `/dev/myVG/myVol`          | Format LV with XFS                   |
+| `mkfs.ext4`    |  `-f /dev/myVG/myVol`       | Format LV with EXT4 (overwrite)      |
+| `blkid`        |  `/dev/myVG/myVol`          | Show UUID and formatting of volume   |
+| `mount`        |                             | Show what is mounted where           |
+| 		 |  `-t ext4 /dev/myVG/myVol /mountpoint` | Mount LV to /mountpoint    |
+| 		 |  `-a`                       | Mount as configured in /etc/fstab    |
+| `umount` 	 |  `/dev/myVG/myVol`          | Unmount LV from /mountpoint          |
+|        	 |  `/mountpoint`              | Unmount LV from /mountpoint          |
+| [`df`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/010-the-df-command.md)|                -    | Show disk usage                      |
+| `xfs_growfs`   | `/dev/myVG/myVol`           | Resize xfs filesystem                |
+| `resize2fs`    | ` /dev/myVG/myVol`          | Resize ext3/4 filesystem             |
+
+---
+
+**Other**
+
+| Command     | Options         | Description                                |
+| ----------- | --------------- | ------------------------------------------ |
+| `<command>` | `--help`        | Help of current command (not standardized) |
+|             | `-h`            |                                            |
+|             | `-?`            |                                            |
+| [`man`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/024-the-man-command.md)       | `<command>`     | Manual page of command                     |
+|             | `-k keyword`    | Search command by keyword (oder `apropos`) |
+| `alias`     |                 | Show aliases                               |
+|             | `name='befehl'` | Create alias                               |
+
+---
+
+## Globs (Wildcards)
+The dot `.` in front of hidden items is ignored by glob patterns!
+
+| Character | Description             |
+| --------- | ----------------------- |
+| `?`       | Any single character    |
+| `*`       | Any characters          |
+| `[ac-e]`  | 1 character in enum     |
+| `[!ac-e]` | 1 character not in enum |
+
+## Regex
+Bash itself does not know regex. Use programs like `grep`, `sed`, `awk`.
+
+**Control characters**
+
+| Character      | Description             |
+| -------------- | ----------------------- |
+| `.`            | Any single character    |
+| `[ac-e]`       | 1 character in enum     |
+| `[^ac-e]`      | 1 character not in enum |
+| `^`            | Start of string         |
+| `$`            | End of string           |
+| `\d`           | Digit                   |
+| `\D`           | Not a digit             |
+| `\s`           | Whitespace              |
+| `\S`           | Not a Whitespace        |
+| `\<`           | Start of word           |
+| `\>`           | End of word             |
+| `pattern?`     | Quantifier 0 or 1       |
+| `pattern*`     | Quantifier 0..n         |
+| `pattern+`     | Quantifier 1..n         |
+| `pattern{x}`   | Quantifier exactly x    |
+| `pattern{x,}`  | Quantifier x..n         |
+| `pattern{x,y}` | Quantifier x..y         |
+| `pattern{,y}`  | Quantifier 0..y         |
+
+**Grep**
+
+| Command | Options             | Description    |
+| ------- | ----------------- | -------------- |
+| [`grep`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/107-the-grep-command.md)  | `pattern file`    | Extended Regex |
+|         | `-E pattern file` | Extended Regex |
+|         | `-v pattern file` | Invert match   |
+|         | `-w pattern file` | Word match     |
+|         | `-i pattern file` | Ignore case    |
+
+## Stream redirection
+- `>` overwrite
+- `>>` append
+
+| Character             | Description                     |
+| --------------------- | ------------------------------- |
+| `> file` or `1> file` | STDOUT to file                  |
+| `< file`              | Datei to STDIN                  |
+| `2> file`             | STDERR to file                  |
+| `2>&1`                | STDERR to same target as STDOUT |
+| `> file 2>&1`         | STDOUT and STDERR to file       |
+
+
+# Text Readers & Editors
+## Less
+| Command             | Description                     |
+| ------------------- | ------------------------------- |
+| `q`                 | Quit                            |
+| `R`                 | Refresh content                 |
+| `F`                 | Auto scroll                     |
+| `g number`          | Go to line                      |
+| `m lowercaseLetter` | Mark line                       |
+| `' lowercaseLetter` | Go to mark                      |
+| `/pattern`          | Search forward                  |
+| `?pattern`          | Search backward                 |
+| `n`                 | Next search result              |
+| `N`                 | Last search result              |
+| `ESC u`             | Remove highlighting from search |
+
+## VI
+
+[`VI/VIM`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/100-the-vim-command.md)
+**Editing**
+
+To leave editing mode press `ESC`.
+
+| Command   | Description           |
+| --------- | --------------------- |
+| `i`       | insert before cursor  |
+| `a`       | insert after cursor   |
+| `A`       | insert at end of line |
+| `o`       | new line below        |
+| `O`       | new line above        |
+| `u`       | undo                  |
+| `.`       | repeat last command   |
+| `yy`      | copy line             |
+| `5yy`     | copy 5 lines          |
+| `p`       | paste below           |
+| `P`       | paste above           |
+| `x`       | delete character      |
+| `5x`      | delete 5 characters   |
+| `dd`      | delete line           |
+| `5dd`     | delete 5 lines        |
+| `:10,20d` | delete lines 10-20    |
+| `d0`      | delete to line begin  |
+| `d$`      | delete to line end    |
+
+**Navigation**
+
+Navigate as usual with `arrow keys`, `home`, `end`, `pg up`, `pg dn`.
+
+| Command | Description            |
+| ------- | ---------------------- |
+| `5G`    | go to line 5           |
+| `H`     | go to top of screen    |
+| `M`     | go to middle of screen |
+| `L`     | go to end of screen    |
+| `5w`    | move over 7 words      |
+| `5b`    | move back 5 words      |
+
+**Other**
+
+| Command     | Description                  |
+| ----------- | ---------------------------- |
+| `/foo`      | search forward               |
+| `?foo`      | search backwards             |
+| `n`         | repeat search                |
+| `:w`        | save                         |
+| `:q`        | close                        |
+| `:wq`       | save and close               |
+| `:q!`       | close without saving         |
+| `:!command` | run bash command             |
+| `:r foo`    | read file foo into this file |
+
+
+# User and Group Management
+**UID**
+
+| UID   | Type           |
+| ----- | -------------- |
+| <1000 | system account |
+| >1000 | user account   |
+
+**User Database**
+
+User info without passwords is stored in `/etc/passwd`.
+
+| username | PW  | UID  | GID  | Kommentar | HOME        | SHELL     |
+| -------- | --- | ---- | ---- | --------- | ----------- | --------- |
+| hfict    | x   | 1000 | 1000 |           | /home/hfict | /bin/bash |
+
+**Group Database**
+
+Group info with secondary group members are stored in `/etc/group`.
+Primary group members are identified by GID in user database.
+
+| groupname | PW  | GID | Users       |
+| --------- | --- | --- | ----------- |
+| wheel     | x   | 10  | hfict,user2 |
+
+**Password Database**
+
+Hashed user passwords are stored in `/etc/shadow`.
+Password encryption is configured in `/etc/login.defs`.
+
+| username | PW     | Last PW change | Minimum | Maximum | Warn | Inactive | Expire |
+| -------- | ------ | -------------- | ------- | ------- | ---- | -------- | ------ |
+| hfict    | [hash] | 17803          | 0       | 99999   | 7    |          |        |
+
+PW:
+- `[hash]` Encrypted test password
+- `! [hash]` Account locked
+- `!!` or `*` Account locked, no password set
+
+** Commands **
+
+| Command    | Param 					      | Description 					        |
+| ---------- | ---------------------------------------------- | ------------------------------------------------------- |
+| `id` 	     | `username` 				      | Show a user's ID and groups 				|
+| [`who`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/017-the-who-command.md)      | 						      | Show logged in users 					|
+| [`last`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/048-the-last-command.md)     | 						      | Show last logins 					|
+| `lastb`    | 						      | Show last failed logins 				|
+| [`sudo`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/051-the-sudo-command.md)     | `-u user command` 			      | Execute command with user rights (default is root) 	|
+|            | `-i` or` su -` 				      | Shell with root rights 					|
+| [`su`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/044-the-su-command.md)       | 						      | Shell as root (non-login shell) 			|
+|            | `-` 					      | Shell as root (login shell) 				|
+| 	     | `- user` 				      | Shell as user 						|
+| [`useradd`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/080-the-useradd-command.md)  | `-u 2101 -g primarygroup -c comment username`  | Create user (without `-g`, new group will be created)   |
+| [`usermod`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/082-the-usermod-command.md)  | `-G group1, group2` 			      | Define (overwrite) secondary groups 			|
+| 	     | `-ag group, group2` 			      | Add secondary groups 					|
+|            | `-l username` 				      | Change username 					|
+| 	     | `-L` 					      | Lock Account 						|
+| 	     | `-U` 					      | Unlock Account 						|
+| 	     | `-s shellpath`  				      | Change shell 						|
+| [`userdel`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/081-the-userdel-command.md)  | `-r username` 				      | Delete user including home and mail spool 		|
+| [`passwd`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/025-the-passwd-command.md)   | `username` 				      | Change password (interactive) 				|
+| `groupadd` | `groupname` 				      | Create group (optionally set GID with `-g`) 		|
+| `groupdel` | `groupname` 			              | Delete group 						|
+
+
+# File System Permissions
+Permissions can be set on:
+- User (owner)
+- Group (owner)
+- Others
+
+Only root can change *User*. *User* can change *Group*.
+
+Basic permissions (Add binary flags to combine):
+
+| Char | Binary Flag | Permission |
+| ---- | ----------- | ---------- |
+| r    | 4           | read       |
+| w    | 2           | write      |
+| x    | 1           | execute    |
+
+Advanced permissions (place in front of basic permissions: `chmod 1777 shared`).:
+
+| Char  | Binary Flag | Name       | Description                                                                |
+| ----- | ----------- | ---------- | -------------------------------------------------------------------------- |
+| t / T | 1           | Sticky Bit | *Others* can't delete content (only applicable for directories)            |
+| s / S | 2           | SGID-Bit   | File: run with permissions of *Group*<br>Dir: New elements inherit *Group* |
+| s / S | 4           | SUID-Bit   | File is run with permissions of *User* (only applicable for files)         |
+
+Advanced permissions replace the **x** when using `ls -l`. Lower case if **x** is set, upper case if **x** is not set.
+
+*Read* permission on a directory only allows to see the directory itself but not it's contents. Use *execute* permission to show contents.
+
+**Commands**
+
+| Command   | Options                    | Description                                      |
+| --------- | ------------------------ | ------------------------------------------------- |
+| [`chmod`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/106-the-chmod-command.md)   | `-R [uog] dirname`       | Set permissions recursively using binary flags    |
+|           | `+[suog] filename`       | Add permissions using binary flags                |
+|           | `-[suog] filename`       | Remove permissions using binary flags             |
+|           | `u+x filename`           | Add *execute* permission for *User*               |
+|           | `g+wx filename`          | Add *write* and *execute* permissions for *Group* |
+|           | `o-r filename`           | Remove *read* permission for *Others*             |
+| [`chown`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/101-the-chown-command.md)   | `-R user:group filename` | Change owner (*User* & *Group*) recursively       |
+|           | `user filename`          | Change owner (*User*)                             |
+|           | `:group filename`        | Change owner (*Group*)                            |
+| `chgroup` | `group filename`         | Change owner (*Group*)                            |
+
+# SSH
+
+[`SSH`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/089-the-ssh-command.md)
+Configuration is done in `/etc/ssh/sshd_config`.
+
+Reload SSH service with `systemctl reload sshd` to apply changes!
+
+DenyUsers, AllowUsers, DenyGroups, AllowGroups override each other and are applied in the order listed above.
+
+| Config            | Option             | Description                                   |
+| ----------------- | ------------------ | --------------------------------------------- |
+| `PermitRootLogin` | `no`               | Deny root to login via SSH                    |
+|                   | `yes`              | Allow root to login via SSH                   |
+|                   | `without-password` | Allow only with private/public key auth       |
+| `AllowUsers`      | `user1 user2`      | Allow only user1 and user2                    |
+| `DenyUsers`       | `user1 user2`      | Allow all users but user1 and user2           |
+| `AllowGroups`     | `group1 group2`    | Allow only users from specified groups        |
+| `DenyGroups`      | `group1 group2`    | Allow all users but those in specified groups |
+
+
+# Cronjobs
+**[`Crontab`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/091-the-crontab-command.md)**
+
+Cronjobs are configured in crontab files. Do not edit these files directly. Use `crontab -e` instead. This runs all required actions to activate a cronjob after saving the edited crontab. The locations are as follows:
+- `/var/spool/cron/username` user specific
+- `/etc/crontab` system wide crontab
+
+The format of the files is (user specific crontabs **do not** have the column *user-name*):
+```
+Example of job definition:
+.---------------- minute (0 - 59 | */5 [every 5 minutes])
+|  .------------- hour (0 - 23)
+|  |  .---------- day of month (1 - 31)
+|  |  |  .------- month (1 - 12) OR jan,feb,mar,apr ...
+|  |  |  |  .---- day of week (0 - 6) (Sunday=0 or 7) OR sun,mon,tue,wed,thu,fri,sat
+|  |  |  |  |
+*  *  *  *  * user-name  command to be executed
+```
+
+| Command                          | Description                   |
+| -------------------------------- | ----------------------------- |
+| `rpm -q cronie`                  | Check if package is installed |
+| `systemctl status crond.service` | Check if service is running   |
+| `crontab -l`                     | List current users crontab    |
+| `crontab -e`                     | Edit current users crontab    |
+| `crontab -e -u username`         | Edit specific users crontab   |
+| `crontab -r`                     | Remove current users crontab  |
+
+**Script folders**
+
+Scripts in one of the following directories will be executed at the intervall specified by the directory's name:
+- `/etc/cron.hourly`
+- `/etc/cron.daily`
+- `/etc/cron.weekly`
+- `/etc/cron.monthly`
+
+**Allow / Deny usage**
+
+Add user names one per line to the following files:
+- `/etc/cron.allow` Whitelist
+- `/etc/cron.deny` Blacklist
+
+If none of the files exists, all users are allowed.
+
+**Logs and Results**
+
+Execution of cronjobs is logged in `/var/log/cron`.
+Results are sent to the users mail `/var/spool/mail/username`.
+
+# Package Management
+## RPM
+
+[`RPM`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/075-the-rpm-command.md)
+
+| Command                  | Description                               |
+| ------------------------ | ----------------------------------------- |
+| `rpm -i rpmfile\|rpmurl`  | Install package                           |
+| `rpm -e packagename`     | Uninstall package                         |
+| `rpm -q packagename`     | Check if package is installed             |
+| `rpm -ql packagename`    | List files in a package                   |
+| `rpm -qa`                | List all installed packages               |
+| `rpm -qf /path/to/file`  | Get package that installed the file       |
+| `rpm -qf $(which <exe>)` | Get package that installed the executable |
+| `rpm -V packagename`     | Validate installed package                |
+
+## YUM
+[`YUM`](https://github.com/bobbyiliev/101-linux-commands-ebook/blob/main/ebook/en/content/053-the-yum-command.md) is configured in `/etc/yum.conf`
+
+Repos are configured in `/etc/yum.repos.d/`
+
+Log is in `/var/log/yum.log`
+
+| Command                               | Description                               |
+| ------------------------------------- | ----------------------------------------- |
+| `yum install packagename [-y]`        | Install package (`-y` no confirm message) |
+| `yum remove packagename`              | Uninstall package                         |
+| `yum update`                          | Update all installed packages             |
+| `yum update packagename`              | Update specific package                   |
+| `yum update pattern*`                 | Update packages using wildcard            |
+| `yum info packagename`                | Get detailed info about package           |
+| `yum list packagename`                | List installed and available packages     |
+| `yum search searchstring`             | search for a package (name & summary)     |
+| `yum search all searchstring`         | search for a package (all infos)          |
+| `yum deplist packagename`             | List dependencies of a package            |
+| `yum reinstall packagename`           | Reinstall (corrupted) package             |
+| `yumdownloader --resolve packagename` | Download rpm package with dependencies    |
+
+---
+
+# 📃 List of commands by category:
 
 If you want to contribute, feel free to pick up a topic marked as `TODO` and submit a pull request 🙌
 
 Feel free to add new topics in case that you don't find one that you like from the current list.
 
 ---
+### Directory Navigation
+- [cd](ebook/en/content/002-the-cd-command.md) - change working directory
+- [ls](ebook/en/content/001-the-ls-command.md) - list directory contents
+- [dir](ebook/en/content/057-the-dir-command.md) - directory listing, columnar format
+- [pwd](ebook/en/content/006-the-pwd-command.md) - return working directory name
+- [tree](ebook/en/content/095-the-tree-command.md) - list subdirectories in a tree structure
+
+
+### File Commands
+- [cat/tac](ebook/en/content/003-the-cat-tac-command.md) - concatenate and print files
+- [diff/sdiff](ebook/en/content/062-the-diff-sdiff-command.md) - compare files line by line
+- [find](ebook/en/content/102-the-find-command.md) - search for files
+- [grep](ebook/en/content/107-the-grep-command.md) - file pattern matcher
+- [head](ebook/en/content/004-the-head-command.md) - display the first lines of a file
+- [locate](ebook/en/content/049-the-locate-command.md) - find files and directories
+- [stat](ebook/en/content/079-the-stat-command.md) - display file status
+- [tail](ebook/en/content/005-the-tail-command.md) - display the last lines of a file
+- [uniq](ebook/en/content/074-the-uniq-command.md) -  report or filter out repeated lines in a file
+
+### File and Directory Manipulation
+- [awk](ebook/en/content/090-the-awk-command.md) - pattern-directed scanning and processing language
+- [chmod](ebook/en/content/106-the-chmod-command.md) - change permissions
+- [chown](ebook/en/content/101-the-chown-command.md) - change file owner and group
+- [cp](ebook/en/content/031-the-cp-command.md) - copy files and directories
+- [cut](ebook/en/content/098-the-cut-command.md) - remove sections from files
+- [mkdir](ebook/en/content/014-the-mkdir-command.md) - make a new directory
+- [mv](ebook/en/content/032-the-mv-command.md) - move files and directories
+- [nano](ebook/en/content/039-the-nano-command.md) - text editor
+- [rm](ebook/en/content/040-the-rm-command.md) - delete files and directories
+- [rmdir](ebook/en/content/103-the-rmdir-command.md) - remove directory
+- [paste](ebook/en/content/060-the-paste-command.md) - merge corresponding or subsequent lines of file
+- [rsync](ebook/en/content/086-the-rsync-command.md) - remote copy files
+- [scp](ebook/en/content/076-the-scp-command.md) - secure copy
+- [sed](ebook/en/content/099-the-sed-command.md) - text transformation tool
+- [sort](ebook/en/content/059-the-sort-command.md) - arrange or merge lines of files
+- [split](ebook/en/content/078-the-split-command.md) - split a file into pieces
+- [touch](ebook/en/content/007-the-touch-command.md) - change file access and modification times
+- [vim](ebook/en/content/100-the-vim-command.md) - text editor
+
+### Package archive and compression tools 
+- [bzip2](ebook/en/content/069-the-bzip2-command.md) - block-sorting file compressor
+- [gzip](ebook/en/content/015-the-gzip-command.md) - compression tool
+- [gunzip](ebook/en/content/064-the-gunzip-command.md) - decompression tool
+- [tar](ebook/en/content/063-the-tar-command.md) - create, extract and manipulate archives
+- [zip](ebook/en/content/054-the-zip-command.md) - package and compress files
+- [unzip](ebook/en/content/055-the-unzip-command.md) - list, test, extract compressed ZIP files
+
+### System commands
+- [crontab](ebook/en/content/091-the-crontab-command.md) - maintain individual tables used to drive the cron daemon
+- [df](ebook/en/content/010-the-df-command.md) - display free disk space
+- [du](ebook/en/content/084-the-du-command.md) - display disk usage statistics
+- [free](ebook/en/content/018-the-free-command.md) - show memory usage information
+- [hostname](ebook/en/content/038-the-hostname-command.md) - set or print name of current host system
+- [hostnamectl](ebook/en/content/065-the-hostnamectl-command.md) - change hostname settings
+- [ionice](ebook/en/content/083-the-ionice-command.md) - get/set I/O process priority
+- [iostat](ebook/en/content/050-the-iostat-command.md) - I/O statistics
+- [kill](ebook/en/content/034-the-kill-command.md) - terminate or signal a process by id
+- [killall](ebook/en/content/035-the-killall-command.md) - kill processes by name
+- [lsblk](ebook/en/content/104-the-lsblk-command.md) - display block and loop devices
+- [lsof](ebook/en/content/068-the-lsof-command.md) - list open files
+- [mpstat](ebook/en/content/072-the-mpstat-command.md) - CPU statistics
+- [ncdu](ebook/en/content/073-the-ncdu-command.md) - curses-based disk usage
+- [ps](ebook/en/content/033-the-ps-command.md) - display process status
+- [pstree](ebook/en/content/094-the-pstree-command.md) - show processes in tree format
+- [reboot](ebook/en/content/058-the-reboot-command.md) - restart the system
+- [service](ebook/en/content/070-the-service-command.md) - run an init script
+- [shutdown](ebook/en/content/056-the-shutdown-command.md) - close down the system at a specific time
+- [top/htop](ebook/en/content/019-the-top-htop-command.md) - display process information
+- [uname](ebook/en/content/013-the-uname-command.md) - prints operating system details
+- [useradd](ebook/en/content/080-the-useradd-command.md) - add/update user accounts
+- [userdel](ebook/en/content/081-the-userdel-command.md) - delete user account
+- [usermod](ebook/en/content/082-the-usermod-command.md) - modify user properties
+- [vmstat](ebook/en/content/071-the-vmstat-command.md) - virtual memory statistics
+- [whereis](ebook/en/content/096-the-whereis-command.md) - locate programs
+
+### Networking Commands
+- [dig](ebook/en/content/087-the-dig-command.md) - DNS lookup utility
+- [ifconfig](ebook/en/content/041-the-ifconfig-command.md) - configure network interface parameters
+- [ip](ebook/en/content/042-the-ip-command.md) - perform network administration tasks
+- [iptable](ebook/en/content/066-the-iptable-command.md) - configure IPv4 network firewall
+- [lscpu](ebook/en/content/030-the-lscpu-command.md) - display CPU architecture information
+- [netstat](ebook/en/content/067-the-netstat-command.md) - show network status
+- [ping](ebook/en/content/085-the-ping-command.md) - check network connectivity
+- [whois](ebook/en/content/088-the-whois-command.md) - information about Internet domain names and network numbers
+
+
+### Package Management
+- [apt](ebook/en/content/052-the-apt-command.md) - Debian package management
+- [rpm](ebook/en/content/075-the-rpm-command.md) - RPM package manager (RedHat)
+- [yum](ebook/en/content/053-the-yum-command.md) - package manager for RedHat Linux
+
+### User Information commands
+For user modification, see useradd, userdel, usermod under System commands
+
+- [groups](ebook/en/content/023-the-groups-command.md) - show group memberships
+- [finger](ebook/en/content/022-the-finger-command.md) - shows information about users
+- [last](ebook/en/content/048-the-last-command.md) - displays most recent user logins
+- [passwd](ebook/en/content/025-the-passwd-command.md) - modify a user's password
+- [w](ebook/en/content/026-the-w-command.md) - display who is logged in and what they are doing
+- [who](ebook/en/content/017-the-who-command.md) - display who is logged in
+- [whoami](ebook/en/content/027-the-whoami-command.md) - display effective user id
+
+### Session commands
+- [clear](ebook/en/content/043-the-clear-command.md) - clear terminal screen
+- [env](ebook/en/content/036-the-env-command.md) - display environment variables, or set variables for command execution
+- [exit](ebook/en/content/061-the-exit-command.md) - close the active session/shell
+- [printenv](ebook/en/content/037-the-printenv-command.md) - print specified environment variables
+- [history](ebook/en/content/028-the-history-command.md) - display the command history
+- [login](ebook/en/content/029-the-login-command.md) - login and initiate a user session
+- [nohup](ebook/en/content/093-the-nohup-command.md) - invoke a utility immune to hangups
+- [sleep](ebook/en/content/077-the-sleep-command.md) - suspend execution for a time interval
+- [ssh](ebook/en/content/089-the-ssh-command.md) - secure shell login
+- [su](ebook/en/content/044-the-su-command.md) - substitute user identity
+- [sudo](ebook/en/content/051-the-sudo-command.md) - execute a command as another user
+- [screen](ebook/en/content/108-the-screen-command.md) - start a screen session
+
+### Getting Help
+- [man](ebook/en/content/024-the-man-command.md) - format and display online manual pages
+- [help](ebook/en/content/011-the-help-command.md) - displays help about basic commands not covered by 'man'
+- [whatis](ebook/en/content/016-the-whatis-command.md) - display one-line command descriptions
+
+### Applications
+- [bc](ebook/en/content/009-the-bc-command.md) - basic calculator
+- [cal](ebook/en/content/008-the-cal-command.md) - displays a calendar
+- [cmatrix](ebook/en/content/105-the-cmatrix-command.md) - enter the Matrix
+- [curl](ebook/en/content/046-the-curl-command.md) - transfer data to or from a server
+- [echo](ebook/en/content/021-the-echo-command.md) - display interpreted arguments
+- [factor](ebook/en/content/012-the-factor-command.md) - prints prime factors of numbers
+- [printf](ebook/en/content/097-the-printf-command.md) - format output
+- [sl](ebook/en/content/020-the-sl-command.md) - runs a steam locomotive across your terminal
+- [wget](ebook/en/content/045-the-wget-command.md) - non-interactive web file download
+- [xargs](ebook/en/content/092-the-xargs-command.md) - construct argument lists and execute utility
+- [yes](ebook/en/content/047-the-yes-command.md) - print continous output stream
+
+
+---
+# 📃 List of commands by chapter:
+
+If you want to contribute, feel free to pick up a topic, update it with `New Examples | [Options]`and submit a pull request 🙌
+
+Feel free to add new topics in case that you don't find one that you like from the current list.
 
 - [001-the-ls-command.md](ebook/en/content/001-the-ls-command.md)
 - [002-the-cd-command.md](ebook/en/content/002-the-cd-command.md)
@@ -122,7 +760,7 @@ Feel free to add new topics in case that you don't find one that you like from t
 - [090-the-awk-command.md](ebook/en/content/090-the-awk-command.md)
 - [091-the-crontab-command.md](ebook/en/content/091-the-crontab-command.md)
 - [092-the-xargs-command.md](ebook/en/content/092-the-xargs-command.md)
-- [093-the-nohub-command.md](ebook/en/content/093-the-nohub-command.md)
+- [093-the-nohup-command.md](ebook/en/content/093-the-nohup-command.md)
 - [094-the-pstree-command.md](ebook/en/content/094-the-pstree-command.md)
 - [095-the-tree-command.md](ebook/en/content/095-the-tree-command.md)
 - [096-the-whereis-command.md](ebook/en/content/096-the-whereis-command.md)
@@ -137,8 +775,11 @@ Feel free to add new topics in case that you don't find one that you like from t
 - [105-the-cmatrix-command.md](ebook/en/content/105-the-cmatrix-command.md)
 - [106-the-chmod-command.md](ebook/en/content/106-the-chmod-command.md)
 - [107-the-grep-command.md](ebook/en/content/107-the-grep-command.md)
+- [108-the-screen-command.md](ebook/en/content/108-the-screen-command.md)
+- [109-the-nc-command.md](ebook/en/content/109-the-nc-command.md)
+- [110-the-make-command.md](ebook/en/content/110-the-make-command.md)
 
-## 🔗 Links
+# 🔗Links
 
 - [Free $100 Credit For DigitalOcean](https://m.do.co/c/2a9bba940f39)
 - [Join DevDojo](https://devdojo.com?ref=bobbyiliev)
@@ -147,13 +788,13 @@ Feel free to add new topics in case that you don't find one that you like from t
 - [Tails](http://devdojo.com/tails)
 - [Katacoda](https://www.katacoda.com/)
 
-## 📖 Other eBooks
+# 📖Other eBooks
 
 - [Introduction to SQL](https://github.com/bobbyiliev/introduction-to-sql)
 - [Introduction to Git and GitHub](https://github.com/bobbyiliev/introduction-to-git-and-github-ebook)
 - [Introduction to Bash Scripting](https://github.com/bobbyiliev/introduction-to-bash-scripting)
 - [Laravel tips and tricks](https://github.com/bobbyiliev/laravel-tips-and-tricks-ebook)
 
-## 🤲 Contributing
+# 🤲Contributing
 
 If you are contributing 🍿 please read the [contributing file](CONTRIBUTING.md) before submitting your pull requests.
