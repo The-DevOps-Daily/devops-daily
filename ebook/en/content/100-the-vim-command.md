@@ -1,9 +1,9 @@
 # The `vim` command
 
 The [vim](https://www.vim.org/) is a text editor for Unix that comes with Linux, BSD, and macOS. It is known to be fast and powerful, partly because it is a small program that can run in a terminal (although it has a graphical interface). 
-Vim text editor is developed by Bram Moolenaar. It supports most file types and vim editor is also known as a programmer's editor.
+Vim text editor is developed by [Bram Moolenaar](https://en.wikipedia.org/wiki/Bram_Moolenaar). It supports most file types and vim editor is also known as a programmer's editor. It is mainly because it can be managed entirely without menus or a mouse with a keyboard.
 
-It is mainly because it can be managed entirely without menus or a mouse with a keyboard.
+**Note:** Do not confuse `vim` with `vi`. `vi`, which stands for "Visual", is a text editor that was developed by [Bill Joy](https://en.wikipedia.org/wiki/Bill_Joy) in 1976. `vim` stands for "Vi Improved", and is an improved clone of the `vi` editor.
 
 ### The most searched question about ```vim``` :
 ``How to exit vim editor ?``
@@ -16,7 +16,7 @@ The command to exit vim editor: ```:wq```
 Here's a [survey](https://stackoverflow.blog/2017/05/23/stack-overflow-helping-one-million-developers-exit-vim/) for the same question, look at this and do not think to quit the vim editor.
 
 ### Installation:
-First of all check if the vim is already installed or not, enter the following command:
+First check if the vim is already installed or not, enter the following command:
 ```
 vim --version
 ```
