@@ -125,8 +125,9 @@ Feel free to add new topics in case that you don't find one that you like from t
 * TODO: [099-the-sed-command.md](ebook/en/content/099-the-sed-command.md)
 * [100-the-vim-command.md](ebook/en/content/100-the-vim-command.md)
 * [101-the-chown-command.md](ebook/en/content/101-the-chown-command.md)
+* [114-the-which-command.md](ebook/en/content/114-the-which-command.md)
 
-## 🔗 Links
+# 🔗 Links
 
 - [Free $100 Credit For DigitalOcean](https://m.do.co/c/2a9bba940f39)
 - [Join DevDojo](https://devdojo.com?ref=bobbyiliev)
