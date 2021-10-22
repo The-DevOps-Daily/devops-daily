@@ -29,6 +29,18 @@ sudo apt remove package_name
 ```
 sudo apt remove g++
 ```
+### Searching for a package:
+`search` followed by the `package_name` used with apt to search a package across all repositories.
+##### Syntax:
+```
+apt search package_name
+```
+note: sudo not required
+##### Example:
+```
+apt search g++
+```
+
 This command will remove g++ from your system.
 
 
