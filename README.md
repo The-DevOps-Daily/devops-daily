@@ -784,7 +784,7 @@ Feel free to add new topics in case that you don't find one that you like from t
 - [111-the-basename-command.md](ebook/en/content/111-the-basename-command.md)
 - [112-the-banner-command.md](ebook/en/content/112-the-banner-command.md)
 - [113-the-alias-command.md](ebook/en/content/113-the-alias-command.md)
-- [114-the-date-command.md](ebook/en/content/114-the-date-command.md)
+- [115-the-date-command.md](ebook/en/content/115-the-date-command.md)
 
 # 🔗Links
 
