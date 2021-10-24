@@ -1,35 +1,40 @@
-# The `head` command
-The `head` command prints the first ten lines of a file.
+# The `pwd` command
 
-## Syntax
-```bash
-$ head [OPTION] [FILENAME]
+The `pwd` stands for Print Working Directory. It prints the path of the current working directory, starting from the root.
+
+Example:
+```
+pwd
 ```
 
-## Example
-```bash
-$ head filename.txt
+The output would be your current directory:
+
+```
+/home/your_user/some_directory
 ```
 
-### Get a specific number of lines:
-Use the `-n` option with a number (should be an integer) of lines to display.
-```bash
-$ head -n 10 foo.txt
+Syntax:
 ```
-This command will display the first ten lines of the file `foo.txt`.
-
-Syntax
-```bash
-$ head -n <number> foo.txt
+pwd [OPTION]
 ```
 
-## Options
-|**Short Flag**|**Long Flag**|**Description**|
-|:-|:-|:-|
-|`-c`|`--bytes=[-]NUM`|Print the first NUM bytes of each file; <br>with the leading '-', <br>print all but the last NUM bytes of each file|
-|`-n`|`--lines=[-]NUM`|Print the first NUM lines instead of the first 10;<br> with the leading '-', <br>print all but the last NUM lines of each file|
-|`-q`|`--quiet, --silent`|Never print headers giving file names|
-|`-v`|`--verbose`|Always print headers giving file names|
-|`-z`|`--zero-terminated`|Line delimiter is NUL, not newline|
-|<center>-</center>|`--help`| Display this help and exit|
-|<center>-</center>|`--version`|Output version information and exit|
+Tip:
+You can also check this by printing out the `$PWD` variable:
+
+```
+echo $PWD
+```
+
+The output would be the same as of the `pwd` command.
+
+### Options:
+
+
+|**Short Flag**   |**Long Flag**   |**Description**   |
+|:---|:---|:---|
+| `-L` | `--logical` | If the environment variable $PWD contains an absolute name of the current directory with no "." or ".." components, then output those contents, even if they contain symbolic links. Otherwise, fall back to default (-P) behavior. |
+| `-P`| `--physical` | Print a fully resolved name for the current directory, where all components of the name are actual directory names, and not symbolic links. |
+| ` ` | `--help`| Display a help message, and exit. |
+| ` ` | `--version`| Display version information, and exit. |
+
+By default, `pwd' behaves as if `-L' were specified.
