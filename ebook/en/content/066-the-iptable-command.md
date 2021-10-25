@@ -20,5 +20,5 @@ iptables -t filter --append INPUT -j DROP
 ### Flags and their Functionalities:
 |Flag|Description|
 |:---|:---|
-|`-C`|Check if a rule is present in the chain or not. It returns 0 if the rule exists and returns 1 if it does not.| |`-A`|Append to the chain provided in parameters.|
-|`-D`|Delete rule from the specified chain.|
+|`-C`|Check if a rule is present in the chain or not. It returns 0 if the rule exists and returns 1 if it does not.|
+|`-A`|Append to the chain provided in parameters.|
