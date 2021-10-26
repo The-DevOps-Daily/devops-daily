@@ -661,8 +661,8 @@ For user modification, see useradd, userdel, usermod under System commands
 - [xargs](ebook/en/content/092-the-xargs-command.md) - construct argument lists and execute utility
 - [yes](ebook/en/content/047-the-yes-command.md) - print continous output stream
 - [banner](ebook/en/content/112-the-banner-command.md) - Writes ASCII character strings in large letters to standard output.
-- [aplay](ebook/en/content/123-the-aplay-command.md) - aplay is a command-line to play audio files.
-- [spd-say](ebook/en/content/124-the-spd-say-command.md) - plays the given text as the sound from the command line.
+- [aplay](ebook/en/content/125-the-aplay-command.md) - aplay is a command-line to play audio files.
+- [spd-say](ebook/en/content/126-the-spd-say-command.md) - plays the given text as the sound from the command line.
 
 ---
 # 📃 List of commands by chapter:
@@ -793,8 +793,8 @@ Feel free to add new topics in case that you don't find one that you like from t
 - [120-fdisk-command.md](ebook/en/content/120-fdisk-command.md)
 - [121-wait-command.md](ebook/en/content/121-wait-command.md)
 - [122-the-zcat-command.md](ebook/en/content/122-the-zcat-command.md)
-- [123-the-aplay-command.md](ebook/en/content/123-the-aplay-command.md)
-- [124-the-spd-say-command.md](ebook/en/content/124-the-spd-say-command.md)
+- [125-the-aplay-command.md](ebook/en/content/125-the-aplay-command.md)
+- [126-the-spd-say-command.md](ebook/en/content/126-the-spd-say-command.md)
 
 # 🔗Links
 
