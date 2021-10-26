@@ -16,7 +16,7 @@ ssh test.server.com -p 3322
 ssh -i private.key user_name@host
 ```
 
-3. -l ssh speecifying a different user name
+3. -l ssh specifying a different username
 
 ```
 ssh -l alternative-username sample.ssh.com

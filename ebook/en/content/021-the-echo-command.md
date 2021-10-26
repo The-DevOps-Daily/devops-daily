@@ -1,19 +1,26 @@
 # The `echo` command
 
-The `echo` command lets you display the line of text/string that are passed as an argument
+The `echo` command lets you display the line of text/string that is passed as an argument
 
 ### Examples:
 
-1. To Show the line of text or string passed as an arguement:
+1. To Show the line of text or string passed as an argument:
 
 ```
 echo Hello There
 ```
-2. To show all files/ folders similar to the `ls` command:
+2. To show all files/folders similar to the `ls` command:
 ```
 echo *
 ```
-
+3. To save text to a file named foo.bar:
+```
+echo "Hello There" > foo.bar
+```
+4. To append text to a file named foo.bar:
+```
+echo "Hello There" >> foo.bar
+```
 ### Syntax:
 
 ```
