@@ -784,8 +784,20 @@ Feel free to add new topics in case that you don't find one that you like from t
 - [111-the-basename-command.md](ebook/en/content/111-the-basename-command.md)
 - [112-the-banner-command.md](ebook/en/content/112-the-banner-command.md)
 - [113-the-alias-command.md](ebook/en/content/113-the-alias-command.md)
+- [114-the-which-command.md](ebook/en/content/114-the-which-command.md)
+- [115-the-date-command.md](ebook/en/content/115-the-date-command.md)
+- [116-mount-command.md](ebook/en/content/116-mount-command.md)
+- [117-nice-command.md](ebook/en/content/117-nice-command.md)
+- [118-the-wc-command.md](ebook/en/content/118-the-wc-command.md)
+- [119-the-tr-command.md](ebook/en/content/119-the-tr-command.md)
+- [120-fdisk-command.md](ebook/en/content/120-fdisk-command.md)
+- [121-wait-command.md](ebook/en/content/121-wait-command.md)
+- [122-the-zcat-command.md](ebook/en/content/122-the-zcat-command.md)
+- [123-the-fold-command.md](ebook/en/content/123-the-fold-command.md)
+- [124-the-quota-command.md](ebook/en/content/124-the-quota-command.md)
 
 # 🔗Links
+
 
 - [Free $100 Credit For DigitalOcean](https://m.do.co/c/2a9bba940f39)
 - [Join DevDojo](https://devdojo.com?ref=bobbyiliev)

@@ -1,5 +1,6 @@
 # The `mkdir` command
-The `mkdir` command in Linux/Unix is used to make a directory.
+The `mkdir` command in Linux/Unix is used to create a directory.
+
 
 ## Syntax
 ```bash
@@ -21,6 +22,9 @@ $ mkdir ~/myfiles
 ```bash
 $ mkdir -m a=rwx mydir
 ```
+
+You can also create sub-directories of a directory. It will create the parent directory first, if it doesn't exist. 
+If it already exists, then it move further to create the sub-directories without any error message.
 
 For directories, this means that any user on the system may view ("read"), and create/modify/delete ("write") files in the directory. Any user may also change to ("execute") the directory, for example with the `cd` command.
 
