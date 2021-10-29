@@ -12,4 +12,4 @@ xeyes
 
 `xeyes` is not for fun, at least not only. The purpose of this program is to let you follow the mouse pointer which is sometimes hard to see. It is very useful on multi-headed computers, where monitors are separated by some distance, and if someone (say teacher at school) wants to present something on the screen, the others on their monitors can easily follow the mouse with `xeyes`.
 
-![Example](https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.tecmint.com%2Flinux-funny-commands%2F&psig=AOvVaw0MjQFQNaE6wvS3Q6R05QrV&ust=1635607712665000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCMie0Ij47_MCFQAAAAAdAAAAABAL)
+![Example](https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.unixmen.com%2Fthe-funny-side-of-linux-command-line-terminal%2F&psig=AOvVaw0MjQFQNaE6wvS3Q6R05QrV&ust=1635607712665000&source=images&cd=vfe&ved=0CAsQjRxqFwoTCMie0Ij47_MCFQAAAAAdAAAAABAR)
