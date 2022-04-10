@@ -5,10 +5,10 @@ grep stands for globally search for regular expression and print out. The patter
 
 ### Examples:
 
-1. To search the contents of the destination.txt file for a string("KeY") case insensitively.
+1. To search the contents of the destination.txt file for a string("key") case insensitively.
 
 ```
-grep -i "KeY" destination.txt
+grep -i "key" destination.txt
 ```
 
 2. Displaying the count of number of matches
