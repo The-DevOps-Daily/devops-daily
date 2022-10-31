@@ -66,4 +66,3 @@ cmp -n 10 list.txt list2.txt
 |`v`|`--version`|output version information and exit|
 ||`--help`|Display this help and exit|
 
-For more details: [Cmp on Wikipedia](https://en.wikipedia.org/wiki/Cmp_(Unix))
