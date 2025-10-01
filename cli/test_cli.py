@@ -5,8 +5,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-
-
 CLI_DIR = Path(__file__).parent
 CLI_ENV = {**os.environ, "PYTHONIOENCODING": "utf-8"}
 
