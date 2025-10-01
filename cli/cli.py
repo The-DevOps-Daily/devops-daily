@@ -15,6 +15,7 @@ def build() -> None:
 
     typer.echo("Building ebook with Ibis...")
 
+
 # Register subcommands
 app.add_typer(hello.app, name="hello")
 
