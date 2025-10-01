@@ -1,7 +1,5 @@
 import typer
-
 from state import set_verbose, verbose_active
-
 
 app = typer.Typer(help="Hello command group")
 
