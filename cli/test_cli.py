@@ -62,10 +62,10 @@ def test_list_command():
         cwd=os.path.dirname(__file__),
     )
     assert result.returncode == 0
-    assert "ls - List directory contents" in result.stdout
-    assert "cd - Change directory" in result.stdout
-    assert "pwd - Print working directory" in result.stdout
-    assert "cat - Concatenate and display files" in result.stdout
+    assert "ls - List directory contents." in result.stdout
+    assert "cd - Change directory." in result.stdout
+    assert "pwd - Print working directory." in result.stdout
+    assert "cat - Concatenate and display files." in result.stdout
 
 
 if __name__ == "__main__":
