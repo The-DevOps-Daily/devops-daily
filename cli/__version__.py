@@ -4,6 +4,7 @@ from importlib.metadata import PackageNotFoundError, version as pkg_version
 
 
 APP_NAME = "101-linux"
+PACKAGE_NAME = "linux-commands-cli"
 
 
 def _discover_package_version() -> str:
@@ -14,11 +15,11 @@ def _discover_package_version() -> str:
     - Lastly, fallback to "0.0.0" if nothing else is found
     """
     try:
-        return pkg_version("linux-commands-cli")
+        return pkg_version(PACKAGE_NAME)
     except PackageNotFoundError:
         pass
 
-    setup_path = os.path.join(os.path.dirname(__file__), "setup.py")
+    setup_path = os.path.join(os.path.dirname(__file__), "..", "setup.py")
     if os.path.exists(setup_path):
         try:
             with open(setup_path, "r", encoding="utf-8") as f:
