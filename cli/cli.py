@@ -1,7 +1,6 @@
 import typer
 
-from commands import hello
-from commands import list
+from commands import hello, list
 
 # Create the root CLI app
 app = typer.Typer(help="101 Linux Commands CLI 🚀")

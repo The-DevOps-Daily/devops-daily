@@ -53,6 +53,7 @@ def test_hello_help():
     assert result.returncode == 0
     assert "Hello command group" in result.stdout
 
+
 def test_list_command():
     """Test the list command."""
     result = subprocess.run(
