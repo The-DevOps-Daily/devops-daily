@@ -3,7 +3,7 @@ import typer
 app = typer.Typer(help="List the commands available on Linux.")
 
 
-@app.command()
+@app.callback(invoke_without_command=True)
 def list():
     commands = [
         "ls - List directory contents.",
