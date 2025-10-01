@@ -5,6 +5,9 @@ import os
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(__file__))
+from __version__ import get_version_string
+
 
 def test_cli_help():
     """Test that the CLI shows help."""
@@ -56,6 +59,19 @@ def test_hello_help():
     )
     assert result.returncode == 0
     assert "Hello command group" in result.stdout
+
+
+def test_global_version_flag():
+    """Test the global --version flag prints version and exits."""
+    result = subprocess.run(
+        [sys.executable, "cli.py", "--version"],
+        capture_output=True,
+        text=True,
+        cwd=os.path.dirname(__file__),
+    )
+    assert result.returncode == 0
+    expected = get_version_string()
+    assert result.stdout.strip() == expected
 
 
 if __name__ == "__main__":
