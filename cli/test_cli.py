@@ -13,7 +13,7 @@ def test_cli_help():
         capture_output=True,
         text=True,
         cwd=os.path.dirname(__file__),
-        check=True
+        check=True,
     )
     assert result.returncode == 0
     assert "101 Linux Commands CLI" in result.stdout
@@ -26,7 +26,7 @@ def test_hello_command():
         capture_output=True,
         text=True,
         cwd=os.path.dirname(__file__),
-        check=True
+        check=True,
     )
     assert result.returncode == 0
     assert "Hello, World!" in result.stdout
@@ -39,7 +39,7 @@ def test_hello_command_with_name():
         capture_output=True,
         text=True,
         cwd=os.path.dirname(__file__),
-        check=True
+        check=True,
     )
     assert result.returncode == 0
     assert "Hello, Linux!" in result.stdout
@@ -52,7 +52,7 @@ def test_hello_help():
         capture_output=True,
         text=True,
         cwd=os.path.dirname(__file__),
-        check=True
+        check=True,
     )
     assert result.returncode == 0
     assert "Hello command group" in result.stdout
