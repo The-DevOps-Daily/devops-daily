@@ -6,7 +6,6 @@ import typer
 
 from commands import hello, list, version
 
-
 app = typer.Typer(help="101 Linux Commands CLI 🚀")
 app.add_typer(hello.app, name="hello")
 app.add_typer(list.app, name="list")
