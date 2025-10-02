@@ -117,6 +117,12 @@ Copying in vim is called "yanking":
 - `dG` : delete from cursor to end of file
 - `dgg`:  delete from cursor to begining of file
 
+### Selection (visual mode)
+
+- `v` : start character-wise selection
+- `V` : start line-wise selection
+- `ctrl + v`  : start block-wise selection
+
 ### Interactive training
 
 In this interactive tutorial, you will learn the different ways to use the `vim` command:
