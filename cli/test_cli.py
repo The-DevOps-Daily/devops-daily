@@ -71,6 +71,7 @@ def test_list_command():
     assert "pwd - Print working directory." in result.stdout
     assert "cat - Concatenate and display files." in result.stdout
 
+
 def test_version_command():
     """Test the version command"""
     result = subprocess.run(
