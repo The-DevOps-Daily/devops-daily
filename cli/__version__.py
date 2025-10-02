@@ -24,10 +24,10 @@ def _discover_package_version() -> str:
         try:
             with open(setup_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            match = re.search(r"version=\"([^\"]+)\"", content)
+            match = re.search(r"version\s*=\s*[\"'](.*?)[\"']", content)
             if match:
                 return match.group(1)
-        except Exception:
+        except (OSError, IOError, UnicodeDecodeError):
             pass
 
     return "0.0.0"
