@@ -17,7 +17,7 @@ To flush a specific file to disk:
 sync myfile.txt
 ```
 ### Additional Flags and their Functionalities:
-|**Short Flag**   |**Long Flag**   |**Description**   |
+| **Short Flag** | **Long Flag** | **Description** |
 |:---|:---|:---|
-|`<center>-</center>`|`	--data`|	Flush only data, not metadata.|
-|`<center>-</center>`|`	--file-system`|	Sync the entire file system containing FILE.|
+| `-` | `--data` | Flush only data, not metadata. |
+| `-` | `--file-system` | Sync the entire file system containing FILE. |
