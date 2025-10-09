@@ -1,3 +1,7 @@
+"""
+Hello command for the 101 Linux Commands CLI.
+"""
+
 import typer
 
 from state import set_verbose, verbose_active
