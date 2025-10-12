@@ -572,6 +572,34 @@ Log is in `/var/log/yum.log`
 | `yum reinstall packagename`           | Reinstall (corrupted) package             |
 | `yumdownloader --resolve packagename` | Download rpm package with dependencies    |
 
+## APT/APT-GET
+
+`APT` is configured in `/etc/apt/apt.conf` (optional)  
+Repos are configured in `/etc/apt/sources.list` and `/etc/apt/sources.list.d/`  
+Log is in `/var/log/apt/` and `/var/log/dpkg.log`
+
+| Command                          | Description                                 |
+|----------------------------------|---------------------------------------------|
+| `apt install packagename [-y]`   | Install package (`-y` no confirm message)   |
+| `apt remove packagename`         | Uninstall package (keep config files)       |
+| `apt purge packagename`          | Uninstall package (remove config files)     |
+| `apt autoremove`                 | Remove unused dependencies                  |
+| `apt update`                     | Update package list from repositories       |
+| `apt upgrade`                    | Upgrade all installed packages              |
+| `apt full-upgrade`               | Upgrade with dependency resolution          |
+| `apt dist-upgrade`               | Upgrade distribution (older command)        |
+| `apt show packagename`           | Get detailed info about package             |
+| `apt list --installed`           | List all installed packages                 |
+| `apt list packagename`           | List installed and available packages       |
+| `apt search searchstring`        | Search for a package                        |
+| `apt-cache search searchstring`  | Search package names and descriptions       |
+| `apt-cache depends packagename`  | List dependencies of a package              |
+| `apt-cache rdepends packagename` | List reverse dependencies                   |
+| `apt reinstall packagename`      | Reinstall (corrupted) package               |
+| `apt download packagename`       | Download .deb package without installing    |
+| `apt-get clean`                  | Clean local repository cache                |
+| `apt-get autoclean`              | Remove obsolete packages from cache         |
+
 ---
 
 # 📃 List of commands by category:
