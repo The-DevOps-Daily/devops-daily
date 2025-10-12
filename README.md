@@ -64,6 +64,7 @@ Visit our [Releases page](https://github.com/bobbyiliev/101-linux-commands/relea
 - [Package Management](#package-management)
   - [RPM](#rpm)
   - [YUM](#yum)
+  - [APT/APT-GET](#apt/apt-get)
 - [📃 List of commands by category:](#-list-of-commands-by-category)
   - [Directory Navigation](#directory-navigation)
   - [File Commands](#file-commands)
