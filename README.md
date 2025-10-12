@@ -575,7 +575,7 @@ Log is in `/var/log/yum.log`
 
 ## APT/APT-GET
 
-`APT` is configured in `/etc/apt/apt.conf` (optional)  
+[`APT`] is configured in `/etc/apt/apt.conf` (optional)  
 Repos are configured in `/etc/apt/sources.list` and `/etc/apt/sources.list.d/`  
 Log is in `/var/log/apt/` and `/var/log/dpkg.log`
 
