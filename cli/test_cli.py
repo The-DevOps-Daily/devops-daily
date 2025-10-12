@@ -2,6 +2,7 @@
 """Basic tests for the CLI module."""
 
 import os
+import re
 import subprocess
 import sys
 
@@ -68,6 +69,26 @@ def test_version_show_command():
     result = run_cli(["version", "show"])
     assert result.returncode == 0
     assert "101-linux v0.1.0" in result.stdout
+
+
+ANSI_ESCAPE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+EMOJI = re.compile("[\U0001f300-\U0001faff]", flags=re.UNICODE)
+
+
+def clean_output(text: str) -> str:
+    """Remove ANSI colors and emojis."""
+    text = ANSI_ESCAPE.sub("", text)
+    text = EMOJI.sub("", text)
+    return text
+
+
+def test_unknown_command():
+    result = run_cli(["unknowncmd"])
+    combined_output = result.stdout + result.stderr
+    clean = clean_output(combined_output)
+
+    assert "No such command" in clean
+    assert "Hint: Run 'cli.py --help' to see available commands." in clean
 
 
 # ----------------------------
@@ -138,4 +159,5 @@ if __name__ == "__main__":
     test_show_invalid()
     test_search_match()
     test_search_no_match()
+    test_unknown_command()
     print("✅ All tests passed!")
