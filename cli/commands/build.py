@@ -39,6 +39,7 @@ def build(
     if verbose_flag["enabled"]:
         debug("Starting the build process using Ibis")
 
+    # Placeholder for future build steps
     steps = ["Compiling markdown", "Generating PDF", "Generating EPUB"]
     for step in steps:
         if dry_run:
@@ -52,3 +53,7 @@ def build(
         fg=typer.colors.GREEN,
     )
     typer.secho(f"Total time: {end_time - start_time}", fg=typer.colors.CYAN)
+
+    # Debug message for test compatibility
+    if verbose_flag["enabled"]:
+        debug("Build process completed")
