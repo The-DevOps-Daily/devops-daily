@@ -1,7 +1,6 @@
 from typing import Dict, TypedDict
 
 import typer
-
 from states.global_state import debug, verbose_flag
 
 

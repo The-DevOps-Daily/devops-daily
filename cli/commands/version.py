@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import typer
-
 from __version__ import __version__
 from states.global_state import debug, verbose_flag
 
