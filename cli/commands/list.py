@@ -5,32 +5,21 @@ app = typer.Typer(help="List common Linux commands with descriptions and example
 
 # Define commands with description and example
 commands = [
-    {
-        "name": "ls",
-        "desc": "List directory contents.",
-        "example": "ls -lah"
-    },
+    {"name": "ls", "desc": "List directory contents.", "example": "ls -lah"},
     {
         "name": "cd",
         "desc": "Change the current directory.",
-        "example": "cd /home/user/Documents"
+        "example": "cd /home/user/Documents",
     },
-    {
-        "name": "pwd",
-        "desc": "Print the current working directory.",
-        "example": "pwd"
-    },
+    {"name": "pwd", "desc": "Print the current working directory.", "example": "pwd"},
     {
         "name": "cat",
         "desc": "Concatenate and display files.",
-        "example": "cat file.txt"
+        "example": "cat file.txt",
     },
-    {
-        "name": "mkdir",
-        "desc": "Create a new directory.",
-        "example": "mkdir new_folder"
-    },
+    {"name": "mkdir", "desc": "Create a new directory.", "example": "mkdir new_folder"},
 ]
+
 
 @app.callback(invoke_without_command=True)
 def list_commands():
