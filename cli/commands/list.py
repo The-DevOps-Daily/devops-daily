@@ -20,6 +20,8 @@ commands = [
     },
     {"name": "mkdir", "desc": "Create a new directory.", "example": "mkdir new_folder"},
 ]
+
+
 @app.callback(invoke_without_command=True)
 def list_commands():
     """List available Linux commands with descriptions and examples."""
