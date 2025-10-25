@@ -20,8 +20,6 @@ commands = [
     },
     {"name": "mkdir", "desc": "Create a new directory.", "example": "mkdir new_folder"},
 ]
-
-
 @app.callback(invoke_without_command=True)
 def list_commands():
     """List available Linux commands with descriptions and examples."""
@@ -30,6 +28,10 @@ def list_commands():
 
     typer.echo("\nAvailable Linux Commands:\n")
     for cmd in commands:
-        typer.secho(f"{cmd['name']}", fg=typer.colors.GREEN, bold=True)
-        typer.echo(f"  Description: {cmd['desc']}")
-        typer.echo(f"  Example: {cmd['example']}\n")
+        # Always output first line for test compatibility
+        typer.echo(f"{cmd['name']} - {cmd['desc']}")
+
+        # Only show detailed description if verbose_flag enabled
+        if verbose_flag["enabled"]:
+            typer.echo(f"  Description: {cmd['desc']}")
+            typer.echo(f"  Example: {cmd['example']}\n")
