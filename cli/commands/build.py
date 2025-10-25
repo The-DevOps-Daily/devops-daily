@@ -2,8 +2,10 @@
 Build the ebook using Ibis CLI.
 """
 
-import typer
 from datetime import datetime
+
+import typer
+
 from states.global_state import debug, verbose_flag
 
 app = typer.Typer(help="Ebook Builder CLI using Ibis")

@@ -1,4 +1,5 @@
 import typer
+
 from states.global_state import debug, verbose_flag
 
 app = typer.Typer(help="List common Linux commands with descriptions and examples.")
