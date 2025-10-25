@@ -6,9 +6,10 @@ from typing import List
 
 import click
 import typer
+from typer.main import TyperGroup
+
 from commands import build, hello, list, search, show, version
 from states.global_state import verbose_flag
-from typer.main import TyperGroup
 
 
 class CustomTyper(TyperGroup):
