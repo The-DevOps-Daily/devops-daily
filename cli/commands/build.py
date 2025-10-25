@@ -13,8 +13,12 @@ app = typer.Typer(help="Ebook Builder CLI using Ibis")
 
 @app.command()
 def build(
-    dry_run: bool = typer.Option(False, help="Simulate the build process without creating files."),
-    output: str = typer.Option("output/ebook", help="Directory to save the built ebook."),
+    dry_run: bool = typer.Option(
+        False, help="Simulate the build process without creating files."
+    ),
+    output: str = typer.Option(
+        "output/ebook", help="Directory to save the built ebook."
+    ),
 ):
     """Build the ebook using Ibis."""
     typer.echo("Building ebook with Ibis...")
