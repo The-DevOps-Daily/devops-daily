@@ -1,0 +1,18 @@
+/sw.js
+  Service-Worker-Allowed: /
+  Cache-Control: no-cache
+
+/offline.html
+  Cache-Control: public, max-age=86400
+
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/posts/*
+  Cache-Control: public, max-age=3600
+
+/guides/*
+  Cache-Control: public, max-age=3600
+
+/games/*
+  Cache-Control: public, max-age=3600
