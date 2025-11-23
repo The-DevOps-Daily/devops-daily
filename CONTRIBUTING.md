@@ -1,202 +1,374 @@
-# Contributing
+# Contributing to DevOps Daily
 
-## Pull Requests
+First off, thank you for considering contributing to DevOps Daily! 🎉 It's people like you that make DevOps Daily such a great resource for the community.
 
-### Creating a Pull Request
+## 📋 Table of Contents
 
-This book has been designed so that people can easily expand it.
-To request us to review changes that you create, you will need to create a pull request.
-Creating a pull request is described in
- [this tutorial](https://www.digitalocean.com/community/tutorials/how-to-create-a-pull-request-on-github).
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [How Can I Contribute?](#how-can-i-contribute)
+- [Content Guidelines](#content-guidelines)
+- [Development Workflow](#development-workflow)
+- [Pull Request Process](#pull-request-process)
+- [Style Guides](#style-guides)
 
-### File Location/Types
+## 📜 Code of Conduct
 
-### [`ebook`](./ebook)
+This project and everyone participating in it is governed by our [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior by opening an issue or contacting the project maintainers.
 
-This directory holds all of the translations of the eBook.
+We're building a welcoming community where everyone can learn and contribute, regardless of experience level.
 
-### [`ebook/{LANG}`](./ebook/{LANG})
+## 🚀 Getting Started
 
-In the `ebook` directory we have the translations of the eBook in different languages.
+1. **Fork the repository** on GitHub
+2. **Clone your fork** locally:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/devops-daily.git
+   cd devops-daily
+   ```
+3. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
+4. **Create a branch** for your changes:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+5. **Start the development server**:
+   ```bash
+   npm run dev
+   ```
 
-If you are adding a new translation, make sure to make a copy of the `./ebook/en` directory and use the language code as the new directory name.
+## 🤝 How Can I Contribute?
 
-### [`ebook/{LANG}/content`](./ebook/{LANG}/content)
+### 📝 Writing Content
 
-All the Markdown files for the '101 Linux commands' eBook are located within the [`content`](./content) directory for the specific language.
+We're always looking for quality DevOps content! You can contribute:
 
-For example if you are adding a Bulgarian translation copy the `./ebook/en` folder to `./ebook/bg`, translate the `.md` files in the `content` directory and submit a PR.
+- **Blog Posts**: Share your knowledge on DevOps topics
+- **Guides**: Create comprehensive multi-part guides
+- **Exercises**: Design hands-on practical exercises
+- **Quizzes**: Create interactive quizzes
+- **News**: Curate and share DevOps news
 
-### eBook Generation
+### 🐛 Reporting Bugs
 
-The project uses [Ibis Next](https://github.com/Hi-Folks/ibis-next) developed by [Roberto Butti](https://github.com/roberto-butti), forked from the original [Ibis](https://github.com/themsaid/ibis/) by [Mohamed Said](https://github.com/themsaid).
+Before creating bug reports, please check existing issues. When creating a bug report, include:
 
-Ibis Next supports generating PDF, EPUB, and HTML formats from Markdown content.
+- A clear and descriptive title
+- Steps to reproduce the issue
+- Expected behavior
+- Actual behavior
+- Screenshots (if applicable)
+- Your environment (OS, browser, Node version)
 
-## Setup and Usage
+### 💡 Suggesting Enhancements
 
-1. Install dependencies:
+Enhancement suggestions are tracked as GitHub issues. When creating an enhancement suggestion, include:
+
+- A clear and descriptive title
+- Detailed description of the proposed feature
+- Why this enhancement would be useful
+- Possible implementation approach (optional)
+
+### 🔧 Code Contributions
+
+Look for issues labeled:
+
+- `good first issue` - Great for newcomers
+- `help wanted` - We need help with these
+- `bug` - Bug fixes needed
+- `enhancement` - New features
+
+## 📚 Content Guidelines
+
+### For Posts
+
+- **Location**: `content/posts/<name-of-post>.md`
+- **Example**: `content/posts/understanding-docker-networking.md`
+
+**Front Matter Structure**:
+
+```yaml
+---
+title: 'How to Fix Docker: Permission Denied'
+excerpt: "Getting a 'permission denied' error when using Docker can be frustrating. Here's how to fix it."
+category:
+  name: 'Docker'
+  slug: 'docker'
+date: '2024-11-15'
+publishedAt: '2024-11-15T09:00:00Z'
+updatedAt: '2024-11-15T09:00:00Z'
+readingTime: '6 min read'
+author:
+  name: 'Your Name'
+  slug: 'your-name'
+tags:
+  - Docker
+  - Troubleshooting
+  - Linux
+  - DevOps
+---
+Your content starts here. Note: The H1 heading comes from the title in front matter.
+```
+
+**Content Best Practices**:
+
+- Write clear, concise, and actionable content
+- Include practical examples and code snippets
+- Use proper markdown formatting
+- Add relevant images (optimized for web)
+- Proofread for grammar and spelling
+- Focus on providing value to readers
+
+### For Guides
+
+- **Location**: `content/guides/<guide-name>/`
+- **Structure**:
+  - Introduction: `content/guides/<guide-name>/index.md`
+  - Parts: `content/guides/<guide-name>/01-part-one.md`, `02-part-two.md`, etc.
+
+**Introduction File Front Matter**:
+
+```yaml
+---
+title: 'Complete Guide to Kubernetes'
+description: 'A comprehensive guide to mastering Kubernetes'
+category:
+  name: 'Kubernetes'
+  slug: 'kubernetes'
+publishedAt: '2024-11-15T09:00:00Z'
+updatedAt: '2024-11-15T09:00:00Z'
+author:
+  name: 'Your Name'
+  slug: 'your-name'
+tags:
+  - Kubernetes
+  - Containers
+  - Orchestration
+---
+```
+
+**Part File Front Matter**:
+
+```yaml
+---
+title: 'Kubernetes Fundamentals'
+description: 'Understanding the basics of Kubernetes'
+order: 1
+---
+```
+
+### For Exercises
+
+- **Location**: `content/exercises/<exercise-name>.md`
+- **Purpose**: Hands-on practical exercises for skill development
+
+### For Quizzes
+
+- **Location**: `content/quizzes/<quiz-name>.md`
+- **Validation**: Run `npm run quiz:validate` to validate quiz structure
+
+### Author Information
+
+If you're contributing content, add your author info:
+
+**Location**: `content/authors/<your-slug>.md`
+
+```yaml
+---
+name: 'Your Name'
+slug: 'your-name'
+bio: 'DevOps Engineer passionate about automation and cloud technologies'
+avatar: '/images/authors/your-name.jpg'
+social:
+  twitter: 'https://twitter.com/yourhandle'
+  github: 'https://github.com/yourhandle'
+  linkedin: 'https://linkedin.com/in/yourhandle'
+---
+```
+
+### Categories
+
+Check `content/categories/` for existing categories. If you need a new category, create:
+
+**Location**: `content/categories/<category-slug>.md`
+
+```yaml
+---
+name: 'Docker'
+slug: 'docker'
+description: 'All about Docker containers and containerization'
+---
+```
+
+## �� Development Workflow
+
+### Running Locally
 
 ```bash
-composer install
+# Start development server
+npm run dev
+
+# Run linting
+npm run lint
+
+# Fix linting issues
+npm run lint:fix
+
+# Format code
+npm run format
+
+# Check formatting
+npm run check-format
 ```
 
-1. Generate PDF (light theme):
+### Building for Production
 
 ```bash
-composer run pdf
+# Full build with image generation
+npm run build
+
+# Fast build (skip image generation)
+npm run build:fast
 ```
 
-1. Generate PDF (dark theme):
+### Useful Scripts
 
 ```bash
-composer run pdf-dark
+# Validate quizzes
+npm run quiz:validate
+
+# Generate RSS feed
+npm run generate-feed
+
+# Generate search index
+npm run generate-search-index
+
+# Generate post images
+npm run generate:images:parallel
 ```
 
-1. Generate EPUB:
+## 📬 Pull Request Process
 
-```bash
-composer run epub
+1. **Update your fork** with the latest changes from main:
+
+   ```bash
+   git checkout main
+   git pull upstream main
+   ```
+
+2. **Create a feature branch**:
+
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+3. **Make your changes** following the style guides
+
+4. **Test your changes locally**:
+
+   ```bash
+   npm run dev
+   npm run lint
+   npm run format
+   ```
+
+5. **Commit your changes**:
+
+   ```bash
+   git add .
+   git commit -m "feat: add your feature description"
+   ```
+
+   Follow [Conventional Commits](https://www.conventionalcommits.org/):
+   - `feat:` New feature
+   - `fix:` Bug fix
+   - `docs:` Documentation changes
+   - `style:` Code style changes (formatting)
+   - `refactor:` Code refactoring
+   - `test:` Adding tests
+   - `chore:` Maintenance tasks
+
+6. **Push to your fork**:
+
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+7. **Open a Pull Request** on GitHub:
+   - Provide a clear title and description
+   - Reference any related issues
+   - Include screenshots for UI changes
+   - Ensure all checks pass
+
+### PR Review Process
+
+- A maintainer will review your PR
+- Address any requested changes
+- Once approved, your PR will be merged
+- Your contribution will be acknowledged in the release notes
+
+## 🎨 Style Guides
+
+### Code Style
+
+- **TypeScript**: Use TypeScript for all new code
+- **Formatting**: Run `npm run format` before committing
+- **Linting**: Run `npm run lint` to check for issues
+- **Components**: Use functional components with hooks
+- **Naming**: Use descriptive, camelCase variable names
+- **Comments**: Write clear comments for complex logic
+
+### Markdown Style
+
+- Use ATX-style headers (`#` syntax)
+- Include blank lines between sections
+- Use fenced code blocks with language identifiers
+- Keep lines under 120 characters when possible
+- Use relative links for internal references
+
+### Commit Messages
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+type(scope): subject
+
+body
+
+footer
 ```
 
-1. Generate HTML:
+Example:
 
-```bash
-composer run html
+```
+feat(posts): add Docker networking guide
+
+- Added comprehensive Docker networking guide
+- Included practical examples
+- Added diagrams for better understanding
+
+Closes #123
 ```
 
-For more information about Ibis Next, visit: [Getting started with Ibis Next](https://github.com/Hi-Folks/ibis-next)
+## 🏆 Recognition
 
-## Contribution Examples
+Contributors are recognized in:
 
-### Typical Git workflow
+- GitHub contributors page
+- Release notes
+- Author pages (for content contributors)
 
-1. Fork the repository on GitHub and clone your fork locally.
+## ❓ Questions?
 
-```bash
-git clone https://github.com/<your-user>/101-linux-commands.git
-cd 101-linux-commands
-```
+- **GitHub Issues**: [Ask a question](https://github.com/The-DevOps-Daily/devops-daily/issues)
+- **Discussions**: Check [GitHub Discussions](https://github.com/The-DevOps-Daily/devops-daily/discussions)
 
-1. Create a dedicated branch for your changes.
+## 📄 License
 
-```bash
-git checkout -b feature/add-cli-example
-```
+By contributing to DevOps Daily, you agree that your contributions will be licensed under the MIT License.
 
-1. While you work, check your status and stage files deliberately.
+---
 
-```bash
-git status
-git add CONTRIBUTING.md
-```
-
-1. Commit with a descriptive message and push your branch.
-
-```bash
-git commit -m "docs: add CLI contribution examples"
-git push origin feature/add-cli-example
-```
-
-### Running the CLI locally
-
-1. Move into the CLI workspace.
-
-```bash
-cd cli
-```
-
-1. (Recommended) Create and activate a virtual environment. Use the command that matches your shell:
-
-```bash
-cd cli
-uv sync --frozen --group dev
-
-# for Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-# OR for macOS/Linux
-source .venv/bin/activate
-```
-
-1. Confirm the CLI works.
-
-```bash
-linux-cli --help
-# or run directly without installation
-python -m cli hello greet --name "Linux Contributor"
-# greet someone specific using the installed entry point
-linux-cli hello greet --name "Linux Contributor"
-```
-
-### Adding a new command
-
-1. Create a new command module inside `cli/commands/`. Example (`cli/commands/ping.py`):
-
-```python
-import typer
-
-
-app = typer.Typer(help="Ping command group")
-
-
-@app.command()
-def once():
-    """Print a ping message."""
-    typer.echo("pong")
-```
-
-1. Register the command with the main Typer app in `cli/cli.py`:
-
-```python
-from commands import hello, ping
-
-app = typer.Typer(help="101 Linux Commands CLI 🚀")
-app.add_typer(hello.app, name="hello")
-app.add_typer(ping.app, name="ping")
-```
-
-1. Add or update tests in `tests/cli/test_cli.py` to cover your new command. Mirror the existing `hello` command tests and update expectations.
-
-1. Run the CLI manually to verify your command behaves as expected.
-
-```bash
-python -m cli ping once
-```
-
-### Running tests
-
-1. Ensure you're in the `cli` directory with your virtual environment activated.
-
-1. Install the testing dependency if you haven't already.
-
-```bash
-pip install pytest
-```
-
-1. Execute the test suite:
-
-```bash
-pytest
-```
-
-1. (Optional but encouraged) Run the additional quality checks that the workflow executes:
-
-```bash
-black cli/
-isort cli/
-flake8 cli/
-mypy cli/
-```
-
-## Issue Creation
-
-In the event that you have an issue using the guide or have a suggestion for a change but don't want to contribute changes,
- we are more than happy to help.
-Make sure that when you create your issue, it follows the format for the type of issue you select
- (it has individual templates for each issue type).
-
-Issue template types include the following:
-
-- Bug Reporting
-- Feature Requests
-- Help Requests
+Thank you for contributing to DevOps Daily! Your efforts help the entire DevOps community. ��
