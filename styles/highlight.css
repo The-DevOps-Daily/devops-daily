@@ -1,0 +1,125 @@
+/* GitHub-style code highlighting */
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  border-radius: 0.5rem;
+}
+
+/* Light theme colors */
+:root {
+  --hljs-comment: #6a737d;
+  --hljs-keyword: #d73a49;
+  --hljs-string: #032f62;
+  --hljs-literal: #0066cc;
+  --hljs-title: #6f42c1;
+  --hljs-variable: #e36209;
+  --hljs-type: #d73a49;
+  --hljs-attr: #005cc5;
+  --hljs-symbol: #0066cc;
+  --hljs-bullet: #0066cc;
+  --hljs-built_in: #005cc5;
+  --hljs-addition: #22863a;
+  --hljs-deletion: #b31d28;
+}
+
+/* Dark theme colors */
+.dark {
+  --hljs-comment: #8b949e;
+  --hljs-keyword: #ff7b72;
+  --hljs-string: #a5d6ff;
+  --hljs-literal: #79c0ff;
+  --hljs-title: #d2a8ff;
+  --hljs-variable: #ffa657;
+  --hljs-type: #ff7b72;
+  --hljs-attr: #79c0ff;
+  --hljs-symbol: #79c0ff;
+  --hljs-bullet: #79c0ff;
+  --hljs-built_in: #79c0ff;
+  --hljs-addition: #aff5b4;
+  --hljs-deletion: #ffdcd7;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--hljs-comment);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: var(--hljs-keyword);
+  font-weight: bold;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag .hljs-attr {
+  color: var(--hljs-literal);
+}
+
+.hljs-string,
+.hljs-doctag {
+  color: var(--hljs-string);
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id {
+  color: var(--hljs-title);
+  font-weight: bold;
+}
+
+.hljs-type,
+.hljs-class .hljs-title {
+  color: var(--hljs-type);
+  font-weight: bold;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attribute {
+  color: var(--hljs-attr);
+  font-weight: normal;
+}
+
+.hljs-regexp,
+.hljs-link {
+  color: var(--hljs-string);
+}
+
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--hljs-symbol);
+}
+
+.hljs-built_in,
+.hljs-builtin-name {
+  color: var(--hljs-built_in);
+}
+
+.hljs-meta {
+  color: var(--hljs-keyword);
+  font-weight: bold;
+}
+
+.hljs-deletion {
+  background: var(--hljs-deletion);
+}
+
+.hljs-addition {
+  background: var(--hljs-addition);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
