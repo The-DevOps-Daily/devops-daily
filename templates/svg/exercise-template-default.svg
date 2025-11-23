@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Exercise Template - Default Style -->
+  <!-- INSTRUCTIONS: Replace {{TITLE}} and {{CATEGORY}} with your content -->
+
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Grid pattern overlay -->
+    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="40" stroke="#60a5fa" stroke-width="1" opacity="0.1"/>
+      <line x1="0" y1="0" x2="40" y2="0" stroke="#60a5fa" stroke-width="1" opacity="0.1"/>
+    </pattern>
+
+    <!-- Terminal icon gradient -->
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Grid pattern -->
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="200" height="40" rx="20" fill="#3b82f6"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">{{CATEGORY}}</text>
+
+  <!-- Terminal/Code icon -->
+  <rect x="80" y="160" width="60" height="60" rx="10" fill="url(#iconGradient)" opacity="0.8"/>
+  <text x="95" y="200" font-family="monospace" font-size="32" fill="#f8fafc">&gt;_</text>
+
+  <!-- Exercise label -->
+  <text x="160" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#60a5fa">HANDS-ON EXERCISE</text>
+
+  <!-- Title (adjust y values for multi-line titles) -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">{{TITLE}}</text>
+
+  <!-- Decorative elements -->
+  <circle cx="1050" cy="150" r="80" fill="#3b82f6" opacity="0.1"/>
+  <circle cx="1100" cy="500" r="120" fill="#60a5fa" opacity="0.1"/>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+</svg>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Exercise Template - Docker/Container Style -->
+  <!-- INSTRUCTIONS: Replace {{TITLE}} with your exercise title -->
+
+  <defs>
+    <!-- Docker blue gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d1b2a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1b263b;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Container accent gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2196f3;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#64b5f6;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Container pattern -->
+    <pattern id="containers" x="0" y="0" width="100" height="80" patternUnits="userSpaceOnUse">
+      <rect x="10" y="10" width="30" height="25" rx="3" fill="#2196f3" opacity="0.1"/>
+      <rect x="50" y="10" width="30" height="25" rx="3" fill="#64b5f6" opacity="0.1"/>
+      <rect x="30" y="45" width="30" height="25" rx="3" fill="#42a5f5" opacity="0.1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Container pattern -->
+  <rect width="1200" height="630" fill="url(#containers)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="180" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">DOCKER</text>
+
+  <!-- Container icon -->
+  <g transform="translate(80, 160)">
+    <rect x="0" y="0" width="50" height="40" rx="4" fill="#2196f3" opacity="0.8"/>
+    <rect x="5" y="5" width="40" height="30" rx="2" fill="#64b5f6"/>
+    <line x1="25" y1="10" x2="25" y2="30" stroke="#0d1b2a" stroke-width="2"/>
+    <line x1="10" y1="20" x2="40" y2="20" stroke="#0d1b2a" stroke-width="2"/>
+  </g>
+
+  <!-- Exercise label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#64b5f6">HANDS-ON EXERCISE</text>
+
+  <!-- Title -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#ffffff">{{TITLE}}</text>
+
+  <!-- Floating containers decoration -->
+  <rect x="950" y="100" width="60" height="50" rx="4" fill="#2196f3" opacity="0.2"/>
+  <rect x="1050" y="150" width="60" height="50" rx="4" fill="#64b5f6" opacity="0.2"/>
+  <rect x="1000" y="450" width="60" height="50" rx="4" fill="#42a5f5" opacity="0.2"/>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#64b5f6">DevOps Daily</text>
+</svg>
