@@ -55,7 +55,7 @@ const StatCard = ({ label, value, color, icon: Icon, subtext }: { label: string;
   <div className="bg-slate-800/80 backdrop-blur-sm p-3 rounded-lg border border-slate-700 flex flex-col items-center justify-center min-w-[100px] flex-1">
     <div className="flex items-center gap-2 mb-1">
       <Icon size={16} color={color} />
-      <span className="text-xs text-slate-400 uppercase tracking-wider font-bold">{label}</span>
+      <span className="text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider font-bold">{label}</span>
     </div>
     <span className="text-2xl font-mono font-bold" style={{ color }}>{value}</span>
     {subtext && <span className="text-[10px] text-slate-500">{subtext}</span>}
@@ -372,8 +372,8 @@ export default function TcpVsUdpSimulator() {
   // --- Renderers ---
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-cyan-500/30">
-      <div className="max-w-4xl mx-auto p-4 md:p-6 flex flex-col gap-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans selection:bg-cyan-500/30">
+      <div className="max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
         
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700 pb-4">
@@ -381,19 +381,19 @@ export default function TcpVsUdpSimulator() {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-green-400 bg-clip-text text-transparent">
               Protocol Simulator
             </h1>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
               Visualize the 3-Way Handshake and Reliability mechanisms.
             </p>
           </div>
           
           {/* Mode Switcher */}
-          <div className="bg-slate-800 p-1 rounded-lg flex gap-1">
+          <div className="bg-slate-200 dark:bg-slate-800 p-1 rounded-lg flex gap-1">
             <button
               onClick={() => handleModeChange(MODES.TCP)}
               className={`px-4 py-2 rounded-md font-bold text-sm transition-all flex items-center gap-2 ${
                 mode === MODES.TCP 
                   ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(8,145,178,0.5)]' 
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Shield size={16} /> TCP
@@ -403,7 +403,7 @@ export default function TcpVsUdpSimulator() {
               className={`px-4 py-2 rounded-md font-bold text-sm transition-all flex items-center gap-2 ${
                 mode === MODES.UDP 
                   ? 'bg-green-600 text-white shadow-[0_0_15px_rgba(34,197,94,0.5)]' 
-                  : 'text-slate-400 hover:text-white'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Zap size={16} /> UDP
@@ -470,7 +470,7 @@ export default function TcpVsUdpSimulator() {
 
         {/* Main Simulation Canvas */}
         <div 
-          className="relative w-full h-64 bg-slate-950 rounded-xl border-2 border-slate-800 overflow-hidden shadow-2xl"
+          className="relative w-full h-96 bg-slate-100 dark:bg-slate-950 rounded-xl border-2 border-slate-300 dark:border-slate-800 overflow-hidden shadow-2xl"
           ref={containerRef}
         >
           {/* Background Grid */}
@@ -507,9 +507,9 @@ export default function TcpVsUdpSimulator() {
           {/* Server (Receiver) */}
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
             <div className={`w-16 h-16 rounded-lg border-2 flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors duration-300 ${
-                connState === CONNECTION_STATES.CONNECTED ? 'border-white bg-slate-800' : 'border-slate-600 bg-slate-900'
+                connState === CONNECTION_STATES.CONNECTED ? 'border-slate-900 dark:border-white bg-slate-100 dark:bg-slate-800' : 'border-slate-400 dark:border-slate-600 bg-slate-200 dark:bg-slate-900'
             }`}>
-               <div className="text-xs font-bold text-center text-slate-400">SERVER<br/>(Receiver)</div>
+               <div className="text-xs font-bold text-center text-slate-700 dark:text-slate-400">SERVER<br/>(Receiver)</div>
             </div>
           </div>
 
@@ -564,10 +564,10 @@ export default function TcpVsUdpSimulator() {
           {!isPlaying && packets.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-30">
               <div className="text-center">
-                <p className="text-slate-300 mb-2">Ready to simulate</p>
+                <p className="text-slate-700 dark:text-slate-300 mb-2">Ready to simulate</p>
                 <button 
                   onClick={handleStartStop}
-                  className="bg-white text-slate-900 px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform flex items-center gap-2 mx-auto"
+                  className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform flex items-center gap-2 mx-auto"
                 >
                   <Play size={18} fill="currentColor" /> Start Traffic
                 </button>
@@ -580,9 +580,9 @@ export default function TcpVsUdpSimulator() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* Playback Controls */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
+            <div className="bg-slate-200 dark:bg-slate-800 rounded-xl p-4 border border-slate-300 dark:border-slate-700">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Simulation Control</h3>
+                    <h3 className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Simulation Control</h3>
                     <div className="flex gap-2">
                         <button 
                             onClick={handleStartStop}
@@ -592,7 +592,7 @@ export default function TcpVsUdpSimulator() {
                         </button>
                         <button 
                             onClick={handleReset}
-                            className="p-2 rounded-full bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors"
+                            className="p-2 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-400 dark:hover:bg-slate-600 transition-colors"
                         >
                             <RefreshCw size={20} />
                         </button>
@@ -609,14 +609,14 @@ export default function TcpVsUdpSimulator() {
                         <input 
                             type="range" min="10" max="100" value={speed} 
                             onChange={(e) => setSpeed(Number(e.target.value))}
-                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                            className="w-full h-2 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                         />
                     </div>
                 </div>
             </div>
 
             {/* Chaos Controls */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 relative overflow-hidden">
+            <div className="bg-slate-200 dark:bg-slate-800 rounded-xl p-4 border border-slate-300 dark:border-slate-700 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
                     <AlertTriangle size={100} />
                 </div>
@@ -634,7 +634,7 @@ export default function TcpVsUdpSimulator() {
                         <input 
                             type="range" min="0" max="50" value={packetLossChance} 
                             onChange={(e) => setPacketLossChance(Number(e.target.value))}
-                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500"
+                            className="w-full h-2 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500"
                         />
                     </div>
 
@@ -647,7 +647,7 @@ export default function TcpVsUdpSimulator() {
                         <input 
                             type="range" min="0" max="100" value={jitter} 
                             onChange={(e) => setJitter(Number(e.target.value))}
-                            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                            className="w-full h-2 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
                         />
                     </div>
                 </div>
@@ -673,7 +673,7 @@ export default function TcpVsUdpSimulator() {
 
         {/* Educational Footer */}
         <div className="text-center mt-4">
-             <p className="text-slate-500 text-sm">
+             <p className="text-slate-600 dark:text-slate-500 text-sm">
                  Experiment by increasing "Packet Loss" to see how TCP retries vs UDP just loses data.
              </p>
         </div>
