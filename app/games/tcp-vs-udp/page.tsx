@@ -34,7 +34,7 @@ export default async function TcpVsUdpPage() {
       <div className="container px-4 py-8 mx-auto">
         <Breadcrumb items={breadcrumbItems} />
 
-        <div className="flex flex-col items-center mx-auto max-w-7xl">
+        <div className="flex flex-col mx-auto max-w-7xl">
           <h2 className="sr-only">
             TCP vs UDP Simulator - Learn Network Protocol Differences
           </h2>
