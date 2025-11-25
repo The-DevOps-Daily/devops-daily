@@ -39,6 +39,20 @@ export interface Game {
  */
 const games: Game[] = [
   {
+  {
+    id: 'tcp-vs-udp',
+    title: 'TCP vs UDP Simulator',
+    description:
+      'Interactive visualization showing the differences between TCP's reliable connection-oriented protocol and UDP's fast connectionless approach. See the 3-way handshake, packet loss, and retransmissions in action.',
+    icon: Network,
+    badgeText: 'New',
+    color: 'from-cyan-500 to-green-600',
+    href: '/games/tcp-vs-udp',
+    tags: ['networking', 'educational', 'interactive', 'protocols'],
+    isNew: true,
+    featured: true,
+    category: 'Networking',
+  },
     id: 'devops-scorecard',
     title: 'DevOps Scorecard',
     description:

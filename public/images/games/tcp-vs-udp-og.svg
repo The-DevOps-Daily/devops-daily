@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#134e4a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- TCP gradient -->
+    <linearGradient id="tcpGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0891b2;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- UDP gradient -->
+    <linearGradient id="udpGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Strong glow filter -->
+    <filter id="strongGlow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Grid pattern -->
+  <g opacity="0.08">
+    <line x1="0" y1="157.5" x2="1200" y2="157.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="315" x2="1200" y2="315" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="472.5" x2="1200" y2="472.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="900" y1="0" x2="900" y2="630" stroke="#94a3b8" stroke-width="1"/>
+  </g>
+
+  <!-- Left Side: TCP -->
+  <g transform="translate(150, 150)">
+    <!-- Client node -->
+    <g>
+      <circle r="30" cx="0" cy="0" fill="#1e293b" stroke="#06b6d4" stroke-width="4" filter="url(#glow)"/>
+      <circle r="18" cx="0" cy="0" fill="#06b6d4" opacity="0.3"/>
+      <text x="0" y="60" font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#cbd5e1" text-anchor="middle">Client</text>
+    </g>
+
+    <!-- Connection line with arrows -->
+    <g>
+      <!-- SYN -->
+      <path d="M 30 -40 L 180 -40" stroke="#d946ef" stroke-width="3" fill="none" opacity="0.8">
+        <animate attributeName="stroke-dashoffset" from="0" to="150" dur="2s" repeatCount="indefinite"/>
+      </path>
+      <polygon points="180,-40 170,-35 170,-45" fill="#d946ef" opacity="0.8"/>
+      <text x="105" y="-50" font-family="system-ui, sans-serif" font-size="12" fill="#d946ef" font-weight="600">SYN</text>
+
+      <!-- SYN-ACK -->
+      <path d="M 180 0 L 30 0" stroke="#d946ef" stroke-width="3" fill="none" opacity="0.8">
+        <animate attributeName="stroke-dashoffset" from="0" to="-150" dur="2s" repeatCount="indefinite"/>
+      </path>
+      <polygon points="30,0 40,-5 40,5" fill="#d946ef" opacity="0.8"/>
+      <text x="105" y="-10" font-family="system-ui, sans-serif" font-size="12" fill="#d946ef" font-weight="600">SYN-ACK</text>
+
+      <!-- ACK -->
+      <path d="M 30 40 L 180 40" stroke="#f59e0b" stroke-width="3" fill="none" opacity="0.8">
+        <animate attributeName="stroke-dashoffset" from="0" to="150" dur="2s" repeatCount="indefinite"/>
+      </path>
+      <polygon points="180,40 170,35 170,45" fill="#f59e0b" opacity="0.8"/>
+      <text x="105" y="30" font-family="system-ui, sans-serif" font-size="12" fill="#f59e0b" font-weight="600">ACK</text>
+    </g>
+
+    <!-- Server node -->
+    <g transform="translate(210, 0)">
+      <circle r="30" cx="0" cy="0" fill="#1e293b" stroke="#06b6d4" stroke-width="4" filter="url(#glow)"/>
+      <circle r="18" cx="0" cy="0" fill="#06b6d4" opacity="0.3"/>
+      <text x="0" y="60" font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#cbd5e1" text-anchor="middle">Server</text>
+    </g>
+
+    <!-- TCP Label -->
+    <text x="105" y="100" font-family="system-ui, sans-serif" font-size="24" font-weight="bold" fill="url(#tcpGradient)" text-anchor="middle" filter="url(#strongGlow)">TCP</text>
+    <text x="105" y="125" font-family="system-ui, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">Reliable • Connection-Oriented</text>
+  </g>
+
+  <!-- Right Side: UDP -->
+  <g transform="translate(750, 150)">
+    <!-- Client node -->
+    <g>
+      <circle r="30" cx="0" cy="0" fill="#1e293b" stroke="#22c55e" stroke-width="4" filter="url(#glow)"/>
+      <circle r="18" cx="0" cy="0" fill="#22c55e" opacity="0.3"/>
+      <text x="0" y="60" font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#cbd5e1" text-anchor="middle">Client</text>
+    </g>
+
+    <!-- Direct data flow (no handshake) -->
+    <g>
+      <!-- Data packets -->
+      <path d="M 30 -30 L 180 -30" stroke="#22c55e" stroke-width="3" fill="none" opacity="0.8" stroke-dasharray="10,5">
+        <animate attributeName="stroke-dashoffset" from="0" to="15" dur="0.5s" repeatCount="indefinite"/>
+      </path>
+      <polygon points="180,-30 170,-25 170,-35" fill="#22c55e" opacity="0.8"/>
+
+      <path d="M 30 0 L 180 0" stroke="#22c55e" stroke-width="3" fill="none" opacity="0.8" stroke-dasharray="10,5">
+        <animate attributeName="stroke-dashoffset" from="0" to="15" dur="0.5s" begin="0.2s" repeatCount="indefinite"/>
+      </path>
+      <polygon points="180,0 170,-5 170,5" fill="#22c55e" opacity="0.8"/>
+
+      <path d="M 30 30 L 180 30" stroke="#22c55e" stroke-width="3" fill="none" opacity="0.8" stroke-dasharray="10,5">
+        <animate attributeName="stroke-dashoffset" from="0" to="15" dur="0.5s" begin="0.4s" repeatCount="indefinite"/>
+      </path>
+      <polygon points="180,30 170,25 170,35" fill="#22c55e" opacity="0.8"/>
+
+      <text x="105" y="-10" font-family="system-ui, sans-serif" font-size="12" fill="#22c55e" font-weight="600">DATA</text>
+    </g>
+
+    <!-- Server node -->
+    <g transform="translate(210, 0)">
+      <circle r="30" cx="0" cy="0" fill="#1e293b" stroke="#22c55e" stroke-width="4" filter="url(#glow)"/>
+      <circle r="18" cx="0" cy="0" fill="#22c55e" opacity="0.3"/>
+      <text x="0" y="60" font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#cbd5e1" text-anchor="middle">Server</text>
+    </g>
+
+    <!-- UDP Label -->
+    <text x="105" y="100" font-family="system-ui, sans-serif" font-size="24" font-weight="bold" fill="url(#udpGradient)" text-anchor="middle" filter="url(#strongGlow)">UDP</text>
+    <text x="105" y="125" font-family="system-ui, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">Fast • Connectionless</text>
+  </g>
+
+  <!-- Center divider -->
+  <line x1="600" y1="100" x2="600" y2="530" stroke="#334155" stroke-width="2" stroke-dasharray="10,10" opacity="0.3"/>
+
+  <!-- Title Section -->
+  <g transform="translate(600, 450)">
+    <text x="0" y="0" font-family="system-ui, sans-serif" font-size="48" font-weight="bold" fill="#f8fafc" text-anchor="middle" filter="url(#strongGlow)">TCP vs UDP</text>
+    <text x="0" y="40" font-family="system-ui, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Interactive Network Protocol Simulator</text>
+    <g transform="translate(-180, 60)">
+      <rect x="0" y="0" width="360" height="40" rx="20" fill="#1e293b" opacity="0.8"/>
+      <text x="180" y="26" font-family="system-ui, sans-serif" font-size="16" font-weight="600" fill="#cbd5e1" text-anchor="middle">Visualize Handshakes • Packet Loss • Retransmissions</text>
+    </g>
+  </g>
+
+  <!-- "NEW" Badge -->
+  <g transform="translate(80, 50)">
+    <rect x="0" y="0" width="80" height="32" rx="16" fill="#22c55e" />
+    <text x="40" y="21" font-family="system-ui, sans-serif" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">NEW</text>
+  </g>
+
+  <!-- Brand Footer -->
+  <text x="600" y="590" font-family="system-ui, sans-serif" font-size="18" font-weight="600" fill="#475569" text-anchor="middle">DevOps Daily</text>
+</svg>
