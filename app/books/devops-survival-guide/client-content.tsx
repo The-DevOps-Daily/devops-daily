@@ -228,8 +228,8 @@ export function ClientContent() {
 
             <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
               Real-world DevOps practices{' '}
-              <span className="text-foreground font-semibold">without the BS</span>. A comprehensive
-              ebook for engineers who want to master DevOps{' '}
+              <span className="text-foreground font-semibold">without the BS</span>. An in-depth
+              ebook for engineers looking to master DevOps{' '}
               <span className="text-foreground font-semibold">without burning out</span>.
             </p>
 
@@ -286,7 +286,7 @@ export function ClientContent() {
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-5xl font-bold mb-4">What You'll Learn</h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                14 comprehensive chapters covering everything from your first day to driving
+                14 detailed chapters covering everything from your first day to driving
                 organizational change
               </p>
             </div>
@@ -426,13 +426,12 @@ export function ClientContent() {
             <h2 className="text-3xl md:text-4xl font-bold mb-6">Written by Engineers, for Engineers</h2>
 
             <p className="text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">
-              This book is crafted by the team at DevOps Daily, seasoned DevOps practitioners who've
+              This book is crafted by the team at DevOps Daily, experienced DevOps practitioners who've
               learned these lessons the hard way so you don't have to.
             </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl mx-auto">
               {[
-                { label: 'Combined Experience', value: '50+ Years' },
                 { label: 'Production Incidents', value: '1000+' },
                 { label: 'Deployments Managed', value: '10K+' },
                 { label: 'Engineers Mentored', value: '500+' },
@@ -481,11 +480,11 @@ export function ClientContent() {
 
                 <div className="flex flex-wrap justify-center gap-4 mt-8">
                   {[
-                    { icon: CheckCircle, text: 'Early chapter access' },
-                    { icon: Sparkles, text: 'Exclusive bonus content' },
-                    { icon: Users, text: 'Community discussions' },
-                    { icon: Gift, text: 'Free forever' },
-                  ].map((benefit, idx) => (
+                  { icon: CheckCircle, text: 'Early chapter access' },
+                  { icon: Sparkles, text: 'Exclusive bonus content' },
+                  { icon: Users, text: 'Community discussions' },
+                  { icon: Gift, text: 'Special launch pricing' },
+                ].map((benefit, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-sm">
                       <benefit.icon className="w-4 h-4 text-primary" />
                       <span className="text-sm font-medium">{benefit.text}</span>
@@ -535,12 +534,12 @@ export function ClientContent() {
                   a: "We're currently writing and expect to release chapters progressively throughout 2025. Subscribe to get notified as soon as each chapter drops!",
                 },
                 {
-                  q: 'Will this be free?',
-                  a: "Yes! We're committed to keeping DevOps knowledge accessible. The digital version will be free, though we may offer a print version for those who prefer physical books.",
+                  q: 'How much will it cost?',
+                  a: "We're committed to keeping DevOps knowledge accessible with affordable pricing. Subscribers will get special early bird pricing when we launch!",
                 },
                 {
                   q: 'Is this for beginners or experienced engineers?',
-                  a: 'Both! Early chapters help newcomers get started right, while later chapters tackle advanced topics that even seasoned DevOps professionals will find valuable.',
+                  a: 'Both! Early chapters help newcomers get started right, while later chapters tackle advanced topics that will benefit DevOps professionals at any level.',
                 },
                 {
                   q: 'Can I contribute or provide feedback?',
@@ -570,7 +569,7 @@ export function ClientContent() {
       </section>
 
       {/* Final CTA - Simplified */}
-      <section className="py-20 relative overflow-hidden">
+      <section id="subscribe" className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent" />
         </div>
@@ -587,28 +586,62 @@ export function ClientContent() {
             <p className="text-xl text-muted-foreground mb-8">
               Join 1,000+ engineers waiting for the DevOps Survival Guide
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="text-lg px-8 py-6 group"
-              >
-                <Link href="/">
-                  <BookOpen className="mr-2 h-5 w-5" />
-                  Browse Free Resources
+
+            {/* Newsletter Signup Form */}
+            <div className="max-w-md mx-auto">
+              <div className="p-8 bg-gradient-to-br from-primary/5 to-purple-500/5 border-2 border-primary/20 rounded-2xl shadow-2xl backdrop-blur-sm">
+                <form
+                  action="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&amp;id=fd76a4e93f&amp;f_id=0022c6e1f0"
+                  method="post"
+                  target="_blank"
+                  noValidate
+                  className="space-y-4"
+                >
+                  <input
+                    type="email"
+                    name="EMAIL"
+                    id="mce-EMAIL-final"
+                    required
+                    placeholder="your@email.com"
+                    className="w-full px-5 py-4 border-2 border-border/50 bg-background/50 backdrop-blur-sm rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                  />
+
+                  {/* Honeypot bot field */}
+                  <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
+                    <input
+                      type="text"
+                      name="b_d1128776b290ad8d08c02094f_fd76a4e93f"
+                      tabIndex={-1}
+                      defaultValue=""
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    name="subscribe"
+                    className="group inline-flex items-center justify-center w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+                  >
+                    <Mail className="mr-2 h-5 w-5" />
+                    Subscribe for Early Access
+                    <Sparkles className="ml-2 h-5 w-5" />
+                  </button>
+                </form>
+
+                <p className="text-center text-sm text-muted-foreground mt-4 flex items-center justify-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  No spam, ever. Unsubscribe anytime.
+                </p>
+              </div>
+
+              <div className="mt-6 text-center">
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  <span>Browse free resources instead</span>
                 </Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                className="text-lg px-8 py-6 shadow-2xl shadow-blue-500/30 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all hover:scale-105"
-              >
-                <Link href="#subscribe">
-                  <Mail className="mr-2 h-5 w-5" />
-                  Get Early Access
-                </Link>
-              </Button>
+              </div>
             </div>
           </div>
         </div>
