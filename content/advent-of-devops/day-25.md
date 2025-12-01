@@ -105,36 +105,36 @@ This repository contains all my projects from the [Advent of DevOps](https://www
 ## Projects by Day
 
 ### Week 1: Foundations
-- **Day 1**: [Docker basics](./day-01-docker-container/) - Containerized first application
-- **Day 2**: [Docker Compose](./day-02-docker-compose/) - Multi-container apps
-- **Day 3**: [GitHub Actions](./day-03-github-actions/) - CI/CD automation
-- **Day 4**: [Caching](./day-04-caching/) - Performance optimization
-- **Day 5**: [Container Debugging](./day-05-debugging/) - Troubleshooting
-- **Day 6**: [Terraform Modules](./day-06-terraform/) - Module development
-- **Day 7**: [IaC Testing](./day-07-iac-testing/) - Testing and validation
+- **Day 1**: [Docker basics](/advent-of-devops/day-1) - Containerized first application
+- **Day 2**: [Docker Compose](/advent-of-devops/day-2) - Multi-container apps
+- **Day 3**: [GitHub Actions](/advent-of-devops/day-03) - CI/CD automation
+- **Day 4**: [Caching](/advent-of-devops/day-04) - Performance optimization
+- **Day 5**: [Container Debugging](/advent-of-devops/day-05) - Troubleshooting
+- **Day 6**: [Terraform Modules](/advent-of-devops/day-06) - Module development
+- **Day 7**: [IaC Testing](/advent-of-devops/day-07) - Testing and validation
 
 ### Week 2: Kubernetes & Orchestration
-- **Day 8**: [Kubernetes](./day-08-kubernetes/) - Deployment fundamentals
-- **Day 9**: [Pod Debugging](./day-09-pod-debugging/) - Troubleshooting
-- **Day 10**: [Helm Charts](./day-10-helm/) - Package management
-- **Day 11**: [Monitoring](./day-11-prometheus/) - Prometheus & Grafana
-- **Day 12**: [Log Analysis](./day-12-logs/) - Parsing and analysis
-- **Day 13**: [Security Scanning](./day-13-trivy/) - Trivy
-- **Day 14**: [K8s Networking](./day-14-networking/) - Deep dive
+- **Day 8**: [Kubernetes](/advent-of-devops/day-08/) - Deployment fundamentals
+- **Day 9**: [Pod Debugging](/advent-of-devops/day-09) - Troubleshooting
+- **Day 10**: [Helm Charts](/advent-of-devops/day-10) - Package management
+- **Day 11**: [Monitoring](/advent-of-devops/day-11) - Prometheus & Grafana
+- **Day 12**: [Log Analysis](/advent-of-devops/day-12) - Parsing and analysis
+- **Day 13**: [Security Scanning](/advent-of-devops/day-13) - Trivy
+- **Day 14**: [K8s Networking](/advent-of-devops/day-14) - Deep dive
 
 ### Week 3: Automation & Performance
-- **Day 15**: [Bash Scripting](./day-15-bash/) - Automation
-- **Day 16**: [Autoscaling](./day-16-hpa/) - HPA
-- **Day 17**: [Serverless](./day-17-lambda/) - AWS Lambda
-- **Day 18**: [Static Sites](./day-18-s3-cloudfront/) - S3 + CloudFront
-- **Day 19**: [Load Testing](./day-19-k6/) - k6
-- **Day 20**: [Secrets](./day-20-secrets/) - Secrets management
-- **Day 21**: [Templates](./day-21-templates/) - Project templates
+- **Day 15**: [Bash Scripting](/advent-of-devops/day-15) - Automation
+- **Day 16**: [Autoscaling](/advent-of-devops/day-16) - HPA
+- **Day 17**: [Serverless](/advent-of-devops/day-17) - AWS Lambda
+- **Day 18**: [Static Sites](/advent-of-devops/day-18) - S3 + CloudFront
+- **Day 19**: [Load Testing](/advent-of-devops/day-19) - k6
+- **Day 20**: [Secrets](/advent-of-devops/day-20) - Secrets management
+- **Day 21**: [Templates](/advent-of-devops/day-21) - Project templates
 
 ### Week 4: Advanced Topics
-- **Day 22**: [Local K8s](./day-22-minikube/) - Minikube/Kind
-- **Day 23**: [Networking](./day-23-network-challenges/) - Challenges
-- **Day 24**: [Security](./day-24-hardening/) - Hardening
+- **Day 22**: [Local K8s](/advent-of-devops/day-22/) - Minikube/Kind
+- **Day 23**: [Networking](/advent-of-devops/day-23-challenges/) - Challenges
+- **Day 24**: [Security](/advent-of-devops/day-24/) - Hardening
 - **Day 25**: Knowledge Sharing - You are here!
 
 ## Key Takeaways
