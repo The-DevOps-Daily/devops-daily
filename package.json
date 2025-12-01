@@ -20,7 +20,7 @@
     "generate:images:parallel": "tsx scripts/generate-post-images-svg-parallel.ts",
     "convert:svg-to-png:parallel": "tsx scripts/convert-svg-to-png-parallel.ts",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "next lint .",
     "lint:fix": "eslint --fix .",
     "format": "prettier --write .",
     "check-format": "prettier --check .",

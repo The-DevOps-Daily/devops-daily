@@ -33,7 +33,7 @@ jobs:
         run: pnpm test
 
       - name: Run linter
-        run: pnpm lint
+        run: pnpm run lint
 
       - name: Check formatting
         run: pnpm check-format
