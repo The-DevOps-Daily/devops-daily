@@ -51,7 +51,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
     @apply bg-background text-foreground;
@@ -210,7 +210,13 @@
 
 /* Code blocks */
 .prose pre {
-  @apply bg-muted/50 backdrop-blur-sm p-0 rounded-lg overflow-hidden border border-border/50 shadow-sm;
+  background-color: hsl(var(--muted) / 0.5);
+  backdrop-filter: blur(4px);
+  padding: 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.5);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   position: relative;
 }
 
@@ -251,7 +257,7 @@
 
 /* Code block hover effect */
 .prose pre:hover {
-  @apply border-border;
+  border-color: hsl(var(--border));
 }
 
 /* Custom scrollbar for code blocks */
@@ -264,19 +270,23 @@
 }
 
 .prose pre code::-webkit-scrollbar-thumb {
-  @apply bg-border/50 rounded;
+  background-color: hsl(var(--border) / 0.5);
+  border-radius: 0.25rem;
 }
 
 .prose pre code::-webkit-scrollbar-thumb:hover {
-  @apply bg-border;
+  background-color: hsl(var(--border));
 }
 
 .prose img {
-  @apply rounded-lg border border-border;
+  border-radius: 0.5rem;
+  border: 1px solid hsl(var(--border));
 }
 
 .prose blockquote {
-  @apply border-l-4 border-border pl-4 italic;
+  border-left: 4px solid hsl(var(--border));
+  padding-left: 1rem;
+  font-style: italic;
 }
 
 .prose ul {
@@ -297,7 +307,9 @@
 
 .prose th,
 .prose td {
-  @apply border border-border p-2 text-left;
+  border: 1px solid hsl(var(--border));
+  padding: 0.5rem;
+  text-align: left;
 }
 
 @keyframes bounce-slow {
