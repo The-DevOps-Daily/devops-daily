@@ -69,6 +69,23 @@ Skipped if no news content exists.
 pnpm test
 ```
 
+The test suite displays a quality summary at the end showing non-blocking warnings:
+
+```
+================================================================================
+📊 Test Quality Summary
+================================================================================
+
+⚠️  Quality Warnings (Non-blocking):
+   - ~165 posts with SEO title/excerpt optimization opportunities
+   - ~545 files with code blocks missing language specifiers
+   - 0 broken internal links detected
+
+✅ All critical validations passed!
+ℹ️  Warnings are recommendations only and won't fail builds.
+================================================================================
+```
+
 ### Run tests in watch mode
 
 ```bash
