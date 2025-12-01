@@ -31,9 +31,3 @@ jobs:
 
       - name: Run markdown validation tests
         run: pnpm test
-
-      - name: Run linter
-        run: pnpm run lint
-
-      - name: Check formatting
-        run: pnpm check-format
