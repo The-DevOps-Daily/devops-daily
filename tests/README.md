@@ -21,6 +21,46 @@ Ensures data consistency across the site:
 - **Unique Slugs**: Ensures no duplicate post or guide slugs
 - **Category Consistency**: Verifies category usage is reasonable
 
+### 3. SEO Validation (`seo-validation.test.ts`)
+
+Validates SEO best practices for all content:
+
+- **Title Length**: Warns if titles exceed 70 characters (Google truncation limit)
+- **Excerpt Length**: Warns if excerpts exceed 160 characters (meta description limit)
+- **Meta Descriptions**: Ensures posts have meta descriptions
+- **Author Information**: Validates author data is present and complete
+
+Note: SEO checks are soft warnings and won't fail builds.
+
+### 4. Content Quality (`content-quality.test.ts`)
+
+Ensures content meets quality standards:
+
+- **Code Block Syntax**: Warns about code blocks missing language specifiers
+- **Link Validity**: Checks that markdown links are properly formatted
+- **Heading Structure**: Validates heading hierarchy (H1, H2, H3)
+- **Content Length**: Ensures posts have meaningful content (soft check)
+
+### 5. Quiz Validation (`quiz-validation.test.ts`)
+
+Validates quiz structure when quizzes are present:
+
+- **Quiz Structure**: Ensures quizzes have required fields (title, description, difficulty)
+- **Questions**: Validates question array structure and correct answers
+- **Difficulty Levels**: Checks valid difficulty values (beginner, intermediate, advanced)
+- **Question Count**: Ensures minimum of 5 questions per quiz
+
+Skipped if no quiz content exists.
+
+### 6. News Validation (`news-validation.test.ts`)
+
+Validates news item structure when news content is present:
+
+- **News Structure**: Ensures news items have required frontmatter
+- **Content Integrity**: Validates news content format and links
+
+Skipped if no news content exists.
+
 ## Running Tests
 
 ### Run all tests
@@ -72,14 +112,17 @@ When adding new test files:
 
 Potential additions for the test suite:
 
-- **Post-build validation**: Test generated HTML output
-- **SEO checks**: Validate meta tags and Open Graph data
-- **Accessibility tests**: Basic a11y checks
+- **Post-build validation**: Test generated HTML output  
+- **Link checker**: Validate external links don't return 404s
+- **Accessibility tests**: Basic a11y checks with axe-core
 - **Performance tests**: Bundle size limits
 - **E2E tests**: Critical user journeys with Playwright
+- **Visual regression**: Screenshot comparison for key pages
 
 ## Notes
 
-- Image reference checking is currently a soft check (warnings only) to avoid false positives
-- Some validations are intentionally lenient to allow flexibility in content
+- Most quality checks are soft warnings (won't fail builds) to allow flexibility
+- Quiz and news tests skip gracefully when content doesn't exist
 - Tests run in Node environment (no browser required)
+- SEO warnings help improve search engine visibility but aren't enforced
+- Code block language specifiers improve syntax highlighting but aren't required
