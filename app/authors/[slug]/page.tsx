@@ -24,9 +24,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const author = await getAuthorBySlug(params.slug);
+  const { slug } = await params;
+  const author = await getAuthorBySlug(slug);
 
   if (!author) {
     return {};
@@ -36,13 +37,13 @@ export async function generateMetadata({
     title: `${author.name} - Author at DevOps Daily`,
     description: author.bio || `Articles and guides by ${author.name}`,
     alternates: {
-      canonical: `/authors/${params.slug}`,
+      canonical: `/authors/${slug}`,
     },
     openGraph: {
       type: 'profile',
       title: author.name,
       description: author.bio || `Articles and guides by ${author.name}`,
-      url: `/authors/${params.slug}`,
+      url: `/authors/${slug}`,
       images: author.avatar
         ? [
             {
@@ -57,16 +58,17 @@ export async function generateMetadata({
   };
 }
 
-export default async function AuthorPage({ params }: { params: { slug: string } }) {
-  const author = await getAuthorBySlug(params.slug);
+export default async function AuthorPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const author = await getAuthorBySlug(slug);
 
   if (!author) {
     notFound();
   }
 
   const [posts, guides] = await Promise.all([
-    getPostsByAuthor(params.slug),
-    getGuidesByAuthor(params.slug),
+    getPostsByAuthor(slug),
+    getGuidesByAuthor(slug),
   ]);
 
   // Breadcrumb items
