@@ -72,6 +72,28 @@ async function copyMarkdownToOut() {
       await copyRecursive(publicGuidesDir, outGuidesDir);
       console.log(`✅ Copied guide markdown files to out/guides/`);
     }
+
+    // Copy advent-of-devops markdown files
+    const publicAdventDir = path.join(publicDir, 'advent-of-devops');
+    const outAdventDir = path.join(outDir, 'advent-of-devops');
+
+    const adventExists = await fs
+      .access(publicAdventDir)
+      .then(() => true)
+      .catch(() => false);
+    if (adventExists) {
+      await fs.mkdir(outAdventDir, { recursive: true });
+
+      const adventFiles = await fs.readdir(publicAdventDir);
+      for (const file of adventFiles) {
+        if (file.endsWith('.md')) {
+          await fs.copyFile(path.join(publicAdventDir, file), path.join(outAdventDir, file));
+        }
+      }
+      console.log(
+        `✅ Copied ${adventFiles.filter((f) => f.endsWith('.md')).length} advent day markdown files to out/advent-of-devops/`
+      );
+    }
   } catch (error) {
     console.error('❌ Error copying markdown files to out directory:', error);
     process.exit(1);

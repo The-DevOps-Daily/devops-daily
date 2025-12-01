@@ -55,6 +55,20 @@ async function copyMarkdownFiles() {
       }
     }
     console.log(`✅ Copied guides to public/guides/`);
+
+    // Copy advent-of-devops
+    const adventDir = path.join(contentDir, 'advent-of-devops');
+    const publicAdventDir = path.join(publicDir, 'advent-of-devops');
+
+    await fs.mkdir(publicAdventDir, { recursive: true });
+
+    const adventFiles = await fs.readdir(adventDir);
+    for (const file of adventFiles) {
+      if (file.endsWith('.md')) {
+        await fs.copyFile(path.join(adventDir, file), path.join(publicAdventDir, file));
+      }
+    }
+    console.log(`✅ Copied ${adventFiles.filter(f => f.endsWith('.md')).length} advent days to public/advent-of-devops/`);
   } catch (error) {
     console.error('❌ Error copying markdown files:', error);
     process.exit(1);
