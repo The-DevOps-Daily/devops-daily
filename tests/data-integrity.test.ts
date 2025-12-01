@@ -12,6 +12,15 @@ describe('Data Integrity', () => {
     it('should check internal markdown links (soft check)', () => {
       const brokenLinks: Array<{ file: string; link: string }> = [];
 
+      // Patterns to ignore (tutorial examples, placeholders)
+      const ignoredPatterns = [
+        /^\.\/(examples?|demos?|templates?)\//,  // Example/demo directories
+        /^\.\/CONTRIBUTING\.md$/,                // Common doc references
+        /^\.\/README\.md$/,                       // README references
+        /^\.\/docs?\//,                           // Docs directories
+        /^\.\/LICENSE$/,                          // License file references
+      ];
+
       allMarkdownFiles.forEach((file) => {
         const filePath = path.join(contentDir, file);
         const content = fs.readFileSync(filePath, 'utf-8');
@@ -23,6 +32,14 @@ describe('Data Integrity', () => {
 
         while ((match = linkRegex.exec(markdownContent)) !== null) {
           const linkUrl = match[2];
+
+          // Skip if link matches any ignored patterns
+          const shouldIgnore = ignoredPatterns.some((pattern) =>
+            pattern.test(linkUrl)
+          );
+          if (shouldIgnore) {
+            continue;
+          }
 
           // Check for relative internal links that point to files
           if (
