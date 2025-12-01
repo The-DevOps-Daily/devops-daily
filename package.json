@@ -1,9 +1,13 @@
 {
   "name": "devops-daily",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "build": "npm run generate:images:parallel && npm run convert:svg-to-png:parallel && npm run copy:markdown && npm run generate-search-index && next build && npm run generate-feed && npm run copy:markdown:out",
     "build:fast": "npm run generate:images:parallel && npm run convert:svg-to-png:parallel && npm run copy:markdown && npm run generate-search-index && next build && npm run generate-feed && npm run copy:markdown:out",
     "build:cf": "npm run copy:markdown && npm run generate-search-index && next build && npm run copy:markdown:out",
@@ -116,15 +120,18 @@
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.48.0",
     "@typescript-eslint/parser": "^8.48.0",
+    "@vitest/ui": "^4.0.14",
     "eslint": "^9.39.1",
     "eslint-config-next": "^16.0.6",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
+    "fast-glob": "^3.3.3",
     "postcss": "^8.5.6",
     "prettier": "^3.7.3",
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.18",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14"
   }
 }
