@@ -109,11 +109,10 @@ const withPWA = withPWAInit({
 const nextConfig = {
   output: 'export',
   trailingSlash: false,
+  // Enable Turbopack explicitly (default in Next.js 16)
+  turbopack: {},
   images: {
     unoptimized: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: true,
