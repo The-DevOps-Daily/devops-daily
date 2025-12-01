@@ -371,10 +371,10 @@
 
 @keyframes highlight {
   0% {
-    @apply ring-primary/40;
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.4);
   }
   100% {
-    @apply ring-primary/0;
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0);
   }
 }
 
