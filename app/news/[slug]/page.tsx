@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
+import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
 
 import type { Metadata } from 'next';
@@ -157,6 +158,9 @@ export default async function NewsDigestPage({
               <div className="mt-12 pt-8 border-t">
                 <ReportIssue type="news" slug={digest.slug} title={digest.title} />
               </div>
+
+              {/* Giscus Discussions */}
+              <GiscusComments className="mt-12" />
             </article>
           </main>
 

@@ -9,6 +9,7 @@ import { tagToSlug } from '@/lib/tag-utils';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { GuidePartNavigation } from '@/components/guide-part-navigation';
 import { ReportIssue } from '@/components/report-issue';
+import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
 import type { Metadata } from 'next';
 
@@ -151,9 +152,12 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
               {/* Report Issue Component */}
               <div className="mt-8">
-                <ReportIssue title={guide.title} type="guide" slug={guide.slug} variant="compact" />
-              </div>
-            </article>
+              <ReportIssue title={guide.title} type="guide" slug={guide.slug} variant="compact" />
+            </div>
+
+            {/* Giscus Discussions */}
+            <GiscusComments className="mt-12" />
+          </article>
           </div>
         </div>
       </div>

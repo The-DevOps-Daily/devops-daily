@@ -9,6 +9,7 @@ import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
 import { RelatedPosts } from '@/components/related-posts';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
+import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
 
 import type { Metadata } from 'next';
@@ -171,10 +172,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               {/* Report Issue Component */}
               <div className="mt-8">
-                <ReportIssue title={post.title} type="post" slug={post.slug} variant="compact" />
-              </div>
+              <ReportIssue title={post.title} type="post" slug={post.slug} variant="compact" />
+            </div>
 
-              {mainRelatedPosts.length > 0 && (
+            {/* Giscus Discussions */}
+            <GiscusComments className="mt-12" />
+
+            {mainRelatedPosts.length > 0 && (
                 <RelatedPosts
                   posts={mainRelatedPosts.map((p) => ({
                     ...p,

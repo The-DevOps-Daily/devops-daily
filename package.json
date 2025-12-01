@@ -37,6 +37,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/utilities": "^3.2.2",
     "@ducanh2912/next-pwa": "^10.2.9",
+    "@giscus/react": "^3.1.0",
     "@hookform/resolvers": "^3.10.0",
     "@next/third-parties": "^16.0.3",
     "@radix-ui/react-accordion": "1.2.2",
