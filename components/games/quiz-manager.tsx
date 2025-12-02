@@ -25,6 +25,7 @@ import {
 Shield,
  Lock,
   Settings,
+  Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +49,7 @@ const iconMap = {
 Shield,
  Lock,
   Settings,
+  Workflow,
 };
 
 interface QuizMetadata {
