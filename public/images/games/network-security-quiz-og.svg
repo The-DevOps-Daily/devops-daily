@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Network & Security Quiz OG Image -->
+
+  <defs>
+    <!-- Background gradient - purple to blue -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5b21b6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Lock icon pattern -->
+   <pattern id="locks" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <circle cx="60" cy="55" r="8" fill="#8b5cf6" opacity="0.08"/>
+      <rect x="52" y="55" width="16" height="18" rx="2" fill="#8b5cf6" opacity="0.08"/>
+   </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Lock pattern overlay -->
+  <rect width="1200" height="630" fill="url(#locks)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="260" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Networking/Security</text>
+
+  <!-- Lock icon -->
+ <g transform="translate(80, 160)">
+   <circle cx="30" cy="30" r="30" fill="#8b5cf6" opacity="0.9"/>
+    <!-- Lock icon SVG -->
+    <g transform="translate(18, 18)">
+      <circle cx="12" cy="10" r="6" fill="none" stroke="#ffffff" stroke-width="2"/>
+      <rect x="6" y="16" width="12" height="14" rx="1" fill="#ffffff"/>
+      <circle cx="12" cy="23" r="2" fill="#8b5cf6"/>
+    </g>
+ </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#a78bfa">INTERACTIVE QUIZ</text>
+
+  <!-- Title line 1 -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#ffffff">Network &amp; Security</text>
+  
+  <!-- Title line 2 -->
+  <text x="80" y="345" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#ffffff">Fundamentals Quiz</text>
+
+  <!-- Decorative network/security icons -->
+  <g opacity="0.15">
+    <!-- Shield icon -->
+    <path d="M 950 120 L 1000 120 L 1000 180 Q 1000 200 980 210 Q 960 220 950 210 Q 930 200 930 180 L 930 120 Z M 950 120 L 975 100 L 1000 120" fill="#8b5cf6" stroke="#8b5cf6" stroke-width="3"/>
+    
+    <!-- Network nodes -->
+    <circle cx="1050" cy="150" r="15" fill="#60a5fa"/>
+    <circle cx="1100" cy="120" r="15" fill="#60a5fa"/>
+    <circle cx="1100" cy="180" r="15" fill="#60a5fa"/>
+    <line x1="1050" y1="150" x2="1100" y2="120" stroke="#60a5fa" stroke-width="2"/>
+    <line x1="1050" y1="150" x2="1100" y2="180" stroke="#60a5fa" stroke-width="2"/>
+    
+    <!-- Firewall icon -->
+    <rect x="980" y="450" width="80" height="60" rx="5" fill="none" stroke="#8b5cf6" stroke-width="4"/>
+    <line x1="1000" y1="450" x2="1000" y2="510" stroke="#8b5cf6" stroke-width="3"/>
+    <line x1="1020" y1="450" x2="1020" y2="510" stroke="#8b5cf6" stroke-width="3"/>
+    <line x1="1040" y1="450" x2="1040" y2="510" stroke="#8b5cf6" stroke-width="3"/>
+    
+    <!-- Key icon -->
+    <circle cx="1100" cy="480" r="12" fill="none" stroke="#60a5fa" stroke-width="3"/>
+    <line x1="1112" y1="480" x2="1140" y2="480" stroke="#60a5fa" stroke-width="3"/>
+    <line x1="1125" y1="475" x2="1125" y2="485" stroke="#60a5fa" stroke-width="3"/>
+    <line x1="1135" y1="475" x2="1135" y2="485" stroke="#60a5fa" stroke-width="3"/>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#a78bfa">DevOps Daily</text>
+</svg>
