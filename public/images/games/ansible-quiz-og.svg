@@ -30,8 +30,8 @@
   <rect width="1200" height="630" fill="url(#gears)"/>
 
   <!-- Category badge -->
-  <rect x="80" y="80" width="280" height="40" rx="20" fill="url(#accentGradient)"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Configuration Management</text>
+  <rect x="80" y="80" width="230" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">Configuration Mgmt</text>
 
   <!-- Quiz icon -->
   <g transform="translate(80, 160)">
