@@ -1,0 +1,285 @@
+{
+  "id": "sre-quiz",
+  "title": "Site Reliability Engineering (SRE) Quiz",
+  "description": "Master SRE concepts: service level objectives, error budgets, toil reduction, and incident management for building reliable systems",
+  "category": "SRE/Operations",
+  "icon": "Shield",
+  "totalPoints": 188,
+  "theme": {
+    "primaryColor": "red",
+    "gradientFrom": "from-red-500",
+    "gradientTo": "to-orange-600"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 4,
+      "intermediate": 7,
+      "advanced": 4
+    }
+  },
+  "questions": [
+    {
+      "id": "slo-definition",
+      "title": "Service Level Objectives",
+      "description": "What makes a good SLO for a user-facing web service?",
+      "situation": "Your team needs to define SLOs for a new e-commerce checkout service. The business wants 'five nines' (99.999%) availability, but you need to propose realistic, measurable objectives.",
+      "codeExample": "Current metrics:\n- Average response time: 250ms\n- Peak traffic: 5,000 req/sec\n- User-reported issues: ~50/month\n- Revenue impact: $10k per minute of downtime",
+      "options": [
+        "SLO: 99.9% of requests complete successfully in <500ms, measured at load balancer over 30-day windows",
+        "SLO: 99.999% availability measured by uptime checks from monitoring tool",
+        "SLO: Zero errors and 100ms response time for all requests",
+        "SLO: Match last month's performance metrics exactly"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Good SLOs are: 1) User-centric (what users experience), 2) Measurable (quantifiable from real traffic), 3) Achievable (allows for maintenance and incidents), 4) Business-aligned (balances reliability with development velocity). 99.9% success rate in <500ms is realistic and allows a 0.1% error budget for innovation.",
+      "hint": "Think about what users actually experience and what allows for sustainable operations.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "error-budget-calculation",
+      "title": "Error Budget Management",
+      "description": "How do you calculate and use error budgets?",
+      "situation": "Your service has a 99.9% availability SLO over 30 days. You've had 2 hours of downtime this month. The product team wants to deploy a risky new feature.",
+      "codeExample": "Math:\n- 30 days = 43,200 minutes\n- 99.9% SLO = 43.2 minutes downtime allowed\n- Current downtime = 120 minutes\n- Error budget remaining = ?",
+      "options": [
+        "Deploy the feature - we always ship on schedule",
+        "Error budget is exhausted (used 277%). Freeze all deployments until next month, focus on reliability improvements",
+        "Error budget is fine - 2 hours is less than 0.1%",
+        "Negotiate a new SLO with stakeholders to cover the downtime"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Error budget = (1 - SLO) × time period. For 99.9% over 30 days: 0.1% × 43,200 min = 43.2 min allowed. You've used 120 min (277% of budget). When error budget is exhausted, SRE practice is to halt feature work and prioritize reliability until budget is restored. This balances innovation with stability.",
+      "hint": "Calculate: (1 - 0.999) × 43,200 minutes. Compare with actual downtime.",
+      "difficulty": "intermediate",
+      "points": 15
+    },
+    {
+      "id": "toil-identification",
+      "title": "Identifying Toil",
+      "description": "Which of these activities is considered toil in SRE?",
+      "situation": "You're analyzing your team's time allocation. Management asks you to identify and reduce toil to free up time for engineering projects.",
+      "options": [
+        "Writing automation to eliminate manual certificate renewals",
+        "Manually restarting crashed services every week because root cause is unknown",
+        "Responding to a novel production incident that requires debugging",
+        "Architecting a new deployment pipeline for better reliability"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Toil is work that is: manual, repetitive, automatable, tactical (not strategic), scales linearly with service growth, and provides no enduring value. Manually restarting services is textbook toil. Options 1 and 4 are engineering work (reducing future toil). Option 3 is valuable operational work (novel problems that build expertise).",
+      "hint": "Toil is repetitive manual work that doesn't provide lasting value.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "golden-signals",
+      "title": "The Four Golden Signals",
+      "description": "What are the four golden signals for monitoring distributed systems?",
+      "situation": "You're setting up monitoring for a new microservices platform. Following Google SRE practices, you need to implement the four golden signals first.",
+      "options": [
+        "CPU, Memory, Disk, Network",
+        "Errors, Warnings, Info, Debug",
+        "Availability, Performance, Security, Cost",
+        "Latency, Traffic, Errors, Saturation"
+      ],
+      "correctAnswer": 3,
+      "explanation": "The four golden signals from Google SRE: 1) Latency (request duration), 2) Traffic (demand on system), 3) Errors (failed requests rate), 4) Saturation (resource utilization approaching limits). These provide comprehensive visibility into service health from a user perspective. CPU/memory are resource metrics; the golden signals focus on user experience.",
+      "hint": "Focus on user-facing metrics, not just infrastructure resources.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "incident-response-roles",
+      "title": "Incident Response Structure",
+      "description": "During a major incident, what roles should be assigned?",
+      "situation": "Your payment service is down during Black Friday. Multiple teams are in the incident channel. Chaos ensues with everyone trying to debug simultaneously. You need to structure the response.",
+      "codeExample": "Current state:\n- 15 engineers in Slack channel\n- 5 different theories being investigated\n- No one communicating to stakeholders\n- Conflicting commands to prod systems",
+      "options": [
+        "Everyone should work on the most critical issue they see",
+        "Senior engineer takes over and fixes everything while others watch",
+        "Assign Incident Commander (coordinates), Ops Lead (executes), Communications Lead (stakeholder updates), and Subject Matter Experts",
+        "Split into equal teams and have each team try different solutions"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Effective incident response requires clear roles: Incident Commander (overall coordination, decision-making), Operations Lead (executes commands, follows IC direction), Communications Lead (updates stakeholders/customers), and SMEs (provide expertise). This prevents duplicate work, ensures communication, and creates clear authority. Defined roles reduce chaos and time-to-resolution.",
+      "hint": "Think about separation of concerns: coordination, execution, and communication.",
+      "difficulty": "intermediate",
+      "points": 13
+    },
+    {
+      "id": "blameless-postmortem",
+      "title": "Blameless Post-Mortem Culture",
+      "description": "What's the primary goal of a blameless post-mortem?",
+      "situation": "After a 4-hour outage caused by a junior engineer's configuration change, you're writing the post-mortem. Some team members want to emphasize 'who made the mistake'.",
+      "options": [
+        "Identify who caused the incident so they can be retrained",
+        "Understand systemic failures that allowed the incident and implement preventive measures, focusing on 'what' not 'who'",
+        "Document the incident for legal and compliance purposes only",
+        "Prove to management that your team followed all procedures correctly"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Blameless post-mortems focus on systems and processes, not people. Goals: 1) Understand root causes and contributing factors, 2) Identify systemic improvements (automation, testing, guardrails), 3) Share learnings across the org, 4) Build psychological safety so people report issues freely. Blaming individuals prevents learning and encourages hiding mistakes.",
+      "hint": "Focus on systemic improvements, not individual blame.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "on-call-best-practices",
+      "title": "On-Call Rotation Design",
+      "description": "What makes a healthy on-call rotation?",
+      "situation": "Your SRE team is burning out. On-call engineers are paged 15+ times per night, exhausted, and threatening to quit. You need to fix the on-call experience.",
+      "codeExample": "Current problems:\n- 15 pages per night (mostly false positives)\n- On-call engineer handles everything alone\n- No clear escalation path\n- Same people on-call due to 'hero culture'",
+      "options": [
+        "Hire more SREs to reduce on-call frequency",
+        "Reduce alert fatigue (tune alerts), define escalation paths, implement follow-the-sun rotation, cap pages per shift, ensure adequate staffing (4+ for 24/7)",
+        "Pay engineers more to compensate for difficult on-call",
+        "Remove on-call requirement and have team check Slack casually"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Healthy on-call requires: 1) Quality alerts (reduce noise/false positives), 2) Clear escalation paths (on-call isn't alone), 3) Sustainable rotation (follow-the-sun, max 2 weeks), 4) Adequate staffing (4+ people for 24/7), 5) Protected time after incidents, 6) Runbooks for common issues. Throwing money or people at broken alerting doesn't solve root problems.",
+      "hint": "Address the root cause: alert quality and support structure.",
+      "difficulty": "advanced",
+      "points": 15
+    },
+    {
+      "id": "capacity-planning",
+      "title": "Capacity Planning Strategy",
+      "description": "How should you approach capacity planning for a growing service?",
+      "situation": "Your service grew 3x last quarter. Infrastructure is at 75% CPU utilization. Black Friday is in 6 weeks with expected 10x traffic spike.",
+      "codeExample": "Current state:\n- Normal: 1,000 req/s at 75% CPU\n- Black Friday: expecting 10,000 req/s\n- Provisioning lead time: 2 weeks\n- Budget: $50k for new infrastructure",
+      "options": [
+        "Wait until we hit 90% CPU, then provision more capacity",
+        "Provision 10x capacity now to handle the spike",
+        "Optimize code performance instead of adding capacity",
+        "Use organic growth rate + load testing to forecast demand, provision with headroom, implement auto-scaling, have emergency capacity plan"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Effective capacity planning: 1) Forecast demand using historical growth + known events, 2) Load test to validate capacity needs, 3) Provision with headroom (N+2 for redundancy), 4) Implement auto-scaling for variable load, 5) Have emergency capacity plans. Don't wait until crisis (option 1) or massively over-provision (option 2). Code optimization helps but won't solve 10x growth in 6 weeks.",
+      "hint": "Balance proactive planning with cost efficiency and have backup plans.",
+      "difficulty": "advanced",
+      "points": 16
+    },
+    {
+      "id": "canary-deployment",
+      "title": "Canary Deployment Process",
+      "description": "What's the correct approach to canary deployments?",
+      "situation": "You're deploying a major API change to 200 production servers. You want to minimize risk of breaking production for all users.",
+      "options": [
+        "Deploy to all servers simultaneously for consistency",
+        "Deploy to 1% of servers, monitor error rates/latency for 1 hour, gradually increase to 5%, 25%, 50%, 100% with rollback plan at each stage",
+        "Deploy to 50% of servers and compare with the other 50%",
+        "Deploy to test environment first, then all production servers"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Canary deployment best practices: 1) Start small (1-5% traffic), 2) Monitor key metrics (error rates, latency, business KPIs), 3) Gradually increase (1% → 5% → 25% → 50% → 100%), 4) Set automated rollback triggers, 5) Soak time at each stage (30 min - 2 hours), 6) Have instant rollback capability. This limits blast radius if issues arise.",
+      "hint": "Start with minimal exposure and gradually increase while monitoring.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "feature-flags",
+      "title": "Feature Flag Strategy",
+      "description": "When should you use feature flags?",
+      "situation": "Your team is building a new payment provider integration. It's complex, will take 3 months, but you want to deploy code continuously without exposing incomplete features to users.",
+      "options": [
+        "Wait 3 months to merge and deploy everything at once",
+        "Use feature flags to hide incomplete work, deploy to prod continuously, gradually enable for internal users then external, with instant kill-switch capability",
+        "Deploy to production but use a separate URL that users don't know about",
+        "Create a long-lived feature branch and deploy only when complete"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Feature flags enable: 1) Continuous deployment of incomplete features (hidden behind flags), 2) Gradual rollout (internal → beta → full), 3) Instant rollback without redeployment (toggle off), 4) A/B testing, 5) Separation of deploy from release. This reduces risk, enables faster iteration, and provides safety nets. Long-lived branches create merge hell and prevent continuous integration.",
+      "hint": "Decouple deployment from enabling features for users.",
+      "difficulty": "intermediate",
+      "points": 13
+    },
+    {
+      "id": "circuit-breaker-pattern",
+      "title": "Circuit Breaker Pattern",
+      "description": "Why implement circuit breakers in distributed systems?",
+      "situation": "Your service calls a payment API that occasionally becomes slow (10s+ timeouts). When this happens, your entire app slows down, request queues fill up, and you start timing out healthy requests too.",
+      "codeExample": "Problem cascade:\n1. Payment API slows to 10s/request\n2. Your app threads wait, get exhausted\n3. Request queue fills (1000+ queued)\n4. Even non-payment requests timeout\n5. Total service outage",
+      "options": [
+        "Increase timeout values to wait longer for responses",
+        "Add more application servers to handle the load",
+        "Implement circuit breaker: detect failures, open circuit (fail fast), periodically test if dependency recovered, close circuit when healthy",
+        "Remove the failing dependency and handle payments manually"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Circuit breakers prevent cascading failures: 1) Monitor dependency health (error rate, latency), 2) Open circuit when threshold exceeded (fail fast instead of waiting), 3) Half-open state: periodically test if dependency recovered, 4) Close circuit when healthy. This protects your service from slow/failing dependencies, preserves resources, and enables graceful degradation.",
+      "hint": "Prevent cascading failures by failing fast when dependencies are unhealthy.",
+      "difficulty": "advanced",
+      "points": 16
+    },
+    {
+      "id": "retry-strategy",
+      "title": "Retry Logic & Backoff",
+      "description": "What's the correct retry strategy for failed requests?",
+      "situation": "Your service occasionally gets 503 errors from a downstream API (1% of requests). You want to retry failed requests but not make the problem worse.",
+      "options": [
+        "Retry immediately, up to 10 times until success",
+        "Never retry - fail fast and return error to user",
+        "Implement exponential backoff with jitter: retry with delays of 100ms, 200ms, 400ms, 800ms, max 3 retries, with random jitter to prevent thundering herd",
+        "Retry every 1 second for 1 minute"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Effective retry strategy: 1) Exponential backoff (increasing delays: 100ms, 200ms, 400ms...), 2) Jitter (randomization to prevent thundering herd), 3) Limited retries (3-5 max), 4) Only retry transient errors (503, timeout, not 4xx), 5) Respect retry-after headers. Immediate retries can overwhelm struggling service. Random jitter prevents all clients retrying simultaneously.",
+      "hint": "Balance persistence with not overwhelming the struggling downstream service.",
+      "difficulty": "intermediate",
+      "points": 14
+    },
+    {
+      "id": "graceful-degradation",
+      "title": "Graceful Degradation",
+      "description": "How should services handle dependency failures?",
+      "situation": "Your e-commerce site depends on: product DB (critical), recommendation engine (nice-to-have), reviews API (nice-to-have). The recommendation engine goes down.",
+      "options": [
+        "Return 503 error - site is unavailable until all dependencies are healthy",
+        "Keep retrying the recommendation engine until it works",
+        "Hide all product listings since we can't show recommendations",
+        "Show cached/default recommendations, continue serving core functionality (browse, checkout), log degraded state for monitoring"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Graceful degradation: 1) Identify critical vs non-critical features, 2) Serve core functionality even when optional features fail, 3) Use cached data, defaults, or remove feature temporarily, 4) Clearly communicate degraded state to ops/monitoring, 5) Automatic recovery when dependencies heal. Users can still buy (critical) even without personalized recommendations (nice-to-have).",
+      "hint": "Core functionality should survive when non-critical dependencies fail.",
+      "difficulty": "beginner",
+      "points": 11
+    },
+    {
+      "id": "alert-design",
+      "title": "Effective Alert Design",
+      "description": "What makes a good alerting rule?",
+      "situation": "Your team gets 50 alerts per day. Most are false positives or transient issues that self-heal. On-call engineers are ignoring pages. You need to redesign alerts.",
+      "codeExample": "Current bad alert:\n'CPU > 80%'\n- Fires 30 times/day\n- Often self-corrects\n- No context provided\n- Not clearly actionable",
+      "options": [
+        "Increase CPU threshold to 95% so it alerts less",
+        "Send all alerts to email instead of paging",
+        "Alert on symptoms not causes: 'Error rate >1% for 5+ minutes' with runbook link, actionable response, and automatic rollback option",
+        "Remove all alerts and rely on user reports"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Good alerts: 1) Symptom-based (error rate, latency) not cause-based (CPU), 2) Actionable (require human response), 3) Include context (runbook, dashboard links), 4) Tuned thresholds (reduce false positives), 5) Appropriate severity and response time. High CPU might be fine if users aren't affected. Alert on user-impacting symptoms with sufficient time window to avoid flapping.",
+      "hint": "Alert on user impact, not infrastructure metrics alone.",
+      "difficulty": "intermediate",
+      "points": 13
+    },
+    {
+      "id": "sre-principles",
+      "title": "Core SRE Principles",
+      "description": "What's a fundamental principle of SRE?",
+      "situation": "Your company is transitioning from traditional ops to SRE. Leadership asks you to explain what makes SRE different from traditional operations.",
+      "options": [
+        "SRE applies software engineering practices to operations: automation, measurement (SLOs), and engineering 50% of time on reliability projects",
+        "SREs only handle incidents, developers do all other work",
+        "SREs maintain 100% uptime through manual processes and careful change control",
+        "SRE is just a new name for DevOps"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Core SRE principles: 1) Apply software engineering to operations (automation, tooling), 2) SLOs and error budgets balance reliability with velocity, 3) Limit toil to <50% of time (rest is engineering work), 4) Blameless post-mortems, 5) Shared ownership (devs + SRE), 6) Measure everything. SRE is an implementation of DevOps culture with specific practices from Google.",
+      "hint": "Think about how SRE treats operations as a software engineering problem.",
+      "difficulty": "beginner",
+      "points": 10
+    }
+  ]
+}

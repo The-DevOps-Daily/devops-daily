@@ -212,9 +212,7 @@ function showHelp() {
 }
 
 // Execute the script
-if (require.main === module) {
-  main().catch((error) => {
-    console.error(colorize('💥 Unexpected error:', 'red'), error);
-    process.exit(1);
-  });
-}
+main().catch((error) => {
+  console.error(colorize('💥 Unexpected error:', 'red'), error);
+  process.exit(1);
+});
