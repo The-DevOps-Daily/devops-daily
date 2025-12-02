@@ -21,7 +21,8 @@ import {
   Package,
   DollarSign,
   Database,
-  Briefcase,
+ Briefcase,
+ Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -41,7 +42,8 @@ const iconMap = {
   Clock,
   DollarSign,
   Database,
-  Briefcase,
+ Briefcase,
+ Shield,
 };
 
 interface QuizMetadata {
