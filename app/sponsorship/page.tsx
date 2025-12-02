@@ -17,7 +17,7 @@ export default function SponsorshipPage() {
       <section className="relative overflow-hidden bg-background py-20">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-background to-background" />
+          <div className="absolute inset-0 bg-linear-to-br from-blue-600/10 via-background to-background" />
           <div className="absolute top-20 right-20 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px]" />
           <div className="absolute bottom-20 left-20 w-72 h-72 bg-purple-500/10 rounded-full blur-[100px]" />
         </div>
@@ -31,7 +31,7 @@ export default function SponsorshipPage() {
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Reach{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-600">
                 10,000+
               </span>{' '}
               DevOps Professionals
@@ -263,7 +263,7 @@ export default function SponsorshipPage() {
       <section className="py-20 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-background to-background" />
+          <div className="absolute inset-0 bg-linear-to-br from-blue-600/5 via-background to-background" />
         </div>
 
         <div className="container mx-auto px-4">

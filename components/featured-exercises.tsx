@@ -68,22 +68,22 @@ function FeaturedExerciseCard({ exercise, index }: { exercise: Exercise; index: 
       <Card
         className={cn(
           'relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 border-2',
-          'bg-gradient-to-br from-background via-background to-muted/20',
+          'bg-linear-to-br from-background via-background to-muted/20',
           exercise.featured && 'ring-2 ring-primary/20 border-primary/30'
         )}
       >
         {/* Background Pattern */}
         <div className="absolute inset-0 transition-opacity duration-500 opacity-5 group-hover:opacity-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(59,130,246,0.3)_1px,transparent_0)] bg-[size:20px_20px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(59,130,246,0.3)_1px,transparent_0)] bg-size-[20px_20px]" />
         </div>
 
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-br from-primary/5 via-transparent to-purple/5 group-hover:opacity-100" />
+        <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-linear-to-br from-primary/5 via-transparent to-purple/5 group-hover:opacity-100" />
 
         {/* Featured Badge */}
         {exercise.featured && (
           <div className="absolute z-10 top-4 right-4">
-            <Badge className="text-white border-none shadow-lg bg-gradient-to-r from-yellow-500 to-orange-500">
+            <Badge className="text-white border-none shadow-lg bg-linear-to-r from-yellow-500 to-orange-500">
               <Zap className="w-3 h-3 mr-1" />
               Featured
             </Badge>
@@ -96,9 +96,9 @@ function FeaturedExerciseCard({ exercise, index }: { exercise: Exercise; index: 
             <div
               className={cn(
                 'w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg',
-                index === 0 && 'bg-gradient-to-r from-yellow-400 to-yellow-600',
-                index === 1 && 'bg-gradient-to-r from-gray-300 to-gray-500',
-                index === 2 && 'bg-gradient-to-r from-amber-600 to-amber-800'
+                index === 0 && 'bg-linear-to-r from-yellow-400 to-yellow-600',
+                index === 1 && 'bg-linear-to-r from-gray-300 to-gray-500',
+                index === 2 && 'bg-linear-to-r from-amber-600 to-amber-800'
               )}
             >
               {index + 1}
@@ -108,7 +108,7 @@ function FeaturedExerciseCard({ exercise, index }: { exercise: Exercise; index: 
 
         <CardHeader className="relative pb-4">
           <div className="flex items-start gap-4">
-            <div className="p-4 transition-transform duration-300 border shadow-sm rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 group-hover:scale-110">
+            <div className="p-4 transition-transform duration-300 border shadow-sm rounded-2xl bg-linear-to-br from-primary/10 to-primary/5 border-primary/20 group-hover:scale-110">
               <IconComponent className="w-7 h-7 text-primary" />
             </div>
 
@@ -187,7 +187,7 @@ function FeaturedExerciseCard({ exercise, index }: { exercise: Exercise; index: 
             <ul className="space-y-1 text-xs text-muted-foreground">
               {exercise.learningObjectives.slice(0, 2).map((objective, index) => (
                 <li key={index} className="flex items-start gap-2">
-                  <CheckCircle2 className="w-3 h-3 mt-0.5 text-primary flex-shrink-0" />
+                  <CheckCircle2 className="w-3 h-3 mt-0.5 text-primary shrink-0" />
                   <span className="line-clamp-1">{objective}</span>
                 </li>
               ))}
@@ -200,7 +200,7 @@ function FeaturedExerciseCard({ exercise, index }: { exercise: Exercise; index: 
           </div>
 
           {/* Hover CTA */}
-          <div className="absolute inset-0 flex items-end justify-center pb-6 transition-all duration-300 rounded-lg opacity-0 bg-gradient-to-t from-background/95 via-background/70 to-transparent group-hover:opacity-100">
+          <div className="absolute inset-0 flex items-end justify-center pb-6 transition-all duration-300 rounded-lg opacity-0 bg-linear-to-t from-background/95 via-background/70 to-transparent group-hover:opacity-100">
             <Button
               size="sm"
               className="transition-transform duration-300 transform translate-y-4 shadow-lg group-hover:translate-y-0"
@@ -239,7 +239,7 @@ export default async function FeaturedExercises({ className }: FeaturedExercises
           <div className="flex items-center gap-3">
             <Badge
               variant="outline"
-              className="text-yellow-600 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/50 dark:text-yellow-400"
+              className="text-yellow-600 bg-linear-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/50 dark:text-yellow-400"
             >
               <Sparkles className="w-4 h-4 mr-2" />
               Featured Labs
@@ -251,7 +251,7 @@ export default async function FeaturedExercises({ className }: FeaturedExercises
           </div>
 
           <div>
-            <h2 className="text-4xl font-bold tracking-tight text-transparent bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
+            <h2 className="text-4xl font-bold tracking-tight text-transparent bg-linear-to-r from-foreground via-foreground to-muted-foreground bg-clip-text">
               Hands-On DevOps Exercises
             </h2>
             <p className="max-w-2xl mt-3 text-lg text-muted-foreground">
@@ -290,7 +290,7 @@ export default async function FeaturedExercises({ className }: FeaturedExercises
 
       {/* Statistics */}
       <div className="grid grid-cols-1 gap-6 mt-16 md:grid-cols-3">
-        <Card className="p-6 text-center border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 dark:border-blue-800">
+        <Card className="p-6 text-center border-blue-200 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 dark:border-blue-800">
           <div className="inline-flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-blue-500/10">
             <Target className="w-6 h-6 text-blue-600" />
           </div>
@@ -298,7 +298,7 @@ export default async function FeaturedExercises({ className }: FeaturedExercises
           <p className="text-sm text-blue-600/80">Interactive Exercises</p>
         </Card>
 
-        <Card className="p-6 text-center border-green-200 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 dark:border-green-800">
+        <Card className="p-6 text-center border-green-200 bg-linear-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 dark:border-green-800">
           <div className="inline-flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-green-500/10">
             <Clock className="w-6 h-6 text-green-600" />
           </div>
@@ -306,7 +306,7 @@ export default async function FeaturedExercises({ className }: FeaturedExercises
           <p className="text-sm text-green-600/80">Average Duration</p>
         </Card>
 
-        <Card className="p-6 text-center border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 dark:border-purple-800">
+        <Card className="p-6 text-center border-purple-200 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 dark:border-purple-800">
           <div className="inline-flex items-center justify-center w-12 h-12 mb-4 rounded-full bg-purple-500/10">
             <CheckCircle2 className="w-6 h-6 text-purple-600" />
           </div>
@@ -317,7 +317,7 @@ export default async function FeaturedExercises({ className }: FeaturedExercises
 
       {/* Bottom CTA Section */}
       <div className="mt-16 text-center">
-        <div className="p-8 border rounded-2xl bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5 border-primary/10">
+        <div className="p-8 border rounded-2xl bg-linear-to-r from-primary/5 via-purple-500/5 to-pink-500/5 border-primary/10">
           <h3 className="mb-2 text-xl font-bold">Ready to level up your DevOps skills?</h3>
           <p className="max-w-md mx-auto mb-4 text-muted-foreground">
             Join thousands of engineers learning DevOps through hands-on practice

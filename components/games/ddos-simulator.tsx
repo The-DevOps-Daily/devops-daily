@@ -105,7 +105,7 @@ function Slider({
       value={value[0]}
       onChange={(e) => onValueChange([parseInt(e.target.value)])}
       className={cn(
-        'w-full h-3 bg-gradient-to-r from-green-200 via-yellow-200 to-red-200 rounded-lg appearance-none cursor-pointer slider-thumb',
+        'w-full h-3 bg-linear-to-r from-green-200 via-yellow-200 to-red-200 rounded-lg appearance-none cursor-pointer slider-thumb',
         className
       )}
       style={{
@@ -537,7 +537,7 @@ export default function DDoSSimulator() {
   const unlockedAchievements = achievements.filter((a) => a.unlocked).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
       <div className={cn("container mx-auto px-4 py-6 sm:py-8 transition-transform duration-200", screenShake && "animate-shake")}>
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
@@ -559,7 +559,7 @@ export default function DDoSSimulator() {
               initial={{ opacity: 0, y: -50, x: '-50%' }}
               animate={{ opacity: 1, y: 0, x: '-50%' }}
               exit={{ opacity: 0, y: -50, x: '-50%' }}
-              className="fixed top-20 left-1/2 z-50 bg-gradient-to-r from-yellow-500/90 to-orange-500/90 backdrop-blur-sm px-6 py-4 rounded-xl shadow-2xl border-2 border-yellow-400"
+              className="fixed top-20 left-1/2 z-50 bg-linear-to-r from-yellow-500/90 to-orange-500/90 backdrop-blur-sm px-6 py-4 rounded-xl shadow-2xl border-2 border-yellow-400"
             >
               <div className="flex items-center gap-3">
                 <Award className="w-6 h-6 text-white" />
@@ -582,10 +582,10 @@ export default function DDoSSimulator() {
           className="text-center mb-8"
         >
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg shadow-red-500/50">
+            <div className="w-12 h-12 rounded-xl bg-linear-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg shadow-red-500/50">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-linear-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">
               DDoS Attack Simulator
             </h1>
           </div>
@@ -889,7 +889,7 @@ export default function DDoSSimulator() {
                       'flex-1',
                       isRunning
                         ? 'bg-red-500 hover:bg-red-600'
-                        : 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
+                        : 'bg-linear-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600'
                     )}
                     disabled={gameOver}
                   >
@@ -951,7 +951,7 @@ export default function DDoSSimulator() {
                     </div>
                     <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-green-500 to-emerald-500"
+                        className="h-full bg-linear-to-r from-green-500 to-emerald-500"
                         style={{ width: `${(blockedRequests / totalRequests) * 100}%` }}
                       />
                     </div>
@@ -979,7 +979,7 @@ export default function DDoSSimulator() {
                       className={cn(
                         'p-3 rounded-lg border transition-all',
                         achievement.unlocked
-                          ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
+                          ? 'bg-linear-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
                           : 'bg-slate-800/30 border-slate-700/30 opacity-50'
                       )}
                     >
@@ -1140,12 +1140,12 @@ export default function DDoSSimulator() {
                       className={cn(
                         'relative w-24 h-24 rounded-2xl flex items-center justify-center transition-all duration-300',
                         serverHealth > 70
-                          ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50'
+                          ? 'bg-linear-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-500/50'
                           : serverHealth > 40
-                            ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50'
+                            ? 'bg-linear-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/50'
                             : serverHealth > 0
-                              ? 'bg-gradient-to-br from-red-500/20 to-rose-500/20 border-2 border-red-500/50'
-                              : 'bg-gradient-to-br from-gray-500/20 to-slate-500/20 border-2 border-gray-500/50'
+                              ? 'bg-linear-to-br from-red-500/20 to-rose-500/20 border-2 border-red-500/50'
+                              : 'bg-linear-to-br from-gray-500/20 to-slate-500/20 border-2 border-gray-500/50'
                       )}
                     >
                       <Server
@@ -1271,13 +1271,13 @@ export default function DDoSSimulator() {
                             </div>
                           </div>
                           {survivalTime === highScore && highScore > 0 && (
-                            <Badge className="mb-4 bg-gradient-to-r from-yellow-500 to-orange-500">
+                            <Badge className="mb-4 bg-linear-to-r from-yellow-500 to-orange-500">
                               🏆 New High Score!
                             </Badge>
                           )}
                           <Button
                             onClick={resetGame}
-                            className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
+                            className="bg-linear-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600"
                           >
                             <RotateCcw className="w-4 h-4 mr-2" />
                             Try Again
@@ -1306,10 +1306,10 @@ export default function DDoSSimulator() {
         </div>
 
         {/* Educational Tips */}
-        <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20 backdrop-blur">
+        <Card className="bg-linear-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20 backdrop-blur">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
                 <Shield className="w-5 h-5 text-blue-400" />
               </div>
               <div>

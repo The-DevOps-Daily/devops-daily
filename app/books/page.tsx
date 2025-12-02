@@ -339,7 +339,7 @@ export default function BooksPage() {
         {/* Background decorations */}
         <div className="absolute inset-0 -z-10">
           {/* Gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10" />
+          <div className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10" />
 
           {/* Grid pattern */}
           <div
@@ -379,7 +379,7 @@ export default function BooksPage() {
             </Badge>
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
               <span className="block mb-2 text-foreground">DevOps Books</span>
-              <span className="block bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient leading-[1.2]">
+              <span className="block bg-clip-text text-transparent bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient leading-[1.2]">
                 Level Up Your Skills
               </span>
             </h1>
@@ -420,7 +420,7 @@ export default function BooksPage() {
                       value={category.id}
                       className="flex items-center gap-2 px-3 sm:px-4 py-2 text-sm whitespace-nowrap data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
                     >
-                      <Icon className="h-4 w-4 flex-shrink-0" />
+                      <Icon className="h-4 w-4 shrink-0" />
                       <span className="hidden xs:inline">{category.name}</span>
                       <span className="xs:hidden">{category.name.split(' ')[0]}</span>
                       <Badge variant="outline" className="ml-1 text-xs h-5 px-1.5">
@@ -460,7 +460,7 @@ export default function BooksPage() {
       {/* CTA Section */}
       <section className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="border-2 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 overflow-hidden relative">
+          <Card className="border-2 bg-linear-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 overflow-hidden relative">
             {/* Background decoration */}
             <div className="absolute inset-0 opacity-[0.02]">
               <div
@@ -538,16 +538,16 @@ function BookCard({ book, index }: { book: Book; index: number }) {
 
   return (
     <Card
-      className="group flex h-full flex-col transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 hover:-translate-y-1 bg-gradient-to-br from-background to-muted/20"
+      className="group flex h-full flex-col transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 hover:-translate-y-1 bg-linear-to-br from-background to-muted/20"
       style={{
         animation: `fade-in 0.5s ease-out ${index * 0.05}s both`,
       }}
     >
       <CardHeader className="pb-4">
         <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="relative flex-shrink-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity" />
-            <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg group-hover:scale-110 transition-transform">
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity" />
+            <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-purple-600 text-white shadow-lg group-hover:scale-110 transition-transform">
               <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
           </div>
@@ -590,7 +590,7 @@ function BookCard({ book, index }: { book: Book; index: number }) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-grow pb-4">
+      <CardContent className="grow pb-4">
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {book.badges?.map((badge, index) => (
             <Badge key={index} variant={badge.variant || 'secondary'} className="text-xs">

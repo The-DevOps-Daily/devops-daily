@@ -17,7 +17,7 @@ const sponsors = [
     name: 'DevDojo',
     logo: '/devdojo.svg?height=60&width=120',
     url: 'https://devdojo.com',
-    className: 'w-auto h-10 flex-shrink-0 fill-current text-red-500',
+    className: 'w-auto h-10 shrink-0 fill-current text-red-500',
     tagline: 'Developer community & tools',
     description: 'Join a community of developers sharing knowledge and tools',
   },
@@ -33,7 +33,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
   if (variant === 'banner') {
     return (
       <div className={cn('my-12', className)}>
-        <div className="relative rounded-2xl border border-border/50 overflow-hidden bg-gradient-to-br from-primary/5 via-background to-primary/5">
+        <div className="relative rounded-2xl border border-border/50 overflow-hidden bg-linear-to-br from-primary/5 via-background to-primary/5">
           {/* Decorative elements */}
           <div className="absolute inset-0 opacity-30">
             <div className="absolute top-0 left-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
@@ -62,7 +62,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                   <ExternalLink className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                   {/* Logo */}
-                  <div className="flex-shrink-0 h-16 w-24 flex items-center justify-center">
+                  <div className="shrink-0 h-16 w-24 flex items-center justify-center">
                     <Image
                       src={sponsor.logo || '/placeholder.svg'}
                       alt={sponsor.name}
@@ -153,10 +153,10 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
   // Full variant (default)
   return (
     <div className={cn('my-12', className)}>
-      <div className="relative rounded-2xl border border-border/50 overflow-hidden bg-gradient-to-br from-background to-muted/30">
+      <div className="relative rounded-2xl border border-border/50 overflow-hidden bg-linear-to-br from-background to-muted/30">
         {/* Decorative background */}
         <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-blue-500/5" />
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-blue-500/5" />
 
         <div className="relative p-6 md:p-8">
           {/* Header */}
@@ -182,7 +182,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
               >
                 <div className="relative h-full p-6 rounded-xl border border-border bg-background hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1">
                   {/* Hover gradient overlay */}
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                   {/* External link indicator */}
                   <ExternalLink className="absolute top-4 right-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

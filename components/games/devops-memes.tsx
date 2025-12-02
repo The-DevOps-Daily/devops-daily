@@ -381,7 +381,7 @@ export default function DevOpsMemes() {
                 delay: Math.random() * 0.3,
               }}
             >
-              <div className="w-2 h-2 bg-gradient-to-r from-orange-400 to-red-500 rounded-full" />
+              <div className="w-2 h-2 bg-linear-to-r from-orange-400 to-red-500 rounded-full" />
             </motion.div>
           ))}
         </div>
@@ -397,14 +397,14 @@ export default function DevOpsMemes() {
           <div className="flex items-center justify-center gap-4 mb-6">
             <Badge
               variant="outline"
-              className="px-4 py-2 text-sm bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border-orange-200 dark:border-orange-700"
+              className="px-4 py-2 text-sm bg-linear-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border-orange-200 dark:border-orange-700"
             >
               <Laugh className="w-4 h-4 mr-2" />
               {ALL_MEMES.length}+ Memes
             </Badge>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-linear-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
             🧪 You Might Be a DevOps Engineer If...
           </h1>
 
@@ -430,7 +430,7 @@ export default function DevOpsMemes() {
                 className={cn(
                   'transition-all duration-200',
                   currentCategory === category.id
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white'
+                    ? 'bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white'
                     : 'border-orange-200 hover:bg-orange-50 dark:border-orange-700 dark:hover:bg-orange-950/20'
                 )}
               >
@@ -451,7 +451,7 @@ export default function DevOpsMemes() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
       >
-        <Card className="relative overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-orange-50/50 via-white to-red-50/50 dark:from-orange-950/20 dark:via-background dark:to-red-950/20 shadow-xl">
+        <Card className="relative overflow-hidden border-2 border-primary/20 bg-linear-to-br from-orange-50/50 via-white to-red-50/50 dark:from-orange-950/20 dark:via-background dark:to-red-950/20 shadow-xl">
           {/* Animated background elements */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute -top-10 -right-10 w-32 h-32 bg-orange-500/10 rounded-full blur-xl animate-pulse" />
@@ -467,7 +467,7 @@ export default function DevOpsMemes() {
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
             >
-              <div className="mx-auto mb-6 p-6 bg-gradient-to-br from-orange-500 to-red-600 rounded-full w-fit shadow-xl">
+              <div className="mx-auto mb-6 p-6 bg-linear-to-br from-orange-500 to-red-600 rounded-full w-fit shadow-xl">
                 <Zap className="h-10 w-10 text-white" />
               </div>
             </motion.div>
@@ -557,7 +557,7 @@ export default function DevOpsMemes() {
                   onClick={generateNewMeme}
                   disabled={isAnimating}
                   size="lg"
-                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl px-8 transition-all duration-200"
+                  className="bg-linear-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-xl px-8 transition-all duration-200"
                 >
                   {isAnimating ? (
                     <motion.div
@@ -692,7 +692,7 @@ export default function DevOpsMemes() {
                         onClick={() => setCurrentMeme(meme)}
                         className="w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors p-2 rounded hover:bg-muted/50 flex items-center gap-2"
                       >
-                        <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                        <ChevronRight className="w-3 h-3 shrink-0" />
                         <span className="truncate">{meme}</span>
                       </button>
                     </motion.div>
@@ -710,7 +710,7 @@ export default function DevOpsMemes() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6, duration: 0.5 }}
       >
-        <Card className="bg-gradient-to-br from-muted/30 to-muted/10 border border-muted-foreground/10">
+        <Card className="bg-linear-to-br from-muted/30 to-muted/10 border border-muted-foreground/10">
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
               <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
@@ -744,9 +744,9 @@ export default function DevOpsMemes() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8, duration: 0.6 }}
       >
-        <Card className="bg-gradient-to-br from-muted/30 to-muted/10 border border-muted-foreground/10">
+        <Card className="bg-linear-to-br from-muted/30 to-muted/10 border border-muted-foreground/10">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            <CardTitle className="text-2xl font-bold text-center bg-linear-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
               About This Meme Generator
             </CardTitle>
           </CardHeader>
@@ -779,7 +779,7 @@ export default function DevOpsMemes() {
               </div>
             </div>
 
-            <div className="text-center p-6 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-lg border border-orange-200/50 dark:border-orange-700/50">
+            <div className="text-center p-6 bg-linear-to-r from-orange-50 to-red-50 dark:from-orange-950/20 dark:to-red-950/20 rounded-lg border border-orange-200/50 dark:border-orange-700/50">
               <p className="text-sm text-muted-foreground">
                 <strong>💡 Pro Tip:</strong> Use keyboard shortcuts for lightning-fast meme
                 generation! Press Space for new memes, or numbers 1-6 for quick reactions.

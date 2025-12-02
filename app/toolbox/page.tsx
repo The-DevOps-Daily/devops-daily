@@ -419,7 +419,7 @@ export default function ToolboxPage() {
   return (
     <div className="min-h-screen pb-16">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-background via-background to-muted/20 py-20">
+      <section className="relative overflow-hidden bg-linear-to-b from-background via-background to-muted/20 py-20">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-grid opacity-[0.02]" />
@@ -439,7 +439,7 @@ export default function ToolboxPage() {
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
               DevOps{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 via-purple-500 to-pink-500">
                 Toolbox
               </span>
             </h1>
@@ -512,7 +512,7 @@ export default function ToolboxPage() {
       {/* CTA Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <Card className="bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 backdrop-blur-sm border-border/50">
+          <Card className="bg-linear-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 backdrop-blur-sm border-border/50">
             <CardContent className="p-8 md:p-12 text-center">
               <h2 className="text-2xl md:text-3xl font-bold mb-4">
                 Know a great DevOps tool we missed?
@@ -564,7 +564,7 @@ function ToolCard({ tool }: { tool: Tool }) {
           {tool.description}
         </CardDescription>
       </CardHeader>
-      <CardContent className="pb-2 flex-grow">
+      <CardContent className="pb-2 grow">
         <div className="flex flex-wrap gap-2">
           {tool.badges?.map((badge) => (
             <Badge key={badge.text} variant={badge.variant || 'default'}>

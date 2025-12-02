@@ -26,7 +26,7 @@ export async function Hero() {
       {/* Background decorations */}
       <div className="absolute inset-0 -z-10">
         {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background" />
+        <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-background to-background" />
 
         {/* Grid pattern */}
         <div
@@ -68,7 +68,7 @@ export async function Hero() {
           <div className="pb-4">
             <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-7xl">
               <span className="block mb-2 text-foreground">DevOps Daily</span>
-              <span className="block bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-500 to-cyan-500 animate-gradient leading-[1.2]">
+              <span className="block bg-clip-text text-transparent bg-linear-to-r from-primary via-blue-500 to-cyan-500 animate-gradient leading-[1.2]">
                 Real Guides for Real Engineers
               </span>
             </h1>

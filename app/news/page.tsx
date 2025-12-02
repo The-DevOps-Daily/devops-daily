@@ -98,7 +98,7 @@ export default async function NewsPage() {
                     <Link href={`/news/${digest.slug}`} className="block">
                       <div className="grid md:grid-cols-3 gap-0">
                         {/* Image */}
-                        <div className="relative aspect-[16/9] md:aspect-auto overflow-hidden bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center p-4">
+                        <div className="relative aspect-video md:aspect-auto overflow-hidden bg-linear-to-br from-muted/50 to-muted flex items-center justify-center p-4">
                           <div className="relative w-full h-full">
                             <OptimizedImage
                               src={digest.image || '/images/placeholder.svg'}
@@ -182,26 +182,26 @@ export default async function NewsPage() {
               </p>
               <div className="space-y-1.5 text-sm">
                 <div className="flex items-start gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                  <div className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
                   <span className="text-muted-foreground text-xs">Kubernetes & Cloud Native</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                  <div className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
                   <span className="text-muted-foreground text-xs">CI/CD & GitOps</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                  <div className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
                   <span className="text-muted-foreground text-xs">Security & Compliance</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <div className="w-1 h-1 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                  <div className="w-1 h-1 rounded-full bg-primary mt-1.5 shrink-0" />
                   <span className="text-muted-foreground text-xs">Infrastructure as Code</span>
                 </div>
               </div>
             </div>
 
             {/* Subscribe Section */}
-            <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-5">
+            <div className="bg-linear-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-lg p-5">
               <h3 className="font-semibold text-base mb-2">Stay Updated</h3>
               <p className="text-xs text-muted-foreground mb-3.5">
                 Get weekly digests delivered to your feed reader.

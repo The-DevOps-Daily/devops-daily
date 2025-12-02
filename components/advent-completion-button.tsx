@@ -50,7 +50,7 @@ export function AdventCompletionButton({ day, title }: CompletionButtonProps) {
         }`}
       >
         <div className="flex items-start gap-4">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             {completed ? (
               <div className="p-3 rounded-full bg-green-500/20">
                 <Trophy className="h-8 w-8 text-green-500" />
@@ -78,7 +78,7 @@ export function AdventCompletionButton({ day, title }: CompletionButtonProps) {
               className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
                 completed
                   ? 'bg-muted hover:bg-muted/80 text-foreground'
-                  : 'bg-gradient-to-r from-primary to-blue-500 hover:shadow-lg hover:shadow-primary/50 text-white'
+                  : 'bg-linear-to-r from-primary to-blue-500 hover:shadow-lg hover:shadow-primary/50 text-white'
               } ${isAnimating ? 'scale-110' : 'scale-100'}`}
             >
               {completed ? (

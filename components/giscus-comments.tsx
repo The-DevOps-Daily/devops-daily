@@ -51,8 +51,8 @@ export function GiscusComments({ className, title }: GiscusCommentsProps) {
         transition={{ duration: 0.3 }}
         className={className}
       >
-        <div className="flex flex-col items-center justify-center py-12 px-4 bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 rounded-lg border border-border/50">
-          <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-primary/10 to-purple-500/10">
+        <div className="flex flex-col items-center justify-center py-12 px-4 bg-linear-to-br from-primary/5 via-purple-500/5 to-pink-500/5 rounded-lg border border-border/50">
+          <div className="flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-linear-to-br from-primary/10 to-purple-500/10">
             <MessageSquare className="w-8 h-8 text-primary" />
           </div>
           <h3 className="text-xl font-semibold mb-2">Join the Discussion</h3>
@@ -63,9 +63,9 @@ export function GiscusComments({ className, title }: GiscusCommentsProps) {
             onClick={handleLoadComments}
             disabled={isLoading}
             size="lg"
-            className="relative group overflow-hidden bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+            className="relative group overflow-hidden bg-linear-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
           >
-            <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            <span className="absolute inset-0 w-full h-full bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />

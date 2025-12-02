@@ -612,7 +612,7 @@ export default function K8sScheduler() {
   return (
     <div className="w-full">
       <div className="w-full mb-6 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/20">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-linear-to-r from-sky-500/10 to-cyan-500/10 border border-sky-500/20">
           <Sparkles className="w-4 h-4 text-sky-500" />
           <span className="text-sm text-muted-foreground">{level.title}</span>
         </div>
@@ -770,7 +770,7 @@ export default function K8sScheduler() {
                       </div>
                       <div className="h-2 rounded bg-muted overflow-hidden relative">
                         <div
-                          className="h-full bg-gradient-to-r from-sky-500 to-cyan-500 dark:from-sky-400 dark:to-cyan-400"
+                          className="h-full bg-linear-to-r from-sky-500 to-cyan-500 dark:from-sky-400 dark:to-cyan-400"
                           style={{ width: `${cpuPct}%` }}
                         />
                         {selectedPodId && (
@@ -789,7 +789,7 @@ export default function K8sScheduler() {
                       </div>
                       <div className="h-2 rounded bg-muted overflow-hidden relative">
                         <div
-                          className="h-full bg-gradient-to-r from-fuchsia-500 to-pink-500 dark:from-fuchsia-400 dark:to-pink-400"
+                          className="h-full bg-linear-to-r from-fuchsia-500 to-pink-500 dark:from-fuchsia-400 dark:to-pink-400"
                           style={{ width: `${memPct}%` }}
                         />
                         {selectedPodId && (
@@ -927,7 +927,7 @@ export default function K8sScheduler() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
             >
-              <div className="mx-auto max-w-xl p-4 rounded-xl border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-lg">
+              <div className="mx-auto max-w-xl p-4 rounded-xl border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 shadow-lg">
                 <div className="flex items-center gap-2 text-emerald-600 font-semibold">
                   <CheckCircle2 className="w-5 h-5" /> Level complete!
                 </div>

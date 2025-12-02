@@ -236,7 +236,7 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
     >
       <div className="w-full max-w-4xl bg-slate-900 rounded-lg border-2 border-blue-500 shadow-2xl overflow-hidden my-4">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4">
+        <div className="bg-linear-to-r from-blue-600 to-purple-600 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Rocket
@@ -327,7 +327,7 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
         <div className="p-4 bg-slate-900">
           <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
+              className="bg-linear-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
               style={{ width: `${((stage + 1) / stages.length) * 100}%` }}
             />
           </div>
@@ -355,7 +355,7 @@ const AchievementModal = ({ open, onClose }: { open: boolean; onClose: () => voi
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4" id="achievement-description">
-          <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 rounded-lg p-6 text-center">
+          <div className="bg-linear-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 rounded-lg p-6 text-center">
             <div className="text-6xl mb-4" aria-hidden="true">
               🚀
             </div>
@@ -600,7 +600,7 @@ export function EasterEggTerminal({ variant = 'icon' }: { variant?: 'icon' | 'te
 
       {/* Confetti */}
       {showConfetti && (
-        <div className="fixed inset-0 z-[9999] pointer-events-none">
+        <div className="fixed inset-0 z-9999 pointer-events-none">
           <Confetti recycle={false} numberOfPieces={500} gravity={0.3} />
         </div>
       )}

@@ -50,7 +50,7 @@ export default async function ExercisesPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 mb-12 md:grid-cols-4">
-        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 dark:border-blue-800">
+        <Card className="border-blue-200 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 dark:border-blue-800">
           <CardContent className="p-4 text-center">
             <Target className="w-8 h-8 mx-auto mb-2 text-blue-600" />
             <div className="text-2xl font-bold text-blue-600">{stats.total}</div>
@@ -58,7 +58,7 @@ export default async function ExercisesPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 dark:border-green-800">
+        <Card className="border-green-200 bg-linear-to-br from-green-50 to-green-100 dark:from-green-950/20 dark:to-green-900/20 dark:border-green-800">
           <CardContent className="p-4 text-center">
             <Users className="w-8 h-8 mx-auto mb-2 text-green-600" />
             <div className="text-2xl font-bold text-green-600">
@@ -68,7 +68,7 @@ export default async function ExercisesPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 dark:border-purple-800">
+        <Card className="border-purple-200 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-950/20 dark:to-purple-900/20 dark:border-purple-800">
           <CardContent className="p-4 text-center">
             <TrendingUp className="w-8 h-8 mx-auto mb-2 text-purple-600" />
             <div className="text-2xl font-bold text-purple-600">
@@ -78,7 +78,7 @@ export default async function ExercisesPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 dark:border-orange-800">
+        <Card className="border-orange-200 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-950/20 dark:to-orange-900/20 dark:border-orange-800">
           <CardContent className="p-4 text-center">
             <Clock className="w-8 h-8 mx-auto mb-2 text-orange-600" />
             <div className="text-2xl font-bold text-orange-600">

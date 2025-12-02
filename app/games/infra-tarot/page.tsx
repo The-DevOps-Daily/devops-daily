@@ -133,7 +133,7 @@ export default async function InfraTarotPage() {
           </div>
 
           {/* Educational Footer */}
-          <div className="w-full max-w-4xl mt-8 p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
+          <div className="w-full max-w-4xl mt-8 p-6 bg-linear-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 rounded-lg border border-purple-200 dark:border-purple-800">
             <h2 className="text-xl font-bold mb-4 text-center text-purple-700 dark:text-purple-300">
               The Art of Infrastructure Divination
             </h2>

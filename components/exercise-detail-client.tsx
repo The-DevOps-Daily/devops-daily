@@ -211,7 +211,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
           {/* Exercise Header */}
           <div className="mb-8">
             <div className="flex items-start gap-4 mb-4">
-              <div className="p-4 border rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <div className="p-4 border rounded-xl bg-linear-to-br from-primary/10 to-primary/5 border-primary/20">
                 <IconComponent className="w-8 h-8 text-primary" />
               </div>
 
@@ -304,7 +304,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                   <ul className="space-y-2">
                     {exercise.learningObjectives.map((objective, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 mt-0.5 text-primary flex-shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 mt-0.5 text-primary shrink-0" />
                         <span>{objective}</span>
                       </li>
                     ))}
@@ -348,7 +348,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                       >
                         <div
                           className={cn(
-                            'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5',
+                            'w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5',
                             completedSteps.includes(step.id)
                               ? 'bg-green-600 text-white'
                               : 'bg-primary/10'
@@ -564,7 +564,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                         <ul className="space-y-1">
                           {currentStepData.validationCriteria.map((criteria, index) => (
                             <li key={index} className="flex items-start gap-2">
-                              <CheckCircle2 className="w-4 h-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                              <CheckCircle2 className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
                               <span className="text-sm text-muted-foreground">{criteria}</span>
                             </li>
                           ))}
@@ -688,7 +688,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                             : 'hover:bg-muted/50'
                         )}
                       >
-                        <div className="flex-shrink-0 mt-0.5">
+                        <div className="shrink-0 mt-0.5">
                           {completedSteps.includes(step.id) ? (
                             <CheckCircle2 className="w-4 h-4 text-green-600" />
                           ) : currentStep === index ? (
@@ -735,7 +735,7 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                         className="block p-2 transition-colors rounded-lg hover:bg-muted/50"
                       >
                         <div className="flex items-start gap-2">
-                          <ExternalLink className="flex-shrink-0 w-3 h-3 mt-1 text-muted-foreground" />
+                          <ExternalLink className="shrink-0 w-3 h-3 mt-1 text-muted-foreground" />
                           <div className="min-w-0">
                             <div className="text-sm font-medium text-primary hover:text-primary/80">
                               {resource.title}

@@ -1290,7 +1290,7 @@ const SkillModal = ({
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start gap-4 mb-4">
-            <div className="p-3 border rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <div className="p-3 border rounded-xl bg-linear-to-br from-primary/10 to-primary/5 border-primary/20">
               <SkillIcon className="w-6 h-6 text-primary" />
             </div>
             <div className="flex-1">
@@ -1375,7 +1375,7 @@ const SkillModal = ({
                             <Badge
                               variant="secondary"
                               className={cn(
-                                'text-xs flex-shrink-0',
+                                'text-xs shrink-0',
                                 resourceTypeBadges[resource.type]
                               )}
                             >
@@ -1469,7 +1469,7 @@ const SkillCard = ({
           <div
             className={cn(
               'p-2 rounded-lg transition-all duration-300 group-hover/skill:scale-110',
-              stageColor ? `bg-gradient-to-br ${stageColor} bg-opacity-10` : 'bg-muted'
+              stageColor ? `bg-linear-to-br ${stageColor} bg-opacity-10` : 'bg-muted'
             )}
           >
             <SkillIcon className="w-4 h-4" />
@@ -1501,7 +1501,7 @@ const SkillCard = ({
         </div>
       )}
 
-      <div className="absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none rounded-xl bg-gradient-to-br from-primary/5 to-transparent group-hover/skill:opacity-100" />
+      <div className="absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none rounded-xl bg-linear-to-br from-primary/5 to-transparent group-hover/skill:opacity-100" />
     </div>
   );
 
@@ -1554,7 +1554,7 @@ const CareerProgressionCard = ({
         <div
           className={cn(
             'p-2 rounded-lg',
-            stageColor ? `bg-gradient-to-br ${stageColor} bg-opacity-10` : 'bg-muted'
+            stageColor ? `bg-linear-to-br ${stageColor} bg-opacity-10` : 'bg-muted'
           )}
         >
           <Briefcase className="w-4 h-4" />
@@ -1610,7 +1610,7 @@ const ProjectCard = ({ project, stageColor }: { project: RoadmapProject; stageCo
           <div
             className={cn(
               'p-2 rounded-lg transition-all duration-300 group-hover/project:scale-110',
-              stageColor ? `bg-gradient-to-br ${stageColor} bg-opacity-10` : 'bg-muted'
+              stageColor ? `bg-linear-to-br ${stageColor} bg-opacity-10` : 'bg-muted'
             )}
           >
             <Code className="w-4 h-4" />
@@ -1655,7 +1655,7 @@ const ProjectCard = ({ project, stageColor }: { project: RoadmapProject; stageCo
         )}
       </div>
 
-      <div className="absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none rounded-xl bg-gradient-to-br from-primary/5 to-transparent group-hover/project:opacity-100" />
+      <div className="absolute inset-0 transition-opacity duration-300 opacity-0 pointer-events-none rounded-xl bg-linear-to-br from-primary/5 to-transparent group-hover/project:opacity-100" />
     </div>
   );
 
@@ -1690,7 +1690,7 @@ const MarketContextCard = ({
         <div
           className={cn(
             'p-2 rounded-lg',
-            stageColor ? `bg-gradient-to-br ${stageColor} bg-opacity-10` : 'bg-muted'
+            stageColor ? `bg-linear-to-br ${stageColor} bg-opacity-10` : 'bg-muted'
           )}
         >
           <TrendingUp className="w-4 h-4" />
@@ -1734,7 +1734,7 @@ export default function RoadmapPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+    <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
       {/* Enhanced Hero Section with Animations */}
       <RoadmapHero />
 
@@ -1757,8 +1757,8 @@ export default function RoadmapPage() {
             {/* Desktop Timeline */}
             <div className="relative hidden lg:block">
               <div className="absolute w-2 h-full transform -translate-x-1/2 left-1/2">
-                <div className="w-full h-full rounded-full bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 opacity-20" />
-                <div className="absolute inset-0 w-1 mx-auto rounded-full bg-gradient-to-b from-blue-500 via-purple-500 to-pink-500 animate-pulse" />
+                <div className="w-full h-full rounded-full bg-linear-to-b from-blue-500 via-purple-500 to-pink-500 opacity-20" />
+                <div className="absolute inset-0 w-1 mx-auto rounded-full bg-linear-to-b from-blue-500 via-purple-500 to-pink-500 animate-pulse" />
               </div>
 
               {roadmapStages.map((stage, index) => (
@@ -1769,7 +1769,7 @@ export default function RoadmapPage() {
                       className={cn(
                         'w-12 h-12 rounded-full border-4 border-background flex items-center justify-center transition-all duration-300 hover:scale-125',
                         stage.id === 'lifetime'
-                          ? 'bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-500 animate-pulse'
+                          ? 'bg-linear-to-r from-yellow-500 via-pink-500 to-purple-500 animate-pulse'
                           : 'bg-primary shadow-lg shadow-primary/25'
                       )}
                     >
@@ -1785,7 +1785,7 @@ export default function RoadmapPage() {
                         <div
                           className={cn(
                             'absolute inset-0 rounded-lg opacity-5 transition-opacity duration-300 group-hover:opacity-10',
-                            stage.color && `bg-gradient-to-br ${stage.color}`
+                            stage.color && `bg-linear-to-br ${stage.color}`
                           )}
                         />
 
@@ -1795,9 +1795,9 @@ export default function RoadmapPage() {
                               className={cn(
                                 'p-3 rounded-xl transition-all duration-300 group-hover:scale-110 shadow-lg',
                                 stage.id === 'lifetime'
-                                  ? 'bg-gradient-to-br from-yellow-500/20 via-pink-500/20 to-purple-500/20'
+                                  ? 'bg-linear-to-br from-yellow-500/20 via-pink-500/20 to-purple-500/20'
                                   : 'bg-muted',
-                                stage.color && `bg-gradient-to-br ${stage.color} bg-opacity-10`
+                                stage.color && `bg-linear-to-br ${stage.color} bg-opacity-10`
                               )}
                             >
                               <stage.icon className="w-6 h-6" />
@@ -1822,7 +1822,7 @@ export default function RoadmapPage() {
                             className={cn(
                               'flex items-center gap-1 transition-all duration-300 px-3 py-1 w-fit',
                               stage.id === 'lifetime' &&
-                                'bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-500 text-white border-none'
+                                'bg-linear-to-r from-yellow-500 via-pink-500 to-purple-500 text-white border-none'
                             )}
                           >
                             {stage.id === 'lifetime' ? (
@@ -1956,7 +1956,7 @@ export default function RoadmapPage() {
                                     key={outcome}
                                     className="flex items-center gap-2 text-xs text-green-700 dark:text-green-300"
                                   >
-                                    <CheckCircle2 className="flex-shrink-0 w-3 h-3" />
+                                    <CheckCircle2 className="shrink-0 w-3 h-3" />
                                     {outcome}
                                   </li>
                                 ))}
@@ -1976,7 +1976,7 @@ export default function RoadmapPage() {
               {roadmapStages.map((stage, index) => (
                 <div key={stage.id} className="relative">
                   {index < roadmapStages.length - 1 && (
-                    <div className="absolute w-1 h-12 rounded-full top-full left-8 bg-gradient-to-b from-primary/50 to-primary/20" />
+                    <div className="absolute w-1 h-12 rounded-full top-full left-8 bg-linear-to-b from-primary/50 to-primary/20" />
                   )}
 
                   <Card
@@ -1989,7 +1989,7 @@ export default function RoadmapPage() {
                     <div
                       className={cn(
                         'absolute inset-0 rounded-lg opacity-5 transition-opacity duration-300 group-hover:opacity-10',
-                        stage.color && `bg-gradient-to-br ${stage.color}`
+                        stage.color && `bg-linear-to-br ${stage.color}`
                       )}
                     />
 
@@ -2000,7 +2000,7 @@ export default function RoadmapPage() {
                             className={cn(
                               'p-3 rounded-lg transition-all duration-300',
                               stage.id === 'lifetime'
-                                ? 'bg-gradient-to-br from-yellow-500/20 via-pink-500/20 to-purple-500/20'
+                                ? 'bg-linear-to-br from-yellow-500/20 via-pink-500/20 to-purple-500/20'
                                 : 'bg-muted'
                             )}
                           >
@@ -2024,7 +2024,7 @@ export default function RoadmapPage() {
                           className={cn(
                             'flex items-center gap-1',
                             stage.id === 'lifetime' &&
-                              'bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-500 text-white border-none'
+                              'bg-linear-to-r from-yellow-500 via-pink-500 to-purple-500 text-white border-none'
                           )}
                         >
                           {stage.id === 'lifetime' ? (
@@ -2183,14 +2183,14 @@ export default function RoadmapPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-b from-background via-muted/20 to-background">
+      <section className="bg-linear-to-b from-background via-muted/20 to-background">
         <div>
           <div>
-            <Card className="border-0 shadow-2xl bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm">
+            <Card className="border-0 shadow-2xl bg-linear-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm">
               <CardContent className="p-12 text-center">
                 <Sparkles className="w-12 h-12 mx-auto mb-6 text-yellow-500 animate-pulse" />
 
-                <h2 className="mb-6 text-3xl font-bold text-transparent md:text-4xl bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text">
+                <h2 className="mb-6 text-3xl font-bold text-transparent md:text-4xl bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text">
                   Ready to Begin Your DevOps Journey?
                 </h2>
 
@@ -2203,7 +2203,7 @@ export default function RoadmapPage() {
                   <Button
                     asChild
                     size="lg"
-                    className="transition-all duration-300 transform shadow-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105"
+                    className="transition-all duration-300 transform shadow-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105"
                   >
                     <Link href="/guides">
                       <BookOpen className="w-4 h-4 mr-2" />

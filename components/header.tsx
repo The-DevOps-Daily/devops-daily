@@ -280,7 +280,7 @@ function DropdownMenu({
         >
           {/* Menu Content */}
           <div className="bg-background/95 backdrop-blur-xl border border-border/80 rounded-xl shadow-2xl shadow-black/20 dark:shadow-black/50 overflow-hidden w-[420px] max-w-[90vw] ring-1 ring-white/10">
-            <div className="p-6 bg-gradient-to-br from-background/50 to-muted/20">
+            <div className="p-6 bg-linear-to-br from-background/50 to-muted/20">
               <div className="grid grid-cols-1 gap-6">
                 {sections.map((section, sectionIndex) => (
                   <div key={sectionIndex} className="space-y-3">
@@ -316,8 +316,8 @@ function DropdownMenu({
                           className={cn(
                             'text-base font-bold text-transparent bg-clip-text',
                             section.color
-                              ? `bg-gradient-to-r ${sectionColors[section.color as keyof typeof sectionColors]?.gradient || sectionColors.primary.gradient}`
-                              : `bg-gradient-to-r ${sectionColors.primary.gradient}`
+                              ? `bg-linear-to-r ${sectionColors[section.color as keyof typeof sectionColors]?.gradient || sectionColors.primary.gradient}`
+                              : `bg-linear-to-r ${sectionColors.primary.gradient}`
                           )}
                         >
                           {section.title}
@@ -339,20 +339,20 @@ function DropdownMenu({
                           onClick={onClose}
                           className={cn(
                             'group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 border',
-                            'hover:bg-gradient-to-r hover:from-primary/5 hover:to-purple-500/5 hover:shadow-md hover:scale-[1.01] hover:border-primary/20',
+                            'hover:bg-linear-to-r hover:from-primary/5 hover:to-purple-500/5 hover:shadow-md hover:scale-[1.01] hover:border-primary/20',
                             'border-transparent hover:border-primary/10',
                             item.featured &&
-                              'bg-gradient-to-r from-primary/8 to-purple-500/8 border border-primary/20 shadow-md'
+                              'bg-linear-to-r from-primary/8 to-purple-500/8 border border-primary/20 shadow-md'
                           )}
                           target={item.external ? '_blank' : undefined}
                           rel={item.external ? 'noopener noreferrer' : undefined}
                         >
                           <div
                             className={cn(
-                              'flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300',
+                              'shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300',
                               item.featured
-                                ? 'bg-gradient-to-br from-primary/20 to-purple-500/20 text-primary group-hover:bg-primary/30 border border-primary/20'
-                                : 'bg-gradient-to-br from-muted to-muted/50 group-hover:bg-gradient-to-br group-hover:from-primary/15 group-hover:to-purple-500/15 text-muted-foreground group-hover:text-primary border border-border/50'
+                                ? 'bg-linear-to-br from-primary/20 to-purple-500/20 text-primary group-hover:bg-primary/30 border border-primary/20'
+                                : 'bg-linear-to-br from-muted to-muted/50 group-hover:bg-linear-to-br group-hover:from-primary/15 group-hover:to-purple-500/15 text-muted-foreground group-hover:text-primary border border-border/50'
                             )}
                           >
                             {item.icon ? (
@@ -373,7 +373,7 @@ function DropdownMenu({
                                 {item.label}
                               </h4>
                               {item.badge && (
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-primary to-purple-600 text-white text-xs rounded-full font-bold">
+                                <span className="px-2 py-0.5 bg-linear-to-r from-primary to-purple-600 text-white text-xs rounded-full font-bold">
                                   {item.badge}
                                 </span>
                               )}
@@ -544,7 +544,7 @@ export function Header() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 right-0 z-[60] w-full px-6 py-6 bg-background/95 border-l shadow-2xl sm:max-w-sm border-border/80 ring-1 ring-white/10 overflow-y-auto"
+              className="fixed inset-y-0 right-0 z-60 w-full px-6 py-6 bg-background/95 border-l shadow-2xl sm:max-w-sm border-border/80 ring-1 ring-white/10 overflow-y-auto"
             >
               {/* Mobile menu header */}
               <div className="flex items-center justify-between mb-8">
@@ -572,15 +572,15 @@ export function Header() {
                       <Link
                         key={item.href}
                         href={item.href}
-                        className="flex items-center gap-4 px-4 text-base font-semibold leading-7 transition-all duration-300 border border-transparent rounded-2xl hover:bg-gradient-to-r hover:from-primary/10 hover:to-purple-500/10 hover:shadow-md hover:border-primary/20"
+                        className="flex items-center gap-4 px-4 text-base font-semibold leading-7 transition-all duration-300 border border-transparent rounded-2xl hover:bg-linear-to-r hover:from-primary/10 hover:to-purple-500/10 hover:shadow-md hover:border-primary/20"
                         onClick={() => setMobileMenuOpen(false)}
                       >
-                        <div className="p-3 border rounded-2xl bg-gradient-to-br from-primary/15 to-purple-500/15 border-primary/20">
+                        <div className="p-3 border rounded-2xl bg-linear-to-br from-primary/15 to-purple-500/15 border-primary/20">
                           <item.icon className="w-6 h-6 text-primary" />
                         </div>
                         <span className="flex-1">{item.label}</span>
                         {item.badge && (
-                          <span className="px-3 py-1 text-xs font-bold text-white rounded-full bg-gradient-to-r from-primary to-purple-600">
+                          <span className="px-3 py-1 text-xs font-bold text-white rounded-full bg-linear-to-r from-primary to-purple-600">
                             {item.badge}
                           </span>
                         )}
@@ -598,7 +598,7 @@ export function Header() {
                         <Link
                           key={index + item.href}
                           href={item.href}
-                          className="flex items-center gap-4 px-4 text-base font-semibold leading-7 transition-all duration-300 border border-transparent rounded-2xl hover:bg-gradient-to-r hover:from-primary/10 hover:to-purple-500/10 hover:shadow-md hover:border-primary/20"
+                          className="flex items-center gap-4 px-4 text-base font-semibold leading-7 transition-all duration-300 border border-transparent rounded-2xl hover:bg-linear-to-r hover:from-primary/10 hover:to-purple-500/10 hover:shadow-md hover:border-primary/20"
                           onClick={() => setMobileMenuOpen(false)}
                           target={item.external ? '_blank' : undefined}
                           rel={item.external ? 'noopener noreferrer' : undefined}
@@ -607,8 +607,8 @@ export function Header() {
                             className={cn(
                               'p-3 rounded-2xl border',
                               item.featured
-                                ? 'bg-gradient-to-br from-primary/20 to-purple-500/20 border-primary/30'
-                                : 'bg-gradient-to-br from-muted to-muted/50 border-border/50'
+                                ? 'bg-linear-to-br from-primary/20 to-purple-500/20 border-primary/30'
+                                : 'bg-linear-to-br from-muted to-muted/50 border-border/50'
                             )}
                           >
                             {item.icon && (
@@ -624,7 +624,7 @@ export function Header() {
                             <div className="flex items-center gap-2 mb-1">
                               <span>{item.label}</span>
                               {item.badge && (
-                                <span className="px-3 py-1 text-xs font-bold text-white rounded-full bg-gradient-to-r from-primary to-purple-600">
+                                <span className="px-3 py-1 text-xs font-bold text-white rounded-full bg-linear-to-r from-primary to-purple-600">
                                   {item.badge}
                                 </span>
                               )}
@@ -653,12 +653,12 @@ export function Header() {
                         <Link
                           key={index + item.href}
                           href={item.href}
-                          className="flex items-center gap-4 px-4 text-base font-semibold leading-7 transition-all duration-300 border border-transparent rounded-2xl hover:bg-gradient-to-r hover:from-primary/10 hover:to-purple-500/10 hover:shadow-md hover:border-primary/20"
+                          className="flex items-center gap-4 px-4 text-base font-semibold leading-7 transition-all duration-300 border border-transparent rounded-2xl hover:bg-linear-to-r hover:from-primary/10 hover:to-purple-500/10 hover:shadow-md hover:border-primary/20"
                           onClick={() => setMobileMenuOpen(false)}
                           target={item.external ? '_blank' : undefined}
                           rel={item.external ? 'noopener noreferrer' : undefined}
                         >
-                          <div className="p-3 border rounded-2xl bg-gradient-to-br from-muted to-muted/50 border-border/50">
+                          <div className="p-3 border rounded-2xl bg-linear-to-br from-muted to-muted/50 border-border/50">
                             {item.icon && <item.icon className="w-6 h-6 text-muted-foreground" />}
                           </div>
                           <div className="flex-1">

@@ -422,7 +422,7 @@ export default function UptimeDefender() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-4 bg-linear-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
             Uptime Defender
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
@@ -438,23 +438,23 @@ export default function UptimeDefender() {
                 </h2>
                 <div className="text-left space-y-3">
                   <p className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
                     <span>Incidents will appear as alerts that need immediate action</span>
                   </p>
                   <p className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
                     <span>Click the correct action button to resolve each incident</span>
                   </p>
                   <p className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 shrink-0" />
                     <span>Resolve incidents quickly for bonus points and combo multipliers</span>
                   </p>
                   <p className="flex items-start gap-2">
-                    <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 flex-shrink-0" />
+                    <AlertTriangle className="w-5 h-5 text-orange-500 mt-0.5 shrink-0" />
                     <span>Missing incidents or wrong actions will drain your uptime</span>
                   </p>
                   <p className="flex items-start gap-2">
-                    <Heart className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <Heart className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
                     <span>Keep your uptime above 0% and survive for 60 seconds!</span>
                   </p>
                 </div>
@@ -486,7 +486,7 @@ export default function UptimeDefender() {
           <Button
             onClick={startGame}
             size="lg"
-            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xl px-8 py-6 h-auto"
+            className="bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xl px-8 py-6 h-auto"
           >
             <Play className="w-6 h-6 mr-2" />
             Start Game
@@ -584,7 +584,7 @@ export default function UptimeDefender() {
             <Button
               onClick={startGame}
               size="lg"
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+              className="bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
             >
               <Play className="w-5 h-5 mr-2" />
               Play Again
@@ -711,7 +711,7 @@ export default function UptimeDefender() {
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
                     className="relative"
                   >
-                    <Card className={`p-4 border-2 bg-gradient-to-br ${incident.type.color} bg-opacity-10`}>
+                    <Card className={`p-4 border-2 bg-linear-to-br ${incident.type.color} bg-opacity-10`}>
                       <div className="flex items-start gap-3">
                         <div className={`p-2 rounded-lg bg-white dark:bg-gray-900`}>
                           <IncidentIcon className={`w-6 h-6 ${incident.type.textColor}`} />

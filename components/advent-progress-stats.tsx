@@ -40,7 +40,7 @@ export function AdventProgressStats() {
         </div>
         <div className="h-3 bg-muted border border-border rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-primary via-blue-500 to-green-500 transition-all duration-500 ease-out"
+            className="h-full bg-linear-to-r from-primary via-blue-500 to-green-500 transition-all duration-500 ease-out"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -68,7 +68,7 @@ export function AdventProgressStats() {
 
       {/* Completion message */}
       {totalCompleted === 25 && (
-        <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-green-500/20 to-blue-500/20 border border-green-500/30">
+        <div className="mt-4 p-4 rounded-lg bg-linear-to-r from-green-500/20 to-blue-500/20 border border-green-500/30">
           <div className="flex items-center gap-2 mb-2">
             <Award className="h-5 w-5 text-green-500" />
             <span className="font-semibold text-green-600 dark:text-green-500">

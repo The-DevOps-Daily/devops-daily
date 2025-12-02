@@ -51,7 +51,7 @@ export default async function AdventOfDevOpsPage() {
       {/* Hero Section with Gradient Background */}
       <div className="relative overflow-hidden">
         {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-green-500/5" />
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-background to-green-500/5" />
         <div className="absolute inset-0">
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
@@ -82,13 +82,13 @@ export default async function AdventOfDevOpsPage() {
         <div className="container relative mx-auto px-4 py-16 md:py-24">
           {/* Hero Content */}
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-red-500/20 to-green-500/20 border border-primary/30 mb-6 animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-red-500/20 to-green-500/20 border border-primary/30 mb-6 animate-fade-in">
               <Gift className="h-4 w-4 text-primary" />
               <span className="text-sm font-medium">25 Days of DevOps Challenges</span>
             </div>
 
             <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in-up">
-              <span className="bg-gradient-to-r from-red-500 via-primary to-green-500 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-red-500 via-primary to-green-500 bg-clip-text text-transparent">
                 Advent of DevOps
               </span>
             </h1>
@@ -115,7 +115,7 @@ export default async function AdventOfDevOpsPage() {
             <div className="flex flex-wrap items-center justify-center gap-4 animate-fade-in-up delay-300">
               <Link
                 href="#challenges"
-                className="group inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-primary to-blue-500 text-white font-medium hover:shadow-lg hover:shadow-primary/50 transition-all hover:-translate-y-0.5"
+                className="group inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-linear-to-r from-primary to-blue-500 text-white font-medium hover:shadow-lg hover:shadow-primary/50 transition-all hover:-translate-y-0.5"
               >
                 <Sparkles className="h-5 w-5" />
                 Start Challenge
@@ -139,7 +139,7 @@ export default async function AdventOfDevOpsPage() {
               </div>
               <div className="h-3 bg-card border border-border rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-red-500 via-primary to-green-500 transition-all duration-1000 ease-out"
+                  className="h-full bg-linear-to-r from-red-500 via-primary to-green-500 transition-all duration-1000 ease-out"
                   style={{ width: `${(currentDay / 25) * 100}%` }}
                 />
               </div>
@@ -171,7 +171,7 @@ export default async function AdventOfDevOpsPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto">
           <div className="relative rounded-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-blue-500/20 to-green-500/20" />
+            <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-blue-500/20 to-green-500/20" />
             <div className="relative px-8 py-12 text-center">
               <h2 className="text-3xl font-bold mb-4">Ready to Start Your Journey?</h2>
               <p className="text-lg text-muted-foreground mb-8">
@@ -188,7 +188,7 @@ export default async function AdventOfDevOpsPage() {
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <Link
                   href="/advent-of-devops/day-1"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-primary to-blue-500 text-white font-medium hover:shadow-lg hover:shadow-primary/50 transition-all"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-linear-to-r from-primary to-blue-500 text-white font-medium hover:shadow-lg hover:shadow-primary/50 transition-all"
                 >
                   <Trophy className="h-5 w-5" />
                   Start Day 1

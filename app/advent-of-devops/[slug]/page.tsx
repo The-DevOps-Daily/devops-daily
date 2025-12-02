@@ -123,7 +123,7 @@ export default async function AdventDayPage({
               <header className="mb-8">
                 {/* Day Badge */}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold bg-gradient-to-r from-red-500 to-green-500 text-white">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold bg-linear-to-r from-red-500 to-green-500 text-white">
                     <Calendar className="h-4 w-4" />
                     Day {day.day} of 25
                   </div>
@@ -147,7 +147,7 @@ export default async function AdventDayPage({
                   )}
                 </div>
 
-                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-linear-to-r from-primary to-blue-500 bg-clip-text text-transparent">
                   {day.title}
                 </h1>
 
@@ -196,7 +196,7 @@ export default async function AdventDayPage({
               <AdventDayClient day={day.day} title={day.title} />
 
               {/* Social Sharing Call-to-Action */}
-              <div className="mt-12 p-6 rounded-xl bg-gradient-to-br from-primary/10 via-background to-blue-500/10 border border-primary/20">
+              <div className="mt-12 p-6 rounded-xl bg-linear-to-br from-primary/10 via-background to-blue-500/10 border border-primary/20">
                 <div className="flex items-start gap-4">
                   <div className="p-3 rounded-full bg-primary/20">
                     <Share2 className="h-6 w-6 text-primary" />

@@ -137,26 +137,26 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
   };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-purple-50 via-blue-50/30 to-background dark:from-purple-950/20 dark:via-blue-950/10 dark:to-background">
+    <section className="relative overflow-hidden bg-linear-to-b from-purple-50 via-blue-50/30 to-background dark:from-purple-950/20 dark:via-blue-950/10 dark:to-background">
       {/* Animated gradient orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           custom={1}
           variants={orbVariants}
           animate="animate"
-          className="absolute w-[600px] h-[600px] bg-gradient-to-r from-purple-400 to-pink-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -top-48 -left-48"
+          className="absolute w-[600px] h-[600px] bg-linear-to-r from-purple-400 to-pink-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -top-48 -left-48"
         />
         <motion.div
           custom={1.5}
           variants={orbVariants}
           animate="animate"
-          className="absolute w-[700px] h-[700px] bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -bottom-48 -right-48"
+          className="absolute w-[700px] h-[700px] bg-linear-to-r from-blue-400 to-cyan-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -bottom-48 -right-48"
         />
         <motion.div
           custom={2}
           variants={orbVariants}
           animate="animate"
-          className="absolute w-[500px] h-[500px] bg-gradient-to-r from-indigo-400 to-purple-400 rounded-full blur-3xl opacity-15 dark:opacity-8 top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          className="absolute w-[500px] h-[500px] bg-linear-to-r from-indigo-400 to-purple-400 rounded-full blur-3xl opacity-15 dark:opacity-8 top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2"
         />
       </div>
 
@@ -171,7 +171,7 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
             custom={i}
             variants={particleVariants}
             animate="animate"
-            className="absolute w-2 h-2 bg-gradient-to-br from-purple-400 to-blue-400 rounded-full"
+            className="absolute w-2 h-2 bg-linear-to-br from-purple-400 to-blue-400 rounded-full"
             style={{
               left: `${8 + (i * 6.5) % 84}%`,
               bottom: '5%',
@@ -226,7 +226,7 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
             <motion.span
               variants={shimmerVariants}
               animate="animate"
-              className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 dark:from-purple-400 dark:via-blue-400 dark:to-indigo-400"
+              className="block text-transparent bg-clip-text bg-linear-to-r from-purple-600 via-blue-600 to-indigo-600 dark:from-purple-400 dark:via-blue-400 dark:to-indigo-400"
               style={{
                 backgroundSize: '200% 200%',
               }}
@@ -280,7 +280,7 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
                 className="relative p-6 overflow-hidden transition-all duration-300 border shadow-lg group bg-background/80 backdrop-blur-sm rounded-xl hover:shadow-2xl hover:border-purple-300 dark:hover:border-purple-700 border-border"
               >
                 {/* Card shine effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <div
                   className={`w-12 h-12 mx-auto mb-3 flex items-center justify-center rounded-lg ${stat.bgColor}`}
                 >
@@ -347,7 +347,7 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
                   repeat: Infinity,
                   ease: 'easeInOut',
                 }}
-                className="relative p-5 bg-gradient-to-br from-purple-500 via-blue-600 to-indigo-600 rounded-full shadow-2xl"
+                className="relative p-5 bg-linear-to-br from-purple-500 via-blue-600 to-indigo-600 rounded-full shadow-2xl"
               >
                 <Brain className="w-10 h-10 text-white" />
               </motion.div>

@@ -33,7 +33,7 @@ export function CookieBanner() {
     <div
       className={`
         fixed bottom-4 left-4 right-4 md:right-auto md:left-4 md:max-w-sm z-50 
-        bg-gradient-to-br from-card/95 to-background/95 backdrop-blur-lg 
+        bg-linear-to-br from-card/95 to-background/95 backdrop-blur-lg 
         border border-border/50 rounded-2xl shadow-2xl shadow-primary/5
         transform transition-all duration-500 ease-out
         ${isLoaded ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}
@@ -41,13 +41,13 @@ export function CookieBanner() {
       style={{ willChange: 'transform, opacity' }}
     >
       {/* Gradient border accent */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-purple-500/20 to-primary/20 rounded-2xl opacity-50 blur-sm" />
+      <div className="absolute inset-0 bg-linear-to-r from-primary/20 via-purple-500/20 to-primary/20 rounded-2xl opacity-50 blur-sm" />
 
       <div className="relative p-4">
         {/* Header with icon and close button */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-lg">
+            <div className="p-1.5 bg-linear-to-br from-primary/10 to-purple-500/10 rounded-lg">
               <Cookie className="h-4 w-4 text-primary" />
             </div>
             <span className="text-sm font-medium text-foreground">Cookie Notice</span>
@@ -74,7 +74,7 @@ export function CookieBanner() {
             onClick={acceptCookies}
             className="
               inline-flex items-center justify-center gap-1.5 px-4 py-2 
-              bg-gradient-to-r from-primary to-primary/90 
+              bg-linear-to-r from-primary to-primary/90 
               hover:from-primary/90 hover:to-primary/80
               text-primary-foreground text-sm font-medium 
               rounded-xl transition-all duration-200 

@@ -367,7 +367,7 @@ export default function InfraTarot() {
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
               >
-                <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500 bg-clip-text text-transparent drop-shadow-sm">
+                <h1 className="text-5xl md:text-7xl font-bold bg-linear-to-r from-purple-600 via-blue-600 to-cyan-500 bg-clip-text text-transparent drop-shadow-sm">
                   Infra Tarot
                 </h1>
               </motion.div>
@@ -407,7 +407,7 @@ export default function InfraTarot() {
         >
           <Badge
             variant="secondary"
-            className="text-sm px-6 py-3 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 border-purple-200 dark:border-purple-700 shadow-lg"
+            className="text-sm px-6 py-3 bg-linear-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 border-purple-200 dark:border-purple-700 shadow-lg"
           >
             🎭 For entertainment purposes only (your prod environment is still your responsibility)
           </Badge>
@@ -428,7 +428,7 @@ export default function InfraTarot() {
               onClick={drawCards}
               disabled={isRevealing}
               size="lg"
-              className="bg-gradient-to-r from-purple-600 via-purple-700 to-blue-600 hover:from-purple-700 hover:via-purple-800 hover:to-blue-700 text-white px-10 py-6 text-xl font-semibold shadow-2xl hover:shadow-purple-500/25 transition-all duration-300"
+              className="bg-linear-to-r from-purple-600 via-purple-700 to-blue-600 hover:from-purple-700 hover:via-purple-800 hover:to-blue-700 text-white px-10 py-6 text-xl font-semibold shadow-2xl hover:shadow-purple-500/25 transition-all duration-300"
             >
               {isRevealing ? (
                 <>
@@ -506,7 +506,7 @@ export default function InfraTarot() {
                     <Card
                       className={cn(
                         'cursor-pointer transform transition-all duration-500 relative overflow-hidden',
-                        'bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800',
+                        'bg-linear-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800',
                         'border-2 shadow-xl hover:shadow-2xl',
                         cardFlips[index]
                           ? 'shadow-2xl border-purple-200 dark:border-purple-700'
@@ -526,7 +526,7 @@ export default function InfraTarot() {
 
                       {!cardFlips[index] ? (
                         // Card Back - Enhanced Design
-                        <div className="relative h-96 flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-blue-900 overflow-hidden">
+                        <div className="relative h-96 flex items-center justify-center bg-linear-to-br from-purple-900 via-purple-800 to-blue-900 overflow-hidden">
                           {/* Mystical background pattern */}
                           <div className="absolute inset-0 opacity-20">
                             <div className="absolute top-4 left-4 text-purple-300">✦</div>
@@ -605,7 +605,7 @@ export default function InfraTarot() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   transition={{ delay: 0.5, duration: 0.8, type: 'spring' }}
                 >
-                  <Card className="bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/40 dark:via-blue-950/40 dark:to-indigo-950/40 border-2 border-purple-200 dark:border-purple-700 shadow-2xl">
+                  <Card className="bg-linear-to-br from-purple-50 via-blue-50 to-indigo-50 dark:from-purple-950/40 dark:via-blue-950/40 dark:to-indigo-950/40 border-2 border-purple-200 dark:border-purple-700 shadow-2xl">
                     <CardHeader className="text-center pb-6">
                       <motion.div
                         initial={{ scale: 0.8 }}
@@ -687,13 +687,13 @@ export default function InfraTarot() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8, duration: 0.6 }}
       >
-        <div className="bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl p-8 border border-muted-foreground/10 shadow-lg">
+        <div className="bg-linear-to-br from-muted/30 to-muted/10 rounded-xl p-8 border border-muted-foreground/10 shadow-lg">
           <motion.div
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
             transition={{ delay: 1, duration: 0.5 }}
           >
-            <h2 className="text-3xl font-bold mb-8 text-center bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h2 className="text-3xl font-bold mb-8 text-center bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
               About Infra Tarot
             </h2>
           </motion.div>
@@ -762,7 +762,7 @@ export default function InfraTarot() {
             </motion.div>
           </div>
           <motion.div
-            className="mt-8 p-6 bg-gradient-to-r from-yellow-50 via-orange-50 to-yellow-50 dark:from-yellow-950/20 dark:via-orange-950/20 dark:to-yellow-950/20 rounded-xl border-2 border-yellow-200 dark:border-yellow-800 shadow-inner"
+            className="mt-8 p-6 bg-linear-to-r from-yellow-50 via-orange-50 to-yellow-50 dark:from-yellow-950/20 dark:via-orange-950/20 dark:to-yellow-950/20 rounded-xl border-2 border-yellow-200 dark:border-yellow-800 shadow-inner"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 1.6, duration: 0.5 }}

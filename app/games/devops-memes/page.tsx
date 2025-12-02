@@ -42,8 +42,8 @@ export default async function DevOpsMemesPage() {
 
           {/* Educational Content */}
           <div className="w-full max-w-4xl mt-16 space-y-8">
-            <div className="bg-gradient-to-br from-orange-50/50 to-red-50/50 dark:from-orange-950/20 dark:to-red-950/20 rounded-xl p-8 border border-orange-200/50 dark:border-orange-700/50">
-              <h2 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+            <div className="bg-linear-to-br from-orange-50/50 to-red-50/50 dark:from-orange-950/20 dark:to-red-950/20 rounded-xl p-8 border border-orange-200/50 dark:border-orange-700/50">
+              <h2 className="text-2xl font-bold mb-6 text-center bg-linear-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
                 Why DevOps Memes Matter
               </h2>
 
@@ -111,7 +111,7 @@ export default async function DevOpsMemesPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-xl p-6 border border-blue-200/50 dark:border-blue-700/50">
+            <div className="bg-linear-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-xl p-6 border border-blue-200/50 dark:border-blue-700/50">
               <h3 className="text-lg font-semibold mb-3 text-blue-600 dark:text-blue-400">
                 💡 How to Use These Memes
               </h3>

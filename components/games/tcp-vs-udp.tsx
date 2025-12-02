@@ -378,7 +378,7 @@ export default function TcpVsUdpSimulator() {
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700 pb-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-green-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold bg-linear-to-r from-cyan-400 to-green-400 bg-clip-text text-transparent">
               Protocol Simulator
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
@@ -516,7 +516,7 @@ export default function TcpVsUdpSimulator() {
           {/* Connection Line */}
           <div className="absolute top-1/2 left-20 right-20 h-1 bg-slate-800 -translate-y-1/2 rounded-full overflow-hidden">
              {/* Flow Animation */}
-             <div className={`w-full h-full bg-gradient-to-r from-transparent via-slate-700 to-transparent ${connState === CONNECTION_STATES.CONNECTED ? 'animate-pulse' : 'opacity-0'}`} />
+             <div className={`w-full h-full bg-linear-to-r from-transparent via-slate-700 to-transparent ${connState === CONNECTION_STATES.CONNECTED ? 'animate-pulse' : 'opacity-0'}`} />
           </div>
 
           {/* Packets Rendering */}

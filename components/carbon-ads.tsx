@@ -39,11 +39,11 @@ export function CarbonAds({ className }: CarbonAdsProps) {
   return (
     <div className={cn('relative', className)}>
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-transparent rounded-xl blur-xl" />
+      <div className="absolute inset-0 bg-linear-to-r from-blue-500/5 to-transparent rounded-xl blur-xl" />
 
       <div className="relative rounded-xl border border-border/50 overflow-hidden backdrop-blur-sm bg-card/50">
         {/* Header with gradient */}
-        <div className="relative bg-gradient-to-r from-blue-500/10 to-blue-500/5 px-4 py-3">
+        <div className="relative bg-linear-to-r from-blue-500/10 to-blue-500/5 px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Megaphone className="h-4 w-4 text-blue-500" />

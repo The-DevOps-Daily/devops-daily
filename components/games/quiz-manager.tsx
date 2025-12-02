@@ -125,12 +125,12 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
               className="flex flex-col h-full overflow-hidden transition-all duration-300 group hover:shadow-lg border-border/50"
             >
               {/* Color indicator bar */}
-              <div className={`h-2 w-full bg-gradient-to-r ${gradientClass}`}></div>
+              <div className={`h-2 w-full bg-linear-to-r ${gradientClass}`}></div>
 
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between mb-4">
                   <div
-                    className={`p-3 rounded-lg bg-gradient-to-br ${gradientClass} text-white shadow-md`}
+                    className={`p-3 rounded-lg bg-linear-to-br ${gradientClass} text-white shadow-md`}
                   >
                     <IconComponent className="w-6 h-6" />
                   </div>
@@ -145,7 +145,7 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
                 <CardDescription className="line-clamp-3">{quiz.description}</CardDescription>
               </CardHeader>
 
-              <CardContent className="flex flex-col justify-between flex-grow">
+              <CardContent className="flex flex-col justify-between grow">
                 <div className="mb-4 space-y-3">
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
@@ -165,7 +165,7 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
 
                 <Button
                   asChild
-                  className={`w-full bg-gradient-to-r ${gradientClass} hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all`}
+                  className={`w-full bg-linear-to-r ${gradientClass} hover:opacity-90 text-white shadow-md hover:shadow-lg transition-all`}
                 >
                   <Link
                     href={getQuizUrl(quiz.id)}
@@ -183,7 +183,7 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
       </div>
 
       {/* Call to action for more quizzes */}
-      <Card className="border-2 border-dashed bg-gradient-to-br from-muted/50 to-muted/30 border-muted-foreground/20">
+      <Card className="border-2 border-dashed bg-linear-to-br from-muted/50 to-muted/30 border-muted-foreground/20">
         <CardContent className="p-8 text-center">
           <Sparkles className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="mb-2 text-lg font-semibold">More Quizzes Coming Soon!</h3>

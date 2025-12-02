@@ -380,7 +380,7 @@ export default function CICDStackGenerator() {
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto my-8">
       <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center">
-        <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 via-blue-500 to-purple-500">
+        <span className="text-transparent bg-clip-text bg-linear-to-r from-green-500 via-blue-500 to-purple-500">
           CI/CD Stack Generator
         </span>
       </h1>
@@ -390,10 +390,10 @@ export default function CICDStackGenerator() {
       </p>
 
       {/* Slot Machine */}
-      <div className="relative w-full max-w-2xl bg-gradient-to-b from-slate-800 to-slate-950 rounded-xl shadow-2xl border border-slate-700 p-6 mb-6">
+      <div className="relative w-full max-w-2xl bg-linear-to-b from-slate-800 to-slate-950 rounded-xl shadow-2xl border border-slate-700 p-6 mb-6">
         {/* Top decoration */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 w-32 h-6 bg-slate-700 rounded-full flex items-center justify-center">
-          <div className="w-24 h-4 bg-gradient-to-r from-red-500 via-amber-500 to-green-500 rounded-full animate-pulse"></div>
+          <div className="w-24 h-4 bg-linear-to-r from-red-500 via-amber-500 to-green-500 rounded-full animate-pulse"></div>
         </div>
 
         {/* Reels Container */}
@@ -437,7 +437,7 @@ export default function CICDStackGenerator() {
                       {reel.displayItems.map((item, itemIndex) => (
                         <div
                           key={itemIndex}
-                          className="h-12 flex items-center justify-center px-2 text-center font-medium text-white/90 text-sm leading-tight flex-shrink-0 border-b border-slate-700/50"
+                          className="h-12 flex items-center justify-center px-2 text-center font-medium text-white/90 text-sm leading-tight shrink-0 border-b border-slate-700/50"
                         >
                           {item}
                         </div>
@@ -461,7 +461,7 @@ export default function CICDStackGenerator() {
                 </AnimatePresence>
 
                 {/* Subtle gradient overlay to create depth */}
-                <div className="absolute inset-0 bg-gradient-to-b from-slate-800/20 via-transparent to-slate-800/20 pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-b from-slate-800/20 via-transparent to-slate-800/20 pointer-events-none" />
               </div>
             ))}
           </div>
@@ -474,7 +474,7 @@ export default function CICDStackGenerator() {
             disabled={isSpinning}
             size="lg"
             className={cn(
-              'px-8 font-bold text-lg bg-gradient-to-r from-amber-500 to-red-500 hover:from-amber-400 hover:to-red-400 shadow-lg',
+              'px-8 font-bold text-lg bg-linear-to-r from-amber-500 to-red-500 hover:from-amber-400 hover:to-red-400 shadow-lg',
               isSpinning && 'opacity-50 cursor-not-allowed'
             )}
           >
@@ -560,7 +560,7 @@ export default function CICDStackGenerator() {
                 className="bg-muted/50 rounded-lg p-4 flex items-center gap-3 backdrop-blur-sm"
               >
                 <div
-                  className={`w-8 h-8 rounded-full ${item.rating.color} flex items-center justify-center flex-shrink-0 text-lg`}
+                  className={`w-8 h-8 rounded-full ${item.rating.color} flex items-center justify-center shrink-0 text-lg`}
                 >
                   {item.rating.emoji}
                 </div>

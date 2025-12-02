@@ -85,7 +85,7 @@ export function ReportIssue({
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
         </div>
         <div className="flex-1 min-w-0">
@@ -95,7 +95,7 @@ export function ReportIssue({
           variant="ghost"
           size="sm"
           onClick={handleClick}
-          className="flex-shrink-0 h-8 px-3 text-xs hover:bg-background/80"
+          className="shrink-0 h-8 px-3 text-xs hover:bg-background/80"
         >
           Report
           <ExternalLink className="w-3 h-3 ml-1.5" />
@@ -108,7 +108,7 @@ export function ReportIssue({
   return (
     <motion.div
       className={cn(
-        'relative overflow-hidden rounded-xl border border-border/60 bg-gradient-to-br from-background to-muted/20 p-6',
+        'relative overflow-hidden rounded-xl border border-border/60 bg-linear-to-br from-background to-muted/20 p-6',
         'hover:shadow-lg hover:border-border/80 transition-all duration-300',
         className
       )}
@@ -119,12 +119,12 @@ export function ReportIssue({
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-gradient-to-bl from-amber-500/5 to-transparent blur-2xl" />
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-linear-to-bl from-amber-500/5 to-transparent blur-2xl" />
 
       <div className="relative flex items-start gap-4">
         {/* Icon */}
         <motion.div
-          className="flex-shrink-0 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20"
+          className="shrink-0 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20"
           animate={{
             scale: isHovered ? 1.1 : 1,
             rotate: isHovered ? 5 : 0,
@@ -173,7 +173,7 @@ export function ReportIssue({
 
               {/* Hover effect */}
               <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-amber-500/0 via-amber-500/10 to-amber-500/0"
+                className="absolute inset-0 bg-linear-to-r from-amber-500/0 via-amber-500/10 to-amber-500/0"
                 initial={{ x: '-100%' }}
                 animate={{ x: isHovered ? '100%' : '-100%' }}
                 transition={{ duration: 0.6 }}

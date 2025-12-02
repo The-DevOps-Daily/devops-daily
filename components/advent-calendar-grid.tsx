@@ -64,7 +64,7 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
             )}
 
             {/* Card Background Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-card via-card to-primary/5 opacity-90" />
+            <div className="absolute inset-0 bg-linear-to-br from-card via-card to-primary/5 opacity-90" />
 
             {/* Locked Overlay */}
             {!isUnlocked && (
@@ -86,7 +86,7 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
                     className={`flex items-center justify-center w-12 h-12 rounded-full border text-xl font-bold ${
                       completed
                         ? 'bg-green-500/20 border-green-500/50 text-green-500'
-                        : 'bg-gradient-to-br from-primary/20 to-blue-500/20 border-primary/30'
+                        : 'bg-linear-to-br from-primary/20 to-blue-500/20 border-primary/30'
                     }`}
                   >
                     {day.day}
@@ -95,7 +95,7 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
                 </div>
                 {day.difficulty && (
                   <div
-                    className={`px-2 py-1 rounded-md text-xs font-medium border bg-gradient-to-br ${difficultyColor}`}
+                    className={`px-2 py-1 rounded-md text-xs font-medium border bg-linear-to-br ${difficultyColor}`}
                   >
                     {day.difficulty}
                   </div>

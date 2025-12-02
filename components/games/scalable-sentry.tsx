@@ -1201,7 +1201,7 @@ export default function ScalableSentry() {
 
         {gameState === 'start' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-sm rounded-lg z-20">
-                <h1 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500 mb-2">SCALABLE SENTRY</h1>
+                <h1 className="text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-indigo-500 mb-2">SCALABLE SENTRY</h1>
                 <p className="text-slate-400 mb-8 tracking-widest uppercase text-sm">Advanced Load Balancer Simulation</p>
 
                 <div className="grid grid-cols-5 gap-4 mb-8 max-w-4xl text-center">
@@ -1239,7 +1239,7 @@ export default function ScalableSentry() {
 
       <div className="w-full max-w-4xl mt-4 flex flex-col md:flex-row gap-4">
 
-        <div className="flex gap-2 flex-grow overflow-x-auto h-28 px-2">
+        <div className="flex gap-2 grow overflow-x-auto h-28 px-2">
             {Object.entries(SERVER_TYPES).map(([key, type]) => {
               const Icon = type.icon;
               return (

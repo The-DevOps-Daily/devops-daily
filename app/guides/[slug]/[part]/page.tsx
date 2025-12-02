@@ -148,7 +148,7 @@ export default async function GuidePartPage({
           <div className="xl:col-span-9">
             <div className="flex flex-col gap-8 lg:flex-row">
               {/* Guide Navigation Sidebar */}
-              <aside className="flex-shrink-0 lg:w-80">
+              <aside className="shrink-0 lg:w-80">
                 <GuideSidebar guide={guide} activePart={partSlug} />
               </aside>
 

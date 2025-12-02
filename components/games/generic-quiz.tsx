@@ -137,7 +137,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
           transition={{ duration: 0.6 }}
         >
           <Card
-            className={`relative overflow-hidden border-2 border-primary/20 bg-gradient-to-br ${quizConfig.theme.primaryColor}/5`}
+            className={`relative overflow-hidden border-2 border-primary/20 bg-linear-to-br ${quizConfig.theme.primaryColor}/5`}
           >
             <div className="absolute inset-0 overflow-hidden">
               <div
@@ -154,7 +154,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
-                className={`mx-auto mb-6 p-6 bg-gradient-to-br ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} rounded-full w-fit shadow-xl`}
+                className={`mx-auto mb-6 p-6 bg-linear-to-br ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} rounded-full w-fit shadow-xl`}
               >
                 <IconComponent className="h-10 w-10 text-white" />
               </motion.div>
@@ -165,7 +165,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                 transition={{ delay: 0.4 }}
               >
                 <CardTitle
-                  className={`text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} bg-clip-text text-transparent`}
+                  className={`text-4xl md:text-5xl font-bold mb-4 bg-linear-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} bg-clip-text text-transparent`}
                 >
                   {quizConfig.title}
                 </CardTitle>
@@ -253,7 +253,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                 <Button
                   size="lg"
                   onClick={() => setGameStarted(true)}
-                  className={`bg-gradient-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90 text-white shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 px-8 py-4 text-lg`}
+                  className={`bg-linear-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90 text-white shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 px-8 py-4 text-lg`}
                 >
                   <Play className="mr-2 h-5 w-5" />
                   Start Quiz
@@ -278,14 +278,14 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
           transition={{ duration: 0.5 }}
         >
           <Card
-            className={`text-center border-2 border-primary/20 bg-gradient-to-br ${quizConfig.theme.primaryColor}/5`}
+            className={`text-center border-2 border-primary/20 bg-linear-to-br ${quizConfig.theme.primaryColor}/5`}
           >
             <CardHeader>
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                className={`mx-auto mb-4 p-4 bg-gradient-to-br ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} rounded-full w-fit`}
+                className={`mx-auto mb-4 p-4 bg-linear-to-br ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} rounded-full w-fit`}
               >
                 <RatingIcon className="h-8 w-8 text-white" />
               </motion.div>
@@ -347,7 +347,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                   <Button
                     onClick={handleRestart}
                     size="lg"
-                    className={`bg-gradient-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90`}
+                    className={`bg-linear-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90`}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Play Again
@@ -479,7 +479,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                   <div className="flex items-start gap-3 w-full">
                     <div
                       className={cn(
-                        'w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5',
+                        'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5',
                         selectedAnswer === index && !showResult
                           ? 'border-primary bg-primary'
                           : 'border-muted-foreground'
@@ -489,14 +489,14 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                         <div className="w-2 h-2 bg-white rounded-full" />
                       )}
                     </div>
-                    <span className="flex-1 font-mono text-sm break-words whitespace-pre-wrap leading-relaxed">
+                    <span className="flex-1 font-mono text-sm wrap-break-word whitespace-pre-wrap leading-relaxed">
                       {option}
                     </span>
                     {showResult && index === question.correctAnswer && (
-                      <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      <CheckCircle className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
                     )}
                     {showResult && selectedAnswer === index && index !== question.correctAnswer && (
-                      <XCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <XCircle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                     )}
                   </div>
                 </Button>
@@ -579,14 +579,14 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                 <Button
                   onClick={handleSubmit}
                   disabled={selectedAnswer === null}
-                  className={`bg-gradient-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90`}
+                  className={`bg-linear-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90`}
                 >
                   Submit Answer
                 </Button>
               ) : (
                 <Button
                   onClick={handleNext}
-                  className={`bg-gradient-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90`}
+                  className={`bg-linear-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90`}
                 >
                   {currentQuestion < quizConfig.questions.length - 1
                     ? 'Next Question'

@@ -54,7 +54,7 @@ export function ReadingProgressBar() {
       transition={{ duration: 0.3 }}
     >
       {/* Background track */}
-      <div className="absolute inset-0 h-full bg-gradient-to-r from-gray-200/20 to-gray-300/20 dark:from-gray-700/20 dark:to-gray-600/20" />
+      <div className="absolute inset-0 h-full bg-linear-to-r from-gray-200/20 to-gray-300/20 dark:from-gray-700/20 dark:to-gray-600/20" />
 
       {/* Progress bar with gradient */}
       <motion.div
@@ -91,7 +91,7 @@ export function ReadingProgressBar() {
             ease: 'linear',
           }}
         >
-          <div className="h-full w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
+          <div className="h-full w-24 bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-12" />
         </motion.div>
       </motion.div>
 

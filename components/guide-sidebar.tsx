@@ -69,15 +69,15 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
 
   return (
     <Card className="sticky top-8 flex flex-col max-h-[calc(100vh-100px)]">
-      <CardHeader className="border-b py-3 flex-shrink-0">
+      <CardHeader className="border-b py-3 shrink-0">
         <CardTitle className="text-base font-medium">Guide Contents</CardTitle>
       </CardHeader>
       <CardContent className="p-0 flex flex-col overflow-hidden">
-        <div className="flex-grow flex flex-col overflow-hidden">
+        <div className="grow flex flex-col overflow-hidden">
           <Link
             href={`/guides/${guide.slug}`}
             className={cn(
-              'flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors flex-shrink-0',
+              'flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted/50 transition-colors shrink-0',
               !activePart && 'bg-muted font-medium'
             )}
           >
@@ -108,7 +108,7 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
                       {/* Number indicator */}
                       <div
                         className={cn(
-                          'flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full mr-2 text-xs font-medium',
+                          'shrink-0 w-6 h-6 flex items-center justify-center rounded-full mr-2 text-xs font-medium',
                           isActive
                             ? 'bg-primary text-primary-foreground'
                             : isCompleted
@@ -134,7 +134,7 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
                       </span>
 
                       {/* Status icons */}
-                      <div className="flex-shrink-0 ml-2">
+                      <div className="shrink-0 ml-2">
                         {isCompleted ? (
                           <button
                             onClick={(e) => toggleCompletion(part.slug, e)}
@@ -156,7 +156,7 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
 
                       {/* Active indicator */}
                       {isActive && (
-                        <ChevronRight className="h-4 w-4 ml-1 text-primary flex-shrink-0" />
+                        <ChevronRight className="h-4 w-4 ml-1 text-primary shrink-0" />
                       )}
                     </Link>
 
@@ -171,7 +171,7 @@ export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
           </div>
         </div>
 
-        <div className="p-3 border-t flex-shrink-0">
+        <div className="p-3 border-t shrink-0">
           <div className="flex items-center justify-between text-xs mb-1.5">
             <span className="text-muted-foreground">Your progress</span>
             <Badge variant="outline" className="px-2 py-0 h-5 text-xs font-normal">

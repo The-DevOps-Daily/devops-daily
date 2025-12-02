@@ -82,12 +82,12 @@ export function ExerciseCard({
       )}
     >
       {/* Gradient background overlay */}
-      <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-gradient-to-br from-primary/5 via-transparent to-purple/5 group-hover:opacity-100" />
+      <div className="absolute inset-0 transition-opacity duration-500 opacity-0 bg-linear-to-br from-primary/5 via-transparent to-purple/5 group-hover:opacity-100" />
 
       {/* Featured badge */}
       {exercise.featured && (
         <div className="absolute z-10 top-4 right-4">
-          <Badge className="text-white border-none bg-gradient-to-r from-yellow-500 to-orange-500">
+          <Badge className="text-white border-none bg-linear-to-r from-yellow-500 to-orange-500">
             <Zap className="w-3 h-3 mr-1" />
             Featured
           </Badge>
@@ -96,7 +96,7 @@ export function ExerciseCard({
 
       <CardHeader className="relative">
         <div className="flex items-start gap-4">
-          <div className="p-3 transition-transform duration-300 border rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 group-hover:scale-110">
+          <div className="p-3 transition-transform duration-300 border rounded-xl bg-linear-to-br from-primary/10 to-primary/5 border-primary/20 group-hover:scale-110">
             <IconComponent className="w-6 h-6 text-primary" />
           </div>
 
@@ -156,7 +156,7 @@ export function ExerciseCard({
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full transition-all duration-300 rounded-full bg-gradient-to-r from-primary to-primary/80"
+                className="h-full transition-all duration-300 rounded-full bg-linear-to-r from-primary to-primary/80"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
@@ -191,7 +191,7 @@ export function ExerciseCard({
           <ul className="space-y-1 text-xs text-muted-foreground">
             {exercise.learningObjectives.slice(0, 2).map((objective, index) => (
               <li key={index} className="flex items-start gap-2">
-                <CheckCircle2 className="w-3 h-3 mt-0.5 text-primary flex-shrink-0" />
+                <CheckCircle2 className="w-3 h-3 mt-0.5 text-primary shrink-0" />
                 <span className="line-clamp-1">{objective}</span>
               </li>
             ))}
@@ -204,7 +204,7 @@ export function ExerciseCard({
         </div>
 
         {/* Hover overlay with CTA */}
-        <div className="absolute inset-0 flex items-end justify-center pb-6 transition-all duration-300 opacity-0 bg-gradient-to-t from-background/95 via-background/70 to-transparent group-hover:opacity-100">
+        <div className="absolute inset-0 flex items-end justify-center pb-6 transition-all duration-300 opacity-0 bg-linear-to-t from-background/95 via-background/70 to-transparent group-hover:opacity-100">
           <Link
             href={`/exercises/${exercise.id}`}
             className="px-4 py-2 text-sm font-medium transition-transform duration-300 transform translate-y-4 rounded-lg bg-primary text-primary-foreground group-hover:translate-y-0 hover:bg-primary/90"

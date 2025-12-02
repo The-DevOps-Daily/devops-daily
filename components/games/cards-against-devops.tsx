@@ -203,11 +203,11 @@ function GameCard({
           'transition-all duration-300 shadow-lg border-2',
           variant === 'preview' ? 'h-32' : 'h-40 sm:h-48',
           isBlack
-            ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white border-gray-600 hover:border-gray-500 hover:shadow-2xl'
-            : 'bg-gradient-to-br from-white via-gray-50 to-white border-gray-200 hover:border-primary/40 hover:shadow-xl dark:from-gray-800 dark:to-gray-900 dark:border-gray-700',
+            ? 'bg-linear-to-br from-gray-900 via-gray-800 to-black text-white border-gray-600 hover:border-gray-500 hover:shadow-2xl'
+            : 'bg-linear-to-br from-white via-gray-50 to-white border-gray-200 hover:border-primary/40 hover:shadow-xl dark:from-gray-800 dark:to-gray-900 dark:border-gray-700',
           isSelected &&
             !isBlack &&
-            'border-primary/80 bg-gradient-to-br from-primary/5 to-purple-500/5 shadow-xl ring-2 ring-primary/20',
+            'border-primary/80 bg-linear-to-br from-primary/5 to-purple-500/5 shadow-xl ring-2 ring-primary/20',
           disabled && 'opacity-60 grayscale',
           !disabled && 'hover:shadow-2xl'
         )}
@@ -232,7 +232,7 @@ function GameCard({
           {/* Card decorations */}
           {isBlack && (
             <div className="absolute top-2 left-2">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full bg-linear-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
                 <Crown className="w-3 h-3 text-white" />
               </div>
             </div>
@@ -240,7 +240,7 @@ function GameCard({
 
           {isSelected && !isBlack && (
             <div className="absolute top-2 right-2">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full bg-linear-to-br from-primary to-purple-600 flex items-center justify-center">
                 <CheckCircle className="w-3 h-3 text-white" />
               </div>
             </div>
@@ -606,7 +606,7 @@ export function CardsAgainstDevOps() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
       <div className="container mx-auto px-4 py-6 sm:py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
@@ -628,10 +628,10 @@ export function CardsAgainstDevOps() {
             className="space-y-4"
           >
             <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-red-600 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-pink-500 to-red-600 flex items-center justify-center">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl sm:text-4xl font-bold bg-linear-to-r from-pink-600 to-red-600 bg-clip-text text-transparent">
                 Cards Against DevOps
               </h1>
             </div>
@@ -680,10 +680,10 @@ export function CardsAgainstDevOps() {
           // Game Setup
           <div className="max-w-2xl mx-auto">
             {setupStep === 'mode' && (
-              <Card className="mx-4 p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-2 border-primary/20 shadow-xl">
+              <Card className="mx-4 p-4 sm:p-6 lg:p-8 bg-linear-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-2 border-primary/20 shadow-xl">
                 <CardContent className="space-y-6">
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-red-600 rounded-2xl flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-linear-to-br from-pink-500 to-red-600 rounded-2xl flex items-center justify-center">
                       <Sparkles className="w-8 h-8 text-white" />
                     </div>
                     <CardTitle className="text-xl sm:text-2xl mb-2">Choose Game Mode</CardTitle>
@@ -701,14 +701,14 @@ export function CardsAgainstDevOps() {
                       variant="outline"
                       className="w-full h-auto p-3 sm:p-4 text-left flex items-start gap-3 sm:gap-4 hover:bg-primary/5 border-2 transition-all duration-200"
                     >
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center shrink-0">
                         <Users className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                       </div>
                       <div className="min-w-0 flex-1 overflow-hidden">
-                        <div className="font-semibold mb-1 text-sm sm:text-base break-words">
+                        <div className="font-semibold mb-1 text-sm sm:text-base wrap-break-word">
                           Solo Play
                         </div>
-                        <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words whitespace-normal">
+                        <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed wrap-break-word whitespace-normal">
                           Practice mode - play against the computer and build your DevOps humor
                           skills
                         </div>
@@ -720,14 +720,14 @@ export function CardsAgainstDevOps() {
                       variant="outline"
                       className="w-full h-auto p-3 sm:p-4 text-left flex items-start gap-3 sm:gap-4 hover:bg-primary/5 border-2 transition-all duration-200"
                     >
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-pink-500 to-red-600 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-linear-to-br from-pink-500 to-red-600 flex items-center justify-center shrink-0">
                         <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                       </div>
                       <div className="min-w-0 flex-1 overflow-hidden">
-                        <div className="font-semibold mb-1 text-sm sm:text-base break-words">
+                        <div className="font-semibold mb-1 text-sm sm:text-base wrap-break-word">
                           Pass & Play (3-8 Players)
                         </div>
-                        <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed break-words whitespace-normal">
+                        <div className="text-xs sm:text-sm text-muted-foreground leading-relaxed wrap-break-word whitespace-normal">
                           Perfect for groups! Take turns on one device with friends or colleagues
                         </div>
                       </div>
@@ -738,10 +738,10 @@ export function CardsAgainstDevOps() {
             )}
 
             {setupStep === 'players' && (
-              <Card className="mx-4 p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-2 border-primary/20 shadow-xl">
+              <Card className="mx-4 p-4 sm:p-6 lg:p-8 bg-linear-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-2 border-primary/20 shadow-xl">
                 <CardContent className="space-y-6">
                   <div className="text-center">
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-red-600 rounded-2xl flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-linear-to-br from-pink-500 to-red-600 rounded-2xl flex items-center justify-center">
                       <UserPlus className="w-8 h-8 text-white" />
                     </div>
                     <CardTitle className="text-xl sm:text-2xl mb-2">Add Players</CardTitle>
@@ -753,7 +753,7 @@ export function CardsAgainstDevOps() {
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {playerNames.map((name, index) => (
                       <div key={index} className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center text-sm font-medium flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-linear-to-br from-primary/20 to-purple-500/20 flex items-center justify-center text-sm font-medium shrink-0">
                           {index + 1}
                         </div>
                         <input
@@ -800,7 +800,7 @@ export function CardsAgainstDevOps() {
                     <Button
                       onClick={initializeMultiplayerGame}
                       disabled={playerNames.filter((name) => name.trim()).length < 3}
-                      className="flex-1 order-1 sm:order-2 bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 order-1 sm:order-2 bg-linear-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Play className="w-4 h-4 mr-2" />
                       Start Game ({playerNames.filter((name) => name.trim()).length}/8)
@@ -873,7 +873,7 @@ export function CardsAgainstDevOps() {
                     exit={{ scale: 0.8, opacity: 0 }}
                     className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-2xl border-2 border-primary/20"
                   >
-                    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-linear-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center">
                       <Award className="w-8 h-8 text-white" />
                     </div>
 
@@ -932,7 +932,7 @@ export function CardsAgainstDevOps() {
             {/* Player Hand */}
             <div className="space-y-4">
               {gameState.gameMode === 'pass-and-play' && !gameState.isJudging && (
-                <div className="text-center p-4 bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-xl border border-primary/20 shadow-lg">
+                <div className="text-center p-4 bg-linear-to-r from-primary/10 to-purple-500/10 rounded-xl border border-primary/20 shadow-lg">
                   <h3 className="font-semibold text-lg mb-2 flex items-center justify-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center animate-pulse">
                       <span className="text-white text-sm font-bold">
@@ -962,7 +962,7 @@ export function CardsAgainstDevOps() {
               )}
 
               {gameState.gameMode === 'pass-and-play' && gameState.isJudging && (
-                <div className="text-center p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20 shadow-lg">
+                <div className="text-center p-4 bg-linear-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20 shadow-lg">
                   <h3 className="font-semibold text-lg mb-2 flex items-center justify-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center animate-bounce">
                       <Gavel className="w-4 h-4 text-white" />
@@ -1002,7 +1002,7 @@ export function CardsAgainstDevOps() {
                         </div>
                         <GameCard
                           onClick={() => selectWinner(submission)}
-                          className="hover:ring-2 hover:ring-yellow-500/50 hover:shadow-xl cursor-pointer transition-all duration-200 hover:scale-[1.02] bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900"
+                          className="hover:ring-2 hover:ring-yellow-500/50 hover:shadow-xl cursor-pointer transition-all duration-200 hover:scale-[1.02] bg-linear-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900"
                         >
                           {gameState.currentBlackCard.replace('_____', submission.card)}
                         </GameCard>
@@ -1070,7 +1070,7 @@ export function CardsAgainstDevOps() {
                       className={`font-semibold w-full sm:w-auto transition-all duration-200 ${
                         gameState.selectedCards.length === 0
                           ? 'bg-gray-400 hover:bg-gray-400 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 hover:scale-105'
+                          : 'bg-linear-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 hover:scale-105'
                       } text-white`}
                     >
                       <ArrowRight className="w-5 h-5 mr-2" />
@@ -1105,10 +1105,10 @@ export function CardsAgainstDevOps() {
                         key={player.id}
                         className={`p-3 sm:p-4 rounded-xl border flex items-center justify-between transition-all duration-200 ${
                           player.isJudge
-                            ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30 ring-1 ring-yellow-500/20'
+                            ? 'bg-linear-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30 ring-1 ring-yellow-500/20'
                             : player.id === gameState.players[gameState.currentPlayerIndex]?.id &&
                                 !gameState.isJudging
-                              ? 'bg-gradient-to-r from-primary/10 to-purple-500/10 border-primary/30 ring-1 ring-primary/20'
+                              ? 'bg-linear-to-r from-primary/10 to-purple-500/10 border-primary/30 ring-1 ring-primary/20'
                               : 'bg-white/70 dark:bg-gray-800/70 border-border/50 hover:bg-white/90 dark:hover:bg-gray-800/90'
                         }`}
                       >
@@ -1116,12 +1116,12 @@ export function CardsAgainstDevOps() {
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                               index === 0
-                                ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg'
+                                ? 'bg-linear-to-br from-yellow-400 to-orange-500 text-white shadow-lg'
                                 : index === 1
-                                  ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-md'
+                                  ? 'bg-linear-to-br from-gray-400 to-gray-500 text-white shadow-md'
                                   : index === 2
-                                    ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white shadow-md'
-                                    : 'bg-gradient-to-br from-primary/20 to-purple-500/20 text-foreground'
+                                    ? 'bg-linear-to-br from-amber-600 to-amber-700 text-white shadow-md'
+                                    : 'bg-linear-to-br from-primary/20 to-purple-500/20 text-foreground'
                             }`}
                           >
                             {index + 1}
@@ -1197,7 +1197,7 @@ export function CardsAgainstDevOps() {
                         className="p-4 bg-white/70 dark:bg-gray-800/70 rounded-xl border border-border/50 backdrop-blur-sm"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-2 shrink-0">
                             <Badge variant="outline" className="text-xs">
                               Round {history.round}
                             </Badge>
@@ -1233,7 +1233,7 @@ export function CardsAgainstDevOps() {
                         className="p-4 bg-white/70 dark:bg-gray-800/70 rounded-xl border border-border/50 backdrop-blur-sm"
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-2 shrink-0">
                             <Badge variant="outline" className="text-xs">
                               Round {history.round}
                             </Badge>
@@ -1275,7 +1275,7 @@ export function CardsAgainstDevOps() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="text-center mb-6">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-red-600 rounded-2xl flex items-center justify-center">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-linear-to-br from-pink-500 to-red-600 rounded-2xl flex items-center justify-center">
                     <MessageCircle className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="text-xl font-bold mb-2">How to Play</h3>

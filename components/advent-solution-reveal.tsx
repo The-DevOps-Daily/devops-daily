@@ -14,7 +14,7 @@ export function SolutionReveal({ children, title = 'Solution' }: SolutionRevealP
   return (
     <div className="my-8 rounded-xl border border-border overflow-hidden bg-card/50 backdrop-blur">
       {/* Header with reveal button */}
-      <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-blue-500/10 border-b border-border">
+      <div className="flex items-center justify-between p-4 bg-linear-to-r from-primary/10 to-blue-500/10 border-b border-border">
         <div className="flex items-center gap-2">
           <Lock className="h-5 w-5 text-primary" />
           <h3 className="font-semibold text-lg">{title}</h3>

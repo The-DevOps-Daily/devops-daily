@@ -277,7 +277,7 @@ export function CommandPalette() {
                               {item.description}
                             </div>
                           </div>
-                          <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
                         </div>
                       </CommandItem>
                     );

@@ -15,7 +15,7 @@ const sponsors = [
     name: 'DevDojo',
     logo: '/devdojo.svg?height=60&width=120',
     url: 'https://devdojo.com',
-    className: 'w-auto h-12 flex-shrink-0 -mt-0.5 fill-current ml-1 text-red-500',
+    className: 'w-auto h-12 shrink-0 -mt-0.5 fill-current ml-1 text-red-500',
     tagline: 'Developer community & tools',
   },
 ];
@@ -35,11 +35,11 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
       {/* Sponsors Section */}
       <div className="relative">
         {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent rounded-xl blur-xl" />
+        <div className="absolute inset-0 bg-linear-to-r from-primary/5 to-transparent rounded-xl blur-xl" />
 
         <div className="relative rounded-xl border border-border/50 overflow-hidden backdrop-blur-sm bg-card/50">
           {/* Header with gradient */}
-          <div className="relative bg-gradient-to-r from-primary/10 to-primary/5 px-4 py-3">
+          <div className="relative bg-linear-to-r from-primary/10 to-primary/5 px-4 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" />
@@ -56,11 +56,11 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex flex-col items-center p-5 bg-gradient-to-b from-background to-muted/50 rounded-lg border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
+                className="group relative flex flex-col items-center p-5 bg-linear-to-b from-background to-muted/50 rounded-lg border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
               >
                 {/* Subtle background pattern */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent rounded-lg" />
+                  <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent rounded-lg" />
                 </div>
 
                 {/* External link indicator */}

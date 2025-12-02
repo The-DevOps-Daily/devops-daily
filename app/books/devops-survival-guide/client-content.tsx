@@ -176,14 +176,14 @@ export function ClientContent() {
         {/* Animated gradient orbs */}
         <div className="absolute inset-0 -z-10 overflow-hidden">
           <div
-            className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-500/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"
+            className="absolute top-1/4 left-1/4 w-96 h-96 bg-linear-to-br from-blue-500/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"
             style={{
               transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
               transition: 'transform 0.3s ease-out',
             }}
           />
           <div
-            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gradient-to-br from-cyan-500/30 to-pink-500/30 rounded-full blur-3xl animate-pulse animation-delay-1000"
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-linear-to-br from-cyan-500/30 to-pink-500/30 rounded-full blur-3xl animate-pulse animation-delay-1000"
             style={{
               transform: `translate(${-mousePosition.x * 0.02}px, ${-mousePosition.y * 0.02}px)`,
               transition: 'transform 0.3s ease-out',
@@ -215,14 +215,14 @@ export function ClientContent() {
               variant="outline"
               className="mb-6 px-6 py-2 text-base font-medium border-primary/50 bg-primary/5 backdrop-blur-sm relative overflow-hidden group"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               <Clock className="inline-block w-4 h-4 mr-2 animate-pulse" />
               Currently Writing
               <Sparkles className="inline-block w-4 h-4 ml-2" />
             </Badge>
 
             {/* Main heading with gradient */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient bg-[length:200%_auto] leading-tight">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient bg-size-[200%_auto] leading-tight">
               DevOps Survival Guide
             </h1>
 
@@ -257,11 +257,11 @@ export function ClientContent() {
 
             {/* CTA with glow effect */}
             <div className="relative inline-block">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 animate-pulse" />
+              <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 animate-pulse" />
               <Button
                 asChild
               size="lg"
-              className="relative text-lg px-10 py-7 shadow-2xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all hover:scale-105"
+              className="relative text-lg px-10 py-7 shadow-2xl bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all hover:scale-105"
               asChild
             >
               <Link href="#subscribe">
@@ -303,16 +303,16 @@ export function ClientContent() {
                 >
                   {/* Gradient overlay on hover */}
                   <div
-                    className={`absolute inset-0 bg-gradient-to-br ${chapter.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
+                    className={`absolute inset-0 bg-linear-to-br ${chapter.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`}
                   />
 
                   {/* Shimmer effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
 
                   <CardHeader className="relative">
                     <div className="flex items-start gap-4">
                       <div
-                        className={`p-3 rounded-xl bg-gradient-to-br ${chapter.color} group-hover:scale-110 transition-transform duration-300`}
+                        className={`p-3 rounded-xl bg-linear-to-br ${chapter.color} group-hover:scale-110 transition-transform duration-300`}
                       >
                         <chapter.icon className="w-6 h-6 text-white" />
                       </div>
@@ -336,7 +336,7 @@ export function ClientContent() {
 
       {/* What's Inside with Icon Grid */}
       <section className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary/5 to-transparent" />
 
         <div className="container mx-auto px-4 relative">
           <div className="max-w-6xl mx-auto">
@@ -396,12 +396,12 @@ export function ClientContent() {
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div
-                    className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${benefit.color} opacity-0 group-hover:opacity-10 rounded-full blur-2xl transition-opacity duration-500 -translate-y-8 translate-x-8`}
+                    className={`absolute top-0 right-0 w-32 h-32 bg-linear-to-br ${benefit.color} opacity-0 group-hover:opacity-10 rounded-full blur-2xl transition-opacity duration-500 -translate-y-8 translate-x-8`}
                   />
 
                   <CardHeader>
                     <div
-                      className={`w-12 h-12 rounded-lg bg-gradient-to-br ${benefit.color} p-2.5 mb-4 group-hover:scale-110 transition-transform`}
+                      className={`w-12 h-12 rounded-lg bg-linear-to-br ${benefit.color} p-2.5 mb-4 group-hover:scale-110 transition-transform`}
                     >
                       <benefit.icon className="w-full h-full text-white" />
                     </div>
@@ -442,7 +442,7 @@ export function ClientContent() {
                   className="group"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
-                  <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">
+                  <div className="text-4xl font-bold mb-2 bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent group-hover:scale-110 transition-transform inline-block">
                     {stat.value}
                   </div>
                   <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -505,7 +505,7 @@ export function ClientContent() {
       {/* Final CTA - Simplified */}
       <section id="subscribe" className="py-20 relative overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-blue-500/10 to-transparent" />
         </div>
 
         <div className="container mx-auto px-4 text-center">
@@ -523,7 +523,7 @@ export function ClientContent() {
 
             {/* Newsletter Signup Form */}
             <div className="max-w-md mx-auto">
-              <div className="p-8 bg-gradient-to-br from-primary/5 to-purple-500/5 border-2 border-primary/20 rounded-2xl shadow-2xl backdrop-blur-sm">
+              <div className="p-8 bg-linear-to-br from-primary/5 to-purple-500/5 border-2 border-primary/20 rounded-2xl shadow-2xl backdrop-blur-sm">
                 <form
                   action="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&amp;id=fd76a4e93f&amp;f_id=0022c6e1f0"
                   method="post"
@@ -553,7 +553,7 @@ export function ClientContent() {
                   <button
                     type="submit"
                     name="subscribe"
-                    className="group inline-flex items-center justify-center w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+                    className="group inline-flex items-center justify-center w-full px-6 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
                   >
                     <Mail className="mr-2 h-5 w-5" />
                     Subscribe for Early Access

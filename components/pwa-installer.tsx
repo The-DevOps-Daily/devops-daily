@@ -150,7 +150,7 @@ export function PWAInstaller() {
       >
         <div className="bg-card border border-border rounded-lg shadow-lg p-4 backdrop-blur-sm">
           <div className="flex items-start gap-3">
-            <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <div className="shrink-0 w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
               <Download className="h-5 w-5 text-primary-foreground" />
             </div>
 
@@ -174,7 +174,7 @@ export function PWAInstaller() {
               variant="ghost"
               size="sm"
               onClick={handleDismiss}
-              className="flex-shrink-0 h-8 w-8 p-0"
+              className="shrink-0 h-8 w-8 p-0"
             >
               <X className="h-4 w-4" />
             </Button>

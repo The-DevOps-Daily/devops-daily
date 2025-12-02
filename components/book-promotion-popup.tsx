@@ -87,7 +87,7 @@ export function BookPromotionPopup() {
     <>
       {/* Confetti outside AnimatePresence to prevent flicker */}
       {showConfetti && (
-        <div className="fixed inset-0 z-[9999] pointer-events-none">
+        <div className="fixed inset-0 z-9999 pointer-events-none">
           <Confetti
             width={typeof window !== 'undefined' ? window.innerWidth : 1000}
             height={typeof window !== 'undefined' ? window.innerHeight : 800}
@@ -128,7 +128,7 @@ export function BookPromotionPopup() {
               <X className="h-6 w-6 sm:h-5 sm:w-5 stroke-[2.5]" />
             </button>
 
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-purple-500/10 to-pink-500/10 border-2 border-primary/20 shadow-2xl">
+            <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-purple-500/10 to-pink-500/10 border-2 border-primary/20 shadow-2xl">
               {/* Animated background elements */}
               <div className="absolute inset-0 overflow-hidden">
                 <motion.div
@@ -142,7 +142,7 @@ export function BookPromotionPopup() {
                     repeat: Infinity,
                     ease: "easeInOut"
                   }}
-                  className="absolute -top-1/2 -right-1/2 w-full h-full bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full blur-3xl"
+                  className="absolute -top-1/2 -right-1/2 w-full h-full bg-linear-to-br from-primary/20 to-purple-500/20 rounded-full blur-3xl"
                 />
                 <motion.div
                   animate={{
@@ -155,7 +155,7 @@ export function BookPromotionPopup() {
                     repeat: Infinity,
                     ease: "easeInOut"
                   }}
-                  className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-gradient-to-tr from-pink-500/20 to-purple-500/20 rounded-full blur-3xl"
+                  className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-linear-to-tr from-pink-500/20 to-purple-500/20 rounded-full blur-3xl"
                 />
               </div>
 
@@ -193,7 +193,7 @@ export function BookPromotionPopup() {
                     </div>
 
                     {/* Title with gradient */}
-                    <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 bg-linear-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
                       📚 Coming Soon!
                     </h2>
 
@@ -204,9 +204,9 @@ export function BookPromotionPopup() {
                       className="text-center mb-4 sm:mb-6"
                     >
                       <h3 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                        <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 flex-shrink-0" />
+                        <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 shrink-0" />
                         <span>The DevOps Survival Guide</span>
-                        <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 flex-shrink-0" />
+                        <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 shrink-0" />
                       </h3>
                       <p className="text-muted-foreground text-base sm:text-lg">
                         Your ultimate resource for mastering DevOps! 🚀
@@ -221,15 +221,15 @@ export function BookPromotionPopup() {
                       className="mb-4 sm:mb-6 space-y-2"
                     >
                       <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
+                        <div className="shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-linear-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
                         <span>Expert tips & best practices 💡</span>
                       </div>
                       <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
+                        <div className="shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-linear-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
                         <span>Real-world scenarios & solutions 🛠️</span>
                       </div>
                       <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="flex-shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
+                        <div className="shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
                         <span>Comprehensive guides & tutorials 📖</span>
                       </div>
                     </motion.div>
@@ -239,10 +239,10 @@ export function BookPromotionPopup() {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.7 }}
-                      className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-xl p-3 sm:p-4 md:p-5 border border-primary/20"
+                      className="bg-linear-to-br from-primary/5 to-purple-500/5 rounded-xl p-3 sm:p-4 md:p-5 border border-primary/20"
                     >
                       <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                        <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                        <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
                         <h4 className="font-semibold text-sm sm:text-base">Get Early Access & Updates! 🎉</h4>
                       </div>
                       <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
@@ -268,7 +268,7 @@ export function BookPromotionPopup() {
 
                         <Button
                           type="submit"
-                          className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold py-4 sm:py-5 md:py-6 text-sm sm:text-base rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+                          className="w-full bg-linear-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold py-4 sm:py-5 md:py-6 text-sm sm:text-base rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
                         >
                           <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                           Yes! Keep Me Updated 🚀
@@ -306,7 +306,7 @@ export function BookPromotionPopup() {
                       transition={{ duration: 1 }}
                       className="mb-3 sm:mb-4 flex justify-center"
                     >
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-3xl sm:text-4xl">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-linear-to-br from-green-500 to-emerald-600 flex items-center justify-center text-3xl sm:text-4xl">
                         🎉
                       </div>
                     </motion.div>
