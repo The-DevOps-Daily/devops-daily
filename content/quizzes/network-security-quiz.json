@@ -1,0 +1,347 @@
+{
+  "id": "network-security-quiz",
+  "title": "Network & Security Fundamentals Quiz",
+  "description": "Test your knowledge of networking protocols, security best practices, firewalls, VPNs, and cloud security for DevOps engineers",
+  "category": "Networking/Security",
+ "icon": "Lock",
+  "totalPoints": 259,
+ "theme": {
+    "primaryColor": "purple",
+    "gradientFrom": "from-purple-600",
+    "gradientTo": "to-blue-600"
+  },
+  "metadata": {
+    "estimatedTime": "25-30 minutes",
+    "difficultyLevels": {
+      "beginner": 4,
+      "intermediate": 9,
+      "advanced": 5
+    }
+  },
+  "questions": [
+    {
+      "id": "osi-model",
+      "title": "TCP/IP Stack Understanding",
+      "description": "Which layer of the OSI model handles end-to-end communication and ensures data delivery?",
+      "situation": "You're debugging a connectivity issue where packets are reaching the server but the application isn't responding. Understanding the network stack will help you identify where to look.",
+      "codeExample": "tcpdump output:\nSYN packets arriving at port 443\nNo SYN-ACK response\nApplication logs show no incoming requests",
+      "options": [
+        "Network Layer (Layer 3) - Routes packets between networks",
+        "Transport Layer (Layer 4) - Manages TCP/UDP connections and port numbers",
+        "Application Layer (Layer 7) - Handles HTTP, DNS, and application protocols",
+        "Data Link Layer (Layer 2) - Manages MAC addresses and switches"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "The Transport Layer (Layer 4) is responsible for end-to-end communication, handling TCP/UDP connections, port numbers, and ensuring reliable data delivery. In this scenario, the issue is likely at Layer 4 (firewall blocking the port) or Layer 7 (application not listening).",
+      "hint": "Think about which layer manages TCP connections and port numbers like 443 for HTTPS."
+    },
+    {
+      "id": "cidr-notation",
+      "title": "CIDR and Subnetting",
+      "description": "How many usable IP addresses are available in a 10.0.1.0/28 subnet?",
+      "situation": "You're setting up a VPC subnet for a microservices cluster and need to ensure you have enough IP addresses for 12 containers plus future growth.",
+      "codeExample": "Subnet: 10.0.1.0/28\nRequired IPs: 12 containers + 2 load balancers\nAWS reserves 5 IPs per subnet (network, gateway, DNS, broadcast, reserved)",
+      "options": [
+        "14 usable IPs (16 total - 2 for network and broadcast)",
+        "11 usable IPs (16 total - 5 reserved by AWS)",
+        "16 usable IPs (all addresses in the range)",
+        "32 usable IPs (/28 means 32 addresses)"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "/28 provides 2^(32-28) = 16 total IP addresses. AWS reserves 5 IPs in every subnet: network address (.0), VPC router (.1), DNS (.2), future use (.3), and broadcast (.255). This leaves 11 usable IPs, which wouldn't be enough for your 14 services. You'd need at least a /27 (27 usable IPs).",
+      "hint": "Remember that cloud providers like AWS reserve additional IPs beyond just network and broadcast addresses."
+    },
+    {
+      "id": "cia-triad",
+      "title": "CIA Triad Fundamentals",
+      "description": "A database backup is encrypted at rest and replicated to three regions. Which CIA principle does this primarily address?",
+      "situation": "Your security team is implementing a disaster recovery strategy and needs to justify the cost of multi-region encrypted backups.",
+      "codeExample": "Backup Strategy:\n- AES-256 encryption at rest\n- Replicated to us-east-1, eu-west-1, ap-south-1\n- Daily snapshots with 30-day retention\n- Cross-account backup copies",
+      "options": [
+        "Confidentiality - encryption prevents unauthorized access to backup data",
+        "Integrity - checksums ensure data hasn't been tampered with",
+        "Availability - multi-region replication ensures data can be recovered if one region fails",
+        "All three equally - encryption (C), replication (A), and versioning (I)"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "This strategy addresses all three CIA principles: Confidentiality through encryption, Integrity through cross-account copies and versioning (implied by retention), and Availability through multi-region replication. The multi-region aspect primarily addresses Availability, but the complete strategy covers all three.",
+      "hint": "Consider how encryption, replication, and retention each contribute to different aspects of security."
+    },
+    {
+      "id": "zero-trust",
+      "title": "Zero Trust Architecture",
+      "description": "Which statement best describes the Zero Trust security model?",
+      "situation": "Your company is moving from a traditional perimeter-based security model to Zero Trust. Leadership wants to understand the fundamental principle.",
+      "codeExample": "Old Model (Perimeter Security):\n- VPN access = full internal network access\n- Trust all traffic inside the firewall\n- Single authentication at entry point\n\nNew Model (Zero Trust):\n- Verify every request\n- Least privilege access\n- Assume breach",
+      "options": [
+        "Never trust, always verify - authenticate and authorize every request regardless of network location",
+        "Trust but verify - allow internal traffic but log everything for audit",
+        "Defense in depth - use multiple layers of firewalls and security tools",
+        "Principle of least privilege - give users minimum permissions needed"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Zero Trust's core principle is 'never trust, always verify' - every request must be authenticated and authorized, regardless of whether it comes from inside or outside the network. This eliminates the concept of a trusted internal network. While least privilege is a component, the fundamental shift is treating every request as potentially hostile.",
+      "hint": "Zero Trust eliminates the concept of a trusted 'inside' network."
+    },
+    {
+      "id": "security-groups-nacls",
+      "title": "Security Groups vs NACLs",
+      "description": "What is the key difference between AWS Security Groups and Network ACLs?",
+      "situation": "You need to block traffic from a specific IP range that's been identified as malicious. Should you use Security Groups or NACLs?",
+      "codeExample": "Requirement: Block 192.0.2.0/24 from accessing EC2 instances\n\nOption 1 (Security Group):\n- Inbound rules: Allow specific ports\n- Cannot add explicit deny rules\n\nOption 2 (NACL):\n- Inbound rules: Can add deny rules\n- Rules evaluated in number order",
+      "options": [
+        "Security Groups are stateful and only support allow rules; NACLs are stateless and support both allow and deny rules",
+        "Security Groups apply to subnets; NACLs apply to individual instances",
+        "Security Groups operate at Layer 7; NACLs operate at Layer 4",
+        "Security Groups are evaluated first; NACLs are the last line of defense"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Security Groups are stateful (return traffic is automatically allowed) and only support allow rules - you cannot explicitly deny traffic. NACLs are stateless (you must allow both inbound and outbound) and support both allow and deny rules evaluated in order. For blocking specific IPs, use NACLs since Security Groups cannot create deny rules.",
+      "hint": "Think about whether you need to explicitly deny traffic or just control what's allowed."
+    },
+    {
+      "id": "ssl-tls-handshake",
+      "title": "SSL/TLS Handshake Process",
+      "description": "During the TLS handshake, when does the server send its certificate to the client?",
+      "situation": "You're debugging an SSL certificate error and need to understand at which point in the handshake the certificate is validated.",
+      "codeExample": "TLS Handshake Steps:\n1. Client Hello (supported ciphers, TLS version)\n2. Server Hello (selected cipher, TLS version)\n3. Server Certificate\n4. Server Key Exchange\n5. Client Key Exchange\n6. Finished messages",
+      "options": [
+        "Before cipher negotiation - the certificate determines which ciphers can be used",
+        "After Server Hello - immediately after agreeing on cipher and TLS version",
+        "After Client Key Exchange - once the client proves it can decrypt the certificate",
+        "During the Finished step - as part of the final handshake verification"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The server sends its certificate immediately after the Server Hello message, after the cipher suite and TLS version have been agreed upon. The client then validates the certificate (checking chain of trust, expiration, hostname match) before proceeding with key exchange. This is why certificate errors appear early in the connection process.",
+      "hint": "The certificate is sent early in the handshake, right after cipher negotiation."
+    },
+    {
+      "id": "iam-policies",
+      "title": "IAM Policy Evaluation",
+      "description": "A user has an explicit Allow in an IAM policy and an explicit Deny in an SCP (Service Control Policy). What happens?",
+      "situation": "You're implementing organization-wide restrictions using SCPs while individual teams manage their own IAM policies. Understanding evaluation order is critical.",
+      "codeExample": "IAM User Policy:\n{\n  \"Effect\": \"Allow\",\n  \"Action\": \"s3:DeleteBucket\",\n  \"Resource\": \"*\"\n}\n\nOrganization SCP:\n{\n  \"Effect\": \"Deny\",\n  \"Action\": \"s3:DeleteBucket\",\n  \"Resource\": \"*\"\n}",
+      "options": [
+        "Allow wins - IAM policies are evaluated before SCPs",
+        "Deny wins - explicit deny always overrides allow in AWS",
+        "Most specific wins - the more restrictive Resource condition is used",
+        "Neither - conflicting policies cancel each other out, resulting in implicit deny"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "In AWS, an explicit deny always wins, regardless of whether it's in an IAM policy, SCP, permission boundary, or resource policy. AWS policy evaluation follows: 1) Explicit deny = deny, 2) Explicit allow = allow, 3) Default = deny. SCPs set the maximum permissions boundary - even if an IAM policy allows an action, an SCP deny will block it.",
+      "hint": "Remember the AWS policy evaluation rule: explicit deny always wins."
+    },
+    {
+      "id": "kubernetes-network-policy",
+      "title": "Kubernetes Network Policies",
+      "description": "What is the default behavior if no NetworkPolicy is applied to a pod in Kubernetes?",
+      "situation": "You're securing a microservices cluster and need to understand the baseline security posture before implementing network policies.",
+      "codeExample": "Cluster Setup:\n- 50 microservices across 10 namespaces\n- No NetworkPolicy resources defined\n- Services communicate via ClusterIP\n- External traffic via Ingress\n\nQuestion: Can frontend pods communicate with database pods?",
+      "options": [
+        "All traffic is denied - Kubernetes follows a deny-by-default model",
+        "All traffic is allowed - pods can communicate with any other pod on any port",
+        "Same-namespace traffic allowed - cross-namespace traffic is denied",
+        "Only labeled pods can communicate - unlabeled pods are isolated"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "intermediate",
+      "explanation": "By default, Kubernetes allows all pod-to-pod communication. Pods can reach any other pod in any namespace on any port. Once you create a NetworkPolicy selecting a pod, that pod becomes isolated and only allows traffic explicitly defined in NetworkPolicy rules. This is the opposite of firewalls which typically deny by default.",
+      "hint": "Think about whether Kubernetes is secure by default or open by default."
+    },
+    {
+      "id": "secrets-management",
+      "title": "Secrets Management Best Practices",
+      "description": "Which approach provides the best security for managing database credentials in Kubernetes?",
+      "situation": "Your application needs to connect to a PostgreSQL database. Multiple teams are debating the best approach for credential management.",
+      "codeExample": "Requirements:\n- Credentials should rotate automatically\n- No secrets in git repository\n- Audit logging of secret access\n- Works with existing PostgreSQL RDS",
+      "options": [
+        "Store credentials in Kubernetes Secrets, mount as environment variables",
+        "Use AWS Secrets Manager with IAM roles for service accounts (IRSA) and automatic rotation",
+        "Encrypt credentials with KMS and store in ConfigMap",
+        "Use HashiCorp Vault with dynamic database credentials"
+      ],
+      "correctAnswer": 3,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "HashiCorp Vault with dynamic database credentials is the gold standard. Vault generates short-lived credentials on-demand, rotates them automatically, provides audit logging, and revokes access when the lease expires. While AWS Secrets Manager (option 2) is also good, Vault's dynamic secrets are superior because credentials are unique per application and short-lived. Kubernetes Secrets (option 1) are just base64-encoded and don't rotate automatically.",
+      "hint": "The best solution generates unique, short-lived credentials rather than sharing long-lived secrets."
+    },
+    {
+      "id": "waf-protection",
+      "title": "Web Application Firewall (WAF)",
+      "description": "Which attack type is a WAF best suited to prevent?",
+      "situation": "Your e-commerce site is experiencing attacks. The security team is proposing different solutions based on the attack patterns observed.",
+      "codeExample": "Attack Patterns Observed:\n1. DDoS from botnet (1M requests/minute)\n2. SQL injection in search parameters\n3. Port scanning of backend servers\n4. Brute force on SSH (port 22)\n\nProposed Solutions:\n- AWS Shield for DDoS\n- WAF for application attacks\n- Security Groups for port filtering",
+      "options": [
+        "DDoS attacks - WAF can rate limit requests from malicious IPs",
+        "SQL injection - WAF inspects HTTP requests and blocks malicious patterns",
+        "Port scanning - WAF monitors network traffic on all ports",
+        "SSH brute force - WAF can block authentication attempts"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "intermediate",
+      "explanation": "WAF (Web Application Firewall) operates at Layer 7 and is designed to inspect HTTP/HTTPS traffic for application-layer attacks like SQL injection, XSS, and CSRF. While WAF can help with rate limiting for DDoS, dedicated DDoS protection (AWS Shield) is better. Port scanning and SSH attacks happen below Layer 7, so network-level controls (Security Groups, NACLs) are more appropriate.",
+      "hint": "WAF operates at the application layer (Layer 7) and inspects HTTP traffic."
+    },
+    {
+      "id": "certificate-lifecycle",
+      "title": "Certificate Lifecycle Management",
+      "description": "Your company uses Let's Encrypt certificates. What is the maximum validity period before renewal is required?",
+      "situation": "You're automating certificate renewal for 200 domains and need to set up monitoring alerts. Understanding certificate lifetimes is essential.",
+      "codeExample": "Current Setup:\n- Let's Encrypt certificates for all domains\n- cert-manager in Kubernetes for automation\n- Need to set alert threshold\n\nQuestion: When should we alert if renewal fails?",
+      "options": [
+        "30 days - Let's Encrypt certificates are valid for 30 days",
+        "90 days - Let's Encrypt certificates are valid for 90 days",
+        "1 year - standard SSL certificate validity",
+        "2 years - maximum validity before CA/Browser Forum changes"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Let's Encrypt certificates are valid for 90 days to encourage automation and limit the impact of key compromise. They recommend renewing at 60 days (30 days before expiry). Set alerts if renewal fails at 60 days, and critical alerts if certificates are within 7 days of expiry. The CA/Browser Forum reduced maximum certificate validity to 1 year in 2020, but Let's Encrypt has always used 90 days.",
+      "hint": "Let's Encrypt uses much shorter validity periods than traditional certificate authorities."
+    },
+    {
+      "id": "bastion-host",
+      "title": "Bastion Host Security",
+      "description": "What is the primary purpose of a bastion host (jump box)?",
+      "situation": "Your infrastructure team is designing secure access to private EC2 instances in a VPC. Database servers have no public IPs.",
+      "codeExample": "Architecture:\n- Public subnet: Bastion host (public IP)\n- Private subnet: Database servers (no public IP)\n- Security Groups: Bastion allows SSH from office IP\n- Database SG: Allows SSH only from Bastion SG\n\nAccess flow: Engineer → Bastion → Database",
+      "options": [
+        "Load balancing - distribute SSH connections across multiple private instances",
+        "Single point of entry - control and audit all access to private resources",
+        "VPN replacement - provide encrypted tunnels to internal resources",
+        "SSH key management - centralized storage of SSH private keys"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "intermediate",
+      "explanation": "A bastion host (jump box) provides a single, hardened point of entry to private resources. This allows you to: 1) Apply strict security controls in one place, 2) Enable detailed audit logging of all access, 3) Implement 2FA/MFA at the entry point, 4) Reduce attack surface by keeping other resources private. Modern alternatives include AWS Session Manager (no bastion needed) or Zero Trust access.",
+      "hint": "Think about creating a single, auditable entry point to your private infrastructure."
+    },
+    {
+      "id": "defense-in-depth",
+      "title": "Defense in Depth Strategy",
+      "description": "Which scenario best demonstrates the defense in depth principle?",
+      "situation": "Your security architect is presenting a comprehensive security strategy to leadership and needs to demonstrate layered security.",
+      "codeExample": "Scenario A: Single strong firewall with advanced rules\n\nScenario B: Multiple layers:\n- Perimeter firewall\n- WAF on application\n- Security groups per service\n- IAM roles with least privilege\n- Encryption at rest and in transit\n- Regular security scanning",
+      "options": [
+        "Scenario A - investing in the best single security control is most effective",
+        "Scenario B - multiple overlapping security controls create redundancy",
+        "Both equally - it's about implementation quality, not quantity of controls",
+        "Neither - defense in depth only applies to physical security"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "intermediate",
+      "explanation": "Defense in depth is the practice of layering multiple security controls so that if one fails, others still provide protection. Scenario B demonstrates this: if the perimeter firewall is bypassed, WAF provides application-level protection; if WAF is circumvented, Security Groups limit lateral movement; if an attacker gains access, IAM limits what they can do; and encryption protects data even if accessed. No single control is perfect, so layers are essential.",
+      "hint": "Defense in depth means multiple layers of security, not relying on any single control."
+    },
+    {
+      "id": "vpn-protocols",
+      "title": "VPN Protocols Comparison",
+      "description": "Which VPN protocol is generally considered most secure and modern?",
+      "situation": "Your company is replacing an old PPTP VPN solution. The team is evaluating OpenVPN, IPSec, and WireGuard for the new remote access solution.",
+      "codeExample": "Requirements:\n- Support for 500+ remote users\n- Mobile device support (iOS, Android)\n- Modern encryption (no legacy vulnerabilities)\n- Good performance on high-latency connections\n- Easy to configure and maintain",
+      "options": [
+        "PPTP - widely supported and fast",
+        "OpenVPN - mature, audited, and highly configurable",
+        "WireGuard - modern, minimal codebase, faster than OpenVPN",
+        "IPSec - industry standard with hardware acceleration"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "WireGuard is the most modern VPN protocol with significant advantages: only 4,000 lines of code (vs 100,000+ for OpenVPN), uses modern cryptography (Curve25519, ChaCha20), faster handshakes, better roaming on mobile, and easier to audit due to simplicity. Linux kernel included it in 5.6. While OpenVPN (option 2) is also good and more mature, WireGuard is considered the future. PPTP is insecure and deprecated.",
+      "hint": "Consider which protocol was designed most recently with modern cryptography in mind."
+    },
+    {
+      "id": "siem-logging",
+      "title": "SIEM and Log Aggregation",
+      "description": "What is the primary benefit of using a SIEM (Security Information and Event Management) system?",
+      "situation": "Security team wants to implement centralized logging. They're debating between basic log aggregation (ELK stack) vs full SIEM (Splunk, Datadog).",
+      "codeExample": "Log Sources:\n- Application logs (1 TB/day)\n- WAF logs\n- VPC Flow Logs\n- CloudTrail (API audit logs)\n- OS security logs\n\nObjective: Detect security incidents quickly",
+      "options": [
+        "Cost reduction - SIEM consolidates logs to reduce storage costs",
+        "Compliance - SIEM provides log retention for regulatory requirements",
+        "Correlation and alerting - SIEM connects events across systems to detect threats",
+        "Performance - SIEM makes log queries faster than databases"
+      ],
+      "correctAnswer": 2,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "SIEM's core value is correlating events across multiple systems to detect security incidents. For example: failed login (App) + failed MFA (Identity) + API calls from unusual location (CloudTrail) + data exfiltration (VPC Flow Logs) = potential breach. Basic log aggregation shows individual events, but SIEM connects dots across systems and time to identify patterns indicating attacks. Modern SIEMs also use ML for anomaly detection.",
+      "hint": "SIEM's power is in connecting events across different systems to detect patterns."
+    },
+    {
+      "id": "container-security",
+      "title": "Container Security Best Practices",
+      "description": "Which approach most effectively reduces container security risks?",
+      "situation": "Your team is hardening container images for production. Multiple security improvements have been proposed.",
+      "codeExample": "Current Dockerfile:\nFROM ubuntu:latest\nRUN apt-get update && apt-get install -y python3\nCOPY app.py /app/\nUSER root\nCMD [\"python3\", \"/app/app.py\"]\n\nProposed improvements:\nA) Use specific version tags\nB) Use minimal base images (alpine, distroless)\nC) Run as non-root user\nD) Scan for vulnerabilities",
+      "options": [
+        "A only - version pinning prevents supply chain attacks",
+        "C only - running as non-root is the most critical security control",
+        "B and C - minimal image + non-root user",
+        "All of the above (A, B, C, D) - defense in depth for containers"
+      ],
+      "correctAnswer": 3,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Container security requires defense in depth: A) Specific tags prevent unexpected changes and enable reproducible builds; B) Minimal images reduce attack surface (alpine/distroless have far fewer packages); C) Non-root prevents privilege escalation; D) Vulnerability scanning catches known CVEs. Each control addresses different risk vectors. A complete approach includes: minimal images, non-root, specific versions, scanning, read-only filesystems, and runtime security.",
+      "hint": "Effective container security requires multiple complementary controls."
+    },
+    {
+      "id": "incident-response",
+      "title": "Security Incident Response",
+      "description": "During a security incident, what should be the first priority?",
+      "situation": "At 2am, your monitoring alerts that unusual data is being exfiltrated from a production database. Multiple team members are on the incident call.",
+      "codeExample": "Alert Details:\n- 50 GB data transfer to unknown IP (Russia)\n- API key compromised (leaked in public GitHub repo)\n- Data includes customer PII\n- Transfer ongoing\n\nCurrent state: Investigating root cause",
+      "options": [
+        "Root cause analysis - understand exactly how the breach occurred",
+        "Containment - immediately stop the data exfiltration and revoke compromised credentials",
+        "Evidence preservation - take snapshots before making any changes",
+        "Notification - inform customers and regulators of the breach"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "The incident response priority order is: 1) Containment (stop ongoing damage), 2) Eradication (remove attacker access), 3) Recovery (restore services), 4) Lessons learned. While evidence preservation is important, stopping ongoing data theft is critical - revoke the API key, block the IP, isolate the database. Take snapshots during containment if possible. Root cause analysis comes after containment. Notification timing depends on regulations (GDPR requires 72 hours).",
+      "hint": "Stop the bleeding first - prevent further damage before investigating how it happened."
+    },
+    {
+      "id": "mfa-authentication",
+      "title": "Multi-Factor Authentication",
+      "description": "Which MFA method provides the strongest security against phishing attacks?",
+      "situation": "After several employees fell victim to phishing attacks, you're upgrading the company's MFA implementation.",
+      "codeExample": "Current: SMS-based OTP codes\n\nOptions to evaluate:\n1. SMS OTP (current)\n2. Authenticator app (TOTP like Google Authenticator)\n3. Hardware security keys (FIDO2/WebAuthn like YubiKey)\n4. Push notifications (like Duo Mobile)\n\nThreat: Sophisticated phishing with real-time relay attacks",
+      "options": [
+        "SMS OTP - codes are convenient and work on any phone",
+        "Authenticator app (TOTP) - more secure than SMS and doesn't require cellular",
+        "Hardware security keys (FIDO2) - cryptographic proof that prevents phishing",
+        "Push notifications - easiest for users with smart approval workflows"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Hardware security keys using FIDO2/WebAuthn are phishing-resistant because they use public-key cryptography and verify the domain. The key only works on the legitimate site's domain - if a user is on a phishing site, the key won't respond. SMS is vulnerable to SIM swapping and interception. TOTP codes can be phished in real-time relay attacks. Push notifications can be approved accidentally (MFA fatigue attacks). For high-security environments, hardware keys are the gold standard.",
+      "hint": "Look for the method that cryptographically verifies the website domain."
+    }
+  ]
+}
