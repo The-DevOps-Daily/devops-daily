@@ -5,18 +5,21 @@ import { ArrowRight, Terminal, GitBranch, Cloud, Cpu, Sparkles } from 'lucide-re
 import { getAllPosts } from '@/lib/posts';
 import { getAllGuides } from '@/lib/guides';
 import { getActiveGames } from '@/lib/games';
+import { getAllQuizzes } from '@/lib/quiz-loader';
 
 export async function Hero() {
   // Fetch counts dynamically
-  const [posts, guides, games] = await Promise.all([
+  const [posts, guides, games, quizzes] = await Promise.all([
     getAllPosts(),
     getAllGuides(),
     getActiveGames(),
+    getAllQuizzes(),
   ]);
 
   const postsCount = posts.length;
   const guidesCount = guides.length;
   const gamesCount = games.length;
+  const quizzesCount = quizzes.length;
 
   return (
     <div className="relative overflow-hidden bg-background">
@@ -76,7 +79,7 @@ export async function Hero() {
           </p>
 
           {/* Stats */}
-          <div className="flex justify-center gap-8 mt-10 text-sm">
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mt-10 text-sm">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{postsCount}+</div>
               <div className="text-muted-foreground">Articles</div>
@@ -88,6 +91,10 @@ export async function Hero() {
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{gamesCount}+</div>
               <div className="text-muted-foreground">Games</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{quizzesCount}+</div>
+              <div className="text-muted-foreground">Quizzes</div>
             </div>
           </div>
 
