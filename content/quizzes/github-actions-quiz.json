@@ -1,0 +1,263 @@
+{
+  "id": "github-actions-quiz",
+  "title": "GitHub Actions Workflows Quiz",
+  "description": "Master GitHub Actions workflows, YAML syntax, marketplace actions, and modern CI/CD automation",
+  "category": "CI/CD",
+  "icon": "GitBranch",
+  "theme": {
+    "primaryColor": "gray",
+    "gradientFrom": "from-gray-700",
+    "gradientTo": "to-gray-900"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 4,
+      "intermediate": 8,
+      "advanced": 3
+    }
+  },
+  "totalPoints": 218,
+  "questions": [
+    {
+      "id": 1,
+      "title": "Workflow Trigger Events",
+      "description": "Which trigger event allows you to manually run a GitHub Actions workflow from the Actions tab?",
+      "difficulty": "beginner",
+      "points": 10,
+      "options": [
+        "manual_dispatch",
+        "workflow_dispatch",
+        "push_manual",
+        "trigger_manual"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The `workflow_dispatch` event allows manual workflow execution from the GitHub Actions UI. It can accept input parameters for customization.",
+      "hint": "The keyword includes 'dispatch' for sending workflows on demand."
+    },
+    {
+      "id": 2,
+      "title": "GitHub-Hosted Runners",
+      "description": "What is the default runner operating system if no `runs-on` is specified in a GitHub Actions workflow?",
+      "difficulty": "beginner",
+      "points": 10,
+      "options": [
+        "ubuntu-latest",
+        "There is no default, it must be specified",
+        "windows-latest",
+        "macos-latest"
+      ],
+      "correctAnswer": 1,
+      "explanation": "GitHub Actions requires an explicit `runs-on` specification. There is no default runner. Common choices are ubuntu-latest, windows-latest, or macos-latest.",
+      "hint": "GitHub enforces explicit runner selection for clarity."
+    },
+    {
+      "id": 3,
+      "title": "Secrets Management",
+      "description": "How do you access a repository secret named `API_KEY` in a GitHub Actions workflow?",
+      "difficulty": "beginner",
+      "points": 12,
+      "options": [
+        "${{ env.API_KEY }}",
+        "${{ secrets.API_KEY }}",
+        "${{ vars.API_KEY }}",
+        "${{ github.secrets.API_KEY }}"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Repository secrets are accessed via the `secrets` context: `${{ secrets.SECRET_NAME }}`. Secrets are encrypted and masked in logs.",
+      "hint": "Secrets have their own dedicated context namespace."
+    },
+    {
+      "id": 4,
+      "title": "Matrix Strategy Basics",
+      "description": "What does a matrix strategy in GitHub Actions allow you to do?",
+      "difficulty": "beginner",
+      "points": 12,
+      "options": [
+        "Run jobs in a specific order",
+        "Run the same job with different configurations in parallel",
+        "Create dependencies between workflows",
+        "Schedule workflows at different times"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Matrix strategies run the same job multiple times in parallel with different variable combinations (e.g., testing across Node 14, 16, 18).",
+      "hint": "Think of testing across multiple versions or environments simultaneously."
+    },
+    {
+      "id": 5,
+      "title": "Popular Marketplace Action",
+      "description": "Which action is required as the first step in most GitHub Actions workflows to access repository code?",
+      "difficulty": "intermediate",
+      "points": 14,
+      "options": [
+        "actions/download-artifact@v3",
+        "actions/checkout@v4",
+        "actions/setup-node@v3",
+        "actions/clone-repo@v2"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The `actions/checkout` action clones your repository to the runner, giving subsequent steps access to your code. It's almost always the first step.",
+      "hint": "This action 'checks out' your code to the runner."
+    },
+    {
+      "id": 6,
+      "title": "Action Versioning Best Practice",
+      "description": "What is the recommended way to version actions in production workflows?",
+      "difficulty": "intermediate",
+      "points": 14,
+      "options": [
+        "Always use @latest",
+        "Pin to a specific commit SHA",
+        "Use @main or @master branch",
+        "Don't specify a version"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Pinning to a commit SHA (e.g., `actions/checkout@a12b3c4`) ensures immutability and prevents breaking changes. For convenience, major version tags (e.g., @v4) are also acceptable.",
+      "hint": "The most immutable versioning approach uses the git commit hash."
+    },
+    {
+      "id": 7,
+      "title": "Reusable Workflows",
+      "description": "How do you call a reusable workflow from another workflow?",
+      "difficulty": "intermediate",
+      "points": 16,
+      "options": [
+        "uses: ./.github/workflows/reusable.yml",
+        "uses: owner/repo/.github/workflows/reusable.yml@main",
+        "include: ./.github/workflows/reusable.yml",
+        "import: reusable-workflow"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Reusable workflows are called using `uses:` with the full path including repository, file path, and ref: `owner/repo/.github/workflows/file.yml@ref`.",
+      "hint": "The syntax is similar to calling marketplace actions, but points to a workflow file."
+    },
+    {
+      "id": 8,
+      "title": "Conditional Job Execution",
+      "description": "Which expression would run a job only on push to the main branch?",
+      "difficulty": "intermediate",
+      "points": 16,
+      "options": [
+        "if: github.ref == 'main'",
+        "if: github.ref == 'refs/heads/main'",
+        "if: github.branch == 'main'",
+        "if: branch.name == 'main'"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The `github.ref` context contains the fully qualified ref (e.g., 'refs/heads/main' for branches, 'refs/tags/v1.0' for tags). Always use the full ref path.",
+      "hint": "GitHub uses fully qualified references like 'refs/heads/' for branches."
+    },
+    {
+      "id": 9,
+      "title": "Concurrency Control",
+      "description": "What does the `concurrency` key in a workflow do?",
+      "difficulty": "intermediate",
+      "points": 16,
+      "options": [
+        "Limits how many jobs run simultaneously",
+        "Controls how many runners can execute the workflow",
+        "Prevents multiple workflow runs from executing concurrently for the same concurrency group",
+        "Sets the maximum number of matrix jobs"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The `concurrency` key groups workflow runs. When a new run starts, previous runs in the same group can be canceled (with `cancel-in-progress: true`) or queued.",
+      "hint": "It prevents overlapping deployments or concurrent runs of the same workflow."
+    },
+    {
+      "id": 10,
+      "title": "Environment Protection Rules",
+      "description": "What can you configure with GitHub environment protection rules?",
+      "difficulty": "intermediate",
+      "points": 16,
+      "options": [
+        "Required reviewers and wait timers before deployment",
+        "The operating system for the runner",
+        "Which branches can trigger workflows",
+        "Maximum workflow execution time"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Environment protection rules allow you to require manual approvals from specific reviewers and add wait timers before deploying to environments like production.",
+      "hint": "Protection rules add gates before deploying to sensitive environments."
+    },
+    {
+      "id": 11,
+      "title": "Docker Container Jobs",
+      "description": "How do you run a job in a custom Docker container?",
+      "difficulty": "intermediate",
+      "points": 14,
+      "options": [
+        "runs-on: docker://myimage:latest",
+        "container: myimage:latest",
+        "docker: myimage:latest",
+        "image: myimage:latest"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The `container:` key specifies a Docker image for the job. Steps run inside this container instead of directly on the runner.",
+      "hint": "The keyword is the same as what Docker uses to describe images."
+    },
+    {
+      "id": 12,
+      "title": "Dependency Caching",
+      "description": "Which action is commonly used to cache dependencies and speed up workflows?",
+      "difficulty": "intermediate",
+      "points": 14,
+      "options": [
+        "actions/cache@v3",
+        "actions/save-cache@v3",
+        "actions/store@v3",
+        "actions/persist@v3"
+      ],
+      "correctAnswer": 0,
+      "explanation": "The `actions/cache` action stores and restores dependencies (like npm packages, pip packages) between workflow runs to reduce build time.",
+      "hint": "The action name directly describes its function."
+    },
+    {
+      "id": 13,
+      "title": "Artifact Management",
+      "description": "What is the retention period for artifacts uploaded with `actions/upload-artifact`?",
+      "difficulty": "advanced",
+      "points": 18,
+      "options": [
+        "7 days",
+        "90 days (default, configurable per repository)",
+        "30 days",
+        "Unlimited"
+      ],
+      "correctAnswer": 1,
+      "explanation": "By default, artifacts are retained for 90 days, but this can be configured at the repository level. You can also specify retention per artifact using the `retention-days` parameter.",
+      "hint": "The default is longer than a month but less than a year."
+    },
+    {
+      "id": 14,
+      "title": "Workflow Debugging",
+      "description": "How do you enable debug logging for a workflow run?",
+      "difficulty": "advanced",
+      "points": 18,
+      "options": [
+        "Add debug: true to the workflow YAML",
+        "Set repository secret ACTIONS_STEP_DEBUG to true",
+        "Run workflow with --debug flag",
+        "Enable in repository settings"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Setting the `ACTIONS_STEP_DEBUG` repository secret to `true` enables debug logging, showing additional diagnostic information for troubleshooting workflow issues.",
+      "hint": "Debug mode is enabled via a special repository secret."
+    },
+    {
+      "id": 15,
+      "title": "Composite Actions",
+      "description": "What is the main advantage of composite actions over JavaScript or Docker actions?",
+      "difficulty": "advanced",
+      "points": 18,
+      "options": [
+        "They execute faster",
+        "They can combine multiple steps into a single reusable action without requiring code",
+        "They have access to more GitHub contexts",
+        "They can run on all platforms"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Composite actions let you bundle multiple workflow steps into a single action using YAML, without writing JavaScript or building Docker images. They're simpler to create and maintain.",
+      "hint": "Composite actions are defined purely in YAML, combining existing steps."
+    }
+  ]
+}
