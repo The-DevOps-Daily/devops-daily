@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { QuizManager } from '@/components/games/quiz-manager';
 import { getQuizMetadata } from '@/lib/quiz-loader';
+import { QuizzesHero } from '@/components/quizzes-hero';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -51,54 +52,7 @@ export default async function QuizzesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-20">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-grid opacity-[0.02]" />
-          <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-20 left-20 w-72 h-72 bg-blue-500/10 rounded-full blur-[100px]" />
-        </div>
-
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 px-4 py-1.5 border-purple-500/50 bg-purple-500/5 backdrop-blur-sm"
-            >
-              <Trophy className="w-3.5 h-3.5 mr-2 text-purple-500" />
-              Knowledge Testing
-            </Badge>
-
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              DevOps{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500">
-                Quizzes & Tests
-              </span>
-            </h1>
-
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Test your DevOps knowledge with our interactive quizzes covering Git, Docker,
-              Kubernetes, Terraform, and more. Track your progress and identify areas for
-              improvement.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></div>
-                <span>{quizzes.length} Interactive Quizzes</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-purple-500" />
-                <span>Multiple Difficulty Levels</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-blue-500" />
-                <span>Real-time Feedback</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <QuizzesHero quizCount={quizzes.length} />
 
       {/* Quizzes Section */}
       {quizzes.length > 0 ? (
