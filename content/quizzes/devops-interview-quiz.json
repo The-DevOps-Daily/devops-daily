@@ -1,0 +1,288 @@
+{
+  "id": "devops-interview-quiz",
+  "title": "DevOps Interview Questions Quiz",
+  "description": "Prepare for your DevOps interviews with real questions asked by top companies covering CI/CD, Kubernetes, IaC, monitoring, and incident management",
+  "category": "Interview Prep",
+  "icon": "Briefcase",
+  "totalPoints": 200,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-indigo-600"
+  },
+  "metadata": {
+    "estimatedTime": "25-30 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 8,
+      "advanced": 4
+    }
+  },
+  "questions": [
+    {
+      "id": "cicd-deployment-strategies",
+      "title": "Deployment Strategies",
+      "description": "Explain the differences between blue-green, canary, and rolling deployments.",
+      "situation": "You're designing a deployment strategy for a high-traffic e-commerce platform. The business requires zero downtime and the ability to quickly rollback if issues are detected.",
+      "codeExample": "Requirements:\n- Zero downtime during deployments\n- Instant rollback capability\n- Gradual traffic shifting to validate changes\n- Cost-effective infrastructure usage",
+      "options": [
+        "Use blue-green deployment for instant rollback, but requires double infrastructure cost",
+        "Use canary deployment to gradually shift traffic (5%, 25%, 50%, 100%) with automated rollback on error rate increase",
+        "Use rolling deployment to update instances one by one",
+        "Use recreate strategy with maintenance window"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Canary deployments are ideal for high-traffic applications as they allow gradual traffic shifting (5%, 25%, 50%, 100%) while monitoring metrics. If error rates spike, you can automatically rollback without affecting all users. Blue-green requires double infrastructure, rolling lacks fine-grained control, and recreate causes downtime.",
+      "hint": "Consider which strategy offers both gradual rollout and quick rollback without doubling infrastructure costs.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "kubernetes-architecture",
+      "title": "Kubernetes Components",
+      "description": "What is the role of the kubelet in a Kubernetes cluster?",
+      "situation": "During an interview, you're asked to explain how Kubernetes manages containers on worker nodes and ensures that pods match their desired state.",
+      "options": [
+        "Kubelet is the API server that handles all REST requests",
+        "Kubelet is an agent that runs on each node, ensures containers are running in pods, and reports node status to the control plane",
+        "Kubelet is the scheduler that assigns pods to nodes",
+        "Kubelet is the controller that manages replica sets"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The kubelet is the primary node agent that runs on each worker node. It receives pod specifications from the API server, ensures containers described in those pods are running and healthy, and reports back the node and pod status. It's the bridge between the control plane and the actual container runtime.",
+      "hint": "Think about what component actually manages containers at the node level.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "terraform-state-management",
+      "title": "Terraform State Management",
+      "description": "Why is it important to use remote state backends in Terraform?",
+      "situation": "Your team is growing from 2 to 10 engineers. Currently, Terraform state is stored locally on individual machines. You need to explain why this won't scale.",
+      "codeExample": "Current problems:\n- State conflicts when multiple engineers work\n- No state locking\n- State files contain sensitive data\n- No backup or versioning",
+      "options": [
+        "Local state is fine, just use git to sync state files",
+        "Remote state backends (S3, Azure Blob, Terraform Cloud) provide state locking, encryption, versioning, and team collaboration",
+        "Remote state is only needed for production environments",
+        "State files should be encrypted and shared via email"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Remote state backends are essential for team collaboration. They provide: 1) State locking to prevent concurrent modifications, 2) Encryption at rest for sensitive data, 3) Versioning for rollback capability, 4) Access controls, and 5) Centralized state for consistency. S3 with DynamoDB for locking is a common solution.",
+      "hint": "Consider what happens when multiple people try to modify infrastructure simultaneously.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "monitoring-sli-slo-sla",
+      "title": "SLI, SLO, and SLA Definitions",
+      "description": "Explain the difference between SLI, SLO, and SLA with examples.",
+      "situation": "You're establishing reliability metrics for a new service. The product team asks what these terms mean and how they relate to each other.",
+      "options": [
+        "They're all the same thing, just different acronyms",
+        "SLI is a metric (e.g., 99.9% uptime), SLO is your internal target (99.95% uptime), SLA is your customer promise (99.5% uptime with penalties)",
+        "SLA is what you measure, SLO is what you promise, SLI is what customers see",
+        "SLI and SLO are internal metrics, SLA is only for legal contracts"
+      ],
+      "correctAnswer": 1,
+      "explanation": "SLI (Service Level Indicator) is the actual measurement (e.g., request success rate, latency). SLO (Service Level Objective) is your internal target (99.95% success rate). SLA (Service Level Agreement) is the customer-facing commitment with consequences (99.5% uptime guarantee with credits). Your SLO should be stricter than your SLA to provide a safety buffer.",
+      "hint": "Think about the relationship: what you measure, what you target internally, and what you promise externally.",
+      "difficulty": "intermediate",
+      "points": 10
+    },
+    {
+      "id": "incident-response-process",
+      "title": "Incident Response Process",
+      "description": "Walk through the steps of handling a production incident.",
+      "situation": "At 2 AM, your payment service goes down. Multiple alerts fire. The on-call engineer needs to follow the incident response process. What are the correct steps?",
+      "codeExample": "Alert: Payment Service - Error rate > 50%\nImpact: 10,000 users unable to checkout\nStatus: CRITICAL",
+      "options": [
+        "Immediately fix the issue, then document what happened",
+        "Acknowledge alert, assess impact, communicate to stakeholders, mitigate/resolve, document in post-mortem, implement preventive measures",
+        "Wait to see if it auto-recovers, then investigate",
+        "Rollback the last deployment and hope it fixes the issue"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Proper incident response: 1) Acknowledge the alert to stop notification spam, 2) Assess impact and severity, 3) Communicate via incident channel to stakeholders, 4) Mitigate first (rollback, failover) then debug root cause, 5) Resolve and verify, 6) Conduct blameless post-mortem, 7) Implement preventive measures. Communication throughout is critical.",
+      "hint": "Think about the balance between quick mitigation and proper communication.",
+      "difficulty": "advanced",
+      "points": 15
+    },
+    {
+      "id": "container-security",
+      "title": "Container Security Best Practices",
+      "description": "What are essential security practices for containerized applications?",
+      "situation": "Your security team is reviewing your Docker containers and asks what security measures are in place. What practices should you have implemented?",
+      "codeExample": "Current Docker setup:\n- Running as root user\n- Using latest tag\n- No image scanning\n- Secrets in environment variables",
+      "options": [
+        "Current setup is fine for development environments",
+        "Use non-root users, specific image tags, scan images for vulnerabilities, use secrets management, minimal base images, read-only filesystems",
+        "Only scan images in production, development can use any practices",
+        "Security is handled by Kubernetes, no need for container-level security"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Container security requires: 1) Run as non-root user (least privilege), 2) Use specific tags (not 'latest') for reproducibility, 3) Scan images for CVEs with tools like Trivy/Snyk, 4) Never bake secrets into images (use Vault, sealed secrets), 5) Use minimal base images (Alpine, distroless), 6) Implement read-only root filesystems where possible, 7) Use security contexts in Kubernetes.",
+      "hint": "Think about defense in depth: multiple layers of security controls.",
+      "difficulty": "intermediate",
+      "points": 13
+    },
+    {
+      "id": "service-mesh-concepts",
+      "title": "Service Mesh Architecture",
+      "description": "What problems does a service mesh solve in microservices architecture?",
+      "situation": "Your microservices architecture has grown to 50 services. You're experiencing challenges with observability, security, and traffic management. The team is considering Istio or Linkerd.",
+      "options": [
+        "Service mesh only helps with logging",
+        "Service mesh provides service-to-service communication, mTLS, traffic management, observability, and circuit breaking without changing application code",
+        "Service mesh replaces Kubernetes and should be used instead",
+        "Service mesh is only useful for external traffic"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Service meshes (Istio, Linkerd, Consul) solve cross-cutting concerns: 1) Automatic mTLS for service-to-service encryption, 2) Traffic management (canary, A/B testing, retries, timeouts), 3) Observability (distributed tracing, metrics), 4) Circuit breaking and fault injection, 5) Security policies. All handled at the sidecar proxy level without code changes.",
+      "hint": "Consider what concerns are common across all microservices but shouldn't be implemented in each service.",
+      "difficulty": "advanced",
+      "points": 16
+    },
+    {
+      "id": "gitops-principles",
+      "title": "GitOps Workflow",
+      "description": "Explain the GitOps approach and its benefits.",
+      "situation": "Your team deploys using kubectl and helm commands run from CI/CD. Management wants to understand how GitOps would improve this process.",
+      "codeExample": "Current process:\n1. Developer merges PR\n2. CI builds Docker image\n3. CI runs kubectl apply\n4. No audit trail of what's deployed",
+      "options": [
+        "GitOps is just storing configs in Git, we already do that",
+        "GitOps uses Git as single source of truth: desired state in Git, automated sync agents (ArgoCD/Flux) continuously reconcile actual state, pull-based deployments, full audit trail",
+        "GitOps requires GitHub, won't work with other Git providers",
+        "GitOps is only for Kubernetes deployments"
+      ],
+      "correctAnswer": 1,
+      "explanation": "GitOps principles: 1) Git is the single source of truth for infrastructure and applications, 2) Automated agents (ArgoCD, Flux) continuously sync Git state to clusters, 3) Pull-based rather than push-based deployments improve security, 4) Complete audit trail via Git history, 5) Easy rollbacks via Git reverts, 6) Declarative configurations enable drift detection.",
+      "hint": "Think about the difference between push-based CI/CD and pull-based synchronization.",
+      "difficulty": "intermediate",
+      "points": 13
+    },
+    {
+      "id": "multi-region-strategy",
+      "title": "Multi-Region Architecture",
+      "description": "Design a multi-region deployment strategy for global application.",
+      "situation": "Your application serves users globally. You need low latency everywhere and disaster recovery capability. How do you architect this?",
+      "codeExample": "Requirements:\n- Latency < 100ms for all users\n- RPO < 15 minutes, RTO < 1 hour\n- Automatic failover\n- Data compliance (GDPR)",
+      "options": [
+        "Deploy everything in one region, users can tolerate latency",
+        "Active-active multi-region with geo-DNS routing, cross-region replication, regional data residency, automated health checks",
+        "Active-passive with manual failover to save costs",
+        "Use CDN for everything, no need for multiple regions"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Multi-region architecture requires: 1) Active-active deployments in multiple regions, 2) Geo-based DNS routing (Route53, Cloud DNS) for latency, 3) Cross-region database replication with conflict resolution, 4) Regional data residency for compliance, 5) Health checks and automatic failover, 6) Shared stateless services, regional stateful services, 7) Consider costs vs benefits per region.",
+      "hint": "Balance latency requirements, disaster recovery needs, data compliance, and operational complexity.",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "pipeline-security",
+      "title": "CI/CD Pipeline Security",
+      "description": "What security measures should be implemented in CI/CD pipelines?",
+      "situation": "You're establishing security standards for CI/CD pipelines. What controls should be in place to prevent supply chain attacks and credential leaks?",
+      "options": [
+        "Security scanning only in production is sufficient",
+        "Implement SAST/DAST scanning, dependency scanning, secrets detection, signed commits, SBOM generation, isolated build environments, least privilege service accounts",
+        "Focus only on code review, automated scanning is unnecessary",
+        "Security is the security team's responsibility, not DevOps"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Pipeline security requires: 1) SAST (static analysis) and DAST (dynamic analysis) scanning, 2) Dependency/SCA scanning for vulnerable packages, 3) Secrets detection (GitGuardian, TruffleHog), 4) Signed commits and artifacts, 5) SBOM (Software Bill of Materials) generation, 6) Isolated, ephemeral build environments, 7) Least privilege CI service accounts, 8) Pipeline-as-code with review process.",
+      "hint": "Consider security at every stage: code, dependencies, secrets, build process, and artifacts.",
+      "difficulty": "intermediate",
+      "points": 14
+    },
+    {
+      "id": "cost-optimization-cloud",
+      "title": "Cloud Cost Optimization",
+      "description": "Your cloud bill has increased 200% in 6 months. How do you optimize costs?",
+      "situation": "CFO is concerned about cloud spend. You need to identify cost drivers and optimize without impacting performance or reliability.",
+      "codeExample": "Current spend breakdown:\n- Compute: 45% (many idle instances)\n- Storage: 30% (old snapshots, wrong classes)\n- Data transfer: 15%\n- Other: 10%",
+      "options": [
+        "Immediately shut down all non-production environments",
+        "Right-size instances based on metrics, implement auto-scaling, use spot/preemptible instances, optimize storage classes, lifecycle policies, reserved instances for steady workloads",
+        "Move everything to the cheapest cloud provider",
+        "Reduce monitoring to save on observability costs"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Cost optimization strategy: 1) Analyze actual resource utilization with cloud cost tools, 2) Right-size over-provisioned instances, 3) Implement auto-scaling for variable workloads, 4) Use spot instances for fault-tolerant workloads (70-90% savings), 5) Optimize storage (S3 Glacier, lifecycle policies), 6) Reserved instances for predictable loads, 7) Optimize data transfer with CDN and regional architecture, 8) Tag resources for cost allocation.",
+      "hint": "Focus on data-driven optimization, not blanket cost cutting that impacts reliability.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "behavioral-production-incident",
+      "title": "Behavioral: Handling Production Incident",
+      "description": "Describe a time when you handled a critical production incident.",
+      "situation": "Interviewer asks: Tell me about a time you dealt with a major outage. What was the issue, how did you handle it, and what did you learn?",
+      "options": [
+        "I haven't had any major incidents, our systems are very reliable",
+        "Describe specific incident with context, your role, actions taken (assessment, communication, mitigation), outcome, and key learnings/improvements implemented",
+        "Blame the developer who caused the issue",
+        "Just say you followed the runbook without additional details"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Use STAR method (Situation, Task, Action, Result): 1) Set context (what service, impact, severity), 2) Explain your specific role and responsibility, 3) Detail actions taken (assessment, communication, mitigation strategy, resolution), 4) Quantify outcome (time to resolve, users affected), 5) Emphasize learnings and preventive measures implemented. Show technical competence and communication skills.",
+      "hint": "Interviewers want to see how you handle pressure, communicate, and learn from incidents.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "observability-three-pillars",
+      "title": "Three Pillars of Observability",
+      "description": "Explain metrics, logs, and traces and when to use each.",
+      "situation": "Your microservices are having intermittent performance issues. You need to explain to junior engineers what observability data to collect and why.",
+      "codeExample": "Problem: API responses occasionally take 10+ seconds\nNeed: Identify which service, what operation, and why",
+      "options": [
+        "Just collect logs, they contain all information needed",
+        "Metrics show what's breaking (error rates, latency), logs show why it broke (error messages), traces show where it broke (request path through services)",
+        "Traces are sufficient for debugging all issues",
+        "Metrics and logs are enough, tracing is too expensive"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Three pillars work together: 1) Metrics (Prometheus, Datadog) aggregate numerical data over time for alerting and trends (CPU, latency, error rates), 2) Logs (ELK, Loki) provide detailed event information for debugging specific errors, 3) Traces (Jaeger, Zipkin) show request flow through distributed systems, identifying bottlenecks. You need all three for complete observability: metrics alert you, traces show you where, logs tell you why.",
+      "hint": "Each pillar answers a different question: what, where, and why.",
+      "difficulty": "beginner",
+      "points": 9
+    },
+    {
+      "id": "infrastructure-patterns",
+      "title": "Infrastructure Design Patterns",
+      "description": "Explain immutable infrastructure and its benefits.",
+      "situation": "Your team currently updates servers in-place using configuration management. You want to propose moving to immutable infrastructure. How do you explain this?",
+      "codeExample": "Current: SSH to servers, run ansible to update\nProposed: Build new AMI/image, replace instances",
+      "options": [
+        "In-place updates are more efficient, no need to change",
+        "Immutable infrastructure means never modifying running instances: build new images, deploy fresh instances, destroy old ones. Benefits: consistency, easy rollback, no configuration drift",
+        "Immutable infrastructure only works for stateless applications",
+        "Immutable infrastructure is too expensive due to recreation costs"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Immutable infrastructure principles: 1) Never modify running instances post-deployment, 2) Build machine images (AMIs, Docker images) with all dependencies, 3) Deploy new instances and destroy old ones, 4) Benefits include: no configuration drift, identical environments, easy rollbacks (previous image), simpler debugging (fewer variables), and better security (no SSH access needed). Trade-off is longer deployment time vs more reliable deployments.",
+      "hint": "Think about pets vs cattle: treating infrastructure as disposable rather than precious.",
+      "difficulty": "intermediate",
+      "points": 11
+    },
+    {
+      "id": "chaos-engineering",
+      "title": "Chaos Engineering Practices",
+      "description": "What is chaos engineering and how would you implement it?",
+      "situation": "You want to improve system resilience by intentionally injecting failures. How do you explain chaos engineering to leadership who are concerned about breaking production?",
+      "codeExample": "Concerns:\n- Will this cause outages?\n- How do we control the blast radius?\n- What failures should we inject?",
+      "options": [
+        "Chaos engineering is too risky for production systems",
+        "Start small in staging, define blast radius, inject controlled failures (pod crashes, network latency, resource exhaustion), monitor impact, gradually expand to production during low-traffic periods",
+        "Only run chaos experiments in development environments",
+        "Chaos engineering means randomly breaking things in production"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Chaos engineering safely: 1) Start with hypothesis about system behavior under failures, 2) Define minimal blast radius (single region, percentage of traffic), 3) Begin in staging/test environments, 4) Use tools like Chaos Monkey, Litmus, Gremlin, 5) Inject failures: pod terminations, network latency/partition, CPU/memory stress, 6) Monitor golden signals during experiments, 7) Automate rollback on unexpected impact, 8) Gradually move to production during business hours with team monitoring. Goal: find weaknesses before they find you.",
+      "hint": "Focus on controlled, observable experiments with safety measures, not random destruction.",
+      "difficulty": "advanced",
+      "points": 17
+    }
+  ]
+}
