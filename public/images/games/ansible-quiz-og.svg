@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Quiz Template - Ansible Configuration Management -->
+
+  <defs>
+    <!-- Background gradient - dark red/pink tones -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#450a0a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#500724;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient - bright red to pink -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Gear pattern for configuration management theme -->
+    <pattern id="gears" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <circle cx="60" cy="60" r="25" fill="none" stroke="#ef4444" stroke-width="3" opacity="0.1"/>
+      <circle cx="60" cy="60" r="15" fill="none" stroke="#ec4899" stroke-width="2" opacity="0.1"/>
+      <text x="50" y="70" font-family="system-ui" font-size="30" fill="#ef4444" opacity="0.15">⚙</text>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Gear pattern -->
+  <rect width="1200" height="630" fill="url(#gears)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="280" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Configuration Management</text>
+
+  <!-- Quiz icon -->
+  <g transform="translate(80, 160)">
+    <circle cx="30" cy="30" r="30" fill="#ef4444" opacity="0.8"/>
+    <text x="20" y="45" font-family="system-ui" font-size="40" font-weight="bold" fill="#ffffff">?</text>
+  </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#ec4899">INTERACTIVE QUIZ</text>
+
+  <!-- Title - split into two lines for better fit -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#ffffff">Ansible Configuration</text>
+  <text x="80" y="350" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#ffffff">Management Quiz</text>
+
+  <!-- Decorative quiz options (A, B, C, D) -->
+  <g opacity="0.2">
+    <circle cx="950" cy="150" r="30" fill="#ef4444"/>
+    <text x="940" y="162" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">A</text>
+
+    <circle cx="1050" cy="150" r="30" fill="#ec4899"/>
+    <text x="1040" y="162" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">B</text>
+
+    <circle cx="1000" cy="480" r="30" fill="#ef4444"/>
+    <text x="990" y="492" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">C</text>
+
+    <circle cx="1100" cy="480" r="30" fill="#ec4899"/>
+    <text x="1090" y="492" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">D</text>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#ec4899">DevOps Daily</text>
+</svg>

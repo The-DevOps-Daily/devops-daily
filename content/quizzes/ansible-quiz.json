@@ -1,0 +1,293 @@
+{
+  "id": "ansible-quiz",
+  "title": "Ansible Configuration Management Quiz",
+  "description": "Test your Ansible skills with playbooks, roles, inventory management, and automation scenarios for infrastructure configuration",
+  "category": "Configuration Management",
+  "icon": "Settings",
+  "totalPoints": 217,
+  "theme": {
+    "primaryColor": "red",
+    "gradientFrom": "from-red-500",
+    "gradientTo": "to-pink-600"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 8,
+      "advanced": 4
+    }
+  },
+  "questions": [
+    {
+      "id": "playbook-structure",
+      "title": "Playbook YAML Structure",
+      "description": "Which of the following is the correct minimal structure for an Ansible playbook?",
+      "situation": "You're creating your first Ansible playbook to configure web servers. Understanding the basic structure is essential.",
+      "codeExample": "Option A:\n- hosts: webservers\n  tasks:\n    - name: Install nginx\n      apt: name=nginx state=present\n\nOption B:\n---\n- name: Configure webservers\n  hosts: webservers\n  tasks:\n    - name: Install nginx\n      apt:\n        name: nginx\n        state: present",
+      "options": [
+        "Option A - hosts and tasks are the only required keys",
+        "Option B - must start with --- and include name for the play",
+        "Both are valid - name is optional but --- is best practice",
+        "Neither - ansible_connection and become are required"
+      ],
+      "correctAnswer": 2,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Both structures are technically valid. The YAML document marker (---) is optional but recommended for clarity. The play name is also optional but helpful for readability. The minimal structure only requires 'hosts' and 'tasks'. However, Option B follows best practices with the document marker and descriptive play name.",
+      "hint": "Ansible is flexible about required vs optional keys in playbooks."
+    },
+    {
+      "id": "idempotency",
+      "title": "Idempotency in Ansible",
+      "description": "What does idempotency mean in the context of Ansible?",
+      "situation": "Your team runs the same playbook multiple times per day. Understanding idempotency ensures safe, predictable automation.",
+      "codeExample": "# Running this playbook twice:\n- name: Ensure nginx is installed\n  apt:\n    name: nginx\n    state: present\n\nFirst run: Changes made\nSecond run: ?",
+      "options": [
+        "The playbook will fail on the second run because nginx is already installed",
+        "The playbook will skip all tasks on subsequent runs for performance",
+        "The playbook produces the same result regardless of how many times it's run",
+        "The playbook requires a --force flag to run multiple times"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "beginner",
+      "explanation": "Idempotency means that running a playbook multiple times produces the same result as running it once. Ansible modules are designed to be idempotent - they check current state and only make changes if needed. In this example, the second run would show 'ok' (no change) rather than 'changed' because nginx is already installed.",
+      "hint": "Think about the desired end state, not the actions taken to get there."
+    },
+    {
+      "id": "handlers",
+      "title": "Handlers and Notify",
+      "description": "When do handlers execute in an Ansible playbook?",
+      "situation": "You're configuring nginx and need to restart the service only when the configuration file changes.",
+      "codeExample": "- name: Update nginx config\n  template:\n    src: nginx.conf.j2\n    dest: /etc/nginx/nginx.conf\n  notify: restart nginx\n\nhandlers:\n  - name: restart nginx\n    service:\n      name: nginx\n      state: restarted",
+      "options": [
+        "Handlers run immediately when notify is called",
+        "Handlers run at the end of the play, only if notified and only once",
+        "Handlers run before each task that notifies them",
+        "Handlers run at the beginning of the playbook execution"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Handlers are special tasks that run at the end of a play (after all tasks complete), but only if they were notified by a task that reported 'changed'. Even if multiple tasks notify the same handler, it only runs once. This is perfect for restarting services - you want to restart nginx once after all configuration changes, not after each individual change.",
+      "hint": "Handlers are designed to run once at the end, even if notified multiple times."
+    },
+    {
+      "id": "inventory-patterns",
+      "title": "Inventory Host Patterns",
+      "description": "Which hosts will the pattern 'webservers:&production' target?",
+      "situation": "You have inventory groups for different server types and environments. You need to target only production web servers.",
+      "codeExample": "[webservers]\nweb1.example.com\nweb2.example.com\nweb3.example.com\n\n[production]\nweb1.example.com\ndb1.example.com\n\n[staging]\nweb2.example.com\ndb2.example.com",
+      "options": [
+        "All hosts in webservers group OR production group (union)",
+        "All hosts in webservers group AND production group (intersection)",
+        "All hosts in webservers group EXCEPT production group (difference)",
+        "Invalid syntax - will cause an error"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The '&' operator performs an intersection - it targets hosts that are in BOTH groups. In this case, only web1.example.com is in both webservers AND production, so only that host will be targeted. The ':' operator is union (OR), '&' is intersection (AND), and '!' is exclusion (NOT).",
+      "hint": "The '&' symbol in inventory patterns means 'AND' or intersection."
+    },
+    {
+      "id": "ansible-vault",
+      "title": "Ansible Vault for Secrets",
+      "description": "What is the recommended way to use Ansible Vault in a CI/CD pipeline?",
+      "situation": "Your playbook contains encrypted passwords using Ansible Vault. You need to run it in GitLab CI without exposing the vault password.",
+      "codeExample": "# Encrypted vars file\n$ANSIBLE_VAULT;1.1;AES256\n303233...encrypted content...\n\n# How to decrypt in CI?",
+      "options": [
+        "Store vault password in git repository with playbook",
+        "Use --ask-vault-pass flag and enter password interactively",
+        "Store vault password in CI environment variable and use --vault-password-file",
+        "Commit decrypted files to repository for CI use"
+      ],
+      "correctAnswer": 2,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "The secure approach is: 1) Store vault password in CI/CD secret environment variable (e.g., VAULT_PASSWORD), 2) Create a temporary password file from the env var, 3) Use ansible-playbook --vault-password-file=/tmp/vault_pass. Never commit vault passwords or decrypted secrets to git. Interactive prompts don't work in CI. Modern alternative: use cloud provider secret managers (AWS Secrets Manager, HashiCorp Vault) instead of Ansible Vault.",
+      "hint": "Use CI/CD secret management features to securely inject the vault password."
+    },
+    {
+      "id": "role-structure",
+      "title": "Ansible Role Directory Structure",
+      "description": "Which directories are automatically loaded when using an Ansible role?",
+      "situation": "You're creating a reusable role for nginx deployment and need to understand the standard directory structure.",
+      "codeExample": "roles/nginx/\n├── tasks/main.yml\n├── handlers/main.yml\n├── templates/\n├── files/\n├── vars/main.yml\n├── defaults/main.yml\n├── meta/main.yml\n└── README.md",
+      "options": [
+        "Only tasks/main.yml is required; all other directories are optional",
+        "All main.yml files in standard directories are automatically included",
+        "You must explicitly import each directory in tasks/main.yml",
+        "The role will fail if any standard directory is missing"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "intermediate",
+      "explanation": "Ansible automatically loads main.yml from standard directories (tasks, handlers, vars, defaults, meta) if they exist. You don't need to explicitly import them. Only tasks/main.yml is technically required for a role to function. The vars/ and defaults/ difference: vars have higher precedence and can't be overridden easily, while defaults have lowest precedence and are meant to be overridden.",
+      "hint": "Ansible follows convention over configuration for role structure."
+    },
+    {
+      "id": "dynamic-inventory",
+      "title": "Dynamic Inventory Sources",
+      "description": "What is the primary benefit of using dynamic inventory over static inventory?",
+      "situation": "Your infrastructure uses AWS auto-scaling groups. Instances are constantly created and destroyed based on demand.",
+      "codeExample": "# Static inventory\n[webservers]\n10.0.1.10\n10.0.1.11\n\n# Dynamic inventory script\n#!/usr/bin/env python3\nimport boto3\n# Query AWS for current instances...",
+      "options": [
+        "Dynamic inventory is faster because it caches results",
+        "Dynamic inventory automatically discovers current infrastructure state from cloud providers",
+        "Dynamic inventory allows grouping hosts by arbitrary attributes",
+        "Dynamic inventory is required for Ansible to work with cloud instances"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Dynamic inventory scripts query infrastructure in real-time (AWS, Azure, GCP, VMware, etc.) to get the current list of hosts, eliminating manual inventory maintenance. This is critical for auto-scaling environments where instances come and go. Modern approach: use inventory plugins (aws_ec2, azure_rm, gcp_compute) which are more efficient than custom scripts. You can also group by tags, regions, etc.",
+      "hint": "Think about infrastructure that changes frequently without manual intervention."
+    },
+    {
+      "id": "privilege-escalation",
+      "title": "Privilege Escalation (become)",
+      "description": "What is the difference between 'become: yes' at play level vs task level?",
+      "situation": "Some tasks in your playbook need root privileges (installing packages), while others should run as the normal user (cloning git repos).",
+      "codeExample": "---\n- hosts: webservers\n  become: yes\n  tasks:\n    - name: Install nginx\n      apt: name=nginx\n    \n    - name: Clone app repo\n      git:\n        repo: https://github.com/app.git\n        dest: /home/deploy/app\n      become: no",
+      "options": [
+        "Play-level become cannot be overridden at task level",
+        "Task-level become always takes precedence, overriding play-level setting",
+        "Both settings must match or Ansible will error",
+        "become is only valid at play level, not task level"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "intermediate",
+      "explanation": "Task-level become overrides play-level become. This allows you to set become: yes for the entire play (convenient for system administration tasks), then selectively use become: no for specific tasks that should run as the regular user. Best practice: set become at the most appropriate level (play, block, or task) to minimize privilege scope.",
+      "hint": "More specific settings override general settings in Ansible."
+    },
+    {
+      "id": "loops-iteration",
+      "title": "Loops and Iteration",
+      "description": "Which is the modern, recommended way to loop over items in Ansible?",
+      "situation": "You need to install multiple packages in a single task instead of writing separate tasks for each package.",
+      "codeExample": "# Old way (deprecated):\n- name: Install packages\n  apt:\n    name: \"{{ item }}\"\n  with_items:\n    - nginx\n    - git\n    - curl\n\n# New way:\n- name: Install packages\n  apt:\n    name: \"{{ item }}\"\n  loop:\n    - nginx\n    - git\n    - curl",
+      "options": [
+        "with_items - it's the original and most stable syntax",
+        "loop - it's the modern, unified syntax replacing with_* lookups",
+        "for_each - consistent with Terraform syntax",
+        "Both with_items and loop are equally recommended"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "'loop' is the modern, recommended way to iterate in Ansible (introduced in 2.5). It replaces the many with_* lookup plugins (with_items, with_dict, with_fileglob, etc.) with a single, consistent syntax. with_items still works but is considered legacy. For the package use case, many modules now accept lists directly: apt: name=['nginx', 'git', 'curl'], which is even better.",
+      "hint": "Ansible is moving toward a single, consistent loop keyword."
+    },
+    {
+      "id": "conditionals",
+      "title": "Conditional Execution (when)",
+      "description": "When is the when clause evaluated in a task?",
+      "situation": "You have a task that should only run on Ubuntu systems, not CentOS. The condition checks ansible_facts['distribution'].",
+      "codeExample": "- name: Install nginx on Ubuntu\n  apt:\n    name: nginx\n    state: present\n  when: ansible_facts['distribution'] == 'Ubuntu'",
+      "options": [
+        "Before connecting to the host - if false, the host is skipped entirely",
+        "After connecting but before gathering facts",
+        "After facts are gathered but before the task module executes",
+        "After the task runs - determines if changes are applied"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The 'when' clause is evaluated after facts are gathered (assuming gather_facts: yes) but before the task module executes. If the condition is false, the task is skipped and marked as 'skipped' in output. This is why you can use ansible_facts in when clauses. The task module is never invoked if when evaluates to false, saving time and avoiding potential errors.",
+      "hint": "Conditions are checked before doing work, after gathering information."
+    },
+    {
+      "id": "error-handling",
+      "title": "Error Handling and Recovery",
+      "description": "How can you continue playbook execution even if a task fails?",
+      "situation": "You're running a playbook that attempts to stop a service that might not exist on all hosts. You don't want the playbook to abort if the service doesn't exist.",
+      "codeExample": "- name: Stop legacy service if it exists\n  service:\n    name: old-app\n    state: stopped\n  # This might fail on some hosts",
+      "options": [
+        "Use failed_when: false to never consider the task failed",
+        "Use ignore_errors: yes to continue despite failures",
+        "Use rescue blocks to handle errors gracefully",
+        "All of the above are valid approaches depending on the scenario"
+      ],
+      "correctAnswer": 3,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "All three approaches are valid for different scenarios: 1) ignore_errors: yes continues execution but still logs the failure, 2) failed_when: false redefines what constitutes failure (e.g., failed_when: result.rc != 0 and result.rc != 2), 3) block/rescue/always provides try-catch-finally logic for complex error handling. For this specific scenario, checking if the service exists first with a stat task is even better.",
+      "hint": "Ansible provides multiple error handling strategies for different needs."
+    },
+    {
+      "id": "ansible-galaxy",
+      "title": "Ansible Galaxy and Role Dependencies",
+      "description": "What is the purpose of the requirements.yml file in an Ansible project?",
+      "situation": "Your playbook depends on several community roles from Ansible Galaxy. You want to ensure all team members use the same role versions.",
+      "codeExample": "# requirements.yml\n---\nroles:\n  - name: geerlingguy.nginx\n    version: 3.1.4\n  - name: geerlingguy.docker\n    version: 6.1.0\n\n# Install with:\nansible-galaxy install -r requirements.yml",
+      "options": [
+        "Lists system package requirements that must be installed before running playbooks",
+        "Specifies Ansible roles to download from Galaxy or git repos with version pinning",
+        "Defines Python library dependencies for custom Ansible modules",
+        "Contains inventory requirements for the playbook to run"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "intermediate",
+      "explanation": "requirements.yml specifies external roles (from Ansible Galaxy, GitHub, or other sources) that your playbook depends on. It supports version pinning to ensure reproducible deployments. You can also specify collections: in the same file (Ansible 2.9+). This is similar to package.json for Node.js or requirements.txt for Python. Always commit requirements.yml to version control and run ansible-galaxy install before running playbooks.",
+      "hint": "Think of it like a dependency manifest file for external Ansible content."
+    },
+    {
+      "id": "template-filters",
+      "title": "Jinja2 Templates and Filters",
+      "description": "What will be the output of {{ my_list | length }} if my_list contains ['a', 'b', 'c']?",
+      "situation": "You're creating a dynamic configuration file that needs to adjust based on the number of items in a list.",
+      "codeExample": "# In playbook vars:\nmy_list:\n  - a\n  - b\n  - c\n\n# In template:\nTotal items: {{ my_list | length }}\nFirst item: {{ my_list | first }}\nUppercase: {{ my_list | map('upper') | list }}",
+      "options": [
+        "3",
+        "['a', 'b', 'c']",
+        "Error - length filter doesn't exist",
+        "'abc'"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "intermediate",
+      "explanation": "The length filter returns the number of items in a list, string, or dictionary. In this case, it returns 3. Jinja2 provides many useful filters: default (set default values), regex_replace (pattern matching), to_json/to_yaml (format conversion), join (concatenate), and more. Filters are chained with the | operator. Understanding filters is crucial for effective Ansible templating.",
+      "hint": "Filters transform or extract information from variables."
+    },
+    {
+      "id": "performance-optimization",
+      "title": "Performance Optimization Strategies",
+      "description": "Which strategy provides the biggest performance improvement for large inventories?",
+      "situation": "Your playbook runs against 500 servers and takes 45 minutes. You need to reduce execution time significantly.",
+      "codeExample": "# Current ansible.cfg:\n[defaults]\nforks = 5\ngathering = implicit\nhost_key_checking = True\n\n# Optimization options?",
+      "options": [
+        "Increase forks to 50-100 for parallel execution across more hosts",
+        "Use gathering = smart to cache facts between playbook runs",
+        "Enable pipelining to reduce SSH overhead",
+        "All of the above combined provide significant speedup"
+      ],
+      "correctAnswer": 3,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Performance optimization requires multiple strategies: 1) Increase forks (default 5) to parallelize across more hosts - try 50-100 for large inventories, 2) Use gathering = smart to cache facts between runs, 3) Enable pipelining = True to reduce SSH connections, 4) Disable host_key_checking in controlled environments, 5) Use async for long-running tasks, 6) Use strategy = free to not wait for all hosts per task. Combined, these can reduce runtime by 70-90%.",
+      "hint": "Multiple optimizations compound for maximum performance gains."
+    },
+    {
+      "id": "testing-molecule",
+      "title": "Testing Roles with Molecule",
+      "description": "What is the primary purpose of Molecule in Ansible development?",
+      "situation": "Your team is developing custom Ansible roles and needs a standardized way to test them before deploying to production.",
+      "codeExample": "# Molecule test sequence:\nmolecule create   # Create test instance\nmolecule converge # Run the role\nmolecule verify   # Run verification tests\nmolecule destroy  # Cleanup\n\n# Or simply:\nmolecule test",
+      "options": [
+        "Molecule generates Ansible roles from templates",
+        "Molecule provides automated testing framework for Ansible roles with multiple drivers (Docker, Vagrant, EC2)",
+        "Molecule is a GUI tool for visualizing playbook execution",
+        "Molecule converts Ansible playbooks to other IaC tools like Terraform"
+      ],
+      "correctAnswer": 1,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Molecule is a testing framework for Ansible roles. It automates the testing lifecycle: create test environment (Docker, Vagrant, cloud), apply the role, run verification tests (using TestInfra, Ansible itself, or other tools), and cleanup. This enables test-driven development (TDD) for infrastructure code. Molecule supports multiple scenarios, different platforms, and integrates with CI/CD. Essential for maintaining reliable, reusable Ansible roles.",
+      "hint": "Think of Molecule as a complete testing framework for infrastructure code."
+    }
+  ]
+}
