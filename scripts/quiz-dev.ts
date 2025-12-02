@@ -493,19 +493,7 @@ function showHelp() {
   console.log('  npx tsx scripts/quiz-dev.ts list');
 }
 
-// Add package.json scripts:
-console.log(colorize('💡 Add these scripts to your package.json:', 'yellow'));
-console.log(`{
-  "scripts": {
-    "quiz:validate": "tsx scripts/quiz-dev.ts validate",
-    "quiz:create": "tsx scripts/quiz-dev.ts create",
-    "quiz:list": "tsx scripts/quiz-dev.ts list",
-    "quiz:stats": "tsx scripts/quiz-dev.ts stats"
-  }
-}`);
-
-if (require.main === module) {
-  main().catch(console.error);
-}
+// Run main if this is the entry point
+main().catch(console.error);
 
 export { main, validateCommand, createCommand, listCommand, statsCommand };
