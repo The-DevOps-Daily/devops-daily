@@ -28,6 +28,7 @@
     "quiz:create": "tsx scripts/quiz-dev.ts create",
     "quiz:list": "tsx scripts/quiz-dev.ts list",
     "quiz:stats": "tsx scripts/quiz-dev.ts stats",
+    "generate-quiz-og": "tsx scripts/generate-quiz-og.ts",
     "generate:images": "tsx scripts/generate-post-images-svg.ts",
     "convert:svg-to-png": "tsx scripts/convert-svg-to-png.ts",
     "svg2png": "tsx scripts/svg-to-png.ts",

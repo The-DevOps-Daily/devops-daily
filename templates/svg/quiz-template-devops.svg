@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Quiz Template - DevOps/CI-CD Theme -->
+  <!-- INSTRUCTIONS: Replace {{TITLE}} and {{CATEGORY}} with your content -->
+
+  <defs>
+    <!-- Background gradient - orange to amber -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c2410c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#b45309;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fb923c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Pipeline pattern -->
+   <pattern id="pipelines" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <circle cx="30" cy="60" r="6" fill="#fb923c" opacity="0.1"/>
+      <circle cx="90" cy="60" r="6" fill="#fb923c" opacity="0.1"/>
+      <line x1="36" y1="60" x2="84" y2="60" stroke="#fb923c" stroke-width="2" opacity="0.1"/>
+   </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Pipeline pattern overlay -->
+  <rect width="1200" height="630" fill="url(#pipelines)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="{{BADGE_WIDTH}}" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">{{CATEGORY}}</text>
+
+  <!-- Quiz icon -->
+  <g transform="translate(80, 160)">
+    <circle cx="30" cy="30" r="30" fill="#fb923c" opacity="0.8"/>
+    <text x="20" y="45" font-family="system-ui" font-size="40" font-weight="bold" fill="#ffffff">?</text>
+  </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#fbbf24">INTERACTIVE QUIZ</text>
+
+  {{TITLE_LINES}}
+
+  <!-- Decorative pipeline elements -->
+  <g opacity="0.15">
+    <!-- Pipeline nodes -->
+    <circle cx="950" cy="150" r="20" fill="#fb923c"/>
+    <circle cx="1050" cy="150" r="20" fill="#fbbf24"/>
+    <circle cx="1100" cy="200" r="20" fill="#fb923c"/>
+    <line x1="970" y1="150" x2="1030" y2="150" stroke="#fb923c" stroke-width="3"/>
+    <line x1="1050" y1="170" x2="1080" y2="190" stroke="#fb923c" stroke-width="3"/>
+    
+    <!-- Deploy icon -->
+    <rect x="980" y="450" width="80" height="60" rx="5" fill="none" stroke="#fb923c" stroke-width="4"/>
+    <polygon points="1020,470 1040,470 1040,490 1045,490 1030,500 1015,490 1020,490" fill="#fb923c"/>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#fbbf24">DevOps Daily</text>
+</svg>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Quiz Template - SRE/Operations Theme -->
+  <!-- INSTRUCTIONS: Replace {{TITLE}} and {{CATEGORY}} with your content -->
+
+  <defs>
+    <!-- Background gradient - red to orange -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#991b1b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c2410c;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fb923c;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Shield pattern -->
+   <pattern id="shields" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <path d="M 55 45 L 60 45 L 60 75 Q 60 78 58 80 Q 56 82 55 80 Q 53 78 53 75 L 53 45 Z M 55 45 L 57.5 42 L 60 45" fill="#ef4444" opacity="0.08"/>
+   </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Shield pattern overlay -->
+  <rect width="1200" height="630" fill="url(#shields)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="{{BADGE_WIDTH}}" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">{{CATEGORY}}</text>
+
+  <!-- Quiz icon -->
+  <g transform="translate(80, 160)">
+    <circle cx="30" cy="30" r="30" fill="#ef4444" opacity="0.8"/>
+    <text x="20" y="45" font-family="system-ui" font-size="40" font-weight="bold" fill="#ffffff">?</text>
+  </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#fb923c">INTERACTIVE QUIZ</text>
+
+  {{TITLE_LINES}}
+
+  <!-- Decorative SRE elements -->
+  <g opacity="0.15">
+    <!-- Shield icon -->
+    <path d="M 950 120 L 1000 120 L 1000 180 Q 1000 200 980 210 Q 960 220 950 210 Q 930 200 930 180 L 930 120 Z M 950 120 L 975 100 L 1000 120" fill="#ef4444" stroke="#ef4444" stroke-width="3"/>
+    
+    <!-- Monitoring graph -->
+    <polyline points="980,460 1000,440 1020,470 1040,450 1060,480 1080,460 1100,490" fill="none" stroke="#ef4444" stroke-width="4"/>
+    <rect x="975" y="430" width="130" height="80" rx="5" fill="none" stroke="#fb923c" stroke-width="3"/>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#fb923c">DevOps Daily</text>
+</svg>

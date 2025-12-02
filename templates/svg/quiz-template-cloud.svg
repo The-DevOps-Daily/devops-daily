@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Quiz Template - Cloud/Infrastructure Theme -->
+  <!-- INSTRUCTIONS: Replace {{TITLE}} and {{CATEGORY}} with your content -->
+
+  <defs>
+    <!-- Background gradient - blue shades -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Cloud pattern -->
+   <pattern id="clouds" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <ellipse cx="40" cy="60" rx="15" ry="10" fill="#3b82f6" opacity="0.08"/>
+      <ellipse cx="55" cy="55" rx="18" ry="12" fill="#3b82f6" opacity="0.08"/>
+      <ellipse cx="70" cy="60" rx="15" ry="10" fill="#3b82f6" opacity="0.08"/>
+   </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Cloud pattern overlay -->
+  <rect width="1200" height="630" fill="url(#clouds)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="{{BADGE_WIDTH}}" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">{{CATEGORY}}</text>
+
+  <!-- Quiz icon -->
+  <g transform="translate(80, 160)">
+    <circle cx="30" cy="30" r="30" fill="#3b82f6" opacity="0.8"/>
+    <text x="20" y="45" font-family="system-ui" font-size="40" font-weight="bold" fill="#ffffff">?</text>
+  </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#60a5fa">INTERACTIVE QUIZ</text>
+
+  {{TITLE_LINES}}
+
+  <!-- Decorative cloud elements -->
+  <g opacity="0.15">
+    <!-- Cloud icon -->
+    <ellipse cx="980" cy="150" rx="40" ry="25" fill="#3b82f6"/>
+    <ellipse cx="1010" cy="140" rx="50" ry="30" fill="#3b82f6"/>
+    <ellipse cx="1040" cy="150" rx="40" ry="25" fill="#3b82f6"/>
+    
+    <!-- Server racks -->
+    <rect x="980" y="450" width="60" height="60" rx="5" fill="none" stroke="#3b82f6" stroke-width="4"/>
+    <line x1="985" y1="465" x2="1035" y2="465" stroke="#3b82f6" stroke-width="2"/>
+    <line x1="985" y1="480" x2="1035" y2="480" stroke="#3b82f6" stroke-width="2"/>
+    <line x1="985" y1="495" x2="1035" y2="495" stroke="#3b82f6" stroke-width="2"/>
+    
+    <rect x="1060" y="450" width="60" height="60" rx="5" fill="none" stroke="#60a5fa" stroke-width="4"/>
+    <line x1="1065" y1="465" x2="1115" y2="465" stroke="#60a5fa" stroke-width="2"/>
+    <line x1="1065" y1="480" x2="1115" y2="480" stroke="#60a5fa" stroke-width="2"/>
+    <line x1="1065" y1="495" x2="1115" y2="495" stroke="#60a5fa" stroke-width="2"/>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+</svg>
