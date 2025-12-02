@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ReportIssue } from '@/components/report-issue';
+import { RoadmapHero } from '@/components/roadmap-hero';
 import {
   Dialog,
   DialogContent,
@@ -1734,100 +1735,8 @@ export default function RoadmapPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-      {/* Hero Section */}
-      <section className="relative pt-20 pb-16 overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 left-0 w-full h-full">
-            <div className="absolute top-20 left-20 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse" />
-            <div className="absolute bottom-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px] animate-pulse animation-delay-2000" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-pink-500/5 to-yellow-500/5 rounded-full blur-[100px] animate-pulse animation-delay-4000" />
-          </div>
-        </div>
-
-        <div className="container px-4 mx-auto">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 px-4 py-1.5 border-blue-500/50 bg-blue-500/5 backdrop-blur-sm hover:bg-blue-500/10 transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-2 text-blue-500" />
-              Complete DevOps Learning Path
-            </Badge>
-
-            <h1 className="mb-6 text-4xl font-bold leading-tight md:text-6xl">
-              Your Journey to <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-gradient">
-                DevOps Mastery
-              </span>
-            </h1>
-
-            <p className="max-w-2xl mx-auto mb-8 text-xl leading-relaxed text-muted-foreground">
-              Follow this comprehensive roadmap to become a skilled DevOps engineer. Each stage
-              includes interactive skills with curated resources and hands-on learning paths.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-4 mb-12">
-              <Button
-                asChild
-                size="lg"
-                className="transition-all duration-300 transform shadow-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105"
-              >
-                <Link href="#roadmap">
-                  Start Learning
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Link>
-              </Button>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-8 text-sm">
-              <Card className="transition-shadow duration-300 border-none shadow-lg hover:shadow-xl">
-                <CardContent className="p-6">
-                  <div className="space-y-2 text-center">
-                    <Rocket className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                    <div className="text-3xl font-bold text-blue-600">{roadmapStages.length}</div>
-                    <div className="text-muted-foreground">Learning Stages</div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="transition-shadow duration-300 border-none shadow-lg hover:shadow-xl">
-                <CardContent className="p-6">
-                  <div className="space-y-2 text-center">
-                    <Timer className="w-8 h-8 mx-auto mb-2 text-purple-500" />
-                    <div className="text-3xl font-bold text-purple-500">{totalTime}+</div>
-                    <div className="text-muted-foreground">Weeks to Complete</div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="transition-shadow duration-300 border-none shadow-lg hover:shadow-xl">
-                <CardContent className="p-6">
-                  <div className="space-y-2 text-center">
-                    <Target className="w-8 h-8 mx-auto mb-2 text-pink-600" />
-                    <div className="text-3xl font-bold text-pink-600">
-                      {roadmapStages.reduce((sum, stage) => sum + stage.skills.length, 0)}+
-                    </div>
-                    <div className="text-muted-foreground">Interactive Skills</div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="transition-shadow duration-300 border-none shadow-lg hover:shadow-xl">
-                <CardContent className="p-6">
-                  <div className="space-y-2 text-center">
-                    <Code className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                    <div className="text-3xl font-bold text-green-600">
-                      {roadmapStages.reduce((sum, stage) => sum + (stage.projects?.length || 0), 0)}
-                      +
-                    </div>
-                    <div className="text-muted-foreground">Hands-on Projects</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Enhanced Hero Section with Animations */}
+      <RoadmapHero />
 
       {/* Roadmap Timeline */}
       <section id="roadmap" className="py-20">
