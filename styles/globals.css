@@ -24,7 +24,7 @@
   text-wrap: balance;
 }
 
-@layer utilities {
+@layer base {
   body {
     font-family: Arial, Helvetica, sans-serif;
   }
