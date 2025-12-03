@@ -183,7 +183,7 @@ function FeaturedExerciseCard({ exercise, index }: { exercise: Exercise; index: 
 
           {/* Learning objectives preview */}
           <div className="pt-4 border-t border-border/50">
-            <h4 className="mb-2 text-xs font-medium text-muted-foreground">You'll learn:</h4>
+            <div className="mb-2 text-xs font-medium text-muted-foreground">You'll learn:</div>
             <ul className="space-y-1 text-xs text-muted-foreground">
               {exercise.learningObjectives.slice(0, 2).map((objective, index) => (
                 <li key={index} className="flex items-start gap-2">
