@@ -130,12 +130,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           title="DevOps Daily RSS Feed"
           href="/feed.xml"
         />
-        <script
-          defer
-          data-website-id="686fb625b5233b4e8e67112c"
-          data-domain="devops-daily.com"
-          src="https://datafa.st/js/script.js"
-        ></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <WebsiteSchema />
