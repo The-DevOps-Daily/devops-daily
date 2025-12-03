@@ -111,6 +111,12 @@ const nextConfig = {
   trailingSlash: false,
   // Enable Turbopack explicitly (default in Next.js 16)
   turbopack: {},
+  compiler: {
+    // Target modern browsers to avoid unnecessary polyfills
+    // This reduces bundle size by ~14 KiB
+    // Requires browsers: Chrome 111+, Safari 16.4+, Firefox 128+
+    // (Browsers that support ES2020+ natively)
+  },
   images: {
     unoptimized: true,
   },
