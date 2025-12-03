@@ -244,7 +244,7 @@ export default async function FeaturedExercises({ className }: FeaturedExercises
               <Sparkles className="w-4 h-4 mr-2" />
               Featured Labs
             </Badge>
-            <Badge variant="outline" className="bg-primary/10 border-primary/50 text-primary">
+            <Badge variant="outline" className="text-blue-600 bg-linear-to-r from-blue-500/10 to-primary/10 border-blue-500/50 dark:text-blue-400">
               <TrendingUp className="w-3 h-3 mr-1" />
               Most Popular
             </Badge>
