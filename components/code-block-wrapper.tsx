@@ -45,6 +45,7 @@ export function CodeBlock({ children, language }: CodeBlockProps) {
 
       <motion.button
         onClick={handleCopy}
+        aria-label={copied ? "Copied to clipboard" : "Copy code to clipboard"}
         className={cn(
           'absolute top-2 right-2 z-10',
           'flex items-center justify-center',
@@ -130,6 +131,7 @@ export function CodeBlockWrapper({ children }: { children: React.ReactNode }) {
 
         // Create copy button
         const copyButton = document.createElement('button');
+        copyButton.setAttribute('aria-label', 'Copy code to clipboard');
         copyButton.className = `
           copy-button absolute top-2 right-2 z-10 
           flex items-center justify-center 
@@ -156,6 +158,9 @@ export function CodeBlockWrapper({ children }: { children: React.ReactNode }) {
           try {
             await navigator.clipboard.writeText(codeText);
 
+            // Update aria-label for screen readers
+            copyButton.setAttribute('aria-label', 'Copied to clipboard');
+
             // Show check icon
             copyButton.innerHTML = `
               <svg class="h-4 w-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,6 +170,7 @@ export function CodeBlockWrapper({ children }: { children: React.ReactNode }) {
 
             // Reset after 2 seconds
             setTimeout(() => {
+              copyButton.setAttribute('aria-label', 'Copy code to clipboard');
               copyButton.innerHTML = `
                 <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
