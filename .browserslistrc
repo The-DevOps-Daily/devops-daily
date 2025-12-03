@@ -1,0 +1,11 @@
+# Conservative modern browser support
+# Targets ~90% of global users while reducing polyfills
+# Browsers from 2020+ that support most ES2020 features
+defaults
+not IE 11
+not dead
+> 0.2%
+Chrome >= 90
+Safari >= 14
+Firefox >= 88
+Edge >= 90
