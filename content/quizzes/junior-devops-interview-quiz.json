@@ -1,0 +1,336 @@
+{
+  "id": "junior-devops-interview-quiz",
+  "title": "Junior DevOps Engineer Interview Quiz",
+  "description": "Entry-level DevOps interview preparation covering Linux fundamentals, Git basics, Docker essentials, CI/CD concepts, cloud computing, scripting, and monitoring fundamentals",
+  "category": "Interview Prep",
+  "icon": "GraduationCap",
+  "totalPoints": 100,
+  "theme": {
+    "primaryColor": "green",
+    "gradientFrom": "from-green-500",
+    "gradientTo": "to-emerald-600"
+  },
+  "metadata": {
+    "estimatedTime": "15-20 minutes",
+    "difficultyLevels": {
+      "beginner": 14,
+      "intermediate": 4
+    }
+  },
+  "questions": [
+    {
+      "id": "junior-linux-permissions",
+      "title": "File Permissions",
+      "description": "What does the permission 'rwxr-xr--' mean in Linux?",
+      "situation": "You're troubleshooting why a user can't execute a script, and you run 'ls -l' to check file permissions.",
+      "codeExample": "$ ls -l deploy.sh\n-rwxr-xr-- 1 devops team 1234 Dec 1 10:00 deploy.sh",
+      "options": [
+        "Owner can read/write/execute, group can read/execute, others can only read",
+        "Owner can read/write, group can read/execute, others can read/write",
+        "Everyone can read/write/execute",
+        "Only owner can read the file"
+      ],
+      "correctAnswer": 0,
+      "explanation": "rwx (owner) = read, write, execute permissions; r-x (group) = read and execute only; r-- (others) = read only. The owner (devops) has full control, the group (team) can read and run it, and others can only view it.",
+      "hint": "Break down the permission string into three groups: owner, group, and others.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-linux-commands",
+      "title": "Process Management",
+      "description": "Which command shows real-time system resource usage and running processes?",
+      "situation": "Your application server is running slow. You need to identify which process is consuming the most CPU and memory.",
+      "options": [
+        "ps aux",
+        "top",
+        "ls -la",
+        "df -h"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The 'top' command provides a real-time, interactive view of running processes, CPU usage, memory consumption, and system load. 'ps aux' shows a snapshot of processes, 'ls -la' lists files, and 'df -h' shows disk space usage.",
+      "hint": "Think about which command updates continuously to show live system activity.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-linux-logs",
+      "title": "System Logs",
+      "description": "Where are system logs typically stored in Linux?",
+      "situation": "An application crashed overnight. You need to check system logs to find error messages.",
+      "options": [
+        "/home/logs",
+        "/var/log",
+        "/etc/logs",
+        "/usr/logs"
+      ],
+      "correctAnswer": 1,
+      "explanation": "/var/log is the standard directory for system and application logs in Linux. Common files include /var/log/syslog (general system), /var/log/auth.log (authentication), and /var/log/nginx/ (web server logs).",
+      "hint": "Think about the /var directory which contains variable data.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-linux-grep",
+      "title": "Text Search",
+      "description": "Which command searches for specific text patterns in files?",
+      "situation": "You need to find all occurrences of 'ERROR' in your application logs from the past week.",
+      "codeExample": "You want to search for 'ERROR' in /var/log/app.log",
+      "options": [
+        "find /var/log/app.log ERROR",
+        "grep 'ERROR' /var/log/app.log",
+        "search ERROR /var/log/app.log",
+        "cat ERROR /var/log/app.log"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'grep' (Global Regular Expression Print) searches for patterns in files. The command 'grep ERROR /var/log/app.log' will find all lines containing 'ERROR'. You can add flags like -i (case-insensitive), -n (line numbers), or -r (recursive).",
+      "hint": "This command is essential for log analysis and text searching.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-git-staging",
+      "title": "Git Staging",
+      "description": "Which command stages all modified files for commit?",
+      "situation": "You've made changes to multiple files in your project and want to prepare them for commit.",
+      "codeExample": "$ git status\nModified: app.js\nModified: config.yaml\nModified: README.md",
+      "options": [
+        "git commit -a",
+        "git add .",
+        "git stage --all",
+        "git push"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'git add .' stages all changes in the current directory and subdirectories. This prepares files to be included in the next commit. 'git commit -a' commits tracked files but doesn't stage new files. 'git push' sends commits to remote, and 'git stage --all' is not a valid command.",
+      "hint": "Think about the two-step process: stage changes, then commit them.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-git-branches",
+      "title": "Git Branching",
+      "description": "What's the purpose of creating a feature branch in Git?",
+      "situation": "Your team follows Git Flow. You're starting work on a new feature and need to explain why you're creating a separate branch.",
+      "options": [
+        "Branches are only for fixing bugs",
+        "Branches isolate development work from the main codebase, allowing parallel development and easy rollback",
+        "Branches are required by Git and serve no practical purpose",
+        "Branches permanently split the codebase into separate projects"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Feature branches isolate new development from the stable main branch. This allows: 1) Multiple developers to work in parallel without conflicts, 2) Code review before merging to main, 3) Easy rollback if needed, 4) Clean commit history. Once complete, branches are merged back and can be deleted.",
+      "hint": "Consider how teams collaborate on different features simultaneously.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "junior-git-merge",
+      "title": "Git Merge vs Rebase",
+      "description": "What's the main difference between 'git merge' and 'git rebase'?",
+      "situation": "Your feature branch is behind main. A senior developer asks whether you want to merge or rebase to get the latest changes.",
+      "options": [
+        "They do exactly the same thing",
+        "Merge creates a new commit combining branches, rebase rewrites history by moving commits to a new base",
+        "Rebase is faster but merge is safer",
+        "Merge deletes the branch, rebase keeps it"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'git merge' creates a new merge commit that combines the changes from both branches, preserving the full history. 'git rebase' rewrites commit history by applying your commits on top of another branch, creating a linear history. Merge is safer (doesn't rewrite history), rebase creates cleaner history but should not be used on shared branches.",
+      "hint": "One creates a merge commit, the other rewrites the commit timeline.",
+      "difficulty": "intermediate",
+      "points": 7
+    },
+    {
+      "id": "junior-git-remote",
+      "title": "Git Remote Operations",
+      "description": "What does 'git pull' do?",
+      "situation": "You start your workday and need to get the latest code that your teammates pushed yesterday.",
+      "codeExample": "$ git pull origin main",
+      "options": [
+        "Sends your local commits to the remote repository",
+        "Fetches remote changes and merges them into your current branch",
+        "Creates a new branch from remote",
+        "Deletes remote branches"
+      ],
+      "correctAnswer": 1,
+      "explanation": "'git pull' is a combination of 'git fetch' (downloads remote changes) and 'git merge' (merges them into your current branch). It's the most common way to sync your local repository with remote updates. Equivalent to running 'git fetch' followed by 'git merge'.",
+      "hint": "This command combines two operations: fetching and merging.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-docker-concepts",
+      "title": "Container Concepts",
+      "description": "What's the main difference between a Docker image and a container?",
+      "situation": "A junior developer asks why we 'run' an image to create a container. You need to explain the relationship.",
+      "options": [
+        "Images are stored templates, containers are running instances of those images",
+        "Containers are templates, images are running processes",
+        "There is no difference, the terms are interchangeable",
+        "Images can be modified, containers cannot"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Docker images are read-only templates that contain application code, runtime, libraries, and dependencies. Containers are running instances created from images. Think of images as classes and containers as objects in programming. You can run multiple containers from a single image, each isolated from the others.",
+      "hint": "Think about the relationship between a recipe and a dish cooked from it.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-docker-commands",
+      "title": "Docker Commands",
+      "description": "Which command starts a container from an image?",
+      "situation": "You have an nginx image and want to start a web server container from it.",
+      "codeExample": "You want to run nginx and expose port 80",
+      "options": [
+        "docker start nginx",
+        "docker create nginx",
+        "docker run nginx",
+        "docker execute nginx"
+      ],
+      "correctAnswer": 2,
+      "explanation": "'docker run' creates and starts a new container from an image. Example: 'docker run -d -p 80:80 nginx' runs nginx in detached mode and maps port 80. 'docker start' restarts an existing stopped container, 'docker create' only creates (doesn't start), and 'docker execute' isn't a valid command.",
+      "hint": "This is the most common command to launch containers.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-docker-dockerfile",
+      "title": "Dockerfile Basics",
+      "description": "What is the purpose of a Dockerfile?",
+      "situation": "You need to containerize a Node.js application. Your team lead mentions creating a Dockerfile.",
+      "options": [
+        "A Dockerfile runs containers",
+        "A Dockerfile is a text document containing instructions to build a Docker image",
+        "A Dockerfile stores container logs",
+        "A Dockerfile manages Docker networks"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A Dockerfile is a text file with instructions (FROM, RUN, COPY, CMD, etc.) that Docker uses to build an image. It defines the base image, dependencies, files to include, and startup commands. Running 'docker build' with a Dockerfile creates an image that can then be used to run containers.",
+      "hint": "Think of it as a blueprint or recipe for creating images.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-docker-layers",
+      "title": "Docker Image Layers",
+      "description": "Why are Docker images built in layers?",
+      "situation": "You notice when rebuilding an image that some steps say 'Using cache'. You want to understand how this works.",
+      "codeExample": "Step 3/8 : RUN npm install\n ---> Using cache\n ---> a1b2c3d4e5f6",
+      "options": [
+        "Layers have no purpose, they're just how Docker works internally",
+        "Layers enable caching and sharing, making builds faster and images smaller",
+        "Layers slow down Docker operations",
+        "Each layer requires separate storage, making images larger"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Docker's layered architecture allows: 1) Caching - unchanged layers are reused, speeding up builds, 2) Sharing - multiple images can share common layers (e.g., same base OS), 3) Efficiency - only changed layers need to be downloaded/uploaded. Each Dockerfile instruction creates a new layer. Order matters: put frequently changing instructions last.",
+      "hint": "Consider why rebuilding is faster when only code changes, not dependencies.",
+      "difficulty": "intermediate",
+      "points": 7
+    },
+    {
+      "id": "junior-cicd-concepts",
+      "title": "CI/CD Pipeline Basics",
+      "description": "What does CI/CD stand for and what's its purpose?",
+      "situation": "You're interviewing for a junior DevOps role and need to explain CI/CD fundamentals.",
+      "options": [
+        "Continuous Integration / Continuous Delivery - automates building, testing, and deploying code changes",
+        "Code Integration / Code Deployment - manual process for releasing software",
+        "Container Installation / Container Distribution - Docker deployment system",
+        "Cloud Integration / Cloud Development - cloud-only development workflow"
+      ],
+      "correctAnswer": 0,
+      "explanation": "CI/CD automates software delivery: Continuous Integration (CI) automatically builds and tests code when developers commit changes, catching bugs early. Continuous Delivery/Deployment (CD) automates releasing to staging and production. Benefits: faster releases, fewer bugs, consistent deployments, reduced manual work. Common tools: Jenkins, GitLab CI, GitHub Actions, CircleCI.",
+      "hint": "Think about automating the path from code commit to production.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "junior-cicd-stages",
+      "title": "Pipeline Stages",
+      "description": "What are typical stages in a CI/CD pipeline?",
+      "situation": "Your team is setting up a new pipeline. You need to identify the common stages in order.",
+      "codeExample": "Pipeline: [?] -> [?] -> [?] -> [?]",
+      "options": [
+        "Deploy -> Build -> Test -> Monitor",
+        "Build -> Test -> Deploy -> Monitor",
+        "Test -> Deploy -> Build -> Monitor",
+        "Monitor -> Test -> Build -> Deploy"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Standard pipeline flow: 1) Build - compile code, install dependencies, 2) Test - run unit, integration, security tests, 3) Deploy - release to staging/production, 4) Monitor - track application health. Each stage must pass before proceeding. Failed tests block deployment, preventing bugs from reaching production.",
+      "hint": "Consider the logical order: prepare, validate, release, observe.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-cloud-service-models",
+      "title": "Cloud Service Models",
+      "description": "What's the difference between IaaS, PaaS, and SaaS?",
+      "situation": "During an interview, you're asked to explain cloud service models with examples.",
+      "options": [
+        "They're all the same, just different names",
+        "IaaS provides infrastructure (VMs, storage), PaaS provides platforms (runtime environments), SaaS provides complete applications",
+        "IaaS is cheapest, SaaS is most expensive",
+        "Only large companies use IaaS, startups use SaaS"
+      ],
+      "correctAnswer": 1,
+      "explanation": "IaaS (Infrastructure as a Service): Rent VMs, storage, networks - you manage OS and above (AWS EC2, Azure VMs). PaaS (Platform as a Service): Provider manages infrastructure and runtime, you deploy code (Heroku, Google App Engine). SaaS (Software as a Service): Ready-to-use applications (Gmail, Salesforce). More control = more management responsibility.",
+      "hint": "Think about the level of abstraction and who manages what.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "junior-cloud-basics",
+      "title": "Load Balancing",
+      "description": "What is the purpose of a load balancer?",
+      "situation": "Your web application runs on multiple servers. You need to explain why you need a load balancer.",
+      "options": [
+        "Load balancers store data",
+        "Load balancers distribute incoming traffic across multiple servers for high availability and performance",
+        "Load balancers are only for large enterprises",
+        "Load balancers replace the need for multiple servers"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Load balancers distribute traffic across multiple backend servers, providing: 1) High availability - if one server fails, traffic routes to healthy servers, 2) Better performance - requests spread across multiple servers, 3) Scalability - easily add/remove servers, 4) Health checks - automatically detect and avoid unhealthy servers. Examples: AWS ALB/NLB, nginx, HAProxy.",
+      "hint": "Think about spreading work across multiple workers for reliability.",
+      "difficulty": "intermediate",
+      "points": 6
+    },
+    {
+      "id": "junior-scripting-basics",
+      "title": "Bash Scripting",
+      "description": "What does the shebang line '#!/bin/bash' do in a script?",
+      "situation": "You're writing your first deployment script and see this line at the top of examples.",
+      "codeExample": "#!/bin/bash\necho 'Deploying application...'",
+      "options": [
+        "It's a comment that has no effect",
+        "It specifies which interpreter should execute the script",
+        "It makes the script executable",
+        "It's required for all text files"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The shebang (#!) tells the system which interpreter to use to execute the script. #!/bin/bash uses the Bash shell, #!/usr/bin/python3 uses Python. Without it, the system uses the default shell. To run the script directly (./script.sh), you also need execute permissions (chmod +x script.sh).",
+      "hint": "This line tells the OS how to run the file.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "junior-monitoring-metrics",
+      "title": "Basic Monitoring Metrics",
+      "description": "What are the four golden signals of monitoring?",
+      "situation": "Your team is setting up monitoring for a new service. You need to know which metrics matter most.",
+      "options": [
+        "CPU, Memory, Disk, Network",
+        "Latency, Traffic, Errors, Saturation",
+        "Uptime, Users, Revenue, Bugs",
+        "Logs, Metrics, Traces, Events"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Four Golden Signals (from Google SRE): 1) Latency - how long requests take, 2) Traffic - how many requests per second, 3) Errors - rate of failing requests, 4) Saturation - how 'full' your system is (CPU, memory, disk). These metrics quickly indicate service health and help diagnose issues. Track these first before adding more detailed metrics.",
+      "hint": "These signals come from Google's Site Reliability Engineering practices.",
+      "difficulty": "intermediate",
+      "points": 7
+    }
+  ]
+}
