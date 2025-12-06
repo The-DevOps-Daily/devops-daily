@@ -51,7 +51,9 @@ docs
 
 # Docker
 Dockerfile
+Dockerfile.*
 docker-compose*.yml
+docker-compose*.yaml
 .docker
 
 # CI/CD

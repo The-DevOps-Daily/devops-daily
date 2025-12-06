@@ -308,6 +308,77 @@ docker logs -f devops-daily-app
 - **Health Check**: Built-in health check endpoint
 - **Port**: Exposes port 3000
 
+### Docker Compose (Recommended for Local Development)
+
+Docker Compose provides an easier way to manage the development environment with hot-reload support.
+
+#### Quick Start
+
+```bash
+# Start development server with hot-reload
+docker compose up dev
+
+# Start in background
+docker compose up -d dev
+
+# View logs
+docker compose logs -f dev
+
+# Stop all services
+docker compose down
+```
+
+#### Available Services
+
+| Service | Port | Description                        |
+| ------- | ---- | ---------------------------------- |
+| `dev`   | 3000 | Development server with hot-reload |
+| `prod`  | 8080 | Production build served via nginx  |
+
+#### Development Mode
+
+```bash
+# Start development server (with hot-reload)
+docker compose up dev
+
+# Rebuild after dependency changes
+docker compose up dev --build
+
+# Run in background
+docker compose up -d dev
+```
+
+The development server mounts your local files, so any changes you make will automatically trigger a reload.
+
+#### Production Mode
+
+```bash
+# Build and run production version
+docker compose up prod --build
+
+# Run in background
+docker compose up -d prod
+```
+
+#### Useful Commands
+
+```bash
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (clean slate)
+docker compose down -v
+
+# View logs for a specific service
+docker compose logs -f dev
+
+# Rebuild a specific service
+docker compose build dev
+
+# Run a one-off command in the dev container
+docker compose run --rm dev pnpm lint
+```
+
 ## 📄 License
 
 This project is open source and available under the [MIT License](LICENSE).

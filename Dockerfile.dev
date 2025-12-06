@@ -1,0 +1,33 @@
+# =============================================================================
+# Dockerfile.dev for DevOps Daily
+# Development environment with hot-reload support
+# =============================================================================
+
+FROM node:20-bullseye-slim
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files for dependency installation
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Install all dependencies (including devDependencies)
+RUN pnpm install --frozen-lockfile
+
+# Copy source files (will be overridden by volume mount in docker-compose)
+COPY . .
+
+# Set environment variables for development
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+# Enable polling for file watching in Docker (needed for hot-reload on some systems)
+ENV WATCHPACK_POLLING=true
+
+# Expose development port
+EXPOSE 3000
+
+# Start the development server
+CMD ["pnpm", "run", "dev"]

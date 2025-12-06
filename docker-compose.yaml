@@ -1,0 +1,56 @@
+# =============================================================================
+# Docker Compose for DevOps Daily
+# Supports both development and production modes
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Development Service
+  # Hot-reload enabled for local development
+  # ===========================================================================
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: devops-daily-dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source code for hot-reload
+      - .:/app
+      # Use named volume for node_modules to avoid conflicts with host
+      - node_modules:/app/node_modules
+      # Mount pnpm store for faster installs
+      - pnpm_store:/root/.local/share/pnpm/store
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+      - WATCHPACK_POLLING=true
+    # Keep container running and enable tty for better logging
+    tty: true
+    stdin_open: true
+    # Restart on failure
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Production Service
+  # Uses the main Dockerfile with nginx for serving static files
+  # ===========================================================================
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: devops-daily-prod
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
+    # Restart policy for production
+    restart: unless-stopped
+    # Health check inherited from Dockerfile
+
+volumes:
+  node_modules:
+    name: devops-daily-node-modules
+  pnpm_store:
+    name: devops-daily-pnpm-store
