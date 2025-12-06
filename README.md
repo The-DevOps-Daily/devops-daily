@@ -302,11 +302,25 @@ docker logs -f devops-daily-app
 
 ### Docker Image Details
 
-- **Base Image**: Node.js 20.11.0 (Alpine) for building, Nginx (Alpine) for serving
+- **Base Image**: Node.js 20.18.1 (Bullseye Slim) for building, Nginx 1.27 (Alpine) for serving
 - **Multi-stage Build**: Optimized for minimal image size
-- **Security**: Runs as non-root user
+- **Security**: Runs as non-root user, includes OS security updates
 - **Health Check**: Built-in health check endpoint
-- **Port**: Exposes port 3000
+- **Port**: Exposes port 80 (production) or 3000 (development)
+- **Version Pinning**: Node.js, pnpm, and nginx versions are pinned via build args for reproducible builds
+
+#### Build Arguments
+
+You can customize the versions used in the Docker build:
+
+```bash
+# Build with custom versions
+docker build \
+  --build-arg NODE_VERSION=20.18.1 \
+  --build-arg PNPM_VERSION=10.11.1 \
+  --build-arg NGINX_VERSION=1.27-alpine \
+  -t devops-daily:custom .
+```
 
 ### Docker Compose (Recommended for Local Development)
 
