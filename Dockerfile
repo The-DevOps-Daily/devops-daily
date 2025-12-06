@@ -27,7 +27,7 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
