@@ -254,18 +254,16 @@ This project is deployed on [Cloudflare Pages](https://pages.cloudflare.com/) bu
 
 ## 🐳 Docker
 
-You can run DevOps Daily in a Docker container for consistent development and deployment environments.
-
-The project uses a **unified Dockerfile** (`Dockerfile.unified`) with build targets for both development and production, making it simpler to maintain while supporting both use cases.
+DevOps Daily can run in Docker for consistent environments. The project uses a **single universal Dockerfile** that switches between development and production modes via a simple `BUILD_ENV` build argument.
 
 ### Building the Docker Image
 
 ```bash
 # Build production image (default target)
-docker build --target production -f Dockerfile.unified -t devops-daily:prod .
+docker build --build-arg BUILD_ENV=production -t devops-daily:prod .
 
 # Build development image
-docker build --target development -f Dockerfile.unified -t devops-daily:dev .
+docker build --build-arg BUILD_ENV=development -t devops-daily:dev .
 ```
 
 ### Running the Container
@@ -304,12 +302,10 @@ docker logs -f devops-daily-app
 
 ### Docker Image Details
 
-- **Architecture**: Unified Dockerfile with multiple build targets
-- **Base Images**: Node.js 20.18.1 (Bullseye Slim), Nginx 1.27 (Alpine)
-- **Build Targets**:
-  - `development`: Hot-reload development server (port 3000)
-  - `production`: Nginx serving static export (port 80)
-- **Multi-stage Build**: Shared base layers for efficient caching
+- **Architecture**: Single universal Dockerfile controlled by `BUILD_ENV` argument
+- **Base Image**: Node.js 20.18.1 (Bullseye Slim)
+- **Environments**: Controlled by `BUILD_ENV=development` or `BUILD_ENV=production`
+- **Smart Builds**: Installs nginx and builds assets only for production
 - **Security**: Runs as non-root user, includes OS security updates
 - **Health Check**: Built-in health check endpoint
 - **Version Pinning**: Node.js, pnpm, and nginx versions are pinned via build args for reproducible builds
@@ -321,17 +317,14 @@ You can customize the versions used in the Docker build:
 ```bash
 # Build production with custom versions
 docker build \
-  --target production \
-  -f Dockerfile.unified \
+  --build-arg BUILD_ENV=production \
   --build-arg NODE_VERSION=20.18.1 \
   --build-arg PNPM_VERSION=10.11.1 \
-  --build-arg NGINX_VERSION=1.27-alpine \
   -t devops-daily:custom .
 
 # Build development with custom Node/pnpm versions
 docker build \
-  --target development \
-  -f Dockerfile.unified \
+  --build-arg BUILD_ENV=development \
   --build-arg NODE_VERSION=20.18.1 \
   --build-arg PNPM_VERSION=10.11.1 \
   -t devops-daily:dev .
@@ -339,8 +332,7 @@ docker build \
 
 ### Docker Compose (Recommended)
 
-Docker Compose provides the easiest way to manage both development and production environments.
-It automatically selects the correct build targets from the unified Dockerfile.
+Docker Compose is the easiest way to manage development and production environments. It automatically passes the `BUILD_ENV` argument to switch between modes.
 
 #### Quick Start
 

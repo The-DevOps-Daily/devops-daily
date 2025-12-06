@@ -50,8 +50,6 @@ docs
 !README.md
 
 # Docker
-Dockerfile
-Dockerfile.dev
 docker-compose*.yml
 docker-compose*.yaml
 .docker

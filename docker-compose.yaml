@@ -11,11 +11,11 @@ services:
   dev:
     build:
       context: .
-      dockerfile: Dockerfile.unified
-      target: development
+      dockerfile: Dockerfile
       args:
         NODE_VERSION: 20.18.1
         PNPM_VERSION: 10.11.1
+        BUILD_ENV: development
     container_name: devops-daily-dev
     image: devops-daily:dev
     ports:
@@ -68,12 +68,11 @@ services:
   prod:
     build:
       context: .
-      dockerfile: Dockerfile.unified
-      target: production
+      dockerfile: Dockerfile
       args:
         NODE_VERSION: 20.18.1
         PNPM_VERSION: 10.11.1
-        NGINX_VERSION: 1.27-alpine
+        BUILD_ENV: production
     container_name: devops-daily-prod
     image: devops-daily:prod
     ports:
@@ -85,11 +84,11 @@ services:
     # Restart policy for production
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
       interval: 30s
-      timeout: 3s
+      timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 40s
     labels:
       - "com.devops-daily.service=prod"
       - "com.devops-daily.environment=production"

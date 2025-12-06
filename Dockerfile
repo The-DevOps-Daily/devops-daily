@@ -1,81 +1,88 @@
-# =============================================================================
-# Dockerfile for DevOps Daily
-# Multi-stage build for optimized image size
-# =============================================================================
+# Universal Dockerfile for DevOps Daily
+# Switch environments with: BUILD_ENV=development or BUILD_ENV=production
 
-# Build arguments for version pinning and configurability
 ARG NODE_VERSION=20.18.1
 ARG PNPM_VERSION=10.11.1
-ARG NGINX_VERSION=1.27-alpine
+ARG BUILD_ENV=production
 
-# =============================================================================
-# Stage 1: Dependencies
-# Install production dependencies in a separate stage for better caching
-# =============================================================================
-FROM node:${NODE_VERSION}-bullseye-slim AS deps
+FROM node:${NODE_VERSION}-bullseye-slim
 
+ARG BUILD_ENV
 ARG PNPM_VERSION
 
-# Install security updates and pnpm with specific version
+# Install system packages based on environment
 RUN apt-get update && \
     apt-get upgrade -y && \
+    if [ "$BUILD_ENV" = "production" ]; then \
+        apt-get install -y nginx curl; \
+    else \
+        apt-get install -y curl; \
+    fi && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    corepack enable && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install pnpm
+RUN corepack enable && \
     corepack prepare pnpm@${PNPM_VERSION} --activate
 
 WORKDIR /app
 
-# Copy package files for dependency installation
+# Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies based on environment
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+        pnpm install --frozen-lockfile --prod; \
+    else \
+        pnpm install --frozen-lockfile; \
+    fi
 
-# =============================================================================
-# Stage 2: Builder
-# Build the Next.js application
-# =============================================================================
-FROM node:${NODE_VERSION}-bullseye-slim AS builder
-
-ARG PNPM_VERSION
-
-# Install security updates and pnpm with specific version
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    corepack enable && \
-    corepack prepare pnpm@${PNPM_VERSION} --activate
-
-WORKDIR /app
-
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy all source files
+# Copy source code
 COPY . .
 
-# Set environment to production for build
-ENV NODE_ENV=production
+# Build for production if needed
+RUN if [ "$BUILD_ENV" = "production" ]; then \
+        NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 pnpm run build:cf && \
+        rm -rf /var/www/html/* && \
+        mkdir -p /var/www/html && \
+        cp -r /app/out/* /var/www/html/ && \
+        echo 'server {' > /etc/nginx/sites-available/default && \
+        echo '    listen 80;' >> /etc/nginx/sites-available/default && \
+        echo '    listen [::]:80;' >> /etc/nginx/sites-available/default && \
+        echo '    server_name localhost;' >> /etc/nginx/sites-available/default && \
+        echo '    root /var/www/html;' >> /etc/nginx/sites-available/default && \
+        echo '    index index.html;' >> /etc/nginx/sites-available/default && \
+        echo '' >> /etc/nginx/sites-available/default && \
+        echo '    gzip on;' >> /etc/nginx/sites-available/default && \
+        echo '    gzip_vary on;' >> /etc/nginx/sites-available/default && \
+        echo '    gzip_min_length 1024;' >> /etc/nginx/sites-available/default && \
+        echo '    gzip_types text/plain text/css text/xml text/javascript application/javascript application/json;' >> /etc/nginx/sites-available/default && \
+        echo '' >> /etc/nginx/sites-available/default && \
+        echo '    add_header X-Frame-Options "SAMEORIGIN" always;' >> /etc/nginx/sites-available/default && \
+        echo '    add_header X-Content-Type-Options "nosniff" always;' >> /etc/nginx/sites-available/default && \
+        echo '    add_header X-XSS-Protection "1; mode=block" always;' >> /etc/nginx/sites-available/default && \
+        echo '    add_header Referrer-Policy "strict-origin-when-cross-origin" always;' >> /etc/nginx/sites-available/default && \
+        echo '    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;' >> /etc/nginx/sites-available/default && \
+        echo '' >> /etc/nginx/sites-available/default && \
+        echo '    location ~* \\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {' >> /etc/nginx/sites-available/default && \
+        echo '        expires 1y;' >> /etc/nginx/sites-available/default && \
+        echo '        add_header Cache-Control "public, immutable";' >> /etc/nginx/sites-available/default && \
+        echo '    }' >> /etc/nginx/sites-available/default && \
+        echo '' >> /etc/nginx/sites-available/default && \
+        echo '    location / {' >> /etc/nginx/sites-available/default && \
+        echo '        try_files $uri $uri.html /index.html;' >> /etc/nginx/sites-available/default && \
+        echo '    }' >> /etc/nginx/sites-available/default && \
+        echo '' >> /etc/nginx/sites-available/default && \
+        echo '    error_page 404 /404.html;' >> /etc/nginx/sites-available/default && \
+        echo '}' >> /etc/nginx/sites-available/default; \
+    fi
+
+# Environment variables
+ENV NODE_ENV=${BUILD_ENV:-production}
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV WATCHPACK_POLLING=true
 
-# Build arguments for optional cache mount
-ARG BUILDKIT_CACHE_MOUNT_NS=devops-daily
-
-# Build the application
-# Using build:cf for faster builds (skips image generation)
-# For full build with image generation, use: RUN pnpm run build
-RUN --mount=type=cache,target=/app/.next/cache,id=${BUILDKIT_CACHE_MOUNT_NS} \
-    pnpm run build:cf
-
-# =============================================================================
-# Stage 3: Production Runner
-# Minimal image to serve the static export
-# =============================================================================
-FROM nginx:${NGINX_VERSION} AS runner
-
-# Add labels for better container management
+# Metadata labels
 LABEL org.opencontainers.image.title="DevOps Daily"
 LABEL org.opencontainers.image.description="A modern content platform for DevOps professionals"
 LABEL org.opencontainers.image.source="https://github.com/The-DevOps-Daily/devops-daily"
@@ -83,77 +90,20 @@ LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.vendor="DevOps Daily"
 LABEL org.opencontainers.image.authors="DevOps Daily Team"
 
-# Install security updates
-RUN apk update && \
-    apk upgrade && \
-    rm -rf /var/cache/apk/*
+# Expose ports (both for flexibility)
+EXPOSE 3000 80
 
-# Remove default nginx static assets
-RUN rm -rf /usr/share/nginx/html/*
+# Health check that adapts to environment
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD if [ "$NODE_ENV" = "production" ]; then \
+            curl -f http://localhost:80/ || exit 1; \
+        else \
+            curl -f http://localhost:3000/ || exit 1; \
+        fi
 
-# Copy custom nginx configuration for SPA routing
-COPY <<EOF /etc/nginx/conf.d/default.conf
-server {
-    listen 80;
-    listen [::]:80;
-    server_name localhost;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private auth;
-    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml application/javascript application/json;
-    gzip_comp_level 6;
-
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
-
-    # Cache static assets
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Main location block
-    location / {
-        try_files \$uri \$uri.html /index.html;
-    }
-
-    # Error page handling
-    error_page 404 /404.html;
-    location = /404.html {
-        internal;
-    }
-}
-EOF
-
-# Copy the static export from builder stage
-COPY --from=builder /app/out /usr/share/nginx/html
-
-# Adjust permissions for non-root user
-RUN chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /var/cache/nginx && \
-    chown -R nginx:nginx /var/log/nginx && \
-    chmod -R 755 /usr/share/nginx/html && \
-    touch /run/nginx.pid && \
-    chown -R nginx:nginx /run/nginx.pid
-
-# Switch to non-root user
-USER nginx
-
-# Expose port 80
-EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start command based on environment
+CMD if [ "$NODE_ENV" = "production" ]; then \
+        nginx -g "daemon off;"; \
+    else \
+        pnpm run dev; \
+    fi

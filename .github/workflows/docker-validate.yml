@@ -37,7 +37,7 @@ jobs:
       - name: Lint Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: Dockerfile.unified
+          dockerfile: Dockerfile
           failure-threshold: warning
 
       - name: Summary
