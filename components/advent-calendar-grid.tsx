@@ -43,14 +43,17 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
           difficultyColors.Intermediate;
         const categoryIcon = categoryIcons[day.category || ''] || '🎯';
 
+        const CardWrapper = isUnlocked ? Link : 'div';
+        const cardProps = isUnlocked ? { href: `/advent-of-devops/${day.slug}` } : {};
+
         return (
-          <Link
+          <CardWrapper
             key={day.slug}
-            href={`/advent-of-devops/${day.slug}`}
+            {...cardProps}
             className={`group relative block rounded-xl border transition-all duration-300 overflow-hidden ${
               isUnlocked
                 ? 'border-border hover:border-primary hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-1 cursor-pointer'
-                : 'border-border/50 opacity-60 cursor-not-allowed'
+                : 'border-border/50 opacity-60 cursor-not-allowed pointer-events-none'
             } ${completed ? 'ring-2 ring-green-500/50' : ''}`}
             style={{
               animationDelay: `${index * 50}ms`,
@@ -128,7 +131,7 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
                 )}
               </div>
             </div>
-          </Link>
+          </CardWrapper>
         );
       })}
     </div>
