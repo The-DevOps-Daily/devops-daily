@@ -1,0 +1,7 @@
+---
+ignored:
+  - DL3008  # Pin versions in apt-get install
+  - SC2016  # Shell expansion in echo statements
+
+trustedRegistries:
+  - docker.io
