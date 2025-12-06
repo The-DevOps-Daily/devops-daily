@@ -25,8 +25,8 @@ import {
 import { cn } from '@/lib/utils';
 
 // Grid configuration
-const GRID_SIZE = 20;
-const CELL_SIZE = 24; // pixels
+const GRID_SIZE = 24;
+const CELL_SIZE = 22; // pixels
 const INITIAL_SPEED = 150; // milliseconds per move
 const SPEED_INCREMENT = 5; // speed increase per server eaten
 const MIN_SPEED = 50; // minimum milliseconds per move
@@ -361,9 +361,49 @@ export default function BugHunter() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left sidebar - Stats */}
-          <div className="space-y-6">
+        {/* Game controls - above everything */}
+        <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center gap-4">
+              {!isRunning ? (
+                <Button
+                  onClick={startGame}
+                  size="lg"
+                  className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  Start Game
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={togglePause}
+                    size="lg"
+                    variant="outline"
+                  >
+                    {isPaused ? (
+                      <><Play className="w-5 h-5 mr-2" /> Resume</>
+                    ) : (
+                      <><Pause className="w-5 h-5 mr-2" /> Pause</>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={resetGame}
+                    size="lg"
+                    variant="outline"
+                  >
+                    <RotateCcw className="w-5 h-5 mr-2" />
+                    Reset
+                  </Button>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid lg:grid-cols-[300px_1fr_300px] gap-6 items-start">
+          {/* Left sidebar - Score */}
+          <div>
             {/* Score Card */}
             <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
               <CardHeader>
@@ -407,118 +447,11 @@ export default function BugHunter() {
               </CardContent>
             </Card>
 
-            {/* Controls Card */}
-            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <Info className="w-5 h-5 text-blue-400" />
-                  Controls
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-center gap-3">
-                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">↑ ↓ ← →</kbd>
-                  <span className="text-gray-400">Move</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">W A S D</kbd>
-                  <span className="text-gray-400">Alternative</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">Space</kbd>
-                  <span className="text-gray-400">Pause</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">Enter</kbd>
-                  <span className="text-gray-400">Start</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Achievements */}
-            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <Award className="w-5 h-5 text-yellow-400" />
-                  Achievements
-                </CardTitle>
-                <CardDescription>
-                  {achievements.filter(a => a.unlocked).length} / {achievements.length} unlocked
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {achievements.map(achievement => (
-                  <div
-                    key={achievement.id}
-                    className={cn(
-                      'flex items-start gap-3 p-2 rounded-lg transition-colors',
-                      achievement.unlocked
-                        ? 'bg-green-500/10 border border-green-500/20'
-                        : 'bg-slate-800/50 opacity-50'
-                    )}
-                  >
-                    <div className="text-2xl">{achievement.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-white">
-                        {achievement.title}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        {achievement.description}
-                      </div>
-                    </div>
-                    {achievement.unlocked && (
-                      <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Main game area */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Game controls */}
-            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-center gap-4">
-                  {!isRunning ? (
-                    <Button
-                      onClick={startGame}
-                      size="lg"
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
-                    >
-                      <Play className="w-5 h-5 mr-2" />
-                      Start Game
-                    </Button>
-                  ) : (
-                    <>
-                      <Button
-                        onClick={togglePause}
-                        size="lg"
-                        variant="outline"
-                      >
-                        {isPaused ? (
-                          <><Play className="w-5 h-5 mr-2" /> Resume</>
-                        ) : (
-                          <><Pause className="w-5 h-5 mr-2" /> Pause</>
-                        )}
-                      </Button>
-                      <Button
-                        onClick={resetGame}
-                        size="lg"
-                        variant="outline"
-                      >
-                        <RotateCcw className="w-5 h-5 mr-2" />
-                        Reset
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Game canvas */}
-            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur overflow-hidden">
+          {/* Center - Game canvas */}
+          <div className="flex justify-center">
+            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur overflow-hidden w-fit">
               <CardContent className="p-6">
                 <div className="relative mx-auto" style={{ width: GRID_SIZE * CELL_SIZE, height: GRID_SIZE * CELL_SIZE }}>
                   {/* Grid background */}
@@ -716,7 +649,78 @@ export default function BugHunter() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Right sidebar - Controls */}
+          <div>
+            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Info className="w-5 h-5 text-blue-400" />
+                  Controls
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">↑ ↓ ← →</kbd>
+                  <span className="text-gray-400">Move</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">W A S D</kbd>
+                  <span className="text-gray-400">Alternative</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">Space</kbd>
+                  <span className="text-gray-400">Pause</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">Enter</kbd>
+                  <span className="text-gray-400">Start</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+
+        {/* Achievements - Below game */}
+        <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Award className="w-5 h-5 text-yellow-400" />
+              Achievements
+            </CardTitle>
+            <CardDescription>
+              {achievements.filter(a => a.unlocked).length} / {achievements.length} unlocked
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {achievements.map(achievement => (
+                <div
+                  key={achievement.id}
+                  className={cn(
+                    'flex items-start gap-3 p-3 rounded-lg transition-colors',
+                    achievement.unlocked
+                      ? 'bg-green-500/10 border border-green-500/20'
+                      : 'bg-slate-800/50 opacity-50'
+                  )}
+                >
+                  <div className="text-2xl">{achievement.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-white">
+                      {achievement.title}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {achievement.description}
+                    </div>
+                  </div>
+                  {achievement.unlocked && (
+                    <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Educational Tips */}
         <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20 backdrop-blur">
