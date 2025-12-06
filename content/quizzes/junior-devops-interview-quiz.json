@@ -25,12 +25,12 @@
       "situation": "You're troubleshooting why a user can't execute a script, and you run 'ls -l' to check file permissions.",
       "codeExample": "$ ls -l deploy.sh\n-rwxr-xr-- 1 devops team 1234 Dec 1 10:00 deploy.sh",
       "options": [
-        "Owner can read/write/execute, group can read/execute, others can only read",
         "Owner can read/write, group can read/execute, others can read/write",
+        "Owner can read/write/execute, group can read/execute, others can only read",
         "Everyone can read/write/execute",
         "Only owner can read the file"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 1,
       "explanation": "rwx (owner) = read, write, execute permissions; r-x (group) = read and execute only; r-- (others) = read only. The owner (devops) has full control, the group (team) can read and run it, and others can only view it.",
       "hint": "Break down the permission string into three groups: owner, group, and others.",
       "difficulty": "beginner",
@@ -43,11 +43,11 @@
       "situation": "Your application server is running slow. You need to identify which process is consuming the most CPU and memory.",
       "options": [
         "ps aux",
-        "top",
         "ls -la",
+        "top",
         "df -h"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "The 'top' command provides a real-time, interactive view of running processes, CPU usage, memory consumption, and system load. 'ps aux' shows a snapshot of processes, 'ls -la' lists files, and 'df -h' shows disk space usage.",
       "hint": "Think about which command updates continuously to show live system activity.",
       "difficulty": "beginner",
@@ -77,12 +77,12 @@
       "situation": "You need to find all occurrences of 'ERROR' in your application logs from the past week.",
       "codeExample": "You want to search for 'ERROR' in /var/log/app.log",
       "options": [
-        "find /var/log/app.log ERROR",
-        "grep 'ERROR' /var/log/app.log",
         "search ERROR /var/log/app.log",
-        "cat ERROR /var/log/app.log"
+        "cat ERROR /var/log/app.log",
+        "find /var/log/app.log ERROR",
+        "grep 'ERROR' /var/log/app.log"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "'grep' (Global Regular Expression Print) searches for patterns in files. The command 'grep ERROR /var/log/app.log' will find all lines containing 'ERROR'. You can add flags like -i (case-insensitive), -n (line numbers), or -r (recursive).",
       "hint": "This command is essential for log analysis and text searching.",
       "difficulty": "beginner",
@@ -164,12 +164,12 @@
       "description": "What's the main difference between a Docker image and a container?",
       "situation": "A junior developer asks why we 'run' an image to create a container. You need to explain the relationship.",
       "options": [
-        "Images are stored templates, containers are running instances of those images",
         "Containers are templates, images are running processes",
         "There is no difference, the terms are interchangeable",
+        "Images are stored templates, containers are running instances of those images",
         "Images can be modified, containers cannot"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 2,
       "explanation": "Docker images are read-only templates that contain application code, runtime, libraries, and dependencies. Containers are running instances created from images. Think of images as classes and containers as objects in programming. You can run multiple containers from a single image, each isolated from the others.",
       "hint": "Think about the relationship between a recipe and a dish cooked from it.",
       "difficulty": "beginner",
@@ -234,12 +234,12 @@
       "description": "What does CI/CD stand for and what's its purpose?",
       "situation": "You're interviewing for a junior DevOps role and need to explain CI/CD fundamentals.",
       "options": [
-        "Continuous Integration / Continuous Delivery - automates building, testing, and deploying code changes",
         "Code Integration / Code Deployment - manual process for releasing software",
         "Container Installation / Container Distribution - Docker deployment system",
+        "Continuous Integration / Continuous Delivery - automates building, testing, and deploying code changes",
         "Cloud Integration / Cloud Development - cloud-only development workflow"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 2,
       "explanation": "CI/CD automates software delivery: Continuous Integration (CI) automatically builds and tests code when developers commit changes, catching bugs early. Continuous Delivery/Deployment (CD) automates releasing to staging and production. Benefits: faster releases, fewer bugs, consistent deployments, reduced manual work. Common tools: Jenkins, GitLab CI, GitHub Actions, CircleCI.",
       "hint": "Think about automating the path from code commit to production.",
       "difficulty": "beginner",
