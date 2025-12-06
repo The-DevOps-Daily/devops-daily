@@ -37,6 +37,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: false
+          load: true
           tags: devops-daily:test-prod
           build-args: |
             NODE_VERSION=${{ inputs.node_version }}
@@ -71,6 +72,7 @@ jobs:
           context: .
           file: ./Dockerfile.dev
           push: false
+          load: true
           tags: devops-daily:test-dev
           build-args: |
             NODE_VERSION=${{ inputs.node_version }}
