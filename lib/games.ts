@@ -14,6 +14,7 @@ import {
   Database,
   Cloud,
   Server,
+  Bug,
 } from 'lucide-react';
 
 export interface Game {
@@ -38,6 +39,20 @@ export interface Game {
  * This is the single source of truth for game metadata
  */
 const games: Game[] = [
+  {
+    id: 'bug-hunter',
+    title: 'Bug Hunter',
+    description:
+      'DevOps-themed Snake game where you control a bug that infects healthy servers. Grow longer with each infection, but avoid crashing into walls or yourself!',
+    icon: Bug,
+    badgeText: 'New',
+    color: 'from-red-500 to-orange-600',
+    href: '/games/bug-hunter',
+    tags: ['game', 'arcade', 'interactive', 'security'],
+    isNew: true,
+    featured: true,
+    category: 'Games',
+  },
   {
     id: 'tcp-vs-udp',
     title: 'TCP vs UDP Simulator',
