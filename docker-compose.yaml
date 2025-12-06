@@ -11,7 +11,8 @@ services:
   dev:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.unified
+      target: development
       args:
         NODE_VERSION: 20.18.1
         PNPM_VERSION: 10.11.1
@@ -67,7 +68,8 @@ services:
   prod:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.unified
+      target: production
       args:
         NODE_VERSION: 20.18.1
         PNPM_VERSION: 10.11.1
