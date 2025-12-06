@@ -22,7 +22,7 @@ export function NewsDigestContent({ content }: NewsDigestContentProps) {
       // Create a wrapper div for the section
       const sectionWrapper = document.createElement('div');
       sectionWrapper.className =
-        'news-section-box mb-8 py-6 pl-12 pr-6 border rounded-lg bg-card hover:border-primary/30 transition-all';
+        'news-section-box mb-8 py-2 pl-12 pr-6 border rounded-lg bg-card hover:border-primary/30 transition-all';
 
       // Get all elements between this h2 and the next h2 (or end of content)
       const elementsInSection: Element[] = [];
@@ -50,7 +50,7 @@ export function NewsDigestContent({ content }: NewsDigestContentProps) {
       // Create a wrapper div for the news item
       const itemWrapper = document.createElement('div');
       itemWrapper.className =
-        'news-item-box mb-6 last:mb-0 py-5 pl-10 pr-5 border rounded-md bg-muted/30 hover:bg-muted/50 hover:border-primary/20 transition-all';
+        'news-item-box mb-6 last:mb-0 py-1 pl-10 pr-5 border rounded-md bg-muted/30 hover:bg-muted/50 hover:border-primary/20 transition-all';
 
       // Get all elements until the next h3 or h2
       const elementsInItem: Element[] = [];
