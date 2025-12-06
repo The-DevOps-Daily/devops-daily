@@ -40,6 +40,9 @@ interface Position {
   y: number;
 }
 
+// Game over reason
+type GameOverReason = 'wall' | 'self' | null;
+
 // Achievement interface
 interface Achievement {
   id: string;
@@ -71,6 +74,9 @@ export default function BugHunter() {
   const [bug, setBug] = useState<Position[]>([{ x: 10, y: 10 }]);
   const [direction, setDirection] = useState<Direction>('RIGHT');
   const [nextDirection, setNextDirection] = useState<Direction>('RIGHT');
+  
+  // Game over reason
+  const [gameOverReason, setGameOverReason] = useState<GameOverReason>(null);
   
   // Server (food) state
   const [server, setServer] = useState<Position>({ x: 15, y: 15 });
@@ -236,6 +242,7 @@ export default function BugHunter() {
         if (newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE) {
           setGameOver(true);
           setIsRunning(false);
+          setGameOverReason('wall');
           return prevBug;
         }
         
@@ -243,6 +250,7 @@ export default function BugHunter() {
         if (prevBug.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
           setGameOver(true);
           setIsRunning(false);
+          setGameOverReason('self');
           return prevBug;
         }
         
@@ -314,6 +322,7 @@ export default function BugHunter() {
     setIsPaused(false);
     setIsRunning(true);
     setShowInstructions(false);
+    setGameOverReason(null);
   };
   
   // Toggle pause
@@ -622,9 +631,13 @@ export default function BugHunter() {
                       >
                         <div className="text-center p-8 bg-slate-900/90 rounded-2xl border-2 border-red-500/50 shadow-2xl max-w-md">
                           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                          <h3 className="text-2xl font-bold text-white mb-2">System Crash!</h3>
+                          <h3 className="text-2xl font-bold text-white mb-2">
+                            {gameOverReason === 'wall' ? 'Bug Patched!' : 'System Crash!'}
+                          </h3>
                           <p className="text-gray-400 mb-4">
-                            The bug crashed into {bug[0].x < 0 || bug[0].x >= GRID_SIZE || bug[0].y < 0 || bug[0].y >= GRID_SIZE ? 'a wall' : 'itself'}!
+                            {gameOverReason === 'wall'
+                              ? 'The bug hit a firewall and was patched!'
+                              : 'The bug corrupted itself and crashed!'}
                           </p>
                           <div className="grid grid-cols-2 gap-4 mb-6">
                             <div className="p-4 bg-slate-800/50 rounded-lg">
@@ -641,9 +654,11 @@ export default function BugHunter() {
                             </div>
                           </div>
                           {score === highScore && highScore > 0 && (
-                            <Badge className="mb-4 bg-gradient-to-r from-yellow-500 to-orange-500">
-                              🏆 New High Score!
-                            </Badge>
+                            <div className="mb-4">
+                              <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500">
+                                🏆 New High Score!
+                              </Badge>
+                            </div>
                           )}
                           <Button
                             onClick={resetGame}
