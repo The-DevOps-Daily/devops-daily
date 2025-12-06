@@ -2,6 +2,14 @@ name: Docker Validation
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+      - 'docker-compose*.yaml'
+      - '.github/workflows/docker-validate.yml'
   pull_request:
     paths:
       - 'Dockerfile*'
