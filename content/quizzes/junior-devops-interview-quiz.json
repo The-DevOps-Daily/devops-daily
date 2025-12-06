@@ -234,10 +234,10 @@
       "description": "What does CI/CD stand for and what's its purpose?",
       "situation": "You're interviewing for a junior DevOps role and need to explain CI/CD fundamentals.",
       "options": [
-        "Code Integration / Code Deployment - manual process for releasing software",
-        "Container Installation / Container Distribution - Docker deployment system",
-        "Cloud Integration / Cloud Development - cloud-only development workflow",
-        "Continuous Integration / Continuous Delivery - automates building, testing, and deploying code changes",
+       "Code Integration / Code Deployment - manual process for releasing software",
+       "Container Installation / Container Distribution - Docker deployment system",
+       "Cloud Integration / Cloud Development - cloud-only development workflow",
+        "Continuous Integration / Continuous Delivery - automates building, testing, and deploying code changes"
       ],
       "correctAnswer": 3,
       "explanation": "CI/CD automates software delivery: Continuous Integration (CI) automatically builds and tests code when developers commit changes, catching bugs early. Continuous Delivery/Deployment (CD) automates releasing to staging and production. Benefits: faster releases, fewer bugs, consistent deployments, reduced manual work. Common tools: Jenkins, GitLab CI, GitHub Actions, CircleCI.",
