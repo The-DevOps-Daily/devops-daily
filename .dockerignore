@@ -51,7 +51,7 @@ docs
 
 # Docker
 Dockerfile
-Dockerfile.*
+Dockerfile.dev
 docker-compose*.yml
 docker-compose*.yaml
 .docker

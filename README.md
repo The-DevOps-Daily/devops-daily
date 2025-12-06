@@ -256,30 +256,32 @@ This project is deployed on [Cloudflare Pages](https://pages.cloudflare.com/) bu
 
 You can run DevOps Daily in a Docker container for consistent development and deployment environments.
 
+The project uses a **unified Dockerfile** (`Dockerfile.unified`) with build targets for both development and production, making it simpler to maintain while supporting both use cases.
+
 ### Building the Docker Image
 
 ```bash
-# Build the Docker image
-docker build -t devops-daily .
+# Build production image (default target)
+docker build --target production -f Dockerfile.unified -t devops-daily:prod .
 
-# Build with a specific tag
-docker build -t devops-daily:v1.0.0 .
+# Build development image
+docker build --target development -f Dockerfile.unified -t devops-daily:dev .
 ```
 
 ### Running the Container
 
 ```bash
-# Run the container
-docker run -p 3000:80 devops-daily
+# Run production container
+docker run -p 8080:80 devops-daily:prod
 
 # Run in detached mode (background)
-docker run -d -p 3000:80 --name devops-daily-app devops-daily
+docker run -d -p 8080:80 --name devops-daily-app devops-daily:prod
 
-# Run with custom port mapping
-docker run -p 8080:80 devops-daily
+# Run development container with hot-reload
+docker run -p 3000:3000 -v $(pwd):/app devops-daily:dev
 ```
 
-After starting the container, visit [http://localhost:3000](http://localhost:3000) (or your custom port) to see the site.
+After starting the container, visit [http://localhost:8080](http://localhost:8080) for production or [http://localhost:3000](http://localhost:3000) for development.
 
 ### Container Management
 
@@ -302,11 +304,14 @@ docker logs -f devops-daily-app
 
 ### Docker Image Details
 
-- **Base Image**: Node.js 20.18.1 (Bullseye Slim) for building, Nginx 1.27 (Alpine) for serving
-- **Multi-stage Build**: Optimized for minimal image size
+- **Architecture**: Unified Dockerfile with multiple build targets
+- **Base Images**: Node.js 20.18.1 (Bullseye Slim), Nginx 1.27 (Alpine)
+- **Build Targets**:
+  - `development`: Hot-reload development server (port 3000)
+  - `production`: Nginx serving static export (port 80)
+- **Multi-stage Build**: Shared base layers for efficient caching
 - **Security**: Runs as non-root user, includes OS security updates
 - **Health Check**: Built-in health check endpoint
-- **Port**: Exposes port 80 (production) or 3000 (development)
 - **Version Pinning**: Node.js, pnpm, and nginx versions are pinned via build args for reproducible builds
 
 #### Build Arguments
@@ -314,17 +319,28 @@ docker logs -f devops-daily-app
 You can customize the versions used in the Docker build:
 
 ```bash
-# Build with custom versions
+# Build production with custom versions
 docker build \
+  --target production \
+  -f Dockerfile.unified \
   --build-arg NODE_VERSION=20.18.1 \
   --build-arg PNPM_VERSION=10.11.1 \
   --build-arg NGINX_VERSION=1.27-alpine \
   -t devops-daily:custom .
+
+# Build development with custom Node/pnpm versions
+docker build \
+  --target development \
+  -f Dockerfile.unified \
+  --build-arg NODE_VERSION=20.18.1 \
+  --build-arg PNPM_VERSION=10.11.1 \
+  -t devops-daily:dev .
 ```
 
-### Docker Compose (Recommended for Local Development)
+### Docker Compose (Recommended)
 
-Docker Compose provides an easier way to manage the development environment with hot-reload support.
+Docker Compose provides the easiest way to manage both development and production environments.
+It automatically selects the correct build targets from the unified Dockerfile.
 
 #### Quick Start
 
@@ -368,6 +384,30 @@ The development server mounts your local files, so any changes you make will aut
 
 ```bash
 # Build and run production version
+docker compose up prod --build
+
+# Run in background
+docker compose up -d prod
+```
+
+#### Useful Commands
+
+```bash
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (clean slate)
+docker compose down -v
+
+# View logs for a specific service
+docker compose logs -f dev
+
+# Rebuild a specific service
+docker compose build dev
+
+# Run a one-off command in the dev container
+docker compose run --rm dev pnpm lint
+```
 docker compose up prod --build
 
 # Run in background
