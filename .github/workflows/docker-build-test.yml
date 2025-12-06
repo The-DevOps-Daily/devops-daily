@@ -1,0 +1,96 @@
+name: Docker Build Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      node_version:
+        description: 'Node.js version to use'
+        required: false
+        default: '20.18.1'
+        type: string
+      pnpm_version:
+        description: 'pnpm version to use'
+        required: false
+        default: '10.11.1'
+        type: string
+      nginx_version:
+        description: 'Nginx version to use'
+        required: false
+        default: '1.27-alpine'
+        type: string
+
+jobs:
+  build-production:
+    name: Build Production Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build production Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: devops-daily:test-prod
+          build-args: |
+            NODE_VERSION=${{ inputs.node_version }}
+            PNPM_VERSION=${{ inputs.pnpm_version }}
+            NGINX_VERSION=${{ inputs.nginx_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test production image
+        run: |
+          docker run -d --name test-prod -p 8080:80 devops-daily:test-prod
+          sleep 5
+          curl -f http://localhost:8080 || exit 1
+          docker logs test-prod
+          docker stop test-prod
+          docker rm test-prod
+
+  build-development:
+    name: Build Development Image
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build development Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.dev
+          push: false
+          tags: devops-daily:test-dev
+          build-args: |
+            NODE_VERSION=${{ inputs.node_version }}
+            PNPM_VERSION=${{ inputs.pnpm_version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-docker-compose:
+    name: Build with Docker Compose
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build with Docker Compose
+        run: |
+          docker compose build dev
+          docker compose build prod
+
+      - name: Verify images exist
+        run: |
+          docker images | grep devops-daily
