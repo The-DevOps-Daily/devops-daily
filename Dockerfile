@@ -14,9 +14,9 @@ ARG PNPM_VERSION
 RUN apt-get update && \
     apt-get upgrade -y && \
     if [ "$BUILD_ENV" = "production" ]; then \
-        apt-get install -y nginx curl; \
+        apt-get install -y --no-install-recommends nginx curl; \
     else \
-        apt-get install -y curl; \
+        apt-get install -y --no-install-recommends curl; \
     fi && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -70,7 +70,7 @@ RUN if [ "$BUILD_ENV" = "production" ]; then \
         echo '    }' >> /etc/nginx/sites-available/default && \
         echo '' >> /etc/nginx/sites-available/default && \
         echo '    location / {' >> /etc/nginx/sites-available/default && \
-        echo '        try_files $uri $uri.html /index.html;' >> /etc/nginx/sites-available/default && \
+        echo '        try_files \$uri \$uri.html /index.html;' >> /etc/nginx/sites-available/default && \
         echo '    }' >> /etc/nginx/sites-available/default && \
         echo '' >> /etc/nginx/sites-available/default && \
         echo '    error_page 404 /404.html;' >> /etc/nginx/sites-available/default && \
@@ -102,8 +102,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
         fi
 
 # Start command based on environment
-CMD if [ "$NODE_ENV" = "production" ]; then \
-        nginx -g "daemon off;"; \
-    else \
-        pnpm run dev; \
-    fi
+CMD ["/bin/sh", "-c", "if [ \"$NODE_ENV\" = \"production\" ]; then nginx -g 'daemon off;'; else pnpm run dev; fi"]
