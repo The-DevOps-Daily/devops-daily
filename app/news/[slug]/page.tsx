@@ -1,4 +1,5 @@
 import { PostContent } from '@/components/post-content';
+import { NewsDigestContent } from '@/components/news-digest-content';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { OptimizedImage } from '@/components/optimized-image';
@@ -149,7 +150,7 @@ export default async function NewsDigestPage({
               </header>
 
               {/* Content */}
-              <PostContent content={digest.content} />
+              <NewsDigestContent content={digest.content} />
 
               {/* Inline Sponsors */}
               <InlineSponsors variant="full" className="my-12" />
