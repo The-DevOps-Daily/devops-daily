@@ -168,7 +168,7 @@ export default async function NewsDigestPage({
           {/* Sidebar */}
           <aside className="lg:col-span-3">
             <div className="sticky top-8 space-y-6">
-              <SponsorSidebar />
+              <SponsorSidebar className="!relative !top-auto" />
 
               {/* Share Section */}
               <div className="bg-card border rounded-lg p-6">
