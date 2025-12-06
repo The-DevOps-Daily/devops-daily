@@ -3,6 +3,8 @@
 # Supports both development and production modes
 # =============================================================================
 
+version: '3.9'
+
 services:
   # ===========================================================================
   # Development Service
@@ -12,7 +14,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+      args:
+        NODE_VERSION: 20.18.1
+        PNPM_VERSION: 10.11.1
     container_name: devops-daily-dev
+    image: devops-daily:dev
     ports:
       - "3000:3000"
     volumes:
@@ -21,16 +27,40 @@ services:
       # Use named volume for node_modules to avoid conflicts with host
       - node_modules:/app/node_modules
       # Mount pnpm store for faster installs
-      - pnpm_store:/root/.local/share/pnpm/store
+      - pnpm_store:/app/.pnpm-store
     environment:
       - NODE_ENV=development
       - NEXT_TELEMETRY_DISABLED=1
       - WATCHPACK_POLLING=true
+    networks:
+      - devops-daily-network
     # Keep container running and enable tty for better logging
     tty: true
     stdin_open: true
     # Restart on failure
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.devops-daily.service=dev"
+      - "com.devops-daily.environment=development"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # ===========================================================================
   # Production Service
@@ -40,14 +70,47 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        NODE_VERSION: 20.18.1
+        PNPM_VERSION: 10.11.1
+        NGINX_VERSION: 1.27-alpine
     container_name: devops-daily-prod
+    image: devops-daily:prod
     ports:
       - "8080:80"
     environment:
       - NODE_ENV=production
+    networks:
+      - devops-daily-network
     # Restart policy for production
     restart: unless-stopped
-    # Health check inherited from Dockerfile
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    labels:
+      - "com.devops-daily.service=prod"
+      - "com.devops-daily.environment=production"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  devops-daily-network:
+    name: devops-daily-network
+    driver: bridge
 
 volumes:
   node_modules:
