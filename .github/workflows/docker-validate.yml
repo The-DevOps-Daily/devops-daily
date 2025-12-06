@@ -1,0 +1,46 @@
+name: Docker Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
+      - 'docker-compose*.yaml'
+      - '.github/workflows/docker-validate.yml'
+
+jobs:
+  validate-dockerfiles:
+    name: Validate Docker Configuration
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate docker-compose.yaml syntax
+        run: |
+          docker compose config
+          echo "✓ docker-compose.yaml syntax validation passed"
+
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: warning
+
+      - name: Lint Dockerfile.dev
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile.dev
+          failure-threshold: warning
+
+      - name: Summary
+        run: |
+          echo "✅ Docker configuration validation complete"
+          echo ""
+          echo "Note: Full image builds are not performed in this workflow to save CI resources."
+          echo "Production builds are tested during Cloudflare Pages deployments."
