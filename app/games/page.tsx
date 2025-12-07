@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Dice6,
-  Gamepad2,
   Sparkles,
   Zap,
   ArrowRight,
@@ -13,6 +12,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { getAllGames } from '@/lib/games';
+import { GamesHero } from '@/components/games-hero';
 
 export const metadata: Metadata = {
   title: 'DevOps Games & Interactive Tools',
@@ -171,49 +171,7 @@ export default async function GamesPage() {
   return (
     <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-20">
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-grid opacity-[0.02]" />
-          <div className="absolute top-20 right-20 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-20 left-20 w-72 h-72 bg-purple-500/10 rounded-full blur-[100px]" />
-        </div>
-
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 px-4 py-1.5 border-blue-500/50 bg-blue-500/5 backdrop-blur-sm"
-            >
-              <Gamepad2 className="w-3.5 h-3.5 mr-2 text-blue-500" />
-              Interactive Zone
-            </Badge>
-
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              DevOps{' '}
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 via-purple-500 to-pink-500">
-                Games & Simulators
-              </span>
-            </h1>
-
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Have fun while learning with our interactive games and simulators designed
-              specifically for DevOps professionals. Practice your skills in a playful, low-pressure
-              environment.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-linear-to-r from-blue-500 to-purple-600 rounded-full"></div>
-                <span>{availableGames.length} Available Now</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-linear-to-r from-gray-400 to-gray-500 rounded-full"></div>
-                <span>{comingSoonGames.length} Coming Soon</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <GamesHero countAvailableGames={availableGames.length} countComingSoonGames={comingSoonGames.length}/>
 
       {/* Featured Games Section */}
       {featuredGames.length > 0 && (
