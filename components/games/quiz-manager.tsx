@@ -121,13 +121,36 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
   const getQuizDifficulty = (quiz: QuizMetadata): DifficultyLevel => {
     const levels = quiz.difficultyLevels;
     const total = levels.beginner + levels.intermediate + levels.advanced;
-
-    // Calculate weighted difficulty score (1=beginner, 2=intermediate, 3=advanced)
-    const score = (levels.beginner * 1 + levels.intermediate * 2 + levels.advanced * 3) / total;
+    const beginnerPct = levels.beginner / total;
+    const intermediatePct = levels.intermediate / total;
+    const advancedPct = levels.advanced / total;
     
-    // Classify based on weighted score
-    if (score < 1.75) return 'beginner';
-    if (score > 2.05) return 'advanced';
+    const title = quiz.title.toLowerCase();
+
+    // Explicit beginner indicators
+    if (title.includes('junior')) return 'beginner';
+    
+    // Fundamentals quizzes with good beginner content
+    if (title.includes('fundamentals') && beginnerPct >= 0.4) return 'beginner';
+    
+    // High beginner percentage
+    if (beginnerPct >= 0.5) return 'beginner';
+    
+    // Advanced topics: automation tools, interview prep, incident response
+    if (
+      title.includes('ansible') ||
+      title.includes('jenkins') ||
+      (title.includes('interview') && !title.includes('junior')) ||
+      title.includes('incident') ||
+      (title.includes('network') && title.includes('security'))
+    ) {
+      return 'advanced';
+    }
+    
+    // High advanced content with substantial intermediate
+    if (advancedPct >= 0.3 && intermediatePct >= 0.35) return 'advanced';
+    
+    // Default to intermediate
     return 'intermediate';
   };
 
