@@ -109,40 +109,41 @@ export function QuizFilters({
         </Select>
 
         {/* Difficulty Filter */}
-        <Select value={selectedDifficulty} onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="All Difficulties" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-             <SelectLabel>Difficulty</SelectLabel>
-             <SelectItem value="all">All Difficulties</SelectItem>
-             <SelectItem value="beginner">Beginner/Junior</SelectItem>
-             <SelectItem value="intermediate">Intermediate/Mid</SelectItem>
-             <SelectItem value="advanced">Advanced/Senior</SelectItem>
-           </SelectGroup>
-        </SelectContent>
-       </Select>
+       <Select value={selectedDifficulty} onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}>
+         <SelectTrigger className="w-full sm:w-[200px]">
+           <SelectValue placeholder="All Difficulties" />
+         </SelectTrigger>
+         <SelectContent>
+           <SelectGroup>
+            <SelectLabel>Difficulty</SelectLabel>
+            <SelectItem value="all">All Difficulties</SelectItem>
+            <SelectItem value="beginner">Beginner/Junior</SelectItem>
+            <SelectItem value="intermediate">Intermediate/Mid</SelectItem>
+            <SelectItem value="advanced">Advanced/Senior</SelectItem>
+          </SelectGroup>
+       </SelectContent>
+      </Select>
 
         {/* Sort By */}
-        <Select 
+        <div className="relative w-full sm:w-[200px]">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleSortDirection();
+            }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 hover:bg-accent rounded p-1 transition-colors"
+            title={`Currently: ${getSortLabel(sortConfig.field, sortConfig.direction)}. Click to reverse.`}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+          </button>
+          <Select 
           value={sortConfig.field} 
           onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
-        >
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleSortDirection();
-              }}
-              className="mr-2 hover:bg-accent rounded p-1 transition-colors shrink-0"
-              title={`Currently: ${getSortLabel(sortConfig.field, sortConfig.direction)}. Click to reverse.`}
-            >
-              <ArrowUpDown className="w-4 h-4" />
-            </button>
-            <SelectValue placeholder="Sort by" />
+          >
+            <SelectTrigger className="w-full pl-10">
+              <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -153,7 +154,8 @@ export function QuizFilters({
               <SelectItem value="points">Points</SelectItem>
             </SelectGroup>
           </SelectContent>
-        </Select>
+          </Select>
+        </div>
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (
