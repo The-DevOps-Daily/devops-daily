@@ -3,9 +3,9 @@
   "title": "Network & Security Fundamentals Quiz",
   "description": "Test your knowledge of networking protocols, security best practices, firewalls, VPNs, and cloud security for DevOps engineers",
   "category": "Networking/Security",
- "icon": "Lock",
+  "icon": "Lock",
   "totalPoints": 259,
- "theme": {
+  "theme": {
     "primaryColor": "purple",
     "gradientFrom": "from-purple-600",
     "gradientTo": "to-blue-600"
@@ -16,7 +16,8 @@
       "beginner": 4,
       "intermediate": 9,
       "advanced": 5
-    }
+    },
+    "createdDate": "2024-09-01"
   },
   "questions": [
     {

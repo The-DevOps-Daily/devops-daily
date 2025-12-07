@@ -107,6 +107,7 @@ export async function getQuizMetadata(): Promise<
     estimatedTime: string;
     theme: QuizConfig['theme'];
     difficultyLevels: QuizConfig['metadata']['difficultyLevels'];
+    createdDate?: string;
   }>
 > {
   try {
@@ -122,6 +123,7 @@ export async function getQuizMetadata(): Promise<
       estimatedTime: quiz.metadata.estimatedTime,
       theme: quiz.theme,
       difficultyLevels: quiz.metadata.difficultyLevels,
+      createdDate: quiz.metadata.createdDate,
     }));
   } catch (error) {
     console.error('Error loading quiz metadata:', error);

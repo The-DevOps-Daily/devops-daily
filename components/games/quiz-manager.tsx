@@ -80,6 +80,7 @@ interface QuizMetadata {
     intermediate: number;
     advanced: number;
   };
+  createdDate?: string;
 }
 
 interface QuizManagerProps {
@@ -178,11 +179,15 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          // Sort by ID/title in reverse alphabetical order (newest)
-          return b.id.localeCompare(a.id);
+          // Sort by creation date (newest first)
+          const dateA = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+          const dateB = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+          return dateB - dateA;
         case 'oldest':
-          // Sort by ID/title in alphabetical order (oldest)
-          return a.id.localeCompare(b.id);
+          // Sort by creation date (oldest first)
+          const dateA2 = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+          const dateB2 = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+          return dateA2 - dateB2;
         case 'difficulty':
           const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
           const aDiff = getQuizDifficulty(a);
