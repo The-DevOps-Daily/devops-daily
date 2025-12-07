@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { BreadcrumbSchema } from '@/components/schema-markup';
 import BugHunter from '@/components/games/bug-hunter';
 import { generateGameMetadata } from '@/lib/game-metadata';
 
@@ -7,5 +8,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default function BugHunterPage() {
-  return <BugHunter />;
+  const schemaItems = [
+    { name: 'Home', url: '/' },
+    { name: 'Games', url: '/games' },
+    { name: 'Bug Hunter', url: '/games/bug-hunter' },
+  ];
+
+  return (
+    <>
+      <BreadcrumbSchema items={schemaItems} />
+      <BugHunter />
+    </>
+  );
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { Breadcrumb } from '@/components/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -333,14 +334,23 @@ export default function BugHunter() {
   };
   
   // Reset game
-  const resetGame = () => {
-    startGame();
-  };
-  
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
+ const resetGame = () => {
+   startGame();
+ };
+ 
+  // Breadcrumb items
+  const breadcrumbItems = [
+    { label: 'Games', href: '/games' },
+    { label: 'Bug Hunter', href: '/games/bug-hunter', isCurrent: true },
+  ];
+ 
+ return (
+   <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
+     <div className="max-w-7xl mx-auto space-y-8">
+       {/* Breadcrumb */}
+       <Breadcrumb items={breadcrumbItems} />
+
+       {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-3">
             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
