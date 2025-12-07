@@ -16,7 +16,7 @@ import { X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'all';
-export type SortOption = 'newest' | 'difficulty' | 'time' | 'points';
+export type SortOption = 'newest' | 'oldest' | 'difficulty' | 'time' | 'points';
 
 interface QuizFiltersProps {
   categories: string[];
@@ -109,6 +109,7 @@ export function QuizFilters({
             <SelectGroup>
               <SelectLabel>Sort By</SelectLabel>
               <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
               <SelectItem value="difficulty">Difficulty</SelectItem>
               <SelectItem value="time">Estimated Time</SelectItem>
               <SelectItem value="points">Total Points</SelectItem>

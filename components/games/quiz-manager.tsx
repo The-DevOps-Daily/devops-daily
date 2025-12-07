@@ -178,8 +178,11 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'newest':
-          // Default order (newest first) - reverse the original order
-          return quizzes.indexOf(b) - quizzes.indexOf(a);
+          // Sort by ID/title in reverse alphabetical order (newest)
+          return b.id.localeCompare(a.id);
+        case 'oldest':
+          // Sort by ID/title in alphabetical order (oldest)
+          return a.id.localeCompare(b.id);
         case 'difficulty':
           const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
           const aDiff = getQuizDifficulty(a);
