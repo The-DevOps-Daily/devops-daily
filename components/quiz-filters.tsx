@@ -124,38 +124,36 @@ export function QuizFilters({
         </SelectContent>
        </Select>
 
-        {/* Sort By - with direction toggle button */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {/* Direction toggle button - on the left */}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleSortDirection}
-            className="h-10 w-10 shrink-0"
-            title={`Currently: ${getSortLabel(sortConfig.field, sortConfig.direction)}. Click to reverse.`}
-          >
-            <ArrowUpDown className="w-4 h-4" />
-          </Button>
-          
-          {/* Sort field selector */}
-          <Select 
-            value={sortConfig.field} 
-            onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
-          >
-            <SelectTrigger className="w-full sm:w-[160px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Sort By</SelectLabel>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="difficulty">Difficulty</SelectItem>
-                <SelectItem value="time">Time</SelectItem>
-                <SelectItem value="points">Points</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Sort By */}
+        <Select 
+          value={sortConfig.field} 
+          onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
+        >
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleSortDirection();
+              }}
+              className="mr-2 hover:bg-accent rounded p-1 transition-colors shrink-0"
+              title={`Currently: ${getSortLabel(sortConfig.field, sortConfig.direction)}. Click to reverse.`}
+            >
+              <ArrowUpDown className="w-4 h-4" />
+            </button>
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Sort By</SelectLabel>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="difficulty">Difficulty</SelectItem>
+              <SelectItem value="time">Time</SelectItem>
+              <SelectItem value="points">Points</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (
