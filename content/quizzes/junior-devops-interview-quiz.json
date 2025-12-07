@@ -15,16 +15,17 @@
     "difficultyLevels": {
       "beginner": 14,
       "intermediate": 4
-    }
+    },
+    "createdDate": "2024-12-06"
   },
   "questions": [
     {
       "id": "junior-linux-permissions",
       "title": "File Permissions",
       "description": "What does the permission 'rwxr-xr--' mean in Linux?",
-     "situation": "You're troubleshooting why a user can't execute a script, and you run 'ls -l' to check file permissions.",
-     "codeExample": "$ ls -l deploy.sh\n-rwxr-xr-- 1 devops team 1234 Dec 1 10:00 deploy.sh",
-     "options": [
+      "situation": "You're troubleshooting why a user can't execute a script, and you run 'ls -l' to check file permissions.",
+      "codeExample": "$ ls -l deploy.sh\n-rwxr-xr-- 1 devops team 1234 Dec 1 10:00 deploy.sh",
+      "options": [
         "Owner can read/write, group can read/execute, others can read/write",
         "Everyone can read/write/execute",
         "Owner can read/write/execute, group can read/execute, others can only read",
@@ -40,8 +41,8 @@
       "id": "junior-linux-commands",
       "title": "Process Management",
       "description": "Which command shows real-time system resource usage and running processes?",
-     "situation": "Your application server is running slow. You need to identify which process is consuming the most CPU and memory.",
-     "options": [
+      "situation": "Your application server is running slow. You need to identify which process is consuming the most CPU and memory.",
+      "options": [
         "ls -la",
         "top",
         "ps aux",
@@ -57,8 +58,8 @@
       "id": "junior-linux-logs",
       "title": "System Logs",
       "description": "Where are system logs typically stored in Linux?",
-     "situation": "An application crashed overnight. You need to check system logs to find error messages.",
-     "options": [
+      "situation": "An application crashed overnight. You need to check system logs to find error messages.",
+      "options": [
         "/usr/logs",
         "/home/logs",
         "/etc/logs",
@@ -93,8 +94,8 @@
       "title": "Git Staging",
       "description": "Which command stages all modified files for commit?",
       "situation": "You've made changes to multiple files in your project and want to prepare them for commit.",
-     "codeExample": "$ git status\nModified: app.js\nModified: config.yaml\nModified: README.md",
-     "options": [
+      "codeExample": "$ git status\nModified: app.js\nModified: config.yaml\nModified: README.md",
+      "options": [
         "git commit -a",
         "git stage --all",
         "git add .",
@@ -110,8 +111,8 @@
       "id": "junior-git-branches",
       "title": "Git Branching",
       "description": "What's the purpose of creating a feature branch in Git?",
-     "situation": "Your team follows Git Flow. You're starting work on a new feature and need to explain why you're creating a separate branch.",
-     "options": [
+      "situation": "Your team follows Git Flow. You're starting work on a new feature and need to explain why you're creating a separate branch.",
+      "options": [
         "Branches are only for fixing bugs",
         "Branches isolate development work from the main codebase, allowing parallel development and easy rollback",
         "Branches are required by Git and serve no practical purpose",
@@ -127,8 +128,8 @@
       "id": "junior-git-merge",
       "title": "Git Merge vs Rebase",
       "description": "What's the main difference between 'git merge' and 'git rebase'?",
-     "situation": "Your feature branch is behind main. A senior developer asks whether you want to merge or rebase to get the latest changes.",
-     "options": [
+      "situation": "Your feature branch is behind main. A senior developer asks whether you want to merge or rebase to get the latest changes.",
+      "options": [
         "They do exactly the same thing",
         "Merge creates a new commit combining branches, rebase rewrites history by moving commits to a new base",
         "Rebase is faster but merge is safer",
@@ -145,8 +146,8 @@
       "title": "Git Remote Operations",
       "description": "What does 'git pull' do?",
       "situation": "You start your workday and need to get the latest code that your teammates pushed yesterday.",
-     "codeExample": "$ git pull origin main",
-     "options": [
+      "codeExample": "$ git pull origin main",
+      "options": [
         "Sends your local commits to the remote repository",
         "Fetches remote changes and merges them into your current branch",
         "Creates a new branch from remote",
@@ -162,8 +163,8 @@
       "id": "junior-docker-concepts",
       "title": "Container Concepts",
       "description": "What's the main difference between a Docker image and a container?",
-     "situation": "A junior developer asks why we 'run' an image to create a container. You need to explain the relationship.",
-     "options": [
+      "situation": "A junior developer asks why we 'run' an image to create a container. You need to explain the relationship.",
+      "options": [
         "Containers are templates, images are running processes",
         "There is no difference, the terms are interchangeable",
         "Images are stored templates, containers are running instances of those images",
@@ -179,9 +180,9 @@
       "id": "junior-docker-commands",
       "title": "Docker Commands",
       "description": "Which command starts a container from an image?",
-     "situation": "You have an nginx image and want to start a web server container from it.",
-     "codeExample": "You want to run nginx and expose port 80",
-     "options": [
+      "situation": "You have an nginx image and want to start a web server container from it.",
+      "codeExample": "You want to run nginx and expose port 80",
+      "options": [
         "docker create nginx",
         "docker execute nginx",
         "docker start nginx",
@@ -197,8 +198,8 @@
       "id": "junior-docker-dockerfile",
       "title": "Dockerfile Basics",
       "description": "What is the purpose of a Dockerfile?",
-     "situation": "You need to containerize a Node.js application. Your team lead mentions creating a Dockerfile.",
-     "options": [
+      "situation": "You need to containerize a Node.js application. Your team lead mentions creating a Dockerfile.",
+      "options": [
         "A Dockerfile is a text document containing instructions to build a Docker image",
         "A Dockerfile runs containers",
         "A Dockerfile stores container logs",
@@ -215,8 +216,8 @@
       "title": "Docker Image Layers",
       "description": "Why are Docker images built in layers?",
       "situation": "You notice when rebuilding an image that some steps say 'Using cache'. You want to understand how this works.",
-     "codeExample": "Step 3/8 : RUN npm install\n ---> Using cache\n ---> a1b2c3d4e5f6",
-     "options": [
+      "codeExample": "Step 3/8 : RUN npm install\n ---> Using cache\n ---> a1b2c3d4e5f6",
+      "options": [
         "Layers have no purpose, they're just how Docker works internally",
         "Layers slow down Docker operations",
         "Layers enable caching and sharing, making builds faster and images smaller",
@@ -234,9 +235,9 @@
       "description": "What does CI/CD stand for and what's its purpose?",
       "situation": "You're interviewing for a junior DevOps role and need to explain CI/CD fundamentals.",
       "options": [
-       "Code Integration / Code Deployment - manual process for releasing software",
-       "Container Installation / Container Distribution - Docker deployment system",
-       "Cloud Integration / Cloud Development - cloud-only development workflow",
+        "Code Integration / Code Deployment - manual process for releasing software",
+        "Container Installation / Container Distribution - Docker deployment system",
+        "Cloud Integration / Cloud Development - cloud-only development workflow",
         "Continuous Integration / Continuous Delivery - automates building, testing, and deploying code changes"
       ],
       "correctAnswer": 3,
@@ -250,8 +251,8 @@
       "title": "Pipeline Stages",
       "description": "What are typical stages in a CI/CD pipeline?",
       "situation": "Your team is setting up a new pipeline. You need to identify the common stages in order.",
-     "codeExample": "Pipeline: [?] -> [?] -> [?] -> [?]",
-     "options": [
+      "codeExample": "Pipeline: [?] -> [?] -> [?] -> [?]",
+      "options": [
         "Build -> Test -> Deploy -> Monitor",
         "Deploy -> Build -> Test -> Monitor",
         "Test -> Deploy -> Build -> Monitor",
@@ -267,8 +268,8 @@
       "id": "junior-cloud-service-models",
       "title": "Cloud Service Models",
       "description": "What's the difference between IaaS, PaaS, and SaaS?",
-     "situation": "During an interview, you're asked to explain cloud service models with examples.",
-     "options": [
+      "situation": "During an interview, you're asked to explain cloud service models with examples.",
+      "options": [
         "IaaS provides infrastructure (VMs, storage), PaaS provides platforms (runtime environments), SaaS provides complete applications",
         "They're all the same, just different names",
         "IaaS is cheapest, SaaS is most expensive",
@@ -284,8 +285,8 @@
       "id": "junior-cloud-basics",
       "title": "Load Balancing",
       "description": "What is the purpose of a load balancer?",
-     "situation": "Your web application runs on multiple servers. You need to explain why you need a load balancer.",
-     "options": [
+      "situation": "Your web application runs on multiple servers. You need to explain why you need a load balancer.",
+      "options": [
         "Load balancers distribute incoming traffic across multiple servers for high availability and performance",
         "Load balancers store data",
         "Load balancers are only for large enterprises",
@@ -302,8 +303,8 @@
       "title": "Bash Scripting",
       "description": "What does the shebang line '#!/bin/bash' do in a script?",
       "situation": "You're writing your first deployment script and see this line at the top of examples.",
-     "codeExample": "#!/bin/bash\necho 'Deploying application...'",
-     "options": [
+      "codeExample": "#!/bin/bash\necho 'Deploying application...'",
+      "options": [
         "It specifies which interpreter should execute the script",
         "It's a comment that has no effect",
         "It makes the script executable",

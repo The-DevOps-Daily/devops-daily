@@ -16,7 +16,8 @@
       "beginner": 3,
       "intermediate": 3,
       "advanced": 2
-    }
+    },
+    "createdDate": "2024-05-01"
   },
   "questions": [
     {
@@ -25,8 +26,21 @@
       "description": "You have changes in both main and feature branches that conflict.",
       "situation": "You are on the main branch and want to merge feature-auth, but there are conflicts in app.js",
       "branches": [
-        { "name": "main", "commits": ["Initial commit", "Update app.js"], "current": true },
-        { "name": "feature-auth", "commits": ["Initial commit", "Add auth to app.js"] }
+        {
+          "name": "main",
+          "commits": [
+            "Initial commit",
+            "Update app.js"
+          ],
+          "current": true
+        },
+        {
+          "name": "feature-auth",
+          "commits": [
+            "Initial commit",
+            "Add auth to app.js"
+          ]
+        }
       ],
       "conflict": "Both branches modified app.js differently",
       "options": [
@@ -47,7 +61,14 @@
       "description": "Your feature branch is ahead of main with no conflicts.",
       "situation": "feature-ui is 3 commits ahead of main, and main has no new commits since branching.",
       "branches": [
-        { "name": "main", "commits": ["Initial commit", "Setup project"], "current": true },
+        {
+          "name": "main",
+          "commits": [
+            "Initial commit",
+            "Setup project"
+          ],
+          "current": true
+        },
         {
           "name": "feature-ui",
           "commits": [
@@ -79,12 +100,22 @@
       "branches": [
         {
           "name": "main",
-          "commits": ["Initial commit", "Setup", "Bug fix", "Security update"],
+          "commits": [
+            "Initial commit",
+            "Setup",
+            "Bug fix",
+            "Security update"
+          ],
           "current": false
         },
         {
           "name": "feature-api",
-          "commits": ["Initial commit", "Setup", "Add API routes", "Add validation"],
+          "commits": [
+            "Initial commit",
+            "Setup",
+            "Add API routes",
+            "Add validation"
+          ],
           "current": true
         }
       ],
@@ -108,7 +139,11 @@
       "branches": [
         {
           "name": "main",
-          "commits": ["Initial commit", "Add features", "Fix typo (WRONG)"],
+          "commits": [
+            "Initial commit",
+            "Add features",
+            "Fix typo (WRONG)"
+          ],
           "current": true
         }
       ],
@@ -130,10 +165,21 @@
       "description": "You are working on a feature but need to quickly fix a bug on main.",
       "situation": "You have uncommitted changes on feature-search but need to switch to main to fix an urgent bug.",
       "branches": [
-        { "name": "main", "commits": ["Initial commit", "Add search"], "current": false },
+        {
+          "name": "main",
+          "commits": [
+            "Initial commit",
+            "Add search"
+          ],
+          "current": false
+        },
         {
           "name": "feature-search",
-          "commits": ["Initial commit", "Add search", "WIP: advanced filters"],
+          "commits": [
+            "Initial commit",
+            "Add search",
+            "WIP: advanced filters"
+          ],
           "current": true
         }
       ],
@@ -157,7 +203,13 @@
       "branches": [
         {
           "name": "feature-login",
-          "commits": ["Initial", "Add login", "Fix typo", "Another typo fix", "Update login"],
+          "commits": [
+            "Initial",
+            "Add login",
+            "Fix typo",
+            "Another typo fix",
+            "Update login"
+          ],
           "current": true
         }
       ],
@@ -179,7 +231,14 @@
       "description": "You need only one specific commit from another branch.",
       "situation": "The experimental-features branch has many commits, but you only want the 'Add error handling' commit on main.",
       "branches": [
-        { "name": "main", "commits": ["Initial commit", "Core features"], "current": true },
+        {
+          "name": "main",
+          "commits": [
+            "Initial commit",
+            "Core features"
+          ],
+          "current": true
+        },
         {
           "name": "experimental-features",
           "commits": [
