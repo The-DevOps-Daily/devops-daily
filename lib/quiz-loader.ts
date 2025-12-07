@@ -106,6 +106,7 @@ export async function getQuizMetadata(): Promise<
     totalPoints: number;
     estimatedTime: string;
     theme: QuizConfig['theme'];
+    difficultyLevels: QuizConfig['metadata']['difficultyLevels'];
   }>
 > {
   try {
@@ -120,9 +121,19 @@ export async function getQuizMetadata(): Promise<
       totalPoints: quiz.totalPoints,
       estimatedTime: quiz.metadata.estimatedTime,
       theme: quiz.theme,
+      difficultyLevels: quiz.metadata.difficultyLevels,
     }));
   } catch (error) {
     console.error('Error loading quiz metadata:', error);
     return [];
   }
+}
+
+/**
+ * Get unique categories from all quizzes
+ */
+export async function getQuizCategories(): Promise<string[]> {
+  const quizzes = await getAllQuizzes();
+  const categories = new Set(quizzes.map((quiz) => quiz.category));
+  return Array.from(categories).sort();
 }

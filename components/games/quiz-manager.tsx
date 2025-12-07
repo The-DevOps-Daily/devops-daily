@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { QuizFilters, DifficultyLevel, SortOption } from '@/components/quiz-filters';
 import {
   GitBranch,
   Code,
@@ -27,6 +29,7 @@ Shield,
   Settings,
   Workflow,
 } from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Icon mapping for dynamic rendering
@@ -52,6 +55,12 @@ Shield,
   Workflow,
 };
 
+// Add GraduationCap to iconMap
+const iconMapExtended = {
+  ...iconMap,
+  GraduationCap,
+};
+
 interface QuizMetadata {
   id: string;
   title: string;
@@ -66,6 +75,11 @@ interface QuizMetadata {
     gradientFrom: string;
     gradientTo: string;
   };
+  difficultyLevels: {
+    beginner: number;
+    intermediate: number;
+    advanced: number;
+  };
 }
 
 interface QuizManagerProps {
@@ -74,6 +88,97 @@ interface QuizManagerProps {
 }
 
 export function QuizManager({ quizzes, className }: QuizManagerProps) {
+  // Filter and sort state
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+
+  // Load filter preferences from localStorage on mount
+  useEffect(() => {
+    const savedCategory = localStorage.getItem('quizFilterCategory');
+    const savedDifficulty = localStorage.getItem('quizFilterDifficulty');
+    const savedSort = localStorage.getItem('quizFilterSort');
+
+    if (savedCategory) setSelectedCategory(savedCategory);
+    if (savedDifficulty) setSelectedDifficulty(savedDifficulty as DifficultyLevel);
+    if (savedSort) setSortBy(savedSort as SortOption);
+  }, []);
+
+  // Save filter preferences to localStorage
+  useEffect(() => {
+    localStorage.setItem('quizFilterCategory', selectedCategory);
+    localStorage.setItem('quizFilterDifficulty', selectedDifficulty);
+    localStorage.setItem('quizFilterSort', sortBy);
+  }, [selectedCategory, selectedDifficulty, sortBy]);
+
+  // Get unique categories
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(new Set(quizzes.map((quiz) => quiz.category)));
+    return uniqueCategories.sort();
+  }, [quizzes]);
+
+  // Determine quiz difficulty level
+  const getQuizDifficulty = (quiz: QuizMetadata): DifficultyLevel => {
+    const levels = quiz.difficultyLevels;
+    const total = levels.beginner + levels.intermediate + levels.advanced;
+
+    // Primarily beginner if 70%+ beginner questions
+    if (levels.beginner / total >= 0.7) return 'beginner';
+    // Primarily advanced if 50%+ advanced questions
+    if (levels.advanced / total >= 0.5) return 'advanced';
+    // Otherwise intermediate
+    return 'intermediate';
+  };
+
+  // Parse estimated time for sorting
+  const parseTime = (timeStr: string): number => {
+    const match = timeStr.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
+  };
+
+  // Filter and sort quizzes
+  const filteredAndSortedQuizzes = useMemo(() => {
+    let filtered = quizzes;
+
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter((quiz) => quiz.category === selectedCategory);
+    }
+
+    // Apply difficulty filter
+    if (selectedDifficulty !== 'all') {
+      filtered = filtered.filter((quiz) => getQuizDifficulty(quiz) === selectedDifficulty);
+    }
+
+    // Sort quizzes
+    const sorted = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          // Default order (newest first) - reverse the original order
+          return quizzes.indexOf(b) - quizzes.indexOf(a);
+        case 'difficulty':
+          const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
+          const aDiff = getQuizDifficulty(a);
+          const bDiff = getQuizDifficulty(b);
+          return difficultyOrder[aDiff] - difficultyOrder[bDiff];
+        case 'time':
+          return parseTime(a.estimatedTime) - parseTime(b.estimatedTime);
+        case 'points':
+          return b.totalPoints - a.totalPoints;
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [quizzes, selectedCategory, selectedDifficulty, sortBy]);
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSelectedCategory('all');
+    setSelectedDifficulty('all');
+  };
+
   const getQuizUrl = (quizId: string) => {
     return `/quizzes/${quizId}`;
   };
@@ -93,6 +198,7 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
       Linux: 'from-gray-500 to-gray-600',
       Python: 'from-yellow-500 to-orange-600',
       SQL: 'from-blue-500 to-cyan-600',
+      'Interview Prep': 'from-green-500 to-emerald-600',
     };
 
     return colors[category] || 'from-gray-500 to-gray-600';
@@ -114,10 +220,25 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
 
   return (
     <div className={cn('space-y-6', className)}>
+      {/* Filters */}
+      <QuizFilters
+        categories={categories}
+        selectedCategory={selectedCategory}
+        selectedDifficulty={selectedDifficulty}
+        sortBy={sortBy}
+        onCategoryChange={setSelectedCategory}
+        onDifficultyChange={setSelectedDifficulty}
+        onSortChange={setSortBy}
+        onClearFilters={handleClearFilters}
+        totalCount={quizzes.length}
+        filteredCount={filteredAndSortedQuizzes.length}
+      />
+
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {quizzes.map((quiz) => {
-          const IconComponent = iconMap[quiz.icon as keyof typeof iconMap] || Target;
+        {filteredAndSortedQuizzes.map((quiz) => {
+          const IconComponent = iconMapExtended[quiz.icon as keyof typeof iconMapExtended] || Target;
           const gradientClass = getDifficultyColor(quiz.category);
+          const quizDifficulty = getQuizDifficulty(quiz);
 
           return (
             <Card
@@ -147,6 +268,11 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
 
               <CardContent className="flex flex-col justify-between grow">
                 <div className="mb-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="capitalize text-xs">
+                      {quizDifficulty}
+                    </Badge>
+                  </div>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <BookOpen className="w-4 h-4" />
@@ -182,8 +308,25 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
         })}
       </div>
 
+      {/* No results message */}
+      {filteredAndSortedQuizzes.length === 0 && (
+        <Card className="border-2 border-dashed bg-linear-to-br from-muted/50 to-muted/30 border-muted-foreground/20">
+          <CardContent className="p-8 text-center">
+            <BookOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">No Quizzes Found</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Try adjusting your filters to find more quizzes.
+            </p>
+            <Button variant="outline" onClick={handleClearFilters}>
+              Clear All Filters
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Call to action for more quizzes */}
-      <Card className="border-2 border-dashed bg-linear-to-br from-muted/50 to-muted/30 border-muted-foreground/20">
+      {filteredAndSortedQuizzes.length > 0 && (
+        <Card className="border-2 border-dashed bg-linear-to-br from-muted/50 to-muted/30 border-muted-foreground/20">
         <CardContent className="p-8 text-center">
           <Sparkles className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <h3 className="mb-2 text-lg font-semibold">More Quizzes Coming Soon!</h3>
@@ -198,6 +341,7 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
           </Button>
         </CardContent>
       </Card>
+      )}
     </div>
   );
 }
