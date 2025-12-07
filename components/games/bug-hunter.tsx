@@ -517,18 +517,18 @@ export default function BugHunter() {
                   ))}
 
                   {/* Instructions overlay */}
-                  <AnimatePresence>
-                    {showInstructions && !isRunning && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
-                      >
-                        <div className="text-center p-8 max-w-md">
-                         <Bug className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">How to Play</h3>
-                         <div className="text-left space-y-2 text-slate-700 dark:text-gray-300 mb-6">
+                 <AnimatePresence>
+                   {showInstructions && !isRunning && (
+                     <motion.div
+                       initial={{ opacity: 0 }}
+                       animate={{ opacity: 1 }}
+                       exit={{ opacity: 0 }}
+                       className="absolute inset-0 bg-white/90 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center"
+                     >
+                       <div className="text-center p-8 max-w-md bg-white dark:bg-slate-900 rounded-2xl border-2 border-slate-300 dark:border-slate-700 shadow-2xl">
+                        <Bug className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">How to Play</h3>
+                        <div className="text-left space-y-2 text-slate-700 dark:text-gray-300 mb-6">
                            <p>• Control the <span className="text-red-400 font-semibold">bug</span> to infect <span className="text-green-400 font-semibold">healthy servers</span></p>
                             <p>• The bug grows longer with each infection</p>
                             <p>• Avoid crashing into walls or yourself</p>
