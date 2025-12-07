@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { QuizFilters, DifficultyLevel, SortOption } from '@/components/quiz-filters';
+import { QuizFilters, DifficultyLevel, SortConfig, SortField, SortDirection } from '@/components/quiz-filters';
 import {
   GitBranch,
   Code,
@@ -100,29 +100,36 @@ interface QuizManagerProps {
 
 export function QuizManager({ quizzes, className }: QuizManagerProps) {
   // Filter and sort state
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('all');
-  const [sortBy, setSortBy] = useState<SortOption>('newest');
+ const [selectedCategory, setSelectedCategory] = useState<string>('all');
+ const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>('all');
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'date', direction: 'desc' });
 
-  // Load filter preferences from localStorage on mount
-  useEffect(() => {
-    const savedCategory = localStorage.getItem('quizFilterCategory');
-    const savedDifficulty = localStorage.getItem('quizFilterDifficulty');
-    const savedSort = localStorage.getItem('quizFilterSort');
+ // Load filter preferences from localStorage on mount
+ useEffect(() => {
+   const savedCategory = localStorage.getItem('quizFilterCategory');
+   const savedDifficulty = localStorage.getItem('quizFilterDifficulty');
+    const savedSortField = localStorage.getItem('quizFilterSortField');
+    const savedSortDirection = localStorage.getItem('quizFilterSortDirection');
 
-    if (savedCategory) setSelectedCategory(savedCategory);
-    if (savedDifficulty) setSelectedDifficulty(savedDifficulty as DifficultyLevel);
-    if (savedSort) setSortBy(savedSort as SortOption);
-  }, []);
+   if (savedCategory) setSelectedCategory(savedCategory);
+   if (savedDifficulty) setSelectedDifficulty(savedDifficulty as DifficultyLevel);
+    if (savedSortField && savedSortDirection) {
+      setSortConfig({ 
+        field: savedSortField as SortField, 
+        direction: savedSortDirection as SortDirection 
+      });
+    }
+ }, []);
 
-  // Save filter preferences to localStorage
-  useEffect(() => {
-    localStorage.setItem('quizFilterCategory', selectedCategory);
-    localStorage.setItem('quizFilterDifficulty', selectedDifficulty);
-    localStorage.setItem('quizFilterSort', sortBy);
-  }, [selectedCategory, selectedDifficulty, sortBy]);
+ // Save filter preferences to localStorage
+ useEffect(() => {
+   localStorage.setItem('quizFilterCategory', selectedCategory);
+   localStorage.setItem('quizFilterDifficulty', selectedDifficulty);
+    localStorage.setItem('quizFilterSortField', sortConfig.field);
+    localStorage.setItem('quizFilterSortDirection', sortConfig.direction);
+  }, [selectedCategory, selectedDifficulty, sortConfig]);
 
-  // Get unique categories
+ // Get unique categories
   const categories = useMemo(() => {
     const uniqueCategories = Array.from(new Set(quizzes.map((quiz) => quiz.category)));
     return uniqueCategories.sort();
@@ -186,51 +193,39 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
     }
 
     // Sort quizzes
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'newest':
-          // Sort by creation date (newest first)
+   const sorted = [...filtered].sort((a, b) => {
+      let result = 0;
+      
+      switch (sortConfig.field) {
+        case 'date':
           const dateA = a.createdDate ? new Date(a.createdDate).getTime() : 0;
           const dateB = b.createdDate ? new Date(b.createdDate).getTime() : 0;
-          return dateB - dateA;
-        case 'oldest':
-          // Sort by creation date (oldest first)
-          const dateA2 = a.createdDate ? new Date(a.createdDate).getTime() : 0;
-         const dateB2 = b.createdDate ? new Date(b.createdDate).getTime() : 0;
-         return dateA2 - dateB2;
-        case 'easiest':
-         // Sort by difficulty (easiest first: beginner -> intermediate -> advanced)
-         const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
-         const aDiff = getQuizDifficulty(a);
-         const bDiff = getQuizDifficulty(b);
-         return difficultyOrder[aDiff] - difficultyOrder[bDiff];
-       case 'hardest':
-         // Sort by difficulty (hardest first: advanced -> intermediate -> beginner)
-          const difficultyOrderHard = { beginner: 1, intermediate: 2, advanced: 3 };
-          const aDiffHard = getQuizDifficulty(a);
-          const bDiffHard = getQuizDifficulty(b);
-         return difficultyOrderHard[bDiffHard] - difficultyOrderHard[aDiffHard];
-        case 'quickest':
-          // Sort by time (quickest first)
-          return parseTime(a.estimatedTime) - parseTime(b.estimatedTime);
-        case 'longest':
-         // Sort by time (longest first)
-         return parseTime(b.estimatedTime) - parseTime(a.estimatedTime);
-        case 'most-points':
-          // Sort by points (highest first)
-          return b.totalPoints - a.totalPoints;
-        case 'least-points':
-          // Sort by points (lowest first)
-          return a.totalPoints - b.totalPoints;
+          result = dateA - dateB;
+          break;
+        case 'difficulty':
+          const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
+          const aDiff = getQuizDifficulty(a);
+          const bDiff = getQuizDifficulty(b);
+          result = difficultyOrder[aDiff] - difficultyOrder[bDiff];
+          break;
+        case 'time':
+          result = parseTime(a.estimatedTime) - parseTime(b.estimatedTime);
+          break;
+        case 'points':
+          result = a.totalPoints - b.totalPoints;
+          break;
        default:
-         return 0;
-      }
-    });
+          result = 0;
+     }
+      
+      // Apply direction (asc = normal, desc = reversed)
+      return sortConfig.direction === 'asc' ? result : -result;
+   });
 
-    return sorted;
-  }, [quizzes, selectedCategory, selectedDifficulty, sortBy]);
+   return sorted;
+  }, [quizzes, selectedCategory, selectedDifficulty, sortConfig]);
 
-  // Clear all filters
+ // Clear all filters
   const handleClearFilters = () => {
     setSelectedCategory('all');
     setSelectedDifficulty('all');
@@ -278,17 +273,17 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
   return (
     <div className={cn('space-y-6', className)}>
       {/* Filters */}
-      <QuizFilters
-        categories={categories}
-        selectedCategory={selectedCategory}
-        selectedDifficulty={selectedDifficulty}
-        sortBy={sortBy}
-        onCategoryChange={setSelectedCategory}
-        onDifficultyChange={setSelectedDifficulty}
-        onSortChange={setSortBy}
-        onClearFilters={handleClearFilters}
-        totalCount={quizzes.length}
-        filteredCount={filteredAndSortedQuizzes.length}
+     <QuizFilters
+       categories={categories}
+       selectedCategory={selectedCategory}
+       selectedDifficulty={selectedDifficulty}
+        sortConfig={sortConfig}
+       onCategoryChange={setSelectedCategory}
+       onDifficultyChange={setSelectedDifficulty}
+        onSortChange={setSortConfig}
+       onClearFilters={handleClearFilters}
+       totalCount={quizzes.length}
+       filteredCount={filteredAndSortedQuizzes.length}
       />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
