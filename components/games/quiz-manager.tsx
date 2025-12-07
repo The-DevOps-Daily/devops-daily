@@ -196,17 +196,24 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
         case 'oldest':
           // Sort by creation date (oldest first)
           const dateA2 = a.createdDate ? new Date(a.createdDate).getTime() : 0;
-          const dateB2 = b.createdDate ? new Date(b.createdDate).getTime() : 0;
-          return dateA2 - dateB2;
-        case 'difficulty':
-          const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
-          const aDiff = getQuizDifficulty(a);
-          const bDiff = getQuizDifficulty(b);
-          return difficultyOrder[aDiff] - difficultyOrder[bDiff];
+         const dateB2 = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+         return dateA2 - dateB2;
+        case 'easiest':
+         // Sort by difficulty (easiest first: beginner -> intermediate -> advanced)
+         const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
+         const aDiff = getQuizDifficulty(a);
+         const bDiff = getQuizDifficulty(b);
+         return difficultyOrder[aDiff] - difficultyOrder[bDiff];
+       case 'hardest':
+         // Sort by difficulty (hardest first: advanced -> intermediate -> beginner)
+          const difficultyOrderHard = { beginner: 1, intermediate: 2, advanced: 3 };
+          const aDiffHard = getQuizDifficulty(a);
+          const bDiffHard = getQuizDifficulty(b);
+          return difficultyOrderHard[bDiffHard] - difficultyOrderHard[aDiffHard];
         case 'time':
           return parseTime(a.estimatedTime) - parseTime(b.estimatedTime);
-        case 'points':
-          return b.totalPoints - a.totalPoints;
+       case 'points':
+         return b.totalPoints - a.totalPoints;
         default:
           return 0;
       }
