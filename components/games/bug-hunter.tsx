@@ -93,10 +93,11 @@ export default function BugHunter() {
   const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
   
   // Refs
-  const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Load high score from localStorage
+ const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
+ const timerRef = useRef<NodeJS.Timeout | null>(null);
+ const directionRef = useRef<Direction>('RIGHT');
+ 
+ // Load high score from localStorage
   useEffect(() => {
     const savedHighScore = localStorage.getItem('bugHunterHighScore');
     if (savedHighScore) {
@@ -146,59 +147,59 @@ export default function BugHunter() {
   }, []);
   
   // Handle keyboard input
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isRunning || isPaused) {
-        if (e.key === ' ' && isRunning) {
-          e.preventDefault();
-          setIsPaused(prev => !prev);
-        }
-        if (e.key === 'Enter' && (gameOver || !isRunning)) {
-          startGame();
-        }
-        return;
-      }
-      
-      if (e.key === ' ') {
-        e.preventDefault();
-        setIsPaused(true);
-        return;
-      }
-      
-      let newDirection: Direction | null = null;
-      
-      switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          if (direction !== 'DOWN') newDirection = 'UP';
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          if (direction !== 'UP') newDirection = 'DOWN';
-          break;
-        case 'ArrowLeft':
-        case 'a':
-        case 'A':
-          if (direction !== 'RIGHT') newDirection = 'LEFT';
-          break;
-        case 'ArrowRight':
-        case 'd':
-        case 'D':
-          if (direction !== 'LEFT') newDirection = 'RIGHT';
-          break;
-      }
-      
-      if (newDirection) {
-        e.preventDefault();
-        setNextDirection(newDirection);
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isRunning, isPaused, direction, gameOver]);
+ useEffect(() => {
+   const handleKeyPress = (e: KeyboardEvent) => {
+     if (!isRunning || isPaused) {
+       if (e.key === ' ' && isRunning) {
+         e.preventDefault();
+         setIsPaused(prev => !prev);
+       }
+       if (e.key === 'Enter' && (gameOver || !isRunning)) {
+         startGame();
+       }
+       return;
+     }
+     
+     if (e.key === ' ') {
+       e.preventDefault();
+       setIsPaused(true);
+       return;
+     }
+     
+     let newDirection: Direction | null = null;
+     
+     switch (e.key) {
+       case 'ArrowUp':
+       case 'w':
+       case 'W':
+         if (directionRef.current !== 'DOWN') newDirection = 'UP';
+         break;
+       case 'ArrowDown':
+       case 's':
+       case 'S':
+         if (directionRef.current !== 'UP') newDirection = 'DOWN';
+         break;
+       case 'ArrowLeft':
+       case 'a':
+       case 'A':
+         if (directionRef.current !== 'RIGHT') newDirection = 'LEFT';
+         break;
+       case 'ArrowRight':
+       case 'd':
+       case 'D':
+         if (directionRef.current !== 'LEFT') newDirection = 'RIGHT';
+         break;
+     }
+     
+     if (newDirection) {
+       e.preventDefault();
+       setNextDirection(newDirection);
+     }
+   };
+   
+   window.addEventListener('keydown', handleKeyPress);
+   return () => window.removeEventListener('keydown', handleKeyPress);
+ }, [isRunning, isPaused, gameOver]);
   
   // Game loop
   useEffect(() => {
@@ -214,15 +215,16 @@ export default function BugHunter() {
     }, 1000);
     
     // Start game loop
-    gameLoopRef.current = setInterval(() => {
-      setBug(prevBug => {
-        const head = prevBug[0];
-        let newHead: Position;
-        
-        // Update direction
-        setDirection(nextDirection);
-        
-        // Calculate new head position
+   gameLoopRef.current = setInterval(() => {
+     setBug(prevBug => {
+       const head = prevBug[0];
+       let newHead: Position;
+       
+       // Update direction
+       setDirection(nextDirection);
+       directionRef.current = nextDirection;
+       
+       // Calculate new head position
         switch (nextDirection) {
           case 'UP':
             newHead = { x: head.x, y: head.y - 1 };
