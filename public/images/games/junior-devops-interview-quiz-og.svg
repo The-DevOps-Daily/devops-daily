@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Junior DevOps Quiz - Beginner-Friendly Green Theme -->
+
+  <defs>
+    <!-- Background gradient - green shades -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#166534;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#15803d;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ade80;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Question mark pattern -->
+    <pattern id="questions" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <text x="50" y="70" font-family="system-ui" font-size="60" fill="#22c55e" opacity="0.08">?</text>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Question pattern -->
+  <rect width="1200" height="630" fill="url(#questions)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="200" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Interview Prep</text>
+
+  <!-- Quiz icon with graduation cap -->
+  <g transform="translate(80, 160)">
+    <circle cx="30" cy="30" r="30" fill="#22c55e" opacity="0.8"/>
+    <!-- Graduation cap -->
+    <polygon points="30,20 15,25 15,28 30,33 45,28 45,25" fill="#ffffff"/>
+    <rect x="27" y="33" width="6" height="12" fill="#ffffff"/>
+    <circle cx="30" cy="47" r="2" fill="#ffffff"/>
+  </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#4ade80">INTERACTIVE QUIZ</text>
+
+  <!-- Title -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#ffffff">Junior DevOps Engineer</text>
+  <text x="80" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#ffffff">Interview Quiz</text>
+
+  <!-- Subtitle -->
+  <text x="80" y="400" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="400" fill="#bbf7d0">18 Questions • Linux, Git, Docker, CI/CD &amp; Cloud</text>
+
+  <!-- Decorative elements -->
+  <g opacity="0.2">
+    <!-- Question marks -->
+    <circle cx="950" cy="150" r="30" fill="#22c55e"/>
+    <text x="940" y="162" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">?</text>
+
+    <circle cx="1050" cy="150" r="30" fill="#4ade80"/>
+    <text x="1040" y="162" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">?</text>
+
+    <!-- Terminal icon -->
+    <rect x="950" y="450" width="100" height="70" rx="5" fill="none" stroke="#22c55e" stroke-width="4"/>
+    <text x="960" y="485" font-family="monospace" font-size="16" fill="#22c55e">&gt;_</text>
+
+    <!-- Server icon -->
+    <rect x="1070" y="450" width="90" height="70" rx="5" fill="none" stroke="#4ade80" stroke-width="4"/>
+    <rect x="1080" y="465" width="70" height="8" rx="2" fill="#4ade80"/>
+    <rect x="1080" y="480" width="70" height="8" rx="2" fill="#4ade80"/>
+    <rect x="1080" y="495" width="70" height="8" rx="2" fill="#4ade80"/>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#4ade80">DevOps Daily</text>
+</svg>
