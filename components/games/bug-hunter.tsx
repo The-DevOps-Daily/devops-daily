@@ -345,24 +345,24 @@ export default function BugHunter() {
   ];
  
  return (
-   <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 py-12 px-4">
-     <div className="max-w-7xl mx-auto space-y-8">
+   <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 py-12 px-4">
+    <div className="max-w-7xl mx-auto space-y-8">
        {/* Breadcrumb */}
        <Breadcrumb items={breadcrumbItems} />
 
        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
-              <Bug className="w-7 h-7 text-white" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white">
-              Bug Hunter
-            </h1>
-          </div>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Control a glitch that infects healthy servers. Grow longer with each infection, but don't crash!
-          </p>
+       <div className="text-center space-y-4">
+         <div className="flex items-center justify-center gap-3">
+           <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
+             <Bug className="w-7 h-7 text-white" />
+           </div>
+           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white">
+             Bug Hunter
+           </h1>
+         </div>
+         <p className="text-xl text-slate-600 dark:text-gray-400 max-w-2xl mx-auto">
+           Control a glitch that infects healthy servers. Grow longer with each infection, but don't crash!
+         </p>
           <div className="flex items-center justify-center gap-4">
             <Link href="/games">
               <Button variant="outline" size="sm" className="gap-2">
@@ -374,8 +374,8 @@ export default function BugHunter() {
         </div>
 
         {/* Game controls - above everything */}
-        <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
-          <CardContent className="p-6">
+       <Card className="bg-slate-100/90 dark:bg-slate-900/90 border-slate-300 dark:border-slate-700/50 backdrop-blur">
+         <CardContent className="p-6">
             <div className="flex items-center justify-center gap-4">
               {!isRunning ? (
                 <Button
@@ -415,43 +415,43 @@ export default function BugHunter() {
 
         <div className="grid lg:grid-cols-[300px_1fr_300px] gap-6 items-start">
           {/* Left sidebar - Score */}
-          <div>
-            {/* Score Card */}
-            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <Trophy className="w-5 h-5 text-yellow-400" />
-                  Score
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Current</span>
-                    <span className="text-3xl font-bold text-white">{score}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">High Score</span>
-                    <span className="text-xl font-bold text-yellow-400">{highScore}</span>
-                  </div>
-                </div>
-                
-                <div className="pt-4 border-t border-slate-700/50 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Servers Infected</span>
-                    <span className="text-lg font-bold text-red-400">{serversInfected}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Bug Length</span>
-                    <span className="text-lg font-bold text-orange-400">{bug.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Time</span>
-                    <span className="text-lg font-bold text-blue-400">{gameTime}s</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-400">Speed</span>
-                    <span className="text-lg font-bold text-purple-400">
+         <div>
+           {/* Score Card */}
+           <Card className="bg-slate-100/90 dark:bg-slate-900/90 border-slate-300 dark:border-slate-700/50 backdrop-blur">
+             <CardHeader>
+               <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+                 <Trophy className="w-5 h-5 text-yellow-400" />
+                 Score
+               </CardTitle>
+             </CardHeader>
+             <CardContent className="space-y-4">
+               <div className="space-y-2">
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm text-slate-600 dark:text-gray-400">Current</span>
+                   <span className="text-3xl font-bold text-slate-900 dark:text-white">{score}</span>
+                 </div>
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm text-slate-600 dark:text-gray-400">High Score</span>
+                   <span className="text-xl font-bold text-yellow-400">{highScore}</span>
+                 </div>
+               </div>
+               
+               <div className="pt-4 border-t border-slate-300 dark:border-slate-700/50 space-y-2">
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm text-slate-600 dark:text-gray-400">Servers Infected</span>
+                   <span className="text-lg font-bold text-red-400">{serversInfected}</span>
+                 </div>
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm text-slate-600 dark:text-gray-400">Bug Length</span>
+                   <span className="text-lg font-bold text-orange-400">{bug.length}</span>
+                 </div>
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm text-slate-600 dark:text-gray-400">Time</span>
+                   <span className="text-lg font-bold text-blue-400">{gameTime}s</span>
+                 </div>
+                 <div className="flex justify-between items-center">
+                   <span className="text-sm text-slate-600 dark:text-gray-400">Speed</span>
+                   <span className="text-lg font-bold text-purple-400">
                       {Math.round((1000 / speed) * 10) / 10} moves/s
                     </span>
                   </div>
@@ -462,14 +462,14 @@ export default function BugHunter() {
           </div>
 
           {/* Center - Game canvas */}
-          <div className="flex justify-center">
-            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur overflow-hidden w-fit">
-              <CardContent className="p-6">
-                <div className="relative mx-auto" style={{ width: GRID_SIZE * CELL_SIZE, height: GRID_SIZE * CELL_SIZE }}>
-                  {/* Grid background */}
-                  <div className="absolute inset-0 bg-slate-950 rounded-lg border-2 border-slate-700">
-                    <div className="absolute inset-0 bg-grid opacity-20" />
-                  </div>
+         <div className="flex justify-center">
+           <Card className="bg-slate-100/90 dark:bg-slate-900/90 border-slate-300 dark:border-slate-700/50 backdrop-blur overflow-hidden w-fit">
+             <CardContent className="p-6">
+               <div className="relative mx-auto" style={{ width: GRID_SIZE * CELL_SIZE, height: GRID_SIZE * CELL_SIZE }}>
+                 {/* Grid background */}
+                 <div className="absolute inset-0 bg-slate-200 dark:bg-slate-950 rounded-lg border-2 border-slate-400 dark:border-slate-700">
+                   <div className="absolute inset-0 bg-grid opacity-20" />
+                 </div>
 
                   {/* Server (food) */}
                   <motion.div
@@ -526,10 +526,10 @@ export default function BugHunter() {
                         className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
                       >
                         <div className="text-center p-8 max-w-md">
-                          <Bug className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                          <h3 className="text-2xl font-bold text-white mb-4">How to Play</h3>
-                          <div className="text-left space-y-2 text-gray-300 mb-6">
-                            <p>• Control the <span className="text-red-400 font-semibold">bug</span> to infect <span className="text-green-400 font-semibold">healthy servers</span></p>
+                         <Bug className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">How to Play</h3>
+                         <div className="text-left space-y-2 text-slate-700 dark:text-gray-300 mb-6">
+                           <p>• Control the <span className="text-red-400 font-semibold">bug</span> to infect <span className="text-green-400 font-semibold">healthy servers</span></p>
                             <p>• The bug grows longer with each infection</p>
                             <p>• Avoid crashing into walls or yourself</p>
                             <p>• Speed increases as you infect more servers</p>
@@ -551,17 +551,17 @@ export default function BugHunter() {
                   <AnimatePresence>
                     {isPaused && isRunning && !gameOver && (
                       <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center"
-                      >
-                        <div className="text-center">
-                          <Pause className="w-16 h-16 text-white mx-auto mb-4" />
-                          <h3 className="text-2xl font-bold text-white mb-2">Paused</h3>
-                          <p className="text-gray-400">Press Space to resume</p>
-                        </div>
-                      </motion.div>
+                       initial={{ opacity: 0 }}
+                       animate={{ opacity: 1 }}
+                       exit={{ opacity: 0 }}
+                       className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center"
+                     >
+                       <div className="text-center">
+                         <Pause className="w-16 h-16 text-slate-900 dark:text-white mx-auto mb-4" />
+                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Paused</h3>
+                         <p className="text-slate-700 dark:text-gray-400">Press Space to resume</p>
+                       </div>
+                     </motion.div>
                     )}
                   </AnimatePresence>
 
@@ -569,35 +569,35 @@ export default function BugHunter() {
                   <AnimatePresence>
                     {gameOver && (
                       <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
-                      >
-                        <div className="text-center p-8 bg-slate-900/90 rounded-2xl border-2 border-red-500/50 shadow-2xl max-w-md">
-                          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                          <h3 className="text-2xl font-bold text-white mb-2">
-                            {gameOverReason === 'wall' ? 'Bug Patched!' : 'System Crash!'}
-                          </h3>
-                          <p className="text-gray-400 mb-4">
-                            {gameOverReason === 'wall'
-                              ? 'The bug hit a firewall and was patched!'
-                              : 'The bug corrupted itself and crashed!'}
-                          </p>
-                          <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="p-4 bg-slate-800/50 rounded-lg">
-                              <div className="text-3xl font-bold text-orange-400">
-                                {score}
-                              </div>
-                              <div className="text-sm text-gray-400">Final Score</div>
-                            </div>
-                            <div className="p-4 bg-slate-800/50 rounded-lg">
-                              <div className="text-3xl font-bold text-red-400">
-                                {serversInfected}
-                              </div>
-                              <div className="text-sm text-gray-400">Infected</div>
-                            </div>
-                          </div>
+                       initial={{ opacity: 0 }}
+                       animate={{ opacity: 1 }}
+                       exit={{ opacity: 0 }}
+                       className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
+                     >
+                       <div className="text-center p-8 bg-slate-100/90 dark:bg-slate-900/90 rounded-2xl border-2 border-red-500/50 shadow-2xl max-w-md">
+                         <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                           {gameOverReason === 'wall' ? 'Bug Patched!' : 'System Crash!'}
+                         </h3>
+                         <p className="text-slate-600 dark:text-gray-400 mb-4">
+                           {gameOverReason === 'wall'
+                             ? 'The bug hit a firewall and was patched!'
+                             : 'The bug corrupted itself and crashed!'}
+                         </p>
+                         <div className="grid grid-cols-2 gap-4 mb-6">
+                           <div className="p-4 bg-slate-200/80 dark:bg-slate-800/50 rounded-lg">
+                             <div className="text-3xl font-bold text-orange-400">
+                               {score}
+                             </div>
+                             <div className="text-sm text-slate-600 dark:text-gray-400">Final Score</div>
+                           </div>
+                           <div className="p-4 bg-slate-200/80 dark:bg-slate-800/50 rounded-lg">
+                             <div className="text-3xl font-bold text-red-400">
+                               {serversInfected}
+                             </div>
+                             <div className="text-sm text-slate-600 dark:text-gray-400">Infected</div>
+                           </div>
+                         </div>
                           {score === highScore && highScore > 0 && (
                             <div className="mb-4">
                               <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500">
@@ -649,57 +649,57 @@ export default function BugHunter() {
                     <div className="w-6 h-6 rounded bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
                       <Bug className="w-4 h-4 text-white" />
                     </div>
-                    <span className="text-gray-400">Bug (You)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
-                      <Server className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-gray-400">Healthy Server</span>
-                  </div>
-                </div>
-              </CardContent>
+                   <span className="text-slate-600 dark:text-gray-400">Bug (You)</span>
+                 </div>
+                 <div className="flex items-center gap-2">
+                   <div className="w-6 h-6 rounded bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center">
+                     <Server className="w-4 h-4 text-white" />
+                   </div>
+                   <span className="text-slate-600 dark:text-gray-400">Healthy Server</span>
+                 </div>
+               </div>
+             </CardContent>
             </Card>
           </div>
 
           {/* Right sidebar - Controls */}
-          <div>
-            <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <Info className="w-5 h-5 text-blue-400" />
-                  Controls
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-center gap-3">
-                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">↑ ↓ ← →</kbd>
-                  <span className="text-gray-400">Move</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">W A S D</kbd>
-                  <span className="text-gray-400">Alternative</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">Space</kbd>
-                  <span className="text-gray-400">Pause</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <kbd className="px-2 py-1 bg-slate-800 rounded border border-slate-700 text-white font-mono">Enter</kbd>
-                  <span className="text-gray-400">Start</span>
-                </div>
-              </CardContent>
-            </Card>
+         <div>
+           <Card className="bg-slate-100/90 dark:bg-slate-900/90 border-slate-300 dark:border-slate-700/50 backdrop-blur">
+             <CardHeader>
+               <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+                 <Info className="w-5 h-5 text-blue-400" />
+                 Controls
+               </CardTitle>
+             </CardHeader>
+             <CardContent className="space-y-3 text-sm">
+               <div className="flex items-center gap-3">
+                 <kbd className="px-2 py-1 bg-slate-200 dark:bg-slate-800 rounded border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-white font-mono">↑ ↓ ← →</kbd>
+                 <span className="text-slate-600 dark:text-gray-400">Move</span>
+               </div>
+               <div className="flex items-center gap-3">
+                 <kbd className="px-2 py-1 bg-slate-200 dark:bg-slate-800 rounded border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-white font-mono">W A S D</kbd>
+                 <span className="text-slate-600 dark:text-gray-400">Alternative</span>
+               </div>
+               <div className="flex items-center gap-3">
+                 <kbd className="px-2 py-1 bg-slate-200 dark:bg-slate-800 rounded border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-white font-mono">Space</kbd>
+                 <span className="text-slate-600 dark:text-gray-400">Pause</span>
+               </div>
+               <div className="flex items-center gap-3">
+                 <kbd className="px-2 py-1 bg-slate-200 dark:bg-slate-800 rounded border border-slate-400 dark:border-slate-700 text-slate-900 dark:text-white font-mono">Enter</kbd>
+                 <span className="text-slate-600 dark:text-gray-400">Start</span>
+               </div>
+             </CardContent>
+           </Card>
           </div>
         </div>
 
         {/* Achievements - Below game */}
-        <Card className="bg-gradient-to-br from-slate-900/90 to-slate-800/90 border-slate-700/50 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Award className="w-5 h-5 text-yellow-400" />
-              Achievements
-            </CardTitle>
+       <Card className="bg-slate-100/90 dark:bg-slate-900/90 border-slate-300 dark:border-slate-700/50 backdrop-blur">
+         <CardHeader>
+           <CardTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
+             <Award className="w-5 h-5 text-yellow-400" />
+             Achievements
+           </CardTitle>
             <CardDescription>
               {achievements.filter(a => a.unlocked).length} / {achievements.length} unlocked
             </CardDescription>
@@ -710,21 +710,21 @@ export default function BugHunter() {
                 <div
                   key={achievement.id}
                   className={cn(
-                    'flex items-start gap-3 p-3 rounded-lg transition-colors',
-                    achievement.unlocked
-                      ? 'bg-green-500/10 border border-green-500/20'
-                      : 'bg-slate-800/50 opacity-50'
-                  )}
+                   'flex items-start gap-3 p-3 rounded-lg transition-colors',
+                   achievement.unlocked
+                     ? 'bg-green-500/10 dark:bg-green-500/10 border border-green-500/20'
+                     : 'bg-slate-200/50 dark:bg-slate-800/50 opacity-50'
+                 )}
                 >
                   <div className="text-2xl">{achievement.icon}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white">
-                      {achievement.title}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {achievement.description}
-                    </div>
-                  </div>
+                   <div className="text-sm font-medium text-slate-900 dark:text-white">
+                     {achievement.title}
+                   </div>
+                   <div className="text-xs text-slate-600 dark:text-gray-400">
+                     {achievement.description}
+                   </div>
+                 </div>
                   {achievement.unlocked && (
                     <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
                   )}
@@ -735,18 +735,18 @@ export default function BugHunter() {
         </Card>
 
         {/* Educational Tips */}
-        <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20 backdrop-blur">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
-                <Info className="w-5 h-5 text-blue-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-white mb-2">
-                  Real-World Security Lessons
-                </h3>
-                <ul className="text-sm text-gray-300 space-y-1">
-                  <li>• <strong>Lateral Movement:</strong> Like the bug spreading, attackers move through networks after initial breach</li>
+       <Card className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 dark:from-blue-500/10 dark:to-purple-500/10 border-blue-500/20 dark:border-blue-500/20 backdrop-blur">
+         <CardContent className="p-6">
+           <div className="flex items-start gap-4">
+             <div className="w-10 h-10 rounded-lg bg-blue-500/20 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
+               <Info className="w-5 h-5 text-blue-400" />
+             </div>
+             <div>
+               <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                 Real-World Security Lessons
+               </h3>
+               <ul className="text-sm text-slate-700 dark:text-gray-300 space-y-1">
+                 <li>• <strong>Lateral Movement:</strong> Like the bug spreading, attackers move through networks after initial breach</li>
                   <li>• <strong>Rapid Propagation:</strong> Malware can quickly spread to vulnerable systems (like WannaCry ransomware)</li>
                   <li>• <strong>Containment:</strong> Early detection and isolation prevent widespread infection</li>
                   <li>• <strong>Defense in Depth:</strong> Multiple security layers slow down attackers (the walls in the game)</li>
