@@ -214,12 +214,16 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
           // Sort by time (quickest first)
           return parseTime(a.estimatedTime) - parseTime(b.estimatedTime);
         case 'longest':
-          // Sort by time (longest first)
-          return parseTime(b.estimatedTime) - parseTime(a.estimatedTime);
-      case 'points':
-        return b.totalPoints - a.totalPoints;
-        default:
-          return 0;
+         // Sort by time (longest first)
+         return parseTime(b.estimatedTime) - parseTime(a.estimatedTime);
+        case 'most-points':
+          // Sort by points (highest first)
+          return b.totalPoints - a.totalPoints;
+        case 'least-points':
+          // Sort by points (lowest first)
+          return a.totalPoints - b.totalPoints;
+       default:
+         return 0;
       }
     });
 
