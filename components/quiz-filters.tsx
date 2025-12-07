@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,16 +16,22 @@ import { X, SlidersHorizontal, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'all';
-export type SortOption = 'newest' | 'oldest' | 'easiest' | 'hardest' | 'quickest' | 'longest' | 'most-points' | 'least-points';
+export type SortField = 'date' | 'difficulty' | 'time' | 'points';
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortConfig {
+  field: SortField;
+  direction: SortDirection;
+}
 
 interface QuizFiltersProps {
   categories: string[];
   selectedCategory: string;
   selectedDifficulty: DifficultyLevel;
-  sortBy: SortOption;
+  sortConfig: SortConfig;
   onCategoryChange: (category: string) => void;
   onDifficultyChange: (difficulty: DifficultyLevel) => void;
-  onSortChange: (sort: SortOption) => void;
+  onSortChange: (config: SortConfig) => void;
   onClearFilters: () => void;
   totalCount: number;
   filteredCount: number;
@@ -36,7 +42,7 @@ export function QuizFilters({
   categories,
   selectedCategory,
   selectedDifficulty,
-  sortBy,
+  sortConfig,
   onCategoryChange,
   onDifficultyChange,
   onSortChange,
@@ -46,6 +52,25 @@ export function QuizFilters({
   className,
 }: QuizFiltersProps) {
   const hasActiveFilters = selectedCategory !== 'all' || selectedDifficulty !== 'all';
+
+  // Helper to get display label for sort field
+  const getSortLabel = (field: SortField, direction: SortDirection): string => {
+    const labels: Record<SortField, { asc: string; desc: string }> = {
+      date: { asc: 'Oldest First', desc: 'Newest First' },
+      difficulty: { asc: 'Easiest First', desc: 'Hardest First' },
+      time: { asc: 'Quickest First', desc: 'Longest First' },
+      points: { asc: 'Least Points', desc: 'Most Points' },
+    };
+    return labels[field][direction];
+  };
+
+  // Toggle sort direction
+  const toggleSortDirection = useCallback(() => {
+    onSortChange({
+      ...sortConfig,
+      direction: sortConfig.direction === 'asc' ? 'desc' : 'asc',
+    });
+  }, [sortConfig, onSortChange]);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -84,41 +109,53 @@ export function QuizFilters({
         </Select>
 
         {/* Difficulty Filter */}
-        <Select value={selectedDifficulty} onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="All Difficulties" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-             <SelectLabel>Difficulty</SelectLabel>
-             <SelectItem value="all">All Difficulties</SelectItem>
-             <SelectItem value="beginner">Beginner/Junior</SelectItem>
-             <SelectItem value="intermediate">Intermediate/Mid</SelectItem>
-             <SelectItem value="advanced">Advanced/Senior</SelectItem>
-           </SelectGroup>
-         </SelectContent>
-        </Select>
+       <Select value={selectedDifficulty} onValueChange={(value) => onDifficultyChange(value as DifficultyLevel)}>
+         <SelectTrigger className="w-full sm:w-[200px]">
+           <SelectValue placeholder="All Difficulties" />
+         </SelectTrigger>
+         <SelectContent>
+           <SelectGroup>
+            <SelectLabel>Difficulty</SelectLabel>
+            <SelectItem value="all">All Difficulties</SelectItem>
+            <SelectItem value="beginner">Beginner/Junior</SelectItem>
+            <SelectItem value="intermediate">Intermediate/Mid</SelectItem>
+            <SelectItem value="advanced">Advanced/Senior</SelectItem>
+          </SelectGroup>
+       </SelectContent>
+      </Select>
 
         {/* Sort By */}
-        <Select value={sortBy} onValueChange={(value) => onSortChange(value as SortOption)}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <ArrowUpDown className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Sort by" />
+        <div className="relative w-full sm:w-[200px]">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleSortDirection();
+            }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 hover:bg-accent rounded p-1 transition-colors"
+            title={`Currently: ${getSortLabel(sortConfig.field, sortConfig.direction)}. Click to reverse.`}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+          </button>
+          <Select 
+          value={sortConfig.field} 
+          onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
+          >
+            <SelectTrigger className="w-full pl-10">
+              <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-             <SelectLabel>Sort By</SelectLabel>
-             <SelectItem value="newest">Newest First</SelectItem>
-             <SelectItem value="oldest">Oldest First</SelectItem>
-            <SelectItem value="easiest">Easiest Difficulty</SelectItem>
-            <SelectItem value="hardest">Hardest Difficulty</SelectItem>
-            <SelectItem value="quickest">Quickest Time</SelectItem>
-            <SelectItem value="longest">Longest Time</SelectItem>
-            <SelectItem value="most-points">Most Points</SelectItem>
-            <SelectItem value="least-points">Least Points</SelectItem>
-         </SelectGroup>
-         </SelectContent>
-        </Select>
+              <SelectLabel>Sort By</SelectLabel>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="difficulty">Difficulty</SelectItem>
+              <SelectItem value="time">Time</SelectItem>
+              <SelectItem value="points">Points</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+          </Select>
+        </div>
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (
