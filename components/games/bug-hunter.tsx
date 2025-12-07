@@ -94,11 +94,12 @@ export default function BugHunter() {
   const [newAchievement, setNewAchievement] = useState<Achievement | null>(null);
   
   // Refs
- const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
- const timerRef = useRef<NodeJS.Timeout | null>(null);
- const directionRef = useRef<Direction>('RIGHT');
- 
- // Load high score from localStorage
+const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
+const timerRef = useRef<NodeJS.Timeout | null>(null);
+const directionRef = useRef<Direction>('RIGHT');
+ const directionQueueRef = useRef<Direction[]>([]);
+
+// Load high score from localStorage
   useEffect(() => {
     const savedHighScore = localStorage.getItem('bugHunterHighScore');
     if (savedHighScore) {
@@ -192,11 +193,11 @@ export default function BugHunter() {
          break;
      }
      
-     if (newDirection) {
-       e.preventDefault();
-       setNextDirection(newDirection);
-     }
-   };
+    if (newDirection) {
+      e.preventDefault();
+      directionQueueRef.current.push(newDirection);
+    }
+  };
    
    window.addEventListener('keydown', handleKeyPress);
    return () => window.removeEventListener('keydown', handleKeyPress);
@@ -216,19 +217,35 @@ export default function BugHunter() {
     }, 1000);
     
     // Start game loop
-   gameLoopRef.current = setInterval(() => {
-     setBug(prevBug => {
-       const head = prevBug[0];
-       let newHead: Position;
-       
-       // Update direction
-       setDirection(nextDirection);
-       directionRef.current = nextDirection;
-       
-       // Calculate new head position
-        switch (nextDirection) {
-          case 'UP':
-            newHead = { x: head.x, y: head.y - 1 };
+  gameLoopRef.current = setInterval(() => {
+    setBug(prevBug => {
+      const head = prevBug[0];
+      let newHead: Position;
+      
+      // Process direction queue
+      if (directionQueueRef.current.length > 0) {
+        const queuedDirection = directionQueueRef.current.shift()!;
+        // Validate the direction change is valid (not opposite)
+        const currentDir = directionRef.current;
+        const isValid = 
+          (queuedDirection === 'UP' && currentDir !== 'DOWN') ||
+          (queuedDirection === 'DOWN' && currentDir !== 'UP') ||
+          (queuedDirection === 'LEFT' && currentDir !== 'RIGHT') ||
+          (queuedDirection === 'RIGHT' && currentDir !== 'LEFT');
+        
+        if (isValid) {
+          setNextDirection(queuedDirection);
+          directionRef.current = queuedDirection;
+        }
+      }
+      
+      // Use current direction from ref
+      const currentDirection = directionRef.current;
+      
+      // Calculate new head position
+       switch (currentDirection) {
+         case 'UP':
+           newHead = { x: head.x, y: head.y - 1 };
             break;
           case 'DOWN':
             newHead = { x: head.x, y: head.y + 1 };
@@ -311,12 +328,14 @@ export default function BugHunter() {
   }, [gameTime, checkAchievement]);
   
   // Start game
-  const startGame = () => {
-    const initialBug = [{ x: 10, y: 10 }];
-    setBug(initialBug);
-    setDirection('RIGHT');
-    setNextDirection('RIGHT');
-    setServer(generateServerPosition(initialBug));
+ const startGame = () => {
+   const initialBug = [{ x: 10, y: 10 }];
+   setBug(initialBug);
+   setDirection('RIGHT');
+   setNextDirection('RIGHT');
+   directionRef.current = 'RIGHT';
+   directionQueueRef.current = [];
+   setServer(generateServerPosition(initialBug));
     setScore(0);
     setServersInfected(0);
     setGameTime(0);
