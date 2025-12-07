@@ -121,40 +121,41 @@ export function QuizFilters({
              <SelectItem value="intermediate">Intermediate/Mid</SelectItem>
              <SelectItem value="advanced">Advanced/Senior</SelectItem>
            </SelectGroup>
-         </SelectContent>
-        </Select>
+        </SelectContent>
+       </Select>
 
-        {/* Sort By */}
-        <Select 
-          value={sortConfig.field} 
-          onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
-        >
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <div className="flex items-center justify-between w-full">
+        {/* Sort By - with direction toggle button */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {/* Direction toggle button - on the left */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={toggleSortDirection}
+            className="h-10 w-10 shrink-0"
+            title={`Currently: ${getSortLabel(sortConfig.field, sortConfig.direction)}. Click to reverse.`}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+          </Button>
+          
+          {/* Sort field selector */}
+          <Select 
+            value={sortConfig.field} 
+            onValueChange={(value) => onSortChange({ ...sortConfig, field: value as SortField })}
+          >
+            <SelectTrigger className="w-full sm:w-[160px]">
               <SelectValue placeholder="Sort by" />
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleSortDirection();
-                }}
-                className="ml-2 hover:bg-accent rounded p-1 transition-colors"
-                title={`Currently: ${getSortLabel(sortConfig.field, sortConfig.direction)}. Click to reverse.`}
-              >
-                <ArrowUpDown className="w-4 h-4" />
-              </button>
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Sort By</SelectLabel>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="difficulty">Difficulty</SelectItem>
-              <SelectItem value="time">Time</SelectItem>
-              <SelectItem value="points">Points</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Sort By</SelectLabel>
+                <SelectItem value="date">Date</SelectItem>
+                <SelectItem value="difficulty">Difficulty</SelectItem>
+                <SelectItem value="time">Time</SelectItem>
+                <SelectItem value="points">Points</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Clear Filters Button */}
         {hasActiveFilters && (
