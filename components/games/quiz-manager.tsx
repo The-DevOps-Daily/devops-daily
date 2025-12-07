@@ -209,11 +209,15 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
           const difficultyOrderHard = { beginner: 1, intermediate: 2, advanced: 3 };
           const aDiffHard = getQuizDifficulty(a);
           const bDiffHard = getQuizDifficulty(b);
-          return difficultyOrderHard[bDiffHard] - difficultyOrderHard[aDiffHard];
-        case 'time':
+         return difficultyOrderHard[bDiffHard] - difficultyOrderHard[aDiffHard];
+        case 'quickest':
+          // Sort by time (quickest first)
           return parseTime(a.estimatedTime) - parseTime(b.estimatedTime);
-       case 'points':
-         return b.totalPoints - a.totalPoints;
+        case 'longest':
+          // Sort by time (longest first)
+          return parseTime(b.estimatedTime) - parseTime(a.estimatedTime);
+      case 'points':
+        return b.totalPoints - a.totalPoints;
         default:
           return 0;
       }
