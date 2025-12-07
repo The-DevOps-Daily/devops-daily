@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Bug gradient (red-orange) -->
+    <linearGradient id="bugGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fb923c;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Server gradient (green) -->
+    <linearGradient id="serverGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Glitch effect -->
+    <filter id="glitch">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" result="turbulence"/>
+      <feDisplacementMap in="SourceGraphic" in2="turbulence" scale="3" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Grid pattern (game board) -->
+  <g opacity="0.15" transform="translate(120, 180)">
+    <!-- Vertical lines -->
+    <line x1="0" y1="0" x2="0" y2="280" stroke="#64748b" stroke-width="1"/>
+    <line x1="35" y1="0" x2="35" y2="280" stroke="#64748b" stroke-width="1"/>
+    <line x1="70" y1="0" x2="70" y2="280" stroke="#64748b" stroke-width="1"/>
+    <line x1="105" y1="0" x2="105" y2="280" stroke="#64748b" stroke-width="1"/>
+    <line x1="140" y1="0" x2="140" y2="280" stroke="#64748b" stroke-width="1"/>
+    <line x1="175" y1="0" x2="175" y2="280" stroke="#64748b" stroke-width="1"/>
+    <line x1="210" y1="0" x2="210" y2="280" stroke="#64748b" stroke-width="1"/>
+    <line x1="245" y1="0" x2="245" y2="280" stroke="#64748b" stroke-width="1"/>
+    <line x1="280" y1="0" x2="280" y2="280" stroke="#64748b" stroke-width="1"/>
+    <!-- Horizontal lines -->
+    <line x1="0" y1="0" x2="280" y2="0" stroke="#64748b" stroke-width="1"/>
+    <line x1="0" y1="35" x2="280" y2="35" stroke="#64748b" stroke-width="1"/>
+    <line x1="0" y1="70" x2="280" y2="70" stroke="#64748b" stroke-width="1"/>
+    <line x1="0" y1="105" x2="280" y2="105" stroke="#64748b" stroke-width="1"/>
+    <line x1="0" y1="140" x2="280" y2="140" stroke="#64748b" stroke-width="1"/>
+    <line x1="0" y1="175" x2="280" y2="175" stroke="#64748b" stroke-width="1"/>
+    <line x1="0" y1="210" x2="280" y2="210" stroke="#64748b" stroke-width="1"/>
+    <line x1="0" y1="245" x2="280" y2="245" stroke="#64748b" stroke-width="1"/>
+    <line x1="0" y1="280" x2="280" y2="280" stroke="#64748b" stroke-width="1"/>
+  </g>
+
+  <!-- Bug snake body -->
+  <g transform="translate(120, 180)">
+    <!-- Bug head -->
+    <g transform="translate(70, 105)">
+      <rect x="0" y="0" width="32" height="32" rx="6" fill="url(#bugGradient)" filter="url(#glow)"/>
+      <!-- Bug icon simplified -->
+      <ellipse cx="16" cy="12" rx="5" ry="6" fill="#1e293b" opacity="0.8"/>
+      <ellipse cx="12" cy="11" rx="2" ry="3" fill="#ffffff"/>
+      <ellipse cx="20" cy="11" rx="2" ry="3" fill="#ffffff"/>
+      <!-- Antennae -->
+      <line x1="10" y1="4" x2="8" y2="0" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+      <line x1="22" y1="4" x2="24" y2="0" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    <!-- Bug body segment 1 -->
+    <rect x="70" y="140" width="32" height="32" rx="6" fill="#dc2626" opacity="0.9"/>
+    <!-- Bug body segment 2 -->
+    <rect x="70" y="175" width="32" height="32" rx="6" fill="#dc2626" opacity="0.8"/>
+    <!-- Bug body segment 3 -->
+    <rect x="70" y="210" width="32" height="32" rx="6" fill="#dc2626" opacity="0.7"/>
+  </g>
+
+  <!-- Healthy servers -->
+  <g transform="translate(120, 180)">
+    <!-- Server 1 -->
+    <g transform="translate(175, 70)">
+      <rect x="0" y="0" width="32" height="32" rx="6" fill="url(#serverGradient)" opacity="0.8"/>
+      <rect x="6" y="8" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <rect x="6" y="14" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <rect x="6" y="20" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <circle cx="10" cy="10" r="2" fill="#22c55e" filter="url(#glow)"/>
+    </g>
+    <!-- Server 2 -->
+    <g transform="translate(210, 140)">
+      <rect x="0" y="0" width="32" height="32" rx="6" fill="url(#serverGradient)" opacity="0.8"/>
+      <rect x="6" y="8" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <rect x="6" y="14" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <rect x="6" y="20" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <circle cx="10" cy="10" r="2" fill="#22c55e" filter="url(#glow)"/>
+    </g>
+    <!-- Server 3 -->
+    <g transform="translate(140, 210)">
+      <rect x="0" y="0" width="32" height="32" rx="6" fill="url(#serverGradient)" opacity="0.8"/>
+      <rect x="6" y="8" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <rect x="6" y="14" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <rect x="6" y="20" width="20" height="4" rx="2" fill="#ffffff" opacity="0.6"/>
+      <circle cx="10" cy="10" r="2" fill="#22c55e" filter="url(#glow)"/>
+    </g>
+  </g>
+
+  <!-- Main content -->
+  <g transform="translate(700, 260)">
+    <!-- Category badge -->
+    <g transform="translate(-60, -80)">
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="#7c2d12" opacity="0.3"/>
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="none" stroke="#f97316" stroke-width="2"/>
+      <text x="100" y="21" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#fb923c" text-anchor="middle">
+        🎮 Interactive Game
+      </text>
+    </g>
+
+    <!-- Title -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="bold" fill="url(#bugGradient)" text-anchor="middle">
+      Bug Hunter
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#94a3b8" text-anchor="middle">
+      DevOps-Themed Snake Game
+    </text>
+
+    <!-- Features -->
+    <g transform="translate(-220, 90)">
+      <g>
+        <circle cx="0" cy="0" r="8" fill="#ef4444"/>
+        <text x="20" y="5" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#cbd5e1" text-anchor="start">
+          Control a bug that infects servers
+        </text>
+      </g>
+      <g transform="translate(0, 30)">
+        <circle cx="0" cy="0" r="8" fill="#22c55e"/>
+        <text x="20" y="5" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#cbd5e1" text-anchor="start">
+          Grow longer with each infection
+        </text>
+      </g>
+      <g transform="translate(0, 60)">
+        <circle cx="0" cy="0" r="8" fill="#f59e0b"/>
+          <text x="20" y="5" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#cbd5e1" text-anchor="start">
+          Unlock achievements &amp; high scores
+          </text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Decorative glitch elements -->
+  <g opacity="0.3">
+    <rect x="900" y="100" width="60" height="4" fill="#ef4444"/>
+    <rect x="920" y="108" width="50" height="4" fill="#f97316"/>
+    <rect x="910" y="116" width="55" height="4" fill="#fb923c"/>
+  </g>
+
+  <g opacity="0.3">
+    <rect x="80" y="500" width="45" height="4" fill="#22c55e"/>
+    <rect x="90" y="508" width="50" height="4" fill="#16a34a"/>
+    <rect x="85" y="516" width="40" height="4" fill="#15803d"/>
+  </g>
+
+  <!-- Decorative circles -->
+  <circle cx="950" cy="150" r="80" fill="#ef4444" opacity="0.05"/>
+  <circle cx="1050" cy="230" r="60" fill="#f97316" opacity="0.05"/>
+  <circle cx="100" cy="520" r="70" fill="#22c55e" opacity="0.05"/>
+
+  <!-- Animated warning indicator -->
+  <g transform="translate(950, 480)">
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#ef4444" stroke-width="3" opacity="0.6">
+      <animate attributeName="r" from="15" to="25" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="0" cy="0" r="15" fill="#ef4444" opacity="0.3"/>
+    <text x="0" y="7" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">
+      🐛
+    </text>
+  </g>
+
+  <!-- Arrow keys hint -->
+  <g transform="translate(1020, 560)" opacity="0.4">
+    <rect x="0" y="0" width="30" height="30" rx="4" fill="#475569" stroke="#64748b" stroke-width="2"/>
+    <text x="15" y="20" font-family="monospace" font-size="16" font-weight="bold" fill="#cbd5e1" text-anchor="middle">↑</text>
+    <rect x="35" y="35" width="30" height="30" rx="4" fill="#475569" stroke="#64748b" stroke-width="2"/>
+    <text x="50" y="55" font-family="monospace" font-size="16" font-weight="bold" fill="#cbd5e1" text-anchor="middle">←</text>
+    <rect x="70" y="35" width="30" height="30" rx="4" fill="#475569" stroke="#64748b" stroke-width="2"/>
+    <text x="85" y="55" font-family="monospace" font-size="16" font-weight="bold" fill="#cbd5e1" text-anchor="middle">↓</text>
+    <rect x="105" y="35" width="30" height="30" rx="4" fill="#475569" stroke="#64748b" stroke-width="2"/>
+    <text x="120" y="55" font-family="monospace" font-size="16" font-weight="bold" fill="#cbd5e1" text-anchor="middle">→</text>
+  </g>
+</svg>
