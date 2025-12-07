@@ -61,6 +61,16 @@ const iconMapExtended = {
   GraduationCap,
 };
 
+// Helper function to format difficulty labels
+const formatDifficultyLabel = (difficulty: string): string => {
+  const labels: Record<string, string> = {
+    beginner: 'Beginner/Junior',
+    intermediate: 'Intermediate/Mid',
+    advanced: 'Advanced/Senior',
+  };
+  return labels[difficulty] || difficulty;
+};
+
 interface QuizMetadata {
   id: string;
   title: string;
@@ -300,12 +310,12 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
 
               <CardContent className="flex flex-col justify-between grow">
                 <div className="mb-4 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="capitalize text-xs">
-                      {quizDifficulty}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                 <div className="flex items-center gap-2">
+                   <Badge variant="secondary" className="capitalize text-xs">
+                     {formatDifficultyLabel(quizDifficulty)}
+                   </Badge>
+                 </div>
+                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <BookOpen className="w-4 h-4" />
                       <span>{quiz.totalQuestions} questions</span>

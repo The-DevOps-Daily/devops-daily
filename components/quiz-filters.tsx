@@ -90,13 +90,13 @@ export function QuizFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectLabel>Difficulty</SelectLabel>
-              <SelectItem value="all">All Difficulties</SelectItem>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="advanced">Advanced</SelectItem>
-            </SelectGroup>
-          </SelectContent>
+             <SelectLabel>Difficulty</SelectLabel>
+             <SelectItem value="all">All Difficulties</SelectItem>
+             <SelectItem value="beginner">Beginner/Junior</SelectItem>
+             <SelectItem value="intermediate">Intermediate/Mid</SelectItem>
+             <SelectItem value="advanced">Advanced/Senior</SelectItem>
+           </SelectGroup>
+         </SelectContent>
         </Select>
 
         {/* Sort By */}
