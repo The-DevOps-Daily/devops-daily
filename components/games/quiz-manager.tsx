@@ -122,11 +122,12 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
     const levels = quiz.difficultyLevels;
     const total = levels.beginner + levels.intermediate + levels.advanced;
 
-    // Primarily beginner if 70%+ beginner questions
-    if (levels.beginner / total >= 0.7) return 'beginner';
-    // Primarily advanced if 50%+ advanced questions
-    if (levels.advanced / total >= 0.5) return 'advanced';
-    // Otherwise intermediate
+    // Calculate weighted difficulty score (1=beginner, 2=intermediate, 3=advanced)
+    const score = (levels.beginner * 1 + levels.intermediate * 2 + levels.advanced * 3) / total;
+    
+    // Classify based on weighted score
+    if (score < 1.75) return 'beginner';
+    if (score > 2.05) return 'advanced';
     return 'intermediate';
   };
 
