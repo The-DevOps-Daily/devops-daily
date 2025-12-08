@@ -146,7 +146,7 @@ export function QuizManager({ quizzes, className }: QuizManagerProps) {
     const title = quiz.title.toLowerCase();
 
     // Explicit beginner indicators
-    if (title.includes('junior')) return 'beginner';
+    if (title.includes('junior') || title.includes('beginner')) return 'beginner';
     
     // Fundamentals quizzes with good beginner content
     if (title.includes('fundamentals') && beginnerPct >= 0.4) return 'beginner';
