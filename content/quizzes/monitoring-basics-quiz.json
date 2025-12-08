@@ -27,11 +27,11 @@
       "situation": "Your team is launching a new web application. Your manager asks why you need to implement monitoring.",
       "options": [
         "To track user behavior and sell data to advertisers",
-        "To detect problems early, ensure system health, and make informed decisions",
         "To make colorful dashboards for presentations",
+        "To detect problems early, ensure system health, and make informed decisions",
         "To replace the need for testing and quality assurance"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "Monitoring helps detect issues before they impact users, ensures systems are healthy and performing well, and provides data for capacity planning and optimization. It's a proactive approach to system reliability.",
       "hint": "Think about preventing downtime and maintaining service quality.",
       "difficulty": "beginner",
@@ -61,11 +61,11 @@
       "situation": "You're setting up monitoring for a new application server and need to track memory consumption.",
       "options": [
         "Disk space",
-        "Memory usage / RAM utilization",
+        "CPU load average",
         "Network bandwidth",
-        "CPU load average"
+        "Memory usage / RAM utilization"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "Memory usage or RAM utilization tracks how much of your system's memory is being used by running processes. High memory usage can lead to swapping, performance degradation, or out-of-memory errors.",
       "hint": "Think about where applications store their running data.",
       "difficulty": "beginner",
@@ -77,12 +77,12 @@
       "description": "At what disk usage percentage should you typically set an alert?",
       "situation": "You're configuring disk space monitoring for your database server. You want to be notified before running out of space.",
       "options": [
-        "99% - wait until the last moment",
         "50% - alert when half full",
         "70-80% - provide time to investigate and take action",
+        "99% - wait until the last moment",
         "25% - alert when mostly empty"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 1,
       "explanation": "Setting alerts at 70-80% disk usage gives you adequate warning time to investigate log growth, clean up unnecessary files, or add more storage before critical issues occur. Waiting until 99% is too late.",
       "hint": "You need enough advance warning to take action before it's critical.",
       "difficulty": "beginner",
@@ -94,12 +94,12 @@
       "description": "Which metric measures the amount of data transferred over the network?",
       "situation": "Your application seems slow, and you suspect network issues. Which metric should you check?",
       "options": [
-        "CPU percentage",
+        "Disk IOPS",
         "Memory usage",
-        "Network bandwidth / throughput",
-        "Disk IOPS"
+        "CPU percentage",
+        "Network bandwidth / throughput"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 3,
       "explanation": "Network bandwidth or throughput measures how much data is being transferred over the network. High usage can indicate legitimate traffic spikes, DDoS attacks, or misconfigured applications sending excessive data.",
       "hint": "Think about data moving across the network.",
       "difficulty": "beginner",
@@ -111,12 +111,12 @@
       "description": "What is the key difference between logging and monitoring?",
       "situation": "Your team is discussing whether to implement logging or monitoring for the new application.",
       "options": [
+        "Monitoring is free; logging costs money",
         "They are exactly the same thing with different names",
-        "Logging records discrete events; monitoring tracks metrics over time",
         "Logging is for developers; monitoring is only for operations",
-        "Monitoring is free; logging costs money"
+        "Logging records discrete events; monitoring tracks metrics over time"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "Logging captures specific events and messages (like errors, user actions, or transactions), while monitoring tracks numerical metrics over time (like CPU usage, request rates, or response times). Both are essential and complementary.",
       "hint": "Think about the type of data each one collects - events vs. numbers.",
       "difficulty": "beginner",
@@ -128,8 +128,8 @@
       "description": "What makes a good alerting rule?",
       "situation": "You're setting up your first alerts for a production system. What should you prioritize?",
       "options": [
-        "Alert on every single metric change to catch everything",
         "Only alert the CEO directly for maximum visibility",
+        "Alert on every single metric change to catch everything",
         "Alert only on actionable issues that require immediate attention",
         "Never set up alerts - check dashboards manually every hour"
       ],
@@ -145,9 +145,9 @@
       "description": "What is a health check endpoint in a web application?",
       "situation": "You're deploying an API service and need to set up monitoring. The documentation mentions implementing a health check endpoint.",
       "options": [
-        "A page that shows employee health insurance information",
-        "An endpoint that returns the application's operational status",
         "A security feature to scan for viruses",
+        "An endpoint that returns the application's operational status",
+        "A page that shows employee health insurance information",
         "A backup system for data recovery"
       ],
       "correctAnswer": 1,
@@ -162,14 +162,14 @@
       "description": "What does 99.9% uptime mean?",
       "situation": "Your SLA promises 99.9% uptime. Your manager asks how much downtime is acceptable per month.",
       "options": [
-        "About 43 minutes per month",
         "About 7 hours per month",
+        "About 43 minutes per month",
         "About 3.65 days per year",
         "No downtime ever allowed"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 1,
       "explanation": "99.9% uptime (three nines) means the service can be down for approximately 0.1% of the time. Per month (30 days), this equals about 43.2 minutes of acceptable downtime. 99.99% (four nines) would be about 4.3 minutes per month.",
-      "hint": "Calculate 0.1% of a month (30 days × 24 hours × 60 minutes).",
+      "hint": "Calculate 0.1% of a month (30 days \u00d7 24 hours \u00d7 60 minutes).",
       "difficulty": "beginner",
       "points": 6
     },
@@ -179,10 +179,10 @@
       "description": "Which tool is commonly used for time-series metrics and monitoring?",
       "situation": "Your team needs to choose a monitoring solution for tracking CPU, memory, and application metrics over time.",
       "options": [
-        "Microsoft Word",
+        "Git",
         "Prometheus",
         "Slack",
-        "Git"
+        "Microsoft Word"
       ],
       "correctAnswer": 1,
       "explanation": "Prometheus is a popular open-source monitoring system designed for collecting and storing time-series data. It's widely used with Grafana for visualization. Other popular options include Datadog, New Relic, and CloudWatch.",
@@ -196,12 +196,12 @@
       "description": "What should a good monitoring dashboard display?",
       "situation": "You're creating your first monitoring dashboard for your team. What information is most important?",
       "options": [
-        "Every possible metric available in the system",
-        "Only colorful graphs to impress management",
         "Key metrics that indicate system health and performance",
+        "Only colorful graphs to impress management",
+        "Every possible metric available in the system",
         "Personal information about team members"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 0,
       "explanation": "Effective dashboards focus on the most important metrics (KPIs) that indicate system health, like error rates, response times, throughput, and resource usage. They should be clear, actionable, and not overwhelming with unnecessary information.",
       "hint": "Less is more - focus on what matters most.",
       "difficulty": "beginner",
@@ -214,11 +214,11 @@
       "situation": "You're joining a new team and hear them discussing SLAs. What are they talking about?",
       "options": [
         "A type of software license",
-        "A commitment to a specific level of service quality and availability",
         "A team lunch schedule agreement",
+        "A commitment to a specific level of service quality and availability",
         "A security audit checklist"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "An SLA is a formal commitment between a service provider and customer defining expected service levels, typically including uptime guarantees, response times, and support availability. Violating SLAs can result in penalties or refunds.",
       "hint": "Think about promises made to customers about service quality.",
       "difficulty": "beginner",
@@ -231,11 +231,11 @@
       "situation": "Your API is working without errors, but users are complaining. You check the response time metric and see it's 5 seconds per request.",
       "options": [
         "Response time doesn't matter as long as requests eventually complete",
-        "Slow response times lead to poor user experience and potential timeouts",
         "5 seconds is fast enough for any application",
+        "Slow response times lead to poor user experience and potential timeouts",
         "Response time only matters for mobile applications"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "Response time directly impacts user experience. Slow responses frustrate users, can cause timeouts, and may indicate performance issues like database bottlenecks, inefficient code, or resource constraints. Most APIs should respond in milliseconds to a few seconds.",
       "hint": "Think about user experience and performance expectations.",
       "difficulty": "beginner",
@@ -247,12 +247,12 @@
       "description": "What does an increasing error rate indicate?",
       "situation": "Your monitoring dashboard shows the error rate climbing from 0.1% to 5% over the last hour.",
       "options": [
-        "This is normal fluctuation - ignore it",
         "Indicates a problem that needs immediate investigation",
+        "This is normal fluctuation - ignore it",
         "Users are making mistakes - provide better documentation",
         "The monitoring system is broken"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "explanation": "A sudden increase in error rate typically signals a problem: recent code deployment issues, infrastructure problems, dependency failures, or increased load causing failures. This requires immediate investigation to prevent widespread user impact.",
       "hint": "Sudden changes in error rates are usually bad signs.",
       "difficulty": "beginner",
@@ -264,12 +264,12 @@
       "description": "Which log level should you use for recording errors that need attention?",
       "situation": "Your application encounters a database connection failure. What log level should this be recorded at?",
       "options": [
-        "DEBUG",
-        "INFO",
         "ERROR",
+        "INFO",
+        "DEBUG",
         "TRACE"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 0,
       "explanation": "ERROR level is for problems that need attention but don't crash the application. DEBUG is for detailed diagnostic info, INFO is for general informational messages, and TRACE is for very detailed debugging. FATAL/CRITICAL is for application-stopping errors.",
       "hint": "Think about the severity of a database connection failure.",
       "difficulty": "beginner",
@@ -281,12 +281,12 @@
       "description": "What are the three pillars of observability?",
       "situation": "Your team is implementing observability practices. What should you focus on?",
       "options": [
-        "Logs, metrics, and traces",
+        "Development, staging, and production",
         "CPU, memory, and disk",
         "Frontend, backend, and database",
-        "Development, staging, and production"
+        "Logs, metrics, and traces"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 3,
       "explanation": "The three pillars of observability are: Logs (discrete events), Metrics (numerical data over time), and Traces (request flows through distributed systems). Together they provide comprehensive insight into system behavior.",
       "hint": "Think about the different types of data that help you understand system behavior.",
       "difficulty": "beginner",
@@ -299,11 +299,11 @@
       "situation": "Your team receives 50 alerts per day, but most aren't critical. Engineers start ignoring alerts.",
       "options": [
         "When alerts are too quiet and people fall asleep",
-        "When too many non-critical alerts cause teams to ignore all alerts",
         "When the monitoring system gets tired and stops working",
+        "When too many non-critical alerts cause teams to ignore all alerts",
         "A medical condition from working too many on-call shifts"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "Alert fatigue occurs when teams receive too many alerts, especially false positives or low-priority notifications. This leads to desensitization where critical alerts are missed or ignored. Solution: create clear, actionable alerts and reduce noise.",
       "hint": "Think about the boy who cried wolf - what happens with too many false alarms?",
       "difficulty": "beginner",
@@ -316,11 +316,11 @@
       "situation": "Your Prometheus setup keeps high-resolution data for 15 days but aggregates older data into hourly summaries.",
       "options": [
         "To confuse engineers looking at historical data",
-        "Because old data is less important and should be deleted",
         "To save storage space while maintaining historical trends",
+        "Because old data is less important and should be deleted",
         "Aggregation happens automatically and can't be controlled"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 1,
       "explanation": "Storing every data point forever would require enormous storage. Aggregation (downsampling) reduces granularity for older data while preserving trends. For example, keeping 1-minute resolution for 30 days, then hourly for a year, provides useful history without excessive storage costs.",
       "hint": "Think about balancing storage costs with useful historical information.",
       "difficulty": "beginner",
