@@ -20,11 +20,12 @@
   <rect width="1200" height="630" fill="url(#grid)"/>
   
   <!-- Category badge -->
-  <rect x="80" y="80" width="364" height="40" rx="20" fill="#3b82f6"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">INFRASTRUCTURE AS CODE</text>
+  <rect x="80" y="80" width="256" height="40" rx="20" fill="#3b82f6"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">WEEK 50, 2025</text>
   
   <!-- Title -->
-  <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">AWS VPC with Terraform</text>
+  <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">DevOps Weekly Digest - Week</text>
+<text x="80" y="370" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">50, 2025</text>
   
   <!-- DevOps Daily branding -->
   <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
