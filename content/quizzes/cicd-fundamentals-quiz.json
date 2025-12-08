@@ -1,0 +1,330 @@
+{
+  "id": "cicd-fundamentals-quiz",
+  "title": "CI/CD Fundamentals Quiz",
+  "description": "Master the basics of Continuous Integration and Continuous Deployment, including pipelines, version control, automated testing, and deployment strategies",
+  "category": "CI/CD",
+  "icon": "GitBranch",
+  "totalPoints": 100,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "15-20 minutes",
+    "difficultyLevels": {
+      "beginner": 18,
+      "intermediate": 0,
+      "advanced": 0
+    },
+    "createdDate": "2024-12-08"
+  },
+  "questions": [
+    {
+      "id": "cicd-definition",
+      "title": "What is CI/CD?",
+      "description": "What does CI/CD stand for?",
+      "situation": "You're joining a new team and they mention CI/CD practices. You want to understand what this means.",
+      "options": [
+        "Code Integration / Code Delivery",
+        "Continuous Integration / Continuous Deployment",
+        "Central Integration / Central Distribution",
+        "Cloud Integration / Cloud Deployment"
+      ],
+      "correctAnswer": 1,
+      "explanation": "CI/CD stands for Continuous Integration and Continuous Deployment (or Continuous Delivery). It's a set of practices that automate the software delivery process, from code commits to production deployment.",
+      "hint": "Think about automating the integration and deployment of code changes.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "ci-purpose",
+      "title": "Purpose of Continuous Integration",
+      "description": "What is the primary purpose of Continuous Integration?",
+      "situation": "Your team has multiple developers committing code daily. You need to understand why CI is important.",
+      "options": [
+        "To make code reviews optional",
+        "To automatically merge all code without testing",
+        "To detect integration issues early by frequently merging and testing code changes",
+        "To deploy code directly to production"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Continuous Integration helps catch bugs and integration issues early by automatically building and testing code changes whenever developers commit. This reduces integration problems and makes it easier to maintain code quality.",
+      "hint": "Think about finding problems early rather than waiting until the end.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "cicd-benefits",
+      "title": "Benefits of CI/CD",
+      "description": "Which of the following is a key benefit of implementing CI/CD?",
+      "situation": "Your manager asks why your team should invest time setting up CI/CD pipelines.",
+      "options": [
+        "It eliminates the need for testing",
+        "It allows faster, more reliable software releases with reduced manual work",
+        "It prevents developers from making mistakes",
+        "It removes the need for code reviews"
+      ],
+      "correctAnswer": 1,
+      "explanation": "CI/CD automates repetitive tasks like building, testing, and deploying code, which leads to faster release cycles, fewer manual errors, and more reliable deployments. Teams can ship features and fixes more quickly with confidence.",
+      "hint": "CI/CD focuses on automation and reliability.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "pipeline-stages",
+      "title": "Basic Pipeline Stages",
+      "description": "What are the typical stages in a basic CI/CD pipeline?",
+      "situation": "You're designing your first CI/CD pipeline and need to understand the common stages.",
+      "options": [
+        "Write, Review, Approve",
+        "Build, Test, Deploy",
+        "Code, Commit, Push",
+        "Plan, Design, Execute"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A typical CI/CD pipeline consists of Build (compile code and create artifacts), Test (run automated tests), and Deploy (release to environments). These stages ensure code quality before reaching production.",
+      "hint": "Think about the steps from source code to running application.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "version-control",
+      "title": "Version Control in CI/CD",
+      "description": "Why is version control essential for CI/CD?",
+      "situation": "Your team is setting up CI/CD. Someone suggests skipping version control to save time.",
+      "options": [
+        "It's not essential, CI/CD can work without it",
+        "It tracks code changes, enables collaboration, and triggers automated pipelines",
+        "It only helps with documentation",
+        "It's only needed for large teams"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Version control (like Git) is fundamental to CI/CD. It tracks all code changes, enables team collaboration, and most importantly, triggers CI/CD pipelines when code is committed. Without it, automated pipelines wouldn't know when to run.",
+      "hint": "Think about what triggers a CI/CD pipeline to start.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "automated-testing",
+      "title": "Automated Testing",
+      "description": "What type of test runs first in a CI/CD pipeline?",
+      "situation": "You're setting up automated tests in your pipeline. Which tests should run first?",
+      "options": [
+        "Manual testing by QA team",
+        "Unit tests (testing individual components)",
+        "End-to-end tests (testing full user workflows)",
+        "Performance tests"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Unit tests should run first because they're fast, test small pieces of code in isolation, and quickly catch basic issues. If unit tests fail, there's no point running slower integration or end-to-end tests.",
+      "hint": "Start with the fastest tests that cover the smallest units of code.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "build-artifacts",
+      "title": "Build Artifacts",
+      "description": "What is a build artifact in CI/CD?",
+      "situation": "Your CI pipeline successfully completes the build stage. What has it created?",
+      "options": [
+        "A backup of the source code",
+        "The compiled/packaged application ready for deployment",
+        "A list of bugs found",
+        "Documentation for the code"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A build artifact is the output of the build process - typically a compiled application, Docker image, or packaged file that can be deployed. It's the tangible result that gets promoted through environments.",
+      "hint": "Think about what gets deployed to servers.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "deployment-environments",
+      "title": "Deployment Environments",
+      "description": "Which environment is typically used for final testing before production?",
+      "situation": "Your pipeline deploys to multiple environments. Where should you do final validation?",
+      "options": [
+        "Development",
+        "Staging",
+        "Production",
+        "Local machine"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Staging is a production-like environment used for final testing before releasing to actual users. It mirrors production configuration and data, allowing you to catch issues before they affect real users.",
+      "hint": "This environment comes right before production and mimics it closely.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "pipeline-triggers",
+      "title": "Pipeline Triggers",
+      "description": "What typically triggers a CI/CD pipeline to run?",
+      "situation": "You want your pipeline to run automatically. What should trigger it?",
+      "options": [
+        "Only manual button clicks",
+        "Code commits, pull requests, or scheduled times",
+        "When the server restarts",
+        "Only on weekends"
+      ],
+      "correctAnswer": 1,
+      "explanation": "CI/CD pipelines are typically triggered by code events (commits, pull requests), schedules (nightly builds), or manual triggers. Automatic triggers ensure code is continuously tested and integrated.",
+      "hint": "Think about events that happen during normal development.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "continuous-deployment-vs-delivery",
+      "title": "Deployment vs Delivery",
+      "description": "What's the difference between Continuous Deployment and Continuous Delivery?",
+      "situation": "Your team is debating whether to implement Continuous Deployment or Continuous Delivery.",
+      "options": [
+        "There is no difference, they're the same thing",
+        "Deployment automatically releases to production; Delivery stops at a manual approval step",
+        "Delivery is faster than Deployment",
+        "Deployment is only for large companies"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Continuous Delivery means code is always ready to deploy but requires manual approval for production. Continuous Deployment automatically deploys every change that passes tests directly to production without human intervention.",
+      "hint": "One requires a human to click 'deploy', the other doesn't.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "common-tools",
+      "title": "CI/CD Tools",
+      "description": "Which of these is a popular CI/CD tool?",
+      "situation": "You need to choose a CI/CD tool for your project.",
+      "options": [
+        "Microsoft Word",
+        "GitHub Actions",
+        "Photoshop",
+        "MySQL"
+      ],
+      "correctAnswer": 1,
+      "explanation": "GitHub Actions is a popular CI/CD platform that runs workflows based on repository events. Other common tools include Jenkins, GitLab CI, CircleCI, and Azure DevOps.",
+      "hint": "Look for tools designed for automation and software delivery.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "build-status",
+      "title": "Build Status Indicators",
+      "description": "What does a green checkmark on a build typically mean?",
+      "situation": "You see a green checkmark next to your latest commit in GitHub.",
+      "options": [
+        "The code has been deployed to production",
+        "All pipeline checks passed successfully",
+        "Someone approved your code",
+        "The build is currently running"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A green checkmark (or 'passing' status) indicates that all CI/CD pipeline checks - builds, tests, and validations - completed successfully. Red X means failure, yellow/orange means in progress or pending.",
+      "hint": "Green usually means success in CI/CD dashboards.",
+      "difficulty": "beginner",
+      "points": 5
+    },
+    {
+      "id": "pipeline-failure",
+      "title": "Handling Pipeline Failures",
+      "description": "Your pipeline fails on a test. What should you do first?",
+      "situation": "You pushed code and the CI pipeline shows a red X with 'Tests failed'.",
+      "options": [
+        "Immediately push more code to fix it",
+        "Review the logs to understand which test failed and why",
+        "Delete the failing test",
+        "Ask someone else to fix it"
+      ],
+      "correctAnswer": 1,
+      "explanation": "When a pipeline fails, always check the logs first to understand what went wrong. The logs show which test failed and the error details, helping you identify and fix the root cause.",
+      "hint": "Investigate before taking action.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "rollback-concept",
+      "title": "Deployment Rollback",
+      "description": "What is a rollback in CI/CD?",
+      "situation": "A new deployment causes issues in production. Your team mentions rolling back.",
+      "options": [
+        "Restarting all servers",
+        "Reverting to the previous working version of the application",
+        "Rolling logs to a backup",
+        "Moving servers to a different location"
+      ],
+      "correctAnswer": 1,
+      "explanation": "A rollback means reverting to a previous stable version of your application when a new deployment causes problems. It's a safety mechanism to quickly restore service while you investigate and fix the issue.",
+      "hint": "Think about undoing a deployment that went wrong.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "code-review-cicd",
+      "title": "Code Reviews in CI/CD",
+      "description": "How do code reviews fit into a CI/CD workflow?",
+      "situation": "You're using pull requests with your CI/CD setup.",
+      "options": [
+        "Code reviews are not needed with CI/CD",
+        "CI/CD runs tests on pull requests before code is merged and reviewed",
+        "Code reviews happen only after deployment",
+        "CI/CD replaces the need for human review"
+      ],
+      "correctAnswer": 1,
+      "explanation": "CI/CD complements code reviews by automatically running tests on pull requests. This gives reviewers confidence that code works before they review it, and ensures only tested code gets merged into the main branch.",
+      "hint": "CI/CD and code reviews work together, not as replacements.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "dependency-management",
+      "title": "Managing Dependencies",
+      "description": "Why is it important to specify exact dependency versions in CI/CD?",
+      "situation": "Your build works locally but fails in CI with the same code.",
+      "options": [
+        "It's not important, any version works",
+        "To ensure consistent, reproducible builds across all environments",
+        "To make builds slower",
+        "To use the oldest possible dependencies"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Specifying exact dependency versions (like in package-lock.json or requirements.txt) ensures everyone - developers, CI systems, and production - uses the same versions. This prevents 'works on my machine' issues.",
+      "hint": "Think about consistency across different environments.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "branch-strategy",
+      "title": "Branching Strategy",
+      "description": "Which branch is typically used for production deployments?",
+      "situation": "Your team needs to set up automated deployments from Git.",
+      "options": [
+        "feature/new-button",
+        "main (or master)",
+        "developer-sandbox",
+        "Any branch is fine"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The main (or master) branch typically represents the production-ready code. Feature branches are used for development, then merged to main after review and testing. Production deployments trigger from the main branch.",
+      "hint": "This branch should always be stable and ready for production.",
+      "difficulty": "beginner",
+      "points": 6
+    },
+    {
+      "id": "pipeline-speed",
+      "title": "Pipeline Efficiency",
+      "description": "Why should CI/CD pipelines run as fast as possible?",
+      "situation": "Your pipeline takes 2 hours to run. Developers are frustrated.",
+      "options": [
+        "Speed doesn't matter in CI/CD",
+        "Fast feedback helps developers fix issues quickly and maintain productivity",
+        "Slower pipelines are more thorough",
+        "It only matters for large teams"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Fast pipelines give developers quick feedback on their changes, allowing them to fix issues while the code is fresh in their minds. Slow pipelines frustrate developers and slow down the entire development process.",
+      "hint": "Think about developer experience and feedback loops.",
+      "difficulty": "beginner",
+      "points": 5
+    }
+  ]
+}
