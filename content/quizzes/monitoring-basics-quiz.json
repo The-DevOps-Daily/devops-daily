@@ -1,6 +1,6 @@
 {
   "id": "monitoring-basics-quiz",
-  "title": "Monitoring Basics Quiz",
+  "title": "Monitoring Beginner Quiz",
   "description": "Master the fundamentals of monitoring, metrics, logging, alerting, and observability concepts for effective system health management",
   "category": "Monitoring",
   "icon": "Activity",
@@ -13,8 +13,8 @@
   "metadata": {
     "estimatedTime": "15-20 minutes",
     "difficultyLevels": {
-      "beginner": 15,
-      "intermediate": 3
+      "beginner": 18,
+      "intermediate": 0
     },
     "createdDate": "2024-12-07"
   },
@@ -288,8 +288,8 @@
       "correctAnswer": 0,
       "explanation": "The three pillars of observability are: Logs (discrete events), Metrics (numerical data over time), and Traces (request flows through distributed systems). Together they provide comprehensive insight into system behavior.",
       "hint": "Think about the different types of data that help you understand system behavior.",
-      "difficulty": "intermediate",
-      "points": 7
+      "difficulty": "beginner",
+      "points": 6
     },
     {
       "id": "alert-fatigue",
@@ -305,8 +305,8 @@
       "correctAnswer": 1,
       "explanation": "Alert fatigue occurs when teams receive too many alerts, especially false positives or low-priority notifications. This leads to desensitization where critical alerts are missed or ignored. Solution: create clear, actionable alerts and reduce noise.",
       "hint": "Think about the boy who cried wolf - what happens with too many false alarms?",
-      "difficulty": "intermediate",
-      "points": 7
+      "difficulty": "beginner",
+      "points": 6
     },
     {
       "id": "metrics-retention",
@@ -322,8 +322,8 @@
       "correctAnswer": 2,
       "explanation": "Storing every data point forever would require enormous storage. Aggregation (downsampling) reduces granularity for older data while preserving trends. For example, keeping 1-minute resolution for 30 days, then hourly for a year, provides useful history without excessive storage costs.",
       "hint": "Think about balancing storage costs with useful historical information.",
-      "difficulty": "intermediate",
-      "points": 8
+      "difficulty": "beginner",
+      "points": 6
     }
   ]
 }
