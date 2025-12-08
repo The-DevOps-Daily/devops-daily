@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { easeInOut, easeOut, motion } from 'framer-motion';
 import { Rocket, TrendingUp, Target, Sparkles, ChevronDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -24,7 +24,7 @@ export function RoadmapHero() {
       y: 0,
       transition: {
         duration: 0.6,
-        ease: 'easeOut',
+        ease: easeOut,
       },
     },
   };
@@ -35,7 +35,7 @@ export function RoadmapHero() {
       transition: {
         duration: 3,
         repeat: Infinity,
-        ease: 'easeInOut',
+        ease: easeInOut,
       },
     },
   };
@@ -47,7 +47,7 @@ export function RoadmapHero() {
      transition: {
        duration: 2,
        repeat: Infinity,
-       ease: 'easeInOut',
+       ease: easeInOut,
      },
    },
  };
@@ -60,7 +60,7 @@ export function RoadmapHero() {
       transition: {
         duration: 8 + custom * 2,
         repeat: Infinity,
-        ease: 'easeInOut',
+        ease: easeInOut,
       },
     }),
   };
@@ -71,7 +71,7 @@ export function RoadmapHero() {
       transition: {
         duration: 5,
         repeat: Infinity,
-        ease: 'linear',
+        ease: 'linear' as const,
       },
     },
   };
@@ -83,7 +83,7 @@ export function RoadmapHero() {
       transition: {
         duration: 3 + custom * 0.5,
         repeat: Infinity,
-        ease: 'easeOut',
+        ease: easeOut,
         delay: custom * 0.5,
       },
     }),

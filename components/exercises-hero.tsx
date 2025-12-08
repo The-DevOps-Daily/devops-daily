@@ -1,26 +1,20 @@
 'use client';
 
 import { easeInOut, easeOut, motion, useReducedMotion } from 'framer-motion';
-import {
-  Trophy,
-  Target,
-  Brain,
-  Sparkles,
-  ChevronDown,
-  Zap,
-  Award,
-  CheckCircle,
-} from 'lucide-react';
+import { Hammer, Layers, Clock, Target, ChevronDown, Zap, Award, Timer, Brain, CheckCircle, Sparkles } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-interface QuizzesHeroProps {
-  quizCount: number;
+interface ExerciseHeroProps {
+  totalExercises: number;
+  averageTime: number
 }
 
-export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
+export function ExerciseHero({
+  totalExercises,
+  averageTime,
+}: ExerciseHeroProps) {
   const shouldReduceMotion = useReducedMotion();
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -44,20 +38,6 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
     },
   };
 
-  const floatingVariants = {
-    animate: shouldReduceMotion
-      ? {}
-      : {
-          y: [0, -15, 0],
-          rotate: [0, 5, -5, 0],
-          transition: {
-            duration: 4,
-            repeat: Infinity,
-            ease: easeInOut,
-          },
-        },
-  };
-
   const pulseVariants = {
     animate: shouldReduceMotion
       ? {}
@@ -66,6 +46,20 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
           opacity: [0.3, 0.6, 0.3],
           transition: {
             duration: 2.5,
+            repeat: Infinity,
+            ease: easeInOut,
+          },
+        },
+  };
+
+  const floatingVariants = {
+    animate: shouldReduceMotion
+      ? {}
+      : {
+          y: [0, -15, 0],
+          rotate: [0, 5, -5, 0],
+          transition: {
+            duration: 4,
             repeat: Infinity,
             ease: easeInOut,
           },
@@ -88,114 +82,59 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
         }),
   };
 
-  const shimmerVariants = {
-    animate: shouldReduceMotion
-      ? {}
-      : {
-          backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-          transition: {
-            duration: 4,
-            repeat: Infinity,
-            ease: 'linear' as const,
-          },
-        },
-  };
-
   const particleVariants = {
     animate: shouldReduceMotion
       ? {}
       : (custom: number) => ({
-          y: [0, -60 - custom * 25],
-          x: [(custom % 2) * 20 - 10, (custom % 2) * -20 + 10],
+          y: [0, -50 - custom * 20],
           opacity: [0, 1, 0],
-          scale: [0, 1, 0.5],
+          scale: [0.6, 1, 0.5],
           rotate: [0, 360],
           transition: {
-            duration: 3.5 + custom * 0.3,
+            duration: 3 + custom * 0.3,
             repeat: Infinity,
-            ease: 'easeOut',
+            ease: "easeOut",
             delay: custom * 0.4,
           },
         }),
   };
 
-  const questionMarkVariants = {
-    animate: shouldReduceMotion
-      ? {}
-      : (custom: number) => ({
-          y: [0, -20, 0],
-          rotate: [0, 10, -10, 0],
-          scale: [1, 1.1, 1],
-          opacity: [0.2, 0.4, 0.2],
-          transition: {
-            duration: 3 + custom * 0.5,
-            repeat: Infinity,
-            ease: easeInOut,
-            delay: custom * 0.7,
-          },
-        }),
-  };
-
   return (
-    <section className="relative overflow-hidden bg-linear-to-b from-purple-50 via-blue-50/30 to-background dark:from-purple-950/20 dark:via-blue-950/10 dark:to-background">
-      {/* Animated gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <section className="relative overflow-hidden bg-linear-to-b from-blue-50 via-cyan-50/40 to-background dark:from-blue-950/20 dark:via-cyan-950/10 dark:to-background">
+      
+      {/* Background Orbs */}
+      <div className="absolute inset-0 pointer-events-none">
         <motion.div
           custom={1}
           variants={orbVariants}
           animate="animate"
-          className="absolute w-[600px] h-[600px] bg-linear-to-r from-purple-400 to-pink-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -top-48 -left-48"
+          className="absolute w-[550px] h-[550px] bg-linear-to-r from-blue-400 to-cyan-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -top-40 -left-40"
         />
         <motion.div
           custom={1.5}
           variants={orbVariants}
           animate="animate"
-          className="absolute w-[700px] h-[700px] bg-linear-to-r from-blue-400 to-cyan-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -bottom-48 -right-48"
-        />
-        <motion.div
-          custom={2}
-          variants={orbVariants}
-          animate="animate"
-          className="absolute w-[500px] h-[500px] bg-linear-to-r from-indigo-400 to-purple-400 rounded-full blur-3xl opacity-15 dark:opacity-8 top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          className="absolute w-[600px] h-[600px] bg-linear-to-r from-indigo-400 to-blue-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -bottom-48 -right-48"
         />
       </div>
 
-      {/* Grid pattern overlay */}
+      {/* Grid Pattern */}
       <div className="absolute inset-0 bg-grid-white/[0.02] dark:bg-grid-black/[0.02] pointer-events-none" />
 
-      {/* Floating particles */}
+      {/* Floating Particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(15)].map((_, i) => (
+        {[...Array(12)].map((_, i) => (
           <motion.div
-            key={`particle-${i}`}
+            key={i}
             custom={i}
             variants={particleVariants}
             animate="animate"
-            className="absolute w-2 h-2 bg-linear-to-br from-purple-400 to-blue-400 rounded-full"
+            className="absolute w-2 h-2 bg-blue-400/70 dark:bg-blue-500/70 rounded-full"
             style={{
-              left: `${8 + (i * 6.5) % 84}%`,
+              left: `${10 + (i * 7) % 80}%`,
               bottom: '5%',
             }}
           />
-        ))}
-      </div>
-
-      {/* Floating question marks */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(8)].map((_, i) => (
-          <motion.div
-            key={`qmark-${i}`}
-            custom={i}
-            variants={questionMarkVariants}
-            animate="animate"
-            className="absolute text-6xl font-bold text-purple-300/20 dark:text-purple-700/20"
-            style={{
-              left: `${15 + (i * 12) % 70}%`,
-              top: `${20 + (i * 15) % 60}%`,
-            }}
-          >
-            ?
-          </motion.div>
         ))}
       </div>
 
@@ -205,16 +144,16 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="max-w-5xl mx-auto text-center"
+          className="max-w-4xl mx-auto text-center"
         >
           {/* Badge */}
           <motion.div variants={itemVariants} className="flex justify-center mb-6">
             <Badge
               variant="outline"
-              className="px-4 py-1.5 border-purple-500/50 bg-purple-500/10 backdrop-blur-sm text-purple-700 dark:text-purple-300"
+              className="px-4 py-1.5 border-blue-500/50 bg-blue-500/10 backdrop-blur-sm text-blue-700 dark:text-blue-300"
             >
-              <Trophy className="w-3.5 h-3.5 mr-2" />
-              Test Your Knowledge
+              <Hammer className="w-3.5 h-3.5 mr-2" />
+              Hands-on Practice
             </Badge>
           </motion.div>
 
@@ -223,17 +162,10 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
             variants={itemVariants}
             className="mb-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
           >
-            <motion.span
-              variants={shimmerVariants}
-              animate="animate"
-              className="block text-transparent bg-clip-text bg-linear-to-r from-purple-600 via-blue-600 to-indigo-600 dark:from-purple-400 dark:via-blue-400 dark:to-indigo-400"
-              style={{
-                backgroundSize: '200% 200%',
-              }}
-            >
-              Challenge Yourself
-            </motion.span>
-            <span className="block mt-2 text-foreground">Level Up Your Skills</span>
+            <span className="block text-transparent bg-clip-text bg-linear-to-r from-blue-600 via-cyan-600 to-indigo-600 dark:from-blue-400 dark:via-cyan-400 dark:to-indigo-400">
+              Master in DevOps
+            </span>
+            <span className="block mt-2 text-foreground">Through Real-World Exercise</span>
           </motion.h1>
 
           {/* Description */}
@@ -241,8 +173,8 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
             variants={itemVariants}
             className="max-w-2xl mx-auto mb-10 text-lg leading-relaxed sm:text-xl text-muted-foreground"
           >
-            Master DevOps with interactive quizzes designed by industry experts. Test your knowledge,
-            track your progress, and earn achievements as you advance.
+            Strengthen your DevOps expertise with hands-on exercises designed to simulate
+            real-world environments. Build skills through practice, not theory.
           </motion.p>
 
           {/* Stats cards */}
@@ -253,15 +185,15 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
             {[
               {
                 icon: Target,
-                label: `${quizCount} Quizzes`,
+                label: `${totalExercises} Exercises`,
                 color: 'text-purple-600 dark:text-purple-400',
                 bgColor: 'bg-purple-500/10',
               },
               {
-                icon: Zap,
-                label: 'Instant Feedback',
-                color: 'text-blue-600 dark:text-blue-400',
-                bgColor: 'bg-blue-500/10',
+                icon: Timer,
+                label: `${averageTime} Avg. Minutes`,
+                color: 'text-orange-600 dark:text-orange-400',
+                bgColor: 'bg-orange-500/10',
               },
               {
                 icon: Award,
@@ -291,7 +223,7 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
             ))}
           </motion.div>
 
-          {/* Floating brain icon */}
+            {/* Floating brain icon */}
           <motion.div
             variants={floatingVariants}
             animate="animate"
@@ -328,6 +260,7 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
                   />
                 </>
               )}
+
               {/* Pulse background */}
               <motion.div
                 variants={pulseVariants}
@@ -354,6 +287,22 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
             </div>
           </motion.div>
 
+          {/* Scroll Indicator */}
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-col items-center gap-2 text-sm text-muted-foreground"
+          >
+            <span>Browse exercises below</span>
+            <motion.div
+              animate={
+                shouldReduceMotion ? {} : { y: [0, 5, 0] }
+              }
+              transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <ChevronDown className="w-5 h-5" />
+            </motion.div>
+          </motion.div>
+          
           {/* Features */}
           <motion.div
             variants={itemVariants}
@@ -371,28 +320,11 @@ export function QuizzesHero({ quizCount }: QuizzesHeroProps) {
             ))}
           </motion.div>
 
-          {/* Scroll indicator */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              delay: shouldReduceMotion ? 0 : 1,
-              duration: shouldReduceMotion ? 0.01 : 0.5,
-            }}
-            className="flex flex-col items-center gap-2 text-sm text-muted-foreground"
-          >
-            <span>Explore quizzes below</span>
-            <motion.div
-              animate={
-                shouldReduceMotion ? {} : { y: [0, 5, 0] }
-              }
-              transition={{ duration: 1.5, repeat: Infinity, ease: easeInOut }}
-            >
-              <ChevronDown className="w-5 h-5" />
-            </motion.div>
-          </motion.div>
         </motion.div>
       </div>
+
+    
+
     </section>
   );
 }
