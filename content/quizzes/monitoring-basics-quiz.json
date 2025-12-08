@@ -133,7 +133,7 @@
         "Alert only on actionable issues that require immediate attention",
         "Never set up alerts - check dashboards manually every hour"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 2,
       "explanation": "Good alerts are actionable (require human intervention), important (affect users or business), and have clear ownership. Too many alerts cause alert fatigue, while too few mean missing critical issues.",
       "hint": "Think about avoiding noise while catching real problems.",
       "difficulty": "beginner",
@@ -150,7 +150,7 @@
         "A page that shows employee health insurance information",
         "A backup system for data recovery"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 1,
       "explanation": "A health check endpoint (typically /health or /healthz) is a simple URL that returns whether the application is running properly. Monitoring systems regularly check this endpoint to verify the service is alive and responding.",
       "hint": "Think about how you can quickly verify if a service is working.",
       "difficulty": "beginner",
@@ -167,7 +167,7 @@
         "About 3.65 days per year",
         "No downtime ever allowed"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 1,
       "explanation": "99.9% uptime (three nines) means the service can be down for approximately 0.1% of the time. Per month (30 days), this equals about 43.2 minutes of acceptable downtime. 99.99% (four nines) would be about 4.3 minutes per month.",
       "hint": "Calculate 0.1% of a month (30 days \u00d7 24 hours \u00d7 60 minutes).",
       "difficulty": "beginner",
@@ -184,7 +184,7 @@
         "Slack",
         "Microsoft Word"
       ],
-      "correctAnswer": 3,
+      "correctAnswer": 1,
       "explanation": "Prometheus is a popular open-source monitoring system designed for collecting and storing time-series data. It's widely used with Grafana for visualization. Other popular options include Datadog, New Relic, and CloudWatch.",
       "hint": "Think about dedicated monitoring and metrics platforms.",
       "difficulty": "beginner",
@@ -201,7 +201,7 @@
         "Every possible metric available in the system",
         "Personal information about team members"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 0,
       "explanation": "Effective dashboards focus on the most important metrics (KPIs) that indicate system health, like error rates, response times, throughput, and resource usage. They should be clear, actionable, and not overwhelming with unnecessary information.",
       "hint": "Less is more - focus on what matters most.",
       "difficulty": "beginner",
@@ -218,7 +218,7 @@
         "A commitment to a specific level of service quality and availability",
         "A security audit checklist"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "An SLA is a formal commitment between a service provider and customer defining expected service levels, typically including uptime guarantees, response times, and support availability. Violating SLAs can result in penalties or refunds.",
       "hint": "Think about promises made to customers about service quality.",
       "difficulty": "beginner",
@@ -235,7 +235,7 @@
         "Slow response times lead to poor user experience and potential timeouts",
         "Response time only matters for mobile applications"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "Response time directly impacts user experience. Slow responses frustrate users, can cause timeouts, and may indicate performance issues like database bottlenecks, inefficient code, or resource constraints. Most APIs should respond in milliseconds to a few seconds.",
       "hint": "Think about user experience and performance expectations.",
       "difficulty": "beginner",
