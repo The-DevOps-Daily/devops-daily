@@ -22,7 +22,7 @@ export function BookPromotionPopup() {
       return
     }
 
-    // Show popup after 10 seconds to avoid overwhelming users
+    // Show popup after 3 minutes to avoid being intrusive
     const timer = setTimeout(() => {
       setIsVisible(true)
       // Small delay for animation
@@ -35,7 +35,7 @@ export function BookPromotionPopup() {
           setTimeout(() => setShowConfetti(false), 5000)
         }, 600)
       }, 100)
-    }, 10000)
+    }, 180000) // 3 minutes (180 seconds)
 
     return () => {
       clearTimeout(timer)
