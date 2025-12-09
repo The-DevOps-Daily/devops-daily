@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, X, Sparkles, Gift, Zap, TrendingUp } from 'lucide-react'
+import { BookOpen, X, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Confetti from 'react-confetti'
 
@@ -25,16 +25,7 @@ export function BookPromotionPopup() {
     // Show popup after 3 minutes to avoid being intrusive
     const timer = setTimeout(() => {
       setIsVisible(true)
-      // Small delay for animation
-      setTimeout(() => {
-        setIsLoaded(true)
-        // Trigger confetti after popup loads
-        setTimeout(() => {
-          setShowConfetti(true)
-          // Stop confetti after 5 seconds
-          setTimeout(() => setShowConfetti(false), 5000)
-        }, 600)
-      }, 100)
+      setTimeout(() => setIsLoaded(true), 100)
     }, 180000) // 3 minutes (180 seconds)
 
     return () => {
@@ -85,171 +76,74 @@ export function BookPromotionPopup() {
 
   return (
     <>
-      {/* Confetti outside AnimatePresence to prevent flicker */}
+      {/* Confetti for celebration */}
       {showConfetti && (
         <div className="fixed inset-0 z-9999 pointer-events-none">
           <Confetti
             width={typeof window !== 'undefined' ? window.innerWidth : 1000}
             height={typeof window !== 'undefined' ? window.innerHeight : 800}
             recycle={false}
-            numberOfPieces={500}
+            numberOfPieces={300}
             gravity={0.3}
           />
         </div>
       )}
 
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm"
-          onClick={handleDismiss}
-        >
+      <AnimatePresence>
+        {isVisible && (
           <motion.div
-            initial={{ scale: 0.8, y: 50, opacity: 0 }}
+            initial={{ x: 400, opacity: 0 }}
             animate={{
-              scale: isLoaded ? 1 : 0.8,
-              y: isLoaded ? 0 : 50,
+              x: isLoaded ? 0 : 400,
               opacity: isLoaded ? 1 : 0
             }}
-            exit={{ scale: 0.8, y: 50, opacity: 0 }}
+            exit={{ x: 400, opacity: 0 }}
             transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-            className="relative w-full max-w-[95vw] sm:max-w-md md:max-w-lg"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] sm:w-96 max-w-sm shadow-2xl"
           >
-            {/* Close button - more visible on mobile */}
-            <button
-              onClick={handleDismiss}
-              className="absolute top-2 right-2 sm:-top-2 sm:-right-2 z-10 p-2 sm:p-2.5 rounded-full bg-background/95 backdrop-blur-sm border-2 border-border shadow-xl hover:bg-muted transition-all duration-200 hover:scale-110 active:scale-95"
-              aria-label="Close popup"
-            >
-              <X className="h-6 w-6 sm:h-5 sm:w-5 stroke-[2.5]" />
-            </button>
+            {/* Compact card */}
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-background via-background to-primary/5 border-2 border-primary/20 shadow-2xl backdrop-blur-sm">
+              {/* Close button */}
+              <button
+                onClick={handleDismiss}
+                className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-background/95 backdrop-blur-sm border border-border shadow-lg hover:bg-muted transition-all duration-200 hover:scale-110 active:scale-95"
+                aria-label="Close notification"
+              >
+                <X className="h-4 w-4 stroke-[2.5]" />
+              </button>
 
-            <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-purple-500/10 to-pink-500/10 border-2 border-primary/20 shadow-2xl">
-              {/* Animated background elements */}
-              <div className="absolute inset-0 overflow-hidden">
-                <motion.div
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    rotate: [0, 90, 0],
-                    opacity: [0.3, 0.5, 0.3],
-                  }}
-                  transition={{
-                    duration: 8,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="absolute -top-1/2 -right-1/2 w-full h-full bg-linear-to-br from-primary/20 to-purple-500/20 rounded-full blur-3xl"
-                />
-                <motion.div
-                  animate={{
-                    scale: [1.2, 1, 1.2],
-                    rotate: [90, 0, 90],
-                    opacity: [0.5, 0.3, 0.5],
-                  }}
-                  transition={{
-                    duration: 8,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                  className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-linear-to-tr from-pink-500/20 to-purple-500/20 rounded-full blur-3xl"
-                />
-              </div>
+              {/* Subtle glow effects */}
+              <div className="absolute -top-10 -left-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
+              <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl" />
 
-              {/* Content */}
-              <div className="relative bg-background/95 backdrop-blur-xl rounded-2xl p-4 sm:p-6 md:p-8 border border-border/50">
+              <div className="relative p-4">
                 {!showThankYou ? (
                   <>
-                    {/* Header with icons */}
-                    <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                      <motion.div
-                        animate={{
-                          rotate: [0, 10, -10, 10, 0],
-                          scale: [1, 1.1, 1, 1.1, 1]
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatDelay: 3
-                        }}
-                      >
-                        <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-                      </motion.div>
-                      <motion.div
-                        animate={{
-                          scale: [1, 1.2, 1],
-                          opacity: [0.7, 1, 0.7]
-                        }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                        }}
-                      >
-                        <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500" />
-                      </motion.div>
+                    {/* Compact header */}
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="shrink-0 p-2 rounded-xl bg-gradient-to-br from-primary to-purple-600 shadow-lg">
+                        <BookOpen className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0 pr-6">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <h3 className="text-base font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                            Free DevOps eBook
+                          </h3>
+                          <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Coming soon! Get early access 📚
+                        </p>
+                      </div>
                     </div>
 
-                    {/* Title with gradient */}
-                    <h2 className="text-2xl sm:text-3xl font-bold text-center mb-2 bg-linear-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      📚 Coming Soon!
-                    </h2>
-
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.3, type: "spring", bounce: 0.5 }}
-                      className="text-center mb-4 sm:mb-6"
-                    >
-                      <h3 className="text-xl sm:text-2xl font-semibold mb-2 sm:mb-3 flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                        <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-500 shrink-0" />
-                        <span>The DevOps Survival Guide</span>
-                        <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-500 shrink-0" />
-                      </h3>
-                      <p className="text-muted-foreground text-base sm:text-lg">
-                        Your ultimate resource for mastering DevOps! 🚀
-                      </p>
-                    </motion.div>
-
-                    {/* Feature highlights */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="mb-4 sm:mb-6 space-y-2"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-linear-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
-                        <span>Expert tips & best practices 💡</span>
-                      </div>
-                      <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-linear-to-br from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
-                        <span>Real-world scenarios & solutions 🛠️</span>
-                      </div>
-                      <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <div className="shrink-0 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white font-bold text-xs">✓</div>
-                        <span>Comprehensive guides & tutorials 📖</span>
-                      </div>
-                    </motion.div>
-
                     {/* Newsletter signup */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.7 }}
-                      className="bg-linear-to-br from-primary/5 to-purple-500/5 rounded-xl p-3 sm:p-4 md:p-5 border border-primary/20"
-                    >
-                      <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                        <Gift className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
-                        <h4 className="font-semibold text-sm sm:text-base">Get Early Access & Updates! 🎉</h4>
-                      </div>
-                      <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
-                        Subscribe to be the first to know when the book launches + exclusive content! ✨
+                    <div className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-lg p-3 border border-primary/20">
+                      <p className="text-xs text-muted-foreground mb-2.5">
+                        Subscribe for exclusive content & launch updates! ✨
                       </p>
 
-                      <form onSubmit={handleSubscribe} className="space-y-2 sm:space-y-3">
+                      <form onSubmit={handleSubscribe} className="space-y-2">
                         <input
                           type="email"
                           name="EMAIL"
@@ -258,7 +152,7 @@ export function BookPromotionPopup() {
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="your@email.com"
                           required
-                          className="w-full px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base border border-border rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                          className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         />
 
                         {/* Honeypot */}
@@ -268,63 +162,46 @@ export function BookPromotionPopup() {
 
                         <Button
                           type="submit"
-                          className="w-full bg-linear-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold py-4 sm:py-5 md:py-6 text-sm sm:text-base rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+                          className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold py-2.5 text-sm rounded-lg transition-all duration-200 hover:shadow-lg"
                         >
-                          <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                          Yes! Keep Me Updated 🚀
+                          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                          Subscribe 🚀
                         </Button>
                       </form>
-                    </motion.div>
+                    </div>
 
-                    {/* Maybe later button */}
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 1 }}
-                      className="mt-4 text-center"
-                    >
+                    {/* Maybe later */}
+                    <div className="mt-2.5 text-center">
                       <button
                         onClick={handleDismiss}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors underline"
                       >
                         Maybe later
                       </button>
-                    </motion.div>
+                    </div>
                   </>
                 ) : (
                   /* Thank you message */
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="text-center py-6 sm:py-8"
-                  >
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.2, 1],
-                        rotate: [0, 360, 720]
-                      }}
-                      transition={{ duration: 1 }}
-                      className="mb-3 sm:mb-4 flex justify-center"
-                    >
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-linear-to-br from-green-500 to-emerald-600 flex items-center justify-center text-3xl sm:text-4xl">
+                  <div className="text-center py-4">
+                    <div className="mb-2 flex justify-center">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-2xl">
                         🎉
                       </div>
-                    </motion.div>
-                    <h3 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">Thank You! ✨</h3>
-                    <p className="text-sm sm:text-base text-muted-foreground mb-2">
-                      You're all set! Check your inbox for confirmation. 📬
+                    </div>
+                    <h3 className="text-lg font-bold mb-2">Thank You! ✨</h3>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      Check your inbox! 📬
                     </p>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
-                      We'll keep you posted on the book launch! 🚀
+                    <p className="text-xs text-muted-foreground">
+                      We'll notify you when it launches! 🚀
                     </p>
-                  </motion.div>
+                  </div>
                 )}
               </div>
             </div>
           </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
     </>
   )
 }
