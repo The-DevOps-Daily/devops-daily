@@ -123,6 +123,9 @@ export function PWAInstaller() {
       localStorage.setItem('pwa-install-dismissed-permanent', 'true');
     }
 
+    // Record interaction timestamp for other notification timing
+    localStorage.setItem('pwa-last-interaction', Date.now().toString());
+
     // Clear the deferredPrompt
     setDeferredPrompt(null);
     setShowInstallPrompt(false);
@@ -132,6 +135,8 @@ export function PWAInstaller() {
     setShowInstallPrompt(false);
     // Permanently dismiss - user clearly doesn't want PWA
     localStorage.setItem('pwa-install-dismissed-permanent', 'true');
+    // Record interaction timestamp for other notification timing
+    localStorage.setItem('pwa-last-interaction', Date.now().toString());
   };
 
   // Don't show if already installed or no prompt available

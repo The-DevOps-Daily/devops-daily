@@ -22,10 +22,27 @@ export function BookPromotionPopup() {
       return
     }
 
+    // Don't show if PWA prompt is currently visible or was recently interacted with
+    // to avoid overlapping corner notifications
+    const checkPWAState = () => {
+      const pwaTimestamp = localStorage.getItem('pwa-last-interaction')
+      if (pwaTimestamp) {
+        const timeSinceInteraction = Date.now() - parseInt(pwaTimestamp)
+        // Wait at least 1 minute after PWA interaction before showing ebook popup
+        if (timeSinceInteraction < 60000) {
+          return false
+        }
+      }
+      return true
+    }
+
     // Show popup after 3 minutes to avoid being intrusive
     const timer = setTimeout(() => {
-      setIsVisible(true)
-      setTimeout(() => setIsLoaded(true), 100)
+      // Double-check PWA state right before showing
+      if (checkPWAState()) {
+        setIsVisible(true)
+        setTimeout(() => setIsLoaded(true), 100)
+      }
     }, 180000) // 3 minutes (180 seconds)
 
     return () => {
