@@ -29,7 +29,6 @@ import {
   CircleDot,
   Home,
   HelpCircle,
-  X,
 } from 'lucide-react';
 
 // --- Game Constants & Config ---
@@ -139,7 +138,6 @@ export default function ScalableSentry() {
   const isDark = theme === 'dark';
 
   const [gameState, setGameState] = useState('start');
-  const [showHelp, setShowHelp] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [stats, setStats] = useState({
     money: CONFIG.initialMoney,
@@ -1432,99 +1430,24 @@ export default function ScalableSentry() {
           ? "bg-slate-900/50 border-slate-800" 
           : "bg-white border-gray-200"
       )}>
-        <div className="flex items-center justify-between mb-2">
-          <h3 className={cn(
-            "text-xs sm:text-sm font-bold flex items-center gap-2",
-            isDark ? "text-slate-300" : "text-gray-900"
-          )}>
-            <Activity size={14} className={cn(
-              isDark ? "text-blue-400" : "text-blue-600"
-            )} />
-            How to Play
-          </h3>
-          <button
-            onClick={() => setShowHelp(true)}
-            className={cn(
-              "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-              isDark
-                ? "bg-blue-600 hover:bg-blue-500 text-white"
-                : "bg-blue-500 hover:bg-blue-600 text-white"
-            )}
-          >
-            <HelpCircle size={14} />
-            Detailed Guide
-          </button>
-        </div>
-        <div className={cn(
-          "grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-[11px]",
-          isDark ? "text-slate-300" : "text-gray-900"
-        )}>
-          <div className="flex gap-2">
-            <span className="text-emerald-400">💰</span>
-            <span><strong>Deploy:</strong> Drag servers from below onto the field</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-blue-400">🎯</span>
-            <span><strong>Target:</strong> Click servers to select and configure targeting</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-purple-400">⚡</span>
-            <span><strong>Upgrade:</strong> Level up selected servers for more power</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-orange-400">🛡️</span>
-            <span><strong>Defend:</strong> Protect the base (right side) from traffic</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-red-400">👾</span>
-            <span><strong>Boss:</strong> Every 5th wave spawns a powerful Monolith</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-sky-400">❄️</span>
-            <span><strong>Abilities:</strong> Use Rate Limit ($200) to freeze traffic</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Help Modal */}
-      {showHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowHelp(false)}
-        >
-          <div
-            className={cn(
-              "relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl",
-              isDark ? "bg-slate-900" : "bg-white"
-            )}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className={cn(
-              "sticky top-0 z-10 flex items-center justify-between p-4 sm:p-6 border-b",
-              isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-200"
+        <div className="space-y-6">
+          {/* Header */}
+          <div>
+            <h3 className={cn(
+              "text-lg sm:text-xl font-bold flex items-center gap-2 mb-2",
+              isDark ? "text-white" : "text-gray-900"
             )}>
-              <h2 className={cn(
-                "text-2xl font-bold flex items-center gap-2",
-                isDark ? "text-white" : "text-gray-900"
-              )}>
-                <HelpCircle size={28} className="text-blue-500" />
-                Game Guide
-              </h2>
-              <button
-                onClick={() => setShowHelp(false)}
-                className={cn(
-                  "p-2 rounded-lg transition-colors",
-                  isDark
-                    ? "hover:bg-slate-800 text-slate-400 hover:text-white"
-                    : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
-                )}
-              >
-                <X size={24} />
-              </button>
-            </div>
+              <HelpCircle size={20} className="text-blue-500" />
+              Game Instructions
+            </h3>
+            <p className={cn(
+              "text-xs sm:text-sm",
+              isDark ? "text-slate-400" : "text-gray-600"
+            )}>Learn about servers, traffic types, and strategies to defend your infrastructure</p>
+          </div>
 
-            {/* Content */}
-            <div className="p-4 sm:p-6 space-y-6">
+          {/* Content */}
+          <div className="space-y-6">
               {/* Server Types Section */}
               <section>
                 <h3 className={cn(
@@ -1889,10 +1812,9 @@ export default function ScalableSentry() {
                   </div>
                 </div>
               </section>
-            </div>
           </div>
         </div>
-      )}
+      </div>
 
         </div>
       </div>
