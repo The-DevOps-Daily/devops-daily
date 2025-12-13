@@ -593,7 +593,7 @@ export default function PacketJourney() {
                 <Sparkles className="h-4 w-4 text-cyan-400" />
                 <AlertDescription className="text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <span>
-                    <strong>Pro tip:</strong> Use keyboard shortcuts - <kbd className="px-2 py-1 bg-slate-700 rounded text-xs">Space</kbd> to play/pause, <kbd className="px-2 py-1 bg-slate-700 rounded text-xs">R</kbd> to reset, <kbd className="px-2 py-1 bg-slate-700 rounded text-xs">Esc</kbd> to close details
+                    <strong>Pro tip:</strong> Use keyboard shortcuts - <kbd className={cn("px-2 py-1 rounded text-xs", isDark ? "bg-slate-700" : "bg-gray-200")}>Space</kbd> to play/pause, <kbd className={cn("px-2 py-1 rounded text-xs", isDark ? "bg-slate-700" : "bg-gray-200")}>R</kbd> to reset, <kbd className={cn("px-2 py-1 rounded text-xs", isDark ? "bg-slate-700" : "bg-gray-200")}>Esc</kbd> to close details
                   </span>
                   <Button size="sm" variant="ghost" onClick={() => setShowHint(false)} className="text-xs h-6">
                     Got it
@@ -620,7 +620,7 @@ export default function PacketJourney() {
               <span className="text-sm font-medium">
                 {isReturning ? 'Returning' : 'Outbound'} - Stage {currentStageIndex + 1} of {journeyStages.length}: {journeyStages[currentStageIndex]?.name}
               </span>
-              <span className="text-xs text-slate-400">
+              <span className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
                 {(stageProgress * 100).toFixed(0)}% complete
               </span>
             </div>
@@ -939,7 +939,12 @@ export default function PacketJourney() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowStagesPanel(!showStagesPanel)}
-                    className="lg:hidden bg-slate-700 border-slate-600 h-8"
+                    className={cn(
+                      "lg:hidden h-8",
+                      isDark
+                        ? "bg-slate-700 border-slate-600"
+                        : "bg-gray-100 border-gray-300"
+                    )}
                   >
                     <Layers className="w-3 h-3 mr-1" />
                     {showStagesPanel ? 'Hide' : 'Show'} Stages
@@ -1281,7 +1286,7 @@ export default function PacketJourney() {
                         Ready to Begin!
                       </p>
                       <p className="text-sm text-slate-300">
-                        Press <kbd className="px-2 py-1 bg-slate-700 rounded text-xs font-mono">Space</kbd> or click "Start Journey" below
+                        Press <kbd className={cn("px-2 py-1 rounded text-xs font-mono", isDark ? "bg-slate-700" : "bg-gray-200")}>Space</kbd> or click "Start Journey" below
                       </p>
                     </div>
                   </div>
@@ -1367,7 +1372,12 @@ export default function PacketJourney() {
           <div className={cn("space-y-4", !showStagesPanel && "hidden lg:block")}>
             {/* Current Stage Info */}
             {isRunning && currentStageIndex < journeyStages.length && (
-              <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
+              <Card className={cn(
+                "backdrop-blur",
+                isDark
+                  ? "bg-slate-800/50 border-slate-700"
+                  : "bg-white/80 border-gray-200"
+              )}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Timer className="w-5 h-5" />
@@ -1432,7 +1442,12 @@ export default function PacketJourney() {
             )}
 
             {/* All Stages List */}
-            <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
+            <Card className={cn(
+              "backdrop-blur",
+              isDark
+                ? "bg-slate-800/50 border-slate-700"
+                : "bg-white/80 border-gray-200"
+            )}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-lg">
@@ -1440,7 +1455,12 @@ export default function PacketJourney() {
                     Journey Stages
                   </CardTitle>
                   {isRunning && (
-                    <Badge variant="outline" className="bg-slate-700 border-slate-600 text-xs">
+                    <Badge variant="outline" className={cn(
+                      "text-xs",
+                      isDark
+                        ? "bg-slate-700 border-slate-600"
+                        : "bg-gray-100 border-gray-300"
+                    )}>
                       {currentStageIndex + 1} / {journeyStages.length}
                     </Badge>
                   )}
@@ -1544,7 +1564,12 @@ export default function PacketJourney() {
 
         {/* Timeline Waterfall */}
         {showTimeline && isRunning && (
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
+          <Card className={cn(
+            "backdrop-blur",
+            isDark
+              ? "bg-slate-800/50 border-slate-700"
+              : "bg-white/80 border-gray-200"
+          )}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5" />
@@ -1615,7 +1640,7 @@ export default function PacketJourney() {
                 <Sparkles className="w-8 h-8 text-blue-400" />
                 <div>
                   <div className="text-2xl font-bold">{journeyStages.length}</div>
-                  <div className="text-sm text-slate-300">Network Hops</div>
+                  <div className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-600")}>Network Hops</div>
                 </div>
               </div>
             </CardContent>
@@ -1627,7 +1652,7 @@ export default function PacketJourney() {
                 <Timer className="w-8 h-8 text-purple-400" />
                 <div>
                   <div className="text-2xl font-bold">{totalJourneyTime}ms</div>
-                  <div className="text-sm text-slate-300">Total Latency</div>
+                  <div className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-600")}>Total Latency</div>
                 </div>
               </div>
             </CardContent>
@@ -1639,7 +1664,7 @@ export default function PacketJourney() {
                 <TrendingUp className="w-8 h-8 text-green-400" />
                 <div>
                   <div className="text-2xl font-bold">{(totalJourneyTime * 2).toFixed(0)}ms</div>
-                  <div className="text-sm text-slate-300">Round-Trip Time</div>
+                  <div className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-600")}>Round-Trip Time</div>
                 </div>
               </div>
             </CardContent>
@@ -1647,7 +1672,12 @@ export default function PacketJourney() {
         </div>
 
         {/* Scenario Comparison */}
-        <Card className="bg-slate-800/50 border-slate-700 backdrop-blur">
+        <Card className={cn(
+          "backdrop-blur",
+          isDark
+            ? "bg-slate-800/50 border-slate-700"
+            : "bg-white/80 border-gray-200"
+        )}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="w-5 h-5" />
@@ -1659,7 +1689,7 @@ export default function PacketJourney() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-700">
+                  <tr className={cn("border-b", isDark ? "border-slate-700" : "border-gray-200")}>
                     <th className="text-left py-3 px-2 font-semibold">Scenario</th>
                     <th className="text-center py-3 px-2 font-semibold">Stages</th>
                     <th className="text-center py-3 px-2 font-semibold">One-Way</th>
@@ -1678,8 +1708,15 @@ export default function PacketJourney() {
                       <tr
                         key={key}
                         className={cn(
-                          'border-b border-slate-700/50 transition-colors cursor-pointer',
-                          isCurrent ? 'bg-blue-500/10' : 'hover:bg-slate-700/30'
+                          'border-b transition-colors cursor-pointer',
+                          isDark
+                            ? 'border-slate-700/50'
+                            : 'border-gray-200',
+                          isCurrent
+                            ? 'bg-blue-500/10'
+                            : isDark
+                              ? 'hover:bg-slate-700/30'
+                              : 'hover:bg-gray-100'
                         )}
                         onClick={() => handleScenarioChange(key)}
                       >
