@@ -1280,12 +1280,15 @@ export default function PacketJourney() {
                 {/* Helpful overlay */}
                 {!isRunning && !journeyComplete && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="bg-slate-800/95 backdrop-blur px-6 py-4 rounded-lg border-2 border-blue-400 shadow-lg">
+                    <div className={cn(
+                      "backdrop-blur px-6 py-4 rounded-lg border-2 border-blue-400 shadow-lg",
+                      isDark ? "bg-slate-800/95" : "bg-white/95"
+                    )}>
                       <p className="text-lg font-semibold text-blue-400 mb-2 flex items-center gap-2">
                         <Sparkles className="w-5 h-5" />
                         Ready to Begin!
                       </p>
-                      <p className="text-sm text-slate-300">
+                      <p className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-700")}>
                         Press <kbd className={cn("px-2 py-1 rounded text-xs font-mono", isDark ? "bg-slate-700" : "bg-gray-200")}>Space</kbd> or click "Start Journey" below
                       </p>
                     </div>
