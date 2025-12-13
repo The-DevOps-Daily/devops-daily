@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
+import { cn } from '@/lib/utils';
 import {
   Server,
   Zap,
@@ -131,6 +133,9 @@ const COLORS = {
 };
 
 export default function ScalableSentry() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const [gameState, setGameState] = useState('start');
   const [isMobile, setIsMobile] = useState(false);
   const [stats, setStats] = useState({
@@ -1100,29 +1105,56 @@ export default function ScalableSentry() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans p-2 sm:p-4 select-none">
+    <div className={cn(
+      "min-h-screen font-sans p-2 sm:p-4 select-none",
+      isDark 
+        ? "bg-slate-950 text-slate-100" 
+        : "bg-gradient-to-br from-gray-50 to-blue-50 text-gray-900"
+    )}>
       <div className="container mx-auto max-w-4xl">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-slate-400 mb-4 sm:mb-6 px-2">
+        <nav className={cn(
+          "flex items-center space-x-2 text-sm mb-4 sm:mb-6 px-2",
+          isDark ? "text-slate-400" : "text-gray-600"
+        )}>
           <Link
             href="/games"
-            className="hover:text-slate-200 transition-colors flex items-center gap-1"
+            className={cn(
+              "transition-colors flex items-center gap-1",
+              isDark ? "hover:text-slate-200" : "hover:text-gray-900"
+            )}
           >
             <Home className="w-4 h-4" />
             Games
           </Link>
           <span>/</span>
-          <span className="text-slate-100">Scalable Sentry</span>
+          <span className={cn(
+            isDark ? "text-slate-100" : "text-gray-900"
+          )}>Scalable Sentry</span>
         </nav>
 
         {/* Mobile Warning */}
         {isMobile && (
-          <div className="mb-4 mx-2 p-4 bg-amber-900/30 border border-amber-700/50 rounded-xl">
+          <div className={cn(
+            "mb-4 mx-2 p-4 rounded-xl border",
+            isDark 
+              ? "bg-amber-900/30 border-amber-700/50" 
+              : "bg-amber-50 border-amber-300"
+          )}>
             <div className="flex items-start gap-3">
-              <AlertTriangle className="text-amber-400 shrink-0 mt-0.5" size={20} />
+              <AlertTriangle className={cn(
+                "shrink-0 mt-0.5",
+                isDark ? "text-amber-400" : "text-amber-600"
+              )} size={20} />
               <div>
-                <h3 className="font-bold text-amber-300 text-sm mb-1">Desktop Recommended</h3>
-                <p className="text-amber-200/80 text-xs leading-relaxed">
+                <h3 className={cn(
+                  "font-bold text-sm mb-1",
+                  isDark ? "text-amber-300" : "text-amber-900"
+                )}>Desktop Recommended</h3>
+                <p className={cn(
+                  "text-xs leading-relaxed",
+                  isDark ? "text-amber-200/80" : "text-amber-800"
+                )}>
                   This tower defense game is best experienced on desktop with mouse/keyboard controls. Mobile play may be challenging due to drag-and-drop mechanics.
                 </p>
               </div>
@@ -1131,13 +1163,30 @@ export default function ScalableSentry() {
         )}
 
         <div className="flex flex-col items-center justify-center">
-          <div className="w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center mb-4 p-3 sm:p-4 bg-slate-900 rounded-xl border border-slate-800 shadow-xl gap-3">
+          <div className={cn(
+            "w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center mb-4 p-3 sm:p-4 rounded-xl border shadow-xl gap-3",
+            isDark 
+              ? "bg-slate-900 border-slate-800" 
+              : "bg-white border-gray-200"
+          )}>
         <div className="flex flex-wrap gap-3 sm:gap-4 justify-center sm:justify-start w-full sm:w-auto">
-          <div className="text-center sm:text-left"><div className="text-xs text-slate-400">BUDGET</div><div className="text-xl sm:text-2xl font-bold text-emerald-400">${stats.money.toFixed(0)}</div></div>
           <div className="text-center sm:text-left">
-            <div className="text-xs text-slate-400">SYSTEM INTEGRITY</div>
+            <div className={cn(
+              "text-xs",
+              isDark ? "text-slate-400" : "text-gray-600"
+            )}>BUDGET</div>
+            <div className="text-xl sm:text-2xl font-bold text-emerald-400">${stats.money.toFixed(0)}</div>
+          </div>
+          <div className="text-center sm:text-left">
+            <div className={cn(
+              "text-xs",
+              isDark ? "text-slate-400" : "text-gray-600"
+            )}>SYSTEM INTEGRITY</div>
             <div className="flex items-center gap-2">
-                <div className="w-24 sm:w-32 h-3 bg-slate-800 rounded-full overflow-hidden">
+                <div className={cn(
+                  "w-24 sm:w-32 h-3 rounded-full overflow-hidden",
+                  isDark ? "bg-slate-800" : "bg-gray-200"
+                )}>
                     <div className={`h-full transition-all duration-300 ${stats.health<30?'bg-red-500':'bg-blue-500'}`} style={{width:`${stats.health}%`}}></div>
                 </div>
                 <span className="font-mono text-sm">{stats.health}%</span>
@@ -1147,10 +1196,24 @@ export default function ScalableSentry() {
           <button
             onClick={activateFreeze}
             disabled={stats.money < 200 || freezeActive}
-            className={`flex flex-col items-center justify-center px-3 py-1 rounded border text-xs ${freezeActive ? 'bg-sky-500/20 border-sky-500' : (stats.money >= 200 ? 'bg-slate-800 hover:bg-slate-700 border-slate-600 cursor-pointer' : 'bg-slate-900 border-slate-800 opacity-50 cursor-not-allowed')}`}
+            className={cn(
+              "flex flex-col items-center justify-center px-3 py-1 rounded border text-xs",
+              freezeActive ? "bg-sky-500/20 border-sky-500" : 
+              stats.money >= 200 
+                ? (isDark 
+                    ? "bg-slate-800 hover:bg-slate-700 border-slate-600" 
+                    : "bg-gray-100 hover:bg-gray-200 border-gray-300") + " cursor-pointer"
+                : (isDark 
+                    ? "bg-slate-900 border-slate-800" 
+                    : "bg-gray-50 border-gray-200") + " opacity-50 cursor-not-allowed"
+            )}
           >
-              <span className="font-bold text-sky-400 flex items-center gap-1"><Snowflake size={10}/> FREEZE</span>
-              <span className="text-slate-400">$200</span>
+              <span className="font-bold text-sky-400 flex items-center gap-1">
+                <Snowflake size={10}/> FREEZE
+              </span>
+              <span className={cn(
+                isDark ? "text-slate-400" : "text-gray-600"
+              )}>$200</span>
           </button>
 
           <button
@@ -1169,9 +1232,15 @@ export default function ScalableSentry() {
           </button>
         </div>
         <div className="text-center sm:text-right">
-            <div className="text-xs text-slate-400">WAVE</div>
+            <div className={cn(
+              "text-xs",
+              isDark ? "text-slate-400" : "text-gray-600"
+            )}>WAVE</div>
             <div className="text-xl font-bold text-amber-400">{stats.wave}</div>
-            <div className="text-[10px] text-slate-500">
+            <div className={cn(
+              "text-[10px]",
+              isDark ? "text-slate-500" : "text-gray-500"
+            )}>
                 {stats.wave % 5 === 0 ? 'BOSS ACTIVE' : `Next Boss: Wave ${Math.ceil(stats.wave/5)*5}`}
             </div>
         </div>
@@ -1188,7 +1257,11 @@ export default function ScalableSentry() {
             onMouseLeave={() => { stateRef.current.mouse.isDown = false; stateRef.current.mouse.draggingId = null; }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDropNewServer}
-            className={`bg-slate-900 rounded-lg shadow-2xl border border-slate-800 cursor-crosshair mx-auto ${gameState==='gameover'?'grayscale opacity-50':''}`}
+            className={cn(
+              "rounded-lg shadow-2xl border cursor-crosshair mx-auto",
+              isDark ? "bg-slate-900 border-slate-800" : "bg-white border-gray-300",
+              gameState === 'gameover' && "grayscale opacity-50"
+            )}
             style={{ maxWidth: '100%', height: 'auto' }}
         />
 
@@ -1200,19 +1273,33 @@ export default function ScalableSentry() {
         )}
 
         {gameState === 'start' && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 backdrop-blur-sm rounded-lg z-20">
+            <div className={cn(
+              "absolute inset-0 flex flex-col items-center justify-center backdrop-blur-sm rounded-lg z-20",
+              isDark ? "bg-slate-950/95" : "bg-white/95"
+            )}>
                 <h1 className="text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-indigo-500 mb-2">SCALABLE SENTRY</h1>
-                <p className="text-slate-400 mb-8 tracking-widest uppercase text-sm">Advanced Load Balancer Simulation</p>
+                <p className={cn(
+                  "mb-8 tracking-widest uppercase text-sm",
+                  isDark ? "text-slate-400" : "text-gray-600"
+                )}>Advanced Load Balancer Simulation</p>
 
                 <div className="grid grid-cols-5 gap-4 mb-8 max-w-4xl text-center">
                     {Object.entries(SERVER_TYPES).map(([key, type]) => {
                       const Icon = type.icon;
                       return (
-                        <div key={key} className="bg-slate-900 p-3 rounded border border-slate-800">
+                        <div key={key} className={cn(
+                          "p-3 rounded border",
+                          isDark 
+                            ? "bg-slate-900 border-slate-800" 
+                            : "bg-gray-50 border-gray-200"
+                        )}>
                             <div className="font-bold mb-1 flex justify-center gap-1 items-center" style={{color: type.color}}>
                                 <Icon size={14} color={type.color}/> {type.name}
                             </div>
-                            <div className="text-[10px] text-slate-400">{type.desc}</div>
+                            <div className={cn(
+                              "text-[10px]",
+                              isDark ? "text-slate-400" : "text-gray-600"
+                            )}>{type.desc}</div>
                         </div>
                       );
                     })}
@@ -1250,25 +1337,46 @@ export default function ScalableSentry() {
                         setDragType(key);
                         e.dataTransfer.setData('type', key);
                     }}
-                    className={`min-w-[70px] sm:min-w-[80px] flex-1 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all
-                        ${stats.money >= type.cost ? 'bg-slate-900 border-slate-700 hover:border-blue-500 cursor-grab active:cursor-grabbing hover:bg-slate-800' : 'bg-slate-900/50 border-slate-800 opacity-40 cursor-not-allowed'}
-                    `}
+                    className={cn(
+                      "min-w-[70px] sm:min-w-[80px] flex-1 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all",
+                      stats.money >= type.cost
+                        ? (isDark 
+                            ? "bg-slate-900 border-slate-700 hover:bg-slate-800" 
+                            : "bg-white border-gray-300 hover:bg-gray-50") + " hover:border-blue-500 cursor-grab active:cursor-grabbing"
+                        : (isDark 
+                            ? "bg-slate-900/50 border-slate-800" 
+                            : "bg-gray-50 border-gray-200") + " opacity-40 cursor-not-allowed"
+                    )}
                 >
                     <Icon className="mb-1" color={type.color} size={20} />
-                    <span className="text-[10px] sm:text-xs font-bold text-slate-300 text-center px-1">{type.name}</span>
+                    <span className={cn(
+                      "text-[10px] sm:text-xs font-bold text-center px-1",
+                      isDark ? "text-slate-300" : "text-gray-700"
+                    )}>{type.name}</span>
                     <span className="text-[10px] sm:text-xs font-mono text-emerald-400">${type.cost}</span>
                 </div>
               );
             })}
         </div>
 
-        <div className="w-full md:w-64 bg-slate-900 p-3 rounded-xl border border-slate-800 flex flex-col gap-2 shrink-0 mx-2 md:mx-0">
+        <div className={cn(
+          "w-full md:w-64 p-3 rounded-xl border flex flex-col gap-2 shrink-0 mx-2 md:mx-0",
+          isDark 
+            ? "bg-slate-900 border-slate-800" 
+            : "bg-white border-gray-200"
+        )}>
             {selection ? (
                 <>
                     <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0">
-                            <div className="text-xs text-slate-500 uppercase">Pod Config</div>
-                            <div className="font-bold text-white text-sm truncate">
+                            <div className={cn(
+                              "text-xs uppercase",
+                              isDark ? "text-slate-500" : "text-gray-600"
+                            )}>Pod Config</div>
+                            <div className={cn(
+                              "font-bold text-sm truncate",
+                              isDark ? "text-white" : "text-gray-900"
+                            )}>
                                 {stateRef.current.servers.find(s=>s.id===selection)?.isTemporary && <span className='text-orange-400'>(TEMP) </span>}
                                 v{stateRef.current.servers.find(s=>s.id===selection)?.level} {SERVER_TYPES[stateRef.current.servers.find(s=>s.id===selection)?.type]?.name}
                             </div>
@@ -1278,7 +1386,12 @@ export default function ScalableSentry() {
                     <button
                         onClick={toggleTargeting}
                         disabled={stateRef.current.servers.find(s=>s.id===selection)?.type === 'firewall' || stateRef.current.servers.find(s=>s.id===selection)?.type === 'observability'}
-                        className="flex items-center justify-between w-full px-3 py-1.5 bg-slate-800 rounded border border-slate-700 text-xs text-slate-300 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={cn(
+                          "flex items-center justify-between w-full px-3 py-1.5 rounded border text-xs disabled:opacity-50 disabled:cursor-not-allowed",
+                          isDark 
+                            ? "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700" 
+                            : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+                        )}
                     >
                         <span className="flex items-center gap-1"><Crosshair size={12}/> Priority:</span>
                         <span className="font-bold text-blue-400 uppercase text-[10px]">{TARGETING_MODES[stateRef.current.servers.find(s=>s.id===selection)?.targeting || 'nearest']}</span>
@@ -1287,13 +1400,21 @@ export default function ScalableSentry() {
                     <button
                         onClick={upgradeServer}
                         disabled={stats.money < getUpgradeCost() || stateRef.current.servers.find(s=>s.id===selection)?.isTemporary}
-                        className={`w-full py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 ${stats.money >= getUpgradeCost() && !stateRef.current.servers.find(s=>s.id===selection)?.isTemporary ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-800 text-slate-500'}`}
+                        className={cn(
+                          "w-full py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1",
+                          stats.money >= getUpgradeCost() && !stateRef.current.servers.find(s=>s.id===selection)?.isTemporary
+                            ? "bg-indigo-600 text-white hover:bg-indigo-500"
+                            : (isDark ? "bg-slate-800 text-slate-500" : "bg-gray-100 text-gray-400")
+                        )}
                     >
                        <ArrowUpCircle size={14}/> <span className="truncate">Upgrade ${getUpgradeCost()}</span>
                     </button>
                 </>
             ) : (
-                <div className="h-full flex items-center justify-center text-center text-slate-600 text-[10px] italic px-2">
+                <div className={cn(
+                  "h-full flex items-center justify-center text-center text-[10px] italic px-2",
+                  isDark ? "text-slate-600" : "text-gray-500"
+                )}>
                     Select a deployed pod to configure targeting or scale up resources.
                 </div>
             )}
@@ -1302,12 +1423,25 @@ export default function ScalableSentry() {
       </div>
 
       {/* Instructions */}
-      <div className="w-full max-w-4xl mt-4 bg-slate-900/50 p-3 sm:p-4 rounded-xl border border-slate-800 mx-2">
-        <h3 className="text-xs sm:text-sm font-bold text-slate-300 mb-2 flex items-center gap-2">
-          <Activity size={14} className="text-blue-400" />
+      <div className={cn(
+        "w-full max-w-4xl mt-4 p-3 sm:p-4 rounded-xl border mx-2",
+        isDark 
+          ? "bg-slate-900/50 border-slate-800" 
+          : "bg-white border-gray-200"
+      )}>
+        <h3 className={cn(
+          "text-xs sm:text-sm font-bold mb-2 flex items-center gap-2",
+          isDark ? "text-slate-300" : "text-gray-900"
+        )}>
+          <Activity size={14} className={cn(
+            isDark ? "text-blue-400" : "text-blue-600"
+          )} />
           How to Play
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-[11px] text-slate-400">
+        <div className={cn(
+          "grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-[11px]",
+          isDark ? "text-slate-400" : "text-gray-700"
+        )}>
           <div className="flex gap-2">
             <span className="text-emerald-400">💰</span>
             <span><strong>Deploy:</strong> Drag servers from below onto the field</span>
