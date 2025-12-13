@@ -713,12 +713,12 @@ export default function PacketJourney() {
                 className={cn(
                   'h-8',
                   manualMode
-                    ? 'bg-green-600 hover:bg-green-700'
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : isDark
-              >
                       ? 'bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-300'
                       : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700'
+                )}
+              >
                 <Layers className="w-3 h-3 mr-1" />
                 Step-by-Step
               </Button>
@@ -732,8 +732,10 @@ export default function PacketJourney() {
                 className={cn(
                   'h-8',
                   !manualMode
-                    ? 'bg-purple-600 hover:bg-purple-700'
-                    : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : isDark
+                      ? 'bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-300'
+                      : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700'
                 )}
               >
                 <Zap className="w-3 h-3 mr-1" />
@@ -796,8 +798,10 @@ export default function PacketJourney() {
                       className={cn(
                         'w-10 h-8 text-xs',
                         speedMultiplier === speed
-                          ? 'bg-blue-600'
-                          : 'bg-slate-700 border-slate-600'
+                          ? 'bg-blue-600 text-white'
+                          : isDark
+                            ? 'bg-slate-700 border-slate-600 text-slate-300'
+                            : 'bg-gray-100 border-gray-300 text-gray-700'
                       )}
                     >
                       {speed}x
@@ -806,7 +810,12 @@ export default function PacketJourney() {
                 </div>
               </>
             )}
-            <Button onClick={resetJourney} variant="outline" className="bg-slate-700 border-slate-600 ml-auto">
+            <Button onClick={resetJourney} variant="outline" className={cn(
+              "ml-auto",
+              isDark
+                ? "bg-slate-700 border-slate-600 hover:bg-slate-600 text-white"
+                : "bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700"
+            )}>
               <RotateCcw className="w-4 h-4 mr-2" />
               Reset
             </Button>
