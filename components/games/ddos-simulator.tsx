@@ -1340,12 +1340,7 @@ export default function DDoSSimulator() {
                           animate={{ scale: [1, 1.1, 1] }}
                           transition={{ duration: 1, repeat: Infinity }}
                         >
-                          <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center shadow-lg",
-                            rateLimitActive 
-                              ? "bg-purple-500 shadow-purple-500/50" 
-                              : "bg-purple-500/50 shadow-purple-500/30"
-                          )}>
+                          <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center shadow-lg shadow-purple-500/50">
                             <Gauge className="w-5 h-5 text-white" />
                           </div>
                         </motion.div>
