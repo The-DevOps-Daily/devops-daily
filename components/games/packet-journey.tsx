@@ -401,21 +401,20 @@ export default function PacketJourney() {
             // Move to next stage
             setCurrentStageIndex((prev) => prev + 1);
             setStageProgress(0);
-          } else {
-            // Reached the end, start return journey
-            setIsReturning(true);
-            if (journeyStages.length > 1) {
-              setCurrentStageIndex((prev) => prev - 1);
-              setStageProgress(0);
-            } else {
-              // Only one stage, complete immediately
-              setJourneyComplete(true);
-              setIsRunning(false);
-              setTotalTime(Date.now() - journeyStartTime.current);
-              return;
-            }
-          }
         } else {
+          // Reached the end, start return journey
+          setIsReturning(true);
+          if (journeyStages.length === 1) {
+            // Only one stage, complete immediately
+            setJourneyComplete(true);
+            setIsRunning(false);
+            setTotalTime(Date.now() - journeyStartTime.current);
+            return;
+          }
+          // For multiple stages, stay at last stage and animate back
+          setStageProgress(0);
+        }
+      } else {
           // Going backward (return journey)
           if (currentStageIndex > 0) {
             // Move to previous stage
