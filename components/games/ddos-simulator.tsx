@@ -1307,6 +1307,7 @@ export default function DDoSSimulator() {
                       <Server
                         className={cn(
                           'w-12 h-12',
+                          isDark ? '' : 'opacity-50',
                           serverHealth > 70
                             ? 'text-green-400'
                             : serverHealth > 40
