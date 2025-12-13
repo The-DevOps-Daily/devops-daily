@@ -224,8 +224,14 @@ const allStages: Record<string, Omit<JourneyStage, 'x' | 'y'>> = {
 };
 
 export default function PacketJourney() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const isDark = resolvedTheme === 'dark';
+
+  // Handle theme hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [scenario, setScenario] = useState<ScenarioType>('https-cdn');
   const [isRunning, setIsRunning] = useState(false);
@@ -504,6 +510,11 @@ export default function PacketJourney() {
 
     return { x, y };
   }, [currentStageIndex, stageProgress, journeyStages, isReturning]);
+
+  // Prevent theme flash on mount
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className={cn(
