@@ -721,13 +721,23 @@ export default function DDoSSimulator() {
           {/* Controls Panel */}
           <div className="lg:col-span-1 space-y-6">
             {/* Attack Controls */}
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur">
+            <Card className={cn(
+              "backdrop-blur",
+              isDark 
+                ? "bg-slate-900/50 border-slate-700/50" 
+                : "bg-white border-gray-200"
+            )}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className={cn(
+                  "flex items-center gap-2",
+                  isDark ? "text-white" : "text-gray-900"
+                )}>
                   <Settings className="w-5 h-5" />
                   Attack Configuration
                 </CardTitle>
-                <CardDescription>Adjust attack parameters</CardDescription>
+                <CardDescription className={cn(
+                  isDark ? "" : "text-gray-600"
+                )}>Adjust attack parameters</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Attack Type */}
