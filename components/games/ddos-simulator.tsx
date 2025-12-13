@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -116,6 +117,10 @@ function Slider({
 }
 
 export default function DDoSSimulator() {
+  // Theme
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   // Game state
   const [isRunning, setIsRunning] = useState(false);
   const [intensity, setIntensity] = useState(3);
@@ -537,7 +542,12 @@ export default function DDoSSimulator() {
   const unlockedAchievements = achievements.filter((a) => a.unlocked).length;
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950">
+    <div className={cn(
+      "min-h-screen",
+      isDark
+        ? "bg-linear-to-br from-slate-950 via-slate-900 to-slate-950"
+        : "bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50"
+    )}>
       <div className={cn("container mx-auto px-4 py-6 sm:py-8 transition-transform duration-200", screenShake && "animate-shake")}>
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
@@ -589,7 +599,10 @@ export default function DDoSSimulator() {
               DDoS Attack Simulator
             </h1>
           </div>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto mb-4">
+          <p className={cn(
+            "text-lg max-w-2xl mx-auto mb-4",
+            isDark ? "text-gray-400" : "text-gray-600"
+          )}>
             Educational simulator to understand how Distributed Denial of Service attacks work and
             why protection is crucial
           </p>
@@ -616,7 +629,11 @@ export default function DDoSSimulator() {
               variant="ghost"
               size="sm"
               onClick={() => setShowEducation(!showEducation)}
-              className="text-gray-400 hover:text-white"
+              className={cn(
+                isDark
+                  ? "text-gray-400 hover:text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              )}
             >
               <Info className="w-4 h-4 mr-2" />
               Learn More
@@ -633,14 +650,22 @@ export default function DDoSSimulator() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-8"
             >
-              <Card className="bg-slate-900/50 border-blue-500/20 backdrop-blur">
+              <Card className={cn(
+                "backdrop-blur border",
+                isDark
+                  ? "bg-slate-900/50 border-blue-500/20"
+                  : "bg-white/80 border-blue-200"
+              )}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-blue-400">
                     <Info className="w-5 h-5" />
                     What is a DDoS Attack?
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4 text-gray-300 text-sm">
+                <CardContent className={cn(
+                  "space-y-4 text-sm",
+                  isDark ? "text-gray-300" : "text-gray-700"
+                )}>
                   <p>
                     A <strong>Distributed Denial of Service (DDoS)</strong> attack is a malicious
                     attempt to disrupt the normal traffic of a targeted server, service, or network
@@ -707,7 +732,10 @@ export default function DDoSSimulator() {
               <CardContent className="space-y-6">
                 {/* Attack Type */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-300">Attack Type</label>
+                  <label className={cn(
+                    "text-sm font-medium",
+                    isDark ? "text-gray-300" : "text-gray-700"
+                  )}>Attack Type</label>
                   <div className="grid grid-cols-1 gap-2">
                     {Object.entries(ATTACK_TYPES).map(([key, attack]) => (
                       <button
@@ -732,9 +760,15 @@ export default function DDoSSimulator() {
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: attack.color }}
                           />
-                          <span className="font-semibold text-white text-sm">{attack.name}</span>
+                          <span className={cn(
+                            "font-semibold text-sm",
+                            isDark ? "text-white" : "text-gray-900"
+                          )}>{attack.name}</span>
                         </div>
-                        <p className="text-xs text-gray-400">{attack.description}</p>
+                        <p className={cn(
+                          "text-xs",
+                          isDark ? "text-gray-400" : "text-gray-600"
+                        )}>{attack.description}</p>
                       </button>
                     ))}
                   </div>
@@ -743,7 +777,10 @@ export default function DDoSSimulator() {
                 {/* Intensity Slider */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-gray-300">
+                    <label className={cn(
+                      "text-sm font-medium",
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    )}>
                       Attack Intensity: Level {intensity}
                     </label>
                     <Badge
@@ -776,7 +813,10 @@ export default function DDoSSimulator() {
 
                 {/* Defense Mechanisms */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm font-medium text-gray-300">
+                  <div className={cn(
+                    "flex items-center justify-between text-sm font-medium",
+                    isDark ? "text-gray-300" : "text-gray-700"
+                  )}>
                     <span>Defense Systems</span>
                     <Badge variant="outline" className="text-xs">
                       {activeDefenses}/3 Active
@@ -784,14 +824,25 @@ export default function DDoSSimulator() {
                   </div>
 
                   {/* Firewall */}
-                  <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                  <div className={cn(
+                    "flex items-center justify-between p-3 rounded-lg border",
+                    isDark
+                      ? "bg-slate-800/50 border-slate-700/50"
+                      : "bg-gray-100 border-gray-300"
+                  )}>
                     <div className="flex items-center gap-2">
                       <Shield
                         className={cn('w-5 h-5', hasFirewall ? 'text-green-400' : 'text-gray-500')}
                       />
                       <div>
-                        <div className="text-sm font-medium text-white">Firewall</div>
-                        <div className="text-xs text-gray-400">Blocks ~30% of attacks</div>
+                        <div className={cn(
+                          "text-sm font-medium",
+                          isDark ? "text-white" : "text-gray-900"
+                        )}>Firewall</div>
+                        <div className={cn(
+                          "text-xs",
+                          isDark ? "text-gray-400" : "text-gray-600"
+                        )}>Blocks ~30% of attacks</div>
                       </div>
                     </div>
                     <button
@@ -811,14 +862,25 @@ export default function DDoSSimulator() {
                   </div>
 
                   {/* Load Balancer */}
-                  <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                  <div className={cn(
+                    "flex items-center justify-between p-3 rounded-lg border",
+                    isDark
+                      ? "bg-slate-800/50 border-slate-700/50"
+                      : "bg-gray-100 border-gray-300"
+                  )}>
                     <div className="flex items-center gap-2">
                       <BarChart3
                         className={cn('w-5 h-5', hasLoadBalancer ? 'text-blue-400' : 'text-gray-500')}
                       />
                       <div>
-                        <div className="text-sm font-medium text-white">Load Balancer</div>
-                        <div className="text-xs text-gray-400">Reduces damage by 50%</div>
+                        <div className={cn(
+                          "text-sm font-medium",
+                          isDark ? "text-white" : "text-gray-900"
+                        )}>Load Balancer</div>
+                        <div className={cn(
+                          "text-xs",
+                          isDark ? "text-gray-400" : "text-gray-600"
+                        )}>Reduces damage by 50%</div>
                       </div>
                     </div>
                     <button
@@ -838,13 +900,21 @@ export default function DDoSSimulator() {
                   </div>
 
                   {/* Auto Rate Limiting */}
-                  <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                  <div className={cn(
+                    "flex items-center justify-between p-3 rounded-lg border",
+                    isDark
+                      ? "bg-slate-800/50 border-slate-700/50"
+                      : "bg-gray-100 border-gray-300"
+                  )}>
                     <div className="flex items-center gap-2">
                       <Gauge
                         className={cn('w-5 h-5', autoRateLimiting ? 'text-purple-400' : 'text-gray-500')}
                       />
                       <div>
-                        <div className="text-sm font-medium text-white flex items-center gap-2">
+                        <div className={cn(
+                          "text-sm font-medium flex items-center gap-2",
+                          isDark ? "text-white" : "text-gray-900"
+                        )}>
                           Auto Rate Limit
                           {rateLimitActive && (
                             <Badge variant="outline" className="text-xs border-purple-500 text-purple-400">
@@ -852,7 +922,10 @@ export default function DDoSSimulator() {
                             </Badge>
                           )}
                         </div>
-                        <div className="text-xs text-gray-400">Auto-blocks high traffic</div>
+                        <div className={cn(
+                          "text-xs",
+                          isDark ? "text-gray-400" : "text-gray-600"
+                        )}>Auto-blocks high traffic</div>
                       </div>
                     </div>
                     <button
@@ -913,9 +986,17 @@ export default function DDoSSimulator() {
             </Card>
 
             {/* Stats Panel */}
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur">
+            <Card className={cn(
+              "backdrop-blur border",
+              isDark
+                ? "bg-slate-900/50 border-slate-700/50"
+                : "bg-white/80 border-gray-200"
+            )}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className={cn(
+                  "flex items-center gap-2",
+                  isDark ? "text-white" : "text-gray-900"
+                )}>
                   <TrendingUp className="w-5 h-5" />
                   Statistics
                 </CardTitle>
@@ -924,27 +1005,47 @@ export default function DDoSSimulator() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
                     <div className="text-2xl font-bold text-blue-400">{totalRequests}</div>
-                    <div className="text-xs text-gray-400">Total Requests</div>
+                    <div className={cn(
+                      "text-xs",
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    )}>Total Requests</div>
                   </div>
                   <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
                     <div className="text-2xl font-bold text-green-400">{blockedRequests}</div>
-                    <div className="text-xs text-gray-400">Blocked</div>
+                    <div className={cn(
+                      "text-xs",
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    )}>Blocked</div>
                   </div>
                   <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
                     <div className="text-2xl font-bold text-purple-400">{currentRPS}</div>
-                    <div className="text-xs text-gray-400">Requests/sec</div>
+                    <div className={cn(
+                      "text-xs",
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    )}>Requests/sec</div>
                   </div>
                   <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
                     <div className="text-2xl font-bold text-orange-400">{particles.length}</div>
-                    <div className="text-xs text-gray-400">Active Packets</div>
+                    <div className={cn(
+                      "text-xs",
+                      isDark ? "text-gray-400" : "text-gray-600"
+                    )}>Active Packets</div>
                   </div>
                 </div>
 
                 {/* Block Rate */}
                 {blockedRequests > 0 && totalRequests > 0 && (
-                  <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark
+                      ? "bg-slate-800/50 border-slate-700/50"
+                      : "bg-gray-100 border-gray-300"
+                  )}>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-400">Block Rate</span>
+                      <span className={cn(
+                        "text-sm",
+                        isDark ? "text-gray-400" : "text-gray-600"
+                      )}>Block Rate</span>
                       <span className="text-sm font-bold text-green-400">
                         {((blockedRequests / totalRequests) * 100).toFixed(1)}%
                       </span>
@@ -961,9 +1062,17 @@ export default function DDoSSimulator() {
             </Card>
 
             {/* Achievements Panel */}
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur">
+            <Card className={cn(
+              "backdrop-blur border",
+              isDark
+                ? "bg-slate-900/50 border-slate-700/50"
+                : "bg-white/80 border-gray-200"
+            )}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
+                <CardTitle className={cn(
+                  "flex items-center gap-2",
+                  isDark ? "text-white" : "text-gray-900"
+                )}>
                   <Award className="w-5 h-5" />
                   Achievements
                 </CardTitle>
@@ -980,19 +1089,27 @@ export default function DDoSSimulator() {
                         'p-3 rounded-lg border transition-all',
                         achievement.unlocked
                           ? 'bg-linear-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
-                          : 'bg-slate-800/30 border-slate-700/30 opacity-50'
+                          : isDark
+                            ? 'bg-slate-800/30 border-slate-700/30 opacity-50'
+                            : 'bg-gray-100 border-gray-300 opacity-50'
                       )}
                     >
                       <div className="flex items-start gap-2">
                         <span className="text-2xl">{achievement.icon}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-white flex items-center gap-2">
+                          <div className={cn(
+                            "text-sm font-semibold flex items-center gap-2",
+                            isDark ? "text-white" : "text-gray-900"
+                          )}>
                             {achievement.title}
                             {achievement.unlocked && (
                               <ShieldCheck className="w-4 h-4 text-yellow-400" />
                             )}
                           </div>
-                          <div className="text-xs text-gray-400">{achievement.description}</div>
+                          <div className={cn(
+                            "text-xs",
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          )}>{achievement.description}</div>
                         </div>
                       </div>
                     </div>
@@ -1004,10 +1121,18 @@ export default function DDoSSimulator() {
 
           {/* Visualization Panel */}
           <div className="lg:col-span-2">
-            <Card className="bg-slate-900/50 border-slate-700/50 backdrop-blur h-full">
+            <Card className={cn(
+              "backdrop-blur h-full border",
+              isDark
+                ? "bg-slate-900/50 border-slate-700/50"
+                : "bg-white/80 border-gray-200"
+            )}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-white">
+                  <CardTitle className={cn(
+                    "flex items-center gap-2",
+                    isDark ? "text-white" : "text-gray-900"
+                  )}>
                     <Target className="w-5 h-5" />
                     Network Visualization
                   </CardTitle>
@@ -1029,12 +1154,20 @@ export default function DDoSSimulator() {
                 {/* Server Health Bar */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-300">Server Health</span>
+                    <span className={cn(
+                      "text-sm font-medium",
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    )}>Server Health</span>
                     <span className={cn('text-sm font-bold', serverStatus.color)}>
                       {Math.floor(serverHealth)}%
                     </span>
                   </div>
-                  <div className="h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                  <div className={cn(
+                    "h-3 rounded-full overflow-hidden border",
+                    isDark 
+                      ? "bg-slate-800 border-slate-700" 
+                      : "bg-gray-200 border-gray-300"
+                  )}>
                     <motion.div
                       className={cn('h-full transition-all duration-300', serverStatus.bg)}
                       style={{ width: `${serverHealth}%` }}
@@ -1050,7 +1183,12 @@ export default function DDoSSimulator() {
                 </div>
 
                 {/* Visualization Area */}
-                <div className="relative w-full aspect-video bg-slate-950 rounded-lg border-2 border-slate-800 overflow-hidden">
+                <div className={cn(
+                  "relative w-full aspect-video rounded-lg border-2 overflow-hidden",
+                  isDark
+                    ? "bg-slate-950 border-slate-800"
+                    : "bg-gray-100 border-gray-300"
+                )}>
                   {/* Background Grid */}
                   <div className="absolute inset-0 opacity-10">
                     <svg width="100%" height="100%">
@@ -1250,24 +1388,45 @@ export default function DDoSSimulator() {
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center"
                       >
-                        <div className="text-center p-8 bg-slate-900/90 rounded-2xl border-2 border-red-500/50 shadow-2xl max-w-md">
+                        <div className={cn(
+                          "text-center p-8 rounded-2xl border-2 border-red-500/50 shadow-2xl max-w-md",
+                          isDark ? "bg-slate-900/90" : "bg-white/95"
+                        )}>
                           <WifiOff className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                          <h3 className="text-2xl font-bold text-white mb-2">Server Offline</h3>
-                          <p className="text-gray-400 mb-4">
+                          <h3 className={cn(
+                            "text-2xl font-bold mb-2",
+                            isDark ? "text-white" : "text-gray-900"
+                          )}>Server Offline</h3>
+                          <p className={cn(
+                            "mb-4",
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          )}>
                             The server was overwhelmed by the DDoS attack!
                           </p>
                           <div className="grid grid-cols-2 gap-4 mb-6">
-                            <div className="p-4 bg-slate-800/50 rounded-lg">
+                            <div className={cn(
+                              "p-4 rounded-lg",
+                              isDark ? "bg-slate-800/50" : "bg-gray-100"
+                            )}>
                               <div className="text-3xl font-bold text-orange-400">
                                 {survivalTime}s
                               </div>
-                              <div className="text-sm text-gray-400">Survival Time</div>
+                              <div className={cn(
+                                "text-sm",
+                                isDark ? "text-gray-400" : "text-gray-600"
+                              )}>Survival Time</div>
                             </div>
-                            <div className="p-4 bg-slate-800/50 rounded-lg">
+                            <div className={cn(
+                              "p-4 rounded-lg",
+                              isDark ? "bg-slate-800/50" : "bg-gray-100"
+                            )}>
                               <div className="text-3xl font-bold text-green-400">
                                 {blockedRequests}
                               </div>
-                              <div className="text-sm text-gray-400">Blocked</div>
+                              <div className={cn(
+                                "text-sm",
+                                isDark ? "text-gray-400" : "text-gray-600"
+                              )}>Blocked</div>
                             </div>
                           </div>
                           {survivalTime === highScore && highScore > 0 && (
@@ -1296,7 +1455,9 @@ export default function DDoSSimulator() {
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: attack.color }}
                       />
-                      <span className="text-gray-400">{attack.name}</span>
+                      <span className={cn(
+                        isDark ? "text-gray-400" : "text-gray-600"
+                      )}>{attack.name}</span>
                     </div>
                   ))}
                 </div>
@@ -1306,17 +1467,34 @@ export default function DDoSSimulator() {
         </div>
 
         {/* Educational Tips */}
-        <Card className="bg-linear-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20 backdrop-blur">
+        <Card className={cn(
+          "border backdrop-blur",
+          isDark 
+            ? "bg-linear-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20" 
+            : "bg-linear-to-br from-blue-50 to-purple-50 border-blue-200"
+        )}>
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center shrink-0">
-                <Shield className="w-5 h-5 text-blue-400" />
+              <div className={cn(
+                "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                isDark ? "bg-blue-500/20" : "bg-blue-100"
+              )}>
+                <Shield className={cn(
+                  "w-5 h-5",
+                  isDark ? "text-blue-400" : "text-blue-600"
+                )} />
               </div>
               <div>
-                <h3 className="font-semibold text-white mb-2">
+                <h3 className={cn(
+                  "font-semibold mb-2",
+                  isDark ? "text-white" : "text-gray-900"
+                )}>
                   How to Protect Against DDoS Attacks
                 </h3>
-                <ul className="text-sm text-gray-300 space-y-1">
+                <ul className={cn(
+                  "text-sm space-y-1",
+                  isDark ? "text-gray-300" : "text-gray-700"
+                )}>
                   <li>• Use CDN services like Cloudflare, Akamai, or AWS CloudFront</li>
                   <li>• Implement rate limiting and traffic filtering</li>
                   <li>• Deploy load balancers and auto-scaling infrastructure</li>
