@@ -745,7 +745,10 @@ export default function PacketJourney() {
           </div>
 
           {/* Main Playback Controls */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 {cn("border-t", isDark ? "border-slate-700" : "border-gray-200")}">
+          <div className={cn(
+            "flex flex-wrap items-center gap-2 pt-2 border-t",
+            isDark ? "border-slate-700" : "border-gray-200"
+          )}>
             {manualMode ? (
               <>
                 <Button
@@ -822,7 +825,7 @@ export default function PacketJourney() {
           </div>
 
           {/* Advanced Options - Collapsible */}
-          <div className="pt-2 border-t border-slate-700">
+          <div className={cn("pt-2 border-t", isDark ? "border-slate-700" : "border-gray-200")}>
             <Button
               size="sm"
               variant="ghost"
