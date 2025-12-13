@@ -3,8 +3,8 @@
   "title": "Git Workflow and Collaboration Fundamentals",
   "description": "Master essential Git workflows, branching strategies, and collaboration techniques used in modern development teams.",
   "category": {
-    "name": "Version Control",
-    "slug": "version-control"
+    "name": "Git",
+    "slug": "git"
   },
   "difficulty": "beginner",
   "estimatedTime": "50 minutes",
