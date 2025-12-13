@@ -3,8 +3,8 @@
   "title": "AWS VPC with Terraform",
   "description": "Build a complete AWS VPC infrastructure using Terraform with public/private subnets, NAT gateway, and security groups.",
   "category": {
-    "name": "Infrastructure as Code",
-    "slug": "infrastructure-as-code"
+    "name": "Terraform",
+    "slug": "terraform"
   },
   "difficulty": "intermediate",
   "estimatedTime": "120 minutes",

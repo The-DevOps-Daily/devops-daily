@@ -3,8 +3,8 @@
   "title": "Deploy a DigitalOcean Droplet with Terraform",
   "description": "Learn Infrastructure as Code basics by deploying a simple web server on DigitalOcean using Terraform. Perfect for beginners starting their IaC journey.",
   "category": {
-    "name": "Infrastructure as Code",
-    "slug": "infrastructure-as-code"
+    "name": "Terraform",
+    "slug": "terraform"
   },
   "difficulty": "beginner",
   "estimatedTime": "60 minutes",
