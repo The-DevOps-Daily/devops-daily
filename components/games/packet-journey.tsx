@@ -1217,7 +1217,7 @@ export default function PacketJourney() {
                         textAnchor="middle"
                         className={cn(
                           "text-[1.5px] font-bold pointer-events-none",
-                          isDark ? "fill-cyan-300" : "fill-gray-900"
+                          isDark ? "fill-cyan-300" : "fill-cyan-600"
                         )}
                         style={{ userSelect: 'none' }}
                       >
