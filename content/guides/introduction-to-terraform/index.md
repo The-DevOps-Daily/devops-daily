@@ -2,8 +2,8 @@
 title: Introduction to Terraform
 description: Learn how to manage infrastructure as code with Terraform, from basic concepts to production-ready configurations
 category:
-  name: Infrastructure as Code
-  slug: infrastructure-as-code
+  name: Terraform
+  slug: terraform
 publishedAt: '2025-04-28'
 updatedAt: '2025-04-28'
 author:
