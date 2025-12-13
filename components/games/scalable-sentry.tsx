@@ -28,6 +28,7 @@ import {
   Flame,
   CircleDot,
   Home,
+  HelpCircle,
 } from 'lucide-react';
 
 // --- Game Constants & Config ---
@@ -1429,45 +1430,392 @@ export default function ScalableSentry() {
           ? "bg-slate-900/50 border-slate-800" 
           : "bg-white border-gray-200"
       )}>
-        <h3 className={cn(
-          "text-xs sm:text-sm font-bold mb-2 flex items-center gap-2",
-          isDark ? "text-slate-300" : "text-gray-900"
-        )}>
-          <Activity size={14} className={cn(
-            isDark ? "text-blue-400" : "text-blue-600"
-          )} />
-          How to Play
-        </h3>
-        <div className={cn(
-          "grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-[10px] sm:text-[11px]",
-          isDark ? "text-slate-400" : "text-gray-700"
-        )}>
-          <div className="flex gap-2">
-            <span className="text-emerald-400">💰</span>
-            <span><strong>Deploy:</strong> Drag servers from below onto the field</span>
+        <div className="space-y-6">
+          {/* Header */}
+          <div>
+            <h3 className={cn(
+              "text-lg sm:text-xl font-bold flex items-center gap-2 mb-2",
+              isDark ? "text-white" : "text-gray-900"
+            )}>
+              <HelpCircle size={20} className="text-blue-500" />
+              Game Instructions
+            </h3>
+            <p className={cn(
+              "text-xs sm:text-sm",
+              isDark ? "text-slate-400" : "text-gray-600"
+            )}>Learn about servers, traffic types, and strategies to defend your infrastructure</p>
           </div>
-          <div className="flex gap-2">
-            <span className="text-blue-400">🎯</span>
-            <span><strong>Target:</strong> Click servers to select and configure targeting</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-purple-400">⚡</span>
-            <span><strong>Upgrade:</strong> Level up selected servers for more power</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-orange-400">🛡️</span>
-            <span><strong>Defend:</strong> Protect the base (right side) from traffic</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-red-400">👾</span>
-            <span><strong>Boss:</strong> Every 5th wave spawns a powerful Monolith</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="text-sky-400">❄️</span>
-            <span><strong>Abilities:</strong> Use Rate Limit ($200) to freeze traffic</span>
+
+          {/* Content */}
+          <div className="space-y-6">
+              {/* Server Types Section */}
+              <section>
+                <h3 className={cn(
+                  "text-xl font-bold mb-4 flex items-center gap-2",
+                  isDark ? "text-blue-400" : "text-blue-600"
+                )}>
+                  <Server size={24} />
+                  Server Types
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* API Node */}
+                  <div className={cn(
+                    "p-4 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Server size={20} color="#6366f1" />
+                      <h4 className={cn(
+                        "font-bold text-lg",
+                        isDark ? "text-white" : "text-gray-900"
+                      )}>API Node <span className="text-emerald-400">$100</span></h4>
+                    </div>
+                    <p className={cn(
+                      "text-sm mb-3",
+                      isDark ? "text-slate-300" : "text-gray-700"
+                    )}>Balanced general-purpose defense server</p>
+                    <div className={cn(
+                      "text-xs space-y-1",
+                      isDark ? "text-slate-400" : "text-gray-600"
+                    )}>
+                      <div><strong>Range:</strong> 150px | <strong>Power:</strong> 2.5 | <strong>Cooling:</strong> 0.6s</div>
+                      <div><strong>Heat Gen:</strong> 0.8 (Medium)</div>
+                      <div className="text-green-500"><strong>✓ Good Against:</strong> HTTP, balanced traffic</div>
+                      <div className="text-red-500"><strong>✗ Struggles With:</strong> High-volume DDoS, bosses</div>
+                      <div className={cn("mt-2 pt-2 border-t", isDark ? "border-slate-700" : "border-gray-200")}>
+                        <strong className="text-blue-400">💡 Strategy:</strong> Use as your foundation. Affordable and reliable for early waves.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Redis Cache */}
+                  <div className={cn(
+                    "p-4 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Layers size={20} color="#ec4899" />
+                      <h4 className={cn(
+                        "font-bold text-lg",
+                        isDark ? "text-white" : "text-gray-900"
+                      )}>Redis Cache <span className="text-emerald-400">$150</span></h4>
+                    </div>
+                    <p className={cn(
+                      "text-sm mb-3",
+                      isDark ? "text-slate-300" : "text-gray-700"
+                    )}>Fast-firing cache layer excellent for volume attacks</p>
+                    <div className={cn(
+                      "text-xs space-y-1",
+                      isDark ? "text-slate-400" : "text-gray-600"
+                    )}>
+                      <div><strong>Range:</strong> 110px | <strong>Power:</strong> 1.5 | <strong>Cooling:</strong> 1.5s</div>
+                      <div><strong>Heat Gen:</strong> 0.4 (Low)</div>
+                      <div className="text-green-500"><strong>✓ Good Against:</strong> DDoS swarms, multiple small requests</div>
+                      <div className="text-red-500"><strong>✗ Struggles With:</strong> Heavy SQL, Monoliths</div>
+                      <div className={cn("mt-2 pt-2 border-t", isDark ? "border-slate-700" : "border-gray-200")}>
+                        <strong className="text-blue-400">💡 Strategy:</strong> Deploy near spawn points to catch DDoS early. Low heat means continuous fire.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Postgres DB */}
+                  <div className={cn(
+                    "p-4 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Database size={20} color="#f59e0b" />
+                      <h4 className={cn(
+                        "font-bold text-lg",
+                        isDark ? "text-white" : "text-gray-900"
+                      )}>Postgres DB <span className="text-emerald-400">$300</span></h4>
+                    </div>
+                    <p className={cn(
+                      "text-sm mb-3",
+                      isDark ? "text-slate-300" : "text-gray-700"
+                    )}>Heavy-hitting database with massive damage output</p>
+                    <div className={cn(
+                      "text-xs space-y-1",
+                      isDark ? "text-slate-400" : "text-gray-600"
+                    )}>
+                      <div><strong>Range:</strong> 200px | <strong>Power:</strong> 15 | <strong>Cooling:</strong> 0.3s</div>
+                      <div><strong>Heat Gen:</strong> 3.5 (Very High)</div>
+                      <div className="text-green-500"><strong>✓ Good Against:</strong> Monoliths, Heavy SQL, boss waves</div>
+                      <div className="text-red-500"><strong>✗ Struggles With:</strong> Fast DDoS swarms, overheats quickly</div>
+                      <div className={cn("mt-2 pt-2 border-t", isDark ? "border-slate-700" : "border-gray-200")}>
+                        <strong className="text-blue-400">💡 Strategy:</strong> Essential for bosses. Place strategically and manage heat carefully.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Security Group */}
+                  <div className={cn(
+                    "p-4 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lock size={20} color="#06b6d4" />
+                      <h4 className={cn(
+                        "font-bold text-lg",
+                        isDark ? "text-white" : "text-gray-900"
+                      )}>Sec Group <span className="text-emerald-400">$200</span></h4>
+                    </div>
+                    <p className={cn(
+                      "text-sm mb-3",
+                      isDark ? "text-slate-300" : "text-gray-700"
+                    )}>Firewall that slows down incoming traffic</p>
+                    <div className={cn(
+                      "text-xs space-y-1",
+                      isDark ? "text-slate-400" : "text-gray-600"
+                    )}>
+                      <div><strong>Range:</strong> 130px | <strong>Power:</strong> 0.5 | <strong>Effect:</strong> Slows traffic</div>
+                      <div><strong>Heat Gen:</strong> 0.5 (Low)</div>
+                      <div className="text-green-500"><strong>✓ Good Against:</strong> Fast targets, buying time</div>
+                      <div className="text-red-500"><strong>✗ Struggles With:</strong> Low damage output</div>
+                      <div className={cn("mt-2 pt-2 border-t", isDark ? "border-slate-700" : "border-gray-200")}>
+                        <strong className="text-blue-400">💡 Strategy:</strong> Place early in path to slow all traffic, giving damage dealers more time.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Prometheus */}
+                  <div className={cn(
+                    "p-4 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <MonitorCheck size={20} color="#10b981" />
+                      <h4 className={cn(
+                        "font-bold text-lg",
+                        isDark ? "text-white" : "text-gray-900"
+                      )}>Prometheus <span className="text-emerald-400">$400</span></h4>
+                    </div>
+                    <p className={cn(
+                      "text-sm mb-3",
+                      isDark ? "text-slate-300" : "text-gray-700"
+                    )}>Observability tool that boosts nearby servers</p>
+                    <div className={cn(
+                      "text-xs space-y-1",
+                      isDark ? "text-slate-400" : "text-gray-600"
+                    )}>
+                      <div><strong>Range:</strong> 250px | <strong>Power:</strong> 0 | <strong>Effect:</strong> +50% damage boost to nearby servers</div>
+                      <div><strong>Heat Gen:</strong> 0.2 (Very Low)</div>
+                      <div className="text-green-500"><strong>✓ Good Against:</strong> Amplifying existing defenses</div>
+                      <div className="text-red-500"><strong>✗ Struggles With:</strong> No direct damage</div>
+                      <div className={cn("mt-2 pt-2 border-t", isDark ? "border-slate-700" : "border-gray-200")}>
+                        <strong className="text-blue-400">💡 Strategy:</strong> Place centrally to boost multiple servers. Essential for late game.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Traffic Types */}
+              <section>
+                <h3 className={cn(
+                  "text-xl font-bold mb-4 flex items-center gap-2",
+                  isDark ? "text-purple-400" : "text-purple-600"
+                )}>
+                  <AlertTriangle size={24} />
+                  Traffic Types
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1", isDark ? "text-white" : "text-gray-900")}>
+                      HTTP Request <span className="text-gray-400">(White)</span>
+                    </div>
+                    <div className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      <strong>HP:</strong> 100 | <strong>Speed:</strong> 1.5 | <strong>Score:</strong> 10<br />
+                      Standard web traffic. Balanced and common.
+                    </div>
+                  </div>
+
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1", isDark ? "text-white" : "text-gray-900")}>
+                      DDoS Attack <span className="text-red-400">(Red)</span>
+                    </div>
+                    <div className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      <strong>HP:</strong> 35 | <strong>Speed:</strong> 3.8 | <strong>Score:</strong> 6<br />
+                      Fast, low-health swarms. Dangerous in numbers.
+                    </div>
+                  </div>
+
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1", isDark ? "text-white" : "text-gray-900")}>
+                      Heavy SQL <span className="text-yellow-400">(Yellow)</span>
+                    </div>
+                    <div className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      <strong>HP:</strong> 700 | <strong>Speed:</strong> 0.6 | <strong>Score:</strong> 50<br />
+                      Slow but tanky. Requires heavy firepower.
+                    </div>
+                  </div>
+
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1", isDark ? "text-white" : "text-gray-900")}>
+                      TLS Handshake <span className="text-green-400">(Green)</span>
+                    </div>
+                    <div className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      <strong>HP:</strong> 250 | <strong>Speed:</strong> 1.2 | <strong>Score:</strong> 20<br />
+                      Encrypted traffic. 25% damage reduction vs servers.
+                    </div>
+                  </div>
+
+                  <div className={cn(
+                    "p-3 rounded-lg border border-purple-500",
+                    isDark ? "bg-purple-900/20" : "bg-purple-50"
+                  )}>
+                    <div className={cn("font-bold mb-1", isDark ? "text-white" : "text-gray-900")}>
+                      The Monolith <span className="text-purple-400">(Purple)</span>
+                    </div>
+                    <div className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      <strong>HP:</strong> 5000 | <strong>Speed:</strong> 0.3 | <strong>Score:</strong> 1000<br />
+                      <strong className="text-red-500">BOSS WAVE!</strong> Spawns every 5 waves. Massive HP and score.
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Game Mechanics */}
+              <section>
+                <h3 className={cn(
+                  "text-xl font-bold mb-4 flex items-center gap-2",
+                  isDark ? "text-orange-400" : "text-orange-600"
+                )}>
+                  <Cpu size={24} />
+                  Game Mechanics
+                </h3>
+                <div className="space-y-3">
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1 flex items-center gap-2", isDark ? "text-white" : "text-gray-900")}>
+                      <Flame size={16} className="text-red-500" />
+                      Heat Management
+                    </div>
+                    <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      Each server generates heat when firing. At 100 heat, the server enters "rebooting" status and stops working temporarily. 
+                      Servers cool down over time. High-power servers like Postgres DB generate more heat.
+                    </p>
+                  </div>
+
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1 flex items-center gap-2", isDark ? "text-white" : "text-gray-900")}>
+                      <Crosshair size={16} className="text-blue-500" />
+                      Targeting Modes
+                    </div>
+                    <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      Click a server to select it, then toggle targeting priority:<br />
+                      <strong>• Nearest:</strong> Targets closest traffic (default)<br />
+                      <strong>• Strongest:</strong> Focuses on high-HP targets<br />
+                      <strong>• Weakest:</strong> Cleans up low-HP targets quickly
+                    </p>
+                  </div>
+
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1 flex items-center gap-2", isDark ? "text-white" : "text-gray-900")}>
+                      <ArrowUpCircle size={16} className="text-purple-500" />
+                      Upgrades
+                    </div>
+                    <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      Upgrade servers to increase power, range, and reduce heat generation. Cost increases with each level. 
+                      Upgrading is usually more efficient than deploying new servers.
+                    </p>
+                  </div>
+
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1 flex items-center gap-2", isDark ? "text-white" : "text-gray-900")}>
+                      <Snowflake size={16} className="text-sky-500" />
+                      Freeze Ability ($200)
+                    </div>
+                    <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      Temporarily freezes all traffic on screen for 5 seconds. Use during overwhelming waves or boss spawns.
+                    </p>
+                  </div>
+
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800 border-slate-700" : "bg-gray-50 border-gray-200"
+                  )}>
+                    <div className={cn("font-bold mb-1 flex items-center gap-2", isDark ? "text-white" : "text-gray-900")}>
+                      <TrendingUp size={16} className="text-indigo-500" />
+                      Autoscaler ($350)
+                    </div>
+                    <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                      Deploys temporary boosted servers across the field. They last for 60 seconds. Has cooldown after use.
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Strategy Tips */}
+              <section>
+                <h3 className={cn(
+                  "text-xl font-bold mb-4 flex items-center gap-2",
+                  isDark ? "text-green-400" : "text-green-600"
+                )}>
+                  <Sparkles size={24} />
+                  Strategy Tips
+                </h3>
+                <div className={cn(
+                  "space-y-2 text-sm",
+                  isDark ? "text-slate-300" : "text-gray-700"
+                )}>
+                  <div className="flex gap-2">
+                    <span className="text-emerald-400">1.</span>
+                    <span><strong>Start Simple:</strong> Deploy 2-3 API Nodes early for steady income</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-emerald-400">2.</span>
+                    <span><strong>Plan Ahead:</strong> Save budget for boss waves (every 5 waves). Have Postgres DB ready.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-emerald-400">3.</span>
+                    <span><strong>Layered Defense:</strong> Place Sec Groups early, damage dealers in middle, Prometheus centrally</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-emerald-400">4.</span>
+                    <span><strong>Heat Management:</strong> Don't over-deploy high-heat servers. Space them out.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-emerald-400">5.</span>
+                    <span><strong>Upgrade Focus:</strong> Upgrade existing servers rather than building new ones when possible</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-emerald-400">6.</span>
+                    <span><strong>DDoS Response:</strong> Redis Cache excels against swarms. Deploy 2-3 near spawn points.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-emerald-400">7.</span>
+                    <span><strong>Use Abilities:</strong> Save Freeze for emergencies. Autoscaler is great for boss waves.</span>
+                  </div>
+                </div>
+              </section>
           </div>
         </div>
       </div>
+
         </div>
       </div>
     </div>
