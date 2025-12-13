@@ -609,7 +609,12 @@ export default function PacketJourney() {
           <motion.div
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{ opacity: 1, scaleX: 1 }}
-            className="bg-slate-800/50 border border-slate-700 rounded-lg p-3 backdrop-blur"
+            className={cn(
+            "border rounded-lg p-3 backdrop-blur",
+            isDark
+              ? "bg-slate-800/50 border-slate-700"
+              : "bg-white/80 border-gray-200"
+          )}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">
@@ -619,7 +624,10 @@ export default function PacketJourney() {
                 {(stageProgress * 100).toFixed(0)}% complete
               </span>
             </div>
-            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div className={cn(
+              "h-2 rounded-full overflow-hidden",
+              isDark ? "bg-slate-700" : "bg-gray-200"
+            )}>
               <motion.div
                 className="h-full bg-linear-to-r from-cyan-500 to-blue-500"
                 initial={{ width: 0 }}
@@ -735,7 +743,7 @@ export default function PacketJourney() {
           </div>
 
           {/* Main Playback Controls */}
-          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-700">
+          <div className="flex flex-wrap items-center gap-2 pt-2 {cn("border-t", isDark ? "border-slate-700" : "border-gray-200")}">
             {manualMode ? (
               <>
                 <Button
@@ -882,7 +890,12 @@ export default function PacketJourney() {
         {/* Main Visualization Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Journey Visualization */}
-          <Card className="lg:col-span-2 bg-slate-800/50 border-slate-700 backdrop-blur">
+          <Card className={cn(
+            "lg:col-span-2 backdrop-blur",
+            isDark
+              ? "bg-slate-800/50 border-slate-700"
+              : "bg-white/80 border-gray-200"
+          )}>
             <CardHeader className="pb-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
