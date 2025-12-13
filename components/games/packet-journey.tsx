@@ -1213,12 +1213,16 @@ export default function PacketJourney() {
 
                       {/* Data packet label */}
                       <text
-                        y="-2.5"
-                        textAnchor="middle"
+                        x="2.5"
+                        y="0.5"
+                        textAnchor="start"
                         className={cn(
                           "text-[1.5px] font-bold pointer-events-none",
                           isDark ? "fill-cyan-300" : "fill-cyan-600"
                         )}
+                        stroke={isDark ? "#000" : "#fff"}
+                        strokeWidth="0.15"
+                        paintOrder="stroke"
                         style={{ userSelect: 'none' }}
                       >
                         DATA
