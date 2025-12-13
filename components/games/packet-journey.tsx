@@ -1149,7 +1149,13 @@ export default function PacketJourney() {
                           textAnchor="end"
                           className={cn(
                             "text-[2.5px] font-semibold pointer-events-none transition-all",
-                            isActive ? "fill-white" : isPassed ? "fill-cyan-400" : "fill-slate-400"
+                            isActive
+                              ? "fill-white"
+                              : isPassed
+                                ? "fill-cyan-400"
+                                : isDark
+                                  ? "fill-slate-400"
+                                  : "fill-gray-600"
                           )}
                           style={{ userSelect: 'none' }}
                         >
@@ -1161,7 +1167,10 @@ export default function PacketJourney() {
                           x={stage.x + 8}
                           y={stage.y + 1}
                           textAnchor="start"
-                          className="fill-slate-500 text-[2px] pointer-events-none"
+                          className={cn(
+                            "text-[2px] pointer-events-none",
+                            isDark ? "fill-slate-500" : "fill-gray-600"
+                          )}
                           style={{ userSelect: 'none' }}
                         >
                           {stage.duration}ms
@@ -1203,7 +1212,10 @@ export default function PacketJourney() {
                       <text
                         y="-2.5"
                         textAnchor="middle"
-                        className="fill-cyan-300 text-[1.5px] font-bold pointer-events-none"
+                        className={cn(
+                          "text-[1.5px] font-bold pointer-events-none",
+                          isDark ? "fill-cyan-300" : "fill-blue-600"
+                        )}
                         style={{ userSelect: 'none' }}
                       >
                         DATA
