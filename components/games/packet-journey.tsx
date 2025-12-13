@@ -979,7 +979,12 @@ export default function PacketJourney() {
             </CardHeader>
             <CardContent>
               {/* SVG Canvas - Redesigned for clarity */}
-              <div className="relative w-full bg-linear-to-br from-slate-900 to-slate-800 rounded-lg border border-slate-700 overflow-hidden min-h-[400px] sm:min-h-[600px]">
+              <div className={cn(
+                "relative w-full rounded-lg border overflow-hidden min-h-[400px] sm:min-h-[600px]",
+                isDark
+                  ? "bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700"
+                  : "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300"
+              )}>
                 <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     {/* Gradient for the path */}
@@ -1296,23 +1301,33 @@ export default function PacketJourney() {
                 )}
 
                 {/* Legend */}
-                <div className="absolute bottom-2 left-2 bg-slate-800/90 backdrop-blur px-3 py-2 rounded-lg border border-slate-600 text-xs">
+                <div className={cn(
+                  "absolute bottom-2 left-2 backdrop-blur px-3 py-2 rounded-lg border text-xs",
+                  isDark
+                    ? "bg-slate-800/90 border-slate-600"
+                    : "bg-white/90 border-gray-300"
+                )}>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-slate-600 border border-slate-500"></div>
-                      <span className="text-slate-400">Pending</span>
+                      <div className={cn(
+                        "w-3 h-3 rounded-full border",
+                        isDark
+                          ? "bg-slate-600 border-slate-500"
+                          : "bg-gray-400 border-gray-500"
+                      )}></div>
+                      <span className={cn(isDark ? "text-slate-400" : "text-gray-700")}>Pending</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-cyan-500 border border-cyan-400 animate-pulse"></div>
-                      <span className="text-slate-300">Active</span>
+                      <span className={cn(isDark ? "text-slate-300" : "text-gray-700")}>Active</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-cyan-500 border border-cyan-400"></div>
-                      <span className="text-slate-300">Complete</span>
+                      <span className={cn(isDark ? "text-slate-300" : "text-gray-700")}>Complete</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-3 h-3 rounded-full bg-red-500 border border-red-400"></div>
-                      <span className="text-slate-300">Failed</span>
+                      <span className={cn(isDark ? "text-slate-300" : "text-gray-700")}>Failed</span>
                     </div>
                   </div>
                 </div>
