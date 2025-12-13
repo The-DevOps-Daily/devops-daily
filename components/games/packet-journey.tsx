@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -223,6 +224,9 @@ const allStages: Record<string, Omit<JourneyStage, 'x' | 'y'>> = {
 };
 
 export default function PacketJourney() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   const [scenario, setScenario] = useState<ScenarioType>('https-cdn');
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -503,19 +507,32 @@ export default function PacketJourney() {
   }, [currentStageIndex, stageProgress, journeyStages, isReturning]);
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-900 via-blue-900 to-slate-900 text-white p-4">
+    <div className={cn(
+      "min-h-screen p-4",
+      isDark
+        ? "bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white"
+        : "bg-gradient-to-br from-blue-50 via-white to-cyan-50 text-gray-900"
+    )}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-slate-400 mb-6">
+        <nav className={cn(
+          "flex items-center space-x-2 text-sm mb-6",
+          isDark ? "text-slate-400" : "text-gray-600"
+        )}>
           <Link
             href="/games"
-            className="hover:text-cyan-400 transition-colors flex items-center gap-1"
+            className={cn(
+              "transition-colors flex items-center gap-1",
+              isDark ? "hover:text-cyan-400" : "hover:text-blue-600"
+            )}
           >
             <Home className="w-4 h-4" />
             Games
           </Link>
           <span>/</span>
-          <span className="text-slate-200">Network Packet Journey</span>
+          <span className={cn(
+            isDark ? "text-slate-200" : "text-gray-900"
+          )}>Network Packet Journey</span>
         </nav>
 
         {/* Header */}
@@ -525,7 +542,10 @@ export default function PacketJourney() {
               <Sparkles className="w-8 h-8 text-cyan-400" />
               Network Packet Journey
             </h1>
-            <p className="text-slate-300 mt-2">
+            <p className={cn(
+              "mt-2",
+              isDark ? "text-slate-300" : "text-gray-600"
+            )}>
               Follow a packet through the entire network stack - from browser to database and back!
             </p>
           </div>
@@ -534,7 +554,11 @@ export default function PacketJourney() {
               variant="outline"
               size="sm"
               onClick={() => setShowEducation(!showEducation)}
-              className="bg-blue-500/20 border-blue-400 hover:bg-blue-500/30"
+              className={cn(
+                isDark
+                  ? "bg-blue-500/20 border-blue-400 hover:bg-blue-500/30 text-white"
+                  : "bg-blue-50 border-blue-300 hover:bg-blue-100 text-blue-700"
+              )}
             >
               <Info className="w-4 h-4 mr-2" />
               Learn
@@ -543,7 +567,11 @@ export default function PacketJourney() {
               variant="outline"
               size="sm"
               asChild
-              className="bg-slate-700 border-slate-600 hover:bg-slate-600"
+              className={cn(
+                isDark
+                  ? "bg-slate-700 border-slate-600 hover:bg-slate-600 text-white"
+                  : "bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700"
+              )}
             >
               <Link href="/games">
                 <Home className="w-4 h-4 mr-2" />
@@ -610,7 +638,11 @@ export default function PacketJourney() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Alert className="bg-blue-500/10 border-blue-400">
+              <Alert className={cn(
+                isDark
+                  ? "bg-blue-500/10 border-blue-400 text-white"
+                  : "bg-blue-50 border-blue-300 text-gray-900"
+              )}>
                 <Info className="h-4 w-4" />
                 <AlertDescription className="text-sm">
                   <strong>How it works:</strong> Watch as a single HTTP/HTTPS request travels through multiple layers:
@@ -625,12 +657,20 @@ export default function PacketJourney() {
         </AnimatePresence>
 
         {/* Compact Controls */}
-        <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 backdrop-blur space-y-3">
+        <div className={cn(
+          "border rounded-lg p-4 backdrop-blur space-y-3",
+          isDark
+            ? "bg-slate-800/50 border-slate-700"
+            : "bg-white/80 border-gray-200"
+        )}>
           {/* Top Row: Scenario + Mode + Actions */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 flex-wrap">
             {/* Scenario Selection - Compact Badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-slate-400">Scenario:</span>
+              <span className={cn(
+                "text-sm font-medium",
+                isDark ? "text-slate-400" : "text-gray-600"
+              )}>Scenario:</span>
               {(Object.keys(scenarios) as ScenarioType[]).map((key) => (
                 <Badge
                   key={key}
@@ -638,8 +678,12 @@ export default function PacketJourney() {
                   className={cn(
                     'cursor-pointer px-3 py-1.5 transition-all',
                     scenario === key
-                      ? 'bg-blue-600 border-blue-400 hover:bg-blue-700 text-white'
-                      : 'bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-300'
+                      ? isDark
+                        ? 'bg-blue-600 border-blue-400 hover:bg-blue-700 text-white'
+                        : 'bg-blue-500 border-blue-400 hover:bg-blue-600 text-white'
+                      : isDark
+                        ? 'bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-300'
+                        : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700'
                   )}
                   variant={scenario === key ? 'default' : 'outline'}
                 >
@@ -650,7 +694,7 @@ export default function PacketJourney() {
 
             {/* Mode Toggle - Inline */}
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-sm text-slate-400">Mode:</span>
+              <span className={cn("text-sm", isDark ? "text-slate-400" : "text-gray-600")}>Mode:</span>
               <Button
                 size="sm"
                 onClick={() => {
@@ -662,9 +706,11 @@ export default function PacketJourney() {
                   'h-8',
                   manualMode
                     ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-slate-700 border-slate-600 hover:bg-slate-600'
-                )}
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : isDark
               >
+                      ? 'bg-slate-700 border-slate-600 hover:bg-slate-600 text-slate-300'
+                      : 'bg-gray-100 border-gray-300 hover:bg-gray-200 text-gray-700'
                 <Layers className="w-3 h-3 mr-1" />
                 Step-by-Step
               </Button>
