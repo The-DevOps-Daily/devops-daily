@@ -2,8 +2,8 @@
 title: 'Introduction to Git'
 description: 'A guide to understanding and learning Git version control'
 category:
-  name: 'Version Control'
-  slug: 'version-control'
+  name: 'Git'
+  slug: 'git'
 parts: 10
 publishedAt: '2024-06-03T10:00:00Z'
 updatedAt: '2024-06-03T12:00:00Z'
