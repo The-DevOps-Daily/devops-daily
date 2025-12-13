@@ -1361,7 +1361,7 @@ export default function PacketJourney() {
                       <CheckCircle2 className="w-8 h-8 text-green-400" />
                       <div>
                         <h3 className="font-bold text-lg">Journey Complete!</h3>
-                        <p className="text-sm text-slate-300">
+                        <p className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-700")}>
                           Round-trip completed in <strong>{totalTime.toFixed(0)}ms</strong>
                           {' '}({(totalJourneyTime * 2).toFixed(0)}ms simulated)
                         </p>
@@ -1387,7 +1387,7 @@ export default function PacketJourney() {
                       <XCircle className="w-8 h-8 text-red-400" />
                       <div>
                         <h3 className="font-bold text-lg">Connection Failed!</h3>
-                        <p className="text-sm text-slate-300">
+                        <p className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-700")}>
                           Failure at <strong>{allStages[injectFailure]?.name}</strong> stage
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
@@ -1449,7 +1449,7 @@ export default function PacketJourney() {
                     </div>
 
                     <div className="space-y-1">
-                      <p className="text-xs font-semibold text-slate-400">What's happening:</p>
+                      <p className={cn("text-xs font-semibold", isDark ? "text-slate-400" : "text-gray-700")}>What's happening:</p>
                       {journeyStages[currentStageIndex].details.map((detail, i) => (
                         <motion.div
                           key={i}
@@ -1460,10 +1460,18 @@ export default function PacketJourney() {
                           <CheckCircle2
                             className={cn(
                               'w-3 h-3 mt-0.5 shrink-0',
-                              stageProgress > i * 0.25 ? 'text-green-400' : 'text-slate-600'
+                              stageProgress > i * 0.25
+                                ? 'text-green-400'
+                                : isDark
+                                  ? 'text-slate-600'
+                                  : 'text-gray-400'
                             )}
                           />
-                          <span className={stageProgress > i * 0.25 ? 'text-slate-200' : 'text-slate-500'}>
+                          <span className={cn(
+                            stageProgress > i * 0.25
+                              ? isDark ? 'text-slate-200' : 'text-gray-900'
+                              : isDark ? 'text-slate-500' : 'text-gray-600'
+                          )}>
                             {detail}
                           </span>
                         </motion.div>
@@ -1769,10 +1777,10 @@ export default function PacketJourney() {
                           </div>
                           <div className="text-xs text-slate-400 mt-0.5">{scenarios[key].description}</div>
                         </td>
-                        <td className="text-center py-3 px-2 text-slate-300">{stages.length}</td>
-                        <td className="text-center py-3 px-2 font-mono text-slate-300">{oneWay}ms</td>
+                        <td className={cn("text-center py-3 px-2", isDark ? "text-slate-300" : "text-gray-900")}>{stages.length}</td>
+                        <td className={cn("text-center py-3 px-2 font-mono", isDark ? "text-slate-300" : "text-gray-900")}>{oneWay}ms</td>
                         <td className="text-center py-3 px-2 font-mono font-semibold text-cyan-400">{roundTrip}ms</td>
-                        <td className="py-3 px-2 text-slate-400 text-xs">
+                        <td className={cn("py-3 px-2 text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
                           {key === 'http' && 'Development, testing'}
                           {key === 'https' && 'Production, secure data'}
                           {key === 'https-cdn' && 'Global users, static content'}
@@ -1784,9 +1792,14 @@ export default function PacketJourney() {
                 </tbody>
               </table>
             </div>
-            <div className="mt-4 p-3 bg-slate-700/30 rounded-lg border border-slate-600">
-              <p className="text-xs text-slate-400">
-                <strong className="text-slate-300">💡 Insight:</strong> The CDN cached scenario is {' '}
+            <div className={cn(
+              "mt-4 p-3 rounded-lg border",
+              isDark
+                ? "bg-slate-700/30 border-slate-600"
+                : "bg-blue-50 border-blue-200"
+            )}>
+              <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-700")}>
+                <strong className={cn(isDark ? "text-slate-300" : "text-gray-900")}>💡 Insight:</strong> The CDN cached scenario is {' '}
                 {Math.round((
                   (scenarios['https-cdn'].stages.map(id => allStages[id]).reduce((sum, s) => sum + s.duration, 0) -
                   scenarios['https-cdn-cache'].stages.map(id => allStages[id]).reduce((sum, s) => sum + s.duration, 0)) /
