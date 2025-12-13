@@ -1481,7 +1481,7 @@ export default function PacketJourney() {
                             'flex-1 h-1 rounded-full transition-all',
                             isActive && 'bg-blue-500',
                             isPassed && 'bg-green-500',
-                            !isActive && !isPassed && 'bg-slate-700'
+                            !isActive && !isPassed && (isDark ? 'bg-slate-700' : 'bg-gray-300')
                           )}
                         />
                       );
@@ -1505,7 +1505,9 @@ export default function PacketJourney() {
                           isActive && 'border-blue-400 bg-blue-500/20 ring-2 ring-blue-400/30',
                           isPassed && !isActive && 'border-green-400/50 bg-green-500/10',
                           isFailed && 'border-red-400 bg-red-500/20',
-                          !isActive && !isPassed && !isFailed && 'border-slate-700 bg-slate-800/50 hover:bg-slate-700/50'
+                          !isActive && !isPassed && !isFailed && (isDark
+                            ? 'border-slate-700 bg-slate-800/50 hover:bg-slate-700/50'
+                            : 'border-gray-300 bg-gray-50 hover:bg-gray-100')
                         )}
                         onClick={() => setShowDetails(showDetails === stage.id ? null : stage.id)}
                         whileHover={{ scale: 1.02 }}
@@ -1518,7 +1520,9 @@ export default function PacketJourney() {
                               'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0',
                               isActive && 'bg-blue-500 text-white',
                               isPassed && !isActive && 'bg-green-500 text-white',
-                              !isActive && !isPassed && 'bg-slate-700 text-slate-400'
+                              !isActive && !isPassed && (isDark
+                                ? 'bg-slate-700 text-slate-400'
+                                : 'bg-gray-300 text-gray-700')
                             )}>
                               {stepNumber}
                             </div>
@@ -1530,7 +1534,7 @@ export default function PacketJourney() {
                             </div>
                             <div>
                               <h4 className="font-semibold text-sm">{stage.name}</h4>
-                              <p className="text-xs text-slate-400">{stage.duration}ms</p>
+                              <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-600")}>{stage.duration}ms</p>
                             </div>
                           </div>
                           {isActive && <Activity className="w-4 h-4 text-blue-400 animate-pulse" />}
@@ -1544,12 +1548,15 @@ export default function PacketJourney() {
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
                               exit={{ opacity: 0, height: 0 }}
-                              className="mt-3 pt-3 border-t border-slate-600 space-y-1"
+                              className={cn(
+                                "mt-3 pt-3 border-t space-y-1",
+                                isDark ? "border-slate-600" : "border-gray-300"
+                              )}
                             >
-                              <p className="text-xs text-slate-300 mb-2">{stage.description}</p>
+                              <p className={cn("text-xs mb-2", isDark ? "text-slate-300" : "text-gray-700")}>{stage.description}</p>
                               {stage.details.map((detail, i) => (
-                                <div key={i} className="flex items-start gap-2 text-xs text-slate-400">
-                                  <span className="text-slate-500">•</span>
+                                <div key={i} className={cn("flex items-start gap-2 text-xs", isDark ? "text-slate-400" : "text-gray-600")}>
+                                  <span className={cn(isDark ? "text-slate-500" : "text-gray-500")}>•</span>
                                   <span>{detail}</span>
                                 </div>
                               ))}
