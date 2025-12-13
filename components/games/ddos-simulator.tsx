@@ -957,8 +957,16 @@ export default function DDoSSimulator() {
 
                 {/* Defense Info Tip */}
                 {activeDefenses > 0 && (
-                  <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <p className="text-xs text-blue-300">
+                  <div className={cn(
+                    "p-3 rounded-lg border",
+                    isDark
+                      ? "bg-blue-500/10 border-blue-500/20"
+                      : "bg-blue-50 border-blue-300"
+                  )}>
+                    <p className={cn(
+                      "text-xs",
+                      isDark ? "text-blue-300" : "text-blue-800"
+                    )}>
                       💡 <strong>Tip:</strong> Active defenses reduce effective load and boost server recovery rate (+{activeDefenses * 0.5}/s). Pause to normalize faster!
                     </p>
                   </div>
