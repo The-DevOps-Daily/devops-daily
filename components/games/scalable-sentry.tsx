@@ -134,8 +134,9 @@ const COLORS = {
 };
 
 export default function ScalableSentry() {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const isDark = resolvedTheme === 'dark';
 
   const [gameState, setGameState] = useState('start');
   const [isMobile, setIsMobile] = useState(false);
@@ -895,6 +896,11 @@ export default function ScalableSentry() {
     return () => cancelAnimationFrame(requestRef.current);
   }, [gameState, update]);
 
+  // Handle theme hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Detect mobile devices
   useEffect(() => {
     const checkMobile = () => {
@@ -1104,6 +1110,11 @@ export default function ScalableSentry() {
     if (!s || s.isTemporary) return 0;
     return Math.floor(SERVER_TYPES[s.type].cost * Math.pow(1.5, s.level));
   };
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className={cn(
