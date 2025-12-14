@@ -724,7 +724,10 @@ export default function DDoSSimulator() {
                       className={cn("h-4 w-4", isDark ? "text-yellow-500" : "text-yellow-600")}
                     />
                     <AlertDescription
-                      className={cn("text-xs", isDark ? "text-yellow-200" : "text-yellow-800")}
+                      className={cn(
+                        "text-xs flex items-center",
+                        isDark ? "text-yellow-200" : "text-yellow-800"
+                      )}
                     >
                       <strong>Important:</strong> This is purely educational. Launching actual DDoS
                       attacks is illegal and unethical. Always use proper DDoS protection services
