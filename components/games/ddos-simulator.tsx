@@ -725,7 +725,7 @@ export default function DDoSSimulator() {
                     />
                     <AlertDescription
                       className={cn(
-                        "text-xs flex items-center",
+                        "text-xs flex items-center translate-y-[3px]",
                         isDark ? "text-yellow-200" : "text-yellow-800"
                       )}
                     >
