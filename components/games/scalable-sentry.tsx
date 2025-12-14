@@ -899,6 +899,7 @@ export default function ScalableSentry() {
   // Handle theme hydration
   useEffect(() => {
     setMounted(true);
+    window.scrollTo(0, 0);
   }, []);
 
   // Detect mobile devices
