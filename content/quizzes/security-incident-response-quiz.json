@@ -4,7 +4,7 @@
   "description": "Test your ability to detect, respond to, and mitigate security incidents including breaches, attacks, and vulnerabilities",
   "category": "Security",
   "icon": "Shield",
-  "totalPoints": 140,
+  "totalPoints": 165,
   "theme": {
     "primaryColor": "red",
     "gradientFrom": "from-red-600",
@@ -13,9 +13,9 @@
   "metadata": {
     "estimatedTime": "20-25 minutes",
     "difficultyLevels": {
-      "beginner": 3,
-      "intermediate": 4,
-      "advanced": 3
+      "beginner": 0,
+      "intermediate": 6,
+      "advanced": 4
     },
     "createdDate": "2024-12-09"
   },
