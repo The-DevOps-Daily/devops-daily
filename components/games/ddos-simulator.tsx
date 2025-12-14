@@ -715,6 +715,7 @@ export default function DDoSSimulator() {
                   </div>
                   <Alert
                     className={cn(
+                      "[&>svg+div]:translate-y-0",
                       isDark
                         ? "bg-yellow-500/10 border-yellow-500/20"
                         : "bg-yellow-50 border-yellow-300"
@@ -725,7 +726,7 @@ export default function DDoSSimulator() {
                     />
                     <AlertDescription
                       className={cn(
-                        "text-xs flex items-center translate-y-[3px]",
+                        "text-xs",
                         isDark ? "text-yellow-200" : "text-yellow-800"
                       )}
                     >
