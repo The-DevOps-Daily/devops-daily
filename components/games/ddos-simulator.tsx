@@ -169,6 +169,9 @@ export default function DDoSSimulator() {
     }
 
     setMounted(true);
+
+    // Ensure page starts at top
+    window.scrollTo(0, 0);
   }, []);
 
   // Calculate spawn rate based on intensity and wave
