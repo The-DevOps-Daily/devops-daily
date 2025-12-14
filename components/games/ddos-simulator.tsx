@@ -118,8 +118,9 @@ function Slider({
 
 export default function DDoSSimulator() {
   // Theme
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const isDark = resolvedTheme === 'dark';
 
   // Game state
   const [isRunning, setIsRunning] = useState(false);
@@ -166,6 +167,8 @@ export default function DDoSSimulator() {
     if (savedAchievements) {
       setAchievements(JSON.parse(savedAchievements));
     }
+
+    setMounted(true);
   }, []);
 
   // Calculate spawn rate based on intensity and wave
@@ -541,6 +544,11 @@ export default function DDoSSimulator() {
   const activeDefenses = [hasFirewall, hasLoadBalancer, autoRateLimiting].filter(Boolean).length;
   const unlockedAchievements = achievements.filter((a) => a.unlocked).length;
 
+  // Early return to prevent hydration mismatch
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div className={cn(
       "min-h-screen",
@@ -717,7 +725,7 @@ export default function DDoSSimulator() {
         </AnimatePresence>
 
         {/* Main Game Area */}
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
           {/* Controls Panel */}
           <div className="lg:col-span-1 space-y-6">
             {/* Attack Controls */}
@@ -1002,143 +1010,10 @@ export default function DDoSSimulator() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Stats Panel */}
-            <Card className={cn(
-              "backdrop-blur border",
-              isDark
-                ? "bg-slate-900/50 border-slate-700/50"
-                : "bg-white/80 border-gray-200"
-            )}>
-              <CardHeader>
-                <CardTitle className={cn(
-                  "flex items-center gap-2",
-                  isDark ? "text-white" : "text-gray-900"
-                )}>
-                  <TrendingUp className="w-5 h-5" />
-                  Statistics
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                    <div className="text-2xl font-bold text-blue-400">{totalRequests}</div>
-                    <div className={cn(
-                      "text-xs",
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    )}>Total Requests</div>
-                  </div>
-                  <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
-                    <div className="text-2xl font-bold text-green-400">{blockedRequests}</div>
-                    <div className={cn(
-                      "text-xs",
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    )}>Blocked</div>
-                  </div>
-                  <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                    <div className="text-2xl font-bold text-purple-400">{currentRPS}</div>
-                    <div className={cn(
-                      "text-xs",
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    )}>Requests/sec</div>
-                  </div>
-                  <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                    <div className="text-2xl font-bold text-orange-400">{particles.length}</div>
-                    <div className={cn(
-                      "text-xs",
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    )}>Active Packets</div>
-                  </div>
-                </div>
-
-                {/* Block Rate */}
-                {blockedRequests > 0 && totalRequests > 0 && (
-                  <div className={cn(
-                    "p-3 rounded-lg border",
-                    isDark
-                      ? "bg-slate-800/50 border-slate-700/50"
-                      : "bg-gray-100 border-gray-300"
-                  )}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={cn(
-                        "text-sm",
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      )}>Block Rate</span>
-                      <span className="text-sm font-bold text-green-400">
-                        {((blockedRequests / totalRequests) * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-linear-to-r from-green-500 to-emerald-500"
-                        style={{ width: `${(blockedRequests / totalRequests) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Achievements Panel */}
-            <Card className={cn(
-              "backdrop-blur border",
-              isDark
-                ? "bg-slate-900/50 border-slate-700/50"
-                : "bg-white/80 border-gray-200"
-            )}>
-              <CardHeader>
-                <CardTitle className={cn(
-                  "flex items-center gap-2",
-                  isDark ? "text-white" : "text-gray-900"
-                )}>
-                  <Award className="w-5 h-5" />
-                  Achievements
-                </CardTitle>
-                <CardDescription>
-                  {unlockedAchievements}/{achievements.length} unlocked
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {achievements.map((achievement) => (
-                    <div
-                      key={achievement.id}
-                      className={cn(
-                        'p-3 rounded-lg border transition-all',
-                        achievement.unlocked
-                          ? 'bg-linear-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
-                          : isDark
-                            ? 'bg-slate-800/30 border-slate-700/30 opacity-50'
-                            : 'bg-gray-100 border-gray-300 opacity-50'
-                      )}
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="text-2xl">{achievement.icon}</span>
-                        <div className="flex-1 min-w-0">
-                          <div className={cn(
-                            "text-sm font-semibold flex items-center gap-2",
-                            isDark ? "text-white" : "text-gray-900"
-                          )}>
-                            {achievement.title}
-                            {achievement.unlocked && (
-                              <ShieldCheck className="w-4 h-4 text-yellow-400" />
-                            )}
-                          </div>
-                          <div className={cn(
-                            "text-xs",
-                            isDark ? "text-gray-400" : "text-gray-600"
-                          )}>{achievement.description}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Visualization Panel */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-1">
             <Card className={cn(
               "backdrop-blur h-full border",
               isDark
@@ -1201,12 +1076,13 @@ export default function DDoSSimulator() {
                 </div>
 
                 {/* Visualization Area */}
-                <div className={cn(
-                  "relative w-full aspect-video rounded-lg border-2 overflow-hidden",
-                  isDark
-                    ? "bg-slate-950 border-slate-800"
-                    : "bg-gray-100 border-gray-300"
-                )}>
+                <div
+                  className={cn(
+                    "relative w-full rounded-lg border-2 overflow-hidden",
+                    isDark ? "bg-slate-950 border-slate-800" : "bg-gray-100 border-gray-300"
+                  )}
+                  style={{ height: '450px' }}
+                >
                   {/* Background Grid */}
                   <div className="absolute inset-0 opacity-10">
                     <svg width="100%" height="100%">
@@ -1482,6 +1358,136 @@ export default function DDoSSimulator() {
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Stats and Achievements Row */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Stats Panel */}
+          <Card
+            className={cn(
+              "backdrop-blur border",
+              isDark ? "bg-slate-900/50 border-slate-700/50" : "bg-white/80 border-gray-200"
+            )}
+          >
+            <CardHeader>
+              <CardTitle
+                className={cn("flex items-center gap-2", isDark ? "text-white" : "text-gray-900")}
+              >
+                <TrendingUp className="w-5 h-5" />
+                Statistics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
+                  <div className="text-2xl font-bold text-blue-400">{totalRequests}</div>
+                  <div className={cn("text-xs", isDark ? "text-gray-400" : "text-gray-600")}>
+                    Total Requests
+                  </div>
+                </div>
+                <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                  <div className="text-2xl font-bold text-green-400">{blockedRequests}</div>
+                  <div className={cn("text-xs", isDark ? "text-gray-400" : "text-gray-600")}>
+                    Blocked
+                  </div>
+                </div>
+                <div className="p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+                  <div className="text-2xl font-bold text-purple-400">{currentRPS}</div>
+                  <div className={cn("text-xs", isDark ? "text-gray-400" : "text-gray-600")}>
+                    Requests/sec
+                  </div>
+                </div>
+                <div className="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                  <div className="text-2xl font-bold text-orange-400">{particles.length}</div>
+                  <div className={cn("text-xs", isDark ? "text-gray-400" : "text-gray-600")}>
+                    Active Packets
+                  </div>
+                </div>
+              </div>
+
+              {/* Block Rate */}
+              {blockedRequests > 0 && totalRequests > 0 && (
+                <div
+                  className={cn(
+                    "p-3 rounded-lg border",
+                    isDark ? "bg-slate-800/50 border-slate-700/50" : "bg-gray-100 border-gray-300"
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={cn("text-sm", isDark ? "text-gray-400" : "text-gray-600")}>
+                      Block Rate
+                    </span>
+                    <span className="text-sm font-bold text-green-400">
+                      {((blockedRequests / totalRequests) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-linear-to-r from-green-500 to-emerald-500"
+                      style={{ width: `${(blockedRequests / totalRequests) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Achievements Panel */}
+          <Card
+            className={cn(
+              "backdrop-blur border",
+              isDark ? "bg-slate-900/50 border-slate-700/50" : "bg-white/80 border-gray-200"
+            )}
+          >
+            <CardHeader>
+              <CardTitle
+                className={cn("flex items-center gap-2", isDark ? "text-white" : "text-gray-900")}
+              >
+                <Award className="w-5 h-5" />
+                Achievements
+              </CardTitle>
+              <CardDescription>
+                {unlockedAchievements}/{achievements.length} unlocked
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {achievements.map((achievement) => (
+                  <div
+                    key={achievement.id}
+                    className={cn(
+                      'p-3 rounded-lg border transition-all',
+                      achievement.unlocked
+                        ? 'bg-linear-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30'
+                        : isDark
+                          ? 'bg-slate-800/30 border-slate-700/30 opacity-50'
+                          : 'bg-gray-100 border-gray-300 opacity-50'
+                    )}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="text-2xl">{achievement.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className={cn(
+                            "text-sm font-semibold flex items-center gap-2",
+                            isDark ? "text-white" : "text-gray-900"
+                          )}
+                        >
+                          {achievement.title}
+                          {achievement.unlocked && (
+                            <ShieldCheck className="w-4 h-4 text-yellow-400" />
+                          )}
+                        </div>
+                        <div className={cn("text-xs", isDark ? "text-gray-400" : "text-gray-600")}>
+                          {achievement.description}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Educational Tips */}
