@@ -142,31 +142,31 @@ Understanding ArgoCD's components helps you troubleshoot issues and optimize you
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│            ArgoCD Components                          │
+│                  ArgoCD Components                       │
 ├──────────────────────────────────────────────────────────┤
-│                                                        │
-│  ┌──────────────────┐                                 │
-│  │   API Server     │                                 │
-│  │                  │  REST/gRPC API for CLI & UI    │
-│  └────────┬─────────┘                                 │
-│           │                                            │
-│           ▼                                            │
-│  ┌──────────────────┐                                 │
-│  │  Repo Server     │                                 │
-│  │                  │  Fetches & renders manifests   │
-│  └────────┬─────────┘                                 │
-│           │                                            │
-│           ▼                                            │
-│  ┌──────────────────┐                                 │
-│  │  Application     │  Reconciliation loop           │
-│  │  Controller      │  (Desired vs Actual state)     │
-│  └────────┬─────────┘                                 │
-│           │                                            │
-│           ▼                                            │
-│  ┌──────────────────┐                                 │
-│  │     Redis        │  Caching & temporary data      │
-│  └──────────────────┘                                 │
-│                                                        │
+│                                                          │
+│  ┌──────────────────┐                                   │
+│  │   API Server     │                                   │
+│  │                  │  REST/gRPC API for CLI & UI       │
+│  └────────┬─────────┘                                   │
+│           │                                              │
+│           ▼                                              │
+│  ┌──────────────────┐                                   │
+│  │  Repo Server     │                                   │
+│  │                  │  Fetches & renders manifests      │
+│  └────────┬─────────┘                                   │
+│           │                                              │
+│           ▼                                              │
+│  ┌──────────────────┐                                   │
+│  │  Application     │  Reconciliation loop              │
+│  │  Controller      │  (Desired vs Actual state)        │
+│  └────────┬─────────┘                                   │
+│           │                                              │
+│           ▼                                              │
+│  ┌──────────────────┐                                   │
+│  │     Redis        │  Caching & temporary data         │
+│  └──────────────────┘                                   │
+│                                                          │
 └──────────────────────────────────────────────────────────┘
 ```
 
