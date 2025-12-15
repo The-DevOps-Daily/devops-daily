@@ -141,25 +141,31 @@ ArgoCD continuously monitors your Git repositories, compares them with the runni
 Understanding ArgoCD's components helps you troubleshoot issues and optimize your setup.
 
 ```
-┌────────────────── ArgoCD Components ──────────────────────┐
-│                                                            │
-│  ┌──────────────────┐                                     │
-│  │   API Server     │ ◄── REST/gRPC API for CLI & UI      │
-│  └────────┬─────────┘                                     │
-│           │                                                │
-│  ┌────────▼─────────┐                                     │
-│  │  Repo Server     │ ◄── Fetches & renders Git manifests│
-│  └────────┬─────────┘                                     │
-│           │                                                │
-│  ┌────────▼─────────┐                                     │
-│  │ Application      │ ◄── Reconciliation loop            │
-│  │ Controller       │     (Desired vs Actual state)      │
-│  └────────┬─────────┘                                     │
-│           │                                                │
-│  ┌────────▼─────────┐                                     │
-│  │   Redis          │ ◄── Caching & temporary data       │
-│  └──────────────────┘                                     │
-└────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│              ArgoCD Components                              │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────────┐                                      │
+│  │   API Server     │  REST/gRPC API for CLI & UI         │
+│  └────────┬─────────┘                                      │
+│           │                                                 │
+│           ▼                                                 │
+│  ┌──────────────────┐                                      │
+│  │  Repo Server     │  Fetches & renders Git manifests    │
+│  └────────┬─────────┘                                      │
+│           │                                                 │
+│           ▼                                                 │
+│  ┌──────────────────┐                                      │
+│  │  Application     │  Reconciliation loop                │
+│  │  Controller      │  (Desired vs Actual state)          │
+│  └────────┬─────────┘                                      │
+│           │                                                 │
+│           ▼                                                 │
+│  ┌──────────────────┐                                      │
+│  │     Redis        │  Caching & temporary data           │
+│  └──────────────────┘                                      │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Component Breakdown
