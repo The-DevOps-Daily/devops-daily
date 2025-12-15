@@ -20,8 +20,8 @@
   <rect width="1200" height="630" fill="url(#grid)"/>
   
   <!-- Category badge -->
-  <rect x="80" y="80" width="364" height="40" rx="20" fill="#3b82f6"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">INFRASTRUCTURE AS CODE</text>
+  <rect x="80" y="80" width="208" height="40" rx="20" fill="#3b82f6"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">TERRAFORM</text>
   
   <!-- Title -->
   <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Deploy a DigitalOcean Droplet</text>
