@@ -111,7 +111,7 @@ This quickly becomes unmanageable and error-prone.
 │   State)    │       │             │       │    State)   │
 └─────────────┘       └─────────────┘       └─────────────┘
        │                     │                      │
-       │  1. Polls for       │                      │
+       │  1. Pulls for       │                      │
        │     changes         │                      │
        │◄────────────────────│                      │
        │                     │                      │
