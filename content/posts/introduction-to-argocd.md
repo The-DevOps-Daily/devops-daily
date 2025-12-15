@@ -106,16 +106,20 @@ This quickly becomes unmanageable and error-prone.
 
 ```
 ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│   Git Repo  │──────►│   ArgoCD    │──────►│ K8s Cluster │
-│  (Desired)  │       │ (Controller)│       │  (Actual)   │
+│   Git Repo  │       │   ArgoCD    │       │ K8s Cluster │
+│  (Desired   │       │             │       │   (Actual   │
+│   State)    │       │             │       │    State)   │
 └─────────────┘       └─────────────┘       └─────────────┘
-      │                      │                      │
-      │                      │                      │
-      │    Monitors for      │    Applies changes   │
-      │◄─────changes─────────│◄─────if needed───────│
-      │                      │                      │
-      │                      │    Detects drift     │
-      │                      │◄─────────────────────│
+       │                     │                      │
+       │  1. Polls for       │                      │
+       │     changes         │                      │
+       │◄────────────────────│                      │
+       │                     │                      │
+       │                     │  2. Compares states  │
+       │                     │◄────────────────────►│
+       │                     │                      │
+       │                     │  3. Syncs if needed  │
+       │                     │─────────────────────►│
 ```
 
 ArgoCD continuously monitors your Git repositories, compares them with the running state in Kubernetes, and automatically synchronizes any differences.
