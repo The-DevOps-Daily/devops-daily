@@ -53,25 +53,59 @@ export function Logo({
   const logo = (
     <div 
       ref={logoRef}
-      className={cn('flex items-center group relative', className)}
+      className={cn('flex items-center group relative p-4', className)}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => {
         setIsHovering(false);
         setMousePosition({ x: 0, y: 0 });
       }}
+      style={{
+        // Add padding for effects to have room
+        margin: '-1rem',
+        padding: '1rem',
+      }}
     >
-      {/* Simple particles that follow mouse */}
+      {/* Fade mask for smooth edge transitions */}
       {interactive && isHovering && (
-        <div className="absolute inset-0 pointer-events-none overflow-visible">
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            maskImage: 'radial-gradient(circle at center, black 40%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(circle at center, black 40%, transparent 100%)',
+          }}
+        >
+          {/* Background glow effect with smooth edges */}
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(circle at ${50 + mousePosition.x * 30}% ${50 + mousePosition.y * 30}%, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.1) 30%, transparent 70%)`,
+              filter: 'blur(20px)',
+              transform: 'scale(1.5)',
+              transition: 'all 0.3s ease-out',
+            }}
+          />
+        </div>
+      )}
+
+      {/* Particles with fade at edges */}
+      {interactive && isHovering && (
+        <div 
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            maskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
+            WebkitMaskImage: 'radial-gradient(circle at center, black 30%, transparent 80%)',
+          }}
+        >
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-primary/50 rounded-full animate-ping"
+              className="absolute w-2 h-2 bg-gradient-to-r from-primary/60 to-purple-600/60 rounded-full"
               style={{
                 left: `${50 + mousePosition.x * 20}%`,
                 top: `${50 + mousePosition.y * 20}%`,
-                animationDelay: `${i * 0.15}s`,
                 transform: `translate(${Math.cos(i * 90 * Math.PI / 180) * 15}px, ${Math.sin(i * 90 * Math.PI / 180) * 15}px)`,
+                animation: `pulse 2s cubic-bezier(0.4, 0, 0.6, 1) ${i * 0.15}s infinite`,
+                filter: 'blur(0.5px)',
               }}
             />
           ))}
@@ -96,9 +130,11 @@ export function Logo({
             `scale(1.1) rotateZ(${mousePosition.x * 3}deg) translateX(${mousePosition.x * 2}px) translateY(${mousePosition.y * 2}px)` : 
             'scale(1)',
           filter: isHovering ?
-            `drop-shadow(${-mousePosition.x * 5}px ${-mousePosition.y * 5}px 15px rgba(139, 92, 246, 0.3))` :
+            `drop-shadow(${-mousePosition.x * 3}px ${-mousePosition.y * 3}px 10px rgba(139, 92, 246, 0.2))` :
             'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          zIndex: 1,
+          position: 'relative',
         }}
         fill="currentColor"
       >
@@ -123,9 +159,10 @@ export function Logo({
             </stop>
           </linearGradient>
           
-          {/* Glow filter for hover */}
+          {/* Softer glow filter */}
           <filter id="logo-glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feColorMatrix in="coloredBlur" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.6 0"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
@@ -176,27 +213,16 @@ export function Logo({
           />
         </g>
         
-        {/* Animated sparkles on hover */}
+        {/* Softer animated sparkles */}
         {interactive && (
-          <g className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-            <circle cx="80" cy="80" r="2" fill="#fbbf24" className="animate-ping" />
-            <circle cx="250" cy="100" r="2" fill="#8b5cf6" className="animate-ping" style={{ animationDelay: '0.3s' }} />
-            <circle cx="180" cy="220" r="2" fill="#3b82f6" className="animate-ping" style={{ animationDelay: '0.6s' }} />
-            <circle cx="100" cy="200" r="2" fill="#10b981" className="animate-ping" style={{ animationDelay: '0.9s' }} />
+          <g className="opacity-0 group-hover:opacity-60 transition-opacity duration-700">
+            <circle cx="80" cy="80" r="1.5" fill="#fbbf24" opacity="0.8" className="animate-pulse" />
+            <circle cx="250" cy="100" r="1.5" fill="#8b5cf6" opacity="0.8" className="animate-pulse" style={{ animationDelay: '0.3s' }} />
+            <circle cx="180" cy="220" r="1.5" fill="#3b82f6" opacity="0.8" className="animate-pulse" style={{ animationDelay: '0.6s' }} />
+            <circle cx="100" cy="200" r="1.5" fill="#10b981" opacity="0.8" className="animate-pulse" style={{ animationDelay: '0.9s' }} />
           </g>
         )}
       </svg>
-
-      {/* Subtle glow effect that follows mouse */}
-      {interactive && isHovering && (
-        <div 
-          className="absolute inset-0 pointer-events-none -z-10"
-          style={{
-            background: `radial-gradient(circle at ${50 + mousePosition.x * 30}% ${50 + mousePosition.y * 30}%, rgba(139, 92, 246, 0.15) 0%, transparent 60%)`,
-            transition: 'all 0.2s ease-out',
-          }}
-        />
-      )}
 
       {showText && (
         <span className={cn(
@@ -217,6 +243,8 @@ export function Logo({
             `perspective(400px) rotateY(${mousePosition.x * 3}deg) rotateX(${-mousePosition.y * 3}deg)` : 
             'none',
           transition: 'transform 0.3s ease-out',
+          position: 'relative',
+          zIndex: 1,
         }}
         >
           DevOps Daily
