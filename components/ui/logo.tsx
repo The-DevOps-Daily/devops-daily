@@ -50,18 +50,6 @@ export function Logo({
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [interactive, isHovering]);
 
-  // Calculate dynamic transforms based on mouse position
-  const rotateX = isHovering ? mousePosition.y * -10 : 0;
-  const rotateY = isHovering ? mousePosition.x * 10 : 0;
-  const translateX = isHovering ? mousePosition.x * 5 : 0;
-  const translateY = isHovering ? mousePosition.y * 5 : 0;
-  
-  // Dynamic shadow based on mouse position
-  const shadowX = isHovering ? -mousePosition.x * 10 : 0;
-  const shadowY = isHovering ? -mousePosition.y * 10 : 5;
-  const shadowBlur = isHovering ? 20 : 10;
-  const shadowOpacity = isHovering ? 0.3 : 0.1;
-
   const logo = (
     <div 
       ref={logoRef}
@@ -71,23 +59,19 @@ export function Logo({
         setIsHovering(false);
         setMousePosition({ x: 0, y: 0 });
       }}
-      style={{
-        perspective: '1000px',
-        transformStyle: 'preserve-3d' as any,
-      }}
     >
-      {/* Dynamic particles that follow mouse */}
+      {/* Simple particles that follow mouse */}
       {interactive && isHovering && (
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(6)].map((_, i) => (
+        <div className="absolute inset-0 pointer-events-none overflow-visible">
+          {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-gradient-to-r from-primary to-purple-600 rounded-full animate-ping"
+              className="absolute w-1 h-1 bg-primary/50 rounded-full animate-ping"
               style={{
-                left: `${50 + mousePosition.x * 30 + Math.cos(i * 60) * 20}%`,
-                top: `${50 + mousePosition.y * 30 + Math.sin(i * 60) * 20}%`,
-                animationDelay: `${i * 0.1}s`,
-                animationDuration: '1.5s',
+                left: `${50 + mousePosition.x * 20}%`,
+                top: `${50 + mousePosition.y * 20}%`,
+                animationDelay: `${i * 0.15}s`,
+                transform: `translate(${Math.cos(i * 90 * Math.PI / 180) * 15}px, ${Math.sin(i * 90 * Math.PI / 180) * 15}px)`,
               }}
             />
           ))}
@@ -100,22 +84,20 @@ export function Logo({
         width={size}
         height={size}
         className={cn(
-          'text-primary transition-all duration-300 ease-out',
+          'text-primary transition-all duration-500',
           interactive && [
+            'group-hover:scale-110',
             'group-hover:drop-shadow-2xl',
             'group-hover:filter',
           ]
         )}
         style={{
-          transform: `
-            rotateX(${rotateX}deg) 
-            rotateY(${rotateY}deg)
-            translateX(${translateX}px)
-            translateY(${translateY}px)
-            scale(${isHovering ? 1.1 : 1})
-          `,
-          filter: `drop-shadow(${shadowX}px ${shadowY}px ${shadowBlur}px rgba(139, 92, 246, ${shadowOpacity}))`,
-          transformStyle: 'preserve-3d' as any,
+          transform: isHovering ? 
+            `scale(1.1) rotateZ(${mousePosition.x * 3}deg) translateX(${mousePosition.x * 2}px) translateY(${mousePosition.y * 2}px)` : 
+            'scale(1)',
+          filter: isHovering ?
+            `drop-shadow(${-mousePosition.x * 5}px ${-mousePosition.y * 5}px 15px rgba(139, 92, 246, 0.3))` :
+            'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
         fill="currentColor"
@@ -131,15 +113,6 @@ export function Logo({
                 repeatCount="indefinite" 
               />
             </stop>
-            <stop offset="50%" className="text-purple-500" stopColor="currentColor">
-              <animate 
-                attributeName="stop-color" 
-                values="currentColor;#ec4899;#8b5cf6;currentColor" 
-                dur="2s" 
-                begin="0.5s"
-                repeatCount="indefinite" 
-              />
-            </stop>
             <stop offset="100%" className="text-purple-600" stopColor="currentColor">
               <animate 
                 attributeName="stop-color" 
@@ -150,30 +123,13 @@ export function Logo({
             </stop>
           </linearGradient>
           
-          {/* Enhanced glow filter that responds to mouse position */}
-          <filter id="logo-glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation={isHovering ? 4 : 2} result="coloredBlur"/>
-            <feFlood floodColor={isHovering ? '#8b5cf6' : '#000000'} floodOpacity={isHovering ? 0.5 : 0}/>
-            <feComposite in2="coloredBlur" operator="in"/>
+          {/* Glow filter for hover */}
+          <filter id="logo-glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
             <feMerge>
-              <feMergeNode/>
+              <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
-          </filter>
-          
-          {/* Morphing filter for dynamic distortion */}
-          <filter id="logo-morph">
-            <feTurbulence 
-              type="fractalNoise" 
-              baseFrequency={isHovering ? 0.02 : 0} 
-              numOctaves="1" 
-              result="turbulence"
-            />
-            <feDisplacementMap 
-              in="SourceGraphic" 
-              in2="turbulence" 
-              scale={isHovering ? 2 : 0} 
-            />
           </filter>
         </defs>
         
@@ -185,9 +141,6 @@ export function Logo({
             'transition-all duration-700',
             interactive && 'group-hover:filter group-hover:[filter:url(#logo-glow)]'
           )}
-          style={{
-            transform: `translate(${mousePosition.x * 2}px, ${mousePosition.y * 2}px)`,
-          }}
         >
           {/* First path with hover animation */}
           <path 
@@ -196,10 +149,6 @@ export function Logo({
               'transition-all duration-500 origin-center',
               interactive && 'group-hover:animate-pulse'
             )}
-            style={{
-              transform: `rotate(${mousePosition.x * 5}deg)`,
-              transformOrigin: 'center',
-            }}
           />
           
           {/* Second path with different animation */}
@@ -210,7 +159,6 @@ export function Logo({
               interactive && 'group-hover:scale-105'
             )}
             style={{
-              transform: `rotate(${-mousePosition.y * 5}deg)`,
               transformOrigin: '50% 50%'
             }}
           />
@@ -223,43 +171,36 @@ export function Logo({
               interactive && 'group-hover:scale-110'
             )}
             style={{
-              transform: `rotate(${mousePosition.x * mousePosition.y * 5}deg)`,
               transformOrigin: '50% 50%'
             }}
           />
         </g>
         
-        {/* Enhanced animated sparkles that react to mouse position */}
-        {interactive && isHovering && (
-          <g className="transition-opacity duration-500">
-            {[...Array(8)].map((_, i) => {
-              const angle = (i * 45) * Math.PI / 180;
-              const radius = 80 + Math.abs(mousePosition.x * mousePosition.y) * 30;
-              const x = 165 + Math.cos(angle) * radius + mousePosition.x * 20;
-              const y = 165 + Math.sin(angle) * radius + mousePosition.y * 20;
-              
-              return (
-                <circle 
-                  key={i}
-                  cx={x} 
-                  cy={y} 
-                  r={2 + Math.abs(mousePosition.x * mousePosition.y) * 2} 
-                  fill={i % 3 === 0 ? '#fbbf24' : i % 3 === 1 ? '#8b5cf6' : '#3b82f6'}
-                  className="animate-pulse"
-                  style={{ 
-                    animationDelay: `${i * 0.1}s`,
-                    opacity: 0.8 + Math.abs(mousePosition.x * mousePosition.y) * 0.2
-                  }} 
-                />
-              );
-            })}
+        {/* Animated sparkles on hover */}
+        {interactive && (
+          <g className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+            <circle cx="80" cy="80" r="2" fill="#fbbf24" className="animate-ping" />
+            <circle cx="250" cy="100" r="2" fill="#8b5cf6" className="animate-ping" style={{ animationDelay: '0.3s' }} />
+            <circle cx="180" cy="220" r="2" fill="#3b82f6" className="animate-ping" style={{ animationDelay: '0.6s' }} />
+            <circle cx="100" cy="200" r="2" fill="#10b981" className="animate-ping" style={{ animationDelay: '0.9s' }} />
           </g>
         )}
       </svg>
 
+      {/* Subtle glow effect that follows mouse */}
+      {interactive && isHovering && (
+        <div 
+          className="absolute inset-0 pointer-events-none -z-10"
+          style={{
+            background: `radial-gradient(circle at ${50 + mousePosition.x * 30}% ${50 + mousePosition.y * 30}%, rgba(139, 92, 246, 0.15) 0%, transparent 60%)`,
+            transition: 'all 0.2s ease-out',
+          }}
+        />
+      )}
+
       {showText && (
         <span className={cn(
-          'ml-2 text-xl font-bold transition-all duration-300',
+          'ml-2 text-xl font-bold transition-all duration-500',
           interactive && [
             'group-hover:bg-gradient-to-r',
             'group-hover:from-primary',
@@ -267,33 +208,19 @@ export function Logo({
             'group-hover:to-blue-600',
             'group-hover:bg-clip-text',
             'group-hover:text-transparent',
+            'group-hover:animate-pulse'
           ],
           textClassName
         )}
         style={{
-          transform: isHovering ? `
-            perspective(1000px)
-            rotateX(${-mousePosition.y * 5}deg) 
-            rotateY(${mousePosition.x * 5}deg)
-            translateZ(20px)
-          ` : 'none',
-          textShadow: isHovering ? 
-            `${mousePosition.x * 2}px ${mousePosition.y * 2}px 10px rgba(139, 92, 246, 0.3)` : 
+          transform: isHovering ? 
+            `perspective(400px) rotateY(${mousePosition.x * 3}deg) rotateX(${-mousePosition.y * 3}deg)` : 
             'none',
+          transition: 'transform 0.3s ease-out',
         }}
         >
           DevOps Daily
         </span>
-      )}
-      
-      {/* Mouse trail effect */}
-      {interactive && isHovering && (
-        <div 
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `radial-gradient(circle at ${50 + mousePosition.x * 50}% ${50 + mousePosition.y * 50}%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)`,
-          }}
-        />
       )}
     </div>
   );
@@ -303,7 +230,8 @@ export function Logo({
       <Link 
         href={href} 
         className={cn(
-          'inline-block transition-all duration-300'
+          'inline-block transition-all duration-300',
+          interactive && 'hover:scale-105'
         )}
       >
         {logo}
