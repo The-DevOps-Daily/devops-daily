@@ -110,3 +110,53 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Logo animations */
+@keyframes logo-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes logo-spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Enhanced logo hover states */
+.logo-interactive {
+  @apply transition-all duration-500 ease-in-out;
+}
+
+.logo-interactive:hover {
+  animation: logo-float 2s ease-in-out infinite;
+}
+
+/* Gradient text animation */
+.gradient-text-animated {
+  background: linear-gradient(
+    90deg,
+    theme('colors.primary'),
+    theme('colors.purple.600'),
+    theme('colors.blue.600'),
+    theme('colors.primary')
+  );
+  background-size: 200% auto;
+  animation: gradient-shift 3s ease infinite;
+}

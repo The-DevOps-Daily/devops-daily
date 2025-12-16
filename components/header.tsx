@@ -473,11 +473,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 bg-background/95">
-      <nav className="container flex items-center justify-between p-4 mx-auto lg:px-8">
-        {/* Logo */}
-        <div className="flex lg:flex-1">
-          <Logo size={55} href="/" showText />
-        </div>
+     <nav className="container flex items-center justify-between p-4 mx-auto lg:px-8">
+       {/* Logo */}
+       <div className="flex lg:flex-1">
+          <Logo size={55} href="/" showText interactive />
+       </div>
 
         {/* Mobile menu button */}
         <div className="flex lg:hidden">
@@ -548,7 +548,7 @@ export function Header() {
             >
               {/* Mobile menu header */}
               <div className="flex items-center justify-between mb-8">
-                <Logo size={50} href="/" showText />
+                <Logo size={50} href="/" showText interactive />
                 <Button
                   variant="ghost"
                   size="sm"

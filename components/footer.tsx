@@ -16,7 +16,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="md:col-span-1 space-y-6">
             <div>
-              <Logo size={60} href="/" showText />
+              <Logo size={60} href="/" showText interactive />
               <p className="mt-4 text-base text-muted-foreground leading-relaxed font-medium">
                 The latest news, tutorials, and guides for DevOps professionals.
                 <span className="block mt-2 text-primary/80 font-semibold">
