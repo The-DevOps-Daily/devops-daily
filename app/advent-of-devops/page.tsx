@@ -2,12 +2,10 @@ import { getAllAdventDays, getAdventIndex } from '@/lib/advent';
 import { PostContent } from '@/components/post-content';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { AdventLandingClient } from '@/components/advent-landing-client';
+import { AdventHeroProgress } from '@/components/advent-hero-progress';
 import { Calendar, Trophy, Star, Sparkles, Target, Gift, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-
-// Force dynamic rendering to ensure current date is always evaluated fresh
-export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Advent of DevOps - 25 Day Challenge | DevOps Daily',
@@ -43,11 +41,6 @@ export const metadata: Metadata = {
 export default async function AdventOfDevOpsPage() {
   const days = await getAllAdventDays();
   const indexContent = await getAdventIndex();
-
-  // Calculate progress (unlock based on December dates)
-  const today = new Date();
-  const isDecember = today.getMonth() === 11; // December is month 11
-  const currentDay = isDecember ? Math.min(today.getDate(), 25) : 25;
 
   return (
     <>
@@ -134,19 +127,8 @@ export default async function AdventOfDevOpsPage() {
               </a>
             </div>
 
-            {/* Progress Bar */}
-            <div className="mt-12 max-w-md mx-auto">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Community Progress</span>
-                <span className="font-medium text-primary">{currentDay} / 25 days</span>
-              </div>
-              <div className="h-3 bg-card border border-border rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-linear-to-r from-red-500 via-primary to-green-500 transition-all duration-1000 ease-out"
-                  style={{ width: `${(currentDay / 25) * 100}%` }}
-                />
-              </div>
-            </div>
+            {/* Progress Bar - Client Component */}
+            <AdventHeroProgress />
           </div>
         </div>
       </div>
@@ -162,7 +144,7 @@ export default async function AdventOfDevOpsPage() {
 
       {/* Challenges Grid with Progress Tracking */}
       <div id="challenges">
-        <AdventLandingClient days={days} currentDay={currentDay} />
+        <AdventLandingClient days={days} />
       </div>
 
       {/* Sponsors Section */}
