@@ -6,6 +6,9 @@ import { Calendar, Trophy, Star, Sparkles, Target, Gift, ChevronRight } from 'lu
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+// Force dynamic rendering to ensure current date is always evaluated fresh
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Advent of DevOps - 25 Day Challenge | DevOps Daily',
   description:
