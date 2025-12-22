@@ -100,7 +100,7 @@
     "react-day-picker": "9.11.3",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.68.0",
-    "react-resizable-panels": "^3.0.6",
+    "react-resizable-panels": "^4.0.15",
     "react-use": "^17.6.0",
     "recharts": "3.6.0",
     "rss-parser": "^3.13.0",
