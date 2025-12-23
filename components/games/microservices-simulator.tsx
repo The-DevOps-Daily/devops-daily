@@ -32,11 +32,13 @@ import { cn } from '@/lib/utils';
 type ServiceType = 'api-gateway' | 'user' | 'product' | 'cart' | 'order' | 'payment' | 'inventory' | 'notification';
 type ServiceStatus = 'healthy' | 'degraded' | 'down';
 type CommunicationType = 'sync' | 'async';
+type TutorialStep = 'welcome' | 'click-service' | 'start-sim' | 'scale-service' | 'toggle-health' | 'complete';
 
 interface Service {
   id: string;
   type: ServiceType;
   name: string;
+  description?: string;
   status: ServiceStatus;
   instances: number;
   cpu: number;
@@ -91,6 +93,13 @@ export default function MicroservicesSimulator() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [showMetrics, setShowMetrics] = useState(true);
   const [communicationType, setCommunicationType] = useState<CommunicationType>('sync');
+  
+  // Tutorial state
+  const [tutorialMode, setTutorialMode] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome');
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [narration, setNarration] = useState('Welcome! Click "Start Tutorial" to learn how microservices work.');
+  const [showAdvancedServices, setShowAdvancedServices] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -106,6 +115,7 @@ export default function MicroservicesSimulator() {
         id: 'api-gateway-1',
         type: 'api-gateway',
         name: 'API Gateway',
+        description: 'Entry point for all requests. Routes traffic to other services.',
         status: 'healthy',
         instances: 2,
         cpu: 30,
@@ -119,6 +129,7 @@ export default function MicroservicesSimulator() {
         id: 'user-1',
         type: 'user',
         name: 'User Service',
+        description: 'Handles user authentication and profile management.',
         status: 'healthy',
         instances: 3,
         cpu: 45,
@@ -132,6 +143,7 @@ export default function MicroservicesSimulator() {
         id: 'product-1',
         type: 'product',
         name: 'Product Service',
+        description: 'Manages product catalog and inventory queries.',
         status: 'healthy',
         instances: 3,
         cpu: 50,
@@ -141,10 +153,17 @@ export default function MicroservicesSimulator() {
         latency: 100,
         position: { x: 300, y: 300 },
       },
+    ];
+    setServices(initialServices);
+  };
+
+  const addAdvancedServices = () => {
+    const advancedServices: Service[] = [
       {
         id: 'cart-1',
         type: 'cart',
         name: 'Cart Service',
+        description: 'Manages shopping cart operations.',
         status: 'healthy',
         instances: 2,
         cpu: 35,
@@ -158,6 +177,7 @@ export default function MicroservicesSimulator() {
         id: 'order-1',
         type: 'order',
         name: 'Order Service',
+        description: 'Processes and tracks orders.',
         status: 'healthy',
         instances: 3,
         cpu: 55,
@@ -168,10 +188,50 @@ export default function MicroservicesSimulator() {
         position: { x: 500, y: 350 },
       },
     ];
-    setServices(initialServices);
+    setServices([...services, ...advancedServices]);
+    setShowAdvancedServices(true);
+    setNarration('Added Cart and Order services! Now you have a complete e-commerce architecture.');
+  };
+
+  const startTutorial = () => {
+    setShowWelcome(false);
+    setTutorialMode(true);
+    setTutorialStep('click-service');
+    setNarration('👆 Click on the API Gateway to learn about this service.');
+  };
+
+  const advanceTutorial = (currentStep: TutorialStep) => {
+    switch (currentStep) {
+      case 'click-service':
+        setTutorialStep('start-sim');
+        setNarration('🎬 Great! Now click the "Start" button to begin the simulation.');
+        break;
+      case 'start-sim':
+        setTutorialStep('scale-service');
+        setNarration('⚖️ Perfect! Notice the requests flowing. Now scale up the User Service to handle more load.');
+        break;
+      case 'scale-service':
+        setTutorialStep('toggle-health');
+        setNarration('👏 Excellent! Now toggle the health of a service to see how failures affect the system.');
+        break;
+      case 'toggle-health':
+        setTutorialStep('complete');
+        setNarration('✅ Tutorial complete! You now understand microservices basics. Try different scenarios!');
+        setTimeout(() => setTutorialMode(false), 3000);
+        break;
+    }
+  };
+
+  const skipTutorial = () => {
+    setShowWelcome(false);
+    setTutorialMode(false);
+    setNarration('Click services to view metrics and interact with your architecture.');
   };
 
   const handleStart = () => {
+    if (tutorialMode && tutorialStep === 'start-sim') {
+      advanceTutorial('start-sim');
+    }
     setIsRunning(true);
     startSimulation();
   };
@@ -185,6 +245,10 @@ export default function MicroservicesSimulator() {
 
   const handleReset = () => {
     setIsRunning(false);
+    setTutorialMode(false);
+    setTutorialStep('welcome');
+    setShowWelcome(false);
+    setShowAdvancedServices(false);
     setTotalRequests(0);
     setSuccessfulRequests(0);
     setFailedRequests(0);
@@ -266,9 +330,15 @@ export default function MicroservicesSimulator() {
 
   const handleServiceClick = (service: Service) => {
     setSelectedService(service);
+    if (tutorialMode && tutorialStep === 'click-service') {
+      advanceTutorial('click-service');
+    }
   };
 
   const scaleService = (serviceId: string, delta: number) => {
+    if (tutorialMode && tutorialStep === 'scale-service' && delta > 0) {
+      advanceTutorial('scale-service');
+    }
     setServices((prev) =>
       prev.map((s) =>
         s.id === serviceId
@@ -279,6 +349,9 @@ export default function MicroservicesSimulator() {
   };
 
   const toggleServiceHealth = (serviceId: string) => {
+    if (tutorialMode && tutorialStep === 'toggle-health') {
+      advanceTutorial('toggle-health');
+    }
     setServices((prev) =>
       prev.map((s) => {
         if (s.id !== serviceId) return s;
@@ -322,6 +395,67 @@ export default function MicroservicesSimulator() {
 
   return (
     <div className="w-full mx-auto px-4">
+      {/* Welcome Modal */}
+      <AnimatePresence>
+        {showWelcome && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="max-w-lg mx-4"
+            >
+              <Card className="p-6">
+                <h2 className="flex items-center gap-2 text-2xl font-bold mb-4">
+                  <Boxes className="w-6 h-6" />
+                  Welcome to Microservices Simulator!
+                </h2>
+                <p className="mb-4 text-muted-foreground">
+                  Learn how modern applications are built using independent, scalable services.
+                  Each service can be deployed, scaled, and maintained separately.
+                </p>
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">🎯</div>
+                    <div>
+                      <div className="font-medium">Interactive Tutorial</div>
+                      <div className="text-sm text-muted-foreground">Step-by-step guided tour</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">🛠️</div>
+                    <div>
+                      <div className="font-medium">Hands-On Learning</div>
+                      <div className="text-sm text-muted-foreground">Scale services, simulate failures</div>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">📊</div>
+                    <div>
+                      <div className="font-medium">Real-Time Metrics</div>
+                      <div className="text-sm text-muted-foreground">Monitor performance and health</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={startTutorial} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                    Start Tutorial
+                  </Button>
+                  <Button onClick={skipTutorial} variant="outline" className="flex-1">
+                    Skip and Explore
+                  </Button>
+                </div>
+              </Card>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Card className="overflow-hidden">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
@@ -341,6 +475,16 @@ export default function MicroservicesSimulator() {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Narration Box */}
+          {(tutorialMode || !showWelcome) && (
+            <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
+              <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-blue-900 dark:text-blue-100">
+                {narration}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -406,24 +550,23 @@ export default function MicroservicesSimulator() {
 
           {/* Metrics Dashboard */}
           {showMetrics && (
-            <div className="grid grid-cols-2 gap-3 p-4 rounded-lg lg:grid-cols-4 bg-muted/30">
+            <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-muted/30">
               <div>
                 <div className="text-xs text-muted-foreground">Total Requests</div>
-                <div className="text-2xl font-bold">{totalRequests}</div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Success Rate</div>
-                <div className={cn('text-2xl font-bold', successRate >= 95 ? 'text-green-500' : successRate >= 80 ? 'text-yellow-500' : 'text-red-500')}>
-                  {successRate.toFixed(1)}%
+                <div className="flex items-center gap-2">
+                  <div className="text-2xl font-bold">{totalRequests}</div>
                 </div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">Avg Latency</div>
-                <div className="text-2xl font-bold">{averageLatency.toFixed(0)}ms</div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Active Services</div>
-                <div className="text-2xl font-bold">{services.length}</div>
+                <div className="text-xs text-muted-foreground">Success Rate</div>
+                <div className="flex items-center gap-2">
+                  <div className={cn('text-2xl font-bold', successRate >= 95 ? 'text-green-500' : successRate >= 80 ? 'text-yellow-500' : 'text-red-500')}>
+                    {successRate.toFixed(1)}%
+                  </div>
+                  <div className="text-xs">
+                    {successRate >= 95 ? '✅ Excellent' : successRate >= 80 ? '⚠️ Warning' : '❌ Critical'}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -483,6 +626,23 @@ export default function MicroservicesSimulator() {
                   }}
                   onClick={() => handleServiceClick(service)}
                   whileHover={{ scale: 1.05 }}
+                  animate={(
+                    tutorialMode && 
+                    ((tutorialStep === 'click-service' && service.type === 'api-gateway') ||
+                     (tutorialStep === 'scale-service' && service.type === 'user'))
+                  ) ? {
+                    scale: [1, 1.1, 1],
+                    boxShadow: [
+                      '0 0 0 0 rgba(59, 130, 246, 0)',
+                      '0 0 0 10px rgba(59, 130, 246, 0.3)',
+                      '0 0 0 0 rgba(59, 130, 246, 0)',
+                    ],
+                  } : {}}
+                  transition={{
+                    duration: 2,
+                    repeat: tutorialMode ? Infinity : 0,
+                    ease: 'easeInOut',
+                  }}
                 >
                   <Card
                     className={cn(
@@ -506,6 +666,23 @@ export default function MicroservicesSimulator() {
                   </Card>
                 </motion.div>
               ))}
+              
+              {/* Progressive Disclosure Button */}
+              {!showAdvancedServices && !tutorialMode && services.length === 3 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="absolute bottom-4 right-4"
+                >
+                  <Button
+                    onClick={addAdvancedServices}
+                    className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  >
+                    <Network className="w-4 h-4" />
+                    Add More Services
+                  </Button>
+                </motion.div>
+              )}
             </div>
           </div>
             </div>
@@ -527,6 +704,9 @@ export default function MicroservicesSimulator() {
                         <span className="text-2xl">{SERVICE_TEMPLATES[selectedService.type].icon}</span>
                         {selectedService.name}
                       </h3>
+                      {selectedService.description && (
+                        <p className="text-sm text-muted-foreground mt-1">{selectedService.description}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-2">
                         <Badge variant="outline" className={getStatusColor(selectedService.status)}>
                           {selectedService.status}
