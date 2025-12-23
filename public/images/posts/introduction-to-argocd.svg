@@ -1,0 +1,61 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#60a5fa" stroke-width="0.5" opacity="0.1"/>
+    </pattern>
+  </defs>
+  
+  <!-- Background gradient -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  
+  <!-- Grid overlay -->
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  
+  <!-- Category badge -->
+  <rect x="80" y="100" width="200" height="40" rx="20" fill="#1e40af" opacity="0.3"/>
+  <text x="180" y="127" font-family="Arial, sans-serif" font-size="16" font-weight="600" fill="#60a5fa" text-anchor="middle">KUBERNETES</text>
+  
+  <!-- Title -->
+  <text x="80" y="220" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f1f5f9">
+    <tspan x="80" dy="0">Introduction to</tspan>
+    <tspan x="80" dy="70">ArgoCD</tspan>
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="80" y="400" font-family="Arial, sans-serif" font-size="28" fill="#cbd5e1">
+    <tspan x="80" dy="0">Getting Started with GitOps</tspan>
+  </text>
+  
+  <!-- Decorative elements - GitOps workflow visualization -->
+  <g transform="translate(750, 200)">
+    <!-- Git icon representation -->
+    <circle cx="0" cy="0" r="40" fill="#fb923c" opacity="0.2"/>
+    <text x="0" y="10" font-family="Arial, sans-serif" font-size="32" fill="#fb923c" text-anchor="middle">⚡</text>
+    
+    <!-- Arrow -->
+    <line x1="45" y1="0" x2="95" y2="0" stroke="#60a5fa" stroke-width="3" opacity="0.5"/>
+    <polygon points="95,0 85,5 85,-5" fill="#60a5fa" opacity="0.5"/>
+    
+    <!-- ArgoCD icon representation -->
+    <circle cx="140" cy="0" r="40" fill="#3b82f6" opacity="0.2"/>
+    <text x="140" y="10" font-family="Arial, sans-serif" font-size="32" fill="#3b82f6" text-anchor="middle">🔄</text>
+    
+    <!-- Arrow -->
+    <line x1="185" y1="0" x2="235" y2="0" stroke="#60a5fa" stroke-width="3" opacity="0.5"/>
+    <polygon points="235,0 225,5 225,-5" fill="#60a5fa" opacity="0.5"/>
+    
+    <!-- Kubernetes icon representation -->
+    <circle cx="280" cy="0" r="40" fill="#22c55e" opacity="0.2"/>
+    <text x="280" y="10" font-family="Arial, sans-serif" font-size="32" fill="#22c55e" text-anchor="middle">☸</text>
+  </g>
+  
+  <!-- Brand -->
+  <text x="80" y="580" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa">DevOps Daily</text>
+</svg>
