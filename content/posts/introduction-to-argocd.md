@@ -145,27 +145,27 @@ Understanding ArgoCD's components helps you troubleshoot issues and optimize you
 │                    ArgoCD Components                       │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
-│  ┌──────────────────┐                                        │
-│  │   API Server     │  REST/gRPC API for CLI & UI        │
-│  │                  │                                        │
-│  └────────┬─────────┘                                        │
+│  ┌──────────────────┐                                      │
+│  │   API Server     │  REST/gRPC API for CLI & UI          │
+│  │                  │                                      │
+│  └────────┬─────────┘                                      │
 │           │                                                │
 │           ▼                                                │
-│  ┌──────────────────┐                                        │
-│  │  Repo Server     │  Fetches & renders manifests       │
-│  │                  │                                        │
-│  └────────┬─────────┘                                        │
+│  ┌──────────────────┐                                      │
+│  │  Repo Server     │  Fetches & renders manifests         │
+│  │                  │                                      │
+│  └────────┬─────────┘                                      │
 │           │                                                │
 │           ▼                                                │
-│  ┌──────────────────┐                                        │
-│  │  Application     │  Reconciliation loop               │
-│  │  Controller      │  (Desired vs Actual state)         │
-│  └────────┬─────────┘                                        │
+│  ┌──────────────────┐                                      │
+│  │  Application     │  Reconciliation loop                 │
+│  │  Controller      │  (Desired vs Actual state)           │
+│  └────────┬─────────┘                                      │
 │           │                                                │
 │           ▼                                                │
-│  ┌──────────────────┐                                        │
-│  │     Redis        │  Caching & temporary data          │
-│  └──────────────────┘                                        │
+│  ┌──────────────────┐                                      │
+│  │     Redis        │  Caching & temporary data            │
+│  └──────────────────┘                                      │
 │                                                            │
 └────────────────────────────────────────────────────────────┘
 ```
