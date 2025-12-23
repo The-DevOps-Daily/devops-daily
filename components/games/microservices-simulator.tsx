@@ -31,7 +31,6 @@ import { cn } from '@/lib/utils';
 // Service types
 type ServiceType = 'api-gateway' | 'user' | 'product' | 'cart' | 'order' | 'payment' | 'inventory' | 'notification';
 type ServiceStatus = 'healthy' | 'degraded' | 'down';
-type CommunicationType = 'sync' | 'async';
 type TutorialStep = 'welcome' | 'click-service' | 'start-sim' | 'scale-service' | 'toggle-health' | 'complete';
 
 interface Service {
@@ -53,7 +52,6 @@ interface ServiceCall {
   id: string;
   from: string;
   to: string;
-  type: CommunicationType;
   success: boolean;
   latency: number;
 }
@@ -69,13 +67,6 @@ const SERVICE_TEMPLATES: Record<ServiceType, { name: string; color: string; icon
   'notification': { name: 'Notification Service', color: '#6366f1', icon: '📧' },
 };
 
-const SCENARIOS = [
-  { id: 'basic', name: 'Basic Setup', description: 'Start with core services' },
-  { id: 'load', name: 'High Load', description: 'Handle traffic spikes' },
-  { id: 'failure', name: 'Service Failure', description: 'Test resilience' },
-  { id: 'cascade', name: 'Cascade Failure', description: 'Prevent cascading failures' },
-];
-
 export default function MicroservicesSimulator() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -83,7 +74,6 @@ export default function MicroservicesSimulator() {
 
   // Game state
   const [isRunning, setIsRunning] = useState(false);
-  const [scenario, setScenario] = useState('basic');
   const [services, setServices] = useState<Service[]>([]);
   const [activeCalls, setActiveCalls] = useState<ServiceCall[]>([]);
   const [totalRequests, setTotalRequests] = useState(0);
@@ -92,7 +82,6 @@ export default function MicroservicesSimulator() {
   const [averageLatency, setAverageLatency] = useState(0);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [showMetrics, setShowMetrics] = useState(true);
-  const [communicationType, setCommunicationType] = useState<CommunicationType>('sync');
   
   // Tutorial state
   const [tutorialMode, setTutorialMode] = useState(false);
@@ -352,7 +341,6 @@ export default function MicroservicesSimulator() {
       id: `call-${Date.now()}-${Math.random()}`,
       from: fromService.id,
       to: toService.id,
-      type: communicationType,
       success: Math.random() < successChance,
       latency: Math.random() * 200 + 300, // 300-500ms range (faster, more dynamic)
     };
@@ -550,43 +538,9 @@ export default function MicroservicesSimulator() {
             <Button onClick={handleReset} variant="outline" className="gap-2">
               <RotateCcw className="w-4 h-4" />
               Reset
-            </Button>
+          </Button>
 
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Scenario:</label>
-              <select
-                value={scenario}
-                onChange={(e) => setScenario(e.target.value)}
-                className="px-3 py-1 text-sm border rounded-md bg-background"
-                disabled={isRunning}
-              >
-                {SCENARIOS.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Communication:</label>
-              <Button
-                variant={communicationType === 'sync' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCommunicationType('sync')}
-              >
-                Sync
-              </Button>
-              <Button
-                variant={communicationType === 'async' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setCommunicationType('async')}
-              >
-                Async
-              </Button>
-            </div>
-
-            <Button
+          <Button
               onClick={() => setShowMetrics(!showMetrics)}
               variant="outline"
               size="sm"
