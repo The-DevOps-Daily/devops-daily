@@ -269,21 +269,21 @@ export default function MicroservicesSimulator() {
       const now = Date.now();
       
       // Simulate traffic between services
-      // Reduced frequency: only send request every 1500ms for easier tracking
-      if (now - lastCallTimeRef.current > 1500) {
+      // Balanced frequency: send request every 600ms for good pacing
+      if (now - lastCallTimeRef.current > 600) {
         simulateServiceCall();
         lastCallTimeRef.current = now;
       }
 
       // Update service metrics
-      // Update metrics less frequently (every 500ms) to reduce visual noise
-      if (now - lastMetricsUpdateRef.current > 500) {
+      // Update metrics every 300ms for responsive feel
+      if (now - lastMetricsUpdateRef.current > 300) {
         setServices((prev) =>
           prev.map((service) => ({
             ...service,
-            cpu: Math.min(100, Math.max(10, service.cpu + (Math.random() - 0.5) * 5)),
-            memory: Math.min(100, Math.max(20, service.memory + (Math.random() - 0.5) * 3)),
-            requestsPerSecond: Math.max(0, service.requestsPerSecond + (Math.random() - 0.5) * 10),
+            cpu: Math.min(100, Math.max(10, service.cpu + (Math.random() - 0.5) * 7)),
+            memory: Math.min(100, Math.max(20, service.memory + (Math.random() - 0.5) * 4)),
+            requestsPerSecond: Math.max(0, service.requestsPerSecond + (Math.random() - 0.5) * 15),
           }))
         );
         lastMetricsUpdateRef.current = now;
@@ -315,7 +315,7 @@ export default function MicroservicesSimulator() {
       to: toService.id,
       type: communicationType,
       success: Math.random() < successChance,
-      latency: Math.random() * 500 + 500, // 500-1000ms range (slower, easier to track)
+      latency: Math.random() * 300 + 400, // 400-700ms range (balanced speed)
     };
 
     setActiveCalls((prev) => [...prev, call]);
@@ -335,7 +335,7 @@ export default function MicroservicesSimulator() {
     // Remove call after animation
     setTimeout(() => {
       setActiveCalls((prev) => prev.filter((c) => c.id !== call.id));
-    }, 1500); // Increased to match slower animation
+    }, 1200); // Match animation duration
   };
 
   const handleServiceClick = (service: Service) => {
@@ -619,7 +619,7 @@ export default function MicroservicesSimulator() {
                       fill={call.success ? '#10b981' : '#ef4444'}
                       initial={{ cx: from.position.x + 60, cy: from.position.y + 40 }}
                       animate={{ cx: to.position.x + 60, cy: to.position.y + 40 }}
-                      transition={{ duration: call.latency / 800, ease: 'linear' }} // Slightly slower animation
+                      transition={{ duration: call.latency / 600, ease: 'linear' }} // Balanced speed
                     />
                   );
                 })}
