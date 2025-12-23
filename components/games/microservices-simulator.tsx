@@ -111,6 +111,16 @@ export default function MicroservicesSimulator() {
     initializeServices();
   }, []);
 
+  // Sync selectedService when services array changes
+  useEffect(() => {
+    if (selectedService) {
+      const updated = services.find((s) => s.id === selectedService.id);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedService)) {
+        setSelectedService(updated);
+      }
+    }
+  }, [services, selectedService]);
+
   const initializeServices = () => {
     const initialServices: Service[] = [
       {
