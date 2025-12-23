@@ -389,14 +389,26 @@ export default function MicroservicesSimulator() {
 
   const handleServiceClick = (service: Service) => {
     setSelectedService(service);
+    // Advance tutorial only if correct service is clicked
     if (tutorialMode && tutorialStep === 'click-service') {
-      advanceTutorial('click-service');
+      if (service.type === 'api-gateway') {
+        advanceTutorial('click-service');
+      } else {
+        // Allow clicking other services, but guide them back
+        setNarration('👆 Good try! But please click the API Gateway first to continue the tutorial.');
+      }
     }
   };
 
   const scaleService = (serviceId: string, delta: number) => {
+    const service = services.find(s => s.id === serviceId);
     if (tutorialMode && tutorialStep === 'scale-service' && delta > 0) {
-      advanceTutorial('scale-service');
+      if (service?.type === 'user') {
+        advanceTutorial('scale-service');
+      } else {
+        // Allow scaling other services, but guide them back
+        setNarration('⚖️ Nice! But try scaling the User Service to continue the tutorial.');
+      }
     }
     setServices((prev) =>
       prev.map((s) =>
@@ -703,7 +715,12 @@ export default function MicroservicesSimulator() {
                   } : {}}
                   transition={{
                     duration: service.status === 'down' ? 1.5 : service.status === 'degraded' ? 1.8 : 2,
-                    repeat: (tutorialMode || service.status !== 'healthy') ? Infinity : 0,
+                    repeat: (
+                      (tutorialMode && 
+                       ((tutorialStep === 'click-service' && service.type === 'api-gateway') ||
+                        (tutorialStep === 'scale-service' && service.type === 'user'))) ||
+                      service.status !== 'healthy'
+                    ) ? Infinity : 0,
                     ease: 'easeInOut',
                   }}
                 >
