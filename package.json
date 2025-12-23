@@ -73,7 +73,7 @@
     "@radix-ui/react-toggle-group": "1.1.11",
     "@radix-ui/react-tooltip": "1.2.8",
     "@radix-ui/react-visually-hidden": "^1.2.4",
-    "autoprefixer": "^10.4.22",
+    "autoprefixer": "^10.4.23",
     "axios": "^1.13.2",
     "canvas": "^3.2.0",
     "canvas-confetti": "^1.9.4",
