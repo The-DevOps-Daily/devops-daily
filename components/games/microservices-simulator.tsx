@@ -321,7 +321,7 @@ export default function MicroservicesSimulator() {
   const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 100;
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
+    <div className="w-full mx-auto px-4">
       <Card className="overflow-hidden">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
@@ -406,7 +406,7 @@ export default function MicroservicesSimulator() {
 
           {/* Metrics Dashboard */}
           {showMetrics && (
-            <div className="grid grid-cols-2 gap-3 p-4 rounded-lg md:grid-cols-4 bg-muted/30">
+            <div className="grid grid-cols-2 gap-3 p-4 rounded-lg lg:grid-cols-4 bg-muted/30">
               <div>
                 <div className="text-xs text-muted-foreground">Total Requests</div>
                 <div className="text-2xl font-bold">{totalRequests}</div>
@@ -428,8 +428,11 @@ export default function MicroservicesSimulator() {
             </div>
           )}
 
-          {/* Architecture Canvas */}
-          <div className="relative p-6 border rounded-lg bg-muted/20" style={{ minHeight: '500px' }}>
+          {/* Main 2-Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Left: Services Canvas (2/3 width) */}
+            <div className="lg:col-span-2">
+          <div className="relative p-6 border rounded-lg bg-muted/20" style={{ minHeight: '600px' }}>
             <div className="absolute inset-0">
               {/* Service connections */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none">
@@ -505,7 +508,10 @@ export default function MicroservicesSimulator() {
               ))}
             </div>
           </div>
+            </div>
 
+            {/* Right: Service Details (1/3 width) */}
+            <div className="space-y-4">
           {/* Service Details Panel */}
           <AnimatePresence>
             {selectedService && (
@@ -589,6 +595,23 @@ export default function MicroservicesSimulator() {
               </motion.div>
             )}
           </AnimatePresence>
+
+              {!selectedService && (
+                <Card className="p-4 bg-muted/20">
+                  <h3 className="flex items-center gap-2 mb-3 text-sm font-semibold">
+                    <Info className="w-4 h-4" />
+                    How to Use
+                  </h3>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li>• Click services to view metrics</li>
+                    <li>• Scale them up/down to handle load</li>
+                    <li>• Toggle health to simulate failures</li>
+                    <li>• Watch requests flow between services</li>
+                  </ul>
+                </Card>
+              )}
+            </div>
+          </div>
 
           {/* Learning Tips */}
           <Alert>
