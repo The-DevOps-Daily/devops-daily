@@ -105,6 +105,7 @@ export default function MicroservicesSimulator() {
   const animationRef = useRef<number>();
   const lastCallTimeRef = useRef<number>(0);
   const lastMetricsUpdateRef = useRef<number>(0);
+  const servicesRef = useRef<Service[]>([]);
 
   useEffect(() => {
     setMounted(true);
@@ -113,6 +114,7 @@ export default function MicroservicesSimulator() {
 
   // Sync selectedService when services array changes
   useEffect(() => {
+    servicesRef.current = services;
     if (selectedService) {
       const updated = services.find((s) => s.id === selectedService.id);
       if (updated && JSON.stringify(updated) !== JSON.stringify(selectedService)) {
@@ -321,10 +323,11 @@ export default function MicroservicesSimulator() {
   };
 
   const simulateServiceCall = () => {
-    if (services.length < 2) return;
+    const currentServices = servicesRef.current;
+    if (currentServices.length < 2) return;
 
-    const fromService = services[Math.floor(Math.random() * services.length)];
-    const availableTargets = services.filter((s) => s.id !== fromService.id);
+    const fromService = currentServices[Math.floor(Math.random() * currentServices.length)];
+    const availableTargets = currentServices.filter((s) => s.id !== fromService.id);
     if (availableTargets.length === 0) return;
 
     const toService = availableTargets[Math.floor(Math.random() * availableTargets.length)];
@@ -333,6 +336,10 @@ export default function MicroservicesSimulator() {
     let successChance = 0.95;
     if (toService.status === 'degraded') successChance = 0.7;
     if (toService.status === 'down') successChance = 0.1;
+
+    // Also factor in fromService health
+    if (fromService.status === 'down') successChance *= 0.2;
+    else if (fromService.status === 'degraded') successChance *= 0.8;
 
     const call: ServiceCall = {
       id: `call-${Date.now()}-${Math.random()}`,
