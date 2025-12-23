@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,6 @@ import {
   Play,
   Pause,
   RotateCcw,
-  Database,
-  Server,
-  Zap,
   AlertTriangle,
   CheckCircle,
   XCircle,
@@ -23,13 +20,11 @@ import {
   Network,
   ArrowRight,
   Info,
-  TrendingUp,
-  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Service types
-type ServiceType = 'api-gateway' | 'user' | 'product' | 'cart' | 'order' | 'payment' | 'inventory' | 'notification';
+type ServiceType = 'api-gateway' | 'user' | 'product' | 'cart' | 'order';
 type ServiceStatus = 'healthy' | 'degraded' | 'down';
 type TutorialStep = 'welcome' | 'click-service' | 'start-sim' | 'scale-service' | 'toggle-health' | 'complete';
 
@@ -42,8 +37,6 @@ interface Service {
   instances: number;
   cpu: number;
   memory: number;
-  requestsPerSecond: number;
-  errorRate: number;
   latency: number;
   position: { x: number; y: number };
 }
@@ -56,15 +49,12 @@ interface ServiceCall {
   latency: number;
 }
 
-const SERVICE_TEMPLATES: Record<ServiceType, { name: string; color: string; icon: string }> = {
-  'api-gateway': { name: 'API Gateway', color: '#3b82f6', icon: '🌐' },
-  'user': { name: 'User Service', color: '#8b5cf6', icon: '👤' },
-  'product': { name: 'Product Service', color: '#ec4899', icon: '📦' },
-  'cart': { name: 'Cart Service', color: '#f59e0b', icon: '🛒' },
-  'order': { name: 'Order Service', color: '#10b981', icon: '📋' },
-  'payment': { name: 'Payment Service', color: '#ef4444', icon: '💳' },
-  'inventory': { name: 'Inventory Service', color: '#06b6d4', icon: '📊' },
-  'notification': { name: 'Notification Service', color: '#6366f1', icon: '📧' },
+const SERVICE_TEMPLATES: Record<ServiceType, { name: string; icon: string }> = {
+  'api-gateway': { name: 'API Gateway', icon: '🌐' },
+  'user': { name: 'User Service', icon: '👤' },
+  'product': { name: 'Product Service', icon: '📦' },
+  'cart': { name: 'Cart Service', icon: '🛒' },
+  'order': { name: 'Order Service', icon: '📋' },
 };
 
 export default function MicroservicesSimulator() {
@@ -90,7 +80,6 @@ export default function MicroservicesSimulator() {
   const [narration, setNarration] = useState('Welcome! Click "Start Tutorial" to learn how microservices work.');
   const [showAdvancedServices, setShowAdvancedServices] = useState(false);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
   const lastCallTimeRef = useRef<number>(0);
   const lastMetricsUpdateRef = useRef<number>(0);
@@ -123,8 +112,6 @@ export default function MicroservicesSimulator() {
         instances: 2,
         cpu: 30,
         memory: 40,
-        requestsPerSecond: 100,
-        errorRate: 0,
         latency: 50,
         position: { x: 100, y: 200 },
       },
@@ -137,8 +124,6 @@ export default function MicroservicesSimulator() {
         instances: 3,
         cpu: 45,
         memory: 60,
-        requestsPerSecond: 80,
-        errorRate: 0,
         latency: 120,
         position: { x: 300, y: 100 },
       },
@@ -151,8 +136,6 @@ export default function MicroservicesSimulator() {
         instances: 3,
         cpu: 50,
         memory: 55,
-        requestsPerSecond: 120,
-        errorRate: 0,
         latency: 100,
         position: { x: 300, y: 300 },
       },
@@ -171,8 +154,6 @@ export default function MicroservicesSimulator() {
         instances: 2,
         cpu: 35,
         memory: 45,
-        requestsPerSecond: 60,
-        errorRate: 0,
         latency: 80,
         position: { x: 500, y: 150 },
       },
@@ -185,8 +166,6 @@ export default function MicroservicesSimulator() {
         instances: 3,
         cpu: 55,
         memory: 65,
-        requestsPerSecond: 50,
-        errorRate: 0,
         latency: 200,
         position: { x: 500, y: 350 },
       },
@@ -302,11 +281,6 @@ export default function MicroservicesSimulator() {
             latency: service.status === 'down' ? 800 + Math.random() * 400 :
               service.status === 'degraded' ? 400 + Math.random() * 300 :
               120 + Math.random() * 180,
-            requestsPerSecond: Math.max(0, 
-              service.status === 'down' ? service.requestsPerSecond * 0.1 :
-              service.status === 'degraded' ? service.requestsPerSecond * 0.5 :
-              service.requestsPerSecond + (Math.random() - 0.5) * 15
-            ),
           }))
         );
         lastMetricsUpdateRef.current = now;
