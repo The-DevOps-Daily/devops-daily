@@ -15,6 +15,7 @@ import {
   Cloud,
   Server,
   Bug,
+  Boxes,
 } from 'lucide-react';
 
 export interface Game {
@@ -80,6 +81,20 @@ const games: Game[] = [
     isNew: true,
     featured: true,
     category: 'Assessment',
+  },
+  {
+    id: 'microservices-simulator',
+    title: 'Microservices Architecture Simulator',
+    description:
+      'Design and deploy microservices. See communication patterns, handle failures, and scale independently. Learn when to use microservices and understand the trade-offs.',
+    icon: Boxes,
+    badgeText: 'New',
+    color: 'from-purple-500 to-pink-600',
+    href: '/games/microservices-simulator',
+    tags: ['microservices', 'architecture', 'interactive', 'distributed-systems'],
+    isNew: true,
+    featured: true,
+    category: 'Architecture',
   },
   {
     id: 'k8s-scheduler',
