@@ -124,7 +124,7 @@
     "@typescript-eslint/parser": "^8.50.1",
     "@vitest/ui": "^4.0.14",
     "eslint": "^9.39.1",
-    "eslint-config-next": "^16.0.10",
+    "eslint-config-next": "^16.1.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "fast-glob": "^3.3.3",
