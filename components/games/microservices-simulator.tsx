@@ -57,6 +57,17 @@ const SERVICE_TEMPLATES: Record<ServiceType, { name: string; icon: string }> = {
   'order': { name: 'Order Service', icon: '📋' },
 };
 
+// Simulation constants
+const REQUEST_INTERVAL_MS = 400; // Interval between service calls (~2.5 req/sec)
+const METRICS_UPDATE_INTERVAL_MS = 200; // How often metrics refresh
+const SERVICE_CALL_ANIMATION_MIN_MS = 300; // Min latency for visual animation
+const SERVICE_CALL_ANIMATION_MAX_MS = 500; // Max latency for visual animation
+const MIN_INSTANCES = 1;
+const MAX_INSTANCES = 10;
+const SUCCESS_RATE_HEALTHY = 0.95; // 95% success rate for healthy services
+const SUCCESS_RATE_DEGRADED = 0.7; // 70% success rate for degraded services
+const SUCCESS_RATE_DOWN = 0.1; // 10% success rate for down services
+
 export default function MicroservicesSimulator() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -95,7 +106,13 @@ export default function MicroservicesSimulator() {
     servicesRef.current = services;
     if (selectedService) {
       const updated = services.find((s) => s.id === selectedService.id);
-      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedService)) {
+      if (updated && (
+        updated.cpu !== selectedService.cpu ||
+        updated.memory !== selectedService.memory ||
+        updated.latency !== selectedService.latency ||
+        updated.instances !== selectedService.instances ||
+        updated.status !== selectedService.status
+      )) {
         setSelectedService(updated);
       }
     }
@@ -217,6 +234,17 @@ export default function MicroservicesSimulator() {
     setNarration('Click services to view metrics and interact with your architecture.');
   };
 
+  // Handle ESC key to close welcome modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showWelcome) {
+        skipTutorial();
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showWelcome]);
+
   const handleStart = () => {
     if (tutorialMode && tutorialStep === 'start-sim') {
       advanceTutorial('start-sim');
@@ -256,15 +284,13 @@ export default function MicroservicesSimulator() {
       const now = Date.now();
       
       // Simulate traffic between services
-      // Active frequency: send request every 400ms for engaging pace
-      if (now - lastCallTimeRef.current > 400) {
+      if (now - lastCallTimeRef.current > REQUEST_INTERVAL_MS) {
         simulateServiceCall();
         lastCallTimeRef.current = now;
       }
 
       // Update service metrics
-      // Update metrics every 200ms for responsive feel
-      if (now - lastMetricsUpdateRef.current > 200) {
+      if (now - lastMetricsUpdateRef.current > METRICS_UPDATE_INTERVAL_MS) {
         setServices((prev) =>
           prev.map((service) => ({
             ...service,
@@ -303,9 +329,9 @@ export default function MicroservicesSimulator() {
     const toService = availableTargets[Math.floor(Math.random() * availableTargets.length)];
 
     // Factor in service health for success rate
-    let successChance = 0.95;
-    if (toService.status === 'degraded') successChance = 0.7;
-    if (toService.status === 'down') successChance = 0.1;
+    let successChance = SUCCESS_RATE_HEALTHY;
+    if (toService.status === 'degraded') successChance = SUCCESS_RATE_DEGRADED;
+    if (toService.status === 'down') successChance = SUCCESS_RATE_DOWN;
 
     // Also factor in fromService health
     if (fromService.status === 'down') successChance *= 0.2;
@@ -316,7 +342,7 @@ export default function MicroservicesSimulator() {
       from: fromService.id,
       to: toService.id,
       success: Math.random() < successChance,
-      latency: Math.random() * 200 + 300, // 300-500ms range (faster, more dynamic)
+      latency: Math.random() * (SERVICE_CALL_ANIMATION_MAX_MS - SERVICE_CALL_ANIMATION_MIN_MS) + SERVICE_CALL_ANIMATION_MIN_MS,
     };
 
     setActiveCalls((prev) => [...prev, call]);
@@ -353,7 +379,7 @@ export default function MicroservicesSimulator() {
     setServices((prev) =>
       prev.map((s) =>
         s.id === serviceId
-          ? { ...s, instances: Math.max(1, Math.min(10, s.instances + delta)) }
+          ? { ...s, instances: Math.max(MIN_INSTANCES, Math.min(MAX_INSTANCES, s.instances + delta)) }
           : s
       )
     );
@@ -487,7 +513,7 @@ export default function MicroservicesSimulator() {
 
         <CardContent className="space-y-4">
           {/* Narration Box */}
-          {(tutorialMode || !showWelcome) && (
+          {!showWelcome && (
             <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
               <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <AlertDescription className="text-blue-900 dark:text-blue-100">
@@ -616,11 +642,20 @@ export default function MicroservicesSimulator() {
                 <motion.div
                   key={service.id}
                   className="absolute cursor-pointer"
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${service.name} - ${service.status} status`}
                   style={{
                     left: service.position.x,
                     top: service.position.y,
                   }}
                   onClick={() => handleServiceClick(service)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleServiceClick(service);
+                    }
+                  }}
                   whileHover={{ scale: 1.05 }}
                   animate={(
                     tutorialMode && 
@@ -804,14 +839,6 @@ export default function MicroservicesSimulator() {
             </div>
           </div>
 
-          {/* Learning Tips */}
-          <Alert>
-            <Info className="w-4 h-4" />
-            <AlertDescription>
-              <strong>Learning Tips:</strong> Click services to view metrics. Scale them up/down to handle load.
-              Toggle health to simulate failures. Watch how independent services communicate and recover.
-            </AlertDescription>
-          </Alert>
         </CardContent>
       </Card>
     </div>
