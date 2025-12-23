@@ -92,7 +92,7 @@ export default async function MicroservicesSimulatorPage() {
                 <h3 className="mb-2 text-lg font-semibold">❌ When to Avoid</h3>
                 <ul className="space-y-1 text-sm">
                   <li>• Small applications</li>
-                  <li>• Small teams (<10 people)</li>
+                  <li>• Small teams (&lt;10 people)</li>
                   <li>• Simple CRUD applications</li>
                   <li>• Tight coupling between features</li>
                   <li>• Network latency is critical</li>
