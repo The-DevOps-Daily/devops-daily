@@ -269,15 +269,15 @@ export default function MicroservicesSimulator() {
       const now = Date.now();
       
       // Simulate traffic between services
-      // Balanced frequency: send request every 600ms for good pacing
-      if (now - lastCallTimeRef.current > 600) {
+      // Active frequency: send request every 400ms for engaging pace
+      if (now - lastCallTimeRef.current > 400) {
         simulateServiceCall();
         lastCallTimeRef.current = now;
       }
 
       // Update service metrics
-      // Update metrics every 300ms for responsive feel
-      if (now - lastMetricsUpdateRef.current > 300) {
+      // Update metrics every 200ms for responsive feel
+      if (now - lastMetricsUpdateRef.current > 200) {
         setServices((prev) =>
           prev.map((service) => ({
             ...service,
@@ -315,7 +315,7 @@ export default function MicroservicesSimulator() {
       to: toService.id,
       type: communicationType,
       success: Math.random() < successChance,
-      latency: Math.random() * 300 + 400, // 400-700ms range (balanced speed)
+      latency: Math.random() * 200 + 300, // 300-500ms range (faster, more dynamic)
     };
 
     setActiveCalls((prev) => [...prev, call]);
@@ -335,7 +335,7 @@ export default function MicroservicesSimulator() {
     // Remove call after animation
     setTimeout(() => {
       setActiveCalls((prev) => prev.filter((c) => c.id !== call.id));
-    }, 1200); // Match animation duration
+    }, 1000); // Match faster animation duration
   };
 
   const handleServiceClick = (service: Service) => {
@@ -560,7 +560,7 @@ export default function MicroservicesSimulator() {
 
           {/* Metrics Dashboard */}
           {showMetrics && (
-            <div className="grid grid-cols-2 gap-3 p-4 rounded-lg bg-muted/30">
+            <div className="grid grid-cols-3 gap-3 p-4 rounded-lg bg-muted/30">
               <div>
                 <div className="text-xs text-muted-foreground">Total Requests</div>
                 <div className="flex items-center gap-2">
@@ -578,6 +578,14 @@ export default function MicroservicesSimulator() {
                   </div>
                 </div>
               </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Successful / Failed</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xl font-bold text-green-500">{successfulRequests}</div>
+                  <div className="text-muted-foreground">/</div>
+                  <div className="text-xl font-bold text-red-500">{failedRequests}</div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -589,6 +597,16 @@ export default function MicroservicesSimulator() {
             <div className="absolute inset-0">
               {/* Service connections */}
               <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                <defs>
+                  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+
                 {services.map((from) =>
                   services
                     .filter((to) => to.id !== from.id)
@@ -617,9 +635,10 @@ export default function MicroservicesSimulator() {
                       key={call.id}
                       r="6"
                       fill={call.success ? '#10b981' : '#ef4444'}
+                      filter={call.success ? undefined : 'url(#glow)'}
                       initial={{ cx: from.position.x + 60, cy: from.position.y + 40 }}
                       animate={{ cx: to.position.x + 60, cy: to.position.y + 40 }}
-                      transition={{ duration: call.latency / 600, ease: 'linear' }} // Balanced speed
+                      transition={{ duration: call.latency / 500, ease: 'linear' }} // Faster, more engaging
                     />
                   );
                 })}
