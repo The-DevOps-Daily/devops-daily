@@ -291,9 +291,24 @@ export default function MicroservicesSimulator() {
         setServices((prev) =>
           prev.map((service) => ({
             ...service,
-            cpu: Math.min(100, Math.max(10, service.cpu + (Math.random() - 0.5) * 7)),
-            memory: Math.min(100, Math.max(20, service.memory + (Math.random() - 0.5) * 4)),
-            requestsPerSecond: Math.max(0, service.requestsPerSecond + (Math.random() - 0.5) * 15),
+            cpu: Math.min(100, Math.max(10, 
+              service.status === 'down' ? 90 + Math.random() * 10 :
+              service.status === 'degraded' ? 60 + Math.random() * 20 :
+              service.cpu + (Math.random() - 0.5) * 7
+            )),
+            memory: Math.min(100, Math.max(20, 
+              service.status === 'down' ? 85 + Math.random() * 15 :
+              service.status === 'degraded' ? 55 + Math.random() * 25 :
+              service.memory + (Math.random() - 0.5) * 4
+            )),
+            latency: service.status === 'down' ? 800 + Math.random() * 400 :
+              service.status === 'degraded' ? 400 + Math.random() * 300 :
+              120 + Math.random() * 180,
+            requestsPerSecond: Math.max(0, 
+              service.status === 'down' ? service.requestsPerSecond * 0.1 :
+              service.status === 'degraded' ? service.requestsPerSecond * 0.5 :
+              service.requestsPerSecond + (Math.random() - 0.5) * 15
+            ),
           }))
         );
         lastMetricsUpdateRef.current = now;
@@ -676,10 +691,20 @@ export default function MicroservicesSimulator() {
                       '0 0 0 10px rgba(59, 130, 246, 0.3)',
                       '0 0 0 0 rgba(59, 130, 246, 0)',
                     ],
+                  } : service.status === 'down' ? {
+                    scale: [1, 0.95, 1],
+                    opacity: [1, 0.7, 1],
+                  } : service.status === 'degraded' ? {
+                    scale: [1, 1.02, 1],
+                    boxShadow: [
+                      '0 0 0 0 rgba(234, 179, 8, 0)',
+                      '0 0 0 6px rgba(234, 179, 8, 0.2)',
+                      '0 0 0 0 rgba(234, 179, 8, 0)',
+                    ],
                   } : {}}
                   transition={{
-                    duration: 2,
-                    repeat: tutorialMode ? Infinity : 0,
+                    duration: service.status === 'down' ? 1.5 : service.status === 'degraded' ? 1.8 : 2,
+                    repeat: (tutorialMode || service.status !== 'healthy') ? Infinity : 0,
                     ease: 'easeInOut',
                   }}
                 >
