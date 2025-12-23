@@ -15,10 +15,8 @@ import {
   CheckCircle,
   XCircle,
   Activity,
-  Settings,
   Boxes,
   Network,
-  ArrowRight,
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -68,6 +66,37 @@ const SUCCESS_RATE_HEALTHY = 0.95; // 95% success rate for healthy services
 const SUCCESS_RATE_DEGRADED = 0.7; // 70% success rate for degraded services
 const SUCCESS_RATE_DOWN = 0.1; // 10% success rate for down services
 
+// Tutorial constants
+const TUTORIAL_COMPLETE_DELAY_MS = 3000; // Delay before exiting tutorial mode
+const CALL_CLEANUP_DELAY_MS = 1000; // Delay before removing completed service calls
+
+// Metrics calculation constants
+const CPU_BASE_MIN = 10;
+const CPU_BASE_MAX = 100;
+const CPU_DOWN_MIN = 90;
+const CPU_DOWN_RANGE = 10;
+const CPU_DEGRADED_MIN = 60;
+const CPU_DEGRADED_RANGE = 20;
+const CPU_VARIATION = 7;
+
+const MEMORY_BASE_MIN = 20;
+const MEMORY_BASE_MAX = 100;
+const MEMORY_DOWN_MIN = 85;
+const MEMORY_DOWN_RANGE = 15;
+const MEMORY_DEGRADED_MIN = 55;
+const MEMORY_DEGRADED_RANGE = 25;
+const MEMORY_VARIATION = 4;
+
+const LATENCY_DOWN_BASE = 800;
+const LATENCY_DOWN_RANGE = 400;
+const LATENCY_DEGRADED_BASE = 400;
+const LATENCY_DEGRADED_RANGE = 300;
+const LATENCY_HEALTHY_MIN = 120;
+const LATENCY_HEALTHY_RANGE = 180;
+
+const HEALTH_MULTIPLIER_DOWN = 0.2; // Success rate multiplier for down services
+const HEALTH_MULTIPLIER_DEGRADED = 0.8; // Success rate multiplier for degraded services
+
 export default function MicroservicesSimulator() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -80,7 +109,6 @@ export default function MicroservicesSimulator() {
   const [totalRequests, setTotalRequests] = useState(0);
   const [successfulRequests, setSuccessfulRequests] = useState(0);
   const [failedRequests, setFailedRequests] = useState(0);
-  const [averageLatency, setAverageLatency] = useState(0);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [showMetrics, setShowMetrics] = useState(true);
   
@@ -223,7 +251,7 @@ export default function MicroservicesSimulator() {
       case 'toggle-health':
         setTutorialStep('complete');
         setNarration('✅ Tutorial complete! You now understand microservices basics. Try different scenarios!');
-        setTimeout(() => setTutorialMode(false), 3000);
+        setTimeout(() => setTutorialMode(false), TUTORIAL_COMPLETE_DELAY_MS);
         break;
     }
   };
@@ -269,7 +297,6 @@ export default function MicroservicesSimulator() {
     setTotalRequests(0);
     setSuccessfulRequests(0);
     setFailedRequests(0);
-    setAverageLatency(0);
     setActiveCalls([]);
     initializeServices();
     if (animationRef.current) {
@@ -294,19 +321,19 @@ export default function MicroservicesSimulator() {
         setServices((prev) =>
           prev.map((service) => ({
             ...service,
-            cpu: Math.min(100, Math.max(10, 
-              service.status === 'down' ? 90 + Math.random() * 10 :
-              service.status === 'degraded' ? 60 + Math.random() * 20 :
-              service.cpu + (Math.random() - 0.5) * 7
+            cpu: Math.min(CPU_BASE_MAX, Math.max(CPU_BASE_MIN, 
+              service.status === 'down' ? CPU_DOWN_MIN + Math.random() * CPU_DOWN_RANGE :
+              service.status === 'degraded' ? CPU_DEGRADED_MIN + Math.random() * CPU_DEGRADED_RANGE :
+              service.cpu + (Math.random() - 0.5) * CPU_VARIATION
             )),
-            memory: Math.min(100, Math.max(20, 
-              service.status === 'down' ? 85 + Math.random() * 15 :
-              service.status === 'degraded' ? 55 + Math.random() * 25 :
-              service.memory + (Math.random() - 0.5) * 4
+            memory: Math.min(MEMORY_BASE_MAX, Math.max(MEMORY_BASE_MIN, 
+              service.status === 'down' ? MEMORY_DOWN_MIN + Math.random() * MEMORY_DOWN_RANGE :
+              service.status === 'degraded' ? MEMORY_DEGRADED_MIN + Math.random() * MEMORY_DEGRADED_RANGE :
+              service.memory + (Math.random() - 0.5) * MEMORY_VARIATION
             )),
-            latency: service.status === 'down' ? 800 + Math.random() * 400 :
-              service.status === 'degraded' ? 400 + Math.random() * 300 :
-              120 + Math.random() * 180,
+            latency: service.status === 'down' ? LATENCY_DOWN_BASE + Math.random() * LATENCY_DOWN_RANGE :
+              service.status === 'degraded' ? LATENCY_DEGRADED_BASE + Math.random() * LATENCY_DEGRADED_RANGE :
+              LATENCY_HEALTHY_MIN + Math.random() * LATENCY_HEALTHY_RANGE,
           }))
         );
         lastMetricsUpdateRef.current = now;
@@ -334,8 +361,8 @@ export default function MicroservicesSimulator() {
     if (toService.status === 'down') successChance = SUCCESS_RATE_DOWN;
 
     // Also factor in fromService health
-    if (fromService.status === 'down') successChance *= 0.2;
-    else if (fromService.status === 'degraded') successChance *= 0.8;
+    if (fromService.status === 'down') successChance *= HEALTH_MULTIPLIER_DOWN;
+    else if (fromService.status === 'degraded') successChance *= HEALTH_MULTIPLIER_DEGRADED;
 
     const call: ServiceCall = {
       id: `call-${Date.now()}-${Math.random()}`,
@@ -354,15 +381,10 @@ export default function MicroservicesSimulator() {
       setFailedRequests((prev) => prev + 1);
     }
 
-    setAverageLatency((prev) => {
-      const total = totalRequests;
-      return (prev * total + call.latency) / (total + 1);
-    });
-
     // Remove call after animation
     setTimeout(() => {
       setActiveCalls((prev) => prev.filter((c) => c.id !== call.id));
-    }, 1000); // Match faster animation duration
+    }, CALL_CLEANUP_DELAY_MS);
   };
 
   const handleServiceClick = (service: Service) => {
@@ -687,7 +709,7 @@ export default function MicroservicesSimulator() {
                 >
                   <Card
                     className={cn(
-                      'w-32 p-2 border-2 transition-all',
+                      'w-32 p-2 border-2 transition-all focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-2',
                       selectedService?.id === service.id && 'ring-2 ring-blue-500',
                       service.status === 'healthy' && 'border-green-500/50',
                       service.status === 'degraded' && 'border-yellow-500/50',
