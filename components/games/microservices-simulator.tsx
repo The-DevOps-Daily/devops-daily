@@ -207,6 +207,13 @@ export default function MicroservicesSimulator() {
     setNarration('Added Cart and Order services! Now you have a complete e-commerce architecture.');
   };
 
+  const removeAdvancedServices = () => {
+    setServices((prev) => prev.filter((s) => s.type !== 'cart' && s.type !== 'order'));
+    setShowAdvancedServices(false);
+    setSelectedService(null);
+    setNarration('Removed advanced services. Back to core microservices architecture.');
+  };
+
   const startTutorial = () => {
     setShowWelcome(false);
     setTutorialMode(true);
@@ -739,18 +746,23 @@ export default function MicroservicesSimulator() {
               ))}
               
               {/* Progressive Disclosure Button */}
-              {!showAdvancedServices && !tutorialMode && services.length === 3 && (
+              {!tutorialMode && services.length >= 3 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="absolute bottom-4 right-4"
                 >
                   <Button
-                    onClick={addAdvancedServices}
-                    className="gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                    onClick={showAdvancedServices ? removeAdvancedServices : addAdvancedServices}
+                    className={cn(
+                      'gap-2',
+                      showAdvancedServices 
+                        ? 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700'
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                    )}
                   >
                     <Network className="w-4 h-4" />
-                    Add More Services
+                    {showAdvancedServices ? 'Remove Extra Services' : 'Add More Services'}
                   </Button>
                 </motion.div>
               )}
