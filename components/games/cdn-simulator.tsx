@@ -58,22 +58,22 @@ type Request = {
 };
 
 const EDGE_LOCATIONS: EdgeLocation[] = [
-  // Simple grid layout - easy to understand, no geographic accuracy needed
-  { id: 'us-east', name: 'US East', region: 'North America', x: 20, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'us-west', name: 'US West', region: 'North America', x: 20, y: 65, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'europe', name: 'Europe', region: 'Europe', x: 50, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'asia', name: 'Asia', region: 'Asia', x: 80, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'australia', name: 'Australia', region: 'Oceania', x: 80, y: 65, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'south-america', name: 'South America', region: 'South America', x: 50, y: 65, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  // 3x2 grid layout - clean and organized
+  { id: 'us-east', name: 'US East', region: 'US East', x: 16.67, y: 33, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'us-west', name: 'US West', region: 'US West', x: 50, y: 33, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'europe', name: 'Europe', region: 'Europe', x: 83.33, y: 33, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'asia', name: 'Asia', region: 'Asia', x: 16.67, y: 67, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'south-america', name: 'South America', region: 'South America', x: 50, y: 67, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'australia', name: 'Australia', region: 'Australia', x: 83.33, y: 67, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
 ];
 
 const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
-  { name: 'New York', x: 15, y: 35 },
-  { name: 'Los Angeles', x: 25, y: 65 },
-  { name: 'London', x: 45, y: 35 },
-  { name: 'Mumbai', x: 75, y: 50 },
-  { name: 'Singapore', x: 85, y: 50 },
-  { name: 'Tokyo', x: 85, y: 35 },
+  { name: 'New York', x: 16.67, y: 40 },
+  { name: 'Los Angeles', x: 50, y: 40 },
+  { name: 'London', x: 83.33, y: 40 },
+  { name: 'Tokyo', x: 16.67, y: 74 },
+  { name: 'São Paulo', x: 50, y: 74 },
+  { name: 'Sydney', x: 83.33, y: 74 },
 ];
 
 // Calculate distance between two points
@@ -202,14 +202,14 @@ export default function CDNSimulator() {
   };
 
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
-    // Define regions around each edge server
+    // Define structured regions in grid cells
     const landRegions = [
-      { name: 'US East', minX: 10, maxX: 30, minY: 25, maxY: 45 },
-      { name: 'US West', minX: 10, maxX: 30, minY: 55, maxY: 75 },
-      { name: 'Europe', minX: 40, maxX: 60, minY: 25, maxY: 45 },
-      { name: 'Asia', minX: 70, maxX: 90, minY: 25, maxY: 45 },
-      { name: 'Australia', minX: 70, maxX: 90, minY: 55, maxY: 75 },
-      { name: 'South America', minX: 40, maxX: 60, minY: 55, maxY: 75 },
+      { name: 'US East', minX: 5, maxX: 28, minY: 38, maxY: 50 },
+      { name: 'US West', minX: 38.5, maxX: 61.5, minY: 38, maxY: 50 },
+      { name: 'Europe', minX: 72, maxX: 95, minY: 38, maxY: 50 },
+      { name: 'Asia', minX: 5, maxX: 28, minY: 72, maxY: 84 },
+      { name: 'South America', minX: 38.5, maxX: 61.5, minY: 72, maxY: 84 },
+      { name: 'Australia', minX: 72, maxX: 95, minY: 72, maxY: 84 },
     ];
     
     const userData = preset || {
@@ -542,76 +542,56 @@ export default function CDNSimulator() {
           </div>
 
           {/* World Map Visualization */}
-          <div className="relative w-full h-[500px] border-2 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-            {/* Region Bubbles - Clean Abstract Layout */}
+          <div className="relative w-full h-[600px] border-2 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+            {/* Grid Lines for Structure */}
+            <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-0">
+              {/* Vertical lines */}
+              <div className="border-r border-slate-300 dark:border-slate-700"></div>
+              <div className="border-r border-slate-300 dark:border-slate-700"></div>
+              <div></div>
+              <div className="border-r border-slate-300 dark:border-slate-700"></div>
+              <div className="border-r border-slate-300 dark:border-slate-700"></div>
+              <div></div>
+            </div>
+
+            {/* Region Cards - Clean Grid Layout */}
             {edges.map((edge) => (
               <div
                 key={`region-${edge.id}`}
-                className="absolute rounded-full bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 border-2 border-green-300 dark:border-green-700 flex items-center justify-center"
+                className="absolute bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/40 dark:to-emerald-900/40 rounded-lg border-2 border-emerald-300 dark:border-emerald-700 flex flex-col items-center justify-center shadow-sm"
                 style={{
                   left: `${edge.x}%`,
-                  top: `${edge.y}%`,
+                  top: `${edge.y - 8}%`,
                   transform: 'translate(-50%, -50%)',
-                  width: '180px',
-                  height: '180px',
+                  width: '28%',
+                  height: '22%',
                 }}
               >
-                <div className="text-center">
-                  <div className="text-sm font-bold text-green-700 dark:text-green-300">
-                    {edge.region}
-                  </div>
-                  <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                {/* Server Icon */}
+                <div className="mb-2">
+                  <Server className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                
+                {/* Region Name */}
+                <div className="text-center px-2">
+                  <div className="text-base font-bold text-emerald-800 dark:text-emerald-200">
                     {edge.name}
+                  </div>
+                  
+                  {/* Status indicator */}
+                  <div className="flex items-center justify-center gap-1 mt-2">
+                    <div className={cn(
+                      'w-2 h-2 rounded-full',
+                      edge.status === 'healthy' && 'bg-green-500',
+                      edge.status === 'degraded' && 'bg-yellow-500',
+                      edge.status === 'offline' && 'bg-red-500'
+                    )} />
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                      {edge.activeRequests > 0 ? `${edge.activeRequests} active` : 'Ready'}
+                    </span>
                   </div>
                 </div>
               </div>
-            ))}
-
-            {/* Edge Servers */}
-            {edges.map((edge) => (
-              <motion.div
-                key={edge.id}
-                className="absolute z-20 cursor-pointer"
-                style={{ left: `${edge.x}%`, top: `${edge.y}%`, transform: 'translate(-50%, -50%)' }}
-                onClick={() => setSelectedEdge(edge)}
-              >
-                {/* Simple green dot marker */}
-                <motion.div
-                  className={cn(
-                    'relative w-3 h-3 rounded-full transition-all',
-                    'hover:scale-150',
-                    edge.status === 'healthy' && 'bg-green-500 shadow-lg shadow-green-500/50',
-                    edge.status === 'degraded' && 'bg-yellow-500 shadow-lg shadow-yellow-500/50',
-                    edge.status === 'offline' && 'bg-red-500 shadow-lg shadow-red-500/50',
-                    selectedEdge?.id === edge.id && 'ring-4 ring-blue-400 scale-150'
-                  )}
-                  animate={
-                    edge.activeRequests > 0
-                      ? {
-                          scale: selectedEdge?.id === edge.id ? 1.5 : [1, 1.2, 1],
-                          boxShadow: [
-                            '0 0 10px rgba(34, 197, 94, 0.5)',
-                            '0 0 20px rgba(34, 197, 94, 0.8)',
-                            '0 0 10px rgba(34, 197, 94, 0.5)',
-                          ],
-                        }
-                      : {}
-                  }
-                  transition={{
-                    duration: 1,
-                    repeat: edge.activeRequests > 0 ? Infinity : 0,
-                  }}
-                />
-                
-                {/* Label always visible */}
-                <motion.div
-                  className="absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap"
-                >
-                  <div className="px-2 py-0.5 bg-white/90 dark:bg-gray-900/90 border border-green-500 rounded shadow-md text-[10px] font-medium">
-                    {edge.name}
-                  </div>
-                </motion.div>
-              </motion.div>
             ))}
 
             {/* Users */}
@@ -624,14 +604,10 @@ export default function CDNSimulator() {
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
               >
-                <div className="relative flex flex-col items-center">
-                  <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center shadow-lg border-2 border-white dark:border-gray-900">
-                    <Users className="w-3 h-3 text-white" />
+                <div className="flex items-center gap-1 bg-blue-500 text-white px-2 py-1 rounded-full shadow-lg border-2 border-blue-300 dark:border-blue-700">
+                  <Users className="w-3 h-3" />
+                  <div className="text-xs font-medium whitespace-nowrap">{user.name}</div>
                   </div>
-                  <div className="absolute top-full mt-1 px-2 py-0.5 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border border-blue-300 dark:border-blue-700 rounded shadow-sm">
-                    <div className="text-xs font-medium whitespace-nowrap">{user.name}</div>
-                  </div>
-                </div>
               </motion.div>
             ))}
 
