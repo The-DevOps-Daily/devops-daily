@@ -114,28 +114,63 @@ const sampleCommits: GitCommit[] = [
   {
     id: '1',
     sha: 'a1b2c3d',
-    message: 'feat: Add new API endpoint',
+    message: 'feat: Add authentication service',
     author: 'alice',
-    timestamp: '2m ago',
+    timestamp: '1m ago',
     deployed: false,
   },
   {
     id: '2',
     sha: 'e4f5g6h',
-    message: 'fix: Increase replica count to 3',
+    message: 'feat: Add payment API endpoint',
     author: 'bob',
-    timestamp: '5m ago',
+    timestamp: '3m ago',
     deployed: false,
   },
   {
     id: '3',
     sha: 'i7j8k9l',
-    message: 'chore: Update dependencies',
+    message: 'fix: Increase replica count to 3',
     author: 'charlie',
+    timestamp: '8m ago',
+    deployed: false,
+  },
+  {
+    id: '4',
+    sha: 'm1n2o3p',
+    message: 'chore: Update Kubernetes manifests',
+    author: 'david',
     timestamp: '10m ago',
+    deployed: false,
+  },
+  {
+    id: '5',
+    sha: 'q4r5s6t',
+    message: 'feat: Add caching layer with Redis',
+    author: 'eve',
+    timestamp: '15m ago',
+    deployed: false,
+  },
+  {
+    id: '6',
+    sha: 'u7v8w9x',
+    message: 'fix: Resolve memory leak in worker',
+    author: 'frank',
+    timestamp: '20m ago',
     deployed: true,
   },
 ];
+
+// Additional commit messages for dynamic generation
+const commitTemplates = [
+  { type: 'feat', messages: ['Add new microservice', 'Implement webhook handler', 'Add GraphQL API', 'Add monitoring dashboard', 'Implement rate limiting'] },
+  { type: 'fix', messages: ['Fix database connection pool', 'Resolve CORS issues', 'Fix memory leak', 'Patch security vulnerability', 'Fix broken health check'] },
+  { type: 'chore', messages: ['Update dependencies', 'Bump Go version to 1.21', 'Update Dockerfile', 'Refactor deployment configs', 'Update CI/CD pipeline'] },
+  { type: 'perf', messages: ['Optimize database queries', 'Add connection pooling', 'Enable compression', 'Add CDN caching', 'Optimize container images'] },
+  { type: 'docs', messages: ['Update API documentation', 'Add architecture diagrams', 'Update README', 'Document deployment process', 'Add troubleshooting guide'] },
+];
+
+const authors = ['alice', 'bob', 'charlie', 'david', 'eve', 'frank', 'grace', 'henry'];
 
 export default function GitOpsWorkflow() {
   const [phase, setPhase] = useState<Phase>('intro');
@@ -144,6 +179,7 @@ export default function GitOpsWorkflow() {
   const [healthStatus, setHealthStatus] = useState<HealthStatus>('healthy');
   const [autoSync, setAutoSync] = useState(true);
   const [pendingSync, setPendingSync] = useState(false);
+  const [nextCommitId, setNextCommitId] = useState(7);
   const [currentChallenge, setCurrentChallenge] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -154,6 +190,26 @@ export default function GitOpsWorkflow() {
   const addInsight = useCallback((message: string) => {
     setInsights((prev) => [...prev.slice(-4), message]);
   }, []);
+
+  const generateRandomCommit = useCallback(() => {
+    const template = commitTemplates[Math.floor(Math.random() * commitTemplates.length)];
+    const message = template.messages[Math.floor(Math.random() * template.messages.length)];
+    const author = authors[Math.floor(Math.random() * authors.length)];
+    const sha = Math.random().toString(36).substring(2, 9);
+    
+    const newCommit: GitCommit = {
+      id: nextCommitId.toString(),
+      sha,
+      message: `${template.type}: ${message}`,
+      author,
+      timestamp: 'Just now',
+      deployed: false,
+    };
+    
+    setCommits((prev) => [newCommit, ...prev]);
+    setNextCommitId((prev) => prev + 1);
+    addInsight(`📝 New commit by ${author}: ${newCommit.message}`);
+  }, [nextCommitId, addInsight]);
 
   const handleDeploy = useCallback(
     (commitId: string) => {
@@ -235,6 +291,7 @@ export default function GitOpsWorkflow() {
     setHealthStatus('healthy');
     setAutoSync(true);
     setPendingSync(false);
+    setNextCommitId(7);
     setCurrentChallenge(0);
     setSelectedAnswer(null);
     setShowExplanation(false);
@@ -484,10 +541,19 @@ export default function GitOpsWorkflow() {
                   <GitBranch className="w-5 h-5 mr-2" />
                   Git Repository (Source of Truth)
                 </CardTitle>
-                <CardDescription>Click deploy to sync commits to Kubernetes</CardDescription>
+                <CardDescription>
+                  Push new commits and deploy to Kubernetes cluster
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="mb-4">
+                  <Button onClick={generateRandomCommit} variant="outline" className="w-full">
+                    <GitCommit className="w-4 h-4 mr-2" />
+                    Create New Commit
+                  </Button>
+                </div>
+
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                   {commits.map((commit) => (
                     <motion.div
                       key={commit.id}
