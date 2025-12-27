@@ -58,21 +58,21 @@ type Request = {
 };
 
 const EDGE_LOCATIONS: EdgeLocation[] = [
-  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 20, y: 38, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 13, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 51, y: 30, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 83, y: 38, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 87, y: 75, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 28, y: 68, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 22.5, y: 43, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 16, y: 42, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 52, y: 40, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 82, y: 44, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 86, y: 72, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 31, y: 63, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
 ];
 
 const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
-  { name: 'New York', x: 21, y: 40 },
-  { name: 'Los Angeles', x: 12, y: 42 },
-  { name: 'London', x: 50, y: 32 },
+  { name: 'New York', x: 22, y: 43 },
+  { name: 'Los Angeles', x: 16, y: 44 },
+  { name: 'London', x: 50, y: 39 },
   { name: 'Mumbai', x: 66, y: 50 },
-  { name: 'Singapore', x: 75, y: 54 },
-  { name: 'Tokyo', x: 83, y: 38 },
+  { name: 'Singapore', x: 75, y: 51 },
+  { name: 'Tokyo', x: 82, y: 44 },
 ];
 
 // Calculate distance between two points
@@ -201,10 +201,28 @@ export default function CDNSimulator() {
   };
 
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
+    // Define regions where users can spawn (on landmasses, not oceans)
+    const landRegions = [
+      { name: 'North America East', minX: 18, maxX: 30, minY: 38, maxY: 48 },
+      { name: 'North America West', minX: 12, maxX: 20, minY: 38, maxY: 50 },
+      { name: 'Europe', minX: 48, maxX: 60, minY: 35, maxY: 50 },
+      { name: 'Asia East', minX: 70, maxX: 85, minY: 30, maxY: 52 },
+      { name: 'Asia South', minX: 62, maxX: 72, minY: 48, maxY: 56 },
+      { name: 'Australia', minX: 80, maxX: 90, minY: 65, maxY: 75 },
+      { name: 'South America', minX: 26, maxX: 38, minY: 55, maxY: 68 },
+      { name: 'Africa', minX: 48, maxX: 62, minY: 50, maxY: 70 },
+    ];
+    
     const userData = preset || {
       name: `User ${users.length + 1}`,
-      x: Math.random() * 90 + 5,
-      y: Math.random() * 70 + 15,
+      ...(() => {
+        // Pick a random land region
+        const region = landRegions[Math.floor(Math.random() * landRegions.length)];
+        return {
+          x: Math.random() * (region.maxX - region.minX) + region.minX,
+          y: Math.random() * (region.maxY - region.minY) + region.minY,
+        };
+      })(),
     };
     
     const newUser: UserLocation = {
