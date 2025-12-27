@@ -58,22 +58,22 @@ type Request = {
 };
 
 const EDGE_LOCATIONS: EdgeLocation[] = [
-  // Coordinates as percentage of SVG viewBox (1000x500)
-  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 14, y: 26, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 9, y: 23, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 52, y: 23, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 75, y: 26, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 77, y: 68, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 18, y: 60, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  // Simple grid layout - easy to understand, no geographic accuracy needed
+  { id: 'us-east', name: 'US East', region: 'North America', x: 20, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'us-west', name: 'US West', region: 'North America', x: 20, y: 65, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'europe', name: 'Europe', region: 'Europe', x: 50, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'asia', name: 'Asia', region: 'Asia', x: 80, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'australia', name: 'Australia', region: 'Oceania', x: 80, y: 65, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'south-america', name: 'South America', region: 'South America', x: 50, y: 65, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
 ];
 
 const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
-  { name: 'New York', x: 14.5, y: 25 },
-  { name: 'Los Angeles', x: 8.5, y: 25 },
-  { name: 'London', x: 51, y: 22 },
-  { name: 'Mumbai', x: 64, y: 36 },
-  { name: 'Singapore', x: 69.5, y: 53 },
-  { name: 'Tokyo', x: 75, y: 26 },
+  { name: 'New York', x: 15, y: 35 },
+  { name: 'Los Angeles', x: 25, y: 65 },
+  { name: 'London', x: 45, y: 35 },
+  { name: 'Mumbai', x: 75, y: 50 },
+  { name: 'Singapore', x: 85, y: 50 },
+  { name: 'Tokyo', x: 85, y: 35 },
 ];
 
 // Calculate distance between two points
@@ -202,16 +202,14 @@ export default function CDNSimulator() {
   };
 
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
-    // Define regions where users can spawn (on landmasses, not oceans)
+    // Define regions around each edge server
     const landRegions = [
-      { name: 'North America East', minX: 12, maxX: 19, minY: 20, maxY: 39 },
-      { name: 'North America West', minX: 6, maxX: 12, minY: 19, maxY: 36 },
-      { name: 'Europe', minX: 48, maxX: 56, minY: 18, maxY: 31 },
-      { name: 'Asia East', minX: 70, maxX: 79, minY: 15, maxY: 33 },
-      { name: 'Asia South', minX: 57, maxX: 70, minY: 30, maxY: 44 },
-      { name: 'Australia', minX: 72, maxX: 82, minY: 60, maxY: 76 },
-      { name: 'South America', minX: 13, maxX: 22, minY: 48, maxY: 74 },
-      { name: 'Africa', minX: 47, maxX: 58, minY: 32, maxY: 66 },
+      { name: 'US East', minX: 10, maxX: 30, minY: 25, maxY: 45 },
+      { name: 'US West', minX: 10, maxX: 30, minY: 55, maxY: 75 },
+      { name: 'Europe', minX: 40, maxX: 60, minY: 25, maxY: 45 },
+      { name: 'Asia', minX: 70, maxX: 90, minY: 25, maxY: 45 },
+      { name: 'Australia', minX: 70, maxX: 90, minY: 55, maxY: 75 },
+      { name: 'South America', minX: 40, maxX: 60, minY: 55, maxY: 75 },
     ];
     
     const userData = preset || {
@@ -544,83 +542,30 @@ export default function CDNSimulator() {
           </div>
 
           {/* World Map Visualization */}
-          <div className="relative w-full h-[500px] border-2 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-            {/* SVG World Map */}
-            <svg 
-              className="absolute inset-0 w-full h-full"
-              viewBox="0 0 1000 500"
-              preserveAspectRatio="xMidYMid slice"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Ocean background */}
-              <rect width="1000" height="500" className="fill-blue-100 dark:fill-blue-950" />
-              
-              {/* North America */}
-              <path 
-                d="M 60,100 Q 70,70 100,75 Q 130,70 145,85 Q 165,75 180,90 L 185,110 Q 190,130 180,145 L 175,165 Q 165,180 150,185 L 130,195 Q 110,200 95,195 L 75,185 Q 60,170 55,150 L 50,120 Q 55,105 60,100 Z" 
-                className="fill-green-400 dark:fill-green-600 stroke-green-600 dark:stroke-green-400 opacity-80 dark:opacity-60"
-                strokeWidth="1.5"
-              />
-              
-              {/* Central America connector */}
-              <path 
-                d="M 150,195 Q 155,205 160,215 L 165,225 Q 162,232 158,238" 
-                className="fill-green-400 dark:fill-green-600 stroke-green-600 dark:stroke-green-400 opacity-80 dark:opacity-60"
-                strokeWidth="1.5"
-              />
-              
-              {/* South America */}
-              <path 
-                d="M 158,238 Q 165,245 175,250 L 190,260 Q 200,275 205,295 L 210,315 Q 208,335 200,350 L 185,365 Q 170,370 155,365 L 145,355 Q 135,340 132,320 L 130,295 Q 132,275 140,260 L 148,245 Q 153,240 158,238 Z" 
-                className="fill-green-400 dark:fill-green-600 stroke-green-600 dark:stroke-green-400 opacity-80 dark:opacity-60"
-                strokeWidth="1.5"
-              />
-              
-              {/* Europe */}
-              <path 
-                d="M 485,95 Q 495,88 510,90 L 530,92 Q 545,95 555,105 L 560,120 Q 558,135 550,145 L 535,152 Q 520,155 505,153 L 490,148 Q 480,138 478,125 L 480,108 Q 482,100 485,95 Z" 
-                className="fill-green-400 dark:fill-green-600 stroke-green-600 dark:stroke-green-400 opacity-80 dark:opacity-60"
-                strokeWidth="1.5"
-              />
-              
-              {/* Africa */}
-              <path 
-                d="M 495,160 Q 505,158 520,160 L 540,165 Q 555,172 565,185 L 575,205 Q 580,225 580,245 L 578,270 Q 575,290 568,305 L 555,320 Q 540,328 520,328 L 500,325 Q 485,318 475,305 L 468,285 Q 465,265 467,245 L 472,220 Q 478,195 485,175 Q 490,165 495,160 Z" 
-                className="fill-green-400 dark:fill-green-600 stroke-green-600 dark:stroke-green-400 opacity-80 dark:opacity-60"
-                strokeWidth="1.5"
-              />
-              
-              {/* Asia (large, complex shape) */}
-              <path 
-                d="M 570,85 Q 585,78 605,75 L 630,73 Q 655,75 675,82 L 700,90 Q 720,98 735,108 L 755,122 Q 770,135 780,150 L 785,165 Q 788,180 785,195 L 775,210 Q 760,220 740,225 L 715,228 Q 690,228 670,223 L 645,215 Q 625,205 610,192 L 595,178 Q 585,165 580,150 L 575,130 Q 573,115 575,100 Q 577,90 580,85 L 585,80 Q 590,78 595,78 L 610,77 Q 625,78 640,82 L 655,87 Q 665,92 675,98" 
-                className="fill-green-400 dark:fill-green-600 stroke-green-600 dark:stroke-green-400 opacity-80 dark:opacity-60"
-                strokeWidth="1.5"
-              />
-              
-              {/* Southeast Asia peninsula */}
-              <path 
-                d="M 690,228 Q 695,235 698,245 L 700,260 Q 698,270 693,278" 
-                className="fill-green-400 dark:fill-green-600 stroke-green-600 dark:stroke-green-400 opacity-80 dark:opacity-60"
-                strokeWidth="1.5"
-              />
-              
-              {/* Australia */}
-              <path 
-                d="M 730,300 Q 745,295 765,297 L 785,302 Q 800,308 810,318 L 818,332 Q 820,347 815,360 L 805,372 Q 790,380 770,382 L 750,380 Q 735,375 725,365 L 718,350 Q 715,335 718,320 L 723,308 Q 727,302 730,300 Z" 
-                className="fill-green-400 dark:fill-green-600 stroke-green-600 dark:stroke-green-400 opacity-80 dark:opacity-60"
-                strokeWidth="1.5"
-              />
-              
-              {/* Antarctica (bottom strip, optional) */}
-              <rect 
-                x="0" 
-                y="460" 
-                width="1000" 
-                height="40" 
-                className="fill-teal-200 dark:fill-teal-800 stroke-teal-600 dark:stroke-teal-400 opacity-40"
-                strokeWidth="1"
-              />
-            </svg>
+          <div className="relative w-full h-[500px] border-2 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+            {/* Region Bubbles - Clean Abstract Layout */}
+            {edges.map((edge) => (
+              <div
+                key={`region-${edge.id}`}
+                className="absolute rounded-full bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 border-2 border-green-300 dark:border-green-700 flex items-center justify-center"
+                style={{
+                  left: `${edge.x}%`,
+                  top: `${edge.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                  width: '180px',
+                  height: '180px',
+                }}
+              >
+                <div className="text-center">
+                  <div className="text-sm font-bold text-green-700 dark:text-green-300">
+                    {edge.region}
+                  </div>
+                  <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    {edge.name}
+                  </div>
+                </div>
+              </div>
+            ))}
 
             {/* Edge Servers */}
             {edges.map((edge) => (
