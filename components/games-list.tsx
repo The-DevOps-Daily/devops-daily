@@ -6,19 +6,38 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Search, Filter, RotateCcw, Sparkles, Zap, Activity, Timer, ArrowRight } from 'lucide-react';
+import { Search, Filter, RotateCcw, Sparkles, Zap, Activity, Timer, ArrowRight, LucideIcon } from 'lucide-react';
 import Link from 'next/link';
-import type { Game } from '@/lib/games';
+
+// Serializable game type with icon component
+export interface SerializableGame {
+  id: string;
+  title: string;
+  description: string;
+  iconComponent: LucideIcon;
+  badgeText?: string;
+  color: string;
+  href: string;
+  tags: string[];
+  isNew?: boolean;
+  isHot?: boolean;
+  isPopular?: boolean;
+  isComingSoon?: boolean;
+  featured?: boolean;
+  category?: string;
+}
 
 interface GamesListProps {
-  games: Game[];
+  games: SerializableGame[];
   className?: string;
   showSearch?: boolean;
   showFilters?: boolean;
 }
 
 // Game Card Component
-function GameCard({ game, featured = false }: { game: Game; featured?: boolean }) {
+function GameCard({ game, featured = false }: { game: SerializableGame; featured?: boolean }) {
+  const Icon = game.iconComponent;
+
   return (
     <Link
       href={game.href}
@@ -47,7 +66,7 @@ function GameCard({ game, featured = false }: { game: Game; featured?: boolean }
         <CardHeader className="pb-4">
           <div className="flex justify-between items-start mb-4">
             <div className={`p-3 rounded-xl bg-linear-to-br ${game.color} text-white shadow-lg`}>
-              <game.icon className="h-6 w-6" />
+              <Icon className="h-6 w-6" />
             </div>
             {game.badgeText && (
               <Badge
@@ -316,7 +335,7 @@ export function GamesList({
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Showing {filteredGames.length} of {games.length} games
-          {searchQuery && <span> for "{searchQuery}"</span>}
+          {searchQuery && <span> for \"{searchQuery}\"</span>}
         </div>
 
         {activeFiltersCount > 0 && (
@@ -369,7 +388,7 @@ export function GamesList({
             <div className="py-12 text-center">
               <div className="mb-4 text-muted-foreground">
                 {searchQuery ? (
-                  <>No games found matching "{searchQuery}"</>
+                  <>No games found matching \"{searchQuery}\"</>
                 ) : (
                   <>No games match your current filters</>
                 )}

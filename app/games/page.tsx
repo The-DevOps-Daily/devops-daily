@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dice6, Sparkles } from 'lucide-react';
 import { getAllGames } from '@/lib/games';
 import { GamesHero } from '@/components/games-hero';
-import { GamesList } from '@/components/games-list';
+import { GamesList, SerializableGame } from '@/components/games-list';
 
 export const metadata: Metadata = {
   title: 'DevOps Games & Interactive Tools',
@@ -44,6 +44,15 @@ export default async function GamesPage() {
   const availableGames = games.filter((game) => !game.isComingSoon);
   const comingSoonGames = games.filter((game) => game.isComingSoon);
 
+  // Serialize games data to remove non-serializable icon components
+  const serializableGames: SerializableGame[] = games.map((game) => {
+    const Icon = game.icon;
+    return {
+      ...game,
+      iconComponent: Icon,
+    };
+  });
+
   return (
     <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
       {/* Hero Section */}
@@ -51,7 +60,7 @@ export default async function GamesPage() {
 
       {/* Games List with Filters */}
       <section className="py-8 container mx-auto px-4 mb-16">
-        <GamesList games={games} />
+        <GamesList games={serializableGames} />
       </section>
 
       {/* CTA Section */}
