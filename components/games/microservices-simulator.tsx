@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 // Service types
 type ServiceType = 'api-gateway' | 'user' | 'product' | 'cart' | 'order';
 type ServiceStatus = 'healthy' | 'degraded' | 'down';
-type TutorialStep = 'welcome' | 'click-service' | 'start-sim' | 'scale-service' | 'toggle-health' | 'complete';
+type TutorialStep = 'welcome' | 'click-service' | 'start-sim' | 'scale-service' | 'complete';
 
 interface Service {
   id: string;
@@ -116,7 +116,6 @@ export default function MicroservicesSimulator() {
   const [tutorialMode, setTutorialMode] = useState(false);
   const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome');
   const [showWelcome, setShowWelcome] = useState(true);
-  const [narration, setNarration] = useState('Welcome! Click "Start Tutorial" to learn how microservices work.');
   const [showAdvancedServices, setShowAdvancedServices] = useState(false);
 
   const animationRef = useRef<number>();
@@ -217,40 +216,30 @@ export default function MicroservicesSimulator() {
     ];
     setServices([...services, ...advancedServices]);
     setShowAdvancedServices(true);
-    setNarration('Added Cart and Order services! Now you have a complete e-commerce architecture.');
   };
 
   const removeAdvancedServices = () => {
     setServices((prev) => prev.filter((s) => s.type !== 'cart' && s.type !== 'order'));
     setShowAdvancedServices(false);
     setSelectedService(null);
-    setNarration('Removed advanced services. Back to core microservices architecture.');
   };
 
   const startTutorial = () => {
     setShowWelcome(false);
     setTutorialMode(true);
     setTutorialStep('click-service');
-    setNarration('👆 Click on the API Gateway to learn about this service.');
   };
 
   const advanceTutorial = (currentStep: TutorialStep) => {
     switch (currentStep) {
       case 'click-service':
         setTutorialStep('start-sim');
-        setNarration('🎬 Great! Now click the "Start" button to begin the simulation.');
         break;
       case 'start-sim':
         setTutorialStep('scale-service');
-        setNarration('⚖️ Perfect! Notice the requests flowing. Now scale up the User Service to handle more load.');
         break;
       case 'scale-service':
-        setTutorialStep('toggle-health');
-        setNarration('👏 Excellent! Now toggle the health of a service to see how failures affect the system.');
-        break;
-      case 'toggle-health':
         setTutorialStep('complete');
-        setNarration('✅ Tutorial complete! You now understand microservices basics. Try different scenarios!');
         setTimeout(() => setTutorialMode(false), TUTORIAL_COMPLETE_DELAY_MS);
         break;
     }
@@ -259,7 +248,6 @@ export default function MicroservicesSimulator() {
   const skipTutorial = () => {
     setShowWelcome(false);
     setTutorialMode(false);
-    setNarration('Click services to view metrics and interact with your architecture.');
   };
 
   // Handle ESC key to close welcome modal
@@ -393,9 +381,6 @@ export default function MicroservicesSimulator() {
     if (tutorialMode && tutorialStep === 'click-service') {
       if (service.type === 'api-gateway') {
         advanceTutorial('click-service');
-      } else {
-        // Allow clicking other services, but guide them back
-        setNarration('👆 Good try! But please click the API Gateway first to continue the tutorial.');
       }
     }
   };
@@ -405,9 +390,6 @@ export default function MicroservicesSimulator() {
     if (tutorialMode && tutorialStep === 'scale-service' && delta > 0) {
       if (service?.type === 'user') {
         advanceTutorial('scale-service');
-      } else {
-        // Allow scaling other services, but guide them back
-        setNarration('⚖️ Nice! But try scaling the User Service to continue the tutorial.');
       }
     }
     setServices((prev) =>
@@ -420,9 +402,6 @@ export default function MicroservicesSimulator() {
   };
 
   const toggleServiceHealth = (serviceId: string) => {
-    if (tutorialMode && tutorialStep === 'toggle-health') {
-      advanceTutorial('toggle-health');
-    }
     setServices((prev) =>
       prev.map((s) => {
         if (s.id !== serviceId) return s;
@@ -546,16 +525,6 @@ export default function MicroservicesSimulator() {
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Narration Box */}
-          {!showWelcome && (
-            <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-              <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <AlertDescription className="text-blue-900 dark:text-blue-100">
-                {narration}
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -692,7 +661,7 @@ export default function MicroservicesSimulator() {
                   }}
                   whileHover={{ scale: 1.05 }}
                   animate={(
-                    tutorialMode && 
+                    tutorialMode && tutorialStep !== 'complete' && 
                     ((tutorialStep === 'click-service' && service.type === 'api-gateway') ||
                      (tutorialStep === 'scale-service' && service.type === 'user'))
                   ) ? {
@@ -716,7 +685,7 @@ export default function MicroservicesSimulator() {
                   transition={{
                     duration: service.status === 'down' ? 1.5 : service.status === 'degraded' ? 1.8 : 2,
                     repeat: (
-                      (tutorialMode && 
+                      (tutorialMode && tutorialStep !== 'complete' && 
                        ((tutorialStep === 'click-service' && service.type === 'api-gateway') ||
                         (tutorialStep === 'scale-service' && service.type === 'user'))) ||
                       service.status !== 'healthy'
@@ -768,6 +737,88 @@ export default function MicroservicesSimulator() {
                   </Button>
                 </motion.div>
               )}
+
+              {/* Floating Tutorial Card */}
+              <AnimatePresence>
+                {tutorialMode && tutorialStep !== 'complete' && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className={cn(
+                      'absolute z-20 max-w-xs',
+                      tutorialStep === 'click-service' && 'left-60 top-48',
+                      tutorialStep === 'start-sim' && 'left-1/2 -translate-x-1/2 top-2',
+                      tutorialStep === 'scale-service' && 'left-[450px] top-24'
+                    )}
+                  >
+                    <Card className="border-2 border-blue-500 bg-blue-50 dark:bg-blue-950/90 shadow-xl">
+                      <div className="p-4 space-y-3">
+                        {/* Progress Indicator */}
+                        <div className="flex items-center justify-between">
+                          <Badge variant="secondary" className="bg-blue-600 text-white text-xs">
+                            Step {tutorialStep === 'click-service' ? '1' : tutorialStep === 'start-sim' ? '2' : '3'} of 3
+                          </Badge>
+                          <Button
+                            onClick={skipTutorial}
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                          >
+                            Skip
+                          </Button>
+                        </div>
+
+                        {/* Tutorial Content */}
+                        <div className="space-y-2">
+                          {tutorialStep === 'click-service' && (
+                            <>
+                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">
+                                👆 Click the API Gateway
+                              </h4>
+                              <p className="text-xs text-blue-700 dark:text-blue-200">
+                                The API Gateway is the entry point for all requests. Click it to see its details and metrics.
+                              </p>
+                            </>
+                          )}
+                          {tutorialStep === 'start-sim' && (
+                            <>
+                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">
+                                ▶️ Start the Simulation
+                              </h4>
+                              <p className="text-xs text-blue-700 dark:text-blue-200">
+                                Press the green "Start" button above to watch requests flow between services in real-time.
+                              </p>
+                            </>
+                          )}
+                          {tutorialStep === 'scale-service' && (
+                            <>
+                              <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-100">
+                                ⬆️ Scale the User Service
+                              </h4>
+                              <p className="text-xs text-blue-700 dark:text-blue-200">
+                                Click the User Service, then press "Scale Up" to add more instances and handle increased load.
+                              </p>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Visual Arrow Indicator */}
+                        {tutorialStep === 'click-service' && (
+                          <div className="absolute -left-8 top-6 text-4xl animate-bounce">
+                            ◀️
+                          </div>
+                        )}
+                        {tutorialStep === 'scale-service' && (
+                          <div className="absolute -left-8 top-6 text-4xl animate-bounce">
+                            ◀️
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
             </div>
