@@ -22,6 +22,20 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'dbms-simulator',
+    title: 'Database Management Systems',
+    description:
+      'Learn about different database types (SQL, NoSQL, Graph, Time-Series) and their use cases. Explore CAP theorem trade-offs and make informed database choices.',
+    iconName: 'Database',
+    badgeText: 'New',
+    color: 'from-blue-500 to-cyan-600',
+    href: '/games/dbms-simulator',
+    tags: ['database', 'sql', 'nosql', 'educational', 'interactive'],
+    isNew: true,
+    featured: true,
+    category: 'Infrastructure',
+  },
+  {
     id: 'gitops-workflow',
     title: 'GitOps Workflow Simulator',
     description:
