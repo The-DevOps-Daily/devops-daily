@@ -180,6 +180,7 @@ export default function GitOpsWorkflow() {
   const [autoSync, setAutoSync] = useState(true);
   const [pendingSync, setPendingSync] = useState(false);
   const [nextCommitId, setNextCommitId] = useState(7);
+  const [hasDrift, setHasDrift] = useState(false);
   const [currentChallenge, setCurrentChallenge] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -190,6 +191,26 @@ export default function GitOpsWorkflow() {
   const addInsight = useCallback((message: string) => {
     setInsights((prev) => [...prev.slice(-4), message]);
   }, []);
+  // Effect: When auto-sync is enabled and there's drift or pending sync, auto-heal
+  useEffect(() => {
+    if (autoSync && (hasDrift || pendingSync)) {
+      addInsight('🔄 Auto-sync enabled - initiating reconciliation...');
+      setSyncStatus('syncing');
+      setHealthStatus('progressing');
+      setPendingSync(false);
+      
+      setTimeout(() => {
+        setSyncStatus('synced');
+        setHealthStatus('healthy');
+        setHasDrift(false);
+        if (hasDrift) {
+          addInsight('✅ Drift corrected automatically - cluster reconciled with Git');
+        } else {
+          addInsight('✅ Auto-sync completed - cluster synced with Git');
+        }
+      }, 2000);
+    }
+  }, [autoSync, hasDrift, pendingSync, addInsight]);
 
   const generateRandomCommit = useCallback(() => {
     const template = commitTemplates[Math.floor(Math.random() * commitTemplates.length)];
@@ -256,13 +277,15 @@ export default function GitOpsWorkflow() {
     setTimeout(() => {
       setSyncStatus('synced');
       setHealthStatus('healthy');
+      setHasDrift(false);
       addInsight('✅ Manual sync successful - cluster synced with Git');
     }, 2000);
-  }, [pendingSync, addInsight]);
+  }, [pendingSync, addInsight, setHasDrift]);
 
   const handleDriftScenario = useCallback(() => {
     setSyncStatus('out-of-sync');
     setHealthStatus('degraded');
+    setHasDrift(true);
     addInsight('⚠️ Configuration drift detected - manual change in cluster!');
     addInsight('🔍 Replicas: Git declares 3, cluster has 5');
 
@@ -273,6 +296,7 @@ export default function GitOpsWorkflow() {
         setTimeout(() => {
           setSyncStatus('synced');
           setHealthStatus('healthy');
+          setHasDrift(false);
           addInsight('✅ Drift corrected automatically - cluster now has 3 replicas');
         }, 1500);
       }, 2000);
@@ -291,6 +315,7 @@ export default function GitOpsWorkflow() {
     setHealthStatus('healthy');
     setAutoSync(true);
     setPendingSync(false);
+    setHasDrift(false);
     setNextCommitId(7);
     setCurrentChallenge(0);
     setSelectedAnswer(null);
