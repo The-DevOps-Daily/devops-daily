@@ -402,21 +402,39 @@ docker build -t myapp .
 BuildKit supports concurrent stage execution:
 
 ```dockerfile
+# syntax=docker/dockerfile:1
+
+# Define base image first
+FROM node:20-alpine AS base
+WORKDIR /app
+
+# Dependencies stage
 FROM base AS deps
+COPY package*.json ./
 RUN npm ci
 
+# Build stage
 FROM base AS build
+COPY package*.json ./
 COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 RUN npm run build
 
+# Test stage (runs in parallel with build)
 FROM base AS test
+COPY package*.json ./
 COPY --from=deps /app/node_modules ./node_modules
+COPY . .
 RUN npm test
 ```
 
 ### Cache Mounts
 
+BuildKit cache mounts persist cache across builds:
+
 ```dockerfile
+# syntax=docker/dockerfile:1
+
 RUN --mount=type=cache,target=/root/.npm \
     npm ci --only=production
 ```
