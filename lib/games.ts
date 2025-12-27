@@ -16,6 +16,7 @@ import {
   Server,
   Bug,
   Boxes,
+  Globe,
 } from 'lucide-react';
 
 export interface Game {
@@ -95,6 +96,20 @@ const games: Game[] = [
     isNew: true,
     featured: true,
     category: 'Architecture',
+  },
+  {
+    id: 'cdn-simulator',
+    title: 'CDN (Content Delivery Network) Simulator',
+    description:
+      'Visualize how edge servers reduce latency and protect origin servers by serving content from locations closer to users.',
+    icon: Globe,
+    badgeText: 'New',
+    color: 'from-blue-500 to-cyan-600',
+    href: '/games/cdn-simulator',
+    tags: ['cdn', 'performance', 'networking', 'interactive'],
+    isNew: true,
+    featured: true,
+    category: 'Networking',
   },
   {
     id: 'k8s-scheduler',
