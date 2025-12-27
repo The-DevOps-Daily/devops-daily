@@ -205,23 +205,23 @@ export default function CDNSimulator() {
   // Define structured positions in each grid cell (3 columns x 2 rows per region)
   const userSlots = [
     // US East - top left cell (below region card)
-    { x: 10, y: 40 }, { x: 16.67, y: 40 }, { x: 23.34, y: 40 },
-    { x: 10, y: 45 }, { x: 16.67, y: 45 }, { x: 23.34, y: 45 },
+    { x: 6.67, y: 40 }, { x: 16.67, y: 40 }, { x: 26.67, y: 40 },
+    { x: 6.67, y: 45 }, { x: 16.67, y: 45 }, { x: 26.67, y: 45 },
     // US West - top middle cell (below region card)
-    { x: 43.33, y: 40 }, { x: 50, y: 40 }, { x: 56.67, y: 40 },
-    { x: 43.33, y: 45 }, { x: 50, y: 45 }, { x: 56.67, y: 45 },
+    { x: 40, y: 40 }, { x: 50, y: 40 }, { x: 60, y: 40 },
+    { x: 40, y: 45 }, { x: 50, y: 45 }, { x: 60, y: 45 },
     // Europe - top right cell (below region card)
-    { x: 76.66, y: 40 }, { x: 83.33, y: 40 }, { x: 90, y: 40 },
-    { x: 76.66, y: 45 }, { x: 83.33, y: 45 }, { x: 90, y: 45 },
+    { x: 73.33, y: 40 }, { x: 83.33, y: 40 }, { x: 93.33, y: 40 },
+    { x: 73.33, y: 45 }, { x: 83.33, y: 45 }, { x: 93.33, y: 45 },
     // Asia - bottom left cell (below region card)
-    { x: 10, y: 88 }, { x: 16.67, y: 88 }, { x: 23.34, y: 88 },
-    { x: 10, y: 92 }, { x: 16.67, y: 92 }, { x: 23.34, y: 92 },
+    { x: 6.67, y: 88 }, { x: 16.67, y: 88 }, { x: 26.67, y: 88 },
+    { x: 6.67, y: 92 }, { x: 16.67, y: 92 }, { x: 26.67, y: 92 },
     // South America - bottom middle cell (below region card)
-    { x: 43.33, y: 88 }, { x: 50, y: 88 }, { x: 56.67, y: 88 },
-    { x: 43.33, y: 92 }, { x: 50, y: 92 }, { x: 56.67, y: 92 },
+    { x: 40, y: 88 }, { x: 50, y: 88 }, { x: 60, y: 88 },
+    { x: 40, y: 92 }, { x: 50, y: 92 }, { x: 60, y: 92 },
     // Australia - bottom right cell (below region card)
-    { x: 76.66, y: 88 }, { x: 83.33, y: 88 }, { x: 90, y: 88 },
-    { x: 76.66, y: 92 }, { x: 83.33, y: 92 }, { x: 90, y: 92 },
+    { x: 73.33, y: 88 }, { x: 83.33, y: 88 }, { x: 93.33, y: 88 },
+    { x: 73.33, y: 92 }, { x: 83.33, y: 92 }, { x: 93.33, y: 92 },
   ];
    
    const userData = preset || (() => {
