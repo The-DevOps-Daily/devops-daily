@@ -202,28 +202,29 @@ export default function CDNSimulator() {
   };
 
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
-    const columnWidth = 100 / 3;
-    const horizontalMargin = columnWidth * 0.07; // keeps spacing from column borders
-
-    const userSlots = EDGE_LOCATIONS.flatMap((edge, index) => {
-      const columnIndex = index % 3;
-      const rowIndex = Math.floor(index / 3);
-      const columnStart = columnIndex * columnWidth;
-      const columnEnd = columnStart + columnWidth;
-      const xPositions = [
-        columnStart + horizontalMargin,
-        columnStart + columnWidth / 2,
-        columnEnd - horizontalMargin,
-      ];
-      const yOffsets = rowIndex === 0 ? [15, 20] : [13, 17];
-
-      return yOffsets.flatMap((yOffset) =>
-        xPositions.map((x) => ({
-          x: parseFloat(Math.min(94, Math.max(6, x)).toFixed(2)),
-          y: parseFloat((edge.y + yOffset).toFixed(2)),
-        }))
-      );
-    });
+    // Define user slots within each grid column (3 columns, 2 rows)
+    // Region cards are 30% wide centered at 16.67%, 50%, 83.33%
+    // Users should be positioned within the visual bounds of each region card
+    const userSlots = [
+      // Column 1 - Region centered at 16.67% (spans 1.67% to 31.67%) - Top row
+      { x: 7.67, y: 40 }, { x: 16.67, y: 40 }, { x: 25.67, y: 40 },
+      { x: 7.67, y: 45 }, { x: 16.67, y: 45 }, { x: 25.67, y: 45 },
+      // Column 2 - Region centered at 50% (spans 35% to 65%) - Top row
+      { x: 41, y: 40 }, { x: 50, y: 40 }, { x: 59, y: 40 },
+      { x: 41, y: 45 }, { x: 50, y: 45 }, { x: 59, y: 45 },
+      // Column 3 - Region centered at 83.33% (spans 68.33% to 98.33%) - Top row
+      { x: 74.33, y: 40 }, { x: 83.33, y: 40 }, { x: 92.33, y: 40 },
+      { x: 74.33, y: 45 }, { x: 83.33, y: 45 }, { x: 92.33, y: 45 },
+      // Column 1 - Region centered at 16.67% (spans 1.67% to 31.67%) - Bottom row
+      { x: 7.67, y: 88 }, { x: 16.67, y: 88 }, { x: 25.67, y: 88 },
+      { x: 7.67, y: 92 }, { x: 16.67, y: 92 }, { x: 25.67, y: 92 },
+      // Column 2 - Region centered at 50% (spans 35% to 65%) - Bottom row
+      { x: 41, y: 88 }, { x: 50, y: 88 }, { x: 59, y: 88 },
+      { x: 41, y: 92 }, { x: 50, y: 92 }, { x: 59, y: 92 },
+      // Column 3 - Region centered at 83.33% (spans 68.33% to 98.33%) - Bottom row
+      { x: 74.33, y: 88 }, { x: 83.33, y: 88 }, { x: 92.33, y: 88 },
+      { x: 74.33, y: 92 }, { x: 83.33, y: 92 }, { x: 92.33, y: 92 },
+    ];
 
     const userData = preset || (() => {
       // Find all available slots that aren't already occupied
