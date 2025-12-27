@@ -71,9 +71,9 @@ const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
   { name: 'New York', x: 16.67, y: 42 },
   { name: 'Los Angeles', x: 50, y: 42 },
   { name: 'London', x: 83.33, y: 42 },
-  { name: 'Tokyo', x: 16.67, y: 92 },
-  { name: 'São Paulo', x: 50, y: 92 },
-  { name: 'Sydney', x: 83.33, y: 92 },
+  { name: 'Tokyo', x: 16.67, y: 90 },
+  { name: 'São Paulo', x: 50, y: 90 },
+  { name: 'Sydney', x: 83.33, y: 90 },
 ];
 
 // Calculate distance between two points
@@ -202,29 +202,29 @@ export default function CDNSimulator() {
   };
 
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
-    // Define structured positions in each grid cell (3 columns x 2 rows per region)
-    const userSlots = [
-      // US East - top left cell (below region card)
-      { x: 8, y: 40 }, { x: 16.67, y: 40 }, { x: 25, y: 40 },
-      { x: 8, y: 45 }, { x: 16.67, y: 45 }, { x: 25, y: 45 },
-      // US West - top middle cell (below region card)
-      { x: 41.5, y: 40 }, { x: 50, y: 40 }, { x: 58.5, y: 40 },
-      { x: 41.5, y: 45 }, { x: 50, y: 45 }, { x: 58.5, y: 45 },
-      // Europe - top right cell (below region card)
-      { x: 75, y: 40 }, { x: 83.33, y: 40 }, { x: 91.5, y: 40 },
-      { x: 75, y: 45 }, { x: 83.33, y: 45 }, { x: 91.5, y: 45 },
-      // Asia - bottom left cell (below region card)
-      { x: 8, y: 90 }, { x: 16.67, y: 90 }, { x: 25, y: 90 },
-      { x: 8, y: 95 }, { x: 16.67, y: 95 }, { x: 25, y: 95 },
-      // South America - bottom middle cell (below region card)
-      { x: 41.5, y: 90 }, { x: 50, y: 90 }, { x: 58.5, y: 90 },
-      { x: 41.5, y: 95 }, { x: 50, y: 95 }, { x: 58.5, y: 95 },
-      // Australia - bottom right cell (below region card)
-      { x: 75, y: 90 }, { x: 83.33, y: 90 }, { x: 91.5, y: 90 },
-      { x: 75, y: 95 }, { x: 83.33, y: 95 }, { x: 91.5, y: 95 },
-    ];
-    
-    const userData = preset || (() => {
+   // Define structured positions in each grid cell (3 columns x 2 rows per region)
+   const userSlots = [
+     // US East - top left cell (below region card)
+     { x: 8, y: 40 }, { x: 16.67, y: 40 }, { x: 25, y: 40 },
+     { x: 8, y: 45 }, { x: 16.67, y: 45 }, { x: 25, y: 45 },
+     // US West - top middle cell (below region card)
+     { x: 41.5, y: 40 }, { x: 50, y: 40 }, { x: 58.5, y: 40 },
+     { x: 41.5, y: 45 }, { x: 50, y: 45 }, { x: 58.5, y: 45 },
+     // Europe - top right cell (below region card)
+     { x: 75, y: 40 }, { x: 83.33, y: 40 }, { x: 91.5, y: 40 },
+     { x: 75, y: 45 }, { x: 83.33, y: 45 }, { x: 91.5, y: 45 },
+     // Asia - bottom left cell (below region card)
+     { x: 8, y: 88 }, { x: 16.67, y: 88 }, { x: 25, y: 88 },
+     { x: 8, y: 92 }, { x: 16.67, y: 92 }, { x: 25, y: 92 },
+     // South America - bottom middle cell (below region card)
+     { x: 41.5, y: 88 }, { x: 50, y: 88 }, { x: 58.5, y: 88 },
+     { x: 41.5, y: 92 }, { x: 50, y: 92 }, { x: 58.5, y: 92 },
+     // Australia - bottom right cell (below region card)
+     { x: 75, y: 88 }, { x: 83.33, y: 88 }, { x: 91.5, y: 88 },
+     { x: 75, y: 92 }, { x: 83.33, y: 92 }, { x: 91.5, y: 92 },
+   ];
+   
+   const userData = preset || (() => {
       // Find all available slots that aren't already occupied
       const occupiedPositions = users.map(u => `${u.x},${u.y}`);
       const availableSlots = userSlots.filter(slot => 
