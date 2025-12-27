@@ -59,21 +59,21 @@ type Request = {
 
 const EDGE_LOCATIONS: EdgeLocation[] = [
   // Coordinates calculated from lat/long: x = (lon + 180) / 360 * 100, y = (90 - lat) / 180 * 100
-  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 27.5, y: 38.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -77.5°, 38°N
-  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 21.9, y: 37.2, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -123.1°, 45°N
-  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 52.4, y: 35.6, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 8.7°, 50°N
-  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 82.8, y: 38.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 139.7°, 35.7°N
-  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 86.4, y: 68.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 151°, -33.9°S
-  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 36.9, y: 62.2, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -46.6°, -23.5°S
+  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 28.5, y: 28.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -77.5°, 38°N
+  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 15.8, y: 25.0, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -123.1°, 45°N
+  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 52.4, y: 22.2, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 8.7°, 50°N
+  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 88.8, y: 30.2, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 139.7°, 35.7°N
+  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 91.9, y: 68.8, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 151°, -33.9°S
+  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 37.1, y: 63.1, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -46.6°, -23.5°S
 ];
 
 const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
-  { name: 'New York', x: 29.2, y: 38.9 }, // -74°, 40.7°N
-  { name: 'Los Angeles', x: 22.3, y: 38.9 }, // -118.2°, 34°N  
-  { name: 'London', x: 50, y: 35.8 }, // 0°, 51.5°N
-  { name: 'Mumbai', x: 68.1, y: 39.4 }, // 72.8°, 19°N
-  { name: 'Singapore', x: 75.3, y: 49.2 }, // 103.8°, 1.4°N
-  { name: 'Tokyo', x: 82.8, y: 38.9 }, // 139.7°, 35.7°N
+  { name: 'New York', x: 29.4, y: 27.4 }, // -74°, 40.7°N
+  { name: 'Los Angeles', x: 17.2, y: 31.1 }, // -118.2°, 34°N  
+  { name: 'London', x: 50.0, y: 21.4 }, // 0°, 51.5°N
+  { name: 'Mumbai', x: 70.2, y: 39.4 }, // 72.8°, 19°N
+  { name: 'Singapore', x: 78.8, y: 49.2 }, // 103.8°, 1.4°N
+  { name: 'Tokyo', x: 88.8, y: 30.2 }, // 139.7°, 35.7°N
 ];
 
 // Calculate distance between two points
@@ -204,14 +204,14 @@ export default function CDNSimulator() {
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
     // Define regions where users can spawn (on landmasses, not oceans)
     const landRegions = [
-      { name: 'North America East', minX: 25, maxX: 32, minY: 35, maxY: 45 },
-      { name: 'North America West', minX: 19, maxX: 25, minY: 33, maxY: 42 },
-      { name: 'Europe', minX: 48, maxX: 58, minY: 32, maxY: 42 },
-      { name: 'Asia East', minX: 77, maxX: 87, minY: 30, maxY: 45 },
-      { name: 'Asia South', minX: 65, maxX: 76, minY: 38, maxY: 50 },
-      { name: 'Australia', minX: 82, maxX: 90, minY: 63, maxY: 72 },
-      { name: 'South America', minX: 33, maxX: 42, minY: 55, maxY: 67 },
-      { name: 'Africa', minX: 48, maxX: 60, minY: 50, maxY: 70 },
+      { name: 'North America East', minX: 25, maxX: 32, minY: 24, maxY: 35 },
+      { name: 'North America West', minX: 14, maxX: 22, minY: 22, maxY: 32 },
+      { name: 'Europe', minX: 48, maxX: 58, minY: 18, maxY: 30 },
+      { name: 'Asia East', minX: 82, maxX: 93, minY: 25, maxY: 38 },
+      { name: 'Asia South', minX: 68, maxX: 80, minY: 35, maxY: 45 },
+      { name: 'Australia', minX: 88, maxX: 96, minY: 60, maxY: 72 },
+      { name: 'South America', minX: 35, maxX: 44, minY: 55, maxY: 68 },
+      { name: 'Africa', minX: 48, maxX: 62, minY: 45, maxY: 70 },
     ];
     
     const userData = preset || {
