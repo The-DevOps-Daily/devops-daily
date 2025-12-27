@@ -4,9 +4,9 @@ excerpt: 'Learn proven strategies to optimize Docker images: multi-stage builds,
 category:
   name: 'Docker'
   slug: 'docker'
-date: '2025-01-15'
-publishedAt: '2025-01-15T09:00:00Z'
-updatedAt: '2025-01-15T09:00:00Z'
+date: '2025-12-27'
+publishedAt: '2025-12-27T09:00:00Z'
+updatedAt: '2025-12-27T09:00:00Z'
 readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
