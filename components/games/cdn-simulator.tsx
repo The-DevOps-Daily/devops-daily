@@ -202,34 +202,56 @@ export default function CDNSimulator() {
   };
 
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
-    // Define structured regions in grid cells
-    const landRegions = [
-      { name: 'US East', minX: 5, maxX: 28, minY: 38, maxY: 50 },
-      { name: 'US West', minX: 38.5, maxX: 61.5, minY: 38, maxY: 50 },
-      { name: 'Europe', minX: 72, maxX: 95, minY: 38, maxY: 50 },
-      { name: 'Asia', minX: 5, maxX: 28, minY: 72, maxY: 84 },
-      { name: 'South America', minX: 38.5, maxX: 61.5, minY: 72, maxY: 84 },
-      { name: 'Australia', minX: 72, maxX: 95, minY: 72, maxY: 84 },
+    // Define structured positions in each grid cell (3 columns x 2 rows per region)
+    const userSlots = [
+      // US East - top left cell
+      { x: 10, y: 44 }, { x: 16.67, y: 44 }, { x: 23, y: 44 },
+      { x: 10, y: 48 }, { x: 16.67, y: 48 }, { x: 23, y: 48 },
+      // US West - top middle cell
+      { x: 43, y: 44 }, { x: 50, y: 44 }, { x: 57, y: 44 },
+      { x: 43, y: 48 }, { x: 50, y: 48 }, { x: 57, y: 48 },
+      // Europe - top right cell
+      { x: 76, y: 44 }, { x: 83.33, y: 44 }, { x: 90, y: 44 },
+      { x: 76, y: 48 }, { x: 83.33, y: 48 }, { x: 90, y: 48 },
+      // Asia - bottom left cell
+      { x: 10, y: 78 }, { x: 16.67, y: 78 }, { x: 23, y: 78 },
+      { x: 10, y: 82 }, { x: 16.67, y: 82 }, { x: 23, y: 82 },
+      // South America - bottom middle cell
+      { x: 43, y: 78 }, { x: 50, y: 78 }, { x: 57, y: 78 },
+      { x: 43, y: 82 }, { x: 50, y: 82 }, { x: 57, y: 82 },
+      // Australia - bottom right cell
+      { x: 76, y: 78 }, { x: 83.33, y: 78 }, { x: 90, y: 78 },
+      { x: 76, y: 82 }, { x: 83.33, y: 82 }, { x: 90, y: 82 },
     ];
     
-    const userData = preset || {
-      name: `User ${users.length + 1}`,
-      ...(() => {
-        // Pick a random land region
-        const region = landRegions[Math.floor(Math.random() * landRegions.length)];
-        return {
-          x: Math.random() * (region.maxX - region.minX) + region.minX,
-          y: Math.random() * (region.maxY - region.minY) + region.minY,
-        };
-      })(),
-    };
+    const userData = preset || (() => {
+      // Find next available slot that isn't already occupied
+      const occupiedPositions = users.map(u => `${u.x},${u.y}`);
+      const availableSlot = userSlots.find(slot => 
+        !occupiedPositions.includes(`${slot.x},${slot.y}`)
+      );
+      
+      // If no slots available, wrap around to first slot
+      const position = availableSlot || userSlots[users.length % userSlots.length];
+      
+      return {
+        name: `User ${users.length + 1}`,
+        ...position,
+      };
+    })();
+    
+    // If preset provided, use it
+    const finalUserData = preset ? {
+      name: preset.name,
+      x: preset.x,
+      y: preset.y,
+    } : userData;
     
     const newUser: UserLocation = {
       id: `user-${Date.now()}-${Math.random()}`,
-      ...userData,
-      nearestEdge: findNearestEdge(userData.x, userData.y),
+      ...finalUserData,
+      nearestEdge: findNearestEdge(finalUserData.x, finalUserData.y),
     };
-    
     setUsers((prev) => [...prev, newUser]);
   };
 
