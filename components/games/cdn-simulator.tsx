@@ -528,7 +528,7 @@ export default function CDNSimulator() {
           <div className="relative w-full h-[500px] border-2 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
             {/* World Map Image */}
             <img
-              src="https://upload.wikimedia.org/wikipedia/commons/8/83/Equirectangular_projection_SW.jpg"
+              src="/world-map.jpg"
               alt="World Map"
               className="absolute inset-0 w-full h-full object-cover opacity-60 dark:opacity-40"
             />
