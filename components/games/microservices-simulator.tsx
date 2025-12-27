@@ -644,6 +644,7 @@ export default function MicroservicesSimulator() {
               {services.map((service) => (
                 <motion.div
                   key={service.id}
+                  initial={{ scale: 1, boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)', opacity: 1 }}
                   className="absolute cursor-pointer"
                   tabIndex={0}
                   role="button"
@@ -660,28 +661,42 @@ export default function MicroservicesSimulator() {
                     }
                   }}
                   whileHover={{ scale: 1.05 }}
-                  animate={(
+                  animate={
+                    // Tutorial highlights (blue pulsing)
                     tutorialMode && tutorialStep !== 'complete' && 
                     ((tutorialStep === 'click-service' && service.type === 'api-gateway') ||
                      (tutorialStep === 'scale-service' && service.type === 'user'))
-                  ) ? {
-                    scale: [1, 1.1, 1],
-                    boxShadow: [
-                      '0 0 0 0 rgba(59, 130, 246, 0)',
-                      '0 0 0 10px rgba(59, 130, 246, 0.3)',
-                      '0 0 0 0 rgba(59, 130, 246, 0)',
-                    ],
-                  } : service.status === 'down' ? {
-                    scale: [1, 0.95, 1],
-                    opacity: [1, 0.7, 1],
-                  } : service.status === 'degraded' ? {
-                    scale: [1, 1.02, 1],
-                    boxShadow: [
-                      '0 0 0 0 rgba(234, 179, 8, 0)',
-                      '0 0 0 6px rgba(234, 179, 8, 0.2)',
-                      '0 0 0 0 rgba(234, 179, 8, 0)',
-                    ],
-                  } : {}}
+                      ? {
+                          scale: [1, 1.1, 1],
+                          boxShadow: [
+                            '0 0 0 0 rgba(59, 130, 246, 0)',
+                            '0 0 0 10px rgba(59, 130, 246, 0.3)',
+                            '0 0 0 0 rgba(59, 130, 246, 0)',
+                          ],
+                        }
+                    // Down status animation
+                    : service.status === 'down'
+                      ? {
+                          scale: [1, 0.95, 1],
+                          opacity: [1, 0.7, 1],
+                        }
+                    // Degraded status animation
+                    : service.status === 'degraded'
+                      ? {
+                          scale: [1, 1.02, 1],
+                          boxShadow: [
+                            '0 0 0 0 rgba(234, 179, 8, 0)',
+                            '0 0 0 6px rgba(234, 179, 8, 0.2)',
+                            '0 0 0 0 rgba(234, 179, 8, 0)',
+                          ],
+                        }
+                    // Default state (no animation)
+                    : {
+                        scale: 1,
+                        boxShadow: '0 0 0 0 rgba(0, 0, 0, 0)',
+                        opacity: 1,
+                      }
+                  }
                   transition={{
                     duration: service.status === 'down' ? 1.5 : service.status === 'degraded' ? 1.8 : 2,
                     repeat: (
