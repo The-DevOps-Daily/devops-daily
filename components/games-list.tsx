@@ -6,15 +6,56 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Search, Filter, RotateCcw, Sparkles, Zap, Activity, Timer, ArrowRight, LucideIcon } from 'lucide-react';
+import {
+  Search,
+  Filter,
+  RotateCcw,
+  Sparkles,
+  Zap,
+  Activity,
+  Timer,
+  ArrowRight,
+  Trophy,
+  LineChart,
+  Shield,
+  Network,
+  Workflow,
+  Laugh,
+  Heart,
+  Server,
+  Database,
+  Cloud,
+  Bug,
+  Boxes,
+  LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
+
+// Icon mapping for serializable icon names
+const iconMap: Record<string, LucideIcon> = {
+  Bug,
+  Network,
+  Trophy,
+  Boxes,
+  LineChart,
+  Activity,
+  Shield,
+  Workflow,
+  Sparkles,
+  Laugh,
+  Heart,
+  Server,
+  Zap,
+  Database,
+  Cloud,
+};
 
 // Serializable game type with icon component
 export interface SerializableGame {
   id: string;
   title: string;
   description: string;
-  iconComponent: LucideIcon;
+  iconName: string;
   badgeText?: string;
   color: string;
   href: string;
@@ -75,7 +116,7 @@ const compareGamesBySort = (a: SerializableGame, b: SerializableGame, sort: stri
 
 // Game Card Component
 function GameCard({ game, featured = false }: { game: SerializableGame; featured?: boolean }) {
-  const Icon = game.iconComponent;
+  const Icon = iconMap[game.iconName] || Activity;
 
   return (
     <Link

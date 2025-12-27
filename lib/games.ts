@@ -1,28 +1,9 @@
 // lib/games.ts
-import {
-  Trophy,
-  LineChart,
-  Activity,
-  Shield,
-  Network,
-  Workflow,
-  Sparkles,
-  Laugh,
-  Heart,
-  Timer,
-  Zap,
-  Database,
-  Cloud,
-  Server,
-  Bug,
-  Boxes,
-} from 'lucide-react';
-
 export interface Game {
   id: string;
   title: string;
   description: string;
-  icon: any;
+  iconName: string;
   badgeText?: string;
   color: string;
   href: string;
@@ -45,7 +26,7 @@ const games: Game[] = [
     title: 'Bug Hunter',
     description:
       'DevOps-themed Snake game where you control a bug that infects healthy servers. Grow longer with each infection, but avoid crashing into walls or yourself!',
-    icon: Bug,
+    iconName: 'Bug',
     badgeText: 'New',
     color: 'from-red-500 to-orange-600',
     href: '/games/bug-hunter',
@@ -59,7 +40,7 @@ const games: Game[] = [
     title: 'TCP vs UDP Simulator',
     description:
       'Interactive visualization showing the differences between TCP\'s reliable connection-oriented protocol and UDP\'s fast connectionless approach. See the 3-way handshake, packet loss, and retransmissions in action.',
-    icon: Network,
+    iconName: 'Network',
     badgeText: 'New',
     color: 'from-cyan-500 to-green-600',
     href: '/games/tcp-vs-udp',
@@ -73,7 +54,7 @@ const games: Game[] = [
     title: 'DevOps Scorecard',
     description:
       'Evaluate your DevOps skills across 8 key areas and generate a beautiful, shareable scorecard with personalized insights.',
-    icon: Trophy,
+    iconName: 'Trophy',
     badgeText: 'New',
     color: 'from-blue-500 to-purple-600',
     href: '/games/devops-scorecard',
@@ -87,7 +68,7 @@ const games: Game[] = [
     title: 'Microservices Architecture Simulator',
     description:
       'Design and deploy microservices. See communication patterns, handle failures, and scale independently. Learn when to use microservices and understand the trade-offs.',
-    icon: Boxes,
+    iconName: 'Boxes',
     badgeText: 'New',
     color: 'from-purple-500 to-pink-600',
     href: '/games/microservices-simulator',
@@ -101,7 +82,7 @@ const games: Game[] = [
     title: 'Kubernetes Scheduler Challenge',
     description:
       'Drag-and-drop Pods onto Nodes while honoring kube scheduling rules: resources, taints/tolerations, selectors, and topology spread.',
-    icon: LineChart,
+    iconName: 'LineChart',
     color: 'from-sky-500 to-cyan-600',
     href: '/games/k8s-scheduler',
     tags: ['kubernetes', 'scheduling', 'interactive'],
@@ -113,7 +94,7 @@ const games: Game[] = [
     title: 'Rate Limit Simulator',
     description:
       'Learn API rate limiting, backoff strategies, and throttling with real-time visualization and interactive charts.',
-    icon: Activity,
+    iconName: 'Activity',
     badgeText: 'Popular',
     color: 'from-blue-500 to-cyan-600',
     href: '/games/rate-limit-simulator',
@@ -126,7 +107,7 @@ const games: Game[] = [
     title: 'DDoS Attack Simulator',
     description:
       'Educational simulator to understand how DDoS attacks work with stunning real-time visualizations, multiple attack vectors, and protection mechanisms.',
-    icon: Shield,
+    iconName: 'Shield',
     color: 'from-red-500 to-orange-600',
     href: '/games/ddos-simulator',
     tags: ['educational', 'security', 'interactive', 'visualization'],
@@ -138,7 +119,7 @@ const games: Game[] = [
     title: 'Scalable Sentry',
     description:
       'Tower defense game where you defend your infrastructure against waves of network traffic. Deploy servers, manage resources, and survive boss waves!',
-    icon: Shield,
+    iconName: 'Shield',
     badgeText: 'New',
     color: 'from-indigo-500 to-purple-600',
     href: '/games/scalable-sentry',
@@ -152,7 +133,7 @@ const games: Game[] = [
     title: 'Network Packet Journey',
     description:
       'Follow a single HTTP/HTTPS packet through the entire network stack with stunning animations. Learn DNS, TCP, TLS, CDN, load balancing, and more!',
-    icon: Network,
+    iconName: 'Network',
     badgeText: 'New',
     color: 'from-cyan-500 to-blue-600',
     href: '/games/packet-journey',
@@ -165,7 +146,7 @@ const games: Game[] = [
     id: 'cicd-stack-generator',
     title: 'CI/CD Stack Generator',
     description: 'Spin the reels to generate your perfect (or perfectly cursed) DevOps stack!',
-    icon: Workflow,
+    iconName: 'Workflow',
     badgeText: 'Fun',
     color: 'from-emerald-500 to-blue-600',
     href: '/games/cicd-stack-generator',
@@ -178,7 +159,7 @@ const games: Game[] = [
     title: 'Infra Tarot Cards',
     description:
       'Draw mystical cards to discover your infrastructure destiny! Get humorous readings about your DevOps future.',
-    icon: Sparkles,
+    iconName: 'Sparkles',
     color: 'from-purple-500 to-blue-600',
     href: '/games/infra-tarot',
     tags: ['fun', 'humor', 'mystical'],
@@ -190,7 +171,7 @@ const games: Game[] = [
     title: 'You Might Be a DevOps Engineer If...',
     description:
       'Auto-generating hilarious and painfully accurate DevOps memes. Each reload brings a new dose of reality!',
-    icon: Laugh,
+    iconName: 'Laugh',
     badgeText: 'Hot',
     color: 'from-orange-500 to-red-600',
     href: '/games/devops-memes',
@@ -203,7 +184,7 @@ const games: Game[] = [
     title: 'Cards Against DevOps',
     description:
       'A hilariously inappropriate DevOps party game. Fill in the blanks with the most outrageous DevOps scenarios!',
-    icon: Heart,
+    iconName: 'Heart',
     color: 'from-pink-500 to-red-600',
     href: '/games/cards-against-devops',
     tags: ['humor', 'party', 'interactive'],
@@ -213,7 +194,7 @@ const games: Game[] = [
     id: 'git-quiz',
     title: 'Git Command Quiz',
     description: 'Test your Git knowledge with interactive scenarios and real-world challenges.',
-    icon: Activity,
+    iconName: 'Activity',
     badgeText: 'Popular',
     color: 'from-orange-500 to-amber-600',
     href: '/games/git-quiz',
@@ -226,7 +207,7 @@ const games: Game[] = [
     title: 'Uptime Defender',
     description:
       'Fast-paced SRE game where you defend your infrastructure uptime! Handle incoming incidents by adding nodes, rotating logs, failing over, restarting pods, and scaling databases.',
-    icon: Server,
+    iconName: 'Server',
     badgeText: 'New',
     color: 'from-green-500 to-emerald-600',
     href: '/games/uptime-defender',
@@ -239,7 +220,7 @@ const games: Game[] = [
     id: 'incident-commander',
     title: 'Incident Commander Simulator',
     description: 'Lead your team through production incidents and learn incident management best practices.',
-    icon: Zap,
+    iconName: 'Zap',
     badgeText: 'Coming Soon',
     color: 'from-purple-500 to-indigo-600',
     href: '#',
@@ -251,7 +232,7 @@ const games: Game[] = [
     id: 'terraform-puzzle',
     title: 'Terraform State Puzzle',
     description: 'Fix complex Terraform state issues and learn advanced IaC troubleshooting techniques.',
-    icon: Shield,
+    iconName: 'Shield',
     badgeText: 'Coming Soon',
     color: 'from-green-500 to-teal-600',
     href: '#',
@@ -263,7 +244,7 @@ const games: Game[] = [
     id: 'database-performance',
     title: 'Database Performance Tuning',
     description: 'Optimize slow queries and database configurations in real-world scenarios.',
-    icon: Database,
+    iconName: 'Database',
     badgeText: 'Coming Soon',
     color: 'from-blue-500 to-indigo-600',
     href: '#',
@@ -275,7 +256,7 @@ const games: Game[] = [
     id: 'cloud-cost-optimizer',
     title: 'Cloud Cost Optimizer Game',
     description: 'Make architectural decisions to reduce cloud costs while maintaining performance and reliability.',
-    icon: Cloud,
+    iconName: 'Cloud',
     badgeText: 'Coming Soon',
     color: 'from-emerald-500 to-green-600',
     href: '#',
@@ -287,7 +268,7 @@ const games: Game[] = [
     id: 'docker-escape',
     title: 'Container Security Challenge',
     description: 'Learn container security by identifying and fixing vulnerabilities in Docker configurations.',
-    icon: Shield,
+    iconName: 'Shield',
     badgeText: 'Coming Soon',
     color: 'from-red-500 to-pink-600',
     href: '#',

@@ -44,15 +44,6 @@ export default async function GamesPage() {
   const availableGames = games.filter((game) => !game.isComingSoon);
   const comingSoonGames = games.filter((game) => game.isComingSoon);
 
-  // Serialize games data to remove non-serializable icon components
-  const serializableGames: SerializableGame[] = games.map((game) => {
-    const Icon = game.icon;
-    return {
-      ...game,
-      iconComponent: Icon,
-    };
-  });
-
   return (
     <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
       {/* Hero Section */}
@@ -60,7 +51,7 @@ export default async function GamesPage() {
 
       {/* Games List with Filters */}
       <section className="py-8 container mx-auto px-4 mb-16">
-        <GamesList games={serializableGames} />
+        <GamesList games={games} />
       </section>
 
       {/* CTA Section */}
