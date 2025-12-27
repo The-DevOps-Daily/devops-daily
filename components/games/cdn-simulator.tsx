@@ -59,21 +59,22 @@ type Request = {
 
 const EDGE_LOCATIONS: EdgeLocation[] = [
   // Coordinates calculated from lat/long: x = (lon + 180) / 360 * 100, y = (90 - lat) / 180 * 100
-  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 28.5, y: 28.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -77.5°, 38°N
-  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 15.8, y: 25.0, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -123.1°, 45°N
-  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 52.4, y: 22.2, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 8.7°, 50°N
-  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 88.8, y: 30.2, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 139.7°, 35.7°N
-  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 91.9, y: 68.8, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 151°, -33.9°S
-  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 37.1, y: 63.1, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -46.6°, -23.5°S
+  // Adjusted with -7° latitude offset to compensate for map display distortion
+  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 28.5, y: 32.8, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -77.5°, 38°N
+  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 15.8, y: 28.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -123.1°, 45°N
+  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 52.4, y: 26.1, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 8.68°, 50.11°N
+  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 88.8, y: 34.1, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 139.69°, 35.68°N
+  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 92.0, y: 72.7, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 151.21°, -33.87°S
+  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 37.0, y: 67.0, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -46.63°, -23.55°S
 ];
 
 const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
-  { name: 'New York', x: 29.4, y: 27.4 }, // -74°, 40.7°N
-  { name: 'Los Angeles', x: 17.2, y: 31.1 }, // -118.2°, 34°N  
-  { name: 'London', x: 50.0, y: 21.4 }, // 0°, 51.5°N
-  { name: 'Mumbai', x: 70.2, y: 39.4 }, // 72.8°, 19°N
-  { name: 'Singapore', x: 78.8, y: 49.2 }, // 103.8°, 1.4°N
-  { name: 'Tokyo', x: 88.8, y: 30.2 }, // 139.7°, 35.7°N
+  { name: 'New York', x: 29.4, y: 31.3 }, // -74°, 40.7°N (adjusted -7°)
+  { name: 'Los Angeles', x: 17.2, y: 35.0 }, // -118.2°, 34°N (adjusted -7°)
+  { name: 'London', x: 50.0, y: 25.3 }, // 0°, 51.5°N (adjusted -7°)
+  { name: 'Mumbai', x: 70.2, y: 43.3 }, // 72.8°, 19°N (adjusted -7°)
+  { name: 'Singapore', x: 78.8, y: 53.1 }, // 103.8°, 1.4°N (adjusted -7°)
+  { name: 'Tokyo', x: 88.8, y: 34.1 }, // 139.69°, 35.68°N (adjusted -7°)
 ];
 
 // Calculate distance between two points
@@ -204,14 +205,14 @@ export default function CDNSimulator() {
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
     // Define regions where users can spawn (on landmasses, not oceans)
     const landRegions = [
-      { name: 'North America East', minX: 25, maxX: 32, minY: 24, maxY: 35 },
-      { name: 'North America West', minX: 14, maxX: 22, minY: 22, maxY: 32 },
-      { name: 'Europe', minX: 48, maxX: 58, minY: 18, maxY: 30 },
-      { name: 'Asia East', minX: 82, maxX: 93, minY: 25, maxY: 38 },
-      { name: 'Asia South', minX: 68, maxX: 80, minY: 35, maxY: 45 },
-      { name: 'Australia', minX: 88, maxX: 96, minY: 60, maxY: 72 },
-      { name: 'South America', minX: 35, maxX: 44, minY: 55, maxY: 68 },
-      { name: 'Africa', minX: 48, maxX: 62, minY: 45, maxY: 70 },
+      { name: 'North America East', minX: 25, maxX: 32, minY: 28, maxY: 39 },
+      { name: 'North America West', minX: 14, maxX: 22, minY: 26, maxY: 36 },
+      { name: 'Europe', minX: 48, maxX: 58, minY: 22, maxY: 34 },
+      { name: 'Asia East', minX: 82, maxX: 93, minY: 29, maxY: 42 },
+      { name: 'Asia South', minX: 68, maxX: 80, minY: 39, maxY: 49 },
+      { name: 'Australia', minX: 88, maxX: 96, minY: 64, maxY: 76 },
+      { name: 'South America', minX: 35, maxX: 44, minY: 59, maxY: 72 },
+      { name: 'Africa', minX: 48, maxX: 62, minY: 49, maxY: 74 },
     ];
     
     const userData = preset || {
@@ -552,32 +553,6 @@ export default function CDNSimulator() {
               className="absolute inset-0 w-full h-full object-cover opacity-60 dark:opacity-40"
             />
 
-            {/* Origin Server (center) */}
-            <motion.div
-              className="absolute z-10"
-              style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
-            >
-              <div className="relative">
-                <motion.div
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.3, 0.6, 0.3],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                  className="absolute inset-0 -m-8 rounded-full bg-purple-500"
-                />
-                <Card className="relative p-3 border-2 border-purple-500 bg-white dark:bg-gray-950">
-                  <Server className="w-8 h-8 text-purple-500" />
-                  <div className="text-xs font-medium mt-1 text-center">Origin</div>
-                  <div className="text-xs text-muted-foreground text-center">{Math.round(originLoad)}%</div>
-                </Card>
-              </div>
-            </motion.div>
-
             {/* Edge Servers */}
             {edges.map((edge) => (
               <motion.div
@@ -682,10 +657,6 @@ export default function CDNSimulator() {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-red-500" />
               <span>Cache Miss (Slower)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-purple-500" />
-              <span>Origin Server</span>
             </div>
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-green-500" />
