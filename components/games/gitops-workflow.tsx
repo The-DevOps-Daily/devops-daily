@@ -367,21 +367,21 @@ export default function GitOpsWorkflow() {
                   for declarative infrastructure and applications.
                 </p>
                 <div className="grid md:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                  <div className="p-4 rounded-lg bg-blue-100/60 dark:bg-blue-950/20">
                     <GitCommit className="w-6 h-6 text-blue-500 mb-2" />
                     <h3 className="font-semibold mb-1">Git as Source of Truth</h3>
                     <p className="text-sm text-muted-foreground">
                       All desired state is stored in Git repositories
                     </p>
                   </div>
-                  <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20">
+                  <div className="p-4 rounded-lg bg-purple-100/60 dark:bg-purple-950/20">
                     <RefreshCw className="w-6 h-6 text-purple-500 mb-2" />
                     <h3 className="font-semibold mb-1">Automated Sync</h3>
                     <p className="text-sm text-muted-foreground">
                       Operators continuously reconcile actual state with desired state
                     </p>
                   </div>
-                  <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20">
+                  <div className="p-4 rounded-lg bg-green-100/60 dark:bg-green-950/20">
                     <Eye className="w-6 h-6 text-green-500 mb-2" />
                     <h3 className="font-semibold mb-1">Drift Detection</h3>
                     <p className="text-sm text-muted-foreground">
@@ -562,8 +562,8 @@ export default function GitOpsWorkflow() {
                       className={cn(
                         'p-3 rounded-lg border',
                         commit.deployed
-                          ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900'
-                          : 'bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-800'
+                          ? 'bg-green-100 border-green-300 dark:bg-green-950/20 dark:border-green-900'
+                          : 'bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-700'
                       )}
                     >
                       <div className="flex items-start justify-between">
@@ -606,7 +606,7 @@ export default function GitOpsWorkflow() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900">
+                  <div className="p-4 rounded-lg bg-blue-100/50 border border-blue-300 dark:bg-blue-950/20 dark:border-blue-900">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold">GitOps Operator</h3>
                       <RefreshCw
@@ -627,26 +627,26 @@ export default function GitOpsWorkflow() {
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border">
+                  <div className="p-4 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold flex items-center">
                         <Server className="w-4 h-4 mr-2" />
                         Production Deployment
                       </h3>
                       {healthStatus === 'healthy' && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400">
+                        <Badge variant="secondary" className="bg-green-600 text-white dark:bg-green-950 dark:text-green-400">
                           <CheckCircle2 className="w-3 h-3 mr-1" />
                           Healthy
                         </Badge>
                       )}
                       {healthStatus === 'degraded' && (
-                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-400">
+                        <Badge variant="secondary" className="bg-yellow-600 text-white dark:bg-yellow-950 dark:text-yellow-400">
                           <AlertTriangle className="w-3 h-3 mr-1" />
                           Degraded
                         </Badge>
                       )}
                       {healthStatus === 'progressing' && (
-                        <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-400">
+                        <Badge variant="secondary" className="bg-blue-600 text-white dark:bg-blue-950 dark:text-blue-400">
                           <Activity className="w-3 h-3 mr-1" />
                           Progressing
                         </Badge>
@@ -713,7 +713,7 @@ export default function GitOpsWorkflow() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="p-3 rounded-lg bg-slate-50 dark:bg-slate-900 border text-sm"
+                        className="p-3 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700 text-sm"
                       >
                         {insight}
                       </motion.div>
@@ -788,17 +788,17 @@ export default function GitOpsWorkflow() {
                         'w-full p-4 rounded-lg border-2 text-left transition-all',
                         'hover:border-blue-300 dark:hover:border-blue-700',
                         selectedAnswer === null &&
-                          'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800',
+                          'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700',
                         selectedAnswer === index &&
                           index === challenge.correctAnswer &&
-                          'bg-green-50 dark:bg-green-950/20 border-green-500',
+                          'bg-green-100/60 dark:bg-green-950/20 border-green-500',
                         selectedAnswer === index &&
                           index !== challenge.correctAnswer &&
                           'bg-red-50 dark:bg-red-950/20 border-red-500',
                         selectedAnswer !== null &&
                           selectedAnswer !== index &&
                           index === challenge.correctAnswer &&
-                          'bg-green-50 dark:bg-green-950/20 border-green-500',
+                          'bg-green-100/60 dark:bg-green-950/20 border-green-500',
                         selectedAnswer !== null &&
                           selectedAnswer !== index &&
                           index !== challenge.correctAnswer &&
@@ -882,7 +882,7 @@ export default function GitOpsWorkflow() {
             </div>
 
             <div className="grid gap-4">
-              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+              <div className="p-4 rounded-lg bg-blue-100/60 dark:bg-blue-950/20">
                 <div className="flex items-center gap-2 mb-2">
                   <GitBranch className="w-5 h-5 text-blue-500" />
                   <h3 className="font-semibold">Key Takeaways</h3>
@@ -895,7 +895,7 @@ export default function GitOpsWorkflow() {
                 </ul>
               </div>
 
-              <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20">
+              <div className="p-4 rounded-lg bg-purple-100/60 dark:bg-purple-950/20">
                 <div className="flex items-center gap-2 mb-2">
                   <FileCode className="w-5 h-5 text-purple-500" />
                   <h3 className="font-semibold">Next Steps</h3>
