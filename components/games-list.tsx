@@ -100,12 +100,23 @@ const compareGamesBySort = (a: SerializableGame, b: SerializableGame, sort: stri
     if (!a.isNew && b.isNew) return 1;
     return 0;
   }
+  if (sort === 'oldest') {
+    if (a.isNew && !b.isNew) return 1;
+    if (!a.isNew && b.isNew) return -1;
+    return 0;
+  }
   if (sort === 'popular') {
     if (a.isPopular && !b.isPopular) return -1;
     if (!a.isPopular && b.isPopular) return 1;
     return 0;
   }
+  if (sort === 'unpopular') {
+    if (a.isPopular && !b.isPopular) return 1;
+    if (!a.isPopular && b.isPopular) return -1;
+    return 0;
+  }
   if (sort === 'title') return a.title.localeCompare(b.title);
+  if (sort === 'title-desc') return b.title.localeCompare(a.title);
   if (sort === 'featured') {
     if (a.featured && !b.featured) return -1;
     if (!a.featured && b.featured) return 1;
@@ -213,7 +224,7 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'new' | 'popular' | 'featured' | 'coming-soon'>('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'title' | 'featured'>('newest');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'unpopular' | 'title' | 'title-desc' | 'featured'>('newest');
 
   // Get unique categories and tags
   const { categories, allTags } = useMemo(() => {
@@ -315,8 +326,11 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
                   className="px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
                   <option value="popular">Popular First</option>
+                  <option value="unpopular">Less Popular First</option>
                   <option value="title">By Title (A-Z)</option>
+                  <option value="title-desc">By Title (Z-A)</option>
                   <option value="featured">Featured First</option>
                 </select>
 
