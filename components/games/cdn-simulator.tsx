@@ -118,27 +118,27 @@ export default function CDNSimulator() {
   useEffect(() => {
     if (!tutorialMode) return;
 
-    switch (tutorialStep) {
-      case 'welcome':
-        setNarration('Welcome! Learn how CDNs deliver content faster using edge servers.');
-        break;
-      case 'add-user':
-        setNarration('👉 Step 1: Click "Add Random User" or choose a preset location (e.g., New York) to place a user on the map.');
-        break;
-      case 'start-simulation':
-        setNarration('👉 Step 2: Great! Now click "Start" to begin simulating requests from your user.');
-        break;
-      case 'observe-cache':
-        setNarration('👀 Watch! Green lines = cache hit (fast, served from nearby edge). Red lines = cache miss (slower, must fetch from origin).');
-        break;
-      case 'add-more-users':
-        setNarration('👉 Step 3: Try adding users from different locations (Mumbai, Tokyo, London) to see how CDN reduces global latency!');
-        break;
-      case 'complete':
-        setNarration('🎉 Tutorial complete! You now understand how CDNs work. Keep exploring!');
-        setTimeout(() => setTutorialMode(false), 3000);
-        break;
-    }
+   switch (tutorialStep) {
+     case 'welcome':
+       setNarration('Welcome! Learn how CDNs deliver content faster using edge servers.');
+       break;
+     case 'add-user':
+       setNarration('👉 Step 1: Add a user to simulate a visitor accessing your website. Each user connects to their nearest edge server automatically.');
+       break;
+     case 'start-simulation':
+       setNarration('👉 Step 2: Click "Start" to simulate HTTP requests. Watch for GREEN lines (cache hit, fast!) vs RED lines (cache miss, slower).');
+       break;
+     case 'observe-cache':
+       setNarration('👀 Notice: ~75% requests are GREEN (cache hits). This means content is served from edge servers near users, not from distant origin! This is the CDN magic.');
+       break;
+     case 'add-more-users':
+       setNarration('👉 Step 3: Add users from different regions. Notice how each connects to their NEAREST edge server - this is why CDNs make global apps fast!');
+       break;
+     case 'complete':
+       setNarration('🎉 You learned: CDNs cache content at edge locations worldwide, reducing latency for global users and protecting your origin server from overload!');
+       setTimeout(() => setTutorialMode(false), 3000);
+       break;
+   }
   }, [tutorialStep, tutorialMode]);
 
   // Progress tutorial based on actions
@@ -417,16 +417,16 @@ export default function CDNSimulator() {
                   </div>
                 </div>
 
-                <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                  <h3 className="font-semibold mb-2">What you'll learn:</h3>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• How geographic distance affects latency</li>
-                    <li>• The difference between cache hits and misses</li>
-                    <li>• How edge servers protect origin servers</li>
-                    <li>• Why global users benefit from CDNs</li>
-                  </ul>
-                </div>
-              </div>
+               <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                 <h3 className="font-semibold mb-2">What you'll learn:</h3>
+                 <ul className="text-sm space-y-1 text-muted-foreground">
+                   <li>• <strong>Latency reduction:</strong> See 60-70% faster response times with CDN</li>
+                   <li>• <strong>Origin protection:</strong> Watch origin load drop from 100% to ~25%</li>
+                   <li>• <strong>Global reach:</strong> Users auto-connect to nearest edge server</li>
+                   <li>• <strong>Cache efficiency:</strong> Compare cache hits vs misses in real-time</li>
+                 </ul>
+               </div>
+             </div>
 
               <div className="flex gap-3">
                 <Button onClick={startTutorial} className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700">
@@ -536,34 +536,43 @@ export default function CDNSimulator() {
             )}
           </div>
 
-          {/* Metrics Dashboard */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 rounded-lg bg-muted/30">
-            <div>
-              <div className="text-xs text-muted-foreground">Total Requests</div>
-              <div className="text-2xl font-bold">{totalRequests}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Cache Hit Rate</div>
-              <div className="text-2xl font-bold text-green-500">{cacheHitRate}%</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Avg Latency</div>
-              <div className="text-2xl font-bold">{avgLatency}ms</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Origin Load</div>
-              <div className="flex items-center gap-2">
-                <div className="text-2xl font-bold">{Math.round(originLoad)}%</div>
-                <div className="text-xs">
-                  {originLoad < 30 ? '✅' : originLoad < 70 ? '⚠️' : '❌'}
-                </div>
-              </div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Active Users</div>
-              <div className="text-2xl font-bold">{users.length}</div>
-            </div>
-          </div>
+         {/* Metrics Dashboard */}
+         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 rounded-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40 border border-blue-200 dark:border-blue-800">
+           <div>
+             <div className="text-xs text-muted-foreground">Total Requests</div>
+             <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{totalRequests}</div>
+             <div className="text-[10px] text-muted-foreground mt-1">Simulated user requests</div>
+           </div>
+           <div>
+             <div className="text-xs text-muted-foreground">Cache Hit Rate</div>
+             <div className="text-2xl font-bold text-green-500">{cacheHitRate}%</div>
+             <div className="text-[10px] text-muted-foreground mt-1">Served from edge</div>
+           </div>
+           <div>
+             <div className="text-xs text-muted-foreground">Avg Latency</div>
+             <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{avgLatency}ms</div>
+             <div className="text-[10px] text-green-600 dark:text-green-400 mt-1">
+               {avgLatency > 0 && `~${Math.round(avgLatency * 3)}ms without CDN`}
+             </div>
+           </div>
+           <div>
+             <div className="text-xs text-muted-foreground">Origin Load</div>
+             <div className="flex items-center gap-2">
+               <div className="text-2xl font-bold">{Math.round(originLoad)}%</div>
+               <div className="text-xs">
+                 {originLoad < 30 ? '✅' : originLoad < 70 ? '⚠️' : '❌'}
+               </div>
+             </div>
+             <div className="text-[10px] text-muted-foreground mt-1">
+               {originLoad < 30 ? 'Protected!' : originLoad < 70 ? 'Moderate' : 'High load!'}
+             </div>
+           </div>
+           <div>
+             <div className="text-xs text-muted-foreground">Active Users</div>
+             <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{users.length}</div>
+             <div className="text-[10px] text-muted-foreground mt-1">Global distribution</div>
+           </div>
+         </div>
 
           {/* World Map Visualization */}
           <div className="relative w-full h-[600px] border-2 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
@@ -662,27 +671,53 @@ export default function CDNSimulator() {
             </svg>
           </div>
 
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span>Cache Hit (Fast)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
-              <span>Cache Miss (Slower)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-green-500" />
-              <span>Edge Server</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-blue-500" />
-              <span>User</span>
-            </div>
-          </div>
+         {/* Legend */}
+         <div className="flex flex-wrap gap-4 text-sm">
+           <div className="flex items-center gap-2">
+             <div className="w-3 h-3 rounded-full bg-green-500" />
+             <span>Cache Hit (Fast)</span>
+           </div>
+           <div className="flex items-center gap-2">
+             <div className="w-3 h-3 rounded-full bg-red-500" />
+             <span>Cache Miss (Slower)</span>
+           </div>
+           <div className="flex items-center gap-2">
+             <Zap className="w-4 h-4 text-green-500" />
+             <span>Edge Server</span>
+           </div>
+           <div className="flex items-center gap-2">
+             <Users className="w-4 h-4 text-blue-500" />
+             <span>User</span>
+           </div>
+         </div>
 
-          {/* Edge Server Details */}
+         {/* Real-Time Learning Insights */}
+         {isRunning && totalRequests > 0 && (
+           <Alert className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/40 dark:to-orange-950/40 border-yellow-300 dark:border-yellow-700">
+             <Info className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+             <AlertDescription className="text-sm">
+               <strong className="text-yellow-900 dark:text-yellow-100">💡 Real-time Insight:</strong>
+               <span className="text-yellow-800 dark:text-yellow-200 ml-2">
+                 {cacheHitRate >= 70 ? (
+                   `With ${cacheHitRate}% cache hit rate, your origin server is handling ${100 - cacheHitRate}% of requests. 
+                    CDN is reducing origin load by ~${cacheHitRate}%! 🎉`
+                 ) : cacheHitRate >= 50 ? (
+                   `Cache hit rate at ${cacheHitRate}%. More cache hits = faster responses and lower origin load.`
+                 ) : (
+                   `Low cache hit rate (${cacheHitRate}%). In production, optimize cache-control headers to improve this.`
+                 )}
+                 {avgLatency > 0 && (
+                   <span className="block mt-1">
+                     Without CDN, average latency would be ~<strong>{Math.round(avgLatency * 3)}ms</strong> (3x slower). 
+                     You're saving <strong>{Math.round(avgLatency * 2)}ms</strong> per request!
+                   </span>
+                 )}
+               </span>
+             </AlertDescription>
+           </Alert>
+         )}
+
+         {/* Edge Server Details */}
           <AnimatePresence>
             {selectedEdge && (
               <motion.div
