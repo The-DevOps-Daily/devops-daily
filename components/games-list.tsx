@@ -296,7 +296,7 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
                   <option value="newest">Newest First</option>
                   <option value="oldest">Oldest First</option>
                   <option value="popular">Popular First</option>
-                  <option value="unpopular">Less Popular First</option>
+                  <option value="unpopular">Least Popular First</option>
                   <option value="title">By Title (A-Z)</option>
                   <option value="title-desc">By Title (Z-A)</option>
                   <option value="featured">Featured First</option>
