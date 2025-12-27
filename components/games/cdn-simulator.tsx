@@ -59,21 +59,21 @@ type Request = {
 
 const EDGE_LOCATIONS: EdgeLocation[] = [
   // 3x2 grid layout - clean and organized
-  { id: 'us-east', name: 'US East', region: 'US East', x: 16.67, y: 33, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'us-west', name: 'US West', region: 'US West', x: 50, y: 33, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'europe', name: 'Europe', region: 'Europe', x: 83.33, y: 33, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'asia', name: 'Asia', region: 'Asia', x: 16.67, y: 67, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'south-america', name: 'South America', region: 'South America', x: 50, y: 67, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'australia', name: 'Australia', region: 'Australia', x: 83.33, y: 67, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'us-east', name: 'US East', region: 'US East', x: 16.67, y: 25, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'us-west', name: 'US West', region: 'US West', x: 50, y: 25, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'europe', name: 'Europe', region: 'Europe', x: 83.33, y: 25, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'asia', name: 'Asia', region: 'Asia', x: 16.67, y: 75, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'south-america', name: 'South America', region: 'South America', x: 50, y: 75, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'australia', name: 'Australia', region: 'Australia', x: 83.33, y: 75, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
 ];
 
 const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
-  { name: 'New York', x: 16.67, y: 40 },
-  { name: 'Los Angeles', x: 50, y: 40 },
-  { name: 'London', x: 83.33, y: 40 },
-  { name: 'Tokyo', x: 16.67, y: 74 },
-  { name: 'São Paulo', x: 50, y: 74 },
-  { name: 'Sydney', x: 83.33, y: 74 },
+  { name: 'New York', x: 16.67, y: 42 },
+  { name: 'Los Angeles', x: 50, y: 42 },
+  { name: 'London', x: 83.33, y: 42 },
+  { name: 'Tokyo', x: 16.67, y: 92 },
+  { name: 'São Paulo', x: 50, y: 92 },
+  { name: 'Sydney', x: 83.33, y: 92 },
 ];
 
 // Calculate distance between two points
@@ -204,24 +204,24 @@ export default function CDNSimulator() {
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
     // Define structured positions in each grid cell (3 columns x 2 rows per region)
     const userSlots = [
-      // US East - top left cell
-      { x: 10, y: 44 }, { x: 16.67, y: 44 }, { x: 23, y: 44 },
-      { x: 10, y: 48 }, { x: 16.67, y: 48 }, { x: 23, y: 48 },
-      // US West - top middle cell
-      { x: 43, y: 44 }, { x: 50, y: 44 }, { x: 57, y: 44 },
-      { x: 43, y: 48 }, { x: 50, y: 48 }, { x: 57, y: 48 },
-      // Europe - top right cell
-      { x: 76, y: 44 }, { x: 83.33, y: 44 }, { x: 90, y: 44 },
-      { x: 76, y: 48 }, { x: 83.33, y: 48 }, { x: 90, y: 48 },
-      // Asia - bottom left cell
-      { x: 10, y: 78 }, { x: 16.67, y: 78 }, { x: 23, y: 78 },
-      { x: 10, y: 82 }, { x: 16.67, y: 82 }, { x: 23, y: 82 },
-      // South America - bottom middle cell
-      { x: 43, y: 78 }, { x: 50, y: 78 }, { x: 57, y: 78 },
-      { x: 43, y: 82 }, { x: 50, y: 82 }, { x: 57, y: 82 },
-      // Australia - bottom right cell
-      { x: 76, y: 78 }, { x: 83.33, y: 78 }, { x: 90, y: 78 },
-      { x: 76, y: 82 }, { x: 83.33, y: 82 }, { x: 90, y: 82 },
+      // US East - top left cell (below region card)
+      { x: 8, y: 40 }, { x: 16.67, y: 40 }, { x: 25, y: 40 },
+      { x: 8, y: 45 }, { x: 16.67, y: 45 }, { x: 25, y: 45 },
+      // US West - top middle cell (below region card)
+      { x: 41.5, y: 40 }, { x: 50, y: 40 }, { x: 58.5, y: 40 },
+      { x: 41.5, y: 45 }, { x: 50, y: 45 }, { x: 58.5, y: 45 },
+      // Europe - top right cell (below region card)
+      { x: 75, y: 40 }, { x: 83.33, y: 40 }, { x: 91.5, y: 40 },
+      { x: 75, y: 45 }, { x: 83.33, y: 45 }, { x: 91.5, y: 45 },
+      // Asia - bottom left cell (below region card)
+      { x: 8, y: 90 }, { x: 16.67, y: 90 }, { x: 25, y: 90 },
+      { x: 8, y: 95 }, { x: 16.67, y: 95 }, { x: 25, y: 95 },
+      // South America - bottom middle cell (below region card)
+      { x: 41.5, y: 90 }, { x: 50, y: 90 }, { x: 58.5, y: 90 },
+      { x: 41.5, y: 95 }, { x: 50, y: 95 }, { x: 58.5, y: 95 },
+      // Australia - bottom right cell (below region card)
+      { x: 75, y: 90 }, { x: 83.33, y: 90 }, { x: 91.5, y: 90 },
+      { x: 75, y: 95 }, { x: 83.33, y: 95 }, { x: 91.5, y: 95 },
     ];
     
     const userData = preset || (() => {
@@ -585,10 +585,10 @@ export default function CDNSimulator() {
                 className="absolute bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/40 dark:to-emerald-900/40 rounded-lg border-2 border-emerald-300 dark:border-emerald-700 flex flex-col items-center justify-center shadow-sm"
                 style={{
                   left: `${edge.x}%`,
-                  top: `${edge.y - 8}%`,
+                  top: `${edge.y}%`,
                   transform: 'translate(-50%, -50%)',
-                  width: '28%',
-                  height: '22%',
+                  width: '30%',
+                  height: '28%',
                 }}
               >
                 {/* Server Icon */}
