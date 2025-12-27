@@ -85,15 +85,6 @@ const matchesSearchQuery = (game: SerializableGame, query: string) => {
   );
 };
 
-const matchesStatus = (game: SerializableGame, status: string) => {
-  if (status === 'all') return true;
-  if (status === 'new') return game.isNew;
-  if (status === 'popular') return game.isPopular;
-  if (status === 'featured') return game.featured;
-  if (status === 'coming-soon') return game.isComingSoon;
-  return true;
-};
-
 const compareGamesBySort = (a: SerializableGame, b: SerializableGame, sort: string) => {
   if (sort === 'newest') {
     if (a.isNew && !b.isNew) return -1;
@@ -223,7 +214,6 @@ function GameCard({ game, featured = false }: { game: SerializableGame; featured
 export function GamesList({ games, className, showSearch = true, showFilters = true }: GamesListProps) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'new' | 'popular' | 'featured' | 'coming-soon'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'unpopular' | 'title' | 'title-desc' | 'featured'>('newest');
 
   // Get unique categories and tags
@@ -237,25 +227,22 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
     let filtered = games.filter((game) => {
       if (searchQuery && !matchesSearchQuery(game, searchQuery)) return false;
       if (selectedCategory !== 'all' && game.category !== selectedCategory) return false;
-      if (!matchesStatus(game, selectedStatus)) return false;
       return true;
     });
 
     filtered.sort((a, b) => compareGamesBySort(a, b, sortBy));
     return filtered;
-  }, [games, searchQuery, selectedCategory, selectedStatus, sortBy]);
+  }, [games, searchQuery, selectedCategory, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
-    setSelectedStatus('all');
     setSortBy('newest');
   };
 
   const activeFiltersCount = [
     searchQuery,
     selectedCategory !== 'all',
-    selectedStatus !== 'all',
     sortBy !== 'newest',
   ].filter(Boolean).length;
 
@@ -284,25 +271,6 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
           {/* Filters */}
           {showFilters && (
             <div className="flex flex-col gap-4">
-              {/* Status Filters */}
-              <div className="flex flex-wrap gap-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Filter className="h-4 w-4" />
-                  Status:
-                </div>
-                {(['all', 'new', 'popular', 'featured', 'coming-soon'] as const).map((status) => (
-                  <Button
-                    key={status}
-                    variant={selectedStatus === status ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedStatus(status)}
-                    className="capitalize"
-                  >
-                    {status === 'coming-soon' ? 'Coming Soon' : status}
-                  </Button>
-                ))}
-              </div>
-
               {/* Category and Sort Filters */}
               <div className="flex flex-wrap gap-4 items-center">
                 {/* Category Filter */}
@@ -365,7 +333,7 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
       {/* Games Grid */}
       <div className="space-y-12">
         {/* Featured Games */}
-        {selectedStatus === 'all' && featuredGames.length > 0 && (
+        {featuredGames.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-6">
               <h2 className="text-2xl font-bold">Featured Games</h2>
@@ -381,12 +349,12 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
 
         {/* All/Regular Games */}
         <div>
-          {selectedStatus === 'all' && featuredGames.length > 0 && (
+          {featuredGames.length > 0 && (
             <h2 className="text-2xl font-bold mb-6">All Games</h2>
           )}
           {filteredGames.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {(selectedStatus === 'all' ? regularGames : filteredGames).map((game) => (
+              {regularGames.map((game) => (
                 <GameCard key={game.id} game={game} />
               ))}
             </div>
