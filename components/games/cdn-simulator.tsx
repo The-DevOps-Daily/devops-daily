@@ -225,14 +225,16 @@ export default function CDNSimulator() {
     ];
     
     const userData = preset || (() => {
-      // Find next available slot that isn't already occupied
+      // Find all available slots that aren't already occupied
       const occupiedPositions = users.map(u => `${u.x},${u.y}`);
-      const availableSlot = userSlots.find(slot => 
+      const availableSlots = userSlots.filter(slot => 
         !occupiedPositions.includes(`${slot.x},${slot.y}`)
       );
       
-      // If no slots available, wrap around to first slot
-      const position = availableSlot || userSlots[users.length % userSlots.length];
+      // Pick a random available slot
+      const position = availableSlots.length > 0
+        ? availableSlots[Math.floor(Math.random() * availableSlots.length)]
+        : userSlots[users.length % userSlots.length]; // Fallback if all slots full
       
       return {
         name: `User ${users.length + 1}`,
@@ -501,14 +503,14 @@ export default function CDNSimulator() {
             <Button
               onClick={() => addUser()}
               variant="outline"
-              disabled={users.length >= 10}
+              disabled={users.length >= 36}
               className={cn(
                 'gap-2',
                 tutorialMode && tutorialStep === 'add-user' && 'ring-4 ring-blue-500 ring-offset-2 animate-pulse'
               )}
             >
               <Users className="w-4 h-4" />
-              Add Random User
+              Add Random User ({users.length}/36)
             </Button>
           </div>
 
@@ -521,7 +523,7 @@ export default function CDNSimulator() {
                 onClick={() => addUser(preset)}
                 variant="secondary"
                 size="sm"
-                disabled={users.length >= 10}
+                disabled={users.length >= 36}
               >
                 <MapPin className="w-3 h-3 mr-1" />
                 {preset.name}
