@@ -23,6 +23,8 @@ import {
 import { cn } from '@/lib/utils';
 
 // Types
+type TutorialStep = 'welcome' | 'add-user' | 'start-simulation' | 'observe-cache' | 'add-more-users' | 'complete';
+
 type EdgeLocation = {
   id: string;
   name: string;
@@ -89,6 +91,10 @@ const calculateLatency = (distance: number): number => {
 export default function CDNSimulator() {
   const [mounted, setMounted] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [tutorialMode, setTutorialMode] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState<TutorialStep>('welcome');
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [narration, setNarration] = useState('');
   const [edges, setEdges] = useState<EdgeLocation[]>(EDGE_LOCATIONS);
   const [users, setUsers] = useState<UserLocation[]>([]);
   const [requests, setRequests] = useState<Request[]>([]);
@@ -106,6 +112,61 @@ export default function CDNSimulator() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Tutorial logic
+  useEffect(() => {
+    if (!tutorialMode) return;
+
+    switch (tutorialStep) {
+      case 'welcome':
+        setNarration('Welcome! Learn how CDNs deliver content faster using edge servers.');
+        break;
+      case 'add-user':
+        setNarration('👉 Step 1: Click "Add Random User" or choose a preset location (e.g., New York) to place a user on the map.');
+        break;
+      case 'start-simulation':
+        setNarration('👉 Step 2: Great! Now click "Start" to begin simulating requests from your user.');
+        break;
+      case 'observe-cache':
+        setNarration('👀 Watch! Green lines = cache hit (fast, served from nearby edge). Red lines = cache miss (slower, must fetch from origin).');
+        break;
+      case 'add-more-users':
+        setNarration('👉 Step 3: Try adding users from different locations (Mumbai, Tokyo, London) to see how CDN reduces global latency!');
+        break;
+      case 'complete':
+        setNarration('🎉 Tutorial complete! You now understand how CDNs work. Keep exploring!');
+        setTimeout(() => setTutorialMode(false), 3000);
+        break;
+    }
+  }, [tutorialStep, tutorialMode]);
+
+  // Progress tutorial based on actions
+  useEffect(() => {
+    if (!tutorialMode) return;
+
+    if (tutorialStep === 'add-user' && users.length > 0) {
+      setTutorialStep('start-simulation');
+    } else if (tutorialStep === 'start-simulation' && isRunning) {
+      setTutorialStep('observe-cache');
+      setTimeout(() => {
+        if (tutorialMode) setTutorialStep('add-more-users');
+      }, 5000);
+    } else if (tutorialStep === 'add-more-users' && users.length >= 3) {
+      setTutorialStep('complete');
+    }
+  }, [users.length, isRunning, tutorialStep, tutorialMode]);
+
+  const startTutorial = () => {
+    setShowWelcome(false);
+    setTutorialMode(true);
+    setTutorialStep('add-user');
+    handleReset();
+  };
+
+  const skipTutorial = () => {
+    setShowWelcome(false);
+    setTutorialMode(false);
+  };
 
   useEffect(() => {
     if (isRunning) {
@@ -238,7 +299,9 @@ export default function CDNSimulator() {
 
   const handleReset = () => {
     setIsRunning(false);
-    setUsers([]);
+    if (!tutorialMode) {
+      setUsers([]);
+    }
     setRequests([]);
     setTotalRequests(0);
     setCacheHits(0);
@@ -255,6 +318,88 @@ export default function CDNSimulator() {
 
   return (
     <div className="w-full mx-auto px-4">
+      {/* Welcome Modal */}
+      <AnimatePresence>
+        {showWelcome && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full mx-4 p-8"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600">
+                  <Globe className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold">CDN Simulator</h2>
+                  <p className="text-muted-foreground">Learn Content Delivery Networks</p>
+                </div>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-blue-600" />
+                    What is a CDN?
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    A Content Delivery Network uses edge servers worldwide to serve content from locations 
+                    closer to users, reducing latency and protecting the origin server from high load.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded border border-green-200 dark:border-green-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      <span className="font-medium text-sm">Cache Hit</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Content served from edge server (fast, ~20-50ms)
+                    </p>
+                  </div>
+                  <div className="p-3 bg-red-50 dark:bg-red-950/20 rounded border border-red-200 dark:border-red-800">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <span className="font-medium text-sm">Cache Miss</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Must fetch from origin server (slower, ~100-300ms)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                  <h3 className="font-semibold mb-2">What you'll learn:</h3>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• How geographic distance affects latency</li>
+                    <li>• The difference between cache hits and misses</li>
+                    <li>• How edge servers protect origin servers</li>
+                    <li>• Why global users benefit from CDNs</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <Button onClick={startTutorial} className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700">
+                  Start Tutorial
+                </Button>
+                <Button onClick={skipTutorial} variant="outline" className="flex-1">
+                  Skip & Explore
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Card className="overflow-hidden">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
@@ -274,12 +419,32 @@ export default function CDNSimulator() {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Tutorial Narration */}
+          <AnimatePresence>
+            {tutorialMode && narration && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+              >
+                <Alert className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40 border-2 border-blue-300 dark:border-blue-700">
+                  <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <AlertDescription className="text-blue-900 dark:text-blue-100 font-medium text-base">
+                    {narration}
+                  </AlertDescription>
+                </Alert>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* Controls */}
           <div className="flex flex-wrap items-center gap-3">
             <Button
               onClick={() => setIsRunning(!isRunning)}
+              disabled={users.length === 0}
               className={cn(
                 'gap-2',
+                tutorialMode && tutorialStep === 'start-simulation' && 'ring-4 ring-blue-500 ring-offset-2 animate-pulse',
                 isRunning ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'
               )}
             >
@@ -297,8 +462,11 @@ export default function CDNSimulator() {
             <Button
               onClick={() => addUser()}
               variant="outline"
-              className="gap-2"
               disabled={users.length >= 10}
+              className={cn(
+                'gap-2',
+                tutorialMode && tutorialStep === 'add-user' && 'ring-4 ring-blue-500 ring-offset-2 animate-pulse'
+              )}
             >
               <Users className="w-4 h-4" />
               Add Random User
@@ -320,6 +488,11 @@ export default function CDNSimulator() {
                 {preset.name}
               </Button>
             ))}
+            {tutorialMode && (
+              <Button onClick={() => { setTutorialMode(false); setShowWelcome(true); }} variant="ghost" size="sm" className="ml-auto">
+                Exit Tutorial
+              </Button>
+            )}
           </div>
 
           {/* Metrics Dashboard */}
