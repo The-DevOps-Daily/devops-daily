@@ -58,16 +58,20 @@ CMD ["node", "dist/index.js"]
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci  # Install all dependencies including devDependencies for build
 COPY . .
 RUN npm run build
 
 # Production stage
 FROM node:20-alpine
 WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+
+# Install only production dependencies
 COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy build artifacts
+COPY --from=builder /app/dist ./dist
 USER node
 CMD ["node", "dist/index.js"]
 ```
@@ -351,7 +355,7 @@ CMD ["npm", "start"]
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production && \
+RUN npm ci && \
     npm cache clean --force
 COPY . .
 RUN npm run build
@@ -368,10 +372,12 @@ RUN addgroup -g 1001 -S nodejs && \
 
 WORKDIR /app
 
-# Copy only production files
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Install only production dependencies
 COPY --chown=nodejs:nodejs package*.json ./
+RUN npm ci --only=production && npm cache clean --force
+
+# Copy build artifacts
+COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
 USER nodejs
 EXPOSE 3000
