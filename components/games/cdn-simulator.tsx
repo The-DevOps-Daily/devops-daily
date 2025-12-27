@@ -58,21 +58,21 @@ type Request = {
 };
 
 const EDGE_LOCATIONS: EdgeLocation[] = [
-  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 25, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 15, y: 38, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 50, y: 28, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 80, y: 38, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 85, y: 70, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 32, y: 65, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 20, y: 38, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 13, y: 35, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 51, y: 30, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 83, y: 38, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 87, y: 75, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 28, y: 68, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
 ];
 
 const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
-  { name: 'New York', x: 26, y: 37 },
-  { name: 'Los Angeles', x: 14, y: 40 },
-  { name: 'London', x: 49, y: 27 },
-  { name: 'Mumbai', x: 68, y: 48 },
-  { name: 'Singapore', x: 75, y: 52 },
-  { name: 'Tokyo', x: 81, y: 38 },
+  { name: 'New York', x: 21, y: 40 },
+  { name: 'Los Angeles', x: 12, y: 42 },
+  { name: 'London', x: 50, y: 32 },
+  { name: 'Mumbai', x: 66, y: 50 },
+  { name: 'Singapore', x: 75, y: 54 },
+  { name: 'Tokyo', x: 83, y: 38 },
 ];
 
 // Calculate distance between two points
@@ -526,17 +526,52 @@ export default function CDNSimulator() {
 
           {/* World Map Visualization */}
           <div className="relative w-full h-[500px] border-2 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
+            {/* Actual World Map */}
+            <svg
+              viewBox="0 0 1000 500"
+              className="absolute inset-0 w-full h-full"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              {/* Ocean background */}
+              <rect width="1000" height="500" fill="currentColor" className="text-blue-100 dark:text-gray-800 opacity-30" />
+              
+              {/* Continents - Simplified world map paths */}
+              <g className="text-green-200 dark:text-green-900" fill="currentColor" opacity="0.4">
+                {/* North America */}
+                <path d="M 150,100 L 100,150 L 120,200 L 150,220 L 200,210 L 250,180 L 280,150 L 300,120 L 280,100 L 230,80 L 180,90 Z" />
+                <path d="M 180,230 L 160,250 L 170,280 L 200,300 L 220,290 L 230,260 L 210,240 Z" />
+                
+                {/* South America */}
+                <path d="M 250,310 L 230,330 L 240,380 L 260,420 L 280,430 L 300,420 L 310,380 L 300,340 L 280,320 Z" />
+                
+                {/* Europe */}
+                <path d="M 480,120 L 460,140 L 470,170 L 500,180 L 530,170 L 550,140 L 540,120 L 510,110 Z" />
+                
+                {/* Africa */}
+                <path d="M 500,200 L 480,220 L 490,280 L 510,340 L 540,360 L 570,350 L 580,310 L 570,250 L 550,210 L 520,200 Z" />
+                
+                {/* Asia */}
+                <path d="M 600,80 L 560,100 L 570,140 L 600,160 L 650,170 L 700,160 L 750,140 L 780,110 L 770,80 L 720,70 L 670,75 L 620,80 Z" />
+                <path d="M 640,180 L 620,200 L 630,240 L 660,270 L 700,280 L 720,260 L 710,220 L 680,190 Z" />
+                
+                {/* Australia */}
+                <path d="M 780,340 L 760,360 L 770,390 L 800,400 L 840,390 L 860,370 L 850,350 L 820,340 Z" />
+              </g>
+              
+              {/* Grid lines for reference */}
+              <g stroke="currentColor" className="text-gray-300 dark:text-gray-700" strokeWidth="0.5" opacity="0.3">
+                {/* Latitude lines */}
+                <line x1="0" y1="125" x2="1000" y2="125" />
+                <line x1="0" y1="250" x2="1000" y2="250" />
+                <line x1="0" y1="375" x2="1000" y2="375" />
+                {/* Longitude lines */}
+                <line x1="250" y1="0" x2="250" y2="500" />
+                <line x1="500" y1="0" x2="500" y2="500" />
+                <line x1="750" y1="0" x2="750" y2="500" />
+              </g>
+            </svg>
+            
             {/* Map background (simplified) */}
-            <div className="absolute inset-0 opacity-10">
-              <svg width="100%" height="100%" className="text-blue-500">
-                {/* Simple continent outlines */}
-                <circle cx="25%" cy="40%" r="120" fill="currentColor" opacity="0.1" />
-                <circle cx="50%" cy="30%" r="100" fill="currentColor" opacity="0.1" />
-                <circle cx="75%" cy="45%" r="130" fill="currentColor" opacity="0.1" />
-                <circle cx="30%" cy="70%" r="80" fill="currentColor" opacity="0.1" />
-                <circle cx="85%" cy="75%" r="70" fill="currentColor" opacity="0.1" />
-              </svg>
-            </div>
 
             {/* Origin Server (center) */}
             <motion.div
