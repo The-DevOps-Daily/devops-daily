@@ -58,21 +58,22 @@ type Request = {
 };
 
 const EDGE_LOCATIONS: EdgeLocation[] = [
-  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 22.5, y: 43, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 16, y: 42, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 52, y: 40, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 82, y: 44, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 86, y: 72, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
-  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 31, y: 63, cacheHitRate: 0, activeRequests: 0, status: 'healthy' },
+  // Coordinates calculated from lat/long: x = (lon + 180) / 360 * 100, y = (90 - lat) / 180 * 100
+  { id: 'us-east', name: 'US East (Virginia)', region: 'North America', x: 27.5, y: 38.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -77.5°, 38°N
+  { id: 'us-west', name: 'US West (Oregon)', region: 'North America', x: 21.9, y: 37.2, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -123.1°, 45°N
+  { id: 'europe', name: 'Europe (Frankfurt)', region: 'Europe', x: 52.4, y: 35.6, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 8.7°, 50°N
+  { id: 'asia', name: 'Asia (Tokyo)', region: 'Asia', x: 82.8, y: 38.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 139.7°, 35.7°N
+  { id: 'australia', name: 'Australia (Sydney)', region: 'Oceania', x: 86.4, y: 68.9, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // 151°, -33.9°S
+  { id: 'south-america', name: 'South America (São Paulo)', region: 'South America', x: 36.9, y: 62.2, cacheHitRate: 0, activeRequests: 0, status: 'healthy' }, // -46.6°, -23.5°S
 ];
 
 const USER_PRESETS: Omit<UserLocation, 'id' | 'nearestEdge'>[] = [
-  { name: 'New York', x: 22, y: 43 },
-  { name: 'Los Angeles', x: 16, y: 44 },
-  { name: 'London', x: 50, y: 39 },
-  { name: 'Mumbai', x: 66, y: 50 },
-  { name: 'Singapore', x: 75, y: 51 },
-  { name: 'Tokyo', x: 82, y: 44 },
+  { name: 'New York', x: 29.2, y: 38.9 }, // -74°, 40.7°N
+  { name: 'Los Angeles', x: 22.3, y: 38.9 }, // -118.2°, 34°N  
+  { name: 'London', x: 50, y: 35.8 }, // 0°, 51.5°N
+  { name: 'Mumbai', x: 68.1, y: 39.4 }, // 72.8°, 19°N
+  { name: 'Singapore', x: 75.3, y: 49.2 }, // 103.8°, 1.4°N
+  { name: 'Tokyo', x: 82.8, y: 38.9 }, // 139.7°, 35.7°N
 ];
 
 // Calculate distance between two points
@@ -203,14 +204,14 @@ export default function CDNSimulator() {
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
     // Define regions where users can spawn (on landmasses, not oceans)
     const landRegions = [
-      { name: 'North America East', minX: 18, maxX: 30, minY: 38, maxY: 48 },
-      { name: 'North America West', minX: 12, maxX: 20, minY: 38, maxY: 50 },
-      { name: 'Europe', minX: 48, maxX: 60, minY: 35, maxY: 50 },
-      { name: 'Asia East', minX: 70, maxX: 85, minY: 30, maxY: 52 },
-      { name: 'Asia South', minX: 62, maxX: 72, minY: 48, maxY: 56 },
-      { name: 'Australia', minX: 80, maxX: 90, minY: 65, maxY: 75 },
-      { name: 'South America', minX: 26, maxX: 38, minY: 55, maxY: 68 },
-      { name: 'Africa', minX: 48, maxX: 62, minY: 50, maxY: 70 },
+      { name: 'North America East', minX: 25, maxX: 32, minY: 35, maxY: 45 },
+      { name: 'North America West', minX: 19, maxX: 25, minY: 33, maxY: 42 },
+      { name: 'Europe', minX: 48, maxX: 58, minY: 32, maxY: 42 },
+      { name: 'Asia East', minX: 77, maxX: 87, minY: 30, maxY: 45 },
+      { name: 'Asia South', minX: 65, maxX: 76, minY: 38, maxY: 50 },
+      { name: 'Australia', minX: 82, maxX: 90, minY: 63, maxY: 72 },
+      { name: 'South America', minX: 33, maxX: 42, minY: 55, maxY: 67 },
+      { name: 'Africa', minX: 48, maxX: 60, minY: 50, maxY: 70 },
     ];
     
     const userData = preset || {
@@ -585,13 +586,25 @@ export default function CDNSimulator() {
                 style={{ left: `${edge.x}%`, top: `${edge.y}%`, transform: 'translate(-50%, -50%)' }}
                 onClick={() => setSelectedEdge(edge)}
               >
-                {/* Subtle pulsing ring for active requests */}
+                {/* Simple green dot marker */}
                 <motion.div
+                  className={cn(
+                    'relative w-3 h-3 rounded-full transition-all',
+                    'hover:scale-150',
+                    edge.status === 'healthy' && 'bg-green-500 shadow-lg shadow-green-500/50',
+                    edge.status === 'degraded' && 'bg-yellow-500 shadow-lg shadow-yellow-500/50',
+                    edge.status === 'offline' && 'bg-red-500 shadow-lg shadow-red-500/50',
+                    selectedEdge?.id === edge.id && 'ring-4 ring-blue-400 scale-150'
+                  )}
                   animate={
                     edge.activeRequests > 0
                       ? {
-                          scale: [1, 1.3, 1],
-                          opacity: [0.1, 0.3, 0.1],
+                          scale: selectedEdge?.id === edge.id ? 1.5 : [1, 1.2, 1],
+                          boxShadow: [
+                            '0 0 10px rgba(34, 197, 94, 0.5)',
+                            '0 0 20px rgba(34, 197, 94, 0.8)',
+                            '0 0 10px rgba(34, 197, 94, 0.5)',
+                          ],
                         }
                       : {}
                   }
@@ -599,36 +612,13 @@ export default function CDNSimulator() {
                     duration: 1,
                     repeat: edge.activeRequests > 0 ? Infinity : 0,
                   }}
-                  className="absolute inset-0 -m-4 rounded-full bg-green-400"
                 />
                 
-                {/* Elegant edge server marker */}
-                <div
-                  className={cn(
-                    'relative flex items-center justify-center w-8 h-8 rounded-full transition-all shadow-md backdrop-blur-sm',
-                    'bg-white/90 dark:bg-gray-900/90 border-2',
-                    'hover:shadow-xl hover:scale-110',
-                    selectedEdge?.id === edge.id && 'ring-2 ring-blue-500',
-                    edge.status === 'healthy' && 'border-green-500',
-                    edge.status === 'degraded' && 'border-yellow-500',
-                    edge.status === 'offline' && 'border-red-500'
-                  )}
-                >
-                  <Zap className="w-4 h-4 text-green-500" />
-                  {edge.activeRequests > 0 && (
-                    <Badge variant="secondary" className="absolute -top-1 -right-1 text-xs px-1 h-4 min-w-[16px] flex items-center justify-center">
-                      {edge.activeRequests}
-                    </Badge>
-                  )}
-                </div>
-                
-                {/* Region label on hover or selection */}
+                {/* Label always visible */}
                 <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: selectedEdge?.id === edge.id ? 1 : 0, y: selectedEdge?.id === edge.id ? 0 : 5 }}
                   className="absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap"
                 >
-                  <div className="px-2 py-1 bg-white dark:bg-gray-900 border border-green-500 rounded shadow-lg text-xs font-medium">
+                  <div className="px-2 py-0.5 bg-white/90 dark:bg-gray-900/90 border border-green-500 rounded shadow-md text-[10px] font-medium">
                     {edge.name}
                   </div>
                 </motion.div>
