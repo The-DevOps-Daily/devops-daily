@@ -143,6 +143,7 @@ export default function GitOpsWorkflow() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
   const [healthStatus, setHealthStatus] = useState<HealthStatus>('healthy');
   const [autoSync, setAutoSync] = useState(true);
+  const [pendingSync, setPendingSync] = useState(false);
   const [currentChallenge, setCurrentChallenge] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -156,11 +157,7 @@ export default function GitOpsWorkflow() {
 
   const handleDeploy = useCallback(
     (commitId: string) => {
-      setSyncStatus('syncing');
-      setHealthStatus('progressing');
-      addInsight(`🚀 Deploying commit ${commitId}...`);
-
-      // Update commits
+      // Update commits to show deployed
       setCommits((prev) =>
         prev.map((commit) => ({
           ...commit,
@@ -168,21 +165,50 @@ export default function GitOpsWorkflow() {
         }))
       );
 
-      // Simulate deployment
-      setTimeout(() => {
-        setSyncStatus('synced');
-        setHealthStatus('healthy');
-        addInsight('✅ Deployment successful - cluster synced with Git');
-      }, 2000);
+      if (autoSync) {
+        // Auto sync enabled - automatically deploy
+        addInsight(`🚀 Commit ${commitId} pushed to Git`);
+        addInsight('🔄 Auto-sync enabled - deploying automatically...');
+        setSyncStatus('syncing');
+        setHealthStatus('progressing');
+
+        setTimeout(() => {
+          setSyncStatus('synced');
+          setHealthStatus('healthy');
+          addInsight('✅ Deployment successful - cluster synced with Git');
+        }, 2500);
+      } else {
+        // Auto sync disabled - manual sync required
+        addInsight(`🚀 Commit ${commitId} pushed to Git`);
+        addInsight('⚠️ Auto-sync disabled - manual sync required');
+        setSyncStatus('out-of-sync');
+        setHealthStatus('unknown');
+        setPendingSync(true);
+      }
     },
-    [addInsight]
+    [addInsight, autoSync]
   );
+
+  const handleManualSync = useCallback(() => {
+    if (!pendingSync) return;
+    
+    addInsight('🔄 Manual sync triggered...');
+    setSyncStatus('syncing');
+    setHealthStatus('progressing');
+    setPendingSync(false);
+
+    setTimeout(() => {
+      setSyncStatus('synced');
+      setHealthStatus('healthy');
+      addInsight('✅ Manual sync successful - cluster synced with Git');
+    }, 2000);
+  }, [pendingSync, addInsight]);
 
   const handleDriftScenario = useCallback(() => {
     setSyncStatus('out-of-sync');
     setHealthStatus('degraded');
-    addInsight('⚠️ Configuration drift detected!');
-    addInsight('🔍 Cluster state differs from Git declaration');
+    addInsight('⚠️ Configuration drift detected - manual change in cluster!');
+    addInsight('🔍 Replicas: Git declares 3, cluster has 5');
 
     if (autoSync) {
       setTimeout(() => {
@@ -191,9 +217,14 @@ export default function GitOpsWorkflow() {
         setTimeout(() => {
           setSyncStatus('synced');
           setHealthStatus('healthy');
-          addInsight('✅ Drift corrected - Git is source of truth');
+          addInsight('✅ Drift corrected automatically - cluster now has 3 replicas');
         }, 1500);
       }, 2000);
+    } else {
+      setTimeout(() => {
+        addInsight('⚠️ Auto-heal disabled - drift persists');
+        addInsight('💡 Tip: Enable auto-sync to automatically correct drift');
+      }, 1500);
     }
   }, [autoSync, addInsight]);
 
@@ -203,6 +234,7 @@ export default function GitOpsWorkflow() {
     setSyncStatus('synced');
     setHealthStatus('healthy');
     setAutoSync(true);
+    setPendingSync(false);
     setCurrentChallenge(0);
     setSelectedAnswer(null);
     setShowExplanation(false);
@@ -414,7 +446,15 @@ export default function GitOpsWorkflow() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setAutoSync(!autoSync)}
+                    onClick={() => {
+                      const newAutoSync = !autoSync;
+                      setAutoSync(newAutoSync);
+                      addInsight(
+                        newAutoSync
+                          ? '🔄 Auto-sync enabled - changes will sync automatically'
+                          : '⏸️ Auto-sync disabled - manual sync required for changes'
+                      );
+                    }}
                     className={cn(autoSync && 'border-green-500 text-green-600 dark:text-green-400')}
                   >
                     {autoSync ? 'On' : 'Off'}
@@ -568,6 +608,22 @@ export default function GitOpsWorkflow() {
                     <Zap className="w-4 h-4 mr-2" />
                     Simulate Configuration Drift
                   </Button>
+
+                  {pendingSync && (
+                    <Alert className="border-orange-500">
+                      <AlertTriangle className="w-4 h-4" />
+                      <AlertDescription>
+                        <strong>Manual Sync Required</strong>
+                        <p className="text-sm mt-1">
+                          Auto-sync is disabled. Click below to manually sync the cluster.
+                        </p>
+                        <Button onClick={handleManualSync} className="mt-2 w-full" size="sm">
+                          <RefreshCw className="w-3 h-3 mr-2" />
+                          Sync Now
+                        </Button>
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               </CardContent>
             </Card>
