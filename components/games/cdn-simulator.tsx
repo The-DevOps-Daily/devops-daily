@@ -202,29 +202,30 @@ export default function CDNSimulator() {
   };
 
   const addUser = (preset?: typeof USER_PRESETS[0]) => {
-  // Define structured positions in each grid cell (3 columns x 2 rows per region)
-  const userSlots = [
-    // US East - top left cell (below region card)
-    { x: 8.67, y: 40 }, { x: 16.67, y: 40 }, { x: 24.67, y: 40 },
-    { x: 8.67, y: 45 }, { x: 16.67, y: 45 }, { x: 24.67, y: 45 },
-    // US West - top middle cell (below region card)
-    { x: 42, y: 40 }, { x: 50, y: 40 }, { x: 58, y: 40 },
-    { x: 42, y: 45 }, { x: 50, y: 45 }, { x: 58, y: 45 },
-    // Europe - top right cell (below region card)
-    { x: 75.33, y: 40 }, { x: 83.33, y: 40 }, { x: 91.33, y: 40 },
-    { x: 75.33, y: 45 }, { x: 83.33, y: 45 }, { x: 91.33, y: 45 },
-    // Asia - bottom left cell (below region card)
-    { x: 8.67, y: 88 }, { x: 16.67, y: 88 }, { x: 24.67, y: 88 },
-    { x: 8.67, y: 92 }, { x: 16.67, y: 92 }, { x: 24.67, y: 92 },
-    // South America - bottom middle cell (below region card)
-    { x: 42, y: 88 }, { x: 50, y: 88 }, { x: 58, y: 88 },
-    { x: 42, y: 92 }, { x: 50, y: 92 }, { x: 58, y: 92 },
-    // Australia - bottom right cell (below region card)
-    { x: 75.33, y: 88 }, { x: 83.33, y: 88 }, { x: 91.33, y: 88 },
-    { x: 75.33, y: 92 }, { x: 83.33, y: 92 }, { x: 91.33, y: 92 },
-  ];
-   
-   const userData = preset || (() => {
+    const columnWidth = 100 / 3;
+    const horizontalMargin = columnWidth * 0.07; // keeps spacing from column borders
+
+    const userSlots = EDGE_LOCATIONS.flatMap((edge, index) => {
+      const columnIndex = index % 3;
+      const rowIndex = Math.floor(index / 3);
+      const columnStart = columnIndex * columnWidth;
+      const columnEnd = columnStart + columnWidth;
+      const xPositions = [
+        columnStart + horizontalMargin,
+        columnStart + columnWidth / 2,
+        columnEnd - horizontalMargin,
+      ];
+      const yOffsets = rowIndex === 0 ? [15, 20] : [13, 17];
+
+      return yOffsets.flatMap((yOffset) =>
+        xPositions.map((x) => ({
+          x: parseFloat(Math.min(94, Math.max(6, x)).toFixed(2)),
+          y: parseFloat((edge.y + yOffset).toFixed(2)),
+        }))
+      );
+    });
+
+    const userData = preset || (() => {
       // Find all available slots that aren't already occupied
       const occupiedPositions = users.map(u => `${u.x},${u.y}`);
       const availableSlots = userSlots.filter(slot => 
