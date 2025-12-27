@@ -22,6 +22,20 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'gitops-workflow',
+    title: 'GitOps Workflow Simulator',
+    description:
+      'Learn GitOps principles through interactive scenarios. Understand Git as source of truth, automated sync, and drift detection.',
+    iconName: 'GitBranch',
+    badgeText: 'New',
+    color: 'from-indigo-500 to-purple-600',
+    href: '/games/gitops-workflow',
+    tags: ['gitops', 'kubernetes', 'argocd', 'educational', 'interactive'],
+    isNew: true,
+    featured: true,
+    category: 'DevOps',
+  },
+  {
     id: 'bug-hunter',
     title: 'Bug Hunter',
     description:
