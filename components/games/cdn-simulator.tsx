@@ -571,7 +571,6 @@ export default function CDNSimulator() {
                 className="absolute z-20 cursor-pointer"
                 style={{ left: `${edge.x}%`, top: `${edge.y}%`, transform: 'translate(-50%, -50%)' }}
                 onClick={() => setSelectedEdge(edge)}
-                whileHover={{ scale: 1.1 }}
               >
                 <motion.div
                   animate={
@@ -590,7 +589,7 @@ export default function CDNSimulator() {
                 />
                 <Card
                   className={cn(
-                    'relative p-2 border-2 transition-all',
+                    'relative p-2 border-2 transition-all hover:shadow-lg hover:border-green-600',
                     selectedEdge?.id === edge.id && 'ring-2 ring-blue-500',
                     edge.status === 'healthy' && 'border-green-500',
                     edge.status === 'degraded' && 'border-yellow-500',
@@ -612,7 +611,7 @@ export default function CDNSimulator() {
             {users.map((user) => (
               <motion.div
                 key={user.id}
-                className="absolute z-10"
+                className="absolute z-30"
                 style={{ left: `${user.x}%`, top: `${user.y}%`, transform: 'translate(-50%, -50%)' }}
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -626,7 +625,7 @@ export default function CDNSimulator() {
             ))}
 
             {/* Request Animations */}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none z-30">
+            <svg className="absolute inset-0 w-full h-full pointer-events-none z-25">
               {requests.map((request) => {
                 const fromX = (request.fromX / 100) * 100;
                 const fromY = (request.fromY / 100) * 100;
