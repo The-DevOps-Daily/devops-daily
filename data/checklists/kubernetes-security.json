@@ -12,13 +12,7 @@
       "id": "enable-rbac",
       "title": "Enable RBAC",
       "description": "Enable Role-Based Access Control to manage permissions",
-      "critical": true,
-      "links": [
-        {
-          "title": "Kubernetes RBAC Documentation",
-          "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/"
-        }
-      ]
+      "critical": true
     },
     {
       "id": "configure-network-policies",
@@ -62,16 +56,6 @@
       "id": "regular-updates",
       "title": "Regular security updates",
       "description": "Keep Kubernetes and all components up to date with latest patches"
-    }
-  ],
-  "resources": [
-    {
-      "title": "Kubernetes Security Best Practices",
-      "url": "https://kubernetes.io/docs/concepts/security/"
-    },
-    {
-      "title": "CIS Kubernetes Benchmark",
-      "url": "https://www.cisecurity.org/benchmark/kubernetes"
     }
   ]
 }

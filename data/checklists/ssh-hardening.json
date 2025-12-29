@@ -12,13 +12,7 @@
       "id": "disable-root-login",
       "title": "Disable root login",
       "description": "Set 'PermitRootLogin no' in /etc/ssh/sshd_config",
-      "critical": true,
-      "links": [
-        {
-          "title": "SSH Configuration Guide",
-          "url": "https://www.ssh.com/academy/ssh/sshd_config"
-        }
-      ]
+      "critical": true
     },
     {
       "id": "change-ssh-port",
@@ -77,16 +71,6 @@
       "id": "configure-allowed-users",
       "title": "Configure allowed users/groups",
       "description": "Use AllowUsers or AllowGroups directives to restrict access"
-    }
-  ],
-  "resources": [
-    {
-      "title": "SSH Security Best Practices",
-      "url": "https://www.ssh.com/academy/ssh/security"
-    },
-    {
-      "title": "fail2ban Documentation",
-      "url": "https://github.com/fail2ban/fail2ban"
     }
   ]
 }

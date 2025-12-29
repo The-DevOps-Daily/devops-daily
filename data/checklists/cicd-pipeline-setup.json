@@ -18,13 +18,7 @@
       "id": "automated-testing",
       "title": "Set up automated testing",
       "description": "Configure unit, integration, and end-to-end tests",
-      "critical": true,
-      "links": [
-        {
-          "title": "Testing Best Practices",
-          "url": "https://martinfowler.com/articles/practical-test-pyramid.html"
-        }
-      ]
+      "critical": true
     },
     {
       "id": "code-quality-checks",
@@ -51,16 +45,6 @@
       "id": "monitoring-alerting",
       "title": "Enable monitoring and alerting",
       "description": "Set up monitoring for pipeline failures and performance"
-    }
-  ],
-  "resources": [
-    {
-      "title": "CI/CD Best Practices",
-      "url": "https://docs.gitlab.com/ee/ci/pipelines/"
-    },
-    {
-      "title": "GitHub Actions Documentation",
-      "url": "https://docs.github.com/en/actions"
     }
   ]
 }

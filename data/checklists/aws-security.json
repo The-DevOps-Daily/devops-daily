@@ -12,13 +12,7 @@
       "id": "enable-mfa-root",
       "title": "Enable MFA for root account",
       "description": "Add multi-factor authentication to the root account",
-      "critical": true,
-      "links": [
-        {
-          "title": "AWS MFA Documentation",
-          "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html"
-        }
-      ]
+      "critical": true
     },
     {
       "id": "configure-cloudtrail",
@@ -56,16 +50,6 @@
       "id": "enable-security-hub",
       "title": "Enable Security Hub",
       "description": "Activate AWS Security Hub for centralized security findings"
-    }
-  ],
-  "resources": [
-    {
-      "title": "AWS Security Best Practices",
-      "url": "https://aws.amazon.com/architecture/security-identity-compliance/"
-    },
-    {
-      "title": "AWS Well-Architected Framework",
-      "url": "https://aws.amazon.com/architecture/well-architected/"
     }
   ]
 }

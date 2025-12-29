@@ -58,15 +58,5 @@
       "title": "Update runbooks",
       "description": "Document any new procedures or changes"
     }
-  ],
-  "resources": [
-    {
-      "title": "Deployment Best Practices",
-      "url": "https://www.atlassian.com/devops/what-is-devops/deployment-best-practices"
-    },
-    {
-      "title": "Blue-Green Deployments",
-      "url": "https://martinfowler.com/bliki/BlueGreenDeployment.html"
-    }
   ]
 }
