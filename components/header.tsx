@@ -35,6 +35,7 @@ import {
   Library,
   Calendar,
   Gift,
+  ListChecks,
 } from 'lucide-react';
 
 interface NavItem {
@@ -100,6 +101,7 @@ const mainNavigation = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Posts', href: '/posts', icon: FileText },
   { label: 'Guides', href: '/guides', icon: BookOpen },
+  { label: 'Checklists', href: '/checklists', icon: ListChecks },
   { label: 'News', href: '/news', icon: Newspaper, badge: 'New' },
 ];
 
