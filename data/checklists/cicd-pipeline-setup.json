@@ -6,25 +6,57 @@
   "category": "DevOps",
   "difficulty": "intermediate",
   "estimatedTime": "1-2 hours",
-  "tags": ["cicd", "pipeline", "automation", "devops", "testing"],
+  "tags": [
+    "cicd",
+    "pipeline",
+    "automation",
+    "devops",
+    "testing"
+  ],
   "items": [
     {
       "id": "vcs-integration",
       "title": "Configure version control integration",
-      "description": "Version control is the foundation of CI/CD. For GitHub: use GitHub Apps (recommended) or OAuth Apps for authentication - GitHub Apps provide granular permissions. In your CI/CD tool (Jenkins, GitLab CI, CircleCI, GitHub Actions), navigate to integrations/settings and add VCS connection. For GitHub Actions: workflows are stored in .github/workflows/ directory - no separate integration needed. For Jenkins: install GitHub plugin, create credentials (Personal Access Token with repo scope), configure GitHub server in Jenkins settings. For GitLab: CI/CD is built-in, ensure .gitlab-ci.yml exists in repository root. Use webhook triggers (not polling) for immediate pipeline execution on push/PR events. Set up branch protection rules: require PR reviews, passing CI checks before merge. Configure status checks to block merges if tests fail. Use deploy keys (read-only SSH keys) for cloning repositories rather than personal credentials. For private repositories, use secure credential storage (GitHub Secrets, Jenkins Credentials, AWS Secrets Manager). Enable signed commits for code integrity. Document repository structure and branching strategy (Git Flow, GitHub Flow, trunk-based development).",
-      "critical": true
+      "description": "Version control is essential for tracking changes, collaboration, and maintaining code history. Use Git with a platform like GitHub, GitLab, or Bitbucket.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Initialize Git repository",
+          "code": "git init\n\n# Add remote:\ngit remote add origin https://github.com/username/repo.git\n\n# Initial commit:\ngit add .\ngit commit -m \"Initial commit\"\ngit push -u origin main"
+        },
+        {
+          "language": "bash",
+          "label": "Set up .gitignore",
+          "code": "cat > .gitignore << EOF\nnode_modules/\n.env\n*.log\ndist/\nbuild/\n.DS_Store\nEOF"
+        }
+      ]
     },
     {
       "id": "automated-testing",
       "title": "Set up automated testing",
-      "description": "Automated testing is the safety net of CI/CD. Follow the test pyramid: many unit tests (fast, isolated, test individual functions), fewer integration tests (test component interactions), minimal E2E tests (slow, brittle, test full user flows). For unit tests: use framework for your language (JUnit/Java, pytest/Python, Jest/JavaScript). Run on every commit: configure pipeline to run 'npm test', 'mvn test', 'pytest', etc. Aim for 80%+ code coverage. For integration tests: test database interactions, API contracts, message queues. Use test databases (Docker containers with test data) - never test against production. For E2E tests: use tools like Selenium, Cypress, Playwright. Run E2E tests on staging environments that mirror production. Parallelize tests to reduce execution time: most CI/CD platforms support test parallelization. Fail fast: order tests from fastest to slowest, stop pipeline on first failure. Generate test reports: use JUnit XML format for compatibility. Archive test results as CI artifacts. Use code coverage tools (JaCoCo, Istanbul, Coverage.py) and set minimum thresholds. Flaky tests are worse than no tests - fix or remove them immediately. Set up test data fixtures and tear down after tests to maintain consistency.",
-      "critical": true
+      "description": "Automated tests ensure code quality and catch bugs early. Implement unit, integration, and end-to-end tests that run on every commit.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions test workflow",
+          "code": "name: Run Tests\n\non: [push, pull_request]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-node@v3\n        with:\n          node-version: 18\n      - run: npm ci\n      - run: npm test\n      - run: npm run test:e2e"
+        }
+      ]
     },
     {
       "id": "code-quality-checks",
       "title": "Implement code quality checks",
-      "description": "Code quality tools catch bugs, security issues, and maintainability problems before code review. For linting: use ESLint (JavaScript), Pylint/Flake8 (Python), RuboCop (Ruby), Checkstyle (Java). Configure in pipeline: 'npm run lint', 'pylint src/', 'rubocop'. Fail builds on errors, warn on style issues. For formatting: use Prettier (JavaScript), Black (Python), gofmt (Go) - enforce consistent style. Add pre-commit hooks to format code automatically before commits. For static analysis: use SonarQube/SonarCloud (multi-language, detects bugs, code smells, security vulnerabilities), SpotBugs (Java), Bandit (Python security), Brakeman (Rails security). Integrate SonarQube with pipeline: run 'sonar-scanner' after tests, set quality gates (minimum coverage %, max code smells, no critical bugs). Most tools generate reports - publish as pipeline artifacts. Configure IDE plugins to show issues during development (shift-left approach). Set up .editorconfig for consistent editor settings. Define coding standards document and enforce with tools. For complex codebases, add architecture validation (ArchUnit, dependency-cruiser) to prevent architectural violations. Review and adjust rules over time - balance strictness with developer productivity.",
-      "critical": false
+      "description": "Automated building ensures consistent, reproducible builds. Use CI/CD tools to compile, package, and create artifacts.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions build workflow",
+          "code": "name: Build\n\non:\n  push:\n    branches: [main]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-node@v3\n        with:\n          node-version: 18\n      - run: npm ci\n      - run: npm run build\n      - uses: actions/upload-artifact@v3\n        with:\n          name: build-artifacts\n          path: dist/"
+        }
+      ]
     },
     {
       "id": "security-scanning",

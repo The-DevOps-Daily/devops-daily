@@ -6,31 +6,85 @@
   "category": "Cloud",
   "difficulty": "intermediate",
   "estimatedTime": "45-60 minutes",
-  "tags": ["aws", "cloud", "security", "iam", "compliance"],
+  "tags": [
+    "aws",
+    "cloud",
+    "security",
+    "iam",
+    "compliance"
+  ],
   "items": [
     {
       "id": "enable-mfa-root",
       "title": "Enable MFA for root account",
-      "description": "The root account has unrestricted access to everything in your AWS account - protecting it is critical. Sign in to AWS Console as root user (use account email and password). Navigate to IAM Dashboard, click on your account name (top right) > Security Credentials. In the Multi-factor authentication (MFA) section, click 'Assign MFA device'. Choose a device type: Virtual MFA (app like Google Authenticator, Authy, Microsoft Authenticator - recommended), Hardware MFA device (physical token), or U2F security key (YubiKey). For Virtual MFA: scan the QR code with your authenticator app, enter two consecutive codes to verify. Store backup codes in a secure location (password manager, encrypted storage) - you'll need them if you lose your device. AWS best practice: use root account ONLY for initial setup and billing. Create IAM users with appropriate permissions for daily tasks. Set up billing alerts to detect unauthorized usage. Consider setting up an AWS Organizations SCP to restrict root account actions.",
-      "critical": true
+      "description": "Enable MFA on the root account to add an extra layer of security. The root account has unrestricted access to all AWS services.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Enable MFA via AWS CLI",
+          "code": "# List MFA devices:\naws iam list-virtual-mfa-devices\n\n# Create virtual MFA device:\naws iam create-virtual-mfa-device \\\n  --virtual-mfa-device-name root-mfa \\\n  --outfile /tmp/QRCode.png \\\n  --bootstrap-method QRCodePNG"
+        },
+        {
+          "language": "bash",
+          "label": "Enable MFA (after scanning QR)",
+          "code": "aws iam enable-mfa-device \\\n  --user-name root \\\n  --serial-number arn:aws:iam::ACCOUNT-ID:mfa/root-mfa \\\n  --authentication-code-1 123456 \\\n  --authentication-code-2 654321"
+        }
+      ]
     },
     {
       "id": "configure-cloudtrail",
       "title": "Configure CloudTrail logging",
-      "description": "CloudTrail logs every API call made in your AWS account - essential for security auditing, compliance, and forensics. Enable in AWS Console: CloudTrail > Trails > Create Trail. Name your trail (e.g., 'organization-trail'). Select 'All regions' to capture activity across all regions from a single trail - this is critical as attackers often use uncommon regions. Create a new S3 bucket for logs or use existing (enable versioning and encryption). Enable 'Log file validation' to detect tampering. Under Management events, select 'All' to log both read and write operations. Enable 'Data events' for S3 and Lambda if needed (generates more logs, higher cost). Configure CloudWatch Logs integration for real-time alerting. Set up S3 lifecycle policies to archive logs to Glacier after 90 days, delete after 7 years (adjust for compliance needs). Enable S3 MFA Delete on the log bucket. Use CloudTrail Insights to detect unusual API activity. Review logs regularly or integrate with SIEM tools (Splunk, Sumo Logic). Cost: ~$2 per 100,000 events for management events.",
-      "critical": true
+      "description": "Use IAM roles instead of hard-coded credentials. Roles provide temporary security credentials and follow the principle of least privilege.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "json",
+          "label": "Example IAM role trust policy",
+          "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [{\n    \"Effect\": \"Allow\",\n    \"Principal\": {\n      \"Service\": \"ec2.amazonaws.com\"\n    },\n    \"Action\": \"sts:AssumeRole\"\n  }]\n}"
+        },
+        {
+          "language": "bash",
+          "label": "Create and attach IAM role",
+          "code": "# Create role:\naws iam create-role \\\n  --role-name MyEC2Role \\\n  --assume-role-policy-document file://trust-policy.json\n\n# Attach managed policy:\naws iam attach-role-policy \\\n  --role-name MyEC2Role \\\n  --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess\n\n# Create instance profile:\naws iam create-instance-profile \\\n  --instance-profile-name MyEC2Role\n\n# Add role to instance profile:\naws iam add-role-to-instance-profile \\\n  --instance-profile-name MyEC2Role \\\n  --role-name MyEC2Role"
+        }
+      ]
     },
     {
       "id": "setup-guardduty",
       "title": "Set up GuardDuty",
-      "description": "GuardDuty is AWS's intelligent threat detection service that monitors for malicious activity and unauthorized behavior. Enable in AWS Console: GuardDuty > Get Started > Enable GuardDuty. It analyzes CloudTrail logs, VPC Flow Logs, and DNS logs using machine learning. Enable in all regions (GuardDuty is regional) - consider using AWS Organizations to enable for all accounts centrally. After enabling, GuardDuty immediately starts generating findings for threats like: cryptocurrency mining, unusual API calls, compromised EC2 instances, reconnaissance activity, backdoor activity, data exfiltration. Create SNS topics to receive alerts: GuardDuty > Settings > Findings export > Configure now. Integrate with Security Hub for centralized findings. Review findings regularly in the console - suppress false positives using suppression rules. High and critical findings need immediate investigation. Export findings to S3 for long-term retention and integration with external tools. Set up automated responses using EventBridge rules + Lambda. Cost: Based on CloudTrail events and VPC Flow Logs analyzed - typically $5-50/month for small accounts.",
-      "critical": false
+      "description": "Enable CloudTrail for audit logging of all AWS API calls. This provides a complete history of account activity for security analysis and compliance.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Create CloudTrail",
+          "code": "# Create S3 bucket for logs:\naws s3 mb s3://my-cloudtrail-logs --region us-east-1\n\n# Create CloudTrail:\naws cloudtrail create-trail \\\n  --name my-trail \\\n  --s3-bucket-name my-cloudtrail-logs\n\n# Start logging:\naws cloudtrail start-logging --name my-trail"
+        },
+        {
+          "language": "json",
+          "label": "S3 bucket policy for CloudTrail",
+          "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [{\n    \"Sid\": \"AWSCloudTrailAclCheck\",\n    \"Effect\": \"Allow\",\n    \"Principal\": {\n      \"Service\": \"cloudtrail.amazonaws.com\"\n    },\n    \"Action\": \"s3:GetBucketAcl\",\n    \"Resource\": \"arn:aws:s3:::my-cloudtrail-logs\"\n  }, {\n    \"Sid\": \"AWSCloudTrailWrite\",\n    \"Effect\": \"Allow\",\n    \"Principal\": {\n      \"Service\": \"cloudtrail.amazonaws.com\"\n    },\n    \"Action\": \"s3:PutObject\",\n    \"Resource\": \"arn:aws:s3:::my-cloudtrail-logs/*\",\n    \"Condition\": {\n      \"StringEquals\": {\n        \"s3:x-amz-acl\": \"bucket-owner-full-control\"\n      }\n    }\n  }]\n}"
+        }
+      ]
     },
     {
       "id": "review-iam-policies",
       "title": "Review IAM policies",
-      "description": "Overly permissive IAM policies are a major security risk. Follow least privilege principle: grant only permissions required for specific tasks. Use IAM Access Analyzer to identify overly permissive policies: IAM > Access Analyzer > Create analyzer. It flags resources shared externally and policies allowing broad access. Review policies attached to users, groups, and roles: look for wildcards in actions (\"Action\": \"*\") or resources (\"Resource\": \"*\"). Replace wildcard policies with specific actions: instead of 's3:*', use 's3:GetObject', 's3:PutObject'. Use IAM Policy Simulator to test policy changes before applying: IAM > Policy Simulator. Enable IAM Access Advisor to see which permissions are actually used: IAM > Users/Roles > Access Advisor tab - remove unused permissions. Never attach policies directly to users - use groups instead for easier management. Use service control policies (SCPs) in AWS Organizations to set permission guardrails across accounts. For cross-account access, use roles with ExternalId instead of sharing credentials. Rotate access keys every 90 days maximum. Use AWS Managed Policies when appropriate, but create custom policies for specific needs.",
-      "critical": true
+      "description": "Configure security groups with least privilege. Only allow necessary traffic and avoid overly permissive rules.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Create restrictive security group",
+          "code": "# Create security group:\naws ec2 create-security-group \\\n  --group-name web-server-sg \\\n  --description \"Security group for web servers\" \\\n  --vpc-id vpc-1234567\n\n# Allow HTTPS from specific IP:\naws ec2 authorize-security-group-ingress \\\n  --group-id sg-1234567 \\\n  --protocol tcp \\\n  --port 443 \\\n  --cidr 203.0.113.0/24\n\n# Allow SSH from specific IP only:\naws ec2 authorize-security-group-ingress \\\n  --group-id sg-1234567 \\\n  --protocol tcp \\\n  --port 22 \\\n  --cidr 203.0.113.10/32"
+        },
+        {
+          "language": "bash",
+          "label": "Audit security groups",
+          "code": "# Find security groups with 0.0.0.0/0:\naws ec2 describe-security-groups \\\n  --filters Name=ip-permission.cidr,Values=0.0.0.0/0 \\\n  --query \"SecurityGroups[*].[GroupId,GroupName]\" \\\n  --output table"
+        }
+      ]
     },
     {
       "id": "enable-s3-encryption",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, Circle, ChevronDown, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Circle, ChevronDown, ExternalLink, Copy, Check } from 'lucide-react';
 import { ChecklistItem } from '@/lib/checklist-utils';
 
 interface ChecklistItemProps {
@@ -12,7 +12,18 @@ interface ChecklistItemProps {
 
 export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistItemProps) {
   const [expanded, setExpanded] = useState(false);
-  const hasDetails = item.description || (item.links && item.links.length > 0);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const hasDetails = item.description || item.codeBlocks || (item.links && item.links.length > 0);
+
+  const copyToClipboard = async (code: string, index: number) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg mb-3 overflow-hidden transition-all hover:shadow-md">
@@ -67,6 +78,35 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {item.description}
                   </p>
+                )}
+                {item.codeBlocks && item.codeBlocks.length > 0 && (
+                  <div className="space-y-3 mt-3">
+                    {item.codeBlocks.map((block, index) => (
+                      <div key={index} className="space-y-1">
+                        {block.label && (
+                          <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            {block.label}
+                          </p>
+                        )}
+                        <div className="relative group">
+                          <pre className="bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs border border-gray-700">
+                            <code className="font-mono">{block.code}</code>
+                          </pre>
+                          <button
+                            onClick={() => copyToClipboard(block.code, index)}
+                            className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Copy to clipboard"
+                          >
+                            {copiedIndex === index ? (
+                              <Check className="w-4 h-4 text-green-400" />
+                            ) : (
+                              <Copy className="w-4 h-4 text-gray-300" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
                 {item.links && item.links.length > 0 && (
                   <div className="space-y-1">

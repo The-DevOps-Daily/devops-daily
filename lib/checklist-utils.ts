@@ -6,6 +6,11 @@ export interface ChecklistItem {
   id: string;
   title: string;
   description?: string;
+  codeBlocks?: Array<{
+    language: string;
+    code: string;
+    label?: string;
+  }>;
   links?: Array<{
     title: string;
     url: string;
