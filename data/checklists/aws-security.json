@@ -11,45 +11,50 @@
     {
       "id": "enable-mfa-root",
       "title": "Enable MFA for root account",
-      "description": "Add multi-factor authentication to the root account",
+      "description": "The root account has unrestricted access to everything in your AWS account - protecting it is critical. Sign in to AWS Console as root user (use account email and password). Navigate to IAM Dashboard, click on your account name (top right) > Security Credentials. In the Multi-factor authentication (MFA) section, click 'Assign MFA device'. Choose a device type: Virtual MFA (app like Google Authenticator, Authy, Microsoft Authenticator - recommended), Hardware MFA device (physical token), or U2F security key (YubiKey). For Virtual MFA: scan the QR code with your authenticator app, enter two consecutive codes to verify. Store backup codes in a secure location (password manager, encrypted storage) - you'll need them if you lose your device. AWS best practice: use root account ONLY for initial setup and billing. Create IAM users with appropriate permissions for daily tasks. Set up billing alerts to detect unauthorized usage. Consider setting up an AWS Organizations SCP to restrict root account actions.",
       "critical": true
     },
     {
       "id": "configure-cloudtrail",
       "title": "Configure CloudTrail logging",
-      "description": "Enable CloudTrail in all regions for audit logging",
+      "description": "CloudTrail logs every API call made in your AWS account - essential for security auditing, compliance, and forensics. Enable in AWS Console: CloudTrail > Trails > Create Trail. Name your trail (e.g., 'organization-trail'). Select 'All regions' to capture activity across all regions from a single trail - this is critical as attackers often use uncommon regions. Create a new S3 bucket for logs or use existing (enable versioning and encryption). Enable 'Log file validation' to detect tampering. Under Management events, select 'All' to log both read and write operations. Enable 'Data events' for S3 and Lambda if needed (generates more logs, higher cost). Configure CloudWatch Logs integration for real-time alerting. Set up S3 lifecycle policies to archive logs to Glacier after 90 days, delete after 7 years (adjust for compliance needs). Enable S3 MFA Delete on the log bucket. Use CloudTrail Insights to detect unusual API activity. Review logs regularly or integrate with SIEM tools (Splunk, Sumo Logic). Cost: ~$2 per 100,000 events for management events.",
       "critical": true
     },
     {
       "id": "setup-guardduty",
       "title": "Set up GuardDuty",
-      "description": "Enable AWS GuardDuty for threat detection"
+      "description": "GuardDuty is AWS's intelligent threat detection service that monitors for malicious activity and unauthorized behavior. Enable in AWS Console: GuardDuty > Get Started > Enable GuardDuty. It analyzes CloudTrail logs, VPC Flow Logs, and DNS logs using machine learning. Enable in all regions (GuardDuty is regional) - consider using AWS Organizations to enable for all accounts centrally. After enabling, GuardDuty immediately starts generating findings for threats like: cryptocurrency mining, unusual API calls, compromised EC2 instances, reconnaissance activity, backdoor activity, data exfiltration. Create SNS topics to receive alerts: GuardDuty > Settings > Findings export > Configure now. Integrate with Security Hub for centralized findings. Review findings regularly in the console - suppress false positives using suppression rules. High and critical findings need immediate investigation. Export findings to S3 for long-term retention and integration with external tools. Set up automated responses using EventBridge rules + Lambda. Cost: Based on CloudTrail events and VPC Flow Logs analyzed - typically $5-50/month for small accounts.",
+      "critical": false
     },
     {
       "id": "review-iam-policies",
       "title": "Review IAM policies",
-      "description": "Audit and implement least privilege IAM policies",
+      "description": "Overly permissive IAM policies are a major security risk. Follow least privilege principle: grant only permissions required for specific tasks. Use IAM Access Analyzer to identify overly permissive policies: IAM > Access Analyzer > Create analyzer. It flags resources shared externally and policies allowing broad access. Review policies attached to users, groups, and roles: look for wildcards in actions (\"Action\": \"*\") or resources (\"Resource\": \"*\"). Replace wildcard policies with specific actions: instead of 's3:*', use 's3:GetObject', 's3:PutObject'. Use IAM Policy Simulator to test policy changes before applying: IAM > Policy Simulator. Enable IAM Access Advisor to see which permissions are actually used: IAM > Users/Roles > Access Advisor tab - remove unused permissions. Never attach policies directly to users - use groups instead for easier management. Use service control policies (SCPs) in AWS Organizations to set permission guardrails across accounts. For cross-account access, use roles with ExternalId instead of sharing credentials. Rotate access keys every 90 days maximum. Use AWS Managed Policies when appropriate, but create custom policies for specific needs.",
       "critical": true
     },
     {
       "id": "enable-s3-encryption",
       "title": "Enable S3 bucket encryption",
-      "description": "Encrypt all S3 buckets at rest using SSE-S3 or SSE-KMS"
+      "description": "S3 bucket encryption protects data at rest from unauthorized access. For each bucket, enable default encryption: S3 Console > Select bucket > Properties > Default encryption > Edit. Choose encryption type: SSE-S3 (AES-256, AWS-managed keys, free) or SSE-KMS (AWS KMS keys, more control, additional cost ~$1/month per key + $0.03 per 10k requests). SSE-KMS recommended for sensitive data: provides audit trail in CloudTrail, allows key rotation, supports access policies. Create KMS key: KMS Console > Create key > Symmetric > Define key policy. For existing buckets with unencrypted objects, enable encryption and use S3 Batch Operations to encrypt existing objects. Enable 'Bucket Key' with SSE-KMS to reduce costs (reduces API calls to KMS). Use bucket policies to enforce encryption: deny PutObject requests without 'x-amz-server-side-encryption' header. Enable versioning to protect against accidental deletion. Enable S3 Object Lock for compliance requirements (WORM - write once, read many). Monitor unencrypted uploads with AWS Config rule 's3-bucket-server-side-encryption-enabled'. For ultra-sensitive data, use client-side encryption before upload.",
+      "critical": false
     },
     {
       "id": "configure-vpc-flow-logs",
       "title": "Configure VPC flow logs",
-      "description": "Enable VPC flow logs for network monitoring"
+      "description": "VPC Flow Logs capture metadata about IP traffic flowing through your VPC - essential for network monitoring, troubleshooting, and security analysis. Enable in VPC Console: Select VPC > Actions > Create flow log. Configure settings: Filter = 'All' (accepted and rejected traffic - critical for security), Destination = CloudWatch Logs or S3 (S3 is cheaper for long-term storage), Aggregation interval = 1 minute (faster detection, more logs) or 10 minutes (default). Create IAM role with permissions to write to CloudWatch Logs or S3. Enable at VPC level (all ENIs), subnet level, or individual ENI level. For S3 destination, use partitioned structure (e.g., by date) for easier querying with Athena. Logs include: source/destination IPs and ports, protocol, packet count, byte count, action (ACCEPT/REJECT). Analyze logs to detect: unauthorized access attempts (rejected flows), data exfiltration (large data transfers to unknown IPs), port scanning. Use CloudWatch Insights or Athena to query logs. Set up CloudWatch alarms for suspicious patterns. Cost: ~$0.50 per GB ingested for CloudWatch, $0.023 per GB for S3. Archive old logs to Glacier after 90 days to save costs.",
+      "critical": false
     },
     {
       "id": "setup-aws-config",
       "title": "Set up AWS Config",
-      "description": "Enable AWS Config for resource inventory and compliance"
+      "description": "AWS Config continuously monitors and records AWS resource configurations, enabling compliance auditing and change tracking. Enable in Config Console: Get Started > Settings. Select 'All resources' to record all supported resource types in the region. Enable 'Include global resources' (IAM, etc.) in ONE region only to avoid duplicate charges. Create or use existing S3 bucket for configuration history and snapshots. Create or use existing SNS topic for configuration change notifications. Create IAM role for Config with necessary permissions. Enable in all regions where you have resources (Config is regional). After setup, enable Config Rules for compliance checks: pre-built rules include 'encrypted-volumes', 's3-bucket-public-read-prohibited', 'iam-password-policy', 'mfa-enabled-for-iam-console-access'. Create custom rules using Lambda for specific requirements. Use Config to answer: 'What resources existed at specific times?', 'What changed and when?', 'Is my infrastructure compliant with policies?'. View compliance dashboard for overview. Set up remediation actions using Systems Manager Automation documents to auto-fix non-compliant resources. Cost: ~$2 per active rule per region per month + $0.003 per configuration item recorded.",
+      "critical": false
     },
     {
       "id": "enable-security-hub",
       "title": "Enable Security Hub",
-      "description": "Activate AWS Security Hub for centralized security findings"
+      "description": "Security Hub aggregates security findings from multiple AWS services and third-party tools into a single dashboard. Enable in Security Hub Console: Get Started > Enable Security Hub. Enable in all regions or use aggregation to centralize findings from multiple regions into one. Choose security standards to enable: AWS Foundational Security Best Practices (free, recommended), CIS AWS Foundations Benchmark, PCI DSS. Security Hub automatically receives findings from: GuardDuty, Inspector, Macie, IAM Access Analyzer, Firewall Manager, Systems Manager Patch Manager. Integrate third-party tools: Palo Alto Networks, Fortinet, Trend Micro, etc. Configure automated responses using EventBridge: route critical findings to SNS/Lambda for immediate action. Use Insights to group and filter findings: identify trends and patterns. Suppress findings that are false positives or accepted risks. Enable integration with AWS Organizations to manage Security Hub across multiple accounts. View compliance scores for each security standard. Use Security Hub findings to prioritize remediation efforts. Export findings to SIEM tools via EventBridge or S3. Cost: ~$0.0010 per security check per region per month (varies by standard) + $0.00003 per finding ingested event. Free tier: 10,000 security checks per month for first 30 days.",
+      "critical": false
     }
   ]
 }
