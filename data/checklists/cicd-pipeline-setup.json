@@ -1,0 +1,66 @@
+{
+  "id": "cicd-pipeline-setup",
+  "slug": "cicd-pipeline-setup",
+  "title": "CI/CD Pipeline Setup Checklist",
+  "description": "Complete guide to setting up a production-ready CI/CD pipeline.",
+  "category": "DevOps",
+  "difficulty": "intermediate",
+  "estimatedTime": "1-2 hours",
+  "tags": ["cicd", "pipeline", "automation", "devops", "testing"],
+  "items": [
+    {
+      "id": "vcs-integration",
+      "title": "Configure version control integration",
+      "description": "Connect your CI/CD tool to GitHub, GitLab, or Bitbucket",
+      "critical": true
+    },
+    {
+      "id": "automated-testing",
+      "title": "Set up automated testing",
+      "description": "Configure unit, integration, and end-to-end tests",
+      "critical": true,
+      "links": [
+        {
+          "title": "Testing Best Practices",
+          "url": "https://martinfowler.com/articles/practical-test-pyramid.html"
+        }
+      ]
+    },
+    {
+      "id": "code-quality-checks",
+      "title": "Implement code quality checks",
+      "description": "Add linting, formatting, and static code analysis"
+    },
+    {
+      "id": "security-scanning",
+      "title": "Configure security scanning",
+      "description": "Implement SAST, DAST, and dependency scanning",
+      "critical": true
+    },
+    {
+      "id": "deployment-automation",
+      "title": "Set up deployment automation",
+      "description": "Configure automated deployments to staging and production"
+    },
+    {
+      "id": "rollback-procedures",
+      "title": "Configure rollback procedures",
+      "description": "Implement automated rollback on failed deployments"
+    },
+    {
+      "id": "monitoring-alerting",
+      "title": "Enable monitoring and alerting",
+      "description": "Set up monitoring for pipeline failures and performance"
+    }
+  ],
+  "resources": [
+    {
+      "title": "CI/CD Best Practices",
+      "url": "https://docs.gitlab.com/ee/ci/pipelines/"
+    },
+    {
+      "title": "GitHub Actions Documentation",
+      "url": "https://docs.github.com/en/actions"
+    }
+  ]
+}

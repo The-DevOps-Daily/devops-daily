@@ -1,0 +1,92 @@
+{
+  "id": "ssh-hardening",
+  "slug": "ssh-hardening",
+  "title": "SSH Hardening Checklist",
+  "description": "Comprehensive guide to harden your SSH server configuration and improve security.",
+  "category": "Security",
+  "difficulty": "intermediate",
+  "estimatedTime": "30-45 minutes",
+  "tags": ["ssh", "security", "linux", "server", "hardening"],
+  "items": [
+    {
+      "id": "disable-root-login",
+      "title": "Disable root login",
+      "description": "Set 'PermitRootLogin no' in /etc/ssh/sshd_config",
+      "critical": true,
+      "links": [
+        {
+          "title": "SSH Configuration Guide",
+          "url": "https://www.ssh.com/academy/ssh/sshd_config"
+        }
+      ]
+    },
+    {
+      "id": "change-ssh-port",
+      "title": "Change default SSH port",
+      "description": "Modify 'Port' directive in /etc/ssh/sshd_config (default is 22)"
+    },
+    {
+      "id": "enable-key-auth",
+      "title": "Enable key-based authentication",
+      "description": "Set 'PubkeyAuthentication yes' in /etc/ssh/sshd_config",
+      "critical": true
+    },
+    {
+      "id": "disable-password-auth",
+      "title": "Disable password authentication",
+      "description": "Set 'PasswordAuthentication no' in /etc/ssh/sshd_config",
+      "critical": true
+    },
+    {
+      "id": "configure-firewall",
+      "title": "Configure firewall rules",
+      "description": "Only allow SSH from trusted IP addresses using iptables or ufw"
+    },
+    {
+      "id": "setup-fail2ban",
+      "title": "Set up fail2ban",
+      "description": "Install and configure fail2ban to prevent brute-force attacks"
+    },
+    {
+      "id": "enable-2fa",
+      "title": "Enable two-factor authentication",
+      "description": "Configure Google Authenticator or similar 2FA method"
+    },
+    {
+      "id": "configure-key-permissions",
+      "title": "Configure SSH key permissions",
+      "description": "Set proper permissions: chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys"
+    },
+    {
+      "id": "ssh-timeouts",
+      "title": "Set up SSH session timeouts",
+      "description": "Configure ClientAliveInterval and ClientAliveCountMax"
+    },
+    {
+      "id": "disable-empty-passwords",
+      "title": "Disable empty passwords",
+      "description": "Set 'PermitEmptyPasswords no' in /etc/ssh/sshd_config",
+      "critical": true
+    },
+    {
+      "id": "use-protocol-v2",
+      "title": "Use SSH protocol version 2",
+      "description": "Set 'Protocol 2' in /etc/ssh/sshd_config"
+    },
+    {
+      "id": "configure-allowed-users",
+      "title": "Configure allowed users/groups",
+      "description": "Use AllowUsers or AllowGroups directives to restrict access"
+    }
+  ],
+  "resources": [
+    {
+      "title": "SSH Security Best Practices",
+      "url": "https://www.ssh.com/academy/ssh/security"
+    },
+    {
+      "title": "fail2ban Documentation",
+      "url": "https://github.com/fail2ban/fail2ban"
+    }
+  ]
+}

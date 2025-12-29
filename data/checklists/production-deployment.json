@@ -1,0 +1,72 @@
+{
+  "id": "production-deployment",
+  "slug": "production-deployment",
+  "title": "Production Deployment Checklist",
+  "description": "Pre-deployment checklist to ensure safe and successful production releases.",
+  "category": "DevOps",
+  "difficulty": "beginner",
+  "estimatedTime": "20-30 minutes",
+  "tags": ["deployment", "production", "release", "devops"],
+  "items": [
+    {
+      "id": "review-code-changes",
+      "title": "Review code changes",
+      "description": "Perform code review and get necessary approvals",
+      "critical": true
+    },
+    {
+      "id": "run-all-tests",
+      "title": "Run all tests",
+      "description": "Ensure all unit, integration, and E2E tests pass",
+      "critical": true
+    },
+    {
+      "id": "update-documentation",
+      "title": "Update documentation",
+      "description": "Update README, API docs, and changelog"
+    },
+    {
+      "id": "create-backup",
+      "title": "Create backup",
+      "description": "Backup database and critical data before deployment",
+      "critical": true
+    },
+    {
+      "id": "notify-team",
+      "title": "Notify team members",
+      "description": "Inform stakeholders about the upcoming deployment"
+    },
+    {
+      "id": "deploy-staging",
+      "title": "Deploy to staging first",
+      "description": "Test the deployment in staging environment",
+      "critical": true
+    },
+    {
+      "id": "verify-monitoring",
+      "title": "Verify monitoring and logging",
+      "description": "Ensure monitoring dashboards and logs are working"
+    },
+    {
+      "id": "smoke-tests",
+      "title": "Perform smoke tests",
+      "description": "Run basic smoke tests after deployment",
+      "critical": true
+    },
+    {
+      "id": "update-runbooks",
+      "title": "Update runbooks",
+      "description": "Document any new procedures or changes"
+    }
+  ],
+  "resources": [
+    {
+      "title": "Deployment Best Practices",
+      "url": "https://www.atlassian.com/devops/what-is-devops/deployment-best-practices"
+    },
+    {
+      "title": "Blue-Green Deployments",
+      "url": "https://martinfowler.com/bliki/BlueGreenDeployment.html"
+    }
+  ]
+}

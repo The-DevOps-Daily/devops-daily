@@ -1,0 +1,77 @@
+{
+  "id": "kubernetes-security",
+  "slug": "kubernetes-security",
+  "title": "Kubernetes Security Checklist",
+  "description": "Essential security checklist for Kubernetes clusters to ensure production readiness.",
+  "category": "Cloud",
+  "difficulty": "advanced",
+  "estimatedTime": "1-2 hours",
+  "tags": ["kubernetes", "k8s", "security", "containers", "cloud"],
+  "items": [
+    {
+      "id": "enable-rbac",
+      "title": "Enable RBAC",
+      "description": "Enable Role-Based Access Control to manage permissions",
+      "critical": true,
+      "links": [
+        {
+          "title": "Kubernetes RBAC Documentation",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/"
+        }
+      ]
+    },
+    {
+      "id": "configure-network-policies",
+      "title": "Configure network policies",
+      "description": "Define NetworkPolicy resources to control pod-to-pod communication",
+      "critical": true
+    },
+    {
+      "id": "pod-security-standards",
+      "title": "Use Pod Security Standards",
+      "description": "Implement Pod Security Admission or Pod Security Policies"
+    },
+    {
+      "id": "enable-audit-logging",
+      "title": "Enable audit logging",
+      "description": "Configure audit policies to track all API server activity"
+    },
+    {
+      "id": "scan-images",
+      "title": "Scan container images for vulnerabilities",
+      "description": "Use tools like Trivy, Clair, or Snyk to scan images",
+      "critical": true
+    },
+    {
+      "id": "resource-limits",
+      "title": "Configure resource limits",
+      "description": "Set CPU and memory limits for all containers"
+    },
+    {
+      "id": "secrets-management",
+      "title": "Use secrets management",
+      "description": "Never store secrets in plain text, use Kubernetes Secrets or external vaults",
+      "critical": true
+    },
+    {
+      "id": "enable-tls",
+      "title": "Enable TLS for all endpoints",
+      "description": "Ensure all communication is encrypted using TLS"
+    },
+    {
+      "id": "regular-updates",
+      "title": "Regular security updates",
+      "description": "Keep Kubernetes and all components up to date with latest patches"
+    }
+  ],
+  "resources": [
+    {
+      "title": "Kubernetes Security Best Practices",
+      "url": "https://kubernetes.io/docs/concepts/security/"
+    },
+    {
+      "title": "CIS Kubernetes Benchmark",
+      "url": "https://www.cisecurity.org/benchmark/kubernetes"
+    }
+  ]
+}

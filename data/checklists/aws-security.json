@@ -1,0 +1,71 @@
+{
+  "id": "aws-security",
+  "slug": "aws-security",
+  "title": "AWS Security Checklist",
+  "description": "Essential security configuration checklist for AWS cloud environments.",
+  "category": "Cloud",
+  "difficulty": "intermediate",
+  "estimatedTime": "45-60 minutes",
+  "tags": ["aws", "cloud", "security", "iam", "compliance"],
+  "items": [
+    {
+      "id": "enable-mfa-root",
+      "title": "Enable MFA for root account",
+      "description": "Add multi-factor authentication to the root account",
+      "critical": true,
+      "links": [
+        {
+          "title": "AWS MFA Documentation",
+          "url": "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_mfa.html"
+        }
+      ]
+    },
+    {
+      "id": "configure-cloudtrail",
+      "title": "Configure CloudTrail logging",
+      "description": "Enable CloudTrail in all regions for audit logging",
+      "critical": true
+    },
+    {
+      "id": "setup-guardduty",
+      "title": "Set up GuardDuty",
+      "description": "Enable AWS GuardDuty for threat detection"
+    },
+    {
+      "id": "review-iam-policies",
+      "title": "Review IAM policies",
+      "description": "Audit and implement least privilege IAM policies",
+      "critical": true
+    },
+    {
+      "id": "enable-s3-encryption",
+      "title": "Enable S3 bucket encryption",
+      "description": "Encrypt all S3 buckets at rest using SSE-S3 or SSE-KMS"
+    },
+    {
+      "id": "configure-vpc-flow-logs",
+      "title": "Configure VPC flow logs",
+      "description": "Enable VPC flow logs for network monitoring"
+    },
+    {
+      "id": "setup-aws-config",
+      "title": "Set up AWS Config",
+      "description": "Enable AWS Config for resource inventory and compliance"
+    },
+    {
+      "id": "enable-security-hub",
+      "title": "Enable Security Hub",
+      "description": "Activate AWS Security Hub for centralized security findings"
+    }
+  ],
+  "resources": [
+    {
+      "title": "AWS Security Best Practices",
+      "url": "https://aws.amazon.com/architecture/security-identity-compliance/"
+    },
+    {
+      "title": "AWS Well-Architected Framework",
+      "url": "https://aws.amazon.com/architecture/well-architected/"
+    }
+  ]
+}
