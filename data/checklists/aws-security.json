@@ -35,31 +35,13 @@
     {
       "id": "configure-cloudtrail",
       "title": "Configure CloudTrail logging",
-      "description": "Use IAM roles instead of hard-coded credentials. Roles provide temporary security credentials and follow the principle of least privilege.",
+      "description": "Enable CloudTrail for audit logging of all AWS API calls. This provides a complete history of account activity for security analysis and compliance. CloudTrail tracks API calls across all services, including who made the call, when, from which IP, and what parameters were used.",
       "critical": true,
-      "codeBlocks": [
-        {
-          "language": "json",
-          "label": "Example IAM role trust policy",
-          "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [{\n    \"Effect\": \"Allow\",\n    \"Principal\": {\n      \"Service\": \"ec2.amazonaws.com\"\n    },\n    \"Action\": \"sts:AssumeRole\"\n  }]\n}"
-        },
-        {
-          "language": "bash",
-          "label": "Create and attach IAM role",
-          "code": "# Create role:\naws iam create-role \\\n  --role-name MyEC2Role \\\n  --assume-role-policy-document file://trust-policy.json\n\n# Attach managed policy:\naws iam attach-role-policy \\\n  --role-name MyEC2Role \\\n  --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess\n\n# Create instance profile:\naws iam create-instance-profile \\\n  --instance-profile-name MyEC2Role\n\n# Add role to instance profile:\naws iam add-role-to-instance-profile \\\n  --instance-profile-name MyEC2Role \\\n  --role-name MyEC2Role"
-        }
-      ]
-    },
-    {
-      "id": "setup-guardduty",
-      "title": "Set up GuardDuty",
-      "description": "Enable CloudTrail for audit logging of all AWS API calls. This provides a complete history of account activity for security analysis and compliance.",
-      "critical": false,
       "codeBlocks": [
         {
           "language": "bash",
           "label": "Create CloudTrail",
-          "code": "# Create S3 bucket for logs:\naws s3 mb s3://my-cloudtrail-logs --region us-east-1\n\n# Create CloudTrail:\naws cloudtrail create-trail \\\n  --name my-trail \\\n  --s3-bucket-name my-cloudtrail-logs\n\n# Start logging:\naws cloudtrail start-logging --name my-trail"
+          "code": "# Create S3 bucket for logs:\naws s3 mb s3://my-cloudtrail-logs --region us-east-1\n\n# Create CloudTrail:\naws cloudtrail create-trail \\  --name my-trail \\  --s3-bucket-name my-cloudtrail-logs\n\n# Start logging:\naws cloudtrail start-logging --name my-trail"
         },
         {
           "language": "json",
@@ -69,20 +51,38 @@
       ]
     },
     {
+      "id": "setup-guardduty",
+      "title": "Set up GuardDuty",
+      "description": "Amazon GuardDuty is a threat detection service that continuously monitors for malicious activity and unauthorized behavior. It analyzes CloudTrail logs, VPC Flow Logs, and DNS logs to identify threats like cryptocurrency mining, credential compromise, and unusual API calls.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Enable GuardDuty",
+          "code": "# Enable GuardDuty in current region:\naws guardduty create-detector --enable\n\n# Get detector ID:\nDETECTOR_ID=$(aws guardduty list-detectors --query 'DetectorIds[0]' --output text)\n\n# List findings:\naws guardduty list-findings --detector-id $DETECTOR_ID"
+        },
+        {
+          "language": "bash",
+          "label": "Enable GuardDuty in all regions",
+          "code": "# Enable in all regions (script):\nfor region in $(aws ec2 describe-regions --query 'Regions[].RegionName' --output text); do\n  echo \"Enabling GuardDuty in $region\"\n  aws guardduty create-detector --enable --region $region\ndone"
+        }
+      ]
+    },
+    {
       "id": "review-iam-policies",
       "title": "Review IAM policies",
-      "description": "Configure security groups with least privilege. Only allow necessary traffic and avoid overly permissive rules.",
+      "description": "Regularly audit IAM policies to ensure they follow the principle of least privilege. Remove overly permissive policies, unused roles, and ensure users only have access to resources they need. Use IAM Access Analyzer to identify resources shared with external entities.",
       "critical": true,
       "codeBlocks": [
         {
           "language": "bash",
-          "label": "Create restrictive security group",
-          "code": "# Create security group:\naws ec2 create-security-group \\\n  --group-name web-server-sg \\\n  --description \"Security group for web servers\" \\\n  --vpc-id vpc-1234567\n\n# Allow HTTPS from specific IP:\naws ec2 authorize-security-group-ingress \\\n  --group-id sg-1234567 \\\n  --protocol tcp \\\n  --port 443 \\\n  --cidr 203.0.113.0/24\n\n# Allow SSH from specific IP only:\naws ec2 authorize-security-group-ingress \\\n  --group-id sg-1234567 \\\n  --protocol tcp \\\n  --port 22 \\\n  --cidr 203.0.113.10/32"
+          "label": "Audit IAM policies",
+          "code": "# List all IAM users:\naws iam list-users\n\n# Get user's attached policies:\naws iam list-attached-user-policies --user-name USERNAME\n\n# Get policy details:\naws iam get-policy-version \\  --policy-arn arn:aws:iam::aws:policy/POLICY_NAME \\  --version-id v1"
         },
         {
           "language": "bash",
-          "label": "Audit security groups",
-          "code": "# Find security groups with 0.0.0.0/0:\naws ec2 describe-security-groups \\\n  --filters Name=ip-permission.cidr,Values=0.0.0.0/0 \\\n  --query \"SecurityGroups[*].[GroupId,GroupName]\" \\\n  --output table"
+          "label": "Find unused IAM roles",
+          "code": "# List roles not used in last 90 days:\naws iam generate-credential-report\nsleep 10\naws iam get-credential-report --output text | \\  base64 -d | awk -F',' '$5 == \"N/A\" || $11 > 90 {print $1}' "
         }
       ]
     },
@@ -90,25 +90,73 @@
       "id": "enable-s3-encryption",
       "title": "Enable S3 bucket encryption",
       "description": "S3 bucket encryption protects data at rest from unauthorized access. For each bucket, enable default encryption: S3 Console > Select bucket > Properties > Default encryption > Edit. Choose encryption type: SSE-S3 (AES-256, AWS-managed keys, free) or SSE-KMS (AWS KMS keys, more control, additional cost ~$1/month per key + $0.03 per 10k requests). SSE-KMS recommended for sensitive data: provides audit trail in CloudTrail, allows key rotation, supports access policies. Create KMS key: KMS Console > Create key > Symmetric > Define key policy. For existing buckets with unencrypted objects, enable encryption and use S3 Batch Operations to encrypt existing objects. Enable 'Bucket Key' with SSE-KMS to reduce costs (reduces API calls to KMS). Use bucket policies to enforce encryption: deny PutObject requests without 'x-amz-server-side-encryption' header. Enable versioning to protect against accidental deletion. Enable S3 Object Lock for compliance requirements (WORM - write once, read many). Monitor unencrypted uploads with AWS Config rule 's3-bucket-server-side-encryption-enabled'. For ultra-sensitive data, use client-side encryption before upload.",
-      "critical": false
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Enable S3 bucket encryption",
+          "code": "# Enable default encryption on bucket:\naws s3api put-bucket-encryption \\  --bucket my-bucket \\  --server-side-encryption-configuration '{\n    \"Rules\": [{\n      \"ApplyServerSideEncryptionByDefault\": {\n        \"SSEAlgorithm\": \"AES256\"\n      },\n      \"BucketKeyEnabled\": true\n    }]\n  }' "
+        },
+        {
+          "language": "bash",
+          "label": "Enable encryption with KMS",
+          "code": "# Create KMS key:\nKEY_ID=$(aws kms create-key --description \"S3 bucket encryption\" --query 'KeyMetadata.KeyId' --output text)\n\n# Enable KMS encryption:\naws s3api put-bucket-encryption \\  --bucket my-bucket \\  --server-side-encryption-configuration '{\n    \"Rules\": [{\n      \"ApplyServerSideEncryptionByDefault\": {\n        \"SSEAlgorithm\": \"aws:kms\",\n        \"KMSMasterKeyID\": \"'$KEY_ID'\"\n      },\n      \"BucketKeyEnabled\": true\n    }]\n  }' "
+        }
+      ]
     },
     {
       "id": "configure-vpc-flow-logs",
       "title": "Configure VPC flow logs",
       "description": "VPC Flow Logs capture metadata about IP traffic flowing through your VPC - essential for network monitoring, troubleshooting, and security analysis. Enable in VPC Console: Select VPC > Actions > Create flow log. Configure settings: Filter = 'All' (accepted and rejected traffic - critical for security), Destination = CloudWatch Logs or S3 (S3 is cheaper for long-term storage), Aggregation interval = 1 minute (faster detection, more logs) or 10 minutes (default). Create IAM role with permissions to write to CloudWatch Logs or S3. Enable at VPC level (all ENIs), subnet level, or individual ENI level. For S3 destination, use partitioned structure (e.g., by date) for easier querying with Athena. Logs include: source/destination IPs and ports, protocol, packet count, byte count, action (ACCEPT/REJECT). Analyze logs to detect: unauthorized access attempts (rejected flows), data exfiltration (large data transfers to unknown IPs), port scanning. Use CloudWatch Insights or Athena to query logs. Set up CloudWatch alarms for suspicious patterns. Cost: ~$0.50 per GB ingested for CloudWatch, $0.023 per GB for S3. Archive old logs to Glacier after 90 days to save costs.",
-      "critical": false
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Enable VPC Flow Logs to S3",
+          "code": "# Create S3 bucket for flow logs:\naws s3 mb s3://my-vpc-flow-logs\n\n# Enable VPC Flow Logs:\naws ec2 create-flow-logs \\  --resource-type VPC \\  --resource-ids vpc-1234567 \\  --traffic-type ALL \\  --log-destination-type s3 \\  --log-destination arn:aws:s3:::my-vpc-flow-logs"
+        },
+        {
+          "language": "bash",
+          "label": "Enable VPC Flow Logs to CloudWatch",
+          "code": "# Create CloudWatch log group:\naws logs create-log-group --log-group-name /aws/vpc/flowlogs\n\n# Create IAM role (see AWS docs for trust policy)\n# Then enable flow logs:\naws ec2 create-flow-logs \\  --resource-type VPC \\  --resource-ids vpc-1234567 \\  --traffic-type ALL \\  --log-destination-type cloud-watch-logs \\  --log-group-name /aws/vpc/flowlogs \\  --deliver-logs-permission-arn arn:aws:iam::ACCOUNT:role/flowlogsRole"
+        }
+      ]
     },
     {
       "id": "setup-aws-config",
       "title": "Set up AWS Config",
       "description": "AWS Config continuously monitors and records AWS resource configurations, enabling compliance auditing and change tracking. Enable in Config Console: Get Started > Settings. Select 'All resources' to record all supported resource types in the region. Enable 'Include global resources' (IAM, etc.) in ONE region only to avoid duplicate charges. Create or use existing S3 bucket for configuration history and snapshots. Create or use existing SNS topic for configuration change notifications. Create IAM role for Config with necessary permissions. Enable in all regions where you have resources (Config is regional). After setup, enable Config Rules for compliance checks: pre-built rules include 'encrypted-volumes', 's3-bucket-public-read-prohibited', 'iam-password-policy', 'mfa-enabled-for-iam-console-access'. Create custom rules using Lambda for specific requirements. Use Config to answer: 'What resources existed at specific times?', 'What changed and when?', 'Is my infrastructure compliant with policies?'. View compliance dashboard for overview. Set up remediation actions using Systems Manager Automation documents to auto-fix non-compliant resources. Cost: ~$2 per active rule per region per month + $0.003 per configuration item recorded.",
-      "critical": false
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Set up AWS Config",
+          "code": "# Create S3 bucket for Config:\naws s3 mb s3://my-aws-config-bucket\n\n# Start configuration recorder:\naws configservice put-configuration-recorder \\  --configuration-recorder name=default,roleARN=arn:aws:iam::ACCOUNT:role/aws-config-role \\  --recording-group allSupported=true,includeGlobalResourceTypes=true"
+        },
+        {
+          "language": "bash",
+          "label": "Enable Config Rules",
+          "code": "# Enable encrypted-volumes rule:\naws configservice put-config-rule \\  --config-rule '{\n    \"ConfigRuleName\": \"encrypted-volumes\",\n    \"Source\": {\n      \"Owner\": \"AWS\",\n      \"SourceIdentifier\": \"ENCRYPTED_VOLUMES\"\n    }\n  }'\n\n# Enable S3 public read prohibited:\naws configservice put-config-rule \\  --config-rule '{\n    \"ConfigRuleName\": \"s3-bucket-public-read-prohibited\",\n    \"Source\": {\n      \"Owner\": \"AWS\",\n      \"SourceIdentifier\": \"S3_BUCKET_PUBLIC_READ_PROHIBITED\"\n    }\n  }' "
+        }
+      ]
     },
     {
       "id": "enable-security-hub",
       "title": "Enable Security Hub",
       "description": "Security Hub aggregates security findings from multiple AWS services and third-party tools into a single dashboard. Enable in Security Hub Console: Get Started > Enable Security Hub. Enable in all regions or use aggregation to centralize findings from multiple regions into one. Choose security standards to enable: AWS Foundational Security Best Practices (free, recommended), CIS AWS Foundations Benchmark, PCI DSS. Security Hub automatically receives findings from: GuardDuty, Inspector, Macie, IAM Access Analyzer, Firewall Manager, Systems Manager Patch Manager. Integrate third-party tools: Palo Alto Networks, Fortinet, Trend Micro, etc. Configure automated responses using EventBridge: route critical findings to SNS/Lambda for immediate action. Use Insights to group and filter findings: identify trends and patterns. Suppress findings that are false positives or accepted risks. Enable integration with AWS Organizations to manage Security Hub across multiple accounts. View compliance scores for each security standard. Use Security Hub findings to prioritize remediation efforts. Export findings to SIEM tools via EventBridge or S3. Cost: ~$0.0010 per security check per region per month (varies by standard) + $0.00003 per finding ingested event. Free tier: 10,000 security checks per month for first 30 days.",
-      "critical": false
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Enable Security Hub",
+          "code": "# Enable Security Hub:\naws securityhub enable-security-hub\n\n# Enable AWS Foundational Security Best Practices:\naws securityhub batch-enable-standards \\  --standards-subscription-requests '[{\n    \"StandardsArn\": \"arn:aws:securityhub:REGION::standards/aws-foundational-security-best-practices/v/1.0.0\"\n  }]' "
+        },
+        {
+          "language": "bash",
+          "label": "Enable Security Hub in all regions",
+          "code": "# Enable in all regions (script):\nfor region in $(aws ec2 describe-regions --query 'Regions[].RegionName' --output text); do\n  echo \"Enabling Security Hub in $region\"\n  aws securityhub enable-security-hub --region $region\n  aws securityhub batch-enable-standards \\    --region $region \\    --standards-subscription-requests '[{\"StandardsArn\": \"arn:aws:securityhub:'$region'::standards/aws-foundational-security-best-practices/v/1.0.0\"}]'\ndone"
+        }
+      ]
     }
   ]
 }
