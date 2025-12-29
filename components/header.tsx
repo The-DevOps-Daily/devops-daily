@@ -101,7 +101,6 @@ const mainNavigation = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Posts', href: '/posts', icon: FileText },
   { label: 'Guides', href: '/guides', icon: BookOpen },
-  { label: 'Checklists', href: '/checklists', icon: ListChecks },
   { label: 'News', href: '/news', icon: Newspaper, badge: 'New' },
 ];
 
@@ -132,6 +131,12 @@ const dropdownNavigation: Record<string, NavSection[]> = {
           href: '/games',
           description: 'DevOps games and simulators',
           icon: Gamepad2,
+        },
+        {
+          label: 'Checklists',
+          href: '/checklists',
+          description: 'Interactive security & DevOps checklists',
+          icon: ListChecks,
         },
       ],
     },
