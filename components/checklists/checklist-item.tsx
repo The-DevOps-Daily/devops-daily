@@ -32,20 +32,22 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <h3 
-                className={`text-base font-medium ${
-                  checked 
-                    ? 'line-through text-gray-500 dark:text-gray-400' 
-                    : 'text-gray-900 dark:text-gray-100'
-                }`}
-              >
-                {item.title}
+              <div className="flex items-center gap-2">
+                <h3 
+                  className={`text-base font-medium ${
+                    checked 
+                      ? 'line-through text-gray-500 dark:text-gray-400' 
+                      : 'text-gray-900 dark:text-gray-100'
+                  }`}
+                >
+                  {item.title}
+                </h3>
                 {item.critical && (
-                  <span className="ml-2 text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full font-semibold">
+                  <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-full font-semibold flex-shrink-0">
                     Critical
                   </span>
                 )}
-              </h3>
+              </div>
               {hasDetails && (
                 <button
                   onClick={() => setExpanded(!expanded)}
