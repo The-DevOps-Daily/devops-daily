@@ -1,0 +1,239 @@
+{
+  "id": "terraform-repo-structure",
+  "slug": "terraform-repo-structure",
+  "title": "Terraform Repository Structure Checklist",
+  "description": "Best practices for organizing and structuring your Terraform projects for maintainability and scalability.",
+  "category": "Infrastructure as Code",
+  "difficulty": "beginner",
+  "estimatedTime": "30-45 minutes",
+  "tags": [
+    "terraform",
+    "iac",
+    "infrastructure",
+    "devops",
+    "best-practices"
+  ],
+  "items": [
+    {
+      "id": "create-root-structure",
+      "title": "Create root directory structure",
+      "description": "Organize your Terraform project with a clear directory structure. Separate environments, modules, and shared configurations. This makes it easier to navigate and maintain your infrastructure code as it grows.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Basic directory structure",
+          "code": "# Create basic Terraform project structure:\nmkdir -p terraform-project/{modules,environments/{dev,staging,prod}}\ncd terraform-project\n\n# Project structure:\n# terraform-project/\n# \u251c\u2500\u2500 modules/           # Reusable Terraform modules\n# \u251c\u2500\u2500 environments/      # Environment-specific configurations\n# \u2502   \u251c\u2500\u2500 dev/\n# \u2502   \u251c\u2500\u2500 staging/\n# \u2502   \u2514\u2500\u2500 prod/\n# \u251c\u2500\u2500 README.md          # Project documentation\n# \u2514\u2500\u2500 .gitignore         # Git ignore file"
+        },
+        {
+          "language": "bash",
+          "label": "Advanced directory structure",
+          "code": "# More comprehensive structure:\nmkdir -p terraform-project/{modules/{vpc,ec2,rds,s3},environments/{dev,staging,prod},scripts,docs}\n\n# Advanced structure:\n# terraform-project/\n# \u251c\u2500\u2500 modules/           # Reusable modules\n# \u2502   \u251c\u2500\u2500 vpc/\n# \u2502   \u251c\u2500\u2500 ec2/\n# \u2502   \u251c\u2500\u2500 rds/\n# \u2502   \u2514\u2500\u2500 s3/\n# \u251c\u2500\u2500 environments/      # Per-environment configs\n# \u2502   \u251c\u2500\u2500 dev/\n# \u2502   \u251c\u2500\u2500 staging/\n# \u2502   \u2514\u2500\u2500 prod/\n# \u251c\u2500\u2500 scripts/           # Helper scripts\n# \u251c\u2500\u2500 docs/              # Documentation\n# \u251c\u2500\u2500 .terraform.lock.hcl\n# \u251c\u2500\u2500 .gitignore\n# \u2514\u2500\u2500 README.md"
+        }
+      ]
+    },
+    {
+      "id": "create-gitignore",
+      "title": "Create .gitignore file",
+      "description": "Prevent sensitive files and Terraform state from being committed to version control. State files can contain sensitive data like passwords and should never be stored in Git. Use remote state backends instead.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Create .gitignore",
+          "code": "cat > .gitignore << 'EOF'\n# Local .terraform directories\n**/.terraform/*\n\n# .tfstate files\n*.tfstate\n*.tfstate.*\n\n# Crash log files\ncrash.log\ncrash.*.log\n\n# Exclude all .tfvars files (may contain sensitive data)\n*.tfvars\n*.tfvars.json\n\n# Ignore override files\noverride.tf\noverride.tf.json\n*_override.tf\n*_override.tf.json\n\n# Ignore CLI configuration files\n.terraformrc\nterraform.rc\n\n# Ignore Mac .DS_Store files\n.DS_Store\n\n# Ignore plan output files\n*.tfplan\nEOF"
+        }
+      ]
+    },
+    {
+      "id": "setup-backend-config",
+      "title": "Configure remote state backend",
+      "description": "Use remote state storage (S3, GCS, Terraform Cloud) to enable team collaboration and prevent state conflicts. Remote state is encrypted and provides state locking to prevent concurrent modifications.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "S3 backend configuration (backend.tf)",
+          "code": "terraform {\n  backend \"s3\" {\n    bucket         = \"my-terraform-state-bucket\"\n    key            = \"prod/terraform.tfstate\"\n    region         = \"us-east-1\"\n    encrypt        = true\n    dynamodb_table = \"terraform-state-lock\"\n    \n    # Optional: Use workspace-aware state path\n    # key = \"\\${terraform.workspace}/terraform.tfstate\"\n  }\n}"
+        },
+        {
+          "language": "bash",
+          "label": "Create S3 backend resources",
+          "code": "# Create S3 bucket for state:\naws s3 mb s3://my-terraform-state-bucket --region us-east-1\n\n# Enable versioning:\naws s3api put-bucket-versioning \\  --bucket my-terraform-state-bucket \\  --versioning-configuration Status=Enabled\n\n# Enable encryption:\naws s3api put-bucket-encryption \\  --bucket my-terraform-state-bucket \\  --server-side-encryption-configuration '{\n    \"Rules\": [{\n      \"ApplyServerSideEncryptionByDefault\": {\n        \"SSEAlgorithm\": \"AES256\"\n      }\n    }]\n  }'\n\n# Create DynamoDB table for state locking:\naws dynamodb create-table \\  --table-name terraform-state-lock \\  --attribute-definitions AttributeName=LockID,AttributeType=S \\  --key-schema AttributeName=LockID,KeyType=HASH \\  --billing-mode PAY_PER_REQUEST"
+        }
+      ]
+    },
+    {
+      "id": "create-main-tf",
+      "title": "Create main configuration files",
+      "description": "Separate your Terraform code into logical files: main.tf (primary resources), variables.tf (input variables), outputs.tf (output values), and versions.tf (provider requirements). This improves readability and maintainability.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "versions.tf - Provider requirements",
+          "code": "terraform {\n  required_version = \">= 1.0.0\"\n  \n  required_providers {\n    aws = {\n      source  = \"hashicorp/aws\"\n      version = \"~> 5.0\"\n    }\n  }\n}\n\nprovider \"aws\" {\n  region = var.aws_region\n  \n  default_tags {\n    tags = {\n      Environment = var.environment\n      ManagedBy   = \"Terraform\"\n      Project     = var.project_name\n    }\n  }\n}"
+        },
+        {
+          "language": "hcl",
+          "label": "variables.tf - Input variables",
+          "code": "variable \"environment\" {\n  description = \"Environment name (dev, staging, prod)\"\n  type        = string\n  \n  validation {\n    condition     = contains([\"dev\", \"staging\", \"prod\"], var.environment)\n    error_message = \"Environment must be dev, staging, or prod.\"\n  }\n}\n\nvariable \"aws_region\" {\n  description = \"AWS region for resources\"\n  type        = string\n  default     = \"us-east-1\"\n}\n\nvariable \"project_name\" {\n  description = \"Project name for resource naming\"\n  type        = string\n}\n\nvariable \"vpc_cidr\" {\n  description = \"CIDR block for VPC\"\n  type        = string\n  default     = \"10.0.0.0/16\"\n}\n\nvariable \"enable_nat_gateway\" {\n  description = \"Enable NAT Gateway for private subnets\"\n  type        = bool\n  default     = true\n}\n\nvariable \"tags\" {\n  description = \"Additional tags for resources\"\n  type        = map(string)\n  default     = {}\n}"
+        },
+        {
+          "language": "hcl",
+          "label": "outputs.tf - Output values",
+          "code": "output \"vpc_id\" {\n  description = \"ID of the VPC\"\n  value       = module.vpc.vpc_id\n}\n\noutput \"public_subnet_ids\" {\n  description = \"List of public subnet IDs\"\n  value       = module.vpc.public_subnet_ids\n}\n\noutput \"private_subnet_ids\" {\n  description = \"List of private subnet IDs\"\n  value       = module.vpc.private_subnet_ids\n  sensitive   = false\n}\n\noutput \"nat_gateway_ips\" {\n  description = \"Elastic IPs of NAT Gateways\"\n  value       = module.vpc.nat_gateway_ips\n}"
+        }
+      ]
+    },
+    {
+      "id": "create-terraform-tfvars",
+      "title": "Create variable files for environments",
+      "description": "Use .tfvars files to define environment-specific values. Keep sensitive values in separate files that are not committed to Git. Use .tfvars.example as a template for team members.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "terraform.tfvars.example (template)",
+          "code": "# Copy this file to terraform.tfvars and fill in your values\n# terraform.tfvars is gitignored for security\n\nproject_name = \"my-project\"\nenvironment  = \"dev\"\naws_region   = \"us-east-1\"\n\nvpc_cidr           = \"10.0.0.0/16\"\nenable_nat_gateway = true\n\ntags = {\n  Team  = \"DevOps\"\n  Owner = \"your-name@example.com\"\n}"
+        },
+        {
+          "language": "hcl",
+          "label": "dev.tfvars - Development environment",
+          "code": "environment        = \"dev\"\nproject_name       = \"my-project\"\naws_region         = \"us-east-1\"\nvpc_cidr           = \"10.0.0.0/16\"\nenable_nat_gateway = false  # Save costs in dev\n\ntags = {\n  Environment = \"Development\"\n  CostCenter  = \"Engineering\"\n}"
+        },
+        {
+          "language": "hcl",
+          "label": "prod.tfvars - Production environment",
+          "code": "environment        = \"prod\"\nproject_name       = \"my-project\"\naws_region         = \"us-east-1\"\nvpc_cidr           = \"10.1.0.0/16\"\nenable_nat_gateway = true  # Required for production\n\ntags = {\n  Environment = \"Production\"\n  CostCenter  = \"Operations\"\n  Compliance  = \"Required\"\n}"
+        }
+      ]
+    },
+    {
+      "id": "create-modules",
+      "title": "Create reusable modules",
+      "description": "Extract common infrastructure patterns into modules for reusability. Each module should have its own main.tf, variables.tf, and outputs.tf. Modules make your code DRY (Don't Repeat Yourself) and easier to test.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Create module structure",
+          "code": "# Create a VPC module:\nmkdir -p modules/vpc\ncd modules/vpc\n\n# Module structure:\n# modules/vpc/\n# \u251c\u2500\u2500 main.tf       # Main resource definitions\n# \u251c\u2500\u2500 variables.tf  # Module input variables\n# \u251c\u2500\u2500 outputs.tf    # Module outputs\n# \u251c\u2500\u2500 versions.tf   # Provider requirements\n# \u2514\u2500\u2500 README.md     # Module documentation"
+        },
+        {
+          "language": "hcl",
+          "label": "modules/vpc/main.tf",
+          "code": "resource \"aws_vpc\" \"main\" {\n  cidr_block           = var.cidr_block\n  enable_dns_hostnames = var.enable_dns_hostnames\n  enable_dns_support   = var.enable_dns_support\n\n  tags = merge(\n    var.tags,\n    {\n      Name = \"\\${var.name}-vpc\"\n    }\n  )\n}\n\nresource \"aws_subnet\" \"public\" {\n  count = length(var.public_subnet_cidrs)\n\n  vpc_id                  = aws_vpc.main.id\n  cidr_block              = var.public_subnet_cidrs[count.index]\n  availability_zone       = var.availability_zones[count.index]\n  map_public_ip_on_launch = true\n\n  tags = merge(\n    var.tags,\n    {\n      Name = \"\\${var.name}-public-\\${count.index + 1}\"\n      Type = \"Public\"\n    }\n  )\n}\n\nresource \"aws_internet_gateway\" \"main\" {\n  vpc_id = aws_vpc.main.id\n\n  tags = merge(\n    var.tags,\n    {\n      Name = \"\\${var.name}-igw\"\n    }\n  )\n}"
+        },
+        {
+          "language": "hcl",
+          "label": "modules/vpc/variables.tf",
+          "code": "variable \"name\" {\n  description = \"Name prefix for VPC resources\"\n  type        = string\n}\n\nvariable \"cidr_block\" {\n  description = \"CIDR block for VPC\"\n  type        = string\n}\n\nvariable \"public_subnet_cidrs\" {\n  description = \"List of CIDR blocks for public subnets\"\n  type        = list(string)\n}\n\nvariable \"availability_zones\" {\n  description = \"List of availability zones\"\n  type        = list(string)\n}\n\nvariable \"enable_dns_hostnames\" {\n  description = \"Enable DNS hostnames in VPC\"\n  type        = bool\n  default     = true\n}\n\nvariable \"enable_dns_support\" {\n  description = \"Enable DNS support in VPC\"\n  type        = bool\n  default     = true\n}\n\nvariable \"tags\" {\n  description = \"Tags to apply to resources\"\n  type        = map(string)\n  default     = {}\n}"
+        },
+        {
+          "language": "hcl",
+          "label": "modules/vpc/outputs.tf",
+          "code": "output \"vpc_id\" {\n  description = \"ID of the VPC\"\n  value       = aws_vpc.main.id\n}\n\noutput \"vpc_cidr_block\" {\n  description = \"CIDR block of the VPC\"\n  value       = aws_vpc.main.cidr_block\n}\n\noutput \"public_subnet_ids\" {\n  description = \"List of public subnet IDs\"\n  value       = aws_subnet.public[*].id\n}\n\noutput \"internet_gateway_id\" {\n  description = \"ID of the Internet Gateway\"\n  value       = aws_internet_gateway.main.id\n}"
+        }
+      ]
+    },
+    {
+      "id": "use-modules",
+      "title": "Use modules in your configuration",
+      "description": "Call your custom modules from environment configurations. Pass in environment-specific values and use module outputs to connect resources together.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "environments/prod/main.tf - Using modules",
+          "code": "module \"vpc\" {\n  source = \"../../modules/vpc\"\n\n  name               = \"\\${var.project_name}-\\${var.environment}\"\n  cidr_block         = var.vpc_cidr\n  public_subnet_cidrs = [\"10.0.1.0/24\", \"10.0.2.0/24\", \"10.0.3.0/24\"]\n  availability_zones  = [\"us-east-1a\", \"us-east-1b\", \"us-east-1c\"]\n\n  tags = var.tags\n}\n\nmodule \"ec2\" {\n  source = \"../../modules/ec2\"\n\n  name          = \"\\${var.project_name}-web\"\n  instance_type = \"t3.medium\"\n  subnet_id     = module.vpc.public_subnet_ids[0]\n  vpc_id        = module.vpc.vpc_id\n\n  tags = var.tags\n}\n\nmodule \"rds\" {\n  source = \"../../modules/rds\"\n\n  name             = \"\\${var.project_name}-db\"\n  engine           = \"postgres\"\n  instance_class   = \"db.t3.medium\"\n  subnet_ids       = module.vpc.private_subnet_ids\n  vpc_id           = module.vpc.vpc_id\n  \n  tags = var.tags\n}"
+        }
+      ]
+    },
+    {
+      "id": "create-readme",
+      "title": "Create comprehensive README",
+      "description": "Document your Terraform project thoroughly. Include prerequisites, setup instructions, usage examples, and troubleshooting tips. Good documentation helps team members understand and contribute to the project.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "markdown",
+          "label": "README.md template",
+          "code": "# Terraform Infrastructure\n\nThis repository contains Terraform configurations for managing our infrastructure.\n\n## Prerequisites\n\n- Terraform >= 1.0.0\n- AWS CLI configured with appropriate credentials\n- Access to S3 backend bucket\n\n## Directory Structure\n\n```\nterraform-project/\n\u251c\u2500\u2500 modules/           # Reusable Terraform modules\n\u2502   \u251c\u2500\u2500 vpc/          # VPC module\n\u2502   \u251c\u2500\u2500 ec2/          # EC2 instance module\n\u2502   \u2514\u2500\u2500 rds/          # RDS database module\n\u251c\u2500\u2500 environments/      # Environment-specific configurations\n\u2502   \u251c\u2500\u2500 dev/          # Development environment\n\u2502   \u251c\u2500\u2500 staging/      # Staging environment\n\u2502   \u2514\u2500\u2500 prod/         # Production environment\n\u251c\u2500\u2500 scripts/           # Helper scripts\n\u2514\u2500\u2500 docs/              # Additional documentation\n```\n\n## Getting Started\n\n### 1. Clone the repository\n\n```bash\ngit clone https://github.com/your-org/terraform-project.git\ncd terraform-project\n```\n\n### 2. Configure your environment\n\n```bash\ncd environments/dev\ncp terraform.tfvars.example terraform.tfvars\n# Edit terraform.tfvars with your values\n```\n\n### 3. Initialize Terraform\n\n```bash\nterraform init\n```\n\n### 4. Plan and apply\n\n```bash\nterraform plan\nterraform apply\n```\n\n## Usage\n\n### Deploy to Development\n\n```bash\ncd environments/dev\nterraform init\nterraform plan\nterraform apply\n```\n\n### Deploy to Production\n\n```bash\ncd environments/prod\nterraform init\nterraform plan\nterraform apply\n```\n\n### Using Variables\n\n```bash\n# Using tfvars file:\nterraform apply -var-file=\"prod.tfvars\"\n\n# Using command line:\nterraform apply -var=\"environment=prod\" -var=\"instance_type=t3.large\"\n```\n\n## Modules\n\n### VPC Module\n\nCreates a VPC with public and private subnets.\n\n**Usage:**\n```hcl\nmodule \"vpc\" {\n  source = \"../../modules/vpc\"\n  \n  name               = \"my-vpc\"\n  cidr_block         = \"10.0.0.0/16\"\n  public_subnet_cidrs = [\"10.0.1.0/24\", \"10.0.2.0/24\"]\n  availability_zones  = [\"us-east-1a\", \"us-east-1b\"]\n}\n```\n\n## Best Practices\n\n1. **Always run `terraform plan` before `apply`**\n2. **Use remote state** - Never commit state files\n3. **Use modules** - Keep code DRY\n4. **Tag all resources** - For cost tracking and management\n5. **Use variables** - Make configurations flexible\n6. **Version providers** - Pin provider versions\n7. **Enable state locking** - Prevent concurrent modifications\n\n## Troubleshooting\n\n### State Lock Error\n\n```bash\n# Force unlock (use with caution):\nterraform force-unlock <lock-id>\n```\n\n### Provider Authentication Issues\n\n```bash\n# Verify AWS credentials:\naws sts get-caller-identity\n\n# Configure AWS CLI:\naws configure\n```\n\n### Refresh State\n\n```bash\nterraform refresh\n```\n\n## Contributing\n\n1. Create a feature branch\n2. Make your changes\n3. Run `terraform fmt` to format code\n4. Run `terraform validate` to validate configuration\n5. Submit a pull request\n\n## Support\n\nFor questions or issues, contact the DevOps team or open an issue.\n"
+        }
+      ]
+    },
+    {
+      "id": "setup-terraform-fmt",
+      "title": "Format and validate code",
+      "description": "Use terraform fmt to automatically format your code to canonical style. Use terraform validate to check for syntax errors and validate configuration. This ensures consistency and catches errors early.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Format and validate",
+          "code": "# Format all .tf files recursively:\nterraform fmt -recursive\n\n# Check if formatting is needed (CI/CD):\nterraform fmt -check -recursive\n\n# Validate configuration:\nterraform validate\n\n# Validate specific directory:\ncd environments/prod\nterraform init\nterraform validate"
+        },
+        {
+          "language": "bash",
+          "label": "Pre-commit hook (optional)",
+          "code": "# Create .git/hooks/pre-commit\ncat > .git/hooks/pre-commit << 'EOF'\n#!/bin/bash\n\necho \"Running terraform fmt...\"\nterraform fmt -check -recursive\n\nif [ $? -ne 0 ]; then\n  echo \"Error: Terraform files are not formatted. Run 'terraform fmt -recursive'\"\n  exit 1\nfi\n\necho \"Running terraform validate...\"\nfor dir in environments/*/; do\n  echo \"Validating $dir\"\n  (cd $dir && terraform init -backend=false && terraform validate)\n  if [ $? -ne 0 ]; then\n    echo \"Error: Validation failed in $dir\"\n    exit 1\n  fi\ndone\n\necho \"\u2713 All checks passed\"\nEOF\n\nchmod +x .git/hooks/pre-commit"
+        }
+      ]
+    },
+    {
+      "id": "use-workspaces",
+      "title": "Use Terraform workspaces (optional)",
+      "description": "Workspaces allow you to manage multiple environments (dev, staging, prod) using the same configuration. Each workspace has its own state file. Useful for simple setups, but separate directories are often clearer for complex projects.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Workspace commands",
+          "code": "# List workspaces:\nterraform workspace list\n\n# Create new workspace:\nterraform workspace new dev\nterraform workspace new staging\nterraform workspace new prod\n\n# Switch workspace:\nterraform workspace select dev\n\n# Show current workspace:\nterraform workspace show\n\n# Delete workspace:\nterraform workspace delete dev"
+        },
+        {
+          "language": "hcl",
+          "label": "Use workspace in configuration",
+          "code": "# Reference current workspace:\nresource \"aws_instance\" \"example\" {\n  ami           = \"ami-0c55b159cbfafe1f0\"\n  instance_type = terraform.workspace == \"prod\" ? \"t3.large\" : \"t3.micro\"\n\n  tags = {\n    Name        = \"web-\\${terraform.workspace}\"\n    Environment = terraform.workspace\n  }\n}\n\n# Workspace-specific variables:\nlocals {\n  environment_config = {\n    dev = {\n      instance_type = \"t3.micro\"\n      instance_count = 1\n    }\n    staging = {\n      instance_type = \"t3.small\"\n      instance_count = 2\n    }\n    prod = {\n      instance_type = \"t3.large\"\n      instance_count = 3\n    }\n  }\n  \n  current_config = local.environment_config[terraform.workspace]\n}"
+        }
+      ]
+    },
+    {
+      "id": "add-ci-cd",
+      "title": "Set up CI/CD pipeline",
+      "description": "Automate Terraform workflows with CI/CD. Run terraform plan on pull requests, and terraform apply on merges to main. This provides code review for infrastructure changes and prevents manual errors.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions - Terraform workflow",
+          "code": "name: Terraform CI/CD\n\non:\n  pull_request:\n    paths:\n      - 'terraform/**'\n      - '.github/workflows/terraform.yml'\n  push:\n    branches:\n      - main\n    paths:\n      - 'terraform/**'\n\nenv:\n  TF_VERSION: 1.5.0\n  AWS_REGION: us-east-1\n\njobs:\n  terraform:\n    name: Terraform Plan/Apply\n    runs-on: ubuntu-latest\n    \n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n      \n      - name: Setup Terraform\n        uses: hashicorp/setup-terraform@v3\n        with:\n          terraform_version: ${{ env.TF_VERSION }}\n      \n      - name: Configure AWS credentials\n        uses: aws-actions/configure-aws-credentials@v4\n        with:\n          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}\n          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}\n          aws-region: ${{ env.AWS_REGION }}\n      \n      - name: Terraform Format Check\n        run: terraform fmt -check -recursive\n        working-directory: ./terraform\n      \n      - name: Terraform Init\n        run: terraform init\n        working-directory: ./terraform/environments/prod\n      \n      - name: Terraform Validate\n        run: terraform validate\n        working-directory: ./terraform/environments/prod\n      \n      - name: Terraform Plan\n        id: plan\n        run: terraform plan -out=tfplan\n        working-directory: ./terraform/environments/prod\n      \n      - name: Terraform Apply\n        if: github.ref == 'refs/heads/main' && github.event_name == 'push'\n        run: terraform apply -auto-approve tfplan\n        working-directory: ./terraform/environments/prod"
+        },
+        {
+          "language": "yaml",
+          "label": "GitLab CI - Terraform pipeline",
+          "code": "image:\n  name: hashicorp/terraform:1.5\n  entrypoint: [\"\"]\n\nvariables:\n  TF_ROOT: ./terraform/environments/prod\n  TF_ADDRESS: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/terraform/state/prod\n\nbefore_script:\n  - cd $TF_ROOT\n  - terraform init\n\nstages:\n  - validate\n  - plan\n  - apply\n\nvalidate:\n  stage: validate\n  script:\n    - terraform fmt -check -recursive\n    - terraform validate\n\nplan:\n  stage: plan\n  script:\n    - terraform plan -out=tfplan\n  artifacts:\n    paths:\n      - $TF_ROOT/tfplan\n\napply:\n  stage: apply\n  script:\n    - terraform apply -auto-approve tfplan\n  dependencies:\n    - plan\n  only:\n    - main\n  when: manual"
+        }
+      ]
+    },
+    {
+      "id": "add-docs",
+      "title": "Generate module documentation",
+      "description": "Use terraform-docs to automatically generate documentation for your modules. This creates markdown documentation from your Terraform code, including inputs, outputs, and resources.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Install and use terraform-docs",
+          "code": "# Install terraform-docs (macOS):\nbrew install terraform-docs\n\n# Install terraform-docs (Linux):\ncurl -Lo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-linux-amd64.tar.gz\ntar -xzf terraform-docs.tar.gz\nchmod +x terraform-docs\nsudo mv terraform-docs /usr/local/bin/\n\n# Generate documentation for a module:\nterraform-docs markdown modules/vpc > modules/vpc/README.md\n\n# Generate for all modules:\nfor dir in modules/*/; do\n  terraform-docs markdown $dir > ${dir}README.md\ndone"
+        },
+        {
+          "language": "yaml",
+          "label": ".terraform-docs.yml - Configuration file",
+          "code": "formatter: markdown\n\nheader-from: main.tf\n\nsections:\n  show:\n    - header\n    - requirements\n    - providers\n    - inputs\n    - outputs\n    - resources\n\noutput:\n  file: README.md\n  mode: replace\n\nsort:\n  enabled: true\n  by: required\n\ncontent: |-\n  {{ .Header }}\n  \n  ## Requirements\n  \n  {{ .Requirements }}\n  \n  ## Providers\n  \n  {{ .Providers }}\n  \n  ## Resources\n  \n  {{ .Resources }}\n  \n  ## Inputs\n  \n  {{ .Inputs }}\n  \n  ## Outputs\n  \n  {{ .Outputs }}"
+        }
+      ]
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import kubernetsSecurity from './kubernetes-security.json';
 import awsSecurity from './aws-security.json';
 import cicdPipelineSetup from './cicd-pipeline-setup.json';
 import productionDeployment from './production-deployment.json';
+import terraformRepoStructure from './terraform-repo-structure.json';
 
 export const checklists: Checklist[] = [
   sshHardening as Checklist,
@@ -12,6 +13,7 @@ export const checklists: Checklist[] = [
   awsSecurity as Checklist,
   cicdPipelineSetup as Checklist,
   productionDeployment as Checklist,
+  terraformRepoStructure,
 ];
 
 export const getChecklistBySlug = (slug: string): Checklist | undefined => {
