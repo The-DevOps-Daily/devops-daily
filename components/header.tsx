@@ -35,6 +35,7 @@ import {
   Library,
   Calendar,
   Gift,
+  ListChecks,
 } from 'lucide-react';
 
 interface NavItem {
@@ -130,6 +131,12 @@ const dropdownNavigation: Record<string, NavSection[]> = {
           href: '/games',
           description: 'DevOps games and simulators',
           icon: Gamepad2,
+        },
+        {
+          label: 'Checklists',
+          href: '/checklists',
+          description: 'Interactive security & DevOps checklists',
+          icon: ListChecks,
         },
       ],
     },

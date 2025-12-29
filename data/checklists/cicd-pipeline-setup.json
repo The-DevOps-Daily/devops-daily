@@ -1,0 +1,134 @@
+{
+  "id": "cicd-pipeline-setup",
+  "slug": "cicd-pipeline-setup",
+  "title": "CI/CD Pipeline Setup Checklist",
+  "description": "Complete guide to setting up a production-ready CI/CD pipeline.",
+  "category": "DevOps",
+  "difficulty": "intermediate",
+  "estimatedTime": "1-2 hours",
+  "tags": [
+    "cicd",
+    "pipeline",
+    "automation",
+    "devops",
+    "testing"
+  ],
+  "items": [
+    {
+      "id": "vcs-integration",
+      "title": "Configure version control integration",
+      "description": "Version control is essential for tracking changes, collaboration, and maintaining code history. Use Git with a platform like GitHub, GitLab, or Bitbucket.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Initialize Git repository",
+          "code": "git init\n\n# Add remote:\ngit remote add origin https://github.com/username/repo.git\n\n# Initial commit:\ngit add .\ngit commit -m \"Initial commit\"\ngit push -u origin main"
+        },
+        {
+          "language": "bash",
+          "label": "Set up .gitignore",
+          "code": "cat > .gitignore << EOF\nnode_modules/\n.env\n*.log\ndist/\nbuild/\n.DS_Store\nEOF"
+        }
+      ]
+    },
+    {
+      "id": "automated-testing",
+      "title": "Set up automated testing",
+      "description": "Automated tests ensure code quality and catch bugs early. Implement unit, integration, and end-to-end tests that run on every commit.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions test workflow",
+          "code": "name: Run Tests\n\non: [push, pull_request]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-node@v3\n        with:\n          node-version: 18\n      - run: npm ci\n      - run: npm test\n      - run: npm run test:e2e"
+        }
+      ]
+    },
+    {
+      "id": "code-quality-checks",
+      "title": "Implement code quality checks",
+      "description": "Automated building ensures consistent, reproducible builds. Use CI/CD tools to compile, package, and create artifacts.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions build workflow",
+          "code": "name: Build\n\non:\n  push:\n    branches: [main]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v3\n      - uses: actions/setup-node@v3\n        with:\n          node-version: 18\n      - run: npm ci\n      - run: npm run build\n      - uses: actions/upload-artifact@v3\n        with:\n          name: build-artifacts\n          path: dist/"
+        }
+      ]
+    },
+    {
+      "id": "security-scanning",
+      "title": "Configure security scanning",
+      "description": "Security scanning finds vulnerabilities before they reach production. SAST (Static Application Security Testing) analyzes source code: use SonarQube, Checkmarx, Veracode, or Semgrep. Run early in pipeline: 'semgrep --config=auto' scans for common vulnerabilities (SQL injection, XSS, hardcoded secrets). Dependency scanning checks for vulnerable libraries: use Snyk, OWASP Dependency-Check, npm audit, pip-audit, Dependabot. Run on every PR: 'npm audit --audit-level=high' fails builds with high/critical vulnerabilities. For Docker images, use Trivy, Clair, or Anchore: 'trivy image myapp:latest --exit-code 1 --severity HIGH,CRITICAL'. DAST (Dynamic Application Security Testing) tests running applications: use OWASP ZAP, Burp Suite. Run against deployed staging environments: 'zap-baseline.py -t https://staging.example.com'. Secret scanning prevents credential leaks: use GitGuardian, TruffleHog, git-secrets. Scan commits: 'trufflehog git file://. --since-commit HEAD~1'. Set up security gates: fail builds with critical vulnerabilities, require approval for high vulnerabilities. Generate security reports and track over time. Automate patching: Dependabot auto-creates PRs for dependency updates. Monitor security advisories for your tech stack. Have incident response plan for discovered vulnerabilities in production.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions - Security Scanning",
+          "code": "name: Security Scan\non: [push, pull_request]\n\njobs:\n  security:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      \n      - name: Run Trivy vulnerability scanner\n        uses: aquasecurity/trivy-action@master\n        with:\n          scan-type: 'fs'\n          scan-ref: '.'\n          format: 'sarif'\n          output: 'trivy-results.sarif'\n      \n      - name: Upload Trivy results\n        uses: github/codeql-action/upload-sarif@v2\n        with:\n          sarif_file: 'trivy-results.sarif' "
+        },
+        {
+          "language": "yaml",
+          "label": "GitLab CI - Dependency Scanning",
+          "code": "include:\n  - template: Security/Dependency-Scanning.gitlab-ci.yml\n  - template: Security/SAST.gitlab-ci.yml\n\nvariables:\n  SECURE_LOG_LEVEL: \"debug\"\n\ndependency_scanning:\n  stage: test\n  allow_failure: false"
+        }
+      ]
+    },
+    {
+      "id": "deployment-automation",
+      "title": "Set up deployment automation",
+      "description": "Automated deployments eliminate human error and enable rapid releases. Define environments: dev (automatic on merge to develop), staging (automatic on merge to main), production (manual approval or automatic with safeguards). Choose deployment strategy: Rolling (gradual replacement, zero downtime), Blue-Green (two identical environments, instant switch), Canary (gradual traffic shift to new version). For Kubernetes: use Helm charts or Kustomize for configuration management. Deploy with: 'helm upgrade --install myapp ./chart --set image.tag=$VERSION'. Use namespaces per environment. For AWS: use CodeDeploy, ECS task definitions, or Elastic Beanstalk. Include health checks in deployment: check /health endpoint returns 200 before marking deployment successful. Implement progressive delivery: deploy to 1% of users, monitor metrics, gradually increase to 100%. Use feature flags (LaunchDarkly, Unleash) to decouple deployment from release - deploy anytime, enable features when ready. Configure deployment pipelines: staging should mirror production architecture. Use infrastructure as code (Terraform, CloudFormation) for reproducible environments. Tag deployments with version, commit SHA, timestamp. Send deployment notifications to Slack/Teams. Document rollback procedures clearly.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions - Deploy to Kubernetes",
+          "code": "name: Deploy to Kubernetes\non:\n  push:\n    branches: [main]\n\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      \n      - name: Configure kubectl\n        uses: azure/k8s-set-context@v3\n        with:\n          kubeconfig: ${{ secrets.KUBE_CONFIG }}\n      \n      - name: Deploy to cluster\n        run: |\n          kubectl apply -f k8s/\n          kubectl rollout status deployment/my-app\n          kubectl get services"
+        },
+        {
+          "language": "yaml",
+          "label": "GitLab CI - Deploy with Helm",
+          "code": "deploy:\n  stage: deploy\n  image: alpine/helm:latest\n  script:\n    - helm upgrade --install my-app ./helm-chart \\        --namespace production \\        --set image.tag=$CI_COMMIT_SHA \\        --wait\n  environment:\n    name: production\n    url: https://my-app.example.com\n  only:\n    - main"
+        }
+      ]
+    },
+    {
+      "id": "rollback-procedures",
+      "title": "Configure rollback procedures",
+      "description": "Rollbacks save you when deployments go wrong. Automate rollback triggers: monitor error rates, latency, failed health checks after deployment. If metrics exceed thresholds, automatically roll back. For Kubernetes: use 'kubectl rollout undo deployment/myapp' to revert to previous version. Configure readiness/liveness probes: if new pods don't become ready within timeout, rollout automatically fails and rolls back. For AWS ECS: keep previous task definition versions, enable circuit breaker to auto-rollback failed deployments. For Blue-Green deployments: rollback is instant - just switch load balancer back to blue environment. For Canary deployments: halt traffic shift and route all to old version. Document manual rollback steps: exact commands, expected duration, verification steps. Test rollback procedures regularly - if you've never rolled back, you don't know if it works. Use versioned artifacts: keep Docker images, build artifacts, database schemas for all production versions. Implement database migration rollbacks: use tools that support down migrations (Flyway, Liquibase). Define rollback time windows: 'If we don't roll back within 30 minutes, proceed forward with hotfix instead'. Alert on-call team immediately when automated rollback occurs. Post-incident: analyze why deployment failed and improve deployment pipeline.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Kubernetes rollback",
+          "code": "# Rollback to previous version:\nkubectl rollout undo deployment/my-app\n\n# Rollback to specific revision:\nkubectl rollout undo deployment/my-app --to-revision=2\n\n# View rollout history:\nkubectl rollout history deployment/my-app\n\n# Check rollout status:\nkubectl rollout status deployment/my-app"
+        },
+        {
+          "language": "yaml",
+          "label": "GitHub Actions - Automatic rollback on failure",
+          "code": "deploy:\n  runs-on: ubuntu-latest\n  steps:\n    - name: Deploy\n      id: deploy\n      run: kubectl apply -f k8s/\n    \n    - name: Health check\n      id: health\n      run: |\n        sleep 30\n        curl -f https://my-app.example.com/health || exit 1\n    \n    - name: Rollback on failure\n      if: failure()\n      run: kubectl rollout undo deployment/my-app"
+        }
+      ]
+    },
+    {
+      "id": "monitoring-alerting",
+      "title": "Enable monitoring and alerting",
+      "description": "Monitor your CI/CD pipeline health to maintain velocity and catch issues early. Track pipeline metrics: build success rate (aim for >95%), average build duration (identify slowdowns), queue time (scaling indicator), test failure rate, deployment frequency (DORA metric). Use built-in dashboards: GitHub Actions Insights, GitLab CI/CD analytics, Jenkins monitoring plugin. For detailed monitoring: send pipeline metrics to Prometheus, Datadog, New Relic. Create alerts for: pipeline failures (notify team immediately via Slack/PagerDuty), long-running builds (>2x average duration), test flakiness (same test fails intermittently), security scan findings (critical vulnerabilities). Monitor deployment health post-deployment: track application metrics (error rate, latency, throughput) using APM tools (Datadog, New Relic, Prometheus+Grafana). Set up synthetic monitoring: continuously test critical user flows in production. Correlate deployments with metric changes: if error rate spikes after deployment, alert and consider rollback. Implement SLOs: 'Deployments should complete in <15 minutes 95% of the time', '99% of builds should succeed'. Use dashboards visible to entire team - pipeline health should be transparent. Review metrics in retrospectives: identify bottlenecks and optimize. Monitor infrastructure costs: track compute hours for CI runners, optimize to reduce costs.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Prometheus scrape config",
+          "code": "scrape_configs:\n  - job_name: 'my-app'\n    kubernetes_sd_configs:\n      - role: pod\n    relabel_configs:\n      - source_labels: [__meta_kubernetes_pod_label_app]\n        action: keep\n        regex: my-app\n      - source_labels: [__meta_kubernetes_pod_name]\n        target_label: pod\n    metrics_path: /metrics\n    scrape_interval: 15s"
+        },
+        {
+          "language": "yaml",
+          "label": "Alertmanager alerts",
+          "code": "groups:\n  - name: deployment_alerts\n    rules:\n      - alert: DeploymentFailed\n        expr: kube_deployment_status_replicas_unavailable > 0\n        for: 5m\n        labels:\n          severity: critical\n        annotations:\n          summary: \"Deployment {{ $labels.deployment }} has unavailable replicas\"\n          \n      - alert: HighErrorRate\n        expr: rate(http_requests_total{status=~\"5..\"}[5m]) > 0.05\n        for: 10m\n        labels:\n          severity: warning\n        annotations:\n          summary: \"High error rate detected\""
+        }
+      ]
+    }
+  ]
+}

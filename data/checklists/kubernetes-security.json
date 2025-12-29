@@ -1,0 +1,180 @@
+{
+  "id": "kubernetes-security",
+  "slug": "kubernetes-security",
+  "title": "Kubernetes Security Checklist",
+  "description": "Essential security checklist for Kubernetes clusters to ensure production readiness.",
+  "category": "Cloud",
+  "difficulty": "advanced",
+  "estimatedTime": "1-2 hours",
+  "tags": [
+    "kubernetes",
+    "k8s",
+    "security",
+    "containers",
+    "cloud"
+  ],
+  "items": [
+    {
+      "id": "enable-rbac",
+      "title": "Enable RBAC",
+      "description": "RBAC (Role-Based Access Control) is essential for Kubernetes security. Most modern clusters have RBAC enabled by default, but verify with: 'kubectl api-versions | grep rbac'. If missing, enable in kube-apiserver with '--authorization-mode=RBAC'. Create least-privilege roles: define Role/ClusterRole objects specifying exact resources and verbs (get, list, create, etc.). Bind roles to users/groups with RoleBinding/ClusterRoleBinding. Example: Create a role for viewing pods only: 'kubectl create role pod-reader --verb=get,list,watch --resource=pods'. Bind it to a user: 'kubectl create rolebinding read-pods --role=pod-reader --user=jane'. Never use cluster-admin for regular operations. Audit existing roles: 'kubectl get clusterrolebindings -o wide' and remove overly permissive bindings. Use tools like rbac-lookup or kubectl-who-can to audit permissions.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Create Role",
+          "code": "apiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata:\n  namespace: default\n  name: pod-reader\nrules:\n  - apiGroups: [\"\"]\n    resources: [\"pods\"]\n    verbs: [\"get\", \"list\", \"watch\"]"
+        },
+        {
+          "language": "yaml",
+          "label": "Create RoleBinding",
+          "code": "apiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: read-pods\n  namespace: default\nsubjects:\n  - kind: User\n    name: jane\n    apiGroup: rbac.authorization.k8s.io\nroleRef:\n  kind: Role\n  name: pod-reader\n  apiGroup: rbac.authorization.k8s.io"
+        }
+      ]
+    },
+    {
+      "id": "configure-network-policies",
+      "title": "Configure network policies",
+      "description": "By default, all pods can communicate with each other - this is a security risk. NetworkPolicies act as pod-level firewalls. First, ensure your CNI plugin supports NetworkPolicy (Calico, Cilium, Weave work; Flannel alone doesn't). Create a default deny-all policy: 'kubectl apply -f deny-all.yaml' with 'podSelector: {}' and empty ingress/egress. Then create specific allow rules for required communication. Example: Allow frontend pods to talk to backend on port 8080: create NetworkPolicy selecting backend pods, allowing ingress from frontend pods on port 8080. Label pods consistently: 'app: backend, tier: api'. Test policies thoroughly - overly restrictive rules will break applications. Use 'kubectl describe networkpolicy' to verify rules. Tools like Cilium Editor help visualize network flows.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Deny all ingress traffic by default",
+          "code": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: deny-all-ingress\n  namespace: default\nspec:\n  podSelector: {}\n  policyTypes:\n    - Ingress"
+        },
+        {
+          "language": "yaml",
+          "label": "Allow specific traffic",
+          "code": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: allow-frontend-to-backend\nspec:\n  podSelector:\n    matchLabels:\n      app: backend\n  policyTypes:\n    - Ingress\n  ingress:\n    - from:\n        - podSelector:\n            matchLabels:\n              app: frontend\n      ports:\n        - protocol: TCP\n          port: 8080"
+        }
+      ]
+    },
+    {
+      "id": "pod-security-standards",
+      "title": "Use Pod Security Standards",
+      "description": "Pod Security Standards (PSS) enforce security best practices at the namespace level. Kubernetes 1.23+ has built-in Pod Security Admission replacing deprecated PodSecurityPolicies. Three levels exist: Privileged (unrestricted), Baseline (minimally restrictive, prevents known privilege escalations), and Restricted (heavily restricted, follows pod hardening best practices). Apply to namespaces via labels: 'kubectl label namespace production pod-security.kubernetes.io/enforce=restricted pod-security.kubernetes.io/audit=restricted pod-security.kubernetes.io/warn=restricted'. Restricted mode blocks: privileged containers, host namespaces, host ports, insecure capabilities, root users. Configure exceptions carefully. For older clusters, use Open Policy Agent (OPA) or Kyverno for policy enforcement. Review violations: 'kubectl get events --field-selector reason=FailedCreate'.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Enforce restricted Pod Security Standard",
+          "code": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: production\n  labels:\n    pod-security.kubernetes.io/enforce: restricted\n    pod-security.kubernetes.io/audit: restricted\n    pod-security.kubernetes.io/warn: restricted"
+        },
+        {
+          "language": "yaml",
+          "label": "Secure Pod specification",
+          "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: secure-pod\nspec:\n  securityContext:\n    runAsNonRoot: true\n    runAsUser: 1000\n    fsGroup: 2000\n    seccompProfile:\n      type: RuntimeDefault\n  containers:\n    - name: app\n      image: myapp:1.0\n      securityContext:\n        allowPrivilegeEscalation: false\n        capabilities:\n          drop:\n            - ALL\n        readOnlyRootFilesystem: true"
+        }
+      ]
+    },
+    {
+      "id": "enable-audit-logging",
+      "title": "Enable audit logging",
+      "description": "Audit logs track all API requests - critical for security investigations and compliance. Create an audit policy file defining what to log. Example policy: log metadata for all requests, request/response bodies for secrets. Place policy at /etc/kubernetes/audit-policy.yaml. Configure kube-apiserver flags: '--audit-policy-file=/etc/kubernetes/audit-policy.yaml --audit-log-path=/var/log/kubernetes/audit.log --audit-log-maxage=30 --audit-log-maxbackup=10 --audit-log-maxsize=100'. This rotates logs, keeps 30 days of history. For production, send logs to external systems (Elasticsearch, Splunk, CloudWatch). Use audit2rbac tool to analyze logs and identify least-privilege permissions. Monitor for suspicious activity: excessive failures, unusual resource access, secret reads. Audit logs are verbose - tune policy to balance detail vs. performance impact.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Audit policy configuration",
+          "code": "apiVersion: audit.k8s.io/v1\nkind: Policy\nrules:\n  # Log all requests at Metadata level\n  - level: Metadata\n    resources:\n      - group: \"\"\n        resources: [\"secrets\", \"configmaps\"]\n  \n  # Log pod changes at Request level\n  - level: Request\n    resources:\n      - group: \"\"\n        resources: [\"pods\"]\n    verbs: [\"create\", \"update\", \"patch\", \"delete\"]\n  \n  # Don't log requests to /healthz\n  - level: None\n    nonResourceURLs:\n      - /healthz*"
+        },
+        {
+          "language": "bash",
+          "label": "Enable audit logging in kube-apiserver",
+          "code": "# Add to kube-apiserver flags:\n--audit-policy-file=/etc/kubernetes/audit-policy.yaml\n--audit-log-path=/var/log/kubernetes/audit.log\n--audit-log-maxage=30\n--audit-log-maxbackup=10\n--audit-log-maxsize=100"
+        }
+      ]
+    },
+    {
+      "id": "scan-images",
+      "title": "Scan container images for vulnerabilities",
+      "description": "Container images often contain vulnerable dependencies - scanning prevents deploying known CVEs. Install Trivy: 'curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh'. Scan images: 'trivy image nginx:1.21' shows all vulnerabilities with severity levels. Integrate scanning into CI/CD pipelines: fail builds with HIGH/CRITICAL vulnerabilities. Use admission controllers like OPA/Gatekeeper or Kyverno to block unscanned or vulnerable images at deployment time. For private registries, use Trivy with '--username' and '--password' flags or registry-specific tools (AWS ECR scanning, GCR vulnerability scanning, Harbor built-in scanner). Scan regularly - new CVEs are discovered daily. Set up automated scanning schedules. Update base images frequently and rebuild applications. Document exceptions for vulnerabilities that can't be immediately patched.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Scan image with Trivy",
+          "code": "# Install Trivy:\ncurl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin\n\n# Scan Docker image:\ntrivy image myapp:1.0\n\n# Scan with severity filter:\ntrivy image --severity HIGH,CRITICAL myapp:1.0\n\n# Scan and fail on vulnerabilities:\ntrivy image --exit-code 1 --severity CRITICAL myapp:1.0"
+        },
+        {
+          "language": "bash",
+          "label": "Scan image with Grype",
+          "code": "# Install Grype:\ncurl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin\n\n# Scan image:\ngrype myapp:1.0\n\n# Output as JSON:\ngrype myapp:1.0 -o json"
+        }
+      ]
+    },
+    {
+      "id": "resource-limits",
+      "title": "Configure resource limits",
+      "description": "Resource limits prevent noisy neighbor problems and DoS attacks. Every container should have requests (guaranteed resources) and limits (maximum resources). Set in pod specs: 'resources: {requests: {memory: \"256Mi\", cpu: \"200m\"}, limits: {memory: \"512Mi\", cpu: \"500m\"}}'. Requests affect scheduling - pods won't schedule if resources unavailable. Limits trigger throttling (CPU) or OOMKill (memory) if exceeded. Use LimitRanges to set namespace defaults: prevents forgetting limits on new deployments. Use ResourceQuotas to cap total namespace resource consumption. Monitor actual usage with 'kubectl top pods' or metrics-server. Start with generous limits, then optimize based on monitoring data. Missing limits allows containers to consume all node resources, starving other pods. For critical workloads, set requests=limits (Guaranteed QoS). Test memory limits carefully - OOMKills cause pod restarts.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Pod with resource limits",
+          "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: resource-limited-pod\nspec:\n  containers:\n    - name: app\n      image: myapp:1.0\n      resources:\n        requests:\n          memory: \"128Mi\"\n          cpu: \"100m\"\n        limits:\n          memory: \"256Mi\"\n          cpu: \"500m\""
+        },
+        {
+          "language": "yaml",
+          "label": "LimitRange for namespace",
+          "code": "apiVersion: v1\nkind: LimitRange\nmetadata:\n  name: default-limits\n  namespace: default\nspec:\n  limits:\n    - default:\n        cpu: 500m\n        memory: 512Mi\n      defaultRequest:\n        cpu: 100m\n        memory: 128Mi\n      type: Container"
+        }
+      ]
+    },
+    {
+      "id": "secrets-management",
+      "title": "Use secrets management",
+      "description": "Never hardcode secrets in manifests, images, or ConfigMaps. Use Kubernetes Secrets at minimum: 'kubectl create secret generic db-password --from-literal=password=mysecret'. However, Secrets are only base64-encoded by default, not encrypted at rest. Enable encryption at rest: configure kube-apiserver with '--encryption-provider-config' pointing to an EncryptionConfiguration file using aescbc or kms providers. Better yet, use external secret managers: HashiCorp Vault, AWS Secrets Manager, Azure Key Vault, Google Secret Manager. Tools like External Secrets Operator or Sealed Secrets sync external secrets into Kubernetes. Never commit secrets to Git - use tools like git-secrets or pre-commit hooks to prevent accidents. Use RBAC to restrict secret access: 'kubectl create role secret-reader --verb=get --resource=secrets --resource-name=db-password'. Rotate secrets regularly. For sensitive workloads, consider injecting secrets as volumes rather than environment variables (reduces exposure in process listings).",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Create secret from literal",
+          "code": "# Create secret:\nkubectl create secret generic db-credentials \\  --from-literal=username=admin \\  --from-literal=password=secretpassword\n\n# View secret:\nkubectl get secret db-credentials -o yaml"
+        },
+        {
+          "language": "yaml",
+          "label": "Use secret in Pod",
+          "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: secret-pod\nspec:\n  containers:\n    - name: app\n      image: myapp:1.0\n      env:\n        - name: DB_USERNAME\n          valueFrom:\n            secretKeyRef:\n              name: db-credentials\n              key: username\n        - name: DB_PASSWORD\n          valueFrom:\n            secretKeyRef:\n              name: db-credentials\n              key: password"
+        }
+      ]
+    },
+    {
+      "id": "enable-tls",
+      "title": "Enable TLS for all endpoints",
+      "description": "All cluster communication must be encrypted. Verify TLS between components: check kube-apiserver, etcd, kubelet all use TLS certificates. For etcd: '--cert-file', '--key-file', '--peer-cert-file', '--peer-key-file' flags. For kubelet: ensure '--tls-cert-file' and '--tls-private-key-file' are set. Rotate certificates before expiry: 'kubeadm certs renew all' for kubeadm clusters. For ingress traffic, use Ingress with TLS: store certificates in Secrets, reference in Ingress spec with 'tls:' section. Use cert-manager to automate certificate management with Let's Encrypt or internal CAs. For service mesh (Istio, Linkerd), enable mTLS: encrypts pod-to-pod traffic and provides identity-based auth. Verify TLS with: 'kubectl get cm -n kube-system kubeadm-config -o yaml' check advertiseAddress uses https. Monitor certificate expiration: 'kubeadm certs check-expiration'. Never disable TLS verification in production.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Create TLS secret",
+          "code": "# Generate self-signed certificate (for testing):\nopenssl req -x509 -nodes -days 365 -newkey rsa:2048 \\  -keyout tls.key -out tls.crt -subj \"/CN=myapp.example.com\"\n\n# Create TLS secret:\nkubectl create secret tls myapp-tls \\  --cert=tls.crt \\  --key=tls.key"
+        },
+        {
+          "language": "yaml",
+          "label": "Ingress with TLS",
+          "code": "apiVersion: networking.k8s.io/v1\nkind: Ingress\nmetadata:\n  name: tls-ingress\nspec:\n  tls:\n    - hosts:\n        - myapp.example.com\n      secretName: myapp-tls\n  rules:\n    - host: myapp.example.com\n      http:\n        paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: myapp\n                port:\n                  number: 80"
+        }
+      ]
+    },
+    {
+      "id": "regular-updates",
+      "title": "Regular security updates",
+      "description": "Kubernetes releases security patches regularly - staying current is critical. Subscribe to kubernetes-announce mailing list for security advisories. Follow Kubernetes version skew policy: control plane and nodes should be within 1-2 minor versions. Upgrade control plane first: 'kubeadm upgrade plan' shows available versions, 'kubeadm upgrade apply v1.28.0' upgrades. Use managed Kubernetes (EKS, GKE, AKS) for easier upgrade paths. Drain nodes before upgrading: 'kubectl drain node1 --ignore-daemonsets' moves workloads safely. Upgrade kubelet and kubectl on nodes after control plane. Test upgrades in non-production environments first. For components, update CNI plugins, CSI drivers, and ingress controllers regularly. Update container runtime (containerd, CRI-O): check for security patches. Maintain an upgrade schedule: aim for upgrades within 3-6 months of releases. Use 'kubectl version' to check current versions. Document upgrade runbooks and rollback procedures.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Update cluster components",
+          "code": "# Check current version:\nkubectl version\n\n# Update kubeadm (on control plane node):\nsudo apt-get update\nsudo apt-get install -y kubeadm=1.28.0-00\n\n# Upgrade control plane:\nsudo kubeadm upgrade apply v1.28.0\n\n# Update kubelet and kubectl:\nsudo apt-get install -y kubelet=1.28.0-00 kubectl=1.28.0-00\nsudo systemctl daemon-reload\nsudo systemctl restart kubelet"
+        },
+        {
+          "language": "bash",
+          "label": "Check for security advisories",
+          "code": "# Subscribe to Kubernetes security announcements:\n# https://groups.google.com/g/kubernetes-security-announce\n\n# Check CVEs for your version:\nkubectl version --short\n# Visit: https://www.cvedetails.com/vulnerability-list/vendor_id-15867/Kubernetes.html\n\n# Automate scanning with kube-bench:\nkubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job.yaml\nkubectl logs job/kube-bench"
+        }
+      ]
+    }
+  ]
+}
