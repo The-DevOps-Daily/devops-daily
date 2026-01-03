@@ -27,12 +27,12 @@
       "difficulty": "beginner",
       "points": 10,
       "options": [
-        "manual_dispatch",
         "workflow_dispatch",
         "push_manual",
-        "trigger_manual"
+        "trigger_manual",
+        "manual_dispatch"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "The `workflow_dispatch` event allows manual workflow execution from the GitHub Actions UI. It can accept input parameters for customization.",
       "hint": "The keyword includes 'dispatch' for sending workflows on demand."
     },
@@ -59,12 +59,12 @@
       "difficulty": "beginner",
       "points": 12,
       "options": [
+        "${{ github.secrets.API_KEY }}",
         "${{ env.API_KEY }}",
         "${{ secrets.API_KEY }}",
-        "${{ vars.API_KEY }}",
-        "${{ github.secrets.API_KEY }}"
+        "${{ vars.API_KEY }}"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "Repository secrets are accessed via the `secrets` context: `${{ secrets.SECRET_NAME }}`. Secrets are encrypted and masked in logs.",
       "hint": "Secrets have their own dedicated context namespace."
     },
@@ -91,12 +91,12 @@
       "difficulty": "intermediate",
       "points": 14,
       "options": [
-        "actions/download-artifact@v3",
-        "actions/checkout@v4",
         "actions/setup-node@v3",
-        "actions/clone-repo@v2"
+        "actions/clone-repo@v2",
+        "actions/download-artifact@v3",
+        "actions/checkout@v4"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "The `actions/checkout` action clones your repository to the runner, giving subsequent steps access to your code. It's almost always the first step.",
       "hint": "This action 'checks out' your code to the runner."
     },
@@ -123,12 +123,12 @@
       "difficulty": "intermediate",
       "points": 16,
       "options": [
-        "uses: ./.github/workflows/reusable.yml",
         "uses: owner/repo/.github/workflows/reusable.yml@main",
         "include: ./.github/workflows/reusable.yml",
-        "import: reusable-workflow"
+        "import: reusable-workflow",
+        "uses: ./.github/workflows/reusable.yml"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "explanation": "Reusable workflows are called using `uses:` with the full path including repository, file path, and ref: `owner/repo/.github/workflows/file.yml@ref`.",
       "hint": "The syntax is similar to calling marketplace actions, but points to a workflow file."
     },
@@ -139,12 +139,12 @@
       "difficulty": "intermediate",
       "points": 16,
       "options": [
-        "if: github.ref == 'main'",
-        "if: github.ref == 'refs/heads/main'",
         "if: github.branch == 'main'",
-        "if: branch.name == 'main'"
+        "if: branch.name == 'main'",
+        "if: github.ref == 'main'",
+        "if: github.ref == 'refs/heads/main'"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "The `github.ref` context contains the fully qualified ref (e.g., 'refs/heads/main' for branches, 'refs/tags/v1.0' for tags). Always use the full ref path.",
       "hint": "GitHub uses fully qualified references like 'refs/heads/' for branches."
     },
@@ -187,12 +187,12 @@
       "difficulty": "intermediate",
       "points": 14,
       "options": [
+        "image: myimage:latest",
         "runs-on: docker://myimage:latest",
         "container: myimage:latest",
-        "docker: myimage:latest",
-        "image: myimage:latest"
+        "docker: myimage:latest"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "The `container:` key specifies a Docker image for the job. Steps run inside this container instead of directly on the runner.",
       "hint": "The keyword is the same as what Docker uses to describe images."
     },
@@ -235,12 +235,12 @@
       "difficulty": "advanced",
       "points": 18,
       "options": [
-        "Add debug: true to the workflow YAML",
-        "Set repository secret ACTIONS_STEP_DEBUG to true",
         "Run workflow with --debug flag",
-        "Enable in repository settings"
+        "Enable in repository settings",
+        "Add debug: true to the workflow YAML",
+        "Set repository secret ACTIONS_STEP_DEBUG to true"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "Setting the `ACTIONS_STEP_DEBUG` repository secret to `true` enables debug logging, showing additional diagnostic information for troubleshooting workflow issues.",
       "hint": "Debug mode is enabled via a special repository secret."
     },

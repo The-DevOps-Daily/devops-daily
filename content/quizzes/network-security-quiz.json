@@ -27,12 +27,12 @@
       "situation": "You're debugging a connectivity issue where packets are reaching the server but the application isn't responding. Understanding the network stack will help you identify where to look.",
       "codeExample": "tcpdump output:\nSYN packets arriving at port 443\nNo SYN-ACK response\nApplication logs show no incoming requests",
       "options": [
-        "Network Layer (Layer 3) - Routes packets between networks",
         "Transport Layer (Layer 4) - Manages TCP/UDP connections and port numbers",
+        "Network Layer (Layer 3) - Routes packets between networks",
         "Application Layer (Layer 7) - Handles HTTP, DNS, and application protocols",
         "Data Link Layer (Layer 2) - Manages MAC addresses and switches"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 10,
       "difficulty": "beginner",
       "explanation": "The Transport Layer (Layer 4) is responsible for end-to-end communication, handling TCP/UDP connections, port numbers, and ensuring reliable data delivery. In this scenario, the issue is likely at Layer 4 (firewall blocking the port) or Layer 7 (application not listening).",
@@ -81,12 +81,12 @@
       "situation": "Your company is moving from a traditional perimeter-based security model to Zero Trust. Leadership wants to understand the fundamental principle.",
       "codeExample": "Old Model (Perimeter Security):\n- VPN access = full internal network access\n- Trust all traffic inside the firewall\n- Single authentication at entry point\n\nNew Model (Zero Trust):\n- Verify every request\n- Least privilege access\n- Assume breach",
       "options": [
-        "Never trust, always verify - authenticate and authorize every request regardless of network location",
         "Trust but verify - allow internal traffic but log everything for audit",
         "Defense in depth - use multiple layers of firewalls and security tools",
+        "Never trust, always verify - authenticate and authorize every request regardless of network location",
         "Principle of least privilege - give users minimum permissions needed"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 2,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "Zero Trust's core principle is 'never trust, always verify' - every request must be authenticated and authorized, regardless of whether it comes from inside or outside the network. This eliminates the concept of a trusted internal network. While least privilege is a component, the fundamental shift is treating every request as potentially hostile.",
@@ -117,12 +117,12 @@
       "situation": "You're debugging an SSL certificate error and need to understand at which point in the handshake the certificate is validated.",
       "codeExample": "TLS Handshake Steps:\n1. Client Hello (supported ciphers, TLS version)\n2. Server Hello (selected cipher, TLS version)\n3. Server Certificate\n4. Server Key Exchange\n5. Client Key Exchange\n6. Finished messages",
       "options": [
-        "Before cipher negotiation - the certificate determines which ciphers can be used",
         "After Server Hello - immediately after agreeing on cipher and TLS version",
+        "Before cipher negotiation - the certificate determines which ciphers can be used",
         "After Client Key Exchange - once the client proves it can decrypt the certificate",
         "During the Finished step - as part of the final handshake verification"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "The server sends its certificate immediately after the Server Hello message, after the cipher suite and TLS version have been agreed upon. The client then validates the certificate (checking chain of trust, expiration, hostname match) before proceeding with key exchange. This is why certificate errors appear early in the connection process.",
@@ -136,11 +136,11 @@
       "codeExample": "IAM User Policy:\n{\n  \"Effect\": \"Allow\",\n  \"Action\": \"s3:DeleteBucket\",\n  \"Resource\": \"*\"\n}\n\nOrganization SCP:\n{\n  \"Effect\": \"Deny\",\n  \"Action\": \"s3:DeleteBucket\",\n  \"Resource\": \"*\"\n}",
       "options": [
         "Allow wins - IAM policies are evaluated before SCPs",
-        "Deny wins - explicit deny always overrides allow in AWS",
         "Most specific wins - the more restrictive Resource condition is used",
-        "Neither - conflicting policies cancel each other out, resulting in implicit deny"
+        "Neither - conflicting policies cancel each other out, resulting in implicit deny",
+        "Deny wins - explicit deny always overrides allow in AWS"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "In AWS, an explicit deny always wins, regardless of whether it's in an IAM policy, SCP, permission boundary, or resource policy. AWS policy evaluation follows: 1) Explicit deny = deny, 2) Explicit allow = allow, 3) Default = deny. SCPs set the maximum permissions boundary - even if an IAM policy allows an action, an SCP deny will block it.",
@@ -189,12 +189,12 @@
       "situation": "Your e-commerce site is experiencing attacks. The security team is proposing different solutions based on the attack patterns observed.",
       "codeExample": "Attack Patterns Observed:\n1. DDoS from botnet (1M requests/minute)\n2. SQL injection in search parameters\n3. Port scanning of backend servers\n4. Brute force on SSH (port 22)\n\nProposed Solutions:\n- AWS Shield for DDoS\n- WAF for application attacks\n- Security Groups for port filtering",
       "options": [
-        "DDoS attacks - WAF can rate limit requests from malicious IPs",
         "SQL injection - WAF inspects HTTP requests and blocks malicious patterns",
+        "DDoS attacks - WAF can rate limit requests from malicious IPs",
         "Port scanning - WAF monitors network traffic on all ports",
         "SSH brute force - WAF can block authentication attempts"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 12,
       "difficulty": "intermediate",
       "explanation": "WAF (Web Application Firewall) operates at Layer 7 and is designed to inspect HTTP/HTTPS traffic for application-layer attacks like SQL injection, XSS, and CSRF. While WAF can help with rate limiting for DDoS, dedicated DDoS protection (AWS Shield) is better. Port scanning and SSH attacks happen below Layer 7, so network-level controls (Security Groups, NACLs) are more appropriate.",
@@ -226,11 +226,11 @@
       "codeExample": "Architecture:\n- Public subnet: Bastion host (public IP)\n- Private subnet: Database servers (no public IP)\n- Security Groups: Bastion allows SSH from office IP\n- Database SG: Allows SSH only from Bastion SG\n\nAccess flow: Engineer → Bastion → Database",
       "options": [
         "Load balancing - distribute SSH connections across multiple private instances",
-        "Single point of entry - control and audit all access to private resources",
         "VPN replacement - provide encrypted tunnels to internal resources",
-        "SSH key management - centralized storage of SSH private keys"
+        "SSH key management - centralized storage of SSH private keys",
+        "Single point of entry - control and audit all access to private resources"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "points": 12,
       "difficulty": "intermediate",
       "explanation": "A bastion host (jump box) provides a single, hardened point of entry to private resources. This allows you to: 1) Apply strict security controls in one place, 2) Enable detailed audit logging of all access, 3) Implement 2FA/MFA at the entry point, 4) Reduce attack surface by keeping other resources private. Modern alternatives include AWS Session Manager (no bastion needed) or Zero Trust access.",
@@ -244,11 +244,11 @@
       "codeExample": "Scenario A: Single strong firewall with advanced rules\n\nScenario B: Multiple layers:\n- Perimeter firewall\n- WAF on application\n- Security groups per service\n- IAM roles with least privilege\n- Encryption at rest and in transit\n- Regular security scanning",
       "options": [
         "Scenario A - investing in the best single security control is most effective",
-        "Scenario B - multiple overlapping security controls create redundancy",
         "Both equally - it's about implementation quality, not quantity of controls",
+        "Scenario B - multiple overlapping security controls create redundancy",
         "Neither - defense in depth only applies to physical security"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "points": 12,
       "difficulty": "intermediate",
       "explanation": "Defense in depth is the practice of layering multiple security controls so that if one fails, others still provide protection. Scenario B demonstrates this: if the perimeter firewall is bypassed, WAF provides application-level protection; if WAF is circumvented, Security Groups limit lateral movement; if an attacker gains access, IAM limits what they can do; and encryption protects data even if accessed. No single control is perfect, so layers are essential.",
@@ -299,10 +299,10 @@
       "options": [
         "A only - version pinning prevents supply chain attacks",
         "C only - running as non-root is the most critical security control",
-        "B and C - minimal image + non-root user",
-        "All of the above (A, B, C, D) - defense in depth for containers"
+        "All of the above (A, B, C, D) - defense in depth for containers",
+        "B and C - minimal image + non-root user"
       ],
-      "correctAnswer": 3,
+      "correctAnswer": 2,
       "points": 18,
       "difficulty": "advanced",
       "explanation": "Container security requires defense in depth: A) Specific tags prevent unexpected changes and enable reproducible builds; B) Minimal images reduce attack surface (alpine/distroless have far fewer packages); C) Non-root prevents privilege escalation; D) Vulnerability scanning catches known CVEs. Each control addresses different risk vectors. A complete approach includes: minimal images, non-root, specific versions, scanning, read-only filesystems, and runtime security.",
@@ -315,12 +315,12 @@
       "situation": "At 2am, your monitoring alerts that unusual data is being exfiltrated from a production database. Multiple team members are on the incident call.",
       "codeExample": "Alert Details:\n- 50 GB data transfer to unknown IP (Russia)\n- API key compromised (leaked in public GitHub repo)\n- Data includes customer PII\n- Transfer ongoing\n\nCurrent state: Investigating root cause",
       "options": [
-        "Root cause analysis - understand exactly how the breach occurred",
         "Containment - immediately stop the data exfiltration and revoke compromised credentials",
+        "Root cause analysis - understand exactly how the breach occurred",
         "Evidence preservation - take snapshots before making any changes",
         "Notification - inform customers and regulators of the breach"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 20,
       "difficulty": "advanced",
       "explanation": "The incident response priority order is: 1) Containment (stop ongoing damage), 2) Eradication (remove attacker access), 3) Recovery (restore services), 4) Lessons learned. While evidence preservation is important, stopping ongoing data theft is critical - revoke the API key, block the IP, isolate the database. Take snapshots during containment if possible. Root cause analysis comes after containment. Notification timing depends on regulations (GDPR requires 72 hours).",
@@ -334,11 +334,11 @@
       "codeExample": "Current: SMS-based OTP codes\n\nOptions to evaluate:\n1. SMS OTP (current)\n2. Authenticator app (TOTP like Google Authenticator)\n3. Hardware security keys (FIDO2/WebAuthn like YubiKey)\n4. Push notifications (like Duo Mobile)\n\nThreat: Sophisticated phishing with real-time relay attacks",
       "options": [
         "SMS OTP - codes are convenient and work on any phone",
-        "Authenticator app (TOTP) - more secure than SMS and doesn't require cellular",
         "Hardware security keys (FIDO2) - cryptographic proof that prevents phishing",
+        "Authenticator app (TOTP) - more secure than SMS and doesn't require cellular",
         "Push notifications - easiest for users with smart approval workflows"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 1,
       "points": 20,
       "difficulty": "advanced",
       "explanation": "Hardware security keys using FIDO2/WebAuthn are phishing-resistant because they use public-key cryptography and verify the domain. The key only works on the legitimate site's domain - if a user is on a phishing site, the key won't respond. SMS is vulnerable to SIM swapping and interception. TOTP codes can be phished in real-time relay attacks. Push notifications can be approved accidentally (MFA fatigue attacks). For high-security environments, hardware keys are the gold standard.",

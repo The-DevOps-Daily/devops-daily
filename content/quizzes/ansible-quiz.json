@@ -63,12 +63,12 @@
       "situation": "You're configuring nginx and need to restart the service only when the configuration file changes.",
       "codeExample": "- name: Update nginx config\n  template:\n    src: nginx.conf.j2\n    dest: /etc/nginx/nginx.conf\n  notify: restart nginx\n\nhandlers:\n  - name: restart nginx\n    service:\n      name: nginx\n      state: restarted",
       "options": [
-        "Handlers run immediately when notify is called",
         "Handlers run at the end of the play, only if notified and only once",
+        "Handlers run immediately when notify is called",
         "Handlers run before each task that notifies them",
         "Handlers run at the beginning of the playbook execution"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "Handlers are special tasks that run at the end of a play (after all tasks complete), but only if they were notified by a task that reported 'changed'. Even if multiple tasks notify the same handler, it only runs once. This is perfect for restarting services - you want to restart nginx once after all configuration changes, not after each individual change.",
@@ -82,11 +82,11 @@
       "codeExample": "[webservers]\nweb1.example.com\nweb2.example.com\nweb3.example.com\n\n[production]\nweb1.example.com\ndb1.example.com\n\n[staging]\nweb2.example.com\ndb2.example.com",
       "options": [
         "All hosts in webservers group OR production group (union)",
-        "All hosts in webservers group AND production group (intersection)",
         "All hosts in webservers group EXCEPT production group (difference)",
-        "Invalid syntax - will cause an error"
+        "Invalid syntax - will cause an error",
+        "All hosts in webservers group AND production group (intersection)"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "The '&' operator performs an intersection - it targets hosts that are in BOTH groups. In this case, only web1.example.com is in both webservers AND production, so only that host will be targeted. The ':' operator is union (OR), '&' is intersection (AND), and '!' is exclusion (NOT).",
@@ -117,12 +117,12 @@
       "situation": "You're creating a reusable role for nginx deployment and need to understand the standard directory structure.",
       "codeExample": "roles/nginx/\n├── tasks/main.yml\n├── handlers/main.yml\n├── templates/\n├── files/\n├── vars/main.yml\n├── defaults/main.yml\n├── meta/main.yml\n└── README.md",
       "options": [
-        "Only tasks/main.yml is required; all other directories are optional",
         "All main.yml files in standard directories are automatically included",
+        "Only tasks/main.yml is required; all other directories are optional",
         "You must explicitly import each directory in tasks/main.yml",
         "The role will fail if any standard directory is missing"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 12,
       "difficulty": "intermediate",
       "explanation": "Ansible automatically loads main.yml from standard directories (tasks, handlers, vars, defaults, meta) if they exist. You don't need to explicitly import them. Only tasks/main.yml is technically required for a role to function. The vars/ and defaults/ difference: vars have higher precedence and can't be overridden easily, while defaults have lowest precedence and are meant to be overridden.",
@@ -136,11 +136,11 @@
       "codeExample": "# Static inventory\n[webservers]\n10.0.1.10\n10.0.1.11\n\n# Dynamic inventory script\n#!/usr/bin/env python3\nimport boto3\n# Query AWS for current instances...",
       "options": [
         "Dynamic inventory is faster because it caches results",
-        "Dynamic inventory automatically discovers current infrastructure state from cloud providers",
         "Dynamic inventory allows grouping hosts by arbitrary attributes",
-        "Dynamic inventory is required for Ansible to work with cloud instances"
+        "Dynamic inventory is required for Ansible to work with cloud instances",
+        "Dynamic inventory automatically discovers current infrastructure state from cloud providers"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "Dynamic inventory scripts query infrastructure in real-time (AWS, Azure, GCP, VMware, etc.) to get the current list of hosts, eliminating manual inventory maintenance. This is critical for auto-scaling environments where instances come and go. Modern approach: use inventory plugins (aws_ec2, azure_rm, gcp_compute) which are more efficient than custom scripts. You can also group by tags, regions, etc.",
@@ -153,12 +153,12 @@
       "situation": "Some tasks in your playbook need root privileges (installing packages), while others should run as the normal user (cloning git repos).",
       "codeExample": "---\n- hosts: webservers\n  become: yes\n  tasks:\n    - name: Install nginx\n      apt: name=nginx\n    \n    - name: Clone app repo\n      git:\n        repo: https://github.com/app.git\n        dest: /home/deploy/app\n      become: no",
       "options": [
-        "Play-level become cannot be overridden at task level",
         "Task-level become always takes precedence, overriding play-level setting",
+        "Play-level become cannot be overridden at task level",
         "Both settings must match or Ansible will error",
         "become is only valid at play level, not task level"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 12,
       "difficulty": "intermediate",
       "explanation": "Task-level become overrides play-level become. This allows you to set become: yes for the entire play (convenient for system administration tasks), then selectively use become: no for specific tasks that should run as the regular user. Best practice: set become at the most appropriate level (play, block, or task) to minimize privilege scope.",

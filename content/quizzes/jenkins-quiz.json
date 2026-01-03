@@ -26,11 +26,11 @@
       "description": "What is the primary difference between Declarative and Scripted Jenkins pipelines?",
       "options": [
         "Declarative uses more verbose syntax than Scripted",
-        "Declarative provides structured syntax with predefined sections, while Scripted offers full Groovy flexibility",
         "Scripted pipelines are faster than Declarative pipelines",
-        "Declarative pipelines cannot use Groovy code"
+        "Declarative pipelines cannot use Groovy code",
+        "Declarative provides structured syntax with predefined sections, while Scripted offers full Groovy flexibility"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "difficulty": "intermediate",
       "points": 12,
       "explanation": "Declarative pipelines use a more structured, opinionated syntax with predefined sections (pipeline, agent, stages, steps), making them easier to read and maintain. Scripted pipelines use pure Groovy, offering maximum flexibility but requiring more scripting knowledge.",
@@ -41,12 +41,12 @@
       "title": "Pipeline Agent Definition",
       "description": "In a Declarative pipeline, which section defines where the pipeline or stage executes?",
       "options": [
-        "node",
         "agent",
+        "node",
         "executor",
         "slave"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "difficulty": "beginner",
       "points": 8,
       "explanation": "The 'agent' section specifies where the pipeline or stage executes. You can define agents as 'any', 'none', 'label', 'docker', or 'kubernetes' to control execution environments.",
@@ -91,11 +91,11 @@
       "description": "In Jenkins, what is a Shared Library used for?",
       "options": [
         "Storing build artifacts",
-        "Sharing reusable pipeline code and functions across multiple projects",
         "Managing Jenkins plugins",
+        "Sharing reusable pipeline code and functions across multiple projects",
         "Configuring agent workspaces"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "difficulty": "intermediate",
       "points": 14,
       "explanation": "Shared Libraries allow you to create reusable Groovy code that can be imported and used across multiple pipelines. They're stored in version control and loaded using @Library annotation, promoting DRY principles and consistency.",
@@ -107,11 +107,11 @@
       "description": "Which Jenkins credential type should you use for Docker registry authentication?",
       "options": [
         "Secret text",
-        "Username with password",
         "SSH Username with private key",
-        "Certificate"
+        "Certificate",
+        "Username with password"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "difficulty": "intermediate",
       "points": 12,
       "explanation": "'Username with password' is the standard credential type for Docker registry authentication. Jenkins securely stores the credentials and provides them to the pipeline via the credentials() binding.",
@@ -123,12 +123,12 @@
       "description": "What does the following agent configuration do?",
       "codeExample": "pipeline {\n  agent {\n    docker {\n      image 'node:18'\n      args '-v /tmp:/tmp'\n    }\n  }\n  stages { ... }\n}",
       "options": [
-        "Installs Docker on the Jenkins agent",
         "Runs the pipeline stages inside a Node.js 18 Docker container",
-        "Builds a Docker image named node:18",
-        "Deploys the application to a Docker container"
+        "Installs Docker on the Jenkins agent",
+        "Deploys the application to a Docker container",
+        "Builds a Docker image named node:18"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "difficulty": "intermediate",
       "points": 14,
       "explanation": "The docker agent configuration runs the entire pipeline (or stage) inside a Docker container using the specified image. This ensures a consistent, isolated build environment without requiring the tools to be installed on the Jenkins agent.",
@@ -140,12 +140,12 @@
       "description": "How do you access a Jenkins credential in a pipeline?",
       "codeExample": "environment {\n  DOCKER_CREDS = credentials('docker-hub-creds')\n}\n// or\nwithCredentials([usernamePassword(...)]) { ... }",
       "options": [
-        "Using environment variables or withCredentials step",
         "Reading from a file in the workspace",
+        "Using environment variables or withCredentials step",
         "Using System.getenv()",
         "Credentials cannot be accessed in pipelines"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 1,
       "difficulty": "intermediate",
       "points": 14,
       "explanation": "Use the credentials() function in an environment block or the withCredentials step to securely access credentials. Jenkins automatically masks these values in console output and cleans them up after use.",
@@ -174,11 +174,11 @@
       "codeExample": "stage('Deploy') {\n  when {\n    branch 'main'\n    environment name: 'DEPLOY', value: 'true'\n  }\n  steps { ... }\n}",
       "options": [
         "When to schedule the pipeline",
-        "Conditional execution of a stage based on specified criteria",
         "When to trigger downstream jobs",
-        "When to clean the workspace"
+        "When to clean the workspace",
+        "Conditional execution of a stage based on specified criteria"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "difficulty": "intermediate",
       "points": 12,
       "explanation": "The 'when' directive allows conditional execution of stages. Common conditions include branch, environment, changelog, expression, and tag. Multiple conditions can be combined with allOf or anyOf.",
@@ -206,12 +206,12 @@
       "description": "What is the purpose of the 'options' directive in a Jenkins pipeline?",
       "codeExample": "pipeline {\n  options {\n    timestamps()\n    timeout(time: 1, unit: 'HOURS')\n    buildDiscarder(logRotator(numToKeepStr: '10'))\n  }\n}",
       "options": [
-        "To define command-line options for scripts",
         "To configure pipeline-wide settings like timeouts and build retention",
+        "To define command-line options for scripts",
         "To set environment variables",
         "To specify available build parameters"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "difficulty": "intermediate",
       "points": 12,
       "explanation": "The 'options' directive configures pipeline-wide settings such as timestamps, timeouts, build discarders, retry logic, and skipDefaultCheckout. These apply to the entire pipeline execution.",
@@ -223,12 +223,12 @@
       "description": "How do you handle errors and implement retry logic in Jenkins pipelines?",
       "codeExample": "retry(3) {\n  sh 'flaky-command'\n}\n// or\ntry {\n  sh 'command'\n} catch (Exception e) {\n  echo \"Failed: ${e}\"\n}",
       "options": [
-        "Using try-catch blocks and the retry step",
         "Errors cannot be handled in pipelines",
         "Using the error() function only",
+        "Using try-catch blocks and the retry step",
         "Setting failFast to false"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 2,
       "difficulty": "advanced",
       "points": 18,
       "explanation": "Use try-catch-finally blocks for error handling and the retry step for automatic retries. You can also use catchError to catch errors without failing the build, and the error() step to explicitly fail with a message.",
@@ -240,11 +240,11 @@
       "description": "What is the recommended way to trigger a Jenkins pipeline from a Git webhook?",
       "options": [
         "Use SCM polling every minute",
-        "Configure a webhook in the Git repository pointing to Jenkins, and enable 'GitHub hook trigger' or 'Generic Webhook Trigger'",
         "Manually trigger builds",
+        "Configure a webhook in the Git repository pointing to Jenkins, and enable 'GitHub hook trigger' or 'Generic Webhook Trigger'",
         "Use cron expressions"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "difficulty": "intermediate",
       "points": 14,
       "explanation": "Configure a webhook in your Git repository (GitHub, GitLab, Bitbucket) to send events to Jenkins. Use the 'GitHub hook trigger for GITScm polling' option or the Generic Webhook Trigger plugin for instant build triggering on code changes.",
@@ -256,11 +256,11 @@
       "description": "What is the difference between 'node' and 'agent' in Jenkins pipelines?",
       "options": [
         "They are identical and interchangeable",
-        "'node' is used in Scripted pipelines, 'agent' in Declarative pipelines",
         "'node' allocates executors, 'agent' does not",
-        "'agent' is deprecated"
+        "'agent' is deprecated",
+        "'node' is used in Scripted pipelines, 'agent' in Declarative pipelines"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "difficulty": "advanced",
       "points": 16,
       "explanation": "'node' is used in Scripted pipelines to allocate an executor and workspace. 'agent' is the Declarative pipeline equivalent, providing similar functionality with more structured syntax and additional options like docker and kubernetes.",
@@ -271,12 +271,12 @@
       "title": "Performance Optimization Strategies",
       "description": "How can you optimize Jenkins pipeline performance for large projects?",
       "options": [
-        "Run everything sequentially",
         "Use parallel stages, Docker layer caching, stash/unstash for artifacts, and skipDefaultCheckout",
-        "Increase the number of executors only",
-        "Disable all plugins"
+        "Disable all plugins",
+        "Run everything sequentially",
+        "Increase the number of executors only"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "difficulty": "advanced",
       "points": 18,
       "explanation": "Optimize performance by: running independent stages in parallel, using Docker layer caching, leveraging stash/unstash for artifacts between stages, using skipDefaultCheckout when appropriate, implementing incremental builds, and using agent labels to utilize appropriate resources.",
@@ -288,11 +288,11 @@
       "description": "What is the best practice for managing Jenkins pipeline definitions?",
       "options": [
         "Store them only in Jenkins UI",
-        "Store Jenkinsfile in version control at the repository root (Pipeline as Code)",
         "Email the Jenkinsfile to team members",
-        "Store in a shared network drive"
+        "Store in a shared network drive",
+        "Store Jenkinsfile in version control at the repository root (Pipeline as Code)"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "difficulty": "advanced",
       "points": 16,
       "explanation": "Store the Jenkinsfile in version control (typically at repository root) following the 'Pipeline as Code' principle. This enables versioning, code review, branching, and ensures the pipeline definition travels with the code.",

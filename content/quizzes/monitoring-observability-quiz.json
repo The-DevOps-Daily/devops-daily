@@ -28,11 +28,11 @@
       "codeExample": "# Metrics needed:\n# - Request rate (requests/second)\n# - Response time (p50, p95, p99)\n# - Error rate (%)\n# - Active connections",
       "options": [
         "Use console.log() to print metrics and grep the logs",
-        "Instrument code with Prometheus client library, expose /metrics endpoint, and scrape with Prometheus server",
         "Manually track metrics in a spreadsheet",
-        "Only monitor when problems occur"
+        "Only monitor when problems occur",
+        "Instrument code with Prometheus client library, expose /metrics endpoint, and scrape with Prometheus server"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "Prometheus is the industry standard for metrics collection. Instrument your code with client libraries to expose metrics at /metrics, then Prometheus scrapes and stores time-series data. This enables powerful querying with PromQL, alerting, and visualization with Grafana. It's designed for high-cardinality metrics and dynamic environments.",
       "hint": "What's the industry-standard time-series database designed specifically for metrics?",
       "difficulty": "beginner",
@@ -62,12 +62,12 @@
       "situation": "Your team gets too many alerts (50+ per day), causing alert fatigue. Critical issues are being missed.",
       "codeExample": "# Current alerts:\n# - Disk usage > 50% (fires constantly)\n# - Any HTTP 404 error\n# - CPU > 30%\n# - Memory usage increases\n# Result: Alert fatigue, missed critical issues",
       "options": [
-        "Send all alerts to everyone on the team",
         "Alert on symptoms (user-facing issues like high error rates, slow response times) not causes, use severity levels, and set meaningful thresholds",
+        "Send all alerts to everyone on the team",
         "Disable all alerts to reduce noise",
         "Only alert during business hours"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "explanation": "Effective alerting focuses on symptoms users experience (errors, latency) rather than low-level metrics (CPU, memory). Use severity levels (critical, warning, info), set thresholds based on SLOs, and alert on rate of change rather than absolute values. Implement on-call rotations with escalation policies. This reduces noise while catching real issues.",
       "hint": "What approach reduces alert fatigue while ensuring critical issues are caught?",
       "difficulty": "beginner",
@@ -116,11 +116,11 @@
       "situation": "You can only monitor 4 metric categories for your web application. Which should you choose?",
       "options": [
         "CPU, Memory, Disk, Network",
-        "Latency, Traffic, Errors, Saturation (The Four Golden Signals)",
         "Number of users, Revenue, Conversions, Bounce rate",
-        "Server count, Container count, Pod count, Node count"
+        "Server count, Container count, Pod count, Node count",
+        "Latency, Traffic, Errors, Saturation (The Four Golden Signals)"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "The Four Golden Signals from Google's SRE book are: Latency (response time), Traffic (requests/second), Errors (error rate), and Saturation (resource utilization). These metrics indicate user experience and system health better than infrastructure metrics alone. They apply to almost any service and help identify issues quickly.",
       "hint": "What monitoring framework does Google SRE recommend for any service?",
       "difficulty": "intermediate",
@@ -134,11 +134,11 @@
       "codeExample": "# Alert problems:\n# - 60% auto-resolve within 5 minutes\n# - 30% require no action\n# - 10% are actionable issues\n# On-call engineers burning out",
       "options": [
         "Increase alert thresholds so they fire less often",
+        "Ignore alerts that auto-resolve",
         "Implement alert aggregation, set minimum duration before alerting, use warning vs critical severity, and create runbooks for each alert",
-        "Hire more engineers to handle the alerts",
-        "Ignore alerts that auto-resolve"
+        "Hire more engineers to handle the alerts"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 2,
       "explanation": "Combat alert fatigue by: aggregating related alerts, requiring issues persist for minimum duration (e.g., 5 minutes) before alerting, using severity levels appropriately, creating clear runbooks for each alert, and regularly reviewing/removing noisy alerts. Every alert should be actionable and require human intervention. Auto-resolving alerts indicate improper thresholds.",
       "hint": "What combination of techniques makes each alert meaningful and actionable?",
       "difficulty": "intermediate",
@@ -150,12 +150,12 @@
       "description": "How do metrics, logs, and traces work together in observability?",
       "situation": "You're implementing a complete observability stack. How should you use each pillar?",
       "options": [
-        "Use metrics to identify WHEN issues occur, logs to understand WHAT happened, traces to see WHERE in distributed systems. Correlate all three for complete observability",
         "Only use metrics, logs and traces are redundant",
+        "Use metrics to identify WHEN issues occur, logs to understand WHAT happened, traces to see WHERE in distributed systems. Correlate all three for complete observability",
         "Use logs for everything, they contain all information",
         "Metrics, logs, and traces are competing solutions, choose one"
       ],
-      "correctAnswer": 0,
+      "correctAnswer": 1,
       "explanation": "The three pillars complement each other: Metrics show trends and trigger alerts (WHEN), Logs provide detailed context and error messages (WHAT), Traces show request flows through distributed systems (WHERE). Modern observability correlates all three using common identifiers (trace IDs, user IDs) to enable drilling down from high-level metrics to specific log entries and traces.",
       "hint": "How do these three different data types complement each other rather than compete?",
       "difficulty": "advanced",

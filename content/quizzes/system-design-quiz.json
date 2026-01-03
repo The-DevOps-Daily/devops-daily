@@ -46,11 +46,11 @@
       "codeExample": "# Problem:\n# - 5,000 reads/min to product_catalog table\n# - Data changes once per hour\n# - DB CPU at 95%",
       "options": [
         "Add more database replicas",
-        "Implement Redis or Memcached cache layer with TTL-based expiration for frequently accessed data",
         "Upgrade to a larger database server",
-        "Denormalize all database tables"
+        "Denormalize all database tables",
+        "Implement Redis or Memcached cache layer with TTL-based expiration for frequently accessed data"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "Caching frequently accessed, infrequently changing data dramatically reduces database load. Redis/Memcached can serve thousands of requests per second from memory, reducing database queries by 80-90%. This is more cost-effective than adding replicas or upgrading hardware for read-heavy workloads.",
       "hint": "What's the most cost-effective solution for data that's read often but changes rarely?",
       "difficulty": "beginner",
@@ -80,12 +80,12 @@
       "situation": "Your system spans multiple data centers. Network issues between data centers occur occasionally.",
       "codeExample": "# CAP Theorem states you can only have 2 of 3:\n# - Consistency (all nodes see same data)\n# - Availability (system always responds)\n# - Partition Tolerance (works despite network failures)",
       "options": [
-        "You can have all three: Consistency, Availability, and Partition Tolerance",
         "During a partition, choose between Consistency (reject requests to maintain data consistency) or Availability (serve potentially stale data)",
+        "You can have all three: Consistency, Availability, and Partition Tolerance",
         "CAP theorem doesn't apply to modern systems",
         "Use blockchain to solve the CAP theorem"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "explanation": "CAP theorem proves you can only achieve 2 of 3 guarantees. During a network partition (which you must tolerate in distributed systems), you must choose: either maintain consistency and reject some requests (CP), or remain available but risk serving stale data (AP). E-commerce often chooses AP for shopping cart, CP for payments.",
       "hint": "During a network split, what tradeoff must you make?",
       "difficulty": "intermediate",
@@ -98,11 +98,11 @@
       "situation": "Video processing is CPU-intensive and slow. Users should get immediate feedback, and the system must handle traffic spikes.",
       "options": [
         "Make users wait 10 minutes for processing to complete",
-        "Use a message queue (RabbitMQ, SQS, Kafka) to accept uploads immediately, process asynchronously, and notify users when complete",
         "Process videos on the web server synchronously",
-        "Reject uploads during high traffic periods"
+        "Reject uploads during high traffic periods",
+        "Use a message queue (RabbitMQ, SQS, Kafka) to accept uploads immediately, process asynchronously, and notify users when complete"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "explanation": "Message queues decouple request acceptance from processing. Users get immediate confirmation, uploads are queued, and worker processes handle them asynchronously. This provides better UX, handles traffic spikes gracefully (queue absorbs bursts), and allows independent scaling of web and worker tiers.",
       "hint": "How do you provide immediate response while handling slow background processing?",
       "difficulty": "intermediate",
@@ -151,11 +151,11 @@
       "codeExample": "# Problem:\n# - Some users: 1000s of requests/minute\n# - Normal users: 10-20 requests/minute\n# - API performance degrading",
       "options": [
         "Block all users making more than 10 requests per minute",
-        "Remove API documentation so fewer people can use it",
         "Implement rate limiting with token bucket or sliding window algorithm, return 429 status codes, and provide clear limits in documentation",
+        "Remove API documentation so fewer people can use it",
         "Add CAPTCHA to every API request"
       ],
-      "correctAnswer": 2,
+      "correctAnswer": 1,
       "explanation": "Rate limiting with token bucket or sliding window algorithms allows burst traffic while preventing sustained abuse. Return HTTP 429 with Retry-After headers to inform clients. Implement tiered limits (per user, per IP, per API key) and document limits clearly. This protects infrastructure while allowing legitimate high-volume users to request limit increases.",
       "hint": "What's the industry-standard approach for controlling API request rates?",
       "difficulty": "advanced",
