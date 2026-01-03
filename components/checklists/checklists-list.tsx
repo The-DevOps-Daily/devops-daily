@@ -61,7 +61,11 @@ export function ChecklistsList({
 
   const difficulties = useMemo(() => {
     const diffs = Array.from(new Set(checklists.map((c) => c.difficulty)));
-    return diffs.sort();
+    // Sort in descending order: Advanced, Intermediate, Beginner
+    const difficultyOrder = ['advanced', 'intermediate', 'beginner'];
+    return diffs.sort((a, b) => {
+      return difficultyOrder.indexOf(a) - difficultyOrder.indexOf(b);
+    });
   }, [checklists]);
 
   // Filter and sort checklists
