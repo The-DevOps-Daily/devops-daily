@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Quiz Template - Default Style -->
+  <!-- INSTRUCTIONS: Replace Database Management Systems and Infrastructure with your content -->
+
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e1b4b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#312e81;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Question mark pattern -->
+    <pattern id="questions" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <text x="50" y="70" font-family="system-ui" font-size="60" fill="#8b5cf6" opacity="0.1">?</text>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Question pattern -->
+  <rect width="1200" height="630" fill="url(#questions)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="200" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Infrastructure</text>
+
+  <!-- Quiz icon -->
+  <g transform="translate(80, 160)">
+    <circle cx="30" cy="30" r="30" fill="#8b5cf6" opacity="0.8"/>
+    <text x="20" y="45" font-family="system-ui" font-size="40" font-weight="bold" fill="#ffffff">?</text>
+  </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#a78bfa">INTERACTIVE QUIZ</text>
+
+  <!-- Title -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#ffffff">Database Management Systems</text>
+
+  <!-- Decorative quiz options (A, B, C, D) -->
+  <g opacity="0.2">
+    <circle cx="950" cy="150" r="30" fill="#8b5cf6"/>
+    <text x="940" y="162" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">A</text>
+
+    <circle cx="1050" cy="150" r="30" fill="#a78bfa"/>
+    <text x="1040" y="162" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">B</text>
+
+    <circle cx="1000" cy="480" r="30" fill="#8b5cf6"/>
+    <text x="990" y="492" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">C</text>
+
+    <circle cx="1100" cy="480" r="30" fill="#a78bfa"/>
+    <text x="1090" y="492" font-family="system-ui" font-size="28" font-weight="bold" fill="#ffffff">D</text>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#a78bfa">DevOps Daily</text>
+</svg>
