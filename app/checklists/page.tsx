@@ -10,26 +10,26 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/checklists',
   },
-  openGraph: {
-    title: 'DevOps & Security Checklists - The DevOps Daily',
-    description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress, ensure nothing is missed, and export to markdown.',
-    type: 'website',
-    url: '/checklists',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'DevOps & Security Checklists',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'DevOps & Security Checklists - The DevOps Daily',
-    description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress and ensure nothing is missed.',
-    images: ['/og-image.png'],
-  },
+ openGraph: {
+   title: 'DevOps & Security Checklists - The DevOps Daily',
+   description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress, ensure nothing is missed, and export to markdown.',
+   type: 'website',
+   url: '/checklists',
+   images: [
+     {
+       url: '/images/checklists/checklists-og.png',
+       width: 1200,
+       height: 630,
+       alt: 'DevOps & Security Checklists',
+     },
+   ],
+ },
+ twitter: {
+   card: 'summary_large_image',
+   title: 'DevOps & Security Checklists - The DevOps Daily',
+   description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress and ensure nothing is missed.',
+   images: ['/images/checklists/checklists-og.png'],
+ },
 };
 
 export default function ChecklistsPage() {
