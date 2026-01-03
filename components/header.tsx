@@ -479,7 +479,7 @@ export function Header() {
   }, [mobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 bg-background/95">
+    <header className="sticky top-0 z-40 bg-background/95 print:hidden">
       <nav className="container flex items-center justify-between p-4 mx-auto lg:px-8">
         {/* Logo */}
         <div className="flex lg:flex-1">

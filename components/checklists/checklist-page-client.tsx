@@ -64,19 +64,20 @@ export function ChecklistPageClient({ checklist }: ChecklistPageClientProps) {
   const completedCount = checklist.items.filter(item => progress[item.id]).length;
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl">
+    <div className="container mx-auto px-4 py-12 max-w-4xl print:py-0">
       {showConfetti && mounted && (
         <Confetti
           width={typeof window !== 'undefined' ? window.innerWidth : 0}
           height={typeof window !== 'undefined' ? window.innerHeight : 0}
           recycle={false}
           numberOfPieces={500}
+          className="print:hidden"
         />
       )}
 
       <Link
         href="/checklists"
-        className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline mb-6"
+        className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline mb-6 print:hidden"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to all checklists
@@ -84,12 +85,12 @@ export function ChecklistPageClient({ checklist }: ChecklistPageClientProps) {
 
       <div className="mb-8">
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <span className={`text-sm px-3 py-1 rounded-full font-semibold ${
+          <span className={`text-sm px-3 py-1 rounded-full font-semibold print:bg-gray-100 print:text-gray-900 ${
             categoryColors[checklist.category as keyof typeof categoryColors] || 'bg-gray-100 text-gray-700'
           }`}>
             {checklist.category}
           </span>
-          <span className={`text-sm px-3 py-1 rounded-full font-semibold ${
+          <span className={`text-sm px-3 py-1 rounded-full font-semibold print:bg-gray-100 print:text-gray-900 ${
             difficultyColors[checklist.difficulty]
           }`}>
             {checklist.difficulty.charAt(0).toUpperCase() + checklist.difficulty.slice(1)}
@@ -137,7 +138,7 @@ export function ChecklistPageClient({ checklist }: ChecklistPageClientProps) {
         />
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8 print:hidden">
         <ChecklistActions
           checklist={checklist}
           progress={progress}

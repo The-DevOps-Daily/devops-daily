@@ -5,7 +5,7 @@ import { EasterEggTerminal } from '@/components/easter-egg-terminal';
 
 export function Footer() {
   return (
-    <footer className="bg-linear-to-br from-background via-background to-muted/20 border-t border-border/50 relative overflow-hidden">
+    <footer className="bg-linear-to-br from-background via-background to-muted/20 border-t border-border/50 relative overflow-hidden print:hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-0 right-0 w-96 h-96 bg-linear-to-bl from-primary/5 to-purple-500/5 rounded-full blur-3xl" />
