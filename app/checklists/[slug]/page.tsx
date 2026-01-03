@@ -25,6 +25,29 @@ export async function generateMetadata(
     title: `${checklist.title} | The DevOps Daily`,
     description: checklist.description,
     keywords: checklist.tags,
+    alternates: {
+      canonical: `/checklists/${resolvedParams.slug}`,
+    },
+    openGraph: {
+      title: `${checklist.title} - The DevOps Daily`,
+      description: checklist.description,
+      type: 'website',
+      url: `/checklists/${resolvedParams.slug}`,
+      images: [
+        {
+          url: '/og-image.png',
+          width: 1200,
+          height: 630,
+          alt: checklist.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${checklist.title} - The DevOps Daily`,
+      description: checklist.description,
+      images: ['/og-image.png'],
+    },
   };
 }
 
