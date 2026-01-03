@@ -313,6 +313,19 @@ export default function DbmsSimulator() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
         <div className="max-w-4xl mx-auto">
+          {/* Breadcrumb */}
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+            <Link
+              href="/games"
+              className="hover:text-primary transition-colors flex items-center gap-1"
+            >
+              <Home className="w-4 h-4" />
+              Games
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">Database Management Systems</span>
+          </nav>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -414,6 +427,19 @@ export default function DbmsSimulator() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
         <div className="max-w-7xl mx-auto">
+          {/* Breadcrumb */}
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+            <Link
+              href="/games"
+              className="hover:text-primary transition-colors flex items-center gap-1"
+            >
+              <Home className="w-4 h-4" />
+              Games
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">Database Management Systems</span>
+          </nav>
+
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -672,6 +698,19 @@ export default function DbmsSimulator() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
         <div className="max-w-5xl mx-auto">
+          {/* Breadcrumb */}
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+            <Link
+              href="/games"
+              className="hover:text-primary transition-colors flex items-center gap-1"
+            >
+              <Home className="w-4 h-4" />
+              Games
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">Database Management Systems</span>
+          </nav>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -798,6 +837,19 @@ export default function DbmsSimulator() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
         <div className="max-w-3xl mx-auto">
+          {/* Breadcrumb */}
+          <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+            <Link
+              href="/games"
+              className="hover:text-primary transition-colors flex items-center gap-1"
+            >
+              <Home className="w-4 h-4" />
+              Games
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">Database Management Systems</span>
+          </nav>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -918,6 +970,19 @@ export default function DbmsSimulator() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-6">
       <div className="max-w-3xl mx-auto">
+        {/* Breadcrumb */}
+        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
+          <Link
+            href="/games"
+            className="hover:text-primary transition-colors flex items-center gap-1"
+          >
+            <Home className="w-4 h-4" />
+            Games
+          </Link>
+          <span>/</span>
+          <span className="text-foreground">Database Management Systems</span>
+        </nav>
+
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
