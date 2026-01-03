@@ -52,7 +52,7 @@ export async function generateMetadata(
     locale: 'en_US',
     images: [
       {
-        url: `/images/checklists/${resolvedParams.slug}-og.svg`,
+        url: `/images/checklists/${resolvedParams.slug}-og.png`,
          width: 1200,
          height: 630,
          alt: checklist.title,
@@ -65,7 +65,7 @@ export async function generateMetadata(
     creator: '@TheDevOpsDaily',
     title: `${checklist.title} - The DevOps Daily`,
     description: checklist.description,
-    images: [`/images/checklists/${resolvedParams.slug}-og.svg`],
+    images: [`/images/checklists/${resolvedParams.slug}-og.png`],
    },
   };
 }
