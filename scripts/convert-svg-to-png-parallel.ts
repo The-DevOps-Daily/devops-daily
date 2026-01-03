@@ -11,6 +11,7 @@ const DIRECTORIES = [
   { dir: path.join(PUBLIC_DIR, 'images', 'guides'), type: 'guides' },
   { dir: path.join(PUBLIC_DIR, 'images', 'exercises'), type: 'exercises' },
   { dir: path.join(PUBLIC_DIR, 'images', 'news'), type: 'news' },
+  { dir: path.join(PUBLIC_DIR, 'images', 'checklists'), type: 'checklists' },
 ];
 
 async function convertSvgToPng(svgPath: string, pngPath: string): Promise<boolean> {
