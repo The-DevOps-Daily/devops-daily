@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="40" stroke="#60a5fa" stroke-width="1" opacity="0.08"/>
+      <line x1="0" y1="0" x2="40" y2="0" stroke="#60a5fa" stroke-width="1" opacity="0.08"/>
+    </pattern>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  
+  <!-- Top badges -->
+  <rect x="80" y="70" width="186" height="44" rx="22" fill="#3b82f6" opacity="0.9"/>
+  <text x="102" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">DEVOPS</text>
+  
+  <rect x="286" y="70" width="240" height="44" rx="22" fill="#60a5fa" opacity="0.8"/>
+  <text x="308" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="#f8fafc">INTERMEDIATE</text>
+  
+  <!-- Item count badge -->
+  <rect x="1020" y="70" width="100" height="44" rx="22" fill="#3b82f6" opacity="0.7"/>
+  <text x="1070" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc" text-anchor="middle">7 Items</text>
+  
+  <!-- Checklist icon -->
+  <g opacity="0.15">
+    <rect x="920" y="320" width="240" height="280" rx="12" fill="#60a5fa" />
+    <rect x="950" y="360" width="40" height="40" rx="8" fill="#0f172a" />
+    <rect x="1010" y="370" width="120" height="20" rx="4" fill="#0f172a" />
+    <rect x="950" y="420" width="40" height="40" rx="8" fill="#0f172a" />
+    <rect x="1010" y="430" width="120" height="20" rx="4" fill="#0f172a" />
+    <rect x="950" y="480" width="40" height="40" rx="8" fill="#0f172a" />
+    <rect x="1010" y="490" width="120" height="20" rx="4" fill="#0f172a" />
+    <polyline points="960,375 970,390 990,365" stroke="#3b82f6" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Title -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#f8fafc">CI/CD Pipeline Setup</text>
+<text x="80" y="345" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#f8fafc">Checklist</text>
+  
+  <!-- Bottom branding -->
+  <text x="80" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+  <text x="80" y="595" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#60a5fa" opacity="0.7">Interactive Checklists</text>
+</svg>

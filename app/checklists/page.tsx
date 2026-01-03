@@ -17,7 +17,7 @@ export const metadata: Metadata = {
    url: '/checklists',
    images: [
      {
-       url: '/images/checklists/checklists-og.png',
+       url: '/images/checklists/checklists-og.svg',
        width: 1200,
        height: 630,
        alt: 'DevOps & Security Checklists',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
    card: 'summary_large_image',
    title: 'DevOps & Security Checklists - The DevOps Daily',
    description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress and ensure nothing is missed.',
-   images: ['/images/checklists/checklists-og.png'],
+   images: ['/images/checklists/checklists-og.svg'],
  },
 };
 
