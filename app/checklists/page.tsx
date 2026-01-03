@@ -4,20 +4,37 @@ import { ChecklistCard } from '@/components/checklists/checklist-card';
 import { ChecklistsHero } from '@/components/checklists/checklists-hero';
 
 export const metadata: Metadata = {
-  title: 'DevOps & Security Checklists | The DevOps Daily',
-  description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress and ensure nothing is missed.',
-  keywords: ['devops checklists', 'security checklists', 'kubernetes checklist', 'aws security', 'ci/cd pipeline'],
-  alternates: {
-    canonical: '/checklists',
-  },
+ title: 'DevOps & Security Checklists | The DevOps Daily',
+ description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress and ensure nothing is missed.',
+ keywords: ['devops checklists', 'security checklists', 'kubernetes checklist', 'aws security', 'ci/cd pipeline'],
+ authors: [{ name: 'The DevOps Daily' }],
+ creator: 'The DevOps Daily',
+ publisher: 'The DevOps Daily',
+ applicationName: 'The DevOps Daily',
+ robots: {
+   index: true,
+   follow: true,
+   googleBot: {
+     index: true,
+     follow: true,
+     'max-video-preview': -1,
+     'max-image-preview': 'large',
+     'max-snippet': -1,
+   },
+ },
+ alternates: {
+   canonical: '/checklists',
+ },
  openGraph: {
    title: 'DevOps & Security Checklists - The DevOps Daily',
-   description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress, ensure nothing is missed, and export to markdown.',
-   type: 'website',
-   url: '/checklists',
-   images: [
-     {
-       url: '/images/checklists/checklists-og.svg',
+  description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress, ensure nothing is missed, and export to markdown.',
+  type: 'website',
+  url: '/checklists',
+  siteName: 'The DevOps Daily',
+  locale: 'en_US',
+  images: [
+    {
+      url: '/images/checklists/checklists-og.svg',
        width: 1200,
        height: 630,
        alt: 'DevOps & Security Checklists',
@@ -25,10 +42,12 @@ export const metadata: Metadata = {
    ],
  },
  twitter: {
-   card: 'summary_large_image',
-   title: 'DevOps & Security Checklists - The DevOps Daily',
-   description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress and ensure nothing is missed.',
-   images: ['/images/checklists/checklists-og.svg'],
+  card: 'summary_large_image',
+  site: '@TheDevOpsDaily',
+  creator: '@TheDevOpsDaily',
+  title: 'DevOps & Security Checklists - The DevOps Daily',
+  description: 'Interactive checklists for DevOps, security, and cloud best practices. Track your progress and ensure nothing is missed.',
+  images: ['/images/checklists/checklists-og.svg'],
  },
 };
 
