@@ -147,19 +147,7 @@ export default async function DevOpsMemesPage() {
               </div>
             </div>
 
-            <div className="text-center bg-muted/30 rounded-xl p-8">
-              <h3 className="text-xl font-bold mb-4">Ready for More Games?</h3>
-              <p className="text-muted-foreground mb-6">
-                Explore our collection of interactive DevOps games and simulators designed to make
-                learning fun!
-              </p>
-              <Button asChild size="lg" className="shadow-lg">
-                <Link href="/games">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Games
-                </Link>
-              </Button>
-            </div>
+            
           </div>
         </div>
       </div>

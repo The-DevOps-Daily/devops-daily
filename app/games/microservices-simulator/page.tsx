@@ -160,12 +160,7 @@ export default async function MicroservicesSimulatorPage() {
           </div>
 
           {/* Back to Games */}
-          <Link href="/games">
-            <Button variant="outline" className="gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to All Games
-            </Button>
-          </Link>
+          
         </div>
       </div>
     </>

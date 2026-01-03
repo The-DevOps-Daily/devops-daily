@@ -79,14 +79,6 @@ export default async function K8sSchedulerPage() {
           </div>
 
           {/* Back to games */}
-          <div className="mt-2">
-            <Button asChild variant="outline">
-              <Link href="/games">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Games
-              </Link>
-            </Button>
-          </div>
         </div>
       </div>
     </>

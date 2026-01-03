@@ -125,16 +125,6 @@ export default async function RateLimitSimulatorPage() {
               </a>
             </div>
           </div>
-
-          {/* Back to games button */}
-          <div className="mt-8">
-            <Button asChild variant="outline">
-              <Link href="/games">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Games
-              </Link>
-            </Button>
-          </div>
         </div>
       </div>
     </>

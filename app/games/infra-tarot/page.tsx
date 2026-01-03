@@ -41,12 +41,7 @@ export default async function InfraTarotPage() {
 
           {/* Back to Games */}
           <div className="w-full mb-6">
-            <Link href="/games">
-              <Button variant="ghost" className="mb-4">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Games
-              </Button>
-            </Link>
+            
           </div>
 
           {/* Game Component */}
