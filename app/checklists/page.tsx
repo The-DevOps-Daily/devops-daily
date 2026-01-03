@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { checklists } from '@/data/checklists';
-import { ChecklistCard } from '@/components/checklists/checklist-card';
 import { ChecklistsHero } from '@/components/checklists/checklists-hero';
+import { ChecklistsList } from '@/components/checklists/checklists-list';
 
 export const metadata: Metadata = {
  title: 'DevOps & Security Checklists | The DevOps Daily',
@@ -52,34 +52,16 @@ export const metadata: Metadata = {
 };
 
 export default function ChecklistsPage() {
-  const categories = Array.from(new Set(checklists.map(c => c.category)));
+  const categories = Array.from(new Set(checklists.map((c) => c.category)));
 
   return (
     <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
       {/* Hero Section */}
       <ChecklistsHero totalChecklists={checklists.length} categories={categories} />
 
-      {/* Checklists by Category */}
+      {/* Checklists List with Filters */}
       <section className="py-8 container mx-auto px-4 mb-16 max-w-7xl">
-        {categories.map(category => {
-          const categoryChecklists = checklists.filter(c => c.category === category);
-          
-          return (
-            <div key={category} className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
-                {category}
-                <span className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                  ({categoryChecklists.length})
-                </span>
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {categoryChecklists.map(checklist => (
-                  <ChecklistCard key={checklist.id} checklist={checklist} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        <ChecklistsList checklists={checklists} />
       </section>
 
       {/* Pro Tips Section */}
