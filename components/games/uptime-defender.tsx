@@ -489,20 +489,12 @@ export default function UptimeDefender() {
             className="bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-xl px-8 py-6 h-auto"
           >
             <Play className="w-6 h-6 mr-2" />
-            Start Game
-          </Button>
+           Start Game
+         </Button>
 
-          <div className="mt-8">
-            <Button asChild variant="outline">
-              <Link href="/games">
-                <Home className="w-4 h-4 mr-2" />
-                Back to Games
-              </Link>
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    );
+       </motion.div>
+     </div>
+   );
   }
 
   // Game over screen
@@ -587,17 +579,11 @@ export default function UptimeDefender() {
               className="bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
             >
               <Play className="w-5 h-5 mr-2" />
-              Play Again
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link href="/games">
-                <Home className="w-5 h-5 mr-2" />
-                Back to Games
-              </Link>
-            </Button>
-          </div>
-        </motion.div>
-      </div>
+             Play Again
+           </Button>
+         </div>
+       </motion.div>
+     </div>
     );
   }
 

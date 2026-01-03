@@ -523,29 +523,11 @@ export default function PacketJourney() {
         ? "bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white"
         : "bg-gradient-to-br from-blue-50 via-white to-cyan-50 text-gray-900"
     )}>
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Breadcrumb */}
-        <nav className={cn(
-          "flex items-center space-x-2 text-sm mb-6",
-          isDark ? "text-slate-400" : "text-gray-600"
-        )}>
-          <Link
-            href="/games"
-            className={cn(
-              "transition-colors flex items-center gap-1",
-              isDark ? "hover:text-cyan-400" : "hover:text-blue-600"
-            )}
-          >
-            <Home className="w-4 h-4" />
-            Games
-          </Link>
-          <span>/</span>
-          <span className={cn(
-            isDark ? "text-slate-200" : "text-gray-900"
-          )}>Network Packet Journey</span>
-        </nav>
+     <div className="max-w-7xl mx-auto space-y-6">
+       {/* Breadcrumb */}
+       </nav>
 
-        {/* Header */}
+       {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-4xl font-bold bg-linear-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent flex items-center gap-3">

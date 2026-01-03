@@ -393,16 +393,10 @@ export default function DbmsSimulator() {
           >
             <Button size="lg" onClick={() => setPhase('explorer')} className="gap-2">
               <Play className="h-5 w-5" />
-              Start Exploring
-            </Button>
-            <Link href="/games">
-              <Button variant="outline" size="lg" className="gap-2">
-                <Home className="h-5 w-5" />
-                Back to Games
-              </Button>
-            </Link>
-          </motion.div>
-        </div>
+             Start Exploring
+           </Button>
+         </motion.div>
+       </div>
       </div>
     );
   }
@@ -993,16 +987,10 @@ export default function DbmsSimulator() {
         >
           <Button onClick={resetGame} className="gap-2">
             <RotateCcw className="h-4 w-4" />
-            Play Again
-          </Button>
-          <Link href="/games">
-            <Button variant="outline" className="gap-2">
-              <Home className="h-4 w-4" />
-              Back to Games
-            </Button>
-          </Link>
-        </motion.div>
-      </div>
-    </div>
+           Play Again
+         </Button>
+       </motion.div>
+     </div>
+   </div>
   );
 }

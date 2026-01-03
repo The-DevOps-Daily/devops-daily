@@ -350,16 +350,10 @@ export default function GitOpsWorkflow() {
   if (phase === 'intro') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <Link href="/games">
-              <Button variant="ghost" size="sm">
-                <Home className="w-4 h-4 mr-2" />
-                Games
-              </Button>
-            </Link>
-            <Badge variant="secondary" className="text-sm">
-              <GitBranch className="w-3 h-3 mr-1" />
+       <div className="max-w-4xl mx-auto">
+         <div className="flex items-center justify-between mb-6">
+           <Badge variant="secondary" className="text-sm">
+             <GitBranch className="w-3 h-3 mr-1" />
               GitOps Learning
             </Badge>
           </div>
@@ -459,16 +453,10 @@ export default function GitOpsWorkflow() {
   if (phase === 'interactive') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <Link href="/games">
-              <Button variant="ghost" size="sm">
-                <Home className="w-4 h-4 mr-2" />
-                Games
-              </Button>
-            </Link>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={resetGame}>
+       <div className="max-w-6xl mx-auto">
+         <div className="flex items-center justify-between mb-6">
+           <div className="flex gap-2">
+             <Button variant="outline" size="sm" onClick={resetGame}>
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset
               </Button>
@@ -761,16 +749,10 @@ export default function GitOpsWorkflow() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <Link href="/games">
-              <Button variant="ghost" size="sm">
-                <Home className="w-4 h-4 mr-2" />
-                Games
-              </Button>
-            </Link>
-            <div className="flex gap-2">
-              <Badge variant="secondary">
-                Challenge {currentChallenge + 1}/{challenges.length}
+         <div className="flex items-center justify-between mb-6">
+           <div className="flex gap-2">
+             <Badge variant="secondary">
+               Challenge {currentChallenge + 1}/{challenges.length}
               </Badge>
               <Badge variant="secondary">
                 Score: {score}/{challenges.length}
@@ -940,15 +922,9 @@ export default function GitOpsWorkflow() {
           <Button variant="outline" size="lg" onClick={resetGame}>
             <RotateCcw className="w-4 h-4 mr-2" />
             Try Again
-          </Button>
-          <Link href="/games">
-            <Button size="lg">
-              <Home className="w-4 h-4 mr-2" />
-              More Games
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </div>
+         </Button>
+       </div>
+     </div>
+   </div>
   );
 }

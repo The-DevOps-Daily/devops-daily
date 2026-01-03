@@ -1124,30 +1124,11 @@ export default function ScalableSentry() {
         ? "bg-slate-950 text-slate-100" 
         : "bg-gradient-to-br from-gray-50 to-blue-50 text-gray-900"
     )}>
-      <div className="container mx-auto max-w-4xl">
-        {/* Breadcrumb */}
-        <nav className={cn(
-          "flex items-center space-x-2 text-sm mb-4 sm:mb-6 px-2",
-          isDark ? "text-slate-400" : "text-gray-600"
-        )}>
-          <Link
-            href="/games"
-            className={cn(
-              "transition-colors flex items-center gap-1",
-              isDark ? "hover:text-slate-200" : "hover:text-gray-900"
-            )}
-          >
-            <Home className="w-4 h-4" />
-            Games
-          </Link>
-          <span>/</span>
-          <span className={cn(
-            isDark ? "text-slate-100" : "text-gray-900"
-          )}>Scalable Sentry</span>
-        </nav>
+     <div className="container mx-auto max-w-4xl">
+       {/* Breadcrumb */}
 
-        {/* Mobile Warning */}
-        {isMobile && (
+       {/* Mobile Warning */}
+       {isMobile && (
           <div className={cn(
             "mb-4 mx-2 p-4 rounded-xl border",
             isDark 
