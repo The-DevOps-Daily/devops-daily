@@ -135,15 +135,73 @@ export function validateQuizConfig(config: QuizConfig): ValidationResult {
     warnings.push({
       path: 'questions',
       message: 'No advanced questions found - consider adding some for experienced users',
-      severity: 'warning',
-    });
-  }
+     severity: 'warning',
+   });
+ }
 
-  return {
-    isValid: errors.length === 0,
+  // Validate answer distribution
+  const answerDistribution = validateAnswerDistribution(config.questions);
+  warnings.push(...answerDistribution);
+
+ return {
+   isValid: errors.length === 0,
     errors,
     warnings,
   };
+}
+
+/**
+ * Validates answer distribution across all questions
+ */
+function validateAnswerDistribution(questions: QuizQuestion[]): ValidationError[] {
+  const warnings: ValidationError[] = [];
+  
+  if (questions.length === 0) {
+    return warnings;
+  }
+
+  // Count how many times each answer option is used
+  const distribution: Record<number, number> = {};
+  questions.forEach((question) => {
+    const correctAnswer = question.correctAnswer;
+    distribution[correctAnswer] = (distribution[correctAnswer] || 0) + 1;
+  });
+
+  const totalQuestions = questions.length;
+  const distributionText = Object.entries(distribution)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([answer, count]) => {
+      const percentage = Math.round((count / totalQuestions) * 100);
+      return `Option ${answer}: ${count} questions (${percentage}%)`;
+    })
+    .join(', ');
+
+  // Warn if any option used > 50% of the time
+  for (const [answer, count] of Object.entries(distribution)) {
+    const percentage = (count / totalQuestions) * 100;
+    if (percentage > 50) {
+      warnings.push({
+        path: 'questions.correctAnswer',
+        message: `Answer option ${answer} is used ${count}/${totalQuestions} times (${Math.round(percentage)}%) - Distribution: ${distributionText}. Consider redistributing answers more evenly.`,
+        severity: 'warning',
+      });
+    }
+  }
+
+  // Warn if any option (0-3) is never used for quizzes with 8+ questions
+  if (totalQuestions >= 8) {
+    for (let option = 0; option <= 3; option++) {
+      if (!distribution[option]) {
+        warnings.push({
+          path: 'questions.correctAnswer',
+          message: `Answer option ${option} is never used - Distribution: ${distributionText}. Consider using all answer options for better balance.`,
+          severity: 'warning',
+        });
+      }
+    }
+  }
+
+  return warnings;
 }
 
 /**
