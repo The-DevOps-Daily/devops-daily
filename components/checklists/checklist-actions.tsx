@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, Share2, RotateCcw, Printer, Check, Copy } from 'lucide-react';
+import { Download, Share2, RotateCcw, Check, Copy } from 'lucide-react';
 import { Checklist, ChecklistProgress, exportToMarkdown, downloadFile, generateShareUrl } from '@/lib/checklist-utils';
 
 interface ChecklistActionsProps {
@@ -27,10 +27,6 @@ export function ChecklistActions({ checklist, progress, onReset }: ChecklistActi
     } catch (error) {
       console.error('Failed to copy URL:', error);
     }
-  };
-
-  const handlePrint = () => {
-    window.print();
   };
 
   const handleReset = () => {
@@ -64,17 +60,8 @@ export function ChecklistActions({ checklist, progress, onReset }: ChecklistActi
           <>
             <Share2 className="w-4 h-4" />
             Share
-          </>
+        </>
         )}
-      </button>
-
-      <button
-        onClick={handlePrint}
-        className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-lg transition-colors text-sm font-medium"
-        aria-label="Print checklist"
-      >
-        <Printer className="w-4 h-4" />
-        Print
       </button>
 
       <button
