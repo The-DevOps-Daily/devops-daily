@@ -146,21 +146,25 @@ async function saveCache(cache: Record<string, string>): Promise<void> {
 }
 
 // Check if image needs regeneration
-async function shouldGenerateImage(title: string, category: string, outputPath: string): Promise<boolean> {
+async function fileExists(outputPath: string): Promise<boolean> {
   if (FORCE_REGENERATE) {
-    return true;
+    return false;
   }
 
   try {
     // Check if SVG file exists
     const svgPath = outputPath.replace('.png', '.svg');
-    await fs.access(svgPath);
+    const stats = await fs.stat(svgPath);
 
-    // File exists, assume valid (cache will be checked in main)
-    return false;
+    // Validate file size - corrupted/empty files should be regenerated
+    if (stats.size < 500) {
+      return false; // File too small, needs regeneration
+    }
+
+    return true; // File exists and has valid size
   } catch {
-    // File doesn't exist, generate
-    return true;
+    // File doesn't exist
+    return false;
   }
 }
 
@@ -276,11 +280,12 @@ async function main() {
   for (let i = 0; i < allTasks.length; i += CACHE_CHECK_BATCH_SIZE) {
     const batch = allTasks.slice(i, i + CACHE_CHECK_BATCH_SIZE);
     const results = await Promise.all(
-      batch.map(task => shouldGenerateImage(task.title, task.category, task.outputPath))
+      batch.map(task => fileExists(task.outputPath))
     );
     
     batch.forEach((task, index) => {
-      if (results[index]) {
+      if (!results[index]) {
+        // File doesn't exist or is corrupted, must regenerate
         task.skip = false;
       } else {
         // Check if content hash matches cache
