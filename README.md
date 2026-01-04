@@ -1,6 +1,6 @@
 # DevOps Daily
 
-> A modern, open-source content platform for DevOps professionals, featuring articles, guides, exercises, news and resources to help you level up your DevOps skills.
+> A modern, open-source content platform for DevOps professionals, featuring articles, guides, exercises, news and resources to help you level up your DevOps skills. [Test Preview Environment]
 
 ![DevOps Daily](https://devops-daily.com/og-image.png)
 
