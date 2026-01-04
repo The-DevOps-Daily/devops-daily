@@ -25,6 +25,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Image generation cache
+.image-cache.json
 package-lock.json
 
 # generated static markdown files

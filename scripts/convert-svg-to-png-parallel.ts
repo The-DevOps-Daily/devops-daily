@@ -5,6 +5,7 @@ import { Resvg } from '@resvg/resvg-js';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 const CONCURRENCY_LIMIT = 8; // Process 8 conversions at a time
+const FORCE_REGENERATE = process.argv.includes('--force');
 
 const DIRECTORIES = [
   { dir: path.join(PUBLIC_DIR, 'images', 'posts'), type: 'posts' },
@@ -90,16 +91,18 @@ async function convertAllSvgImages() {
         const pngPath = path.join(dir, pngFile);
 
         // Check if PNG already exists and is newer than SVG
-        try {
-          const svgStats = await fs.stat(svgPath);
-          const pngStats = await fs.stat(pngPath);
+        if (!FORCE_REGENERATE) {
+          try {
+            const svgStats = await fs.stat(svgPath);
+            const pngStats = await fs.stat(pngPath);
 
-          if (pngStats.mtime > svgStats.mtime) {
-            // Skip if PNG is up to date
-            continue;
+            if (pngStats.mtime > svgStats.mtime) {
+              // Skip if PNG is up to date
+              continue;
+            }
+          } catch {
+            // PNG doesn't exist, proceed with conversion
           }
-        } catch {
-          // PNG doesn't exist, proceed with conversion
         }
 
         allTasks.push({ svgPath, pngPath, type });

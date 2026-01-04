@@ -1,6 +1,7 @@
 // scripts/generate-post-images-svg-parallel.ts
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 import { getAllPosts } from '../lib/posts.js';
 import { getAllGuides } from '../lib/guides.js';
 import { getAllExercises } from '../lib/exercises.js';
@@ -10,6 +11,7 @@ import { getAllNews } from '../lib/news.js';
 const IMAGE_WIDTH = 1200;
 const IMAGE_HEIGHT = 630;
 const CONCURRENCY_LIMIT = 10; // Process 10 files at a time
+const FORCE_REGENERATE = process.argv.includes('--force');
 
 // Brand colors
 const COLORS = {
@@ -119,6 +121,49 @@ async function generateImage(title: string, category: string, outputPath: string
   await fs.writeFile(svgPath, svg, 'utf-8');
 }
 
+// Generate content hash for caching
+function generateContentHash(title: string, category: string): string {
+  const content = `${title}|${category}`;
+  return crypto.createHash('md5').update(content).digest('hex').substring(0, 16);
+}
+
+// Cache file path
+const CACHE_FILE = path.join(process.cwd(), '.image-cache.json');
+
+// Load cache from disk
+async function loadCache(): Promise<Record<string, string>> {
+  try {
+    const data = await fs.readFile(CACHE_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return {};
+  }
+}
+
+// Save cache to disk
+async function saveCache(cache: Record<string, string>): Promise<void> {
+  await fs.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf-8');
+}
+
+// Check if image needs regeneration
+async function shouldGenerateImage(title: string, category: string, outputPath: string): Promise<boolean> {
+  if (FORCE_REGENERATE) {
+    return true;
+  }
+
+  try {
+    // Check if SVG file exists
+    const svgPath = outputPath.replace('.png', '.svg');
+    await fs.access(svgPath);
+
+    // File exists, assume valid (cache will be checked in main)
+    return false;
+  } catch {
+    // File doesn't exist, generate
+    return true;
+  }
+}
+
 // Process items in batches with concurrency control
 async function processBatch<T>(
   items: T[],
@@ -146,11 +191,15 @@ interface GenerationTask {
 }
 
 async function main() {
-  console.log('🎨 Generating post images with parallel processing...\n');
+  console.log(`🎨 Generating post images with parallel processing${FORCE_REGENERATE ? ' (FORCE MODE)' : ''}...\n`);
   const startTime = Date.now();
 
+  // Load cache
+  const cache = await loadCache();
+  let cacheUpdated = false;
+
   // Collect all generation tasks
-  const tasks: GenerationTask[] = [];
+  const allTasks: GenerationTask[] = [];
 
   console.log('📋 Collecting content to process...');
 
@@ -159,7 +208,7 @@ async function main() {
   for (const post of posts) {
     if (!post.image || post.image.includes('placeholder')) {
       const imagePath = path.join(process.cwd(), 'public', 'images', 'posts', `${post.slug}.svg`);
-      tasks.push({
+      allTasks.push({
         title: post.title,
         category: post.category?.name || 'DevOps',
         outputPath: imagePath,
@@ -174,7 +223,7 @@ async function main() {
   for (const guide of guides) {
     if (!guide.image || guide.image.includes('placeholder')) {
       const imagePath = path.join(process.cwd(), 'public', 'images', 'guides', `${guide.slug}.svg`);
-      tasks.push({
+      allTasks.push({
         title: guide.title,
         category: guide.category?.name || 'Guide',
         outputPath: imagePath,
@@ -195,7 +244,7 @@ async function main() {
         'exercises',
         `${exercise.id}.svg`
       );
-      tasks.push({
+      allTasks.push({
         title: exercise.title,
         category: exercise.category?.name || 'Exercise',
         outputPath: imagePath,
@@ -210,7 +259,7 @@ async function main() {
   for (const digest of news) {
     if (!digest.image || digest.image.includes('placeholder')) {
       const imagePath = path.join(process.cwd(), 'public', 'images', 'news', `${digest.slug}.svg`);
-      tasks.push({
+      allTasks.push({
         title: digest.title,
         category: `Week ${digest.week}, ${digest.year}`,
         outputPath: imagePath,
@@ -220,19 +269,63 @@ async function main() {
     }
   }
 
-  console.log(`\n📊 Found ${tasks.length} images to generate`);
+  // Parallel cache checking in batches
+  console.log(`\n🔍 Checking cache status for ${allTasks.length} items...`);
+  const CACHE_CHECK_BATCH_SIZE = 50;
+  
+  for (let i = 0; i < allTasks.length; i += CACHE_CHECK_BATCH_SIZE) {
+    const batch = allTasks.slice(i, i + CACHE_CHECK_BATCH_SIZE);
+    const results = await Promise.all(
+      batch.map(task => shouldGenerateImage(task.title, task.category, task.outputPath))
+    );
+    
+    batch.forEach((task, index) => {
+      if (results[index]) {
+        task.skip = false;
+      } else {
+        // Check if content hash matches cache
+        const currentHash = generateContentHash(task.title, task.category);
+        const cachedHash = cache[task.outputPath];
+        
+        if (currentHash === cachedHash) {
+          task.skip = true; // Cache hit
+        } else {
+          task.skip = false; // Content changed
+        }
+      }
+    });
+  }
+
+  const tasksToGenerate = allTasks.filter(t => !t.skip);
+  const tasksToSkip = allTasks.filter(t => t.skip);
+
+  console.log(`\n📊 Total content items: ${allTasks.length}`);
+  console.log(`✅ Already up to date: ${tasksToSkip.length}`);
+  console.log(`🔄 To generate: ${tasksToGenerate.length}`);
+
+  if (tasksToGenerate.length === 0) {
+    console.log('\n✨ All images are up to date! Skipping generation.\n');
+    return;
+  }
+
   console.log(`⚡ Processing with concurrency limit of ${CONCURRENCY_LIMIT}\n`);
 
   // Track progress
   let completed = 0;
-  const total = tasks.length;
+  const total = tasksToGenerate.length;
 
   // Process tasks in parallel batches
   await processBatch(
-    tasks,
+    tasksToGenerate,
     async (task) => {
       try {
         await generateImage(task.title, task.category, task.outputPath);
+        
+        // Update cache with new hash
+        const newHash = generateContentHash(task.title, task.category);
+        cache[task.outputPath] = newHash;
+        cacheUpdated = true;
+        
         completed++;
 
         // Progress indicator
@@ -250,6 +343,12 @@ async function main() {
 
   const endTime = Date.now();
   const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+  // Save updated cache
+  if (cacheUpdated) {
+    await saveCache(cache);
+    console.log('💾 Cache updated\n');
+  }
 
   console.log('\n\n✅ Image generation complete!');
   console.log(`⏱️  Total time: ${duration}s`);
