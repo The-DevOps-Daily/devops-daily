@@ -13,12 +13,14 @@ export default defineConfig({
   },
   test: {
     globals: true,
-    environment: 'node',
-    include: ['tests/**/*.test.ts'],
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
+    include: ['tests/**/*.test.ts', 'components/**/*.test.tsx', 'lib/**/*.test.ts', 'scripts/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['lib/**', 'scripts/**'],
+      include: ['lib/**', 'scripts/**', 'components/**'],
+      exclude: ["**/*.test.ts", "**/*.test.tsx", "**/__tests__/**", "node_modules/**", "**/ui/**"],
     },
   },
 });
