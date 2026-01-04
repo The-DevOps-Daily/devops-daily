@@ -13,7 +13,8 @@ The build process generates OG (Open Graph) images for posts, guides, exercises,
 Generates SVG OG images for all content types.
 
 **Caching Strategy:**
-- Checks if SVG file exists using `fs.stat()`
+- Checks if SVG file exists and validates size using `fs.stat()`
+- Validates file size (must be >500 bytes) to detect corruption
 - Uses persistent metadata cache (`.image-cache.json`)
 - Compares content hash (MD5 of title + category) with cached hash
 - Skips generation only if file exists AND hash matches
@@ -95,7 +96,7 @@ Images are regenerated when:
    - New content added
    - Title changes in any post (detected via hash comparison)
    - Category changes in any post (detected via hash comparison)
-   - Existing SVG deleted or corrupted (< 500 bytes)
+   - Existing SVG deleted or corrupted (<500 bytes)
    - Cache file deleted or corrupted
 
 2. **Force Flag:**
