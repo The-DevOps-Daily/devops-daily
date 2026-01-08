@@ -44,7 +44,7 @@
     "@ducanh2912/next-pwa": "^10.2.9",
     "@giscus/react": "^3.1.0",
     "@hookform/resolvers": "^5.2.2",
-    "@next/third-parties": "^16.0.8",
+    "@next/third-parties": "^16.1.1",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
     "@radix-ui/react-aspect-ratio": "1.1.8",
