@@ -33,10 +33,18 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
 
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg mb-3 overflow-hidden transition-all hover:shadow-md">
-      <div className="p-4">
+      <div 
+        className={`p-4 ${
+          hasDetails ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors' : ''
+        }`}
+        onClick={handleTitleClick}
+      >
         <div className="flex items-start gap-3">
           <button
-            onClick={() => onToggle(item.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle(item.id);
+            }}
             className="mt-0.5 flex-shrink-0 transition-transform hover:scale-110"
             aria-label={checked ? `Mark "${item.title}" as incomplete` : `Mark "${item.title}" as complete`}
           >
@@ -49,12 +57,7 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <div 
-                className={`flex items-center gap-2 ${
-                  hasDetails ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
-                }`}
-                onClick={handleTitleClick}
-              >
+              <div className="flex items-center gap-2">
                 <h3 
                   className={`text-base font-medium ${
                     checked 
@@ -87,7 +90,7 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
             </div>
 
             {expanded && hasDetails && (
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 space-y-2" onClick={(e) => e.stopPropagation()}>
                 {item.description && (
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {item.description}
