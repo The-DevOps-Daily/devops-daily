@@ -156,7 +156,7 @@ export default async function NewsDigestPage({
               <InlineSponsors variant="full" className="my-12" />
 
               {/* Report Issue */}
-              <div className="mt-12 pt-8 border-t">
+              <div className="mt-12 pt-8 border-t" id="article-end">
                 <ReportIssue type="news" slug={digest.slug} title={digest.title} />
               </div>
 

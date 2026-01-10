@@ -243,7 +243,7 @@ export default async function AdventDayPage({
               <InlineSponsors variant="full" className="my-12" />
 
               {/* Report Issue */}
-              <div className="mt-12 pt-8 border-t">
+              <div className="mt-12 pt-8 border-t" id="article-end">
                 <ReportIssue type="post" slug={day.slug} title={day.title} variant="compact" />
               </div>
 

@@ -124,7 +124,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
               )}
 
               {/* Add structured data for guide */}
-              <div className="pt-8 mt-8 border-t border-border">
+              <div className="pt-8 mt-8 border-t border-border" id="article-end">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <span>Last updated: {guide.updatedAt || 'Recently'}</span>
                 </div>
