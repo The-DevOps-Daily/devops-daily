@@ -106,12 +106,12 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
                           </p>
                         )}
                         <div className="relative group">
-                          <pre className="bg-gray-900 dark:bg-gray-950 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs border border-gray-700">
-                            <code className="font-mono">{block.code}</code>
+                          <pre className="bg-muted/50 backdrop-blur-sm p-4 rounded-lg overflow-x-auto text-xs border border-border/50">
+                            <code className="font-mono text-foreground">{block.code}</code>
                           </pre>
                           <button
                             onClick={() => copyToClipboard(block.code, index)}
-                            className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-2 right-2 p-2 bg-background/80 backdrop-blur-sm border border-border/50 hover:bg-background rounded opacity-0 group-hover:opacity-100 transition-opacity"
                             title="Copy to clipboard"
                           >
                             {copiedIndex === index ? (
