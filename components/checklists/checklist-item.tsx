@@ -15,7 +15,7 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const hasDetails = item.description || item.codeBlocks || (item.links && item.links.length > 0);
 
-  const handleBoxClick = () => {
+  const handleTitleClick = () => {
     if (hasDetails) {
       setExpanded(!expanded);
     }
@@ -32,13 +32,8 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
   };
 
   return (
-    <div 
-      className={`border border-gray-200 dark:border-gray-700 rounded-lg mb-3 overflow-hidden transition-all hover:shadow-md ${
-        hasDetails ? 'cursor-pointer' : ''
-      }`}
-      onClick={handleBoxClick}
-    >
-      <div className="p-4" onClick={(e) => e.stopPropagation()}>
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg mb-3 overflow-hidden transition-all hover:shadow-md">
+      <div className="p-4">
         <div className="flex items-start gap-3">
           <button
             onClick={() => onToggle(item.id)}
@@ -52,9 +47,14 @@ export function ChecklistItemComponent({ item, checked, onToggle }: ChecklistIte
             )}
           </button>
 
-          <div className="flex-1 min-w-0" onClick={handleBoxClick}>
+          <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+              <div 
+                className={`flex items-center gap-2 ${
+                  hasDetails ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+                }`}
+                onClick={handleTitleClick}
+              >
                 <h3 
                   className={`text-base font-medium ${
                     checked 
