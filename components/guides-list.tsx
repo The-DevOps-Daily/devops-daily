@@ -10,12 +10,13 @@ import { Guides } from '@/lib/guides';
 interface GuidesListProps {
   className?: string;
   guides: Guides[];
+  priorityCount?: number;
 }
 
-export function GuidesList({ guides, className }: GuidesListProps) {
+export function GuidesList({ guides, className, priorityCount = 2 }: GuidesListProps) {
   return (
     <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-8', className)}>
-      {guides.map((guide) => (
+      {guides.map((guide, index) => (
         <Link
           key={guide.slug}
           href={`/guides/${guide.slug}`}
@@ -26,6 +27,7 @@ export function GuidesList({ guides, className }: GuidesListProps) {
               src={guide.image || '/placeholder.svg'}
               alt={guide.title}
               fill
+              priority={index < priorityCount}
               className="object-cover transition-transform group-hover:scale-105"
             />
           </div>

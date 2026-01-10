@@ -1,6 +1,7 @@
 import type React from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { getBlurPlaceholder, getShimmerPlaceholder } from '@/lib/blur-data';
 
 interface OptimizedImageProps {
   src: string;
@@ -9,6 +10,7 @@ interface OptimizedImageProps {
   height?: number;
   fill?: boolean;
   priority?: boolean;
+  enableBlur?: boolean;
   className?: string;
 }
 
@@ -19,6 +21,7 @@ export function OptimizedImage({
   height,
   fill = false,
   priority = false,
+  enableBlur = true,
   className,
   ...props
 }: OptimizedImageProps &
@@ -45,11 +48,18 @@ export function OptimizedImage({
     }
   }
 
+  // Get blur placeholder for this image
+  const blurDataURL = enableBlur ? getBlurPlaceholder(imageSrc) : undefined;
+  const placeholder = enableBlur ? (blurDataURL ? 'blur' : 'empty') : 'empty';
+  const blurURL = blurDataURL || (enableBlur && !priority ? getShimmerPlaceholder(finalWidth || 400, finalHeight || 300) : undefined);
+
   return (
     <div className={cn('relative', fill ? 'w-full h-full' : '', className)}>
       <Image
         src={imageSrc || '/placeholder.svg'}
         alt={alt}
+        placeholder={placeholder as 'blur' | 'empty'}
+        blurDataURL={blurURL}
         width={fill ? undefined : finalWidth}
         height={fill ? undefined : finalHeight}
         fill={fill}
