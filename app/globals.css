@@ -528,3 +528,17 @@ html {
 .delay-1000 {
   animation-delay: 1000ms;
 }
+
+/* Progressive image loading shimmer effect */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}

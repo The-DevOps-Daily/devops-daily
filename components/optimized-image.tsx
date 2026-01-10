@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { getBlurPlaceholder, getShimmerPlaceholder } from '@/lib/blur-data';
@@ -29,6 +30,8 @@ export function OptimizedImage({
     React.ComponentProps<typeof Image>,
     'src' | 'alt' | 'width' | 'height' | 'fill' | 'priority' | 'className'
   >) {
+  const [isLoaded, setIsLoaded] = useState(false);
+
   // Use placeholder image if src is not provided
   const imageSrc = src || '/placeholder.svg';
 
@@ -50,23 +53,50 @@ export function OptimizedImage({
 
   // Get blur placeholder for this image
   const blurDataURL = enableBlur ? getBlurPlaceholder(imageSrc) : undefined;
-  const placeholder = enableBlur ? (blurDataURL ? 'blur' : 'empty') : 'empty';
-  const blurURL = blurDataURL || (enableBlur && !priority ? getShimmerPlaceholder(finalWidth || 400, finalHeight || 300) : undefined);
 
   return (
-    <div className={cn('relative', fill ? 'w-full h-full' : '', className)}>
+    <div className={cn('relative overflow-hidden', fill ? 'w-full h-full' : '', className)}>
+      {/* Blur placeholder background */}
+      {enableBlur && blurDataURL && !isLoaded && !priority && (
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url(${blurDataURL})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(20px)',
+            transform: 'scale(1.1)', // Prevent blur edge artifacts
+          }}
+        />
+      )}
+      
+      {/* Shimmer fallback for images without blur data */}
+      {enableBlur && !blurDataURL && !isLoaded && !priority && (
+        <div
+          className="absolute inset-0 z-0 animate-pulse bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800"
+          style={{
+            backgroundSize: '200% 100%',
+            animation: 'shimmer 2s infinite',
+          }}
+        />
+      )}
+
       <Image
         src={imageSrc || '/placeholder.svg'}
         alt={alt}
-        placeholder={placeholder as 'blur' | 'empty'}
-        blurDataURL={blurURL}
+        placeholder="empty"
         width={fill ? undefined : finalWidth}
         height={fill ? undefined : finalHeight}
         fill={fill}
         priority={priority}
         loading={priority ? 'eager' : 'lazy'}
+        onLoad={() => setIsLoaded(true)}
         sizes={fill ? '(max-width: 768px) 100vw, 50vw' : undefined}
-        className={cn('object-cover', fill ? 'w-full h-full' : '')}
+        className={cn(
+          'object-cover relative z-10 transition-opacity duration-500',
+          fill ? 'w-full h-full' : '',
+          isLoaded ? 'opacity-100' : 'opacity-0'
+        )}
         {...props}
       />
     </div>
