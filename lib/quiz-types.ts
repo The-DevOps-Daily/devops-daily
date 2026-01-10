@@ -40,5 +40,7 @@ export interface QuizConfig {
       intermediate: number;
       advanced: number;
     };
+    createdDate?: string;
+    tags?: string[];
   };
 }

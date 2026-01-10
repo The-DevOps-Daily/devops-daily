@@ -1,7 +1,7 @@
 import { GuideContent } from '@/components/guide-content';
 import { GuideSidebar } from '@/components/guide-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
-import { getGuideBySlug, getAllGuides } from '@/lib/guides';
+import { getGuideBySlug, getAllGuides, getRelatedGuides } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
@@ -11,6 +11,7 @@ import { GuidePartNavigation } from '@/components/guide-part-navigation';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
+import { RelatedPosts } from '@/components/related-posts';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -79,6 +80,8 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
   if (!guide) {
     notFound();
   }
+
+  const relatedGuides = await getRelatedGuides(guide.slug, guide.category?.slug || '', 3);
 
   const firstPart = guide.parts && guide.parts.length > 0 ? guide.parts[0] : undefined;
 
@@ -157,6 +160,22 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
             {/* Giscus Discussions */}
             <GiscusComments className="mt-12" title={guide.title} />
+
+            {/* Related Guides */}
+            {relatedGuides.length > 0 && (
+              <RelatedPosts
+                posts={relatedGuides.map((g) => ({
+                  title: g.title,
+                  slug: g.slug,
+                  date: g.publishedAt || '',
+                  readingTime: g.readingTime || '',
+                  category: g.category || { name: '', slug: '' },
+                }))}
+                title="Related Guides"
+                linkPrefix="/guides"
+                className="mt-12"
+              />
+            )}
           </article>
           </div>
         </div>

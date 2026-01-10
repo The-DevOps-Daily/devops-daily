@@ -14,19 +14,26 @@ interface RelatedPostsProps {
     };
   }>;
   className?: string;
+  title?: string;
+  linkPrefix?: string;
 }
 
-export function RelatedPosts({ posts, className }: RelatedPostsProps) {
+export function RelatedPosts({ 
+  posts, 
+  className, 
+  title = 'Related Posts',
+  linkPrefix = '/posts'
+}: RelatedPostsProps) {
   if (!posts.length) return null;
 
   return (
     <div className={cn('', className)}>
-      <h2 className="text-2xl font-bold mb-4">Related Posts</h2>
+      <h2 className="text-2xl font-bold mb-4">{title}</h2>
       <div className="grid gap-6 md:grid-cols-2">
         {posts.map((post) => (
           <Link
             key={post.slug}
-            href={`/posts/${post.slug}`}
+            href={`${linkPrefix}/${post.slug}`}
             className="group p-4 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all"
           >
             <h3 className="font-semibold line-clamp-2 group-hover:text-primary transition-colors">

@@ -2,12 +2,13 @@ import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import GenericQuiz from '@/components/games/generic-quiz';
-import { getQuizById, getAllQuizzes } from '@/lib/quiz-loader';
+import { getQuizById, getAllQuizzes, getRelatedQuizzes } from '@/lib/quiz-loader';
 import { ReportIssue } from '@/components/report-issue';
 import { ArrowLeft, Twitter, Facebook, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { RelatedPosts } from '@/components/related-posts';
 
 export const dynamicParams = false;
 
@@ -70,6 +71,8 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
   if (!quizConfig) {
     notFound();
   }
+
+  const relatedQuizzes = await getRelatedQuizzes(slug, quizConfig.category, 3);
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -170,6 +173,24 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
               </Link>
             </Button>
           </div>
+
+          {/* Related Quizzes */}
+          {relatedQuizzes.length > 0 && (
+            <div className="max-w-4xl mx-auto mt-12">
+              <RelatedPosts
+                posts={relatedQuizzes.map((q) => ({
+                  title: q.title,
+                  slug: q.id,
+                  date: q.metadata.createdDate || '',
+                  readingTime: q.metadata.estimatedTime,
+                  category: { name: q.category, slug: q.category.toLowerCase().replace(/\\s+/g, '-') },
+                }))}
+                title="Related Quizzes"
+                linkPrefix="/quizzes"
+                className=""
+              />
+            </div>
+          )}
 
           {/* Social Share Section */}
           <div className="max-w-4xl mx-auto mt-8">

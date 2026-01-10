@@ -139,3 +139,69 @@ export async function getQuizCategories(): Promise<string[]> {
   const categories = new Set(quizzes.map((quiz) => quiz.category));
   return Array.from(categories).sort();
 }
+
+/**
+ * Get related quizzes based on category, tags, and difficulty
+ */
+export async function getRelatedQuizzes(
+  currentId: string,
+  category: string,
+  limit = 3
+): Promise<QuizConfig[]> {
+  const quizzes = await getAllQuizzes();
+  const currentQuiz = quizzes.find((q) => q.id === currentId);
+  const currentTags = currentQuiz?.metadata?.tags || [];
+  
+  // Filter out current quiz
+  const candidateQuizzes = quizzes.filter((quiz) => quiz.id !== currentId);
+  
+  // Score each candidate quiz
+  const scoredQuizzes = candidateQuizzes.map((quiz) => {
+    let score = 0;
+    
+    // Tag matches (highest priority: 10 points per matching tag)
+    if (quiz.metadata?.tags && currentTags.length > 0) {
+      const matchingTags = quiz.metadata.tags.filter((tag) => currentTags.includes(tag));
+      score += matchingTags.length * 10;
+    }
+    
+    // Same category (5 points)
+    if (quiz.category === category) {
+      score += 5;
+    }
+    
+    // Similar difficulty distribution (1 point per matching level)
+    if (currentQuiz?.metadata.difficultyLevels && quiz.metadata.difficultyLevels) {
+      const currentDiff = currentQuiz.metadata.difficultyLevels;
+      const quizDiff = quiz.metadata.difficultyLevels;
+      
+      // Compare difficulty distributions (closer is better)
+      const beginnerDiff = Math.abs(currentDiff.beginner - quizDiff.beginner);
+      const intermediateDiff = Math.abs(currentDiff.intermediate - quizDiff.intermediate);
+      const advancedDiff = Math.abs(currentDiff.advanced - quizDiff.advanced);
+      
+      // Award points for similar difficulty (max 3 points)
+      const totalDiff = beginnerDiff + intermediateDiff + advancedDiff;
+      if (totalDiff <= 3) score += 3;
+      else if (totalDiff <= 6) score += 2;
+      else if (totalDiff <= 9) score += 1;
+    }
+    
+    // Recency bonus (2 points for quizzes created within last 90 days)
+    if (quiz.metadata.createdDate) {
+      const quizDate = new Date(quiz.metadata.createdDate).getTime();
+      const daysSinceCreated = (Date.now() - quizDate) / (1000 * 60 * 60 * 24);
+      if (daysSinceCreated < 90) {
+        score += 2;
+      }
+    }
+    
+    return { quiz, score };
+  });
+  
+  // Sort by score (descending) and return top results
+  return scoredQuizzes
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ quiz }) => quiz);
+}
