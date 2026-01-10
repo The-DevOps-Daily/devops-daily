@@ -35,3 +35,5 @@ package-lock.json
 /public/posts/
 /public/guides/
 /public/advent-of-devops/
+# blur data cache (auto-generated)
+lib/blur-data-generated.ts

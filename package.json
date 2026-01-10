@@ -37,7 +37,8 @@
     "generate-search-index": "tsx scripts/generate-search-index.ts",
     "devops-daily:generate-news": "tsx scripts/devops-daily/index.ts",
     "devops-daily:generate-news:no-ai": "tsx scripts/devops-daily/index.ts --skip-ai",
-    "generate:blur-placeholders": "tsx scripts/generate-blur-placeholders.ts"
+    "generate:blur-placeholders": "tsx scripts/generate-blur-placeholders.ts",
+    "generate:blur-data": "tsx scripts/generate-blur-data-ts.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
