@@ -6,7 +6,7 @@ import { OptimizedImage } from '@/components/optimized-image';
 import { getPostBySlug, getAllPosts, getRelatedPosts } from '@/lib/posts';
 import { notFound, redirect } from 'next/navigation';
 import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
-import { RelatedPosts } from '@/components/related-posts';
+import { RelatedContent } from '@/components/related-content';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
@@ -179,13 +179,9 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <GiscusComments className="mt-12" title={post.title} />
 
             {mainRelatedPosts.length > 0 && (
-                <RelatedPosts
-                  posts={mainRelatedPosts.map((p) => ({
-                    ...p,
-                    date: p.date || '',
-                    readingTime: p.readingTime || '5 min read',
-                    category: p.category || { name: '', slug: '' },
-                  }))}
+                <RelatedContent
+                  items={mainRelatedPosts}
+                  type="post"
                   className="mt-12"
                 />
               )}

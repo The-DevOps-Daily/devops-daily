@@ -140,3 +140,27 @@ export async function getLatestGuides(limit = 4) {
     )
     .slice(0, limit);
 }
+
+export async function getRelatedGuides(currentSlug: string, categorySlug: string, limit = 3) {
+  const guides = await getAllGuides();
+  const currentGuide = guides.find((g) => g.slug === currentSlug);
+  const currentTags = currentGuide?.tags || [];
+  const candidateGuides = guides.filter((guide) => guide.slug !== currentSlug);
+  const scoredGuides = candidateGuides.map((guide) => {
+    let score = 0;
+    if (guide.tags && currentTags.length > 0) {
+      const matchingTags = guide.tags.filter((tag) => currentTags.includes(tag));
+      score += matchingTags.length * 10;
+    }
+    if (guide.category?.slug === categorySlug) {
+      score += 5;
+    }
+    const guideDate = new Date(guide.publishedAt || 0).getTime();
+    const daysSincePublished = (Date.now() - guideDate) / (1000 * 60 * 60 * 24);
+    if (daysSincePublished < 30) {
+      score += 2;
+    }
+    return { guide, score };
+  });
+  return scoredGuides.sort((a, b) => b.score - a.score).slice(0, limit).map(({ guide }) => guide);
+}

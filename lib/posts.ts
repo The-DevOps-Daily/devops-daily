@@ -105,16 +105,26 @@ export async function getPostsByCategory(categorySlug: string) {
 
 export async function getRelatedPosts(currentSlug: string, categorySlug: string, limit = 3) {
   const posts = await getAllPosts();
-  const sameCategoryPosts = posts
-    .filter((post) => post.slug !== currentSlug && post.category?.slug === categorySlug)
-    .slice(0, limit);
-  if (sameCategoryPosts.length < limit) {
-    const otherPosts = posts
-      .filter((post) => post.slug !== currentSlug && post.category?.slug !== categorySlug)
-      .slice(0, limit - sameCategoryPosts.length);
-    return [...sameCategoryPosts, ...otherPosts];
-  }
-  return sameCategoryPosts;
+  const currentPost = posts.find((p) => p.slug === currentSlug);
+  const currentTags = currentPost?.tags || [];
+  const candidatePosts = posts.filter((post) => post.slug !== currentSlug);
+  const scoredPosts = candidatePosts.map((post) => {
+    let score = 0;
+    if (post.tags && currentTags.length > 0) {
+      const matchingTags = post.tags.filter((tag) => currentTags.includes(tag));
+      score += matchingTags.length * 10;
+    }
+    if (post.category?.slug === categorySlug) {
+      score += 5;
+    }
+    const postDate = new Date(post.publishedAt || post.date || 0).getTime();
+    const daysSincePublished = (Date.now() - postDate) / (1000 * 60 * 60 * 24);
+    if (daysSincePublished < 30) {
+      score += 2;
+    }
+    return { post, score };
+  });
+  return scoredPosts.sort((a, b) => b.score - a.score).slice(0, limit).map(({ post }) => post);
 }
 
 export async function getPostsByTag(tag: string) {

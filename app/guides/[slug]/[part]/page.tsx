@@ -1,7 +1,7 @@
 import { GuideContent } from '@/components/guide-content';
 import { GuideSidebar } from '@/components/guide-sidebar';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
-import { getGuideBySlug, getAllGuides, getGuidePart } from '@/lib/guides';
+import { getGuideBySlug, getAllGuides, getGuidePart, getRelatedGuides } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
@@ -11,6 +11,7 @@ import { GuidePartNavigation } from '@/components/guide-part-navigation';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
+import { RelatedContent } from '@/components/related-content';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -112,6 +113,7 @@ export default async function GuidePartPage({
   const previousPart = currentPartIndex > 0 ? guide.parts[currentPartIndex - 1] : undefined;
   const nextPart =
     currentPartIndex < guide.parts.length - 1 ? guide.parts[currentPartIndex + 1] : undefined;
+  const relatedGuides = await getRelatedGuides(guide.slug, guide.category?.slug || '', 3);
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -233,6 +235,15 @@ export default async function GuidePartPage({
 
                 {/* Giscus Discussions */}
                 <GiscusComments className="mt-12" title={`${currentPart?.title} - ${guide.title}`} />
+
+                {/* Related Guides */}
+                {relatedGuides.length > 0 && (
+                  <RelatedContent
+                    items={relatedGuides}
+                    type="guide"
+                    className="mt-12"
+                  />
+                )}
               </article>
             </div>
           </div>
