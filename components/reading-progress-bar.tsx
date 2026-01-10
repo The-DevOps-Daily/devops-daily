@@ -16,12 +16,41 @@ export function ReadingProgressBar() {
     if (!mounted) return;
 
     const handleScroll = () => {
-      // Calculate the scroll progress
-      const scrollTop = window.scrollY;
-      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      const scrollProgress = (scrollTop / docHeight) * 100;
+      // Find the main article content element
+      const articleElement = document.querySelector('article.prose');
+      
+      if (!articleElement) {
+        // Fallback to full page if article not found
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollProgress = (scrollTop / docHeight) * 100;
+        setProgress(Math.min(scrollProgress, 100));
+        setIsVisible(scrollTop > 100);
+        return;
+      }
 
-      setProgress(Math.min(scrollProgress, 100));
+      // Calculate progress based on article content
+      const scrollTop = window.scrollY;
+      const articleTop = articleElement.offsetTop;
+      const articleHeight = articleElement.offsetHeight;
+      const articleBottom = articleTop + articleHeight;
+      
+      // Calculate how far through the article we are
+      const windowBottom = scrollTop + window.innerHeight;
+      
+      // Progress starts when article comes into view
+      if (windowBottom < articleTop) {
+        setProgress(0);
+      } else if (scrollTop > articleBottom) {
+        // Cap at 100% once we've scrolled past the article
+        setProgress(100);
+      } else {
+        // Calculate progress through the article
+        const articleScrolled = scrollTop - articleTop + window.innerHeight;
+        const totalArticleScroll = articleHeight + window.innerHeight;
+        const scrollProgress = (articleScrolled / totalArticleScroll) * 100;
+        setProgress(Math.max(0, Math.min(scrollProgress, 100)));
+      }
 
       // Show progress bar when user starts scrolling
       setIsVisible(scrollTop > 100);
