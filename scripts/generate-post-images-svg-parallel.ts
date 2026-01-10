@@ -127,6 +127,11 @@ function generateContentHash(title: string, category: string): string {
   return crypto.createHash('md5').update(content).digest('hex').substring(0, 16);
 }
 
+// Convert absolute path to relative path for cross-environment compatibility
+function getRelativePath(absolutePath: string): string {
+  return path.relative(process.cwd(), absolutePath);
+}
+
 // Cache file path
 const CACHE_FILE = path.join(process.cwd(), '.image-cache.json');
 
@@ -145,12 +150,8 @@ async function saveCache(cache: Record<string, string>): Promise<void> {
   await fs.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf-8');
 }
 
-// Check if image needs regeneration
+// Check if file exists and is valid (not corrupted)
 async function fileExists(outputPath: string): Promise<boolean> {
-  if (FORCE_REGENERATE) {
-    return false;
-  }
-
   try {
     // Check if SVG file exists
     const svgPath = outputPath.replace('.png', '.svg');
@@ -285,14 +286,15 @@ async function main() {
     
     batch.forEach((task, index) => {
       if (!results[index]) {
-        // File doesn't exist or is corrupted, must regenerate
+        // File doesn't exist or is corrupted
         task.skip = false;
       } else {
         // Check if content hash matches cache
         const currentHash = generateContentHash(task.title, task.category);
-        const cachedHash = cache[task.outputPath];
+        const relativePath = getRelativePath(task.outputPath);
+        const cachedHash = cache[relativePath];
         
-        if (currentHash === cachedHash) {
+        if (!FORCE_REGENERATE && currentHash === cachedHash) {
           task.skip = true; // Cache hit
         } else {
           task.skip = false; // Content changed
@@ -328,7 +330,8 @@ async function main() {
         
         // Update cache with new hash
         const newHash = generateContentHash(task.title, task.category);
-        cache[task.outputPath] = newHash;
+        const relativePath = getRelativePath(task.outputPath);
+        cache[relativePath] = newHash;
         cacheUpdated = true;
         
         completed++;

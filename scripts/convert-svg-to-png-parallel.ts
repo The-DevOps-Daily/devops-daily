@@ -1,11 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
+import crypto from 'crypto';
 import sharp from 'sharp';
 import { Resvg } from '@resvg/resvg-js';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
 const CONCURRENCY_LIMIT = 8; // Process 8 conversions at a time
 const FORCE_REGENERATE = process.argv.includes('--force');
+const CACHE_FILE = path.join(process.cwd(), '.png-cache.json');
 
 const DIRECTORIES = [
   { dir: path.join(PUBLIC_DIR, 'images', 'posts'), type: 'posts' },
@@ -14,6 +16,36 @@ const DIRECTORIES = [
   { dir: path.join(PUBLIC_DIR, 'images', 'news'), type: 'news' },
   { dir: path.join(PUBLIC_DIR, 'images', 'checklists'), type: 'checklists' },
 ];
+
+// Generate content hash for SVG file
+async function generateSvgHash(svgPath: string): Promise<string> {
+  try {
+    const content = await fs.readFile(svgPath, 'utf-8');
+    return crypto.createHash('md5').update(content).digest('hex').substring(0, 16);
+  } catch {
+    return '';
+  }
+}
+
+// Convert absolute path to relative path for cross-environment compatibility
+function getRelativePath(absolutePath: string): string {
+  return path.relative(process.cwd(), absolutePath);
+}
+
+// Load cache from disk
+async function loadCache(): Promise<Record<string, string>> {
+  try {
+    const data = await fs.readFile(CACHE_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch {
+    return {};
+  }
+}
+
+// Save cache to disk
+async function saveCache(cache: Record<string, string>): Promise<void> {
+  await fs.writeFile(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf-8');
+}
 
 async function convertSvgToPng(svgPath: string, pngPath: string): Promise<boolean> {
   try {
@@ -76,6 +108,10 @@ async function convertAllSvgImages() {
   console.log('🖼️  Converting SVG images to PNG with parallel processing...\n');
   const startTime = Date.now();
 
+  // Load cache
+  const cache = await loadCache();
+  let cacheUpdated = false;
+
   const allTasks: ConversionTask[] = [];
 
   // Collect all conversion tasks
@@ -90,18 +126,23 @@ async function convertAllSvgImages() {
         const pngFile = svgFile.replace('.svg', '.png');
         const pngPath = path.join(dir, pngFile);
 
-        // Check if PNG already exists and is newer than SVG
+        // Check if PNG needs regeneration based on content hash
         if (!FORCE_REGENERATE) {
           try {
-            const svgStats = await fs.stat(svgPath);
-            const pngStats = await fs.stat(pngPath);
+            // Check if PNG exists
+            await fs.stat(pngPath);
+            
+            // Get current SVG hash
+            const currentHash = await generateSvgHash(svgPath);
+            const relativePath = getRelativePath(svgPath);
+            const cachedHash = cache[relativePath];
 
-            if (pngStats.mtime > svgStats.mtime) {
-              // Skip if PNG is up to date
+            if (currentHash && currentHash === cachedHash) {
+              // Skip if PNG is up to date (content hasn't changed)
               continue;
             }
           } catch {
-            // PNG doesn't exist, proceed with conversion
+            // PNG doesn't exist or error reading SVG, proceed with conversion
           }
         }
 
@@ -130,6 +171,14 @@ async function convertAllSvgImages() {
     async (task) => {
       const success = await convertSvgToPng(task.svgPath, task.pngPath);
       if (success) {
+        // Update cache with new SVG hash
+        const svgHash = await generateSvgHash(task.svgPath);
+        if (svgHash) {
+          const relativePath = getRelativePath(task.svgPath);
+          cache[relativePath] = svgHash;
+          cacheUpdated = true;
+        }
+
         completed++;
 
         // Progress indicator
@@ -146,6 +195,11 @@ async function convertAllSvgImages() {
 
   const endTime = Date.now();
   const duration = ((endTime - startTime) / 1000).toFixed(2);
+
+  // Save updated cache
+  if (cacheUpdated) {
+    await saveCache(cache);
+  }
 
   console.log('\n\n✅ SVG to PNG conversion complete!');
   console.log(`⏱️  Total time: ${duration}s`);
