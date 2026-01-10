@@ -138,7 +138,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
               <InlineSponsors variant="full" />
 
               {/* Add structured data for article */}
-              <div className="pt-8 mt-8 border-t border-border">
+              <div className="pt-8 mt-8 border-t border-border" id="article-end">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <span>Published: {post.date}</span>
                   {post.updatedAt && (

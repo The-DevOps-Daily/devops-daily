@@ -179,7 +179,7 @@ export default async function GuidePartPage({
                 />
 
                 {/* Metadata and Tags */}
-                <div className="pt-8 mt-8 border-t border-border">
+                <div className="pt-8 mt-8 border-t border-border" id="article-end">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <div>

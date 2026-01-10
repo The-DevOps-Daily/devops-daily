@@ -16,10 +16,10 @@ export function ReadingProgressBar() {
     if (!mounted) return;
 
     const handleScroll = () => {
-      // Find the main article content element
-      const articleElement = document.querySelector('article.prose');
+      // Find the article end marker (Published/Last updated section)
+      const articleEndElement = document.getElementById('article-end');
       
-      if (!articleElement) {
+      if (!articleEndElement) {
         // Fallback to full page if article not found
         const scrollTop = window.scrollY;
         const docHeight = document.documentElement.scrollHeight - window.innerHeight;
@@ -29,25 +29,27 @@ export function ReadingProgressBar() {
         return;
       }
 
-      // Calculate progress based on article content
+      // Calculate progress based on article content ending at the metadata section
       const scrollTop = window.scrollY;
-      const articleTop = articleElement.offsetTop;
-      const articleHeight = articleElement.offsetHeight;
-      const articleBottom = articleTop + articleHeight;
+      const articleElement = document.querySelector('article.prose');
+      const articleTop = articleElement?.offsetTop || 0;
+      const articleEndTop = articleEndElement.offsetTop;
+      const articleEndBottom = articleEndTop + articleEndElement.offsetHeight;
       
       // Calculate how far through the article we are
       const windowBottom = scrollTop + window.innerHeight;
       
-      // Progress starts when article comes into view
-      if (windowBottom < articleTop) {
+      // Progress reaches 100% when we reach the end of the metadata section
+      if (scrollTop < articleTop) {
         setProgress(0);
-      } else if (scrollTop > articleBottom) {
-        // Cap at 100% once we've scrolled past the article
+      } else if (windowBottom >= articleEndBottom) {
+        // Cap at 100% once metadata section is fully visible
         setProgress(100);
       } else {
         // Calculate progress through the article
-        const articleScrolled = scrollTop - articleTop + window.innerHeight;
-        const totalArticleScroll = articleHeight + window.innerHeight;
+        const contentHeight = articleEndBottom - articleTop;
+        const articleScrolled = windowBottom - articleTop;
+        const totalArticleScroll = contentHeight;
         const scrollProgress = (articleScrolled / totalArticleScroll) * 100;
         setProgress(Math.max(0, Math.min(scrollProgress, 100)));
       }
