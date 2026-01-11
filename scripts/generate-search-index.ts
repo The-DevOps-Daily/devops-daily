@@ -6,10 +6,11 @@ import { getAllGuides } from '../lib/guides.js';
 import { getAllExercises } from '../lib/exercises.js';
 import { getAllNews } from '../lib/news.js';
 import { getActiveGames } from '../lib/games.js';
+import { checklists } from '../data/checklists/index.js';
 
 interface SearchItem {
   id: string;
-  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page';
+  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page' | 'checklist';
   title: string;
   description: string;
   url: string;
@@ -99,6 +100,14 @@ const PAGES: SearchItem[] = [
     description: 'Browse content by category',
     url: '/categories',
     icon: '📑',
+  },
+  {
+    id: 'page-checklists',
+    type: 'page',
+    title: 'Checklists',
+    description: 'Interactive DevOps and security checklists',
+    url: '/checklists',
+    icon: '✅',
   },
 ];
 
@@ -231,6 +240,21 @@ async function generateSearchIndex() {
   } catch (error) {
     console.log('  ⚠️ Could not load news items');
   }
+
+  // Add checklists
+  console.log('✅ Adding checklists...');
+  const checklistItems: SearchItem[] = checklists.map((checklist) => ({
+    id: `checklist-${checklist.slug}`,
+    type: 'checklist',
+    title: checklist.title,
+    description: checklist.description,
+    url: `/checklists/${checklist.slug}`,
+    category: checklist.category,
+    tags: checklist.tags,
+    icon: '✅',
+  }));
+  searchIndex.push(...checklistItems);
+  console.log(`  ✓ Added ${checklistItems.length} checklists`);
 
   // Calculate size
   const json = JSON.stringify(searchIndex);

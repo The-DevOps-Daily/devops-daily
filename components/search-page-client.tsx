@@ -22,6 +22,7 @@ import {
   Loader2,
   Sparkles,
   ChevronDown,
+  ListChecks,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   game: Gamepad2,
   news: Newspaper,
   page: Home,
+  checklist: ListChecks,
 };
 
 export function SearchPageClient() {

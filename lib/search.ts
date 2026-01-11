@@ -2,7 +2,7 @@ import Fuse from 'fuse.js';
 
 export interface SearchItem {
   id: string;
-  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page';
+  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page' | 'checklist';
   title: string;
   description: string;
   url: string;
@@ -184,6 +184,7 @@ export const TYPE_LABELS: Record<string, string> = {
   game: 'Games',
   news: 'News',
   page: 'Pages',
+  checklist: 'Checklists',
 };
 
 export const TYPE_COLORS: Record<string, string> = {
@@ -194,4 +195,5 @@ export const TYPE_COLORS: Record<string, string> = {
   game: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20',
   news: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
   page: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
+  checklist: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
 };
