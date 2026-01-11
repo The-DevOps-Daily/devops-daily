@@ -358,15 +358,33 @@ export default function LoadBalancerSimulator() {
             <div className="absolute right-[85%] top-0 bottom-0 flex flex-col justify-around py-8 z-10" style={{ transform: 'translateX(50%)' }}>
               {servers.map((server) => (
                 <div key={server.id} className="text-center">
+                  {/* Server Rack Visual */}
                   <div
-                    className="w-16 h-16 rounded-lg flex flex-col items-center justify-center text-white shadow-lg"
+                    className="relative w-24 h-32 rounded-lg flex flex-col items-center justify-center shadow-lg border-2 border-slate-300 dark:border-slate-600"
                     style={{ backgroundColor: server.color }}
                   >
-                    <Server className="h-6 w-6" />
-                    <div className="text-xs font-medium mt-1">{server.name.replace('Server ', '')}</div>
+                    {/* Server rack slots */}
+                    <div className="absolute inset-2 flex flex-col gap-2">
+                      {[1, 2, 3].map((slot) => (
+                        <div
+                          key={slot}
+                          className="h-6 rounded bg-white/20 border border-white/30 flex items-center justify-center"
+                        >
+                          <div className="flex gap-1">
+                            <div className="w-1 h-1 rounded-full bg-white/60" />
+                            <div className="w-1 h-1 rounded-full bg-white/60" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="absolute bottom-2 text-white text-xs font-bold">
+                      {server.name.replace('Server ', 'S')}
+                    </div>
                   </div>
-                  <div className="text-xs mt-2">
-                    <div className="font-medium">{server.totalRequests} requests</div>
+                  {/* Stats below server */}
+                  <div className="text-xs mt-2 bg-white dark:bg-slate-800 rounded px-3 py-1.5 shadow-md inline-block">
+                    <div className="font-bold text-foreground">{server.name}</div>
+                    <div className="font-medium text-muted-foreground">{server.totalRequests} requests</div>
                     <div className="text-muted-foreground">
                       {server.activeConnections} active
                     </div>
