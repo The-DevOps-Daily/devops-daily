@@ -46,8 +46,6 @@ interface Request {
   timestamp: number;
   targetServerId: string;
   status: 'pending' | 'completed' | 'failed';
-  x: number;
-  y: number;
 }
 
 const ALGORITHMS: Record<
@@ -184,8 +182,6 @@ export default function LoadBalancerSimulator() {
       timestamp: Date.now(),
       targetServerId: targetServer.id,
       status: 'pending',
-      x: 0,
-      y: 0,
     };
 
     setRequestIdCounter((prev) => prev + 1);
@@ -310,9 +306,9 @@ export default function LoadBalancerSimulator() {
           <CardTitle className="text-lg">Live Traffic Flow</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="relative bg-muted/30 rounded-lg p-8 min-h-[400px]">
+          <div className="relative bg-muted/30 rounded-lg p-8 h-[400px] overflow-hidden">
             {/* Client Icon */}
-            <div className="absolute left-8 top-1/2 -translate-y-1/2">
+            <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
               <div className="text-center">
                 <Zap className="h-12 w-12 mx-auto text-blue-500" />
                 <div className="text-xs mt-2 font-medium">Clients</div>
@@ -320,7 +316,7 @@ export default function LoadBalancerSimulator() {
             </div>
 
             {/* Servers */}
-            <div className="absolute right-8 top-0 bottom-0 flex flex-col justify-around">
+            <div className="absolute right-8 top-0 bottom-0 flex flex-col justify-around py-12 z-10">
               {servers.map((server, idx) => (
                 <div key={server.id} className="text-center">
                   <div
@@ -346,17 +342,22 @@ export default function LoadBalancerSimulator() {
                 .map((req) => {
                   const targetIndex = servers.findIndex((s) => s.id === req.targetServerId);
                   const clientColorIndex = parseInt(req.clientId.split('-')[1]);
+                  
+                  // Fixed positions for 3 servers in 400px container
+                  const serverYPositions = [80, 200, 320];
+                  const targetY = serverYPositions[targetIndex] || 200;
+                  
                   return (
                     <motion.div
                       key={req.id}
-                      initial={{ x: 80, y: '50%' }}
+                      initial={{ left: 100, top: 200 }}
                       animate={{
-                        x: 'calc(100% - 120px)',
-                        y: `${((targetIndex + 1) / (servers.length + 1)) * 100}%`,
+                        left: 'calc(100% - 100px)',
+                        top: targetY,
                       }}
                       exit={{ opacity: 0, scale: 0 }}
                       transition={{ duration: 0.8, ease: 'linear' }}
-                      className="absolute w-4 h-4 rounded-full shadow-lg"
+                      className="absolute w-3 h-3 rounded-full shadow-lg"
                       style={{
                         backgroundColor: CLIENT_COLORS[clientColorIndex % CLIENT_COLORS.length],
                       }}
