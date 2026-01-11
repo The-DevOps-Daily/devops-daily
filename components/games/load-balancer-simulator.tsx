@@ -47,9 +47,18 @@ const ALGORITHMS: Record<AlgorithmType, { name: string; description: string }> =
   },
 };
 
+// Traffic rate presets (ms between requests)
+const TRAFFIC_RATES = [
+  { label: 'Slow', value: 1200 },
+  { label: 'Normal', value: 600 },
+  { label: 'Fast', value: 300 },
+  { label: 'Burst', value: 150 },
+];
+
 export default function LoadBalancerSimulator() {
   const [algorithm, setAlgorithm] = useState<AlgorithmType>('round-robin');
   const [isRunning, setIsRunning] = useState(false);
+  const [trafficRate, setTrafficRate] = useState(600);
   const [servers, setServers] = useState<ServerState[]>([
     { id: 1, name: 'Server 1', requests: 0, active: 0 },
     { id: 2, name: 'Server 2', requests: 0, active: 0 },
@@ -119,9 +128,9 @@ export default function LoadBalancerSimulator() {
 
   useEffect(() => {
     if (!isRunning) return;
-    const interval = setInterval(sendRequest, 600);
+    const interval = setInterval(sendRequest, trafficRate);
     return () => clearInterval(interval);
-  }, [isRunning, sendRequest]);
+  }, [isRunning, sendRequest, trafficRate]);
 
   const reset = () => {
     setIsRunning(false);
@@ -134,8 +143,12 @@ export default function LoadBalancerSimulator() {
     setRoundRobinIndex(0);
   };
 
-  // Server Y positions (percentage from top)
-  const serverYPositions = [20, 50, 80];
+  // Server Y positions - these match the flex justify-around layout
+  // Container is 420px with py-6 (24px each side), so usable = 372px
+  // 3 items with justify-around: positions at 1/6, 3/6, 5/6 of usable area
+  // Adding padding offset: (24 + 372/6)/420, (24 + 372/2)/420, (24 + 5*372/6)/420
+  // Roughly: 17%, 50%, 83%
+  const serverYPositions = [17, 50, 83];
 
   return (
     <div className="space-y-6">
@@ -166,6 +179,25 @@ export default function LoadBalancerSimulator() {
               </Button>
             </div>
 
+            {/* Traffic Rate Control */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Traffic:</label>
+              <div className="flex gap-1">
+                {TRAFFIC_RATES.map((rate) => (
+                  <Button
+                    key={rate.value}
+                    variant={trafficRate === rate.value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setTrafficRate(rate.value)}
+                    className="text-xs px-2 h-8"
+                  >
+                    {rate.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Algorithm Selector */}
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium">Algorithm:</label>
               <select
@@ -212,7 +244,7 @@ export default function LoadBalancerSimulator() {
                     key={y}
                     x1="58%"
                     y1="50%"
-                    x2="82%"
+                    x2="85%"
                     y2={`${y}%`}
                     stroke={isActive ? SERVER_COLORS[idx].hex : SERVER_COLORS[idx].dimHex}
                     strokeWidth={isActive ? 5 : 3}
@@ -239,8 +271,8 @@ export default function LoadBalancerSimulator() {
               <div className="mt-2 text-xs font-medium text-muted-foreground">{ALGORITHMS[algorithm].name}</div>
             </div>
 
-            {/* Servers (Right) - Clean layout without extra text */}
-            <div className="absolute right-[6%] top-0 bottom-0 flex flex-col justify-around py-8 z-10">
+            {/* Servers (Right) - positioned to match serverYPositions */}
+            <div className="absolute right-[4%] top-0 bottom-0 flex flex-col justify-around py-6 z-10">
               {servers.map((server, idx) => (
                 <div key={server.id} className="text-center">
                   <div
@@ -280,7 +312,7 @@ export default function LoadBalancerSimulator() {
                     <motion.div
                       key={packet.id}
                       initial={{ left: '50%', top: '50%' }}
-                      animate={{ left: '82%', top: `${serverY}%` }}
+                      animate={{ left: '85%', top: `${serverY}%` }}
                       transition={{ duration: 0.5, ease: 'linear' }}
                       className="absolute w-5 h-5 rounded-full shadow-lg z-20 border-2 border-white"
                       style={{ transform: 'translate(-50%, -50%)', backgroundColor: dotColor }}
