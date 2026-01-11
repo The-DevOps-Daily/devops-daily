@@ -1,461 +1,272 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  BarChart,
-  Bar,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Play,
-  Pause,
-  RotateCcw,
-  Server,
-  Globe,
-  Network,
-} from 'lucide-react';
+import { Play, Pause, RotateCcw, Users, Server } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
-type AlgorithmType =
-  | 'round-robin'
-  | 'least-connections'
-  | 'ip-hash'
-  | 'random';
+type AlgorithmType = 'round-robin' | 'least-connections' | 'ip-hash' | 'random';
 
-interface ServerConfig {
-  id: string;
+interface ServerState {
+  id: number;
   name: string;
-  activeConnections: number;
-  totalRequests: number;
-  color: string;
+  requests: number;
+  active: number;
 }
 
-interface Request {
+interface RequestPacket {
   id: string;
-  clientId: string;
-  timestamp: number;
-  targetServerId: string;
-  status: 'pending' | 'completed' | 'failed';
+  targetServer: number;
+  phase: 'to-lb' | 'to-server';
 }
 
-const ALGORITHMS: Record<
-  AlgorithmType,
-  { name: string; description: string }
-> = {
+const ALGORITHMS: Record<AlgorithmType, { name: string; description: string }> = {
   'round-robin': {
     name: 'Round Robin',
-    description: 'Distributes requests sequentially across all servers in a circular order',
+    description: 'Sends requests to each server in order: 1 → 2 → 3 → 1 → 2 → 3...',
   },
   'least-connections': {
     name: 'Least Connections',
-    description: 'Routes traffic to the server with the fewest active connections',
+    description: 'Always sends to the server handling the fewest requests right now',
   },
   'ip-hash': {
     name: 'IP Hash',
-    description: 'Uses client IP hash to maintain session affinity (sticky sessions)',
+    description: 'Same user always goes to the same server (sticky sessions)',
   },
   random: {
     name: 'Random',
-    description: 'Randomly distributes requests across available servers',
+    description: 'Randomly picks a server for each request',
   },
 };
-
-const CLIENT_COLORS = [
-  '#3b82f6',
-  '#ef4444',
-  '#10b981',
-  '#f59e0b',
-];
-
-const SERVER_COLORS = ['#8b5cf6', '#ec4899', '#06b6d4'];
-
-function Select({
-  value,
-  onValueChange,
-  children,
-}: {
-  value: string;
-  onValueChange: (value: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(e) => onValueChange(e.target.value)}
-      className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-    >
-      {children}
-    </select>
-  );
-}
-
-function SelectItem({ value, children }: { value: string; children: React.ReactNode }) {
-  return <option value={value}>{children}</option>;
-}
 
 export default function LoadBalancerSimulator() {
   const [algorithm, setAlgorithm] = useState<AlgorithmType>('round-robin');
   const [isRunning, setIsRunning] = useState(false);
-  const [servers, setServers] = useState<ServerConfig[]>([
-    {
-      id: 'server-1',
-      name: 'Server 1',
-      activeConnections: 0,
-      totalRequests: 0,
-      color: SERVER_COLORS[0],
-    },
-    {
-      id: 'server-2',
-      name: 'Server 2',
-      activeConnections: 0,
-      totalRequests: 0,
-      color: SERVER_COLORS[1],
-    },
-    {
-      id: 'server-3',
-      name: 'Server 3',
-      activeConnections: 0,
-      totalRequests: 0,
-      color: SERVER_COLORS[2],
-    },
+  const [servers, setServers] = useState<ServerState[]>([
+    { id: 1, name: 'Server 1', requests: 0, active: 0 },
+    { id: 2, name: 'Server 2', requests: 0, active: 0 },
+    { id: 3, name: 'Server 3', requests: 0, active: 0 },
   ]);
-  const [requests, setRequests] = useState<Request[]>([]);
-  const [currentRRIndex, setCurrentRRIndex] = useState(0);
-  const [requestIdCounter, setRequestIdCounter] = useState(0);
-  const [clientIdCounter, setClientIdCounter] = useState(0);
+  const [packets, setPackets] = useState<RequestPacket[]>([]);
+  const [roundRobinIndex, setRoundRobinIndex] = useState(0);
+  const [clientHash] = useState(() => Math.floor(Math.random() * 3));
 
-  const selectServer = useCallback(
-    (clientId: string): ServerConfig | null => {
-      if (servers.length === 0) return null;
-
-      switch (algorithm) {
-        case 'round-robin': {
-          const server = servers[currentRRIndex % servers.length];
-          setCurrentRRIndex((prev) => prev + 1);
-          return server;
-        }
-
-        case 'least-connections': {
-          return servers.reduce((min, server) =>
-            server.activeConnections < min.activeConnections ? server : min
-          );
-        }
-
-        case 'ip-hash': {
-          const hash = clientId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-          return servers[hash % servers.length];
-        }
-
-        case 'random': {
-          return servers[Math.floor(Math.random() * servers.length)];
-        }
-
-        default:
-          return servers[0];
+  const getTargetServer = useCallback((): number => {
+    switch (algorithm) {
+      case 'round-robin': {
+        const target = (roundRobinIndex % 3) + 1;
+        setRoundRobinIndex((prev) => prev + 1);
+        return target;
       }
-    },
-    [algorithm, servers, currentRRIndex]
-  );
+      case 'least-connections': {
+        const sorted = [...servers].sort((a, b) => a.active - b.active);
+        return sorted[0].id;
+      }
+      case 'ip-hash':
+        return clientHash + 1;
+      case 'random':
+        return Math.floor(Math.random() * 3) + 1;
+      default:
+        return 1;
+    }
+  }, [algorithm, roundRobinIndex, servers, clientHash]);
 
-  const generateRequest = useCallback(() => {
-    if (!isRunning || servers.length === 0) return;
+  const sendRequest = useCallback(() => {
+    const targetServer = getTargetServer();
+    const packetId = `req-${Date.now()}-${Math.random()}`;
 
-    const clientId = `client-${clientIdCounter % 4}`;
-    setClientIdCounter((prev) => prev + 1);
+    // Create packet going to load balancer
+    setPackets((prev) => [...prev, { id: packetId, targetServer, phase: 'to-lb' }]);
 
-    const targetServer = selectServer(clientId);
-    if (!targetServer) return;
-
-    const request: Request = {
-      id: `req-${requestIdCounter}`,
-      clientId,
-      timestamp: Date.now(),
-      targetServerId: targetServer.id,
-      status: 'pending',
-    };
-
-    setRequestIdCounter((prev) => prev + 1);
-    setRequests((prev) => [...prev.slice(-20), request]);
-
-    setServers((prevServers) =>
-      prevServers.map((s) =>
-        s.id === targetServer.id
-          ? {
-              ...s,
-              activeConnections: s.activeConnections + 1,
-              totalRequests: s.totalRequests + 1,
-            }
-          : s
-      )
-    );
-
-    // Complete request after animation
+    // After 500ms, switch to going to server
     setTimeout(() => {
-      setRequests((prev) =>
-        prev.map((r) => (r.id === request.id ? { ...r, status: 'completed' } : r))
+      setPackets((prev) =>
+        prev.map((p) => (p.id === packetId ? { ...p, phase: 'to-server' } : p))
       );
-      setServers((prevServers) =>
-        prevServers.map((s) =>
-          s.id === targetServer.id
-            ? {
-                ...s,
-                activeConnections: Math.max(0, s.activeConnections - 1),
-              }
+
+      // Increment active connections
+      setServers((prev) =>
+        prev.map((s) => (s.id === targetServer ? { ...s, active: s.active + 1 } : s))
+      );
+    }, 500);
+
+    // After 1000ms, complete the request
+    setTimeout(() => {
+      setPackets((prev) => prev.filter((p) => p.id !== packetId));
+      setServers((prev) =>
+        prev.map((s) =>
+          s.id === targetServer
+            ? { ...s, requests: s.requests + 1, active: Math.max(0, s.active - 1) }
             : s
         )
       );
-    }, 800);
-  }, [isRunning, servers, selectServer, clientIdCounter, requestIdCounter]);
+    }, 1000);
+  }, [getTargetServer]);
 
   useEffect(() => {
     if (!isRunning) return;
-
-    const interval = setInterval(() => {
-      generateRequest();
-    }, 400);
-
+    const interval = setInterval(sendRequest, 800);
     return () => clearInterval(interval);
-  }, [isRunning, generateRequest]);
+  }, [isRunning, sendRequest]);
 
-  const handleReset = () => {
+  const reset = () => {
     setIsRunning(false);
-    setServers((prev) =>
-      prev.map((s) => ({
-        ...s,
-        activeConnections: 0,
-        totalRequests: 0,
-      }))
-    );
-    setRequests([]);
-    setCurrentRRIndex(0);
-    setRequestIdCounter(0);
-    setClientIdCounter(0);
+    setPackets([]);
+    setServers([
+      { id: 1, name: 'Server 1', requests: 0, active: 0 },
+      { id: 2, name: 'Server 2', requests: 0, active: 0 },
+      { id: 3, name: 'Server 3', requests: 0, active: 0 },
+    ]);
+    setRoundRobinIndex(0);
   };
 
+  // Server Y positions (percentage from top)
+  const serverYPositions = [20, 50, 80];
+
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6">
+    <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-2xl md:text-3xl">
-            <Server className="h-8 w-8" />
-            Load Balancer Algorithm Simulator
-          </CardTitle>
-          <CardDescription>
-            Watch how different algorithms distribute requests across 3 servers
-          </CardDescription>
+          <CardTitle>Load Balancer Simulator</CardTitle>
+          <p className="text-sm text-muted-foreground mt-1">
+            Watch how a load balancer distributes incoming user requests across multiple servers
+          </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           {/* Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="md:col-span-2">
-              <label className="text-sm font-medium mb-2 block">Select Algorithm</label>
-              <Select value={algorithm} onValueChange={(v) => setAlgorithm(v as AlgorithmType)}>
-                {Object.entries(ALGORITHMS).map(([key, { name }]) => (
-                  <SelectItem key={key} value={key}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </Select>
-            </div>
-            <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={() => setIsRunning(!isRunning)}
                 variant={isRunning ? 'destructive' : 'default'}
-                className="flex-1"
+                size="sm"
               >
-                {isRunning ? (
-                  <>
-                    <Pause className="mr-2 h-4 w-4" />
-                    Pause
-                  </>
-                ) : (
-                  <>
-                    <Play className="mr-2 h-4 w-4" />
-                    Start
-                  </>
-                )}
+                {isRunning ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
+                {isRunning ? 'Stop' : 'Start'}
               </Button>
-              <Button onClick={handleReset} variant="outline" size="icon">
-                <RotateCcw className="h-4 w-4" />
+              <Button onClick={reset} variant="outline" size="sm">
+                <RotateCcw className="h-4 w-4 mr-1" /> Reset
               </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">Algorithm:</label>
+              <select
+                value={algorithm}
+                onChange={(e) => setAlgorithm(e.target.value as AlgorithmType)}
+                className="px-3 py-1.5 text-sm border rounded-md bg-background"
+              >
+                {Object.entries(ALGORITHMS).map(([key, { name }]) => (
+                  <option key={key} value={key}>
+                    {name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Algorithm Description */}
-          <div className="p-3 mb-6 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+          {/* Algorithm explanation */}
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
             <p className="text-sm">
-              <strong>{ALGORITHMS[algorithm].name}:</strong> {ALGORITHMS[algorithm].description}
+              <span className="font-semibold">{ALGORITHMS[algorithm].name}:</span>{' '}
+              {ALGORITHMS[algorithm].description}
             </p>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Visual Area */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Live Traffic Flow</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="relative bg-gradient-to-br from-blue-50 to-green-50 dark:from-slate-900 dark:to-slate-800 rounded-lg p-8 h-[500px] overflow-hidden">
-            {/* Dashed Connection Lines */}
+          {/* Main Diagram - Simple left-to-right flow */}
+          <div className="relative h-80 bg-slate-50 dark:bg-slate-900 rounded-lg border overflow-hidden">
+            {/* Connection lines (SVG) */}
             <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
-              {/* Internet to Load Balancer */}
-              <line
-                x1="15%"
-                y1="50%"
-                x2="50%"
-                y2="50%"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeDasharray="5,5"
-                className="text-muted-foreground"
-              />
-              {/* Load Balancer to Servers */}
-              {[20, 50, 80].map((yPercent, idx) => (
-                <line
-                  key={idx}
-                  x1="50%"
-                  y1="50%"
-                  x2="85%"
-                  y2={`${yPercent}%`}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeDasharray="5,5"
-                  className="text-muted-foreground"
-                />
+              {/* Users to Load Balancer */}
+              <line x1="15%" y1="50%" x2="45%" y2="50%" stroke="#cbd5e1" strokeWidth="2" strokeDasharray="6 4" />
+              {/* Load Balancer to each Server */}
+              {serverYPositions.map((y) => (
+                <line key={y} x1="55%" y1="50%" x2="85%" y2={`${y}%`} stroke="#cbd5e1" strokeWidth="2" strokeDasharray="6 4" />
               ))}
             </svg>
 
-            {/* Internet Icon */}
-            <div className="absolute left-[15%] top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
-                  <Globe className="h-8 w-8 text-white" />
-                </div>
-                <div className="text-xs mt-2 font-medium">Internet</div>
+            {/* Users (Left) */}
+            <div className="absolute left-[10%] top-1/2 -translate-y-1/2 z-10 text-center">
+              <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center shadow-lg mx-auto">
+                <Users className="h-8 w-8 text-white" />
               </div>
+              <div className="mt-2 text-sm font-medium">Users</div>
             </div>
 
-            {/* Load Balancer Icon */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <div className="text-center">
-                <div className="w-20 h-20 rounded-lg bg-purple-500 flex items-center justify-center shadow-lg">
-                  <Network className="h-10 w-10 text-white" />
-                </div>
-                <div className="text-xs mt-2 font-medium">Load Balancer</div>
-                <div className="text-xs text-muted-foreground">{ALGORITHMS[algorithm].name}</div>
+            {/* Load Balancer (Center) */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center">
+              <div className="w-20 h-20 rounded-lg bg-purple-600 flex items-center justify-center shadow-lg mx-auto">
+                <span className="text-white text-xs font-bold text-center leading-tight">Load<br/>Balancer</span>
               </div>
+              <div className="mt-2 text-xs text-muted-foreground">{ALGORITHMS[algorithm].name}</div>
             </div>
 
-            {/* Servers */}
-            <div className="absolute right-[85%] top-0 bottom-0 flex flex-col justify-around py-8 z-10" style={{ transform: 'translateX(50%)' }}>
-              {servers.map((server) => (
-                <div key={server.id} className="text-center">
-                  {/* Server Rack Visual */}
-                  <div
-                    className="relative w-24 h-32 rounded-lg flex flex-col items-center justify-center shadow-lg border-2 border-slate-300 dark:border-slate-600"
-                    style={{ backgroundColor: server.color }}
-                  >
-                    {/* Server rack slots */}
-                    <div className="absolute inset-2 flex flex-col gap-2">
-                      {[1, 2, 3].map((slot) => (
-                        <div
-                          key={slot}
-                          className="h-6 rounded bg-white/20 border border-white/30 flex items-center justify-center"
-                        >
-                          <div className="flex gap-1">
-                            <div className="w-1 h-1 rounded-full bg-white/60" />
-                            <div className="w-1 h-1 rounded-full bg-white/60" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="absolute bottom-2 text-white text-xs font-bold">
-                      {server.name.replace('Server ', 'S')}
-                    </div>
+            {/* Servers (Right) */}
+            <div className="absolute right-[5%] top-0 bottom-0 flex flex-col justify-around py-4 z-10">
+              {servers.map((server, idx) => (
+                <div key={server.id} className="flex items-center gap-2">
+                  <div className="w-14 h-14 rounded-lg bg-green-600 flex items-center justify-center shadow-lg">
+                    <Server className="h-7 w-7 text-white" />
                   </div>
-                  {/* Stats below server */}
-                  <div className="text-xs mt-2 bg-white dark:bg-slate-800 rounded px-3 py-1.5 shadow-md inline-block">
-                    <div className="font-bold text-foreground">{server.name}</div>
-                    <div className="font-medium text-muted-foreground">{server.totalRequests} requests</div>
-                    <div className="text-muted-foreground">
-                      {server.activeConnections} active
+                  <div className="text-left">
+                    <div className="text-sm font-medium">{server.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {server.requests} handled
+                      {server.active > 0 && (
+                        <span className="ml-1 text-orange-500">({server.active} active)</span>
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Animated Requests */}
+            {/* Animated Packets */}
             <AnimatePresence>
-              {requests
-                .filter((r) => r.status === 'pending')
-                .map((req) => {
-                  const targetIndex = servers.findIndex((s) => s.id === req.targetServerId);
-                  const clientColorIndex = parseInt(req.clientId.split('-')[1]);
-                  const serverYPercents = [20, 50, 80];
-                  const targetYPercent = serverYPercents[targetIndex] || 50;
-                  const color = CLIENT_COLORS[clientColorIndex % CLIENT_COLORS.length];
+              {packets.map((packet) => {
+                const serverIdx = packet.targetServer - 1;
+                const serverY = serverYPositions[serverIdx];
 
+                if (packet.phase === 'to-lb') {
+                  // Animate from Users (15%) to Load Balancer (50%)
                   return (
-                    <React.Fragment key={req.id}>
-                      {/* Stage 1: Internet to Load Balancer */}
-                      <motion.div
-                        initial={{ left: '15%', top: '50%', opacity: 1 }}
-                        animate={{ left: '50%', top: '50%', opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4, ease: 'easeInOut' }}
-                        className="absolute w-3 h-3 rounded-full shadow-lg"
-                        style={{
-                          backgroundColor: color,
-                          transform: 'translate(-50%, -50%)',
-                          zIndex: 20,
-                        }}
-                      />
-                      
-                      {/* Stage 2: Load Balancer to Server */}
-                      <motion.div
-                      initial={{ left: '50%', top: '50%', opacity: 0 }}
-                      animate={{ left: '85%', top: `${targetYPercent}%`, opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.5, delay: 0.4, ease: 'easeInOut' }}
-                      className="absolute w-3 h-3 rounded-full shadow-lg"
-                      style={{
-                        backgroundColor: color,
-                        transform: 'translate(-50%, -50%)',
-                        zIndex: 20,
-                      }}
+                    <motion.div
+                      key={packet.id}
+                      initial={{ left: '15%', top: '50%' }}
+                      animate={{ left: '50%', top: '50%' }}
+                      transition={{ duration: 0.5, ease: 'linear' }}
+                      className="absolute w-4 h-4 rounded-full bg-blue-500 shadow-lg z-20"
+                      style={{ transform: 'translate(-50%, -50%)' }}
                     />
-                    </React.Fragment>
                   );
-                })}
+                } else {
+                  // Animate from Load Balancer (50%) to Server (85%)
+                  return (
+                    <motion.div
+                      key={packet.id}
+                      initial={{ left: '50%', top: '50%' }}
+                      animate={{ left: '85%', top: `${serverY}%` }}
+                      transition={{ duration: 0.5, ease: 'linear' }}
+                      className="absolute w-4 h-4 rounded-full bg-green-500 shadow-lg z-20"
+                      style={{ transform: 'translate(-50%, -50%)' }}
+                    />
+                  );
+                }
+              })}
             </AnimatePresence>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Simple Stats */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Request Distribution</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={servers}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="totalRequests" fill="#3b82f6" name="Total Requests" />
-            </BarChart>
-          </ResponsiveContainer>
+          {/* Simple Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            {servers.map((server) => (
+              <div key={server.id} className="bg-slate-100 dark:bg-slate-800 rounded-lg p-4 text-center">
+                <div className="text-sm font-medium">{server.name}</div>
+                <div className="text-3xl font-bold text-green-600">{server.requests}</div>
+                <div className="text-xs text-muted-foreground">requests handled</div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
