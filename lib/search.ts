@@ -37,12 +37,12 @@ const FUSE_OPTIONS: Fuse.IFuseOptions<SearchItem> = {
     { name: 'category', weight: 0.8 },
     { name: 'tags', weight: 0.6 },
   ],
-  threshold: 0.4,
+  threshold: 0.2,
   includeScore: true,
   includeMatches: true,
-  minMatchCharLength: 2,
-  ignoreLocation: true,
-  findAllMatches: true,
+  minMatchCharLength: 3,
+  ignoreLocation: false,
+  findAllMatches: false,
 };
 
 export function createSearchIndex(items: SearchItem[]): Fuse<SearchItem> {
