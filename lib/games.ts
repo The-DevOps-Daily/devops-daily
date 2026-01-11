@@ -22,6 +22,20 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'load-balancer-simulator',
+    title: 'Load Balancer Algorithm Simulator',
+    description:
+      'Learn how different load balancing algorithms distribute traffic across servers. Experiment with Round Robin, Least Connections, IP Hash, and more. See how load balancers handle failures and optimize performance.',
+    iconName: 'Server',
+    badgeText: 'New',
+    color: 'from-cyan-500 to-blue-600',
+    href: '/games/load-balancer-simulator',
+    tags: ['load-balancing', 'networking', 'educational', 'interactive', 'infrastructure'],
+    isNew: true,
+    featured: true,
+    category: 'Infrastructure',
+  },
+  {
     id: 'dbms-simulator',
     title: 'Database Management Systems',
     description:
