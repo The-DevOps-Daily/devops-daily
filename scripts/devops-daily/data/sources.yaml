@@ -1,5 +1,5 @@
 # DevOps Daily News Sources
-# Curated list of RSS feeds and web sources for DevOps content
+# Comprehensive list of RSS feeds and web sources for DevOps content
 
 sources:
   # Kubernetes & Container Orchestration
@@ -58,6 +58,12 @@ sources:
     category: "Platforms"
     priority: "medium"
 
+  - name: "Linode Blog"
+    type: "rss"
+    url: "https://www.linode.com/blog/feed/"
+    category: "Platforms"
+    priority: "low"
+
   # CI/CD & Automation
   - name: "GitLab Blog"
     type: "rss"
@@ -83,12 +89,6 @@ sources:
     category: "CI/CD"
     priority: "medium"
 
-  - name: "Tekton Blog"
-    type: "web"
-    url: "https://tekton.dev/blog/"
-    category: "CI/CD"
-    priority: "medium"
-
   - name: "Harness Blog"
     type: "rss"
     url: "https://www.harness.io/blog/rss.xml"
@@ -108,11 +108,11 @@ sources:
     category: "IaC"
     priority: "high"
 
-  - name: "Crossplane Blog"
+  - name: "CloudFormation Updates"
     type: "web"
-    url: "https://blog.crossplane.io/"
+    url: "https://aws.amazon.com/cloudformation/resources/templates/"
     category: "IaC"
-    priority: "medium"
+    priority: "low"
 
   # Observability & Monitoring
   - name: "Grafana Blog"
@@ -124,12 +124,6 @@ sources:
   - name: "New Relic Blog"
     type: "rss"
     url: "https://blog.newrelic.com/feed/"
-    category: "Observability"
-    priority: "medium"
-
-  - name: "Dynatrace Blog"
-    type: "rss"
-    url: "https://www.dynatrace.com/news/blog/feed/"
     category: "Observability"
     priority: "medium"
 
@@ -158,24 +152,12 @@ sources:
     category: "Security"
     priority: "high"
 
-  - name: "Kyverno Blog"
-    type: "web"
-    url: "https://kyverno.io/blog/"
-    category: "Security"
-    priority: "medium"
-
   # Service Mesh & Networking
   - name: "Istio Blog"
     type: "rss"
     url: "https://istio.io/latest/blog/feed.xml"
     category: "Cloud Native"
     priority: "high"
-
-  - name: "Envoy Proxy Blog"
-    type: "web"
-    url: "https://blog.envoyproxy.io/"
-    category: "Cloud Native"
-    priority: "medium"
 
   - name: "Cilium Blog"
     type: "rss"
@@ -222,15 +204,20 @@ sources:
     category: "Kubernetes"
     priority: "high"
 
-  - name: "Artifact Hub News"
+  # Serverless & FaaS
+  - name: "OpenFaaS Blog"
     type: "web"
-    url: "https://artifacthub.io/blog/"
+    url: "https://www.openfaas.com/blog/"
+    category: "Cloud Native"
+    priority: "low"
+
+  # Edge Computing
+  - name: "k0s Blog"
+    type: "web"
+    url: "https://blog.k0sproject.io/"
     category: "Kubernetes"
     priority: "low"
 
-  # Serverless & FaaS
-  # Edge Computing
-  # Chaos Engineering
   # Industry News & Aggregators
   - name: "DevOps.com"
     type: "rss"
@@ -244,13 +231,31 @@ sources:
     category: "Misc"
     priority: "high"
 
-  - name: "SRE Weekly"
-    type: "rss"
-    url: "https://sreweekly.com/feed/"
-    category: "Misc"
-    priority: "medium"
-
   # Additional CNCF Projects
+  - name: "etcd Blog"
+    type: "web"
+    url: "https://etcd.io/blog/"
+    category: "Cloud Native"
+    priority: "low"
+
+  - name: "CoreDNS Blog"
+    type: "web"
+    url: "https://coredns.io/blog/"
+    category: "Cloud Native"
+    priority: "low"
+
+  - name: "Fluentd Blog"
+    type: "web"
+    url: "https://www.fluentd.org/blog/"
+    category: "Observability"
+    priority: "low"
+
+  - name: "NATS Blog"
+    type: "rss"
+    url: "https://nats.io/blog/index.xml"
+    category: "Cloud Native"
+    priority: "low"
+
   # AI/ML Ops
   - name: "Kubeflow Blog"
     type: "web"
@@ -258,7 +263,25 @@ sources:
     category: "Cloud Native"
     priority: "low"
 
+  - name: "MLflow Blog"
+    type: "web"
+    url: "https://mlflow.org/blog"
+    category: "Misc"
+    priority: "low"
+
   # Development Tools
+  - name: "JetBrains Blog"
+    type: "rss"
+    url: "https://blog.jetbrains.com/feed/"
+    category: "Misc"
+    priority: "low"
+
+  - name: "VS Code Blog"
+    type: "rss"
+    url: "https://code.visualstudio.com/feed.xml"
+    category: "Misc"
+    priority: "low"
+
   # Additional Tools
   - name: "Cloudflare Blog"
     type: "rss"
@@ -272,7 +295,19 @@ sources:
     category: "Platforms"
     priority: "medium"
 
+  - name: "Railway Blog"
+    type: "rss"
+    url: "https://blog.railway.app/rss.xml"
+    category: "Platforms"
+    priority: "low"
+
   # Linux & OS
+  - name: "Ubuntu Blog"
+    type: "rss"
+    url: "https://ubuntu.com/blog/feed"
+    category: "Misc"
+    priority: "low"
+
   - name: "Red Hat Blog"
     type: "rss"
     url: "https://www.redhat.com/en/rss/blog"
@@ -285,6 +320,12 @@ sources:
     category: "Misc"
     priority: "low"
 
+  - name: "Canonical Blog"
+    type: "rss"
+    url: "https://canonical.com/blog/feed"
+    category: "Misc"
+    priority: "low"
+
   # Community & Events
   - name: "KubeCon Updates"
     type: "web"
@@ -292,7 +333,19 @@ sources:
     category: "Misc"
     priority: "low"
 
+  - name: "DevOpsDays"
+    type: "web"
+    url: "https://devopsdays.org/"
+    category: "Misc"
+    priority: "low"
+
   # Additional IaC Tools
+  - name: "CDK Blog"
+    type: "web"
+    url: "https://aws.amazon.com/blogs/developer/category/developer-tools/aws-cloud-development-kit/"
+    category: "IaC"
+    priority: "low"
+
   # Multi-Cloud
   - name: "Anthos Blog"
     type: "web"
@@ -314,7 +367,19 @@ sources:
     priority: "low"
 
   # Additional Observability
+  - name: "Sentry Blog"
+    type: "rss"
+    url: "https://blog.sentry.io/feed.xml"
+    category: "Observability"
+    priority: "low"
+
   # Development Environments
+  - name: "Tilt Blog"
+    type: "web"
+    url: "https://blog.tilt.dev/"
+    category: "Misc"
+    priority: "low"
+
   # Additional Databases
   - name: "Yugabyte Blog"
     type: "rss"
@@ -322,9 +387,39 @@ sources:
     category: "Databases"
     priority: "low"
 
+  - name: "TiDB Blog"
+    type: "rss"
+    url: "https://www.pingcap.com/blog/feed/"
+    category: "Databases"
+    priority: "low"
+
   # WebAssembly
+  - name: "Spin Blog"
+    type: "web"
+    url: "https://www.fermyon.com/blog"
+    category: "Cloud Native"
+    priority: "low"
+
   # Configuration Management
+  - name: "Kustomize Blog"
+    type: "web"
+    url: "https://kubectl.docs.kubernetes.io/blog/"
+    category: "Kubernetes"
+    priority: "low"
+
   # Local Development
+  - name: "kind Blog"
+    type: "web"
+    url: "https://kind.sigs.k8s.io/"
+    category: "Kubernetes"
+    priority: "low"
+
+  - name: "minikube Blog"
+    type: "web"
+    url: "https://minikube.sigs.k8s.io/docs/"
+    category: "Kubernetes"
+    priority: "low"
+
   # Multi-tenancy
   - name: "vcluster Blog"
     type: "web"
@@ -333,11 +428,29 @@ sources:
     priority: "medium"
 
   # Additional Git Tools
+  - name: "Gitea Blog"
+    type: "web"
+    url: "https://blog.gitea.io/"
+    category: "CI/CD"
+    priority: "low"
+
   # Documentation Tools
+  - name: "Docusaurus Blog"
+    type: "rss"
+    url: "https://docusaurus.io/blog/rss.xml"
+    category: "Misc"
+    priority: "low"
+
   # Additional Monitoring
   - name: "Zabbix Blog"
     type: "rss"
     url: "https://blog.zabbix.com/feed/"
+    category: "Observability"
+    priority: "low"
+
+  - name: "Nagios Blog"
+    type: "web"
+    url: "https://www.nagios.com/articles/"
     category: "Observability"
     priority: "low"
 
@@ -348,13 +461,13 @@ sources:
     category: "Cloud Native"
     priority: "medium"
 
-  - name: "Quay Blog"
-    type: "web"
-    url: "https://www.redhat.com/en/technologies/cloud-computing/quay"
-    category: "Cloud Native"
+  # Additional Build Tools
+  - name: "Bazel Blog"
+    type: "rss"
+    url: "https://blog.bazel.build/feed.xml"
+    category: "CI/CD"
     priority: "low"
 
-  # Additional Build Tools
   # Feature Flags
   - name: "LaunchDarkly Blog"
     type: "rss"
@@ -362,3 +475,8 @@ sources:
     category: "CI/CD"
     priority: "low"
 
+  - name: "Flagsmith Blog"
+    type: "web"
+    url: "https://flagsmith.com/blog/"
+    category: "CI/CD"
+    priority: "low"
