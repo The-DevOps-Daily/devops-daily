@@ -55,19 +55,25 @@ export function createSearchIndex(items: SearchItem[]): Fuse<SearchItem> {
 export function searchWithFuse(
   fuse: Fuse<SearchItem>,
   query: string,
-  filters: SearchFilters
+  filters: SearchFilters,
+  allItems?: SearchItem[]
 ): SearchResult[] {
-  if (!query.trim()) {
+  let results: SearchResult[];
+
+  // If there's a query, use Fuse.js for fuzzy search
+  if (query.trim()) {
+    const fuseResults = fuse.search(query);
+    results = fuseResults.map((result) => ({
+      ...result.item,
+      score: result.score,
+      matches: result.matches,
+    }));
+  } else if (allItems) {
+    // No query but we have items - return all items for filter-only browsing
+    results = allItems.map((item) => ({ ...item }));
+  } else {
     return [];
   }
-
-  const fuseResults = fuse.search(query);
-
-  let results: SearchResult[] = fuseResults.map((result) => ({
-    ...result.item,
-    score: result.score,
-    matches: result.matches,
-  }));
 
   // Apply type filter
   if (filters.types.length > 0) {

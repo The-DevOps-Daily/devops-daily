@@ -136,11 +136,23 @@ export function SearchPageClient() {
 
   // Search results
   const results = useMemo(() => {
-    if (!fuse || !query.trim()) {
+    if (!fuse) {
       return [];
     }
-    return searchWithFuse(fuse, query, filters);
-  }, [fuse, query, filters]);
+    // Check if any filters are active
+    const hasFilters = 
+      filters.types.length > 0 || 
+      filters.categories.length > 0 || 
+      filters.tags.length > 0;
+    
+    // If no query and no filters, return empty
+    if (!query.trim() && !hasFilters) {
+      return [];
+    }
+    
+    // Pass searchIndex for filter-only browsing (when no query)
+    return searchWithFuse(fuse, query, filters, searchIndex);
+  }, [fuse, query, filters, searchIndex]);
 
   // Available filter options
   const filterOptions = useMemo(() => {
@@ -585,9 +597,10 @@ export function SearchPageClient() {
       {/* Results */}
       {!loading && (
         <>
-          {query && (
+          {(query || results.length > 0) && (
             <div className="mb-4 text-sm text-muted-foreground">
-              Found {results.length} result{results.length !== 1 ? 's' : ''} for &quot;{query}&quot;
+              Found {results.length} result{results.length !== 1 ? 's' : ''}
+              {query ? <> for &quot;{query}&quot;</> : ' matching your filters'}
             </div>
           )}
 
@@ -652,12 +665,12 @@ export function SearchPageClient() {
             </div>
           )}
 
-          {!query && (
+          {!query && results.length === 0 && (
             <div className="text-center py-20">
               <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h2 className="text-xl font-semibold mb-2">Start searching</h2>
               <p className="text-muted-foreground">
-                Type above to search across {searchIndex.length} items
+                Type above to search across {searchIndex.length} items, or use filters to browse
               </p>
             </div>
           )}
