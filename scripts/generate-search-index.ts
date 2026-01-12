@@ -37,7 +37,6 @@ const PAGES: SearchItem[] = [
     description: 'Browse all blog posts',
     url: '/posts',
     icon: '📝',
-    date: post.date || post.publishedAt,
   },
   {
     id: 'page-guides',
@@ -46,7 +45,6 @@ const PAGES: SearchItem[] = [
     description: 'Comprehensive DevOps guides',
     url: '/guides',
     icon: '📚',
-    date: guide.publishedAt,
   },
   {
     id: 'page-exercises',
@@ -79,7 +77,6 @@ const PAGES: SearchItem[] = [
     description: 'Latest DevOps news and updates',
     url: '/news',
     icon: '📰',
-      date: item.date || item.publishedAt,
   },
   {
     id: 'page-roadmap',
