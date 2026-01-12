@@ -41,6 +41,14 @@ import {
 } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { useIsMobile } from '@/components/ui/use-mobile';
+import {
   type SearchItem,
   type SearchResult,
   type SearchFilters,
@@ -70,6 +78,7 @@ export function SearchPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   const [searchIndex, setSearchIndex] = useState<SearchItem[]>([]);
   const [fuse, setFuse] = useState<Fuse<SearchItem> | null>(null);
@@ -385,88 +394,184 @@ export function SearchPageClient() {
         </div>
       </div>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <div className="overflow-hidden">
-           <div className="bg-muted/50 rounded-xl p-6 mb-6 space-y-6">
-              {/* Content Type Filter */}
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
-                  Content Type
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {filterOptions.types.map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => toggleType(type)}
-                      className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
-                        filters.types.includes(type)
-                          ? TYPE_COLORS[type]
-                          : 'bg-background hover:bg-muted'
-                      }`}
-                    >
-                      {TYPE_LABELS[type] || type}
-                    </button>
-                  ))}
-                </div>
+      {/* Mobile Filters Sheet */}
+      <Sheet open={isMobile && showFilters} onOpenChange={setShowFilters}>
+        <SheetContent side="left" className="w-[300px] sm:w-[350px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Filters</SheetTitle>
+            <SheetDescription>Refine your search results</SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-6">
+            {/* Content Type Filter */}
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Content Type
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {filterOptions.types.map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => toggleType(type)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      filters.types.includes(type)
+                        ? TYPE_COLORS[type]
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    {TYPE_LABELS[type] || type}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Category Filter */}
-              {filterOptions.categories.length > 0 && (
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center gap-2 font-semibold">
-                    <Hash className="w-4 h-4" />
-                    Categories
-                    <ChevronDown className="w-4 h-4" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {filterOptions.categories.slice(0, 20).map((category) => (
-                        <label
-                          key={category}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background border hover:bg-muted cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={filters.categories.includes(category)}
-                            onCheckedChange={() => toggleCategory(category)}
-                          />
-                          <span className="text-sm">{category}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
+            {/* Category Filter */}
+            {filterOptions.categories.length > 0 && (
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger className="flex items-center gap-2 font-semibold">
+                  <Hash className="w-4 h-4" />
+                  Categories
+                  <ChevronDown className="w-4 h-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {filterOptions.categories.slice(0, 20).map((category) => (
+                      <label
+                        key={category}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background border hover:bg-muted cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={filters.categories.includes(category)}
+                          onCheckedChange={() => toggleCategory(category)}
+                        />
+                        <span className="text-sm">{category}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
 
-              {/* Tags Filter */}
-              {filterOptions.tags.length > 0 && (
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center gap-2 font-semibold">
-                    <Hash className="w-4 h-4" />
-                    Tags
-                    <ChevronDown className="w-4 h-4" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="flex flex-wrap gap-2 mt-3 max-h-40 overflow-y-auto">
-                      {filterOptions.tags.slice(0, 50).map((tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          className={`px-2 py-1 rounded text-xs border transition-colors ${
-                            filters.tags.includes(tag)
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-background hover:bg-muted'
-                          }`}
-                        >
-                          #{tag}
-                        </button>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-               </Collapsible>
-             )}
-           </div>
+            {/* Tags Filter */}
+            {filterOptions.tags.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 font-semibold">
+                  <Hash className="w-4 h-4" />
+                  Tags
+                  <ChevronDown className="w-4 h-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="flex flex-wrap gap-2 mt-3 max-h-60 overflow-y-auto">
+                    {filterOptions.tags.slice(0, 50).map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`px-2 py-1 rounded text-xs border transition-colors ${
+                          filters.tags.includes(tag)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-background hover:bg-muted'
+                        }`}
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={clearFilters} className="w-full">
+                Clear all filters
+              </Button>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Filters Panel */}
+      {!isMobile && showFilters && (
+        <div className="overflow-hidden">
+          <div className="bg-muted/50 rounded-xl p-6 mb-6 space-y-6">
+            {/* Content Type Filter */}
+            <div>
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Content Type
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {filterOptions.types.map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => toggleType(type)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      filters.types.includes(type)
+                        ? TYPE_COLORS[type]
+                        : 'bg-background hover:bg-muted'
+                    }`}
+                  >
+                    {TYPE_LABELS[type] || type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            {filterOptions.categories.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 font-semibold">
+                  <Hash className="w-4 h-4" />
+                  Categories
+                  <ChevronDown className="w-4 h-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {filterOptions.categories.slice(0, 20).map((category) => (
+                      <label
+                        key={category}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-background border hover:bg-muted cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={filters.categories.includes(category)}
+                          onCheckedChange={() => toggleCategory(category)}
+                        />
+                        <span className="text-sm">{category}</span>
+                      </label>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* Tags Filter */}
+            {filterOptions.tags.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 font-semibold">
+                  <Hash className="w-4 h-4" />
+                  Tags
+                  <ChevronDown className="w-4 h-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="flex flex-wrap gap-2 mt-3 max-h-40 overflow-y-auto">
+                    {filterOptions.tags.slice(0, 50).map((tag) => (
+                      <button
+                        key={tag}
+                        onClick={() => toggleTag(tag)}
+                        className={`px-2 py-1 rounded text-xs border transition-colors ${
+                          filters.tags.includes(tag)
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-background hover:bg-muted'
+                        }`}
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+          </div>
         </div>
       )}
 
