@@ -83,7 +83,7 @@
     "cmdk": "1.1.1",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.6.0",
-    "framer-motion": "^12.23.25",
+    "framer-motion": "^12.26.1",
     "fuse.js": "^7.1.0",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
