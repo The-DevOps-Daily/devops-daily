@@ -87,6 +87,14 @@ const PAGES: SearchItem[] = [
     icon: '🗺️',
   },
   {
+    id: 'page-junior-roadmap',
+    type: 'page',
+    title: 'Junior DevOps Roadmap',
+    description: 'Beginner-friendly roadmap for aspiring DevOps engineers',
+    url: '/roadmap/junior',
+    icon: '🌱',
+  },
+  {
     id: 'page-toolbox',
     type: 'page',
     title: 'Toolbox',

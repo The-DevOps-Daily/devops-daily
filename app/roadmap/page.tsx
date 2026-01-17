@@ -61,6 +61,7 @@ import {
   Building,
   GraduationCap,
   X,
+  ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
@@ -1752,6 +1753,14 @@ export default function RoadmapPage() {
                 Each stage includes curated resources, hands-on projects, and real-world skills you
                 can practice immediately.
               </p>
+              <Link
+                href="/roadmap/junior"
+                className="inline-flex items-center gap-1.5 mt-4 text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                <GraduationCap className="w-4 h-4" />
+                New to DevOps? Start with the Junior Roadmap
+                <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
 
             {/* Desktop Timeline */}
