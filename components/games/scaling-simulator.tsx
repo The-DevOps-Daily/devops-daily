@@ -401,6 +401,20 @@ export default function ScalingSimulator() {
     return () => clearInterval(interval);
   }, [isRunning, time, scenario, servers, hasLoadBalancer, scalingConfig, speed, addServer, removeServer, metrics, totalCost]);
 
+  // Immediately scale to minInstances when auto-scaling is enabled
+  useEffect(() => {
+    if (!scalingConfig.autoScalingEnabled || !hasLoadBalancer) return;
+    
+    const healthyServers = servers.filter((s) => s.status === 'healthy' || s.status === 'starting');
+    if (healthyServers.length < scalingConfig.minInstances) {
+      // Add servers one at a time with a small delay
+      const timer = setTimeout(() => {
+        addServer();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [scalingConfig.autoScalingEnabled, scalingConfig.minInstances, hasLoadBalancer, servers, addServer]);
+
   // Reset game
   const reset = useCallback(() => {
     setIsRunning(false);
