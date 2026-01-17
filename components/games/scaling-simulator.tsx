@@ -204,6 +204,10 @@ export default function ScalingSimulator() {
 
   // Add a new server
   const addServer = useCallback(() => {
+    // Limit to maxInstances servers
+    if (servers.length >= scalingConfig.maxInstances) {
+      return;
+    }
     const newServer: ServerInstance = {
       id: `server-${Date.now()}`,
       cpuCores: 2,
@@ -225,7 +229,7 @@ export default function ScalingSimulator() {
         );
       }, 3000 / speed);
     }
-  }, [servers.length, time, speed]);
+  }, [servers.length, time, speed, scalingConfig.maxInstances]);
 
   // Remove a server
   const removeServer = useCallback(
@@ -909,17 +913,20 @@ export default function ScalingSimulator() {
                     </div>
                   </div>
                 ))}
-                <Button
-                  variant="outline"
-                  className="h-full min-h-[150px] border-dashed"
-                  onClick={addServer}
-                >
-                  <Plus className="h-6 w-6 mr-2" />
-                  Add Server
-                  <Badge variant="secondary" className="ml-2">
-                    +$20/mo
-                  </Badge>
-                </Button>
+               <Button
+                 variant="outline"
+                 className="h-full min-h-[150px] border-dashed"
+                 onClick={addServer}
+                  disabled={servers.length >= scalingConfig.maxInstances}
+               >
+                 <Plus className="h-6 w-6 mr-2" />
+                 Add Server
+                 <Badge variant="secondary" className="ml-2">
+                    {servers.length >= scalingConfig.maxInstances
+                      ? `Max ${scalingConfig.maxInstances}`
+                      : '+$20/mo'}
+                 </Badge>
+               </Button>
               </div>
             </TabsContent>
 
