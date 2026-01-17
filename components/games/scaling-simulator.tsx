@@ -406,14 +406,24 @@ export default function ScalingSimulator() {
     if (!scalingConfig.autoScalingEnabled || !hasLoadBalancer) return;
     
     const healthyServers = servers.filter((s) => s.status === 'healthy' || s.status === 'starting');
+    
+    // Scale up if below minimum
     if (healthyServers.length < scalingConfig.minInstances) {
-      // Add servers one at a time with a small delay
       const timer = setTimeout(() => {
         addServer();
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [scalingConfig.autoScalingEnabled, scalingConfig.minInstances, hasLoadBalancer, servers, addServer]);
+    
+    // Scale down if above minimum (and no load requiring extra capacity)
+    if (healthyServers.length > scalingConfig.minInstances && healthyServers.length > 1) {
+      const timer = setTimeout(() => {
+        const serverToRemove = healthyServers[healthyServers.length - 1];
+        if (serverToRemove) removeServer(serverToRemove.id);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [scalingConfig.autoScalingEnabled, scalingConfig.minInstances, hasLoadBalancer, servers, addServer, removeServer]);
 
   // Reset game
   const reset = useCallback(() => {
