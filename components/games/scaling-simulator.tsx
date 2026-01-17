@@ -167,7 +167,7 @@ export default function ScalingSimulator() {
     minInstances: 1,
     maxInstances: 10,
     cpuThreshold: 70,
-    scaleUpDelay: 30,
+    scaleUpDelay: 5,
     scaleDownDelay: 300,
   });
   const [metrics, setMetrics] = useState<Metrics>({
@@ -310,7 +310,18 @@ export default function ScalingSimulator() {
       );
       const overallLoad = currentTraffic / totalCapacity;
 
-      // Update server loads
+      // Calculate what the new server loads will be
+      const newServerLoads = healthyServers.map((s) => {
+        const serverCapacity = calculateServerCapacity(s);
+        return hasLoadBalancer
+          ? currentTraffic / healthyServers.length / serverCapacity
+          : currentTraffic / serverCapacity;
+      });
+      const avgLoad = newServerLoads.length > 0 
+        ? newServerLoads.reduce((sum, load) => sum + load, 0) / newServerLoads.length 
+        : 0;
+
+      // Update server loads in state
       setServers((prev) =>
         prev.map((s) => {
           if (s.status !== 'healthy') return s;
@@ -328,8 +339,6 @@ export default function ScalingSimulator() {
       );
 
       // Calculate response time and update metrics
-      const avgLoad =
-        healthyServers.reduce((sum, s) => sum + s.currentLoad, 0) / healthyServers.length;
       const responseTime = calculateResponseTime(avgLoad);
       setResponseTimeHistory((prev) => [...prev.slice(-60), responseTime]);
 
@@ -427,7 +436,7 @@ export default function ScalingSimulator() {
       minInstances: 1,
       maxInstances: 10,
       cpuThreshold: 70,
-      scaleUpDelay: 30,
+      scaleUpDelay: 5,
       scaleDownDelay: 300,
     });
     setMetrics({
