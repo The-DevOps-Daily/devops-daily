@@ -414,15 +414,6 @@ export default function ScalingSimulator() {
       }, 500);
       return () => clearTimeout(timer);
     }
-    
-    // Scale down if above minimum (and no load requiring extra capacity)
-    if (healthyServers.length > scalingConfig.minInstances && healthyServers.length > 1) {
-      const timer = setTimeout(() => {
-        const serverToRemove = healthyServers[healthyServers.length - 1];
-        if (serverToRemove) removeServer(serverToRemove.id);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
   }, [scalingConfig.autoScalingEnabled, scalingConfig.minInstances, hasLoadBalancer, servers, addServer, removeServer]);
 
   // Reset game
