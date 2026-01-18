@@ -1,0 +1,213 @@
+{
+  "id": "high-availability",
+  "slug": "high-availability",
+  "title": "High Availability Architecture Checklist",
+  "description": "Comprehensive checklist for designing and implementing highly available systems with load balancing, failover, and redundancy.",
+  "category": "Infrastructure",
+  "difficulty": "advanced",
+  "estimatedTime": "90-120 minutes",
+  "tags": ["high-availability", "load-balancing", "failover", "redundancy", "disaster-recovery"],
+  "items": [
+    {
+      "id": "eliminate-single-points-of-failure",
+      "title": "Eliminate single points of failure",
+      "description": "Identify and eliminate every single point of failure in your architecture. Every critical component should have redundancy - databases, load balancers, application servers, and network paths.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Kubernetes multi-replica deployment",
+          "code": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api-server\nspec:\n  replicas: 3\n  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxUnavailable: 1\n      maxSurge: 1\n  selector:\n    matchLabels:\n      app: api-server\n  template:\n    metadata:\n      labels:\n        app: api-server\n    spec:\n      affinity:\n        podAntiAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            - labelSelector:\n                matchLabels:\n                  app: api-server\n              topologyKey: kubernetes.io/hostname"
+        }
+      ]
+    },
+    {
+      "id": "implement-load-balancing",
+      "title": "Implement load balancing",
+      "description": "Distribute traffic across multiple instances using load balancers. Use health checks to route traffic only to healthy instances. Consider both Layer 4 and Layer 7 load balancing based on your needs.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "AWS Application Load Balancer",
+          "code": "resource \"aws_lb\" \"main\" {\n  name               = \"api-alb\"\n  internal           = false\n  load_balancer_type = \"application\"\n  security_groups    = [aws_security_group.alb.id]\n  subnets            = var.public_subnet_ids\n\n  enable_deletion_protection = true\n  enable_http2               = true\n}\n\nresource \"aws_lb_target_group\" \"main\" {\n  name     = \"api-tg\"\n  port     = 80\n  protocol = \"HTTP\"\n  vpc_id   = var.vpc_id\n\n  health_check {\n    enabled             = true\n    path                = \"/health\"\n    port                = \"traffic-port\"\n    healthy_threshold   = 2\n    unhealthy_threshold = 3\n    timeout             = 5\n    interval            = 30\n  }\n}"
+        },
+        {
+          "language": "yaml",
+          "label": "NGINX load balancer config",
+          "code": "upstream backend {\n    least_conn;\n    server backend1:8080 weight=5;\n    server backend2:8080 weight=5;\n    server backend3:8080 backup;\n    \n    keepalive 32;\n}\n\nserver {\n    listen 80;\n    \n    location / {\n        proxy_pass http://backend;\n        proxy_http_version 1.1;\n        proxy_set_header Connection \"\";\n        proxy_next_upstream error timeout http_502;\n    }\n}"
+        }
+      ]
+    },
+    {
+      "id": "multi-az-deployment",
+      "title": "Deploy across multiple availability zones",
+      "description": "Spread your infrastructure across multiple availability zones to survive zone failures. Ensure data replication is synchronous or has acceptable RPO for your use case.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "Multi-AZ subnet configuration",
+          "code": "data \"aws_availability_zones\" \"available\" {\n  state = \"available\"\n}\n\nresource \"aws_subnet\" \"private\" {\n  count             = 3\n  vpc_id            = aws_vpc.main.id\n  cidr_block        = cidrsubnet(var.vpc_cidr, 4, count.index)\n  availability_zone = data.aws_availability_zones.available.names[count.index]\n\n  tags = {\n    Name = \"private-${data.aws_availability_zones.available.names[count.index]}\"\n  }\n}\n\nresource \"aws_db_subnet_group\" \"main\" {\n  name       = \"main\"\n  subnet_ids = aws_subnet.private[*].id\n}"
+        },
+        {
+          "language": "hcl",
+          "label": "Multi-AZ RDS instance",
+          "code": "resource \"aws_db_instance\" \"main\" {\n  identifier     = \"production-db\"\n  engine         = \"postgres\"\n  engine_version = \"15.4\"\n  instance_class = \"db.r6g.large\"\n\n  multi_az               = true\n  db_subnet_group_name   = aws_db_subnet_group.main.name\n  storage_encrypted      = true\n  backup_retention_period = 7\n  \n  performance_insights_enabled = true\n}"
+        }
+      ]
+    },
+    {
+      "id": "implement-health-checks",
+      "title": "Implement comprehensive health checks",
+      "description": "Create health check endpoints that verify all critical dependencies. Include liveness probes (is the app running?) and readiness probes (can it serve traffic?). Don't just return 200 OK - actually verify connectivity to databases, caches, and external services.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Health check endpoint",
+          "code": "app.get('/health', async (req, res) => {\n  const health = {\n    status: 'healthy',\n    timestamp: new Date().toISOString(),\n    checks: {}\n  };\n\n  // Check database\n  try {\n    await db.query('SELECT 1');\n    health.checks.database = { status: 'healthy' };\n  } catch (err) {\n    health.checks.database = { status: 'unhealthy', error: err.message };\n    health.status = 'unhealthy';\n  }\n\n  // Check Redis\n  try {\n    await redis.ping();\n    health.checks.redis = { status: 'healthy' };\n  } catch (err) {\n    health.checks.redis = { status: 'unhealthy', error: err.message };\n    health.status = 'unhealthy';\n  }\n\n  res.status(health.status === 'healthy' ? 200 : 503).json(health);\n});"
+        },
+        {
+          "language": "yaml",
+          "label": "Kubernetes health probes",
+          "code": "spec:\n  containers:\n    - name: app\n      livenessProbe:\n        httpGet:\n          path: /health/live\n          port: 8080\n        initialDelaySeconds: 15\n        periodSeconds: 10\n        failureThreshold: 3\n      readinessProbe:\n        httpGet:\n          path: /health/ready\n          port: 8080\n        initialDelaySeconds: 5\n        periodSeconds: 5\n        failureThreshold: 3\n      startupProbe:\n        httpGet:\n          path: /health/live\n          port: 8080\n        failureThreshold: 30\n        periodSeconds: 10"
+        }
+      ]
+    },
+    {
+      "id": "database-replication",
+      "title": "Configure database replication",
+      "description": "Set up database replication for read scalability and failover. Choose between synchronous (strong consistency, higher latency) and asynchronous (eventual consistency, lower latency) replication based on your requirements.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "PostgreSQL streaming replication",
+          "code": "-- On primary: postgresql.conf\nwal_level = replica\nmax_wal_senders = 3\nmax_replication_slots = 3\nsynchronous_commit = on\nsynchronous_standby_names = 'replica1'\n\n-- Create replication user\nCREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'secret';\n\n-- pg_hba.conf\nhost replication replicator replica_ip/32 scram-sha-256"
+        },
+        {
+          "language": "bash",
+          "label": "Setup replica",
+          "code": "# On replica server\npg_basebackup -h primary_host -U replicator -D /var/lib/postgresql/data -Fp -Xs -P -R\n\n# Check replication status\npsql -c \"SELECT * FROM pg_stat_replication;\"\n\n# Check replica lag\npsql -c \"SELECT now() - pg_last_xact_replay_timestamp() AS replication_lag;\""
+        }
+      ]
+    },
+    {
+      "id": "auto-scaling",
+      "title": "Configure auto-scaling",
+      "description": "Implement auto-scaling to handle variable load. Scale based on CPU, memory, request count, or custom metrics. Set appropriate min/max limits and cooldown periods to prevent thrashing.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "AWS Auto Scaling Group",
+          "code": "resource \"aws_autoscaling_group\" \"app\" {\n  name                = \"app-asg\"\n  vpc_zone_identifier = var.private_subnet_ids\n  target_group_arns   = [aws_lb_target_group.main.arn]\n  health_check_type   = \"ELB\"\n\n  min_size         = 2\n  max_size         = 10\n  desired_capacity = 3\n\n  launch_template {\n    id      = aws_launch_template.app.id\n    version = \"$Latest\"\n  }\n}\n\nresource \"aws_autoscaling_policy\" \"scale_up\" {\n  name                   = \"scale-up\"\n  autoscaling_group_name = aws_autoscaling_group.app.name\n  policy_type            = \"TargetTrackingScaling\"\n\n  target_tracking_configuration {\n    predefined_metric_specification {\n      predefined_metric_type = \"ASGAverageCPUUtilization\"\n    }\n    target_value = 70.0\n  }\n}"
+        },
+        {
+          "language": "yaml",
+          "label": "Kubernetes HPA",
+          "code": "apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: api-server\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: api-server\n  minReplicas: 3\n  maxReplicas: 20\n  metrics:\n    - type: Resource\n      resource:\n        name: cpu\n        target:\n          type: Utilization\n          averageUtilization: 70\n    - type: Resource\n      resource:\n        name: memory\n        target:\n          type: Utilization\n          averageUtilization: 80"
+        }
+      ]
+    },
+    {
+      "id": "implement-circuit-breakers",
+      "title": "Implement circuit breakers",
+      "description": "Use circuit breakers to prevent cascade failures. When a service fails, the circuit breaker opens and returns errors fast instead of waiting for timeouts. After a cooldown period, it allows some requests through to test recovery.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Circuit breaker pattern",
+          "code": "import CircuitBreaker from 'opossum';\n\nconst options = {\n  timeout: 3000,        // 3 seconds\n  errorThresholdPercentage: 50,\n  resetTimeout: 30000,  // 30 seconds\n  volumeThreshold: 10   // min requests before tripping\n};\n\nconst breaker = new CircuitBreaker(fetchFromService, options);\n\nbreaker.on('open', () => console.log('Circuit opened'));\nbreaker.on('halfOpen', () => console.log('Circuit half-open'));\nbreaker.on('close', () => console.log('Circuit closed'));\n\n// Usage\ntry {\n  const result = await breaker.fire(params);\n} catch (err) {\n  // Handle failure or use fallback\n}"
+        },
+        {
+          "language": "yaml",
+          "label": "Istio circuit breaker",
+          "code": "apiVersion: networking.istio.io/v1beta1\nkind: DestinationRule\nmetadata:\n  name: api-service\nspec:\n  host: api-service\n  trafficPolicy:\n    connectionPool:\n      tcp:\n        maxConnections: 100\n      http:\n        h2UpgradePolicy: UPGRADE\n        http1MaxPendingRequests: 100\n        http2MaxRequests: 1000\n    outlierDetection:\n      consecutive5xxErrors: 5\n      interval: 30s\n      baseEjectionTime: 60s\n      maxEjectionPercent: 50"
+        }
+      ]
+    },
+    {
+      "id": "graceful-degradation",
+      "title": "Design for graceful degradation",
+      "description": "Plan how your system behaves when components fail. Show cached data, disable non-critical features, or queue requests for later processing. Users should experience reduced functionality, not complete failure.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Fallback patterns",
+          "code": "async function getProductData(productId: string) {\n  try {\n    // Try primary source\n    return await productService.get(productId);\n  } catch (err) {\n    console.warn('Primary service failed, trying cache');\n    \n    try {\n      // Fallback to cache\n      const cached = await cache.get(`product:${productId}`);\n      if (cached) return { ...cached, fromCache: true };\n    } catch (cacheErr) {\n      console.warn('Cache failed too');\n    }\n    \n    // Return minimal static data\n    return {\n      id: productId,\n      name: 'Product Unavailable',\n      degraded: true\n    };\n  }\n}"
+        },
+        {
+          "language": "typescript",
+          "label": "Feature flags for degradation",
+          "code": "const features = {\n  recommendations: true,\n  realTimeInventory: true,\n  reviews: true\n};\n\n// Disable features under pressure\nfunction degradeFeatures() {\n  features.recommendations = false;\n  features.reviews = false;\n}\n\n// In your handlers\nif (features.recommendations) {\n  data.recommendations = await getRecommendations();\n}"
+        }
+      ]
+    },
+    {
+      "id": "session-management",
+      "title": "Implement stateless or distributed sessions",
+      "description": "Don't store sessions locally on application servers. Use Redis, Memcached, or database-backed sessions so any instance can handle any request. This enables seamless failover and scaling.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Redis session store",
+          "code": "import session from 'express-session';\nimport RedisStore from 'connect-redis';\nimport { createClient } from 'redis';\n\nconst redisClient = createClient({\n  url: process.env.REDIS_URL,\n  socket: {\n    reconnectStrategy: (retries) => Math.min(retries * 100, 3000)\n  }\n});\n\nawait redisClient.connect();\n\napp.use(session({\n  store: new RedisStore({ client: redisClient }),\n  secret: process.env.SESSION_SECRET,\n  resave: false,\n  saveUninitialized: false,\n  cookie: {\n    secure: true,\n    httpOnly: true,\n    maxAge: 24 * 60 * 60 * 1000 // 24 hours\n  }\n}));"
+        }
+      ]
+    },
+    {
+      "id": "backup-and-recovery",
+      "title": "Implement backup and recovery procedures",
+      "description": "Regular backups are essential. Test your recovery procedures regularly - an untested backup is not a backup. Document RTO (recovery time objective) and RPO (recovery point objective) for each system.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "AWS Backup configuration",
+          "code": "resource \"aws_backup_plan\" \"production\" {\n  name = \"production-backup\"\n\n  rule {\n    rule_name         = \"daily-backup\"\n    target_vault_name = aws_backup_vault.main.name\n    schedule          = \"cron(0 5 * * ? *)\"\n\n    lifecycle {\n      cold_storage_after = 30\n      delete_after       = 365\n    }\n\n    copy_action {\n      destination_vault_arn = aws_backup_vault.dr_region.arn\n    }\n  }\n}\n\nresource \"aws_backup_selection\" \"all_rds\" {\n  name         = \"all-rds-databases\"\n  plan_id      = aws_backup_plan.production.id\n  iam_role_arn = aws_iam_role.backup.arn\n\n  selection_tag {\n    type  = \"STRINGEQUALS\"\n    key   = \"Backup\"\n    value = \"true\"\n  }\n}"
+        },
+        {
+          "language": "bash",
+          "label": "Test recovery procedure",
+          "code": "#!/bin/bash\n# Monthly recovery test script\n\nset -e\n\necho \"Starting recovery test...\"\n\n# Restore database to test instance\naws rds restore-db-instance-from-snapshot \\\n  --db-instance-identifier test-recovery-$(date +%Y%m%d) \\\n  --db-snapshot-identifier latest-prod-snapshot \\\n  --db-instance-class db.t3.medium\n\n# Wait for restoration\naws rds wait db-instance-available \\\n  --db-instance-identifier test-recovery-$(date +%Y%m%d)\n\n# Run validation queries\necho \"Running data validation...\"\npsql -h test-recovery -c \"SELECT COUNT(*) FROM critical_table;\"\n\n# Cleanup\naws rds delete-db-instance \\\n  --db-instance-identifier test-recovery-$(date +%Y%m%d) \\\n  --skip-final-snapshot\n\necho \"Recovery test completed successfully\""
+        }
+      ]
+    },
+    {
+      "id": "dns-failover",
+      "title": "Configure DNS-based failover",
+      "description": "Use DNS health checks and failover routing for regional or global high availability. Route53 health checks can automatically route traffic away from unhealthy endpoints.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "Route53 health check and failover",
+          "code": "resource \"aws_route53_health_check\" \"primary\" {\n  fqdn              = \"api-primary.example.com\"\n  port              = 443\n  type              = \"HTTPS\"\n  resource_path     = \"/health\"\n  failure_threshold = 3\n  request_interval  = 30\n\n  tags = {\n    Name = \"primary-health-check\"\n  }\n}\n\nresource \"aws_route53_record\" \"primary\" {\n  zone_id = aws_route53_zone.main.zone_id\n  name    = \"api.example.com\"\n  type    = \"A\"\n\n  failover_routing_policy {\n    type = \"PRIMARY\"\n  }\n\n  set_identifier  = \"primary\"\n  health_check_id = aws_route53_health_check.primary.id\n\n  alias {\n    name                   = aws_lb.primary.dns_name\n    zone_id                = aws_lb.primary.zone_id\n    evaluate_target_health = true\n  }\n}\n\nresource \"aws_route53_record\" \"secondary\" {\n  zone_id = aws_route53_zone.main.zone_id\n  name    = \"api.example.com\"\n  type    = \"A\"\n\n  failover_routing_policy {\n    type = \"SECONDARY\"\n  }\n\n  set_identifier = \"secondary\"\n\n  alias {\n    name                   = aws_lb.secondary.dns_name\n    zone_id                = aws_lb.secondary.zone_id\n    evaluate_target_health = true\n  }\n}"
+        }
+      ]
+    },
+    {
+      "id": "chaos-engineering",
+      "title": "Practice chaos engineering",
+      "description": "Proactively test failure scenarios in production. Start small with controlled experiments. Use tools like Chaos Monkey, Litmus, or AWS Fault Injection Simulator to simulate failures and verify your system recovers.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Litmus Chaos experiment",
+          "code": "apiVersion: litmuschaos.io/v1alpha1\nkind: ChaosEngine\nmetadata:\n  name: pod-kill-chaos\nspec:\n  engineState: active\n  appinfo:\n    appns: production\n    applabel: app=api-server\n  chaosServiceAccount: litmus-admin\n  experiments:\n    - name: pod-delete\n      spec:\n        components:\n          env:\n            - name: TOTAL_CHAOS_DURATION\n              value: '60'\n            - name: CHAOS_INTERVAL\n              value: '10'\n            - name: FORCE\n              value: 'true'"
+        },
+        {
+          "language": "bash",
+          "label": "AWS FIS experiment",
+          "code": "# Create experiment template\naws fis create-experiment-template \\\n  --description \"Terminate 30% of instances\" \\\n  --targets '{\n    \"Instances\": {\n      \"resourceType\": \"aws:ec2:instance\",\n      \"resourceTags\": {\"Environment\": \"production\"},\n      \"selectionMode\": \"PERCENT(30)\"\n    }\n  }' \\\n  --actions '{\n    \"TerminateInstances\": {\n      \"actionId\": \"aws:ec2:terminate-instances\",\n      \"targets\": {\"Instances\": \"Instances\"}\n    }\n  }' \\\n  --stop-conditions '[{\n    \"source\": \"aws:cloudwatch:alarm\",\n    \"value\": \"arn:aws:cloudwatch:...:alarm:HighErrorRate\"\n  }]' \\\n  --role-arn arn:aws:iam::123456789:role/FISRole"
+        }
+      ]
+    }
+  ]
+}
