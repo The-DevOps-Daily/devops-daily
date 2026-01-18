@@ -1753,13 +1753,13 @@ export default function RoadmapPage() {
                 Each stage includes curated resources, hands-on projects, and real-world skills you
                 can practice immediately.
               </p>
-              <Link
+              <Link 
                 href="/roadmap/junior"
-                className="inline-flex items-center gap-1.5 mt-4 text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="inline-flex items-center gap-2 mt-6 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 hover:border-blue-500/40 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 group"
               >
-                <GraduationCap className="w-4 h-4" />
-                New to DevOps? Start with the Junior Roadmap
-                <ArrowRight className="w-3 h-3" />
+                <GraduationCap className="w-4 h-4 text-blue-500" />
+                <span>New to DevOps? <span className="text-blue-600 dark:text-blue-400">Start with the Junior Roadmap</span></span>
+                <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
 
