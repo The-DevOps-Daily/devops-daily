@@ -475,9 +475,9 @@ export default function JuniorDevOpsRoadmap() {
                   <Lightbulb className="w-5 h-5 text-green-500" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Practical</h3>
+                  <h3 className="font-semibold mb-1">Project Ideas</h3>
                   <p className="text-sm text-muted-foreground">
-                    Hands-on projects at each milestone
+                    Suggested projects to practice skills
                   </p>
                 </div>
               </div>
