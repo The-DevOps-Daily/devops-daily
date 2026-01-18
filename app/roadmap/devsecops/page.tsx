@@ -103,6 +103,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: AlertTriangle,
         priority: 'essential',
         estimatedHours: 20,
+        link: '/guides/owasp-top-10',
       },
       {
         name: 'Threat Modeling',
