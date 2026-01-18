@@ -95,6 +95,14 @@ const PAGES: SearchItem[] = [
     icon: '🌱',
   },
   {
+    id: 'page-devsecops-roadmap',
+    type: 'page',
+    title: 'DevSecOps Roadmap',
+    description: 'Security-first roadmap for integrating security into DevOps practices',
+    url: '/roadmap/devsecops',
+    icon: '🔒',
+  },
+  {
     id: 'page-toolbox',
     type: 'page',
     title: 'Toolbox',

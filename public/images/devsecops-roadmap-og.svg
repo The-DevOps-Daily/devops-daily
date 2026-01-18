@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="milestone1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f87171;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fb923c;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#eab308;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#facc15;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone6" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ade80;stop-opacity:1" />
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <g opacity="0.1">
+    <circle cx="50" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="100" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="150" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="50" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="100" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="150" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="1050" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1100" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1150" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1050" cy="580" r="2" fill="#94a3b8"/>
+    <circle cx="1100" cy="580" r="2" fill="#94a3b8"/>
+    <circle cx="1150" cy="580" r="2" fill="#94a3b8"/>
+  </g>
+
+  <!-- Shield icon -->
+  <g transform="translate(560, 60)">
+    <path d="M40 5 L75 20 L75 45 C75 65 60 80 40 90 C20 80 5 65 5 45 L5 20 Z" fill="none" stroke="url(#titleGradient)" stroke-width="3" filter="url(#glow)"/>
+    <path d="M30 45 L38 53 L52 38" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <rect x="430" y="160" width="340" height="36" rx="18" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="184" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#94a3b8" text-anchor="middle">Security-First DevOps - 6-7 Month Journey</text>
+
+  <text x="600" y="250" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="700" fill="url(#titleGradient)" text-anchor="middle">DevSecOps</text>
+  <text x="600" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="700" fill="#f8fafc" text-anchor="middle">Roadmap</text>
+
+  <text x="600" y="355" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#94a3b8" text-anchor="middle">Shift left, automate security, and build resilient systems</text>
+
+  <line x1="100" y1="440" x2="1100" y2="440" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+  <line x1="100" y1="440" x2="1100" y2="440" stroke="url(#titleGradient)" stroke-width="3" stroke-linecap="round" filter="url(#glow)"/>
+
+  <g transform="translate(100, 390)">
+    <circle cx="0" cy="50" r="20" fill="url(#milestone1)" filter="url(#glow)"/>
+    <text x="0" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">1</text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#f8fafc" text-anchor="middle">Fundamentals</text>
+  </g>
+
+  <g transform="translate(300, 390)">
+    <circle cx="0" cy="50" r="20" fill="url(#milestone2)" filter="url(#glow)"/>
+    <text x="0" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">2</text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#f8fafc" text-anchor="middle">Secure Dev</text>
+  </g>
+
+  <g transform="translate(500, 390)">
+    <circle cx="0" cy="50" r="20" fill="url(#milestone3)" filter="url(#glow)"/>
+    <text x="0" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">3</text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#f8fafc" text-anchor="middle">CI/CD Sec</text>
+  </g>
+
+  <g transform="translate(700, 390)">
+    <circle cx="0" cy="50" r="20" fill="url(#milestone4)" filter="url(#glow)"/>
+    <text x="0" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">4</text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#f8fafc" text-anchor="middle">Container</text>
+  </g>
+
+  <g transform="translate(900, 390)">
+    <circle cx="0" cy="50" r="20" fill="url(#milestone5)" filter="url(#glow)"/>
+    <text x="0" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">5</text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#f8fafc" text-anchor="middle">Cloud Sec</text>
+  </g>
+
+  <g transform="translate(1100, 390)">
+    <circle cx="0" cy="50" r="20" fill="url(#milestone6)" filter="url(#glow)"/>
+    <text x="0" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="white" text-anchor="middle">6</text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="600" fill="#f8fafc" text-anchor="middle">SecOps</text>
+  </g>
+
+  <g transform="translate(600, 560)">
+    <text x="-200" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">6-7 months</text>
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">6 milestones</text>
+    <text x="200" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">30+ security skills</text>
+  </g>
+
+  <text x="600" y="600" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#475569" text-anchor="middle">devops-daily.com</text>
+</svg>

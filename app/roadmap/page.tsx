@@ -62,6 +62,7 @@ import {
   GraduationCap,
   X,
   ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState, useEffect } from 'react';
@@ -1753,14 +1754,24 @@ export default function RoadmapPage() {
                 Each stage includes curated resources, hands-on projects, and real-world skills you
                 can practice immediately.
               </p>
-              <Link 
-                href="/roadmap/junior"
-                className="inline-flex items-center gap-2 mt-6 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 hover:border-blue-500/40 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 group"
-              >
-                <GraduationCap className="w-4 h-4 text-blue-500" />
-                <span>New to DevOps? <span className="text-blue-600 dark:text-blue-400">Start with the Junior Roadmap</span></span>
-                <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
+                <Link 
+                  href="/roadmap/junior"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 hover:border-blue-500/40 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 group"
+                >
+                  <GraduationCap className="w-4 h-4 text-blue-500" />
+                  <span>New to DevOps? <span className="text-blue-600 dark:text-blue-400">Junior Roadmap</span></span>
+                  <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                </Link>
+                <Link 
+                  href="/roadmap/devsecops"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-red-500/10 to-purple-500/10 border border-red-500/20 hover:border-red-500/40 hover:from-red-500/20 hover:to-purple-500/20 transition-all duration-300 group"
+                >
+                  <ShieldCheck className="w-4 h-4 text-red-500" />
+                  <span>Security focused? <span className="text-red-600 dark:text-red-400">DevSecOps Roadmap</span></span>
+                  <ArrowRight className="w-4 h-4 text-red-500 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
             </div>
 
             {/* Desktop Timeline */}
