@@ -19,7 +19,9 @@ When permissions are overly broad:
 
 ### IAM Policies: Start with Deny
 
-Always start with no permissions and add only what's needed:
+AWS IAM follows an implicit deny model: users have no permissions until explicitly granted. The key is to resist the temptation to grant broad permissions "just in case."
+
+**Good practice:** Be specific about actions and resources. This policy allows reading from one specific S3 bucket only:
 
 ```json
 {
@@ -29,19 +31,20 @@ Always start with no permissions and add only what's needed:
       "Sid": "AllowS3ReadSpecificBucket",
       "Effect": "Allow",
       "Action": [
-        "s3:GetObject",
-        "s3:ListBucket"
+        "s3:GetObject",    // Read individual objects
+        "s3:ListBucket"    // List bucket contents
+        // Note: No write, delete, or admin permissions
       ],
       "Resource": [
-        "arn:aws:s3:::my-app-assets",
-        "arn:aws:s3:::my-app-assets/*"
+        "arn:aws:s3:::my-app-assets",     // Bucket itself (for ListBucket)
+        "arn:aws:s3:::my-app-assets/*"    // Objects in bucket (for GetObject)
       ]
     }
   ]
 }
 ```
 
-**Bad practice** - overly permissive:
+**Bad practice** - this grants full S3 admin access to every bucket in the account:
 
 ```json
 {
@@ -49,16 +52,24 @@ Always start with no permissions and add only what's needed:
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": "s3:*",
-      "Resource": "*"
+      "Action": "s3:*",     // Every S3 action including DeleteBucket!
+      "Resource": "*"       // Every bucket in the account
+      // An attacker with this access could delete all your data
     }
   ]
 }
 ```
 
+**Real impact:** In 2019, Capital One's breach exposed 100+ million records partly due to overly permissive IAM roles on EC2 instances.
+
 ### Kubernetes RBAC
 
-Create specific roles for each workload:
+Kubernetes Role-Based Access Control (RBAC) lets you define precisely what actions each service account can perform. The principle is the same: start with nothing, add only what's needed.
+
+**Key concepts:**
+- **Role**: Defines permissions (what actions on what resources)
+- **RoleBinding**: Grants a Role to a user/service account
+- **ClusterRole/ClusterRoleBinding**: Same, but cluster-wide instead of namespace-scoped
 
 ```yaml
 # Role with minimal permissions
@@ -66,14 +77,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: pod-reader
-  namespace: production
+  namespace: production  # Role only applies in this namespace
 rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: [""]
-  resources: ["pods/log"]
-  verbs: ["get"]
+- apiGroups: [""]         # Core API group
+  resources: ["pods"]     # Only pods, not secrets, configmaps, etc.
+  verbs: ["get", "list", "watch"]  # Read-only, no create/delete
+- apiGroups: [""]         
+  resources: ["pods/log"] # Allow reading pod logs
+  verbs: ["get"]          # But not streaming (no watch)
 
 ---
 # Bind role to specific service account
@@ -94,43 +105,65 @@ roleRef:
 
 ### Database Permissions
 
-Create application-specific database users:
+Database credentials are a prime target for attackers. If your application uses a database account with full admin rights, a SQL injection vulnerability becomes catastrophic. Instead, create purpose-specific users with minimal permissions.
+
+**The principle:** Your application probably only needs SELECT, INSERT, and UPDATE on specific tables. It almost never needs DROP, ALTER, or access to admin tables.
 
 ```sql
 -- Create a read-only user for reporting
+-- This user can only read data, never modify it
 CREATE USER reporting_user WITH PASSWORD 'secure_password';
-GRANT CONNECT ON DATABASE myapp TO reporting_user;
-GRANT USAGE ON SCHEMA public TO reporting_user;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO reporting_user;
+GRANT CONNECT ON DATABASE myapp TO reporting_user;  -- Can connect
+GRANT USAGE ON SCHEMA public TO reporting_user;      -- Can see schema
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO reporting_user;  -- Read-only
 
 -- Create an app user with limited write access
+-- Only the specific tables and operations the app needs
 CREATE USER app_user WITH PASSWORD 'secure_password';
 GRANT CONNECT ON DATABASE myapp TO app_user;
 GRANT USAGE ON SCHEMA public TO app_user;
 GRANT SELECT, INSERT, UPDATE ON users, orders, products TO app_user;
--- Note: No DELETE, no access to admin tables
+-- Note: No DELETE permission (use soft deletes in app logic)
+-- Note: No access to audit_logs, admin_settings tables
+-- Note: No TRUNCATE, DROP, or ALTER permissions
 ```
+
+**Separate users for different functions:** Reporting dashboards, background jobs, and the main application should each have their own database user with appropriate permissions.
 
 ### Linux File Permissions
 
-Apply minimal file permissions:
+Linux file permissions are your first defense against privilege escalation. An attacker who compromises your application should not be able to read sensitive configuration files or modify executables.
+
+**Permission numbers explained:**
+- First digit: Owner permissions
+- Second digit: Group permissions
+- Third digit: Others permissions
+- Values: 4=read, 2=write, 1=execute (add together)
 
 ```bash
 # Application files - read/execute only
+# 555 = r-xr-xr-x (everyone can read/execute, nobody can modify)
 chmod 555 /opt/myapp/bin/*
 
 # Configuration files - read only by app user
+# 400 = r-------- (only owner can read, nobody else)
 chmod 400 /opt/myapp/config/secrets.yml
 chown appuser:appgroup /opt/myapp/config/secrets.yml
 
 # Log directory - write only where needed
+# 755 = rwxr-xr-x (owner full access, others can read/traverse)
 chmod 755 /var/log/myapp
+# 644 = rw-r--r-- (owner can write, others can only read)
 chmod 644 /var/log/myapp/*.log
 ```
 
+**Common mistakes:** Setting 777 on directories for "convenience", leaving secrets world-readable, or running applications as root.
+
 ### Container Security Context
 
-Run containers with minimal privileges:
+Containers inherit many default privileges that most applications don't need. A security context explicitly restricts what the container can do, limiting the damage if it's compromised.
+
+**Key settings explained:**
 
 ```yaml
 apiVersion: v1
@@ -138,24 +171,24 @@ kind: Pod
 metadata:
   name: secure-pod
 spec:
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 1000
-    runAsGroup: 1000
-    fsGroup: 1000
+  securityContext:          # Pod-level settings apply to all containers
+    runAsNonRoot: true      # Kubernetes will reject containers trying to run as root
+    runAsUser: 1000         # Run as specific non-root UID
+    runAsGroup: 1000        # Run as specific GID
+    fsGroup: 1000           # Group for volume ownership
   containers:
   - name: app
     image: myapp:latest
-    securityContext:
-      allowPrivilegeEscalation: false
-      readOnlyRootFilesystem: true
+    securityContext:                   # Container-specific settings
+      allowPrivilegeEscalation: false  # Prevent sudo, setuid, etc.
+      readOnlyRootFilesystem: true     # Can't write to container filesystem
       capabilities:
-        drop:
-          - ALL
+        drop:                          # Remove Linux capabilities
+          - ALL                        # Drop everything, then add back only what's needed
     volumeMounts:
-    - name: tmp
+    - name: tmp               # Writable volume for temp files
       mountPath: /tmp
-    - name: cache
+    - name: cache             # Writable volume for cache
       mountPath: /app/cache
   volumes:
   - name: tmp
