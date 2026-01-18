@@ -1,0 +1,178 @@
+{
+  "id": "aws-well-architected",
+  "slug": "aws-well-architected",
+  "title": "AWS Well-Architected Review Checklist",
+  "description": "Comprehensive checklist based on AWS Well-Architected Framework covering operational excellence, security, reliability, performance efficiency, cost optimization, and sustainability.",
+  "category": "Cloud",
+  "difficulty": "advanced",
+  "estimatedTime": "120-180 minutes",
+  "tags": ["aws", "well-architected", "cloud", "best-practices", "architecture"],
+  "items": [
+    {
+      "id": "ops-infrastructure-as-code",
+      "title": "Manage infrastructure as code",
+      "description": "Define all infrastructure using code (CloudFormation, Terraform, CDK). Version control your infrastructure, enable peer reviews, and maintain consistency across environments. Never make manual console changes in production.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "AWS CDK infrastructure example",
+          "code": "import * as cdk from 'aws-cdk-lib';\nimport * as ec2 from 'aws-cdk-lib/aws-ec2';\nimport * as rds from 'aws-cdk-lib/aws-rds';\n\nexport class ProductionStack extends cdk.Stack {\n  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {\n    super(scope, id, props);\n\n    const vpc = new ec2.Vpc(this, 'ProductionVPC', {\n      maxAzs: 3,\n      natGateways: 2,\n      subnetConfiguration: [\n        { name: 'Public', subnetType: ec2.SubnetType.PUBLIC },\n        { name: 'Private', subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },\n        { name: 'Isolated', subnetType: ec2.SubnetType.PRIVATE_ISOLATED }\n      ]\n    });\n\n    new rds.DatabaseCluster(this, 'Database', {\n      engine: rds.DatabaseClusterEngine.auroraPostgres({\n        version: rds.AuroraPostgresEngineVersion.VER_15_4\n      }),\n      instances: 2,\n      vpc,\n      vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_ISOLATED }\n    });\n  }\n}"
+        }
+      ]
+    },
+    {
+      "id": "ops-observability",
+      "title": "Implement comprehensive observability",
+      "description": "Collect logs, metrics, and traces from all workloads. Use CloudWatch, X-Ray, and CloudTrail. Set up dashboards for operational visibility and alerts for anomalies.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "CloudWatch monitoring setup",
+          "code": "resource \"aws_cloudwatch_dashboard\" \"main\" {\n  dashboard_name = \"production-overview\"\n  dashboard_body = jsonencode({\n    widgets = [\n      {\n        type   = \"metric\"\n        x      = 0\n        y      = 0\n        width  = 12\n        height = 6\n        properties = {\n          metrics = [\n            [\"AWS/ApplicationELB\", \"RequestCount\", \"LoadBalancer\", aws_lb.main.arn_suffix]\n          ]\n          period = 60\n          stat   = \"Sum\"\n          title  = \"Request Count\"\n        }\n      }\n    ]\n  })\n}\n\nresource \"aws_cloudwatch_metric_alarm\" \"high_5xx\" {\n  alarm_name          = \"high-5xx-errors\"\n  comparison_operator = \"GreaterThanThreshold\"\n  evaluation_periods  = 2\n  metric_name         = \"HTTPCode_Target_5XX_Count\"\n  namespace           = \"AWS/ApplicationELB\"\n  period              = 60\n  statistic           = \"Sum\"\n  threshold           = 10\n  alarm_actions       = [aws_sns_topic.alerts.arn]\n}"
+        }
+      ]
+    },
+    {
+      "id": "sec-identity-access",
+      "title": "Implement strong identity and access management",
+      "description": "Use IAM roles instead of long-term credentials. Apply least privilege principle. Enable MFA for all human users. Use AWS Organizations and Service Control Policies for guardrails.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "Least privilege IAM role",
+          "code": "resource \"aws_iam_role\" \"lambda_role\" {\n  name = \"lambda-execution-role\"\n\n  assume_role_policy = jsonencode({\n    Version = \"2012-10-17\"\n    Statement = [{\n      Action = \"sts:AssumeRole\"\n      Effect = \"Allow\"\n      Principal = {\n        Service = \"lambda.amazonaws.com\"\n      }\n    }]\n  })\n}\n\nresource \"aws_iam_role_policy\" \"lambda_policy\" {\n  name = \"lambda-specific-permissions\"\n  role = aws_iam_role.lambda_role.id\n\n  policy = jsonencode({\n    Version = \"2012-10-17\"\n    Statement = [\n      {\n        Effect = \"Allow\"\n        Action = [\n          \"dynamodb:GetItem\",\n          \"dynamodb:PutItem\",\n          \"dynamodb:Query\"\n        ]\n        Resource = aws_dynamodb_table.orders.arn\n      },\n      {\n        Effect = \"Allow\"\n        Action = [\"logs:CreateLogStream\", \"logs:PutLogEvents\"]\n        Resource = \"${aws_cloudwatch_log_group.lambda.arn}:*\"\n      }\n    ]\n  })\n}"
+        }
+      ]
+    },
+    {
+      "id": "sec-data-protection",
+      "title": "Protect data at rest and in transit",
+      "description": "Encrypt all data at rest using KMS. Use TLS 1.2+ for data in transit. Classify data and apply appropriate controls. Implement key rotation and secure key management.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "Encryption configuration",
+          "code": "resource \"aws_kms_key\" \"main\" {\n  description             = \"Main encryption key\"\n  deletion_window_in_days = 30\n  enable_key_rotation     = true\n\n  policy = jsonencode({\n    Version = \"2012-10-17\"\n    Statement = [\n      {\n        Sid    = \"Enable IAM policies\"\n        Effect = \"Allow\"\n        Principal = { AWS = \"arn:aws:iam::${data.aws_caller_identity.current.account_id}:root\" }\n        Action   = \"kms:*\"\n        Resource = \"*\"\n      }\n    ]\n  })\n}\n\nresource \"aws_s3_bucket_server_side_encryption_configuration\" \"main\" {\n  bucket = aws_s3_bucket.main.id\n\n  rule {\n    apply_server_side_encryption_by_default {\n      kms_master_key_id = aws_kms_key.main.arn\n      sse_algorithm     = \"aws:kms\"\n    }\n    bucket_key_enabled = true\n  }\n}\n\nresource \"aws_lb_listener\" \"https\" {\n  load_balancer_arn = aws_lb.main.arn\n  port              = 443\n  protocol          = \"HTTPS\"\n  ssl_policy        = \"ELBSecurityPolicy-TLS13-1-2-2021-06\"\n  certificate_arn   = aws_acm_certificate.main.arn\n}"
+        }
+      ]
+    },
+    {
+      "id": "sec-network-protection",
+      "title": "Implement network security controls",
+      "description": "Use VPCs with proper subnet segmentation. Implement security groups with minimal access. Use VPC endpoints for AWS services. Enable VPC Flow Logs for audit and troubleshooting.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "Network security configuration",
+          "code": "resource \"aws_security_group\" \"app\" {\n  name        = \"app-sg\"\n  description = \"Application security group\"\n  vpc_id      = aws_vpc.main.id\n\n  ingress {\n    description     = \"HTTP from ALB\"\n    from_port       = 8080\n    to_port         = 8080\n    protocol        = \"tcp\"\n    security_groups = [aws_security_group.alb.id]\n  }\n\n  egress {\n    description = \"HTTPS to VPC endpoints\"\n    from_port   = 443\n    to_port     = 443\n    protocol    = \"tcp\"\n    prefix_list_ids = [aws_vpc_endpoint.s3.prefix_list_id]\n  }\n}\n\nresource \"aws_vpc_endpoint\" \"s3\" {\n  vpc_id       = aws_vpc.main.id\n  service_name = \"com.amazonaws.${var.region}.s3\"\n  vpc_endpoint_type = \"Gateway\"\n  route_table_ids   = aws_route_table.private[*].id\n}\n\nresource \"aws_flow_log\" \"main\" {\n  vpc_id          = aws_vpc.main.id\n  traffic_type    = \"ALL\"\n  iam_role_arn    = aws_iam_role.flow_log.arn\n  log_destination = aws_cloudwatch_log_group.flow_log.arn\n}"
+        }
+      ]
+    },
+    {
+      "id": "rel-multi-az",
+      "title": "Deploy across multiple Availability Zones",
+      "description": "Distribute workloads across at least 2 AZs for single-region deployments. Use Auto Scaling groups, multi-AZ RDS, and Application Load Balancers to handle AZ failures automatically.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "Multi-AZ deployment",
+          "code": "resource \"aws_autoscaling_group\" \"app\" {\n  name                = \"app-asg\"\n  vpc_zone_identifier = aws_subnet.private[*].id  # Multiple AZs\n  target_group_arns   = [aws_lb_target_group.app.arn]\n  health_check_type   = \"ELB\"\n  health_check_grace_period = 300\n\n  min_size         = 2\n  max_size         = 10\n  desired_capacity = 4\n\n  launch_template {\n    id      = aws_launch_template.app.id\n    version = \"$Latest\"\n  }\n\n  instance_refresh {\n    strategy = \"Rolling\"\n    preferences {\n      min_healthy_percentage = 75\n    }\n  }\n}\n\nresource \"aws_db_instance\" \"main\" {\n  identifier     = \"production\"\n  engine         = \"postgres\"\n  instance_class = \"db.r6g.large\"\n  multi_az       = true\n\n  backup_retention_period = 7\n  backup_window          = \"03:00-04:00\"\n}"
+        }
+      ]
+    },
+    {
+      "id": "rel-backup-recovery",
+      "title": "Implement backup and recovery strategies",
+      "description": "Define RTO/RPO for each workload. Automate backups using AWS Backup. Test recovery procedures regularly. Consider cross-region backup replication for disaster recovery.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "AWS Backup configuration",
+          "code": "resource \"aws_backup_plan\" \"main\" {\n  name = \"production-backup-plan\"\n\n  rule {\n    rule_name         = \"daily-backup\"\n    target_vault_name = aws_backup_vault.main.name\n    schedule          = \"cron(0 5 * * ? *)\"\n\n    lifecycle {\n      cold_storage_after = 30\n      delete_after       = 365\n    }\n\n    copy_action {\n      destination_vault_arn = aws_backup_vault.dr.arn\n      lifecycle {\n        delete_after = 90\n      }\n    }\n  }\n}\n\nresource \"aws_backup_selection\" \"critical\" {\n  name         = \"critical-resources\"\n  plan_id      = aws_backup_plan.main.id\n  iam_role_arn = aws_iam_role.backup.arn\n\n  selection_tag {\n    type  = \"STRINGEQUALS\"\n    key   = \"CriticalData\"\n    value = \"true\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "id": "perf-right-sizing",
+      "title": "Right-size compute resources",
+      "description": "Select appropriate instance types based on workload requirements. Use AWS Compute Optimizer recommendations. Consider Graviton instances for better price-performance. Implement auto-scaling.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Compute Optimizer recommendations",
+          "code": "# Get EC2 recommendations\naws compute-optimizer get-ec2-instance-recommendations \\\n  --filters \"name=Finding,values=OVER_PROVISIONED,UNDER_PROVISIONED\" \\\n  --query 'instanceRecommendations[*].{Instance:instanceArn,Current:currentInstanceType,Recommended:recommendationOptions[0].instanceType,Savings:recommendationOptions[0].savingsOpportunity.savingsOpportunityPercentage}'\n\n# Get Lambda recommendations\naws compute-optimizer get-lambda-function-recommendations \\\n  --query 'lambdaFunctionRecommendations[*].{Function:functionArn,CurrentMemory:currentMemorySize,RecommendedMemory:memorySizeRecommendationOptions[0].memorySize}'"
+        },
+        {
+          "language": "hcl",
+          "label": "Graviton-based instances",
+          "code": "resource \"aws_launch_template\" \"app\" {\n  name = \"app-template\"\n\n  # Use Graviton for better price-performance\n  instance_type = \"c7g.large\"  # Graviton3\n\n  # Or use mixed instances for flexibility\n  instance_market_options {\n    market_type = \"spot\"\n  }\n}\n\nresource \"aws_autoscaling_group\" \"app\" {\n  mixed_instances_policy {\n    instances_distribution {\n      on_demand_base_capacity                  = 2\n      on_demand_percentage_above_base_capacity = 25\n      spot_allocation_strategy                 = \"capacity-optimized\"\n    }\n    launch_template {\n      launch_template_specification {\n        launch_template_id = aws_launch_template.app.id\n      }\n      override {\n        instance_type = \"c7g.large\"\n      }\n      override {\n        instance_type = \"c6g.large\"\n      }\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "id": "perf-caching",
+      "title": "Implement caching strategies",
+      "description": "Use CloudFront for static content and API caching. Implement ElastiCache for database query caching. Use DAX for DynamoDB acceleration. Cache at multiple layers for best performance.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "CloudFront and ElastiCache setup",
+          "code": "resource \"aws_cloudfront_distribution\" \"main\" {\n  enabled         = true\n  is_ipv6_enabled = true\n  http_version    = \"http2and3\"\n\n  origin {\n    domain_name = aws_lb.api.dns_name\n    origin_id   = \"api\"\n\n    custom_origin_config {\n      http_port              = 80\n      https_port             = 443\n      origin_protocol_policy = \"https-only\"\n      origin_ssl_protocols   = [\"TLSv1.2\"]\n    }\n  }\n\n  default_cache_behavior {\n    allowed_methods        = [\"GET\", \"HEAD\", \"OPTIONS\"]\n    cached_methods         = [\"GET\", \"HEAD\"]\n    target_origin_id       = \"api\"\n    viewer_protocol_policy = \"redirect-to-https\"\n\n    cache_policy_id          = aws_cloudfront_cache_policy.api.id\n    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.cors.id\n  }\n}\n\nresource \"aws_elasticache_replication_group\" \"main\" {\n  replication_group_id       = \"cache\"\n  description                = \"Redis cluster\"\n  node_type                  = \"cache.r6g.large\"\n  num_cache_clusters         = 2\n  automatic_failover_enabled = true\n  multi_az_enabled          = true\n  at_rest_encryption_enabled = true\n  transit_encryption_enabled = true\n}"
+        }
+      ]
+    },
+    {
+      "id": "cost-tagging",
+      "title": "Implement cost allocation tags",
+      "description": "Tag all resources consistently for cost allocation. Enable Cost Explorer and create budgets. Use AWS Cost Anomaly Detection. Set up alerts for unexpected spending.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "Tagging strategy",
+          "code": "locals {\n  common_tags = {\n    Environment = var.environment\n    Project     = var.project_name\n    Team        = var.team\n    CostCenter  = var.cost_center\n    ManagedBy   = \"terraform\"\n  }\n}\n\nresource \"aws_instance\" \"app\" {\n  # ... instance config ...\n\n  tags = merge(local.common_tags, {\n    Name = \"${var.project_name}-app-${count.index}\"\n    Role = \"application\"\n  })\n}\n\nresource \"aws_budgets_budget\" \"monthly\" {\n  name         = \"monthly-budget\"\n  budget_type  = \"COST\"\n  limit_amount = \"1000\"\n  limit_unit   = \"USD\"\n  time_unit    = \"MONTHLY\"\n\n  notification {\n    comparison_operator        = \"GREATER_THAN\"\n    threshold                  = 80\n    threshold_type            = \"PERCENTAGE\"\n    notification_type         = \"ACTUAL\"\n    subscriber_email_addresses = [var.finance_email]\n  }\n}"
+        }
+      ]
+    },
+    {
+      "id": "cost-reserved-savings",
+      "title": "Optimize with Reserved Instances and Savings Plans",
+      "description": "Analyze usage patterns and purchase Reserved Instances or Savings Plans for predictable workloads. Use Spot instances for fault-tolerant workloads. Regularly review and optimize commitments.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Analyze savings opportunities",
+          "code": "# Get Reserved Instance recommendations\naws ce get-reservation-purchase-recommendation \\\n  --service \"Amazon Elastic Compute Cloud - Compute\" \\\n  --lookback-period-in-days SIXTY_DAYS \\\n  --payment-option NO_UPFRONT \\\n  --term-in-years ONE_YEAR\n\n# Get Savings Plan recommendations\naws ce get-savings-plans-purchase-recommendation \\\n  --savings-plans-type COMPUTE_SP \\\n  --term-in-years ONE_YEAR \\\n  --payment-option NO_UPFRONT \\\n  --lookback-period-in-days SIXTY_DAYS\n\n# Check current coverage\naws ce get-reservation-coverage \\\n  --time-period Start=2024-01-01,End=2024-01-31 \\\n  --granularity MONTHLY"
+        }
+      ]
+    },
+    {
+      "id": "sus-resource-efficiency",
+      "title": "Optimize resource efficiency for sustainability",
+      "description": "Choose efficient instance types (Graviton). Implement scaling to match demand. Use managed services to improve utilization. Consider sustainability when selecting regions.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Sustainability best practices",
+          "code": "# AWS regions with low carbon intensity:\n# - eu-north-1 (Stockholm) - Renewable energy\n# - eu-west-1 (Ireland) - Renewable energy\n# - ca-central-1 (Montreal) - Hydroelectric\n# - us-west-2 (Oregon) - Renewable energy\n\n# Check Customer Carbon Footprint Tool\n# Console > Billing > Carbon Footprint\n\n# Graviton instances: ~60% more energy efficient\n# Compare: m6i.large vs m7g.large (Graviton3)\n\n# Serverless reduces idle resources\n# Lambda, Fargate, Aurora Serverless v2"
+        },
+        {
+          "language": "hcl",
+          "label": "Efficient resource configuration",
+          "code": "resource \"aws_autoscaling_group\" \"app\" {\n  # Scale down during off-hours\n  min_size = 1\n  max_size = 20\n\n  # Use Graviton for efficiency\n  launch_template {\n    id = aws_launch_template.graviton.id\n  }\n}\n\nresource \"aws_autoscaling_schedule\" \"scale_down_night\" {\n  scheduled_action_name  = \"scale-down-night\"\n  autoscaling_group_name = aws_autoscaling_group.app.name\n  min_size              = 1\n  max_size              = 5\n  desired_capacity      = 2\n  recurrence            = \"0 22 * * *\"  # 10 PM\n}\n\nresource \"aws_autoscaling_schedule\" \"scale_up_morning\" {\n  scheduled_action_name  = \"scale-up-morning\"\n  autoscaling_group_name = aws_autoscaling_group.app.name\n  min_size              = 3\n  max_size              = 20\n  desired_capacity      = 5\n  recurrence            = \"0 7 * * 1-5\"  # 7 AM weekdays\n}"
+        }
+      ]
+    }
+  ]
+}

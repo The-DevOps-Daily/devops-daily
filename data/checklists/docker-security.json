@@ -1,0 +1,228 @@
+{
+  "id": "docker-security",
+  "slug": "docker-security",
+  "title": "Docker Security Hardening Checklist",
+  "description": "Comprehensive security checklist for hardening Docker containers, images, and runtime environments.",
+  "category": "Security",
+  "difficulty": "intermediate",
+  "estimatedTime": "60-90 minutes",
+  "tags": ["docker", "containers", "security", "hardening", "devsecops"],
+  "items": [
+    {
+      "id": "use-official-images",
+      "title": "Use official or verified base images",
+      "description": "Always start from official images from Docker Hub or verified publishers. Official images are reviewed for security and regularly updated. Avoid using random community images that may contain malware or vulnerabilities.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "dockerfile",
+          "label": "Good: Use official images",
+          "code": "# Use official Node.js image\nFROM node:20-alpine\n\n# Or use verified publisher images\nFROM bitnami/nginx:latest\n\n# Specify exact version for reproducibility\nFROM python:3.12.1-slim-bookworm"
+        },
+        {
+          "language": "bash",
+          "label": "Verify image authenticity",
+          "code": "# Check image digest\ndocker images --digests\n\n# Pull by digest for immutable reference\ndocker pull node@sha256:abc123...\n\n# Enable Docker Content Trust\nexport DOCKER_CONTENT_TRUST=1\ndocker pull nginx:latest"
+        }
+      ]
+    },
+    {
+      "id": "run-as-non-root",
+      "title": "Run containers as non-root user",
+      "description": "Never run containers as root. Create a dedicated user in your Dockerfile and switch to it. This limits the damage if the container is compromised.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "dockerfile",
+          "label": "Create and use non-root user",
+          "code": "FROM node:20-alpine\n\n# Create app directory\nWORKDIR /app\n\n# Create non-root user\nRUN addgroup -g 1001 -S appgroup && \\\n    adduser -u 1001 -S appuser -G appgroup\n\n# Copy files and set ownership\nCOPY --chown=appuser:appgroup . .\n\n# Switch to non-root user\nUSER appuser\n\nCMD [\"node\", \"server.js\"]"
+        },
+        {
+          "language": "bash",
+          "label": "Run container as specific user",
+          "code": "# Run as specific user ID\ndocker run --user 1001:1001 myimage\n\n# Verify running user\ndocker exec mycontainer whoami"
+        }
+      ]
+    },
+    {
+      "id": "minimize-image-size",
+      "title": "Use minimal base images and multi-stage builds",
+      "description": "Smaller images have fewer vulnerabilities. Use Alpine or distroless images. Multi-stage builds let you compile in one stage and copy only the binary to a minimal runtime image.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "dockerfile",
+          "label": "Multi-stage build example",
+          "code": "# Build stage\nFROM golang:1.21-alpine AS builder\nWORKDIR /app\nCOPY . .\nRUN CGO_ENABLED=0 go build -o myapp\n\n# Runtime stage - minimal image\nFROM gcr.io/distroless/static-debian12\nCOPY --from=builder /app/myapp /\nUSER nonroot:nonroot\nENTRYPOINT [\"/myapp\"]"
+        },
+        {
+          "language": "bash",
+          "label": "Compare image sizes",
+          "code": "# Check image sizes\ndocker images | grep -E 'node|alpine|distroless'\n\n# node:20          ~1GB\n# node:20-alpine   ~180MB\n# distroless       ~20MB"
+        }
+      ]
+    },
+    {
+      "id": "scan-images",
+      "title": "Scan images for vulnerabilities",
+      "description": "Integrate vulnerability scanning into your CI/CD pipeline. Scan images before pushing to registry and block deployments with critical vulnerabilities.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Scan with Trivy",
+          "code": "# Install Trivy\nbrew install trivy\n\n# Scan an image\ntrivy image myapp:latest\n\n# Scan and fail on HIGH/CRITICAL\ntrivy image --severity HIGH,CRITICAL --exit-code 1 myapp:latest\n\n# Scan Dockerfile\ntrivy config Dockerfile"
+        },
+        {
+          "language": "yaml",
+          "label": "GitHub Actions integration",
+          "code": "- name: Scan image with Trivy\n  uses: aquasecurity/trivy-action@master\n  with:\n    image-ref: 'myapp:${{ github.sha }}'\n    format: 'sarif'\n    output: 'trivy-results.sarif'\n    severity: 'CRITICAL,HIGH'\n    exit-code: '1'"
+        }
+      ]
+    },
+    {
+      "id": "read-only-filesystem",
+      "title": "Use read-only filesystem",
+      "description": "Run containers with read-only root filesystem to prevent malicious writes. Mount specific directories as writable only where needed (temp, logs, etc.).",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Run with read-only filesystem",
+          "code": "# Read-only root filesystem\ndocker run --read-only myapp\n\n# With tmpfs for temporary files\ndocker run --read-only \\\n  --tmpfs /tmp:rw,noexec,nosuid \\\n  --tmpfs /var/run:rw,noexec,nosuid \\\n  myapp"
+        },
+        {
+          "language": "yaml",
+          "label": "Kubernetes securityContext",
+          "code": "securityContext:\n  readOnlyRootFilesystem: true\n  allowPrivilegeEscalation: false\nvolumeMounts:\n  - name: tmp\n    mountPath: /tmp\nvolumes:\n  - name: tmp\n    emptyDir: {}"
+        }
+      ]
+    },
+    {
+      "id": "drop-capabilities",
+      "title": "Drop unnecessary Linux capabilities",
+      "description": "Containers inherit dangerous Linux capabilities by default. Drop all capabilities and add back only what's needed. Most apps don't need any special capabilities.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Drop all capabilities",
+          "code": "# Drop all capabilities\ndocker run --cap-drop=ALL myapp\n\n# Drop all, add specific ones back\ndocker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE myapp\n\n# List container capabilities\ndocker exec mycontainer capsh --print"
+        },
+        {
+          "language": "yaml",
+          "label": "Kubernetes capabilities",
+          "code": "securityContext:\n  capabilities:\n    drop:\n      - ALL\n    add:\n      - NET_BIND_SERVICE  # Only if needed for ports < 1024"
+        }
+      ]
+    },
+    {
+      "id": "no-secrets-in-images",
+      "title": "Never store secrets in images",
+      "description": "Secrets in images can be extracted from any layer. Use environment variables, mounted secrets, or secret management tools like Vault.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "dockerfile",
+          "label": "Bad vs Good practices",
+          "code": "# BAD - Secret in image layer\nENV API_KEY=super-secret-key\nCOPY .env /app/.env\n\n# GOOD - Use build args for non-sensitive config\nARG NODE_ENV=production\n\n# GOOD - Secrets at runtime\n# Pass via: docker run -e API_KEY=xxx myapp"
+        },
+        {
+          "language": "bash",
+          "label": "Use Docker secrets",
+          "code": "# Create secret\necho \"my-password\" | docker secret create db_password -\n\n# Use in service (Swarm)\ndocker service create \\\n  --secret db_password \\\n  --env DB_PASSWORD_FILE=/run/secrets/db_password \\\n  myapp"
+        }
+      ]
+    },
+    {
+      "id": "limit-resources",
+      "title": "Set resource limits",
+      "description": "Prevent containers from consuming all host resources. Set memory and CPU limits to contain resource exhaustion attacks and noisy neighbors.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Set resource limits",
+          "code": "# Limit memory and CPU\ndocker run -d \\\n  --memory=512m \\\n  --memory-swap=512m \\\n  --cpus=0.5 \\\n  --pids-limit=100 \\\n  myapp"
+        },
+        {
+          "language": "yaml",
+          "label": "Kubernetes resources",
+          "code": "resources:\n  requests:\n    memory: \"256Mi\"\n    cpu: \"250m\"\n  limits:\n    memory: \"512Mi\"\n    cpu: \"500m\""
+        }
+      ]
+    },
+    {
+      "id": "use-security-profiles",
+      "title": "Enable AppArmor or Seccomp profiles",
+      "description": "Use security profiles to restrict system calls containers can make. Docker has default Seccomp profile enabled. Consider custom profiles for tighter security.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Apply Seccomp profile",
+          "code": "# Use default profile (already enabled)\ndocker run --security-opt seccomp=default myapp\n\n# Use custom profile\ndocker run --security-opt seccomp=custom-profile.json myapp\n\n# Check if seccomp is enabled\ndocker info | grep -i seccomp"
+        },
+        {
+          "language": "json",
+          "label": "Custom Seccomp profile",
+          "code": "{\n  \"defaultAction\": \"SCMP_ACT_ERRNO\",\n  \"architectures\": [\"SCMP_ARCH_X86_64\"],\n  \"syscalls\": [\n    {\n      \"names\": [\"read\", \"write\", \"exit\", \"exit_group\"],\n      \"action\": \"SCMP_ACT_ALLOW\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "id": "private-registry",
+      "title": "Use private container registry",
+      "description": "Store images in a private registry with access controls. Enable vulnerability scanning, image signing, and retention policies.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Push to private registry",
+          "code": "# Login to registry\ndocker login myregistry.azurecr.io\n\n# Tag and push\ndocker tag myapp:latest myregistry.azurecr.io/myapp:v1.0\ndocker push myregistry.azurecr.io/myapp:v1.0\n\n# Pull from private registry\ndocker pull myregistry.azurecr.io/myapp:v1.0"
+        },
+        {
+          "language": "bash",
+          "label": "Sign images with Cosign",
+          "code": "# Install cosign\nbrew install cosign\n\n# Generate key pair\ncosign generate-key-pair\n\n# Sign image\ncosign sign --key cosign.key myregistry.io/myapp:v1.0\n\n# Verify signature\ncosign verify --key cosign.pub myregistry.io/myapp:v1.0"
+        }
+      ]
+    },
+    {
+      "id": "network-segmentation",
+      "title": "Use network segmentation",
+      "description": "Isolate containers using Docker networks. Only expose necessary ports. Use internal networks for backend services that don't need external access.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Create isolated networks",
+          "code": "# Create frontend network\ndocker network create frontend\n\n# Create backend network (internal only)\ndocker network create --internal backend\n\n# Run containers on specific networks\ndocker run -d --network frontend --name web nginx\ndocker run -d --network backend --name db postgres\n\n# Connect web to both networks\ndocker network connect backend web"
+        },
+        {
+          "language": "yaml",
+          "label": "Docker Compose networks",
+          "code": "services:\n  web:\n    networks:\n      - frontend\n      - backend\n  db:\n    networks:\n      - backend\n\nnetworks:\n  frontend:\n  backend:\n    internal: true"
+        }
+      ]
+    },
+    {
+      "id": "health-checks",
+      "title": "Implement health checks",
+      "description": "Add HEALTHCHECK instructions to detect when containers are unhealthy. This allows orchestrators to restart failed containers automatically.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "dockerfile",
+          "label": "Add health check",
+          "code": "FROM node:20-alpine\nWORKDIR /app\nCOPY . .\n\nHEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \\\n  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1\n\nCMD [\"node\", \"server.js\"]"
+        },
+        {
+          "language": "bash",
+          "label": "Check container health",
+          "code": "# View health status\ndocker inspect --format='{{.State.Health.Status}}' mycontainer\n\n# View health check logs\ndocker inspect --format='{{json .State.Health}}' mycontainer | jq"
+        }
+      ]
+    }
+  ]
+}

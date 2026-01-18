@@ -1,0 +1,210 @@
+{
+  "id": "monitoring-observability",
+  "slug": "monitoring-observability",
+  "title": "Monitoring & Observability Checklist",
+  "description": "Comprehensive checklist for implementing monitoring, logging, tracing, and alerting across your infrastructure and applications.",
+  "category": "DevOps",
+  "difficulty": "intermediate",
+  "estimatedTime": "60-90 minutes",
+  "tags": ["monitoring", "observability", "logging", "metrics", "alerting", "tracing"],
+  "items": [
+    {
+      "id": "define-slis-slos",
+      "title": "Define SLIs, SLOs, and SLAs",
+      "description": "Start by defining what good looks like. Service Level Indicators (SLIs) are metrics that measure service quality. Service Level Objectives (SLOs) are targets for those metrics. SLAs are contractual commitments based on SLOs.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Example SLOs definition",
+          "code": "# SLO Configuration\nservice: api-gateway\nslos:\n  - name: availability\n    sli: success_rate\n    target: 99.9%\n    window: 30d\n    description: \"99.9% of requests return non-5xx status\"\n\n  - name: latency_p99\n    sli: request_duration_seconds\n    target: 99%\n    threshold: 500ms\n    window: 30d\n    description: \"99% of requests complete within 500ms\"\n\n  - name: throughput\n    sli: requests_per_second\n    target: 1000\n    description: \"System handles 1000 RPS without degradation\""
+        },
+        {
+          "language": "promql",
+          "label": "PromQL SLI calculations",
+          "code": "# Availability SLI\nsum(rate(http_requests_total{status!~\"5..\"}[5m]))\n/\nsum(rate(http_requests_total[5m]))\n\n# Latency SLI (p99 under 500ms)\nhistogram_quantile(0.99, \n  sum(rate(http_request_duration_seconds_bucket[5m])) by (le)\n) < 0.5\n\n# Error budget remaining\n1 - ((1 - (sum(rate(http_requests_total{status!~\"5..\"}[30d])) \n  / sum(rate(http_requests_total[30d])))) / (1 - 0.999))"
+        }
+      ]
+    },
+    {
+      "id": "structured-logging",
+      "title": "Implement structured logging",
+      "description": "Use JSON-formatted logs with consistent fields like timestamp, level, service, trace_id, and message. This makes logs searchable and parseable. Include contextual information but avoid logging sensitive data.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Structured logger setup",
+          "code": "import pino from 'pino';\n\nconst logger = pino({\n  level: process.env.LOG_LEVEL || 'info',\n  formatters: {\n    level: (label) => ({ level: label })\n  },\n  base: {\n    service: 'api-gateway',\n    environment: process.env.NODE_ENV,\n    version: process.env.APP_VERSION\n  },\n  timestamp: pino.stdTimeFunctions.isoTime\n});\n\n// Usage with context\nlogger.info({\n  traceId: req.headers['x-trace-id'],\n  userId: req.user?.id,\n  method: req.method,\n  path: req.path\n}, 'Request received');\n\n// Error logging\nlogger.error({\n  err: error,\n  stack: error.stack,\n  context: { orderId, userId }\n}, 'Payment processing failed');"
+        },
+        {
+          "language": "json",
+          "label": "Structured log output",
+          "code": "{\n  \"timestamp\": \"2024-01-15T10:30:00.000Z\",\n  \"level\": \"info\",\n  \"service\": \"api-gateway\",\n  \"environment\": \"production\",\n  \"traceId\": \"abc123def456\",\n  \"userId\": \"user_789\",\n  \"method\": \"POST\",\n  \"path\": \"/api/orders\",\n  \"msg\": \"Request received\"\n}"
+        }
+      ]
+    },
+    {
+      "id": "metrics-instrumentation",
+      "title": "Instrument applications with metrics",
+      "description": "Expose key metrics using standard formats like Prometheus. Track the RED method (Rate, Errors, Duration) for services and USE method (Utilization, Saturation, Errors) for resources.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Prometheus metrics setup",
+          "code": "import { Registry, Counter, Histogram, Gauge } from 'prom-client';\n\nconst register = new Registry();\n\n// Request counter\nconst httpRequestsTotal = new Counter({\n  name: 'http_requests_total',\n  help: 'Total HTTP requests',\n  labelNames: ['method', 'path', 'status'],\n  registers: [register]\n});\n\n// Request duration histogram\nconst httpRequestDuration = new Histogram({\n  name: 'http_request_duration_seconds',\n  help: 'HTTP request duration in seconds',\n  labelNames: ['method', 'path'],\n  buckets: [0.01, 0.05, 0.1, 0.5, 1, 5],\n  registers: [register]\n});\n\n// Active connections gauge\nconst activeConnections = new Gauge({\n  name: 'active_connections',\n  help: 'Number of active connections',\n  registers: [register]\n});\n\n// Middleware to record metrics\napp.use((req, res, next) => {\n  const end = httpRequestDuration.startTimer({ method: req.method, path: req.route?.path });\n  res.on('finish', () => {\n    httpRequestsTotal.inc({ method: req.method, path: req.route?.path, status: res.statusCode });\n    end();\n  });\n  next();\n});"
+        },
+        {
+          "language": "yaml",
+          "label": "Prometheus scrape config",
+          "code": "scrape_configs:\n  - job_name: 'api-services'\n    kubernetes_sd_configs:\n      - role: pod\n    relabel_configs:\n      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]\n        action: keep\n        regex: true\n      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]\n        action: replace\n        target_label: __metrics_path__\n        regex: (.+)\n      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]\n        action: replace\n        regex: ([^:]+)(?::\\d+)?;(\\d+)\n        replacement: $1:$2\n        target_label: __address__"
+        }
+      ]
+    },
+    {
+      "id": "distributed-tracing",
+      "title": "Implement distributed tracing",
+      "description": "Trace requests across service boundaries using OpenTelemetry. Propagate trace context through HTTP headers. Traces help understand request flow and identify bottlenecks in microservices.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "OpenTelemetry setup",
+          "code": "import { NodeSDK } from '@opentelemetry/sdk-node';\nimport { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';\nimport { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';\nimport { Resource } from '@opentelemetry/resources';\nimport { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';\n\nconst sdk = new NodeSDK({\n  resource: new Resource({\n    [SemanticResourceAttributes.SERVICE_NAME]: 'api-gateway',\n    [SemanticResourceAttributes.SERVICE_VERSION]: '1.0.0',\n    environment: process.env.NODE_ENV\n  }),\n  traceExporter: new OTLPTraceExporter({\n    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT\n  }),\n  instrumentations: [\n    getNodeAutoInstrumentations({\n      '@opentelemetry/instrumentation-http': {\n        ignoreIncomingPaths: ['/health', '/metrics']\n      }\n    })\n  ]\n});\n\nsdk.start();"
+        },
+        {
+          "language": "typescript",
+          "label": "Custom span creation",
+          "code": "import { trace, SpanStatusCode } from '@opentelemetry/api';\n\nconst tracer = trace.getTracer('order-service');\n\nasync function processOrder(orderId: string) {\n  return tracer.startActiveSpan('process-order', async (span) => {\n    try {\n      span.setAttribute('order.id', orderId);\n      \n      // Nested span for database operation\n      await tracer.startActiveSpan('fetch-order', async (dbSpan) => {\n        const order = await db.orders.findById(orderId);\n        dbSpan.setAttribute('db.operation', 'SELECT');\n        dbSpan.end();\n        return order;\n      });\n      \n      span.setStatus({ code: SpanStatusCode.OK });\n    } catch (error) {\n      span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });\n      span.recordException(error);\n      throw error;\n    } finally {\n      span.end();\n    }\n  });\n}"
+        }
+      ]
+    },
+    {
+      "id": "centralized-log-aggregation",
+      "title": "Set up centralized log aggregation",
+      "description": "Aggregate logs from all services into a central system like Elasticsearch, Loki, or CloudWatch. Enable full-text search, filtering by service/level/time, and correlation with traces.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Fluent Bit configuration",
+          "code": "[SERVICE]\n    Flush         5\n    Log_Level     info\n    Parsers_File  parsers.conf\n\n[INPUT]\n    Name              tail\n    Path              /var/log/containers/*.log\n    Parser            docker\n    Tag               kube.*\n    Refresh_Interval  5\n    Mem_Buf_Limit     50MB\n\n[FILTER]\n    Name         kubernetes\n    Match        kube.*\n    Merge_Log    On\n    K8S-Logging.Parser  On\n\n[OUTPUT]\n    Name            es\n    Match           *\n    Host            elasticsearch\n    Port            9200\n    Index           logs\n    Type            _doc\n    Logstash_Format On\n    Retry_Limit     3"
+        },
+        {
+          "language": "yaml",
+          "label": "Loki with Promtail",
+          "code": "# promtail-config.yaml\nserver:\n  http_listen_port: 9080\n\npositions:\n  filename: /tmp/positions.yaml\n\nclients:\n  - url: http://loki:3100/loki/api/v1/push\n\nscrape_configs:\n  - job_name: kubernetes-pods\n    kubernetes_sd_configs:\n      - role: pod\n    relabel_configs:\n      - source_labels: [__meta_kubernetes_pod_label_app]\n        target_label: app\n      - source_labels: [__meta_kubernetes_namespace]\n        target_label: namespace\n    pipeline_stages:\n      - json:\n          expressions:\n            level: level\n            message: msg\n      - labels:\n          level:"
+        }
+      ]
+    },
+    {
+      "id": "dashboards",
+      "title": "Create monitoring dashboards",
+      "description": "Build dashboards that show system health at a glance. Include service overview, resource utilization, error rates, and latency percentiles. Use consistent layouts across services for familiarity.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "json",
+          "label": "Grafana dashboard panel",
+          "code": "{\n  \"title\": \"Request Rate\",\n  \"type\": \"graph\",\n  \"datasource\": \"Prometheus\",\n  \"targets\": [\n    {\n      \"expr\": \"sum(rate(http_requests_total[5m])) by (service)\",\n      \"legendFormat\": \"{{service}}\"\n    }\n  ],\n  \"yAxes\": [\n    {\n      \"label\": \"Requests/sec\",\n      \"min\": 0\n    }\n  ],\n  \"alert\": {\n    \"name\": \"High Request Rate\",\n    \"conditions\": [\n      {\n        \"evaluator\": { \"type\": \"gt\", \"params\": [1000] },\n        \"reducer\": { \"type\": \"avg\" }\n      }\n    ]\n  }\n}"
+        },
+        {
+          "language": "bash",
+          "label": "Essential dashboard panels",
+          "code": "# Key panels for service dashboard:\n\n1. Request Rate (RPS)\n2. Error Rate (%)\n3. Latency (p50, p95, p99)\n4. Active Connections\n5. CPU Utilization\n6. Memory Usage\n7. Pod/Container Count\n8. SLO Budget Remaining\n9. Recent Errors Table\n10. Dependency Health Status"
+        }
+      ]
+    },
+    {
+      "id": "alerting-rules",
+      "title": "Configure meaningful alerts",
+      "description": "Alert on symptoms, not causes. Focus on user-impacting issues. Avoid noisy alerts that get ignored. Every alert should be actionable with a clear runbook. Use severity levels appropriately.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Prometheus alerting rules",
+          "code": "groups:\n  - name: service-alerts\n    rules:\n      - alert: HighErrorRate\n        expr: |\n          sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (service)\n          / sum(rate(http_requests_total[5m])) by (service) > 0.01\n        for: 5m\n        labels:\n          severity: critical\n        annotations:\n          summary: \"High error rate on {{ $labels.service }}\"\n          description: \"Error rate is {{ $value | humanizePercentage }}\"\n          runbook_url: \"https://runbooks.example.com/high-error-rate\"\n\n      - alert: HighLatency\n        expr: |\n          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 2\n        for: 10m\n        labels:\n          severity: warning\n        annotations:\n          summary: \"High p99 latency on {{ $labels.service }}\"\n          description: \"p99 latency is {{ $value | humanizeDuration }}\""
+        },
+        {
+          "language": "yaml",
+          "label": "Alertmanager routing",
+          "code": "route:\n  receiver: 'default-receiver'\n  group_by: ['alertname', 'service']\n  group_wait: 30s\n  group_interval: 5m\n  repeat_interval: 4h\n  routes:\n    - match:\n        severity: critical\n      receiver: 'pagerduty-critical'\n      continue: true\n    - match:\n        severity: critical\n      receiver: 'slack-critical'\n    - match:\n        severity: warning\n      receiver: 'slack-warnings'\n\nreceivers:\n  - name: 'pagerduty-critical'\n    pagerduty_configs:\n      - service_key: '<key>'\n        severity: critical\n  - name: 'slack-critical'\n    slack_configs:\n      - channel: '#incidents'\n        title: '🚨 {{ .GroupLabels.alertname }}'\n        text: '{{ .CommonAnnotations.description }}'"
+        }
+      ]
+    },
+    {
+      "id": "infrastructure-monitoring",
+      "title": "Monitor infrastructure resources",
+      "description": "Track CPU, memory, disk, and network across all hosts. Monitor Kubernetes cluster health, node status, and resource quotas. Set up alerts for resource exhaustion before it impacts services.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Node Exporter deployment",
+          "code": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: node-exporter\nspec:\n  selector:\n    matchLabels:\n      app: node-exporter\n  template:\n    spec:\n      hostNetwork: true\n      hostPID: true\n      containers:\n        - name: node-exporter\n          image: prom/node-exporter:latest\n          args:\n            - --path.procfs=/host/proc\n            - --path.sysfs=/host/sys\n            - --collector.filesystem.ignored-mount-points\n            - ^/(sys|proc|dev|host|etc)($|/)\n          volumeMounts:\n            - name: proc\n              mountPath: /host/proc\n              readOnly: true\n            - name: sys\n              mountPath: /host/sys\n              readOnly: true"
+        },
+        {
+          "language": "promql",
+          "label": "Infrastructure alert queries",
+          "code": "# Disk space low (< 10% free)\n(node_filesystem_avail_bytes / node_filesystem_size_bytes) * 100 < 10\n\n# High CPU usage (> 80% for 10 min)\n100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > 80\n\n# Memory pressure (< 10% available)\n(node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 10\n\n# Pod stuck in pending\nkube_pod_status_phase{phase=\"Pending\"} > 0\n\n# Node not ready\nkube_node_status_condition{condition=\"Ready\",status=\"true\"} == 0"
+        }
+      ]
+    },
+    {
+      "id": "log-correlation",
+      "title": "Correlate logs, metrics, and traces",
+      "description": "Link your observability signals together. Include trace IDs in logs. Add exemplars to metrics that link to traces. This enables jumping from a spike in a graph directly to the relevant traces and logs.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Inject trace ID into logs",
+          "code": "import { trace, context } from '@opentelemetry/api';\n\nfunction getTraceContext() {\n  const span = trace.getSpan(context.active());\n  if (!span) return {};\n  \n  const spanContext = span.spanContext();\n  return {\n    traceId: spanContext.traceId,\n    spanId: spanContext.spanId,\n    traceFlags: spanContext.traceFlags\n  };\n}\n\n// Logger middleware\nconst logWithTrace = (message: string, data?: object) => {\n  logger.info({\n    ...getTraceContext(),\n    ...data\n  }, message);\n};"
+        },
+        {
+          "language": "yaml",
+          "label": "Grafana data source correlation",
+          "code": "# In Grafana, configure data source correlations\n# datasource-correlations.yaml\n\ncorrelations:\n  - sourceUID: prometheus\n    targetUID: tempo\n    label: \"View traces\"\n    config:\n      type: query\n      target:\n        query: '{ traceId=\"${__value.raw}\" }'\n      field: traceId\n\n  - sourceUID: loki\n    targetUID: tempo\n    label: \"View trace\"\n    config:\n      type: query\n      target:\n        query: '{ traceId=\"${__data.fields.traceId}\" }'"
+        }
+      ]
+    },
+    {
+      "id": "anomaly-detection",
+      "title": "Implement anomaly detection",
+      "description": "Use machine learning or statistical methods to detect unusual patterns. Static thresholds don't work for metrics with variable baselines. Consider seasonal patterns and use dynamic alerting.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "promql",
+          "label": "Statistical anomaly detection",
+          "code": "# Detect if current value is more than 3 standard deviations from mean\n(\n  http_requests_total - avg_over_time(http_requests_total[1h])\n) / stddev_over_time(http_requests_total[1h]) > 3\n\n# Compare to same time last week\nhttp_requests_total > 1.5 * http_requests_total offset 7d\n\n# Predict future value using linear regression\npredict_linear(node_filesystem_avail_bytes[6h], 24 * 3600) < 0"
+        },
+        {
+          "language": "python",
+          "label": "ML-based anomaly detection",
+          "code": "from sklearn.ensemble import IsolationForest\nimport pandas as pd\n\n# Load metrics data\ndf = pd.read_csv('metrics.csv')\n\n# Train isolation forest\nmodel = IsolationForest(contamination=0.01)\ndf['anomaly'] = model.fit_predict(df[['request_rate', 'error_rate', 'latency_p99']])\n\n# Anomalies have label -1\nanomalies = df[df['anomaly'] == -1]\nprint(f\"Detected {len(anomalies)} anomalies\")"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-monitoring",
+      "title": "Set up synthetic monitoring",
+      "description": "Proactively test your services from the user's perspective. Run regular checks from multiple locations. Synthetic monitors catch issues before users do and verify critical user journeys work.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Kubernetes CronJob for health checks",
+          "code": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: synthetic-monitor\nspec:\n  schedule: \"*/5 * * * *\"\n  jobTemplate:\n    spec:\n      template:\n        spec:\n          containers:\n            - name: check\n              image: curlimages/curl\n              command:\n                - /bin/sh\n                - -c\n                - |\n                  response=$(curl -s -o /dev/null -w '%{http_code}' https://api.example.com/health)\n                  if [ \"$response\" != \"200\" ]; then\n                    curl -X POST $SLACK_WEBHOOK -d '{\"text\": \"Health check failed!\"}'\n                    exit 1\n                  fi\n          restartPolicy: Never"
+        },
+        {
+          "language": "typescript",
+          "label": "Playwright synthetic test",
+          "code": "import { test, expect } from '@playwright/test';\n\ntest('user can complete checkout', async ({ page }) => {\n  // Navigate to site\n  await page.goto('https://shop.example.com');\n  \n  // Search and add product\n  await page.fill('[data-testid=search]', 'laptop');\n  await page.click('[data-testid=search-btn]');\n  await page.click('[data-testid=product-0]');\n  await page.click('[data-testid=add-to-cart]');\n  \n  // Checkout\n  await page.click('[data-testid=checkout]');\n  await expect(page.locator('[data-testid=order-summary]')).toBeVisible();\n  \n  // Verify load time\n  const metrics = await page.metrics();\n  expect(metrics.TaskDuration).toBeLessThan(3000);\n});"
+        }
+      ]
+    }
+  ]
+}

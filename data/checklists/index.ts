@@ -6,6 +6,11 @@ import awsSecurity from './aws-security.json';
 import cicdPipelineSetup from './cicd-pipeline-setup.json';
 import productionDeployment from './production-deployment.json';
 import terraformRepoStructure from './terraform-repo-structure.json';
+import dockerSecurity from './docker-security.json';
+import highAvailability from './high-availability.json';
+import monitoringObservability from './monitoring-observability.json';
+import awsWellArchitected from './aws-well-architected.json';
+import gitopsImplementation from './gitops-implementation.json';
 
 export const checklists: Checklist[] = [
   sshHardening as Checklist,
@@ -14,6 +19,11 @@ export const checklists: Checklist[] = [
   cicdPipelineSetup as Checklist,
   productionDeployment as Checklist,
   terraformRepoStructure,
+  dockerSecurity as Checklist,
+  highAvailability as Checklist,
+  monitoringObservability as Checklist,
+  awsWellArchitected as Checklist,
+  gitopsImplementation as Checklist,
 ];
 
 export const getChecklistBySlug = (slug: string): Checklist | undefined => {

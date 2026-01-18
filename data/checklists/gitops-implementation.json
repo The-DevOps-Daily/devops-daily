@@ -1,0 +1,197 @@
+{
+  "id": "gitops-implementation",
+  "slug": "gitops-implementation",
+  "title": "GitOps Implementation Checklist",
+  "description": "Comprehensive checklist for implementing GitOps practices with repository structure, sync policies, secret management, and deployment strategies.",
+  "category": "DevOps",
+  "difficulty": "intermediate",
+  "estimatedTime": "60-90 minutes",
+  "tags": ["gitops", "kubernetes", "argocd", "flux", "continuous-deployment"],
+  "items": [
+    {
+      "id": "repo-structure",
+      "title": "Design repository structure",
+      "description": "Organize your Git repositories for GitOps. Choose between monorepo or multi-repo approach. Separate application code from deployment manifests. Structure environments clearly.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Recommended directory structure",
+          "code": "gitops-repo/\n├── apps/                      # Application definitions\n│   ├── production/\n│   │   ├── api-service.yaml\n│   │   ├── web-frontend.yaml\n│   │   └── kustomization.yaml\n│   ├── staging/\n│   │   └── kustomization.yaml\n│   └── base/                  # Base manifests\n│       ├── api-service/\n│       │   ├── deployment.yaml\n│       │   ├── service.yaml\n│       │   └── kustomization.yaml\n│       └── web-frontend/\n├── infrastructure/            # Cluster infrastructure\n│   ├── controllers/           # Ingress, cert-manager, etc.\n│   ├── monitoring/            # Prometheus, Grafana\n│   └── security/              # Network policies, RBAC\n├── clusters/                  # Cluster-specific config\n│   ├── prod-us-east/\n│   └── staging/\n└── README.md"
+        },
+        {
+          "language": "yaml",
+          "label": "Kustomization overlay example",
+          "code": "# apps/production/kustomization.yaml\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\n\nnamespace: production\n\nresources:\n  - ../base/api-service\n  - ../base/web-frontend\n\nimages:\n  - name: api-service\n    newTag: v1.2.3\n  - name: web-frontend\n    newTag: v2.1.0\n\npatches:\n  - path: patches/replica-count.yaml\n  - path: patches/resource-limits.yaml\n\nconfigMapGenerator:\n  - name: app-config\n    envs:\n      - config.env"
+        }
+      ]
+    },
+    {
+      "id": "gitops-tool-setup",
+      "title": "Set up GitOps controller",
+      "description": "Install and configure Argo CD or Flux. These controllers continuously sync your cluster state with your Git repository. Choose based on your team's needs and preferences.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Install Argo CD",
+          "code": "# Create namespace\nkubectl create namespace argocd\n\n# Install Argo CD\nkubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml\n\n# Wait for pods\nkubectl wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s\n\n# Get initial admin password\nargocd admin initial-password -n argocd\n\n# Login via CLI\nargocd login localhost:8080 --username admin --password <password>\n\n# Change password\nargocd account update-password"
+        },
+        {
+          "language": "bash",
+          "label": "Install Flux",
+          "code": "# Install Flux CLI\ncurl -s https://fluxcd.io/install.sh | sudo bash\n\n# Bootstrap Flux with GitHub\nflux bootstrap github \\\n  --owner=my-org \\\n  --repository=gitops-repo \\\n  --branch=main \\\n  --path=clusters/production \\\n  --personal\n\n# Check Flux status\nflux check\nflux get all"
+        }
+      ]
+    },
+    {
+      "id": "application-definitions",
+      "title": "Define applications declaratively",
+      "description": "Create Application or Kustomization resources that define what to deploy and how. Specify source repository, target namespace, and sync policies.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Argo CD Application",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: api-service\n  namespace: argocd\n  finalizers:\n    - resources-finalizer.argocd.argoproj.io\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/org/gitops-repo\n    targetRevision: main\n    path: apps/production/api-service\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: production\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true\n    syncOptions:\n      - CreateNamespace=true\n    retry:\n      limit: 5\n      backoff:\n        duration: 5s\n        factor: 2\n        maxDuration: 3m"
+        },
+        {
+          "language": "yaml",
+          "label": "Flux Kustomization",
+          "code": "apiVersion: kustomize.toolkit.fluxcd.io/v1\nkind: Kustomization\nmetadata:\n  name: api-service\n  namespace: flux-system\nspec:\n  interval: 10m\n  targetNamespace: production\n  sourceRef:\n    kind: GitRepository\n    name: gitops-repo\n  path: ./apps/production/api-service\n  prune: true\n  healthChecks:\n    - apiVersion: apps/v1\n      kind: Deployment\n      name: api-service\n      namespace: production\n  timeout: 3m\n  retryInterval: 1m"
+        }
+      ]
+    },
+    {
+      "id": "secret-management",
+      "title": "Implement secure secret management",
+      "description": "Never store plain secrets in Git. Use Sealed Secrets, SOPS, External Secrets Operator, or Vault. Encrypt secrets before committing and decrypt at deployment time.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Sealed Secrets workflow",
+          "code": "# Install kubeseal CLI\nbrew install kubeseal\n\n# Create a regular secret\nkubectl create secret generic db-credentials \\\n  --from-literal=username=admin \\\n  --from-literal=password=secret123 \\\n  --dry-run=client -o yaml > secret.yaml\n\n# Seal the secret\nkubeseal --format yaml < secret.yaml > sealed-secret.yaml\n\n# Now safe to commit\nrm secret.yaml\ngit add sealed-secret.yaml\ngit commit -m 'Add sealed database credentials'"
+        },
+        {
+          "language": "yaml",
+          "label": "External Secrets Operator",
+          "code": "apiVersion: external-secrets.io/v1beta1\nkind: ExternalSecret\nmetadata:\n  name: db-credentials\n  namespace: production\nspec:\n  refreshInterval: 1h\n  secretStoreRef:\n    name: aws-secrets-manager\n    kind: ClusterSecretStore\n  target:\n    name: db-credentials\n    creationPolicy: Owner\n  data:\n    - secretKey: username\n      remoteRef:\n        key: production/database\n        property: username\n    - secretKey: password\n      remoteRef:\n        key: production/database\n        property: password"
+        },
+        {
+          "language": "bash",
+          "label": "SOPS with age encryption",
+          "code": "# Install SOPS and age\nbrew install sops age\n\n# Generate age key\nage-keygen -o key.txt\nexport SOPS_AGE_KEY_FILE=key.txt\n\n# Create .sops.yaml config\ncat > .sops.yaml << EOF\ncreation_rules:\n  - path_regex: secrets/.*\\.yaml\n    age: age1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\nEOF\n\n# Encrypt secret\nsops --encrypt secrets/db-creds.yaml > secrets/db-creds.enc.yaml\n\n# Decrypt (handled by Flux or ArgoCD)\nsops --decrypt secrets/db-creds.enc.yaml"
+        }
+      ]
+    },
+    {
+      "id": "sync-policies",
+      "title": "Configure sync policies",
+      "description": "Define how changes are synced - automatic vs manual, with or without pruning. Configure retry policies and health checks. Set up sync windows for production deployments.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Argo CD sync policies",
+          "code": "spec:\n  syncPolicy:\n    # Automatic sync\n    automated:\n      prune: true           # Delete resources not in Git\n      selfHeal: true        # Revert manual changes\n      allowEmpty: false     # Don't sync empty directories\n    \n    syncOptions:\n      - Validate=true       # Validate manifests before applying\n      - CreateNamespace=true\n      - PrunePropagationPolicy=foreground\n      - PruneLast=true      # Prune after other syncs\n      - ServerSideApply=true\n      - RespectIgnoreDifferences=true\n    \n    retry:\n      limit: 5\n      backoff:\n        duration: 5s\n        factor: 2\n        maxDuration: 3m\n\n  # Ignore specific differences\n  ignoreDifferences:\n    - group: apps\n      kind: Deployment\n      jsonPointers:\n        - /spec/replicas  # Ignore HPA-managed replicas"
+        },
+        {
+          "language": "yaml",
+          "label": "Sync windows for production",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: AppProject\nmetadata:\n  name: production\nspec:\n  syncWindows:\n    # Allow syncs only during business hours\n    - kind: allow\n      schedule: '0 9-17 * * 1-5'  # Mon-Fri 9am-5pm\n      duration: 8h\n      applications:\n        - '*'\n      namespaces:\n        - production\n    \n    # Block syncs during holidays\n    - kind: deny\n      schedule: '* * 25 12 *'  # Christmas\n      duration: 24h\n      applications:\n        - '*'\n    \n    # Allow manual overrides\n    - kind: allow\n      schedule: '* * * * *'\n      duration: 1h\n      manualSync: true"
+        }
+      ]
+    },
+    {
+      "id": "branch-strategy",
+      "title": "Define branch and promotion strategy",
+      "description": "Set up environment promotion workflow. Use branches or directories for environments. Implement PR-based promotion with required reviews. Consider tools like Argo CD Image Updater for automated image updates.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Environment promotion workflow",
+          "code": "# .github/workflows/promote.yaml\nname: Promote to Production\n\non:\n  workflow_dispatch:\n    inputs:\n      version:\n        description: 'Version to promote'\n        required: true\n\njobs:\n  promote:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      \n      - name: Update production manifest\n        run: |\n          cd apps/production\n          kustomize edit set image api-service=api-service:${{ inputs.version }}\n          \n      - name: Create Pull Request\n        uses: peter-evans/create-pull-request@v5\n        with:\n          commit-message: 'Promote api-service ${{ inputs.version }} to production'\n          title: '[Prod] Promote api-service ${{ inputs.version }}'\n          branch: promote/api-service-${{ inputs.version }}\n          labels: production,promotion"
+        },
+        {
+          "language": "yaml",
+          "label": "Argo CD Image Updater",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: api-service\n  annotations:\n    argocd-image-updater.argoproj.io/image-list: api=myrepo/api-service\n    argocd-image-updater.argoproj.io/api.update-strategy: semver\n    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^v[0-9]+\\.[0-9]+\\.[0-9]+$\n    argocd-image-updater.argoproj.io/write-back-method: git\n    argocd-image-updater.argoproj.io/git-branch: main\nspec:\n  source:\n    path: apps/staging/api-service"
+        }
+      ]
+    },
+    {
+      "id": "drift-detection",
+      "title": "Enable drift detection and alerts",
+      "description": "Monitor for configuration drift between Git and cluster state. Alert on manual changes. Use self-heal to automatically revert unauthorized changes.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Argo CD notifications for drift",
+          "code": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: argocd-notifications-cm\ndata:\n  trigger.on-sync-status-unknown: |\n    - when: app.status.sync.status == 'Unknown'\n      send: [slack-alert]\n  \n  trigger.on-health-degraded: |\n    - when: app.status.health.status == 'Degraded'\n      send: [slack-alert, pagerduty]\n  \n  trigger.on-sync-failed: |\n    - when: app.status.operationState.phase in ['Error', 'Failed']\n      send: [slack-alert]\n  \n  template.slack-alert: |\n    message: |\n      Application {{.app.metadata.name}} sync status: {{.app.status.sync.status}}\n      Health: {{.app.status.health.status}}\n      {{if .app.status.operationState}}\n      Operation: {{.app.status.operationState.phase}}\n      {{end}}"
+        },
+        {
+          "language": "bash",
+          "label": "Monitor drift with CLI",
+          "code": "# Check sync status\nargocd app list --output wide\n\n# Find out-of-sync apps\nargocd app list -o json | jq '.[] | select(.status.sync.status != \"Synced\") | .metadata.name'\n\n# Diff against desired state\nargocd app diff api-service\n\n# See what changed\nargocd app diff api-service --local ./apps/production/api-service"
+        }
+      ]
+    },
+    {
+      "id": "rollback-strategy",
+      "title": "Define rollback procedures",
+      "description": "Document how to rollback deployments. With GitOps, rollback means reverting a Git commit. Test rollback procedures regularly. Consider progressive delivery with Argo Rollouts.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "GitOps rollback options",
+          "code": "# Option 1: Revert commit in Git\ngit revert HEAD\ngit push origin main\n# ArgoCD will sync the reverted state\n\n# Option 2: Sync to previous commit\nargocd app sync api-service --revision HEAD~1\n\n# Option 3: Rollback using ArgoCD history\nargocd app history api-service\nargocd app rollback api-service 5  # Rollback to revision 5\n\n# Option 4: Manual override (temporary)\nkubectl set image deployment/api-service api=api-service:v1.1.0\n# Note: ArgoCD will show as OutOfSync"
+        },
+        {
+          "language": "yaml",
+          "label": "Argo Rollouts for progressive delivery",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: api-service\nspec:\n  replicas: 10\n  strategy:\n    canary:\n      steps:\n        - setWeight: 10\n        - pause: { duration: 5m }\n        - setWeight: 30\n        - pause: { duration: 5m }\n        - setWeight: 50\n        - pause: { duration: 5m }\n      analysis:\n        templates:\n          - templateName: success-rate\n        startingStep: 1\n      trafficRouting:\n        nginx:\n          stableIngress: api-service\n  selector:\n    matchLabels:\n      app: api-service\n  template:\n    # Pod template here"
+        }
+      ]
+    },
+    {
+      "id": "access-control",
+      "title": "Configure RBAC and access controls",
+      "description": "Restrict who can modify the GitOps repository. Use protected branches and required reviews. Configure ArgoCD RBAC to limit who can sync or override. Integrate with SSO.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Argo CD RBAC policy",
+          "code": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: argocd-rbac-cm\n  namespace: argocd\ndata:\n  policy.default: role:readonly\n  policy.csv: |\n    # Developers can sync staging apps\n    p, role:developer, applications, sync, staging/*, allow\n    p, role:developer, applications, get, */*, allow\n    \n    # Ops can sync all apps\n    p, role:ops, applications, *, */*, allow\n    p, role:ops, clusters, get, *, allow\n    \n    # Admins can do everything\n    p, role:admin, *, *, */*, allow\n    \n    # Map groups to roles\n    g, dev-team, role:developer\n    g, ops-team, role:ops\n    g, platform-admins, role:admin\n  \n  scopes: '[groups, email]'"
+        },
+        {
+          "language": "yaml",
+          "label": "GitHub branch protection",
+          "code": "# .github/settings.yml (with probot/settings app)\nbranches:\n  - name: main\n    protection:\n      required_pull_request_reviews:\n        required_approving_review_count: 2\n        dismiss_stale_reviews: true\n        require_code_owner_reviews: true\n      required_status_checks:\n        strict: true\n        contexts:\n          - validate-manifests\n          - security-scan\n      enforce_admins: true\n      restrictions:\n        users: []\n        teams:\n          - platform-admins"
+        }
+      ]
+    },
+    {
+      "id": "observability",
+      "title": "Set up GitOps observability",
+      "description": "Monitor your GitOps controller health and sync metrics. Track deployment frequency, lead time, and failure rate. Set up dashboards for visibility into the deployment pipeline.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "ArgoCD Prometheus metrics",
+          "code": "apiVersion: monitoring.coreos.com/v1\nkind: ServiceMonitor\nmetadata:\n  name: argocd-metrics\n  namespace: argocd\nspec:\n  selector:\n    matchLabels:\n      app.kubernetes.io/name: argocd-server\n  endpoints:\n    - port: metrics\n---\n# Key metrics to track:\n# argocd_app_info - Application info\n# argocd_app_sync_total - Sync operations count\n# argocd_app_reconcile_duration_seconds - Reconcile duration\n# argocd_cluster_api_resource_objects - Cluster resources\n# argocd_app_health_status - Health by status"
+        },
+        {
+          "language": "promql",
+          "label": "GitOps dashboard queries",
+          "code": "# Deployment frequency (syncs per day)\nsum(increase(argocd_app_sync_total[24h]))\n\n# Failed syncs\nsum(argocd_app_sync_total{phase=\"Error\"})\n\n# Apps out of sync\ncount(argocd_app_info{sync_status!=\"Synced\"})\n\n# Unhealthy apps\ncount(argocd_app_info{health_status!=\"Healthy\"})\n\n# Time since last sync\ntime() - argocd_app_info{} * on(name) group_right argocd_app_sync_total"
+        }
+      ]
+    }
+  ]
+}
