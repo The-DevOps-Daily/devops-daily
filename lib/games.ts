@@ -74,7 +74,6 @@ const games: Game[] = [
     href: '/games/dbms-simulator',
     tags: ['database', 'sql', 'nosql', 'educational', 'interactive'],
     isNew: true,
-    featured: true,
     category: 'Infrastructure',
   },
   {
@@ -88,7 +87,6 @@ const games: Game[] = [
     href: '/games/gitops-workflow',
     tags: ['gitops', 'kubernetes', 'argocd', 'educational', 'interactive'],
     isNew: true,
-    featured: true,
     category: 'DevOps',
   },
   {
@@ -102,7 +100,6 @@ const games: Game[] = [
     href: '/games/bug-hunter',
     tags: ['game', 'arcade', 'interactive', 'security'],
     isNew: true,
-    featured: true,
     category: 'Games',
   },
   {
@@ -116,7 +113,6 @@ const games: Game[] = [
     href: '/games/tcp-vs-udp',
     tags: ['networking', 'educational', 'interactive', 'protocols'],
     isNew: true,
-    featured: true,
     category: 'Networking',
   },
   {
@@ -144,7 +140,6 @@ const games: Game[] = [
     href: '/games/microservices-simulator',
     tags: ['microservices', 'architecture', 'interactive', 'distributed-systems'],
     isNew: true,
-    featured: true,
     category: 'Architecture',
   },
   {
@@ -181,7 +176,6 @@ const games: Game[] = [
     color: 'from-red-500 to-orange-600',
     href: '/games/ddos-simulator',
     tags: ['educational', 'security', 'interactive', 'visualization'],
-    featured: true,
     category: 'Security',
   },
   {
@@ -195,7 +189,6 @@ const games: Game[] = [
     href: '/games/scalable-sentry',
     tags: ['game', 'tower-defense', 'strategy', 'networking'],
     isNew: true,
-    featured: true,
     category: 'Games',
   },
   {
@@ -209,7 +202,6 @@ const games: Game[] = [
     href: '/games/packet-journey',
     tags: ['educational', 'networking', 'interactive', 'visualization'],
     isNew: true,
-    featured: true,
     category: 'Networking',
   },
   {
@@ -283,7 +275,6 @@ const games: Game[] = [
     href: '/games/uptime-defender',
     tags: ['game', 'sre', 'interactive', 'real-time'],
     isNew: true,
-    featured: true,
     category: 'SRE',
   },
   {
