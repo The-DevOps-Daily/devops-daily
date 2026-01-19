@@ -35,23 +35,33 @@
     {
       "id": "observability-stack-setup",
       "title": "Deploy Observability Stack Infrastructure",
-      "description": "Set up Jaeger for tracing, Prometheus for metrics, and configure the foundational observability infrastructure.",
-      "codeExample": "# Create observability namespace\nkubectl create namespace observability\n\n# Deploy Jaeger using Operator\nkubectl create -f https://github.com/jaegertracing/jaeger-operator/releases/download/v1.39.0/jaeger-operator.yaml -n observability\n\n# Wait for operator to be ready\nkubectl wait --for=condition=available deployment jaeger-operator -n observability --timeout=300s\n\n# Create Jaeger instance\ncat > jaeger-instance.yaml <<EOF\napiVersion: jaegertracing.io/v1\nkind: Jaeger\nmetadata:\n  name: jaeger\n  namespace: observability\nspec:\n  strategy: allInOne\n  allInOne:\n    image: jaegertracing/all-in-one:latest\n    options:\n      log-level: info\n      memory:\n        max-traces: 50000\n  storage:\n    type: memory\n  ingress:\n    enabled: false\n  ui:\n    options:\n      dependencies:\n        menuEnabled: true\n      tracking:\n        gaID: UA-000000-2\nEOF\n\nkubectl apply -f jaeger-instance.yaml\n\n# Deploy OpenTelemetry Collector\ncat > otel-collector.yaml <<EOF\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: otel-collector-config\n  namespace: observability\ndata:\n  collector.yaml: |\n    receivers:\n      otlp:\n        protocols:\n          grpc:\n            endpoint: 0.0.0.0:4317\n          http:\n            endpoint: 0.0.0.0:4318\n      prometheus:\n        config:\n          scrape_configs:\n            - job_name: 'otel-collector'\n              scrape_interval: 10s\n              static_configs:\n                - targets: ['0.0.0.0:8888']\n    \n    processors:\n      batch:\n        timeout: 1s\n        send_batch_size: 1024\n      memory_limiter:\n        limit_mib: 512\n    \n    exporters:\n      jaeger:\n        endpoint: jaeger-collector:14250\n        tls:\n          insecure: true\n      prometheus:\n        endpoint: \"0.0.0.0:8889\"\n      debug:\n        verbosity: detailed\n    \n    service:\n      pipelines:\n        traces:\n          receivers: [otlp]\n          processors: [memory_limiter, batch]\n          exporters: [jaeger, debug]\n        metrics:\n          receivers: [otlp, prometheus]\n          processors: [memory_limiter, batch]\n          exporters: [prometheus, debug]\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: otel-collector\n  namespace: observability\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: otel-collector\n  template:\n    metadata:\n      labels:\n        app: otel-collector\n    spec:\n      containers:\n      - name: otel-collector\n        image: otel/opentelemetry-collector-contrib:latest\n        command:\n          - \"/otelcol-contrib\"\n          - \"--config=/conf/collector.yaml\"\n        volumeMounts:\n        - name: otel-collector-config-vol\n          mountPath: /conf\n        ports:\n        - containerPort: 4317   # OTLP gRPC receiver\n        - containerPort: 4318   # OTLP HTTP receiver\n        - containerPort: 8889   # Prometheus metrics\n        env:\n        - name: GOGC\n          value: \"80\"\n      volumes:\n      - name: otel-collector-config-vol\n        configMap:\n          name: otel-collector-config\n          items:\n            - key: collector.yaml\n              path: collector.yaml\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: otel-collector\n  namespace: observability\nspec:\n  ports:\n  - name: otlp-grpc\n    port: 4317\n    targetPort: 4317\n  - name: otlp-http\n    port: 4318\n    targetPort: 4318\n  - name: metrics\n    port: 8889\n    targetPort: 8889\n  selector:\n    app: otel-collector\nEOF\n\nkubectl apply -f otel-collector.yaml",
+      "description": "Set up Jaeger for tracing, Prometheus for metrics, and configure the foundational observability infrastructure. Note: If using minikube/kind/k3d, cert-manager must be installed first for Jaeger Operator.",
+      "codeExample": "# Create observability namespace\nkubectl create namespace observability\n\n# If using Minikube, enable the built-in Metrics Server addon\nminikube addons enable metrics-server\nkubectl wait --for=condition=available deployment/metrics-server -n kube-system --timeout=300s\n\n# Install cert-manager (required for Jaeger Operator webhooks on local K8s clusters)\nkubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml\n\n# Wait for cert-manager to be ready\nkubectl wait --for=condition=available deployment cert-manager -n cert-manager --timeout=300s\nkubectl wait --for=condition=available deployment cert-manager-webhook -n cert-manager --timeout=300s\nkubectl wait --for=condition=available deployment cert-manager-cainjector -n cert-manager --timeout=300s\n\n# Deploy Jaeger using Operator\nkubectl create -f https://github.com/jaegertracing/jaeger-operator/releases/download/v1.51.0/jaeger-operator.yaml -n observability\n\n# Wait for operator to be ready\nkubectl wait --for=condition=available deployment jaeger-operator -n observability --timeout=300s\n\n# Create Jaeger instance\ncat > jaeger-instance.yaml <<EOF\napiVersion: jaegertracing.io/v1\nkind: Jaeger\nmetadata:\n  name: jaeger\n  namespace: observability\nspec:\n  strategy: allInOne\n  allInOne:\n    image: jaegertracing/all-in-one:latest\n    options:\n      log-level: info\n      memory:\n        max-traces: 50000\n  storage:\n    type: memory\n  ingress:\n    enabled: false\n  ui:\n    options:\n      dependencies:\n        menuEnabled: true\n      tracking:\n        gaID: UA-000000-2\nEOF\n\nkubectl apply -f jaeger-instance.yaml\n\n# Deploy OpenTelemetry Collector\ncat > otel-collector.yaml <<EOF\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: otel-collector-config\n  namespace: observability\ndata:\n  collector.yaml: |\n    receivers:\n      otlp:\n        protocols:\n          grpc:\n            endpoint: 0.0.0.0:4317\n          http:\n            endpoint: 0.0.0.0:4318\n      prometheus:\n        config:\n          scrape_configs:\n            - job_name: 'otel-collector'\n              scrape_interval: 10s\n              static_configs:\n                - targets: ['0.0.0.0:8888']\n    \n    processors:\n      batch:\n        timeout: 1s\n        send_batch_size: 1024\n      memory_limiter:\n        limit_mib: 512\n    \n    exporters:\n      jaeger:\n        endpoint: jaeger-collector:14250\n        tls:\n          insecure: true\n      prometheus:\n        endpoint: \"0.0.0.0:8889\"\n      debug:\n        verbosity: detailed\n    \n    service:\n      pipelines:\n        traces:\n          receivers: [otlp]\n          processors: [memory_limiter, batch]\n          exporters: [jaeger, debug]\n        metrics:\n          receivers: [otlp, prometheus]\n          processors: [memory_limiter, batch]\n          exporters: [prometheus, debug]\n---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: otel-collector\n  namespace: observability\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: otel-collector\n  template:\n    metadata:\n      labels:\n        app: otel-collector\n    spec:\n      containers:\n      - name: otel-collector\n        image: otel/opentelemetry-collector-contrib:latest\n        command:\n          - \"/otelcol-contrib\"\n          - \"--config=/conf/collector.yaml\"\n        volumeMounts:\n        - name: otel-collector-config-vol\n          mountPath: /conf\n        ports:\n        - containerPort: 4317   # OTLP gRPC receiver\n        - containerPort: 4318   # OTLP HTTP receiver\n        - containerPort: 8889   # Prometheus metrics\n        env:\n        - name: GOGC\n          value: \"80\"\n      volumes:\n      - name: otel-collector-config-vol\n        configMap:\n          name: otel-collector-config\n          items:\n            - key: collector.yaml\n              path: collector.yaml\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: otel-collector\n  namespace: observability\nspec:\n  ports:\n  - name: otlp-grpc\n    port: 4317\n    targetPort: 4317\n  - name: otlp-http\n    port: 4318\n    targetPort: 4318\n  - name: metrics\n    port: 8889\n    targetPort: 8889\n  selector:\n    app: otel-collector\nEOF\n\nkubectl apply -f otel-collector.yaml",
       "commands": [
         "kubectl create namespace observability",
-        "kubectl apply -f https://github.com/jaegertracing/jaeger-operator/releases/download/v1.39.0/jaeger-operator.yaml -n observability",
+        "minikube addons enable metrics-server",
+        "kubectl wait --for=condition=available deployment/metrics-server -n kube-system --timeout=300s",
+        "kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.4/cert-manager.yaml",
+        "kubectl wait --for=condition=available deployment cert-manager -n cert-manager --timeout=300s",
+        "kubectl apply -f https://github.com/jaegertracing/jaeger-operator/releases/download/v1.51.0/jaeger-operator.yaml -n observability",
+        "kubectl wait --for=condition=available deployment jaeger-operator -n observability --timeout=300s",
         "kubectl apply -f jaeger-instance.yaml",
         "kubectl apply -f otel-collector.yaml",
         "kubectl get pods -n observability",
+        "kubectl get pods -n cert-manager",
         "kubectl port-forward -n observability svc/jaeger-query 16686:16686 &"
       ],
       "validationCriteria": [
+        "Metrics server is running (minikube only)",
+        "cert-manager is installed and all pods are running",
         "Jaeger operator and instance are running",
         "OpenTelemetry Collector is deployed and healthy",
         "Jaeger UI is accessible on port 16686",
         "All observability pods are in running state"
       ],
       "hints": [
+        "On minikube: run 'minikube addons enable metrics-server' first and wait for it to be ready",
+        "On minikube/kind/k3d: cert-manager must be installed and fully running before Jaeger Operator",
         "Wait for Jaeger operator to be ready before creating instance",
         "Check pod logs if services fail to start",
         "Jaeger UI should show no traces initially"
@@ -169,9 +179,19 @@
       "url": "https://www.jaegertracing.io/docs/",
       "type": "documentation",
       "external": true
+    },
+    {
+      "title": "cert-manager Documentation",
+      "url": "https://cert-manager.io/docs/",
+      "type": "documentation",
+      "external": true
     }
   ],
   "troubleshooting": [
+    {
+      "issue": "Jaeger Operator deployment hangs or fails",
+      "solution": "cert-manager is required but not installed by default on local clusters (minikube, kind, k3d). Install cert-manager first and wait for all pods to be Ready: kubectl get pods -n cert-manager"
+    },
     {
       "issue": "No traces appearing in Jaeger",
       "solution": "Check OpenTelemetry Collector logs, verify service environment variables, and ensure network connectivity between services and collector"
