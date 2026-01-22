@@ -66,3 +66,6 @@ docker-compose*.yaml
 *.tsbuildinfo
 .eslintcache
 .prettierignore
+
+# Dockerfile itself (not needed in build context for static files)
+Dockerfile*

@@ -12,10 +12,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: development
       args:
-        NODE_VERSION: 20.18.1
-        PNPM_VERSION: 10.11.1
-        BUILD_ENV: development
+        NODE_VERSION: 22.13.1
+        PNPM_VERSION: 10.28.1
     container_name: devops-daily-dev
     image: devops-daily:dev
     ports:
@@ -63,16 +63,16 @@ services:
 
   # ===========================================================================
   # Production Service
-  # Uses the main Dockerfile with nginx for serving static files
+  # Uses multi-stage build with nginx for serving static files
   # ===========================================================================
   prod:
     build:
       context: .
       dockerfile: Dockerfile
+      target: production
       args:
-        NODE_VERSION: 20.18.1
-        PNPM_VERSION: 10.11.1
-        BUILD_ENV: production
+        NODE_VERSION: 22.13.1
+        PNPM_VERSION: 10.28.1
     container_name: devops-daily-prod
     image: devops-daily:prod
     ports:
@@ -84,11 +84,11 @@ services:
     # Restart policy for production
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 10s
     labels:
       - "com.devops-daily.service=prod"
       - "com.devops-daily.environment=production"
@@ -96,10 +96,10 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
           memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     logging:
       driver: "json-file"
       options:
