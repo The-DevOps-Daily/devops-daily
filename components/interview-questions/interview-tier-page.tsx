@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
-  Search,
   ChevronDown,
   ChevronUp,
   Code,
@@ -299,9 +298,8 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
   const Icon = config.icon;
   
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [isShuffled, setIsShuffled] = useState(false);
+  const [displayQuestions, setDisplayQuestions] = useState<InterviewQuestion[]>([]);
   const [progress, setProgress] = useState<Record<string, { reviewed: boolean; confident: boolean }>>({});
 
   // Load progress on mount
@@ -309,26 +307,20 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
     setProgress(getInterviewProgress());
   }, []);
 
-  // Filter and optionally shuffle questions
+  // Filter questions by category
   const filteredQuestions = useMemo(() => {
-    let result = questions.filter((q) => {
-      const matchesSearch =
-        !searchQuery ||
-        q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
-      const matchesCategory = !selectedCategory || q.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+    return questions.filter((q) => {
+      return !selectedCategory || q.category === selectedCategory;
     });
+  }, [questions, selectedCategory]);
 
-    if (isShuffled) {
-      result = [...result].sort(() => Math.random() - 0.5);
-    }
+  // Initialize display questions when filtered questions change
+  useEffect(() => {
+    setDisplayQuestions(filteredQuestions);
+    setCurrentIndex(0);
+  }, [filteredQuestions]);
 
-    return result;
-  }, [questions, searchQuery, selectedCategory, isShuffled]);
-
-  const currentQuestion = filteredQuestions[currentIndex];
+  const currentQuestion = displayQuestions[currentIndex];
   
   const completedCount = Object.values(progress).filter(p => p.reviewed).length;
   const confidentCount = Object.values(progress).filter(p => p.confident).length;
@@ -339,7 +331,7 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
       setProgress(getInterviewProgress());
       
       // Auto-advance to next question
-      if (currentIndex < filteredQuestions.length - 1) {
+      if (currentIndex < displayQuestions.length - 1) {
         setCurrentIndex(currentIndex + 1);
       }
     }
@@ -349,10 +341,12 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
     resetInterviewProgress();
     setProgress({});
     setCurrentIndex(0);
+    setDisplayQuestions(filteredQuestions);
   };
 
   const handleShuffle = () => {
-    setIsShuffled(!isShuffled);
+    const shuffled = [...displayQuestions].sort(() => Math.random() - 0.5);
+    setDisplayQuestions(shuffled);
     setCurrentIndex(0);
   };
 
@@ -400,22 +394,7 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
         </div>
 
         {/* Controls */}
-        <div className="flex flex-wrap gap-4 mb-6">
-          {/* Search */}
-          <div className="flex-1 min-w-[200px] relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search questions..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentIndex(0);
-              }}
-              className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
+       <div className="flex flex-wrap gap-4 mb-6">
           {/* Category filter */}
           <select
             value={selectedCategory || ''}
@@ -435,10 +414,9 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
           <Button
             onClick={handleShuffle}
             variant="outline"
-            className={isShuffled ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-700' : ''}
           >
             <Shuffle className="w-4 h-4 mr-2" />
-            {isShuffled ? 'Shuffled' : 'Shuffle'}
+            Shuffle
           </Button>
 
           {/* Reset button */}
@@ -457,13 +435,13 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
           >
             <ChevronUp className="w-4 h-4 mr-2" />
             Previous
-          </Button>
-          <span className="text-sm text-gray-600 dark:text-gray-400">
-            Question {currentIndex + 1} of {filteredQuestions.length}
-          </span>
-          <Button
-            onClick={() => setCurrentIndex(Math.min(filteredQuestions.length - 1, currentIndex + 1))}
-            disabled={currentIndex === filteredQuestions.length - 1}
+         </Button>
+         <span className="text-sm text-gray-600 dark:text-gray-400">
+            Question {currentIndex + 1} of {displayQuestions.length}
+         </span>
+         <Button
+            onClick={() => setCurrentIndex(Math.min(displayQuestions.length - 1, currentIndex + 1))}
+            disabled={currentIndex === displayQuestions.length - 1}
             variant="outline"
           >
             Next
@@ -490,7 +468,7 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
             All Questions
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {filteredQuestions.map((q, index) => {
+            {displayQuestions.map((q, index) => {
               const isCompleted = progress[q.id]?.reviewed;
               const isConfident = progress[q.id]?.confident;
               const isCurrent = index === currentIndex;
