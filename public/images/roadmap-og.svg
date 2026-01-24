@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="milestone1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ef4444;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#22d3ee;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ec4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f472b6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone6" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#34d399;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone7" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f87171;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone8" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#14b8a6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2dd4bf;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="milestone9" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#818cf8;stop-opacity:1" />
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <g opacity="0.1">
+    <circle cx="50" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="100" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="150" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="50" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="100" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="150" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="1050" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1100" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1150" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1050" cy="580" r="2" fill="#94a3b8"/>
+    <circle cx="1100" cy="580" r="2" fill="#94a3b8"/>
+    <circle cx="1150" cy="580" r="2" fill="#94a3b8"/>
+  </g>
+
+  <rect x="420" y="70" width="360" height="36" rx="18" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="94" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#94a3b8" text-anchor="middle">Complete DevOps Engineer Path - 9 Stages</text>
+
+  <text x="600" y="165" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="700" fill="#f8fafc" text-anchor="middle">DevOps</text>
+  <text x="600" y="230" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="700" fill="url(#titleGradient)" text-anchor="middle">Roadmap</text>
+
+  <text x="600" y="275" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#94a3b8" text-anchor="middle">From fundamentals to production-ready DevOps engineer</text>
+
+  <line x1="80" y1="380" x2="1120" y2="380" stroke="#334155" stroke-width="3" stroke-linecap="round"/>
+  <line x1="80" y1="380" x2="1120" y2="380" stroke="url(#titleGradient)" stroke-width="3" stroke-linecap="round" filter="url(#glow)"/>
+
+  <g transform="translate(80, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone1)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">1</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">Fundamentals</text>
+  </g>
+
+  <g transform="translate(210, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone2)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">2</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">IaC</text>
+  </g>
+
+  <g transform="translate(340, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone3)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">3</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">Containers</text>
+  </g>
+
+  <g transform="translate(470, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone4)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">4</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">CI/CD</text>
+  </g>
+
+  <g transform="translate(600, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone5)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">5</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">Cloud</text>
+  </g>
+
+  <g transform="translate(730, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone6)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">6</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">Monitoring</text>
+  </g>
+
+  <g transform="translate(860, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone7)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">7</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">Security</text>
+  </g>
+
+  <g transform="translate(990, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone8)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">8</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">Databases</text>
+  </g>
+
+  <g transform="translate(1120, 330)">
+    <circle cx="0" cy="50" r="18" fill="url(#milestone9)" filter="url(#glow)"/>
+    <text x="0" y="55" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="700" fill="white" text-anchor="middle">∞</text>
+    <text x="0" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="600" fill="#f8fafc" text-anchor="middle">Learning</text>
+  </g>
+
+  <g transform="translate(600, 500)">
+    <rect x="-280" y="-20" width="140" height="40" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="-210" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#94a3b8" text-anchor="middle">9 Core Stages</text>
+
+    <rect x="-70" y="-20" width="140" height="40" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="0" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#94a3b8" text-anchor="middle">50+ Skills</text>
+
+    <rect x="140" y="-20" width="140" height="40" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+    <text x="210" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#94a3b8" text-anchor="middle">Career Ready</text>
+  </g>
+
+  <text x="600" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#475569" text-anchor="middle">devops-daily.com</text>
+</svg>
