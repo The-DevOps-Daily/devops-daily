@@ -8,7 +8,13 @@
   "category": "Linux",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["bash", "scripting", "automation", "linux", "shell"],
+  "tags": [
+    "bash",
+    "scripting",
+    "automation",
+    "linux",
+    "shell"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Using == instead of = in [ ] conditionals",
     "Not handling script failures (use set -e or check $?)"
   ],
-  "relatedTopics": ["shellcheck", "bash-strict-mode", "python-scripting", "make"],
-  "resources": [
-    {
-      "title": "Bash Scripting Guide",
-      "url": "https://tldp.org/LDP/abs/html/"
-    }
+  "relatedTopics": [
+    "shellcheck",
+    "bash-strict-mode",
+    "python-scripting",
+    "make"
   ]
 }

@@ -2,13 +2,19 @@
   "id": "networking-basics-dns",
   "slug": "networking-basics-dns",
   "title": "DNS Basics",
-  "question": "What is DNS and how does DNS resolution work?",
+  "question": "What is DNS and how does the DNS resolution process work step by step?",
   "answer": "DNS (Domain Name System) translates human-readable domain names to IP addresses. Resolution flow: browser cache → OS cache → resolver (ISP/configured DNS) → root servers → TLD servers → authoritative nameservers. Common record types: A (IPv4), AAAA (IPv6), CNAME (alias), MX (mail), TXT (verification).",
   "explanation": "DNS is fundamental to how the internet works. DevOps engineers need to understand DNS for configuring domains, troubleshooting connectivity issues, setting up load balancers, managing SSL certificates, and configuring email services.",
   "category": "Networking",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["dns", "networking", "infrastructure", "fundamentals", "troubleshooting"],
+  "tags": [
+    "dns",
+    "networking",
+    "infrastructure",
+    "fundamentals",
+    "troubleshooting"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Using CNAME at the apex/root domain (not allowed)",
     "Not understanding DNS propagation delays"
   ],
-  "relatedTopics": ["route53", "cloudflare", "bind", "dns-over-https"],
-  "resources": [
-    {
-      "title": "How DNS Works Comic",
-      "url": "https://howdns.works/"
-    }
+  "relatedTopics": [
+    "route53",
+    "cloudflare",
+    "bind",
+    "dns-over-https"
   ]
 }

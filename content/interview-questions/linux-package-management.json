@@ -8,7 +8,13 @@
   "category": "Linux",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["linux", "apt", "yum", "package-management", "sysadmin"],
+  "tags": [
+    "linux",
+    "apt",
+    "yum",
+    "package-management",
+    "sysadmin"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Running apt upgrade in production without testing first",
     "Not understanding that apt and yum are for different distros"
   ],
-  "relatedTopics": ["snap", "flatpak", "rpm", "dpkg"],
-  "resources": [
-    {
-      "title": "Ubuntu Package Management",
-      "url": "https://ubuntu.com/server/docs/package-management"
-    }
+  "relatedTopics": [
+    "snap",
+    "flatpak",
+    "rpm",
+    "dpkg"
   ]
 }

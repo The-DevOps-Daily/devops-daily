@@ -8,7 +8,13 @@
   "category": "Docker",
   "difficulty": "intermediate",
   "tier": "mid",
-  "tags": ["docker", "containers", "images", "optimization", "caching"],
+  "tags": [
+    "docker",
+    "containers",
+    "images",
+    "optimization",
+    "caching"
+  ],
   "codeExamples": [
     {
       "language": "dockerfile",
@@ -31,11 +37,10 @@
     "Not using .dockerignore, causing unnecessary cache invalidation when unrelated files change",
     "Using COPY . . before installing dependencies"
   ],
-  "relatedTopics": ["multi-stage-builds", "buildkit", "image-optimization", "dockerignore"],
-  "resources": [
-    {
-      "title": "Docker Build Cache Documentation",
-      "url": "https://docs.docker.com/build/cache/"
-    }
+  "relatedTopics": [
+    "multi-stage-builds",
+    "buildkit",
+    "image-optimization",
+    "dockerignore"
   ]
 }

@@ -8,7 +8,13 @@
   "category": "SRE",
   "difficulty": "advanced",
   "tier": "senior",
-  "tags": ["chaos-engineering", "reliability", "sre", "testing", "resilience"],
+  "tags": [
+    "chaos-engineering",
+    "reliability",
+    "sre",
+    "testing",
+    "resilience"
+  ],
   "codeExamples": [
     {
       "language": "yaml",
@@ -31,11 +37,10 @@
     "Starting with production before validating in staging",
     "No automated rollback mechanism when experiments go wrong"
   ],
-  "relatedTopics": ["game-days", "disaster-recovery", "fault-injection", "resilience-testing"],
-  "resources": [
-    {
-      "title": "Principles of Chaos Engineering",
-      "url": "https://principlesofchaos.org/"
-    }
+  "relatedTopics": [
+    "game-days",
+    "disaster-recovery",
+    "fault-injection",
+    "resilience-testing"
   ]
 }

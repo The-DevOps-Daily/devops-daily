@@ -8,7 +8,13 @@
   "category": "CI/CD",
   "difficulty": "intermediate",
   "tier": "mid",
-  "tags": ["cicd", "deployment", "devops", "release-management", "zero-downtime"],
+  "tags": [
+    "cicd",
+    "deployment",
+    "devops",
+    "release-management",
+    "zero-downtime"
+  ],
   "codeExamples": [
     {
       "language": "yaml",
@@ -18,7 +24,7 @@
     {
       "language": "bash",
       "label": "Switch traffic to green",
-      "code": "# Update service selector to point to green\nkubectl patch service app-service \\\n  -p '{\"spec\":{\"selector\":{\"version\":\"green\"}}}'\n\n# Rollback to blue if needed\nkubectl patch service app-service \\\n  -p '{\"spec\":{\"selector\":{\"version\":\"blue\"}}}'" 
+      "code": "# Update service selector to point to green\nkubectl patch service app-service \\\n  -p '{\"spec\":{\"selector\":{\"version\":\"green\"}}}'\n\n# Rollback to blue if needed\nkubectl patch service app-service \\\n  -p '{\"spec\":{\"selector\":{\"version\":\"blue\"}}}'"
     }
   ],
   "followUpQuestions": [
@@ -31,11 +37,10 @@
     "Forgetting to warm up the new environment before switching traffic",
     "Not having proper health checks to verify the green environment before cutover"
   ],
-  "relatedTopics": ["canary-deployment", "rolling-update", "feature-flags", "database-migrations"],
-  "resources": [
-    {
-      "title": "Blue-Green Deployments on AWS",
-      "url": "https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/bluegreen-deployments.html"
-    }
+  "relatedTopics": [
+    "canary-deployment",
+    "rolling-update",
+    "feature-flags",
+    "database-migrations"
   ]
 }

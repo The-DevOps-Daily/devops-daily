@@ -8,7 +8,13 @@
   "category": "Linux",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["linux", "environment", "configuration", "bash", "fundamentals"],
+  "tags": [
+    "linux",
+    "environment",
+    "configuration",
+    "bash",
+    "fundamentals"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Putting spaces around the = sign (VAR = value won't work)",
     "Storing secrets in plain text environment variables in production"
   ],
-  "relatedTopics": ["dotenv", "secrets-management", "docker-env", "12-factor-app"],
-  "resources": [
-    {
-      "title": "The Twelve-Factor App: Config",
-      "url": "https://12factor.net/config"
-    }
+  "relatedTopics": [
+    "dotenv",
+    "secrets-management",
+    "docker-env",
+    "12-factor-app"
   ]
 }

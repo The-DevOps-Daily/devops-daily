@@ -8,7 +8,13 @@
   "category": "Linux",
   "difficulty": "advanced",
   "tier": "senior",
-  "tags": ["linux", "troubleshooting", "debugging", "performance", "sysadmin"],
+  "tags": [
+    "linux",
+    "troubleshooting",
+    "debugging",
+    "performance",
+    "sysadmin"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Not checking if the high CPU is expected (batch job, build process)",
     "Forgetting to check system logs before diving into process-level debugging"
   ],
-  "relatedTopics": ["memory-debugging", "io-troubleshooting", "performance-tuning", "observability"],
-  "resources": [
-    {
-      "title": "Linux Performance Analysis",
-      "url": "https://www.brendangregg.com/linuxperf.html"
-    }
+  "relatedTopics": [
+    "memory-debugging",
+    "io-troubleshooting",
+    "performance-tuning",
+    "observability"
   ]
 }

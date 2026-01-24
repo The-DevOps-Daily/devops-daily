@@ -8,7 +8,13 @@
   "category": "Infrastructure",
   "difficulty": "intermediate",
   "tier": "mid",
-  "tags": ["infrastructure", "devops", "deployment", "iac", "best-practices"],
+  "tags": [
+    "infrastructure",
+    "devops",
+    "deployment",
+    "iac",
+    "best-practices"
+  ],
   "codeExamples": [
     {
       "language": "hcl",
@@ -31,11 +37,10 @@
     "Not versioning machine images properly",
     "Building images too slowly, making deployments take too long"
   ],
-  "relatedTopics": ["packer", "ami", "docker", "gitops"],
-  "resources": [
-    {
-      "title": "Immutable Infrastructure",
-      "url": "https://www.hashicorp.com/resources/what-is-immutable-infrastructure"
-    }
+  "relatedTopics": [
+    "packer",
+    "ami",
+    "docker",
+    "gitops"
   ]
 }

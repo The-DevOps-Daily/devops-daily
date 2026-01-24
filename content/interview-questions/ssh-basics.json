@@ -8,7 +8,13 @@
   "category": "Linux",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["ssh", "security", "authentication", "linux", "remote-access"],
+  "tags": [
+    "ssh",
+    "security",
+    "authentication",
+    "linux",
+    "remote-access"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Sharing or committing private keys to version control",
     "Not using a passphrase on private keys"
   ],
-  "relatedTopics": ["ssh-agent", "ssh-tunneling", "bastion-hosts", "scp"],
-  "resources": [
-    {
-      "title": "GitHub: Generating SSH Keys",
-      "url": "https://docs.github.com/en/authentication/connecting-to-github-with-ssh"
-    }
+  "relatedTopics": [
+    "ssh-agent",
+    "ssh-tunneling",
+    "bastion-hosts",
+    "scp"
   ]
 }

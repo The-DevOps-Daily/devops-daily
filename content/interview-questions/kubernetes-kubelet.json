@@ -8,7 +8,13 @@
   "category": "Kubernetes",
   "difficulty": "intermediate",
   "tier": "mid",
-  "tags": ["kubernetes", "kubelet", "nodes", "architecture", "containers"],
+  "tags": [
+    "kubernetes",
+    "kubelet",
+    "nodes",
+    "architecture",
+    "containers"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Misconfiguring eviction thresholds leading to unexpected pod evictions",
     "Forgetting that kubelet needs container runtime (containerd/cri-o) to be running"
   ],
-  "relatedTopics": ["kube-proxy", "container-runtime", "node-conditions", "pod-scheduling"],
-  "resources": [
-    {
-      "title": "Kubernetes Kubelet Documentation",
-      "url": "https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/"
-    }
+  "relatedTopics": [
+    "kube-proxy",
+    "container-runtime",
+    "node-conditions",
+    "pod-scheduling"
   ]
 }

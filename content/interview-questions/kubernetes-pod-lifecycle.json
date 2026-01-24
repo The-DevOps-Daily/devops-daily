@@ -8,7 +8,13 @@
   "category": "Kubernetes",
   "difficulty": "intermediate",
   "tier": "mid",
-  "tags": ["kubernetes", "pods", "containers", "orchestration", "lifecycle"],
+  "tags": [
+    "kubernetes",
+    "pods",
+    "containers",
+    "orchestration",
+    "lifecycle"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Not implementing graceful shutdown handlers, leading to data loss",
     "Setting terminationGracePeriodSeconds too low for applications that need cleanup time"
   ],
-  "relatedTopics": ["container-states", "init-containers", "health-probes", "restart-policies"],
-  "resources": [
-    {
-      "title": "Kubernetes Pod Lifecycle Documentation",
-      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/"
-    }
+  "relatedTopics": [
+    "container-states",
+    "init-containers",
+    "health-probes",
+    "restart-policies"
   ]
 }

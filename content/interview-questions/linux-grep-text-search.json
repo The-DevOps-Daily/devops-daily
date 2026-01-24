@@ -8,7 +8,13 @@
   "category": "Linux",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["linux", "grep", "text-processing", "troubleshooting", "cli"],
+  "tags": [
+    "linux",
+    "grep",
+    "text-processing",
+    "troubleshooting",
+    "cli"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Not using -r when searching directories",
     "Using grep pattern | grep -v pattern instead of just grep -v"
   ],
-  "relatedTopics": ["awk", "sed", "regular-expressions", "ripgrep"],
-  "resources": [
-    {
-      "title": "GNU grep Manual",
-      "url": "https://www.gnu.org/software/grep/manual/grep.html"
-    }
+  "relatedTopics": [
+    "awk",
+    "sed",
+    "regular-expressions",
+    "ripgrep"
   ]
 }

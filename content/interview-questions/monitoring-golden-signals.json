@@ -8,7 +8,13 @@
   "category": "Monitoring",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["monitoring", "observability", "sre", "metrics", "fundamentals"],
+  "tags": [
+    "monitoring",
+    "observability",
+    "sre",
+    "metrics",
+    "fundamentals"
+  ],
   "codeExamples": [
     {
       "language": "yaml",
@@ -26,11 +32,10 @@
     "Setting alerts too sensitive (alert fatigue) or too loose (missing issues)",
     "Not measuring latency at different percentiles (p50, p95, p99)"
   ],
-  "relatedTopics": ["prometheus", "grafana", "alerting", "slos"],
-  "resources": [
-    {
-      "title": "Google SRE - Monitoring Distributed Systems",
-      "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
-    }
+  "relatedTopics": [
+    "prometheus",
+    "grafana",
+    "alerting",
+    "slos"
   ]
 }

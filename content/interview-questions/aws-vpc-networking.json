@@ -8,7 +8,13 @@
   "category": "AWS",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["aws", "vpc", "networking", "cloud", "security"],
+  "tags": [
+    "aws",
+    "vpc",
+    "networking",
+    "cloud",
+    "security"
+  ],
   "codeExamples": [
     {
       "language": "hcl",
@@ -31,11 +37,10 @@
     "Forgetting to create a NAT Gateway, leaving private instances without internet access",
     "Not using multiple availability zones for NAT Gateway redundancy"
   ],
-  "relatedTopics": ["security-groups", "nacls", "vpc-endpoints", "transit-gateway"],
-  "resources": [
-    {
-      "title": "AWS VPC Documentation",
-      "url": "https://docs.aws.amazon.com/vpc/latest/userguide/what-is-amazon-vpc.html"
-    }
+  "relatedTopics": [
+    "security-groups",
+    "nacls",
+    "vpc-endpoints",
+    "transit-gateway"
   ]
 }

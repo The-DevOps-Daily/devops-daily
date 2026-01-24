@@ -8,7 +8,13 @@
   "category": "CI/CD",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["cicd", "automation", "devops", "pipeline", "fundamentals"],
+  "tags": [
+    "cicd",
+    "automation",
+    "devops",
+    "pipeline",
+    "fundamentals"
+  ],
   "codeExamples": [
     {
       "language": "yaml",
@@ -26,11 +32,10 @@
     "Not having proper staging environments for pre-production testing",
     "Missing rollback procedures when deployments fail"
   ],
-  "relatedTopics": ["github-actions", "jenkins", "gitlab-ci", "deployment-strategies"],
-  "resources": [
-    {
-      "title": "CI/CD Concepts",
-      "url": "https://about.gitlab.com/topics/ci-cd/"
-    }
+  "relatedTopics": [
+    "github-actions",
+    "jenkins",
+    "gitlab-ci",
+    "deployment-strategies"
   ]
 }

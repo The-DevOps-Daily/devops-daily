@@ -8,7 +8,12 @@
   "category": "Docker",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["docker", "containers", "images", "fundamentals"],
+  "tags": [
+    "docker",
+    "containers",
+    "images",
+    "fundamentals"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +36,10 @@
     "Not cleaning up stopped containers and unused images (disk space issues)",
     "Running containers as root without considering security implications"
   ],
-  "relatedTopics": ["dockerfile", "docker-compose", "docker-volumes", "registries"],
-  "resources": [
-    {
-      "title": "Docker Overview",
-      "url": "https://docs.docker.com/get-started/overview/"
-    }
+  "relatedTopics": [
+    "dockerfile",
+    "docker-compose",
+    "docker-volumes",
+    "registries"
   ]
 }

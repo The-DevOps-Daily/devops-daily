@@ -8,7 +8,13 @@
   "category": "Linux",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["linux", "permissions", "security", "fundamentals", "sysadmin"],
+  "tags": [
+    "linux",
+    "permissions",
+    "security",
+    "fundamentals",
+    "sysadmin"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Forgetting that directories need execute permission for traversal",
     "Not understanding the difference between numeric and symbolic notation"
   ],
-  "relatedTopics": ["chown", "umask", "acl", "sudoers"],
-  "resources": [
-    {
-      "title": "Linux File Permissions Explained",
-      "url": "https://www.redhat.com/sysadmin/linux-file-permissions-explained"
-    }
+  "relatedTopics": [
+    "chown",
+    "umask",
+    "acl",
+    "sudoers"
   ]
 }

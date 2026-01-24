@@ -8,7 +8,13 @@
   "category": "Terraform",
   "difficulty": "intermediate",
   "tier": "mid",
-  "tags": ["terraform", "iac", "state", "infrastructure", "devops"],
+  "tags": [
+    "terraform",
+    "iac",
+    "state",
+    "infrastructure",
+    "devops"
+  ],
   "codeExamples": [
     {
       "language": "hcl",
@@ -31,11 +37,10 @@
     "Not using state locking, leading to concurrent modification issues",
     "Running terraform apply from multiple machines simultaneously"
   ],
-  "relatedTopics": ["remote-backends", "state-locking", "workspaces", "terraform-cloud"],
-  "resources": [
-    {
-      "title": "Terraform State Documentation",
-      "url": "https://developer.hashicorp.com/terraform/language/state"
-    }
+  "relatedTopics": [
+    "remote-backends",
+    "state-locking",
+    "workspaces",
+    "terraform-cloud"
   ]
 }

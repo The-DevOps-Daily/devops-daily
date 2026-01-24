@@ -8,7 +8,13 @@
   "category": "SRE",
   "difficulty": "advanced",
   "tier": "senior",
-  "tags": ["incident-management", "postmortem", "sre", "culture", "leadership"],
+  "tags": [
+    "incident-management",
+    "postmortem",
+    "sre",
+    "culture",
+    "leadership"
+  ],
   "codeExamples": [
     {
       "language": "markdown",
@@ -26,11 +32,10 @@
     "Not following up on action items from previous postmortems",
     "Writing postmortems only for major incidents (minor ones teach too)"
   ],
-  "relatedTopics": ["incident-response", "on-call", "runbooks", "sre-culture"],
-  "resources": [
-    {
-      "title": "Google SRE - Postmortem Culture",
-      "url": "https://sre.google/sre-book/postmortem-culture/"
-    }
+  "relatedTopics": [
+    "incident-response",
+    "on-call",
+    "runbooks",
+    "sre-culture"
   ]
 }

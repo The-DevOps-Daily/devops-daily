@@ -8,7 +8,12 @@
   "category": "Git",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["git", "version-control", "branching", "workflow"],
+  "tags": [
+    "git",
+    "version-control",
+    "branching",
+    "workflow"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +36,10 @@
     "Force pushing after rebase without communicating with team members",
     "Using rebase when merge commits provide valuable context"
   ],
-  "relatedTopics": ["interactive-rebase", "squashing-commits", "git-workflows", "conflict-resolution"],
-  "resources": [
-    {
-      "title": "Git Branching - Rebasing",
-      "url": "https://git-scm.com/book/en/v2/Git-Branching-Rebasing"
-    }
+  "relatedTopics": [
+    "interactive-rebase",
+    "squashing-commits",
+    "git-workflows",
+    "conflict-resolution"
   ]
 }

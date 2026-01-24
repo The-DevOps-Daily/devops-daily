@@ -8,7 +8,13 @@
   "category": "Linux",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["linux", "logs", "troubleshooting", "sysadmin", "debugging"],
+  "tags": [
+    "linux",
+    "logs",
+    "troubleshooting",
+    "sysadmin",
+    "debugging"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +37,10 @@
     "Forgetting that older logs may be compressed (.gz files)",
     "Not using grep flags like -i for case-insensitive search"
   ],
-  "relatedTopics": ["journalctl", "logrotate", "syslog", "rsyslog"],
-  "resources": [
-    {
-      "title": "Linux Logging Basics",
-      "url": "https://www.loggly.com/ultimate-guide/linux-logging-basics/"
-    }
+  "relatedTopics": [
+    "journalctl",
+    "logrotate",
+    "syslog",
+    "rsyslog"
   ]
 }

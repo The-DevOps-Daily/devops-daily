@@ -8,7 +8,12 @@
   "category": "Git",
   "difficulty": "beginner",
   "tier": "junior",
-  "tags": ["git", "version-control", "staging", "fundamentals"],
+  "tags": [
+    "git",
+    "version-control",
+    "staging",
+    "fundamentals"
+  ],
   "codeExamples": [
     {
       "language": "bash",
@@ -31,11 +36,10 @@
     "Using 'git add .' without checking what's being staged",
     "Not pulling latest changes before pushing"
   ],
-  "relatedTopics": ["branching", "merging", "stashing", "gitignore"],
-  "resources": [
-    {
-      "title": "Git Basics",
-      "url": "https://git-scm.com/book/en/v2/Getting-Started-Git-Basics"
-    }
+  "relatedTopics": [
+    "branching",
+    "merging",
+    "stashing",
+    "gitignore"
   ]
 }
