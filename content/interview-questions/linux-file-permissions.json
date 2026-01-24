@@ -1,0 +1,41 @@
+{
+  "id": "linux-file-permissions",
+  "slug": "linux-file-permissions",
+  "title": "Linux File Permissions",
+  "question": "Explain Linux file permissions. What does the permission 'rwxr-xr--' mean?",
+  "answer": "Linux file permissions are divided into three groups: owner, group, and others. Each has read (r), write (w), and execute (x) permissions. 'rwxr-xr--' means: owner has full access (rwx), group can read and execute (r-x), others can only read (r--). Use chmod to modify permissions and chown to change ownership.",
+  "explanation": "File permissions are fundamental to Linux security. They control who can read, write, or execute files. Understanding permissions is essential for troubleshooting access issues, setting up secure deployments, and managing shared resources in team environments.",
+  "category": "Linux",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["linux", "permissions", "security", "fundamentals", "sysadmin"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "View and modify permissions",
+      "code": "# View file permissions\nls -la myfile.sh\n# Output: -rwxr-xr-- 1 devops team 1234 Dec 1 10:00 myfile.sh\n\n# Make file executable\nchmod +x script.sh\n\n# Set specific permissions (owner: rwx, group: rx, others: r)\nchmod 754 script.sh\n\n# Recursive permission change\nchmod -R 755 /var/www/html/"
+    },
+    {
+      "language": "bash",
+      "label": "Change ownership",
+      "code": "# Change owner\nchown newuser myfile.txt\n\n# Change owner and group\nchown newuser:newgroup myfile.txt\n\n# Recursive ownership change\nchown -R www-data:www-data /var/www/"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between chmod 755 and chmod 777?",
+    "How do special permissions like setuid, setgid, and sticky bit work?",
+    "What is umask and how does it affect default file permissions?"
+  ],
+  "commonMistakes": [
+    "Setting chmod 777 on production files (security risk)",
+    "Forgetting that directories need execute permission for traversal",
+    "Not understanding the difference between numeric and symbolic notation"
+  ],
+  "relatedTopics": ["chown", "umask", "acl", "sudoers"],
+  "resources": [
+    {
+      "title": "Linux File Permissions Explained",
+      "url": "https://www.redhat.com/sysadmin/linux-file-permissions-explained"
+    }
+  ]
+}

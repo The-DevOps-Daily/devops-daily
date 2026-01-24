@@ -14,6 +14,8 @@ import {
 import type { InterviewQuestion } from '@/lib/interview-utils';
 import {
   getDifficultyColor,
+  getTierColor,
+  getTierLabel,
   markQuestionReviewed,
   getInterviewProgress,
 } from '@/lib/interview-utils';
@@ -52,6 +54,11 @@ function QuestionCard({ question }: { question: InterviewQuestion }) {
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded">
                 {question.category}
+              </span>
+              <span
+                className={`px-2 py-0.5 text-xs font-medium rounded ${getTierColor(question.tier)}`}
+              >
+                {getTierLabel(question.tier)}
               </span>
               <span
                 className={`px-2 py-0.5 text-xs font-medium rounded ${getDifficultyColor(question.difficulty)}`}
@@ -233,6 +240,7 @@ export function InterviewQuestionsList({ questions }: InterviewQuestionsListProp
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [selectedTier, setSelectedTier] = useState<string>('all');
   const [quizMode, setQuizMode] = useState(false);
 
   const categories = useMemo(() => {
@@ -250,10 +258,11 @@ export function InterviewQuestionsList({ questions }: InterviewQuestionsListProp
       const matchesCategory = selectedCategory === 'all' || question.category === selectedCategory;
       const matchesDifficulty =
         selectedDifficulty === 'all' || question.difficulty === selectedDifficulty;
+      const matchesTier = selectedTier === 'all' || question.tier === selectedTier;
 
-      return matchesSearch && matchesCategory && matchesDifficulty;
+      return matchesSearch && matchesCategory && matchesDifficulty && matchesTier;
     });
-  }, [questions, searchQuery, selectedCategory, selectedDifficulty]);
+  }, [questions, searchQuery, selectedCategory, selectedDifficulty, selectedTier]);
 
   if (quizMode) {
     return (
@@ -293,14 +302,25 @@ export function InterviewQuestionsList({ questions }: InterviewQuestionsListProp
         </select>
 
         <select
-          value={selectedDifficulty}
-          onChange={(e) => setSelectedDifficulty(e.target.value)}
+         value={selectedDifficulty}
+         onChange={(e) => setSelectedDifficulty(e.target.value)}
+         className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
+       >
+         <option value="all">All Difficulties</option>
+         <option value="beginner">Beginner</option>
+         <option value="intermediate">Intermediate</option>
+         <option value="advanced">Advanced</option>
+       </select>
+
+        <select
+          value={selectedTier}
+          onChange={(e) => setSelectedTier(e.target.value)}
           className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary/50"
         >
-          <option value="all">All Difficulties</option>
-          <option value="beginner">Beginner</option>
-          <option value="intermediate">Intermediate</option>
-          <option value="advanced">Advanced</option>
+          <option value="all">All Experience Levels</option>
+          <option value="junior">Junior</option>
+          <option value="mid">Mid-Level</option>
+          <option value="senior">Senior</option>
         </select>
 
         <Button onClick={() => setQuizMode(true)} variant="outline" className="gap-2">

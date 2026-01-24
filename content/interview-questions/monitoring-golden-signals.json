@@ -1,0 +1,36 @@
+{
+  "id": "monitoring-golden-signals",
+  "slug": "monitoring-golden-signals",
+  "title": "Four Golden Signals of Monitoring",
+  "question": "What are the four golden signals of monitoring and why are they important?",
+  "answer": "The Four Golden Signals (from Google SRE) are: Latency (request response time), Traffic (requests per second), Errors (rate of failed requests), and Saturation (resource utilization). These metrics quickly indicate service health and help diagnose issues. They're the minimum metrics every service should track.",
+  "explanation": "These signals come from Google's Site Reliability Engineering practices. Together they provide a comprehensive view of system health. Latency shows user experience, traffic shows demand, errors show reliability, and saturation shows capacity. Start with these before adding more specific metrics.",
+  "category": "Monitoring",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["monitoring", "observability", "sre", "metrics", "fundamentals"],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Prometheus alerting rules",
+      "code": "groups:\n- name: golden-signals\n  rules:\n  # Latency - P95 response time > 500ms\n  - alert: HighLatency\n    expr: histogram_quantile(0.95, http_request_duration_seconds_bucket) > 0.5\n    for: 5m\n\n  # Errors - Error rate > 1%\n  - alert: HighErrorRate\n    expr: rate(http_requests_total{status=~\"5..\"}[5m]) / rate(http_requests_total[5m]) > 0.01\n    for: 5m\n\n  # Saturation - CPU > 80%\n  - alert: HighCPU\n    expr: 100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100) > 80"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you distinguish between latency for successful vs failed requests?",
+    "What's the difference between metrics, logs, and traces?",
+    "How do you set appropriate alert thresholds?"
+  ],
+  "commonMistakes": [
+    "Only monitoring one signal (e.g., just CPU usage)",
+    "Setting alerts too sensitive (alert fatigue) or too loose (missing issues)",
+    "Not measuring latency at different percentiles (p50, p95, p99)"
+  ],
+  "relatedTopics": ["prometheus", "grafana", "alerting", "slos"],
+  "resources": [
+    {
+      "title": "Google SRE - Monitoring Distributed Systems",
+      "url": "https://sre.google/sre-book/monitoring-distributed-systems/"
+    }
+  ]
+}

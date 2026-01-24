@@ -1,0 +1,41 @@
+{
+  "id": "sli-slo-sla",
+  "slug": "sli-slo-sla",
+  "title": "SLI, SLO, and SLA Definitions",
+  "question": "Explain the difference between SLI, SLO, and SLA with examples.",
+  "answer": "SLI (Service Level Indicator) is a metric measuring service behavior (e.g., latency, error rate). SLO (Service Level Objective) is an internal target for that metric (e.g., 99.9% availability). SLA (Service Level Agreement) is an external contract with customers specifying consequences for missing targets. Example: SLI = request latency, SLO = 95% of requests < 200ms, SLA = credits if monthly availability drops below 99.5%.",
+  "explanation": "These concepts form the foundation of reliability engineering. SLIs help measure user experience, SLOs balance reliability with feature velocity, and SLAs formalize business commitments. Without clear SLOs, teams either over-engineer for unnecessary reliability or ship too fast and burn out on incidents.",
+  "category": "SRE",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": ["sre", "reliability", "monitoring", "slo", "business"],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "SLO definition example",
+      "code": "# Service Level Objectives for API service\nslos:\n  availability:\n    description: Service should be available\n    indicator: (successful_requests / total_requests) * 100\n    target: 99.9%\n    window: 30d\n\n  latency:\n    description: API should respond quickly\n    indicator: p95_response_time_ms\n    target: 95% of requests < 200ms\n    window: 30d\n\n  error_budget: 0.1%  # 43.2 minutes/month of allowed downtime"
+    },
+    {
+      "language": "promql",
+      "label": "SLI measurement in Prometheus",
+      "code": "# Availability SLI\nsum(rate(http_requests_total{status!~\"5..\"}[5m]))\n  /\nsum(rate(http_requests_total[5m]))\n\n# Latency SLI (P95)\nhistogram_quantile(0.95,\n  sum(rate(http_request_duration_seconds_bucket[5m])) by (le)\n)\n\n# Error budget remaining\n1 - (\n  (1 - availability_sli) / (1 - availability_target)\n)"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle situations when you're close to exhausting your error budget?",
+    "What's the difference between availability and reliability?",
+    "How do you choose appropriate SLO targets?"
+  ],
+  "commonMistakes": [
+    "Setting SLOs at 100% (impossible and prevents any changes)",
+    "Confusing SLOs (internal targets) with SLAs (customer contracts)",
+    "Not tracking error budget, making it meaningless"
+  ],
+  "relatedTopics": ["error-budget", "toil", "incident-management", "reliability"],
+  "resources": [
+    {
+      "title": "Google SRE - Service Level Objectives",
+      "url": "https://sre.google/sre-book/service-level-objectives/"
+    }
+  ]
+}

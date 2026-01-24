@@ -7,6 +7,7 @@
   "explanation": "Layer caching is crucial for fast build times and efficient storage. When Docker builds an image, it checks if it can reuse cached layers. If a layer changes, all subsequent layers must be rebuilt. Understanding this mechanism helps you structure Dockerfiles for optimal build performance.",
   "category": "Docker",
   "difficulty": "intermediate",
+  "tier": "mid",
   "tags": ["docker", "containers", "images", "optimization", "caching"],
   "codeExamples": [
     {

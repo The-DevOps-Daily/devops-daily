@@ -1,0 +1,41 @@
+{
+  "id": "git-basics",
+  "slug": "git-basics",
+  "title": "Git Staging and Committing",
+  "question": "Explain the Git staging area. What is the difference between git add, git commit, and git push?",
+  "answer": "Git has three states: working directory (untracked changes), staging area (changes ready to commit), and repository (committed history). 'git add' moves changes to staging, 'git commit' saves staged changes to local repository, 'git push' uploads commits to remote. This workflow allows selective commits and careful change management.",
+  "explanation": "The staging area is Git's key feature that separates it from older version control systems. It lets you prepare commits with exactly the changes you want, review before committing, and create atomic commits that represent single logical changes.",
+  "category": "Git",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["git", "version-control", "staging", "fundamentals"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Basic Git workflow",
+      "code": "# Check status (see staged/unstaged changes)\ngit status\n\n# Stage specific file\ngit add app.js\n\n# Stage all changes\ngit add .\n\n# Commit staged changes\ngit commit -m \"Add user authentication feature\"\n\n# Push to remote\ngit push origin main"
+    },
+    {
+      "language": "bash",
+      "label": "Viewing changes",
+      "code": "# View unstaged changes\ngit diff\n\n# View staged changes\ngit diff --staged\n\n# View commit history\ngit log --oneline -10\n\n# Unstage a file\ngit reset HEAD file.txt"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you undo the last commit without losing changes?",
+    "What is the difference between git reset and git revert?",
+    "How do you stage only part of a file's changes?"
+  ],
+  "commonMistakes": [
+    "Committing without meaningful commit messages",
+    "Using 'git add .' without checking what's being staged",
+    "Not pulling latest changes before pushing"
+  ],
+  "relatedTopics": ["branching", "merging", "stashing", "gitignore"],
+  "resources": [
+    {
+      "title": "Git Basics",
+      "url": "https://git-scm.com/book/en/v2/Getting-Started-Git-Basics"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "docker-basics",
+  "slug": "docker-basics",
+  "title": "Docker Container Basics",
+  "question": "What is the difference between a Docker image and a container? How do they relate to each other?",
+  "answer": "A Docker image is a read-only template containing application code, dependencies, and configuration. A container is a running instance of an image. You can create multiple containers from one image. Images are built from Dockerfiles and stored in registries. Containers are ephemeral - they can be started, stopped, and destroyed.",
+  "explanation": "Understanding the image/container distinction is fundamental to Docker. Think of an image as a class definition and a container as an object instance. This relationship enables consistent deployments across environments - the same image produces identical containers everywhere.",
+  "category": "Docker",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["docker", "containers", "images", "fundamentals"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Working with images and containers",
+      "code": "# Pull an image from registry\ndocker pull nginx:latest\n\n# List images\ndocker images\n\n# Create and run a container from image\ndocker run -d --name my-nginx nginx:latest\n\n# List running containers\ndocker ps\n\n# List all containers (including stopped)\ndocker ps -a"
+    },
+    {
+      "language": "dockerfile",
+      "label": "Simple Dockerfile",
+      "code": "FROM node:20-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm install\nCOPY . .\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens to data inside a container when it stops?",
+    "How do you persist data using Docker volumes?",
+    "What is the difference between docker run and docker start?"
+  ],
+  "commonMistakes": [
+    "Confusing images with containers",
+    "Not cleaning up stopped containers and unused images (disk space issues)",
+    "Running containers as root without considering security implications"
+  ],
+  "relatedTopics": ["dockerfile", "docker-compose", "docker-volumes", "registries"],
+  "resources": [
+    {
+      "title": "Docker Overview",
+      "url": "https://docs.docker.com/get-started/overview/"
+    }
+  ]
+}

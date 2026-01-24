@@ -7,6 +7,7 @@
   "explanation": "Systematic troubleshooting is essential for production issues. Starting with broad tools (top) and narrowing down (strace, perf) helps identify root causes efficiently. Understanding Linux process management and debugging tools is a core DevOps skill.",
   "category": "Linux",
   "difficulty": "advanced",
+  "tier": "senior",
   "tags": ["linux", "troubleshooting", "debugging", "performance", "sysadmin"],
   "codeExamples": [
     {

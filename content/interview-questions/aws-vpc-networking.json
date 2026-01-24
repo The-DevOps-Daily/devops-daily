@@ -7,6 +7,7 @@
   "explanation": "VPC subnet design is fundamental to AWS security architecture. The public/private split follows the principle of least exposure - only resources that need direct internet access (load balancers, bastion hosts) go in public subnets, while application servers and databases stay in private subnets.",
   "category": "AWS",
   "difficulty": "beginner",
+  "tier": "junior",
   "tags": ["aws", "vpc", "networking", "cloud", "security"],
   "codeExamples": [
     {

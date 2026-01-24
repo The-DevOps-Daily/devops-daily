@@ -7,6 +7,7 @@
   "explanation": "Understanding Pod lifecycle is crucial for debugging applications and implementing proper health checks. The lifecycle begins when a Pod is created and ends when it's deleted or evicted. During this time, Kubernetes continuously monitors and manages the Pod's state through its control loops.",
   "category": "Kubernetes",
   "difficulty": "intermediate",
+  "tier": "mid",
   "tags": ["kubernetes", "pods", "containers", "orchestration", "lifecycle"],
   "codeExamples": [
     {

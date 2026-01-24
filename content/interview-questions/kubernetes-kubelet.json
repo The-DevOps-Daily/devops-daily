@@ -1,0 +1,41 @@
+{
+  "id": "kubernetes-kubelet",
+  "slug": "kubernetes-kubelet",
+  "title": "Kubernetes Kubelet",
+  "question": "What is the role of the kubelet in a Kubernetes cluster? How does it interact with the control plane?",
+  "answer": "The kubelet is an agent running on each worker node. It receives Pod specifications from the API server, ensures containers are running in those pods, reports node and pod status back to the control plane, and manages pod lifecycle including health checks. It's the bridge between the Kubernetes control plane and container runtime.",
+  "explanation": "Understanding kubelet is essential for troubleshooting node-level issues. When pods fail to start or behave unexpectedly, kubelet logs often reveal the root cause. The kubelet also handles resource limits, volume mounting, and liveness/readiness probes.",
+  "category": "Kubernetes",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": ["kubernetes", "kubelet", "nodes", "architecture", "containers"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Kubelet troubleshooting",
+      "code": "# Check kubelet status\nsystemctl status kubelet\n\n# View kubelet logs\njournalctl -u kubelet -f\n\n# Check node conditions\nkubectl describe node <node-name>\n\n# View kubelet configuration\nkubectl proxy & curl localhost:8001/api/v1/nodes/<node>/proxy/configz"
+    },
+    {
+      "language": "yaml",
+      "label": "Kubelet configuration",
+      "code": "# /var/lib/kubelet/config.yaml example\napiVersion: kubelet.config.k8s.io/v1beta1\nkind: KubeletConfiguration\ncontainerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock\nmaxPods: 110\nevictionHard:\n  memory.available: 100Mi\n  nodefs.available: 10%\n  imagefs.available: 15%"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens when the kubelet loses connection to the API server?",
+    "How does the kubelet determine if a pod is healthy?",
+    "What is the difference between kubelet and kube-proxy?"
+  ],
+  "commonMistakes": [
+    "Not checking kubelet logs when pods fail to start",
+    "Misconfiguring eviction thresholds leading to unexpected pod evictions",
+    "Forgetting that kubelet needs container runtime (containerd/cri-o) to be running"
+  ],
+  "relatedTopics": ["kube-proxy", "container-runtime", "node-conditions", "pod-scheduling"],
+  "resources": [
+    {
+      "title": "Kubernetes Kubelet Documentation",
+      "url": "https://kubernetes.io/docs/reference/command-line-tools-reference/kubelet/"
+    }
+  ]
+}

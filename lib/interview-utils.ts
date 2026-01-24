@@ -4,6 +4,8 @@
 
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
 
+export type ExperienceTier = 'junior' | 'mid' | 'senior';
+
 export interface CodeExample {
   language: string;
   code: string;
@@ -19,6 +21,7 @@ export interface InterviewQuestion {
   explanation?: string;
   category: string;
   difficulty: Difficulty;
+  tier: ExperienceTier;
   tags: string[];
   codeExamples?: CodeExample[];
   followUpQuestions?: string[];
@@ -134,6 +137,38 @@ export const getDifficultyColor = (difficulty: Difficulty): string => {
       return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+  }
+};
+
+/**
+ * Get tier color class
+ */
+export const getTierColor = (tier: ExperienceTier): string => {
+  switch (tier) {
+    case 'junior':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'mid':
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+    case 'senior':
+      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
+  }
+};
+
+/**
+ * Get tier label
+ */
+export const getTierLabel = (tier: ExperienceTier): string => {
+  switch (tier) {
+    case 'junior':
+      return 'Junior';
+    case 'mid':
+      return 'Mid-Level';
+    case 'senior':
+      return 'Senior';
+    default:
+      return tier;
   }
 };
 

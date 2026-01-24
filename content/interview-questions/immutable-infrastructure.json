@@ -1,0 +1,41 @@
+{
+  "id": "immutable-infrastructure",
+  "slug": "immutable-infrastructure",
+  "title": "Immutable Infrastructure",
+  "question": "Explain immutable infrastructure and its benefits. How does it differ from traditional server management?",
+  "answer": "Immutable infrastructure means never modifying running instances post-deployment. Instead of patching servers, you build new machine images with updates, deploy fresh instances, and destroy old ones. Benefits include: no configuration drift, consistent environments, easy rollbacks (previous image), simpler debugging (fewer variables), and better security (no SSH access needed).",
+  "explanation": "The key principle is 'pets vs cattle' - treating infrastructure as disposable rather than precious. Traditional approaches SSH into servers and run updates, leading to drift over time where servers become unique snowflakes. Immutable infrastructure ensures every deployment is identical and reproducible.",
+  "category": "Infrastructure",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": ["infrastructure", "devops", "deployment", "iac", "best-practices"],
+  "codeExamples": [
+    {
+      "language": "hcl",
+      "label": "Packer AMI build",
+      "code": "source \"amazon-ebs\" \"app\" {\n  ami_name      = \"app-{{timestamp}}\"\n  instance_type = \"t3.small\"\n  region        = \"us-east-1\"\n  source_ami_filter {\n    filters = {\n      name = \"ubuntu/images/*ubuntu-jammy-22.04-amd64-server-*\"\n    }\n    most_recent = true\n    owners      = [\"099720109477\"]\n  }\n  ssh_username = \"ubuntu\"\n}\n\nbuild {\n  sources = [\"source.amazon-ebs.app\"]\n\n  provisioner \"shell\" {\n    scripts = [\"scripts/install_deps.sh\"]\n  }\n}"
+    },
+    {
+      "language": "hcl",
+      "label": "Blue-green with new AMI",
+      "code": "resource \"aws_launch_template\" \"app\" {\n  name_prefix   = \"app-\"\n  image_id      = var.ami_id  # New AMI for each release\n  instance_type = \"t3.small\"\n\n  lifecycle {\n    create_before_destroy = true\n  }\n}\n\n# ASG automatically replaces instances with new AMI\nresource \"aws_autoscaling_group\" \"app\" {\n  launch_template {\n    id      = aws_launch_template.app.id\n    version = \"$Latest\"\n  }\n  instance_refresh {\n    strategy = \"Rolling\"\n  }\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle stateful applications with immutable infrastructure?",
+    "What tools do you use to build machine images?",
+    "How do you manage secrets in an immutable infrastructure setup?"
+  ],
+  "commonMistakes": [
+    "SSH-ing into production servers to make 'quick fixes'",
+    "Not versioning machine images properly",
+    "Building images too slowly, making deployments take too long"
+  ],
+  "relatedTopics": ["packer", "ami", "docker", "gitops"],
+  "resources": [
+    {
+      "title": "Immutable Infrastructure",
+      "url": "https://www.hashicorp.com/resources/what-is-immutable-infrastructure"
+    }
+  ]
+}

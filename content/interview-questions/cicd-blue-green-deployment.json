@@ -7,6 +7,7 @@
   "explanation": "Blue-green deployments provide a safety net for releases by keeping the previous version running until the new one is verified. This strategy is particularly valuable for critical applications where downtime or failed deployments have significant business impact.",
   "category": "CI/CD",
   "difficulty": "intermediate",
+  "tier": "mid",
   "tags": ["cicd", "deployment", "devops", "release-management", "zero-downtime"],
   "codeExamples": [
     {

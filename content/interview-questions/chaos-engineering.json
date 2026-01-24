@@ -1,0 +1,41 @@
+{
+  "id": "chaos-engineering",
+  "slug": "chaos-engineering",
+  "title": "Chaos Engineering Practices",
+  "question": "What is chaos engineering and how would you implement it safely in a production environment?",
+  "answer": "Chaos engineering is the practice of intentionally injecting failures to test system resilience. Implementation: start with hypothesis about system behavior, define minimal blast radius, begin in staging, use tools like Chaos Monkey or Litmus, inject failures (pod terminations, network latency, resource exhaustion), monitor golden signals, automate rollback on unexpected impact, gradually expand to production during low-traffic periods with team monitoring.",
+  "explanation": "Chaos engineering's goal is finding weaknesses before they find you. It builds confidence in system resilience and uncovers hidden dependencies. The key is controlled, observable experiments with safety measures - not random destruction. Netflix pioneered this with Chaos Monkey, and it's now standard practice at large-scale organizations.",
+  "category": "SRE",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": ["chaos-engineering", "reliability", "sre", "testing", "resilience"],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Litmus ChaosEngine example",
+      "code": "apiVersion: litmuschaos.io/v1alpha1\nkind: ChaosEngine\nmetadata:\n  name: nginx-chaos\nspec:\n  appinfo:\n    appns: default\n    applabel: 'app=nginx'\n    appkind: deployment\n  chaosServiceAccount: litmus-admin\n  experiments:\n  - name: pod-delete\n    spec:\n      components:\n        env:\n        - name: TOTAL_CHAOS_DURATION\n          value: '30'\n        - name: CHAOS_INTERVAL\n          value: '10'\n        - name: FORCE\n          value: 'false'"
+    },
+    {
+      "language": "bash",
+      "label": "Manual chaos injection",
+      "code": "# Network latency injection\ntc qdisc add dev eth0 root netem delay 100ms 20ms\n\n# CPU stress\nstress-ng --cpu 4 --timeout 60s\n\n# Kill random pod in deployment\nkubectl delete pod $(kubectl get pods -l app=myapp -o name | shuf -n 1)\n\n# Network partition simulation\niptables -A INPUT -s 10.0.0.0/8 -j DROP"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you define and control the blast radius of chaos experiments?",
+    "What metrics should you monitor during chaos experiments?",
+    "How do you convince leadership that intentionally breaking production is valuable?"
+  ],
+  "commonMistakes": [
+    "Running chaos experiments without proper monitoring in place",
+    "Starting with production before validating in staging",
+    "No automated rollback mechanism when experiments go wrong"
+  ],
+  "relatedTopics": ["game-days", "disaster-recovery", "fault-injection", "resilience-testing"],
+  "resources": [
+    {
+      "title": "Principles of Chaos Engineering",
+      "url": "https://principlesofchaos.org/"
+    }
+  ]
+}

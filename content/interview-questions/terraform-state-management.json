@@ -7,6 +7,7 @@
   "explanation": "State is the source of truth for what Terraform has created. Without it, Terraform cannot know which resources it manages or their current configuration. Proper state management is critical for team collaboration and preventing infrastructure drift.",
   "category": "Terraform",
   "difficulty": "intermediate",
+  "tier": "mid",
   "tags": ["terraform", "iac", "state", "infrastructure", "devops"],
   "codeExamples": [
     {

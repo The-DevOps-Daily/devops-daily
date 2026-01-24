@@ -7,6 +7,7 @@
   "explanation": "Both achieve branch integration but with different history outcomes. Merge is safer and preserves the complete development timeline. Rebase creates cleaner history but rewrites commits, which can cause issues if others have based work on those commits.",
   "category": "Git",
   "difficulty": "beginner",
+  "tier": "junior",
   "tags": ["git", "version-control", "branching", "workflow"],
   "codeExamples": [
     {
