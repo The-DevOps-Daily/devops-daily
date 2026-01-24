@@ -308,7 +308,7 @@ function DropdownMenu({
           style={{ pointerEvents: 'auto' }}
         >
           {/* Menu Content */}
-          <div className="bg-background/95 backdrop-blur-xl border border-border/80 rounded-xl shadow-2xl shadow-black/20 dark:shadow-black/50 overflow-hidden w-[420px] max-w-[90vw] ring-1 ring-white/10">
+          <div className="bg-background/95 backdrop-blur-xl border border-border/80 rounded-xl shadow-2xl shadow-black/20 dark:shadow-black/50 overflow-y-auto w-[420px] max-w-[90vw] max-h-[calc(100vh-120px)] ring-1 ring-white/10">
             <div className="p-6 bg-linear-to-br from-background/50 to-muted/20">
               <div className="grid grid-cols-1 gap-6">
                 {sections.map((section, sectionIndex) => (
