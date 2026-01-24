@@ -1,0 +1,41 @@
+{
+  "id": "environment-variables",
+  "slug": "environment-variables",
+  "title": "Environment Variables",
+  "question": "What are environment variables and how do you use them in Linux? How do you make them persistent?",
+  "answer": "Environment variables are dynamic values that affect processes and programs. Set temporarily with export VAR=value, view with echo $VAR or printenv. For persistence: add to ~/.bashrc (user-specific) or /etc/environment (system-wide). Common vars include PATH, HOME, USER, and custom app configs.",
+  "explanation": "Environment variables are crucial for configuring applications without hardcoding values. They're the standard way to pass configuration to containers, manage secrets (though not ideal for sensitive data), and customize behavior across environments like dev, staging, and production.",
+  "category": "Linux",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["linux", "environment", "configuration", "bash", "fundamentals"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Setting and viewing variables",
+      "code": "# Set variable for current session\nexport DATABASE_URL='postgres://localhost:5432/mydb'\n\n# View specific variable\necho $DATABASE_URL\n\n# View all environment variables\nprintenv\n\n# Set variable for single command\nDEBUG=true ./my-script.sh"
+    },
+    {
+      "language": "bash",
+      "label": "Making variables persistent",
+      "code": "# Add to ~/.bashrc for user persistence\necho 'export API_KEY=abc123' >> ~/.bashrc\nsource ~/.bashrc\n\n# Or add to /etc/environment for system-wide\nsudo echo 'API_KEY=abc123' >> /etc/environment\n\n# Check if variable is set\nif [ -z \"$API_KEY\" ]; then\n  echo 'API_KEY not set'\nfi"
+    }
+  ],
+  "followUpQuestions": [
+    "What's the difference between setting a variable with and without export?",
+    "How do environment variables work with Docker containers?",
+    "Why shouldn't you store sensitive secrets in environment variables?"
+  ],
+  "commonMistakes": [
+    "Forgetting to export variables (they won't be available to child processes)",
+    "Putting spaces around the = sign (VAR = value won't work)",
+    "Storing secrets in plain text environment variables in production"
+  ],
+  "relatedTopics": ["dotenv", "secrets-management", "docker-env", "12-factor-app"],
+  "resources": [
+    {
+      "title": "The Twelve-Factor App: Config",
+      "url": "https://12factor.net/config"
+    }
+  ]
+}

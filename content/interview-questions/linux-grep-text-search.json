@@ -1,0 +1,41 @@
+{
+  "id": "linux-grep-text-search",
+  "slug": "linux-grep-text-search",
+  "title": "Using grep for Text Search",
+  "question": "How do you use grep to search for text patterns in files? What are some useful flags?",
+  "answer": "grep (Global Regular Expression Print) searches for patterns in files. Basic usage: grep 'pattern' file. Useful flags: -i for case-insensitive search, -r for recursive directory search, -n to show line numbers, -v to invert match (show non-matching lines), -c to count matches, and -E for extended regex.",
+  "explanation": "grep is one of the most essential tools for DevOps engineers. It's used constantly for log analysis, searching configuration files, debugging issues, and filtering command output. Mastering grep dramatically speeds up troubleshooting.",
+  "category": "Linux",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["linux", "grep", "text-processing", "troubleshooting", "cli"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Common grep patterns",
+      "code": "# Case-insensitive search\ngrep -i 'error' /var/log/app.log\n\n# Search recursively in directory\ngrep -r 'TODO' ./src/\n\n# Show line numbers\ngrep -n 'connection' config.yaml\n\n# Count occurrences\ngrep -c 'failed' auth.log\n\n# Invert match (exclude lines)\ngrep -v 'DEBUG' app.log"
+    },
+    {
+      "language": "bash",
+      "label": "Advanced patterns with pipes",
+      "code": "# Search command output\nps aux | grep nginx\n\n# Multiple patterns\ngrep -E 'error|warning|critical' /var/log/syslog\n\n# Context lines (3 before and after)\ngrep -B3 -A3 'Exception' app.log\n\n# Only show matching part\ngrep -o 'IP: [0-9.]*' access.log"
+    }
+  ],
+  "followUpQuestions": [
+    "What's the difference between grep, egrep, and fgrep?",
+    "How would you search for a pattern across compressed log files?",
+    "What is ripgrep (rg) and why might you use it instead of grep?"
+  ],
+  "commonMistakes": [
+    "Forgetting to quote patterns with special characters",
+    "Not using -r when searching directories",
+    "Using grep pattern | grep -v pattern instead of just grep -v"
+  ],
+  "relatedTopics": ["awk", "sed", "regular-expressions", "ripgrep"],
+  "resources": [
+    {
+      "title": "GNU grep Manual",
+      "url": "https://www.gnu.org/software/grep/manual/grep.html"
+    }
+  ]
+}

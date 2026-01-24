@@ -3,6 +3,13 @@ import type { ExperienceTier } from '@/lib/interview-utils';
 
 // Junior tier
 import linuxFilePermissions from './linux-file-permissions.json';
+import linuxSystemLogs from './linux-system-logs.json';
+import linuxGrepTextSearch from './linux-grep-text-search.json';
+import environmentVariables from './environment-variables.json';
+import sshBasics from './ssh-basics.json';
+import networkingBasicsDns from './networking-basics-dns.json';
+import linuxPackageManagement from './linux-package-management.json';
+import bashScriptingBasics from './bash-scripting-basics.json';
 import dockerBasics from './docker-basics.json';
 import cicdPipelineStages from './cicd-pipeline-stages.json';
 import gitBasics from './git-basics.json';
@@ -25,6 +32,13 @@ import incidentPostmortem from './incident-postmortem.json';
 export const interviewQuestions: InterviewQuestion[] = [
   // Junior tier
   linuxFilePermissions as InterviewQuestion,
+  linuxSystemLogs as InterviewQuestion,
+  linuxGrepTextSearch as InterviewQuestion,
+  environmentVariables as InterviewQuestion,
+  sshBasics as InterviewQuestion,
+  networkingBasicsDns as InterviewQuestion,
+  linuxPackageManagement as InterviewQuestion,
+  bashScriptingBasics as InterviewQuestion,
   dockerBasics as InterviewQuestion,
   cicdPipelineStages as InterviewQuestion,
   gitBasics as InterviewQuestion,

@@ -1,0 +1,41 @@
+{
+  "id": "ssh-basics",
+  "slug": "ssh-basics",
+  "title": "SSH Basics and Key Authentication",
+  "question": "How does SSH key authentication work? How do you set it up?",
+  "answer": "SSH key authentication uses a public-private key pair. Generate keys with ssh-keygen, copy the public key (~/.ssh/id_rsa.pub) to the server's ~/.ssh/authorized_keys file using ssh-copy-id. The private key stays on your machine and should never be shared. Key auth is more secure than passwords and enables passwordless login.",
+  "explanation": "SSH is the primary way to access remote servers securely. Understanding key-based authentication is essential for DevOps work, as it's used for server administration, Git operations, CI/CD pipelines, and automated deployments.",
+  "category": "Linux",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["ssh", "security", "authentication", "linux", "remote-access"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Generate and deploy SSH keys",
+      "code": "# Generate new SSH key pair\nssh-keygen -t ed25519 -C 'your@email.com'\n\n# Copy public key to server\nssh-copy-id user@server.example.com\n\n# Or manually copy the key\ncat ~/.ssh/id_ed25519.pub | ssh user@server 'cat >> ~/.ssh/authorized_keys'\n\n# Connect to server\nssh user@server.example.com"
+    },
+    {
+      "language": "bash",
+      "label": "SSH config file for easier access",
+      "code": "# Create/edit ~/.ssh/config\nHost prod-server\n  HostName 192.168.1.100\n  User deploy\n  IdentityFile ~/.ssh/prod_key\n  Port 22\n\n# Now connect with just:\nssh prod-server\n\n# Run command on remote server\nssh prod-server 'df -h'"
+    }
+  ],
+  "followUpQuestions": [
+    "What's the difference between RSA, ECDSA, and Ed25519 keys?",
+    "How do you use SSH agent to manage multiple keys?",
+    "How would you set up SSH tunneling/port forwarding?"
+  ],
+  "commonMistakes": [
+    "Setting wrong permissions on .ssh directory (should be 700) and authorized_keys (should be 600)",
+    "Sharing or committing private keys to version control",
+    "Not using a passphrase on private keys"
+  ],
+  "relatedTopics": ["ssh-agent", "ssh-tunneling", "bastion-hosts", "scp"],
+  "resources": [
+    {
+      "title": "GitHub: Generating SSH Keys",
+      "url": "https://docs.github.com/en/authentication/connecting-to-github-with-ssh"
+    }
+  ]
+}

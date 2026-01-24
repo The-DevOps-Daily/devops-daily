@@ -1,0 +1,41 @@
+{
+  "id": "linux-package-management",
+  "slug": "linux-package-management",
+  "title": "Linux Package Management",
+  "question": "How do you install and manage software packages in Linux? What's the difference between apt and yum?",
+  "answer": "Package managers handle software installation, updates, and dependencies. apt (Debian/Ubuntu) and yum/dnf (RHEL/CentOS/Fedora) are the main ones. apt uses .deb packages, yum uses .rpm. Basic commands: apt update && apt install package, yum install package. Both resolve dependencies automatically.",
+  "explanation": "Understanding package management is essential for setting up servers, installing dependencies, and maintaining system security through updates. Different distributions use different package managers, so knowing both apt and yum families is valuable.",
+  "category": "Linux",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["linux", "apt", "yum", "package-management", "sysadmin"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "apt commands (Debian/Ubuntu)",
+      "code": "# Update package list\nsudo apt update\n\n# Install a package\nsudo apt install nginx\n\n# Upgrade all packages\nsudo apt upgrade\n\n# Remove a package\nsudo apt remove nginx\n\n# Search for packages\napt search docker\n\n# Show package info\napt show nginx"
+    },
+    {
+      "language": "bash",
+      "label": "yum/dnf commands (RHEL/CentOS)",
+      "code": "# Install a package\nsudo yum install httpd\n# or with dnf (newer)\nsudo dnf install httpd\n\n# Update all packages\nsudo yum update\n\n# List installed packages\nyum list installed\n\n# Check for security updates\nyum updateinfo list security"
+    }
+  ],
+  "followUpQuestions": [
+    "What are PPAs and how do you add third-party repositories?",
+    "How would you pin a package to a specific version?",
+    "What's the difference between apt and apt-get?"
+  ],
+  "commonMistakes": [
+    "Forgetting to run apt update before installing new packages",
+    "Running apt upgrade in production without testing first",
+    "Not understanding that apt and yum are for different distros"
+  ],
+  "relatedTopics": ["snap", "flatpak", "rpm", "dpkg"],
+  "resources": [
+    {
+      "title": "Ubuntu Package Management",
+      "url": "https://ubuntu.com/server/docs/package-management"
+    }
+  ]
+}

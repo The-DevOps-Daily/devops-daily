@@ -1,0 +1,41 @@
+{
+  "id": "linux-system-logs",
+  "slug": "linux-system-logs",
+  "title": "Linux System Logs",
+  "question": "Where are system logs stored in Linux and how do you view them?",
+  "answer": "System logs in Linux are typically stored in /var/log. Key log files include: /var/log/syslog or /var/log/messages for general system logs, /var/log/auth.log for authentication events, /var/log/kern.log for kernel messages, and /var/log/dmesg for boot messages. Use commands like tail, cat, less, or journalctl (for systemd) to view logs.",
+  "explanation": "Log analysis is a fundamental skill for troubleshooting issues in production systems. Understanding where logs are stored and how to efficiently search through them helps you quickly diagnose application crashes, security incidents, and system failures.",
+  "category": "Linux",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["linux", "logs", "troubleshooting", "sysadmin", "debugging"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Common log locations and viewing commands",
+      "code": "# View last 100 lines of syslog\ntail -n 100 /var/log/syslog\n\n# Follow logs in real-time\ntail -f /var/log/syslog\n\n# Search for errors in logs\ngrep -i 'error' /var/log/syslog\n\n# View systemd journal logs\njournalctl -u nginx --since '1 hour ago'\n\n# View boot messages\ndmesg | tail -50"
+    },
+    {
+      "language": "bash",
+      "label": "Log rotation and management",
+      "code": "# Check log rotation config\ncat /etc/logrotate.conf\n\n# View compressed old logs\nzcat /var/log/syslog.1.gz\n\n# Search across multiple log files\ngrep -r 'connection refused' /var/log/"
+    }
+  ],
+  "followUpQuestions": [
+    "What is logrotate and why is it important?",
+    "How does journalctl differ from traditional log files?",
+    "How would you set up centralized logging for multiple servers?"
+  ],
+  "commonMistakes": [
+    "Not checking timestamps when correlating events across services",
+    "Forgetting that older logs may be compressed (.gz files)",
+    "Not using grep flags like -i for case-insensitive search"
+  ],
+  "relatedTopics": ["journalctl", "logrotate", "syslog", "rsyslog"],
+  "resources": [
+    {
+      "title": "Linux Logging Basics",
+      "url": "https://www.loggly.com/ultimate-guide/linux-logging-basics/"
+    }
+  ]
+}

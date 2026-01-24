@@ -154,14 +154,11 @@ export function InterviewQuestionsHero({
 
        {/* Note about quizzes */}
        <div className="mt-8 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
-          <p className="text-sm text-gray-600 dark:text-gray-400 text-center leading-relaxed">
-            <span className="font-medium text-gray-700 dark:text-gray-300">This page is for practice</span> — compare your answers with real-world responses to improve your interview skills.{' '}
-            <span className="block mt-2">
-              Want to test your knowledge with scored assessments?{' '}
-              <Link href="/quizzes" className="text-primary hover:underline font-medium">
-                Take our DevOps Quizzes →
-              </Link>
-            </span>
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+            Want to test your knowledge with scored assessments?{' '}
+            <Link href="/quizzes" className="text-primary hover:underline font-medium">
+              Take our DevOps Quizzes →
+            </Link>
           </p>
        </div>
       </div>

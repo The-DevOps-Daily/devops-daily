@@ -1,0 +1,41 @@
+{
+  "id": "networking-basics-dns",
+  "slug": "networking-basics-dns",
+  "title": "DNS Basics",
+  "question": "What is DNS and how does DNS resolution work?",
+  "answer": "DNS (Domain Name System) translates human-readable domain names to IP addresses. Resolution flow: browser cache → OS cache → resolver (ISP/configured DNS) → root servers → TLD servers → authoritative nameservers. Common record types: A (IPv4), AAAA (IPv6), CNAME (alias), MX (mail), TXT (verification).",
+  "explanation": "DNS is fundamental to how the internet works. DevOps engineers need to understand DNS for configuring domains, troubleshooting connectivity issues, setting up load balancers, managing SSL certificates, and configuring email services.",
+  "category": "Networking",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["dns", "networking", "infrastructure", "fundamentals", "troubleshooting"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "DNS troubleshooting commands",
+      "code": "# Query DNS records\ndig example.com\ndig example.com MX\ndig +short example.com A\n\n# Alternative tool\nnslookup example.com\n\n# Trace DNS resolution path\ndig +trace example.com\n\n# Check specific nameserver\ndig @8.8.8.8 example.com"
+    },
+    {
+      "language": "bash",
+      "label": "Local DNS configuration",
+      "code": "# View DNS resolver config\ncat /etc/resolv.conf\n\n# Local hosts file (bypasses DNS)\ncat /etc/hosts\n# 127.0.0.1   localhost\n# 192.168.1.10   myapp.local\n\n# Flush DNS cache (varies by OS)\n# macOS\ndscacheutil -flushcache\n# Linux systemd\nsudo systemd-resolve --flush-caches"
+    }
+  ],
+  "followUpQuestions": [
+    "What's the difference between A records and CNAME records?",
+    "What is TTL and why does it matter?",
+    "How would you set up DNS for a load-balanced application?"
+  ],
+  "commonMistakes": [
+    "Forgetting about DNS caching when making changes (TTL)",
+    "Using CNAME at the apex/root domain (not allowed)",
+    "Not understanding DNS propagation delays"
+  ],
+  "relatedTopics": ["route53", "cloudflare", "bind", "dns-over-https"],
+  "resources": [
+    {
+      "title": "How DNS Works Comic",
+      "url": "https://howdns.works/"
+    }
+  ]
+}

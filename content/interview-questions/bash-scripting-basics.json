@@ -1,0 +1,41 @@
+{
+  "id": "bash-scripting-basics",
+  "slug": "bash-scripting-basics",
+  "title": "Bash Scripting Basics",
+  "question": "What is the shebang line and how do you write a basic bash script?",
+  "answer": "The shebang (#!) tells the OS which interpreter to use. #!/bin/bash specifies bash. Basic script structure: shebang, variables (VAR=value), conditionals (if/then/fi), loops (for/while), and functions. Make scripts executable with chmod +x. Use set -e to exit on errors and set -x for debugging.",
+  "explanation": "Bash scripting is essential for automating repetitive tasks, deployment scripts, system administration, and CI/CD pipelines. Even with modern tools like Ansible or Terraform, bash scripts remain valuable for quick automation and glue code.",
+  "category": "Linux",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["bash", "scripting", "automation", "linux", "shell"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Basic script structure",
+      "code": "#!/bin/bash\nset -e  # Exit on error\n\n# Variables\nAPP_NAME=\"myapp\"\nENV=${1:-\"dev\"}  # Default to 'dev' if no argument\n\n# Function\ndeploy() {\n  echo \"Deploying $APP_NAME to $ENV...\"\n}\n\n# Conditional\nif [ \"$ENV\" = \"prod\" ]; then\n  echo \"Production deployment - extra caution!\"\nfi\n\ndeploy"
+    },
+    {
+      "language": "bash",
+      "label": "Loops and input handling",
+      "code": "#!/bin/bash\n\n# For loop\nfor server in web1 web2 web3; do\n  echo \"Checking $server...\"\n  ssh $server 'uptime'\ndone\n\n# While loop reading file\nwhile read -r line; do\n  echo \"Processing: $line\"\ndone < servers.txt\n\n# Check if command succeeded\nif docker ps > /dev/null 2>&1; then\n  echo \"Docker is running\"\nelse\n  echo \"Docker is not running\"\n  exit 1\nfi"
+    }
+  ],
+  "followUpQuestions": [
+    "What's the difference between $* and $@ for script arguments?",
+    "How do you handle errors gracefully in bash scripts?",
+    "When would you choose bash over Python for automation?"
+  ],
+  "commonMistakes": [
+    "Forgetting to quote variables (causes issues with spaces)",
+    "Using == instead of = in [ ] conditionals",
+    "Not handling script failures (use set -e or check $?)"
+  ],
+  "relatedTopics": ["shellcheck", "bash-strict-mode", "python-scripting", "make"],
+  "resources": [
+    {
+      "title": "Bash Scripting Guide",
+      "url": "https://tldp.org/LDP/abs/html/"
+    }
+  ]
+}
