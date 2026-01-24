@@ -2,9 +2,11 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, Play, BookOpen } from 'lucide-react';
 import type { InterviewQuestion } from '@/lib/interview-utils';
 import { getDifficultyColor } from '@/lib/interview-utils';
+import { InterviewQuizMode } from './interview-quiz-mode';
+import { Button } from '@/components/ui/button';
 
 interface InterviewQuestionsListProps {
   questions: InterviewQuestion[];
@@ -14,6 +16,7 @@ export function InterviewQuestionsList({ questions }: InterviewQuestionsListProp
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [quizMode, setQuizMode] = useState(false);
 
   const categories = useMemo(() => {
     return ['all', ...Array.from(new Set(questions.map(q => q.category))).sort()];
@@ -33,8 +36,42 @@ export function InterviewQuestionsList({ questions }: InterviewQuestionsListProp
     });
   }, [questions, searchQuery, selectedCategory, selectedDifficulty]);
 
+  // Quiz mode view
+  if (quizMode) {
+    const quizQuestions = selectedCategory === 'all' 
+      ? filteredQuestions 
+      : filteredQuestions.filter(q => q.category === selectedCategory);
+    
+    return (
+      <InterviewQuizMode
+        questions={quizQuestions}
+        category={selectedCategory === 'all' ? undefined : selectedCategory}
+        onExit={() => setQuizMode(false)}
+      />
+    );
+  }
+
   return (
     <div>
+      {/* Quiz Mode Toggle */}
+      <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/20 rounded-lg">
+            <Play className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Quiz Mode</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Test yourself on {filteredQuestions.length} questions
+            </p>
+          </div>
+        </div>
+        <Button onClick={() => setQuizMode(true)} className="gap-2">
+          <Play className="h-4 w-4" />
+          Start Quiz
+        </Button>
+      </div>
+
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="relative flex-1">
