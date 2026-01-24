@@ -66,12 +66,12 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     descriptionFields: ['excerpt', 'description'],
   },
   news: {
-    dir: 'content/news',
-    imagesDir: 'news',
-    extension: '.md',
-    requiredFields: ['title'],
-    descriptionFields: ['summary', 'description', 'excerpt'],
-  },
+   dir: 'content/news',
+   imagesDir: 'news',
+   extension: '.md',
+    requiredFields: ['title', 'summary'],
+   descriptionFields: ['summary', 'description', 'excerpt'],
+ },
 };
 
 interface ValidationError {
