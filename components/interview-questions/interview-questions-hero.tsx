@@ -50,8 +50,8 @@ export function InterviewQuestionsHero({
 }: InterviewQuestionsHeroProps) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-primary/5 via-background to-background py-16">
-      <div className="container mx-auto px-4 max-w-7xl">
-        <div className="text-center max-w-3xl mx-auto">
+      <div className="container mx-auto px-4 max-w-3xl">
+        <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
             <Briefcase className="w-4 h-4" />
             <span className="text-sm font-medium">Interview Preparation</span>
@@ -61,16 +61,16 @@ export function InterviewQuestionsHero({
             DevOps Interview Questions
           </h1>
 
-          <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-            {totalQuestions} curated questions across {categories.length} categories.{' '}
+          <p className="text-lg text-gray-600 dark:text-gray-400">
+            {totalQuestions} curated questions across {categories.length} categories.
             <span className="block mt-1 text-base">
               Select your experience level to start practicing.
             </span>
           </p>
         </div>
 
-        {/* Tier Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-5xl mx-auto">
+        {/* Tier List */}
+        <div className="flex flex-col gap-4">
           {(['junior', 'mid', 'senior'] as ExperienceTier[]).map((tier) => {
             const config = tierConfig[tier];
             const Icon = config.icon;
@@ -80,35 +80,43 @@ export function InterviewQuestionsHero({
               <Link
                 key={tier}
                 href={`/interview-questions/${tier}`}
-                className={`group relative overflow-hidden rounded-xl border-2 ${config.borderColor} ${config.hoverBorder} bg-gradient-to-br ${config.bgGradient} p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1`}
+                className={`group relative overflow-hidden rounded-xl border-2 ${config.borderColor} ${config.hoverBorder} bg-gradient-to-br ${config.bgGradient} p-5 transition-all duration-300 hover:shadow-lg`}
               >
-                {/* Icon */}
-                <div
-                  className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${config.gradient} mb-4`}
-                >
-                  <Icon className="w-6 h-6 text-white" />
-                </div>
+                <div className="flex items-center gap-4">
+                  {/* Icon */}
+                  <div
+                    className={`flex-shrink-0 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br ${config.gradient}`}
+                  >
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
 
-                {/* Content */}
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-                  {config.title}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">{config.subtitle}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">{config.description}</p>
+                  {/* Content */}
+                  <div className="flex-grow min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                        {config.title}
+                      </h3>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {config.subtitle}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {config.description}
+                    </p>
+                  </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {questionCount} questions
-                  </span>
-                  <span className="inline-flex items-center text-sm font-medium text-primary group-hover:translate-x-1 transition-transform">
-                    Start <ChevronRight className="w-4 h-4 ml-1" />
-                  </span>
+                  {/* Right side */}
+                  <div className="flex-shrink-0 flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                      {questionCount} questions
+                    </span>
+                    <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                  </div>
                 </div>
 
                 {/* Decorative element */}
                 <div
-                  className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full bg-gradient-to-br ${config.gradient} opacity-10 group-hover:opacity-20 transition-opacity`}
+                  className={`absolute -right-8 -top-8 w-24 h-24 rounded-full bg-gradient-to-br ${config.gradient} opacity-10 group-hover:opacity-20 transition-opacity`}
                 />
               </Link>
             );
