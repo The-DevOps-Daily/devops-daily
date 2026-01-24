@@ -146,21 +146,27 @@ const dropdownNavigation: Record<string, NavSection[]> = {
       description: 'Structured learning paths',
       color: 'green',
       items: [
+       {
+         label: 'Practical Exercises',
+         href: '/exercises',
+         description: 'Hands-on DevOps exercises',
+         icon: Target,
+       },
+       {
+         label: 'DevOps Roadmap',
+         href: '/roadmap',
+         description: 'Your journey to DevOps mastery',
+         icon: Map,
+         featured: false,
+       },
         {
-          label: 'Practical Exercises',
-          href: '/exercises',
-          description: 'Hands-on DevOps exercises',
-          icon: Target,
-        },
-        {
-          label: 'DevOps Roadmap',
-          href: '/roadmap',
-          description: 'Your journey to DevOps mastery',
+          label: 'All Roadmaps',
+          href: '/roadmaps',
+          description: 'Browse all learning paths',
           icon: Map,
-          featured: false,
         },
-        {
-        label: 'Quizzes & Tests',
+       {
+       label: 'Quizzes & Tests',
         href: '/quizzes',
         description: 'Test your DevOps knowledge',
         icon: Trophy,
