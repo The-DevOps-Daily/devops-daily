@@ -119,15 +119,24 @@ export function Footer() {
               <li>
                 <Link
                   href="/roadmap"
+                 className="group flex items-center justify-between text-muted-foreground hover:text-primary transition-all duration-300 py-2 px-3 rounded-xl hover:bg-primary/5"
+               >
+                 <span className="font-medium">Roadmap</span>
+                 <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
+               </Link>
+             </li>
+              <li>
+                <Link
+                  href="/roadmaps"
                   className="group flex items-center justify-between text-muted-foreground hover:text-primary transition-all duration-300 py-2 px-3 rounded-xl hover:bg-primary/5"
                 >
-                  <span className="font-medium">Roadmap</span>
+                  <span className="font-medium">All Roadmaps</span>
                   <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/toolbox"
+             <li>
+               <Link
+                 href="/toolbox"
                   className="group flex items-center justify-between text-muted-foreground hover:text-primary transition-all duration-300 py-2 px-3 rounded-xl hover:bg-primary/5"
                 >
                   <span className="font-medium">Toolbox</span>
