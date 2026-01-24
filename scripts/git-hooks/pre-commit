@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# Pre-commit hook to validate OG data for content files
+# Install with: npm run hooks:install
+#
+
+# Check if tsx is available
+if ! command -v npx >/dev/null 2>&1; then
+    echo "\033[33m⚠ npx not found, skipping OG validation\033[0m"
+    exit 0
+fi
+
+# Run the validation script on staged files only
+echo "\033[34m🔍 Running OG data validation...\033[0m"
+npx tsx scripts/git-hooks/validate-og-data.ts --staged-only
+
+exit_code=$?
+
+if [ $exit_code -ne 0 ]; then
+    echo "\033[31m❌ OG validation failed. Please fix the errors above.\033[0m"
+    echo "\033[33mTo skip this check, use: git commit --no-verify\033[0m"
+    exit 1
+fi
+
+exit 0
