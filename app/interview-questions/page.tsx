@@ -5,8 +5,16 @@ import { InterviewQuestionsList } from '@/components/interview-questions/intervi
 
 export const metadata: Metadata = {
   title: 'DevOps Interview Questions | The DevOps Daily',
-  description: 'In-depth DevOps interview questions with detailed answers, code examples, and explanations. Prepare for Kubernetes, Docker, Terraform, CI/CD, AWS, and more.',
-  keywords: ['devops interview questions', 'kubernetes interview', 'docker interview', 'terraform interview', 'cicd interview', 'aws interview'],
+  description:
+    'In-depth DevOps interview questions with detailed answers, code examples, and explanations. Prepare for Kubernetes, Docker, Terraform, CI/CD, AWS, and more.',
+  keywords: [
+    'devops interview questions',
+    'kubernetes interview',
+    'docker interview',
+    'terraform interview',
+    'cicd interview',
+    'aws interview',
+  ],
   authors: [{ name: 'The DevOps Daily' }],
   creator: 'The DevOps Daily',
   publisher: 'The DevOps Daily',
@@ -27,7 +35,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'DevOps Interview Questions - The DevOps Daily',
-    description: 'In-depth DevOps interview questions with detailed answers, code examples, and explanations. Prepare for your next interview.',
+    description:
+      'In-depth DevOps interview questions with detailed answers, code examples, and explanations. Prepare for your next interview.',
     type: 'website',
     url: '/interview-questions',
     siteName: 'The DevOps Daily',
@@ -46,7 +55,8 @@ export const metadata: Metadata = {
     site: '@TheDevOpsDaily',
     creator: '@TheDevOpsDaily',
     title: 'DevOps Interview Questions - The DevOps Daily',
-    description: 'In-depth DevOps interview questions with detailed answers, code examples, and explanations.',
+    description:
+      'In-depth DevOps interview questions with detailed answers, code examples, and explanations.',
     images: ['/images/interview-questions/interview-questions-og.png'],
   },
 };
@@ -56,27 +66,10 @@ export default function InterviewQuestionsPage() {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
-      <InterviewQuestionsHero 
-        totalQuestions={interviewQuestions.length} 
-        categories={categories} 
-      />
+      <InterviewQuestionsHero totalQuestions={interviewQuestions.length} categories={categories} />
 
-      <section className="py-8 container mx-auto px-4 mb-16 max-w-7xl">
+      <section className="py-8 container mx-auto px-4 pb-16 max-w-4xl">
         <InterviewQuestionsList questions={interviewQuestions} />
-      </section>
-
-      <section className="py-8 container mx-auto px-4 mb-16 max-w-7xl">
-        <div className="p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            💡 Interview Prep Tips
-          </h3>
-          <ul className="space-y-2 text-gray-700 dark:text-gray-300">
-            <li>✓ Read the answer, then try to explain it in your own words</li>
-            <li>✓ Practice the code examples in a real environment</li>
-            <li>✓ Review follow-up questions to prepare for deeper discussions</li>
-            <li>✓ Track your progress to identify areas that need more practice</li>
-          </ul>
-        </div>
       </section>
     </div>
   );
