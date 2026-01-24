@@ -36,7 +36,10 @@
     "images:all:parallel": "npm run generate:images:parallel && npm run convert:svg-to-png:parallel",
     "generate-search-index": "tsx scripts/generate-search-index.ts",
     "devops-daily:generate-news": "tsx scripts/devops-daily/index.ts",
-    "devops-daily:generate-news:no-ai": "tsx scripts/devops-daily/index.ts --skip-ai"
+    "devops-daily:generate-news:no-ai": "tsx scripts/devops-daily/index.ts --skip-ai",
+    "og:validate": "tsx scripts/git-hooks/validate-og-data.ts",
+    "og:validate:staged": "tsx scripts/git-hooks/validate-og-data.ts --staged-only",
+    "hooks:install": "sh scripts/git-hooks/install.sh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
