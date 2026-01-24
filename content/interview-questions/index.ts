@@ -1,5 +1,5 @@
 import type { InterviewQuestion } from '@/lib/interview-utils';
-import type { InterviewQuestion, ExperienceTier } from '@/lib/interview-utils';
+import type { ExperienceTier } from '@/lib/interview-utils';
 
 // Junior tier
 import linuxFilePermissions from './linux-file-permissions.json';
@@ -59,6 +59,14 @@ export const getQuestionsByDifficulty = (difficulty: string): InterviewQuestion[
 
 export const getQuestionsByTier = (tier: ExperienceTier): InterviewQuestion[] => {
   return interviewQuestions.filter(q => q.tier === tier);
+};
+
+export const getQuestionCountsByTier = (): Record<ExperienceTier, number> => {
+  return {
+    junior: interviewQuestions.filter(q => q.tier === 'junior').length,
+    mid: interviewQuestions.filter(q => q.tier === 'mid').length,
+    senior: interviewQuestions.filter(q => q.tier === 'senior').length,
+  };
 };
 
 export const getQuestionsByTag = (tag: string): InterviewQuestion[] => {

@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
-import { interviewQuestions, getAllCategories } from '@/content/interview-questions';
+import { interviewQuestions, getAllCategories, getQuestionCountsByTier } from '@/content/interview-questions';
 import { InterviewQuestionsHero } from '@/components/interview-questions/interview-questions-hero';
-import { InterviewQuestionsList } from '@/components/interview-questions/interview-questions-list';
 
 export const metadata: Metadata = {
   title: 'DevOps Interview Questions | The DevOps Daily',
@@ -63,14 +62,15 @@ export const metadata: Metadata = {
 
 export default function InterviewQuestionsPage() {
   const categories = getAllCategories();
+  const questionsByTier = getQuestionCountsByTier();
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
-      <InterviewQuestionsHero totalQuestions={interviewQuestions.length} categories={categories} />
-
-      <section className="py-8 container mx-auto px-4 pb-16 max-w-4xl">
-        <InterviewQuestionsList questions={interviewQuestions} />
-      </section>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      <InterviewQuestionsHero
+        totalQuestions={interviewQuestions.length}
+        categories={categories}
+        questionsByTier={questionsByTier}
+      />
     </div>
   );
 }
