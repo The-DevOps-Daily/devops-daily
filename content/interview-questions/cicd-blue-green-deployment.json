@@ -1,0 +1,40 @@
+{
+  "id": "cicd-blue-green-deployment",
+  "slug": "cicd-blue-green-deployment",
+  "title": "Blue-Green Deployment Strategy",
+  "question": "What is a blue-green deployment, and what are its advantages and disadvantages compared to other deployment strategies?",
+  "answer": "Blue-green deployment maintains two identical production environments (blue and green). One serves live traffic while the other receives the new version. After testing, traffic switches to the updated environment. Advantages: instant rollback, zero downtime, and safe testing. Disadvantages: requires double resources and can be complex with databases.",
+  "explanation": "Blue-green deployments provide a safety net for releases by keeping the previous version running until the new one is verified. This strategy is particularly valuable for critical applications where downtime or failed deployments have significant business impact.",
+  "category": "CI/CD",
+  "difficulty": "intermediate",
+  "tags": ["cicd", "deployment", "devops", "release-management", "zero-downtime"],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Kubernetes blue-green with services",
+      "code": "# Blue deployment (current production)\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app-blue\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: myapp\n      version: blue\n  template:\n    metadata:\n      labels:\n        app: myapp\n        version: blue\n---\n# Service pointing to blue\napiVersion: v1\nkind: Service\nmetadata:\n  name: app-service\nspec:\n  selector:\n    app: myapp\n    version: blue  # Switch to 'green' after verification\n  ports:\n  - port: 80"
+    },
+    {
+      "language": "bash",
+      "label": "Switch traffic to green",
+      "code": "# Update service selector to point to green\nkubectl patch service app-service \\\n  -p '{\"spec\":{\"selector\":{\"version\":\"green\"}}}'\n\n# Rollback to blue if needed\nkubectl patch service app-service \\\n  -p '{\"spec\":{\"selector\":{\"version\":\"blue\"}}}'" 
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle database migrations in a blue-green deployment?",
+    "What is the difference between blue-green and canary deployments?",
+    "How would you implement blue-green deployments with AWS or other cloud providers?"
+  ],
+  "commonMistakes": [
+    "Not accounting for database schema changes that may break the old version",
+    "Forgetting to warm up the new environment before switching traffic",
+    "Not having proper health checks to verify the green environment before cutover"
+  ],
+  "relatedTopics": ["canary-deployment", "rolling-update", "feature-flags", "database-migrations"],
+  "resources": [
+    {
+      "title": "Blue-Green Deployments on AWS",
+      "url": "https://docs.aws.amazon.com/whitepapers/latest/overview-deployment-options/bluegreen-deployments.html"
+    }
+  ]
+}

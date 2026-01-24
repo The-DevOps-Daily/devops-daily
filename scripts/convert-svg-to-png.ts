@@ -9,6 +9,7 @@ const GUIDES_IMAGES_DIR = path.join(PUBLIC_DIR, 'images', 'guides');
 const EXERCISES_IMAGES_DIR = path.join(PUBLIC_DIR, 'images', 'exercises');
 const NEWS_IMAGES_DIR = path.join(PUBLIC_DIR, 'images', 'news');
 const CHECKLISTS_IMAGES_DIR = path.join(PUBLIC_DIR, 'images', 'checklists');
+const INTERVIEW_IMAGES_DIR = path.join(PUBLIC_DIR, 'images', 'interview-questions');
 
 async function convertSvgToPng(svgPath: string, pngPath: string) {
   try {
@@ -53,6 +54,7 @@ async function convertAllSvgImages() {
    { dir: EXERCISES_IMAGES_DIR, type: 'exercises' },
    { dir: NEWS_IMAGES_DIR, type: 'news' },
     { dir: CHECKLISTS_IMAGES_DIR, type: 'checklists' },
+    { dir: INTERVIEW_IMAGES_DIR, type: 'interview-questions' },
  ];
 
   for (const { dir, type } of directories) {

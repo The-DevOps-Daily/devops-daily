@@ -1,0 +1,40 @@
+{
+  "id": "kubernetes-pod-lifecycle",
+  "slug": "kubernetes-pod-lifecycle",
+  "title": "Kubernetes Pod Lifecycle",
+  "question": "Explain the different phases of a Kubernetes Pod lifecycle and what happens during each phase.",
+  "answer": "A Kubernetes Pod goes through several phases: Pending (waiting for scheduling or image pulls), Running (at least one container is running), Succeeded (all containers terminated successfully), Failed (at least one container failed), and Unknown (Pod state cannot be determined). Each phase reflects the Pod's current status in the cluster.",
+  "explanation": "Understanding Pod lifecycle is crucial for debugging applications and implementing proper health checks. The lifecycle begins when a Pod is created and ends when it's deleted or evicted. During this time, Kubernetes continuously monitors and manages the Pod's state through its control loops.",
+  "category": "Kubernetes",
+  "difficulty": "intermediate",
+  "tags": ["kubernetes", "pods", "containers", "orchestration", "lifecycle"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Check Pod phase",
+      "code": "# Get Pod phase\nkubectl get pod my-pod -o jsonpath='{.status.phase}'\n\n# Watch Pod status changes\nkubectl get pod my-pod -w\n\n# Describe Pod for detailed lifecycle events\nkubectl describe pod my-pod"
+    },
+    {
+      "language": "yaml",
+      "label": "Pod with lifecycle hooks",
+      "code": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: lifecycle-demo\nspec:\n  containers:\n  - name: app\n    image: nginx\n    lifecycle:\n      postStart:\n        exec:\n          command: [\"/bin/sh\", \"-c\", \"echo Hello > /tmp/started\"]\n      preStop:\n        exec:\n          command: [\"/bin/sh\", \"-c\", \"nginx -s quit; sleep 10\"]"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between a Pod restart policy of Always, OnFailure, and Never?",
+    "How do liveness and readiness probes affect the Pod lifecycle?",
+    "What happens when a Pod's container exceeds its memory limit?"
+  ],
+  "commonMistakes": [
+    "Confusing Pod phase with container state - a Running Pod can have containers in different states",
+    "Not implementing graceful shutdown handlers, leading to data loss",
+    "Setting terminationGracePeriodSeconds too low for applications that need cleanup time"
+  ],
+  "relatedTopics": ["container-states", "init-containers", "health-probes", "restart-policies"],
+  "resources": [
+    {
+      "title": "Kubernetes Pod Lifecycle Documentation",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/"
+    }
+  ]
+}

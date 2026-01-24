@@ -1,0 +1,40 @@
+{
+  "id": "terraform-state-management",
+  "slug": "terraform-state-management",
+  "title": "Terraform State Management",
+  "question": "What is Terraform state, why is it important, and how do you manage state in a team environment?",
+  "answer": "Terraform state is a JSON file that maps real-world resources to your configuration. It tracks metadata, improves performance, and enables collaboration. For teams, use remote backends (S3, GCS, Terraform Cloud) with state locking to prevent concurrent modifications. Never commit state to version control as it may contain secrets.",
+  "explanation": "State is the source of truth for what Terraform has created. Without it, Terraform cannot know which resources it manages or their current configuration. Proper state management is critical for team collaboration and preventing infrastructure drift.",
+  "category": "Terraform",
+  "difficulty": "intermediate",
+  "tags": ["terraform", "iac", "state", "infrastructure", "devops"],
+  "codeExamples": [
+    {
+      "language": "hcl",
+      "label": "S3 backend configuration",
+      "code": "terraform {\n  backend \"s3\" {\n    bucket         = \"my-terraform-state\"\n    key            = \"prod/terraform.tfstate\"\n    region         = \"us-east-1\"\n    encrypt        = true\n    dynamodb_table = \"terraform-locks\"  # State locking\n  }\n}\n\n# Create the DynamoDB table for locking\nresource \"aws_dynamodb_table\" \"terraform_locks\" {\n  name         = \"terraform-locks\"\n  billing_mode = \"PAY_PER_REQUEST\"\n  hash_key     = \"LockID\"\n\n  attribute {\n    name = \"LockID\"\n    type = \"S\"\n  }\n}"
+    },
+    {
+      "language": "bash",
+      "label": "Common state commands",
+      "code": "# List resources in state\nterraform state list\n\n# Show specific resource\nterraform state show aws_instance.web\n\n# Move resource (refactoring)\nterraform state mv aws_instance.old aws_instance.new\n\n# Import existing resource\nterraform import aws_instance.web i-1234567890\n\n# Remove from state (without destroying)\nterraform state rm aws_instance.legacy"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle state file corruption or conflicts?",
+    "What is state locking and why is it important?",
+    "How do you migrate from local state to a remote backend?"
+  ],
+  "commonMistakes": [
+    "Committing terraform.tfstate to Git, exposing sensitive data",
+    "Not using state locking, leading to concurrent modification issues",
+    "Running terraform apply from multiple machines simultaneously"
+  ],
+  "relatedTopics": ["remote-backends", "state-locking", "workspaces", "terraform-cloud"],
+  "resources": [
+    {
+      "title": "Terraform State Documentation",
+      "url": "https://developer.hashicorp.com/terraform/language/state"
+    }
+  ]
+}

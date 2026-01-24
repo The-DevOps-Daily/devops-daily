@@ -58,6 +58,14 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     descriptionFields: ['description'],
     slugField: 'slug',
   },
+  'interview-questions': {
+    dir: 'content/interview-questions',
+    imagesDir: 'interview-questions',
+    extension: '.json',
+    requiredFields: ['title', 'question'],
+    descriptionFields: ['question'],
+    slugField: 'slug',
+  },
   advent: {
     dir: 'content/advent-of-devops',
     imagesDir: 'advent',

@@ -1,0 +1,40 @@
+{
+  "id": "linux-process-debugging",
+  "slug": "linux-process-debugging",
+  "title": "Linux Process Debugging",
+  "question": "A process is consuming 100% CPU on a Linux server. Walk me through how you would identify and troubleshoot this issue.",
+  "answer": "Start with top or htop to identify the process. Use ps aux to get details. Check strace to see system calls, lsof for open files, and /proc/<pid>/ for process info. For Java/Python, get thread dumps. Check logs, and consider perf or flamegraphs for deep analysis. May indicate infinite loops, memory leaks, or resource contention.",
+  "explanation": "Systematic troubleshooting is essential for production issues. Starting with broad tools (top) and narrowing down (strace, perf) helps identify root causes efficiently. Understanding Linux process management and debugging tools is a core DevOps skill.",
+  "category": "Linux",
+  "difficulty": "advanced",
+  "tags": ["linux", "troubleshooting", "debugging", "performance", "sysadmin"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Identify high CPU process",
+      "code": "# Find top CPU consumers\ntop -bn1 | head -20\n\n# Sort by CPU usage\nps aux --sort=-%cpu | head -10\n\n# Get process details\nps -p <PID> -o pid,ppid,cmd,%cpu,%mem,etime\n\n# Check process tree\npstree -p <PID>"
+    },
+    {
+      "language": "bash",
+      "label": "Deep process analysis",
+      "code": "# Trace system calls\nstrace -p <PID> -c  # Summary\nstrace -p <PID> -f  # Follow forks\n\n# Check open files and connections\nlsof -p <PID>\n\n# View process memory map\ncat /proc/<PID>/maps\n\n# CPU profiling with perf\nperf record -p <PID> -g -- sleep 30\nperf report"
+    }
+  ],
+  "followUpQuestions": [
+    "How would you generate a thread dump for a Java application?",
+    "What is the difference between CPU user time and system time?",
+    "How do you identify if the issue is I/O bound vs CPU bound?"
+  ],
+  "commonMistakes": [
+    "Immediately killing the process without investigating the root cause",
+    "Not checking if the high CPU is expected (batch job, build process)",
+    "Forgetting to check system logs before diving into process-level debugging"
+  ],
+  "relatedTopics": ["memory-debugging", "io-troubleshooting", "performance-tuning", "observability"],
+  "resources": [
+    {
+      "title": "Linux Performance Analysis",
+      "url": "https://www.brendangregg.com/linuxperf.html"
+    }
+  ]
+}

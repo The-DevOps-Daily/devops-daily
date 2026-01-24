@@ -1,0 +1,40 @@
+{
+  "id": "git-rebase-vs-merge",
+  "slug": "git-rebase-vs-merge",
+  "title": "Git Rebase vs Merge",
+  "question": "What is the difference between git rebase and git merge? When would you use each?",
+  "answer": "Merge creates a new commit combining two branches, preserving history. Rebase rewrites history by moving commits to a new base, creating a linear history. Use merge for shared branches to preserve context; use rebase for feature branches to keep history clean. Never rebase commits that have been pushed to shared branches.",
+  "explanation": "Both achieve branch integration but with different history outcomes. Merge is safer and preserves the complete development timeline. Rebase creates cleaner history but rewrites commits, which can cause issues if others have based work on those commits.",
+  "category": "Git",
+  "difficulty": "beginner",
+  "tags": ["git", "version-control", "branching", "workflow"],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Merge workflow",
+      "code": "# Merge feature into main\ngit checkout main\ngit merge feature-branch\n\n# Creates merge commit: A-B-C-M (where M merges F1-F2)\n#                        \\   /\n#                         F1-F2"
+    },
+    {
+      "language": "bash",
+      "label": "Rebase workflow",
+      "code": "# Rebase feature onto main\ngit checkout feature-branch\ngit rebase main\n\n# Before: A-B-C (main)\n#          \\\n#           F1-F2 (feature)\n\n# After:  A-B-C-F1'-F2' (linear history)\n\n# Interactive rebase to clean up commits\ngit rebase -i HEAD~3  # Squash, reword, reorder"
+    }
+  ],
+  "followUpQuestions": [
+    "What is interactive rebase and when would you use it?",
+    "How do you resolve conflicts during a rebase?",
+    "What is the golden rule of rebasing?"
+  ],
+  "commonMistakes": [
+    "Rebasing commits that have already been pushed to a shared branch",
+    "Force pushing after rebase without communicating with team members",
+    "Using rebase when merge commits provide valuable context"
+  ],
+  "relatedTopics": ["interactive-rebase", "squashing-commits", "git-workflows", "conflict-resolution"],
+  "resources": [
+    {
+      "title": "Git Branching - Rebasing",
+      "url": "https://git-scm.com/book/en/v2/Git-Branching-Rebasing"
+    }
+  ]
+}
