@@ -41,23 +41,7 @@ export interface InterviewQuestionProgress {
   };
 }
 
-export interface QuizModeState {
-  currentIndex: number;
-  answers: Record<string, boolean>; // questionId -> correct/incorrect
-  completed: boolean;
-  startedAt?: string;
-  completedAt?: string;
-}
-
-export interface QuizModeResult {
-  correct: number;
-  total: number;
-  percentage: number;
-  timeSpent?: number; // in seconds
-}
-
 const STORAGE_PREFIX = 'interview_progress_';
-const QUIZ_MODE_PREFIX = 'interview_quiz_';
 
 /**
  * Get interview progress from localStorage
@@ -170,65 +154,4 @@ export const getTierLabel = (tier: ExperienceTier): string => {
     default:
       return tier;
   }
-};
-
-/**
- * Get quiz mode state from localStorage
- */
-export const getQuizModeState = (category?: string): QuizModeState | null => {
-  if (typeof window === 'undefined') return null;
-  
-  const key = category ? `${QUIZ_MODE_PREFIX}${category}` : `${QUIZ_MODE_PREFIX}all`;
-  const stored = localStorage.getItem(key);
-  return stored ? JSON.parse(stored) : null;
-};
-
-/**
- * Save quiz mode state to localStorage
- */
-export const saveQuizModeState = (state: QuizModeState, category?: string): void => {
-  if (typeof window === 'undefined') return;
-  
-  const key = category ? `${QUIZ_MODE_PREFIX}${category}` : `${QUIZ_MODE_PREFIX}all`;
-  localStorage.setItem(key, JSON.stringify(state));
-};
-
-/**
- * Clear quiz mode state
- */
-export const clearQuizModeState = (category?: string): void => {
-  if (typeof window === 'undefined') return;
-  
-  const key = category ? `${QUIZ_MODE_PREFIX}${category}` : `${QUIZ_MODE_PREFIX}all`;
-  localStorage.removeItem(key);
-};
-
-/**
- * Calculate quiz result from state
- */
-export const calculateQuizResult = (state: QuizModeState): QuizModeResult => {
-  const answers = Object.values(state.answers);
-  const correct = answers.filter(Boolean).length;
-  const total = answers.length;
-  const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
-  
-  let timeSpent: number | undefined;
-  if (state.startedAt && state.completedAt) {
-    timeSpent = Math.round(
-      (new Date(state.completedAt).getTime() - new Date(state.startedAt).getTime()) / 1000
-    );
-  }
-  
-  return { correct, total, percentage, timeSpent };
-};
-
-/**
- * Get score rating based on percentage
- */
-export const getScoreRating = (percentage: number): { label: string; emoji: string } => {
-  if (percentage >= 90) return { label: 'Expert!', emoji: '🏆' };
-  if (percentage >= 75) return { label: 'Great job!', emoji: '⭐' };
-  if (percentage >= 60) return { label: 'Good effort!', emoji: '👍' };
-  if (percentage >= 40) return { label: 'Keep practicing!', emoji: '📚' };
-  return { label: 'Review the material', emoji: '💪' };
 };
