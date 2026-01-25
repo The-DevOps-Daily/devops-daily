@@ -1,0 +1,41 @@
+{
+  "id": "cicd-pipeline-design",
+  "slug": "cicd-pipeline-design",
+  "title": "CI/CD Pipeline Design",
+  "question": "How would you design a CI/CD pipeline for a microservices application? What stages would you include?",
+  "answer": "A comprehensive pipeline includes: 1) Build stage - compile code, install dependencies. 2) Test stage - unit tests, integration tests, code coverage. 3) Security scanning - SAST, dependency scanning, container scanning. 4) Artifact creation - build and push Docker images. 5) Deploy to staging - automated deployment with smoke tests. 6) Performance/E2E tests - load testing, end-to-end tests. 7) Deploy to production - with approval gates, canary or blue-green deployment. Include notifications, rollback mechanisms, and artifact versioning throughout.",
+  "explanation": "Pipeline design impacts developer productivity, deployment frequency, and system reliability. A well-designed pipeline catches issues early, provides fast feedback, and enables confident production deployments. This is a core DevOps competency.",
+  "category": "CI/CD",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "cicd",
+    "pipeline",
+    "automation",
+    "deployment",
+    "devops"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "GitHub Actions pipeline example",
+      "code": "name: CI/CD Pipeline\non:\n  push:\n    branches: [main]\n  pull_request:\n    branches: [main]\n\njobs:\n  build-and-test:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run tests\n        run: npm test\n      - name: Security scan\n        run: npm audit\n\n  deploy-staging:\n    needs: build-and-test\n    if: github.ref == 'refs/heads/main'\n    runs-on: ubuntu-latest\n    steps:\n      - name: Deploy to staging\n        run: ./deploy.sh staging\n\n  deploy-production:\n    needs: deploy-staging\n    runs-on: ubuntu-latest\n    environment: production\n    steps:\n      - name: Deploy to production\n        run: ./deploy.sh production"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle database migrations in a CI/CD pipeline?",
+    "What is the difference between continuous delivery and continuous deployment?",
+    "How do you implement rollback in your pipelines?"
+  ],
+  "commonMistakes": [
+    "Skipping tests to deploy faster",
+    "Not having environment parity between staging and production",
+    "Missing rollback mechanisms"
+  ],
+  "relatedTopics": [
+    "github-actions",
+    "jenkins",
+    "deployment-strategies",
+    "testing"
+  ]
+}

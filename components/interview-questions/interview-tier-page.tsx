@@ -4,8 +4,8 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
-  ChevronDown,
-  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Code,
   AlertTriangle,
   CheckCircle,
@@ -429,24 +429,24 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
         {/* Question Navigation */}
         <div className="flex items-center justify-between mb-6">
           <Button
-            onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
-            disabled={currentIndex === 0}
-            variant="outline"
-          >
-            <ChevronUp className="w-4 h-4 mr-2" />
-            Previous
+           onClick={() => setCurrentIndex(Math.max(0, currentIndex - 1))}
+           disabled={currentIndex === 0}
+           variant="outline"
+         >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+           Previous
+        </Button>
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+           Question {currentIndex + 1} of {displayQuestions.length}
+        </span>
+        <Button
+           onClick={() => setCurrentIndex(Math.min(displayQuestions.length - 1, currentIndex + 1))}
+           disabled={currentIndex === displayQuestions.length - 1}
+           variant="outline"
+         >
+           Next
+            <ChevronRight className="w-4 h-4 ml-2" />
          </Button>
-         <span className="text-sm text-gray-600 dark:text-gray-400">
-            Question {currentIndex + 1} of {displayQuestions.length}
-         </span>
-         <Button
-            onClick={() => setCurrentIndex(Math.min(displayQuestions.length - 1, currentIndex + 1))}
-            disabled={currentIndex === displayQuestions.length - 1}
-            variant="outline"
-          >
-            Next
-            <ChevronDown className="w-4 h-4 ml-2" />
-          </Button>
         </div>
 
         {/* Current Question Card */}

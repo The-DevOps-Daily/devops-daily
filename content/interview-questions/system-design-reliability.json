@@ -1,0 +1,41 @@
+{
+  "id": "system-design-reliability",
+  "slug": "system-design-reliability",
+  "title": "System Design for Reliability",
+  "question": "How would you design a highly available web application? What components and patterns would you use?",
+  "answer": "For high availability: 1) Multi-AZ deployment with load balancers distributing traffic across zones. 2) Stateless application servers that can scale horizontally. 3) Database replication with automatic failover (primary-replica or multi-master). 4) Caching layer (Redis/Memcached) to reduce database load. 5) CDN for static assets and geographic distribution. 6) Circuit breakers and retries for external dependencies. 7) Health checks at every layer. 8) Async processing with message queues for non-critical operations. Design for failure: assume every component can fail and plan accordingly.",
+  "explanation": "System design for reliability is a senior-level skill that combines architectural knowledge, cloud expertise, and operational experience. It requires understanding trade-offs between consistency, availability, cost, and complexity.",
+  "category": "Architecture",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "system-design",
+    "high-availability",
+    "architecture",
+    "reliability",
+    "senior"
+  ],
+  "codeExamples": [
+    {
+      "language": "text",
+      "label": "High Availability Architecture",
+      "code": "                    [CDN]\n                      |\n              [Load Balancer]\n              /      |      \\\n         [App-1] [App-2] [App-3]  <- Stateless, multi-AZ\n              \\      |      /\n              [Cache Layer]\n                    |\n           [Database Primary]\n                    |\n           [Database Replica]\n                    |\n              [Backup/DR]"
+    }
+  ],
+  "followUpQuestions": [
+    "How would you handle a database failover scenario?",
+    "What is the CAP theorem and how does it affect your design decisions?",
+    "How do you test system resilience?"
+  ],
+  "commonMistakes": [
+    "Single points of failure in the architecture",
+    "Not testing failover scenarios before production",
+    "Over-engineering for availability that isn't required"
+  ],
+  "relatedTopics": [
+    "high-availability",
+    "disaster-recovery",
+    "cap-theorem",
+    "distributed-systems"
+  ]
+}

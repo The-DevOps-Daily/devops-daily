@@ -1,0 +1,41 @@
+{
+  "id": "git-branching-strategies",
+  "slug": "git-branching-strategies",
+  "title": "Git Branching Strategies",
+  "question": "What are common Git branching strategies? Describe GitFlow or trunk-based development.",
+  "answer": "Common strategies include GitFlow (feature branches, develop, release, and main branches with structured releases), GitHub Flow (simple feature branches merged to main with continuous deployment), and trunk-based development (short-lived branches or direct commits to main with feature flags). Trunk-based development is preferred for CI/CD as it reduces merge conflicts and enables faster delivery.",
+  "explanation": "Branching strategies directly impact deployment frequency and team collaboration. DevOps engineers help teams choose and implement strategies that support their CI/CD goals. Understanding trade-offs helps optimize the development workflow.",
+  "category": "Git",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "git",
+    "branching",
+    "gitflow",
+    "trunk-based",
+    "cicd"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Common branch operations",
+      "code": "# Create and switch to feature branch\ngit checkout -b feature/add-login\n\n# Keep branch updated with main\ngit fetch origin\ngit rebase origin/main\n\n# Merge feature branch\ngit checkout main\ngit merge --no-ff feature/add-login\n\n# Delete merged branch\ngit branch -d feature/add-login\ngit push origin --delete feature/add-login"
+    }
+  ],
+  "followUpQuestions": [
+    "What are the pros and cons of GitFlow vs trunk-based development?",
+    "How do feature flags enable trunk-based development?",
+    "When would you use a release branch?"
+  ],
+  "commonMistakes": [
+    "Long-lived feature branches causing merge conflicts",
+    "Not keeping branches up-to-date with main",
+    "Using complex branching when simple approaches would work"
+  ],
+  "relatedTopics": [
+    "git",
+    "cicd",
+    "feature-flags",
+    "pull-requests"
+  ]
+}

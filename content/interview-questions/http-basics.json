@@ -1,0 +1,41 @@
+{
+  "id": "http-basics",
+  "slug": "http-basics",
+  "title": "HTTP Methods and Status Codes",
+  "question": "What are the main HTTP methods and what do common status codes like 200, 404, and 500 mean?",
+  "answer": "The main HTTP methods are: GET (retrieve data), POST (create data), PUT (update/replace data), PATCH (partial update), and DELETE (remove data). Status code 200 means success, 201 means created, 301/302 are redirects, 400 is bad request, 401 is unauthorized, 403 is forbidden, 404 is not found, and 500 is internal server error. Understanding these is essential for API troubleshooting.",
+  "explanation": "HTTP is the foundation of web communication. DevOps engineers troubleshoot APIs, configure load balancers, set up monitoring, and read access logs daily. Knowing HTTP methods and status codes helps quickly diagnose issues and communicate with developers effectively.",
+  "category": "Networking",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "http",
+    "api",
+    "web",
+    "networking",
+    "troubleshooting"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Test HTTP endpoints with curl",
+      "code": "# GET request\ncurl -X GET https://api.example.com/users\n\n# POST request with JSON data\ncurl -X POST https://api.example.com/users \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"name\": \"John\"}'\n\n# Check response headers and status\ncurl -I https://example.com\n\n# Verbose output for debugging\ncurl -v https://example.com"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between PUT and PATCH?",
+    "What does a 502 Bad Gateway error typically indicate?",
+    "What is the difference between 401 and 403 status codes?"
+  ],
+  "commonMistakes": [
+    "Using GET requests to modify data",
+    "Not checking response status codes in scripts",
+    "Confusing 401 (authentication) with 403 (authorization)"
+  ],
+  "relatedTopics": [
+    "rest-api",
+    "curl",
+    "load-balancing",
+    "api-gateway"
+  ]
+}

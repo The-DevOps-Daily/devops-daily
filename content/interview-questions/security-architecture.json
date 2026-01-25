@@ -1,0 +1,41 @@
+{
+  "id": "security-architecture",
+  "slug": "security-architecture",
+  "title": "Security Architecture and DevSecOps",
+  "question": "How do you integrate security into the DevOps pipeline? Describe the key components of a secure architecture.",
+  "answer": "DevSecOps shifts security left by integrating it throughout the pipeline: 1) Pre-commit: secrets scanning, linting. 2) CI: SAST (static analysis), dependency scanning, container scanning. 3) CD: DAST (dynamic testing), infrastructure security scanning. 4) Runtime: WAF, network policies, runtime protection. Architecture security includes: defense in depth (multiple security layers), zero trust (verify everything, trust nothing), least privilege access, encryption at rest and in transit, network segmentation, and comprehensive logging and monitoring for security events.",
+  "explanation": "Security is a shared responsibility in modern DevOps. Understanding how to build security into systems from the start, rather than bolting it on later, is essential for senior engineers. Security breaches can have severe business and legal consequences.",
+  "category": "Security",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "security",
+    "devsecops",
+    "architecture",
+    "zero-trust",
+    "senior"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Security scanning in CI/CD",
+      "code": "# GitHub Actions security workflow\nname: Security Scan\non: [push, pull_request]\n\njobs:\n  security:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      \n      # Secrets detection\n      - name: Detect secrets\n        uses: trufflesecurity/trufflehog@main\n      \n      # Dependency scanning\n      - name: Dependency check\n        run: npm audit --audit-level=high\n      \n      # Container scanning\n      - name: Scan container image\n        uses: aquasecurity/trivy-action@master\n        with:\n          image-ref: 'myapp:latest'\n          severity: 'CRITICAL,HIGH'\n      \n      # SAST\n      - name: Static analysis\n        uses: github/codeql-action/analyze@v2"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you manage secrets in a Kubernetes environment?",
+    "What is the principle of defense in depth?",
+    "How do you implement zero trust networking?"
+  ],
+  "commonMistakes": [
+    "Treating security as a final step before release",
+    "Not scanning third-party dependencies",
+    "Storing secrets in code repositories"
+  ],
+  "relatedTopics": [
+    "devsecops",
+    "zero-trust",
+    "secrets-management",
+    "compliance"
+  ]
+}

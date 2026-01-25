@@ -1,0 +1,41 @@
+{
+  "id": "dockerfile-best-practices",
+  "slug": "dockerfile-best-practices",
+  "title": "Dockerfile Best Practices",
+  "question": "What is the difference between a Docker image and a container? What are some Dockerfile best practices?",
+  "answer": "An image is a read-only template containing the application and dependencies. A container is a running instance of an image. Best practices include: use official base images, minimize layers by combining RUN commands, use multi-stage builds to reduce image size, don't run as root, use specific version tags instead of latest, and order instructions from least to most frequently changing to leverage layer caching.",
+  "explanation": "Container optimization directly impacts deployment speed, security, and costs. Smaller images deploy faster, have fewer vulnerabilities, and cost less to store. Understanding these concepts helps DevOps engineers build efficient CI/CD pipelines.",
+  "category": "Docker",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "docker",
+    "dockerfile",
+    "containers",
+    "images",
+    "best-practices"
+  ],
+  "codeExamples": [
+    {
+      "language": "dockerfile",
+      "label": "Optimized multi-stage Dockerfile",
+      "code": "# Build stage\nFROM node:20-alpine AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --only=production\nCOPY . .\nRUN npm run build\n\n# Production stage\nFROM node:20-alpine\nWORKDIR /app\nRUN addgroup -g 1001 appgroup && \\\n    adduser -S -u 1001 -G appgroup appuser\nCOPY --from=builder /app/dist ./dist\nCOPY --from=builder /app/node_modules ./node_modules\nUSER appuser\nEXPOSE 3000\nCMD [\"node\", \"dist/index.js\"]"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between COPY and ADD?",
+    "How does layer caching work in Docker builds?",
+    "What is the difference between CMD and ENTRYPOINT?"
+  ],
+  "commonMistakes": [
+    "Using 'latest' tag in production",
+    "Running containers as root",
+    "Not using .dockerignore to exclude unnecessary files"
+  ],
+  "relatedTopics": [
+    "docker",
+    "multi-stage-builds",
+    "container-security",
+    "cicd"
+  ]
+}
