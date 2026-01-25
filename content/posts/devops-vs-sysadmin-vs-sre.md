@@ -203,13 +203,9 @@ Here's the thing: **these roles overlap significantly**. In the real world:
 ```
 +-------------------------------------------------------+
 |                                                       |
-|     +-------------+                                   |
-|     |   SysAdmin  |                                   |
-|     +------+------+                                   |
-|            |                                          |
-|     +------+------+     +-------------+               |
-|     |   DevOps    +-----+     SRE     |               |
-|     +-------------+     +-------------+               |
+|       +----------+    +----------+    +----------+    |
+|       | SysAdmin |<-->|  DevOps  |<-->|   SRE    |    |
+|       +----------+    +----------+    +----------+    |
 |                                                       |
 |  All three share: Linux, networking, monitoring,      |
 |  troubleshooting, and automation fundamentals         |
