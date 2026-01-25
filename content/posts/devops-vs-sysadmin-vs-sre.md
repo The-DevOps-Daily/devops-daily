@@ -131,15 +131,16 @@ DevOps Engineers are **automation enthusiasts** and **bridge builders**. They be
 
 ### What Does an SRE Do?
 
-SRE was pioneered by Google and is essentially a **specialized subset of DevOps** that focuses heavily on reliability and uptime. While DevOps covers the entire software delivery lifecycle, SRE zeroes in on:
+SRE was pioneered by Google and applies **software engineering principles to operations problems**. While DevOps and SRE share many goals and practices, SRE brings a distinct methodology centered on:
 
 - Defining and measuring reliability (SLOs, SLIs, error budgets)
 - Building systems that are scalable and self-healing
 - Reducing toil (repetitive manual work) through engineering
 - Incident response and blameless postmortems
 - Capacity planning and performance optimization
+- On-call rotations with a focus on sustainable practices
 
-**Important context:** SRE is a narrower discipline than DevOps. Many SRE practices (monitoring, incident response, automation) are already part of DevOps. SRE adds specific methodologies like error budgets and SLOs, but doesn't cover the full breadth of CI/CD, infrastructure as code, and cross-team collaboration that DevOps encompasses.
+**How SRE relates to DevOps:** There's significant overlap between the two disciplines. Some organizations use the terms interchangeably, while others see SRE as a specific implementation of DevOps principles with its own unique practices. Both aim for reliable, automated systems — they just approach it from slightly different angles.
 
 ### A Day in the Life
 
@@ -157,7 +158,7 @@ SREs need strong **software engineering skills** (not just scripting—real codi
 
 ### The SRE Mindset
 
-SREs are **specialists who focus on the reliability aspect of DevOps**. They believe reliability is a feature that should be designed and measured. While valuable, this specialization means SREs often have a narrower scope than DevOps engineers, who work across the entire delivery pipeline. Many SREs eventually transition to DevOps roles to gain broader experience.
+SREs are **engineers who treat operations as a software problem**. They believe reliability is a feature that should be designed, measured, and engineered. They value data-driven decisions, sustainable on-call practices, and eliminating toil through automation. The motto might be: "Hope is not a strategy."
 
 ---
 
@@ -193,26 +194,22 @@ Here's how the three roles compare across different dimensions:
 
 ## The Overlap
 
-Here's the thing: **these roles overlap significantly**, with DevOps being the broadest discipline. In the real world:
+Here's the thing: **these roles overlap significantly**. In the real world:
 
 - A SysAdmin at a startup might do DevOps work
 - A DevOps Engineer might handle SRE responsibilities
-- An SRE often transitions to DevOps to expand their scope
+- An SRE might do traditional sysadmin tasks
 
 ```
 +-------------------------------------------------------+
 |                                                       |
-|  +--------------------------------------------------+ |
-|  |                    DevOps                        | |
-|  |  (Broadest: CI/CD, IaC, culture, automation)     | |
-|  |                                                  | |
-|  |   +-----------+          +-----------+           | |
-|  |   | SysAdmin  |          |    SRE    |           | |
-|  |   | (infra,   |          | (reliab-  |           | |
-|  |   | ops)      |          |  ility)   |           | |
-|  |   +-----------+          +-----------+           | |
-|  |                                                  | |
-|  +--------------------------------------------------+ |
+|     +-------------+                                   |
+|     |   SysAdmin  |                                   |
+|     +------+------+                                   |
+|            |                                          |
+|     +------+------+     +-------------+               |
+|     |   DevOps    +-----+     SRE     |               |
+|     +-------------+     +-------------+               |
 |                                                       |
 |  All three share: Linux, networking, monitoring,      |
 |  troubleshooting, and automation fundamentals         |
@@ -272,18 +269,18 @@ Here's how these roles often connect in career paths:
 +-----------------------------------------------------------+
 |                                                           |
 |  Help Desk --> SysAdmin --> Senior SysAdmin               |
-|                    |                   |                  |
-|                    v                   v                  |
+|                    |                                      |
+|                    v                                      |
 |              DevOps Engineer <---> SRE                    |
 |                    |                                      |
 |                    v                                      |
-|              Senior DevOps / Platform Engineer            |
+|         Senior DevOps / Senior SRE / Platform Eng        |
 |                                                           |
 |  All paths can lead to:                                   |
 |  * Engineering Manager                                    |
 |  * Platform Architect                                     |
 |  * Principal Engineer                                     |
-|  * VP of Engineering / CTO                                |
+|  * CTO                                                    |
 |                                                           |
 +-----------------------------------------------------------+
 ```
@@ -291,9 +288,9 @@ Here's how these roles often connect in career paths:
 **Common transitions:**
 
 - **SysAdmin → DevOps**: Learn automation, CI/CD, and cloud
-- **SRE → DevOps**: Broader scope, more team interaction
-- **Developer → DevOps**: Apply coding skills to infrastructure and automation
-- **SRE → DevOps**: Expand from reliability focus to full SDLC involvement
+- **DevOps → SRE**: Deepen focus on reliability, SLOs, and engineering practices
+- **SRE → DevOps**: Expand focus to full delivery pipeline and team collaboration
+- **Developer → either**: Apply coding skills to infrastructure problems
 
 ---
 
