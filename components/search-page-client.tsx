@@ -23,6 +23,7 @@ import {
   Sparkles,
   ChevronDown,
   ListChecks,
+  MessageSquare,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -72,6 +73,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   news: Newspaper,
   page: Home,
   checklist: ListChecks,
+  'interview-question': MessageSquare,
 };
 
 export function SearchPageClient() {

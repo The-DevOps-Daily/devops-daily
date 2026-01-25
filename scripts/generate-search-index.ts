@@ -7,10 +7,11 @@ import { getAllExercises } from '../lib/exercises.js';
 import { getAllNews } from '../lib/news.js';
 import { getActiveGames } from '../lib/games.js';
 import { checklists } from '../content/checklists/index.js';
+import { interviewQuestions } from '../content/interview-questions/index.js';
 
 interface SearchItem {
   id: string;
-  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page' | 'checklist';
+  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page' | 'checklist' | 'interview-question';
   title: string;
   description: string;
   url: string;
@@ -119,12 +120,44 @@ const PAGES: SearchItem[] = [
     icon: '📑',
   },
   {
-    id: 'page-checklists',
+   id: 'page-checklists',
+   type: 'page',
+   title: 'Checklists',
+   description: 'Interactive DevOps and security checklists',
+   url: '/checklists',
+   icon: '✅',
+ },
+  {
+    id: 'page-interview-questions',
     type: 'page',
-    title: 'Checklists',
-    description: 'Interactive DevOps and security checklists',
-    url: '/checklists',
-    icon: '✅',
+    title: 'Interview Questions',
+    description: 'Practice DevOps interview questions by experience level',
+    url: '/interview-questions',
+    icon: '💬',
+  },
+  {
+    id: 'page-interview-questions-junior',
+    type: 'interview-question',
+    title: 'Junior Interview Questions',
+    description: 'Entry-level DevOps interview questions for beginners',
+    url: '/interview-questions/junior',
+    icon: '🌱',
+  },
+  {
+    id: 'page-interview-questions-mid',
+    type: 'interview-question',
+    title: 'Mid-Level Interview Questions',
+    description: 'Intermediate DevOps interview questions for experienced practitioners',
+    url: '/interview-questions/mid',
+    icon: '🚀',
+  },
+  {
+    id: 'page-interview-questions-senior',
+    type: 'interview-question',
+    title: 'Senior Interview Questions',
+    description: 'Advanced DevOps interview questions for senior engineers and architects',
+    url: '/interview-questions/senior',
+    icon: '🎯',
   },
 ];
 
@@ -275,6 +308,21 @@ async function generateSearchIndex() {
   }));
   searchIndex.push(...checklistItems);
   console.log(`  ✓ Added ${checklistItems.length} checklists`);
+
+  // Add interview questions
+  console.log('💬 Adding interview questions...');
+  const interviewItems: SearchItem[] = interviewQuestions.map((question) => ({
+    id: `interview-${question.slug}`,
+    type: 'interview-question',
+    title: question.title,
+    description: question.question,
+    url: `/interview-questions/${question.tier}`,
+    category: question.category,
+    tags: question.tags,
+    icon: '💬',
+  }));
+  searchIndex.push(...interviewItems);
+  console.log(`  ✓ Added ${interviewItems.length} interview questions`);
 
   // Calculate size
   const json = JSON.stringify(searchIndex);

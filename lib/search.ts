@@ -2,7 +2,7 @@ import Fuse from 'fuse.js';
 
 export interface SearchItem {
   id: string;
-  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page' | 'checklist';
+  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page' | 'checklist' | 'interview-question';
   title: string;
   description: string;
   url: string;
@@ -202,6 +202,7 @@ export const TYPE_LABELS: Record<string, string> = {
   news: 'News',
   page: 'Pages',
   checklist: 'Checklists',
+  'interview-question': 'Interview Questions',
 };
 
 export const TYPE_COLORS: Record<string, string> = {
@@ -213,6 +214,7 @@ export const TYPE_COLORS: Record<string, string> = {
   news: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
   page: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
   checklist: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
+  'interview-question': 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
 };
 
 // Popular searches for "no results" state
