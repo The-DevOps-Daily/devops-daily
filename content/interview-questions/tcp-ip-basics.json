@@ -1,0 +1,41 @@
+{
+  "id": "tcp-ip-basics",
+  "slug": "tcp-ip-basics",
+  "title": "TCP/IP Fundamentals",
+  "question": "Explain the difference between TCP and UDP. When would you use each?",
+  "answer": "TCP (Transmission Control Protocol) is connection-oriented, ensuring reliable, ordered delivery with error checking and retransmission. UDP (User Datagram Protocol) is connectionless, offering faster but unreliable delivery without guarantees. Use TCP for web traffic (HTTP), file transfers, and email. Use UDP for streaming, gaming, DNS queries, and real-time applications where speed matters more than reliability.",
+  "explanation": "Understanding TCP vs UDP is fundamental for troubleshooting network issues, configuring firewalls, and designing distributed systems. DevOps engineers must know which protocol applications use to properly monitor, secure, and optimize network traffic.",
+  "category": "Networking",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "networking",
+    "tcp",
+    "udp",
+    "protocols",
+    "fundamentals"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Check open TCP/UDP ports",
+      "code": "# List all TCP connections\nnetstat -tulpn | grep tcp\nss -tulpn | grep tcp\n\n# List all UDP connections\nnetstat -tulpn | grep udp\nss -tulpn | grep udp\n\n# Test TCP connectivity\nnc -zv hostname 80\n\n# Test UDP connectivity\nnc -zuv hostname 53"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the TCP three-way handshake?",
+    "Why does DNS use UDP by default but can fall back to TCP?",
+    "What are the common TCP states and what do they mean?"
+  ],
+  "commonMistakes": [
+    "Assuming all network traffic uses TCP",
+    "Blocking UDP on firewalls without understanding impact on DNS and NTP",
+    "Not considering TCP overhead for high-throughput applications"
+  ],
+  "relatedTopics": [
+    "dns",
+    "firewalls",
+    "load-balancing",
+    "network-troubleshooting"
+  ]
+}

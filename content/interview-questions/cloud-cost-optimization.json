@@ -1,0 +1,41 @@
+{
+  "id": "cloud-cost-optimization",
+  "slug": "cloud-cost-optimization",
+  "title": "Cloud Cost Optimization",
+  "question": "How do you approach cloud cost optimization? What strategies and tools would you use?",
+  "answer": "Cost optimization starts with visibility: use cloud-native tools (AWS Cost Explorer, Azure Cost Management) and third-party solutions (Kubecost, Infracost) to understand spending. Key strategies: 1) Right-sizing - match instance sizes to actual usage. 2) Reserved instances/savings plans for predictable workloads (30-70% savings). 3) Spot/preemptible instances for fault-tolerant workloads. 4) Auto-scaling to match demand. 5) Storage lifecycle policies to move cold data to cheaper tiers. 6) Clean up unused resources (orphaned volumes, old snapshots). 7) Tag everything for cost allocation. Implement FinOps practices with regular cost reviews and accountability.",
+  "explanation": "Cloud costs can spiral out of control without proper governance. Senior engineers must balance performance and reliability requirements with cost efficiency. This directly impacts company profitability and is increasingly a key engineering responsibility.",
+  "category": "Cloud",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "cost-optimization",
+    "finops",
+    "cloud",
+    "aws",
+    "senior"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Find unused AWS resources",
+      "code": "# Find unattached EBS volumes\naws ec2 describe-volumes \\\n  --filters Name=status,Values=available \\\n  --query 'Volumes[*].[VolumeId,Size,CreateTime]'\n\n# Find old snapshots (>90 days)\naws ec2 describe-snapshots --owner-ids self \\\n  --query 'Snapshots[?StartTime<=`2024-01-01`].[SnapshotId,VolumeSize]'\n\n# Find stopped instances\naws ec2 describe-instances \\\n  --filters Name=instance-state-name,Values=stopped \\\n  --query 'Reservations[].Instances[].[InstanceId,InstanceType]'"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you decide between reserved instances and savings plans?",
+    "What is FinOps and how do you implement it?",
+    "How do you handle cost optimization in Kubernetes?"
+  ],
+  "commonMistakes": [
+    "Over-provisioning resources 'just in case'",
+    "Not setting up billing alerts",
+    "Ignoring data transfer costs between regions/services"
+  ],
+  "relatedTopics": [
+    "finops",
+    "cloud",
+    "auto-scaling",
+    "reserved-instances"
+  ]
+}

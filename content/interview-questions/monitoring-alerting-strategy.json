@@ -1,0 +1,41 @@
+{
+  "id": "monitoring-alerting-strategy",
+  "slug": "monitoring-alerting-strategy",
+  "title": "Monitoring and Alerting Strategy",
+  "question": "How do you design a monitoring and alerting strategy? What metrics would you track and how do you avoid alert fatigue?",
+  "answer": "Start with the four golden signals: latency, traffic, errors, and saturation. Use RED method for services (Rate, Errors, Duration) and USE method for resources (Utilization, Saturation, Errors). To avoid alert fatigue: alert on symptoms not causes, set appropriate thresholds with historical data, use severity levels (page vs ticket), implement alert grouping and deduplication, require runbooks for every alert, and regularly review and tune alerts. Only page for actionable issues that require immediate human intervention.",
+  "explanation": "Effective monitoring enables proactive issue detection and faster incident resolution. Poor alerting leads to alert fatigue where important signals get ignored. This is a critical skill for maintaining reliable systems.",
+  "category": "Observability",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "monitoring",
+    "alerting",
+    "observability",
+    "sre",
+    "metrics"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Prometheus alerting rules example",
+      "code": "groups:\n- name: service-alerts\n  rules:\n  # High error rate - page immediately\n  - alert: HighErrorRate\n    expr: |\n      sum(rate(http_requests_total{status=~\"5..\"}[5m]))\n      / sum(rate(http_requests_total[5m])) > 0.05\n    for: 5m\n    labels:\n      severity: critical\n    annotations:\n      summary: High error rate detected\n      runbook: https://wiki/runbooks/high-error-rate\n\n  # High latency - create ticket\n  - alert: HighLatency\n    expr: |\n      histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5\n    for: 10m\n    labels:\n      severity: warning\n    annotations:\n      summary: P95 latency above 500ms"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between metrics, logs, and traces?",
+    "How do you decide between warning and critical alert severity?",
+    "What is an error budget and how does it relate to alerting?"
+  ],
+  "commonMistakes": [
+    "Alerting on every metric threshold crossing",
+    "Not including runbooks with alerts",
+    "Setting thresholds without historical baseline data"
+  ],
+  "relatedTopics": [
+    "prometheus",
+    "grafana",
+    "observability",
+    "incident-management"
+  ]
+}

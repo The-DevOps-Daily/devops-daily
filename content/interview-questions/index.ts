@@ -16,6 +16,11 @@ import gitBasics from './git-basics.json';
 import monitoringGoldenSignals from './monitoring-golden-signals.json';
 import gitRebaseVsMerge from './git-rebase-vs-merge.json';
 import awsVpcNetworking from './aws-vpc-networking.json';
+import tcpIpBasics from './tcp-ip-basics.json';
+import httpBasics from './http-basics.json';
+import cloudIamBasics from './cloud-iam-basics.json';
+import gitBranchingStrategies from './git-branching-strategies.json';
+import dockerfileBestPractices from './dockerfile-best-practices.json';
 // Mid tier
 import kubernetesPodLifecycle from './kubernetes-pod-lifecycle.json';
 import dockerLayersCaching from './docker-layers-caching.json';
@@ -24,10 +29,18 @@ import terraformStateManagement from './terraform-state-management.json';
 import kubernetesKubelet from './kubernetes-kubelet.json';
 import sliSloSla from './sli-slo-sla.json';
 import immutableInfrastructure from './immutable-infrastructure.json';
+import kubernetesServicesNetworking from './kubernetes-services-networking.json';
+import infrastructureAsCodePatterns from './infrastructure-as-code-patterns.json';
+import cicdPipelineDesign from './cicd-pipeline-design.json';
+import monitoringAlertingStrategy from './monitoring-alerting-strategy.json';
 // Senior tier
 import linuxProcessDebugging from './linux-process-debugging.json';
 import chaosEngineering from './chaos-engineering.json';
 import incidentPostmortem from './incident-postmortem.json';
+import systemDesignReliability from './system-design-reliability.json';
+import disasterRecoveryPlanning from './disaster-recovery-planning.json';
+import securityArchitecture from './security-architecture.json';
+import cloudCostOptimization from './cloud-cost-optimization.json';
 
 export const interviewQuestions: InterviewQuestion[] = [
   // Junior tier
@@ -45,6 +58,11 @@ export const interviewQuestions: InterviewQuestion[] = [
   monitoringGoldenSignals as InterviewQuestion,
   gitRebaseVsMerge as InterviewQuestion,
   awsVpcNetworking as InterviewQuestion,
+  tcpIpBasics as InterviewQuestion,
+  httpBasics as InterviewQuestion,
+  cloudIamBasics as InterviewQuestion,
+  gitBranchingStrategies as InterviewQuestion,
+  dockerfileBestPractices as InterviewQuestion,
   // Mid tier
   kubernetesPodLifecycle as InterviewQuestion,
   dockerLayersCaching as InterviewQuestion,
@@ -53,10 +71,18 @@ export const interviewQuestions: InterviewQuestion[] = [
   kubernetesKubelet as InterviewQuestion,
   sliSloSla as InterviewQuestion,
   immutableInfrastructure as InterviewQuestion,
+  kubernetesServicesNetworking as InterviewQuestion,
+  infrastructureAsCodePatterns as InterviewQuestion,
+  cicdPipelineDesign as InterviewQuestion,
+  monitoringAlertingStrategy as InterviewQuestion,
   // Senior tier
   linuxProcessDebugging as InterviewQuestion,
   chaosEngineering as InterviewQuestion,
   incidentPostmortem as InterviewQuestion,
+  systemDesignReliability as InterviewQuestion,
+  disasterRecoveryPlanning as InterviewQuestion,
+  securityArchitecture as InterviewQuestion,
+  cloudCostOptimization as InterviewQuestion,
 ];
 
 export const getQuestionBySlug = (slug: string): InterviewQuestion | undefined => {

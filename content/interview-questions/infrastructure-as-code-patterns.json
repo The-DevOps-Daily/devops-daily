@@ -1,0 +1,41 @@
+{
+  "id": "infrastructure-as-code-patterns",
+  "slug": "infrastructure-as-code-patterns",
+  "title": "Infrastructure as Code Patterns",
+  "question": "What are the key principles and patterns of Infrastructure as Code? How do you structure IaC for multiple environments?",
+  "answer": "Key IaC principles: declarative over imperative, idempotent operations, version control everything, and immutable infrastructure. For multiple environments, use modules for reusable components, separate state files per environment, use workspaces or directory structures (dev/staging/prod), parameterize with variables and tfvars files, and implement DRY (Don't Repeat Yourself) through modules. Always test changes in lower environments first.",
+  "explanation": "IaC is the foundation of modern DevOps practices. Well-structured IaC enables reproducible infrastructure, reduces configuration drift, facilitates disaster recovery, and allows infrastructure changes to go through the same code review process as application code.",
+  "category": "Infrastructure",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "iac",
+    "terraform",
+    "infrastructure",
+    "patterns",
+    "best-practices"
+  ],
+  "codeExamples": [
+    {
+      "language": "hcl",
+      "label": "Terraform module structure",
+      "code": "# Directory structure:\n# infrastructure/\n#   modules/\n#     vpc/\n#     eks/\n#   environments/\n#     dev/\n#       main.tf\n#       terraform.tfvars\n#     prod/\n#       main.tf\n#       terraform.tfvars\n\n# environments/dev/main.tf\nmodule \"vpc\" {\n  source = \"../../modules/vpc\"\n  \n  environment = var.environment\n  cidr_block  = var.vpc_cidr\n}\n\nmodule \"eks\" {\n  source = \"../../modules/eks\"\n  \n  vpc_id      = module.vpc.vpc_id\n  subnet_ids  = module.vpc.private_subnet_ids\n  environment = var.environment\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle secrets in Infrastructure as Code?",
+    "What is the difference between Terraform workspaces and directory-based separation?",
+    "How do you test infrastructure code before applying?"
+  ],
+  "commonMistakes": [
+    "Hardcoding environment-specific values",
+    "Not using remote state with locking",
+    "Creating overly complex module hierarchies"
+  ],
+  "relatedTopics": [
+    "terraform",
+    "pulumi",
+    "gitops",
+    "immutable-infrastructure"
+  ]
+}

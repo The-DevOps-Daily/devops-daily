@@ -1,0 +1,46 @@
+{
+  "id": "cloud-iam-basics",
+  "slug": "cloud-iam-basics",
+  "title": "Cloud IAM Basics",
+  "question": "What is IAM in cloud computing? Explain the concepts of users, roles, and policies.",
+  "answer": "IAM (Identity and Access Management) controls who can access cloud resources and what they can do. Users are individual identities (people or services). Roles are sets of permissions that can be assumed temporarily. Policies are JSON documents that define what actions are allowed or denied on which resources. The principle of least privilege means giving only the minimum permissions needed.",
+  "explanation": "IAM is the security foundation of cloud infrastructure. Misconfigured IAM is one of the top causes of cloud breaches. DevOps engineers must understand IAM to set up secure CI/CD pipelines, manage service accounts, and follow security best practices.",
+  "category": "Cloud",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "iam",
+    "cloud",
+    "security",
+    "aws",
+    "permissions"
+  ],
+  "codeExamples": [
+    {
+      "language": "json",
+      "label": "Example AWS IAM Policy",
+      "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Action\": [\n        \"s3:GetObject\",\n        \"s3:PutObject\"\n      ],\n      \"Resource\": \"arn:aws:s3:::my-bucket/*\"\n    }\n  ]\n}"
+    },
+    {
+      "language": "bash",
+      "label": "AWS CLI IAM commands",
+      "code": "# List IAM users\naws iam list-users\n\n# List attached policies for a user\naws iam list-attached-user-policies --user-name devops\n\n# Get current identity\naws sts get-caller-identity"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the principle of least privilege?",
+    "When would you use a role instead of a user?",
+    "What is the difference between identity-based and resource-based policies?"
+  ],
+  "commonMistakes": [
+    "Using root account for daily operations",
+    "Granting overly permissive policies like AdministratorAccess",
+    "Hardcoding credentials instead of using roles"
+  ],
+  "relatedTopics": [
+    "aws",
+    "security",
+    "service-accounts",
+    "least-privilege"
+  ]
+}

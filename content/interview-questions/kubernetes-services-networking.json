@@ -1,0 +1,41 @@
+{
+  "id": "kubernetes-services-networking",
+  "slug": "kubernetes-services-networking",
+  "title": "Kubernetes Services and Networking",
+  "question": "Explain the different types of Kubernetes Services (ClusterIP, NodePort, LoadBalancer) and when to use each.",
+  "answer": "ClusterIP (default) exposes the service on an internal IP, accessible only within the cluster - use for internal communication between pods. NodePort exposes the service on each node's IP at a static port (30000-32767) - use for development or when you manage your own load balancer. LoadBalancer provisions an external load balancer (in cloud environments) - use for production external traffic. Ingress is not a service type but a separate resource for HTTP/HTTPS routing with a single entry point.",
+  "explanation": "Kubernetes networking is essential for connecting microservices and exposing applications. Understanding service types helps architects design secure, scalable systems and troubleshoot connectivity issues efficiently.",
+  "category": "Kubernetes",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "kubernetes",
+    "networking",
+    "services",
+    "ingress",
+    "load-balancing"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Kubernetes Service types",
+      "code": "# ClusterIP (internal only)\napiVersion: v1\nkind: Service\nmetadata:\n  name: backend-service\nspec:\n  type: ClusterIP\n  selector:\n    app: backend\n  ports:\n    - port: 80\n      targetPort: 8080\n---\n# LoadBalancer (external traffic)\napiVersion: v1\nkind: Service\nmetadata:\n  name: frontend-service\nspec:\n  type: LoadBalancer\n  selector:\n    app: frontend\n  ports:\n    - port: 80\n      targetPort: 3000"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between port, targetPort, and nodePort?",
+    "How does kube-proxy handle service traffic?",
+    "When would you use an Ingress instead of a LoadBalancer service?"
+  ],
+  "commonMistakes": [
+    "Using LoadBalancer for every service (costly and unnecessary)",
+    "Confusing targetPort with port",
+    "Not understanding that NodePort opens ports on ALL nodes"
+  ],
+  "relatedTopics": [
+    "kubernetes",
+    "ingress",
+    "kube-proxy",
+    "service-mesh"
+  ]
+}
