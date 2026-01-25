@@ -4,8 +4,6 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
-  ChevronDown,
-  ChevronUp,
   ChevronLeft,
   ChevronRight,
   Code,
