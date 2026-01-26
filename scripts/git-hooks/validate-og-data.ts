@@ -25,6 +25,7 @@ interface ContentConfig {
   requiredFields: string[];
   descriptionFields: string[]; // Fields that can serve as og:description (in order of priority)
   slugField?: string;
+  skipOgImage?: boolean; // Skip OG image validation (e.g., interview questions don't have individual pages)
 }
 
 const CONTENT_CONFIG: Record<string, ContentConfig> = {
@@ -65,6 +66,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     requiredFields: ['title', 'question'],
     descriptionFields: ['question'],
     slugField: 'slug',
+    skipOgImage: true, // Interview questions are displayed on tier pages, not individual pages
   },
   advent: {
     dir: 'content/advent-of-devops',
@@ -223,24 +225,26 @@ function validateFile(
   if (config.slugField && data[config.slugField]) {
     slug = data[config.slugField] as string;
   } else {
-    slug = getSlugFromFilename(filePath);
-  }
+   slug = getSlugFromFilename(filePath);
+ }
 
-  // Check for OG image
-  if (!ogImageExists(slug, config.imagesDir)) {
-    // Check if index file for guides (guides have subdirectories)
-    if (filePath.includes('guides/') && filePath.endsWith('index.md')) {
-      const guideSlug = path.basename(path.dirname(filePath));
-      if (!ogImageExists(guideSlug, config.imagesDir)) {
+ // Check for OG image
+  if (!config.skipOgImage) {
+    if (!ogImageExists(slug, config.imagesDir)) {
+      // Check if index file for guides (guides have subdirectories)
+      if (filePath.includes('guides/') && filePath.endsWith('index.md')) {
+        const guideSlug = path.basename(path.dirname(filePath));
+        if (!ogImageExists(guideSlug, config.imagesDir)) {
+          warnings.push(
+            `Missing OG image. Expected: public/images/${config.imagesDir}/${guideSlug}.{svg,png}`
+          );
+        }
+      } else if (!filePath.endsWith('index.ts')) {
+        // Skip index.ts files
         warnings.push(
-          `Missing OG image. Expected: public/images/${config.imagesDir}/${guideSlug}.{svg,png}`
+          `Missing OG image. Expected: public/images/${config.imagesDir}/${slug}.{svg,png}`
         );
       }
-    } else if (!filePath.endsWith('index.ts')) {
-      // Skip index.ts files
-      warnings.push(
-        `Missing OG image. Expected: public/images/${config.imagesDir}/${slug}.{svg,png}`
-      );
     }
   }
 

@@ -1,0 +1,46 @@
+{
+  "id": "git-workflow-strategies",
+  "slug": "git-workflow-strategies",
+  "title": "Git Workflow Strategies",
+  "question": "Describe some common Git workflows used in team environments. What are the pros and cons of each?",
+  "answer": "Common workflows: 1) Feature Branch - each feature in its own branch, merged via PR. Simple and widely used. 2) GitFlow - uses develop, feature, release, and hotfix branches. More structured but complex. 3) Trunk-Based - short-lived branches merged frequently to main. Requires good CI/CD and testing. 4) Forking - contributors fork the repo, used in open source. Choose based on team size, release cadence, and CI/CD maturity.",
+  "explanation": "There's no universally 'best' workflow - it depends on your team's needs. Trunk-based development is trending in DevOps-mature organizations because it encourages frequent integration and reduces merge conflicts. Feature branching is great for teams needing code review gates. GitFlow suits projects with scheduled releases.",
+  "category": "Git",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "git",
+    "version-control",
+    "workflows",
+    "collaboration",
+    "fundamentals"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Feature branch workflow",
+      "code": "# Start new feature\ngit checkout main\ngit pull origin main\ngit checkout -b feature/add-login\n\n# Work on feature, commit changes\ngit add .\ngit commit -m \"Add login form\"\n\n# Push and create PR\ngit push origin feature/add-login\n# Create PR on GitHub/GitLab\n\n# After PR approved and merged\ngit checkout main\ngit pull origin main\ngit branch -d feature/add-login"
+    },
+    {
+      "language": "bash",
+      "label": "Trunk-based development",
+      "code": "# Short-lived branch (1-2 days max)\ngit checkout main\ngit pull\ngit checkout -b small-change\n\n# Make small, focused changes\ngit add .\ngit commit -m \"Refactor auth module\"\n\n# Merge quickly (after CI passes)\ngit checkout main\ngit pull\ngit merge small-change\ngit push\ngit branch -d small-change"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle merge conflicts in a team environment?",
+    "What is the role of code review in these workflows?",
+    "How does CI/CD integrate with different Git workflows?"
+  ],
+  "commonMistakes": [
+    "Keeping feature branches open too long, leading to painful merges",
+    "Not pulling from main regularly to stay up-to-date",
+    "Using complex workflows (like GitFlow) for small teams or simple projects"
+  ],
+  "relatedTopics": [
+    "pull-requests",
+    "code-review",
+    "ci-cd",
+    "branching"
+  ]
+}

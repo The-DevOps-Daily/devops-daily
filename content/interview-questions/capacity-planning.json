@@ -1,0 +1,46 @@
+{
+  "id": "capacity-planning",
+  "slug": "capacity-planning",
+  "title": "Capacity Planning and Scaling",
+  "question": "How do you approach capacity planning for a growing production system? What metrics and strategies do you use?",
+  "answer": "Capacity planning ensures systems can handle current and future load. Process: 1) Establish baselines - current CPU, memory, disk, network utilization and request rates. 2) Understand growth patterns - historical trends, seasonality, planned campaigns. 3) Define headroom - typically 30-40% buffer for unexpected spikes. 4) Model scenarios - what happens at 2x, 5x, 10x traffic? 5) Identify bottlenecks - database connections, API rate limits, stateful components. 6) Plan scaling strategy - vertical vs horizontal, auto-scaling policies. 7) Load test regularly. Review capacity quarterly.",
+  "explanation": "Capacity planning is both art and science. Too much capacity wastes money; too little causes outages. Cloud auto-scaling helps but doesn't solve everything - databases, third-party APIs, and stateful services often can't scale horizontally. Senior engineers must think about bottlenecks that aren't obvious and plan for Black Friday scenarios before they happen.",
+  "category": "SRE",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "capacity-planning",
+    "scaling",
+    "sre",
+    "performance",
+    "architecture"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Horizontal Pod Autoscaler",
+      "code": "apiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: api-server\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: api-server\n  minReplicas: 3\n  maxReplicas: 50\n  metrics:\n  - type: Resource\n    resource:\n      name: cpu\n      target:\n        type: Utilization\n        averageUtilization: 70\n  - type: Pods\n    pods:\n      metric:\n        name: requests_per_second\n      target:\n        type: AverageValue\n        averageValue: 1000\n  behavior:\n    scaleUp:\n      stabilizationWindowSeconds: 60\n    scaleDown:\n      stabilizationWindowSeconds: 300"
+    },
+    {
+      "language": "bash",
+      "label": "Capacity analysis queries",
+      "code": "# PromQL: CPU headroom percentage\n100 - (\n  avg(rate(container_cpu_usage_seconds_total{pod=~\"api-.*\"}[5m]))\n  /\n  avg(kube_pod_container_resource_limits{resource=\"cpu\"})\n) * 100\n\n# Current vs limit memory usage\nsum(container_memory_working_set_bytes{pod=~\"api-.*\"})\n/\nsum(kube_pod_container_resource_limits{resource=\"memory\"})\n\n# Request rate trend (7-day growth)\npredict_linear(rate(http_requests_total[1h])[7d:1h], 30 * 24 * 3600)"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle capacity planning for stateful services like databases?",
+    "What is the difference between scaling up and scaling out?",
+    "How do you account for third-party API rate limits in capacity planning?"
+  ],
+  "commonMistakes": [
+    "Only planning for average load, not peak load",
+    "Forgetting about dependent services that may become bottlenecks",
+    "Not accounting for the time it takes to scale (cold start, provisioning)"
+  ],
+  "relatedTopics": [
+    "auto-scaling",
+    "load-testing",
+    "performance",
+    "reliability"
+  ]
+}

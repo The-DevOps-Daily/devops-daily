@@ -1,0 +1,46 @@
+{
+  "id": "zero-trust-architecture",
+  "slug": "zero-trust-architecture",
+  "title": "Zero Trust Architecture",
+  "question": "What is Zero Trust Architecture and how do you implement it in a modern infrastructure?",
+  "answer": "Zero Trust is a security model that assumes no implicit trust - every request must be verified. Core principles: 1) Never trust, always verify - authenticate and authorize every access attempt. 2) Least privilege - grant minimum necessary permissions. 3) Assume breach - design as if attackers are already inside. Implementation: identity-based access (not network-based), micro-segmentation, continuous verification with MFA, device health checks, encrypted communications everywhere, comprehensive logging. Technologies: identity providers (Okta, Azure AD), service mesh (mutual TLS), BeyondCorp-style access proxies.",
+  "explanation": "Traditional perimeter security (castle and moat) fails in cloud-native environments with remote workers, SaaS applications, and microservices. Zero Trust shifts security to identity and per-request verification. Google's BeyondCorp pioneered this approach. Implementation is a journey - start with identity management and gradually add micro-segmentation. The goal is that compromising one system doesn't give access to everything.",
+  "category": "Security",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "security",
+    "zero-trust",
+    "architecture",
+    "identity",
+    "networking"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Istio mutual TLS policy",
+      "code": "apiVersion: security.istio.io/v1beta1\nkind: PeerAuthentication\nmetadata:\n  name: default\n  namespace: production\nspec:\n  mtls:\n    mode: STRICT  # Require mTLS for all traffic\n---\napiVersion: security.istio.io/v1beta1\nkind: AuthorizationPolicy\nmetadata:\n  name: payment-access\n  namespace: production\nspec:\n  selector:\n    matchLabels:\n      app: payment-service\n  rules:\n  - from:\n    - source:\n        principals: [\"cluster.local/ns/production/sa/order-service\"]\n    to:\n    - operation:\n        methods: [\"POST\"]\n        paths: [\"/api/charge\"]"
+    },
+    {
+      "language": "hcl",
+      "label": "AWS VPC micro-segmentation",
+      "code": "# Security group per service tier\nresource \"aws_security_group\" \"api\" {\n  name        = \"api-tier\"\n  description = \"API service tier - minimal ingress\"\n  vpc_id      = aws_vpc.main.id\n\n  # Only allow from load balancer\n  ingress {\n    from_port       = 8080\n    to_port         = 8080\n    protocol        = \"tcp\"\n    security_groups = [aws_security_group.alb.id]\n  }\n\n  # Explicit egress rules (not allow all)\n  egress {\n    from_port       = 5432\n    to_port         = 5432\n    protocol        = \"tcp\"\n    security_groups = [aws_security_group.database.id]\n  }\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle service-to-service authentication in a Zero Trust model?",
+    "What is the role of a service mesh in Zero Trust architecture?",
+    "How do you balance Zero Trust security with developer productivity?"
+  ],
+  "commonMistakes": [
+    "Implementing Zero Trust as a product purchase instead of architectural change",
+    "Forgetting about east-west traffic (service to service) and only securing north-south",
+    "Not having comprehensive logging to detect anomalies"
+  ],
+  "relatedTopics": [
+    "identity-management",
+    "micro-segmentation",
+    "service-mesh",
+    "beyondcorp"
+  ]
+}

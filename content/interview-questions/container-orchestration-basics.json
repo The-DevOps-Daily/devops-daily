@@ -1,0 +1,46 @@
+{
+  "id": "container-orchestration-basics",
+  "slug": "container-orchestration-basics",
+  "title": "Container Orchestration Basics",
+  "question": "What is container orchestration and why do we need it? Name some common orchestration platforms.",
+  "answer": "Container orchestration automates container deployment, scaling, networking, and management. It handles: scheduling containers across hosts, load balancing traffic, auto-scaling based on demand, self-healing (restarting failed containers), rolling updates, and service discovery. Popular platforms: Kubernetes (most common), Docker Swarm (simpler), Amazon ECS, and Nomad.",
+  "explanation": "Running a few containers manually is easy, but managing hundreds or thousands in production requires orchestration. Kubernetes has become the industry standard, supported by all major cloud providers. Understanding basic orchestration concepts is essential even if you primarily use managed services.",
+  "category": "Kubernetes",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "kubernetes",
+    "containers",
+    "orchestration",
+    "docker",
+    "fundamentals"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Simple Kubernetes deployment",
+      "code": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-app\nspec:\n  replicas: 3  # Run 3 instances\n  selector:\n    matchLabels:\n      app: web\n  template:\n    metadata:\n      labels:\n        app: web\n    spec:\n      containers:\n      - name: app\n        image: nginx:1.25\n        ports:\n        - containerPort: 80"
+    },
+    {
+      "language": "bash",
+      "label": "Basic kubectl commands",
+      "code": "# View running pods\nkubectl get pods\n\n# View deployments\nkubectl get deployments\n\n# Scale a deployment\nkubectl scale deployment web-app --replicas=5\n\n# View pod logs\nkubectl logs pod-name\n\n# Describe a resource\nkubectl describe pod pod-name"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between a Pod and a Container in Kubernetes?",
+    "How does Kubernetes know when a container is healthy?",
+    "What happens when a container crashes in a Kubernetes pod?"
+  ],
+  "commonMistakes": [
+    "Thinking Kubernetes is always necessary - simpler solutions may suffice",
+    "Running stateful applications without understanding persistent storage",
+    "Not setting resource limits, leading to noisy neighbor problems"
+  ],
+  "relatedTopics": [
+    "docker",
+    "kubernetes",
+    "microservices",
+    "scaling"
+  ]
+}

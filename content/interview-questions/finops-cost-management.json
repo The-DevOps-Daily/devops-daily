@@ -1,0 +1,46 @@
+{
+  "id": "finops-cost-management",
+  "slug": "finops-cost-management",
+  "title": "FinOps and Cloud Cost Management",
+  "question": "How do you implement FinOps practices to optimize and manage cloud costs at scale?",
+  "answer": "FinOps combines finance, technology, and business to maximize cloud value. Key practices: 1) Visibility - tagging, cost allocation by team/service/environment. 2) Rightsizing - analyze usage patterns, downsize over-provisioned resources. 3) Reserved capacity - RIs/Savings Plans for predictable workloads (30-70% savings). 4) Spot/Preemptible instances for fault-tolerant workloads. 5) Automated cleanup - delete unused resources, schedule non-prod shutdowns. 6) Architecture optimization - serverless for variable loads, data lifecycle policies. 7) Showback/chargeback - teams accountable for their costs. Set up alerts and regular cost reviews.",
+  "explanation": "Cloud costs can spiral quickly without governance. FinOps is a cultural practice as much as technical - engineering teams need visibility and accountability. The FinOps Foundation defines three phases: Inform (visibility), Optimize (reduce waste), Operate (continuous governance). Mature organizations have dedicated FinOps teams working with engineering to balance cost and performance.",
+  "category": "Cloud",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "finops",
+    "cost-optimization",
+    "cloud",
+    "aws",
+    "governance"
+  ],
+  "codeExamples": [
+    {
+      "language": "hcl",
+      "label": "Required tags policy",
+      "code": "# Enforce tagging for cost allocation\nresource \"aws_organizations_policy\" \"require_tags\" {\n  name    = \"RequireCostTags\"\n  type    = \"TAG_POLICY\"\n  content = jsonencode({\n    tags = {\n      Environment = {\n        tag_key   = { \"@@assign\" : \"Environment\" }\n        tag_value = { \"@@assign\" : [\"prod\", \"staging\", \"dev\"] }\n      }\n      Team = {\n        tag_key   = { \"@@assign\" : \"Team\" }\n        enforced_for = { \"@@assign\" : [\"ec2:instance\", \"rds:db\"] }\n      }\n      CostCenter = {\n        tag_key = { \"@@assign\" : \"CostCenter\" }\n      }\n    }\n  })\n}"
+    },
+    {
+      "language": "bash",
+      "label": "Cost analysis queries",
+      "code": "# AWS Cost Explorer - top spending services\naws ce get-cost-and-usage \\\n    --time-period Start=2024-01-01,End=2024-01-31 \\\n    --granularity MONTHLY \\\n    --metrics UnblendedCost \\\n    --group-by Type=DIMENSION,Key=SERVICE\n\n# Find unattached EBS volumes (waste)\naws ec2 describe-volumes \\\n    --filters Name=status,Values=available \\\n    --query 'Volumes[*].[VolumeId,Size,CreateTime]'\n\n# Identify underutilized EC2 instances\naws ce get-rightsizing-recommendation \\\n    --service EC2 \\\n    --configuration '{\"RecommendationTarget\":\"SAME_INSTANCE_FAMILY\"}'"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you balance cost optimization with performance requirements?",
+    "What is the difference between Reserved Instances and Savings Plans?",
+    "How do you handle cost anomalies and unexpected spikes?"
+  ],
+  "commonMistakes": [
+    "Buying Reserved Instances before understanding usage patterns",
+    "Optimizing costs without considering impact on reliability",
+    "Not involving engineering teams in cost discussions"
+  ],
+  "relatedTopics": [
+    "cloud-governance",
+    "reserved-instances",
+    "rightsizing",
+    "tagging"
+  ]
+}

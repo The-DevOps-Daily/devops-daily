@@ -1,0 +1,47 @@
+{
+  "id": "database-backup-recovery",
+  "slug": "database-backup-recovery",
+  "title": "Database Backup and Recovery",
+  "question": "Describe database backup strategies and how you would design a recovery plan for production databases.",
+  "answer": "Key backup types: 1) Full backups - complete database copy, resource-intensive. 2) Incremental - only changes since last backup. 3) Point-in-time recovery (PITR) - using transaction logs/WAL. Strategy: daily full backups + continuous WAL archiving for PITR. Store backups in separate region/account. Test restores regularly! Recovery plan: define RTO (Recovery Time Objective) and RPO (Recovery Point Objective), document restore procedures, automate where possible, and practice with chaos engineering.",
+  "explanation": "Backups are worthless if you can't restore from them. Every organization has horror stories of corrupted backups or untested restore procedures. RTO defines how quickly you must recover, RPO defines maximum acceptable data loss. These requirements drive your backup strategy - if RPO is 5 minutes, you need continuous replication, not daily backups.",
+  "category": "Infrastructure",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "database",
+    "backup",
+    "disaster-recovery",
+    "postgres",
+    "devops"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "PostgreSQL backup strategies",
+      "code": "# Logical backup (SQL dump)\npg_dump -h localhost -U postgres mydb > backup.sql\n\n# Compressed backup\npg_dump -h localhost -U postgres -Fc mydb > backup.dump\n\n# Physical backup with pg_basebackup\npg_basebackup -h localhost -U repl_user -D /backups/base \\\n    -Fp -Xs -P\n\n# Restore from dump\npg_restore -h localhost -U postgres -d mydb backup.dump\n\n# Enable WAL archiving in postgresql.conf\n# archive_mode = on\n# archive_command = 'aws s3 cp %p s3://bucket/wal/%f'"
+    },
+    {
+      "language": "yaml",
+      "label": "Kubernetes CronJob for backups",
+      "code": "apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: postgres-backup\nspec:\n  schedule: \"0 2 * * *\"  # Daily at 2 AM\n  jobTemplate:\n    spec:\n      template:\n        spec:\n          containers:\n          - name: backup\n            image: postgres:15\n            command:\n            - /bin/sh\n            - -c\n            - |\n              pg_dump -h $DB_HOST -U $DB_USER $DB_NAME | \\\n                gzip | aws s3 cp - s3://backups/$(date +%Y%m%d).sql.gz\n          restartPolicy: OnFailure"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you test that backups are actually restorable?",
+    "What is the difference between RTO and RPO?",
+    "How do you handle backups for databases with terabytes of data?"
+  ],
+  "commonMistakes": [
+    "Never testing restore procedures until an actual disaster",
+    "Storing backups in the same region/account as production",
+    "Not encrypting backups containing sensitive data",
+    "Ignoring backup retention policies and running out of storage"
+  ],
+  "relatedTopics": [
+    "disaster-recovery",
+    "postgres",
+    "rto-rpo",
+    "point-in-time-recovery"
+  ]
+}

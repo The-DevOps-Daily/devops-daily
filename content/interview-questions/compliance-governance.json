@@ -1,0 +1,46 @@
+{
+  "id": "compliance-governance",
+  "slug": "compliance-governance",
+  "title": "Compliance and Governance in Cloud",
+  "question": "How do you implement compliance and governance controls in a cloud-native environment?",
+  "answer": "Cloud compliance involves policies, automation, and audit capabilities. Key components: 1) Policy-as-code (OPA/Gatekeeper, AWS SCPs) to enforce rules automatically. 2) Tagging standards for resource ownership/cost tracking. 3) Centralized logging and audit trails. 4) Network segmentation and least-privilege IAM. 5) Encryption at rest and in transit. 6) Regular compliance scanning (Prowler, ScoutSuite). 7) Change management processes. Frameworks to consider: SOC2, HIPAA, PCI-DSS, GDPR depending on industry. Shift compliance left - catch violations before deployment.",
+  "explanation": "Compliance isn't just checkbox exercises - it's about building secure, auditable systems. Cloud makes compliance both easier (APIs for everything) and harder (velocity of change). Modern approaches embed compliance into CI/CD: policy checks in pipelines, infrastructure scanning, and continuous monitoring. The goal is making compliant the default, not an afterthought.",
+  "category": "Security",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "compliance",
+    "governance",
+    "security",
+    "policy",
+    "cloud"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "OPA Gatekeeper policy",
+      "code": "apiVersion: constraints.gatekeeper.sh/v1beta1\nkind: K8sRequiredLabels\nmetadata:\n  name: require-team-label\nspec:\n  match:\n    kinds:\n    - apiGroups: [\"\"]\n      kinds: [\"Namespace\"]\n  parameters:\n    labels:\n    - key: team\n    - key: environment\n    - key: cost-center\n    message: \"All namespaces must have team, environment, and cost-center labels\""
+    },
+    {
+      "language": "hcl",
+      "label": "AWS Service Control Policy",
+      "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Sid\": \"DenyNonApprovedRegions\",\n      \"Effect\": \"Deny\",\n      \"NotAction\": [\n        \"iam:*\",\n        \"organizations:*\",\n        \"support:*\"\n      ],\n      \"Resource\": \"*\",\n      \"Condition\": {\n        \"StringNotEquals\": {\n          \"aws:RequestedRegion\": [\n            \"us-east-1\",\n            \"eu-west-1\"\n          ]\n        }\n      }\n    },\n    {\n      \"Sid\": \"RequireEncryption\",\n      \"Effect\": \"Deny\",\n      \"Action\": \"s3:PutObject\",\n      \"Resource\": \"*\",\n      \"Condition\": {\n        \"Null\": {\n          \"s3:x-amz-server-side-encryption\": \"true\"\n        }\n      }\n    }\n  ]\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle compliance in a rapidly changing environment with frequent deployments?",
+    "What is the difference between preventive and detective controls?",
+    "How do you prepare for and conduct compliance audits?"
+  ],
+  "commonMistakes": [
+    "Treating compliance as a one-time project instead of continuous process",
+    "Relying solely on manual reviews that can't scale",
+    "Not documenting exceptions and their justifications"
+  ],
+  "relatedTopics": [
+    "policy-as-code",
+    "opa",
+    "soc2",
+    "security"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "id": "cloud-regions-availability-zones",
+  "slug": "cloud-regions-availability-zones",
+  "title": "Cloud Regions and Availability Zones",
+  "question": "What are cloud regions and availability zones? How do they affect application architecture?",
+  "answer": "A region is a geographic area containing multiple data centers (e.g., us-east-1). Availability zones (AZs) are isolated data centers within a region, connected by low-latency links. Deploy across multiple AZs for high availability - if one AZ fails, your app continues running. Choose regions based on user proximity (latency), compliance requirements, and service availability.",
+  "explanation": "Understanding regions and AZs is fundamental to designing resilient cloud applications. AWS has 30+ regions with 3-6 AZs each. Deploying across AZs provides fault tolerance with minimal latency penalty. Multi-region deployments add disaster recovery but increase complexity and cost.",
+  "category": "Cloud",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "cloud",
+    "aws",
+    "infrastructure",
+    "availability",
+    "fundamentals"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "AWS CLI region commands",
+      "code": "# List all available regions\naws ec2 describe-regions --output table\n\n# List AZs in current region\naws ec2 describe-availability-zones --output table\n\n# Set default region\nexport AWS_DEFAULT_REGION=us-west-2\n\n# Run command in specific region\naws ec2 describe-instances --region eu-west-1"
+    },
+    {
+      "language": "hcl",
+      "label": "Multi-AZ deployment in Terraform",
+      "code": "# Get available AZs\ndata \"aws_availability_zones\" \"available\" {\n  state = \"available\"\n}\n\n# Create subnets across AZs\nresource \"aws_subnet\" \"app\" {\n  count             = 2\n  vpc_id            = aws_vpc.main.id\n  cidr_block        = cidrsubnet(var.vpc_cidr, 8, count.index)\n  availability_zone = data.aws_availability_zones.available.names[count.index]\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between high availability and disaster recovery?",
+    "How do you handle data replication across availability zones?",
+    "What factors influence region selection for a new application?"
+  ],
+  "commonMistakes": [
+    "Deploying everything in a single AZ, creating a single point of failure",
+    "Choosing regions only based on cost without considering user latency",
+    "Not accounting for data residency and compliance requirements"
+  ],
+  "relatedTopics": [
+    "high-availability",
+    "disaster-recovery",
+    "load-balancing",
+    "multi-region"
+  ]
+}

@@ -21,6 +21,12 @@ import httpBasics from './http-basics.json';
 import cloudIamBasics from './cloud-iam-basics.json';
 import gitBranchingStrategies from './git-branching-strategies.json';
 import dockerfileBestPractices from './dockerfile-best-practices.json';
+import cloudRegionsAvailabilityZones from './cloud-regions-availability-zones.json';
+import containerOrchestrationBasics from './container-orchestration-basics.json';
+import gitWorkflowStrategies from './git-workflow-strategies.json';
+import shellScriptingFundamentals from './shell-scripting-fundamentals.json';
+import configurationManagementBasics from './configuration-management-basics.json';
+import yamlJsonBasics from './yaml-json-basics.json';
 // Mid tier
 import kubernetesPodLifecycle from './kubernetes-pod-lifecycle.json';
 import dockerLayersCaching from './docker-layers-caching.json';
@@ -33,6 +39,12 @@ import kubernetesServicesNetworking from './kubernetes-services-networking.json'
 import infrastructureAsCodePatterns from './infrastructure-as-code-patterns.json';
 import cicdPipelineDesign from './cicd-pipeline-design.json';
 import monitoringAlertingStrategy from './monitoring-alerting-strategy.json';
+import serviceMeshConcepts from './service-mesh-concepts.json';
+import secretsManagement from './secrets-management.json';
+import databaseBackupRecovery from './database-backup-recovery.json';
+import logAggregationStrategies from './log-aggregation-strategies.json';
+import performanceOptimization from './performance-optimization.json';
+import gitopsPrinciples from './gitops-principles.json';
 // Senior tier
 import linuxProcessDebugging from './linux-process-debugging.json';
 import chaosEngineering from './chaos-engineering.json';
@@ -41,6 +53,12 @@ import systemDesignReliability from './system-design-reliability.json';
 import disasterRecoveryPlanning from './disaster-recovery-planning.json';
 import securityArchitecture from './security-architecture.json';
 import cloudCostOptimization from './cloud-cost-optimization.json';
+import multiCloudArchitecture from './multi-cloud-architecture.json';
+import complianceGovernance from './compliance-governance.json';
+import capacityPlanning from './capacity-planning.json';
+import platformTeamScaling from './platform-team-scaling.json';
+import finopsCostManagement from './finops-cost-management.json';
+import zeroTrustArchitecture from './zero-trust-architecture.json';
 
 export const interviewQuestions: InterviewQuestion[] = [
   // Junior tier
@@ -63,6 +81,12 @@ export const interviewQuestions: InterviewQuestion[] = [
   cloudIamBasics as InterviewQuestion,
   gitBranchingStrategies as InterviewQuestion,
   dockerfileBestPractices as InterviewQuestion,
+  cloudRegionsAvailabilityZones as InterviewQuestion,
+  containerOrchestrationBasics as InterviewQuestion,
+  gitWorkflowStrategies as InterviewQuestion,
+  shellScriptingFundamentals as InterviewQuestion,
+  configurationManagementBasics as InterviewQuestion,
+  yamlJsonBasics as InterviewQuestion,
   // Mid tier
   kubernetesPodLifecycle as InterviewQuestion,
   dockerLayersCaching as InterviewQuestion,
@@ -75,6 +99,12 @@ export const interviewQuestions: InterviewQuestion[] = [
   infrastructureAsCodePatterns as InterviewQuestion,
   cicdPipelineDesign as InterviewQuestion,
   monitoringAlertingStrategy as InterviewQuestion,
+  serviceMeshConcepts as InterviewQuestion,
+  secretsManagement as InterviewQuestion,
+  databaseBackupRecovery as InterviewQuestion,
+  logAggregationStrategies as InterviewQuestion,
+  performanceOptimization as InterviewQuestion,
+  gitopsPrinciples as InterviewQuestion,
   // Senior tier
   linuxProcessDebugging as InterviewQuestion,
   chaosEngineering as InterviewQuestion,
@@ -83,6 +113,12 @@ export const interviewQuestions: InterviewQuestion[] = [
   disasterRecoveryPlanning as InterviewQuestion,
   securityArchitecture as InterviewQuestion,
   cloudCostOptimization as InterviewQuestion,
+  multiCloudArchitecture as InterviewQuestion,
+  complianceGovernance as InterviewQuestion,
+  capacityPlanning as InterviewQuestion,
+  platformTeamScaling as InterviewQuestion,
+  finopsCostManagement as InterviewQuestion,
+  zeroTrustArchitecture as InterviewQuestion,
 ];
 
 export const getQuestionBySlug = (slug: string): InterviewQuestion | undefined => {

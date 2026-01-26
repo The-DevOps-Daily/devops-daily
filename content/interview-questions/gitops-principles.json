@@ -1,0 +1,46 @@
+{
+  "id": "gitops-principles",
+  "slug": "gitops-principles",
+  "title": "GitOps Principles and Implementation",
+  "question": "What is GitOps and how does it differ from traditional CI/CD? Explain the pull-based deployment model.",
+  "answer": "GitOps uses Git as the single source of truth for declarative infrastructure and applications. Core principles: 1) Declarative - desired state defined in Git. 2) Versioned - all changes tracked via Git history. 3) Automated - agents automatically apply changes. 4) Reconciliation - controllers continuously sync actual state to desired state. Pull-based model: agents (ArgoCD, Flux) run inside the cluster, pull changes from Git, and apply them. This is more secure than push-based CI/CD as the cluster doesn't need external access.",
+  "explanation": "GitOps treats operations like software development - infrastructure changes go through pull requests, code review, and audit trails. The pull model is a key differentiator: instead of CI pipelines pushing to clusters (requiring credentials), cluster agents pull from Git. This improves security and enables self-healing - if someone manually changes a resource, the GitOps controller reverts it to match Git.",
+  "category": "DevOps",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "gitops",
+    "argocd",
+    "flux",
+    "ci-cd",
+    "kubernetes"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "ArgoCD Application",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: myapp\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/org/k8s-manifests\n    targetRevision: main\n    path: apps/myapp/overlays/prod\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: production\n  syncPolicy:\n    automated:\n      prune: true      # Delete resources removed from Git\n      selfHeal: true   # Revert manual changes\n    syncOptions:\n    - CreateNamespace=true"
+    },
+    {
+      "language": "yaml",
+      "label": "Flux Kustomization",
+      "code": "apiVersion: kustomize.toolkit.fluxcd.io/v1\nkind: Kustomization\nmetadata:\n  name: myapp\n  namespace: flux-system\nspec:\n  interval: 5m\n  path: ./apps/myapp\n  prune: true\n  sourceRef:\n    kind: GitRepository\n    name: infrastructure\n  healthChecks:\n  - apiVersion: apps/v1\n    kind: Deployment\n    name: myapp\n    namespace: production"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle secrets in a GitOps workflow?",
+    "What is drift detection and why is it important?",
+    "How do you implement progressive delivery with GitOps?"
+  ],
+  "commonMistakes": [
+    "Committing secrets to Git (use sealed secrets or external secrets)",
+    "Not setting up proper RBAC for the GitOps controller",
+    "Mixing application and infrastructure repos inappropriately"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "flux",
+    "kubernetes",
+    "continuous-delivery"
+  ]
+}

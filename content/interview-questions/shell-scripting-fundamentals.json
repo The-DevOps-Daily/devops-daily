@@ -1,0 +1,46 @@
+{
+  "id": "shell-scripting-fundamentals",
+  "slug": "shell-scripting-fundamentals",
+  "title": "Shell Scripting Fundamentals",
+  "question": "What are the essential components of a shell script? Explain variables, conditionals, and loops.",
+  "answer": "Shell scripts automate command sequences. Essential components: 1) Shebang (#!/bin/bash) - specifies interpreter. 2) Variables - store values, accessed with $. 3) Conditionals (if/elif/else) - control flow based on conditions. 4) Loops (for, while) - iterate over items or until condition. 5) Functions - reusable code blocks. 6) Exit codes - indicate success (0) or failure (non-zero). Always quote variables and use 'set -e' for error handling.",
+  "explanation": "Shell scripting is the glue of DevOps - automating repetitive tasks, deployment scripts, cron jobs, and system administration. Bash is most common on Linux, but principles apply to other shells. Well-written scripts include error handling, logging, and are idempotent when possible.",
+  "category": "Linux",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "bash",
+    "scripting",
+    "linux",
+    "automation",
+    "fundamentals"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Basic script structure",
+      "code": "#!/bin/bash\nset -e  # Exit on error\n\n# Variables\nNAME=\"webapp\"\nENV=${1:-\"dev\"}  # Default to 'dev' if not provided\n\n# Conditional\nif [[ \"$ENV\" == \"prod\" ]]; then\n    echo \"Deploying to production...\"\n    REPLICAS=3\nelse\n    echo \"Deploying to $ENV...\"\n    REPLICAS=1\nfi\n\n# Loop\nfor i in {1..5}; do\n    echo \"Attempt $i\"\ndone\n\necho \"Deployed $NAME with $REPLICAS replicas\""
+    },
+    {
+      "language": "bash",
+      "label": "Functions and error handling",
+      "code": "#!/bin/bash\nset -euo pipefail  # Strict mode\n\n# Function definition\nlog() {\n    echo \"[$(date '+%Y-%m-%d %H:%M:%S')] $1\"\n}\n\n# Check command exists\ncheck_dependency() {\n    if ! command -v \"$1\" &> /dev/null; then\n        log \"ERROR: $1 is required but not installed\"\n        exit 1\n    fi\n}\n\n# Usage\ncheck_dependency docker\ncheck_dependency kubectl\nlog \"All dependencies satisfied\""
+    }
+  ],
+  "followUpQuestions": [
+    "What does 'set -euo pipefail' do and why is it important?",
+    "How do you pass arguments to a shell script?",
+    "What is the difference between single and double quotes in bash?"
+  ],
+  "commonMistakes": [
+    "Not quoting variables, causing word splitting issues",
+    "Forgetting to handle error cases (missing 'set -e')",
+    "Using 'rm -rf $VAR' without checking if VAR is set"
+  ],
+  "relatedTopics": [
+    "linux",
+    "automation",
+    "cron",
+    "command-line"
+  ]
+}

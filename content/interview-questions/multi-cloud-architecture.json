@@ -1,0 +1,47 @@
+{
+  "id": "multi-cloud-architecture",
+  "slug": "multi-cloud-architecture",
+  "title": "Multi-Cloud Architecture",
+  "question": "When would you recommend a multi-cloud strategy? What are the challenges and how do you address them?",
+  "answer": "Multi-cloud involves using multiple cloud providers strategically. Valid use cases: avoiding vendor lock-in, leveraging best-of-breed services (e.g., GCP for ML, AWS for breadth), compliance requirements (data sovereignty), disaster recovery across providers. Challenges: increased complexity, different APIs/services, networking between clouds, skill requirements, cost management. Address via: abstraction layers (Terraform, Kubernetes), unified observability (Datadog), cloud-agnostic architectures, clear governance policies. Don't go multi-cloud just because - the complexity cost is significant.",
+  "explanation": "Multi-cloud is often oversold. True multi-cloud (workloads running identically on multiple clouds) is rare and expensive. More common is using different clouds for different purposes (hybrid cloud) or having disaster recovery in another cloud. The key question is: does the business value outweigh the operational complexity? For most companies, single cloud with good architecture is simpler and sufficient.",
+  "category": "Architecture",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "multi-cloud",
+    "architecture",
+    "aws",
+    "gcp",
+    "azure",
+    "strategy"
+  ],
+  "codeExamples": [
+    {
+      "language": "hcl",
+      "label": "Multi-cloud Terraform structure",
+      "code": "# providers.tf\nterraform {\n  required_providers {\n    aws = {\n      source  = \"hashicorp/aws\"\n      version = \"~> 5.0\"\n    }\n    google = {\n      source  = \"hashicorp/google\"\n      version = \"~> 5.0\"\n    }\n  }\n}\n\nprovider \"aws\" {\n  region = \"us-east-1\"\n}\n\nprovider \"google\" {\n  project = \"my-project\"\n  region  = \"us-central1\"\n}\n\n# Example: Primary on AWS, DR on GCP\nmodule \"primary\" {\n  source = \"./modules/aws-cluster\"\n}\n\nmodule \"dr\" {\n  source = \"./modules/gcp-cluster\"\n}"
+    },
+    {
+      "language": "yaml",
+      "label": "Cloud-agnostic service mesh",
+      "code": "# Consul for multi-cloud service discovery\napiVersion: consul.hashicorp.com/v1alpha1\nkind: ServiceDefaults\nmetadata:\n  name: payment-service\nspec:\n  protocol: http\n  # Enable cross-datacenter routing\n  meshGateway:\n    mode: local  # Use local mesh gateway\n  # Failover to other cloud\n  failover:\n    - datacenters:\n        - gcp-central\n        - aws-east"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle data consistency across multiple clouds?",
+    "What is the difference between multi-cloud, hybrid cloud, and multi-region?",
+    "How do you manage costs when running across multiple cloud providers?"
+  ],
+  "commonMistakes": [
+    "Going multi-cloud to avoid lock-in but creating lock-in to abstraction tools",
+    "Underestimating the network latency between cloud providers",
+    "Not accounting for the increased skills/training required"
+  ],
+  "relatedTopics": [
+    "hybrid-cloud",
+    "disaster-recovery",
+    "vendor-lock-in",
+    "cloud-strategy"
+  ]
+}

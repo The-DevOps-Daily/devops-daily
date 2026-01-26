@@ -1,0 +1,46 @@
+{
+  "id": "platform-team-scaling",
+  "slug": "platform-team-scaling",
+  "title": "Platform Team Scaling and Processes",
+  "question": "How do you scale a platform/DevOps team to support a growing engineering organization?",
+  "answer": "Scaling platform teams requires balancing self-service with support. Strategies: 1) Build internal platforms - abstract complexity, provide golden paths. 2) Self-service tooling - templates, CLIs, portals for common tasks. 3) Inner source model - development teams contribute back. 4) Documentation and training - reduce support burden. 5) Embedded vs centralized - consider platform engineers embedded in product teams. 6) Toil reduction - automate repetitive requests. 7) SLOs for internal services. Goal: platform team scales sub-linearly with company growth through leverage.",
+  "explanation": "A platform team that must manually handle every request becomes a bottleneck. The modern approach treats internal developers as customers and builds products for them. Spotify's model, Backstage-style portals, and 'you build it, you run it' all aim to increase developer velocity while maintaining standards. Success is measured by developer satisfaction and ability to ship safely without waiting on the platform team.",
+  "category": "DevOps",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "platform-engineering",
+    "devops",
+    "team-scaling",
+    "processes",
+    "leadership"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Backstage service template",
+      "code": "apiVersion: scaffolder.backstage.io/v1beta3\nkind: Template\nmetadata:\n  name: microservice-template\n  title: New Microservice\n  description: Create a production-ready microservice\nspec:\n  owner: platform-team\n  type: service\n  parameters:\n    - title: Service Info\n      properties:\n        name:\n          title: Name\n          type: string\n        team:\n          title: Owning Team\n          type: string\n          enum: [payments, users, orders]\n  steps:\n    - id: fetch\n      action: fetch:template\n      input:\n        url: ./skeleton\n    - id: publish\n      action: publish:github\n    - id: register\n      action: catalog:register"
+    },
+    {
+      "language": "bash",
+      "label": "Platform CLI example",
+      "code": "#!/bin/bash\n# Internal platform CLI for self-service\n\n# Create new service (templated)\nplatform create service --name payments-api --team payments\n\n# Request database\nplatform request postgres --size medium --team payments\n\n# Deploy to environment\nplatform deploy payments-api --env staging\n\n# View service health\nplatform status payments-api\n\n# Access logs (with proper RBAC)\nplatform logs payments-api --since 1h"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you balance standardization with team autonomy?",
+    "What metrics do you use to measure platform team effectiveness?",
+    "How do you handle teams that want to use non-standard tools?"
+  ],
+  "commonMistakes": [
+    "Building a platform nobody asked for (solution looking for a problem)",
+    "Not treating internal tools with the same rigor as customer-facing products",
+    "Forcing teams to use the platform instead of making it genuinely better"
+  ],
+  "relatedTopics": [
+    "platform-engineering",
+    "developer-experience",
+    "backstage",
+    "internal-developer-platform"
+  ]
+}

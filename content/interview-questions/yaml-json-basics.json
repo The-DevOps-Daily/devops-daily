@@ -1,0 +1,47 @@
+{
+  "id": "yaml-json-basics",
+  "slug": "yaml-json-basics",
+  "title": "YAML and JSON Configuration Formats",
+  "question": "What are YAML and JSON? When would you use each format in DevOps?",
+  "answer": "YAML (YAML Ain't Markup Language) and JSON (JavaScript Object Notation) are data serialization formats. YAML is human-readable with indentation-based syntax, supports comments, and is preferred for configuration files (Kubernetes, Ansible, CI/CD). JSON is more compact, has strict syntax, and is preferred for APIs and machine-to-machine communication. Both represent the same data structures: objects/maps, arrays/lists, and scalar values.",
+  "explanation": "DevOps engineers work with YAML and JSON daily. Kubernetes manifests, Helm charts, GitHub Actions, and Ansible playbooks all use YAML. APIs typically return JSON. Understanding both formats and being able to convert between them is essential. Common pitfalls include YAML indentation errors and JSON trailing commas.",
+  "category": "DevOps",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "yaml",
+    "json",
+    "configuration",
+    "fundamentals",
+    "devops"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "YAML example",
+      "code": "# YAML supports comments\napp:\n  name: myapp\n  version: 1.0.0\n  \n  # Nested configuration\n  database:\n    host: localhost\n    port: 5432\n    \n  # List/array\n  environments:\n    - development\n    - staging\n    - production\n    \n  # Boolean and null\n  enabled: true\n  deprecated: false\n  optional_field: null\n  \n  # Multi-line string\n  description: |\n    This is a multi-line\n    description block."
+    },
+    {
+      "language": "json",
+      "label": "Equivalent JSON",
+      "code": "{\n  \"app\": {\n    \"name\": \"myapp\",\n    \"version\": \"1.0.0\",\n    \"database\": {\n      \"host\": \"localhost\",\n      \"port\": 5432\n    },\n    \"environments\": [\n      \"development\",\n      \"staging\",\n      \"production\"\n    ],\n    \"enabled\": true,\n    \"deprecated\": false,\n    \"optional_field\": null,\n    \"description\": \"This is a multi-line\\ndescription block.\"\n  }\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "What common YAML mistakes cause parsing errors?",
+    "How do you validate YAML or JSON files?",
+    "What tools can convert between YAML and JSON?"
+  ],
+  "commonMistakes": [
+    "Using tabs instead of spaces in YAML (only spaces allowed)",
+    "Inconsistent indentation in YAML files",
+    "Trailing commas in JSON arrays/objects (not allowed)",
+    "Forgetting to quote strings with special characters in YAML"
+  ],
+  "relatedTopics": [
+    "kubernetes",
+    "ansible",
+    "ci-cd",
+    "apis"
+  ]
+}

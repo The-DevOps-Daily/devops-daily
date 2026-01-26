@@ -1,0 +1,46 @@
+{
+  "id": "log-aggregation-strategies",
+  "slug": "log-aggregation-strategies",
+  "title": "Log Aggregation Strategies",
+  "question": "How do you implement centralized logging in a distributed system? What are the key components?",
+  "answer": "Centralized logging collects logs from all services into one searchable system. Key components: 1) Collection - agents like Fluentd, Fluent Bit, or Filebeat. 2) Transport - message queues (Kafka) for buffering. 3) Processing - parsing, filtering, enriching (Logstash). 4) Storage - Elasticsearch, Loki, or cloud services. 5) Visualization - Kibana, Grafana. Best practices: use structured logging (JSON), include correlation IDs for tracing requests, set retention policies, and implement log levels appropriately.",
+  "explanation": "In distributed systems, logs scattered across hundreds of containers are useless. Centralized logging enables searching across all services, correlating events, and debugging issues. The ELK stack (Elasticsearch, Logstash, Kibana) is traditional; newer options like Loki (Grafana) are more cost-effective. Structured logging is crucial - parsing unstructured text at scale is expensive.",
+  "category": "Monitoring",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "logging",
+    "observability",
+    "elk",
+    "fluentd",
+    "monitoring"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Fluent Bit DaemonSet",
+      "code": "apiVersion: apps/v1\nkind: DaemonSet\nmetadata:\n  name: fluent-bit\nspec:\n  selector:\n    matchLabels:\n      app: fluent-bit\n  template:\n    spec:\n      containers:\n      - name: fluent-bit\n        image: fluent/fluent-bit:latest\n        volumeMounts:\n        - name: varlog\n          mountPath: /var/log\n        - name: config\n          mountPath: /fluent-bit/etc/\n      volumes:\n      - name: varlog\n        hostPath:\n          path: /var/log\n      - name: config\n        configMap:\n          name: fluent-bit-config"
+    },
+    {
+      "language": "json",
+      "label": "Structured log format",
+      "code": "{\n  \"timestamp\": \"2024-01-15T10:30:00.000Z\",\n  \"level\": \"error\",\n  \"service\": \"payment-api\",\n  \"trace_id\": \"abc123xyz\",\n  \"span_id\": \"def456\",\n  \"user_id\": \"user_789\",\n  \"message\": \"Payment processing failed\",\n  \"error\": {\n    \"type\": \"PaymentGatewayError\",\n    \"message\": \"Connection timeout\",\n    \"stack\": \"...\"\n  },\n  \"duration_ms\": 5023\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle high-volume logging without impacting application performance?",
+    "What is the difference between logs, metrics, and traces?",
+    "How do you implement log retention and comply with data regulations?"
+  ],
+  "commonMistakes": [
+    "Logging sensitive data (passwords, PII) that violates compliance",
+    "Using DEBUG level in production, creating massive storage costs",
+    "Not including correlation IDs, making distributed tracing impossible"
+  ],
+  "relatedTopics": [
+    "elk-stack",
+    "observability",
+    "distributed-tracing",
+    "grafana-loki"
+  ]
+}

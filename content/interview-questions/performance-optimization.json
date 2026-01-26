@@ -1,0 +1,46 @@
+{
+  "id": "performance-optimization",
+  "slug": "performance-optimization",
+  "title": "Application Performance Optimization",
+  "question": "How do you identify and resolve performance bottlenecks in a production application?",
+  "answer": "Performance optimization process: 1) Measure first - use APM tools (Datadog, New Relic) to identify slow endpoints. 2) Profile - CPU profiling, memory analysis, database query analysis. 3) Common bottlenecks: N+1 queries, missing indexes, synchronous operations that should be async, memory leaks, inefficient algorithms. 4) Load test to find breaking points. 5) Optimize incrementally - cache frequently accessed data, optimize database queries, implement connection pooling, use CDNs for static assets. Always measure impact of changes.",
+  "explanation": "Premature optimization is the root of all evil, but measured optimization is essential. Start with observability - you can't improve what you can't measure. APM tools show where time is spent. Database queries are often the bottleneck. Caching (Redis, CDN) can dramatically improve performance but adds complexity. Load testing reveals how the system behaves under stress.",
+  "category": "SRE",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "performance",
+    "optimization",
+    "apm",
+    "sre",
+    "caching"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Database query analysis",
+      "code": "# PostgreSQL slow query log\n# In postgresql.conf:\n# log_min_duration_statement = 1000  # Log queries > 1s\n\n# Analyze query plan\nEXPLAIN ANALYZE SELECT * FROM orders \n  WHERE user_id = 123 \n  ORDER BY created_at DESC\n  LIMIT 10;\n\n# Find missing indexes\nSELECT schemaname, tablename, \n       seq_scan, seq_tup_read,\n       idx_scan, idx_tup_fetch\nFROM pg_stat_user_tables\nWHERE seq_scan > idx_scan\nORDER BY seq_tup_read DESC;"
+    },
+    {
+      "language": "yaml",
+      "label": "Redis caching pattern",
+      "code": "# Kubernetes Redis deployment for caching\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: redis-cache\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: redis\n  template:\n    spec:\n      containers:\n      - name: redis\n        image: redis:7-alpine\n        command: [\"redis-server\"]\n        args:\n        - \"--maxmemory\"\n        - \"256mb\"\n        - \"--maxmemory-policy\"\n        - \"allkeys-lru\"  # Evict least recently used\n        resources:\n          limits:\n            memory: 300Mi"
+    }
+  ],
+  "followUpQuestions": [
+    "When should you use caching vs. optimizing the underlying operation?",
+    "How do you prevent cache stampede problems?",
+    "What tools do you use for load testing?"
+  ],
+  "commonMistakes": [
+    "Optimizing without measuring - guessing where bottlenecks are",
+    "Caching everything without considering cache invalidation complexity",
+    "Fixing symptoms (adding more servers) instead of root causes"
+  ],
+  "relatedTopics": [
+    "caching",
+    "apm",
+    "load-testing",
+    "database-optimization"
+  ]
+}

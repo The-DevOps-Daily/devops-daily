@@ -1,0 +1,46 @@
+{
+  "id": "service-mesh-concepts",
+  "slug": "service-mesh-concepts",
+  "title": "Service Mesh Concepts",
+  "question": "What is a service mesh and when would you implement one? Explain the sidecar pattern.",
+  "answer": "A service mesh is a dedicated infrastructure layer for service-to-service communication, handling traffic management, security, and observability. It uses the sidecar pattern: a proxy container (like Envoy) runs alongside each service, intercepting all network traffic. Benefits: mutual TLS encryption, traffic splitting, retries/timeouts, and distributed tracing without code changes. Popular options: Istio, Linkerd, and Consul Connect. Implement when you have many microservices needing consistent networking policies.",
+  "explanation": "As microservices grow, managing inter-service communication becomes complex. A service mesh extracts networking concerns from application code into infrastructure. The sidecar proxy handles all traffic, enabling features like circuit breaking and canary deployments transparently. However, it adds operational complexity and resource overhead - don't use it for simple architectures.",
+  "category": "Kubernetes",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "service-mesh",
+    "istio",
+    "kubernetes",
+    "microservices",
+    "networking"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Istio traffic splitting",
+      "code": "apiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: reviews\nspec:\n  hosts:\n  - reviews\n  http:\n  - route:\n    - destination:\n        host: reviews\n        subset: v1\n      weight: 90\n    - destination:\n        host: reviews\n        subset: v2\n      weight: 10  # 10% canary traffic"
+    },
+    {
+      "language": "yaml",
+      "label": "Retry and timeout policy",
+      "code": "apiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: payments\nspec:\n  hosts:\n  - payments\n  http:\n  - timeout: 10s\n    retries:\n      attempts: 3\n      perTryTimeout: 3s\n      retryOn: 5xx,reset,connect-failure\n    route:\n    - destination:\n        host: payments"
+    }
+  ],
+  "followUpQuestions": [
+    "How does mutual TLS work in a service mesh?",
+    "What is the performance overhead of running a service mesh?",
+    "How do you debug issues when traffic passes through sidecar proxies?"
+  ],
+  "commonMistakes": [
+    "Implementing a service mesh for a simple monolith or few services",
+    "Not accounting for increased resource usage from sidecar containers",
+    "Misconfiguring traffic policies causing cascading failures"
+  ],
+  "relatedTopics": [
+    "microservices",
+    "istio",
+    "envoy",
+    "distributed-tracing"
+  ]
+}

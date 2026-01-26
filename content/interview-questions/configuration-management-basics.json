@@ -1,0 +1,46 @@
+{
+  "id": "configuration-management-basics",
+  "slug": "configuration-management-basics",
+  "title": "Configuration Management Basics",
+  "question": "What is configuration management? Why is it important and what tools are commonly used?",
+  "answer": "Configuration management is the practice of automating and standardizing system configurations across environments. It ensures consistency (all servers configured the same), enables version control of configs, provides audit trails, and reduces manual errors. Common tools: Ansible (agentless, YAML), Puppet (agent-based, DSL), Chef (agent-based, Ruby), and SaltStack. CM enables infrastructure as code and is essential for managing servers at scale.",
+  "explanation": "Without configuration management, maintaining consistency across dozens or hundreds of servers becomes impossible. CM tools enforce desired state - if someone manually changes a config, the CM tool reverts it. This is crucial for security compliance and reproducible deployments. Ansible has become dominant due to its simplicity and agentless architecture.",
+  "category": "Infrastructure",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "ansible",
+    "configuration-management",
+    "iac",
+    "automation",
+    "fundamentals"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Simple Ansible playbook",
+      "code": "---\n- name: Configure web servers\n  hosts: webservers\n  become: yes\n  tasks:\n    - name: Install nginx\n      apt:\n        name: nginx\n        state: present\n        update_cache: yes\n\n    - name: Start nginx service\n      service:\n        name: nginx\n        state: started\n        enabled: yes\n\n    - name: Copy config file\n      copy:\n        src: nginx.conf\n        dest: /etc/nginx/nginx.conf\n      notify: Restart nginx\n\n  handlers:\n    - name: Restart nginx\n      service:\n        name: nginx\n        state: restarted"
+    },
+    {
+      "language": "bash",
+      "label": "Running Ansible",
+      "code": "# Check connectivity to hosts\nansible all -m ping\n\n# Run playbook\nansible-playbook site.yml\n\n# Run with specific inventory\nansible-playbook -i production site.yml\n\n# Dry run (check mode)\nansible-playbook site.yml --check\n\n# Limit to specific hosts\nansible-playbook site.yml --limit webserver1"
+    }
+  ],
+  "followUpQuestions": [
+    "What is idempotency and why is it important in configuration management?",
+    "What is the difference between push and pull-based configuration management?",
+    "When would you use configuration management vs. containers?"
+  ],
+  "commonMistakes": [
+    "Not testing playbooks in staging before production",
+    "Hardcoding environment-specific values instead of using variables",
+    "Running as root when privilege escalation should be explicit"
+  ],
+  "relatedTopics": [
+    "ansible",
+    "infrastructure-as-code",
+    "automation",
+    "desired-state"
+  ]
+}
