@@ -133,7 +133,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "fast-glob": "^3.3.3",
     "postcss": "^8.5.6",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.1.17",
     "tsx": "^4.21.0",
