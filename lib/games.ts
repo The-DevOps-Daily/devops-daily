@@ -22,6 +22,20 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'deployment-strategies',
+    title: 'Deployment Strategies Simulator',
+    description:
+      'Learn deployment strategies like Blue-Green, Canary, Rolling Updates, Recreate, and Feature Toggles. Visualize how each strategy handles traffic routing, downtime, and rollbacks in real-time.',
+    iconName: 'Rocket',
+    badgeText: 'New',
+    color: 'from-indigo-500 to-blue-600',
+    href: '/games/deployment-strategies',
+    tags: ['deployment', 'kubernetes', 'devops', 'educational', 'interactive', 'ci-cd'],
+    isNew: true,
+    featured: true,
+    category: 'DevOps',
+  },
+  {
     id: 'scaling-simulator',
     title: 'Horizontal vs Vertical Scaling Simulator',
     description:
