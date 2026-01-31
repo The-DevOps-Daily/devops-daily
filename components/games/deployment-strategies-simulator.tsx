@@ -480,30 +480,26 @@ export default function DeploymentStrategiesSimulator() {
             </div>
 
             {/* Pods */}
-            <div className="flex gap-6">
-              {/* V1 Pods */}
-              {v1Pods.length > 0 && (
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs font-medium text-blue-500">v1</span>
-                  <div className="flex flex-col gap-2">
-                    {v1Pods.map((pod, i) => (
-                      <PodBox key={`v1-${i}`} pod={pod} />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* V2 Pods */}
-              {v2Pods.length > 0 && (
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs font-medium text-green-500">v2</span>
-                  <div className="flex flex-col gap-2">
-                    {v2Pods.map((pod, i) => (
-                      <PodBox key={`v2-${i}`} pod={pod} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+           <div className="flex gap-6">
+             {/* V1 Pods - Fixed width for symmetry */}
+             <div className="w-14 flex flex-col items-center gap-2">
+               <span className={`text-xs font-medium ${v1Pods.length > 0 ? 'text-blue-500' : 'text-muted-foreground/30'}`}>v1</span>
+               <div className="flex flex-col gap-2 min-h-[148px]">
+                 {v1Pods.map((pod, i) => (
+                   <PodBox key={`v1-${i}`} pod={pod} />
+                 ))}
+               </div>
+             </div>
+             {/* V2 Pods - Fixed width for symmetry */}
+             <div className="w-14 flex flex-col items-center gap-2">
+               <span className={`text-xs font-medium ${v2Pods.length > 0 ? 'text-green-500' : 'text-muted-foreground/30'}`}>v2</span>
+               <div className="flex flex-col gap-2 min-h-[148px]">
+                 {v2Pods.map((pod, i) => (
+                   <PodBox key={`v2-${i}`} pod={pod} />
+                   ))}
+               </div>
+             </div>
+           </div>
           </div>
 
           {/* Note */}
