@@ -13,6 +13,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Globe,
+  ChevronRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -264,11 +265,11 @@ export default function DeploymentStrategiesSimulator() {
     if (!pod) {
       return (
         <div className={cn(
-          'w-9 h-9 rounded-lg border-2 border-dashed',
+          'w-8 h-8 rounded-lg border-2 border-dashed',
           'border-slate-300 dark:border-slate-600',
           'flex items-center justify-center'
         )}>
-          <Server className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+          <Server className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
         </div>
       );
     }
@@ -281,11 +282,11 @@ export default function DeploymentStrategiesSimulator() {
           opacity: pod.status === 'terminating' ? 0.5 : 1,
         }}
         className={cn(
-          'w-9 h-9 rounded-lg flex items-center justify-center shadow-md relative',
+          'w-8 h-8 rounded-lg flex items-center justify-center shadow-md relative',
           pod.status === 'terminating' ? terminatingColor : baseColor
         )}
       >
-        <Server className="w-4 h-4 text-white" />
+        <Server className="w-3.5 h-3.5 text-white" />
         {pod.status === 'starting' && (
           <motion.div
             className={cn('absolute inset-0 rounded-lg border-2', borderColor)}
@@ -294,6 +295,36 @@ export default function DeploymentStrategiesSimulator() {
           />
         )}
       </motion.div>
+    );
+  };
+
+  const TrafficLine = ({ active, color }: { active: boolean; color: 'blue' | 'green' | 'purple' }) => {
+    const colorClasses = {
+      blue: { line: 'bg-blue-400', dot: 'bg-blue-500', arrow: 'text-blue-500' },
+      green: { line: 'bg-green-400', dot: 'bg-green-500', arrow: 'text-green-500' },
+      purple: { line: 'bg-purple-400', dot: 'bg-purple-500', arrow: 'text-purple-500' },
+    };
+    const colors = colorClasses[color];
+
+    return (
+      <div className="flex-1 flex items-center min-w-[30px]">
+        <div className={cn(
+          'flex-1 h-0.5 transition-colors',
+          active ? colors.line : 'bg-slate-300 dark:bg-slate-600'
+        )} />
+        {active && (
+          <motion.div
+            className={cn('absolute w-2 h-2 rounded-full shadow-sm', colors.dot)}
+            style={{ left: 0 }}
+            animate={{ left: ['0%', 'calc(100% - 8px)'] }}
+            transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
+          />
+        )}
+        <ChevronRight className={cn(
+          'w-4 h-4 -ml-0.5 flex-shrink-0',
+          active ? colors.arrow : 'text-slate-400'
+        )} />
+      </div>
     );
   };
 
@@ -359,7 +390,7 @@ export default function DeploymentStrategiesSimulator() {
         </div>
 
         {/* Main Diagram */}
-        <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-6">
+        <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-5">
           {/* Downtime Overlay */}
           <AnimatePresence>
             {step.hasDowntime && (
@@ -377,103 +408,119 @@ export default function DeploymentStrategiesSimulator() {
             )}
           </AnimatePresence>
 
-          {/* Horizontal Flow Layout */}
-          <div className="flex items-center justify-between gap-4">
-            {/* Users */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                <Users className="w-7 h-7 text-slate-500 dark:text-slate-400" />
+          {/* Two-row layout: v1 on top, v2 on bottom */}
+          <div className="flex flex-col gap-4">
+            {/* V1 Row */}
+            <div className="flex items-center gap-2">
+              {/* Users */}
+              <div className="flex flex-col items-center w-14 flex-shrink-0">
+                <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+                </div>
+                <span className="text-[9px] font-medium text-muted-foreground mt-1">Users</span>
               </div>
-              <span className="text-xs font-medium text-muted-foreground">Users</span>
-            </div>
 
-            {/* Arrow to LB */}
-            <div className="flex-1 flex items-center justify-center relative h-8">
-              <div className="w-full h-0.5 bg-slate-300 dark:bg-slate-600" />
-              {hasAnyTraffic && (
-                <motion.div
-                  className="absolute w-3 h-3 rounded-full bg-purple-500"
-                  animate={{ left: ['0%', '100%'] }}
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                />
-              )}
-              <ArrowRight className="absolute right-0 w-4 h-4 text-slate-400" />
-            </div>
-
-            {/* Load Balancer */}
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 rounded-xl bg-purple-500 flex items-center justify-center shadow-lg">
-                <Globe className="w-7 h-7 text-white" />
-              </div>
-              <span className="text-xs font-medium text-muted-foreground">Load Balancer</span>
-            </div>
-
-            {/* Arrow to Pods */}
-            <div className="flex-1 flex flex-col items-center justify-center gap-2 relative">
-              {/* V1 Arrow */}
-              <div className="w-full flex items-center relative h-6">
+              {/* Line to LB */}
+              <div className="flex-1 flex items-center relative min-w-[30px]">
                 <div className={cn(
-                  'w-full h-0.5 transition-colors',
-                  hasV1Traffic ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'
+                  'flex-1 h-0.5',
+                  hasAnyTraffic ? 'bg-purple-400' : 'bg-slate-300 dark:bg-slate-600'
+                )} />
+                {hasAnyTraffic && (
+                  <motion.div
+                    className="absolute w-2 h-2 rounded-full bg-purple-500 shadow-sm"
+                    animate={{ left: ['0%', 'calc(100% - 8px)'] }}
+                    transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
+                  />
+                )}
+                <ChevronRight className={cn(
+                  'w-4 h-4 -ml-0.5 flex-shrink-0',
+                  hasAnyTraffic ? 'text-purple-500' : 'text-slate-400'
+                )} />
+              </div>
+
+              {/* Load Balancer */}
+              <div className="flex flex-col items-center w-14 flex-shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-purple-500 flex items-center justify-center shadow-md">
+                  <Globe className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-[9px] font-medium text-muted-foreground mt-1">LB</span>
+              </div>
+
+              {/* Line to V1 */}
+              <div className="flex-1 flex items-center relative min-w-[30px]">
+                <div className={cn(
+                  'flex-1 h-0.5',
+                  hasV1Traffic ? 'bg-blue-400' : 'bg-slate-300 dark:bg-slate-600'
                 )} />
                 {hasV1Traffic && (
                   <motion.div
-                    className="absolute w-2.5 h-2.5 rounded-full bg-blue-500"
-                    animate={{ left: ['0%', '100%'] }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
+                    className="absolute w-2 h-2 rounded-full bg-blue-500 shadow-sm"
+                    animate={{ left: ['0%', 'calc(100% - 8px)'] }}
+                    transition={{ duration: 0.5, repeat: Infinity, ease: 'linear', delay: 0.3 }}
                   />
                 )}
-                <ArrowRight className={cn(
-                  'absolute right-0 w-4 h-4',
+                <ChevronRight className={cn(
+                  'w-4 h-4 -ml-0.5 flex-shrink-0',
                   hasV1Traffic ? 'text-blue-500' : 'text-slate-400'
                 )} />
               </div>
-              {/* V2 Arrow */}
-              <div className="w-full flex items-center relative h-6">
-                <div className={cn(
-                  'w-full h-0.5 transition-colors',
-                  hasV2Traffic ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'
-                )} />
-                {hasV2Traffic && (
-                  <motion.div
-                    className="absolute w-2.5 h-2.5 rounded-full bg-green-500"
-                    animate={{ left: ['0%', '100%'] }}
-                    transition={{ duration: 0.8, repeat: Infinity, ease: 'linear', delay: 0.2 }}
-                  />
-                )}
-                <ArrowRight className={cn(
-                  'absolute right-0 w-4 h-4',
-                  hasV2Traffic ? 'text-green-500' : 'text-slate-400'
-                )} />
-              </div>
-            </div>
 
-            {/* Pod Columns */}
-            <div className="flex gap-4">
-              {/* V1 Column */}
-              <div className="flex flex-col items-center gap-1">
+              {/* V1 Label + Pods */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={cn(
-                  'text-xs font-bold mb-1',
+                  'text-xs font-bold w-14 text-right',
                   hasV1Traffic ? 'text-blue-500' : 'text-slate-400'
                 )}>
-                  v1 {step.trafficSplit.v1 > 0 && `(${step.trafficSplit.v1}%)`}
+                  v1 {step.trafficSplit.v1 > 0 && `${step.trafficSplit.v1}%`}
                 </span>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex gap-1">
                   {[0, 1, 2].map((i) => (
                     <PodIcon key={`v1-${i}`} pod={step.v1Pods[i]} version="v1" />
                   ))}
                 </div>
               </div>
+            </div>
 
-              {/* V2 Column */}
-              <div className="flex flex-col items-center gap-1">
+            {/* V2 Row */}
+            <div className="flex items-center gap-2">
+              {/* Spacer for Users */}
+              <div className="w-14 flex-shrink-0" />
+
+              {/* Spacer line */}
+              <div className="flex-1 min-w-[30px]" />
+
+              {/* Spacer for LB */}
+              <div className="w-14 flex-shrink-0" />
+
+              {/* Line to V2 */}
+              <div className="flex-1 flex items-center relative min-w-[30px]">
+                <div className={cn(
+                  'flex-1 h-0.5',
+                  hasV2Traffic ? 'bg-green-400' : 'bg-slate-300 dark:bg-slate-600'
+                )} />
+                {hasV2Traffic && (
+                  <motion.div
+                    className="absolute w-2 h-2 rounded-full bg-green-500 shadow-sm"
+                    animate={{ left: ['0%', 'calc(100% - 8px)'] }}
+                    transition={{ duration: 0.5, repeat: Infinity, ease: 'linear', delay: 0.3 }}
+                  />
+                )}
+                <ChevronRight className={cn(
+                  'w-4 h-4 -ml-0.5 flex-shrink-0',
+                  hasV2Traffic ? 'text-green-500' : 'text-slate-400'
+                )} />
+              </div>
+
+              {/* V2 Label + Pods */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 <span className={cn(
-                  'text-xs font-bold mb-1',
+                  'text-xs font-bold w-14 text-right',
                   hasV2Traffic ? 'text-green-500' : 'text-slate-400'
                 )}>
-                  v2 {step.trafficSplit.v2 > 0 && `(${step.trafficSplit.v2}%)`}
+                  v2 {step.trafficSplit.v2 > 0 && `${step.trafficSplit.v2}%`}
                 </span>
-                <div className="flex flex-col gap-1.5">
+                <div className="flex gap-1">
                   {[0, 1, 2].map((i) => (
                     <PodIcon key={`v2-${i}`} pod={step.v2Pods[i]} version="v2" />
                   ))}
