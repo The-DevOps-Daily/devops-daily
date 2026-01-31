@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, RotateCcw, Users, Server } from 'lucide-react';
+import { Play, Pause, RotateCcw, Users, Server, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type AlgorithmType = 'round-robin' | 'least-connections' | 'ip-hash' | 'random';
@@ -13,46 +13,34 @@ interface ServerState {
   name: string;
   requests: number;
   active: number;
+  healthy: boolean;
 }
 
 interface RequestPacket {
   id: string;
   targetServer: number;
-  phase: 'to-lb' | 'exit-lb' | 'to-server';
+  phase: 'to-lb' | 'exit-lb' | 'to-server' | 'failed';
 }
 
-// Distinct colors for each server - makes it crystal clear where requests go
 const SERVER_COLORS = [
   { bg: 'bg-emerald-500', hex: '#10b981', dimHex: '#6ee7b7' },
   { bg: 'bg-amber-500', hex: '#f59e0b', dimHex: '#fcd34d' },
   { bg: 'bg-rose-500', hex: '#f43f5e', dimHex: '#fda4af' },
 ];
 
-const ALGORITHMS: Record<AlgorithmType, { name: string; description: string }> = {
-  'round-robin': {
-    name: 'Round Robin',
-    description: 'Sends requests to each server in order: 1 → 2 → 3 → 1 → 2 → 3...',
-  },
-  'least-connections': {
-    name: 'Least Connections',
-    description: 'Always sends to the server handling the fewest requests right now',
-  },
-  'ip-hash': {
-    name: 'IP Hash',
-    description: 'Same user always goes to the same server (sticky sessions)',
-  },
-  random: {
-    name: 'Random',
-    description: 'Randomly picks a server for each request',
-  },
+const FAILED_COLOR = { hex: '#9ca3af', dimHex: '#d1d5db' };
+
+const ALGORITHMS: Record<AlgorithmType, { name: string; short: string }> = {
+  'round-robin': { name: 'Round Robin', short: '1→2→3→...' },
+  'least-connections': { name: 'Least Conn', short: 'Min load' },
+  'ip-hash': { name: 'IP Hash', short: 'Sticky' },
+  random: { name: 'Random', short: 'Random' },
 };
 
-// Traffic rate presets (ms between requests)
 const TRAFFIC_RATES = [
   { label: 'Slow', value: 1200 },
   { label: 'Normal', value: 600 },
   { label: 'Fast', value: 300 },
-  { label: 'Burst', value: 150 },
 ];
 
 export default function LoadBalancerSimulator() {
@@ -60,282 +48,285 @@ export default function LoadBalancerSimulator() {
   const [isRunning, setIsRunning] = useState(false);
   const [trafficRate, setTrafficRate] = useState(600);
   const [servers, setServers] = useState<ServerState[]>([
-    { id: 1, name: 'Server 1', requests: 0, active: 0 },
-    { id: 2, name: 'Server 2', requests: 0, active: 0 },
-    { id: 3, name: 'Server 3', requests: 0, active: 0 },
+    { id: 1, name: 'S1', requests: 0, active: 0, healthy: true },
+    { id: 2, name: 'S2', requests: 0, active: 0, healthy: true },
+    { id: 3, name: 'S3', requests: 0, active: 0, healthy: true },
   ]);
   const [packets, setPackets] = useState<RequestPacket[]>([]);
   const [roundRobinIndex, setRoundRobinIndex] = useState(0);
   const [clientHash] = useState(() => Math.floor(Math.random() * 3));
+  const [failedRequests, setFailedRequests] = useState(0);
 
-  // Track which server lines are active (have packets going to them)
   const activeServerLines = useMemo(() => {
     const active = new Set<number>();
     packets.forEach((p) => {
-      if (p.phase === 'to-server') {
-        active.add(p.targetServer);
-      }
+      if (p.phase === 'to-server') active.add(p.targetServer);
     });
     return active;
   }, [packets]);
 
-  const getTargetServer = useCallback((): number => {
+  const healthyServers = useMemo(() => servers.filter((s) => s.healthy), [servers]);
+
+  const toggleServerHealth = useCallback((serverId: number) => {
+    setServers((prev) =>
+      prev.map((s) => (s.id === serverId ? { ...s, healthy: !s.healthy } : s))
+    );
+  }, []);
+
+  const getTargetServer = useCallback((): number | null => {
+    if (healthyServers.length === 0) return null;
+
     switch (algorithm) {
       case 'round-robin': {
-        const target = (roundRobinIndex % 3) + 1;
-        setRoundRobinIndex((prev) => prev + 1);
-        return target;
+        let attempts = 0;
+        let idx = roundRobinIndex;
+        while (attempts < 3) {
+          const target = (idx % 3) + 1;
+          idx++;
+          if (servers.find((s) => s.id === target)?.healthy) {
+            setRoundRobinIndex(idx);
+            return target;
+          }
+          attempts++;
+        }
+        return healthyServers[0]?.id ?? null;
       }
       case 'least-connections': {
-        const sorted = [...servers].sort((a, b) => a.active - b.active);
+        const sorted = [...healthyServers].sort((a, b) => a.active - b.active);
         return sorted[0].id;
       }
-      case 'ip-hash':
-        return clientHash + 1;
+      case 'ip-hash': {
+        const targetId = clientHash + 1;
+        return servers.find((s) => s.id === targetId)?.healthy ? targetId : null;
+      }
       case 'random':
-        return Math.floor(Math.random() * 3) + 1;
+        return healthyServers[Math.floor(Math.random() * healthyServers.length)].id;
       default:
         return 1;
     }
-  }, [algorithm, roundRobinIndex, servers, clientHash]);
+  }, [algorithm, roundRobinIndex, servers, clientHash, healthyServers]);
 
   const sendRequest = useCallback(() => {
     const targetServer = getTargetServer();
     const packetId = `req-${Date.now()}-${Math.random()}`;
 
+    if (targetServer === null) {
+      setPackets((prev) => [...prev, { id: packetId, targetServer: 0, phase: 'to-lb' }]);
+      setTimeout(() => {
+        setPackets((prev) => prev.map((p) => (p.id === packetId ? { ...p, phase: 'failed' } : p)));
+      }, 300);
+      setTimeout(() => {
+        setPackets((prev) => prev.filter((p) => p.id !== packetId));
+        setFailedRequests((prev) => prev + 1);
+      }, 600);
+      return;
+    }
+
     setPackets((prev) => [...prev, { id: packetId, targetServer, phase: 'to-lb' }]);
-
-    // Phase 1 complete: arrived at LB center, now exit horizontally to line start
     setTimeout(() => {
-      setPackets((prev) =>
-        prev.map((p) => (p.id === packetId ? { ...p, phase: 'exit-lb' } : p))
-      );
-    }, 350);
-
-    // Phase 2: at line start point (58%), now follow angled line to server
+      setPackets((prev) => prev.map((p) => (p.id === packetId ? { ...p, phase: 'exit-lb' } : p)));
+    }, 300);
     setTimeout(() => {
-      setPackets((prev) =>
-        prev.map((p) => (p.id === packetId ? { ...p, phase: 'to-server' } : p))
-      );
-      setServers((prev) =>
-        prev.map((s) => (s.id === targetServer ? { ...s, active: s.active + 1 } : s))
-      );
-    }, 450);
-
-    // Phase 3: arrived at server, complete request
+      setPackets((prev) => prev.map((p) => (p.id === packetId ? { ...p, phase: 'to-server' } : p)));
+      setServers((prev) => prev.map((s) => (s.id === targetServer ? { ...s, active: s.active + 1 } : s)));
+    }, 400);
     setTimeout(() => {
       setPackets((prev) => prev.filter((p) => p.id !== packetId));
       setServers((prev) =>
         prev.map((s) =>
-          s.id === targetServer
-            ? { ...s, requests: s.requests + 1, active: Math.max(0, s.active - 1) }
-            : s
+          s.id === targetServer ? { ...s, requests: s.requests + 1, active: Math.max(0, s.active - 1) } : s
         )
       );
-    }, 950);
+    }, 900);
   }, [getTargetServer]);
 
   useEffect(() => {
     if (!isRunning) return;
     const interval = setInterval(sendRequest, trafficRate);
     return () => clearInterval(interval);
-  }, [isRunning, sendRequest, trafficRate]);
+  }, [isRunning, trafficRate, sendRequest]);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setIsRunning(false);
-    setPackets([]);
-    setServers([
-      { id: 1, name: 'Server 1', requests: 0, active: 0 },
-      { id: 2, name: 'Server 2', requests: 0, active: 0 },
-      { id: 3, name: 'Server 3', requests: 0, active: 0 },
-    ]);
     setRoundRobinIndex(0);
-  };
+    setServers([
+      { id: 1, name: 'S1', requests: 0, active: 0, healthy: true },
+      { id: 2, name: 'S2', requests: 0, active: 0, healthy: true },
+      { id: 3, name: 'S3', requests: 0, active: 0, healthy: true },
+    ]);
+    setPackets([]);
+    setFailedRequests(0);
+  }, []);
 
-  // Server Y positions - these match the flex justify-around layout
-  // Container is 420px with py-6 (24px each side), so usable = 372px
-  // 3 items with justify-around: positions at 1/6, 3/6, 5/6 of usable area
-  // Adding padding offset: (24 + 372/6)/420, (24 + 372/2)/420, (24 + 5*372/6)/420
-  // Roughly: 17%, 50%, 83%
-  const serverYPositions = [17, 50, 83];
+  const serverYPositions = [20, 50, 80];
 
   return (
-    <div className="space-y-6">
-      <Card className="max-w-6xl mx-auto">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            Load Balancer Simulator
+    <div className="w-full max-w-3xl mx-auto">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <Server className="h-5 w-5" />
+              Load Balancer Simulator
+            </span>
+            <span className="text-xs font-normal text-muted-foreground">Click servers to toggle failure</span>
           </CardTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Watch how a load balancer distributes incoming user requests across multiple servers
-          </p>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Controls */}
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setIsRunning(!isRunning)}
-                variant={isRunning ? 'destructive' : 'default'}
-                size="sm"
-              >
-                {isRunning ? <Pause className="h-4 w-4 mr-1" /> : <Play className="h-4 w-4 mr-1" />}
-                {isRunning ? 'Stop' : 'Start'}
+        <CardContent className="space-y-4">
+          {/* Compact Controls */}
+          <div className="flex flex-wrap gap-2 items-center justify-between">
+            <div className="flex gap-1">
+              <Button size="sm" onClick={() => setIsRunning(!isRunning)} variant={isRunning ? 'destructive' : 'default'}>
+                {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>
-              <Button onClick={reset} variant="outline" size="sm">
-                <RotateCcw className="h-4 w-4 mr-1" /> Reset
+              <Button size="sm" onClick={reset} variant="outline">
+                <RotateCcw className="h-4 w-4" />
               </Button>
             </div>
-
-            {/* Traffic Rate Control */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Traffic:</label>
-              <div className="flex gap-1">
-                {TRAFFIC_RATES.map((rate) => (
-                  <Button
-                    key={rate.value}
-                    variant={trafficRate === rate.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setTrafficRate(rate.value)}
-                    className="text-xs px-2 h-8"
-                  >
-                    {rate.label}
-                  </Button>
-                ))}
-              </div>
+            <div className="flex gap-1">
+              {(Object.keys(ALGORITHMS) as AlgorithmType[]).map((alg) => (
+                <Button
+                  key={alg}
+                  size="sm"
+                  variant={algorithm === alg ? 'default' : 'ghost'}
+                  onClick={() => setAlgorithm(alg)}
+                  className="text-xs px-2"
+                >
+                  {ALGORITHMS[alg].name}
+                </Button>
+              ))}
             </div>
-
-            {/* Algorithm Selector */}
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Algorithm:</label>
-              <select
-                value={algorithm}
-                onChange={(e) => setAlgorithm(e.target.value as AlgorithmType)}
-                className="px-3 py-1.5 text-sm border rounded-md bg-background"
-              >
-                {Object.entries(ALGORITHMS).map(([key, { name }]) => (
-                  <option key={key} value={key}>
-                    {name}
-                  </option>
-                ))}
-              </select>
+            <div className="flex gap-1">
+              {TRAFFIC_RATES.map((rate) => (
+                <Button
+                  key={rate.label}
+                  size="sm"
+                  variant={trafficRate === rate.value ? 'secondary' : 'ghost'}
+                  onClick={() => setTrafficRate(rate.value)}
+                  className="text-xs px-2"
+                >
+                  {rate.label}
+                </Button>
+              ))}
             </div>
           </div>
 
-          {/* Algorithm explanation */}
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <p className="text-sm">
-              <span className="font-semibold">{ALGORITHMS[algorithm].name}:</span>{' '}
-              {ALGORITHMS[algorithm].description}
-            </p>
-          </div>
-
-          {/* Main Diagram - Wide layout */}
-          <div className="relative h-[420px] bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-xl border-2 overflow-hidden">
-            {/* Connection lines (SVG) */}
-            <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
-              {/* Users to Load Balancer - single line */}
-              <line
-                x1="12%"
-                y1="50%"
-                x2="42%"
-                y2="50%"
-                stroke="#94a3b8"
-                strokeWidth="3"
-                strokeDasharray="8 4"
-              />
-              {/* Load Balancer to each Server - colored lines that light up */}
+          {/* Compact Visual Diagram */}
+          <div className="relative h-48 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden">
+            <svg className="absolute inset-0 w-full h-full">
+              <line x1="18%" y1="50%" x2="42%" y2="50%" stroke="#3b82f6" strokeWidth="2" strokeDasharray="6 3" />
               {serverYPositions.map((y, idx) => {
                 const isActive = activeServerLines.has(idx + 1);
+                const isHealthy = servers[idx].healthy;
+                const color = isHealthy ? SERVER_COLORS[idx] : FAILED_COLOR;
                 return (
                   <line
                     key={y}
                     x1="58%"
                     y1="50%"
-                    x2="85%"
+                    x2="82%"
                     y2={`${y}%`}
-                    stroke={isActive ? SERVER_COLORS[idx].hex : SERVER_COLORS[idx].dimHex}
-                    strokeWidth={isActive ? 5 : 3}
-                    strokeDasharray={isActive ? '0' : '8 4'}
-                    style={{ transition: 'stroke 0.15s, stroke-width 0.15s' }}
+                    stroke={isActive && isHealthy ? color.hex : color.dimHex}
+                    strokeWidth={isActive && isHealthy ? 4 : 2}
+                    strokeDasharray={isHealthy ? (isActive ? '0' : '6 3') : '3 6'}
+                    opacity={isHealthy ? 1 : 0.3}
                   />
                 );
               })}
             </svg>
 
-            {/* Users (Left) */}
-            <div className="absolute left-[6%] top-1/2 -translate-y-1/2 z-10 text-center">
-              <div className="w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center shadow-lg mx-auto border-4 border-white dark:border-slate-700">
-                <Users className="h-10 w-10 text-white" />
+            {/* Users */}
+            <div className="absolute left-[8%] top-1/2 -translate-y-1/2 z-10 text-center">
+              <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center shadow-md border-2 border-white dark:border-slate-700">
+                <Users className="h-7 w-7 text-white" />
               </div>
-              <div className="mt-2 text-sm font-semibold">Users</div>
             </div>
 
-            {/* Load Balancer (Center) */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 text-center">
-              <div className="w-24 h-24 rounded-xl bg-purple-600 flex items-center justify-center shadow-xl mx-auto border-4 border-white dark:border-slate-700">
-                <span className="text-white text-sm font-bold text-center leading-tight">Load<br/>Balancer</span>
+            {/* Load Balancer */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+              <div className="w-16 h-16 rounded-lg bg-purple-600 flex items-center justify-center shadow-md border-2 border-white dark:border-slate-700">
+                <span className="text-white text-xs font-bold text-center">LB</span>
               </div>
-              <div className="mt-2 text-xs font-medium text-muted-foreground">{ALGORITHMS[algorithm].name}</div>
             </div>
 
-            {/* Servers (Right) - positioned to match serverYPositions */}
-            <div className="absolute right-[4%] top-0 bottom-0 flex flex-col justify-around py-6 z-10">
+            {/* Servers */}
+            <div className="absolute right-[6%] top-0 bottom-0 flex flex-col justify-around py-4 z-10">
               {servers.map((server, idx) => (
-                <div key={server.id} className="text-center">
+                <div
+                  key={server.id}
+                  className="text-center cursor-pointer group"
+                  onClick={() => toggleServerHealth(server.id)}
+                  title={`Click to ${server.healthy ? 'disable' : 'enable'}`}
+                >
                   <div
-                    className={`w-20 h-20 rounded-xl ${SERVER_COLORS[idx].bg} flex items-center justify-center shadow-lg mx-auto border-4 border-white dark:border-slate-700 transition-transform ${
-                      activeServerLines.has(server.id) ? 'scale-110' : ''
-                    }`}
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center shadow-md border-2 transition-all
+                      ${server.healthy ? SERVER_COLORS[idx].bg : 'bg-gray-400'}
+                      ${server.healthy ? 'border-white dark:border-slate-700' : 'border-red-500'}
+                      ${activeServerLines.has(server.id) && server.healthy ? 'scale-110' : ''}
+                      ${!server.healthy ? 'opacity-50' : ''}
+                      group-hover:ring-2 group-hover:ring-offset-1 group-hover:ring-gray-400`}
                   >
-                    <Server className="h-9 w-9 text-white" />
+                    {server.healthy ? (
+                      <Server className="h-6 w-6 text-white" />
+                    ) : (
+                      <XCircle className="h-6 w-6 text-white" />
+                    )}
                   </div>
-                  <div className="mt-2 text-sm font-semibold">{server.name}</div>
+                  <div className={`text-xs font-medium mt-1 ${!server.healthy ? 'text-red-500' : ''}`}>
+                    {server.requests}
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Animated Packets - Follow the colored lines */}
+            {/* Packets */}
             <AnimatePresence>
               {packets.map((packet) => {
                 const serverIdx = packet.targetServer - 1;
-                const serverY = serverYPositions[serverIdx];
-                const dotColor = SERVER_COLORS[serverIdx].hex;
+                const serverY = serverYPositions[serverIdx] || 50;
+                const dotColor = serverIdx >= 0 ? SERVER_COLORS[serverIdx]?.hex : '#ef4444';
 
                 if (packet.phase === 'to-lb') {
-                  // Blue dot: Users → Load Balancer
                   return (
                     <motion.div
                       key={packet.id}
-                      initial={{ left: '12%', top: '50%' }}
+                      initial={{ left: '14%', top: '50%' }}
                       animate={{ left: '50%', top: '50%' }}
-                      transition={{ duration: 0.35, ease: 'linear' }}
-                      className="absolute w-5 h-5 rounded-full bg-blue-500 shadow-lg z-20 border-2 border-white"
+                      transition={{ duration: 0.3, ease: 'linear' }}
+                      className="absolute w-4 h-4 rounded-full bg-blue-500 shadow z-20 border border-white"
+                      style={{ transform: 'translate(-50%, -50%)' }}
+                    />
+                  );
+                } else if (packet.phase === 'failed') {
+                  return (
+                    <motion.div
+                      key={packet.id}
+                      initial={{ left: '50%', top: '50%' }}
+                      animate={{ left: '14%', top: '50%' }}
+                      transition={{ duration: 0.3, ease: 'linear' }}
+                      className="absolute w-4 h-4 rounded-full bg-red-500 shadow z-20 border border-white"
                       style={{ transform: 'translate(-50%, -50%)' }}
                     />
                   );
                 } else if (packet.phase === 'exit-lb') {
-                  // Colored dot: exit LB horizontally to line start point (58%)
                   return (
                     <motion.div
                       key={packet.id}
                       initial={{ left: '50%', top: '50%' }}
                       animate={{ left: '58%', top: '50%' }}
                       transition={{ duration: 0.1, ease: 'linear' }}
-                      className="absolute w-5 h-5 rounded-full shadow-lg z-20 border-2 border-white"
+                      className="absolute w-4 h-4 rounded-full shadow z-20 border border-white"
                       style={{ transform: 'translate(-50%, -50%)', backgroundColor: dotColor }}
                     />
                   );
                 } else {
-                  // Colored dot: follow angled line from 58% to server
                   return (
                     <motion.div
                       key={packet.id}
                       initial={{ left: '58%', top: '50%' }}
-                      animate={{ left: '85%', top: `${serverY}%` }}
+                      animate={{ left: '82%', top: `${serverY}%` }}
                       transition={{ duration: 0.5, ease: 'linear' }}
-                      className="absolute w-5 h-5 rounded-full shadow-lg z-20 border-2 border-white"
+                      className="absolute w-4 h-4 rounded-full shadow z-20 border border-white"
                       style={{ transform: 'translate(-50%, -50%)', backgroundColor: dotColor }}
                     />
                   );
@@ -344,23 +335,27 @@ export default function LoadBalancerSimulator() {
             </AnimatePresence>
           </div>
 
-          {/* Stats - Color coded to match servers */}
-          <div className="grid grid-cols-3 gap-4">
-            {servers.map((server, idx) => (
-              <div
-                key={server.id}
-                className="rounded-lg p-4 text-center border-2"
-                style={{ borderColor: SERVER_COLORS[idx].hex, backgroundColor: SERVER_COLORS[idx].dimHex }}
-              >
-                <div className="text-sm font-semibold" style={{ color: SERVER_COLORS[idx].hex }}>
-                  {server.name}
+          {/* Compact Stats Row */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex gap-4">
+              {servers.map((server, idx) => (
+                <div key={server.id} className="flex items-center gap-1">
+                  <div
+                    className={`w-3 h-3 rounded-full ${server.healthy ? '' : 'opacity-40'}`}
+                    style={{ backgroundColor: server.healthy ? SERVER_COLORS[idx].hex : FAILED_COLOR.hex }}
+                  />
+                  <span className={!server.healthy ? 'text-muted-foreground line-through' : ''}>
+                    {server.name}: {server.requests}
+                  </span>
                 </div>
-                <div className="text-3xl font-bold" style={{ color: SERVER_COLORS[idx].hex }}>
-                  {server.requests}
-                </div>
-                <div className="text-xs text-muted-foreground">requests handled</div>
+              ))}
+            </div>
+            {failedRequests > 0 && (
+              <div className="flex items-center gap-1 text-red-500">
+                <XCircle className="h-3 w-3" />
+                <span>Failed: {failedRequests}</span>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
