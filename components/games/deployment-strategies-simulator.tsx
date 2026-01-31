@@ -390,7 +390,7 @@ export default function DeploymentStrategiesSimulator() {
         </div>
 
         {/* Main Diagram */}
-        <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-5">
+        <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-6">
           {/* Downtime Overlay */}
           <AnimatePresence>
             {step.hasDowntime && (
@@ -408,47 +408,47 @@ export default function DeploymentStrategiesSimulator() {
             )}
           </AnimatePresence>
 
-          {/* Two-row layout: v1 on top, v2 on bottom */}
-          <div className="flex flex-col gap-4">
-            {/* V1 Row */}
-            <div className="flex items-center gap-2">
-              {/* Users */}
-              <div className="flex flex-col items-center w-14 flex-shrink-0">
-                <div className="w-11 h-11 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                </div>
-                <span className="text-[9px] font-medium text-muted-foreground mt-1">Users</span>
+          {/* Horizontal layout: Users -> LB (centered) -> v1/v2 pods */}
+          <div className="flex items-center gap-3">
+            {/* Users */}
+            <div className="flex flex-col items-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               </div>
+              <span className="text-[10px] font-medium text-muted-foreground mt-1">Users</span>
+            </div>
 
-              {/* Line to LB */}
-              <div className="flex-1 flex items-center relative min-w-[30px]">
-                <div className={cn(
-                  'flex-1 h-0.5',
-                  hasAnyTraffic ? 'bg-purple-400' : 'bg-slate-300 dark:bg-slate-600'
-                )} />
-                {hasAnyTraffic && (
-                  <motion.div
-                    className="absolute w-2 h-2 rounded-full bg-purple-500 shadow-sm"
-                    animate={{ left: ['0%', 'calc(100% - 8px)'] }}
-                    transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
-                  />
-                )}
-                <ChevronRight className={cn(
-                  'w-4 h-4 -ml-0.5 flex-shrink-0',
-                  hasAnyTraffic ? 'text-purple-500' : 'text-slate-400'
-                )} />
+            {/* Line: Users to LB */}
+            <div className="flex-1 flex items-center relative min-w-[40px]">
+              <div className={cn(
+                'flex-1 h-0.5',
+                hasAnyTraffic ? 'bg-purple-400' : 'bg-slate-300 dark:bg-slate-600'
+              )} />
+              {hasAnyTraffic && (
+                <motion.div
+                  className="absolute w-2 h-2 rounded-full bg-purple-500 shadow-sm"
+                  animate={{ left: ['0%', 'calc(100% - 8px)'] }}
+                  transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
+                />
+              )}
+              <ChevronRight className={cn(
+                'w-4 h-4 -ml-0.5 flex-shrink-0',
+                hasAnyTraffic ? 'text-purple-500' : 'text-slate-400'
+              )} />
+            </div>
+
+            {/* Load Balancer - Centered */}
+            <div className="flex flex-col items-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center shadow-md">
+                <Globe className="w-5 h-5 text-white" />
               </div>
+              <span className="text-[10px] font-medium text-muted-foreground mt-1">Load Balancer</span>
+            </div>
 
-              {/* Load Balancer */}
-              <div className="flex flex-col items-center w-14 flex-shrink-0">
-                <div className="w-11 h-11 rounded-xl bg-purple-500 flex items-center justify-center shadow-md">
-                  <Globe className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[9px] font-medium text-muted-foreground mt-1">LB</span>
-              </div>
-
-              {/* Line to V1 */}
-              <div className="flex-1 flex items-center relative min-w-[30px]">
+            {/* Branching paths from LB to v1/v2 */}
+            <div className="flex-1 flex flex-col justify-center gap-3 min-w-[60px]">
+              {/* V1 Path */}
+              <div className="flex items-center relative">
                 <div className={cn(
                   'flex-1 h-0.5',
                   hasV1Traffic ? 'bg-blue-400' : 'bg-slate-300 dark:bg-slate-600'
@@ -465,36 +465,8 @@ export default function DeploymentStrategiesSimulator() {
                   hasV1Traffic ? 'text-blue-500' : 'text-slate-400'
                 )} />
               </div>
-
-              {/* V1 Label + Pods */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className={cn(
-                  'text-xs font-bold w-14 text-right',
-                  hasV1Traffic ? 'text-blue-500' : 'text-slate-400'
-                )}>
-                  v1 {step.trafficSplit.v1 > 0 && `${step.trafficSplit.v1}%`}
-                </span>
-                <div className="flex gap-1">
-                  {[0, 1, 2].map((i) => (
-                    <PodIcon key={`v1-${i}`} pod={step.v1Pods[i]} version="v1" />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* V2 Row */}
-            <div className="flex items-center gap-2">
-              {/* Spacer for Users */}
-              <div className="w-14 flex-shrink-0" />
-
-              {/* Spacer line */}
-              <div className="flex-1 min-w-[30px]" />
-
-              {/* Spacer for LB */}
-              <div className="w-14 flex-shrink-0" />
-
-              {/* Line to V2 */}
-              <div className="flex-1 flex items-center relative min-w-[30px]">
+              {/* V2 Path */}
+              <div className="flex items-center relative">
                 <div className={cn(
                   'flex-1 h-0.5',
                   hasV2Traffic ? 'bg-green-400' : 'bg-slate-300 dark:bg-slate-600'
@@ -511,11 +483,28 @@ export default function DeploymentStrategiesSimulator() {
                   hasV2Traffic ? 'text-green-500' : 'text-slate-400'
                 )} />
               </div>
+            </div>
 
-              {/* V2 Label + Pods */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Pod columns: v1 on top, v2 on bottom */}
+            <div className="flex flex-col gap-3 flex-shrink-0">
+              {/* V1 Pods Row */}
+              <div className="flex items-center gap-2">
                 <span className={cn(
-                  'text-xs font-bold w-14 text-right',
+                  'text-xs font-bold w-12',
+                  hasV1Traffic ? 'text-blue-500' : 'text-slate-400'
+                )}>
+                  v1 {step.trafficSplit.v1 > 0 && `${step.trafficSplit.v1}%`}
+                </span>
+                <div className="flex gap-1">
+                  {[0, 1, 2].map((i) => (
+                    <PodIcon key={`v1-${i}`} pod={step.v1Pods[i]} version="v1" />
+                  ))}
+                </div>
+              </div>
+              {/* V2 Pods Row */}
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  'text-xs font-bold w-12',
                   hasV2Traffic ? 'text-green-500' : 'text-slate-400'
                 )}>
                   v2 {step.trafficSplit.v2 > 0 && `${step.trafficSplit.v2}%`}
