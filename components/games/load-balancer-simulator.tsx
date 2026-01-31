@@ -212,7 +212,7 @@ export default function LoadBalancerSimulator() {
   const totalRequests = servers.reduce((sum, s) => sum + s.requests, 0);
 
   // Pre-compute server Y positions for consistent line/dot placement
-  const serverYPositions = [18, 50, 82]; // top, middle, bottom as percentages
+  const serverYPositions = [20, 50, 80]; // top, middle, bottom as percentages
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -280,12 +280,12 @@ export default function LoadBalancerSimulator() {
           </div>
 
           {/* Visualization */}
-          <div className="relative h-80 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-xl overflow-hidden">
+          <div className="relative h-72 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-xl overflow-hidden">
             {/* Connection Lines */}
             <svg className="absolute inset-0 w-full h-full">
               {/* Users to Load Balancer */}
               <line
-                x1="15%"
+                x1="18%"
                 y1="50%"
                 x2="42%"
                 y2="50%"
@@ -305,7 +305,7 @@ export default function LoadBalancerSimulator() {
                     key={y}
                     x1="58%"
                     y1="50%"
-                    x2="85%"
+                    x2="82%"
                     y2={`${y}%`}
                     stroke={lineColor}
                     strokeWidth={isActive && server.healthy ? 5 : 3}
@@ -317,7 +317,7 @@ export default function LoadBalancerSimulator() {
             </svg>
 
             {/* Users (Left) */}
-            <div className="absolute left-[6%] top-1/2 -translate-y-1/2 z-10 text-center">
+            <div className="absolute left-[8%] top-1/2 -translate-y-1/2 z-10 text-center">
               <div className="w-20 h-20 rounded-full bg-blue-500 flex items-center justify-center shadow-lg mx-auto border-4 border-white dark:border-slate-700">
                 <Users className="h-10 w-10 text-white" />
               </div>
@@ -333,11 +333,12 @@ export default function LoadBalancerSimulator() {
             </div>
 
             {/* Servers (Right) - positioned to match serverYPositions */}
-            <div className="absolute right-[4%] top-0 bottom-0 flex flex-col justify-around py-4 z-10">
+            <div className="absolute right-[8%] top-0 bottom-0 w-24 z-10">
               {servers.map((server, idx) => (
                 <div
                   key={server.id}
-                  className="text-center cursor-pointer group"
+                  className="absolute text-center cursor-pointer group"
+                  style={{ top: `${serverYPositions[idx]}%`, transform: 'translateY(-50%)', left: 0, right: 0 }}
                   onClick={() => toggleServerHealth(server.id)}
                   title={`Click to ${server.healthy ? 'take offline' : 'bring online'}`}
                 >
@@ -374,7 +375,7 @@ export default function LoadBalancerSimulator() {
                   return (
                     <motion.div
                       key={packet.id}
-                      initial={{ left: '12%', top: '50%' }}
+                      initial={{ left: '18%', top: '50%' }}
                       animate={{ left: '50%', top: '50%' }}
                       transition={{ duration: 0.35, ease: 'linear' }}
                       className="absolute w-5 h-5 rounded-full bg-blue-500 shadow-lg z-20 border-2 border-white"
@@ -387,7 +388,7 @@ export default function LoadBalancerSimulator() {
                     <motion.div
                       key={packet.id}
                       initial={{ left: '50%', top: '50%' }}
-                      animate={{ left: '12%', top: '50%' }}
+                      animate={{ left: '18%', top: '50%' }}
                       transition={{ duration: 0.35, ease: 'linear' }}
                       className="absolute w-5 h-5 rounded-full bg-red-500 shadow-lg z-20 border-2 border-white"
                       style={{ transform: 'translate(-50%, -50%)' }}
@@ -411,7 +412,7 @@ export default function LoadBalancerSimulator() {
                     <motion.div
                       key={packet.id}
                       initial={{ left: '58%', top: '50%' }}
-                      animate={{ left: '85%', top: `${serverY}%` }}
+                      animate={{ left: '82%', top: `${serverY}%` }}
                       transition={{ duration: 0.5, ease: 'linear' }}
                       className="absolute w-5 h-5 rounded-full shadow-lg z-20 border-2 border-white"
                       style={{ transform: 'translate(-50%, -50%)', backgroundColor: dotColor }}
