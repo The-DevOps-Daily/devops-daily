@@ -288,11 +288,12 @@ const STRATEGIES: Record<
 export default function DeploymentStrategiesSimulator() {
   const [strategy, setStrategy] = useState<DeploymentStrategy>('recreate');
   const [currentStep, setCurrentStep] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+ const [isPlaying, setIsPlaying] = useState(false);
 
-  const config = STRATEGIES[strategy];
-  const step = config.steps[currentStep];
-  const isLastStep = currentStep === config.steps.length - 1;
+ const config = STRATEGIES[strategy];
+ const safeStep = Math.min(currentStep, config.steps.length - 1);
+ const step = config.steps[safeStep];
+ const isLastStep = currentStep === config.steps.length - 1;
 
   const nextStep = useCallback(() => {
     if (currentStep < config.steps.length - 1) {
@@ -314,8 +315,8 @@ export default function DeploymentStrategiesSimulator() {
   }, [isPlaying, nextStep]);
 
   useEffect(() => {
-    reset();
-  }, [strategy]);
+   reset();
+ }, [strategy, reset]);
 
   const hasV1Traffic = step.trafficSplit.v1 > 0;
   const hasV2Traffic = step.trafficSplit.v2 > 0;
