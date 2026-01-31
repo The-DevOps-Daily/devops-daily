@@ -32,20 +32,28 @@ GitOps uses Git as the single source of truth for your infrastructure and applic
 - **Pull-Based Deployment**: The cluster pulls changes rather than CI pushing them
 
 ```
-GitOps Workflow:
+How GitOps Works (Step by Step):
 
-  Developer        App Repo          Registry        GitOps Repo
-      |               |                  |                |
-      |--push code--->|                  |                |
-      |               |--GitHub Actions--|                |
-      |               |   build & test   |                |
-      |               |--push image----->|                |
-      |               |--update tag---------------------->|
-      |               |                  |                |
-                                                          |
-  Kubernetes         ArgoCD                               |
-      |<---deploy-----|<---sync---------------------------|  
-      |               |   (pull-based)                       
+  1. You push code to GitHub
+         |
+         v
+  2. GitHub Actions builds a Docker image
+         |
+         v
+  3. Image is pushed to a container registry (like GHCR)
+         |
+         v
+  4. GitHub Actions updates the GitOps repo with the new image tag
+         |
+         v
+  5. ArgoCD (running in your cluster) watches the GitOps repo
+         |
+         v
+  6. ArgoCD sees the change and deploys the new version automatically
+
+
+The key insight: Your cluster PULLS updates from Git.
+You never SSH into servers or run kubectl manually.
 ```
 
 ## Why GitOps Over Traditional SSH Deployments?
