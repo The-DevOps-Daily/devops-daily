@@ -308,9 +308,12 @@ function DropdownMenu({
           style={{ pointerEvents: 'auto' }}
         >
           {/* Menu Content */}
-          <div className="bg-background/95 backdrop-blur-xl border border-border/80 rounded-xl shadow-2xl shadow-black/20 dark:shadow-black/50 overflow-y-auto w-[420px] max-w-[90vw] max-h-[calc(100vh-120px)] ring-1 ring-white/10">
-            <div className="p-6 bg-linear-to-br from-background/50 to-muted/20">
-              <div className="grid grid-cols-1 gap-6">
+          <div className={cn(
+            'bg-background/95 backdrop-blur-xl border border-border/80 rounded-xl shadow-2xl shadow-black/20 dark:shadow-black/50 ring-1 ring-white/10',
+            sections.length > 1 ? 'w-[680px] max-w-[90vw]' : 'w-[340px] max-w-[90vw]'
+          )}>
+            <div className="p-5 bg-linear-to-br from-background/50 to-muted/20">
+              <div className={cn('grid gap-6', sections.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
                 {sections.map((section, sectionIndex) => (
                   <div key={sectionIndex} className="space-y-3">
                     {/* Section Header */}
