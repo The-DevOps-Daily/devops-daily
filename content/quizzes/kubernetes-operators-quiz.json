@@ -1,0 +1,201 @@
+{
+  "id": "kubernetes-operators-quiz",
+  "title": "Kubernetes Operators Interview Quiz",
+  "description": "Test your knowledge of Kubernetes Operators through real-world interview scenarios covering custom resources, controllers, reconciliation loops, and Operator SDK",
+  "category": "Kubernetes",
+  "icon": "Settings",
+  "totalPoints": 130,
+  "theme": {
+    "primaryColor": "purple",
+    "gradientFrom": "from-purple-500",
+    "gradientTo": "to-indigo-600"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 4,
+      "advanced": 3
+    },
+    "createdDate": "2025-01-24"
+  },
+  "questions": [
+    {
+      "id": "what-is-operator",
+      "title": "What is a Kubernetes Operator?",
+      "description": "The interviewer asks you to explain the fundamental concept of Kubernetes Operators.",
+      "situation": "You're in a technical interview and the interviewer wants to understand your knowledge of Operators at a conceptual level.",
+      "options": [
+        "A Kubernetes Operator is a method of packaging, deploying, and managing applications using custom resources and controllers that extend the Kubernetes API",
+        "A Kubernetes Operator is a built-in Kubernetes component that manages cluster nodes",
+        "A Kubernetes Operator is a command-line tool for deploying Helm charts",
+        "A Kubernetes Operator is a type of pod that runs privileged containers"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A Kubernetes Operator is a pattern that uses Custom Resource Definitions (CRDs) and custom controllers to automate application management. It encapsulates operational knowledge (like how to deploy, scale, backup, and upgrade an application) in code.",
+      "hint": "Think about how Operators extend Kubernetes to manage complex applications automatically.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "crd-basics",
+      "title": "Custom Resource Definitions (CRDs)",
+      "description": "Explain the role of CRDs in the Operator pattern.",
+      "situation": "The interviewer asks you to describe what Custom Resource Definitions are and how they relate to Operators.",
+      "codeExample": "apiVersion: apiextensions.k8s.io/v1\nkind: CustomResourceDefinition\nmetadata:\n  name: databases.example.com\nspec:\n  group: example.com\n  versions:\n    - name: v1\n      served: true\n      storage: true\n      schema:\n        openAPIV3Schema:\n          type: object\n          properties:\n            spec:\n              type: object\n              properties:\n                size:\n                  type: integer\n                version:\n                  type: string\n  scope: Namespaced\n  names:\n    plural: databases\n    singular: database\n    kind: Database\n    shortNames:\n      - db",
+      "options": [
+        "CRDs are configuration files that store application secrets",
+        "CRDs are only used for monitoring and logging purposes",
+        "CRDs replace the need for Deployments and StatefulSets",
+        "CRDs extend the Kubernetes API by defining new resource types that can be managed like built-in resources (pods, services)"
+      ],
+      "correctAnswer": 3,
+      "explanation": "CRDs extend the Kubernetes API by allowing you to define custom resource types. Once a CRD is created, users can create instances of that custom resource using kubectl, just like built-in resources. The Operator's controller then watches these custom resources and acts on them.",
+      "hint": "Consider how CRDs allow you to create new 'kinds' of resources in Kubernetes.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "reconciliation-loop",
+      "title": "The Reconciliation Loop",
+      "description": "Describe how the reconciliation loop works in an Operator.",
+      "situation": "The interviewer wants to understand the core control loop pattern that drives Operators.",
+      "codeExample": "func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {\n    // 1. Fetch the Database custom resource\n    var database examplev1.Database\n    if err := r.Get(ctx, req.NamespacedName, &database); err != nil {\n        return ctrl.Result{}, client.IgnoreNotFound(err)\n    }\n\n    // 2. Check current state vs desired state\n    // 3. Take action to reconcile differences\n    // 4. Update status\n\n    return ctrl.Result{}, nil\n}",
+      "options": [
+        "The reconciliation loop runs once when a resource is created and never again",
+        "The reconciliation loop continuously compares desired state (spec) with actual state and takes actions to converge them",
+        "The reconciliation loop is triggered manually by the cluster administrator",
+        "The reconciliation loop only handles delete operations"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The reconciliation loop is the heart of an Operator. It continuously watches for changes to custom resources and compares the desired state (defined in the spec) with the actual state of the system. When differences are detected, it takes actions to bring the actual state in line with the desired state.",
+      "hint": "Think about the declarative nature of Kubernetes - you declare what you want, and controllers make it happen.",
+      "difficulty": "beginner",
+      "points": 12
+    },
+    {
+      "id": "operator-vs-helm",
+      "title": "Operators vs Helm Charts",
+      "description": "When would you choose an Operator over a Helm chart?",
+      "situation": "The interviewer asks you to compare Operators with Helm charts and explain when each is appropriate.",
+      "options": [
+        "Operators and Helm are identical; use whichever you prefer",
+        "Use Helm only for stateless applications and Operators only for databases",
+        "Use Operators when you need ongoing operational automation (scaling, backups, failover); use Helm for simple deploy-and-forget applications",
+        "Always use Helm because Operators are deprecated"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Helm is great for templating and one-time deployment of applications. Operators excel when you need ongoing Day-2 operations: automatic scaling, backups, upgrades, failover, and self-healing. For stateful applications like databases that require complex operational knowledge, Operators are typically the better choice.",
+      "hint": "Consider the difference between 'deploy once' and 'continuously manage' scenarios.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "operator-sdk-scaffolding",
+      "title": "Building an Operator with Operator SDK",
+      "description": "How would you start building a new Operator?",
+      "situation": "Your team needs to build a custom Operator for managing a proprietary database. The interviewer asks about your approach.",
+      "codeExample": "# Initialize a new Operator project\noperator-sdk init --domain example.com --repo github.com/example/db-operator\n\n# Create an API (CRD and controller)\noperator-sdk create api --group cache --version v1 --kind Database --resource --controller\n\n# Generated project structure:\n# .\n# ├── api/v1/database_types.go    # CRD type definitions\n# ├── controllers/\n# │   └── database_controller.go  # Reconciliation logic\n# ├── config/\n# │   ├── crd/                    # CRD manifests\n# │   ├── rbac/                   # RBAC permissions\n# │   └── manager/                # Operator deployment\n# └── main.go",
+      "options": [
+        "Use Operator SDK to scaffold the project, generate CRD types, and create controller boilerplate, then implement the reconciliation logic",
+        "Write all Kubernetes API interactions from scratch without any framework",
+        "Copy an existing Operator and modify the code",
+        "Use kubectl plugins to auto-generate Operators"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Operator SDK provides scaffolding commands that generate project structure, CRD type definitions, controller boilerplate, RBAC configurations, and build/deployment manifests. This significantly accelerates development and ensures best practices are followed.",
+      "hint": "Think about how frameworks and SDKs help accelerate development with best practices.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "status-subresource",
+      "title": "Status Subresource",
+      "description": "What is the purpose of the status subresource in a custom resource?",
+      "situation": "The interviewer asks about separating spec and status in your custom resources.",
+      "codeExample": "apiVersion: example.com/v1\nkind: Database\nmetadata:\n  name: my-database\nspec:\n  size: 3\n  version: \"14.5\"\nstatus:\n  phase: Running\n  replicas: 3\n  readyReplicas: 3\n  conditions:\n    - type: Ready\n      status: \"True\"\n      lastTransitionTime: \"2024-01-15T10:30:00Z\"",
+      "options": [
+        "Status stores the resource's YAML manifest backup",
+        "Status is where the controller reports the actual observed state, separate from the desired state in spec",
+        "Status contains user-provided configuration",
+        "Status is only used for logging purposes"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The status subresource separates the desired state (spec) from the observed state (status). Users update spec to declare what they want, while the controller updates status to report what actually exists. This separation enables optimistic concurrency and clearer ownership.",
+      "hint": "Think about who writes to spec vs who writes to status.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "finalizers",
+      "title": "Finalizers for Cleanup",
+      "description": "How do finalizers help with resource cleanup in Operators?",
+      "situation": "Your Operator provisions AWS RDS instances. The interviewer asks how you ensure RDS instances are deleted when the custom resource is deleted.",
+      "codeExample": "const finalizerName = \"database.example.com/cleanup\"\n\nfunc (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {\n    var db examplev1.Database\n    if err := r.Get(ctx, req.NamespacedName, &db); err != nil {\n        return ctrl.Result{}, client.IgnoreNotFound(err)\n    }\n\n    // Check if being deleted\n    if !db.DeletionTimestamp.IsZero() {\n        if containsString(db.Finalizers, finalizerName) {\n            // Cleanup external resources (e.g., delete RDS)\n            if err := r.deleteExternalResources(&db); err != nil {\n                return ctrl.Result{}, err\n            }\n            // Remove finalizer\n            db.Finalizers = removeString(db.Finalizers, finalizerName)\n            if err := r.Update(ctx, &db); err != nil {\n                return ctrl.Result{}, err\n            }\n        }\n        return ctrl.Result{}, nil\n    }\n\n    // Add finalizer if not present\n    if !containsString(db.Finalizers, finalizerName) {\n        db.Finalizers = append(db.Finalizers, finalizerName)\n        if err := r.Update(ctx, &db); err != nil {\n            return ctrl.Result{}, err\n        }\n    }\n    // ... rest of reconciliation\n}",
+      "options": [
+        "Finalizers automatically restart pods when they crash",
+        "Finalizers are used to encrypt sensitive data",
+        "Finalizers speed up the deletion process",
+        "Finalizers prevent resource deletion until cleanup logic runs, allowing the controller to delete external resources before the Kubernetes object is removed"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Finalizers prevent a resource from being deleted until cleanup is complete. When a resource with finalizers is deleted, Kubernetes sets deletionTimestamp but keeps the resource. The controller detects this, performs cleanup (like deleting external cloud resources), then removes the finalizer to allow final deletion.",
+      "hint": "Think about what happens when you need to clean up resources outside of Kubernetes before deletion completes.",
+      "difficulty": "intermediate",
+      "points": 14
+    },
+    {
+      "id": "owner-references",
+      "title": "Owner References and Garbage Collection",
+      "description": "How do you ensure child resources are automatically deleted when the parent custom resource is deleted?",
+      "situation": "Your Database Operator creates Pods, Services, and ConfigMaps. The interviewer asks how to handle cleanup.",
+      "codeExample": "func (r *DatabaseReconciler) createPod(db *examplev1.Database) *corev1.Pod {\n    pod := &corev1.Pod{\n        ObjectMeta: metav1.ObjectMeta{\n            Name:      db.Name + \"-pod\",\n            Namespace: db.Namespace,\n        },\n        Spec: corev1.PodSpec{...},\n    }\n    \n    // Set owner reference\n    ctrl.SetControllerReference(db, pod, r.Scheme)\n    \n    return pod\n}",
+      "options": [
+        "Set owner references on child resources so Kubernetes garbage collection automatically deletes them when the parent is deleted",
+        "Manually delete all child resources in the reconciliation loop",
+        "Use a CronJob to periodically clean up orphaned resources",
+        "Child resources must be deleted before creating the parent resource"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Owner references create a parent-child relationship. When the parent (custom resource) is deleted, Kubernetes garbage collection automatically deletes all resources that have an owner reference pointing to it. This is the recommended pattern for managing dependent resources.",
+      "hint": "Kubernetes has built-in garbage collection - how can you leverage it?",
+      "difficulty": "advanced",
+      "points": 14
+    },
+    {
+      "id": "level-triggered-vs-edge",
+      "title": "Level-Triggered vs Edge-Triggered Reconciliation",
+      "description": "Explain why Kubernetes controllers use level-triggered reconciliation.",
+      "situation": "The interviewer asks about the design philosophy behind how controllers respond to changes.",
+      "options": [
+        "Controllers use edge-triggered logic, responding only to change events",
+        "Controllers use a hybrid approach that changes based on cluster load",
+        "Controllers use level-triggered logic, comparing current state against desired state regardless of what changed",
+        "Controllers don't respond to changes; they run on a fixed schedule"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Kubernetes controllers are level-triggered: they reconcile based on the current state vs desired state, not on what specific event occurred. This makes controllers resilient - if events are missed or duplicated, the controller still converges to the correct state by examining the current situation.",
+      "hint": "Think about reliability - what happens if an event is missed in edge-triggered systems?",
+      "difficulty": "advanced",
+      "points": 14
+    },
+    {
+      "id": "operator-maturity-model",
+      "title": "Operator Capability Levels",
+      "description": "Describe the Operator maturity model and capability levels.",
+      "situation": "The interviewer asks how mature your Operator is and what capabilities it provides.",
+      "codeExample": "Operator Capability Levels:\n\nLevel 1 - Basic Install\n  - Automated application provisioning\n  - Basic configuration management\n\nLevel 2 - Seamless Upgrades\n  - Application version upgrades\n  - Patch management\n\nLevel 3 - Full Lifecycle\n  - Backup and restore\n  - Failure recovery\n\nLevel 4 - Deep Insights\n  - Metrics and alerts\n  - Log processing\n  - Workload analysis\n\nLevel 5 - Auto Pilot\n  - Horizontal/vertical scaling\n  - Auto-tuning\n  - Anomaly detection",
+      "options": [
+        "Operator maturity is determined by lines of code",
+        "Capability levels range from Basic Install (Level 1) to Auto Pilot (Level 5), each adding more sophisticated automation like upgrades, backups, monitoring, and auto-scaling",
+        "All Operators must implement all 5 levels to be production-ready",
+        "Capability levels only apply to database Operators"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The Operator Capability Model defines 5 maturity levels: Basic Install, Seamless Upgrades, Full Lifecycle (backup/restore), Deep Insights (monitoring), and Auto Pilot (auto-scaling/tuning). This helps teams understand what capabilities an Operator provides and plan their implementation roadmap.",
+      "hint": "Think about the progression from simple deployment to fully autonomous operation.",
+      "difficulty": "advanced",
+      "points": 18
+    }
+  ]
+}
