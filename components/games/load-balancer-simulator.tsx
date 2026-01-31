@@ -20,6 +20,7 @@ interface RequestPacket {
   id: string;
   targetServer: number;
   phase: 'to-lb' | 'exit-lb' | 'to-server' | 'failed';
+  clientId?: number;
 }
 
 // Distinct colors for each server - makes it crystal clear where requests go
@@ -69,8 +70,21 @@ export default function LoadBalancerSimulator() {
   ]);
   const [packets, setPackets] = useState<RequestPacket[]>([]);
   const [roundRobinIndex, setRoundRobinIndex] = useState(0);
-  const [clientHash] = useState(() => Math.floor(Math.random() * 3));
+  const [clientIndex, setClientIndex] = useState(0);
   const [failedRequests, setFailedRequests] = useState(0);
+
+  // Simulated clients for IP Hash - each client consistently maps to a server
+  const clients = useMemo(
+    () => [
+      { id: 1, ip: '192.168.1.10', serverHash: 0 },
+      { id: 2, ip: '192.168.1.25', serverHash: 1 },
+      { id: 3, ip: '192.168.1.42', serverHash: 2 },
+      { id: 4, ip: '10.0.0.15', serverHash: 0 },
+      { id: 5, ip: '10.0.0.88', serverHash: 1 },
+      { id: 6, ip: '172.16.0.33', serverHash: 2 },
+    ],
+    []
+  );
 
   // Track which server lines are active (have packets going to them)
   const activeServerLines = useMemo(() => {
@@ -114,7 +128,10 @@ export default function LoadBalancerSimulator() {
         return sorted[0].id;
       }
       case 'ip-hash': {
-        const targetId = clientHash + 1;
+        // Rotate through simulated clients - each client always maps to same server
+        const client = clients[clientIndex % clients.length];
+        setClientIndex((prev) => prev + 1);
+        const targetId = client.serverHash + 1;
         return servers.find((s) => s.id === targetId)?.healthy ? targetId : null;
       }
       case 'random':
@@ -122,7 +139,7 @@ export default function LoadBalancerSimulator() {
       default:
         return 1;
     }
-  }, [algorithm, roundRobinIndex, servers, clientHash, healthyServers]);
+  }, [algorithm, roundRobinIndex, servers, clientIndex, clients, healthyServers]);
 
   const sendRequest = useCallback(() => {
     const targetServer = getTargetServer();
@@ -188,6 +205,7 @@ export default function LoadBalancerSimulator() {
     ]);
     setPackets([]);
     setRoundRobinIndex(0);
+    setClientIndex(0);
     setFailedRequests(0);
   };
 
