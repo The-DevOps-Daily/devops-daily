@@ -14,6 +14,9 @@ import {
   AlertTriangle,
   Globe,
   ChevronRight,
+  Activity,
+  Zap,
+  Eye,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -32,6 +35,8 @@ interface Step {
   v2Pods: Pod[];
   trafficSplit: { v1: number; v2: number };
   hasDowntime?: boolean;
+  isObserving?: boolean;
+  isAutomatic?: boolean;
   note: string;
 }
 
@@ -91,45 +96,48 @@ const STRATEGIES: Record<
     cons: ['Downtime', 'No rollback', 'Risky'],
   },
   rolling: {
-    name: 'Rolling Update',
-    description: 'Replace pods one at a time. Zero downtime with temporary version mixing.',
-    steps: [
-      {
-        title: 'Initial State',
-        v1Pods: createPods('v1', 3),
-        v2Pods: [],
-        trafficSplit: { v1: 100, v2: 0 },
-        note: 'All traffic goes to v1',
-      },
-      {
-        title: 'Replace Pod 1',
-        v1Pods: createPods('v1', 2),
-        v2Pods: createPods('v2', 1, 'starting'),
-        trafficSplit: { v1: 100, v2: 0 },
-        note: 'v2 pod starting, traffic to v1',
-      },
-      {
-        title: 'Pod 1 Ready',
-        v1Pods: createPods('v1', 2),
-        v2Pods: createPods('v2', 1),
-        trafficSplit: { v1: 67, v2: 33 },
-        note: 'Mixed: 67% v1, 33% v2',
-      },
-      {
-        title: 'Replace Pod 2',
-        v1Pods: createPods('v1', 1),
-        v2Pods: createPods('v2', 2),
-        trafficSplit: { v1: 33, v2: 67 },
-        note: 'Mixed: 33% v1, 67% v2',
-      },
-      {
-        title: 'Complete',
-        v1Pods: [],
-        v2Pods: createPods('v2', 3),
-        trafficSplit: { v1: 0, v2: 100 },
-        note: 'All traffic to v2',
-      },
-    ],
+   name: 'Rolling Update',
+   description: 'Replace pods one at a time. Zero downtime with temporary version mixing.',
+   steps: [
+     {
+       title: 'Initial State',
+       v1Pods: createPods('v1', 3),
+       v2Pods: [],
+       trafficSplit: { v1: 100, v2: 0 },
+       note: 'Starting automatic pod replacement',
+     },
+     {
+       title: 'Replace Pod 1',
+       v1Pods: createPods('v1', 2),
+       v2Pods: createPods('v2', 1, 'starting'),
+       trafficSplit: { v1: 100, v2: 0 },
+       isAutomatic: true,
+       note: 'Auto: v2 pod starting',
+     },
+     {
+       title: 'Pod 1 Ready',
+       v1Pods: createPods('v1', 2),
+       v2Pods: createPods('v2', 1),
+       trafficSplit: { v1: 67, v2: 33 },
+       isAutomatic: true,
+       note: 'Auto: Traffic split by pod count',
+     },
+     {
+       title: 'Replace Pod 2',
+       v1Pods: createPods('v1', 1),
+       v2Pods: createPods('v2', 2),
+       trafficSplit: { v1: 33, v2: 67 },
+       isAutomatic: true,
+       note: 'Auto: Continuing replacement',
+     },
+     {
+       title: 'Complete',
+       v1Pods: [],
+       v2Pods: createPods('v2', 3),
+       trafficSplit: { v1: 0, v2: 100 },
+       note: 'All pods replaced automatically',
+     },
+   ],
     pros: ['Zero downtime', 'Gradual rollout', 'Easy rollback'],
     cons: ['Slow', 'Version mixing', 'Complex'],
   },
@@ -177,45 +185,61 @@ const STRATEGIES: Record<
     cons: ['Double resources', 'Expensive', 'Stateful issues'],
   },
   canary: {
-    name: 'Canary',
-    description: 'Gradually shift traffic from v1 to v2, monitoring for issues.',
-    steps: [
-      {
-        title: 'Initial State',
-        v1Pods: createPods('v1', 3),
-        v2Pods: [],
-        trafficSplit: { v1: 100, v2: 0 },
-        note: 'All traffic to v1',
-      },
-      {
-        title: 'Deploy Canary',
-        v1Pods: createPods('v1', 3),
-        v2Pods: createPods('v2', 1, 'starting'),
-        trafficSplit: { v1: 100, v2: 0 },
-        note: 'Single canary pod starting',
-      },
-      {
-        title: '10% Traffic',
-        v1Pods: createPods('v1', 3),
-        v2Pods: createPods('v2', 1),
-        trafficSplit: { v1: 90, v2: 10 },
-        note: '10% traffic to canary',
-      },
-      {
-        title: '50% Traffic',
-        v1Pods: createPods('v1', 2),
-        v2Pods: createPods('v2', 2),
-        trafficSplit: { v1: 50, v2: 50 },
-        note: 'Gradually increasing...',
-      },
-      {
-        title: 'Complete',
-        v1Pods: [],
-        v2Pods: createPods('v2', 3),
-        trafficSplit: { v1: 0, v2: 100 },
-        note: 'Full rollout to v2',
-      },
-    ],
+   name: 'Canary',
+   description: 'Gradually shift traffic from v1 to v2, monitoring for issues.',
+   steps: [
+     {
+       title: 'Initial State',
+       v1Pods: createPods('v1', 3),
+       v2Pods: [],
+       trafficSplit: { v1: 100, v2: 0 },
+       note: 'Preparing canary deployment',
+     },
+     {
+       title: 'Deploy Canary',
+       v1Pods: createPods('v1', 3),
+       v2Pods: createPods('v2', 1, 'starting'),
+       trafficSplit: { v1: 100, v2: 0 },
+       note: 'Deploy single canary pod',
+     },
+     {
+       title: 'Route 10%',
+       v1Pods: createPods('v1', 3),
+       v2Pods: createPods('v2', 1),
+       trafficSplit: { v1: 90, v2: 10 },
+       note: 'Manually route 10% to canary',
+     },
+     {
+       title: 'Observe Metrics',
+       v1Pods: createPods('v1', 3),
+       v2Pods: createPods('v2', 1),
+       trafficSplit: { v1: 90, v2: 10 },
+       isObserving: true,
+       note: 'Monitor error rates, latency, logs...',
+     },
+     {
+       title: 'Increase to 50%',
+       v1Pods: createPods('v1', 2),
+       v2Pods: createPods('v2', 2),
+       trafficSplit: { v1: 50, v2: 50 },
+       note: 'Manually increase traffic after validation',
+     },
+     {
+       title: 'Final Check',
+       v1Pods: createPods('v1', 2),
+       v2Pods: createPods('v2', 2),
+       trafficSplit: { v1: 50, v2: 50 },
+       isObserving: true,
+       note: 'Verify metrics before full rollout',
+     },
+     {
+       title: 'Full Rollout',
+       v1Pods: [],
+       v2Pods: createPods('v2', 3),
+       trafficSplit: { v1: 0, v2: 100 },
+       note: 'Manual decision: promote to 100%',
+     },
+   ],
     pros: ['Low risk', 'Gradual', 'Monitorable'],
     cons: ['Slow', 'Complex routing', 'Version mixing'],
   },
@@ -379,14 +403,30 @@ export default function DeploymentStrategiesSimulator() {
           ))}
         </div>
 
-        {/* Step Header */}
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">
-            Step {currentStep + 1}: {step.title}
-          </h3>
-          <Button onClick={nextStep} disabled={isLastStep} size="sm" variant="outline">
-            Next <ArrowRight className="w-4 h-4 ml-1" />
-          </Button>
+       {/* Step Header */}
+       <div className="flex items-center justify-between">
+         <div className="flex items-center gap-3">
+           <h3 className="font-semibold">
+             Step {currentStep + 1}: {step.title}
+           </h3>
+           {step.isAutomatic && (
+             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+               <Zap className="w-3 h-3" /> AUTOMATIC
+             </span>
+           )}
+           {step.isObserving && (
+             <motion.span
+               className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300"
+               animate={{ opacity: [1, 0.5, 1] }}
+               transition={{ repeat: Infinity, duration: 1.5 }}
+             >
+               <Activity className="w-3 h-3" /> OBSERVING
+             </motion.span>
+           )}
+         </div>
+         <Button onClick={nextStep} disabled={isLastStep} size="sm" variant="outline">
+           Next <ArrowRight className="w-4 h-4 ml-1" />
+         </Button>
         </div>
 
         {/* Main Diagram */}
@@ -518,13 +558,34 @@ export default function DeploymentStrategiesSimulator() {
             </div>
           </div>
 
-          {/* Note Badge */}
-          <div className="text-center mt-4">
-            <span className="inline-block bg-white/90 dark:bg-slate-800/90 px-4 py-1.5 rounded-full text-sm font-medium text-muted-foreground shadow-sm border border-slate-200 dark:border-slate-700">
-              {step.note}
-            </span>
-          </div>
-        </div>
+         {/* Note Badge */}
+         <div className="text-center mt-4">
+           {step.isObserving ? (
+             <motion.div
+               className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/30 px-4 py-2 rounded-full text-sm font-medium text-amber-600 dark:text-amber-400 shadow-sm border border-amber-200 dark:border-amber-700"
+               animate={{ borderColor: ['rgba(251,191,36,0.3)', 'rgba(251,191,36,0.8)', 'rgba(251,191,36,0.3)'] }}
+               transition={{ repeat: Infinity, duration: 1.5 }}
+             >
+               <motion.div
+                 animate={{ scale: [1, 1.2, 1] }}
+                 transition={{ repeat: Infinity, duration: 1.5 }}
+               >
+                 <Eye className="w-4 h-4" />
+               </motion.div>
+               <span>{step.note}</span>
+             </motion.div>
+           ) : step.isAutomatic ? (
+             <span className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 px-4 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200 dark:border-blue-700">
+               <Zap className="w-4 h-4" />
+               <span>{step.note}</span>
+             </span>
+           ) : (
+             <span className="inline-block bg-white/90 dark:bg-slate-800/90 px-4 py-1.5 rounded-full text-sm font-medium text-muted-foreground shadow-sm border border-slate-200 dark:border-slate-700">
+               {step.note}
+             </span>
+           )}
+         </div>
+       </div>
 
         {/* Completion Badge */}
         {isLastStep && (
