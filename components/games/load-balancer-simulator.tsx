@@ -194,7 +194,7 @@ export default function LoadBalancerSimulator() {
   const totalRequests = servers.reduce((sum, s) => sum + s.requests, 0);
 
   // Pre-compute server Y positions for consistent line/dot placement
-  const serverYPositions = [20, 50, 80]; // top, middle, bottom as percentages
+  const serverYPositions = [18, 50, 82]; // top, middle, bottom as percentages
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -262,7 +262,7 @@ export default function LoadBalancerSimulator() {
           </div>
 
           {/* Visualization */}
-          <div className="relative h-72 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-xl overflow-hidden">
+          <div className="relative h-80 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-xl overflow-hidden">
             {/* Connection Lines */}
             <svg className="absolute inset-0 w-full h-full">
               {/* Users to Load Balancer */}
@@ -315,7 +315,7 @@ export default function LoadBalancerSimulator() {
             </div>
 
             {/* Servers (Right) - positioned to match serverYPositions */}
-            <div className="absolute right-[4%] top-0 bottom-0 flex flex-col justify-around py-6 z-10">
+            <div className="absolute right-[4%] top-0 bottom-0 flex flex-col justify-around py-4 z-10">
               {servers.map((server, idx) => (
                 <div
                   key={server.id}
@@ -337,7 +337,7 @@ export default function LoadBalancerSimulator() {
                       <XCircle className="h-9 w-9 text-white" />
                     )}
                   </div>
-                  <div className={`mt-2 text-sm font-semibold ${!server.healthy ? 'text-red-500' : ''}`}>
+                  <div className={`mt-1 text-xs font-semibold ${!server.healthy ? 'text-red-500' : ''}`}>
                     {server.name}
                   </div>
                 </div>
