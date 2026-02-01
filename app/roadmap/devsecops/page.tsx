@@ -187,6 +187,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: GitBranch,
         priority: 'important',
         estimatedHours: 8,
+        link: '/guides/pre-commit-hooks',
       },
       {
         name: 'Code Review for Security',
