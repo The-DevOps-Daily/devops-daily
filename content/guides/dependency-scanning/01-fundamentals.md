@@ -45,10 +45,10 @@ CVE (Common Vulnerabilities and Exposures) provides unique identifiers for vulne
 
 ```
 CVE-2021-44228 (Log4Shell)
-    │    │    │
-    │    │    └── Sequential number
-    │    └────── Year discovered/published
-    └────────── CVE prefix
+    |    |    |
+    |    |    +-- Sequential number
+    |    +------ Year discovered/published
+    +---------- CVE prefix
 ```
 
 ### CVSS Scoring
@@ -93,14 +93,14 @@ Understanding your dependency tree is crucial:
 
 ```
 Your App
-│
-├── express (direct dependency - you installed this)
-│   ├── body-parser (transitive - express needs this)
-│   │   └── raw-body
-│   │       └── iconv-lite (vulnerable!)
-│   └── cookie
-│
-└── lodash (direct dependency)
+|
+|-- express (direct dependency - you installed this)
+|   |-- body-parser (transitive - express needs this)
+|   |   +-- raw-body
+|   |       +-- iconv-lite (vulnerable!)
+|   +-- cookie
+|
++-- lodash (direct dependency)
 ```
 
 **Direct dependencies**: Packages you explicitly install (`npm install express`)
