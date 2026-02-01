@@ -283,7 +283,7 @@ export default function RestVsGraphqlSimulator() {
           {/* Inline Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t">
             <div className="p-3 rounded-lg bg-muted/30 text-center">
-              <div className="text-xs text-muted-foreground mb-1">Requests</div>
+              <div className="text-xs text-muted-foreground mb-1">HTTP Requests</div>
               <div className="flex items-center justify-center gap-2">
                 <div>
                   <div className="text-xl font-bold text-orange-500">
@@ -334,9 +334,9 @@ export default function RestVsGraphqlSimulator() {
             </div>
 
             <div className="p-3 rounded-lg bg-green-500/10 text-center border border-green-500/20">
-              <div className="text-xs text-muted-foreground mb-1">Saved</div>
+              <div className="text-xs text-muted-foreground mb-1">Bandwidth Saved</div>
               <div className="text-2xl font-bold text-green-500">{savings}%</div>
-              <div className="text-[10px] text-green-600 dark:text-green-400">with GraphQL</div>
+              <div className="text-[10px] text-green-600 dark:text-green-400">less data to download</div>
             </div>
           </div>
 
