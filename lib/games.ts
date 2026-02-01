@@ -36,6 +36,20 @@ const games: Game[] = [
     category: 'DevOps',
   },
   {
+    id: 'rest-vs-graphql',
+    title: 'REST API vs GraphQL Simulator',
+    description:
+      'Compare REST and GraphQL side-by-side. Understand over-fetching, under-fetching, the N+1 problem, and when to use each approach with interactive scenarios.',
+    iconName: 'FileJson',
+    badgeText: 'New',
+    color: 'from-orange-500 to-pink-600',
+    href: '/games/rest-vs-graphql',
+    tags: ['api', 'rest', 'graphql', 'educational', 'interactive', 'backend'],
+    isNew: true,
+    featured: true,
+    category: 'API Design',
+  },
+  {
     id: 'scaling-simulator',
     title: 'Horizontal vs Vertical Scaling Simulator',
     description:
