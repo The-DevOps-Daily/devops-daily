@@ -4,18 +4,18 @@
   "description": "Test your knowledge of Kubernetes Operators through real-world interview scenarios covering custom resources, controllers, reconciliation loops, and Operator SDK",
   "category": "Kubernetes",
   "icon": "Settings",
-  "totalPoints": 130,
+  "totalPoints": 210,
   "theme": {
     "primaryColor": "purple",
     "gradientFrom": "from-purple-500",
     "gradientTo": "to-indigo-600"
   },
   "metadata": {
-    "estimatedTime": "20-25 minutes",
+    "estimatedTime": "35-45 minutes",
     "difficultyLevels": {
-      "beginner": 3,
-      "intermediate": 4,
-      "advanced": 3
+      "beginner": 4,
+      "intermediate": 7,
+      "advanced": 5
     },
     "createdDate": "2025-01-24"
   },
@@ -194,6 +194,113 @@
       "correctAnswer": 1,
       "explanation": "The Operator Capability Model defines 5 maturity levels: Basic Install, Seamless Upgrades, Full Lifecycle (backup/restore), Deep Insights (monitoring), and Auto Pilot (auto-scaling/tuning). This helps teams understand what capabilities an Operator provides and plan their implementation roadmap.",
       "hint": "Think about the progression from simple deployment to fully autonomous operation.",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "controller-vs-operator",
+      "title": "Controller vs Operator: What's the Difference?",
+      "description": "Explain the difference between a Kubernetes Controller and an Operator.",
+      "situation": "You're discussing Kubernetes architecture and the interviewer wants to know if you understand the nuanced difference between Controllers and Operators.",
+      "options": [
+        "Controllers and Operators are completely interchangeable terms",
+        "Controllers only manage pods, while Operators manage all other resources",
+        "An Operator is a controller that manages Custom Resources (CRDs) and encodes domain-specific operational knowledge, while controllers manage built-in Kubernetes resources",
+        "Operators are deprecated in favor of controllers"
+      ],
+      "correctAnswer": 2,
+      "explanation": "A Controller is a control loop that watches the state of your cluster and makes changes to move toward the desired state. An Operator is a specific type of controller that uses Custom Resources to manage applications and their components. The key difference is that Operators encode domain-specific knowledge (like how to backup a database) rather than generic Kubernetes operations.",
+      "hint": "Think about what additional capabilities Operators provide beyond basic resource management.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "preventing-infinite-loops",
+      "title": "Preventing Infinite Reconciliation Loops",
+      "description": "How do you prevent your Operator from entering an infinite reconciliation loop?",
+      "situation": "The interviewer noticed your Operator keeps triggering reconciliation even when nothing has changed. They ask how to fix this.",
+      "codeExample": "func (r *DatabaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {\n    var db examplev1.Database\n    if err := r.Get(ctx, req.NamespacedName, &db); err != nil {\n        return ctrl.Result{}, client.IgnoreNotFound(err)\n    }\n\n    // Check if update is actually needed before making changes\n    currentReplicas := db.Status.Replicas\n    desiredReplicas := db.Spec.Replicas\n    \n    if currentReplicas == desiredReplicas {\n        return ctrl.Result{}, nil  // No changes needed\n    }\n    \n    // Proceed with update only if state differs\n    ...",
+      "options": [
+        "Always use Update() instead of Patch() for all changes",
+        "Check if the actual state already matches desired state before making any modifications, and use Status subresource for state tracking",
+        "Add a random sleep between reconciliation calls",
+        "Disable the reconciliation loop after 10 iterations"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Infinite loops occur when every reconciliation triggers another one. To prevent this: (1) Always check if changes are actually needed before updating, (2) Use Status subresource to track state without triggering Spec watches, (3) Use Patch instead of Update to only modify changed fields, (4) Avoid updating metadata like annotations unnecessarily.",
+      "hint": "Think about what triggers a new reconciliation and how to avoid unnecessary triggers.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "webhooks-mutating-validating",
+      "title": "Admission Webhooks: Mutating and Validating",
+      "description": "Explain the role of admission webhooks in Operators.",
+      "situation": "The interviewer asks how to add validation and default values to your Custom Resources before they're persisted.",
+      "codeExample": "// Validating webhook - reject invalid resources\nfunc (r *Database) ValidateCreate() (warnings admission.Warnings, err error) {\n    if r.Spec.Replicas > 10 {\n        return nil, field.Invalid(\n            field.NewPath(\"spec\").Child(\"replicas\"),\n            r.Spec.Replicas,\n            \"cannot exceed 10 replicas\",\n        )\n    }\n    return nil, nil\n}\n\n// Mutating webhook - set defaults\nfunc (r *Database) Default() {\n    if r.Spec.Version == \"\" {\n        r.Spec.Version = \"14.0\"  // Default PostgreSQL version\n    }\n}",
+      "options": [
+        "Webhooks are only used for authentication",
+        "Validating webhooks modify requests, mutating webhooks reject them",
+        "All validation must be done in the reconciliation loop",
+        "Mutating webhooks modify requests (add defaults), validating webhooks reject invalid requests - both run before the resource is persisted to etcd"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Admission webhooks intercept API requests before persistence. Mutating webhooks can modify requests (e.g., setting default values). Validating webhooks can accept or reject requests (e.g., enforce business rules). Using webhooks for validation is more efficient than doing it in the reconciliation loop because invalid resources are rejected immediately.",
+      "hint": "Think about when validation should happen - during API request or during reconciliation?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "operator-performance",
+      "title": "Operator Performance Optimization",
+      "description": "What techniques can you use to optimize Operator performance in large clusters?",
+      "situation": "Your Operator is managing 5000+ custom resources and the interviewer asks how you would optimize its performance.",
+      "codeExample": "func (r *DatabaseReconciler) SetupWithManager(mgr ctrl.Manager) error {\n    return ctrl.NewControllerManagedBy(mgr).\n        For(&examplev1.Database{}).\n        // Use predicates to filter events\n        WithEventFilter(predicate.GenerationChangedPredicate{}).\n        // Configure rate limiting\n        WithOptions(controller.Options{\n            MaxConcurrentReconciles: 5,\n            RateLimiter: workqueue.NewItemExponentialFailureRateLimiter(\n                100*time.Millisecond,\n                5*time.Minute,\n            ),\n        }).\n        Complete(r)\n}",
+      "options": [
+        "Remove all caching and query the API server directly for freshest data",
+        "Use informer caches, event filtering with predicates, rate limiting, concurrent reconciliation, and indexed lookups",
+        "Process all resources sequentially to avoid race conditions",
+        "Increase API server timeout to handle slow operations"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Key optimization techniques: (1) Informer caches reduce API server load, (2) Predicates filter unnecessary events (e.g., only trigger on spec changes), (3) Rate limiting prevents overwhelming the cluster during error storms, (4) Concurrent reconciliation (MaxConcurrentReconciles) parallelizes work, (5) Field indexers enable efficient lookups instead of listing all resources.",
+      "hint": "Think about reducing API server load and handling many resources efficiently.",
+      "difficulty": "intermediate",
+      "points": 14
+    },
+    {
+      "id": "operator-security-rbac",
+      "title": "Operator Security and RBAC",
+      "description": "What security best practices should an Operator follow?",
+      "situation": "The security team is reviewing your Operator before production deployment. The interviewer asks about security measures.",
+      "codeExample": "# Minimal RBAC - only grant what's needed\napiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata:\n  name: database-operator-role\nrules:\n- apiGroups: [\"example.com\"]\n  resources: [\"databases\"]\n  verbs: [\"get\", \"list\", \"watch\", \"update\", \"patch\"]\n- apiGroups: [\"example.com\"]\n  resources: [\"databases/status\"]\n  verbs: [\"update\", \"patch\"]\n- apiGroups: [\"\"]\n  resources: [\"pods\", \"services\"]\n  verbs: [\"get\", \"list\", \"create\", \"delete\"]\n# Note: No cluster-wide permissions unless absolutely necessary",
+      "options": [
+        "Grant cluster-admin to simplify RBAC configuration",
+        "Run the operator pod as root for maximum compatibility",
+        "Follow least-privilege RBAC, run as non-root, use network policies, enable TLS for webhooks, and avoid storing secrets in CRD specs",
+        "Security is handled by Kubernetes automatically, no special configuration needed"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Operator security best practices: (1) Least-privilege RBAC - only grant permissions actually needed, (2) Run as non-root with read-only filesystem where possible, (3) Use NetworkPolicies to restrict pod communication, (4) TLS for all webhook endpoints, (5) Don't store sensitive data in CRD specs - use Secret references instead, (6) Implement proper input validation in webhooks.",
+      "hint": "Think about the principle of least privilege and defense in depth.",
+      "difficulty": "advanced",
+      "points": 14
+    },
+    {
+      "id": "multi-tenant-operators",
+      "title": "Multi-Tenant Operator Design",
+      "description": "How do you design an Operator that safely serves multiple tenants?",
+      "situation": "Your company offers a managed database service. The interviewer asks how your Operator would handle multiple customers on the same cluster.",
+      "codeExample": "// Namespace-scoped controller\nfunc (r *DatabaseReconciler) SetupWithManager(mgr ctrl.Manager) error {\n    return ctrl.NewControllerManagedBy(mgr).\n        For(&examplev1.Database{}).\n        // Watch only specific namespaces\n        WithEventFilter(predicate.Funcs{\n            CreateFunc: func(e event.CreateEvent) bool {\n                return r.isAllowedNamespace(e.Object.GetNamespace())\n            },\n        }).\n        Complete(r)\n}\n\nfunc (r *DatabaseReconciler) isAllowedNamespace(ns string) bool {\n    // Check if namespace belongs to allowed tenant\n    return strings.HasPrefix(ns, \"tenant-\")\n}",
+      "options": [
+        "Use a single namespace for all tenants to simplify management",
+        "Give each tenant cluster-admin access to manage their own resources",
+        "Operators cannot support multi-tenancy; use separate clusters instead",
+        "Use namespace isolation, namespace-scoped CRDs, RBAC per tenant, resource quotas, and network policies to ensure tenant isolation"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Multi-tenant Operator design requires: (1) Namespace isolation - each tenant gets dedicated namespace(s), (2) Namespace-scoped CRDs instead of cluster-scoped, (3) RBAC limiting each tenant to their namespaces, (4) ResourceQuotas preventing any tenant from consuming excessive resources, (5) NetworkPolicies preventing cross-tenant communication, (6) Consider tenant labels/annotations for additional filtering.",
+      "hint": "Think about how to prevent one tenant from affecting or accessing another tenant's resources.",
       "difficulty": "advanced",
       "points": 18
     }
