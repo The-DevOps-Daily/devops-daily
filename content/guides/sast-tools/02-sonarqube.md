@@ -10,12 +10,12 @@ SonarQube is an open-source platform for continuous code quality and security in
 SonarQube consists of three main components:
 
 ```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  SonarScanner   │ ───▶ │  SonarQube     │ ───▶ │    Database     │
-│  (CI Runner)    │     │  Server        │     │  (PostgreSQL)   │
-└─────────────────┘     └─────────────────┘     └─────────────────┘
-     Analyzes            Processes               Stores
-     source code         results                 history
++------------------+      +------------------+      +------------------+
+|   SonarScanner   | ---> |   SonarQube      | ---> |    Database      |
+|   (CI Runner)    |      |   Server         |      |   (PostgreSQL)   |
++------------------+      +------------------+      +------------------+
+      Analyzes             Processes                Stores
+      source code          results                  history
 ```
 
 - **SonarScanner** — Runs in your CI/CD pipeline, analyzes code, sends results to server
@@ -188,14 +188,14 @@ SonarQube categorizes issues into several types:
 ### Key Metrics
 
 ```
-┌───────────────────────────────────────────────┐
-│              Quality Gate: PASSED               │
-├───────────────────────────────────────────────┤
-│  Bugs: 3          Vulnerabilities: 1            │
-│  Code Smells: 47  Security Hotspots: 5          │
-├───────────────────────────────────────────────┤
-│  Coverage: 78%    Duplications: 2.3%            │
-└───────────────────────────────────────────────┘
++-----------------------------------------------+
+|            Quality Gate: PASSED               |
++-----------------------------------------------+
+|  Bugs: 3          Vulnerabilities: 1          |
+|  Code Smells: 47  Security Hotspots: 5        |
++-----------------------------------------------+
+|  Coverage: 78%    Duplications: 2.3%          |
++-----------------------------------------------+
 ```
 
 - **Coverage** — Percentage of code covered by tests
