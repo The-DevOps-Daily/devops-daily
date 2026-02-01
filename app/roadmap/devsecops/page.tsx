@@ -179,6 +179,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Scan,
         priority: 'essential',
         estimatedHours: 10,
+       link: '/guides/dependency-scanning',
       },
       {
         name: 'Pre-commit Hooks',
