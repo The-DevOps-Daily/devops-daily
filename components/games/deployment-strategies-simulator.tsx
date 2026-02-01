@@ -512,12 +512,12 @@ export default function DeploymentStrategiesSimulator() {
             {/* Users */}
             <div className={cn(
               'flex flex-shrink-0',
-              isMobile ? 'flex-row items-center gap-3' : 'flex-col items-center'
+              isMobile ? 'flex-col items-center' : 'flex-col items-center'
             )}>
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
                 <Users className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500 dark:text-slate-400" />
               </div>
-              <span className="text-[10px] font-medium text-muted-foreground sm:mt-1">Users</span>
+              <span className="text-[10px] font-medium text-muted-foreground mt-1">Users</span>
             </div>
 
             {/* Line: Users to LB */}
@@ -547,12 +547,12 @@ export default function DeploymentStrategiesSimulator() {
             {/* Load Balancer - Centered */}
             <div className={cn(
               'flex flex-shrink-0',
-              isMobile ? 'flex-row items-center gap-2' : 'flex-col items-center'
+              isMobile ? 'flex-col items-center' : 'flex-col items-center'
             )}>
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500 flex items-center justify-center shadow-md">
                 <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <span className="text-[10px] font-medium text-muted-foreground sm:mt-1">LB</span>
+              <span className="text-[10px] font-medium text-muted-foreground mt-1">LB</span>
             </div>
 
             {/* Branching paths from LB to v1/v2 */}
