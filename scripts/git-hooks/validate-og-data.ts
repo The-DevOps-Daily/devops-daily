@@ -42,6 +42,7 @@ const CONTENT_CONFIG: Record<string, ContentConfig> = {
     extension: '.md',
     requiredFields: ['title', 'description'],
     descriptionFields: ['description'],
+    skipOgImage: true, // Guide parts share the main guide's OG image via getSocialImagePath(guideSlug)
   },
   exercises: {
     dir: 'content/exercises',
@@ -230,7 +231,16 @@ function validateFile(
 
  // Check for OG image
   if (!config.skipOgImage) {
-    if (!ogImageExists(slug, config.imagesDir)) {
+    // For news files, construct the correct slug with year prefix
+    let imageSlug = slug;
+    if (filePath.includes('content/news/') && filePath.match(/content\/news\/(\d{4})\/week-\d+\.md$/)) {
+      const yearMatch = filePath.match(/content\/news\/(\d{4})/);
+      const weekMatch = slug.match(/week-(\d+)/);
+      if (yearMatch && weekMatch) {
+        imageSlug = `${yearMatch[1]}-${slug}`;
+      }
+    }
+    if (!ogImageExists(imageSlug, config.imagesDir)) {
       // Check if index file for guides (guides have subdirectories)
       if (filePath.includes('guides/') && filePath.endsWith('index.md')) {
         const guideSlug = path.basename(path.dirname(filePath));
@@ -242,7 +252,7 @@ function validateFile(
       } else if (!filePath.endsWith('index.ts')) {
         // Skip index.ts files
         warnings.push(
-          `Missing OG image. Expected: public/images/${config.imagesDir}/${slug}.{svg,png}`
+          `Missing OG image. Expected: public/images/${config.imagesDir}/${imageSlug}.{svg,png}`
         );
       }
     }
