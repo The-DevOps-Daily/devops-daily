@@ -336,7 +336,7 @@ export default function RestVsGraphqlSimulator() {
             <div className="p-3 rounded-lg bg-green-500/10 text-center border border-green-500/20">
               <div className="text-xs text-muted-foreground mb-1">Bandwidth Saved</div>
               <div className="text-2xl font-bold text-green-500">{savings}%</div>
-              <div className="text-[10px] text-green-600 dark:text-green-400">less data to download</div>
+              <div className="text-[10px] text-green-600 dark:text-green-400 mt-1">less data downloaded<br/>compared to REST</div>
             </div>
           </div>
 
