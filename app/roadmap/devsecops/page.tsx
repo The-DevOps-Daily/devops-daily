@@ -165,13 +165,14 @@ const milestones: DevSecOpsMilestone[] = [
         estimatedHours: 25,
         link: '/guides/secure-coding-practices',
       },
-      {
-        name: 'SAST Tools',
-        description: 'Static Application Security Testing with SonarQube, Semgrep, or CodeQL',
-        icon: FileSearch,
-        priority: 'essential',
-        estimatedHours: 20,
-      },
+     {
+       name: 'SAST Tools',
+       description: 'Static Application Security Testing with SonarQube, Semgrep, or CodeQL',
+       icon: FileSearch,
+       priority: 'essential',
+       estimatedHours: 20,
+       link: '/guides/sast-tools',
+     },
       {
         name: 'Dependency Scanning',
         description: 'Find vulnerable dependencies with Dependabot, Snyk, or OWASP Dependency-Check',
