@@ -23,6 +23,18 @@ import { cn } from '@/lib/utils';
 
 type DeploymentStrategy = 'recreate' | 'rolling' | 'blue-green' | 'canary';
 
+// Mobile breakpoint helper - component renders differently on mobile
+const useMobileView = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  return isMobile;
+};
+
 interface Pod {
   id: string;
   version: 'v1' | 'v2';
@@ -289,6 +301,7 @@ export default function DeploymentStrategiesSimulator() {
   const [strategy, setStrategy] = useState<DeploymentStrategy>('recreate');
   const [currentStep, setCurrentStep] = useState(0);
  const [isPlaying, setIsPlaying] = useState(false);
+  const isMobile = useMobileView();
 
  const config = STRATEGIES[strategy];
  const safeStep = Math.min(currentStep, config.steps.length - 1);
@@ -330,11 +343,11 @@ export default function DeploymentStrategiesSimulator() {
     if (!pod) {
       return (
         <div className={cn(
-          'w-8 h-8 rounded-lg border-2 border-dashed',
+          'w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg border-2 border-dashed',
           'border-slate-300 dark:border-slate-600',
           'flex items-center justify-center'
         )}>
-          <Server className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600" />
+          <Server className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-300 dark:text-slate-600" />
         </div>
       );
     }
@@ -347,14 +360,14 @@ export default function DeploymentStrategiesSimulator() {
           opacity: pod.status === 'terminating' ? 0.5 : 1,
         }}
         className={cn(
-          'w-8 h-8 rounded-lg flex items-center justify-center shadow-md relative',
+          'w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg flex items-center justify-center shadow-md relative',
           pod.status === 'terminating' ? terminatingColor : baseColor
         )}
       >
-        <Server className="w-3.5 h-3.5 text-white" />
+        <Server className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
         {pod.status === 'starting' && (
           <motion.div
-            className={cn('absolute inset-0 rounded-lg border-2', borderColor)}
+            className={cn('absolute inset-0 rounded-md sm:rounded-lg border-2', borderColor)}
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ repeat: Infinity, duration: 1 }}
           />
@@ -394,30 +407,32 @@ export default function DeploymentStrategiesSimulator() {
   };
 
   return (
-    <Card className="w-full max-w-3xl mx-auto">
-      <CardHeader className="pb-3">
+    <Card className="w-full max-w-3xl mx-auto overflow-hidden">
+      <CardHeader className="pb-3 px-3 sm:px-6">
         <CardTitle className="flex items-center justify-between">
-          <span>Deployment Strategies</span>
-          <div className="flex gap-2">
-            <Button onClick={() => setIsPlaying(!isPlaying)} variant="outline" size="sm">
+          <span className="text-base sm:text-lg">Deployment Strategies</span>
+          <div className="flex gap-1 sm:gap-2">
+            <Button onClick={() => setIsPlaying(!isPlaying)} variant="outline" size="sm" className="px-2 sm:px-3">
               {isPlaying ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
-              {isPlaying ? 'Pause' : 'Play'}
+              <span className="hidden sm:inline">{isPlaying ? 'Pause' : 'Play'}</span>
             </Button>
-            <Button onClick={reset} variant="outline" size="sm">
-              <RotateCcw className="w-4 h-4 mr-1" /> Reset
+            <Button onClick={reset} variant="outline" size="sm" className="px-2 sm:px-3">
+              <RotateCcw className="w-4 h-4 sm:mr-1" />
+              <span className="hidden sm:inline"> Reset</span>
             </Button>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-6">
         {/* Strategy Selector */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
           {(Object.keys(STRATEGIES) as DeploymentStrategy[]).map((s) => (
             <Button
               key={s}
               onClick={() => setStrategy(s)}
               variant={strategy === s ? 'default' : 'outline'}
               size="sm"
+              className="text-xs sm:text-sm px-2 sm:px-3"
             >
               {STRATEGIES[s].name}
             </Button>
@@ -425,7 +440,7 @@ export default function DeploymentStrategiesSimulator() {
         </div>
 
         {/* Description */}
-        <p className="text-sm text-muted-foreground">{config.description}</p>
+        <p className="text-xs sm:text-sm text-muted-foreground">{config.description}</p>
 
         {/* Step Progress */}
         <div className="flex items-center gap-1">
@@ -445,9 +460,9 @@ export default function DeploymentStrategiesSimulator() {
         </div>
 
        {/* Step Header */}
-       <div className="flex items-center justify-between">
-         <div className="flex items-center gap-3">
-           <h3 className="font-semibold">
+       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+           <h3 className="font-semibold text-sm sm:text-base">
              Step {currentStep + 1}: {step.title}
            </h3>
            {step.isAutomatic && (
@@ -471,7 +486,7 @@ export default function DeploymentStrategiesSimulator() {
         </div>
 
         {/* Main Diagram */}
-        <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-6">
+        <div className="relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-3 sm:p-6">
           {/* Downtime Overlay */}
           <AnimatePresence>
             {step.hasDowntime && (
@@ -489,89 +504,123 @@ export default function DeploymentStrategiesSimulator() {
             )}
           </AnimatePresence>
 
-          {/* Horizontal layout: Users -> LB (centered) -> v1/v2 pods */}
-          <div className="flex items-center gap-3">
+          {/* Responsive layout: Vertical on mobile, Horizontal on desktop */}
+          <div className={cn(
+            'flex gap-3',
+            isMobile ? 'flex-col items-center' : 'flex-row items-center'
+          )}>
             {/* Users */}
-            <div className="flex flex-col items-center flex-shrink-0">
-              <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                <Users className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+            <div className={cn(
+              'flex flex-shrink-0',
+              isMobile ? 'flex-row items-center gap-3' : 'flex-col items-center'
+            )}>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-slate-500 dark:text-slate-400" />
               </div>
-              <span className="text-[10px] font-medium text-muted-foreground mt-1">Users</span>
+              <span className="text-[10px] font-medium text-muted-foreground sm:mt-1">Users</span>
             </div>
 
             {/* Line: Users to LB */}
-            <div className="flex-1 flex items-center relative min-w-[40px]">
+            <div className={cn(
+              'flex-1 flex items-center relative',
+              isMobile ? 'flex-col min-h-[30px] w-0.5' : 'flex-row min-w-[30px] sm:min-w-[40px]'
+            )}>
               <div className={cn(
-                'flex-1 h-0.5',
+                'flex-1',
+                isMobile ? 'w-0.5 h-full' : 'h-0.5 w-full',
                 hasAnyTraffic ? 'bg-purple-400' : 'bg-slate-300 dark:bg-slate-600'
               )} />
               {hasAnyTraffic && (
                 <motion.div
                   className="absolute w-2 h-2 rounded-full bg-purple-500 shadow-sm"
-                  animate={{ left: ['0%', 'calc(100% - 8px)'] }}
+                  animate={isMobile ? { top: ['0%', 'calc(100% - 8px)'] } : { left: ['0%', 'calc(100% - 8px)'] }}
                   transition={{ duration: 0.6, repeat: Infinity, ease: 'linear' }}
                 />
               )}
               <ChevronRight className={cn(
-                'w-4 h-4 -ml-0.5 flex-shrink-0',
+                'w-4 h-4 flex-shrink-0',
+                isMobile ? 'rotate-90 -mt-0.5' : '-ml-0.5',
                 hasAnyTraffic ? 'text-purple-500' : 'text-slate-400'
               )} />
             </div>
 
             {/* Load Balancer - Centered */}
-            <div className="flex flex-col items-center flex-shrink-0">
-              <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center shadow-md">
-                <Globe className="w-5 h-5 text-white" />
+            <div className={cn(
+              'flex flex-shrink-0',
+              isMobile ? 'flex-row items-center gap-2' : 'flex-col items-center'
+            )}>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-purple-500 flex items-center justify-center shadow-md">
+                <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <span className="text-[10px] font-medium text-muted-foreground mt-1">Load Balancer</span>
+              <span className="text-[10px] font-medium text-muted-foreground sm:mt-1">LB</span>
             </div>
 
             {/* Branching paths from LB to v1/v2 */}
-            <div className="flex-1 flex flex-col justify-center gap-3 min-w-[60px]">
+            <div className={cn(
+              'flex-1 flex justify-center gap-2 sm:gap-3',
+              isMobile ? 'flex-row min-h-[30px]' : 'flex-col min-w-[40px] sm:min-w-[60px]'
+            )}>
               {/* V1 Path */}
-              <div className="flex items-center relative">
+              <div className={cn(
+                'flex items-center relative',
+                isMobile ? 'flex-col flex-1' : 'flex-row'
+              )}>
                 <div className={cn(
-                  'flex-1 h-0.5',
+                  'flex-1',
+                  isMobile ? 'w-0.5 h-full' : 'h-0.5 w-full',
                   hasV1Traffic ? 'bg-blue-400' : 'bg-slate-300 dark:bg-slate-600'
                 )} />
                 {hasV1Traffic && (
                   <motion.div
                     className="absolute w-2 h-2 rounded-full bg-blue-500 shadow-sm"
-                    animate={{ left: ['0%', 'calc(100% - 8px)'] }}
+                    animate={isMobile ? { top: ['0%', 'calc(100% - 8px)'] } : { left: ['0%', 'calc(100% - 8px)'] }}
                     transition={{ duration: 0.5, repeat: Infinity, ease: 'linear', delay: 0.3 }}
                   />
                 )}
                 <ChevronRight className={cn(
-                  'w-4 h-4 -ml-0.5 flex-shrink-0',
+                  'w-4 h-4 flex-shrink-0',
+                  isMobile ? 'rotate-90 -mt-0.5' : '-ml-0.5',
                   hasV1Traffic ? 'text-blue-500' : 'text-slate-400'
                 )} />
               </div>
               {/* V2 Path */}
-              <div className="flex items-center relative">
+              <div className={cn(
+                'flex items-center relative',
+                isMobile ? 'flex-col flex-1' : 'flex-row'
+              )}>
                 <div className={cn(
-                  'flex-1 h-0.5',
+                  'flex-1',
+                  isMobile ? 'w-0.5 h-full' : 'h-0.5 w-full',
                   hasV2Traffic ? 'bg-green-400' : 'bg-slate-300 dark:bg-slate-600'
                 )} />
                 {hasV2Traffic && (
                   <motion.div
                     className="absolute w-2 h-2 rounded-full bg-green-500 shadow-sm"
-                    animate={{ left: ['0%', 'calc(100% - 8px)'] }}
+                    animate={isMobile ? { top: ['0%', 'calc(100% - 8px)'] } : { left: ['0%', 'calc(100% - 8px)'] }}
                     transition={{ duration: 0.5, repeat: Infinity, ease: 'linear', delay: 0.3 }}
                   />
                 )}
                 <ChevronRight className={cn(
-                  'w-4 h-4 -ml-0.5 flex-shrink-0',
+                  'w-4 h-4 flex-shrink-0',
+                  isMobile ? 'rotate-90 -mt-0.5' : '-ml-0.5',
                   hasV2Traffic ? 'text-green-500' : 'text-slate-400'
                 )} />
               </div>
             </div>
 
             {/* Pod columns: v1 on top, v2 on bottom */}
-            <div className="flex flex-col gap-3 flex-shrink-0">
+            <div className={cn(
+              'flex gap-2 sm:gap-3 flex-shrink-0',
+              isMobile ? 'flex-row' : 'flex-col'
+            )}>
               {/* V1 Pods Row */}
-              <div className="flex items-center gap-2">
+              <div className={cn(
+                'flex items-center gap-1.5 sm:gap-2',
+                isMobile ? 'flex-col' : 'flex-row'
+              )}>
                 <span className={cn(
-                  'text-xs font-bold w-12',
+                  'text-[10px] sm:text-xs font-bold',
+                  isMobile ? 'w-auto' : 'w-10 sm:w-12',
                   hasV1Traffic ? 'text-blue-500' : 'text-slate-400'
                 )}>
                   v1 {step.trafficSplit.v1 > 0 && `${step.trafficSplit.v1}%`}
@@ -583,9 +632,13 @@ export default function DeploymentStrategiesSimulator() {
                 </div>
               </div>
               {/* V2 Pods Row */}
-              <div className="flex items-center gap-2">
+              <div className={cn(
+                'flex items-center gap-1.5 sm:gap-2',
+                isMobile ? 'flex-col' : 'flex-row'
+              )}>
                 <span className={cn(
-                  'text-xs font-bold w-12',
+                  'text-[10px] sm:text-xs font-bold',
+                  isMobile ? 'w-auto' : 'w-10 sm:w-12',
                   hasV2Traffic ? 'text-green-500' : 'text-slate-400'
                 )}>
                   v2 {step.trafficSplit.v2 > 0 && `${step.trafficSplit.v2}%`}
@@ -600,10 +653,10 @@ export default function DeploymentStrategiesSimulator() {
           </div>
 
          {/* Note Badge */}
-         <div className="text-center mt-4">
+         <div className="text-center mt-3 sm:mt-4">
            {step.isObserving ? (
              <motion.div
-               className="inline-flex items-center gap-2 bg-amber-50 dark:bg-amber-900/30 px-4 py-2 rounded-full text-sm font-medium text-amber-600 dark:text-amber-400 shadow-sm border border-amber-200 dark:border-amber-700"
+               className="inline-flex items-center gap-1.5 sm:gap-2 bg-amber-50 dark:bg-amber-900/30 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium text-amber-600 dark:text-amber-400 shadow-sm border border-amber-200 dark:border-amber-700"
                animate={{ borderColor: ['rgba(251,191,36,0.3)', 'rgba(251,191,36,0.8)', 'rgba(251,191,36,0.3)'] }}
                transition={{ repeat: Infinity, duration: 1.5 }}
              >
@@ -611,17 +664,17 @@ export default function DeploymentStrategiesSimulator() {
                  animate={{ scale: [1, 1.2, 1] }}
                  transition={{ repeat: Infinity, duration: 1.5 }}
                >
-                 <Eye className="w-4 h-4" />
+                 <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                </motion.div>
                <span>{step.note}</span>
              </motion.div>
            ) : step.isAutomatic ? (
-             <span className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 px-4 py-1.5 rounded-full text-sm font-medium text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200 dark:border-blue-700">
-               <Zap className="w-4 h-4" />
+             <span className="inline-flex items-center gap-1.5 sm:gap-2 bg-blue-50 dark:bg-blue-900/30 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200 dark:border-blue-700">
+               <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
                <span>{step.note}</span>
              </span>
            ) : (
-             <span className="inline-block bg-white/90 dark:bg-slate-800/90 px-4 py-1.5 rounded-full text-sm font-medium text-muted-foreground shadow-sm border border-slate-200 dark:border-slate-700">
+             <span className="inline-block bg-white/90 dark:bg-slate-800/90 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-medium text-muted-foreground shadow-sm border border-slate-200 dark:border-slate-700">
                {step.note}
              </span>
            )}
@@ -641,18 +694,18 @@ export default function DeploymentStrategiesSimulator() {
         )}
 
         {/* Pros/Cons */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-            <h4 className="font-medium text-green-600 dark:text-green-400 mb-2">Pros</h4>
-            <ul className="space-y-1 text-muted-foreground text-xs">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
+          <div className="p-2 sm:p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+            <h4 className="font-medium text-green-600 dark:text-green-400 mb-1 sm:mb-2 text-xs sm:text-sm">Pros</h4>
+            <ul className="space-y-0.5 sm:space-y-1 text-muted-foreground text-[10px] sm:text-xs">
               {config.pros.map((pro, i) => (
                 <li key={i}>+ {pro}</li>
               ))}
             </ul>
           </div>
-          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-            <h4 className="font-medium text-red-600 dark:text-red-400 mb-2">Cons</h4>
-            <ul className="space-y-1 text-muted-foreground text-xs">
+          <div className="p-2 sm:p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+            <h4 className="font-medium text-red-600 dark:text-red-400 mb-1 sm:mb-2 text-xs sm:text-sm">Cons</h4>
+            <ul className="space-y-0.5 sm:space-y-1 text-muted-foreground text-[10px] sm:text-xs">
               {config.cons.map((con, i) => (
                 <li key={i}>- {con}</li>
               ))}
