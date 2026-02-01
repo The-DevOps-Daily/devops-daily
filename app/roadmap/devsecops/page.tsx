@@ -195,6 +195,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Eye,
         priority: 'important',
         estimatedHours: 15,
+        link: '/guides/code-review-security',
       },
     ],
     project: {
