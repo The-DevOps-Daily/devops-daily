@@ -163,6 +163,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Code,
         priority: 'essential',
         estimatedHours: 25,
+        link: '/guides/secure-coding-practices',
       },
       {
         name: 'SAST Tools',
