@@ -1,6 +1,20 @@
 ---
 title: 'Dependency Scanning'
 description: 'Learn how to identify and remediate vulnerabilities in your project dependencies using Snyk, Dependabot, and native package manager tools.'
+category:
+  name: 'Security'
+  slug: 'security'
+publishedAt: '2025-01-24'
+updatedAt: '2025-01-24'
+author:
+  name: 'DevOps Daily Team'
+  slug: 'devops-daily-team'
+tags:
+  - Security
+  - DevSecOps
+  - Dependency Scanning
+  - Vulnerabilities
+  - Supply Chain
 ---
 
 Modern applications rely heavily on third-party dependencies—often 80-90% of your codebase consists of external packages. This creates a massive attack surface: a single vulnerable dependency can compromise your entire application.
