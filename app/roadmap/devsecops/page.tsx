@@ -226,11 +226,11 @@ const milestones: DevSecOpsMilestone[] = [
     timeframe: '6-8 weeks',
     skills: [
       {
-        name: 'Pipeline Hardening',
-        description: 'Secure CI/CD configurations, runner isolation, and artifact signing',
-        link: '/checklists/cicd-pipeline-setup',
-        icon: Workflow,
-        priority: 'essential',
+       name: 'Pipeline Hardening',
+       description: 'Secure CI/CD configurations, runner isolation, and artifact signing',
+        link: '/guides/pipeline-hardening',
+       icon: Workflow,
+       priority: 'essential',
         estimatedHours: 20,
       },
       {
