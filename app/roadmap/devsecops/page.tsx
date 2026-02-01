@@ -239,6 +239,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Key,
         priority: 'essential',
         estimatedHours: 25,
+        link: '/guides/secrets-management',
       },
       {
         name: 'DAST Integration',
