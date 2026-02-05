@@ -178,7 +178,7 @@ importers:
         version: 0.4.6(react-dom@19.2.0(react@19.2.3))(react@19.2.3)
       openai:
         specifier: ^6.16.0
-        version: 6.16.0(zod@4.3.5)
+        version: 6.16.0(zod@4.3.6)
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -222,8 +222,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.8))(@types/react@19.2.8)(react-dom@19.2.0(react@19.2.3))(react@19.2.3)
       zod:
-        specifier: ^4.3.5
-        version: 4.3.5
+        specifier: ^4.3.6
+        version: 4.3.6
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.3
@@ -5486,8 +5486,8 @@ packages:
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
 
-  zod@4.3.5:
-    resolution: {integrity: sha512-k7Nwx6vuWx1IJ9Bjuf4Zt1PEllcwe7cls3VNzm4CQ1/hgtFUK2bRNG3rvnpPUhFjmqJKAKtjV576KnUkHocg/g==}
+  zod@4.3.6:
+    resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
 snapshots:
 
@@ -8869,8 +8869,8 @@ snapshots:
       '@babel/parser': 7.28.5
       eslint: 9.39.2(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 4.3.5
-      zod-validation-error: 4.0.2(zod@4.3.5)
+      zod: 4.3.6
+      zod-validation-error: 4.0.2(zod@4.3.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -9776,9 +9776,9 @@ snapshots:
     dependencies:
       wrappy: 1.0.2
 
-  openai@6.16.0(zod@4.3.5):
+  openai@6.16.0(zod@4.3.6):
     optionalDependencies:
-      zod: 4.3.5
+      zod: 4.3.6
 
   optionator@0.9.4:
     dependencies:
@@ -11084,8 +11084,8 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-validation-error@4.0.2(zod@4.3.5):
+  zod-validation-error@4.0.2(zod@4.3.6):
     dependencies:
-      zod: 4.3.5
+      zod: 4.3.6
 
-  zod@4.3.5: {}
+  zod@4.3.6: {}
