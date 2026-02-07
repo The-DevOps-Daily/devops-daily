@@ -1,0 +1,19 @@
+{
+  "public/images/exercises/redis-caching-strategies.svg": "3cc3e432b456daf0",
+  "public/images/exercises/nginx-load-balancing-reverse-proxy.svg": "f40500cd067f56c1",
+  "public/images/exercises/linux-performance-troubleshooting.svg": "48f7e0aa24210ced",
+  "public/images/exercises/git-workflow-collaboration.svg": "bfec2886ae784e00",
+  "public/images/exercises/terraform-digitalocean-droplet.svg": "b23bec9bae54b050",
+  "public/images/exercises/helm-kubernetes-packaging.svg": "b7e9f8eea4e77a17",
+  "public/images/exercises/ansible-web-server-automation.svg": "2c68d03c88692f5d",
+  "public/images/exercises/infrastructure-security-vault-sops.svg": "6a5be19cfe6d4843",
+  "public/images/exercises/microservices-observability-opentelemetry.svg": "8bb487cf0ccb3019",
+  "public/images/exercises/gitops-argocd-deployment.svg": "f43c01ab102c9d35",
+  "public/images/exercises/docker-multi-stage-build.svg": "b7f544416deac7c1",
+  "public/images/exercises/terraform-aws-vpc.svg": "1e6cce4b27d3381c",
+  "public/images/exercises/kubernetes-hpa-lab.svg": "d214edc85cfc632c",
+  "public/images/exercises/ci-cd-github-actions.svg": "5aaff1f2e5ebe319",
+  "public/images/exercises/prometheus-grafana-monitoring.svg": "a43a9174ca370551",
+  "public/images/posts/gitops-deploy-docker-containers-github-actions-argocd.svg": "5b29267a4bb8a793",
+  "public/images/posts/how-to-publish-helm-chart.svg": "dab2d9f9df96c681"
+}
