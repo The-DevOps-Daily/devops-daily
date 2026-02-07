@@ -22,6 +22,20 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'aws-vpc-simulator',
+    title: 'AWS VPC Networking Simulator',
+    description:
+      'Learn AWS networking fundamentals with an interactive VPC simulator. Visualize how traffic flows through public and private subnets, understand NAT Gateways, Internet Gateways, and route tables.',
+    iconName: 'Cloud',
+    badgeText: 'New',
+    color: 'from-orange-500 to-yellow-600',
+    href: '/games/aws-vpc-simulator',
+    tags: ['aws', 'vpc', 'networking', 'cloud', 'educational', 'interactive', 'infrastructure'],
+    isNew: true,
+    featured: true,
+    category: 'Cloud',
+  },
+  {
     id: 'dns-simulator',
     title: 'DNS Resolution Simulator',
     description:
