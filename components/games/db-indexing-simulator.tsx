@@ -187,10 +187,10 @@ export default function DbIndexingSimulator() {
       rowsReturned: matchingRows.length,
       timeMs,
       usedIndex: usesIndex,
-      indexName: usesIndex ? \`idx_\${query.column}\` : undefined,
+      indexName: usesIndex ? `idx_${query.column}` : undefined,
       explanation: usesIndex
-        ? \`Index seek on idx_\${query.column} - jumped directly to matching rows\`
-        : \`Full table scan - checked every row in the table\`,
+        ? `Index seek on idx_${query.column} - jumped directly to matching rows`
+        : `Full table scan - checked every row in the table`,
     };
 
     await new Promise((r) => setTimeout(r, 150));
@@ -360,7 +360,7 @@ export default function DbIndexingSimulator() {
                     )}
                     initial={{ width: 0 }}
                     animate={{
-                      width: \`\${(animation.currentRow / animation.totalRows) * 100}%\`,
+                      width: `${(animation.currentRow / animation.totalRows) * 100}%`,
                     }}
                   />
                 </div>
