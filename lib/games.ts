@@ -21,7 +21,6 @@ export interface Game {
  * This is the single source of truth for game metadata
  */
 const games: Game[] = [
-const games: Game[] = [
   {
     id: 'caching-simulator',
     title: 'Caching Strategies Simulator',
