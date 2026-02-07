@@ -294,6 +294,8 @@ export default function AwsVpcSimulator() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      // Don't intercept browser refresh shortcut (Ctrl+R / Cmd+R)
+      if ((e.key === 'r' || e.key === 'R') && (e.ctrlKey || e.metaKey)) return;
 
       switch (e.key) {
         case 'r':

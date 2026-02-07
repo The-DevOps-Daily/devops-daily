@@ -228,7 +228,7 @@ export default function LoadBalancerSimulator() {
       }
 
       // R to reset
-      if (e.key === 'r' || e.key === 'R') {
+      if ((e.key === 'r' || e.key === 'R') && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         reset();
       }
