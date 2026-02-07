@@ -1,779 +1,491 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Play,
-  Pause,
-  RotateCcw,
-  Database,
-  HardDrive,
-  Zap,
-  Clock,
-  Trash2,
-  Plus,
-  Search,
-  Edit,
-} from 'lucide-react';
+import { RotateCcw, Database, HardDrive, Zap, Clock, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
-// Types
-type EvictionPolicy = 'lru' | 'lfu' | 'fifo' | 'random' | 'ttl';
-type WriteStrategy = 'write-through' | 'write-back' | 'write-around';
-type AccessPattern = 'random' | 'sequential' | 'zipf';
+type EvictionPolicy = 'lru' | 'fifo' | 'lfu';
 
 interface CacheItem {
   key: string;
-  value: string;
   accessCount: number;
   lastAccess: number;
   insertTime: number;
-  ttl: number;
-  expiresAt: number;
 }
 
 interface RequestAnimation {
   id: string;
   key: string;
-  type: 'read' | 'write';
-  phase: 'to-cache' | 'hit' | 'miss-to-db' | 'db-to-cache' | 'complete';
+  phase: 'checking' | 'hit' | 'miss-fetching' | 'storing' | 'complete';
   isHit: boolean;
 }
 
-interface Stats {
-  hits: number;
-  misses: number;
-  evictions: number;
-  totalRequests: number;
-  timeSavedMs: number;
-}
-
-// Configuration
-const EVICTION_POLICIES: Record<EvictionPolicy, { name: string; description: string }> = {
+const EVICTION_POLICIES: Record<EvictionPolicy, { name: string; description: string; how: string }> = {
   lru: {
-    name: 'LRU (Least Recently Used)',
-    description: 'Evicts items not accessed recently. Most common in practice.',
-  },
-  lfu: {
-    name: 'LFU (Least Frequently Used)',
-    description: 'Evicts items accessed least often. Good for identifying hot data.',
+    name: 'LRU',
+    description: 'Least Recently Used',
+    how: 'Removes the item that was accessed longest ago',
   },
   fifo: {
-    name: 'FIFO (First In, First Out)',
-    description: 'Evicts oldest items first. Simple queue-based approach.',
+    name: 'FIFO',
+    description: 'First In, First Out',
+    how: 'Removes the oldest item in cache (like a queue)',
   },
-  random: {
-    name: 'Random',
-    description: 'Randomly selects items to evict. Surprisingly effective.',
-  },
-  ttl: {
-    name: 'TTL (Time To Live)',
-    description: 'Evicts expired items based on time. Common for sessions.',
+  lfu: {
+    name: 'LFU',
+    description: 'Least Frequently Used',
+    how: 'Removes the item accessed the fewest times',
   },
 };
 
-const WRITE_STRATEGIES: Record<WriteStrategy, { name: string; description: string }> = {
-  'write-through': {
-    name: 'Write-Through',
-    description: 'Write to cache and database simultaneously. Strong consistency.',
-  },
-  'write-back': {
-    name: 'Write-Back',
-    description: 'Write to cache, async to database. Better performance.',
-  },
-  'write-around': {
-    name: 'Write-Around',
-    description: 'Write directly to database, bypass cache. Reduces cache pollution.',
-  },
-};
-
-const TRAFFIC_RATES = [
-  { label: 'Slow', value: 2000 },
-  { label: 'Normal', value: 1000 },
-  { label: 'Fast', value: 500 },
-  { label: 'Burst', value: 200 },
+// Data items the user can request
+const DATA_ITEMS = [
+  { key: 'A', label: 'User Profile', color: 'bg-blue-500' },
+  { key: 'B', label: 'Product List', color: 'bg-green-500' },
+  { key: 'C', label: 'Settings', color: 'bg-purple-500' },
+  { key: 'D', label: 'Dashboard', color: 'bg-orange-500' },
+  { key: 'E', label: 'Messages', color: 'bg-pink-500' },
+  { key: 'F', label: 'Analytics', color: 'bg-cyan-500' },
 ];
 
-const CACHE_LATENCY_MS = 5;
-const DB_LATENCY_MS = 100;
-
-// Sample data keys (simulating user data)
-const DATA_KEYS = [
-  'user:1',
-  'user:2',
-  'user:3',
-  'user:4',
-  'user:5',
-  'session:abc',
-  'session:def',
-  'session:ghi',
-  'product:100',
-  'product:101',
-  'product:102',
-  'cart:user1',
-  'cart:user2',
-  'config:app',
-  'config:db',
-];
-
-// Generate Zipf distribution weights (hot keys accessed more frequently)
-function generateZipfWeights(n: number): number[] {
-  const weights: number[] = [];
-  let sum = 0;
-  for (let i = 1; i <= n; i++) {
-    weights.push(1 / i);
-    sum += 1 / i;
-  }
-  return weights.map((w) => w / sum);
-}
-
-const ZIPF_WEIGHTS = generateZipfWeights(DATA_KEYS.length);
+const CACHE_SIZE = 4;
+const CACHE_LATENCY = 5;
+const DB_LATENCY = 100;
 
 export default function CachingSimulator() {
-  // State
-  const [cache, setCache] = useState<Map<string, CacheItem>>(new Map());
-  const [cacheSize, setCacheSize] = useState(8);
-  const [evictionPolicy, setEvictionPolicy] = useState<EvictionPolicy>('lru');
-  const [writeStrategy, setWriteStrategy] = useState<WriteStrategy>('write-through');
-  const [accessPattern, setAccessPattern] = useState<AccessPattern>('zipf');
-  const [ttlSeconds, setTtlSeconds] = useState(30);
-  const [isRunning, setIsRunning] = useState(false);
-  const [trafficRate, setTrafficRate] = useState(1000);
-  const [stats, setStats] = useState<Stats>({
-    hits: 0,
-    misses: 0,
-    evictions: 0,
-    totalRequests: 0,
-    timeSavedMs: 0,
-  });
-  const [animations, setAnimations] = useState<RequestAnimation[]>([]);
-  const [lastOperation, setLastOperation] = useState<string | null>(null);
-  const tickRef = useRef(0);
+  const [policy, setPolicy] = useState<EvictionPolicy>('lru');
+  const [cache, setCache] = useState<CacheItem[]>([]);
+  const [animation, setAnimation] = useState<RequestAnimation | null>(null);
+  const [stats, setStats] = useState({ hits: 0, misses: 0, totalTime: 0 });
+  const [evictingKey, setEvictingKey] = useState<string | null>(null);
+  const [lastAction, setLastAction] = useState<string>('');
+  const [tick, setTick] = useState(0);
 
-  // Derived state
-  const hitRate = useMemo(() => {
-    if (stats.totalRequests === 0) return 0;
-    return ((stats.hits / stats.totalRequests) * 100).toFixed(1);
-  }, [stats]);
+  const getItemToEvict = useCallback((currentCache: CacheItem[]): CacheItem | null => {
+    if (currentCache.length < CACHE_SIZE) return null;
 
-  const cacheArray = useMemo(() => Array.from(cache.entries()), [cache]);
-
-  // Select key based on access pattern
-  const selectKey = useCallback((): string => {
-    switch (accessPattern) {
-      case 'sequential':
-        return DATA_KEYS[tickRef.current % DATA_KEYS.length];
-      case 'zipf': {
-        const rand = Math.random();
-        let cumulative = 0;
-        for (let i = 0; i < ZIPF_WEIGHTS.length; i++) {
-          cumulative += ZIPF_WEIGHTS[i];
-          if (rand <= cumulative) return DATA_KEYS[i];
-        }
-        return DATA_KEYS[0];
-      }
+    switch (policy) {
+      case 'lru':
+        return currentCache.reduce((oldest, item) =>
+          item.lastAccess < oldest.lastAccess ? item : oldest
+        );
+      case 'fifo':
+        return currentCache.reduce((oldest, item) =>
+          item.insertTime < oldest.insertTime ? item : oldest
+        );
+      case 'lfu':
+        return currentCache.reduce((leastFreq, item) =>
+          item.accessCount < leastFreq.accessCount ? item : leastFreq
+        );
       default:
-        return DATA_KEYS[Math.floor(Math.random() * DATA_KEYS.length)];
+        return currentCache[0];
     }
-  }, [accessPattern]);
+  }, [policy]);
 
-  // Find item to evict based on policy
-  const findEvictionCandidate = useCallback(
-    (currentCache: Map<string, CacheItem>): string | null => {
-      if (currentCache.size === 0) return null;
+  const handleRequest = useCallback((key: string) => {
+    if (animation) return; // Prevent overlapping requests
 
-      const entries = Array.from(currentCache.entries());
+    const requestId = `req-${Date.now()}`;
+    const currentTick = tick + 1;
+    setTick(currentTick);
 
-      switch (evictionPolicy) {
-        case 'lru': {
-          let oldest = entries[0];
-          for (const entry of entries) {
-            if (entry[1].lastAccess < oldest[1].lastAccess) {
-              oldest = entry;
-            }
-          }
-          return oldest[0];
-        }
-        case 'lfu': {
-          let leastFrequent = entries[0];
-          for (const entry of entries) {
-            if (entry[1].accessCount < leastFrequent[1].accessCount) {
-              leastFrequent = entry;
-            }
-          }
-          return leastFrequent[0];
-        }
-        case 'fifo': {
-          let oldest = entries[0];
-          for (const entry of entries) {
-            if (entry[1].insertTime < oldest[1].insertTime) {
-              oldest = entry;
-            }
-          }
-          return oldest[0];
-        }
-        case 'ttl': {
-          const now = Date.now();
-          const expired = entries.find((e) => e[1].expiresAt <= now);
-          if (expired) return expired[0];
-          let soonestExpiry = entries[0];
-          for (const entry of entries) {
-            if (entry[1].expiresAt < soonestExpiry[1].expiresAt) {
-              soonestExpiry = entry;
-            }
-          }
-          return soonestExpiry[0];
-        }
-        case 'random':
-        default:
-          return entries[Math.floor(Math.random() * entries.length)][0];
-      }
-    },
-    [evictionPolicy]
-  );
+    // Check if item is in cache
+    const cachedItem = cache.find((item) => item.key === key);
+    const isHit = !!cachedItem;
 
-  // Process a read request
-  const processRead = useCallback(
-    (key: string) => {
-      const animId = `${Date.now()}-${Math.random()}`;
-      const now = Date.now();
+    // Start animation - checking cache
+    setAnimation({ id: requestId, key, phase: 'checking', isHit });
 
-      setCache((prevCache) => {
-        const newCache = new Map(prevCache);
-        const item = newCache.get(key);
-
-        if (item && (evictionPolicy !== 'ttl' || item.expiresAt > now)) {
-          // Cache hit
-          newCache.set(key, {
-            ...item,
-            accessCount: item.accessCount + 1,
-            lastAccess: now,
-          });
-
-          setStats((s) => ({
-            ...s,
-            hits: s.hits + 1,
-            totalRequests: s.totalRequests + 1,
-            timeSavedMs: s.timeSavedMs + (DB_LATENCY_MS - CACHE_LATENCY_MS),
-          }));
-
-          setAnimations((prev) => [
-            ...prev,
-            { id: animId, key, type: 'read', phase: 'hit', isHit: true },
-          ]);
-          setLastOperation(`HIT: ${key} (${CACHE_LATENCY_MS}ms)`);
-        } else {
-          // Cache miss - need to evict if full
-          if (newCache.size >= cacheSize) {
-            const evictKey = findEvictionCandidate(newCache);
-            if (evictKey) {
-              newCache.delete(evictKey);
-              setStats((s) => ({ ...s, evictions: s.evictions + 1 }));
-            }
-          }
-
-          // Add new item from "database"
-          newCache.set(key, {
-            key,
-            value: `data_${key}`,
-            accessCount: 1,
-            lastAccess: now,
-            insertTime: now,
-            ttl: ttlSeconds * 1000,
-            expiresAt: now + ttlSeconds * 1000,
-          });
-
-          setStats((s) => ({
-            ...s,
-            misses: s.misses + 1,
-            totalRequests: s.totalRequests + 1,
-          }));
-
-          setAnimations((prev) => [
-            ...prev,
-            { id: animId, key, type: 'read', phase: 'miss-to-db', isHit: false },
-          ]);
-          setLastOperation(`MISS: ${key} (${DB_LATENCY_MS}ms)`);
-        }
-
-        return newCache;
-      });
-
-      // Clear animation after delay
+    if (isHit) {
+      // Cache HIT
       setTimeout(() => {
-        setAnimations((prev) => prev.filter((a) => a.id !== animId));
-      }, 800);
-    },
-    [cacheSize, evictionPolicy, ttlSeconds, findEvictionCandidate]
-  );
+        setAnimation((prev) => prev && { ...prev, phase: 'hit' });
+        setLastAction(`HIT! "${key}" found in cache (${CACHE_LATENCY}ms)`);
 
-  // Process a write request
-  const processWrite = useCallback(
-    (key: string) => {
-      const animId = `${Date.now()}-${Math.random()}`;
-      const now = Date.now();
+        // Update access stats
+        setCache((prev) =>
+          prev.map((item) =>
+            item.key === key
+              ? { ...item, accessCount: item.accessCount + 1, lastAccess: currentTick }
+              : item
+          )
+        );
 
-      setAnimations((prev) => [
-        ...prev,
-        { id: animId, key, type: 'write', phase: 'to-cache', isHit: false },
-      ]);
-
-      if (writeStrategy === 'write-around') {
-        // Write-around: only write to DB, invalidate cache
-        setCache((prevCache) => {
-          const newCache = new Map(prevCache);
-          newCache.delete(key);
-          return newCache;
-        });
-        setLastOperation(`WRITE-AROUND: ${key} (DB only)`);
-      } else {
-        // Write-through or write-back: update cache
-        setCache((prevCache) => {
-          const newCache = new Map(prevCache);
-
-          if (newCache.size >= cacheSize && !newCache.has(key)) {
-            const evictKey = findEvictionCandidate(newCache);
-            if (evictKey) {
-              newCache.delete(evictKey);
-              setStats((s) => ({ ...s, evictions: s.evictions + 1 }));
-            }
-          }
-
-          const existing = newCache.get(key);
-          newCache.set(key, {
-            key,
-            value: `updated_${key}_${now}`,
-            accessCount: existing ? existing.accessCount + 1 : 1,
-            lastAccess: now,
-            insertTime: existing ? existing.insertTime : now,
-            ttl: ttlSeconds * 1000,
-            expiresAt: now + ttlSeconds * 1000,
-          });
-
-          return newCache;
-        });
-
-        const strategyLabel = writeStrategy === 'write-through' ? 'WRITE-THROUGH' : 'WRITE-BACK';
-        setLastOperation(`${strategyLabel}: ${key}`);
-      }
-
-      setStats((s) => ({ ...s, totalRequests: s.totalRequests + 1 }));
+        setStats((prev) => ({
+          ...prev,
+          hits: prev.hits + 1,
+          totalTime: prev.totalTime + CACHE_LATENCY,
+        }));
+      }, 400);
 
       setTimeout(() => {
-        setAnimations((prev) => prev.filter((a) => a.id !== animId));
+        setAnimation(null);
+      }, 1200);
+    } else {
+      // Cache MISS
+      setTimeout(() => {
+        setAnimation((prev) => prev && { ...prev, phase: 'miss-fetching' });
+        setLastAction(`MISS! Fetching "${key}" from database...`);
+      }, 400);
+
+      setTimeout(() => {
+        // Check if we need to evict
+        const toEvict = getItemToEvict(cache);
+        if (toEvict) {
+          setEvictingKey(toEvict.key);
+          setLastAction(`Evicting "${toEvict.key}" (${EVICTION_POLICIES[policy].how.toLowerCase()})`);
+        }
       }, 800);
-    },
-    [writeStrategy, cacheSize, ttlSeconds, findEvictionCandidate]
-  );
 
-  // Auto-run traffic
-  useEffect(() => {
-    if (!isRunning) return;
+      setTimeout(() => {
+        setAnimation((prev) => prev && { ...prev, phase: 'storing' });
 
-    const interval = setInterval(() => {
-      tickRef.current++;
-      const key = selectKey();
-      // 80% reads, 20% writes
-      if (Math.random() < 0.8) {
-        processRead(key);
-      } else {
-        processWrite(key);
-      }
-    }, trafficRate);
+        // Add to cache (with potential eviction)
+        setCache((prev) => {
+          const toEvict = getItemToEvict(prev);
+          const filtered = toEvict ? prev.filter((item) => item.key !== toEvict.key) : prev;
+          return [
+            ...filtered,
+            { key, accessCount: 1, lastAccess: currentTick, insertTime: currentTick },
+          ];
+        });
 
-    return () => clearInterval(interval);
-  }, [isRunning, trafficRate, selectKey, processRead, processWrite]);
+        setEvictingKey(null);
+        setLastAction(`Stored "${key}" in cache (${DB_LATENCY}ms total)`);
 
-  // Reset
-  const handleReset = () => {
-    setIsRunning(false);
-    setCache(new Map());
-    setStats({ hits: 0, misses: 0, evictions: 0, totalRequests: 0, timeSavedMs: 0 });
-    setAnimations([]);
-    setLastOperation(null);
-    tickRef.current = 0;
+        setStats((prev) => ({
+          ...prev,
+          misses: prev.misses + 1,
+          totalTime: prev.totalTime + DB_LATENCY,
+        }));
+      }, 1200);
+
+      setTimeout(() => {
+        setAnimation(null);
+      }, 1800);
+    }
+  }, [animation, cache, getItemToEvict, policy, tick]);
+
+  const reset = () => {
+    setCache([]);
+    setAnimation(null);
+    setStats({ hits: 0, misses: 0, totalTime: 0 });
+    setEvictingKey(null);
+    setLastAction('');
+    setTick(0);
   };
 
-  // Manual operations
-  const handleManualRead = (key: string) => {
-    processRead(key);
-  };
+  const hitRate = stats.hits + stats.misses > 0
+    ? ((stats.hits / (stats.hits + stats.misses)) * 100).toFixed(1)
+    : '0.0';
 
-  const handleManualWrite = (key: string) => {
-    processWrite(key);
-  };
+  const getItemColor = (key: string) =>
+    DATA_ITEMS.find((item) => item.key === key)?.color || 'bg-gray-500';
 
-  const handleClearCache = () => {
-    setCache(new Map());
-    setLastOperation('Cache cleared');
-  };
-
-  const handleInvalidateKey = (key: string) => {
-    setCache((prevCache) => {
-      const newCache = new Map(prevCache);
-      newCache.delete(key);
-      return newCache;
-    });
-    setLastOperation(`Invalidated: ${key}`);
-  };
+  const getItemLabel = (key: string) =>
+    DATA_ITEMS.find((item) => item.key === key)?.label || key;
 
   return (
-    <div className="w-full max-w-7xl mx-auto p-4 space-y-6">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-          Caching Strategies Simulator
-        </h1>
-        <p className="text-muted-foreground">
-          Learn how caching works with different eviction policies and write strategies
-        </p>
-      </div>
-
-      {/* Controls */}
+    <div className="w-full max-w-4xl mx-auto space-y-6">
+      {/* Policy Selector */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Configuration</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Zap className="h-5 w-5 text-yellow-500" />
+            Eviction Policy
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Cache Size */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Cache Size: {cacheSize}</label>
-              <input
-                type="range"
-                min="4"
-                max="16"
-                value={cacheSize}
-                onChange={(e) => setCacheSize(Number(e.target.value))}
-                className="w-full"
-                disabled={isRunning}
-              />
-            </div>
-
-            {/* Eviction Policy */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Eviction Policy</label>
-              <select
-                value={evictionPolicy}
-                onChange={(e) => setEvictionPolicy(e.target.value as EvictionPolicy)}
-                className="w-full p-2 rounded border bg-background"
-                disabled={isRunning}
+          <div className="grid grid-cols-3 gap-3">
+            {(Object.keys(EVICTION_POLICIES) as EvictionPolicy[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => {
+                  if (!animation) {
+                    setPolicy(p);
+                    reset();
+                  }
+                }}
+                className={cn(
+                  'p-3 rounded-lg border-2 transition-all text-left',
+                  policy === p
+                    ? 'border-blue-500 bg-blue-500/10'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                )}
               >
-                {Object.entries(EVICTION_POLICIES).map(([key, val]) => (
-                  <option key={key} value={key}>
-                    {val.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Write Strategy */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Write Strategy</label>
-              <select
-                value={writeStrategy}
-                onChange={(e) => setWriteStrategy(e.target.value as WriteStrategy)}
-                className="w-full p-2 rounded border bg-background"
-                disabled={isRunning}
-              >
-                {Object.entries(WRITE_STRATEGIES).map(([key, val]) => (
-                  <option key={key} value={key}>
-                    {val.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Access Pattern */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Access Pattern</label>
-              <select
-                value={accessPattern}
-                onChange={(e) => setAccessPattern(e.target.value as AccessPattern)}
-                className="w-full p-2 rounded border bg-background"
-                disabled={isRunning}
-              >
-                <option value="zipf">Zipf (Hot Keys)</option>
-                <option value="random">Random</option>
-                <option value="sequential">Sequential</option>
-              </select>
-            </div>
+                <div className="font-bold text-sm">{EVICTION_POLICIES[p].name}</div>
+                <div className="text-xs text-muted-foreground">
+                  {EVICTION_POLICIES[p].description}
+                </div>
+              </button>
+            ))}
           </div>
-
-          {/* TTL for TTL policy */}
-          {evictionPolicy === 'ttl' && (
-            <div className="mt-4">
-              <label className="text-sm font-medium mb-2 block">TTL: {ttlSeconds}s</label>
-              <input
-                type="range"
-                min="5"
-                max="60"
-                value={ttlSeconds}
-                onChange={(e) => setTtlSeconds(Number(e.target.value))}
-                className="w-full max-w-xs"
-                disabled={isRunning}
-              />
-            </div>
-          )}
-
-          {/* Policy Description */}
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2 text-sm">
-              <Zap className="h-4 w-4 text-purple-500" />
-              <span className="font-medium">Policy:</span>
-              <span className="text-muted-foreground">
-                {EVICTION_POLICIES[evictionPolicy].description}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-sm mt-1">
-              <Edit className="h-4 w-4 text-blue-500" />
-              <span className="font-medium">Write:</span>
-              <span className="text-muted-foreground">
-                {WRITE_STRATEGIES[writeStrategy].description}
-              </span>
-            </div>
-          </div>
-
-          {/* Traffic Controls */}
-          <div className="mt-4 flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Traffic Rate:</span>
-              <div className="flex gap-1">
-                {TRAFFIC_RATES.map((rate) => (
-                  <Button
-                    key={rate.value}
-                    variant={trafficRate === rate.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setTrafficRate(rate.value)}
-                  >
-                    {rate.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setIsRunning(!isRunning)}
-                variant={isRunning ? 'destructive' : 'default'}
-              >
-                {isRunning ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
-                {isRunning ? 'Pause' : 'Start'}
-              </Button>
-              <Button variant="outline" onClick={handleReset}>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset
-              </Button>
-              <Button variant="outline" onClick={handleClearCache}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear Cache
-              </Button>
-            </div>
-          </div>
+          <p className="mt-3 text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+            <strong>{EVICTION_POLICIES[policy].name}:</strong> {EVICTION_POLICIES[policy].how}
+          </p>
         </CardContent>
       </Card>
 
       {/* Main Visualization */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cache Visualization */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <HardDrive className="h-5 w-5 text-purple-500" />
-              Cache ({cache.size}/{cacheSize} items)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {/* Cache Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 min-h-[200px]">
-              <AnimatePresence mode="popLayout">
-                {cacheArray.map(([key, item]) => (
-                  <motion.div
-                    key={key}
-                    layout
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-                    className="relative p-2 rounded-lg border bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30"
-                  >
-                    <div className="text-xs font-mono font-bold truncate">{item.key}</div>
-                    <div className="text-[10px] text-muted-foreground truncate">{item.value}</div>
-                    <div className="flex justify-between mt-1 text-[9px] text-muted-foreground">
-                      <span>Hits: {item.accessCount}</span>
-                      {evictionPolicy === 'ttl' && (
-                        <span className="text-orange-500">
-                          TTL: {Math.max(0, Math.round((item.expiresAt - Date.now()) / 1000))}s
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleInvalidateKey(key)}
-                      className="absolute top-1 right-1 opacity-50 hover:opacity-100 text-red-500"
-                      title="Invalidate"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-
-              {/* Empty slots */}
-              {Array.from({ length: Math.max(0, cacheSize - cache.size) }).map((_, i) => (
-                <div
-                  key={`empty-${i}`}
-                  className="p-2 rounded-lg border border-dashed border-muted-foreground/20 flex items-center justify-center text-xs text-muted-foreground"
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Cache Simulator</CardTitle>
+            <Button variant="outline" size="sm" onClick={reset} disabled={!!animation}>
+              <RotateCcw className="h-4 w-4 mr-1" />
+              Reset
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Request Buttons */}
+          <div>
+            <div className="text-sm font-medium mb-2 text-muted-foreground">
+              Click to request data:
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {DATA_ITEMS.map((item) => (
+                <Button
+                  key={item.key}
+                  variant="outline"
+                  onClick={() => handleRequest(item.key)}
+                  disabled={!!animation}
+                  className={cn(
+                    'flex flex-col items-center py-3 h-auto',
+                    cache.some((c) => c.key === item.key) && 'ring-2 ring-green-500'
+                  )}
                 >
-                  Empty
-                </div>
+                  <span
+                    className={cn(
+                      'w-8 h-8 rounded-full flex items-center justify-center text-white font-bold mb-1',
+                      item.color
+                    )}
+                  >
+                    {item.key}
+                  </span>
+                  <span className="text-xs text-muted-foreground truncate w-full text-center">
+                    {item.label}
+                  </span>
+                </Button>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Items with green ring are in cache
+            </p>
+          </div>
 
-            {/* Last Operation */}
-            {lastOperation && (
-              <motion.div
-                key={lastOperation}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`mt-4 p-2 rounded text-sm font-mono text-center ${
-                  lastOperation.includes('HIT')
-                    ? 'bg-green-500/20 text-green-600'
-                    : lastOperation.includes('MISS')
-                      ? 'bg-red-500/20 text-red-600'
-                      : 'bg-blue-500/20 text-blue-600'
-                }`}
-              >
-                {lastOperation}
-              </motion.div>
-            )}
+          {/* Visual Flow */}
+          <div className="relative h-32 bg-muted/30 rounded-lg overflow-hidden">
+            {/* Database */}
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
+              <div className="w-12 h-12 bg-slate-600 rounded-lg flex items-center justify-center">
+                <Database className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xs mt-1 text-muted-foreground">Database</span>
+              <span className="text-xs text-muted-foreground">({DB_LATENCY}ms)</span>
+            </div>
 
-            {/* Request Animations */}
+            {/* Cache */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2">
+              <div className="flex flex-col items-center">
+                <div className="flex gap-1 p-2 bg-emerald-500/20 rounded-lg border-2 border-emerald-500">
+                  {Array.from({ length: CACHE_SIZE }).map((_, i) => {
+                    const item = cache[i];
+                    return (
+                      <div
+                        key={i}
+                        className={cn(
+                          'w-10 h-10 rounded flex items-center justify-center text-white font-bold text-sm transition-all',
+                          item
+                            ? cn(
+                                getItemColor(item.key),
+                                evictingKey === item.key && 'animate-pulse ring-2 ring-red-500'
+                              )
+                            : 'bg-gray-300 dark:bg-gray-700'
+                        )}
+                      >
+                        {item ? item.key : '-'}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-1 mt-1">
+                  <HardDrive className="h-3 w-3 text-emerald-500" />
+                  <span className="text-xs text-muted-foreground">Cache ({CACHE_LATENCY}ms)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* App/User */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
+              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                <Zap className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xs mt-1 text-muted-foreground">Your App</span>
+            </div>
+
+            {/* Animated Request */}
             <AnimatePresence>
-              {animations.map((anim) => (
+              {animation && (
                 <motion.div
-                  key={anim.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full text-xs font-bold ${
-                    anim.isHit ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                  }`}
+                  key={animation.id}
+                  className={cn(
+                    'absolute w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm z-10',
+                    getItemColor(animation.key)
+                  )}
+                  initial={{ right: 16, top: '50%', y: '-50%' }}
+                  animate={{
+                    right:
+                      animation.phase === 'checking'
+                        ? '50%'
+                        : animation.phase === 'hit'
+                          ? 16
+                          : animation.phase === 'miss-fetching'
+                            ? 'calc(100% - 64px)'
+                            : animation.phase === 'storing'
+                              ? '50%'
+                              : 16,
+                    x: animation.phase === 'checking' || animation.phase === 'storing' ? '50%' : 0,
+                  }}
+                  transition={{ duration: 0.3 }}
                 >
-                  {anim.isHit ? 'HIT!' : 'MISS'}
+                  {animation.key}
                 </motion.div>
-              ))}
+              )}
             </AnimatePresence>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Stats Panel */}
+          {/* Status Message */}
+          <div
+            className={cn(
+              'text-center py-2 px-4 rounded-lg font-medium text-sm',
+              lastAction.includes('HIT')
+                ? 'bg-green-500/20 text-green-700 dark:text-green-400'
+                : lastAction.includes('MISS') || lastAction.includes('Evicting')
+                  ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                  : lastAction.includes('Stored')
+                    ? 'bg-blue-500/20 text-blue-700 dark:text-blue-400'
+                    : 'bg-muted text-muted-foreground'
+            )}
+          >
+            {lastAction || 'Click a data item above to make a request'}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats & Cache Details */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Stats */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <Zap className="h-5 w-5 text-yellow-500" />
-              Statistics
+              <TrendingUp className="h-5 w-5 text-blue-500" />
+              Performance Stats
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Hit Rate Gauge */}
-            <div className="text-center">
-              <div className="text-4xl font-bold text-purple-500">{hitRate}%</div>
-              <div className="text-sm text-muted-foreground">Hit Rate</div>
-              <div className="mt-2 h-3 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all"
-                  style={{ width: `${hitRate}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>0%</span>
-                <span className="text-green-500">Target: 80%+</span>
-                <span>100%</span>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-green-500/10 rounded-lg text-center">
-                <div className="text-2xl font-bold text-green-600">{stats.hits}</div>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-green-500/10 rounded-lg">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {stats.hits}
+                </div>
                 <div className="text-xs text-muted-foreground">Cache Hits</div>
               </div>
-              <div className="p-3 bg-red-500/10 rounded-lg text-center">
-                <div className="text-2xl font-bold text-red-600">{stats.misses}</div>
+              <div className="text-center p-3 bg-amber-500/10 rounded-lg">
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                  {stats.misses}
+                </div>
                 <div className="text-xs text-muted-foreground">Cache Misses</div>
               </div>
-              <div className="p-3 bg-orange-500/10 rounded-lg text-center">
-                <div className="text-2xl font-bold text-orange-600">{stats.evictions}</div>
-                <div className="text-xs text-muted-foreground">Evictions</div>
-              </div>
-              <div className="p-3 bg-blue-500/10 rounded-lg text-center">
-                <div className="text-2xl font-bold text-blue-600">{stats.totalRequests}</div>
-                <div className="text-xs text-muted-foreground">Total Requests</div>
-              </div>
-            </div>
-
-            {/* Time Saved */}
-            <div className="p-3 bg-purple-500/10 rounded-lg text-center">
-              <div className="flex items-center justify-center gap-2">
-                <Clock className="h-5 w-5 text-purple-500" />
-                <span className="text-2xl font-bold text-purple-600">
-                  {(stats.timeSavedMs / 1000).toFixed(2)}s
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground">Time Saved by Caching</div>
-            </div>
-
-            {/* Latency Comparison */}
-            <div className="space-y-2">
-              <div className="text-sm font-medium">Latency Comparison</div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="w-16">Cache:</span>
-                <div className="flex-1 h-4 bg-muted rounded overflow-hidden">
-                  <div className="h-full bg-green-500" style={{ width: '5%' }} />
+              <div className="text-center p-3 bg-blue-500/10 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {hitRate}%
                 </div>
-                <span className="text-green-600">{CACHE_LATENCY_MS}ms</span>
+                <div className="text-xs text-muted-foreground">Hit Rate</div>
               </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="w-16">Database:</span>
-                <div className="flex-1 h-4 bg-muted rounded overflow-hidden">
-                  <div className="h-full bg-red-500" style={{ width: '100%' }} />
+              <div className="text-center p-3 bg-purple-500/10 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {stats.totalTime}ms
                 </div>
-                <span className="text-red-600">{DB_LATENCY_MS}ms</span>
+                <div className="text-xs text-muted-foreground">Total Time</div>
               </div>
             </div>
+            {stats.hits + stats.misses > 0 && (
+              <p className="mt-3 text-xs text-muted-foreground text-center">
+                Without cache: {(stats.hits + stats.misses) * DB_LATENCY}ms |
+                Saved: {(stats.hits + stats.misses) * DB_LATENCY - stats.totalTime}ms
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Cache Contents */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5 text-emerald-500" />
+              Cache Contents
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {cache.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-4">
+                Cache is empty. Request some data!
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {cache.map((item) => (
+                  <div
+                    key={item.key}
+                    className={cn(
+                      'flex items-center gap-3 p-2 rounded-lg bg-muted/50',
+                      evictingKey === item.key && 'ring-2 ring-red-500 animate-pulse'
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm',
+                        getItemColor(item.key)
+                      )}
+                    >
+                      {item.key}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{getItemLabel(item.key)}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Accessed: {item.accessCount}x | Last: #{item.lastAccess} | Added: #{item.insertTime}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Manual Operations */}
+      {/* Educational Section */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Manual Operations</CardTitle>
+          <CardTitle className="text-lg">How Caching Works</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2">
-            {DATA_KEYS.slice(0, 10).map((key) => (
-              <div key={key} className="flex items-center gap-1">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleManualRead(key)}
-                  className="text-xs"
-                >
-                  <Search className="h-3 w-3 mr-1" />
-                  {key}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleManualWrite(key)}
-                  className="text-xs text-blue-500"
-                >
-                  <Edit className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
+        <CardContent className="text-sm text-muted-foreground space-y-3">
+          <p>
+            <strong>Caching</strong> stores frequently accessed data in fast memory to avoid
+            slow database lookups. When you request data:
+          </p>
+          <ol className="list-decimal list-inside space-y-1 ml-2">
+            <li><strong>Cache Hit:</strong> Data is found in cache → returned instantly ({CACHE_LATENCY}ms)</li>
+            <li><strong>Cache Miss:</strong> Data not in cache → fetch from database ({DB_LATENCY}ms), then store in cache</li>
+          </ol>
+          <p>
+            When the cache is full (4 items), the <strong>eviction policy</strong> decides which
+            item to remove to make room for new data. Try different policies and see how they
+            affect performance!
+          </p>
         </CardContent>
       </Card>
     </div>
