@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import {
   Target,
   BookOpen,
   Zap,
+  Keyboard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -283,6 +284,59 @@ export default function GitCommandQuiz() {
     setShowHint(false);
     setGameStarted(false);
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (!gameStarted || currentScenario >= scenarios.length) {
+        if ((e.key === 'Enter' || e.key === ' ') && !gameStarted) {
+          e.preventDefault();
+          setGameStarted(true);
+        }
+        if (e.key === 'r' || e.key === 'R') {
+          handleRestart();
+        }
+        return;
+      }
+
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= scenario.options.length && !showResult) {
+        e.preventDefault();
+        setSelectedAnswer(num - 1);
+      }
+
+      if (e.key === 'Enter' && selectedAnswer !== null && !showResult) {
+        e.preventDefault();
+        handleSubmit();
+      }
+
+      if ((e.key === 'n' || e.key === 'N' || e.key === 'ArrowRight') && showResult) {
+        e.preventDefault();
+        handleNext();
+      }
+
+      if ((e.key === 'h' || e.key === 'H') && !showResult) {
+        e.preventDefault();
+        setShowHint((prev) => !prev);
+      }
+
+      if (e.key === 'r' || e.key === 'R') {
+        handleRestart();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [gameStarted, currentScenario, selectedAnswer, showResult, scenario]);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -757,6 +811,12 @@ export default function GitCommandQuiz() {
                   <Sparkles className="ml-2 h-4 w-4" />
                 </Button>
               )}
+            </div>
+
+            {/* Keyboard shortcuts hint */}
+            <div className="hidden sm:flex items-center gap-2 text-xs opacity-70">
+              <Keyboard className="h-3 w-3" />
+              <span>1-{scenario.options.length} select · Enter submit · N next · H hint · R restart</span>
             </div>
           </div>
         </CardContent>

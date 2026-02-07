@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause, RefreshCw, Wifi, WifiOff, Shield, Zap, Activity, AlertTriangle, Info, Lock, ArrowRightLeft } from 'lucide-react';
+import { Play, Pause, RefreshCw, Wifi, WifiOff, Shield, Zap, Activity, AlertTriangle, Info, Lock, ArrowRightLeft, Keyboard } from 'lucide-react';
 
 /**
  * TCP vs UDP Visual Simulator
@@ -369,6 +369,41 @@ export default function TcpVsUdpSimulator() {
     logMessage(`Switched to ${newMode} Protocol`);
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Space to toggle play/pause
+      if (e.key === ' ') {
+        e.preventDefault();
+        handleStartStop();
+      }
+
+      // R to reset
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        handleReset();
+      }
+
+      // M to toggle mode
+      if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        handleModeChange(mode === MODES.TCP ? MODES.UDP : MODES.TCP);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [mode, handleStartStop, handleReset, handleModeChange]);
+
   // --- Renderers ---
 
   return (
@@ -675,6 +710,11 @@ export default function TcpVsUdpSimulator() {
         <div className="text-center mt-4">
              <p className="text-slate-600 dark:text-slate-500 text-sm">
                  Experiment by increasing "Packet Loss" to see how TCP retries vs UDP just loses data.
+             </p>
+             {/* Keyboard shortcuts hint */}
+             <p className="hidden sm:flex items-center justify-center gap-2 text-xs opacity-70 mt-2">
+               <Keyboard className="h-3 w-3" />
+               <span>Space play/pause · M toggle mode · R reset</span>
              </p>
         </div>
 

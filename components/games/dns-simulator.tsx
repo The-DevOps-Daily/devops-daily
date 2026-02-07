@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,7 @@ import {
   Zap,
   HardDrive,
   Wifi,
+  Keyboard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -265,6 +266,57 @@ export default function DnsSimulator() {
   const [isComplete, setIsComplete] = useState(false);
   const [stats, setStats] = useState({ queries: 0, cacheHits: 0, totalTime: 0 });
 
+  // Keyboard navigation handler
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Space to start lookup
+      if (e.key === ' ' && !isRunning && currentStepIndex === -1) {
+        e.preventDefault();
+        runLookup();
+        return;
+      }
+
+      // Arrow keys for step navigation
+      if (e.key === 'ArrowRight' && isRunning && currentStepIndex < steps.length) {
+        e.preventDefault();
+        handleStepForward();
+      }
+      if (e.key === 'ArrowLeft' && isRunning && currentStepIndex > 0) {
+        e.preventDefault();
+        handleStepBack();
+      }
+
+      // R to reset
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        handleReset();
+      }
+
+      // Escape to reset
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleReset();
+      }
+    },
+    [isRunning, currentStepIndex, steps.length]
+  );
+
+  // Add keyboard event listener
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   const runLookup = useCallback(() => {
     const newSteps = generateSteps(domain, recordType, browserCache, osCache, resolverCache);
     setSteps(newSteps);
@@ -449,6 +501,16 @@ export default function DnsSimulator() {
               <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
                 {recordType} {domain}
               </code>
+            </div>
+
+            <div className="ml-auto hidden items-center gap-1.5 text-xs text-muted-foreground lg:flex">
+              <Keyboard className="h-3 w-3" />
+              <span>
+                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">Space</kbd> start,{' '}
+                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">→</kbd> next,{' '}
+                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">←</kbd> back,{' '}
+                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">R</kbd> reset
+              </span>
             </div>
           </div>
         </CardContent>

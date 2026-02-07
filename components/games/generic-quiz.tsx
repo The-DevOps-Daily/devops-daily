@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,7 @@ import {
   Code,
   GitBranch,
   Terminal,
+  Keyboard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -96,6 +97,68 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
     setShowHint(false);
     setGameStarted(false);
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Only handle keys when quiz is active (not on start/results screen)
+      if (!gameStarted || currentQuestion >= quizConfig.questions.length) {
+        // Enter or Space to start quiz
+        if ((e.key === 'Enter' || e.key === ' ') && !gameStarted) {
+          e.preventDefault();
+          setGameStarted(true);
+        }
+        // R to restart on results screen
+        if (e.key === 'r' || e.key === 'R') {
+          handleRestart();
+        }
+        return;
+      }
+
+      // Number keys 1-4 to select answer
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= question.options.length && !showResult) {
+        e.preventDefault();
+        setSelectedAnswer(num - 1);
+      }
+
+      // Enter to submit answer
+      if (e.key === 'Enter' && selectedAnswer !== null && !showResult) {
+        e.preventDefault();
+        handleSubmit();
+      }
+
+      // N or ArrowRight for next question (after showing result)
+      if ((e.key === 'n' || e.key === 'N' || e.key === 'ArrowRight') && showResult) {
+        e.preventDefault();
+        handleNext();
+      }
+
+      // H to toggle hint
+      if ((e.key === 'h' || e.key === 'H') && !showResult && question.hint) {
+        e.preventDefault();
+        setShowHint((prev) => !prev);
+      }
+
+      // R to restart quiz
+      if (e.key === 'r' || e.key === 'R') {
+        handleRestart();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  });
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -258,6 +321,10 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                   <Play className="mr-2 h-5 w-5" />
                   Start Quiz
                 </Button>
+                <p className="mt-4 text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                  <Keyboard className="h-3 w-3" />
+                  <span>Press <kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px] font-mono">1-4</kbd> to select, <kbd className="px-1.5 py-0.5 bg-muted border rounded text-[10px] font-mono">Enter</kbd> to submit</span>
+                </p>
               </motion.div>
             </CardContent>
           </Card>

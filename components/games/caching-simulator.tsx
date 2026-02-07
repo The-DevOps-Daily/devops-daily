@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +13,7 @@ import {
   CheckCircle,
   XCircle,
   ArrowDown,
+  Keyboard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -92,6 +93,43 @@ export default function CachingSimulator() {
     time: number;
     key: string;
   } | null>(null);
+
+  // Keyboard navigation handler
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Number keys 1-6 to request data item (A-F)
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= DATA_ITEMS.length && !animation) {
+        e.preventDefault();
+        handleRequest(DATA_ITEMS[num - 1].key);
+      }
+
+      // R to reset
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        reset();
+      }
+
+      // Escape to reset
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        reset();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [animation]);
 
   const getItemToEvict = useCallback(
     (currentCache: CacheItem[]): CacheItem | null => {
@@ -395,6 +433,13 @@ export default function CachingSimulator() {
             </div>
             <p className="text-[10px] sm:text-xs text-muted-foreground mt-2">
               Green ring = in cache
+            </p>
+            <p className="hidden text-[10px] text-muted-foreground mt-1 items-center gap-1 sm:flex">
+              <Keyboard className="h-3 w-3" />
+              <span>
+                Press <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">1-6</kbd> to request,{' '}
+                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">R</kbd> to reset
+              </span>
             </p>
           </div>
 

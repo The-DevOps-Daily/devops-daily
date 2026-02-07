@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, RotateCcw, Users, Server, XCircle } from 'lucide-react';
+import { Play, Pause, RotateCcw, Users, Server, XCircle, Keyboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type AlgorithmType = 'round-robin' | 'least-connections' | 'ip-hash' | 'random';
@@ -208,6 +208,43 @@ export default function LoadBalancerSimulator() {
     setClientIndex(0);
     setFailedRequests(0);
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Space to toggle start/stop
+      if (e.key === ' ') {
+        e.preventDefault();
+        setIsRunning((prev) => !prev);
+      }
+
+      // R to reset
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        reset();
+      }
+
+      // 1-4 to select algorithm
+      const algos: AlgorithmType[] = ['round-robin', 'least-connections', 'ip-hash', 'random'];
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 4) {
+        e.preventDefault();
+        setAlgorithm(algos[num - 1]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const totalRequests = servers.reduce((sum, s) => sum + s.requests, 0);
 
@@ -449,6 +486,12 @@ export default function LoadBalancerSimulator() {
                 <div className="text-xs text-muted-foreground">requests handled</div>
               </div>
             ))}
+          </div>
+
+          {/* Keyboard shortcuts hint */}
+          <div className="hidden sm:flex items-center justify-center gap-2 text-xs opacity-70 pt-2">
+            <Keyboard className="h-3 w-3" />
+            <span>Space start/stop · 1-4 algorithm · R reset</span>
           </div>
         </CardContent>
       </Card>

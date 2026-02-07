@@ -27,6 +27,7 @@ import {
   Activity,
   BarChart3,
   Settings,
+  Keyboard,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -358,6 +359,35 @@ export default function RateLimitSimulator() {
     }
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Space to toggle start/stop
+      if (e.key === ' ') {
+        e.preventDefault();
+        handleToggle();
+      }
+
+      // R to reset
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        resetSimulation();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRunning, startSimulation, stopSimulation, resetSimulation]);
+
   // Calculate rates
   const successRate = totalRequests > 0 ? (successfulRequests / totalRequests) * 100 : 0;
   const throttleRate = totalRequests > 0 ? (throttledRequests / totalRequests) * 100 : 0;
@@ -547,6 +577,12 @@ export default function RateLimitSimulator() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Keyboard shortcuts hint */}
+          <div className="hidden sm:flex items-center justify-center gap-2 text-xs opacity-70">
+            <Keyboard className="h-3 w-3" />
+            <span>Space start/stop · R reset</span>
+          </div>
 
           {/* Chart */}
           <Card>

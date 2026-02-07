@@ -17,6 +17,7 @@ import {
   Activity,
   Zap,
   Eye,
+  Keyboard,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -330,6 +331,55 @@ export default function DeploymentStrategiesSimulator() {
   useEffect(() => {
    reset();
  }, [strategy, reset]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Space to toggle play/pause
+      if (e.key === ' ') {
+        e.preventDefault();
+        setIsPlaying((prev) => !prev);
+      }
+
+      // Arrow keys for step navigation
+      if (e.key === 'ArrowRight' && currentStep < config.steps.length - 1) {
+        e.preventDefault();
+        setIsPlaying(false);
+        setCurrentStep((s) => s + 1);
+      }
+      if (e.key === 'ArrowLeft' && currentStep > 0) {
+        e.preventDefault();
+        setIsPlaying(false);
+        setCurrentStep((s) => s - 1);
+      }
+
+      // R to reset
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        reset();
+      }
+
+      // 1-4 to select strategy
+      const strategies: DeploymentStrategy[] = ['recreate', 'rolling', 'blue-green', 'canary'];
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 4) {
+        e.preventDefault();
+        setStrategy(strategies[num - 1]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentStep, config.steps.length, reset]);
 
   const hasV1Traffic = step.trafficSplit.v1 > 0;
   const hasV2Traffic = step.trafficSplit.v2 > 0;
@@ -711,6 +761,12 @@ export default function DeploymentStrategiesSimulator() {
               ))}
             </ul>
           </div>
+        </div>
+
+        {/* Keyboard shortcuts hint */}
+        <div className="hidden sm:flex items-center justify-center gap-2 text-xs opacity-70">
+          <Keyboard className="h-3 w-3" />
+          <span>Space play/pause · ←→ step · 1-4 strategy · R reset</span>
         </div>
       </CardContent>
     </Card>
