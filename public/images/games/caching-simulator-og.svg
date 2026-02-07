@@ -199,25 +199,13 @@
       <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
       <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#c084fc" text-anchor="middle">LRU</text>
     </g>
-    <g transform="translate(-100, 190)">
+    <g transform="translate(-90, 190)">
       <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#ec4899" stroke-width="1.5"/>
-      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#f472b6" text-anchor="middle">LFU</text>
+      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#f472b6" text-anchor="middle">FIFO</text>
     </g>
-    <g transform="translate(-20, 190)">
+    <g transform="translate(0, 190)">
       <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
-      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#22d3ee" text-anchor="middle">FIFO</text>
-    </g>
-    <g transform="translate(60, 190)">
-      <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
-      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#4ade80" text-anchor="middle">TTL</text>
-    </g>
-    <g transform="translate(-140, 230)">
-      <rect x="0" y="0" width="110" height="28" rx="14" fill="#1e293b" stroke="#f97316" stroke-width="1.5"/>
-      <text x="55" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#fb923c" text-anchor="middle">Write-Through</text>
-    </g>
-    <g transform="translate(-20, 230)">
-      <rect x="0" y="0" width="110" height="28" rx="14" fill="#1e293b" stroke="#eab308" stroke-width="1.5"/>
-      <text x="55" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#fde047" text-anchor="middle">Write-Back</text>
+      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#22d3ee" text-anchor="middle">LFU</text>
     </g>
   </g>
 

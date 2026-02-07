@@ -58,14 +58,16 @@ const DATA_ITEMS = [
 ];
 
 const CACHE_SIZE = 4;
-const CACHE_LATENCY = 5;
-const DB_LATENCY = 100;
+
+// Realistic latency ranges (in milliseconds)
+const getCacheLatency = () => Math.floor(Math.random() * 9) + 1; // 1-10ms
+const getDbLatency = () => Math.floor(Math.random() * 150) + 50; // 50-200ms
 
 export default function CachingSimulator() {
   const [policy, setPolicy] = useState<EvictionPolicy>('lru');
   const [cache, setCache] = useState<CacheItem[]>([]);
   const [animation, setAnimation] = useState<RequestAnimation | null>(null);
-  const [stats, setStats] = useState({ hits: 0, misses: 0, totalTime: 0 });
+  const [stats, setStats] = useState({ hits: 0, misses: 0, totalTime: 0, withoutCacheTime: 0 });
   const [evictingKey, setEvictingKey] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [requestSteps, setRequestSteps] = useState<RequestStep[]>([]);
@@ -100,6 +102,10 @@ export default function CachingSimulator() {
     setTick(currentTick);
     setLastResult(null);
 
+    // Generate realistic latencies for this request
+    const cacheLatency = getCacheLatency();
+    const dbLatency = getDbLatency();
+
     const cachedItem = cache.find((item) => item.key === key);
     const isHit = !!cachedItem;
 
@@ -109,13 +115,13 @@ export default function CachingSimulator() {
       // Cache HIT - show 2-step process
       setRequestSteps([
         { step: 1, label: 'Check cache for data', status: 'active' },
-        { step: 2, label: 'Return from cache', status: 'pending', time: CACHE_LATENCY },
+        { step: 2, label: 'Return from cache', status: 'pending', time: cacheLatency },
       ]);
 
       setTimeout(() => {
         setRequestSteps([
           { step: 1, label: 'Check cache for data', status: 'done' },
-          { step: 2, label: 'Found! Return from cache', status: 'active', time: CACHE_LATENCY },
+          { step: 2, label: 'Found! Return from cache', status: 'active', time: cacheLatency },
         ]);
         setAnimation((prev) => prev && { ...prev, phase: 'hit' });
 
@@ -130,16 +136,17 @@ export default function CachingSimulator() {
         setStats((prev) => ({
           ...prev,
           hits: prev.hits + 1,
-          totalTime: prev.totalTime + CACHE_LATENCY,
+          totalTime: prev.totalTime + cacheLatency,
+          withoutCacheTime: prev.withoutCacheTime + dbLatency,
         }));
       }, 400);
 
       setTimeout(() => {
         setRequestSteps([
           { step: 1, label: 'Check cache for data', status: 'done' },
-          { step: 2, label: 'Found! Return from cache', status: 'done', time: CACHE_LATENCY },
+          { step: 2, label: 'Found! Return from cache', status: 'done', time: cacheLatency },
         ]);
-        setLastResult({ isHit: true, time: CACHE_LATENCY, key });
+        setLastResult({ isHit: true, time: cacheLatency, key });
         setAnimation(null);
       }, 1200);
     } else {
@@ -149,7 +156,7 @@ export default function CachingSimulator() {
 
       setRequestSteps([
         { step: 1, label: 'Check cache for data', status: 'active' },
-        { step: 2, label: 'Fetch from database', status: 'pending', time: DB_LATENCY },
+        { step: 2, label: 'Fetch from database', status: 'pending', time: dbLatency },
         ...(needsEviction ? [{ step: 3, label: `Evict "${toEvict?.key}" to make room`, status: 'pending' as const }] : []),
         { step: needsEviction ? 4 : 3, label: 'Store in cache for next time', status: 'pending' as const },
       ]);
@@ -198,12 +205,13 @@ export default function CachingSimulator() {
         setStats((prev) => ({
           ...prev,
           misses: prev.misses + 1,
-          totalTime: prev.totalTime + DB_LATENCY,
+          totalTime: prev.totalTime + dbLatency,
+          withoutCacheTime: prev.withoutCacheTime + dbLatency,
         }));
       }, 1200);
 
       setTimeout(() => {
-        setLastResult({ isHit: false, time: DB_LATENCY, key });
+        setLastResult({ isHit: false, time: dbLatency, key });
         setAnimation(null);
       }, 1800);
     }
@@ -212,7 +220,7 @@ export default function CachingSimulator() {
   const reset = () => {
     setCache([]);
     setAnimation(null);
-    setStats({ hits: 0, misses: 0, totalTime: 0 });
+    setStats({ hits: 0, misses: 0, totalTime: 0, withoutCacheTime: 0 });
     setEvictingKey(null);
     setTick(0);
     setRequestSteps([]);
@@ -326,7 +334,7 @@ export default function CachingSimulator() {
                 <Database className="h-6 w-6 text-white" />
               </div>
               <span className="text-xs mt-1 text-muted-foreground">Database</span>
-              <span className="text-xs text-red-500 font-medium">Slow ({DB_LATENCY}ms)</span>
+              <span className="text-xs text-red-500 font-medium">Slow (50-200ms)</span>
             </div>
 
             {/* Cache */}
@@ -355,7 +363,7 @@ export default function CachingSimulator() {
                 </div>
                 <div className="flex items-center gap-1 mt-1">
                   <HardDrive className="h-3 w-3 text-emerald-500" />
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Fast ({CACHE_LATENCY}ms)</span>
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Fast (1-10ms)</span>
                 </div>
               </div>
             </div>
@@ -439,7 +447,7 @@ export default function CachingSimulator() {
                     {step.time && (
                       <span className={cn(
                         'ml-auto',
-                        step.time === CACHE_LATENCY ? 'text-green-400' : 'text-red-400'
+                        step.time <= 10 ? 'text-green-400' : 'text-red-400'
                       )}>
                         +{step.time}ms
                       </span>
@@ -531,7 +539,7 @@ export default function CachingSimulator() {
                       <motion.div
                         className="h-full bg-green-500"
                         initial={{ width: 0 }}
-                        animate={{ width: `${Math.min((stats.totalTime / ((stats.hits + stats.misses) * DB_LATENCY)) * 100, 100)}%` }}
+                        animate={{ width: `${stats.withoutCacheTime > 0 ? Math.min((stats.totalTime / stats.withoutCacheTime) * 100, 100) : 0}%` }}
                       />
                     </div>
                     <span className="text-xs font-medium text-green-600 dark:text-green-400 w-16 text-right">
@@ -544,12 +552,12 @@ export default function CachingSimulator() {
                       <div className="h-full bg-red-500 w-full" />
                     </div>
                     <span className="text-xs font-medium text-red-600 dark:text-red-400 w-16 text-right">
-                      {(stats.hits + stats.misses) * DB_LATENCY}ms
+                      {stats.withoutCacheTime}ms
                     </span>
                   </div>
                 </div>
                 <p className="text-xs text-center mt-2 text-emerald-600 dark:text-emerald-400 font-medium">
-                  You saved {(stats.hits + stats.misses) * DB_LATENCY - stats.totalTime}ms with caching!
+                  You saved {stats.withoutCacheTime - stats.totalTime}ms with caching!
                 </p>
               </div>
             )}
@@ -610,11 +618,11 @@ export default function CachingSimulator() {
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
               <div className="font-medium text-red-600 dark:text-red-400 mb-1">Without Cache</div>
-              <p>Every request goes to the database ({DB_LATENCY}ms each time). Slow and expensive!</p>
+              <p>Every request goes to the database (50-200ms each time). Slow and expensive!</p>
             </div>
             <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
               <div className="font-medium text-green-600 dark:text-green-400 mb-1">With Cache</div>
-              <p>Repeated requests return instantly ({CACHE_LATENCY}ms). 20x faster!</p>
+              <p>Repeated requests return instantly (1-10ms). Up to 20x faster!</p>
             </div>
           </div>
           <p>
