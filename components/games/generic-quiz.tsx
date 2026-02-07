@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,83 +59,6 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
   // Get the icon component dynamically
   const IconComponent = iconMap[quizConfig.icon as keyof typeof iconMap] || Target;
 
-  // Keyboard navigation handler
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Only handle keys when quiz is active (not on start/results screen)
-      if (!gameStarted || currentQuestion >= quizConfig.questions.length) {
-        // Enter or Space to start quiz
-        if ((e.key === 'Enter' || e.key === ' ') && !gameStarted) {
-          e.preventDefault();
-          setGameStarted(true);
-        }
-        // R to restart on results screen
-        if (e.key === 'r' || e.key === 'R') {
-          e.preventDefault();
-          handleRestart();
-        }
-        return;
-      }
-
-      // Number keys 1-4 to select answer
-      const num = parseInt(e.key);
-      if (num >= 1 && num <= question.options.length && !showResult) {
-        e.preventDefault();
-        handleAnswerSelect(num - 1);
-      }
-
-      // Enter to submit answer
-      if (e.key === 'Enter' && selectedAnswer !== null && !showResult) {
-        e.preventDefault();
-        handleSubmit();
-      }
-
-      // N or ArrowRight for next question (after showing result)
-      if ((e.key === 'n' || e.key === 'N' || e.key === 'ArrowRight') && showResult) {
-        e.preventDefault();
-        handleNext();
-      }
-
-      // H to toggle hint
-      if ((e.key === 'h' || e.key === 'H') && !showResult && question.hint) {
-        e.preventDefault();
-        setShowHint(!showHint);
-      }
-
-      // R to restart quiz
-      if (e.key === 'r' || e.key === 'R') {
-        e.preventDefault();
-        handleRestart();
-      }
-    },
-    [
-      gameStarted,
-      currentQuestion,
-      quizConfig.questions.length,
-      question,
-      showResult,
-      selectedAnswer,
-      showHint,
-      handleRestart,
-    ]
-  );
-
-  // Add keyboard event listener
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
   const handleAnswerSelect = (answerIndex: number) => {
     if (showResult) return;
     setSelectedAnswer(answerIndex);
@@ -173,6 +96,68 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
     setShowHint(false);
     setGameStarted(false);
   };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Only handle keys when quiz is active (not on start/results screen)
+      if (!gameStarted || currentQuestion >= quizConfig.questions.length) {
+        // Enter or Space to start quiz
+        if ((e.key === 'Enter' || e.key === ' ') && !gameStarted) {
+          e.preventDefault();
+          setGameStarted(true);
+        }
+        // R to restart on results screen
+        if (e.key === 'r' || e.key === 'R') {
+          handleRestart();
+        }
+        return;
+      }
+
+      // Number keys 1-4 to select answer
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= question.options.length && !showResult) {
+        e.preventDefault();
+        setSelectedAnswer(num - 1);
+      }
+
+      // Enter to submit answer
+      if (e.key === 'Enter' && selectedAnswer !== null && !showResult) {
+        e.preventDefault();
+        handleSubmit();
+      }
+
+      // N or ArrowRight for next question (after showing result)
+      if ((e.key === 'n' || e.key === 'N' || e.key === 'ArrowRight') && showResult) {
+        e.preventDefault();
+        handleNext();
+      }
+
+      // H to toggle hint
+      if ((e.key === 'h' || e.key === 'H') && !showResult && question.hint) {
+        e.preventDefault();
+        setShowHint((prev) => !prev);
+      }
+
+      // R to restart quiz
+      if (e.key === 'r' || e.key === 'R') {
+        handleRestart();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  });
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
