@@ -21,6 +21,21 @@ export interface Game {
  * This is the single source of truth for game metadata
  */
 const games: Game[] = [
+const games: Game[] = [
+  {
+    id: 'caching-simulator',
+    title: 'Caching Strategies Simulator',
+    description:
+      'Learn caching fundamentals with an interactive simulator. Visualize cache hits, misses, eviction policies (LRU, LFU, FIFO), and understand write strategies.',
+    iconName: 'Database',
+    badgeText: 'New',
+    color: 'from-purple-500 to-pink-600',
+    href: '/games/caching-simulator',
+    tags: ['caching', 'performance', 'redis', 'educational', 'interactive', 'backend'],
+    isNew: true,
+    featured: true,
+    category: 'Infrastructure',
+  },
   {
     id: 'deployment-strategies',
     title: 'Deployment Strategies Simulator',

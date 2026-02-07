@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Cache gradient (purple to pink) -->
+    <linearGradient id="cacheGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Database gradient -->
+    <linearGradient id="dbGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Hit gradient (green) -->
+    <linearGradient id="hitGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#16a34a;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Miss gradient (orange) -->
+    <linearGradient id="missGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Grid pattern -->
+  <g opacity="0.1">
+    <line x1="0" y1="157.5" x2="1200" y2="157.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="315" x2="1200" y2="315" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="472.5" x2="1200" y2="472.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="900" y1="0" x2="900" y2="630" stroke="#94a3b8" stroke-width="1"/>
+  </g>
+
+  <!-- CACHE VISUALIZATION (Left side) -->
+  <g transform="translate(60, 100)">
+    <!-- Cache Layer -->
+    <g transform="translate(0, 50)">
+      <text x="120" y="-15" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#a855f7" text-anchor="middle">CACHE</text>
+      
+      <!-- Cache container -->
+      <rect x="0" y="0" width="240" height="180" rx="12" fill="#1e293b" stroke="#a855f7" stroke-width="2" filter="url(#glow)"/>
+      
+      <!-- Cache items (key-value pairs) -->
+      <g transform="translate(15, 20)">
+        <rect x="0" y="0" width="210" height="30" rx="6" fill="#22c55e" opacity="0.2"/>
+        <text x="10" y="20" font-family="monospace" font-size="12" fill="#4ade80">user:123</text>
+        <text x="130" y="20" font-family="monospace" font-size="11" fill="#94a3b8">{"name":...}</text>
+        <circle cx="200" cy="15" r="4" fill="#22c55e" filter="url(#glow)"/>
+      </g>
+      
+      <g transform="translate(15, 55)">
+        <rect x="0" y="0" width="210" height="30" rx="6" fill="#22c55e" opacity="0.2"/>
+        <text x="10" y="20" font-family="monospace" font-size="12" fill="#4ade80">prod:42</text>
+        <text x="130" y="20" font-family="monospace" font-size="11" fill="#94a3b8">{"price":...}</text>
+        <circle cx="200" cy="15" r="4" fill="#22c55e" filter="url(#glow)"/>
+      </g>
+      
+      <g transform="translate(15, 90)">
+        <rect x="0" y="0" width="210" height="30" rx="6" fill="#eab308" opacity="0.2"/>
+        <text x="10" y="20" font-family="monospace" font-size="12" fill="#fde047">sess:abc</text>
+        <text x="130" y="20" font-family="monospace" font-size="11" fill="#94a3b8">{"exp":...}</text>
+        <circle cx="200" cy="15" r="4" fill="#eab308" filter="url(#glow)"/>
+      </g>
+      
+      <g transform="translate(15, 125)">
+        <rect x="0" y="0" width="210" height="30" rx="6" fill="#64748b" opacity="0.15"/>
+        <text x="10" y="20" font-family="monospace" font-size="12" fill="#94a3b8">config:v1</text>
+        <text x="130" y="20" font-family="monospace" font-size="11" fill="#64748b">{"ttl":...}</text>
+        <circle cx="200" cy="15" r="4" fill="#64748b"/>
+      </g>
+    </g>
+    
+    <!-- Arrows to Database -->
+    <g transform="translate(250, 140)">
+      <!-- Cache hit arrow -->
+      <line x1="0" y1="-30" x2="60" y2="-30" stroke="#22c55e" stroke-width="3" stroke-linecap="round">
+        <animate attributeName="stroke-dasharray" values="0,100;60,100" dur="1s" repeatCount="indefinite"/>
+      </line>
+      <text x="30" y="-40" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4ade80" text-anchor="middle">HIT</text>
+      
+      <!-- Cache miss arrow -->
+      <line x1="0" y1="30" x2="60" y2="30" stroke="#f97316" stroke-width="3" stroke-linecap="round" stroke-dasharray="5,5">
+        <animate attributeName="stroke-dashoffset" values="0;-20" dur="1s" repeatCount="indefinite"/>
+      </line>
+      <text x="30" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#fb923c" text-anchor="middle">MISS</text>
+    </g>
+    
+    <!-- Database -->
+    <g transform="translate(320, 130)">
+      <text x="60" y="-15" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#06b6d4" text-anchor="middle">DATABASE</text>
+      
+      <!-- DB Icon -->
+      <ellipse cx="60" cy="15" rx="50" ry="15" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+      <rect x="10" y="15" width="100" height="60" fill="#1e293b" stroke="#06b6d4" stroke-width="2" stroke-dasharray="0,110,100"/>
+      <ellipse cx="60" cy="75" rx="50" ry="15" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+      
+      <!-- DB Lines -->
+      <line x1="20" y1="35" x2="100" y2="35" stroke="#06b6d4" stroke-width="1" opacity="0.3"/>
+      <line x1="20" y1="50" x2="100" y2="50" stroke="#06b6d4" stroke-width="1" opacity="0.3"/>
+      <circle cx="60" cy="55" r="4" fill="#06b6d4" filter="url(#glow)"/>
+    </g>
+  </g>
+
+  <!-- STATS PANEL -->
+  <g transform="translate(60, 380)">
+    <rect x="0" y="0" width="420" height="180" rx="12" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+    <text x="20" y="30" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#f1f5f9">Performance Metrics</text>
+    
+    <!-- Hit Rate bar -->
+    <g transform="translate(20, 50)">
+      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Hit Rate</text>
+      <rect x="70" y="-12" width="300" height="16" rx="4" fill="#0f172a"/>
+      <rect x="70" y="-12" width="255" height="16" rx="4" fill="#22c55e">
+        <animate attributeName="width" values="255;270;240;255" dur="3s" repeatCount="indefinite"/>
+      </rect>
+      <text x="380" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4ade80" text-anchor="end">85%</text>
+    </g>
+    
+    <!-- Latency bar -->
+    <g transform="translate(20, 80)">
+      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Latency</text>
+      <rect x="70" y="-12" width="300" height="16" rx="4" fill="#0f172a"/>
+      <rect x="70" y="-12" width="45" height="16" rx="4" fill="#a855f7"/>
+      <text x="380" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#c084fc" text-anchor="end">5ms</text>
+    </g>
+    
+    <!-- Evictions bar -->
+    <g transform="translate(20, 110)">
+      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Evictions</text>
+      <rect x="70" y="-12" width="300" height="16" rx="4" fill="#0f172a"/>
+      <rect x="70" y="-12" width="60" height="16" rx="4" fill="#f97316">
+        <animate attributeName="width" values="60;90;45;60" dur="4s" repeatCount="indefinite"/>
+      </rect>
+      <text x="380" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#fb923c" text-anchor="end">42</text>
+    </g>
+    
+    <!-- Time Saved -->
+    <g transform="translate(20, 140)">
+      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Time Saved</text>
+      <rect x="70" y="-12" width="300" height="16" rx="4" fill="#0f172a"/>
+      <rect x="70" y="-12" width="225" height="16" rx="4" fill="#06b6d4"/>
+      <text x="380" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#22d3ee" text-anchor="end">8.5s</text>
+    </g>
+  </g>
+
+  <!-- Main content (right side) -->
+  <g transform="translate(780, 180)">
+    <!-- Badge -->
+    <g transform="translate(-100, -20)">
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="#4a1d96" opacity="0.3"/>
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="none" stroke="#a855f7" stroke-width="2"/>
+      <text x="100" y="21" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#c084fc" text-anchor="middle">
+        Interactive Simulator
+      </text>
+    </g>
+
+    <!-- Title -->
+    <text x="0" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="bold" fill="url(#cacheGradient)" text-anchor="middle">
+      Caching Strategies
+    </text>
+    <text x="0" y="95" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="bold" fill="#94a3b8" text-anchor="middle">
+      Simulator
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">
+      Learn eviction policies and write
+    </text>
+    <text x="0" y="162" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">
+      strategies with real-time metrics
+    </text>
+
+    <!-- Feature badges -->
+    <g transform="translate(-180, 190)">
+      <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#c084fc" text-anchor="middle">LRU</text>
+    </g>
+    <g transform="translate(-100, 190)">
+      <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#ec4899" stroke-width="1.5"/>
+      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#f472b6" text-anchor="middle">LFU</text>
+    </g>
+    <g transform="translate(-20, 190)">
+      <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#22d3ee" text-anchor="middle">FIFO</text>
+    </g>
+    <g transform="translate(60, 190)">
+      <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="35" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#4ade80" text-anchor="middle">TTL</text>
+    </g>
+    <g transform="translate(-140, 230)">
+      <rect x="0" y="0" width="110" height="28" rx="14" fill="#1e293b" stroke="#f97316" stroke-width="1.5"/>
+      <text x="55" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#fb923c" text-anchor="middle">Write-Through</text>
+    </g>
+    <g transform="translate(-20, 230)">
+      <rect x="0" y="0" width="110" height="28" rx="14" fill="#1e293b" stroke="#eab308" stroke-width="1.5"/>
+      <text x="55" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#fde047" text-anchor="middle">Write-Back</text>
+    </g>
+  </g>
+
+  <!-- Decorative elements -->
+  <circle cx="1100" cy="100" r="60" fill="#a855f7" opacity="0.05"/>
+  <circle cx="1050" cy="550" r="80" fill="#ec4899" opacity="0.05"/>
+  <circle cx="50" cy="80" r="50" fill="#06b6d4" opacity="0.05"/>
+
+  <!-- Animated pulse -->
+  <g transform="translate(180, 200)">
+    <circle cx="0" cy="0" r="10" fill="none" stroke="#a855f7" stroke-width="2" opacity="0.6">
+      <animate attributeName="r" from="10" to="25" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>
