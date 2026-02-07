@@ -534,10 +534,10 @@ export default function AwsVpcSimulator() {
                   animate={{ opacity: 1, x: 0 }}
                   className={cn(
                     'flex items-start gap-2 rounded-md p-2 text-sm',
-                    v.type === 'error' && 'bg-red-500/10 text-red-300',
-                    v.type === 'warning' && 'bg-yellow-500/10 text-yellow-300',
-                    v.type === 'info' && 'bg-blue-500/10 text-blue-300',
-                    v.type === 'success' && 'bg-green-500/10 text-green-300'
+                    v.type === 'error' && 'bg-red-500/10 text-red-700 dark:text-red-300',
+                    v.type === 'warning' && 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300',
+                    v.type === 'info' && 'bg-blue-500/10 text-blue-700 dark:text-blue-300',
+                    v.type === 'success' && 'bg-green-500/10 text-green-700 dark:text-green-300'
                   )}
                 >
                   {v.type === 'error' && <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />}
@@ -567,7 +567,7 @@ export default function AwsVpcSimulator() {
                 <div className="mb-3 flex justify-center">
                   <div className="flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1">
                     <Globe className="h-4 w-4 text-blue-400" />
-                    <span className="text-xs text-blue-300">Internet</span>
+                    <span className="text-xs text-blue-700 dark:text-blue-300">Internet</span>
                   </div>
                 </div>
 
@@ -584,7 +584,7 @@ export default function AwsVpcSimulator() {
                         className="flex items-center gap-2 rounded-lg border border-purple-500/50 bg-purple-500/20 px-3 py-2"
                       >
                         <Router className="h-4 w-4 text-purple-400" />
-                        <span className="text-xs text-purple-300">Internet Gateway</span>
+                        <span className="text-xs text-purple-700 dark:text-purple-300">Internet Gateway</span>
                       </motion.div>
                     </div>
                   </>
@@ -601,24 +601,24 @@ export default function AwsVpcSimulator() {
                         animate={{ opacity: 1, y: 0 }}
                         className="rounded-lg border border-green-700 bg-green-900/20 p-2"
                       >
-                        <div className="mb-2 text-center text-[10px] font-medium text-green-400">Public Subnet</div>
+                        <div className="mb-2 text-center text-[10px] font-medium text-green-700 dark:text-green-400">Public Subnet</div>
                         <div className="flex flex-wrap justify-center gap-2">
                           {activeComponents.has('public-route-table') && (
                             <div className="flex items-center gap-1 rounded bg-indigo-500/20 px-2 py-1">
                               <Network className="h-3 w-3 text-indigo-400" />
-                              <span className="text-[10px] text-indigo-300">Route Table</span>
+                              <span className="text-[10px] text-indigo-700 dark:text-indigo-300">Route Table</span>
                             </div>
                           )}
                           {activeComponents.has('public-ec2') && (
                             <div className="flex items-center gap-1 rounded bg-green-600/20 px-2 py-1">
                               <Server className="h-3 w-3 text-green-400" />
-                              <span className="text-[10px] text-green-300">EC2</span>
+                              <span className="text-[10px] text-green-700 dark:text-green-300">EC2</span>
                             </div>
                           )}
                           {activeComponents.has('nat-gateway') && (
                             <div className="flex items-center gap-1 rounded bg-orange-500/20 px-2 py-1">
                               <Shield className="h-3 w-3 text-orange-400" />
-                              <span className="text-[10px] text-orange-300">NAT GW</span>
+                              <span className="text-[10px] text-orange-700 dark:text-orange-300">NAT GW</span>
                             </div>
                           )}
                         </div>
@@ -632,18 +632,18 @@ export default function AwsVpcSimulator() {
                         animate={{ opacity: 1, y: 0 }}
                         className="rounded-lg border border-red-700 bg-red-900/20 p-2"
                       >
-                        <div className="mb-2 text-center text-[10px] font-medium text-red-400">Private Subnet</div>
+                        <div className="mb-2 text-center text-[10px] font-medium text-red-700 dark:text-red-400">Private Subnet</div>
                         <div className="flex flex-wrap justify-center gap-2">
                           {activeComponents.has('private-route-table') && (
                             <div className="flex items-center gap-1 rounded bg-amber-500/20 px-2 py-1">
                               <Network className="h-3 w-3 text-amber-400" />
-                              <span className="text-[10px] text-amber-300">Route Table</span>
+                              <span className="text-[10px] text-amber-700 dark:text-amber-300">Route Table</span>
                             </div>
                           )}
                           {activeComponents.has('private-ec2') && (
                             <div className="flex items-center gap-1 rounded bg-red-600/20 px-2 py-1">
                               <Server className="h-3 w-3 text-red-400" />
-                              <span className="text-[10px] text-red-300">EC2</span>
+                              <span className="text-[10px] text-red-700 dark:text-red-300">EC2</span>
                             </div>
                           )}
                         </div>
