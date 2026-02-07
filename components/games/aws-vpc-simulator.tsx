@@ -1,18 +1,13 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
   Cloud,
   Server,
   Globe,
-  ArrowRight,
-  ArrowDown,
-  Play,
   RotateCcw,
-  ChevronRight,
-  ChevronLeft,
   CheckCircle,
   Shield,
   Network,
@@ -21,6 +16,8 @@ import {
   Info,
   X,
   AlertTriangle,
+  Zap,
+  PlayCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -29,834 +26,740 @@ import { cn } from '@/lib/utils';
 // TYPES
 // ============================================================================
 
-type ScenarioId = 'internet-to-public' | 'private-to-internet' | 'public-to-private' | 'broken-nat';
-
-interface TrafficStep {
-  id: number;
-  title: string;
-  location: ComponentId;
-  explanation: string;
-  isError?: boolean;
-}
-
-type ComponentId =
-  | 'internet'
+type ComponentType =
   | 'igw'
-  | 'public-route-table'
-  | 'public-subnet'
-  | 'public-ec2'
   | 'nat-gateway'
-  | 'private-route-table'
+  | 'public-subnet'
   | 'private-subnet'
-  | 'private-ec2';
+  | 'public-ec2'
+  | 'private-ec2'
+  | 'public-route-table'
+  | 'private-route-table';
 
-interface VpcComponent {
-  id: ComponentId;
+interface VpcComponentDef {
+  type: ComponentType;
   name: string;
-  shortName: string;
   description: string;
   icon: React.ElementType;
   color: string;
   bgColor: string;
+  category: 'gateway' | 'subnet' | 'compute' | 'routing';
+  dependencies?: ComponentType[];
 }
 
-interface Scenario {
-  id: ScenarioId;
-  title: string;
-  description: string;
-  steps: TrafficStep[];
+interface ValidationResult {
+  type: 'success' | 'warning' | 'error' | 'info';
+  message: string;
+  component?: ComponentType;
 }
 
 // ============================================================================
 // CONSTANTS
 // ============================================================================
 
-const VPC_COMPONENTS: Record<ComponentId, VpcComponent> = {
-  internet: {
-    id: 'internet',
-    name: 'Internet',
-    shortName: 'Internet',
-    description: 'The public internet - where external users and services live',
-    icon: Globe,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-  },
-  igw: {
-    id: 'igw',
+const AVAILABLE_COMPONENTS: VpcComponentDef[] = [
+  {
+    type: 'igw',
     name: 'Internet Gateway',
-    shortName: 'IGW',
-    description: 'Allows communication between your VPC and the internet. Horizontally scaled and highly available.',
+    description: 'Enables internet access for your VPC. Required for any public-facing resources.',
     icon: Router,
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10',
+    category: 'gateway',
   },
-  'public-route-table': {
-    id: 'public-route-table',
-    name: 'Public Route Table',
-    shortName: 'Route Table',
-    description: 'Routes 0.0.0.0/0 (all internet traffic) to the Internet Gateway',
-    icon: Network,
-    color: 'text-indigo-500',
-    bgColor: 'bg-indigo-500/10',
-  },
-  'public-subnet': {
-    id: 'public-subnet',
-    name: 'Public Subnet',
-    shortName: 'Public',
-    description: 'Subnet with route to IGW. Resources can have public IPs. CIDR: 10.0.1.0/24',
-    icon: Cloud,
-    color: 'text-green-500',
-    bgColor: 'bg-green-500/10',
-  },
-  'public-ec2': {
-    id: 'public-ec2',
-    name: 'Public EC2 Instance',
-    shortName: 'Web Server',
-    description: 'EC2 instance in public subnet with public IP (e.g., web server, bastion host)',
-    icon: Server,
-    color: 'text-green-600',
-    bgColor: 'bg-green-600/10',
-  },
-  'nat-gateway': {
-    id: 'nat-gateway',
+  {
+    type: 'nat-gateway',
     name: 'NAT Gateway',
-    shortName: 'NAT GW',
-    description: 'Allows private subnet instances to access internet while blocking inbound connections. Placed in public subnet.',
+    description: 'Allows private resources to access internet without being publicly accessible. Must be in a public subnet.',
     icon: Shield,
     color: 'text-orange-500',
     bgColor: 'bg-orange-500/10',
+    category: 'gateway',
+    dependencies: ['igw', 'public-subnet'],
   },
-  'private-route-table': {
-    id: 'private-route-table',
-    name: 'Private Route Table',
-    shortName: 'Route Table',
-    description: 'Routes 0.0.0.0/0 to NAT Gateway (not directly to internet)',
-    icon: Network,
-    color: 'text-cyan-500',
-    bgColor: 'bg-cyan-500/10',
-  },
-  'private-subnet': {
-    id: 'private-subnet',
-    name: 'Private Subnet',
-    shortName: 'Private',
-    description: 'No direct internet access. Protected from public internet. CIDR: 10.0.2.0/24',
+  {
+    type: 'public-subnet',
+    name: 'Public Subnet',
+    description: 'A subnet with a route to the Internet Gateway. Resources here can have public IPs.',
     icon: Cloud,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
+    color: 'text-green-500',
+    bgColor: 'bg-green-500/10',
+    category: 'subnet',
+    dependencies: ['igw'],
   },
-  'private-ec2': {
-    id: 'private-ec2',
-    name: 'Private EC2 Instance',
-    shortName: 'App Server',
-    description: 'EC2 instance in private subnet (e.g., application server, database)',
+  {
+    type: 'private-subnet',
+    name: 'Private Subnet',
+    description: 'A subnet without direct internet access. Resources are protected from public exposure.',
+    icon: Cloud,
+    color: 'text-red-500',
+    bgColor: 'bg-red-500/10',
+    category: 'subnet',
+  },
+  {
+    type: 'public-ec2',
+    name: 'Public EC2 Instance',
+    description: 'A compute instance in a public subnet. Can be accessed directly from the internet.',
     icon: Server,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-600/10',
-  },
-};
-
-const SCENARIOS: Scenario[] = [
-  {
-    id: 'internet-to-public',
-    title: 'Internet → Public EC2',
-    description: 'How external users reach a public web server',
-    steps: [
-      {
-        id: 1,
-        title: 'User Request from Internet',
-        location: 'internet',
-        explanation: 'A user on the internet wants to access your web application. They type your domain name which resolves to your EC2\'s public IP address.',
-      },
-      {
-        id: 2,
-        title: 'Traffic Hits Internet Gateway',
-        location: 'igw',
-        explanation: 'The Internet Gateway receives the incoming traffic. It\'s the entry point to your VPC from the internet. IGW performs 1:1 NAT between public and private IPs.',
-      },
-      {
-        id: 3,
-        title: 'Route Table Lookup',
-        location: 'public-route-table',
-        explanation: 'The route table determines where to send the traffic. It sees the destination is 10.0.1.x (public subnet CIDR) and routes locally within the VPC.',
-      },
-      {
-        id: 4,
-        title: 'Traffic Enters Public Subnet',
-        location: 'public-subnet',
-        explanation: 'Traffic enters the public subnet (10.0.1.0/24). Security Groups and NACLs are evaluated to allow or deny the traffic.',
-      },
-      {
-        id: 5,
-        title: 'Reaches EC2 Instance',
-        location: 'public-ec2',
-        explanation: 'The web server receives the request! The Security Group must allow inbound traffic on the appropriate port (e.g., 80/443 for HTTP/HTTPS).',
-      },
-    ],
+    color: 'text-green-600',
+    bgColor: 'bg-green-600/10',
+    category: 'compute',
+    dependencies: ['public-subnet'],
   },
   {
-    id: 'private-to-internet',
-    title: 'Private EC2 → Internet',
-    description: 'How a private instance accesses the internet (e.g., for updates)',
-    steps: [
-      {
-        id: 1,
-        title: 'Private Instance Initiates Request',
-        location: 'private-ec2',
-        explanation: 'Your application server in the private subnet needs to download updates or call an external API. It has no public IP, only a private IP (10.0.2.x).',
-      },
-      {
-        id: 2,
-        title: 'Private Route Table Lookup',
-        location: 'private-route-table',
-        explanation: 'The route table checks the destination. For 0.0.0.0/0 (internet), it routes to the NAT Gateway instead of directly to IGW.',
-      },
-      {
-        id: 3,
-        title: 'Traffic Exits Private Subnet',
-        location: 'private-subnet',
-        explanation: 'Traffic leaves the private subnet heading toward the NAT Gateway in the public subnet.',
-      },
-      {
-        id: 4,
-        title: 'NAT Gateway Translates',
-        location: 'nat-gateway',
-        explanation: 'NAT Gateway replaces the private source IP with its own public IP. This allows the response to come back. It\'s like a post office forwarding address!',
-      },
-      {
-        id: 5,
-        title: 'Public Route Table',
-        location: 'public-route-table',
-        explanation: 'Traffic from NAT Gateway uses the public route table. For internet-bound traffic (0.0.0.0/0), it routes to the Internet Gateway.',
-      },
-      {
-        id: 6,
-        title: 'Through Internet Gateway',
-        location: 'igw',
-        explanation: 'The Internet Gateway sends the traffic to the internet. The source IP is now the NAT Gateway\'s public IP, hiding your private instance.',
-      },
-      {
-        id: 7,
-        title: 'Reaches the Internet',
-        location: 'internet',
-        explanation: 'Request reaches the external service! The response will follow the reverse path, with NAT Gateway translating back to your private instance.',
-      },
-    ],
+    type: 'private-ec2',
+    name: 'Private EC2 Instance',
+    description: 'A compute instance in a private subnet. Cannot be accessed directly from the internet.',
+    icon: Server,
+    color: 'text-red-600',
+    bgColor: 'bg-red-600/10',
+    category: 'compute',
+    dependencies: ['private-subnet'],
   },
   {
-    id: 'public-to-private',
-    title: 'Public EC2 → Private EC2',
-    description: 'How your web server talks to your app server',
-    steps: [
-      {
-        id: 1,
-        title: 'Web Server Sends Request',
-        location: 'public-ec2',
-        explanation: 'Your public web server needs data from the application server in the private subnet. It uses the private IP (10.0.2.x) as the destination.',
-      },
-      {
-        id: 2,
-        title: 'Route Table Lookup',
-        location: 'public-route-table',
-        explanation: 'The route table sees destination 10.0.2.x. This matches the VPC CIDR (10.0.0.0/16), so traffic stays local - no need to go through IGW or NAT.',
-      },
-      {
-        id: 3,
-        title: 'Traffic Crosses Subnets',
-        location: 'private-subnet',
-        explanation: 'Traffic moves directly between subnets within the VPC. This is internal routing - fast and free (no NAT Gateway charges).',
-      },
-      {
-        id: 4,
-        title: 'Reaches Private Instance',
-        location: 'private-ec2',
-        explanation: 'The app server receives the request. Security Groups must allow traffic from the web server\'s Security Group or IP range.',
-      },
-    ],
+    type: 'public-route-table',
+    name: 'Public Route Table',
+    description: 'Routes traffic to the Internet Gateway for public subnets (0.0.0.0/0 -> IGW).',
+    icon: Network,
+    color: 'text-indigo-500',
+    bgColor: 'bg-indigo-500/10',
+    category: 'routing',
+    dependencies: ['igw', 'public-subnet'],
   },
   {
-    id: 'broken-nat',
-    title: 'Troubleshooting: No NAT Gateway',
-    description: 'What happens when private instance can\'t reach internet',
-    steps: [
-      {
-        id: 1,
-        title: 'Private Instance Tries Internet',
-        location: 'private-ec2',
-        explanation: 'Your app server tries to download a package from the internet. It sends a request to an external IP address.',
-      },
-      {
-        id: 2,
-        title: 'Route Table Check',
-        location: 'private-route-table',
-        explanation: 'The route table looks for a route to 0.0.0.0/0 (internet). Without a NAT Gateway configured, there\'s no valid route!',
-      },
-      {
-        id: 3,
-        title: 'No Route Found!',
-        location: 'private-subnet',
-        explanation: 'Without a route to the NAT Gateway, the traffic has nowhere to go. The connection times out.',
-        isError: true,
-      },
-      {
-        id: 4,
-        title: 'Connection Failed',
-        location: 'private-ec2',
-        explanation: '\u274c Connection timeout! Fix: Add a NAT Gateway in the public subnet and update the private route table to route 0.0.0.0/0 to the NAT Gateway.',
-        isError: true,
-      },
-    ],
+    type: 'private-route-table',
+    name: 'Private Route Table',
+    description: 'Routes traffic to NAT Gateway for private subnets (0.0.0.0/0 -> NAT).',
+    icon: Network,
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-500/10',
+    category: 'routing',
+    dependencies: ['private-subnet'],
   },
 ];
 
+const COMPONENT_MAP = Object.fromEntries(
+  AVAILABLE_COMPONENTS.map((c) => [c.type, c])
+) as Record<ComponentType, VpcComponentDef>;
+
 // ============================================================================
-// HELPER COMPONENTS
+// VALIDATION LOGIC
 // ============================================================================
 
-interface TooltipProps {
-  component: VpcComponent;
-  isVisible: boolean;
-  onClose: () => void;
+function validateConfiguration(activeComponents: Set<ComponentType>): ValidationResult[] {
+  const results: ValidationResult[] = [];
+  const active = Array.from(activeComponents);
+
+  // Check for missing dependencies
+  for (const compType of active) {
+    const comp = COMPONENT_MAP[compType];
+    if (comp.dependencies) {
+      for (const dep of comp.dependencies) {
+        if (!activeComponents.has(dep)) {
+          results.push({
+            type: 'error',
+            message: `${comp.name} requires ${COMPONENT_MAP[dep].name} to function.`,
+            component: compType,
+          });
+        }
+      }
+    }
+  }
+
+  // Check for unused components
+  if (activeComponents.has('igw') && !activeComponents.has('public-subnet')) {
+    results.push({
+      type: 'warning',
+      message: 'Internet Gateway is not useful without a Public Subnet.',
+      component: 'igw',
+    });
+  }
+
+  if (activeComponents.has('nat-gateway') && !activeComponents.has('private-subnet')) {
+    results.push({
+      type: 'warning',
+      message: 'NAT Gateway is not useful without a Private Subnet.',
+      component: 'nat-gateway',
+    });
+  }
+
+  if (
+    activeComponents.has('private-subnet') &&
+    !activeComponents.has('nat-gateway') &&
+    activeComponents.has('private-ec2')
+  ) {
+    results.push({
+      type: 'warning',
+      message: 'Private EC2 cannot access the internet without a NAT Gateway.',
+      component: 'private-ec2',
+    });
+  }
+
+  if (activeComponents.has('public-subnet') && !activeComponents.has('public-route-table')) {
+    results.push({
+      type: 'info',
+      message: 'Consider adding a Public Route Table to properly route traffic in your public subnet.',
+      component: 'public-subnet',
+    });
+  }
+
+  if (
+    activeComponents.has('private-subnet') &&
+    activeComponents.has('nat-gateway') &&
+    !activeComponents.has('private-route-table')
+  ) {
+    results.push({
+      type: 'info',
+      message: 'Consider adding a Private Route Table to route traffic through NAT Gateway.',
+      component: 'private-subnet',
+    });
+  }
+
+  // Success cases
+  if (results.length === 0 && active.length > 0) {
+    const hasPublicArch =
+      activeComponents.has('igw') && activeComponents.has('public-subnet') && activeComponents.has('public-ec2');
+    const hasPrivateArch = activeComponents.has('private-subnet') && activeComponents.has('private-ec2');
+    const hasNat = activeComponents.has('nat-gateway');
+
+    if (hasPublicArch && hasPrivateArch && hasNat) {
+      results.push({
+        type: 'success',
+        message: 'Complete VPC architecture! Public web tier + private database tier with NAT for outbound access.',
+      });
+    } else if (hasPublicArch) {
+      results.push({
+        type: 'success',
+        message: 'Valid public-facing architecture. Your EC2 can receive traffic from the internet.',
+      });
+    } else if (hasPrivateArch && hasNat) {
+      results.push({
+        type: 'success',
+        message: 'Valid private architecture with NAT. Resources can access internet without being exposed.',
+      });
+    }
+  }
+
+  return results;
 }
 
-function ComponentTooltip({ component, isVisible, onClose }: TooltipProps) {
-  if (!isVisible) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 10 }}
-      className="absolute z-50 w-64 p-3 text-sm bg-popover border rounded-lg shadow-lg -top-2 left-full ml-2"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <component.icon className={cn('h-4 w-4', component.color)} />
-          <span className="font-semibold">{component.name}</span>
-        </div>
-        <button onClick={onClose} className="p-0.5 hover:bg-muted rounded">
-          <X className="h-3 w-3" />
-        </button>
-      </div>
-      <p className="mt-2 text-muted-foreground">{component.description}</p>
-    </motion.div>
-  );
-}
-
 // ============================================================================
-// MAIN COMPONENT
+// COMPONENT
 // ============================================================================
 
-export default function AwsVpcSimulator() {
-  // State
-  const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('internet-to-public');
-  const [currentStepIndex, setCurrentStepIndex] = useState(-1);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-  const [tooltipComponent, setTooltipComponent] = useState<ComponentId | null>(null);
+export function AwsVpcSimulator() {
+  const [activeComponents, setActiveComponents] = useState<Set<ComponentType>>(new Set());
+  const [selectedInfo, setSelectedInfo] = useState<ComponentType | null>(null);
+  const [showTestPanel, setShowTestPanel] = useState(false);
 
-  const scenario = SCENARIOS.find((s) => s.id === selectedScenario)!;
-  const steps = scenario.steps;
-  const currentStep = currentStepIndex >= 0 ? steps[currentStepIndex] : null;
-  const totalSteps = steps.length;
+  const validation = useMemo(() => validateConfiguration(activeComponents), [activeComponents]);
 
-  // Handlers
-  const startSimulation = useCallback(() => {
-    setIsRunning(true);
-    setIsComplete(false);
-    setCurrentStepIndex(0);
+  const toggleComponent = useCallback((type: ComponentType) => {
+    setActiveComponents((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
   }, []);
 
-  const handleStepForward = useCallback(() => {
-    if (currentStepIndex < totalSteps - 1) {
-      setCurrentStepIndex((prev) => prev + 1);
-    } else {
-      setIsComplete(true);
-      setIsRunning(false);
-    }
-  }, [currentStepIndex, totalSteps]);
-
-  const handleStepBack = useCallback(() => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex((prev) => prev - 1);
-      setIsComplete(false);
-      setIsRunning(true);
-    }
-  }, [currentStepIndex]);
-
-  const handleReset = useCallback(() => {
-    setIsRunning(false);
-    setIsComplete(false);
-    setCurrentStepIndex(-1);
+  const reset = useCallback(() => {
+    setActiveComponents(new Set());
+    setSelectedInfo(null);
+    setShowTestPanel(false);
   }, []);
 
-  const handleScenarioChange = useCallback((id: ScenarioId) => {
-    setSelectedScenario(id);
-    setIsRunning(false);
-    setIsComplete(false);
-    setCurrentStepIndex(-1);
+  const loadPreset = useCallback((preset: 'public' | 'private' | 'full') => {
+    const presets: Record<string, ComponentType[]> = {
+      public: ['igw', 'public-subnet', 'public-route-table', 'public-ec2'],
+      private: ['igw', 'public-subnet', 'nat-gateway', 'private-subnet', 'private-route-table', 'private-ec2'],
+      full: [
+        'igw',
+        'public-subnet',
+        'public-route-table',
+        'public-ec2',
+        'nat-gateway',
+        'private-subnet',
+        'private-route-table',
+        'private-ec2',
+      ],
+    };
+    setActiveComponents(new Set(presets[preset]));
   }, []);
 
-  // Keyboard navigation
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
       switch (e.key) {
-        case ' ':
-          e.preventDefault();
-          if (!isRunning && !isComplete) {
-            startSimulation();
-          } else if (isComplete) {
-            startSimulation();
-          }
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          if (isRunning) handleStepForward();
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          if (isRunning || isComplete) handleStepBack();
-          break;
         case 'r':
         case 'R':
-        case 'Escape':
           e.preventDefault();
-          handleReset();
+          reset();
           break;
         case '1':
-        case '2':
-        case '3':
-        case '4':
           e.preventDefault();
-          const scenarioIndex = parseInt(e.key) - 1;
-          if (scenarioIndex < SCENARIOS.length) {
-            handleScenarioChange(SCENARIOS[scenarioIndex].id);
-          }
+          loadPreset('public');
+          break;
+        case '2':
+          e.preventDefault();
+          loadPreset('private');
+          break;
+        case '3':
+          e.preventDefault();
+          loadPreset('full');
+          break;
+        case 't':
+        case 'T':
+          e.preventDefault();
+          setShowTestPanel((p) => !p);
+          break;
+        case 'Escape':
+          e.preventDefault();
+          setSelectedInfo(null);
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isRunning, isComplete, startSimulation, handleStepForward, handleStepBack, handleReset, handleScenarioChange]);
+  }, [reset, loadPreset]);
 
-  // Check if component is active in current step
-  const isComponentActive = (componentId: ComponentId) => {
-    return currentStep?.location === componentId;
-  };
+  // Group components by category
+  const groupedComponents = useMemo(() => {
+    const groups: Record<string, VpcComponentDef[]> = {
+      gateway: [],
+      subnet: [],
+      compute: [],
+      routing: [],
+    };
+    AVAILABLE_COMPONENTS.forEach((c) => groups[c.category].push(c));
+    return groups;
+  }, []);
 
-  // Check if component has been visited
-  const isComponentVisited = (componentId: ComponentId) => {
-    if (currentStepIndex < 0) return false;
-    return steps.slice(0, currentStepIndex).some((s) => s.location === componentId);
-  };
-
-  // Render a VPC component box
-  const renderComponent = (componentId: ComponentId, className?: string) => {
-    const component = VPC_COMPONENTS[componentId];
-    const Icon = component.icon;
-    const isActive = isComponentActive(componentId);
-    const isVisited = isComponentVisited(componentId);
-    const isError = currentStep?.isError && isActive;
+  const renderComponentButton = (comp: VpcComponentDef) => {
+    const isActive = activeComponents.has(comp.type);
+    const Icon = comp.icon;
+    const hasError = validation.some((v) => v.type === 'error' && v.component === comp.type);
+    const hasWarning = validation.some((v) => v.type === 'warning' && v.component === comp.type);
 
     return (
-      <div className={cn('relative', className)}>
-        <motion.div
-          className={cn(
-            'flex flex-col items-center justify-center rounded-lg border-2 p-2 sm:p-3 transition-all cursor-pointer',
-            'min-w-[70px] sm:min-w-[90px]',
-            isActive && !isError && 'border-blue-500 bg-blue-500/20 ring-2 ring-blue-500',
-            isActive && isError && 'border-red-500 bg-red-500/20 ring-2 ring-red-500',
-            isVisited && !isActive && 'border-green-500/50 bg-green-500/10',
-            !isActive && !isVisited && 'border-muted-foreground/30 bg-muted/30'
-          )}
-          animate={isActive ? { scale: [1, 1.05, 1] } : {}}
-          transition={{ duration: 1.5, repeat: isActive ? Infinity : 0 }}
-          onClick={() => setTooltipComponent(tooltipComponent === componentId ? null : componentId)}
-        >
-          <Icon
-            className={cn(
-              'h-5 w-5 sm:h-6 sm:w-6',
-              isActive && !isError && component.color,
-              isActive && isError && 'text-red-500',
-              isVisited && !isActive && 'text-green-500',
-              !isActive && !isVisited && 'text-muted-foreground/50'
+      <motion.button
+        key={comp.type}
+        onClick={() => toggleComponent(comp.type)}
+        className={cn(
+          'relative flex items-center gap-2 rounded-lg border-2 p-2 text-left transition-all sm:p-3',
+          isActive
+            ? hasError
+              ? 'border-red-500 bg-red-500/20'
+              : hasWarning
+                ? 'border-yellow-500 bg-yellow-500/20'
+                : 'border-green-500 bg-green-500/20'
+            : 'border-slate-600 bg-slate-800/50 hover:border-slate-500 hover:bg-slate-800'
+        )}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <div className={cn('rounded-md p-1.5', isActive ? comp.bgColor : 'bg-slate-700/50')}>
+          <Icon className={cn('h-4 w-4 sm:h-5 sm:w-5', isActive ? comp.color : 'text-slate-400')} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className={cn('text-xs font-medium sm:text-sm', isActive ? 'text-slate-100' : 'text-slate-300')}>
+              {comp.name}
+            </span>
+            {isActive && (
+              <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}>
+                {hasError ? (
+                  <AlertTriangle className="h-3 w-3 text-red-400" />
+                ) : hasWarning ? (
+                  <AlertTriangle className="h-3 w-3 text-yellow-400" />
+                ) : (
+                  <CheckCircle className="h-3 w-3 text-green-400" />
+                )}
+              </motion.span>
             )}
-          />
-          <span className="mt-1 text-[9px] sm:text-[10px] font-medium text-center leading-tight">
-            {component.shortName}
-          </span>
-          {isVisited && !isActive && (
-            <CheckCircle className="absolute -top-1 -right-1 h-3 w-3 text-green-500" />
-          )}
-          {isError && (
-            <AlertTriangle className="absolute -top-1 -right-1 h-3 w-3 text-red-500" />
-          )}
-        </motion.div>
-        <AnimatePresence>
-          <ComponentTooltip
-            component={component}
-            isVisible={tooltipComponent === componentId}
-            onClose={() => setTooltipComponent(null)}
-          />
-        </AnimatePresence>
-      </div>
+          </div>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedInfo(selectedInfo === comp.type ? null : comp.type);
+          }}
+          className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+        >
+          <Info className="h-3 w-3 sm:h-4 sm:w-4" />
+        </button>
+      </motion.button>
     );
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-4">
-      {/* Header */}
-      <Card className="border-orange-500/20 bg-gradient-to-r from-orange-500/5 to-yellow-500/5">
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-            <Cloud className="h-5 w-5 sm:h-6 sm:w-6 text-orange-500" />
-            AWS VPC Networking Simulator
+    <Card className="mx-auto w-full max-w-4xl border-slate-700 bg-slate-900">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg text-slate-100 sm:text-xl">
+            <Cloud className="h-5 w-5 text-orange-400 sm:h-6 sm:w-6" />
+            AWS VPC Builder
           </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            Learn how traffic flows through VPCs, subnets, and gateways. Click any component for details!
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Scenario Selection */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm sm:text-base">Select Scenario</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {SCENARIOS.map((s, idx) => (
-              <Button
-                key={s.id}
-                variant={selectedScenario === s.id ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleScenarioChange(s.id)}
-                disabled={isRunning}
-                className={cn(
-                  'h-auto py-2 px-2 sm:px-3 text-[10px] sm:text-xs flex-col items-start text-left',
-                  s.id === 'broken-nat' && selectedScenario !== s.id && 'border-red-500/30'
-                )}
-              >
-                <span className="font-semibold">{idx + 1}. {s.title}</span>
-                <span className="text-[9px] sm:text-[10px] opacity-70 line-clamp-1">{s.description}</span>
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Controls */}
-      <Card>
-        <CardContent className="pt-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {!isRunning && !isComplete && (
-              <Button onClick={startSimulation} className="flex-1 sm:flex-none">
-                <Play className="mr-2 h-4 w-4" />
-                Start Simulation
-              </Button>
-            )}
-
-            {isRunning && currentStepIndex < steps.length && (
-              <>
-                <Button onClick={handleStepForward} className="flex-1 sm:flex-none">
-                  <ChevronRight className="mr-2 h-4 w-4" />
-                  Next Step
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleStepBack}
-                  disabled={currentStepIndex <= 0}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-
-            {isComplete && (
-              <Button onClick={startSimulation} variant="outline" className="flex-1 sm:flex-none">
-                <Play className="mr-2 h-4 w-4" />
-                Run Again
-              </Button>
-            )}
-
-            <Button variant="outline" size="icon" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4" />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTestPanel(!showTestPanel)}
+              className={cn(
+                'border-slate-600 text-slate-300 hover:bg-slate-800',
+                showTestPanel && 'bg-slate-800'
+              )}
+            >
+              <Zap className="mr-1 h-3 w-3" />
+              Test
             </Button>
-
-            <div className="ml-auto hidden items-center gap-1.5 text-xs text-muted-foreground lg:flex">
-              <Keyboard className="h-3 w-3" />
-              <span>
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">Space</kbd> start,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">→</kbd> next,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">←</kbd> back,{' '}
-                <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">1-4</kbd> scenario
-              </span>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={reset}
+              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+            >
+              <RotateCcw className="mr-1 h-3 w-3" />
+              Reset
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+          Build your VPC by adding components. The simulator will tell you if something is misconfigured.
+        </p>
+      </CardHeader>
 
-      {/* Progress */}
-      {currentStepIndex >= 0 && (
-        <Card>
-          <CardContent className="py-3">
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="font-medium">
-                Step {Math.min(currentStepIndex + 1, totalSteps)} of {totalSteps}
-              </span>
-              {isComplete && (
-                <span className={cn(
-                  'flex items-center gap-1',
-                  currentStep?.isError ? 'text-red-600' : 'text-green-600'
-                )}>
-                  {currentStep?.isError ? (
-                    <><AlertTriangle className="h-3 w-3" /> Error</>
-                  ) : (
-                    <><CheckCircle className="h-3 w-3" /> Complete</>
-                  )}
-                </span>
-              )}
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className={cn(
-                  'h-full transition-all duration-300',
-                  currentStep?.isError ? 'bg-red-500' : 'bg-orange-500'
-                )}
-                style={{ width: `${Math.min(((currentStepIndex + 1) / totalSteps) * 100, 100)}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* VPC Diagram */}
-      <Card>
-        <CardHeader className="p-3 pb-2 sm:p-6 sm:pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Cloud className="h-4 w-4 text-orange-500" />
-            VPC Architecture (10.0.0.0/16)
-            <span className="text-xs font-normal text-muted-foreground ml-2">
-              Click any component for details
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-2 sm:p-6">
-          <div className="relative">
-            {/* Internet (outside VPC) */}
-            <div className="flex justify-center mb-3">
-              {renderComponent('internet')}
-            </div>
-
-            {/* Arrow down */}
-            <div className="flex justify-center mb-3">
-              <ArrowDown className={cn(
-                'h-5 w-5',
-                (isComponentActive('igw') || isComponentVisited('igw')) ? 'text-blue-500' : 'text-muted-foreground/30'
-              )} />
-            </div>
-
-            {/* VPC Container */}
-            <div className="border-2 border-orange-500/30 rounded-xl p-3 sm:p-4 bg-orange-500/5">
-              <div className="text-[10px] sm:text-xs font-semibold text-orange-600 mb-3 flex items-center gap-1">
-                <Cloud className="h-3 w-3" />
-                VPC
-              </div>
-
-              {/* Internet Gateway */}
-              <div className="flex justify-center mb-4">
-                {renderComponent('igw')}
-              </div>
-
-              {/* Subnets Container */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                {/* Public Subnet */}
-                <div className="border-2 border-green-500/30 rounded-lg p-2 sm:p-3 bg-green-500/5">
-                  <div className="text-[9px] sm:text-[10px] font-semibold text-green-600 mb-2">
-                    Public Subnet (10.0.1.0/24)
-                  </div>
-                  <div className="flex flex-col items-center gap-2">
-                    {renderComponent('public-route-table')}
-                    <ArrowDown className={cn(
-                      'h-4 w-4',
-                      (isComponentActive('public-subnet') || isComponentVisited('public-subnet')) ? 'text-green-500' : 'text-muted-foreground/30'
-                    )} />
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      {renderComponent('public-ec2')}
-                      {renderComponent('nat-gateway')}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Private Subnet */}
-                <div className="border-2 border-blue-500/30 rounded-lg p-2 sm:p-3 bg-blue-500/5">
-                  <div className="text-[9px] sm:text-[10px] font-semibold text-blue-600 mb-2">
-                    Private Subnet (10.0.2.0/24)
-                  </div>
-                  <div className="flex flex-col items-center gap-2">
-                    {renderComponent('private-route-table')}
-                    <ArrowDown className={cn(
-                      'h-4 w-4',
-                      (isComponentActive('private-subnet') || isComponentVisited('private-subnet')) ? 'text-blue-500' : 'text-muted-foreground/30'
-                    )} />
-                    {renderComponent('private-ec2')}
-                  </div>
-                </div>
-              </div>
-
-              {/* Connection arrow between subnets (for public-to-private scenario) */}
-              {selectedScenario === 'public-to-private' && (
-                <div className="hidden sm:flex justify-center mt-2">
-                  <ArrowRight className={cn(
-                    'h-4 w-4',
-                    currentStepIndex >= 2 ? 'text-green-500' : 'text-muted-foreground/30'
-                  )} />
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Current Step Explanation */}
-      <AnimatePresence mode="wait">
-        {currentStep && (
-          <motion.div
-            key={currentStep.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+      <CardContent className="space-y-4 sm:space-y-5">
+        {/* Quick Presets */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-slate-400">Quick start:</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => loadPreset('public')}
+            className="h-6 px-2 text-xs text-slate-300 hover:bg-slate-800"
           >
-            <Card className={cn(
-              'border-2',
-              currentStep.isError ? 'border-red-500/50 bg-red-500/5' : 'border-blue-500/50 bg-blue-500/5'
-            )}>
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  {currentStep.isError ? (
-                    <AlertTriangle className="h-5 w-5 text-red-500" />
-                  ) : (
-                    <Info className="h-5 w-5 text-blue-500" />
+            <PlayCircle className="mr-1 h-3 w-3" />
+            Public Web Server
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => loadPreset('private')}
+            className="h-6 px-2 text-xs text-slate-300 hover:bg-slate-800"
+          >
+            <PlayCircle className="mr-1 h-3 w-3" />
+            Private with NAT
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => loadPreset('full')}
+            className="h-6 px-2 text-xs text-slate-300 hover:bg-slate-800"
+          >
+            <PlayCircle className="mr-1 h-3 w-3" />
+            Full Architecture
+          </Button>
+        </div>
+
+        {/* Component Palette */}
+        <div className="space-y-3">
+          {Object.entries(groupedComponents).map(([category, components]) => (
+            <div key={category}>
+              <div className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-500">
+                {category === 'gateway' && 'Gateways'}
+                {category === 'subnet' && 'Subnets'}
+                {category === 'compute' && 'Compute'}
+                {category === 'routing' && 'Routing'}
+              </div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {components.map(renderComponentButton)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Component Info Panel */}
+        <AnimatePresence>
+          {selectedInfo && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-lg border border-slate-600 bg-slate-800 p-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    {React.createElement(COMPONENT_MAP[selectedInfo].icon, {
+                      className: cn('h-4 w-4', COMPONENT_MAP[selectedInfo].color),
+                    })}
+                    <span className="font-medium text-slate-200">{COMPONENT_MAP[selectedInfo].name}</span>
+                  </div>
+                  <button onClick={() => setSelectedInfo(null)} className="text-slate-400 hover:text-slate-200">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <p className="mt-2 text-sm text-slate-400">{COMPONENT_MAP[selectedInfo].description}</p>
+                {COMPONENT_MAP[selectedInfo].dependencies && (
+                  <div className="mt-2 text-xs text-slate-500">
+                    <span className="font-medium">Requires:</span>{' '}
+                    {COMPONENT_MAP[selectedInfo].dependencies!.map((d) => COMPONENT_MAP[d].name).join(', ')}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Validation Feedback */}
+        <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+          <div className="mb-2 text-xs font-medium text-slate-400">Configuration Status</div>
+          {activeComponents.size === 0 ? (
+            <p className="text-sm text-slate-500">Add components to build your VPC architecture.</p>
+          ) : validation.length === 0 ? (
+            <p className="text-sm text-slate-400">Add more components to create a functional architecture.</p>
+          ) : (
+            <div className="space-y-2">
+              {validation.map((v, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className={cn(
+                    'flex items-start gap-2 rounded-md p-2 text-sm',
+                    v.type === 'error' && 'bg-red-500/10 text-red-300',
+                    v.type === 'warning' && 'bg-yellow-500/10 text-yellow-300',
+                    v.type === 'info' && 'bg-blue-500/10 text-blue-300',
+                    v.type === 'success' && 'bg-green-500/10 text-green-300'
                   )}
-                  {currentStep.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {currentStep.explanation}
-                </p>
-                <div className="mt-3 flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">Current:</span>
-                  <span className={cn(
-                    'px-2 py-0.5 rounded font-medium',
-                    VPC_COMPONENTS[currentStep.location].bgColor,
-                    VPC_COMPONENTS[currentStep.location].color
-                  )}>
-                    {VPC_COMPONENTS[currentStep.location].name}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                >
+                  {v.type === 'error' && <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+                  {v.type === 'warning' && <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+                  {v.type === 'info' && <Info className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+                  {v.type === 'success' && <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />}
+                  <span>{v.message}</span>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
 
-      {/* Key Concepts (shown when not running) */}
-      {!isRunning && !isComplete && (
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm sm:text-base">💡 Quick Reference</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 text-xs sm:text-sm sm:grid-cols-2">
-              <div className="flex items-start gap-2">
-                <div className="p-1 rounded bg-purple-500/10">
-                  <Router className="h-3 w-3 text-purple-500" />
-                </div>
-                <div>
-                  <strong>Internet Gateway</strong>
-                  <p className="text-muted-foreground">Entry/exit point for internet traffic</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="p-1 rounded bg-orange-500/10">
-                  <Shield className="h-3 w-3 text-orange-500" />
-                </div>
-                <div>
-                  <strong>NAT Gateway</strong>
-                  <p className="text-muted-foreground">Lets private instances reach internet</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="p-1 rounded bg-green-500/10">
-                  <Cloud className="h-3 w-3 text-green-500" />
-                </div>
-                <div>
-                  <strong>Public Subnet</strong>
-                  <p className="text-muted-foreground">Has route to IGW, instances get public IPs</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="p-1 rounded bg-blue-500/10">
-                  <Cloud className="h-3 w-3 text-blue-500" />
-                </div>
-                <div>
-                  <strong>Private Subnet</strong>
-                  <p className="text-muted-foreground">No direct internet, uses NAT for outbound</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* Visual Architecture Diagram */}
+        <AnimatePresence>
+          {activeComponents.size > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-lg border border-slate-700 bg-slate-800/30 p-3 sm:p-4">
+                <div className="mb-3 text-xs font-medium text-slate-400">Your VPC Architecture</div>
 
-      {/* Route Tables Reference */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
-            <Network className="h-4 w-4 text-indigo-500" />
-            Route Tables
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="text-xs sm:text-sm">
-              <div className="font-semibold text-green-600 mb-2">Public Route Table</div>
-              <div className="space-y-1 font-mono text-[10px] sm:text-xs bg-muted/50 p-2 rounded">
-                <div className="flex justify-between">
-                  <span>10.0.0.0/16</span>
-                  <span className="text-muted-foreground">→ local</span>
+                {/* Internet */}
+                <div className="mb-3 flex justify-center">
+                  <div className="flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1">
+                    <Globe className="h-4 w-4 text-blue-400" />
+                    <span className="text-xs text-blue-300">Internet</span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span>0.0.0.0/0</span>
-                  <span className="text-purple-600">→ igw-xxxxx</span>
+
+                {/* IGW */}
+                {activeComponents.has('igw') && (
+                  <>
+                    <div className="mb-1 flex justify-center">
+                      <div className="h-4 w-0.5 bg-slate-600" />
+                    </div>
+                    <div className="mb-3 flex justify-center">
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="flex items-center gap-2 rounded-lg border border-purple-500/50 bg-purple-500/20 px-3 py-2"
+                      >
+                        <Router className="h-4 w-4 text-purple-400" />
+                        <span className="text-xs text-purple-300">Internet Gateway</span>
+                      </motion.div>
+                    </div>
+                  </>
+                )}
+
+                {/* VPC Container */}
+                <div className="rounded-lg border-2 border-dashed border-slate-600 p-3">
+                  <div className="mb-3 text-center text-[10px] text-slate-500">VPC (10.0.0.0/16)</div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {/* Public Subnet */}
+                    {activeComponents.has('public-subnet') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-lg border border-green-700 bg-green-900/20 p-2"
+                      >
+                        <div className="mb-2 text-center text-[10px] font-medium text-green-400">Public Subnet</div>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {activeComponents.has('public-route-table') && (
+                            <div className="flex items-center gap-1 rounded bg-indigo-500/20 px-2 py-1">
+                              <Network className="h-3 w-3 text-indigo-400" />
+                              <span className="text-[10px] text-indigo-300">Route Table</span>
+                            </div>
+                          )}
+                          {activeComponents.has('public-ec2') && (
+                            <div className="flex items-center gap-1 rounded bg-green-600/20 px-2 py-1">
+                              <Server className="h-3 w-3 text-green-400" />
+                              <span className="text-[10px] text-green-300">EC2</span>
+                            </div>
+                          )}
+                          {activeComponents.has('nat-gateway') && (
+                            <div className="flex items-center gap-1 rounded bg-orange-500/20 px-2 py-1">
+                              <Shield className="h-3 w-3 text-orange-400" />
+                              <span className="text-[10px] text-orange-300">NAT GW</span>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {/* Private Subnet */}
+                    {activeComponents.has('private-subnet') && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="rounded-lg border border-red-700 bg-red-900/20 p-2"
+                      >
+                        <div className="mb-2 text-center text-[10px] font-medium text-red-400">Private Subnet</div>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {activeComponents.has('private-route-table') && (
+                            <div className="flex items-center gap-1 rounded bg-amber-500/20 px-2 py-1">
+                              <Network className="h-3 w-3 text-amber-400" />
+                              <span className="text-[10px] text-amber-300">Route Table</span>
+                            </div>
+                          )}
+                          {activeComponents.has('private-ec2') && (
+                            <div className="flex items-center gap-1 rounded bg-red-600/20 px-2 py-1">
+                              <Server className="h-3 w-3 text-red-400" />
+                              <span className="text-[10px] text-red-300">EC2</span>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {!activeComponents.has('public-subnet') && !activeComponents.has('private-subnet') && (
+                      <div className="col-span-full py-4 text-center text-xs text-slate-500">
+                        Add subnets to see the architecture
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="text-xs sm:text-sm">
-              <div className="font-semibold text-blue-600 mb-2">Private Route Table</div>
-              <div className="space-y-1 font-mono text-[10px] sm:text-xs bg-muted/50 p-2 rounded">
-                <div className="flex justify-between">
-                  <span>10.0.0.0/16</span>
-                  <span className="text-muted-foreground">→ local</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>0.0.0.0/0</span>
-                  <span className="text-orange-600">→ nat-xxxxx</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Test Panel */}
+        <AnimatePresence>
+          {showTestPanel && activeComponents.size > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3">
+                <div className="mb-2 text-xs font-medium text-slate-400">Connectivity Tests</div>
+                <div className="space-y-2 text-sm">
+                  {/* Test: Internet to Public EC2 */}
+                  <div className="flex items-center justify-between rounded bg-slate-800 p-2">
+                    <span className="text-slate-300">Internet to Public EC2</span>
+                    {activeComponents.has('igw') &&
+                    activeComponents.has('public-subnet') &&
+                    activeComponents.has('public-ec2') ? (
+                      <span className="flex items-center gap-1 text-green-400">
+                        <CheckCircle className="h-4 w-4" /> Works
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-red-400">
+                        <X className="h-4 w-4" /> Blocked
+                      </span>
+                    )}
+                  </div>
+                  {/* Test: Private EC2 to Internet */}
+                  <div className="flex items-center justify-between rounded bg-slate-800 p-2">
+                    <span className="text-slate-300">Private EC2 to Internet</span>
+                    {activeComponents.has('igw') &&
+                    activeComponents.has('nat-gateway') &&
+                    activeComponents.has('private-subnet') &&
+                    activeComponents.has('private-ec2') ? (
+                      <span className="flex items-center gap-1 text-green-400">
+                        <CheckCircle className="h-4 w-4" /> Works
+                      </span>
+                    ) : activeComponents.has('private-ec2') ? (
+                      <span className="flex items-center gap-1 text-red-400">
+                        <X className="h-4 w-4" /> Blocked
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">N/A</span>
+                    )}
+                  </div>
+                  {/* Test: Internet to Private EC2 */}
+                  <div className="flex items-center justify-between rounded bg-slate-800 p-2">
+                    <span className="text-slate-300">Internet to Private EC2</span>
+                    {activeComponents.has('private-ec2') ? (
+                      <span className="flex items-center gap-1 text-green-400">
+                        <Shield className="h-4 w-4" /> Protected
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">N/A</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Keyboard Hints */}
+        <div className="hidden items-center justify-center gap-4 text-xs text-slate-500 sm:flex">
+          <Keyboard className="h-3 w-3" />
+          <span>
+            <kbd className="rounded bg-slate-700 px-1">1-3</kbd> presets
+          </span>
+          <span>
+            <kbd className="rounded bg-slate-700 px-1">T</kbd> test
+          </span>
+          <span>
+            <kbd className="rounded bg-slate-700 px-1">R</kbd> reset
+          </span>
+        </div>
+
+        {/* Educational Summary */}
+        <div className="rounded-lg border border-slate-700 bg-slate-800/30 p-3">
+          <h3 className="mb-2 text-sm font-semibold text-slate-200">Key Concepts</h3>
+          <ul className="space-y-1 text-xs text-slate-400">
+            <li>
+              <strong className="text-green-400">Public Subnet</strong>: Has route to Internet Gateway - resources can
+              have public IPs
+            </li>
+            <li>
+              <strong className="text-red-400">Private Subnet</strong>: No direct internet route - resources are
+              protected
+            </li>
+            <li>
+              <strong className="text-orange-400">NAT Gateway</strong>: Lets private resources reach internet without
+              being exposed
+            </li>
+            <li>
+              <strong className="text-purple-400">Internet Gateway</strong>: The door between your VPC and the internet
+            </li>
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
