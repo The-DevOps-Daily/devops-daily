@@ -222,8 +222,8 @@ export default function DbIndexingSimulator() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-100 sm:text-2xl">Database Indexing</h2>
-          <p className="mt-1 text-xs text-slate-400 sm:text-sm">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">Database Indexing</h2>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
             See how indexes speed up queries by avoiding full table scans
           </p>
         </div>
@@ -235,22 +235,22 @@ export default function DbIndexingSimulator() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4">
-        <Card className="border-slate-700 bg-slate-800/50">
+        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
           <CardContent className="p-3 text-center sm:p-4">
-            <div className="text-lg font-bold text-slate-100 sm:text-2xl">{stats.queries}</div>
-            <div className="text-[10px] text-slate-400 sm:text-xs">Queries Run</div>
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{stats.queries}</div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">Queries Run</div>
           </CardContent>
         </Card>
-        <Card className="border-slate-700 bg-slate-800/50">
+        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
           <CardContent className="p-3 text-center sm:p-4">
-            <div className="text-lg font-bold text-slate-100 sm:text-2xl">{stats.totalTime}ms</div>
-            <div className="text-[10px] text-slate-400 sm:text-xs">Total Time</div>
+            <div className="text-lg font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{stats.totalTime}ms</div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">Total Time</div>
           </CardContent>
         </Card>
-        <Card className="border-slate-700 bg-slate-800/50">
+        <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
           <CardContent className="p-3 text-center sm:p-4">
             <div className="text-lg font-bold text-emerald-400 sm:text-2xl">{stats.indexHits}</div>
-            <div className="text-[10px] text-slate-400 sm:text-xs">Index Hits</div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">Index Hits</div>
           </CardContent>
         </Card>
       </div>
@@ -260,16 +260,16 @@ export default function DbIndexingSimulator() {
         {/* Left: Index Manager + Query Selector */}
         <div className="space-y-4">
           {/* Index Manager */}
-          <Card className="border-slate-700 bg-slate-800/50">
+          <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
             <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="flex items-center gap-2 text-base text-slate-100 sm:text-lg">
+              <CardTitle className="flex items-center gap-2 text-base text-slate-900 dark:text-slate-100 sm:text-lg">
                 <Zap className="h-4 w-4 text-yellow-400 sm:h-5 sm:w-5" />
                 <span className="hidden sm:inline">Index Manager</span>
                 <span className="sm:hidden">Indexes</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Add indexes to columns to speed up queries on those columns.
               </p>
               <div className="space-y-2">
@@ -282,12 +282,12 @@ export default function DbIndexingSimulator() {
                         'flex items-center justify-between rounded-lg border p-2 sm:p-3',
                         indexed
                           ? 'border-emerald-500/50 bg-emerald-500/10'
-                          : 'border-slate-600 bg-slate-700/50'
+                          : 'border-slate-300 bg-slate-200/50 dark:border-slate-600 dark:bg-slate-700/50'
                       )}
                     >
                       <div className="flex items-center gap-2">
-                        <Database className="h-4 w-4 text-slate-400" />
-                        <span className="text-sm font-medium text-slate-200">{column}</span>
+                        <Database className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{column}</span>
                         {indexed && (
                           <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[10px] text-emerald-400">
                             INDEXED
@@ -321,9 +321,9 @@ export default function DbIndexingSimulator() {
           </Card>
 
           {/* Query Selector */}
-          <Card className="border-slate-700 bg-slate-800/50">
+          <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
             <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="flex items-center gap-2 text-base text-slate-100 sm:text-lg">
+              <CardTitle className="flex items-center gap-2 text-base text-slate-900 dark:text-slate-100 sm:text-lg">
                 <Search className="h-4 w-4 text-blue-400 sm:h-5 sm:w-5" />
                 <span className="hidden sm:inline">Select Query</span>
                 <span className="sm:hidden">Query</span>
@@ -360,10 +360,11 @@ export default function DbIndexingSimulator() {
               </div>
 
               {/* SQL Preview */}
-              <div className="rounded-lg bg-slate-900 p-2 sm:p-3">
+              <div className="rounded-lg bg-slate-200 p-2 dark:bg-slate-900 sm:p-3">
                 <code className="break-all text-[10px] text-blue-300 sm:text-xs">
-                  {selectedQuery.sql}
-                </code>
+              <code className="break-all text-[10px] text-blue-600 dark:text-blue-300 sm:text-xs">
+                {selectedQuery.sql}
+              </code>
               </div>
 
               <Button
@@ -390,38 +391,38 @@ export default function DbIndexingSimulator() {
         {/* Right: Table Visualization + Results */}
         <div className="space-y-4">
           {/* Table Visualization */}
-          <Card className="border-slate-700 bg-slate-800/50">
+          <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
             <CardHeader className="pb-2 sm:pb-4">
-              <CardTitle className="flex items-center gap-2 text-base text-slate-100 sm:text-lg">
+              <CardTitle className="flex items-center gap-2 text-base text-slate-900 dark:text-slate-100 sm:text-lg">
                 <Table className="h-4 w-4 text-purple-400 sm:h-5 sm:w-5" />
                 <span>users table</span>
-                <span className="ml-auto text-xs font-normal text-slate-400">
+                <span className="ml-auto text-xs font-normal text-slate-500 dark:text-slate-400">
                   {SAMPLE_DATA.length} rows
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="max-h-64 overflow-auto rounded-lg border border-slate-600">
+              <div className="max-h-64 overflow-auto rounded-lg border border-slate-300 dark:border-slate-600">
                 <table className="w-full text-xs sm:text-sm">
-                  <thead className="sticky top-0 bg-slate-700">
+                  <thead className="sticky top-0 bg-slate-200 dark:bg-slate-700">
                     <tr>
-                      <th className="px-2 py-1.5 text-left text-slate-300">id</th>
-                      <th className="px-2 py-1.5 text-left text-slate-300">
+                      <th className="px-2 py-1.5 text-left text-slate-600 dark:text-slate-300">id</th>
+                      <th className="px-2 py-1.5 text-left text-slate-600 dark:text-slate-300">
                         email
                         {hasIndex('email') && (
                           <Zap className="ml-1 inline h-3 w-3 text-yellow-400" />
                         )}
                       </th>
-                      <th className="hidden px-2 py-1.5 text-left text-slate-300 sm:table-cell">
+                      <th className="hidden px-2 py-1.5 text-left text-slate-600 dark:text-slate-300 sm:table-cell">
                         name
                       </th>
-                      <th className="px-2 py-1.5 text-left text-slate-300">
+                      <th className="px-2 py-1.5 text-left text-slate-600 dark:text-slate-300">
                         age
                         {hasIndex('age') && (
                           <Zap className="ml-1 inline h-3 w-3 text-yellow-400" />
                         )}
                       </th>
-                      <th className="px-2 py-1.5 text-left text-slate-300">
+                      <th className="px-2 py-1.5 text-left text-slate-600 dark:text-slate-300">
                         city
                         {hasIndex('city') && (
                           <Zap className="ml-1 inline h-3 w-3 text-yellow-400" />
@@ -444,13 +445,13 @@ export default function DbIndexingSimulator() {
                         idx === animation.currentRow - 1;
 
                       return (
-                        <motion.tr
-                          key={row.id}
-                          className={cn(
-                            'border-t border-slate-600',
+                       <motion.tr
+                         key={row.id}
+                         className={cn(
+                            'border-t border-slate-300 dark:border-slate-600',
                             isFound && 'bg-emerald-500/20',
                             isCurrentlyScanningRow && !isFound && 'bg-yellow-500/20',
-                            isScanning && !isFound && !isCurrentlyScanningRow && 'bg-slate-600/30'
+                            isScanning && !isFound && !isCurrentlyScanningRow && 'bg-slate-300/30 dark:bg-slate-600/30'
                           )}
                           animate={
                             isCurrentlyScanningRow
@@ -459,15 +460,15 @@ export default function DbIndexingSimulator() {
                           }
                           transition={{ duration: 0.15 }}
                         >
-                          <td className="px-2 py-1 text-slate-400">{row.id}</td>
-                          <td className="max-w-[80px] truncate px-2 py-1 text-slate-200 sm:max-w-none">
+                          <td className="px-2 py-1 text-slate-500 dark:text-slate-400">{row.id}</td>
+                          <td className="max-w-[80px] truncate px-2 py-1 text-slate-700 dark:text-slate-200 sm:max-w-none">
                             {row.email}
                           </td>
-                          <td className="hidden px-2 py-1 text-slate-200 sm:table-cell">
+                          <td className="hidden px-2 py-1 text-slate-700 dark:text-slate-200 sm:table-cell">
                             {row.name}
                           </td>
-                          <td className="px-2 py-1 text-slate-200">{row.age}</td>
-                          <td className="px-2 py-1 text-slate-200">{row.city}</td>
+                          <td className="px-2 py-1 text-slate-700 dark:text-slate-200">{row.age}</td>
+                          <td className="px-2 py-1 text-slate-700 dark:text-slate-200">{row.city}</td>
                         </motion.tr>
                       );
                     })}
@@ -482,7 +483,7 @@ export default function DbIndexingSimulator() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="mt-3 rounded-lg border border-slate-600 bg-slate-700/50 p-3"
+                    className="mt-3 rounded-lg border border-slate-300 bg-slate-200/50 p-3 dark:border-slate-600 dark:bg-slate-700/50"
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span
@@ -501,11 +502,11 @@ export default function DbIndexingSimulator() {
                           </>
                         )}
                       </span>
-                      <span className="text-slate-400">
+                      <span className="text-slate-500 dark:text-slate-400">
                         Scanned {animation.currentRow} / {animation.totalRows} rows
                       </span>
                     </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-600">
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-300 dark:bg-slate-600">
                       <motion.div
                         className={cn(
                           'h-full rounded-full',
@@ -556,27 +557,27 @@ export default function DbIndexingSimulator() {
                           {lastResult.usedIndex ? 'Index Used!' : 'Full Table Scan'}
                         </span>
                       </div>
-                      <span className="text-lg font-bold text-slate-100">{lastResult.timeMs}ms</span>
+                      <span className="text-lg font-bold text-slate-900 dark:text-slate-100">{lastResult.timeMs}ms</span>
                     </div>
 
                     <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <span className="text-xs text-slate-400">Rows Scanned</span>
-                        <div className="font-medium text-slate-200">{lastResult.rowsScanned}</div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">Rows Scanned</span>
+                        <div className="font-medium text-slate-700 dark:text-slate-200">{lastResult.rowsScanned}</div>
                       </div>
                       <div>
-                        <span className="text-xs text-slate-400">Rows Returned</span>
-                        <div className="font-medium text-slate-200">{lastResult.rowsReturned}</div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">Rows Returned</span>
+                        <div className="font-medium text-slate-700 dark:text-slate-200">{lastResult.rowsReturned}</div>
                       </div>
                     </div>
 
-                    <div className="mt-3 rounded-lg bg-slate-800/50 p-2">
-                      <p className="text-xs text-slate-300">{lastResult.explanation}</p>
+                    <div className="mt-3 rounded-lg bg-slate-200 p-2 dark:bg-slate-800/50">
+                      <p className="text-xs text-slate-600 dark:text-slate-300">{lastResult.explanation}</p>
                     </div>
 
                     {!lastResult.usedIndex && (
                       <div className="mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
-                        <p className="text-xs text-blue-300">
+                        <p className="text-xs text-blue-600 dark:text-blue-300">
                           <TrendingUp className="mr-1 inline h-3 w-3" />
                           Tip: Add an index on <strong>{selectedQuery.column}</strong> to speed up
                           this query!
@@ -592,31 +593,31 @@ export default function DbIndexingSimulator() {
       </div>
 
       {/* Educational Section */}
-      <Card className="border-slate-700 bg-slate-800/50">
+      <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
         <CardContent className="p-4">
-          <h3 className="mb-3 flex items-center gap-2 font-semibold text-slate-100">
+          <h3 className="mb-3 flex items-center gap-2 font-semibold text-slate-900 dark:text-slate-100">
             <Database className="h-4 w-4 text-emerald-400" />
             How Database Indexes Work
           </h3>
           <div className="grid gap-4 text-sm sm:grid-cols-2">
             <div>
               <h4 className="mb-1 font-medium text-yellow-400">Without Index (Full Table Scan)</h4>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 The database must check <strong>every row</strong> in the table to find matches.
                 Slow for large tables!
               </p>
             </div>
             <div>
               <h4 className="mb-1 font-medium text-emerald-400">With Index (Index Seek)</h4>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 The index acts like a book&apos;s index - the database jumps{' '}
                 <strong>directly</strong> to matching rows. Much faster!
               </p>
             </div>
           </div>
-          <div className="mt-4 rounded-lg bg-slate-700/50 p-3">
-            <h4 className="mb-2 text-xs font-medium text-slate-300">When to Create an Index:</h4>
-            <ul className="grid gap-1 text-xs text-slate-400 sm:grid-cols-2">
+          <div className="mt-4 rounded-lg bg-slate-200/50 p-3 dark:bg-slate-700/50">
+            <h4 className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">When to Create an Index:</h4>
+            <ul className="grid gap-1 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-2">
               <li>• Columns used frequently in WHERE clauses</li>
               <li>• Columns used in JOIN conditions</li>
               <li>• Columns used for sorting (ORDER BY)</li>
