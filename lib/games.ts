@@ -22,6 +22,20 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'db-indexing-simulator',
+    title: 'Database Indexing Simulator',
+    description:
+      'Learn how database indexes work with an interactive simulator. See the difference between full table scans and index seeks, understand B-tree structure, and learn when to create indexes.',
+    iconName: 'Table',
+    badgeText: 'New',
+    color: 'from-emerald-500 to-teal-600',
+    href: '/games/db-indexing-simulator',
+    tags: ['database', 'sql', 'performance', 'indexing', 'educational', 'backend'],
+    isNew: true,
+    featured: true,
+    category: 'Database',
+  },
+  {
     id: 'caching-simulator',
     title: 'Caching Strategies Simulator',
     description:
