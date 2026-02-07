@@ -4,7 +4,7 @@ excerpt: 'New to DevOps? This beginner-friendly guide explains what DevOps is, w
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2025-01-25'
+date: '2026-01-25'
 publishedAt: '2025-01-25T09:00:00Z'
 updatedAt: '2025-01-25T09:00:00Z'
 readingTime: '15 min read'

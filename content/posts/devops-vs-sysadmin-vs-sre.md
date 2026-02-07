@@ -4,7 +4,7 @@ excerpt: "Confused about DevOps, SysAdmin, and SRE roles? This beginner-friendly
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2025-01-25'
+date: '2026-01-25'
 publishedAt: '2025-01-25T10:00:00Z'
 updatedAt: '2025-01-25T10:00:00Z'
 readingTime: '12 min read'

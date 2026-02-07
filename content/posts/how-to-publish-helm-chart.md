@@ -4,7 +4,7 @@ excerpt: 'Learn how to package and publish your Helm charts to various repositor
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
-date: '2025-01-24'
+date: '2026-01-24'
 publishedAt: '2025-01-24T09:00:00Z'
 updatedAt: '2025-01-24T09:00:00Z'
 readingTime: '10 min read'
