@@ -361,10 +361,9 @@ export default function DbIndexingSimulator() {
 
               {/* SQL Preview */}
               <div className="rounded-lg bg-slate-200 p-2 dark:bg-slate-900 sm:p-3">
-                <code className="break-all text-[10px] text-blue-300 sm:text-xs">
-              <code className="break-all text-[10px] text-blue-600 dark:text-blue-300 sm:text-xs">
+                <code className="break-all text-[10px] text-blue-600 dark:text-blue-300 sm:text-xs">
                 {selectedQuery.sql}
-              </code>
+                </code>
               </div>
 
               <Button
