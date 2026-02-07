@@ -247,7 +247,7 @@ function validateConfiguration(activeComponents: Set<ComponentType>): Validation
 // COMPONENT
 // ============================================================================
 
-export function AwsVpcSimulator() {
+export default function AwsVpcSimulator() {
   const [activeComponents, setActiveComponents] = useState<Set<ComponentType>>(new Set());
   const [selectedInfo, setSelectedInfo] = useState<ComponentType | null>(null);
   const [showTestPanel, setShowTestPanel] = useState(false);
