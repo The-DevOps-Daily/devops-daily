@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RotateCcw, Database, HardDrive, Zap, Clock, TrendingUp } from 'lucide-react';
+import { RotateCcw, Database, HardDrive, Zap, Clock, TrendingUp, CheckCircle, XCircle, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +21,13 @@ interface RequestAnimation {
   key: string;
   phase: 'checking' | 'hit' | 'miss-fetching' | 'storing' | 'complete';
   isHit: boolean;
+}
+
+interface RequestStep {
+  step: number;
+  label: string;
+  status: 'pending' | 'active' | 'done';
+  time?: number;
 }
 
 const EVICTION_POLICIES: Record<EvictionPolicy, { name: string; description: string; how: string }> = {
@@ -41,7 +48,6 @@ const EVICTION_POLICIES: Record<EvictionPolicy, { name: string; description: str
   },
 };
 
-// Data items the user can request
 const DATA_ITEMS = [
   { key: 'A', label: 'User Profile', color: 'bg-blue-500' },
   { key: 'B', label: 'Product List', color: 'bg-green-500' },
@@ -61,8 +67,9 @@ export default function CachingSimulator() {
   const [animation, setAnimation] = useState<RequestAnimation | null>(null);
   const [stats, setStats] = useState({ hits: 0, misses: 0, totalTime: 0 });
   const [evictingKey, setEvictingKey] = useState<string | null>(null);
-  const [lastAction, setLastAction] = useState<string>('');
   const [tick, setTick] = useState(0);
+  const [requestSteps, setRequestSteps] = useState<RequestStep[]>([]);
+  const [lastResult, setLastResult] = useState<{ isHit: boolean; time: number; key: string } | null>(null);
 
   const getItemToEvict = useCallback((currentCache: CacheItem[]): CacheItem | null => {
     if (currentCache.length < CACHE_SIZE) return null;
@@ -86,26 +93,32 @@ export default function CachingSimulator() {
   }, [policy]);
 
   const handleRequest = useCallback((key: string) => {
-    if (animation) return; // Prevent overlapping requests
+    if (animation) return;
 
     const requestId = `req-${Date.now()}`;
     const currentTick = tick + 1;
     setTick(currentTick);
+    setLastResult(null);
 
-    // Check if item is in cache
     const cachedItem = cache.find((item) => item.key === key);
     const isHit = !!cachedItem;
 
-    // Start animation - checking cache
     setAnimation({ id: requestId, key, phase: 'checking', isHit });
 
     if (isHit) {
-      // Cache HIT
-      setTimeout(() => {
-        setAnimation((prev) => prev && { ...prev, phase: 'hit' });
-        setLastAction(`HIT! "${key}" found in cache (${CACHE_LATENCY}ms)`);
+      // Cache HIT - show 2-step process
+      setRequestSteps([
+        { step: 1, label: 'Check cache for data', status: 'active' },
+        { step: 2, label: 'Return from cache', status: 'pending', time: CACHE_LATENCY },
+      ]);
 
-        // Update access stats
+      setTimeout(() => {
+        setRequestSteps([
+          { step: 1, label: 'Check cache for data', status: 'done' },
+          { step: 2, label: 'Found! Return from cache', status: 'active', time: CACHE_LATENCY },
+        ]);
+        setAnimation((prev) => prev && { ...prev, phase: 'hit' });
+
         setCache((prev) =>
           prev.map((item) =>
             item.key === key
@@ -122,31 +135,57 @@ export default function CachingSimulator() {
       }, 400);
 
       setTimeout(() => {
+        setRequestSteps([
+          { step: 1, label: 'Check cache for data', status: 'done' },
+          { step: 2, label: 'Found! Return from cache', status: 'done', time: CACHE_LATENCY },
+        ]);
+        setLastResult({ isHit: true, time: CACHE_LATENCY, key });
         setAnimation(null);
       }, 1200);
     } else {
-      // Cache MISS
+      // Cache MISS - show 4-step process
+      const toEvict = getItemToEvict(cache);
+      const needsEviction = cache.length >= CACHE_SIZE;
+
+      setRequestSteps([
+        { step: 1, label: 'Check cache for data', status: 'active' },
+        { step: 2, label: 'Fetch from database', status: 'pending', time: DB_LATENCY },
+        ...(needsEviction ? [{ step: 3, label: `Evict "${toEvict?.key}" to make room`, status: 'pending' as const }] : []),
+        { step: needsEviction ? 4 : 3, label: 'Store in cache for next time', status: 'pending' as const },
+      ]);
+
       setTimeout(() => {
+        setRequestSteps((prev) => prev.map((s, i) =>
+          i === 0 ? { ...s, status: 'done', label: 'Not in cache!' }
+          : i === 1 ? { ...s, status: 'active' }
+          : s
+        ));
         setAnimation((prev) => prev && { ...prev, phase: 'miss-fetching' });
-        setLastAction(`MISS! Fetching "${key}" from database...`);
       }, 400);
 
       setTimeout(() => {
-        // Check if we need to evict
-        const toEvict = getItemToEvict(cache);
-        if (toEvict) {
+        if (needsEviction && toEvict) {
           setEvictingKey(toEvict.key);
-          setLastAction(`Evicting "${toEvict.key}" (${EVICTION_POLICIES[policy].how.toLowerCase()})`);
+          setRequestSteps((prev) => prev.map((s, i) =>
+            i === 1 ? { ...s, status: 'done' }
+            : i === 2 ? { ...s, status: 'active' }
+            : s
+          ));
+        } else {
+          setRequestSteps((prev) => prev.map((s, i) =>
+            i === 1 ? { ...s, status: 'done' }
+            : i === 2 ? { ...s, status: 'active' }
+            : s
+          ));
         }
       }, 800);
 
       setTimeout(() => {
         setAnimation((prev) => prev && { ...prev, phase: 'storing' });
 
-        // Add to cache (with potential eviction)
         setCache((prev) => {
-          const toEvict = getItemToEvict(prev);
-          const filtered = toEvict ? prev.filter((item) => item.key !== toEvict.key) : prev;
+          const toEvictNow = getItemToEvict(prev);
+          const filtered = toEvictNow ? prev.filter((item) => item.key !== toEvictNow.key) : prev;
           return [
             ...filtered,
             { key, accessCount: 1, lastAccess: currentTick, insertTime: currentTick },
@@ -154,7 +193,7 @@ export default function CachingSimulator() {
         });
 
         setEvictingKey(null);
-        setLastAction(`Stored "${key}" in cache (${DB_LATENCY}ms total)`);
+        setRequestSteps((prev) => prev.map((s) => ({ ...s, status: 'done' as const })));
 
         setStats((prev) => ({
           ...prev,
@@ -164,6 +203,7 @@ export default function CachingSimulator() {
       }, 1200);
 
       setTimeout(() => {
+        setLastResult({ isHit: false, time: DB_LATENCY, key });
         setAnimation(null);
       }, 1800);
     }
@@ -174,8 +214,9 @@ export default function CachingSimulator() {
     setAnimation(null);
     setStats({ hits: 0, misses: 0, totalTime: 0 });
     setEvictingKey(null);
-    setLastAction('');
     setTick(0);
+    setRequestSteps([]);
+    setLastResult(null);
   };
 
   const hitRate = stats.hits + stats.misses > 0
@@ -285,7 +326,7 @@ export default function CachingSimulator() {
                 <Database className="h-6 w-6 text-white" />
               </div>
               <span className="text-xs mt-1 text-muted-foreground">Database</span>
-              <span className="text-xs text-muted-foreground">({DB_LATENCY}ms)</span>
+              <span className="text-xs text-red-500 font-medium">Slow ({DB_LATENCY}ms)</span>
             </div>
 
             {/* Cache */}
@@ -314,7 +355,7 @@ export default function CachingSimulator() {
                 </div>
                 <div className="flex items-center gap-1 mt-1">
                   <HardDrive className="h-3 w-3 text-emerald-500" />
-                  <span className="text-xs text-muted-foreground">Cache ({CACHE_LATENCY}ms)</span>
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Fast ({CACHE_LATENCY}ms)</span>
                 </div>
               </div>
             </div>
@@ -358,20 +399,87 @@ export default function CachingSimulator() {
             </AnimatePresence>
           </div>
 
-          {/* Status Message */}
-          <div
-            className={cn(
-              'text-center py-2 px-4 rounded-lg font-medium text-sm',
-              lastAction.includes('HIT')
-                ? 'bg-green-500/20 text-green-700 dark:text-green-400'
-                : lastAction.includes('MISS') || lastAction.includes('Evicting')
-                  ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400'
-                  : lastAction.includes('Stored')
-                    ? 'bg-blue-500/20 text-blue-700 dark:text-blue-400'
-                    : 'bg-muted text-muted-foreground'
+          {/* Step-by-step Status Window */}
+          <div className="bg-slate-900 rounded-lg p-4 font-mono text-sm">
+            <div className="flex items-center gap-2 mb-3 text-slate-400 text-xs">
+              <div className="flex gap-1">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                <div className="w-3 h-3 rounded-full bg-green-500" />
+              </div>
+              <span>Request Log</span>
+            </div>
+
+            {requestSteps.length === 0 ? (
+              <div className="text-slate-500">
+                <span className="text-green-400">$</span> Click a data item to see how caching works...
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {requestSteps.map((step, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    {step.status === 'done' ? (
+                      <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
+                    ) : step.status === 'active' ? (
+                      <motion.div
+                        animate={{ opacity: [1, 0.5, 1] }}
+                        transition={{ repeat: Infinity, duration: 0.8 }}
+                        className="w-4 h-4 rounded-full bg-yellow-400 flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-4 h-4 rounded-full bg-slate-600 flex-shrink-0" />
+                    )}
+                    <span className={cn(
+                      step.status === 'done' ? 'text-green-400' :
+                      step.status === 'active' ? 'text-yellow-400' :
+                      'text-slate-500'
+                    )}>
+                      {step.label}
+                    </span>
+                    {step.time && (
+                      <span className={cn(
+                        'ml-auto',
+                        step.time === CACHE_LATENCY ? 'text-green-400' : 'text-red-400'
+                      )}>
+                        +{step.time}ms
+                      </span>
+                    )}
+                  </div>
+                ))}
+
+                {/* Result summary */}
+                {lastResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                      'mt-3 pt-3 border-t border-slate-700 flex items-center gap-2',
+                      lastResult.isHit ? 'text-green-400' : 'text-amber-400'
+                    )}
+                  >
+                    {lastResult.isHit ? (
+                      <>
+                        <CheckCircle className="h-5 w-5" />
+                        <span>CACHE HIT!</span>
+                        <ArrowRight className="h-4 w-4" />
+                        <span className="text-green-300">
+                          {lastResult.time}ms (20x faster than database!)
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-5 w-5" />
+                        <span>CACHE MISS</span>
+                        <ArrowRight className="h-4 w-4" />
+                        <span className="text-amber-300">
+                          {lastResult.time}ms (but now "{lastResult.key}" is cached for next time!)
+                        </span>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+              </div>
             )}
-          >
-            {lastAction || 'Click a data item above to make a request'}
           </div>
         </CardContent>
       </Card>
@@ -414,10 +522,36 @@ export default function CachingSimulator() {
               </div>
             </div>
             {stats.hits + stats.misses > 0 && (
-              <p className="mt-3 text-xs text-muted-foreground text-center">
-                Without cache: {(stats.hits + stats.misses) * DB_LATENCY}ms |
-                Saved: {(stats.hits + stats.misses) * DB_LATENCY - stats.totalTime}ms
-              </p>
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                <div className="text-sm font-medium mb-2">Time Comparison</div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-24">With cache:</span>
+                    <div className="flex-1 bg-muted rounded-full h-4 overflow-hidden">
+                      <motion.div
+                        className="h-full bg-green-500"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min((stats.totalTime / ((stats.hits + stats.misses) * DB_LATENCY)) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-green-600 dark:text-green-400 w-16 text-right">
+                      {stats.totalTime}ms
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground w-24">Without cache:</span>
+                    <div className="flex-1 bg-muted rounded-full h-4 overflow-hidden">
+                      <div className="h-full bg-red-500 w-full" />
+                    </div>
+                    <span className="text-xs font-medium text-red-600 dark:text-red-400 w-16 text-right">
+                      {(stats.hits + stats.misses) * DB_LATENCY}ms
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-center mt-2 text-emerald-600 dark:text-emerald-400 font-medium">
+                  You saved {(stats.hits + stats.misses) * DB_LATENCY - stats.totalTime}ms with caching!
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -470,21 +604,22 @@ export default function CachingSimulator() {
       {/* Educational Section */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">How Caching Works</CardTitle>
+          <CardTitle className="text-lg">Why Use Caching?</CardTitle>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-3">
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20">
+              <div className="font-medium text-red-600 dark:text-red-400 mb-1">Without Cache</div>
+              <p>Every request goes to the database ({DB_LATENCY}ms each time). Slow and expensive!</p>
+            </div>
+            <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+              <div className="font-medium text-green-600 dark:text-green-400 mb-1">With Cache</div>
+              <p>Repeated requests return instantly ({CACHE_LATENCY}ms). 20x faster!</p>
+            </div>
+          </div>
           <p>
-            <strong>Caching</strong> stores frequently accessed data in fast memory to avoid
-            slow database lookups. When you request data:
-          </p>
-          <ol className="list-decimal list-inside space-y-1 ml-2">
-            <li><strong>Cache Hit:</strong> Data is found in cache → returned instantly ({CACHE_LATENCY}ms)</li>
-            <li><strong>Cache Miss:</strong> Data not in cache → fetch from database ({DB_LATENCY}ms), then store in cache</li>
-          </ol>
-          <p>
-            When the cache is full (4 items), the <strong>eviction policy</strong> decides which
-            item to remove to make room for new data. Try different policies and see how they
-            affect performance!
+            The <strong>eviction policy</strong> decides what to remove when the cache is full.
+            Try requesting the same items multiple times to see your hit rate improve!
           </p>
         </CardContent>
       </Card>
