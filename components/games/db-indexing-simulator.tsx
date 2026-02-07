@@ -197,6 +197,9 @@ export default function DbIndexingSimulator() {
         : `Full table scan - checked every row in the table`,
     };
 
+    // Brief pause to show the last row being scanned before marking complete
+    await new Promise((r) => setTimeout(r, 150));
+
     setAnimation((prev) => (prev ? { ...prev, isComplete: true, foundRows: matchingRows } : null));
     setLastResult(result);
     setStats((prev) => ({
