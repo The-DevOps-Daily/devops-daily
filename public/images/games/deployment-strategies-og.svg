@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Blue-green gradient -->
+    <linearGradient id="blueGreenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#22c55e;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Canary gradient (yellow-orange) -->
+    <linearGradient id="canaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#eab308;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f97316;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Rolling gradient (purple) -->
+    <linearGradient id="rollingGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Grid pattern -->
+  <g opacity="0.1">
+    <line x1="0" y1="157.5" x2="1200" y2="157.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="315" x2="1200" y2="315" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="472.5" x2="1200" y2="472.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="900" y1="0" x2="900" y2="630" stroke="#94a3b8" stroke-width="1"/>
+  </g>
+
+  <!-- BLUE-GREEN DEPLOYMENT VISUALIZATION -->
+  <g transform="translate(60, 140)">
+    <!-- Label -->
+    <text x="85" y="-15" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#3b82f6" text-anchor="middle">BLUE-GREEN</text>
+    
+    <!-- Blue environment -->
+    <g transform="translate(0, 10)">
+      <rect x="0" y="0" width="70" height="50" rx="6" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+      <text x="35" y="20" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#3b82f6" text-anchor="middle">BLUE</text>
+      <text x="35" y="35" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#64748b" text-anchor="middle">v1.0</text>
+      <circle cx="60" cy="12" r="4" fill="#22c55e" filter="url(#glow)"/>
+    </g>
+    
+    <!-- Arrow -->
+    <g transform="translate(80, 35)">
+      <line x1="0" y1="0" x2="20" y2="0" stroke="#64748b" stroke-width="2"/>
+      <polyline points="15,-5 22,0 15,5" fill="none" stroke="#64748b" stroke-width="2"/>
+    </g>
+    
+    <!-- Green environment -->
+    <g transform="translate(110, 10)">
+      <rect x="0" y="0" width="70" height="50" rx="6" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+      <text x="35" y="20" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#22c55e" text-anchor="middle">GREEN</text>
+      <text x="35" y="35" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#64748b" text-anchor="middle">v2.0</text>
+      <circle cx="60" cy="12" r="4" fill="#eab308" filter="url(#glow)"/>
+    </g>
+  </g>
+
+  <!-- CANARY DEPLOYMENT VISUALIZATION -->
+  <g transform="translate(60, 280)">
+    <!-- Label -->
+    <text x="85" y="-15" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#eab308" text-anchor="middle">CANARY</text>
+    
+    <!-- Traffic split visualization -->
+    <g transform="translate(0, 10)">
+      <!-- Main prod -->
+      <rect x="0" y="0" width="120" height="35" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
+      <text x="60" y="15" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">Production 95%</text>
+      <rect x="5" y="22" width="100" height="8" rx="2" fill="#0f172a"/>
+      <rect x="5" y="22" width="95" height="8" rx="2" fill="#3b82f6"/>
+      
+      <!-- Canary -->
+      <rect x="0" y="42" width="120" height="35" rx="4" fill="#1e293b" stroke="#eab308" stroke-width="1.5"/>
+      <text x="60" y="57" font-family="system-ui, -apple-system, sans-serif" font-size="9" fill="#eab308" text-anchor="middle">Canary 5%</text>
+      <rect x="5" y="64" width="100" height="8" rx="2" fill="#0f172a"/>
+      <rect x="5" y="64" width="5" height="8" rx="2" fill="#eab308"/>
+    </g>
+  </g>
+
+  <!-- ROLLING DEPLOYMENT VISUALIZATION -->
+  <g transform="translate(60, 430)">
+    <!-- Label -->
+    <text x="85" y="-15" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#a855f7" text-anchor="middle">ROLLING</text>
+    
+    <!-- Instance boxes -->
+    <g transform="translate(0, 10)">
+      <rect x="0" y="0" width="35" height="30" rx="4" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="17" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#22c55e" text-anchor="middle">v2</text>
+      
+      <rect x="42" y="0" width="35" height="30" rx="4" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="59" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#22c55e" text-anchor="middle">v2</text>
+      
+      <rect x="84" y="0" width="35" height="30" rx="4" fill="#1e293b" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="101" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#a855f7" text-anchor="middle">...</text>
+      
+      <rect x="126" y="0" width="35" height="30" rx="4" fill="#1e293b" stroke="#64748b" stroke-width="1.5"/>
+      <text x="143" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="8" fill="#64748b" text-anchor="middle">v1</text>
+    </g>
+  </g>
+
+  <!-- Metrics panel -->
+  <g transform="translate(230, 140)">
+    <!-- Panel background -->
+    <rect x="0" y="0" width="360" height="160" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    
+    <!-- Panel title -->
+    <text x="20" y="28" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#f8fafc">Deployment Metrics</text>
+    
+    <!-- Downtime bar -->
+    <g transform="translate(20, 50)">
+      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Downtime</text>
+      <rect x="80" y="-12" width="250" height="16" rx="4" fill="#1e293b"/>
+      <rect x="80" y="-12" width="12" height="16" rx="4" fill="#22c55e"/>
+      <text x="340" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#22c55e" text-anchor="end">0s</text>
+    </g>
+    
+    <!-- Rollback speed -->
+    <g transform="translate(20, 80)">
+      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Rollback</text>
+      <rect x="80" y="-12" width="250" height="16" rx="4" fill="#1e293b"/>
+      <rect x="80" y="-12" width="225" height="16" rx="4" fill="#3b82f6"/>
+      <text x="340" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#3b82f6" text-anchor="end">Instant</text>
+    </g>
+    
+    <!-- Risk level -->
+    <g transform="translate(20, 110)">
+      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Risk</text>
+      <rect x="80" y="-12" width="250" height="16" rx="4" fill="#1e293b"/>
+      <rect x="80" y="-12" width="50" height="16" rx="4" fill="#eab308"/>
+      <text x="340" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#eab308" text-anchor="end">Low</text>
+    </g>
+    
+    <!-- Cost -->
+    <g transform="translate(20, 140)">
+      <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#94a3b8">Cost</text>
+      <rect x="80" y="-12" width="250" height="16" rx="4" fill="#1e293b"/>
+      <rect x="80" y="-12" width="175" height="16" rx="4" fill="#a855f7"/>
+      <text x="340" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#a855f7" text-anchor="end">2x Infra</text>
+    </g>
+  </g>
+
+  <!-- Main content (right side) -->
+  <g transform="translate(830, 180)">
+    <!-- Badge -->
+    <g transform="translate(-100, -20)">
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="#1e3a5f" opacity="0.5"/>
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="none" stroke="#3b82f6" stroke-width="2"/>
+      <text x="100" y="21" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#60a5fa" text-anchor="middle">
+        Interactive Simulator
+      </text>
+    </g>
+
+    <!-- Title -->
+    <text x="0" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="url(#blueGreenGradient)" text-anchor="middle">
+      Deployment
+    </text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="url(#blueGreenGradient)" text-anchor="middle">
+      Strategies
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#64748b" text-anchor="middle">
+      Master zero-downtime deployments
+    </text>
+    <text x="0" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#64748b" text-anchor="middle">
+      with hands-on simulation
+    </text>
+
+    <!-- Feature badges -->
+    <g transform="translate(-170, 175)">
+      <rect x="0" y="0" width="95" height="28" rx="14" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="47" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#60a5fa" text-anchor="middle">Blue-Green</text>
+    </g>
+    <g transform="translate(-65, 175)">
+      <rect x="0" y="0" width="75" height="28" rx="14" fill="#1e293b" stroke="#eab308" stroke-width="1.5"/>
+      <text x="37" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#facc15" text-anchor="middle">Canary</text>
+    </g>
+    <g transform="translate(20, 175)">
+      <rect x="0" y="0" width="75" height="28" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="37" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#c084fc" text-anchor="middle">Rolling</text>
+    </g>
+    <g transform="translate(105, 175)">
+      <rect x="0" y="0" width="75" height="28" rx="14" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="37" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4ade80" text-anchor="middle">A/B Test</text>
+    </g>
+    <g transform="translate(-120, 215)">
+      <rect x="0" y="0" width="110" height="28" rx="14" fill="#1e293b" stroke="#f97316" stroke-width="1.5"/>
+      <text x="55" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#fb923c" text-anchor="middle">Live Metrics</text>
+    </g>
+    <g transform="translate(0, 215)">
+      <rect x="0" y="0" width="120" height="28" rx="14" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="60" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#22d3ee" text-anchor="middle">Instant Rollback</text>
+    </g>
+  </g>
+
+  <!-- Decorative elements -->
+  <circle cx="1100" cy="100" r="60" fill="#3b82f6" opacity="0.05"/>
+  <circle cx="1050" cy="550" r="80" fill="#22c55e" opacity="0.05"/>
+  <circle cx="50" cy="80" r="50" fill="#a855f7" opacity="0.05"/>
+
+  <!-- Animated pulse -->
+  <g transform="translate(145, 175)">
+    <circle cx="0" cy="0" r="8" fill="none" stroke="#22c55e" stroke-width="2" opacity="0.6">
+      <animate attributeName="r" from="8" to="20" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" from="0.6" to="0" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>
