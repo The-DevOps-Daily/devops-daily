@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- DNS hierarchy visualization (left side) -->
+  <g transform="translate(150, 180)">
+    <!-- Root Server -->
+    <rect x="60" y="0" width="120" height="50" rx="8" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+    <text x="120" y="32" font-family="system-ui, sans-serif" font-size="14" fill="#06b6d4" text-anchor="middle">Root (.)</text>
+    
+    <!-- Arrow down -->
+    <line x1="120" y1="50" x2="120" y2="80" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="115,75 120,85 125,75" fill="#64748b"/>
+    
+    <!-- TLD Server -->
+    <rect x="60" y="85" width="120" height="50" rx="8" fill="#1e293b" stroke="#0ea5e9" stroke-width="2"/>
+    <text x="120" y="117" font-family="system-ui, sans-serif" font-size="14" fill="#0ea5e9" text-anchor="middle">TLD (.com)</text>
+    
+    <!-- Arrow down -->
+    <line x1="120" y1="135" x2="120" y2="165" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="115,160 120,170 125,160" fill="#64748b"/>
+    
+    <!-- Auth Server -->
+    <rect x="60" y="170" width="120" height="50" rx="8" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+    <text x="120" y="202" font-family="system-ui, sans-serif" font-size="14" fill="#22c55e" text-anchor="middle">Authoritative</text>
+    
+    <!-- Cache indicators -->
+    <circle cx="30" cy="90" r="8" fill="#a855f7"/>
+    <text x="35" y="120" font-family="system-ui, sans-serif" font-size="10" fill="#94a3b8">Cache</text>
+  </g>
+  
+  <!-- Main content (centered right) -->
+  <g transform="translate(750, 280)">
+    <text x="0" y="0" font-family="system-ui, sans-serif" font-size="52" font-weight="bold" fill="url(#titleGradient)" text-anchor="middle">
+      DNS Resolution
+    </text>
+    <text x="0" y="50" font-family="system-ui, sans-serif" font-size="24" fill="#94a3b8" text-anchor="middle">
+      Simulator
+    </text>
+    
+    <text x="0" y="100" font-family="system-ui, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">
+      Learn how DNS lookups work step-by-step
+    </text>
+    
+    <!-- Record type badges -->
+    <g transform="translate(-150, 130)">
+      <rect x="0" y="0" width="60" height="28" rx="14" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="30" y="19" font-family="system-ui, sans-serif" font-size="12" fill="#60a5fa" text-anchor="middle">A</text>
+    </g>
+    <g transform="translate(-80, 130)">
+      <rect x="0" y="0" width="60" height="28" rx="14" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="30" y="19" font-family="system-ui, sans-serif" font-size="12" fill="#22d3ee" text-anchor="middle">AAAA</text>
+    </g>
+    <g transform="translate(-10, 130)">
+      <rect x="0" y="0" width="70" height="28" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="35" y="19" font-family="system-ui, sans-serif" font-size="12" fill="#c084fc" text-anchor="middle">CNAME</text>
+    </g>
+    <g transform="translate(70, 130)">
+      <rect x="0" y="0" width="60" height="28" rx="14" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="30" y="19" font-family="system-ui, sans-serif" font-size="12" fill="#4ade80" text-anchor="middle">MX</text>
+    </g>
+  </g>
+  
+  <!-- Decorative dots -->
+  <circle cx="100" cy="150" r="20" fill="#3b82f6" opacity="0.15"/>
+  <circle cx="1100" cy="150" r="25" fill="#06b6d4" opacity="0.15"/>
+  <circle cx="1050" cy="500" r="18" fill="#22c55e" opacity="0.15"/>
+  <circle cx="150" cy="480" r="15" fill="#a855f7" opacity="0.15"/>
+</svg>

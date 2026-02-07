@@ -22,6 +22,20 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'dns-simulator',
+    title: 'DNS Resolution Simulator',
+    description:
+      'Learn how DNS works with an interactive step-by-step simulator. Visualize the DNS hierarchy, understand caching at different levels, and see the difference between recursive and iterative queries.',
+    iconName: 'Globe',
+    badgeText: 'New',
+    color: 'from-blue-500 to-cyan-600',
+    href: '/games/dns-simulator',
+    tags: ['dns', 'networking', 'educational', 'interactive', 'infrastructure'],
+    isNew: true,
+    featured: true,
+    category: 'Networking',
+  },
+  {
     id: 'db-indexing-simulator',
     title: 'Database Indexing Simulator',
     description:
