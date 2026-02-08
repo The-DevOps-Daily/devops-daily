@@ -19,6 +19,12 @@ import {
   Zap,
   PlayCircle,
 } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronLeft,
+  ArrowRight,
+  Play,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -51,6 +57,151 @@ interface ValidationResult {
   type: 'success' | 'warning' | 'error' | 'info';
   message: string;
   component?: ComponentType;
+}
+
+type TrafficScenario = 'internet-to-public' | 'private-to-internet' | 'public-to-private';
+
+interface TrafficStep {
+  id: number;
+  title: string;
+  location: string;
+  explanation: string;
+  highlight: ComponentType[];
+}
+
+interface TrafficScenarioDef {
+  id: TrafficScenario;
+  name: string;
+  description: string;
+  requiredComponents: ComponentType[];
+}
+
+const TRAFFIC_SCENARIOS: TrafficScenarioDef[] = [
+  {
+    id: 'internet-to-public',
+    name: 'Internet → Public EC2',
+    description: 'How traffic flows from the internet to a public-facing web server',
+    requiredComponents: ['igw', 'public-subnet', 'public-ec2', 'public-route-table'],
+  },
+  {
+    id: 'private-to-internet',
+    name: 'Private EC2 → Internet',
+    description: 'How a private database server fetches updates from the internet',
+    requiredComponents: ['igw', 'nat-gateway', 'public-subnet', 'private-subnet', 'private-ec2', 'private-route-table'],
+  },
+  {
+    id: 'public-to-private',
+    name: 'Public EC2 → Private EC2',
+    description: 'How a web server communicates with a private database',
+    requiredComponents: ['public-subnet', 'private-subnet', 'public-ec2', 'private-ec2'],
+  },
+];
+
+function generateTrafficSteps(scenario: TrafficScenario): TrafficStep[] {
+  switch (scenario) {
+    case 'internet-to-public':
+      return [
+        {
+          id: 1,
+          title: 'Request from Internet',
+          location: 'Internet',
+          explanation: 'A user from the internet sends a request to your EC2 instance\'s public IP address.',
+          highlight: [],
+        },
+        {
+          id: 2,
+          title: 'Internet Gateway',
+          location: 'VPC Edge',
+          explanation: 'The request arrives at the Internet Gateway, which is the entry/exit point for all internet traffic in your VPC.',
+          highlight: ['igw'],
+        },
+        {
+          id: 3,
+          title: 'Route Table Lookup',
+          location: 'Public Subnet',
+          explanation: 'The public route table directs traffic destined for the public subnet to the correct location.',
+          highlight: ['public-route-table'],
+        },
+        {
+          id: 4,
+          title: 'Arrives at EC2',
+          location: 'Public Subnet',
+          explanation: 'The traffic reaches your EC2 instance in the public subnet. Security groups will filter if the traffic is allowed.',
+          highlight: ['public-ec2', 'public-subnet'],
+        },
+      ];
+    case 'private-to-internet':
+      return [
+        {
+          id: 1,
+          title: 'Private EC2 Request',
+          location: 'Private Subnet',
+          explanation: 'Your private EC2 instance (e.g., a database) needs to download updates from the internet.',
+          highlight: ['private-ec2', 'private-subnet'],
+        },
+        {
+          id: 2,
+          title: 'Route Table Lookup',
+          location: 'Private Subnet',
+          explanation: 'The private route table has a rule: 0.0.0.0/0 → NAT Gateway. This routes all internet-bound traffic to the NAT.',
+          highlight: ['private-route-table'],
+        },
+        {
+          id: 3,
+          title: 'NAT Gateway Translation',
+          location: 'Public Subnet',
+          explanation: 'The NAT Gateway translates the private IP to its own public IP, masking the private EC2. It lives in the public subnet.',
+          highlight: ['nat-gateway', 'public-subnet'],
+        },
+        {
+          id: 4,
+          title: 'To Internet Gateway',
+          location: 'VPC Edge',
+          explanation: 'The request (now from NAT\'s public IP) exits through the Internet Gateway to reach the internet.',
+          highlight: ['igw'],
+        },
+        {
+          id: 5,
+          title: 'Response Returns',
+          location: 'VPC',
+          explanation: 'The response comes back to NAT Gateway, which translates it back and forwards to the private EC2.',
+          highlight: ['igw', 'nat-gateway', 'private-ec2'],
+        },
+      ];
+    case 'public-to-private':
+      return [
+        {
+          id: 1,
+          title: 'Web Server Request',
+          location: 'Public Subnet',
+          explanation: 'Your web server in the public subnet needs to query the database in the private subnet.',
+          highlight: ['public-ec2', 'public-subnet'],
+        },
+        {
+          id: 2,
+          title: 'Internal VPC Routing',
+          location: 'VPC',
+          explanation: 'Traffic within the VPC (10.0.0.0/16) stays local. The route table knows how to reach other subnets directly.',
+          highlight: ['public-route-table'],
+        },
+        {
+          id: 3,
+          title: 'Arrives at Private EC2',
+          location: 'Private Subnet',
+          explanation: 'The request reaches your private database. No NAT or IGW needed for internal VPC traffic!',
+          highlight: ['private-ec2', 'private-subnet'],
+        },
+        {
+          id: 4,
+          title: 'Response Sent Back',
+          location: 'Private Subnet',
+          explanation: 'The database responds directly to the web server via the internal VPC network.',
+          highlight: ['private-ec2', 'public-ec2'],
+        },
+      ];
+    default:
+      return [];
+  }
 }
 
 // ============================================================================
@@ -251,8 +402,21 @@ export default function AwsVpcSimulator() {
   const [activeComponents, setActiveComponents] = useState<Set<ComponentType>>(new Set());
   const [selectedInfo, setSelectedInfo] = useState<ComponentType | null>(null);
   const [showTestPanel, setShowTestPanel] = useState(false);
+  const [selectedScenario, setSelectedScenario] = useState<TrafficScenario | null>(null);
+  const [trafficSteps, setTrafficSteps] = useState<TrafficStep[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(-1);
+  const [isSimulating, setIsSimulating] = useState(false);
 
   const validation = useMemo(() => validateConfiguration(activeComponents), [activeComponents]);
+
+  const isHighlighted = useCallback(
+    (type: ComponentType) => {
+      if (!isSimulating || currentStepIndex < 0) return false;
+      const step = trafficSteps[currentStepIndex];
+      return step?.highlight?.includes(type) ?? false;
+    },
+    [isSimulating, currentStepIndex, trafficSteps]
+  );
 
   const toggleComponent = useCallback((type: ComponentType) => {
     setActiveComponents((prev) => {
@@ -270,7 +434,41 @@ export default function AwsVpcSimulator() {
     setActiveComponents(new Set());
     setSelectedInfo(null);
     setShowTestPanel(false);
+    setSelectedScenario(null);
+    setTrafficSteps([]);
+    setCurrentStepIndex(-1);
+    setIsSimulating(false);
   }, []);
+
+  const startSimulation = useCallback((scenario: TrafficScenario) => {
+    const scenarioDef = TRAFFIC_SCENARIOS.find((s) => s.id === scenario);
+    if (!scenarioDef) return;
+    setActiveComponents(new Set(scenarioDef.requiredComponents));
+    setSelectedScenario(scenario);
+    const steps = generateTrafficSteps(scenario);
+    setTrafficSteps(steps);
+    setCurrentStepIndex(0);
+    setIsSimulating(true);
+  }, []);
+
+  const stopSimulation = useCallback(() => {
+    setSelectedScenario(null);
+    setTrafficSteps([]);
+    setCurrentStepIndex(-1);
+    setIsSimulating(false);
+  }, []);
+
+  const stepForward = useCallback(() => {
+    if (currentStepIndex < trafficSteps.length - 1) {
+      setCurrentStepIndex((i) => i + 1);
+    }
+  }, [currentStepIndex, trafficSteps.length]);
+
+  const stepBack = useCallback(() => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex((i) => i - 1);
+    }
+  }, [currentStepIndex]);
 
   const loadPreset = useCallback((preset: 'public' | 'private' | 'full') => {
     const presets: Record<string, ComponentType[]> = {
@@ -305,31 +503,47 @@ export default function AwsVpcSimulator() {
           break;
         case '1':
           e.preventDefault();
-          loadPreset('public');
+          if (!isSimulating) loadPreset('public');
           break;
         case '2':
           e.preventDefault();
-          loadPreset('private');
+          if (!isSimulating) loadPreset('private');
           break;
         case '3':
           e.preventDefault();
-          loadPreset('full');
+          if (!isSimulating) loadPreset('full');
           break;
         case 't':
         case 'T':
           e.preventDefault();
-          setShowTestPanel((p) => !p);
+          if (!isSimulating) setShowTestPanel((p) => !p);
           break;
         case 'Escape':
           e.preventDefault();
-          setSelectedInfo(null);
+          if (isSimulating) {
+            stopSimulation();
+          } else {
+            setSelectedInfo(null);
+          }
+          break;
+        case 'ArrowRight':
+          if (isSimulating) {
+            e.preventDefault();
+            stepForward();
+          }
+          break;
+        case 'ArrowLeft':
+          if (isSimulating) {
+            e.preventDefault();
+            stepBack();
+          }
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [reset, loadPreset]);
+  }, [reset, loadPreset, isSimulating, stopSimulation, stepForward, stepBack]);
 
   // Group components by category
   const groupedComponents = useMemo(() => {
@@ -541,6 +755,135 @@ export default function AwsVpcSimulator() {
         {/* Validation Feedback */}
         <div className="rounded-lg border border bg-muted/50 p-3">
           <div className="mb-2 text-xs font-medium text-muted-foreground">Configuration Status</div>
+
+        {/* Traffic Flow Simulation */}
+        <div className="rounded-lg border border bg-gradient-to-br from-purple-500/10 to-blue-500/10 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-medium text-foreground">
+              <Play className="h-4 w-4" />
+              Traffic Flow Simulation
+            </div>
+            {isSimulating && (
+              <Button variant="ghost" size="sm" onClick={stopSimulation} className="h-6 px-2 text-xs">
+                <X className="mr-1 h-3 w-3" />
+                Exit
+              </Button>
+            )}
+          </div>
+
+          {!isSimulating ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">Select a scenario to visualize how traffic flows through your VPC:</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {TRAFFIC_SCENARIOS.map((scenario) => (
+                  <Button
+                    key={scenario.id}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => startSimulation(scenario.id)}
+                    className="h-auto flex-col items-start gap-1 p-2 text-left"
+                  >
+                    <span className="flex items-center gap-1 text-xs font-medium">
+                      <ArrowRight className="h-3 w-3" />
+                      {scenario.name}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{scenario.description}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Progress */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  Step {currentStepIndex + 1} of {trafficSteps.length}
+                </span>
+                <span className="font-medium text-purple-600 dark:text-purple-400">
+                  {TRAFFIC_SCENARIOS.find((s) => s.id === selectedScenario)?.name}
+                </span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-purple-500 to-blue-500"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${((currentStepIndex + 1) / trafficSteps.length) * 100}%` }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+
+              {/* Current Step */}
+              {trafficSteps[currentStepIndex] && (
+                <motion.div
+                  key={currentStepIndex}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-lg border border bg-background p-3"
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500 text-xs text-white">
+                      {trafficSteps[currentStepIndex].id}
+                    </div>
+                    {trafficSteps[currentStepIndex].title}
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    Location: {trafficSteps[currentStepIndex].location}
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {trafficSteps[currentStepIndex].explanation}
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Navigation */}
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={stepBack}
+                  disabled={currentStepIndex <= 0}
+                  className="h-8"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Back
+                </Button>
+                <div className="flex gap-1">
+                  {trafficSteps.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentStepIndex(i)}
+                      className={cn(
+                        'h-2 w-2 rounded-full transition-colors',
+                        i === currentStepIndex ? 'bg-purple-500' : 'bg-muted hover:bg-muted-foreground/50'
+                      )}
+                    />
+                  ))}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={stepForward}
+                  disabled={currentStepIndex >= trafficSteps.length - 1}
+                  className="h-8"
+                >
+                  Next
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Keyboard hints */}
+              <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground">
+                <span><kbd className="rounded bg-muted px-1">←</kbd> Back</span>
+                <span><kbd className="rounded bg-muted px-1">→</kbd> Next</span>
+                <span><kbd className="rounded bg-muted px-1">Esc</kbd> Exit</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Validation Feedback */}
+        <div className="rounded-lg border border bg-muted/50 p-3">
+          <div className="mb-2 text-xs font-medium text-muted-foreground">Configuration Status</div>
           {activeComponents.size === 0 ? (
             <p className="text-sm text-muted-foreground">Add components to build your VPC architecture.</p>
           ) : validation.length === 0 ? (
@@ -601,7 +944,10 @@ export default function AwsVpcSimulator() {
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        className="flex items-center gap-2 rounded-lg border border-purple-500/50 bg-purple-500/20 px-3 py-2"
+                        className={cn(
+                          'flex items-center gap-2 rounded-lg border border-purple-500/50 bg-purple-500/20 px-3 py-2 transition-all',
+                          isHighlighted('igw') && 'ring-2 ring-yellow-400 ring-offset-2 ring-offset-background'
+                        )}
                       >
                         <Router className="h-4 w-4 text-purple-400" />
                         <span className="text-xs text-purple-700 dark:text-purple-300">Internet Gateway</span>
@@ -619,24 +965,36 @@ export default function AwsVpcSimulator() {
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="rounded-lg border border-green-700 bg-green-900/20 p-2"
+                        className={cn(
+                          'rounded-lg border border-green-700 bg-green-900/20 p-2 transition-all',
+                          isHighlighted('public-subnet') && 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-background'
+                        )}
                       >
                         <div className="mb-2 text-center text-[10px] font-medium text-green-700 dark:text-green-400">Public Subnet</div>
                         <div className="flex flex-wrap justify-center gap-2">
                           {activeComponents.has('public-route-table') && (
-                            <div className="flex items-center gap-1 rounded bg-indigo-500/20 px-2 py-1">
+                            <div className={cn(
+                              'flex items-center gap-1 rounded bg-indigo-500/20 px-2 py-1 transition-all',
+                              isHighlighted('public-route-table') && 'ring-2 ring-yellow-400'
+                            )}>
                               <Network className="h-3 w-3 text-indigo-400" />
                               <span className="text-[10px] text-indigo-700 dark:text-indigo-300">Route Table</span>
                             </div>
                           )}
                           {activeComponents.has('public-ec2') && (
-                            <div className="flex items-center gap-1 rounded bg-green-600/20 px-2 py-1">
+                            <div className={cn(
+                              'flex items-center gap-1 rounded bg-green-600/20 px-2 py-1 transition-all',
+                              isHighlighted('public-ec2') && 'ring-2 ring-yellow-400'
+                            )}>
                               <Server className="h-3 w-3 text-green-400" />
                               <span className="text-[10px] text-green-700 dark:text-green-300">EC2</span>
                             </div>
                           )}
                           {activeComponents.has('nat-gateway') && (
-                            <div className="flex items-center gap-1 rounded bg-orange-500/20 px-2 py-1">
+                            <div className={cn(
+                              'flex items-center gap-1 rounded bg-orange-500/20 px-2 py-1 transition-all',
+                              isHighlighted('nat-gateway') && 'ring-2 ring-yellow-400'
+                            )}>
                               <Shield className="h-3 w-3 text-orange-400" />
                               <span className="text-[10px] text-orange-700 dark:text-orange-300">NAT GW</span>
                             </div>
@@ -650,18 +1008,27 @@ export default function AwsVpcSimulator() {
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="rounded-lg border border-red-700 bg-red-900/20 p-2"
+                        className={cn(
+                          'rounded-lg border border-red-700 bg-red-900/20 p-2 transition-all',
+                          isHighlighted('private-subnet') && 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-background'
+                        )}
                       >
                         <div className="mb-2 text-center text-[10px] font-medium text-red-700 dark:text-red-400">Private Subnet</div>
                         <div className="flex flex-wrap justify-center gap-2">
                           {activeComponents.has('private-route-table') && (
-                            <div className="flex items-center gap-1 rounded bg-amber-500/20 px-2 py-1">
+                            <div className={cn(
+                              'flex items-center gap-1 rounded bg-amber-500/20 px-2 py-1 transition-all',
+                              isHighlighted('private-route-table') && 'ring-2 ring-yellow-400'
+                            )}>
                               <Network className="h-3 w-3 text-amber-400" />
                               <span className="text-[10px] text-amber-700 dark:text-amber-300">Route Table</span>
                             </div>
                           )}
                           {activeComponents.has('private-ec2') && (
-                            <div className="flex items-center gap-1 rounded bg-red-600/20 px-2 py-1">
+                            <div className={cn(
+                              'flex items-center gap-1 rounded bg-red-600/20 px-2 py-1 transition-all',
+                              isHighlighted('private-ec2') && 'ring-2 ring-yellow-400'
+                            )}>
                               <Server className="h-3 w-3 text-red-400" />
                               <span className="text-[10px] text-red-700 dark:text-red-300">EC2</span>
                             </div>
