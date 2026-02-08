@@ -1,0 +1,98 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316"/>
+      <stop offset="100%" style="stop-color:#eab308"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#22c55e"/>
+      <stop offset="100%" style="stop-color:#10b981"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+  
+  <!-- Grid pattern -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.05"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  
+  <!-- VPC Container -->
+  <rect x="150" y="180" width="900" height="350" rx="20" fill="#f97316" fill-opacity="0.1" stroke="#f97316" stroke-width="2" stroke-dasharray="8,4"/>
+  <text x="180" y="210" fill="#f97316" font-family="system-ui, sans-serif" font-size="16" font-weight="600">VPC (10.0.0.0/16)</text>
+  
+  <!-- Internet -->
+  <circle cx="600" cy="100" r="45" fill="url(#blueGrad)" fill-opacity="0.2" stroke="#3b82f6" stroke-width="2"/>
+  <text x="600" y="105" fill="#3b82f6" font-family="system-ui, sans-serif" font-size="14" font-weight="600" text-anchor="middle">Internet</text>
+  
+  <!-- Internet Gateway -->
+  <rect x="540" y="220" width="120" height="50" rx="8" fill="#a855f7" fill-opacity="0.2" stroke="#a855f7" stroke-width="2"/>
+  <text x="600" y="250" fill="#a855f7" font-family="system-ui, sans-serif" font-size="12" font-weight="600" text-anchor="middle">Internet Gateway</text>
+  
+  <!-- Arrow from Internet to IGW -->
+  <path d="M600 145 L600 220" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowBlue)"/>
+  <defs>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3b82f6"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#22c55e"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#f97316"/>
+    </marker>
+  </defs>
+  
+  <!-- Public Subnet -->
+  <rect x="200" y="300" width="350" height="200" rx="12" fill="#22c55e" fill-opacity="0.1" stroke="#22c55e" stroke-width="2"/>
+  <text x="230" y="330" fill="#22c55e" font-family="system-ui, sans-serif" font-size="14" font-weight="600">Public Subnet (10.0.1.0/24)</text>
+  
+  <!-- Public EC2 -->
+  <rect x="240" y="370" width="100" height="60" rx="8" fill="#22c55e" fill-opacity="0.3" stroke="#22c55e" stroke-width="2"/>
+  <text x="290" y="395" fill="#22c55e" font-family="system-ui, sans-serif" font-size="11" font-weight="600" text-anchor="middle">Web Server</text>
+  <text x="290" y="415" fill="#22c55e" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle" opacity="0.8">EC2</text>
+  
+  <!-- NAT Gateway -->
+  <rect x="390" y="370" width="100" height="60" rx="8" fill="#f97316" fill-opacity="0.3" stroke="#f97316" stroke-width="2"/>
+  <text x="440" y="395" fill="#f97316" font-family="system-ui, sans-serif" font-size="11" font-weight="600" text-anchor="middle">NAT Gateway</text>
+  <text x="440" y="415" fill="#f97316" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle" opacity="0.8">nat-xxxxx</text>
+  
+  <!-- Route Table (Public) -->
+  <rect x="240" y="450" width="250" height="35" rx="4" fill="#6366f1" fill-opacity="0.2" stroke="#6366f1" stroke-width="1"/>
+  <text x="365" y="472" fill="#6366f1" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">Route: 0.0.0.0/0 → IGW</text>
+  
+  <!-- Private Subnet -->
+  <rect x="650" y="300" width="350" height="200" rx="12" fill="#3b82f6" fill-opacity="0.1" stroke="#3b82f6" stroke-width="2"/>
+  <text x="680" y="330" fill="#3b82f6" font-family="system-ui, sans-serif" font-size="14" font-weight="600">Private Subnet (10.0.2.0/24)</text>
+  
+  <!-- Private EC2 -->
+  <rect x="750" y="370" width="100" height="60" rx="8" fill="#3b82f6" fill-opacity="0.3" stroke="#3b82f6" stroke-width="2"/>
+  <text x="800" y="395" fill="#3b82f6" font-family="system-ui, sans-serif" font-size="11" font-weight="600" text-anchor="middle">App Server</text>
+  <text x="800" y="415" fill="#3b82f6" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle" opacity="0.8">EC2</text>
+  
+  <!-- Route Table (Private) -->
+  <rect x="700" y="450" width="250" height="35" rx="4" fill="#06b6d4" fill-opacity="0.2" stroke="#06b6d4" stroke-width="1"/>
+  <text x="825" y="472" fill="#06b6d4" font-family="system-ui, sans-serif" font-size="10" text-anchor="middle">Route: 0.0.0.0/0 → NAT</text>
+  
+  <!-- Traffic Flow Arrows -->
+  <path d="M600 270 L375 370" stroke="#22c55e" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowGreen)"/>
+  <path d="M440 370 L440 270 L600 270" stroke="#f97316" stroke-width="2" stroke-dasharray="6,3"/>
+  <path d="M800 370 L800 340 L500 340 L500 370" stroke="#3b82f6" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrowBlue)"/>
+  
+  <!-- Title -->
+  <text x="600" y="580" fill="white" font-family="system-ui, sans-serif" font-size="32" font-weight="700" text-anchor="middle">AWS VPC Networking Simulator</text>
+  <text x="600" y="610" fill="#94a3b8" font-family="system-ui, sans-serif" font-size="16" text-anchor="middle">Learn VPCs, Subnets, NAT Gateways, and Route Tables</text>
+  
+  <!-- DevOps Daily branding -->
+  <text x="1150" y="600" fill="#64748b" font-family="system-ui, sans-serif" font-size="14" text-anchor="end">devops-daily.com</text>
+</svg>
