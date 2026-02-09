@@ -150,4 +150,4 @@ Whatever you choose, the good news is that in 2026, there are more options than 
 
 ---
 
-*Did we miss your favorite Heroku alternative? Let us know on [Twitter](https://twitter.com/devopsdailyio)!*
+*Did we miss your favorite Heroku alternative? Let us know on [X/Twitter](https://x.com/thedevopsdaily)!*
