@@ -451,10 +451,9 @@ export default function ToolboxPage() {
 
             <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground max-w-2xl mx-auto">
               <p>
-                <span className="font-semibold">Affiliate Notice:</span> Some links on this page are
-                affiliate links. We may earn a commission if you make a purchase through these
-                links, at no extra cost to you.
-              </p>
+                <span className="font-semibold">Affiliate Notice:</span> We earn commissions when
+                you shop through the links below.
+             </p>
             </div>
           </div>
         </div>

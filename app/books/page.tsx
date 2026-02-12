@@ -418,8 +418,14 @@ export default function BooksPage() {
             <p className="mb-8 text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Curated collection of the best DevOps, SRE, Cloud Engineering, and Infrastructure
               books. From beginner guides to advanced practices.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+           </p>
+            <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground max-w-2xl mx-auto mb-4">
+              <p>
+                <span className="font-semibold">Affiliate Notice:</span> We earn commissions when
+                you shop through the links below.
+              </p>
+            </div>
+           <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
               <Badge variant="secondary" className="text-xs px-3 py-1">
                 <Star className="mr-1.5 h-3 w-3 fill-current" />
                 Top Picks Only

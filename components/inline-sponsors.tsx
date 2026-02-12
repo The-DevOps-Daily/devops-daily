@@ -44,12 +44,15 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
             <div className="flex items-center justify-center gap-2 mb-6">
               <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
               <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                Sponsored by
-              </span>
-              <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
-            </div>
+               Sponsored by
+             </span>
+             <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
+           </div>
+            <p className="text-xs text-muted-foreground text-center mb-4">
+              We earn commissions when you shop through the links below.
+            </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
               {sponsors.map((sponsor) => (
                 <Link
                   key={sponsor.name}
@@ -102,17 +105,20 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
   }
 
   if (variant === 'compact') {
-    return (
-      <div className={cn('my-8', className)}>
-        <div className="rounded-xl border border-border/50 bg-muted/30 p-6 max-w-2xl mx-auto">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Our Sponsors
-            </span>
-          </div>
+   return (
+     <div className={cn('my-8', className)}>
+       <div className="rounded-xl border border-border/50 bg-muted/30 p-6 max-w-2xl mx-auto">
+         <div className="flex items-center justify-center gap-2 mb-4">
+           <Sparkles className="h-4 w-4 text-primary" />
+           <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+             Our Sponsors
+           </span>
+         </div>
+          <p className="text-xs text-muted-foreground text-center mb-4">
+            We earn commissions when you shop through the links below.
+          </p>
 
-          <div className="flex flex-wrap items-center justify-center gap-4">
+         <div className="flex flex-wrap items-center justify-center gap-4">
             {sponsors.map((sponsor) => (
               <Link
                 key={sponsor.name}
@@ -164,10 +170,10 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold text-foreground">Proudly Sponsored By</span>
-            </div>
-            <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
-              These amazing companies help us create free, high-quality DevOps content for the community
-            </p>
+           </div>
+           <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+              We earn commissions when you shop through the links below.
+           </p>
           </div>
 
           {/* Sponsors Grid */}
