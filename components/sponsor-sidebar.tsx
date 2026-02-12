@@ -41,12 +41,12 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
           {/* Header with gradient */}
           <div className="relative bg-linear-to-r from-primary/10 to-primary/5 px-4 py-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="font-semibold">Our Sponsors</span>
-              </div>
-              <span className="text-xs text-muted-foreground">Support DevOps Daily</span>
-            </div>
+             <div className="flex items-center gap-2">
+               <Sparkles className="h-4 w-4 text-primary" />
+               <span className="font-semibold">Our Sponsors</span>
+             </div>
+              <span className="text-xs text-muted-foreground">We earn commissions</span>
+           </div>
           </div>
 
           <div className="p-4 space-y-3">
