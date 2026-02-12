@@ -82,7 +82,7 @@
     "axios": "^1.13.4",
     "canvas": "^3.2.1",
     "canvas-confetti": "^1.9.4",
-    "cheerio": "^1.1.2",
+    "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.1.1",
