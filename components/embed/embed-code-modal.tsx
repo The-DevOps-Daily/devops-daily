@@ -99,7 +99,7 @@ export function EmbedCodeModal({ gameSlug, gameTitle }: EmbedCodeModalProps) {
           Embed
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Code size={20} />
@@ -116,16 +116,16 @@ export function EmbedCodeModal({ gameSlug, gameTitle }: EmbedCodeModalProps) {
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="iframe" className="space-y-4 mt-4">
+          <TabsContent value="iframe" className="space-y-3 mt-3">
             {/* Size Presets */}
             <div className="space-y-2">
               <Label className="text-sm font-medium">Size</Label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {(Object.keys(SIZE_PRESETS) as SizePreset[]).map((preset) => (
                   <button
                     key={preset}
                     onClick={() => setSizePreset(preset)}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-lg border transition-all ${
+                    className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-lg border transition-all ${
                       sizePreset === preset
                         ? 'border-blue-500 bg-blue-500/10 text-blue-500'
                         : 'border-border hover:border-blue-500/50 hover:bg-muted'
