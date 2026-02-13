@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Calendar, User } from 'lucide-react';
+import { Clock, Calendar, User, Info } from 'lucide-react';
 
 interface PostHeaderProps {
   post: {
@@ -16,9 +16,10 @@ interface PostHeaderProps {
       slug: string;
     };
   };
+  hasAffiliateLinks?: boolean;
 }
 
-export function PostHeader({ post }: PostHeaderProps) {
+export function PostHeader({ post, hasAffiliateLinks = false }: PostHeaderProps) {
   return (
     <div className="mb-8">
       <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -41,6 +42,14 @@ export function PostHeader({ post }: PostHeaderProps) {
         )}
       </div>
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{post.title}</h1>
+      {hasAffiliateLinks && (
+        <div className="mt-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
+          <Info className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>
+            <strong>Disclosure:</strong> This post contains affiliate links. We may earn a commission when you purchase through links in this article.
+          </span>
+        </div>
+      )}
     </div>
   );
 }

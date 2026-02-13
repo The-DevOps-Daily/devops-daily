@@ -88,6 +88,16 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   const relatedPosts = await getRelatedPosts(post.slug, post.category?.slug || '', 6);
 
+  // Check if post content contains affiliate links
+  const affiliatePatterns = [
+    'm.do.co',           // DigitalOcean referral
+    'amzn.to',           // Amazon short links
+    'amazon.com/.*tag=', // Amazon affiliate tags
+  ];
+  const hasAffiliateLinks = affiliatePatterns.some(pattern =>
+    new RegExp(pattern).test(post.content)
+  );
+
   // Split related posts for main section and sidebar
   const mainRelatedPosts = relatedPosts.slice(0, 3);
   const sidebarRelatedPosts = relatedPosts.slice(3, 6);
@@ -119,6 +129,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   readingTime: post.readingTime || '5 min read',
                   category: post.category || { name: '', slug: '' },
                 }}
+                hasAffiliateLinks={hasAffiliateLinks}
               />
               {/* Post image */}
               {post.image && (
