@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('git-quiz');
@@ -44,7 +45,10 @@ export default async function GitQuizPage() {
       <BreadcrumbSchema items={schemaItems} />
 
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="git-quiz" gameTitle={gameTitle} />
+        </div>
 
         <div className="flex flex-col items-center max-w-6xl mx-auto">
           {/* Page H1 heading for SEO and accessibility */}

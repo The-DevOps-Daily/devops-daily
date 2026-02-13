@@ -4,6 +4,7 @@ import { generateGameMetadata } from '@/lib/game-metadata';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('uptime-defender');
@@ -34,7 +35,10 @@ export default async function UptimeDefenderPage() {
       <h1 className="sr-only">Uptime Defender - SRE Incident Response Game</h1>
 
       <div className="container px-4 pt-4 mx-auto max-w-7xl">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="uptime-defender" gameTitle={gameTitle} />
+        </div>
       </div>
 
       <UptimeDefender />

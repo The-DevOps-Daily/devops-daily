@@ -4,6 +4,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import RestVsGraphqlSimulator from '@/components/games/rest-vs-graphql-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('rest-vs-graphql');
@@ -29,7 +30,10 @@ export default async function RestVsGraphqlPage() {
       <BreadcrumbSchema items={schemaItems} />
 
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="rest-vs-graphql" gameTitle={gameTitle} />
+        </div>
 
         <div className="flex flex-col mx-auto max-w-7xl">
           <h2 className="sr-only">

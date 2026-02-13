@@ -2,11 +2,9 @@ import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import TcpVsUdpSimulator from '@/components/games/tcp-vs-udp';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('tcp-vs-udp');
@@ -32,7 +30,10 @@ export default async function TcpVsUdpPage() {
       <BreadcrumbSchema items={schemaItems} />
 
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="tcp-vs-udp" gameTitle={gameTitle} />
+        </div>
 
         <div className="flex flex-col mx-auto max-w-7xl">
           <h2 className="sr-only">

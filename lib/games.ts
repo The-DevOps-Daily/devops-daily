@@ -464,3 +464,10 @@ export async function getGamesByCategory(category: string): Promise<Game[]> {
 export async function getGamesByTag(tag: string): Promise<Game[]> {
   return games.filter((game) => game.tags.some((t) => t.toLowerCase() === tag.toLowerCase()));
 }
+
+/**
+ * Get all game IDs (for static generation)
+ */
+export async function getAllGameIds(): Promise<string[]> {
+  return games.filter((game) => !game.isComingSoon).map((game) => game.id);
+}

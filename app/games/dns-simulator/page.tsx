@@ -5,6 +5,7 @@ import DnsSimulator from '../../../components/games/dns-simulator';
 import { Twitter, Facebook, Linkedin } from 'lucide-react';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('dns-simulator');
@@ -30,7 +31,10 @@ export default async function DnsSimulatorPage() {
       <BreadcrumbSchema items={schemaItems} />
 
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="dns-simulator" gameTitle={gameTitle} />
+        </div>
 
         <div className="flex flex-col items-center mx-auto max-w-7xl">
           <h2 className="sr-only">

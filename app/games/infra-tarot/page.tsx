@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('infra-tarot');
@@ -34,7 +35,10 @@ export default async function InfraTarotPage() {
       <BreadcrumbSchema items={schemaItems} />
 
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="infra-tarot" gameTitle={gameTitle} />
+        </div>
 
         <div className="flex flex-col items-center mx-auto max-w-7xl">
           <h2 className="sr-only">Infra Tarot Cards - Your Infrastructure Destiny</h2>

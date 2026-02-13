@@ -2,7 +2,7 @@
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-src https://giscus.app
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-src https://giscus.app; frame-ancestors 'self'
 
 /sw.js
   Service-Worker-Allowed: /
@@ -25,4 +25,10 @@
   Cache-Control: public, max-age=3600
 
 /games/*
+  Cache-Control: public, max-age=3600
+
+# Allow games to be embedded on external sites via the /embed route
+/games/*/embed
+  X-Frame-Options: ALLOWALL
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-ancestors *
   Cache-Control: public, max-age=3600

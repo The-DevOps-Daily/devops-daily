@@ -4,6 +4,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import DDoSSimulator from '@/components/games/ddos-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('ddos-simulator');
@@ -28,7 +29,10 @@ export default async function DDoSSimulatorPage() {
     <>
       <BreadcrumbSchema items={schemaItems} />
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="ddos-simulator" gameTitle={gameTitle} />
+        </div>
         <DDoSSimulator />
       </div>
     </>

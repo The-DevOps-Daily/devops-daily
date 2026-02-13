@@ -7,6 +7,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import DevOpsMemes from '@/components/games/devops-memes';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('devops-memes');
@@ -34,7 +35,10 @@ export default async function DevOpsMemesPage() {
       <BreadcrumbSchema items={schemaItems} />
 
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="devops-memes" gameTitle={gameTitle} />
+        </div>
 
         <div className="flex flex-col items-center max-w-6xl mx-auto">
           {/* Game Component */}
