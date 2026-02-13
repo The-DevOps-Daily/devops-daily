@@ -26,7 +26,7 @@ If you've been relying on Heroku for its simplicity and developer experience, no
 
 ## 1. DigitalOcean App Platform (Recommended)
 
-[DigitalOcean App Platform](https://m.do.co/c/2a9bba940f39) is probably the closest experience to Heroku you'll find. It offers the same git-push-to-deploy workflow that made Heroku famous, with competitive pricing and excellent documentation.
+[DigitalOcean App Platform](https://www.jdoqocy.com/click-101674709-15836238) is probably the closest experience to Heroku you'll find. It offers the same git-push-to-deploy workflow that made Heroku famous, with competitive pricing and excellent documentation.
 
 **Why it's great:**
 - **Heroku-like simplicity** — Connect your GitHub repo and deploy
@@ -51,7 +51,7 @@ services:
     instance_size_slug: basic-xxs
 ```
 
-[Get started with DigitalOcean App Platform →](https://m.do.co/c/2a9bba940f39)
+[Get started with DigitalOcean App Platform →](https://www.jdoqocy.com/click-101674709-15836238)
 
 ---
 
@@ -144,7 +144,7 @@ Before you migrate, here's what to prepare:
 
 Heroku's move to maintenance mode marks the end of an era. The platform that pioneered "git push to deploy" is stepping back, but its legacy lives on in the alternatives that followed.
 
-**Our recommendation:** Start with [DigitalOcean App Platform](https://m.do.co/c/2a9bba940f39) if you want the smoothest transition. It's the closest to the Heroku experience with transparent pricing and solid documentation.
+**Our recommendation:** Start with [DigitalOcean App Platform](https://www.jdoqocy.com/click-101674709-15836238) if you want the smoothest transition. It's the closest to the Heroku experience with transparent pricing and solid documentation.
 
 Whatever you choose, the good news is that in 2026, there are more options than ever for deploying applications without managing infrastructure.
 

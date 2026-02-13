@@ -736,6 +736,6 @@ When running Kubernetes in a production environment, properly managing configura
 - Support for external secret management systems
 - Encrypted etcd for secure storage
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and leverage these features for your applications.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and leverage these features for your applications.
 
 In the next section, we'll explore persistent storage in Kubernetes, which allows your applications to store data beyond the container lifecycle.

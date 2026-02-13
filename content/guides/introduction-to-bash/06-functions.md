@@ -404,7 +404,7 @@ retry() {
 retry "ping -c 1 google.com" 5 2
 ```
 
-> **Need a server to practice your Bash scripts?** If you're looking for a reliable, affordable environment to test your Bash scripts, consider using a DigitalOcean Droplet. You can get $200 in free credits to start with by signing up at [https://m.do.co/c/2a9bba940f39](https://m.do.co/c/2a9bba940f39)
+> **Need a server to practice your Bash scripts?** If you're looking for a reliable, affordable environment to test your Bash scripts, consider using a DigitalOcean Droplet. You can get $200 in free credits to start with by signing up at [https://www.jdoqocy.com/click-101674709-15836238](https://www.jdoqocy.com/click-101674709-15836238)
 
 ### Backup Function
 

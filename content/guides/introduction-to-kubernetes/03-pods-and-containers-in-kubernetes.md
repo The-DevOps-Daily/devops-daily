@@ -505,6 +505,6 @@ DigitalOcean Kubernetes provides an optimized platform for running your pods wit
 - Block storage for persistent volumes
 - Container registry for your images
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and start deploying your pods on a production-ready Kubernetes platform.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and start deploying your pods on a production-ready Kubernetes platform.
 
 In the next section, we'll explore Deployments and ReplicaSets, which help you manage multiple pod instances and handle updates gracefully.

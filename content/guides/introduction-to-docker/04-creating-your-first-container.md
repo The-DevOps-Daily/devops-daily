@@ -288,6 +288,6 @@ After running these commands, you can access your WordPress site at http://local
 
 For development teams, running Docker containers in the cloud provides a consistent environment accessible to everyone. DigitalOcean offers an excellent platform for this with fast SSD-based Droplets optimized for container workloads.
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and deploy your containerized applications to the cloud.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and deploy your containerized applications to the cloud.
 
 In the next section, we'll learn how to build your own custom Docker images with Dockerfiles.

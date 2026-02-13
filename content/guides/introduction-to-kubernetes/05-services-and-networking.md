@@ -566,7 +566,7 @@ spec:
       targetPort: 8080
 ```
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and easily provision load balancers for your Kubernetes services.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and easily provision load balancers for your Kubernetes services.
 
 ## Best Practices for Services and Networking
 

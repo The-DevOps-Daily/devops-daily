@@ -509,7 +509,7 @@ secrets:
 
 Docker Compose files work excellently when deploying to cloud providers like DigitalOcean. You can set up a Droplet with Docker installed and use your Compose file to deploy your application.
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) and get $200 in free credits to deploy your Compose-based applications.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) and get $200 in free credits to deploy your Compose-based applications.
 
 Steps to deploy:
 

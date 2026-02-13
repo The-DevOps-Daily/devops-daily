@@ -1135,7 +1135,7 @@ main "${ARGS[@]}"
 
 Shell scripts are extremely valuable for cloud automation. Here's an example of how you might use shell scripting on a DigitalOcean Droplet:
 
-1. Sign up for a DigitalOcean account (use [this link](https://m.do.co/c/2a9bba940f39) to receive $200 in credits for 60 days)
+1. Sign up for a DigitalOcean account (use [this link](https://www.jdoqocy.com/click-101674709-15836238) to receive $200 in credits for 60 days)
 2. Create a new Droplet
 3. Create this automation script:
 

@@ -1086,7 +1086,7 @@ Running Linux in the cloud requires specific considerations:
 
 Managing a Linux server on DigitalOcean:
 
-1. Create a Droplet (use [this link](https://m.do.co/c/2a9bba940f39) to receive $200 in credits for 60 days)
+1. Create a Droplet (use [this link](https://www.jdoqocy.com/click-101674709-15836238) to receive $200 in credits for 60 days)
 
 2. Secure and optimize a cloud server:
 

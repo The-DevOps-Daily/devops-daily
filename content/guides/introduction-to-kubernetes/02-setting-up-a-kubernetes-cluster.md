@@ -233,7 +233,7 @@ Managed services offload the control plane management to cloud providers, allowi
 
 ### DigitalOcean Kubernetes (DOKS)
 
-DigitalOcean offers a managed Kubernetes service that simplifies setup and maintenance. [Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits to try DOKS.
+DigitalOcean offers a managed Kubernetes service that simplifies setup and maintenance. [Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits to try DOKS.
 
 You can create a cluster through the web UI or using their CLI tool, doctl:
 
@@ -512,6 +512,6 @@ When selecting a Kubernetes solution, consider these factors:
 - **Scalability**: All solutions can scale, but with different levels of effort
 - **Integration**: Consider how well it integrates with your existing tools
 
-For many teams, starting with a managed service like DigitalOcean Kubernetes ([Get $200 in free credits](https://m.do.co/c/2a9bba940f39)) provides a good balance of simplicity and capability while learning.
+For many teams, starting with a managed service like DigitalOcean Kubernetes ([Get $200 in free credits](https://www.jdoqocy.com/click-101674709-15836238)) provides a good balance of simplicity and capability while learning.
 
 In the next section, we'll explore how to work with pods and containers, the fundamental units of deployment in Kubernetes.

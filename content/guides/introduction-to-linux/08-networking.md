@@ -771,7 +771,7 @@ When running Linux in the cloud, network configuration is often handled differen
 
 ### Example: DigitalOcean Droplet
 
-When you create a Droplet on DigitalOcean (use [this link](https://m.do.co/c/2a9bba940f39) to receive $200 in credits), networking is pre-configured, but you may need to make changes:
+When you create a Droplet on DigitalOcean (use [this link](https://www.jdoqocy.com/click-101674709-15836238) to receive $200 in credits), networking is pre-configured, but you may need to make changes:
 
 1. Configure Private Networking:
 

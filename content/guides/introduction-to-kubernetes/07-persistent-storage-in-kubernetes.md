@@ -376,7 +376,7 @@ spec:
       storage: 5Gi
 ```
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and try this Block Storage integration with Kubernetes.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and try this Block Storage integration with Kubernetes.
 
 ## StatefulSets with Persistent Storage
 
@@ -697,6 +697,6 @@ DigitalOcean makes it easy to provision and manage persistent storage for your K
 - Automated volume snapshots
 - Seamless Kubernetes integration through CSI driver
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and try their storage solutions with your Kubernetes applications.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and try their storage solutions with your Kubernetes applications.
 
 In the next section, we'll explore Kubernetes resource management, covering how to optimize your cluster's compute resources and implement effective scaling strategies.

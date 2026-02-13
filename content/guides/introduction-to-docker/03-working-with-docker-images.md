@@ -213,7 +213,7 @@ This is useful for transferring images to air-gapped environments or for backup 
 
 For team environments or production workloads, consider using a private registry like DigitalOcean Container Registry to store and share your custom images securely.
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) and get $200 in free credits to try their Container Registry service.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) and get $200 in free credits to try their Container Registry service.
 
 ## Next Steps
 

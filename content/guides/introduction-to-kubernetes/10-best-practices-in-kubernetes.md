@@ -791,7 +791,7 @@ DigitalOcean Kubernetes Service (DOKS) provides several security features:
    - Private networking
    - VPC integration
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and deploy your applications on a secure Kubernetes platform.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and deploy your applications on a secure Kubernetes platform.
 
 ## Securing the CI/CD Pipeline
 

@@ -734,7 +734,7 @@ sudo quota -u username
 
 When working with cloud servers, you'll often need to set up users. Here's how to do it on a DigitalOcean Droplet:
 
-1. Create a new Droplet (use [this link](https://m.do.co/c/2a9bba940f39) for $200 in credits)
+1. Create a new Droplet (use [this link](https://www.jdoqocy.com/click-101674709-15836238) for $200 in credits)
 2. Connect as root
 3. Create a non-root user with sudo privileges:
 

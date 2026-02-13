@@ -691,7 +691,7 @@ tmux ls
 tmux attach -t [session_id]
 ```
 
-> **Need a server to practice these Bash tools?** If you want a dedicated environment to experiment with these tools, consider setting up a DigitalOcean Droplet. Their basic plans start at just $4/month, and you can get $200 in credits using this link: [https://m.do.co/c/2a9bba940f39](https://m.do.co/c/2a9bba940f39)
+> **Need a server to practice these Bash tools?** If you want a dedicated environment to experiment with these tools, consider setting up a DigitalOcean Droplet. Their basic plans start at just $4/month, and you can get $200 in credits using this link: [https://www.jdoqocy.com/click-101674709-15836238](https://www.jdoqocy.com/click-101674709-15836238)
 
 ## Putting Tools Together: Practical Examples
 

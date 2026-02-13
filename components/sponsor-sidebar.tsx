@@ -8,7 +8,7 @@ const sponsors = [
   {
     name: 'DigitalOcean',
     logo: 'https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg',
-    url: 'https://m.do.co/c/2a9bba940f39',
+    url: 'https://www.jdoqocy.com/click-101674709-15836238',
     tagline: 'Cloud infrastructure for developers',
   },
   {

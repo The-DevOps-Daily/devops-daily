@@ -911,7 +911,7 @@ DigitalOcean Kubernetes makes monitoring easy with:
 - Managed Prometheus and Grafana offered as add-ons
 - Simple log aggregation with existing tools
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and implement effective monitoring for your Kubernetes applications.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and implement effective monitoring for your Kubernetes applications.
 
 ## Best Practices for Kubernetes Monitoring and Logging
 

@@ -315,7 +315,7 @@ Both containers have access to the same data in the volume.
 
 When running containers in the cloud, you can use platform-specific volume solutions. DigitalOcean's Block Storage provides SSD-based volumes that can be attached to your Droplets running Docker.
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and try their Block Storage service with your containerized applications.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and try their Block Storage service with your containerized applications.
 
 ## tmpfs Mounts for Sensitive Data
 

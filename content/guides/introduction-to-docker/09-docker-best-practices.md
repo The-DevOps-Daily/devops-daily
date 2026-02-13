@@ -564,7 +564,7 @@ For common components like databases, message queues, and caches, consider using
 
 ### Use DigitalOcean for Simplified Container Deployment
 
-DigitalOcean provides simplified container deployment options that implement many of these best practices automatically. [Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and deploy your containerized applications following best practices.
+DigitalOcean provides simplified container deployment options that implement many of these best practices automatically. [Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and deploy your containerized applications following best practices.
 
 ## Performance and Efficiency Best Practices
 

@@ -370,7 +370,7 @@ Cluster Autoscaler works with many cloud providers:
 
 On DigitalOcean, you can enable autoscaling when creating a cluster or by modifying existing node pools. Specify the minimum and maximum node count, and the cluster will automatically scale based on resource demands.
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and try out their autoscaling features for Kubernetes clusters.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and try out their autoscaling features for Kubernetes clusters.
 
 ## Analyzing Resource Usage
 
@@ -840,6 +840,6 @@ DigitalOcean Kubernetes provides a cost-effective platform with built-in autosca
 - Prometheus-compatible metrics API
 - Integration with DOKS metrics to Datadog, Prometheus, and other monitoring tools
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and efficiently manage resources on your Kubernetes clusters.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and efficiently manage resources on your Kubernetes clusters.
 
 In the next section, we'll explore monitoring and logging in Kubernetes, which are essential for maintaining visibility into your applications and infrastructure.

@@ -89,7 +89,7 @@ After running this command, log out and back in for the changes to take effect.
 
 If you don't want to install Docker locally, you can use a cloud-based development environment. DigitalOcean's Droplets provide an excellent platform for running Docker.
 
-You can quickly spin up a Droplet with Docker pre-installed using their One-Click Docker application. [Get $200 in free credits when you sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to test your Docker applications in the cloud.
+You can quickly spin up a Droplet with Docker pre-installed using their One-Click Docker application. [Get $200 in free credits when you sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to test your Docker applications in the cloud.
 
 ## Verifying Your Installation
 

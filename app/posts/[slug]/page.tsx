@@ -90,7 +90,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   // Check if post content contains affiliate links
   const affiliatePatterns = [
-    'm.do.co',           // DigitalOcean referral
+    'm.do.co',           // DigitalOcean referral (old)
+    'jdoqocy.com',       // DigitalOcean referral (CJ Affiliate)
     'amzn.to',           // Amazon short links
     'amazon.com/.*tag=', // Amazon affiliate tags
   ];

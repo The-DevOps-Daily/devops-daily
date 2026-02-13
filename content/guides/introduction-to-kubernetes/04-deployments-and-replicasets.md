@@ -651,6 +651,6 @@ DigitalOcean Kubernetes provides a reliable platform for running your Deployment
 - Load balancer integration for services
 - Container Registry for storing your images securely
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) and get $200 in free credits to deploy your applications on a production-ready Kubernetes platform.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) and get $200 in free credits to deploy your applications on a production-ready Kubernetes platform.
 
 In the next section, we'll explore Kubernetes Services and Networking, which enable communication between your applications and the outside world.

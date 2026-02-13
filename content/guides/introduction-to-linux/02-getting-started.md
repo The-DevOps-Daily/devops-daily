@@ -120,7 +120,7 @@ Cloud providers let you create Linux servers in minutes without needing physical
 
 DigitalOcean provides one of the simplest ways to get started with a Linux server:
 
-1. Sign up for a DigitalOcean account (use [this link](https://m.do.co/c/2a9bba940f39) to receive $200 in credits for 60 days)
+1. Sign up for a DigitalOcean account (use [this link](https://www.jdoqocy.com/click-101674709-15836238) to receive $200 in credits for 60 days)
 2. Create a new Droplet (DigitalOcean's term for a virtual server)
 3. Select Ubuntu as the operating system
 4. Choose the smallest plan for learning ($4-5/month, or free with credits)

@@ -826,7 +826,7 @@ When running Linux in cloud environments, efficient process management is crucia
 
 ### Cloud Process Management Example
 
-For example, on a DigitalOcean Droplet (use [this link](https://m.do.co/c/2a9bba940f39) for $200 in credits):
+For example, on a DigitalOcean Droplet (use [this link](https://www.jdoqocy.com/click-101674709-15836238) for $200 in credits):
 
 1. Choose a Droplet size appropriate for your workload
 2. Monitor resource usage to avoid over-provisioning

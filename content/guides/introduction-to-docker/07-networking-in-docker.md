@@ -363,7 +363,7 @@ For applications where network performance is critical:
 
 When deploying containerized applications to the cloud, networking is a crucial consideration. DigitalOcean provides robust networking features for container-based applications, including private networks between Droplets.
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and deploy your networked container applications in a production-ready environment.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and deploy your networked container applications in a production-ready environment.
 
 ## Network Troubleshooting Tools
 

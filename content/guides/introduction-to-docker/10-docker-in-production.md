@@ -551,7 +551,7 @@ DigitalOcean provides a user-friendly platform for running container workloads i
 - **DigitalOcean App Platform**: PaaS for containerized applications
 - **Droplets with Docker**: Self-managed Docker hosts
 
-[Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) to get $200 in free credits and deploy your Docker applications to production with confidence.
+[Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) to get $200 in free credits and deploy your Docker applications to production with confidence.
 
 ## Disaster Recovery Planning
 

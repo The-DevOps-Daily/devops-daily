@@ -191,7 +191,7 @@ rsync -av source_directory/ destination_directory/
 rsync -avz -e ssh source_directory/ username@remote_host:/path/to/destination/
 ```
 
-> **Need a server to practice file operations?** If you want to experiment with remote file operations, consider setting up a DigitalOcean Droplet. Their basic plans start at just $4/month, and you can get $200 in credits to start with using this link: [https://m.do.co/c/2a9bba940f39](https://m.do.co/c/2a9bba940f39)
+> **Need a server to practice file operations?** If you want to experiment with remote file operations, consider setting up a DigitalOcean Droplet. Their basic plans start at just $4/month, and you can get $200 in credits to start with using this link: [https://www.jdoqocy.com/click-101674709-15836238](https://www.jdoqocy.com/click-101674709-15836238)
 
 ## Advanced File Operations
 

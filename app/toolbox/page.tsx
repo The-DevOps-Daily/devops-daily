@@ -98,7 +98,7 @@ const tools: Tool[] = [
   {
     name: 'DigitalOcean',
     description: 'Cloud infrastructure provider offering scalable compute and storage solutions.',
-    href: 'https://m.do.co/c/2a9bba940f39',
+    href: 'https://www.jdoqocy.com/click-101674709-15836238',
     category: 'cloud',
     icon: CloudCog,
     isPopular: true,

@@ -346,7 +346,7 @@ docker build -t registry.example.com/myapp:1.0.0 .
 docker push registry.example.com/myapp:1.0.0
 ```
 
-For cloud-based container registries, DigitalOcean Container Registry offers a secure, private place to store your Docker images. [Sign up with DigitalOcean](https://m.do.co/c/2a9bba940f39) and get $200 in free credits to try their Container Registry service.
+For cloud-based container registries, DigitalOcean Container Registry offers a secure, private place to store your Docker images. [Sign up with DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) and get $200 in free credits to try their Container Registry service.
 
 ## Real-World Example: Building a Full-Stack Application
 

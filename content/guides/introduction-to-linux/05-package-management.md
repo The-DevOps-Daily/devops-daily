@@ -746,7 +746,7 @@ When working with cloud servers, you'll often use package management to set up a
 
 DigitalOcean makes it easy to create a Linux server with various distributions. Here's a quick way to get started:
 
-1. Sign up for a DigitalOcean account (use [this link](https://m.do.co/c/2a9bba940f39) to receive $200 in credits for 60 days)
+1. Sign up for a DigitalOcean account (use [this link](https://www.jdoqocy.com/click-101674709-15836238) to receive $200 in credits for 60 days)
 2. Create a Droplet (virtual server) with your preferred Linux distribution
 3. Connect via SSH and update your system:
 
