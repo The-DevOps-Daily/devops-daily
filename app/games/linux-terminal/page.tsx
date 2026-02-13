@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import LinuxTerminal from '@/components/games/linux-terminal';
+import { GameActions } from '@/components/games/game-actions';
 import { Twitter, Facebook, Linkedin } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -54,7 +55,10 @@ export default function LinuxTerminalPage() {
       <BreadcrumbSchema items={schemaItems} />
 
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="linux-terminal" gameTitle={gameTitle} />
+        </div>
 
         <div className="flex flex-col items-center mx-auto max-w-7xl">
           <h2 className="sr-only">

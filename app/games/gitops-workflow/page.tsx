@@ -4,6 +4,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('gitops-workflow');
@@ -28,7 +29,10 @@ export default async function GitOpsWorkflowPage() {
     <>
       <BreadcrumbSchema items={schemaItems} />
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="gitops-workflow" gameTitle={gameTitle} />
+        </div>
         <GitOpsWorkflow />
       </div>
     </>

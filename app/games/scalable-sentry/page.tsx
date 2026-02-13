@@ -4,6 +4,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import ScalableSentry from '@/components/games/scalable-sentry';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('scalable-sentry');
@@ -28,7 +29,10 @@ export default async function ScalableSentryPage() {
     <>
       <BreadcrumbSchema items={schemaItems} />
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="scalable-sentry" gameTitle={gameTitle} />
+        </div>
         <ScalableSentry />
       </div>
     </>

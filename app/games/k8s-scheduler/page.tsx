@@ -7,6 +7,7 @@ import { ArrowLeft, Twitter, Facebook, Linkedin, Activity } from 'lucide-react';
 import K8sScheduler from '@/components/games/k8s-scheduler';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
+import { GameActions } from '@/components/games/game-actions';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('k8s-scheduler');
@@ -35,7 +36,10 @@ export default async function K8sSchedulerPage() {
     <>
       <BreadcrumbSchema items={schemaItems} />
       <div className="container px-4 py-8 mx-auto">
-        <Breadcrumb items={breadcrumbItems} />
+        <div className="flex items-center justify-between mb-4">
+          <Breadcrumb items={breadcrumbItems} />
+          <GameActions gameSlug="k8s-scheduler" gameTitle={gameTitle} />
+        </div>
         <div className="flex flex-col items-center max-w-5xl mx-auto">
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             <Activity className="w-4 h-4" />
