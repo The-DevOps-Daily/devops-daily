@@ -99,7 +99,7 @@ export function EmbedCodeModal({ gameSlug, gameTitle }: EmbedCodeModalProps) {
           Embed
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Code size={20} />
@@ -170,7 +170,7 @@ export function EmbedCodeModal({ gameSlug, gameTitle }: EmbedCodeModalProps) {
               />
             </div>
 
-            {/* Generated Code */}
+            {/* Generated Code - Fixed height with internal scroll */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-sm font-medium">Embed Code</Label>
@@ -193,7 +193,7 @@ export function EmbedCodeModal({ gameSlug, gameTitle }: EmbedCodeModalProps) {
                   )}
                 </Button>
               </div>
-              <pre className="p-4 bg-slate-900 rounded-lg overflow-x-auto text-xs text-slate-300 border border-slate-700">
+              <pre className="p-4 bg-slate-900 rounded-lg overflow-auto max-h-[140px] text-xs text-slate-300 border border-slate-700">
                 <code>{sizePreset === 'responsive' ? responsiveCode : iframeCode}</code>
               </pre>
             </div>
