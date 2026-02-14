@@ -24,6 +24,7 @@ import {
   XCircle,
   ArrowRight,
   RefreshCw,
+  Settings,
 } from 'lucide-react';
 
 // Types
