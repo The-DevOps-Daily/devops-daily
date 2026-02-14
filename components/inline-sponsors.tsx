@@ -4,24 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Sparkles, ExternalLink, Heart } from 'lucide-react';
-
-const sponsors = [
-  {
-    name: 'DigitalOcean',
-    logo: 'https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg',
-    url: 'https://www.jdoqocy.com/click-101674709-15836238',
-    tagline: 'Cloud infrastructure for developers',
-    description: 'Simple, reliable cloud computing designed for developers',
-  },
-  {
-    name: 'DevDojo',
-    logo: '/devdojo.svg?height=60&width=120',
-    url: 'https://devdojo.com',
-    className: 'w-auto h-10 shrink-0 fill-current text-red-500',
-    tagline: 'Developer community & tools',
-    description: 'Join a community of developers sharing knowledge and tools',
-  },
-];
+import { sponsors } from '@/lib/sponsors';
 
 interface InlineSponsorsProps {
   className?: string;

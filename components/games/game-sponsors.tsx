@@ -3,20 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { ExternalLink } from 'lucide-react';
-
-const sponsors = [
-  {
-    name: 'DigitalOcean',
-    logo: 'https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg',
-    url: 'https://www.jdoqocy.com/click-101674709-15836238',
-  },
-  {
-    name: 'DevDojo',
-    logo: '/devdojo.svg?height=60&width=120',
-    url: 'https://devdojo.com',
-  },
-];
+import { sponsors } from '@/lib/sponsors';
 
 interface GameSponsorsProps {
   className?: string;
@@ -29,22 +16,25 @@ interface GameSponsorsProps {
 export function GameSponsors({ className }: GameSponsorsProps) {
   return (
     <div className={cn('w-full mb-6', className)}>
-      <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 py-4 px-6 rounded-lg border border-border/40 bg-muted/30">
-        <span className="text-sm font-medium text-muted-foreground">Supported by</span>
+      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 py-5 px-8 rounded-lg border border-border/40 bg-muted/30">
+        <span className="text-sm font-semibold text-muted-foreground">Supported by</span>
         {sponsors.map((sponsor) => (
           <Link
             key={sponsor.name}
             href={sponsor.url}
             target="_blank"
             rel="noopener noreferrer sponsored"
-            className="group flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-muted/50 transition-all"
+            className="group flex items-center gap-2 px-4 py-2 rounded-md hover:bg-muted/50 transition-all"
           >
             <Image
               src={sponsor.logo || '/placeholder.svg'}
               alt={sponsor.name}
-              width={100}
-              height={32}
-              className="h-7 w-auto opacity-85 group-hover:opacity-100 transition-opacity"
+              width={140}
+              height={44}
+              className={cn(
+                'h-10 w-auto opacity-90 group-hover:opacity-100 transition-opacity',
+                sponsor.className
+              )}
             />
           </Link>
         ))}
