@@ -5,6 +5,7 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('uptime-defender');
@@ -38,10 +39,15 @@ export default async function UptimeDefenderPage() {
         <div className="flex items-center justify-between">
           <Breadcrumb items={breadcrumbItems} />
           <GameActions gameSlug="uptime-defender" gameTitle={gameTitle} />
-        </div>
+       </div>
       </div>
 
       <UptimeDefender />
+
+      {/* Our Sponsors */}
+      <div className="container px-4 py-8 mx-auto">
+        <InlineSponsors variant="full" />
+      </div>
     </>
   );
 }

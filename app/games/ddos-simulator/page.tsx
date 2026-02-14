@@ -5,6 +5,7 @@ import DDoSSimulator from '@/components/games/ddos-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('ddos-simulator');
@@ -32,8 +33,13 @@ export default async function DDoSSimulatorPage() {
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />
           <GameActions gameSlug="ddos-simulator" gameTitle={gameTitle} />
+       </div>
+       <DDoSSimulator />
+
+        {/* Our Sponsors */}
+        <div className="w-full my-8">
+          <InlineSponsors variant="full" />
         </div>
-        <DDoSSimulator />
       </div>
     </>
   );

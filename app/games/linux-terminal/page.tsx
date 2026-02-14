@@ -3,6 +3,7 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import LinuxTerminal from '@/components/games/linux-terminal';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 import { Twitter, Facebook, Linkedin } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -63,9 +64,14 @@ export default function LinuxTerminalPage() {
         <div className="flex flex-col items-center mx-auto max-w-7xl">
           <h2 className="sr-only">
             Learn Linux - Interactive Terminal Tutorial
-          </h2>
+         </h2>
 
-          <LinuxTerminal />
+         <LinuxTerminal />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           <div className="w-full p-6 my-8 rounded-lg bg-muted/30">
             <h2 className="mb-4 text-2xl font-bold">About This Tutorial</h2>

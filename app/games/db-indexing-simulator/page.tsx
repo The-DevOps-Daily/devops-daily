@@ -6,6 +6,7 @@ import { Twitter, Facebook, Linkedin } from 'lucide-react';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('db-indexing-simulator');
@@ -42,8 +43,13 @@ export default async function DbIndexingSimulatorPage() {
           <h2 className="sr-only">
             Database Indexing Simulator - Learn How Indexes Speed Up SQL Queries
           </h2>
-          {/* Game Component */}
-          <DbIndexingSimulator />
+         {/* Game Component */}
+         <DbIndexingSimulator />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           {/* Educational Content */}
           <div className="w-full p-6 my-8 rounded-lg bg-muted/30">

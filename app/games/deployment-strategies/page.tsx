@@ -6,6 +6,7 @@ import { Twitter, Facebook, Linkedin } from 'lucide-react';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('deployment-strategies');
@@ -39,9 +40,14 @@ export default async function DeploymentStrategiesPage() {
         <div className="flex flex-col items-center mx-auto max-w-7xl">
           <h2 className="sr-only">
             Deployment Strategies Simulator - Learn Blue-Green, Canary, Rolling Updates
-          </h2>
+         </h2>
 
-          <DeploymentStrategiesSimulator />
+         <DeploymentStrategiesSimulator />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           <div className="w-full p-6 my-8 rounded-lg bg-muted/30">
             <h2 className="mb-4 text-2xl font-bold">Understanding Deployment Strategies</h2>

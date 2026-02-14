@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('devops-scorecard');
@@ -44,8 +45,13 @@ export default async function DevOpsScorecardPage() {
           {/* Page H1 heading for SEO and accessibility */}
           <h1 className="sr-only">{gameTitle}</h1>
 
-          {/* Game Component */}
-          <DevOpsScorecard />
+         {/* Game Component */}
+         <DevOpsScorecard />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           {/* Educational Content */}
           <div className="w-full max-w-4xl p-6 my-8 rounded-lg bg-muted/30">

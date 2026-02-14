@@ -8,6 +8,7 @@ import K8sScheduler from '@/components/games/k8s-scheduler';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('k8s-scheduler');
@@ -44,9 +45,14 @@ export default async function K8sSchedulerPage() {
           <div className="flex items-center gap-2 mb-4 text-muted-foreground">
             <Activity className="w-4 h-4" />
             <span className="text-sm">Kubernetes • Scheduling • Interactive</span>
-          </div>
+         </div>
 
-          <K8sScheduler />
+         <K8sScheduler />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           {/* Share buttons */}
           <div className="w-full max-w-md my-8">

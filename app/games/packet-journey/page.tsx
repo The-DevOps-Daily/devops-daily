@@ -5,6 +5,7 @@ import PacketJourney from '@/components/games/packet-journey';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('packet-journey');
@@ -32,8 +33,13 @@ export default async function PacketJourneyPage() {
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />
           <GameActions gameSlug="packet-journey" gameTitle={gameTitle} />
+       </div>
+       <PacketJourney />
+
+        {/* Our Sponsors */}
+        <div className="w-full my-8">
+          <InlineSponsors variant="full" />
         </div>
-        <PacketJourney />
       </div>
     </>
   );

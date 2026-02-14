@@ -6,6 +6,7 @@ import { Twitter, Facebook, Linkedin } from 'lucide-react';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('aws-vpc-simulator');
@@ -41,6 +42,11 @@ export default async function AwsVpcSimulatorPage() {
             AWS VPC Networking Simulator - Learn How Virtual Private Clouds Work
           </h2>
           <AwsVpcSimulator />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           {/* Educational Content */}
           <div className="w-full p-6 my-8 rounded-lg bg-muted/30">

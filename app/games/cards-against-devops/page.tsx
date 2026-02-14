@@ -5,6 +5,7 @@ import { CardsAgainstDevOps } from '@/components/games/cards-against-devops';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('cards-against-devops');
@@ -32,8 +33,13 @@ export default async function CardsAgainstDevOpsPage() {
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />
           <GameActions gameSlug="cards-against-devops" gameTitle={gameTitle} />
+       </div>
+       <CardsAgainstDevOps />
+
+        {/* Our Sponsors */}
+        <div className="w-full my-8">
+          <InlineSponsors variant="full" />
         </div>
-        <CardsAgainstDevOps />
       </div>
     </>
   );

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('microservices-simulator');
@@ -44,8 +45,13 @@ export default async function MicroservicesSimulatorPage() {
           <h2 className="sr-only">
             Microservices Architecture Simulator - Learn Service Communication & Resilience
           </h2>
-          {/* Game Component */}
-          <MicroservicesSimulator />
+         {/* Game Component */}
+         <MicroservicesSimulator />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           {/* Educational Content */}
           <div className="w-full p-6 my-8 rounded-lg bg-muted/30">

@@ -5,6 +5,7 @@ import RestVsGraphqlSimulator from '@/components/games/rest-vs-graphql-simulator
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('rest-vs-graphql');
@@ -38,8 +39,13 @@ export default async function RestVsGraphqlPage() {
         <div className="flex flex-col mx-auto max-w-7xl">
           <h2 className="sr-only">
             REST API vs GraphQL - Interactive Comparison Simulator
-          </h2>
-          <RestVsGraphqlSimulator />
+         </h2>
+         <RestVsGraphqlSimulator />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
         </div>
       </div>
     </>

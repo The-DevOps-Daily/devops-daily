@@ -11,6 +11,7 @@ import { notFound } from 'next/navigation';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('git-quiz');
@@ -54,8 +55,13 @@ export default async function GitQuizPage() {
           {/* Page H1 heading for SEO and accessibility */}
           <h1 className="sr-only">Git Command Quiz</h1>
 
-          {/* Quiz Component */}
-          <GenericQuiz quizConfig={quizConfig} />
+         {/* Quiz Component */}
+         <GenericQuiz quizConfig={quizConfig} />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           {/* Share buttons */}
           <div className="w-full max-w-md my-8">

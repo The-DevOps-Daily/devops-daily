@@ -5,6 +5,7 @@ import TcpVsUdpSimulator from '@/components/games/tcp-vs-udp';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('tcp-vs-udp');
@@ -38,8 +39,13 @@ export default async function TcpVsUdpPage() {
         <div className="flex flex-col mx-auto max-w-7xl">
           <h2 className="sr-only">
             TCP vs UDP Simulator - Learn Network Protocol Differences
-          </h2>
-          <TcpVsUdpSimulator />
+         </h2>
+         <TcpVsUdpSimulator />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           <div className="w-full p-6 my-8 rounded-lg bg-muted/30">
             <h2 className="mb-4 text-2xl font-bold">Understanding TCP vs UDP</h2>

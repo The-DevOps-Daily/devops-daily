@@ -4,6 +4,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import BugHunter from '@/components/games/bug-hunter';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('bug-hunter');
@@ -35,6 +36,11 @@ export default function BugHunterPage() {
       </div>
 
       <BugHunter />
+
+      {/* Our Sponsors */}
+      <div className="container px-4 py-8 mx-auto max-w-7xl">
+        <InlineSponsors variant="full" />
+      </div>
     </>
   );
 }

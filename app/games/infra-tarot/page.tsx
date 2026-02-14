@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { InlineSponsors } from '@/components/inline-sponsors';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('infra-tarot');
@@ -48,8 +49,13 @@ export default async function InfraTarotPage() {
             
           </div>
 
-          {/* Game Component */}
-          <InfraTarot />
+         {/* Game Component */}
+         <InfraTarot />
+
+          {/* Our Sponsors */}
+          <div className="w-full my-8">
+            <InlineSponsors variant="full" />
+          </div>
 
           {/* Social Sharing */}
           <div className="w-full max-w-4xl mt-8 p-6 bg-muted/30 rounded-lg">
