@@ -120,6 +120,20 @@ const games: Game[] = [
     category: 'Infrastructure',
   },
   {
+    id: 'bcdr-simulator',
+    title: 'BCDR Simulator',
+    description:
+      'Learn Business Continuity & Disaster Recovery with interactive RTO/RPO planning, failover strategies, and disaster scenarios. Understand hot, warm, and cold DR sites.',
+    iconName: 'Shield',
+    badgeText: 'New',
+    color: 'from-red-500 to-orange-600',
+    href: '/games/bcdr-simulator',
+    tags: ['bcdr', 'disaster-recovery', 'infrastructure', 'educational', 'devops'],
+    isNew: true,
+    featured: true,
+    category: 'Infrastructure',
+  },
+  {
     id: 'linux-terminal',
     title: 'Learn Linux - Interactive Tutorial',
     description:
