@@ -130,9 +130,8 @@
 
   <!-- Stats -->
   <g transform="translate(600, 530)">
-    <text x="-150" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">30+ Books</text>
-    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">8 Categories</text>
-    <text x="150" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">Free Resources</text>
+    <text x="-100" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">Beginner to Advanced</text>
+    <text x="100" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">Free &amp; Paid Resources</text>
   </g>
 
   <!-- Footer -->
