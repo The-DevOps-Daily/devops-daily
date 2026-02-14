@@ -39,7 +39,7 @@ export default function BugHunterPage() {
 
       {/* Our Sponsors */}
       <div className="container px-4 py-8 mx-auto max-w-7xl">
-        <InlineSponsors variant="full" />
+        <InlineSponsors variant="compact" />
       </div>
     </>
   );

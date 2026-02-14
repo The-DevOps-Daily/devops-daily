@@ -38,7 +38,7 @@ export default async function ScalableSentryPage() {
 
         {/* Our Sponsors */}
         <div className="w-full my-8">
-          <InlineSponsors variant="full" />
+          <InlineSponsors variant="compact" />
         </div>
       </div>
     </>

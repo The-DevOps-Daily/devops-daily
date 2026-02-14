@@ -47,7 +47,7 @@ export default async function CICDStackGeneratorPage() {
 
           {/* Our Sponsors */}
           <div className="w-full my-8">
-            <InlineSponsors variant="full" />
+            <InlineSponsors variant="compact" />
           </div>
 
           {/* Share buttons */}

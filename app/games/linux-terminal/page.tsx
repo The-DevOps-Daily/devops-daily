@@ -70,7 +70,7 @@ export default function LinuxTerminalPage() {
 
           {/* Our Sponsors */}
           <div className="w-full my-8">
-            <InlineSponsors variant="full" />
+            <InlineSponsors variant="compact" />
           </div>
 
           <div className="w-full p-6 my-8 rounded-lg bg-muted/30">

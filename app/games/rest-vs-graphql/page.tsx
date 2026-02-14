@@ -44,7 +44,7 @@ export default async function RestVsGraphqlPage() {
 
           {/* Our Sponsors */}
           <div className="w-full my-8">
-            <InlineSponsors variant="full" />
+            <InlineSponsors variant="compact" />
           </div>
         </div>
       </div>

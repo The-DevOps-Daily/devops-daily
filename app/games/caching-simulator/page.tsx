@@ -48,7 +48,7 @@ export default async function CachingSimulatorPage() {
 
           {/* Our Sponsors */}
           <div className="w-full my-8">
-            <InlineSponsors variant="full" />
+            <InlineSponsors variant="compact" />
           </div>
 
           {/* Educational Content */}

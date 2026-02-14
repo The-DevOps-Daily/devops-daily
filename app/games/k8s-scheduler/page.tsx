@@ -51,7 +51,7 @@ export default async function K8sSchedulerPage() {
 
           {/* Our Sponsors */}
           <div className="w-full my-8">
-            <InlineSponsors variant="full" />
+            <InlineSponsors variant="compact" />
           </div>
 
           {/* Share buttons */}

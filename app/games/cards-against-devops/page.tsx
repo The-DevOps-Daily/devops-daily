@@ -38,7 +38,7 @@ export default async function CardsAgainstDevOpsPage() {
 
         {/* Our Sponsors */}
         <div className="w-full my-8">
-          <InlineSponsors variant="full" />
+          <InlineSponsors variant="compact" />
         </div>
       </div>
     </>

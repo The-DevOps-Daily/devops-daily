@@ -60,7 +60,7 @@ export default async function GitQuizPage() {
 
           {/* Our Sponsors */}
           <div className="w-full my-8">
-            <InlineSponsors variant="full" />
+            <InlineSponsors variant="compact" />
           </div>
 
           {/* Share buttons */}

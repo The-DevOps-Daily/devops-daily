@@ -46,7 +46,7 @@ export default async function UptimeDefenderPage() {
 
       {/* Our Sponsors */}
       <div className="container px-4 py-8 mx-auto">
-        <InlineSponsors variant="full" />
+        <InlineSponsors variant="compact" />
       </div>
     </>
   );
