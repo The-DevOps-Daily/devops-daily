@@ -3,7 +3,9 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import LinuxTerminal from '@/components/games/linux-terminal';
 import { GameActions } from '@/components/games/game-actions';
+import { GameSponsors } from '@/components/games/game-sponsors';
 import { Twitter, Facebook, Linkedin } from 'lucide-react';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export const metadata: Metadata = {
   title: 'Learn Linux - Interactive Terminal Tutorial | DevOps Daily',
@@ -65,10 +67,13 @@ export default function LinuxTerminalPage() {
             Learn Linux - Interactive Terminal Tutorial
           </h2>
 
-          <LinuxTerminal />
+          {/* Sponsors */}
+          <GameSponsors />
 
-          <div className="w-full p-6 my-8 rounded-lg bg-muted/30">
-            <h2 className="mb-4 text-2xl font-bold">About This Tutorial</h2>
+         <LinuxTerminal />
+
+         <div className="w-full p-6 my-8 rounded-lg bg-muted/30">
+           <h2 className="mb-4 text-2xl font-bold">About This Tutorial</h2>
             <div className="grid gap-6 md:grid-cols-2">
               <div>
                 <h3 className="mb-3 text-lg font-semibold">What You'll Learn</h3>
@@ -129,7 +134,12 @@ export default function LinuxTerminalPage() {
             </div>
           </div>
 
-          <div className="w-full max-w-md my-8">
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md mx-auto my-8">
+            <CarbonAds />
+          </div>
+
+          <div className="w-full max-w-md mx-auto my-8">
             <h3 className="mb-4 text-lg font-medium text-center">Share this tutorial</h3>
             <div className="flex justify-center gap-4">
               <a

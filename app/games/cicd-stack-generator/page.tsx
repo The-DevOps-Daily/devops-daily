@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('cicd-stack-generator');
@@ -41,11 +43,19 @@ export default async function CICDStackGeneratorPage() {
         </div>
 
         <div className="flex flex-col items-center max-w-4xl mx-auto">
+          {/* Sponsors */}
+          <GameSponsors />
+
           {/* Game Component */}
           <CICDStackGenerator />
 
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md mx-auto my-8">
+            <CarbonAds />
+          </div>
+
           {/* Share buttons */}
-          <div className="w-full max-w-md my-8">
+          <div className="w-full max-w-md mx-auto my-8">
             <h3 className="mb-4 text-lg font-medium text-center">Share this game</h3>
             <div className="flex justify-center gap-4">
               <a

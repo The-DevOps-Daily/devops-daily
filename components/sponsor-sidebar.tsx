@@ -3,22 +3,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Clock, Sparkles, ExternalLink } from 'lucide-react';
 import { CarbonAds } from '@/components/carbon-ads';
-
-const sponsors = [
-  {
-    name: 'DigitalOcean',
-    logo: 'https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg',
-    url: 'https://www.jdoqocy.com/click-101674709-15836238',
-    tagline: 'Cloud infrastructure for developers',
-  },
-  {
-    name: 'DevDojo',
-    logo: '/devdojo.svg?height=60&width=120',
-    url: 'https://devdojo.com',
-    className: 'w-auto h-12 shrink-0 -mt-0.5 fill-current ml-1 text-red-500',
-    tagline: 'Developer community & tools',
-  },
-];
+import { sponsors } from '@/lib/sponsors';
 
 interface SponsorSidebarProps {
   className?: string;
@@ -75,7 +60,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                     alt={sponsor.name}
                     width={120}
                     height={60}
-                    className={cn('h-auto w-auto max-h-12', sponsor.className)}
+                    className={cn('h-auto w-auto max-h-12', sponsor.className, sponsor.sidebarClassName)}
                   />
                 </div>
 

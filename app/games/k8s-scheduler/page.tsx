@@ -8,6 +8,8 @@ import K8sScheduler from '@/components/games/k8s-scheduler';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('k8s-scheduler');
@@ -46,10 +48,18 @@ export default async function K8sSchedulerPage() {
             <span className="text-sm">Kubernetes • Scheduling • Interactive</span>
           </div>
 
+          {/* Sponsors */}
+          <GameSponsors />
+
           <K8sScheduler />
 
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md mx-auto my-8">
+            <CarbonAds />
+          </div>
+
           {/* Share buttons */}
-          <div className="w-full max-w-md my-8">
+          <div className="w-full max-w-md mx-auto my-8">
             <h3 className="mb-4 text-lg font-medium text-center">Share this game</h3>
             <div className="flex justify-center gap-4">
               <a

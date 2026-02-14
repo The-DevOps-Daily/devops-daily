@@ -6,6 +6,8 @@ import { Twitter, Facebook, Linkedin } from 'lucide-react';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('db-indexing-simulator');
@@ -42,6 +44,10 @@ export default async function DbIndexingSimulatorPage() {
           <h2 className="sr-only">
             Database Indexing Simulator - Learn How Indexes Speed Up SQL Queries
           </h2>
+
+          {/* Sponsors */}
+          <GameSponsors />
+
           {/* Game Component */}
           <DbIndexingSimulator />
 
@@ -120,8 +126,13 @@ export default async function DbIndexingSimulatorPage() {
             </div>
           </div>
 
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md mx-auto my-8">
+            <CarbonAds />
+          </div>
+
           {/* Share buttons */}
-          <div className="w-full max-w-md my-8">
+          <div className="w-full max-w-md mx-auto my-8">
             <h3 className="mb-4 text-lg font-medium text-center">Share this simulator</h3>
             <div className="flex justify-center gap-4">
               <a

@@ -5,6 +5,8 @@ import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('gitops-workflow');
@@ -33,7 +35,16 @@ export default async function GitOpsWorkflowPage() {
           <Breadcrumb items={breadcrumbItems} />
           <GameActions gameSlug="gitops-workflow" gameTitle={gameTitle} />
         </div>
+
+        {/* Sponsors */}
+        <GameSponsors />
+
         <GitOpsWorkflow />
+
+        {/* Carbon Ads */}
+        <div className="w-full max-w-md mx-auto my-8">
+          <CarbonAds />
+        </div>
       </div>
     </>
   );

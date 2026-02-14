@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('infra-tarot');
@@ -48,10 +50,13 @@ export default async function InfraTarotPage() {
             
           </div>
 
-          {/* Game Component */}
-          <InfraTarot />
+          {/* Sponsors */}
+          <GameSponsors />
 
-          {/* Social Sharing */}
+         {/* Game Component */}
+         <InfraTarot />
+
+         {/* Social Sharing */}
           <div className="w-full max-w-4xl mt-8 p-6 bg-muted/30 rounded-lg">
             <h2 className="text-xl font-bold mb-4 text-center">Share the Fun</h2>
             <p className="text-center text-muted-foreground mb-4">
@@ -149,6 +154,11 @@ export default async function InfraTarotPage() {
                 sometimes, a little humor helps us cope with the chaos of distributed systems! 🎭
               </p>
             </div>
+          </div>
+
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md mx-auto my-8">
+            <CarbonAds />
           </div>
         </div>
       </div>

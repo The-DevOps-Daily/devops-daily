@@ -8,6 +8,8 @@ import DevOpsMemes from '@/components/games/devops-memes';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
+import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('devops-memes');
@@ -41,6 +43,9 @@ export default async function DevOpsMemesPage() {
         </div>
 
         <div className="flex flex-col items-center max-w-6xl mx-auto">
+          {/* Sponsors */}
+          <GameSponsors />
+
           {/* Game Component */}
           <DevOpsMemes />
 
@@ -151,7 +156,10 @@ export default async function DevOpsMemesPage() {
               </div>
             </div>
 
-            
+            {/* Carbon Ads */}
+            <div className="w-full max-w-md mx-auto my-8">
+              <CarbonAds />
+            </div>
           </div>
         </div>
       </div>
