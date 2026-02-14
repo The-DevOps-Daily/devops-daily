@@ -914,9 +914,16 @@ export default function DevSecOpsRoadmapPage() {
       </section>
 
       {/* Report Issue */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <ReportIssue />
-      </div>
+      <section className="py-8 container mx-auto px-4 max-w-4xl mb-16">
+        <div className="text-center">
+          <ReportIssue
+            title="Found an issue with this roadmap?"
+            type="page"
+            slug="roadmap/devsecops"
+            variant="default"
+          />
+        </div>
+      </section>
     </div>
   );
 }
