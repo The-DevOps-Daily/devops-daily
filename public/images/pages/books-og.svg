@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#eab308;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="book1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#60a5fa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="book2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4ade80;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="book3" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a78bfa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="book4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f87171;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="book5" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fb923c;stop-opacity:1" />
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="shadow">
+      <feDropShadow dx="4" dy="4" stdDeviation="4" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Decorative dots -->
+  <g opacity="0.1">
+    <circle cx="50" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="100" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="150" cy="50" r="2" fill="#94a3b8"/>
+    <circle cx="50" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="100" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="150" cy="100" r="2" fill="#94a3b8"/>
+    <circle cx="1050" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1100" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1150" cy="530" r="2" fill="#94a3b8"/>
+    <circle cx="1050" cy="580" r="2" fill="#94a3b8"/>
+    <circle cx="1100" cy="580" r="2" fill="#94a3b8"/>
+    <circle cx="1150" cy="580" r="2" fill="#94a3b8"/>
+  </g>
+
+  <!-- Book stack illustration -->
+  <g transform="translate(150, 200)" filter="url(#shadow)">
+    <!-- Book 1 (bottom) -->
+    <rect x="0" y="180" width="180" height="30" rx="2" fill="url(#book1)" transform="rotate(-5)"/>
+    <rect x="5" y="182" width="4" height="26" fill="#1e3a5f" transform="rotate(-5)"/>
+    
+    <!-- Book 2 -->
+    <rect x="10" y="145" width="160" height="28" rx="2" fill="url(#book2)" transform="rotate(3)"/>
+    <rect x="15" y="147" width="4" height="24" fill="#166534" transform="rotate(3)"/>
+    
+    <!-- Book 3 -->
+    <rect x="5" y="110" width="170" height="32" rx="2" fill="url(#book3)" transform="rotate(-2)"/>
+    <rect x="10" y="113" width="4" height="26" fill="#5b21b6" transform="rotate(-2)"/>
+    
+    <!-- Book 4 -->
+    <rect x="15" y="75" width="150" height="28" rx="2" fill="url(#book4)" transform="rotate(4)"/>
+    <rect x="20" y="77" width="4" height="24" fill="#991b1b" transform="rotate(4)"/>
+    
+    <!-- Book 5 (top) -->
+    <rect x="8" y="40" width="165" height="30" rx="2" fill="url(#book5)" transform="rotate(-3)"/>
+    <rect x="13" y="43" width="4" height="24" fill="#c2410c" transform="rotate(-3)"/>
+  </g>
+
+  <!-- Open book icon -->
+  <g transform="translate(540, 70)">
+    <path d="M60 10 L60 70 C40 60 20 60 0 70 L0 10 C20 0 40 0 60 10 Z" fill="none" stroke="url(#titleGradient)" stroke-width="3" filter="url(#glow)"/>
+    <path d="M60 10 L60 70 C80 60 100 60 120 70 L120 10 C100 0 80 0 60 10 Z" fill="none" stroke="url(#titleGradient)" stroke-width="3" filter="url(#glow)"/>
+    <line x1="20" y1="25" x2="50" y2="25" stroke="#64748b" stroke-width="2"/>
+    <line x1="20" y1="35" x2="45" y2="35" stroke="#64748b" stroke-width="2"/>
+    <line x1="20" y1="45" x2="48" y2="45" stroke="#64748b" stroke-width="2"/>
+    <line x1="70" y1="25" x2="100" y2="25" stroke="#64748b" stroke-width="2"/>
+    <line x1="75" y1="35" x2="100" y2="35" stroke="#64748b" stroke-width="2"/>
+    <line x1="72" y1="45" x2="100" y2="45" stroke="#64748b" stroke-width="2"/>
+  </g>
+
+  <!-- Badge -->
+  <rect x="430" y="170" width="340" height="36" rx="18" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="600" y="194" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#94a3b8" text-anchor="middle">Curated Collection for DevOps Engineers</text>
+
+  <!-- Title -->
+  <text x="600" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="url(#titleGradient)" text-anchor="middle">DevOps</text>
+  <text x="600" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="#f8fafc" text-anchor="middle">Books</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="390" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Essential reads for SRE, Cloud, and Platform Engineering</text>
+
+  <!-- Category tags -->
+  <g transform="translate(600, 450)">
+    <rect x="-280" y="0" width="100" height="32" rx="16" fill="#1e40af" opacity="0.3"/>
+    <text x="-230" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#60a5fa" text-anchor="middle">Cloud</text>
+    
+    <rect x="-160" y="0" width="100" height="32" rx="16" fill="#166534" opacity="0.3"/>
+    <text x="-110" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#4ade80" text-anchor="middle">SRE</text>
+    
+    <rect x="-40" y="0" width="100" height="32" rx="16" fill="#7c3aed" opacity="0.3"/>
+    <text x="10" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#a78bfa" text-anchor="middle">DevOps</text>
+    
+    <rect x="80" y="0" width="100" height="32" rx="16" fill="#dc2626" opacity="0.3"/>
+    <text x="130" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#f87171" text-anchor="middle">Security</text>
+    
+    <rect x="200" y="0" width="100" height="32" rx="16" fill="#ea580c" opacity="0.3"/>
+    <text x="250" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#fb923c" text-anchor="middle">Platform</text>
+  </g>
+
+  <!-- Stats -->
+  <g transform="translate(600, 530)">
+    <text x="-150" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">30+ Books</text>
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">8 Categories</text>
+    <text x="150" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#64748b" text-anchor="middle">Free Resources</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="600" y="590" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="500" fill="#475569" text-anchor="middle">devops-daily.com</text>
+</svg>

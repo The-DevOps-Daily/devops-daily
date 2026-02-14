@@ -40,6 +40,14 @@ export const metadata: Metadata = {
     description:
       'Curated collection of the best DevOps, SRE, and Cloud Engineering books. From beginner guides to advanced practices.',
     type: 'website',
+    images: ['/images/pages/books-og.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DevOps Books | DevOps Daily',
+    description:
+      'Curated collection of the best DevOps, SRE, and Cloud Engineering books. From beginner guides to advanced practices.',
+    images: ['/images/pages/books-og.png'],
   },
 };
 
