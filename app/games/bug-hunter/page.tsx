@@ -44,7 +44,7 @@ export default function BugHunterPage() {
       <BugHunter />
       
       {/* Carbon Ads - placed at bottom */}
-      <div className="container px-4 py-8 mx-auto max-w-md">
+      <div className="w-full max-w-md mx-auto my-8">
         <CarbonAds />
       </div>
     </>

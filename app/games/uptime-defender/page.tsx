@@ -51,7 +51,7 @@ export default async function UptimeDefenderPage() {
       <UptimeDefender />
 
       {/* Carbon Ads */}
-      <div className="container px-4 py-4 mx-auto max-w-md">
+      <div className="w-full max-w-md mx-auto my-8">
         <CarbonAds />
       </div>
     </>

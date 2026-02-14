@@ -42,7 +42,7 @@ export default async function DDoSSimulatorPage() {
         <DDoSSimulator />
 
         {/* Carbon Ads */}
-        <div className="max-w-md mx-auto my-8">
+        <div className="w-full max-w-md mx-auto my-8">
           <CarbonAds />
         </div>
       </div>

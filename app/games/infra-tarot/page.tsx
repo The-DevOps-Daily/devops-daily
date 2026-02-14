@@ -157,7 +157,7 @@ export default async function InfraTarotPage() {
           </div>
 
           {/* Carbon Ads */}
-          <div className="w-full max-w-md my-8">
+          <div className="w-full max-w-md mx-auto my-8">
             <CarbonAds />
           </div>
         </div>
