@@ -6,6 +6,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('uptime-defender');
@@ -48,6 +49,11 @@ export default async function UptimeDefenderPage() {
       </div>
 
       <UptimeDefender />
+
+      {/* Carbon Ads */}
+      <div className="container px-4 py-4 mx-auto max-w-md">
+        <CarbonAds />
+      </div>
     </>
   );
 }

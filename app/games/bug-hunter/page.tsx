@@ -5,6 +5,7 @@ import BugHunter from '@/components/games/bug-hunter';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('bug-hunter');
@@ -41,6 +42,11 @@ export default function BugHunterPage() {
       </div>
 
       <BugHunter />
+      
+      {/* Carbon Ads - placed at bottom */}
+      <div className="container px-4 py-8 mx-auto max-w-md">
+        <CarbonAds />
+      </div>
     </>
   );
 }

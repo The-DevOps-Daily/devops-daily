@@ -9,6 +9,7 @@ import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('k8s-scheduler');
@@ -51,6 +52,11 @@ export default async function K8sSchedulerPage() {
           <GameSponsors />
 
           <K8sScheduler />
+
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md my-8">
+            <CarbonAds />
+          </div>
 
           {/* Share buttons */}
           <div className="w-full max-w-md my-8">

@@ -7,6 +7,7 @@ import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('dns-simulator');
@@ -104,6 +105,11 @@ export default async function DnsSimulatorPage() {
                 <li>• <strong>DNS Caching:</strong> Happens at browser, OS, and resolver levels to speed up lookups</li>
               </ul>
             </div>
+          </div>
+          
+          {/* Carbon Ads - placed after educational content */}
+          <div className="w-full max-w-md my-8">
+            <CarbonAds />
           </div>
 
           {/* Share buttons */}

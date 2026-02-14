@@ -7,6 +7,7 @@ import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('aws-vpc-simulator');
@@ -153,6 +154,11 @@ export default async function AwsVpcSimulatorPage() {
                 <li>• <strong>Endpoints:</strong> Use VPC endpoints for AWS services to avoid internet traffic</li>
               </ul>
             </div>
+          </div>
+
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md my-8">
+            <CarbonAds />
           </div>
 
           {/* Share buttons */}

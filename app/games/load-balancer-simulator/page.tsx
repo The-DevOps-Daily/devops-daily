@@ -7,6 +7,7 @@ import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('load-balancer-simulator');
@@ -116,6 +117,11 @@ export default async function LoadBalancerSimulatorPage() {
                 <li>• Monitor distribution fairness and server utilization</li>
               </ul>
             </div>
+          </div>
+
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md my-8">
+            <CarbonAds />
           </div>
 
           <div className="w-full max-w-md my-8">

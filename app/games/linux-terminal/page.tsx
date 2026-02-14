@@ -5,6 +5,7 @@ import LinuxTerminal from '@/components/games/linux-terminal';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
 import { Twitter, Facebook, Linkedin } from 'lucide-react';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export const metadata: Metadata = {
   title: 'Learn Linux - Interactive Terminal Tutorial | DevOps Daily',
@@ -131,6 +132,11 @@ export default function LinuxTerminalPage() {
                 <li>• Understanding Linux makes you a more effective developer</li>
               </ul>
             </div>
+          </div>
+
+          {/* Carbon Ads */}
+          <div className="w-full max-w-md my-8">
+            <CarbonAds />
           </div>
 
           <div className="w-full max-w-md my-8">

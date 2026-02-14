@@ -4,23 +4,19 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { sponsors } from '@/lib/sponsors';
-import { CarbonAds } from '@/components/carbon-ads';
 
 interface GameSponsorsProps {
   className?: string;
-  showCarbonAds?: boolean;
 }
 
 /**
  * Slim, inline sponsor bar for game/simulator pages.
  * Placed above the game component, full width, minimal design.
- * Optionally includes CarbonAds.
  */
-export function GameSponsors({ className, showCarbonAds = true }: GameSponsorsProps) {
+export function GameSponsors({ className }: GameSponsorsProps) {
   return (
-    <div className={cn('w-full mb-6 space-y-4', className)}>
-      {/* Sponsors Bar */}
-      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 py-4 px-6 rounded-lg border border-border/40 bg-muted/30">
+    <div className={cn('w-full mb-6', className)}>
+      <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 py-4 px-6 rounded-lg border border-border/40 bg-muted/20">
         <span className="text-sm font-semibold text-muted-foreground">Supported by</span>
         {sponsors.map((sponsor) => (
           <Link
@@ -50,15 +46,6 @@ export function GameSponsors({ className, showCarbonAds = true }: GameSponsorsPr
           Become a sponsor
         </Link>
       </div>
-
-      {/* Carbon Ads */}
-      {showCarbonAds && (
-        <div className="flex justify-center">
-          <div className="max-w-md w-full">
-            <CarbonAds />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
