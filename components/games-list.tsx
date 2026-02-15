@@ -65,6 +65,7 @@ export interface SerializableGame {
   category?: string;
   isPopular?: boolean;
   isComingSoon?: boolean;
+  createdAt?: string; // ISO 8601 date string for sorting
 }
 
 interface GamesListProps {
@@ -87,14 +88,16 @@ const matchesSearchQuery = (game: SerializableGame, query: string) => {
 
 const compareGamesBySort = (a: SerializableGame, b: SerializableGame, sort: string) => {
   if (sort === 'newest') {
-    if (a.isNew && !b.isNew) return -1;
-    if (!a.isNew && b.isNew) return 1;
-    return 0;
+    // Sort by creation date (newest first)
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA; // Descending order (newest first)
   }
   if (sort === 'oldest') {
-    if (a.isNew && !b.isNew) return 1;
-    if (!a.isNew && b.isNew) return -1;
-    return 0;
+    // Sort by creation date (oldest first)
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateA - dateB; // Ascending order (oldest first)
   }
   if (sort === 'popular') {
     if (a.isPopular && !b.isPopular) return -1;

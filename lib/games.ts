@@ -14,6 +14,7 @@ export interface Game {
   isComingSoon?: boolean;
   featured?: boolean;
   category?: string;
+  createdAt?: string; // ISO 8601 date string for sorting
 }
 
 /**
@@ -32,8 +33,8 @@ const games: Game[] = [
     href: '/games/aws-vpc-simulator',
     tags: ['aws', 'vpc', 'networking', 'cloud', 'educational', 'interactive', 'infrastructure'],
     isNew: true,
-    featured: true,
     category: 'Cloud',
+    createdAt: '2025-01-20',
   },
   {
     id: 'dns-simulator',
@@ -48,6 +49,7 @@ const games: Game[] = [
     isNew: true,
     featured: true,
     category: 'Networking',
+    createdAt: '2025-01-18',
   },
   {
     id: 'db-indexing-simulator',
@@ -62,6 +64,7 @@ const games: Game[] = [
     isNew: true,
     featured: true,
     category: 'Database',
+    createdAt: '2025-01-17',
   },
   {
     id: 'caching-simulator',
@@ -76,6 +79,7 @@ const games: Game[] = [
     isNew: true,
     featured: true,
     category: 'Infrastructure',
+    createdAt: '2025-01-16',
   },
   {
     id: 'deployment-strategies',
@@ -90,6 +94,7 @@ const games: Game[] = [
     isNew: true,
     featured: true,
     category: 'DevOps',
+    createdAt: '2025-01-15',
   },
   {
     id: 'rest-vs-graphql',
@@ -104,6 +109,7 @@ const games: Game[] = [
     isNew: true,
     featured: true,
     category: 'API Design',
+    createdAt: '2025-01-14',
   },
   {
     id: 'scaling-simulator',
@@ -116,8 +122,8 @@ const games: Game[] = [
     href: '/games/scaling-simulator',
     tags: ['scaling', 'infrastructure', 'educational', 'interactive', 'cloud', 'auto-scaling'],
     isNew: true,
-    featured: true,
     category: 'Infrastructure',
+    createdAt: '2025-01-13',
   },
   {
     id: 'bcdr-simulator',
@@ -130,8 +136,8 @@ const games: Game[] = [
     href: '/games/bcdr-simulator',
     tags: ['bcdr', 'disaster-recovery', 'infrastructure', 'educational', 'devops'],
     isNew: true,
-    featured: true,
     category: 'Infrastructure',
+    createdAt: '2025-01-12',
   },
   {
     id: 'ssl-tls-handshake',
@@ -144,8 +150,8 @@ const games: Game[] = [
     href: '/games/ssl-tls-handshake',
     tags: ['security', 'networking', 'tls', 'ssl', 'certificates', 'educational'],
     isNew: true,
-    featured: true,
     category: 'Security',
+    createdAt: '2025-01-11',
   },
   {
     id: 'linux-terminal',
@@ -158,8 +164,8 @@ const games: Game[] = [
     href: '/games/linux-terminal',
     tags: ['linux', 'terminal', 'educational', 'interactive', 'tutorial', 'beginner'],
     isNew: true,
-    featured: true,
     category: 'Educational',
+    createdAt: '2025-01-10',
   },
   {
     id: 'load-balancer-simulator',
@@ -172,8 +178,8 @@ const games: Game[] = [
     href: '/games/load-balancer-simulator',
     tags: ['load-balancing', 'networking', 'educational', 'interactive', 'infrastructure'],
     isNew: true,
-    featured: true,
     category: 'Infrastructure',
+    createdAt: '2025-01-09',
   },
   {
     id: 'dbms-simulator',
@@ -187,6 +193,7 @@ const games: Game[] = [
     tags: ['database', 'sql', 'nosql', 'educational', 'interactive'],
     isNew: true,
     category: 'Infrastructure',
+    createdAt: '2025-01-08',
   },
   {
     id: 'gitops-workflow',
@@ -200,6 +207,7 @@ const games: Game[] = [
     tags: ['gitops', 'kubernetes', 'argocd', 'educational', 'interactive'],
     isNew: true,
     category: 'DevOps',
+    createdAt: '2025-01-07',
   },
   {
     id: 'bug-hunter',
@@ -213,6 +221,7 @@ const games: Game[] = [
     tags: ['game', 'arcade', 'interactive', 'security'],
     isNew: true,
     category: 'Games',
+    createdAt: '2025-01-06',
   },
   {
     id: 'tcp-vs-udp',
@@ -226,6 +235,7 @@ const games: Game[] = [
     tags: ['networking', 'educational', 'interactive', 'protocols'],
     isNew: true,
     category: 'Networking',
+    createdAt: '2025-01-05',
   },
   {
     id: 'devops-scorecard',
@@ -238,8 +248,8 @@ const games: Game[] = [
     href: '/games/devops-scorecard',
     tags: ['assessment', 'career', 'skills'],
     isNew: true,
-    featured: true,
     category: 'Assessment',
+    createdAt: '2025-01-04',
   },
   {
     id: 'microservices-simulator',
@@ -253,6 +263,7 @@ const games: Game[] = [
     tags: ['microservices', 'architecture', 'interactive', 'distributed-systems'],
     isNew: true,
     category: 'Architecture',
+    createdAt: '2025-01-03',
   },
   {
     id: 'k8s-scheduler',
@@ -265,6 +276,7 @@ const games: Game[] = [
     tags: ['kubernetes', 'scheduling', 'interactive'],
     featured: true,
     category: 'Kubernetes',
+    createdAt: '2024-12-01',
   },
   {
     id: 'rate-limit-simulator',
@@ -278,6 +290,7 @@ const games: Game[] = [
     tags: ['educational', 'API', 'interactive'],
     isPopular: true,
     category: 'APIs',
+    createdAt: '2024-11-15',
   },
   {
     id: 'ddos-simulator',
@@ -289,6 +302,7 @@ const games: Game[] = [
     href: '/games/ddos-simulator',
     tags: ['educational', 'security', 'interactive', 'visualization'],
     category: 'Security',
+    createdAt: '2024-11-10',
   },
   {
     id: 'scalable-sentry',
@@ -302,6 +316,7 @@ const games: Game[] = [
     tags: ['game', 'tower-defense', 'strategy', 'networking'],
     isNew: true,
     category: 'Games',
+    createdAt: '2025-01-02',
   },
   {
     id: 'packet-journey',
@@ -315,6 +330,7 @@ const games: Game[] = [
     tags: ['educational', 'networking', 'interactive', 'visualization'],
     isNew: true,
     category: 'Networking',
+    createdAt: '2025-01-01',
   },
   {
     id: 'cicd-stack-generator',
@@ -327,6 +343,7 @@ const games: Game[] = [
     tags: ['fun', 'interactive'],
     isHot: true,
     category: 'CI/CD',
+    createdAt: '2024-10-20',
   },
   {
     id: 'infra-tarot',
@@ -339,6 +356,7 @@ const games: Game[] = [
     tags: ['fun', 'humor', 'mystical'],
     featured: false,
     category: 'Fun',
+    createdAt: '2024-10-15',
   },
   {
     id: 'devops-memes',
@@ -352,6 +370,7 @@ const games: Game[] = [
     tags: ['humor', 'memes', 'viral'],
     isHot: true,
     category: 'Fun',
+    createdAt: '2024-10-10',
   },
   {
     id: 'cards-against-devops',
@@ -363,6 +382,7 @@ const games: Game[] = [
     href: '/games/cards-against-devops',
     tags: ['humor', 'party', 'interactive'],
     category: 'Fun',
+    createdAt: '2024-10-05',
   },
   {
     id: 'git-quiz',
@@ -375,6 +395,7 @@ const games: Game[] = [
     tags: ['git', 'quiz', 'interactive'],
     isPopular: true,
     category: 'Git',
+    createdAt: '2024-09-01',
   },
   {
     id: 'uptime-defender',
@@ -388,6 +409,7 @@ const games: Game[] = [
     tags: ['game', 'sre', 'interactive', 'real-time'],
     isNew: true,
     category: 'SRE',
+    createdAt: '2024-12-28',
   },
   {
     id: 'incident-commander',
