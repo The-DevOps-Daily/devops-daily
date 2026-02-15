@@ -311,7 +311,7 @@ export default function SslTlsHandshakeSimulator() {
       } else {
         setIsPlaying(false);
       }
-    }, 1500);
+    }, 3500);
 
     return () => clearTimeout(timer);
   }, [isPlaying, currentStepIndex, steps.length, hasFailed, isComplete]);
@@ -336,6 +336,44 @@ export default function SslTlsHandshakeSimulator() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Educational Intro */}
+      {currentStepIndex === 0 && !isPlaying && (
+        <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+              <div>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">How to use this simulator</h3>
+                <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
+                  Watch how your browser establishes a secure HTTPS connection. Use the <strong>Play</strong> button 
+                  for auto-advance, or <strong>Next/Prev</strong> to step through manually. Each step shows what 
+                  data is exchanged between client and server.
+                </p>
+                <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                  💡 Tip: Try different TLS versions and failure scenarios to see how the handshake changes.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Progress Bar */}
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+        <motion.div
+          className={cn(
+            'absolute left-0 top-0 h-full rounded-full',
+            hasFailed ? 'bg-red-500' : isComplete ? 'bg-green-500' : 'bg-blue-500'
+          )}
+          initial={{ width: 0 }}
+          animate={{ width: `${getProgressPercentage()}%` }}
+          transition={{ duration: 0.5, ease: 'easeOut' }}
+        />
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-600 dark:text-slate-400">
+          Step {currentStepIndex + 1} of {steps.length}
+        </div>
+      </div>
+
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -459,7 +497,7 @@ export default function SslTlsHandshakeSimulator() {
                       left: currentStep.direction === 'client-to-server' ? '100%' : '0%',
                       x: currentStep.direction === 'client-to-server' ? -32 : 0,
                     }}
-                    transition={{ duration: 1, ease: 'easeInOut' }}
+                    transition={{ duration: 2, ease: 'easeInOut' }}
                   >
                     {currentStep.direction === 'both' ? (
                       <ArrowLeftRight className="h-4 w-4" />
