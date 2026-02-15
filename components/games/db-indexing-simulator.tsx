@@ -607,21 +607,28 @@ export default function DbIndexingSimulator() {
            </div>
 
             {/* Composite Indexes */}
-            <div className="mt-4 border-t border-slate-300 pt-4 dark:border-slate-600">
-              <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">
-                Composite Indexes
-                <span className="ml-1 text-[10px] text-slate-400">(order matters)</span>
-              </p>
-              <div className="space-y-2">
-                {COMPOSITE_INDEX_OPTIONS.map((columns) => {
-                  const indexed = hasCompositeIndex(columns);
-                  const label = columns.join(' + ');
-                  return (
-                    <div
-                      key={label}
-                      className={cn(
-                        'flex items-center justify-between rounded-lg border p-2 sm:p-3',
-                        indexed
+           <div className="mt-4 border-t border-slate-300 pt-4 dark:border-slate-600">
+              <div className="mb-2">
+                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+               Composite Indexes
+               <span className="ml-1 text-[10px] text-slate-400">(order matters)</span>
+             </p>
+                <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                  A composite index is a <strong>single index</strong> on multiple columns. The leftmost column is used first for filtering.
+                </p>
+              </div>
+             <div className="space-y-2">
+               {COMPOSITE_INDEX_OPTIONS.map((columns) => {
+                 const indexed = hasCompositeIndex(columns);
+                 const label = columns.join(' + ');
+                  const tooltipText = `Creates one B-tree index ordered by ${columns[0]}, then ${columns[1]}. Best for queries that filter on ${columns[0]} first.`;
+                 return (
+                   <div
+                     key={label}
+                      title={tooltipText}
+                     className={cn(
+                       'flex items-center justify-between rounded-lg border p-2 sm:p-3',
+                       indexed
                           ? 'border-purple-500/50 bg-purple-500/10'
                           : 'border-slate-300 bg-slate-200/50 dark:border-slate-600 dark:bg-slate-700/50'
                       )}
@@ -923,14 +930,41 @@ export default function DbIndexingSimulator() {
               When to Create an Index:
             </h4>
             <ul className="grid gap-1 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-2">
-              <li>• Columns used frequently in WHERE clauses</li>
-              <li>• Columns used in JOIN conditions</li>
-              <li>• Columns used for sorting (ORDER BY)</li>
-              <li>• High-cardinality columns (many unique values)</li>
-            </ul>
+             <li>• Columns used frequently in WHERE clauses</li>
+             <li>• Columns used in JOIN conditions</li>
+             <li>• Columns used for sorting (ORDER BY)</li>
+             <li>• High-cardinality columns (many unique values)</li>
+           </ul>
+         </div>
+
+          {/* Composite Index Explanation */}
+          <div className="mt-4 rounded-lg border border-purple-500/30 bg-purple-500/10 p-3">
+            <h4 className="mb-2 text-xs font-medium text-purple-600 dark:text-purple-300">
+              🔑 Why Does Composite Index Order Matter?
+            </h4>
+            <p className="mb-2 text-xs text-slate-600 dark:text-slate-400">
+              A composite index like <code className="rounded bg-slate-200 px-1 dark:bg-slate-700">(age, city)</code> is
+              a <strong>single B-tree</strong> sorted first by age, then by city within each age.
+            </p>
+            <div className="grid gap-2 text-xs sm:grid-cols-2">
+              <div className="rounded bg-emerald-500/10 p-2">
+                <p className="font-medium text-emerald-600 dark:text-emerald-400">✓ Can use (age, city) index:</p>
+                <ul className="mt-1 text-slate-500 dark:text-slate-400">
+                  <li>• WHERE age = 28</li>
+                  <li>• WHERE age = 28 AND city = &apos;NYC&apos;</li>
+                </ul>
+              </div>
+              <div className="rounded bg-yellow-500/10 p-2">
+                <p className="font-medium text-yellow-600 dark:text-yellow-400">✗ Cannot use (age, city) index:</p>
+                <ul className="mt-1 text-slate-500 dark:text-slate-400">
+                  <li>• WHERE city = &apos;NYC&apos; (needs city first)</li>
+                  <li>• Need (city, age) index instead</li>
+                </ul>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+       </CardContent>
+     </Card>
+   </div>
   );
 }
