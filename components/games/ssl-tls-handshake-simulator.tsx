@@ -271,11 +271,14 @@ export default function SslTlsHandshakeSimulator() {
 
   // Keyboard navigation
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+   const handleKeyDown = (e: KeyboardEvent) => {
+     const target = e.target as HTMLElement;
+     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
-      if (e.key === ' ' || e.key === 'Enter') {
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
+     if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         if (isComplete || hasFailed) {
           reset();

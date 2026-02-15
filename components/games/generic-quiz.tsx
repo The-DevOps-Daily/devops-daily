@@ -111,6 +111,9 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
         return;
       }
 
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
       // Only handle keys when quiz is active (not on start/results screen)
       if (!gameStarted || currentQuestion >= quizConfig.questions.length) {
         // Enter or Space to start quiz

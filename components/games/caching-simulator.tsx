@@ -107,6 +107,9 @@ export default function CachingSimulator() {
         return;
       }
 
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
       // Number keys 1-6 to request data item (A-F)
       const num = parseInt(e.key);
       if (num >= 1 && num <= DATA_ITEMS.length && !animation) {

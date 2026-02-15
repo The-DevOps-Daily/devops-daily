@@ -442,6 +442,9 @@ export default function BCDRSimulator() {
     if (!hasStarted) return;
     
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
       // Don't allow navigation while auto-playing (user should wait)
       if (isPlaying && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
         return;

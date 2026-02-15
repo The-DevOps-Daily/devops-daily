@@ -381,6 +381,9 @@ export default function TcpVsUdpSimulator() {
         return;
       }
 
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
       // Space to toggle play/pause
       if (e.key === ' ') {
         e.preventDefault();

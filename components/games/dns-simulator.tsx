@@ -279,6 +279,9 @@ export default function DnsSimulator() {
         return;
       }
 
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
       // Space to start lookup
       if (e.key === ' ' && !isRunning && currentStepIndex === -1) {
         e.preventDefault();

@@ -168,6 +168,9 @@ export default function DbIndexingSimulator() {
         return;
       }
 
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
       // Number keys 1-4 to select query
       const num = parseInt(e.key);
       if (num >= 1 && num <= QUERIES.length && !isRunning) {

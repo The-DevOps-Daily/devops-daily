@@ -297,6 +297,9 @@ export default function GitCommandQuiz() {
         return;
       }
 
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
       if (!gameStarted || currentScenario >= scenarios.length) {
         if ((e.key === 'Enter' || e.key === ' ') && !gameStarted) {
           e.preventDefault();
