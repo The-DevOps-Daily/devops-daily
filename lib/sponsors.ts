@@ -32,6 +32,13 @@ export const sponsors: Sponsor[] = [
     className: 'fill-current text-red-500',
     sidebarClassName: 'w-auto h-12 shrink-0 -mt-0.5 ml-1',
   },
+  {
+    name: 'Acronis',
+    logo: '/acronis.svg',
+    url: 'https://www.jdoqocy.com/click-101674709-10562048',
+    tagline: 'The most secure backup',
+    description: 'Acronis: the most secure backup solution for your data',
+  },
 ];
 
 /**
