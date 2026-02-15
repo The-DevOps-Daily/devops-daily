@@ -8,6 +8,7 @@ import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
 import { CarbonAds } from '@/components/carbon-ads';
+import Image from 'next/image';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('bcdr-simulator');
@@ -109,6 +110,45 @@ export default async function BCDRSimulatorPage() {
                 <li>• Automate failover where possible to reduce human error</li>
               </ul>
             </div>
+          </div>
+
+          {/* Acronis Affiliate Promotion */}
+          <div className="w-full p-6 my-8 rounded-lg border border-blue-500/20 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+              <a
+                href="https://www.jdoqocy.com/click-101674709-10562048"
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                className="shrink-0"
+              >
+                <Image
+                  src="/acronis.svg"
+                  alt="Acronis"
+                  width={80}
+                  height={80}
+                  className="rounded-lg"
+                />
+              </a>
+              <div className="flex-1 text-center sm:text-left">
+                <h3 className="mb-2 text-lg font-semibold">Need a Real BCDR Solution?</h3>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  <strong>Acronis Cyber Protect</strong> offers enterprise-grade backup and disaster
+                  recovery with anti-ransomware protection. Trusted by 500,000+ businesses worldwide.
+                </p>
+                <a
+                  href="https://www.jdoqocy.com/click-101674709-10562048"
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg hover:bg-blue-700"
+                >
+                  Learn More About Acronis
+                  <span aria-hidden="true">→</span>
+                </a>
+              </div>
+            </div>
+            <p className="mt-4 text-xs text-center text-muted-foreground/70">
+              <em>This page contains an affiliate link. Using it helps support DevOps Daily at no extra cost to you.</em>
+            </p>
           </div>
 
           {/* Carbon Ads */}
