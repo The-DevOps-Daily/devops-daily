@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#22c55e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Grid pattern -->
+  <g opacity="0.08">
+    <line x1="0" y1="157.5" x2="1200" y2="157.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="315" x2="1200" y2="315" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="472.5" x2="1200" y2="472.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="900" y1="0" x2="900" y2="630" stroke="#94a3b8" stroke-width="1"/>
+  </g>
+
+  <!-- Client icon -->
+  <g transform="translate(100, 200)">
+    <rect x="0" y="0" width="140" height="180" rx="10" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+    <rect x="15" y="20" width="110" height="80" rx="4" fill="#0f172a"/>
+    <text x="70" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">CLIENT</text>
+    <circle cx="70" cy="160" r="8" fill="#64748b"/>
+    <!-- Browser icon in screen -->
+    <rect x="30" y="35" width="80" height="50" rx="2" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+    <circle cx="40" cy="42" r="3" fill="#ef4444"/>
+    <circle cx="50" cy="42" r="3" fill="#eab308"/>
+    <circle cx="60" cy="42" r="3" fill="#22c55e"/>
+  </g>
+
+  <!-- Server icon -->
+  <g transform="translate(480, 200)">
+    <rect x="0" y="0" width="140" height="180" rx="10" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+    <!-- Server slots -->
+    <rect x="15" y="25" width="110" height="25" rx="3" fill="#0f172a" stroke="#22c55e" stroke-width="1"/>
+    <circle cx="30" cy="37.5" r="4" fill="#22c55e" filter="url(#glow)"/>
+    <rect x="45" y="33" width="70" height="8" rx="2" fill="#0f172a"/>
+    <rect x="15" y="60" width="110" height="25" rx="3" fill="#0f172a" stroke="#3b82f6" stroke-width="1"/>
+    <circle cx="30" cy="72.5" r="4" fill="#3b82f6" filter="url(#glow)"/>
+    <rect x="45" y="68" width="70" height="8" rx="2" fill="#0f172a"/>
+    <rect x="15" y="95" width="110" height="25" rx="3" fill="#0f172a" stroke="#64748b" stroke-width="1"/>
+    <circle cx="30" cy="107.5" r="4" fill="#64748b"/>
+    <rect x="45" y="103" width="70" height="8" rx="2" fill="#0f172a"/>
+    <text x="70" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">SERVER</text>
+    <text x="70" y="168" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#64748b" text-anchor="middle">HTTPS</text>
+  </g>
+
+  <!-- Handshake arrows -->
+  <g transform="translate(250, 230)">
+    <!-- Client Hello -->
+    <line x1="0" y1="20" x2="200" y2="20" stroke="#3b82f6" stroke-width="2"/>
+    <polygon points="200,15 220,20 200,25" fill="#3b82f6"/>
+    <text x="110" y="12" font-family="monospace" font-size="10" fill="#60a5fa" text-anchor="middle">ClientHello</text>
+    
+    <!-- Server Hello -->
+    <line x1="220" y1="60" x2="20" y2="60" stroke="#22c55e" stroke-width="2"/>
+    <polygon points="20,55 0,60 20,65" fill="#22c55e"/>
+    <text x="110" y="52" font-family="monospace" font-size="10" fill="#4ade80" text-anchor="middle">ServerHello + Cert</text>
+    
+    <!-- Key Exchange -->
+    <line x1="0" y1="100" x2="200" y2="100" stroke="#a855f7" stroke-width="2"/>
+    <polygon points="200,95 220,100 200,105" fill="#a855f7"/>
+    <text x="110" y="92" font-family="monospace" font-size="10" fill="#c084fc" text-anchor="middle">Key Exchange</text>
+    
+    <!-- Finished -->
+    <line x1="220" y1="140" x2="20" y2="140" stroke="#eab308" stroke-width="2"/>
+    <polygon points="20,135 0,140 20,145" fill="#eab308"/>
+    <text x="110" y="132" font-family="monospace" font-size="10" fill="#facc15" text-anchor="middle">Finished</text>
+  </g>
+
+  <!-- Lock icon -->
+  <g transform="translate(350, 440)">
+    <rect x="-15" y="0" width="30" height="25" rx="4" fill="#22c55e"/>
+    <path d="M-7,-15 L-7,-5 a7,7 0 0,1 14,0 L7,-15" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="0" cy="10" r="3" fill="#0f172a"/>
+    <text x="0" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#22c55e" text-anchor="middle">Secure Connection</text>
+  </g>
+
+  <!-- Main content (right side) -->
+  <g transform="translate(900, 180)">
+    <!-- Badge -->
+    <g transform="translate(-100, -20)">
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="#1e3a5f" opacity="0.5"/>
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="none" stroke="#22c55e" stroke-width="2"/>
+      <text x="100" y="21" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#4ade80" text-anchor="middle">
+        Interactive Simulator
+      </text>
+    </g>
+
+    <!-- Title -->
+    <text x="0" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="url(#greenGradient)" text-anchor="middle">
+      SSL/TLS
+    </text>
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="url(#greenGradient)" text-anchor="middle">
+      Handshake
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#64748b" text-anchor="middle">
+      Visualize secure connection
+    </text>
+    <text x="0" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#64748b" text-anchor="middle">
+      establishment step-by-step
+    </text>
+
+    <!-- Feature badges -->
+    <g transform="translate(-140, 175)">
+      <rect x="0" y="0" width="75" height="28" rx="14" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+      <text x="37" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#60a5fa" text-anchor="middle">TLS 1.2</text>
+    </g>
+    <g transform="translate(-55, 175)">
+      <rect x="0" y="0" width="75" height="28" rx="14" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="37" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4ade80" text-anchor="middle">TLS 1.3</text>
+    </g>
+    <g transform="translate(30, 175)">
+      <rect x="0" y="0" width="115" height="28" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="57" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#c084fc" text-anchor="middle">Certificate Chain</text>
+    </g>
+    <g transform="translate(-100, 215)">
+      <rect x="0" y="0" width="95" height="28" rx="14" fill="#1e293b" stroke="#eab308" stroke-width="1.5"/>
+      <text x="47" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#facc15" text-anchor="middle">Cipher Suites</text>
+    </g>
+    <g transform="translate(5, 215)">
+      <rect x="0" y="0" width="100" height="28" rx="14" fill="#1e293b" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="50" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#f87171" text-anchor="middle">Failure Modes</text>
+    </g>
+  </g>
+
+  <!-- Decorative elements -->
+  <circle cx="1100" cy="100" r="60" fill="#22c55e" opacity="0.05"/>
+  <circle cx="1050" cy="550" r="80" fill="#3b82f6" opacity="0.05"/>
+  <circle cx="50" cy="80" r="50" fill="#a855f7" opacity="0.05"/>
+</svg>

@@ -291,7 +291,7 @@ export default function SslTlsHandshakeSimulator() {
         e.preventDefault();
         setCurrentStepIndex((i) => i - 1);
       }
-      if (e.key === 'r' || e.key === 'R') {
+      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         reset();
       }

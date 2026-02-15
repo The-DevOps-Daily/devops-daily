@@ -119,7 +119,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
           setGameStarted(true);
         }
         // R to restart on results screen
-        if (e.key === 'r' || e.key === 'R') {
+        if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
           handleRestart();
         }
         return;
@@ -151,7 +151,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
       }
 
       // R to restart quiz
-      if (e.key === 'r' || e.key === 'R') {
+      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
         handleRestart();
       }
     };
