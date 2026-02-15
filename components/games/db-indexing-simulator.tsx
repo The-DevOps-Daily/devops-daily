@@ -197,8 +197,8 @@ export default function DbIndexingSimulator() {
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isRunning]);
 
   const hasIndex = useCallback(

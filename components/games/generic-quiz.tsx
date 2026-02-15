@@ -159,8 +159,8 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   });
 
   const getDifficultyColor = (difficulty: string) => {

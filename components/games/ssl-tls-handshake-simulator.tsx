@@ -300,13 +300,13 @@ export default function SslTlsHandshakeSimulator() {
         setCurrentStepIndex((i) => i - 1);
       }
       if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        reset();
-      }
-    };
+       e.preventDefault();
+       reset();
+     }
+   };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPlaying, currentStepIndex, steps.length, isComplete, hasFailed]);
 
   // Auto-play

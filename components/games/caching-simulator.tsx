@@ -130,8 +130,8 @@ export default function CachingSimulator() {
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [animation]);
 
   const getItemToEvict = useCallback(
