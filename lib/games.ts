@@ -134,6 +134,20 @@ const games: Game[] = [
     category: 'Infrastructure',
   },
   {
+    id: 'ssl-tls-handshake',
+    title: 'SSL/TLS Handshake Simulator',
+    description:
+      'Visualize how SSL/TLS handshakes work with certificate verification, key exchange, and cipher negotiation. Compare TLS 1.2 and 1.3 protocols.',
+    iconName: 'Lock',
+    badgeText: 'New',
+    color: 'from-green-500 to-emerald-600',
+    href: '/games/ssl-tls-handshake',
+    tags: ['security', 'networking', 'tls', 'ssl', 'certificates', 'educational'],
+    isNew: true,
+    featured: true,
+    category: 'Security',
+  },
+  {
     id: 'linux-terminal',
     title: 'Learn Linux - Interactive Tutorial',
     description:
