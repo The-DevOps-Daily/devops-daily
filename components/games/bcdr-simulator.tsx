@@ -451,24 +451,27 @@ export default function BCDRSimulator() {
       }
       
       switch (e.key) {
-        case ' ': // Space - toggle play/pause
-          e.preventDefault();
-          handleTogglePlay();
-          break;
-        case 'ArrowRight': // Next step (only when paused)
-          if (currentStep < steps.length - 1) {
-            setCurrentStep(prev => prev + 1);
-          }
-          break;
-        case 'ArrowLeft': // Previous step (only when paused)
-          if (currentStep > 0) {
-            setCurrentStep(prev => prev - 1);
-          }
-          break;
-        case 'r': // Reset
-        case 'R':
-          handleReset();
-          break;
+      case ' ': // Space - toggle play/pause
+        e.preventDefault();
+        handleTogglePlay();
+        break;
+      case 'ArrowRight': // Next step (only when paused)
+        e.preventDefault();
+        if (currentStep < steps.length - 1) {
+          setCurrentStep(prev => prev + 1);
+        }
+        break;
+      case 'ArrowLeft': // Previous step (only when paused)
+        e.preventDefault();
+        if (currentStep > 0) {
+          setCurrentStep(prev => prev - 1);
+        }
+        break;
+      case 'r': // Reset
+      case 'R':
+        e.preventDefault();
+        handleReset();
+        break;
       }
     };
     
