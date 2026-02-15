@@ -34,7 +34,7 @@ export const sponsors: Sponsor[] = [
   },
   {
     name: 'Acronis',
-    logo: 'https://www.ftjcfx.com/image-101674709-10562048',
+    logo: '/acronis.svg',
     url: 'https://www.jdoqocy.com/click-101674709-10562048',
     tagline: 'The most secure backup',
     description: 'Acronis: the most secure backup solution for your data',
