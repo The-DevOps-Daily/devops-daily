@@ -25,6 +25,7 @@ import {
   Keyboard,
   Info,
 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -262,6 +263,7 @@ export default function SslTlsHandshakeSimulator() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [failureScenario, setFailureScenario] = useState<FailureScenario>('none');
   const [showCertChain, setShowCertChain] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   const steps = tlsVersion === '1.3' ? TLS_13_STEPS : TLS_12_STEPS;
   const currentStep = steps[currentStepIndex];
@@ -324,6 +326,21 @@ export default function SslTlsHandshakeSimulator() {
     return () => clearTimeout(timer);
   }, [isPlaying, currentStepIndex, steps.length, hasFailed, isComplete]);
 
+  // Countdown timer for auto-play visual feedback
+  useEffect(() => {
+    if (!isPlaying || hasFailed || isComplete) {
+      setCountdown(0);
+      return;
+    }
+
+    setCountdown(100);
+    const interval = setInterval(() => {
+      setCountdown((c) => Math.max(0, c - 2));
+    }, 70);
+
+    return () => clearInterval(interval);
+  }, [isPlaying, currentStepIndex, hasFailed, isComplete]);
+
   // Show cert chain when on certificate step
   useEffect(() => {
     if (currentStep?.phase === 'certificate') {
@@ -385,6 +402,34 @@ export default function SslTlsHandshakeSimulator() {
           Step {currentStepIndex + 1} of {steps.length}
         </div>
       </div>
+
+      {/* Auto-play Activity Indicator */}
+      {isPlaying && !isComplete && !hasFailed && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="flex items-center justify-between rounded-lg bg-blue-50 px-4 py-2 dark:bg-blue-950/30"
+        >
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              Processing step {currentStepIndex + 1}...
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-24 overflow-hidden rounded-full bg-blue-200 dark:bg-blue-800">
+              <motion.div
+                className="h-full rounded-full bg-blue-500"
+                initial={{ width: '100%' }}
+                animate={{ width: `${countdown}%` }}
+                transition={{ duration: 0.1, ease: 'linear' }}
+              />
+            </div>
+            <span className="text-xs text-blue-600 dark:text-blue-400">Next in {Math.ceil(countdown * 0.035)}s</span>
+          </div>
+        </motion.div>
+      )}
 
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
