@@ -25,6 +25,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+import { Keyboard } from 'lucide-react';
+
 type StoryPhase = 
   | 'intro'
   | 'normal-ops'
@@ -385,6 +387,7 @@ export default function BCDRSimulator() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [stepProgress, setStepProgress] = useState(0);
 
   const steps = createStorySteps(strategy);
   const step = steps[currentStep];
@@ -392,6 +395,14 @@ export default function BCDRSimulator() {
 
   useEffect(() => {
     if (!isPlaying) return;
+    
+    // Reset progress when step changes
+    setStepProgress(0);
+    
+    // Progress bar animation (updates every 100ms for smooth progress)
+    const progressInterval = setInterval(() => {
+      setStepProgress(prev => Math.min(prev + 2.5, 100));
+    }, 100);
     
     const timer = setTimeout(() => {
       if (currentStep < steps.length - 1) {
@@ -401,8 +412,47 @@ export default function BCDRSimulator() {
       }
     }, 4000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(progressInterval);
+    };
   }, [isPlaying, currentStep, steps.length]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!hasStarted) return;
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't allow navigation while auto-playing (user should wait)
+      if (isPlaying && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        return;
+      }
+      
+      switch (e.key) {
+        case ' ': // Space - toggle play/pause
+          e.preventDefault();
+          handleTogglePlay();
+          break;
+        case 'ArrowRight': // Next step (only when paused)
+          if (currentStep < steps.length - 1) {
+            setCurrentStep(prev => prev + 1);
+          }
+          break;
+        case 'ArrowLeft': // Previous step (only when paused)
+          if (currentStep > 0) {
+            setCurrentStep(prev => prev - 1);
+          }
+          break;
+        case 'r': // Reset
+        case 'R':
+          handleReset();
+          break;
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasStarted, isPlaying, currentStep, steps.length, handleTogglePlay, handleReset]);
 
   const handleStart = useCallback(() => {
     setHasStarted(true);
@@ -511,20 +561,37 @@ export default function BCDRSimulator() {
           {steps.map((_, i) => (
             <motion.div
               key={i}
-              className={cn(
-                'h-2 flex-1 rounded-full transition-all',
-                i <= currentStep ? 'bg-primary' : 'bg-muted',
-              )}
-              animate={{
-                scale: i === currentStep ? [1, 1.1, 1] : 1,
-              }}
-              transition={{
-                repeat: i === currentStep && isPlaying ? Infinity : 0,
-                duration: 1,
-              }}
-            />
+              className="h-2 flex-1 rounded-full bg-muted overflow-hidden"
+            >
+              <motion.div
+                className={cn(
+                  'h-full rounded-full transition-all',
+                  i < currentStep ? 'bg-primary' : i === currentStep ? 'bg-primary' : 'bg-transparent',
+                )}
+                style={{
+                  width: i < currentStep ? '100%' : i === currentStep ? `${isPlaying ? stepProgress : 100}%` : '0%',
+                }}
+                transition={{ duration: 0.1 }}
+              />
+            </motion.div>
           ))}
         </div>
+        
+        {/* Auto-play indicator */}
+        {isPlaying && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center gap-2 text-sm text-muted-foreground"
+          >
+            <motion.div
+              className="w-2 h-2 rounded-full bg-green-500"
+              animate={{ opacity: [1, 0.3, 1] }}
+              transition={{ repeat: Infinity, duration: 1 }}
+            />
+            <span>Auto-playing... Press Space to pause, or wait for the next step</span>
+          </motion.div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -620,7 +687,7 @@ export default function BCDRSimulator() {
           <Button
             variant="outline"
             size="sm"
-            disabled={currentStep === 0}
+            disabled={currentStep === 0 || isPlaying}
             onClick={() => setCurrentStep(prev => prev - 1)}
           >
             ← Previous
@@ -631,11 +698,22 @@ export default function BCDRSimulator() {
           <Button
             variant="outline"
             size="sm"
-            disabled={currentStep >= steps.length - 1}
+            disabled={currentStep >= steps.length - 1 || isPlaying}
             onClick={() => setCurrentStep(prev => prev + 1)}
           >
             Next →
           </Button>
+        </div>
+        
+        {/* Keyboard shortcuts hint */}
+        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
+          <span className="flex items-center gap-1">
+            <Keyboard className="w-3 h-3" />
+            Shortcuts:
+          </span>
+          <span><kbd className="px-1 py-0.5 bg-muted rounded text-xs">Space</kbd> Play/Pause</span>
+          <span><kbd className="px-1 py-0.5 bg-muted rounded text-xs">←</kbd><kbd className="px-1 py-0.5 bg-muted rounded text-xs">→</kbd> Navigate</span>
+          <span><kbd className="px-1 py-0.5 bg-muted rounded text-xs">R</kbd> Reset</span>
         </div>
 
         {/* Strategy comparison at summary */}
