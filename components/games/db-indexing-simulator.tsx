@@ -30,7 +30,7 @@ interface TableRow {
 }
 
 interface IndexInfo {
-  column: string;
+  columns: string[];
   type: 'btree' | 'hash';
 }
 
@@ -42,6 +42,14 @@ interface QueryResult {
   usedIndex: boolean;
   indexName?: string;
   explanation: string;
+  explainPlan?: ExplainStep[];
+}
+
+interface ExplainStep {
+  operation: string;
+  detail: string;
+  cost: number;
+  rows: number;
 }
 
 interface ScanAnimation {
@@ -72,6 +80,7 @@ const QUERIES = [
     shortLabel: 'Email',
     sql: "SELECT * FROM users WHERE email = 'emma@example.com'",
     column: 'email',
+    columns: ['email'],
     value: 'emma@example.com',
     type: 'exact' as const,
   },
@@ -81,6 +90,7 @@ const QUERIES = [
     shortLabel: 'Age',
     sql: 'SELECT * FROM users WHERE age = 28',
     column: 'age',
+    columns: ['age'],
     value: 28,
     type: 'exact' as const,
   },
@@ -90,6 +100,7 @@ const QUERIES = [
     shortLabel: 'City',
     sql: "SELECT * FROM users WHERE city = 'Chicago'",
     column: 'city',
+    columns: ['city'],
     value: 'Chicago',
     type: 'exact' as const,
   },
@@ -99,14 +110,42 @@ const QUERIES = [
     shortLabel: 'Range',
     sql: 'SELECT * FROM users WHERE age BETWEEN 30 AND 40',
     column: 'age',
+    columns: ['age'],
     valueMin: 30,
     valueMax: 40,
     type: 'range' as const,
+  },
+  {
+    id: 'age-city-composite',
+    label: 'Age + City',
+    shortLabel: 'Composite',
+    sql: "SELECT * FROM users WHERE age = 28 AND city = 'New York'",
+    column: 'age',
+    columns: ['age', 'city'],
+    value: 28,
+    secondValue: 'New York',
+    type: 'composite' as const,
+  },
+  {
+    id: 'city-age-composite',
+    label: 'City + Age',
+    shortLabel: 'City+Age',
+    sql: "SELECT * FROM users WHERE city = 'New York' AND age = 28",
+    column: 'city',
+    columns: ['city', 'age'],
+    value: 'New York',
+    secondValue: 28,
+    type: 'composite' as const,
   },
 ];
 
 const INDEXABLE_COLUMNS = ['email', 'age', 'city'] as const;
 type IndexableColumn = (typeof INDEXABLE_COLUMNS)[number];
+
+const COMPOSITE_INDEX_OPTIONS: [IndexableColumn, IndexableColumn][] = [
+  ['age', 'city'],
+  ['city', 'age'],
+];
 
 export default function DbIndexingSimulator() {
   const [indexes, setIndexes] = useState<IndexInfo[]>([]);
@@ -160,39 +199,94 @@ export default function DbIndexingSimulator() {
   }, [isRunning]);
 
   const hasIndex = useCallback(
-    (column: string) => indexes.some((idx) => idx.column === column),
+    (column: string) => indexes.some((idx) => idx.columns[0] === column),
     [indexes]
+  );
+
+  const hasCompositeIndex = useCallback(
+    (columns: string[]) => {
+      return indexes.some(
+        (idx) =>
+          idx.columns.length === columns.length &&
+          idx.columns.every((col, i) => col === columns[i])
+      );
+    },
+    [indexes]
+  );
+
+  const canUseIndexForQuery = useCallback(
+    (queryColumns: string[]) => {
+      // Check for exact composite index match
+      if (hasCompositeIndex(queryColumns)) return { usable: true, type: 'composite-exact' as const };
+      
+      // Check if any composite index has the right leading column(s)
+      for (const idx of indexes) {
+        if (idx.columns.length > 1) {
+          // Composite index can be used if query columns match the leading columns
+          const leadingMatch = queryColumns.every(
+            (col, i) => idx.columns[i] === col
+          );
+          if (leadingMatch && queryColumns.length <= idx.columns.length) {
+            return { usable: true, type: 'composite-partial' as const, indexColumns: idx.columns };
+          }
+        }
+      }
+      
+      // Check for single column index on the first query column
+      if (hasIndex(queryColumns[0])) return { usable: true, type: 'single' as const };
+      
+      return { usable: false, type: 'none' as const };
+    },
+    [indexes, hasIndex, hasCompositeIndex]
   );
 
   const addIndex = useCallback((column: IndexableColumn) => {
     setIndexes((prev) => {
-      if (prev.some((idx) => idx.column === column)) return prev;
-      return [...prev, { column, type: 'btree' }];
+      if (prev.some((idx) => idx.columns.length === 1 && idx.columns[0] === column)) return prev;
+      return [...prev, { columns: [column], type: 'btree' }];
     });
   }, []);
 
-  const removeIndex = useCallback((column: string) => {
-    setIndexes((prev) => prev.filter((idx) => idx.column !== column));
+  const addCompositeIndex = useCallback((columns: [IndexableColumn, IndexableColumn]) => {
+    setIndexes((prev) => {
+      if (hasCompositeIndex(columns)) return prev;
+      return [...prev, { columns: [...columns], type: 'btree' }];
+    });
+  }, [hasCompositeIndex]);
+
+  const removeIndex = useCallback((columns: string[]) => {
+    setIndexes((prev) =>
+      prev.filter(
+        (idx) =>
+          !(idx.columns.length === columns.length &&
+            idx.columns.every((col, i) => col === columns[i]))
+      )
+    );
   }, []);
 
   const runQuery = useCallback(async () => {
-    if (isRunning) return;
-    setIsRunning(true);
-    setLastResult(null);
+   if (isRunning) return;
+   setIsRunning(true);
+   setLastResult(null);
 
-    const query = selectedQuery;
-    const usesIndex = hasIndex(query.column);
+   const query = selectedQuery;
+    const indexResult = canUseIndexForQuery(query.columns);
+    const usesIndex = indexResult.usable;
 
-    const matchingRows: number[] = [];
-    SAMPLE_DATA.forEach((row, idx) => {
-      if (query.type === 'exact') {
-        const value = row[query.column as keyof TableRow];
-        if (value === query.value) matchingRows.push(idx);
-      } else if (query.type === 'range' && 'valueMin' in query && 'valueMax' in query) {
-        const value = row[query.column as keyof TableRow] as number;
-        if (value >= query.valueMin && value <= query.valueMax) matchingRows.push(idx);
-      }
-    });
+   const matchingRows: number[] = [];
+   SAMPLE_DATA.forEach((row, idx) => {
+     if (query.type === 'exact') {
+       const value = row[query.column as keyof TableRow];
+       if (value === query.value) matchingRows.push(idx);
+     } else if (query.type === 'range' && 'valueMin' in query && 'valueMax' in query) {
+       const value = row[query.column as keyof TableRow] as number;
+       if (value >= query.valueMin && value <= query.valueMax) matchingRows.push(idx);
+      } else if (query.type === 'composite' && 'secondValue' in query) {
+        const value1 = row[query.columns[0] as keyof TableRow];
+        const value2 = row[query.columns[1] as keyof TableRow];
+        if (value1 === query.value && value2 === query.secondValue) matchingRows.push(idx);
+     }
+   });
 
     const totalRows = SAMPLE_DATA.length;
     const scanRows = usesIndex ? Math.min(matchingRows.length + 1, 3) : totalRows;
@@ -222,34 +316,69 @@ export default function DbIndexingSimulator() {
     }
 
     const baseTime = usesIndex ? 5 : 50;
-    const variance = usesIndex ? Math.random() * 10 : Math.random() * 30;
-    const timeMs = Math.round(baseTime + variance);
+   const variance = usesIndex ? Math.random() * 10 : Math.random() * 30;
+   const timeMs = Math.round(baseTime + variance);
 
-    const result: QueryResult = {
-      query: query.sql,
-      rowsScanned: usesIndex ? matchingRows.length : totalRows,
-      rowsReturned: matchingRows.length,
-      timeMs,
-      usedIndex: usesIndex,
-      indexName: usesIndex ? `idx_${query.column}` : undefined,
-      explanation: usesIndex
-        ? `Index seek on idx_${query.column} - jumped directly to matching rows`
-        : `Full table scan - checked every row in the table`,
-    };
+    const indexName = usesIndex
+      ? indexResult.type === 'composite-exact' || indexResult.type === 'composite-partial'
+        ? `idx_${query.columns.join('_')}`
+        : `idx_${query.columns[0]}`
+      : undefined;
+
+    const explainPlan: ExplainStep[] = usesIndex
+      ? [
+          {
+            operation: 'Index Scan',
+            detail: `using ${indexName} on users`,
+            cost: 1.0 + matchingRows.length * 0.01,
+            rows: matchingRows.length,
+          },
+        ]
+      : [
+          {
+            operation: 'Seq Scan',
+            detail: 'on users',
+            cost: totalRows * 0.1,
+            rows: totalRows,
+          },
+          {
+            operation: 'Filter',
+            detail: query.sql.split('WHERE ')[1] || '',
+            cost: totalRows * 0.05,
+            rows: matchingRows.length,
+          },
+        ];
+
+   const result: QueryResult = {
+     query: query.sql,
+     rowsScanned: usesIndex ? matchingRows.length : totalRows,
+     rowsReturned: matchingRows.length,
+     timeMs,
+     usedIndex: usesIndex,
+      indexName,
+     explanation: usesIndex
+        ? indexResult.type === 'composite-exact'
+          ? `Composite index seek on ${indexName} - efficiently matched both columns`
+          : indexResult.type === 'composite-partial'
+            ? `Partial composite index on ${indexName} - used leading column(s)`
+            : `Index seek on ${indexName} - jumped directly to matching rows`
+       : `Full table scan - checked every row in the table`,
+      explainPlan,
+   };
 
     await new Promise((r) => setTimeout(r, 150));
 
     setAnimation((prev) => (prev ? { ...prev, isComplete: true, foundRows: matchingRows } : null));
     setLastResult(result);
     setStats((prev) => ({
-      queries: prev.queries + 1,
-      totalTime: prev.totalTime + timeMs,
-      indexHits: prev.indexHits + (usesIndex ? 1 : 0),
-    }));
+     queries: prev.queries + 1,
+     totalTime: prev.totalTime + timeMs,
+     indexHits: prev.indexHits + (usesIndex ? 1 : 0),
+   }));
 
-    await new Promise((r) => setTimeout(r, 500));
-    setIsRunning(false);
-  }, [selectedQuery, hasIndex, isRunning]);
+   await new Promise((r) => setTimeout(r, 500));
+   setIsRunning(false);
+  }, [selectedQuery, canUseIndexForQuery, isRunning]);
 
   const reset = useCallback(() => {
     setIndexes([]);
@@ -453,12 +582,12 @@ export default function DbIndexingSimulator() {
                         </span>
                       )}
                     </div>
-                    <Button
-                      variant={indexed ? 'destructive' : 'default'}
-                      size="sm"
-                      onClick={() => (indexed ? removeIndex(column) : addIndex(column))}
-                      className="h-7 px-2 text-xs sm:h-8 sm:px-3"
-                    >
+                   <Button
+                     variant={indexed ? 'destructive' : 'default'}
+                     size="sm"
+                      onClick={() => (indexed ? removeIndex([column]) : addIndex(column))}
+                     className="h-7 px-2 text-xs sm:h-8 sm:px-3"
+                   >
                       {indexed ? (
                         <>
                           <Trash2 className="mr-1 h-3 w-3" />
@@ -475,11 +604,67 @@ export default function DbIndexingSimulator() {
                   </div>
                 );
               })}
-            </div>
-          </CardContent>
-        </Card>
+           </div>
 
-        {/* Query Selector */}
+            {/* Composite Indexes */}
+            <div className="mt-4 border-t border-slate-300 pt-4 dark:border-slate-600">
+              <p className="mb-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                Composite Indexes
+                <span className="ml-1 text-[10px] text-slate-400">(order matters)</span>
+              </p>
+              <div className="space-y-2">
+                {COMPOSITE_INDEX_OPTIONS.map((columns) => {
+                  const indexed = hasCompositeIndex(columns);
+                  const label = columns.join(' + ');
+                  return (
+                    <div
+                      key={label}
+                      className={cn(
+                        'flex items-center justify-between rounded-lg border p-2 sm:p-3',
+                        indexed
+                          ? 'border-purple-500/50 bg-purple-500/10'
+                          : 'border-slate-300 bg-slate-200/50 dark:border-slate-600 dark:bg-slate-700/50'
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Database className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                          ({label})
+                        </span>
+                        {indexed && (
+                          <span className="rounded bg-purple-500/20 px-1.5 py-0.5 text-[10px] text-purple-400">
+                            INDEXED
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        variant={indexed ? 'destructive' : 'default'}
+                        size="sm"
+                        onClick={() => (indexed ? removeIndex(columns) : addCompositeIndex(columns))}
+                        className="h-7 px-2 text-xs sm:h-8 sm:px-3"
+                      >
+                        {indexed ? (
+                          <>
+                            <Trash2 className="mr-1 h-3 w-3" />
+                            <span className="hidden sm:inline">Remove</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="mr-1 h-3 w-3" />
+                            <span className="hidden sm:inline">Add Index</span>
+                            <span className="sm:hidden">Add</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+         </CardContent>
+       </Card>
+
+       {/* Query Selector */}
         <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
           <CardHeader className="pb-2 sm:pb-4">
             <CardTitle className="flex items-center gap-2 text-base text-slate-900 dark:text-slate-100 sm:text-lg">
@@ -490,12 +675,12 @@ export default function DbIndexingSimulator() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              {QUERIES.map((query) => {
-                const isSelected = selectedQuery.id === query.id;
-                const willUseIndex = hasIndex(query.column);
-                return (
-                  <Button
-                    key={query.id}
+             {QUERIES.map((query) => {
+               const isSelected = selectedQuery.id === query.id;
+                const willUseIndex = canUseIndexForQuery(query.columns).usable;
+               return (
+                 <Button
+                   key={query.id}
                     variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setSelectedQuery(query)}
@@ -608,20 +793,70 @@ export default function DbIndexingSimulator() {
                 </div>
 
                 <div className="mt-3 rounded-lg bg-slate-200 p-2 dark:bg-slate-800/50">
-                  <p className="text-xs text-slate-600 dark:text-slate-300">
-                    {lastResult.explanation}
-                  </p>
-                </div>
+                 <p className="text-xs text-slate-600 dark:text-slate-300">
+                   {lastResult.explanation}
+                 </p>
+               </div>
 
-                {!lastResult.usedIndex && (
-                  <div className="mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
-                    <p className="text-xs text-blue-600 dark:text-blue-300">
-                      <TrendingUp className="mr-1 inline h-3 w-3" />
-                      Tip: Add an index on <strong>{selectedQuery.column}</strong> to speed up this
-                      query!
+                {/* EXPLAIN Plan Visualization */}
+                {lastResult.explainPlan && lastResult.explainPlan.length > 0 && (
+                  <div className="mt-3 rounded-lg border border-slate-300 bg-slate-200/50 p-3 dark:border-slate-600 dark:bg-slate-800/30">
+                    <p className="mb-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      Query Execution Plan (EXPLAIN)
                     </p>
+                    <div className="space-y-2">
+                      {lastResult.explainPlan.map((step, idx) => (
+                        <div
+                          key={idx}
+                          className={cn(
+                            'flex items-center justify-between rounded border px-2 py-1.5 text-xs',
+                            step.operation === 'Index Scan'
+                              ? 'border-emerald-500/30 bg-emerald-500/10'
+                              : step.operation === 'Seq Scan'
+                                ? 'border-yellow-500/30 bg-yellow-500/10'
+                                : 'border-slate-300 bg-slate-100 dark:border-slate-600 dark:bg-slate-700/50'
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            {idx > 0 && <ArrowRight className="h-3 w-3 text-slate-400" />}
+                            <span
+                              className={cn(
+                                'font-medium',
+                                step.operation === 'Index Scan'
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : step.operation === 'Seq Scan'
+                                    ? 'text-yellow-600 dark:text-yellow-400'
+                                    : 'text-slate-600 dark:text-slate-300'
+                              )}
+                            >
+                              {step.operation}
+                            </span>
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {step.detail}
+                            </span>
+                          </div>
+                          <div className="flex gap-3 text-[10px] text-slate-400">
+                            <span>cost: {step.cost.toFixed(2)}</span>
+                            <span>rows: {step.rows}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
+
+               {!lastResult.usedIndex && (
+                 <div className="mt-3 rounded-lg border border-blue-500/30 bg-blue-500/10 p-2">
+                   <p className="text-xs text-blue-600 dark:text-blue-300">
+                     <TrendingUp className="mr-1 inline h-3 w-3" />
+                      Tip: {selectedQuery.type === 'composite' ? (
+                        <>Add a composite index on <strong>({selectedQuery.columns.join(' + ')})</strong> for best performance, or at least on <strong>{selectedQuery.columns[0]}</strong>.</>
+                      ) : (
+                        <>Add an index on <strong>{selectedQuery.columns[0]}</strong> to speed up this query!</>
+                      )}
+                   </p>
+                 </div>
+               )}
               </CardContent>
             </Card>
           </motion.div>
