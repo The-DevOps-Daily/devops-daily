@@ -370,22 +370,6 @@ export default function SslTlsHandshakeSimulator() {
         </Card>
       )}
 
-      {/* Progress Bar */}
-      <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-        <motion.div
-          className={cn(
-            'absolute left-0 top-0 h-full rounded-full',
-            hasFailed ? 'bg-red-500' : isComplete ? 'bg-green-500' : 'bg-blue-500'
-          )}
-          initial={{ width: 0 }}
-          animate={{ width: `${getProgressPercentage()}%` }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-        />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-medium text-slate-600 dark:text-slate-400">
-          Step {currentStepIndex + 1} of {steps.length}
-        </div>
-      </div>
-
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -489,11 +473,11 @@ export default function SslTlsHandshakeSimulator() {
 
             {/* Connection Visualization */}
             <div className="relative mx-4 flex-1">
-              {/* Progress Bar */}
+              {/* Connection Progress Bar */}
               <div
                 className={cn(
-                  'h-2 overflow-hidden rounded-full bg-slate-300 transition-shadow duration-300 dark:bg-slate-600',
-                  isPlaying && !isComplete && !hasFailed && 'shadow-[0_0_8px_rgba(59,130,246,0.6)]'
+                  'relative h-3 overflow-hidden rounded-full bg-slate-300 transition-shadow duration-300 dark:bg-slate-600',
+                  isPlaying && !isComplete && !hasFailed && 'shadow-[0_0_10px_rgba(59,130,246,0.7)]'
                 )}
               >
                 <motion.div
@@ -506,7 +490,52 @@ export default function SslTlsHandshakeSimulator() {
                   animate={{ width: `${getProgressPercentage()}%` }}
                   transition={{ duration: 0.3 }}
                 />
+                {/* Step indicator on progress bar */}
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-semibold text-slate-700 dark:text-slate-300">
+                  {currentStepIndex + 1}/{steps.length}
+                </div>
               </div>
+
+              {/* Status text below connection */}
+              <AnimatePresence mode="wait">
+                {!isComplete && !hasFailed && (
+                  <motion.div
+                    key={currentStep?.title}
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    transition={{ duration: 0.2 }}
+                    className="mt-1 text-center"
+                  >
+                    <p className="text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                      {currentStep?.title}
+                    </p>
+                    {isPlaying && (
+                      <p className="mt-0.5 text-[9px] text-blue-600 dark:text-blue-400">
+                        Auto-advancing...
+                      </p>
+                    )}
+                  </motion.div>
+                )}
+                {isComplete && (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-1 text-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400"
+                  >
+                    ✓ Secure connection established
+                  </motion.p>
+                )}
+                {hasFailed && (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-1 text-center text-[10px] font-semibold text-red-600 dark:text-red-400"
+                  >
+                    ✗ {failure.message}
+                  </motion.p>
+                )}
+              </AnimatePresence>
 
               {/* Animated Packet */}
               <AnimatePresence>
