@@ -418,7 +418,26 @@ export default function BCDRSimulator() {
     };
   }, [isPlaying, currentStep, steps.length]);
 
-  // Keyboard navigation
+  const handleStart = useCallback(() => {
+    setHasStarted(true);
+    setCurrentStep(0);
+    setIsPlaying(true);
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setHasStarted(false);
+    setCurrentStep(0);
+    setIsPlaying(false);
+  }, []);
+
+  const handleTogglePlay = useCallback(() => {
+    if (currentStep >= steps.length - 1) {
+      setCurrentStep(0);
+    }
+    setIsPlaying(prev => !prev);
+  }, [currentStep, steps.length]);
+
+  // Keyboard navigation (must be after useCallback definitions)
   useEffect(() => {
     if (!hasStarted) return;
     
@@ -453,25 +472,6 @@ export default function BCDRSimulator() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [hasStarted, isPlaying, currentStep, steps.length, handleTogglePlay, handleReset]);
-
-  const handleStart = useCallback(() => {
-    setHasStarted(true);
-    setCurrentStep(0);
-    setIsPlaying(true);
-  }, []);
-
-  const handleReset = useCallback(() => {
-    setHasStarted(false);
-    setCurrentStep(0);
-    setIsPlaying(false);
-  }, []);
-
-  const handleTogglePlay = useCallback(() => {
-    if (currentStep >= steps.length - 1) {
-      setCurrentStep(0);
-    }
-    setIsPlaying(prev => !prev);
-  }, [currentStep, steps.length]);
 
   const showFire = step.phase === 'disaster-strikes' || 
     step.phase === 'customers-affected' || 
