@@ -547,6 +547,30 @@ export default function SslTlsHandshakeSimulator() {
                 />
               </div>
 
+              {/* Auto-play Countdown Timer (below connection line) */}
+              {isPlaying && !isComplete && !hasFailed && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-2 flex flex-col items-center"
+                >
+                  <div className="flex w-full items-center gap-2">
+                    <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
+                    <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-600">
+                      <motion.div
+                        className="h-full rounded-full bg-blue-400"
+                        initial={{ width: '100%' }}
+                        animate={{ width: `${countdown}%` }}
+                        transition={{ duration: 0.1, ease: 'linear' }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {Math.ceil(countdown * 0.035)}s
+                    </span>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Animated Packet */}
               <AnimatePresence>
                 {currentStep && currentStep.direction !== 'none' && !hasFailed && !isComplete && (
