@@ -30,6 +30,8 @@ import DevOpsScorecard from '@/components/games/devops-scorecard';
 import CardsAgainstDevOps from '@/components/games/cards-against-devops';
 import InfraTarot from '@/components/games/infra-tarot';
 import DevOpsMemes from '@/components/games/devops-memes';
+import BCDRSimulator from '@/components/games/bcdr-simulator';
+import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
 
 // Map of game slugs to their components
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
@@ -59,6 +61,8 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   'cards-against-devops': CardsAgainstDevOps,
   'infra-tarot': InfraTarot,
   'devops-memes': DevOpsMemes,
+  'bcdr-simulator': BCDRSimulator,
+  'ssl-tls-handshake': SslTlsHandshakeSimulator,
 };
 
 interface PageProps {
