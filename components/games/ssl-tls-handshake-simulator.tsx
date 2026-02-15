@@ -473,6 +473,47 @@ export default function SslTlsHandshakeSimulator() {
 
             {/* Connection Visualization */}
             <div className="relative mx-4 flex-1">
+              {/* Status text above connection */}
+              <AnimatePresence mode="wait">
+                {!isComplete && !hasFailed && (
+                  <motion.div
+                    key={currentStep?.title}
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 5 }}
+                    transition={{ duration: 0.2 }}
+                    className="mb-2 text-center"
+                  >
+                    <p className="text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                      {currentStep?.title}
+                    </p>
+                    {isPlaying && (
+                      <p className="mt-0.5 text-[9px] text-blue-600 dark:text-blue-400">
+                        Auto-advancing...
+                      </p>
+                    )}
+                  </motion.div>
+                )}
+                {isComplete && (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mb-2 text-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400"
+                  >
+                    ✓ Secure connection established
+                  </motion.p>
+                )}
+                {hasFailed && (
+                  <motion.p
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mb-2 text-center text-[10px] font-semibold text-red-600 dark:text-red-400"
+                  >
+                    ✗ {failure.message}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
               {/* Connection Progress Bar */}
               <div
                 className={cn(
@@ -495,47 +536,6 @@ export default function SslTlsHandshakeSimulator() {
                   {currentStepIndex + 1}/{steps.length}
                 </div>
               </div>
-
-              {/* Status text below connection */}
-              <AnimatePresence mode="wait">
-                {!isComplete && !hasFailed && (
-                  <motion.div
-                    key={currentStep?.title}
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-1 text-center"
-                  >
-                    <p className="text-[10px] font-medium text-slate-600 dark:text-slate-400">
-                      {currentStep?.title}
-                    </p>
-                    {isPlaying && (
-                      <p className="mt-0.5 text-[9px] text-blue-600 dark:text-blue-400">
-                        Auto-advancing...
-                      </p>
-                    )}
-                  </motion.div>
-                )}
-                {isComplete && (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="mt-1 text-center text-[10px] font-semibold text-emerald-600 dark:text-emerald-400"
-                  >
-                    ✓ Secure connection established
-                  </motion.p>
-                )}
-                {hasFailed && (
-                  <motion.p
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="mt-1 text-center text-[10px] font-semibold text-red-600 dark:text-red-400"
-                  >
-                    ✗ {failure.message}
-                  </motion.p>
-                )}
-              </AnimatePresence>
 
               {/* Animated Packet */}
               <AnimatePresence>
