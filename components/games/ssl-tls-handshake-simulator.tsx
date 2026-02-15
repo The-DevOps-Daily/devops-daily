@@ -85,22 +85,14 @@ const TLS_12_STEPS: HandshakeStep[] = [
     title: 'Certificate',
     description: 'Server sends its certificate chain',
     direction: 'server-to-client',
-    details: [
-      'Server certificate',
-      'Intermediate CA certificate',
-      'Certificate chain validation',
-    ],
+    details: ['Server certificate', 'Intermediate CA certificate', 'Certificate chain validation'],
   },
   {
     phase: 'server-key-exchange',
     title: 'ServerKeyExchange',
     description: 'Server sends key exchange parameters',
     direction: 'server-to-client',
-    details: [
-      'Diffie-Hellman parameters',
-      'ECDHE curve parameters',
-      'Server signature',
-    ],
+    details: ['Diffie-Hellman parameters', 'ECDHE curve parameters', 'Server signature'],
     tls12Only: true,
   },
   {
@@ -226,7 +218,10 @@ const TLS_13_STEPS: HandshakeStep[] = [
   },
 ];
 
-const FAILURE_SCENARIOS: Record<FailureScenario, { title: string; description: string; failsAt: HandshakePhase }> = {
+const FAILURE_SCENARIOS: Record<
+  FailureScenario,
+  { title: string; description: string; failsAt: HandshakePhase }
+> = {
   none: { title: 'Normal', description: 'Successful handshake', failsAt: 'secure' },
   'expired-cert': {
     title: 'Expired Certificate',
@@ -235,7 +230,7 @@ const FAILURE_SCENARIOS: Record<FailureScenario, { title: string; description: s
   },
   'wrong-hostname': {
     title: 'Hostname Mismatch',
-    description: 'Certificate CN/SAN doesn\'t match domain',
+    description: "Certificate CN/SAN doesn't match domain",
     failsAt: 'certificate',
   },
   'weak-cipher': {
@@ -253,7 +248,12 @@ const FAILURE_SCENARIOS: Record<FailureScenario, { title: string; description: s
 const CERTIFICATE_CHAIN = [
   { name: 'Root CA', issuer: 'Self-signed', color: 'text-amber-500', icon: Shield },
   { name: 'Intermediate CA', issuer: 'Root CA', color: 'text-blue-500', icon: ShieldCheck },
-  { name: 'Server Certificate', issuer: 'Intermediate CA', color: 'text-emerald-500', icon: FileCheck },
+  {
+    name: 'Server Certificate',
+    issuer: 'Intermediate CA',
+    color: 'text-emerald-500',
+    icon: FileCheck,
+  },
 ];
 
 export default function SslTlsHandshakeSimulator() {
@@ -271,14 +271,14 @@ export default function SslTlsHandshakeSimulator() {
 
   // Keyboard navigation
   useEffect(() => {
-   const handleKeyDown = (e: KeyboardEvent) => {
-     const target = e.target as HTMLElement;
-     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
       // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
       if (e.metaKey || e.ctrlKey) return;
 
-     if (e.key === ' ' || e.key === 'Enter') {
+      if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         if (isComplete || hasFailed) {
           reset();
@@ -286,7 +286,12 @@ export default function SslTlsHandshakeSimulator() {
           setIsPlaying((p) => !p);
         }
       }
-      if (e.key === 'ArrowRight' && !isPlaying && currentStepIndex < steps.length - 1 && !hasFailed) {
+      if (
+        e.key === 'ArrowRight' &&
+        !isPlaying &&
+        currentStepIndex < steps.length - 1 &&
+        !hasFailed
+      ) {
         e.preventDefault();
         setCurrentStepIndex((i) => i + 1);
       }
@@ -346,14 +351,18 @@ export default function SslTlsHandshakeSimulator() {
             <div className="flex items-start gap-3">
               <Info className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
               <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">How to use this simulator</h3>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                  How to use this simulator
+                </h3>
                 <p className="mt-1 text-sm text-blue-800 dark:text-blue-200">
-                  Watch how your browser establishes a secure HTTPS connection. Use the <strong>Play</strong> button 
-                  for auto-advance, or <strong>Next/Prev</strong> to step through manually. Each step shows what 
-                  data is exchanged between client and server.
+                  Watch how your browser establishes a secure HTTPS connection. Use the{' '}
+                  <strong>Play</strong> button for auto-advance, or <strong>Next/Prev</strong> to
+                  step through manually. Each step shows what data is exchanged between client and
+                  server.
                 </p>
                 <p className="mt-2 text-xs text-blue-600 dark:text-blue-400">
-                  💡 Tip: Try different TLS versions and failure scenarios to see how the handshake changes.
+                  💡 Tip: Try different TLS versions and failure scenarios to see how the handshake
+                  changes.
                 </p>
               </div>
             </div>
@@ -403,7 +412,9 @@ export default function SslTlsHandshakeSimulator() {
       <div className="grid gap-4 sm:grid-cols-2">
         <Card className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-700 dark:text-slate-300">TLS Version</CardTitle>
+            <CardTitle className="text-sm text-slate-700 dark:text-slate-300">
+              TLS Version
+            </CardTitle>
           </CardHeader>
           <CardContent className="flex gap-2">
             {(['1.2', '1.3'] as TLSVersion[]).map((v) => (
@@ -418,9 +429,7 @@ export default function SslTlsHandshakeSimulator() {
                 className="flex-1"
               >
                 TLS {v}
-                {v === '1.3' && (
-                  <Badge className="ml-1 bg-emerald-500 text-[10px]">Faster</Badge>
-                )}
+                {v === '1.3' && <Badge className="ml-1 bg-emerald-500 text-[10px]">Faster</Badge>}
               </Button>
             ))}
           </CardContent>
@@ -466,9 +475,16 @@ export default function SslTlsHandshakeSimulator() {
                       : 'border-blue-500 bg-blue-500/20'
                 )}
               >
-                <Monitor className={cn('h-8 w-8 sm:h-10 sm:w-10', isComplete ? 'text-emerald-500' : hasFailed ? 'text-red-500' : 'text-blue-500')} />
+                <Monitor
+                  className={cn(
+                    'h-8 w-8 sm:h-10 sm:w-10',
+                    isComplete ? 'text-emerald-500' : hasFailed ? 'text-red-500' : 'text-blue-500'
+                  )}
+                />
               </div>
-              <span className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-400">Client</span>
+              <span className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                Client
+              </span>
             </div>
 
             {/* Connection Visualization */}
@@ -557,9 +573,16 @@ export default function SslTlsHandshakeSimulator() {
                       : 'border-purple-500 bg-purple-500/20'
                 )}
               >
-                <Server className={cn('h-8 w-8 sm:h-10 sm:w-10', isComplete ? 'text-emerald-500' : hasFailed ? 'text-red-500' : 'text-purple-500')} />
+                <Server
+                  className={cn(
+                    'h-8 w-8 sm:h-10 sm:w-10',
+                    isComplete ? 'text-emerald-500' : hasFailed ? 'text-red-500' : 'text-purple-500'
+                  )}
+                />
               </div>
-              <span className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-400">Server</span>
+              <span className="mt-2 text-xs font-medium text-slate-600 dark:text-slate-400">
+                Server
+              </span>
             </div>
           </div>
 
@@ -737,9 +760,7 @@ export default function SslTlsHandshakeSimulator() {
                             Issued by: {cert.issuer}
                           </p>
                         </div>
-                        {!hasFailed && (
-                          <CheckCircle className="h-4 w-4 text-emerald-500" />
-                        )}
+                        {!hasFailed && <CheckCircle className="h-4 w-4 text-emerald-500" />}
                         {hasFailed && i === CERTIFICATE_CHAIN.length - 1 && (
                           <XCircle className="h-4 w-4 text-red-500" />
                         )}
@@ -828,8 +849,8 @@ export default function SslTlsHandshakeSimulator() {
             <div>
               <h4 className="mb-1 font-medium text-amber-500">AEAD (Authenticated Encryption)</h4>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Combines encryption and authentication in one step (e.g., AES-GCM). Required in
-                TLS 1.3 for better security.
+                Combines encryption and authentication in one step (e.g., AES-GCM). Required in TLS
+                1.3 for better security.
               </p>
             </div>
           </div>
