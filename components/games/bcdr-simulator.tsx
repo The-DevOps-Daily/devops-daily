@@ -14,355 +14,472 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  DollarSign,
   HardDrive,
   XCircle,
   ArrowRight,
-  Info,
-  Keyboard,
   Zap,
+  Cloud,
+  Flame,
+  Users,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-// DR Strategy types
-type DRStrategy = 'hot' | 'warm' | 'cold';
-type DisasterType = 'datacenter' | 'ransomware' | 'database' | 'hardware';
-type Phase = 'normal' | 'disaster' | 'detection' | 'failover' | 'recovery' | 'restored';
+type StoryPhase = 
+  | 'intro'
+  | 'normal-ops'
+  | 'disaster-strikes'
+  | 'customers-affected'
+  | 'recovery-begins'
+  | 'rpo-explained'
+  | 'rto-explained'
+  | 'system-restored'
+  | 'summary';
 
-interface SimulationStep {
-  phase: Phase;
+type DRStrategy = 'hot' | 'warm' | 'cold';
+
+interface StoryStep {
+  phase: StoryPhase;
   title: string;
-  description: string;
-  primaryStatus: 'online' | 'offline' | 'degraded';
-  drStatus: 'standby' | 'activating' | 'active' | 'syncing';
-  dataFlow: 'primary' | 'switching' | 'dr' | 'none';
-  elapsedMinutes: number;
+  narrative: string;
+  primaryStatus: 'online' | 'offline' | 'recovering';
+  backupStatus: 'idle' | 'syncing' | 'activating' | 'active';
+  customersServed: boolean;
+  dataLoss: number;
+  downtimeMinutes: number;
 }
 
-// Strategy configurations
-const STRATEGIES: Record<DRStrategy, {
+const STRATEGY_CONFIG: Record<DRStrategy, {
   name: string;
+  emoji: string;
+  recoveryTime: number;
+  dataLossMinutes: number;
   description: string;
-  rtoMinutes: number;
-  rpoMinutes: number;
-  monthlyCost: number;
-  syncType: string;
-  pros: string[];
-  cons: string[];
 }> = {
   hot: {
-    name: 'Hot Site',
-    description: 'Fully operational duplicate with real-time data sync. Instant failover.',
-    rtoMinutes: 5,
-    rpoMinutes: 0,
-    monthlyCost: 15000,
-    syncType: 'Real-time replication',
-    pros: ['Near-zero downtime', 'No data loss', 'Automatic failover possible'],
-    cons: ['Very expensive', 'Requires constant maintenance', 'Double infrastructure'],
+    name: 'Hot Backup',
+    emoji: '🔥',
+    recoveryTime: 5,
+    dataLossMinutes: 0,
+    description: 'Always running, instantly ready',
   },
   warm: {
-    name: 'Warm Site',
-    description: 'Hardware ready, data synced periodically. Balance of cost and speed.',
-    rtoMinutes: 60,
-    rpoMinutes: 15,
-    monthlyCost: 5000,
-    syncType: 'Hourly backups',
-    pros: ['Good balance', 'Reasonable cost', 'Pre-configured systems'],
-    cons: ['Some data loss possible', 'Manual intervention needed', '1-4 hour recovery'],
+    name: 'Warm Backup',
+    emoji: '🌡️',
+    recoveryTime: 60,
+    dataLossMinutes: 15,
+    description: 'Ready to start, some setup needed',
   },
   cold: {
-    name: 'Cold Site',
-    description: 'Basic facility with power/network. Systems must be set up during disaster.',
-    rtoMinutes: 480,
-    rpoMinutes: 1440,
-    monthlyCost: 1000,
-    syncType: 'Daily/weekly backups',
-    pros: ['Lowest cost', 'Simple to maintain', 'Good for non-critical systems'],
-    cons: ['Long recovery time', 'Significant data loss', 'Manual setup required'],
+    name: 'Cold Backup',
+    emoji: '❄️',
+    recoveryTime: 480,
+    dataLossMinutes: 1440,
+    description: 'Needs full setup when disaster hits',
   },
 };
 
-// Disaster scenarios
-const DISASTERS: Record<DisasterType, {
-  name: string;
-  description: string;
-  severity: 'high' | 'critical';
-  icon: React.ReactNode;
-}> = {
-  datacenter: {
-    name: 'Data Center Outage',
-    description: 'Complete power failure at primary site',
-    severity: 'critical',
-    icon: <Server className="w-5 h-5" />,
-  },
-  ransomware: {
-    name: 'Ransomware Attack',
-    description: 'Encryption of critical systems',
-    severity: 'critical',
-    icon: <Shield className="w-5 h-5" />,
-  },
-  database: {
-    name: 'Database Corruption',
-    description: 'Critical data corruption detected',
-    severity: 'high',
-    icon: <Database className="w-5 h-5" />,
-  },
-  hardware: {
-    name: 'Hardware Failure',
-    description: 'Critical server malfunction',
-    severity: 'high',
-    icon: <HardDrive className="w-5 h-5" />,
-  },
-};
-
-// Generate simulation steps based on strategy
-const generateSteps = (strategy: DRStrategy): SimulationStep[] => {
-  const config = STRATEGIES[strategy];
-  const baseSteps: SimulationStep[] = [
+function createStorySteps(strategy: DRStrategy): StoryStep[] {
+  const config = STRATEGY_CONFIG[strategy];
+  return [
     {
-      phase: 'normal',
-      title: 'Normal Operations',
-      description: 'Primary site handling all traffic. DR site on standby.',
+      phase: 'intro',
+      title: 'Your Business is Running',
+      narrative: 'Meet your app. It serves customers, processes orders, and stores important data. Everything is working perfectly.',
       primaryStatus: 'online',
-      drStatus: 'standby',
-      dataFlow: 'primary',
-      elapsedMinutes: 0,
+      backupStatus: strategy === 'hot' ? 'syncing' : 'idle',
+      customersServed: true,
+      dataLoss: 0,
+      downtimeMinutes: 0,
     },
     {
-      phase: 'disaster',
-      title: 'Disaster Strikes!',
-      description: 'Primary site goes offline. Systems unavailable.',
+      phase: 'normal-ops',
+      title: 'Daily Operations',
+      narrative: 'Every minute, new data is created: customer orders, user accounts, payments. Your backup copies this data ' +
+        (strategy === 'hot' ? 'in real-time.' : strategy === 'warm' ? 'every 15 minutes.' : 'once a day.'),
+      primaryStatus: 'online',
+      backupStatus: strategy === 'hot' ? 'syncing' : 'idle',
+      customersServed: true,
+      dataLoss: 0,
+      downtimeMinutes: 0,
+    },
+    {
+      phase: 'disaster-strikes',
+      title: '⚠️ DISASTER STRIKES!',
+      narrative: 'Your main data center catches fire! Servers go down. The system is completely offline.',
       primaryStatus: 'offline',
-      drStatus: 'standby',
-      dataFlow: 'none',
-      elapsedMinutes: 0,
+      backupStatus: strategy === 'hot' ? 'syncing' : 'idle',
+      customersServed: false,
+      dataLoss: 0,
+      downtimeMinutes: 0,
     },
     {
-      phase: 'detection',
-      title: 'Detection & Assessment',
-      description: 'Monitoring alerts triggered. Team assessing situation.',
+      phase: 'customers-affected',
+      title: 'Customers Can\'t Access Your Service',
+      narrative: 'Every minute of downtime costs you money and trust. Customers see error pages. Orders can\'t be placed. Support tickets pile up.',
       primaryStatus: 'offline',
-      drStatus: 'standby',
-      dataFlow: 'none',
-      elapsedMinutes: strategy === 'hot' ? 1 : strategy === 'warm' ? 5 : 15,
+      backupStatus: 'activating',
+      customersServed: false,
+      dataLoss: 0,
+      downtimeMinutes: 5,
     },
     {
-      phase: 'failover',
-      title: 'Failover Initiated',
-      description: strategy === 'hot' 
-        ? 'Automatic failover to hot site in progress.'
+      phase: 'recovery-begins',
+      title: 'Activating Backup Systems',
+      narrative: strategy === 'hot'
+        ? 'Your hot backup instantly takes over! It was running in parallel all along.'
         : strategy === 'warm'
-        ? 'Manual failover started. Activating warm site systems.'
-        : 'Cold site activation started. Installing and configuring systems.',
+        ? 'Your team starts the warm backup. Servers boot up and load the latest data snapshot.'
+        : 'Engineers rush to the cold backup site. They must set up everything from scratch.',
       primaryStatus: 'offline',
-      drStatus: 'activating',
-      dataFlow: 'switching',
-      elapsedMinutes: strategy === 'hot' ? 2 : strategy === 'warm' ? 15 : 120,
+      backupStatus: 'activating',
+      customersServed: strategy === 'hot',
+      dataLoss: config.dataLossMinutes,
+      downtimeMinutes: Math.floor(config.recoveryTime / 2),
     },
     {
-      phase: 'recovery',
-      title: 'Systems Coming Online',
-      description: 'DR site systems booting. Data being restored.',
+      phase: 'rpo-explained',
+      title: 'Understanding Data Loss (RPO)',
+      narrative: `RPO = Recovery Point Objective = How much data can you afford to lose?\n\nWith your ${config.name}: You lost ${config.dataLossMinutes === 0 ? 'ZERO' : config.dataLossMinutes + ' minutes of'} data because your backup ${strategy === 'hot' ? 'syncs in real-time' : strategy === 'warm' ? 'syncs every 15 minutes' : 'only syncs daily'}.`,
       primaryStatus: 'offline',
-      drStatus: 'syncing',
-      dataFlow: 'switching',
-      elapsedMinutes: strategy === 'hot' ? 4 : strategy === 'warm' ? 45 : 360,
+      backupStatus: 'activating',
+      customersServed: strategy === 'hot',
+      dataLoss: config.dataLossMinutes,
+      downtimeMinutes: Math.floor(config.recoveryTime / 2),
     },
     {
-      phase: 'restored',
-      title: 'Service Restored',
-      description: `Operations resumed from DR site. Total recovery: ${config.rtoMinutes} min. Data loss: ${config.rpoMinutes} min.`,
+      phase: 'rto-explained',
+      title: 'Understanding Downtime (RTO)',
+      narrative: `RTO = Recovery Time Objective = How long until you're back online?\n\nWith your ${config.name}: Customers waited ${config.recoveryTime < 60 ? config.recoveryTime + ' minutes' : Math.floor(config.recoveryTime / 60) + ' hours'} for service to return.`,
+      primaryStatus: 'recovering',
+      backupStatus: 'active',
+      customersServed: true,
+      dataLoss: config.dataLossMinutes,
+      downtimeMinutes: config.recoveryTime,
+    },
+    {
+      phase: 'system-restored',
+      title: 'Back Online!',
+      narrative: 'Your backup system is now serving all customers. Business continues from the backup site.',
       primaryStatus: 'offline',
-      drStatus: 'active',
-      dataFlow: 'dr',
-      elapsedMinutes: config.rtoMinutes,
+      backupStatus: 'active',
+      customersServed: true,
+      dataLoss: config.dataLossMinutes,
+      downtimeMinutes: config.recoveryTime,
+    },
+    {
+      phase: 'summary',
+      title: 'Disaster Recovery Summary',
+      narrative: `With your ${config.name} strategy:\n• Downtime: ${config.recoveryTime < 60 ? config.recoveryTime + ' minutes' : Math.floor(config.recoveryTime / 60) + ' hours'}\n• Data Lost: ${config.dataLossMinutes === 0 ? 'None!' : config.dataLossMinutes + ' minutes worth'}`,
+      primaryStatus: 'offline',
+      backupStatus: 'active',
+      customersServed: true,
+      dataLoss: config.dataLossMinutes,
+      downtimeMinutes: config.recoveryTime,
     },
   ];
-  return baseSteps;
-};
+}
 
-// Info tooltip component
-const InfoTooltip = ({ term, explanation }: { term: string; explanation: string }) => (
-  <span className="group relative inline-flex items-center">
-    <span className="font-semibold underline decoration-dotted cursor-help">{term}</span>
-    <Info className="w-3 h-3 ml-1 text-muted-foreground" />
-    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border">
-      {explanation}
-    </span>
-  </span>
-);
-
-// Site visualization component
-const SiteCard = ({ 
-  title, 
+function DataCenterVisual({ 
   status, 
-  isActive,
-  icon 
+  label, 
+  isPrimary,
+  showFire,
 }: { 
-  title: string; 
-  status: string; 
-  isActive: boolean;
-  icon: React.ReactNode;
-}) => {
-  const statusColors = {
-    online: 'bg-green-500',
-    offline: 'bg-red-500',
-    standby: 'bg-yellow-500',
-    activating: 'bg-blue-500 animate-pulse',
-    active: 'bg-green-500',
-    syncing: 'bg-blue-500 animate-pulse',
-    degraded: 'bg-orange-500',
-  };
+  status: 'online' | 'offline' | 'recovering' | 'idle' | 'syncing' | 'activating' | 'active';
+  label: string;
+  isPrimary: boolean;
+  showFire?: boolean;
+}) {
+  const isOnline = status === 'online' || status === 'syncing' || status === 'active';
+  const isActivating = status === 'activating' || status === 'recovering';
 
   return (
     <motion.div
       className={cn(
-        'p-4 rounded-lg border-2 transition-all duration-300',
-        isActive ? 'border-green-500 bg-green-500/10' : 'border-border bg-card'
+        'relative p-4 rounded-xl border-2 transition-all duration-500',
+        isOnline && 'border-green-500 bg-green-500/10',
+        isActivating && 'border-yellow-500 bg-yellow-500/10',
+        (status === 'offline' || status === 'idle') && 'border-gray-500 bg-gray-500/10',
       )}
-      animate={{ scale: isActive ? 1.02 : 1 }}
+      animate={{
+        scale: isActivating ? [1, 1.02, 1] : 1,
+      }}
+      transition={{
+        repeat: isActivating ? Infinity : 0,
+        duration: 1,
+      }}
     >
-      <div className="flex items-center gap-3">
-        <div className={cn(
-          'p-2 rounded-lg',
-          isActive ? 'bg-green-500/20 text-green-500' : 'bg-muted text-muted-foreground'
+      {showFire && (
+        <motion.div
+          className="absolute -top-3 -right-3 text-2xl"
+          animate={{ scale: [1, 1.2, 1], rotate: [0, 5, -5, 0] }}
+          transition={{ repeat: Infinity, duration: 0.5 }}
+        >
+          🔥
+        </motion.div>
+      )}
+      
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex gap-1">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className={cn(
+                'w-8 h-12 rounded border-2 flex items-center justify-center',
+                isOnline && 'border-green-400 bg-green-900/50',
+                isActivating && 'border-yellow-400 bg-yellow-900/50',
+                (status === 'offline' || status === 'idle') && 'border-gray-600 bg-gray-900/50',
+              )}
+              animate={{
+                opacity: status === 'offline' ? 0.3 : 1,
+              }}
+            >
+              <Server className={cn(
+                'w-4 h-4',
+                isOnline && 'text-green-400',
+                isActivating && 'text-yellow-400',
+                (status === 'offline' || status === 'idle') && 'text-gray-600',
+              )} />
+            </motion.div>
+          ))}
+        </div>
+        
+        <span className="text-sm font-medium">{label}</span>
+        
+        <Badge variant={isOnline ? 'default' : isActivating ? 'secondary' : 'outline'} className={cn(
+          'text-xs',
+          isOnline && 'bg-green-600',
+          isActivating && 'bg-yellow-600',
         )}>
-          {icon}
-        </div>
-        <div className="flex-1">
-          <div className="font-medium">{title}</div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className={cn('w-2 h-2 rounded-full', statusColors[status as keyof typeof statusColors] || 'bg-gray-500')} />
-            <span className="capitalize">{status}</span>
-          </div>
-        </div>
+          {status === 'online' && '● Online'}
+          {status === 'offline' && '○ Offline'}
+          {status === 'idle' && '○ Standby'}
+          {status === 'syncing' && '↻ Syncing'}
+          {status === 'activating' && '◐ Starting...'}
+          {status === 'active' && '● Active'}
+          {status === 'recovering' && '◐ Recovering'}
+        </Badge>
       </div>
     </motion.div>
   );
-};
+}
+
+function CustomerVisual({ served }: { served: boolean }) {
+  return (
+    <motion.div
+      className={cn(
+        'flex flex-col items-center gap-2 p-3 rounded-lg',
+        served ? 'bg-green-500/10' : 'bg-red-500/10',
+      )}
+      animate={{
+        scale: served ? 1 : [1, 0.95, 1],
+      }}
+      transition={{
+        repeat: served ? 0 : Infinity,
+        duration: 1,
+      }}
+    >
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            animate={{
+              y: served ? 0 : [0, -3, 0],
+            }}
+            transition={{
+              delay: i * 0.1,
+              repeat: served ? 0 : Infinity,
+              duration: 0.5,
+            }}
+          >
+            <Users className={cn(
+              'w-6 h-6',
+              served ? 'text-green-500' : 'text-red-500',
+            )} />
+          </motion.div>
+        ))}
+      </div>
+      <span className={cn(
+        'text-xs font-medium',
+        served ? 'text-green-600' : 'text-red-600',
+      )}>
+        {served ? 'Customers Happy!' : 'Customers Waiting...'}
+      </span>
+    </motion.div>
+  );
+}
+
+function DataFlowArrow({ active, direction }: { active: boolean; direction: 'right' | 'left' }) {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <motion.div
+        className="flex items-center"
+        animate={{
+          opacity: active ? 1 : 0.3,
+        }}
+      >
+        {active && (
+          <motion.div
+            className="flex gap-1"
+            animate={{
+              x: direction === 'right' ? [0, 10, 0] : [0, -10, 0],
+            }}
+            transition={{
+              repeat: Infinity,
+              duration: 1,
+            }}
+          >
+            <div className="w-2 h-2 rounded-full bg-blue-500" />
+            <div className="w-2 h-2 rounded-full bg-blue-400" />
+            <div className="w-2 h-2 rounded-full bg-blue-300" />
+          </motion.div>
+        )}
+        <ArrowRight className={cn(
+          'w-6 h-6 mx-2',
+          active ? 'text-blue-500' : 'text-gray-600',
+          direction === 'left' && 'rotate-180',
+        )} />
+      </motion.div>
+      <span className="text-xs text-muted-foreground">
+        {active ? 'Data flowing' : 'No connection'}
+      </span>
+    </div>
+  );
+}
+
+function MetricCard({ 
+  icon: Icon, 
+  label, 
+  value, 
+  subtext,
+  variant = 'default',
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  subtext?: string;
+  variant?: 'default' | 'warning' | 'success' | 'danger';
+}) {
+  const colors = {
+    default: 'border-border bg-card',
+    warning: 'border-yellow-500/50 bg-yellow-500/10',
+    success: 'border-green-500/50 bg-green-500/10',
+    danger: 'border-red-500/50 bg-red-500/10',
+  };
+
+  return (
+    <div className={cn('p-3 rounded-lg border', colors[variant])}>
+      <div className="flex items-center gap-2 mb-1">
+        <Icon className="w-4 h-4 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">{label}</span>
+      </div>
+      <div className="text-lg font-bold">{value}</div>
+      {subtext && <div className="text-xs text-muted-foreground">{subtext}</div>}
+    </div>
+  );
+}
 
 export default function BCDRSimulator() {
   const [strategy, setStrategy] = useState<DRStrategy>('warm');
-  const [disaster, setDisaster] = useState<DisasterType>('datacenter');
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [showIntro, setShowIntro] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
 
-  const steps = generateSteps(strategy);
-  const config = STRATEGIES[strategy];
-  const disasterConfig = DISASTERS[disaster];
-  const step = steps[Math.min(currentStep, steps.length - 1)];
-  const isLastStep = currentStep >= steps.length - 1;
+  const steps = createStorySteps(strategy);
+  const step = steps[currentStep];
+  const config = STRATEGY_CONFIG[strategy];
 
-  const nextStep = useCallback(() => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep((s) => s + 1);
-    } else {
-      setIsPlaying(false);
-    }
-  }, [currentStep, steps.length]);
+  useEffect(() => {
+    if (!isPlaying) return;
+    
+    const timer = setTimeout(() => {
+      if (currentStep < steps.length - 1) {
+        setCurrentStep(prev => prev + 1);
+      } else {
+        setIsPlaying(false);
+      }
+    }, 4000);
 
-  const reset = useCallback(() => {
+    return () => clearTimeout(timer);
+  }, [isPlaying, currentStep, steps.length]);
+
+  const handleStart = useCallback(() => {
+    setHasStarted(true);
+    setCurrentStep(0);
+    setIsPlaying(true);
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setHasStarted(false);
     setCurrentStep(0);
     setIsPlaying(false);
   }, []);
 
-  // Auto-advance simulation
-  useEffect(() => {
-    if (!isPlaying) return;
-    const timer = setInterval(nextStep, 2500);
-    return () => clearInterval(timer);
-  }, [isPlaying, nextStep]);
+  const handleTogglePlay = useCallback(() => {
+    if (currentStep >= steps.length - 1) {
+      setCurrentStep(0);
+    }
+    setIsPlaying(prev => !prev);
+  }, [currentStep, steps.length]);
 
-  // Reset when strategy changes
-  useEffect(() => {
-    reset();
-  }, [strategy, reset]);
+  const showFire = step.phase === 'disaster-strikes' || 
+    step.phase === 'customers-affected' || 
+    step.phase === 'recovery-begins';
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-        return;
-      }
-      if (e.key === ' ') {
-        e.preventDefault();
-        if (showIntro) {
-          setShowIntro(false);
-        } else {
-          setIsPlaying((prev) => !prev);
-        }
-      }
-      if (e.key === 'ArrowRight' && !isPlaying && currentStep < steps.length - 1) {
-        setCurrentStep((s) => s + 1);
-      }
-      if (e.key === 'ArrowLeft' && !isPlaying && currentStep > 0) {
-        setCurrentStep((s) => s - 1);
-      }
-      if (e.key === 'r' || e.key === 'R') {
-        reset();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, currentStep, steps.length, showIntro, reset]);
-
-  // Intro screen
-  if (showIntro) {
+  if (!hasStarted) {
     return (
       <Card className="w-full max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-primary" />
-            What is BCDR?
+            <Shield className="w-6 h-6 text-blue-500" />
+            Business Continuity & Disaster Recovery Simulator
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <p className="text-muted-foreground">
-            <strong>Business Continuity & Disaster Recovery (BCDR)</strong> ensures your systems 
-            can survive and recover from disasters like outages, cyberattacks, or hardware failures.
-          </p>
+          <div className="text-center py-8">
+            <motion.div
+              className="text-6xl mb-4"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            >
+              🏢💥☁️
+            </motion.div>
+            <h2 className="text-2xl font-bold mb-2">What happens when disaster strikes?</h2>
+            <p className="text-muted-foreground max-w-md mx-auto">
+              Learn how businesses recover from disasters like fires, floods, or cyberattacks.
+              See the difference between Hot, Warm, and Cold backup strategies.
+            </p>
+          </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="p-4 rounded-lg bg-muted/50 border">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-5 h-5 text-blue-500" />
-                <InfoTooltip term="RTO" explanation="Recovery Time Objective" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Maximum acceptable <strong>downtime</strong>. How long can your business survive without this system?
-              </p>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/50 border">
-              <div className="flex items-center gap-2 mb-2">
-                <Database className="w-5 h-5 text-green-500" />
-                <InfoTooltip term="RPO" explanation="Recovery Point Objective" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Maximum acceptable <strong>data loss</strong>. How much data can you afford to lose?
-              </p>
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <h3 className="font-semibold mb-3">Choose your backup strategy:</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {(Object.keys(STRATEGY_CONFIG) as DRStrategy[]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStrategy(s)}
+                  className={cn(
+                    'p-4 rounded-lg border-2 text-left transition-all',
+                    strategy === s
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border hover:border-primary/50',
+                  )}
+                >
+                  <div className="text-2xl mb-1">{STRATEGY_CONFIG[s].emoji}</div>
+                  <div className="font-semibold">{STRATEGY_CONFIG[s].name}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {STRATEGY_CONFIG[s].description}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="p-4 rounded-lg border bg-primary/5">
-            <h4 className="font-semibold mb-3">In this simulator, you will:</h4>
-            <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-              <li>Choose a <strong>DR Strategy</strong> (Hot, Warm, or Cold site)</li>
-              <li>Select a <strong>Disaster Scenario</strong></li>
-              <li>Watch the <strong>Recovery Process</strong> unfold step-by-step</li>
-              <li>Compare <strong>RTO, RPO, and Cost</strong> trade-offs</li>
-            </ol>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between pt-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Keyboard className="w-4 h-4" />
-              <span>Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs">Space</kbd> to start</span>
-            </div>
-            <Button onClick={() => setShowIntro(false)} className="gap-2">
-              Start Simulator <ArrowRight className="w-4 h-4" />
+          <div className="text-center">
+            <Button size="lg" onClick={handleStart} className="gap-2">
+              <Play className="w-5 h-5" />
+              Start Simulation
             </Button>
           </div>
         </CardContent>
@@ -371,282 +488,205 @@ export default function BCDRSimulator() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* Strategy & Disaster Selection */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Configuration</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* DR Strategy Selection */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">DR Strategy</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(Object.keys(STRATEGIES) as DRStrategy[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStrategy(s)}
-                  disabled={isPlaying}
-                  className={cn(
-                    'p-3 rounded-lg border-2 text-left transition-all',
-                    strategy === s
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50',
-                    isPlaying && 'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  <div className="font-medium text-sm">{STRATEGIES[s].name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    RTO: {STRATEGIES[s].rtoMinutes}min
-                  </div>
-                </button>
-              ))}
-            </div>
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-6 h-6 text-blue-500" />
+            BCDR Simulator
+            <Badge variant="outline">{config.emoji} {config.name}</Badge>
+          </CardTitle>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleTogglePlay}>
+              {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              <RotateCcw className="w-4 h-4" />
+            </Button>
           </div>
-
-          {/* Disaster Scenario Selection */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Disaster Scenario</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {(Object.keys(DISASTERS) as DisasterType[]).map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setDisaster(d)}
-                  disabled={isPlaying}
-                  className={cn(
-                    'p-3 rounded-lg border-2 transition-all',
-                    disaster === d
-                      ? 'border-primary bg-primary/10'
-                      : 'border-border hover:border-primary/50',
-                    isPlaying && 'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    {DISASTERS[d].icon}
-                    <span className="text-sm font-medium">{DISASTERS[d].name}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Simulation Visualization */}
-      <Card>
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              {disasterConfig.icon}
-              {disasterConfig.name} Recovery
-            </CardTitle>
-            <Badge variant={step.phase === 'restored' ? 'default' : step.phase === 'normal' ? 'secondary' : 'destructive'}>
-              {step.phase === 'restored' ? 'Recovered' : step.phase === 'normal' ? 'Normal' : 'In Progress'}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Progress Steps */}
-          <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2">
-            {steps.map((s, idx) => (
-              <div key={idx} className="flex items-center flex-1 min-w-0">
-                <div
-                  className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium shrink-0',
-                    idx < currentStep
-                      ? 'bg-green-500 text-white'
-                      : idx === currentStep
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  {idx < currentStep ? <CheckCircle className="w-4 h-4" /> : idx + 1}
-                </div>
-                {idx < steps.length - 1 && (
-                  <div className={cn(
-                    'h-1 flex-1 mx-1',
-                    idx < currentStep ? 'bg-green-500' : 'bg-muted'
-                  )} />
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Current Step Info */}
-          <AnimatePresence mode="wait">
+        </div>
+        
+        {/* Progress bar */}
+        <div className="flex gap-1 mt-4">
+          {steps.map((_, i) => (
             <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="text-center p-4 rounded-lg bg-muted/50"
-            >
-              <h3 className="text-xl font-bold mb-2">{step.title}</h3>
-              <p className="text-muted-foreground">{step.description}</p>
-              {step.elapsedMinutes > 0 && (
-                <div className="mt-2 text-sm">
-                  <Clock className="w-4 h-4 inline mr-1" />
-                  Elapsed: {step.elapsedMinutes} min
-                </div>
+              key={i}
+              className={cn(
+                'h-2 flex-1 rounded-full transition-all',
+                i <= currentStep ? 'bg-primary' : 'bg-muted',
               )}
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Site Visualization */}
-          <div className="grid grid-cols-2 gap-4">
-            <SiteCard
-              title="Primary Site"
-              status={step.primaryStatus}
-              isActive={step.dataFlow === 'primary'}
-              icon={<Server className="w-5 h-5" />}
+              animate={{
+                scale: i === currentStep ? [1, 1.1, 1] : 1,
+              }}
+              transition={{
+                repeat: i === currentStep && isPlaying ? Infinity : 0,
+                duration: 1,
+              }}
             />
-            <SiteCard
-              title={`DR Site (${config.name})`}
-              status={step.drStatus}
-              isActive={step.dataFlow === 'dr'}
-              icon={<Shield className="w-5 h-5" />}
+          ))}
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {/* Story narrative */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step.phase}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="text-center py-4"
+          >
+            <h2 className={cn(
+              'text-xl font-bold mb-2',
+              step.phase === 'disaster-strikes' && 'text-red-500',
+              step.phase === 'system-restored' && 'text-green-500',
+            )}>
+              {step.title}
+            </h2>
+            <p className="text-muted-foreground whitespace-pre-line max-w-lg mx-auto">
+              {step.narrative}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Visual diagram */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 py-6">
+          <DataCenterVisual
+            status={step.primaryStatus}
+            label="Main Site"
+            isPrimary={true}
+            showFire={showFire}
+          />
+          
+          <DataFlowArrow
+            active={step.backupStatus === 'syncing' || step.backupStatus === 'active'}
+            direction="right"
+          />
+          
+          <DataCenterVisual
+            status={step.backupStatus}
+            label="Backup Site"
+            isPrimary={false}
+          />
+          
+          <DataFlowArrow
+            active={step.customersServed}
+            direction="right"
+          />
+          
+          <CustomerVisual served={step.customersServed} />
+        </div>
+
+        {/* Metrics */}
+        {(step.phase === 'rpo-explained' || step.phase === 'rto-explained' || step.phase === 'summary') && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-3"
+          >
+            <MetricCard
+              icon={Clock}
+              label="RTO (Downtime)"
+              value={config.recoveryTime < 60 ? `${config.recoveryTime}m` : `${Math.floor(config.recoveryTime / 60)}h`}
+              subtext="Time to recover"
+              variant={config.recoveryTime <= 15 ? 'success' : config.recoveryTime <= 60 ? 'warning' : 'danger'}
             />
-          </div>
+            <MetricCard
+              icon={Database}
+              label="RPO (Data Loss)"
+              value={config.dataLossMinutes === 0 ? 'None' : `${config.dataLossMinutes}m`}
+              subtext="Data at risk"
+              variant={config.dataLossMinutes === 0 ? 'success' : config.dataLossMinutes <= 15 ? 'warning' : 'danger'}
+            />
+            <MetricCard
+              icon={Shield}
+              label="Strategy"
+              value={config.name}
+              subtext={config.emoji}
+            />
+            <MetricCard
+              icon={CheckCircle}
+              label="Status"
+              value={step.customersServed ? 'Serving' : 'Down'}
+              subtext={step.customersServed ? 'Customers happy' : 'Customers waiting'}
+              variant={step.customersServed ? 'success' : 'danger'}
+            />
+          </motion.div>
+        )}
 
-          {/* Data Flow Indicator */}
-          <div className="flex items-center justify-center gap-4 p-3 rounded-lg bg-muted/30">
-            <span className="text-sm text-muted-foreground">Traffic Flow:</span>
-            {step.dataFlow === 'primary' && (
-              <span className="flex items-center gap-2 text-green-500">
-                <Zap className="w-4 h-4" /> Primary Site
-              </span>
-            )}
-            {step.dataFlow === 'switching' && (
-              <span className="flex items-center gap-2 text-blue-500 animate-pulse">
-                <ArrowRight className="w-4 h-4" /> Switching to DR...
-              </span>
-            )}
-            {step.dataFlow === 'dr' && (
-              <span className="flex items-center gap-2 text-green-500">
-                <CheckCircle className="w-4 h-4" /> DR Site Active
-              </span>
-            )}
-            {step.dataFlow === 'none' && (
-              <span className="flex items-center gap-2 text-red-500">
-                <XCircle className="w-4 h-4" /> Service Unavailable
-              </span>
-            )}
-          </div>
+        {/* Step navigation */}
+        <div className="flex justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentStep === 0}
+            onClick={() => setCurrentStep(prev => prev - 1)}
+          >
+            ← Previous
+          </Button>
+          <span className="text-sm text-muted-foreground px-4 py-2">
+            {currentStep + 1} / {steps.length}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentStep >= steps.length - 1}
+            onClick={() => setCurrentStep(prev => prev + 1)}
+          >
+            Next →
+          </Button>
+        </div>
 
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-3">
-            <Button variant="outline" size="sm" onClick={reset} className="gap-2">
-              <RotateCcw className="w-4 h-4" /> Reset
-            </Button>
-            <Button
-              onClick={() => setIsPlaying(!isPlaying)}
-              disabled={isLastStep}
-              className="gap-2"
-            >
-              {isPlaying ? (
-                <><Pause className="w-4 h-4" /> Pause</>
-              ) : (
-                <><Play className="w-4 h-4" /> {currentStep === 0 ? 'Start Disaster' : 'Continue'}</>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={nextStep}
-              disabled={isPlaying || isLastStep}
-              className="gap-2"
-            >
-              Step <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Keyboard hints */}
-          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-            <span><kbd className="px-1.5 py-0.5 bg-muted rounded">Space</kbd> Play/Pause</span>
-            <span><kbd className="px-1.5 py-0.5 bg-muted rounded">←</kbd> <kbd className="px-1.5 py-0.5 bg-muted rounded">→</kbd> Step</span>
-            <span><kbd className="px-1.5 py-0.5 bg-muted rounded">R</kbd> Reset</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Strategy Comparison */}
-      <Card>
-        <CardHeader className="pb-4">
-          <CardTitle className="text-lg">Strategy Comparison</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Strategy</th>
-                  <th className="text-center p-2">RTO</th>
-                  <th className="text-center p-2">RPO</th>
-                  <th className="text-center p-2">Cost/mo</th>
-                  <th className="text-left p-2 hidden sm:table-cell">Best For</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(Object.keys(STRATEGIES) as DRStrategy[]).map((s) => (
-                  <tr
-                    key={s}
-                    className={cn(
-                      'border-b last:border-0',
-                      strategy === s && 'bg-primary/5'
-                    )}
-                  >
-                    <td className="p-2 font-medium">{STRATEGIES[s].name}</td>
-                    <td className="p-2 text-center">
-                      <Badge variant={STRATEGIES[s].rtoMinutes <= 5 ? 'default' : STRATEGIES[s].rtoMinutes <= 60 ? 'secondary' : 'outline'}>
-                        {STRATEGIES[s].rtoMinutes}min
-                      </Badge>
-                    </td>
-                    <td className="p-2 text-center">
-                      <Badge variant={STRATEGIES[s].rpoMinutes === 0 ? 'default' : STRATEGIES[s].rpoMinutes <= 15 ? 'secondary' : 'outline'}>
-                        {STRATEGIES[s].rpoMinutes === 0 ? 'Zero' : STRATEGIES[s].rpoMinutes + 'min'}
-                      </Badge>
-                    </td>
-                    <td className="p-2 text-center">
-                      <span className="flex items-center justify-center gap-1">
-                        <DollarSign className="w-3 h-3" />
-                        {STRATEGIES[s].monthlyCost.toLocaleString()}
-                      </span>
-                    </td>
-                    <td className="p-2 text-muted-foreground hidden sm:table-cell">
-                      {s === 'hot' && 'Mission-critical systems'}
-                      {s === 'warm' && 'Important business apps'}
-                      {s === 'cold' && 'Non-critical, archival'}
-                    </td>
+        {/* Strategy comparison at summary */}
+        {step.phase === 'summary' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="border rounded-lg p-4 bg-muted/30"
+          >
+            <h3 className="font-semibold mb-3">Compare All Strategies</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2">Strategy</th>
+                    <th className="text-center py-2">Recovery Time</th>
+                    <th className="text-center py-2">Data Loss Risk</th>
+                    <th className="text-center py-2">Best For</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Selected Strategy Details */}
-          <div className="mt-4 p-4 rounded-lg bg-muted/30 border">
-            <h4 className="font-medium mb-3">Selected: {config.name}</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h5 className="text-sm font-medium text-green-500 mb-1 flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4" /> Pros
-                </h5>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  {config.pros.map((p, i) => <li key={i}>• {p}</li>)}
-                </ul>
-              </div>
-              <div>
-                <h5 className="text-sm font-medium text-red-500 mb-1 flex items-center gap-1">
-                  <AlertTriangle className="w-4 h-4" /> Cons
-                </h5>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  {config.cons.map((c, i) => <li key={i}>• {c}</li>)}
-                </ul>
-              </div>
+                </thead>
+                <tbody>
+                  <tr className={cn('border-b', strategy === 'hot' && 'bg-primary/10')}>
+                    <td className="py-2">🔥 Hot</td>
+                    <td className="text-center text-green-600">~5 minutes</td>
+                    <td className="text-center text-green-600">None</td>
+                    <td className="text-center text-xs">Banks, Hospitals</td>
+                  </tr>
+                  <tr className={cn('border-b', strategy === 'warm' && 'bg-primary/10')}>
+                    <td className="py-2">🌡️ Warm</td>
+                    <td className="text-center text-yellow-600">~1 hour</td>
+                    <td className="text-center text-yellow-600">15 min</td>
+                    <td className="text-center text-xs">E-commerce, SaaS</td>
+                  </tr>
+                  <tr className={cn(strategy === 'cold' && 'bg-primary/10')}>
+                    <td className="py-2">❄️ Cold</td>
+                    <td className="text-center text-red-600">~8 hours</td>
+                    <td className="text-center text-red-600">24 hours</td>
+                    <td className="text-center text-xs">Archives, Dev/Test</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            <div className="mt-4 text-center">
+              <Button onClick={handleReset} variant="default" className="gap-2">
+                <RotateCcw className="w-4 h-4" />
+                Try Another Strategy
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
