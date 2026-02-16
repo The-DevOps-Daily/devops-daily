@@ -65,7 +65,7 @@ function generateSVG(title: string, category: string): string {
       (line, index) =>
         `<text x="80" y="${
           300 + index * 70
-        }" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="${
+        }" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="${
           COLORS.text
         }">${escapeXml(line)}</text>`
     )
@@ -96,7 +96,7 @@ function generateSVG(title: string, category: string): string {
   <rect x="80" y="80" width="${100 + safeCategory.length * 12}" height="40" rx="20" fill="${
     COLORS.primary
   }"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="${
+  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="${
     COLORS.text
   }">${safeCategory}</text>
 
@@ -106,7 +106,7 @@ function generateSVG(title: string, category: string): string {
   <!-- DevOps Daily branding -->
   <text x="80" y="${
     IMAGE_HEIGHT - 80
-  }" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="${
+  }" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="${
     COLORS.accent
   }">DevOps Daily</text>
 </svg>`;

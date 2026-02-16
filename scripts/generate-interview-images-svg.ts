@@ -91,7 +91,7 @@ function generateQuestionSVG(
       (line, index) =>
         `<text x="80" y="${
           280 + index * 65
-        }" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="${
+        }" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="${
           COLORS.text
         }">${escapeXml(line)}</text>`
     )
@@ -122,27 +122,27 @@ function generateQuestionSVG(
   
   <!-- Top badge -->
   <rect x="80" y="70" width="260" height="44" rx="22" fill="${COLORS.primary}" opacity="0.9"/>
-  <text x="105" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="${COLORS.text}">INTERVIEW QUESTION</text>
+  <text x="105" y="100" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="${COLORS.text}">INTERVIEW QUESTION</text>
   
   <!-- Category and difficulty badges -->
   <rect x="80" y="130" width="${categoryWidth}" height="40" rx="20" fill="${categoryColor}" opacity="0.9"/>
-  <text x="102" y="157" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="${COLORS.text}">${safeCategory}</text>
+  <text x="102" y="157" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="${COLORS.text}">${safeCategory}</text>
   
   <rect x="${80 + categoryWidth + 15}" y="130" width="${difficultyWidth}" height="40" rx="20" fill="${difficultyColor}" opacity="0.8"/>
-  <text x="${102 + categoryWidth + 15}" y="157" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="${COLORS.text}">${safeDifficulty}</text>
+  <text x="${102 + categoryWidth + 15}" y="157" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="${COLORS.text}">${safeDifficulty}</text>
   
   <!-- Question mark icon -->
   <g opacity="0.12">
     <circle cx="1020" cy="400" r="150" fill="${categoryColor}" />
-    <text x="1020" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="200" font-weight="bold" fill="${COLORS.background}" text-anchor="middle">?</text>
+    <text x="1020" y="450" font-family="Arial, sans-serif" font-size="200" font-weight="bold" fill="${COLORS.background}" text-anchor="middle">?</text>
   </g>
   
   <!-- Title -->
   ${titleElements}
   
   <!-- Bottom branding -->
-  <text x="80" y="${IMAGE_HEIGHT - 70}" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="${COLORS.accent}">DevOps Daily</text>
-  <text x="80" y="${IMAGE_HEIGHT - 35}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="${COLORS.accent}" opacity="0.7">Interview Prep</text>
+  <text x="80" y="${IMAGE_HEIGHT - 70}" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="${COLORS.accent}">DevOps Daily</text>
+  <text x="80" y="${IMAGE_HEIGHT - 35}" font-family="Arial, sans-serif" font-size="20" font-weight="500" fill="${COLORS.accent}" opacity="0.7">Interview Prep</text>
 </svg>`;
 }
 
@@ -166,30 +166,30 @@ function generateListingPageSVG(): string {
   
   <!-- Badge -->
   <rect x="80" y="80" width="280" height="50" rx="25" fill="${COLORS.primary}" opacity="0.9"/>
-  <text x="115" y="113" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="${COLORS.text}">INTERVIEW PREP</text>
+  <text x="115" y="113" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="${COLORS.text}">INTERVIEW PREP</text>
   
   <!-- Main title -->
-  <text x="80" y="230" font-family="system-ui, -apple-system, sans-serif" font-size="62" font-weight="bold" fill="${COLORS.text}">DevOps Interview</text>
-  <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="62" font-weight="bold" fill="${COLORS.text}">Questions</text>
+  <text x="80" y="230" font-family="Arial, sans-serif" font-size="62" font-weight="bold" fill="${COLORS.text}">DevOps Interview</text>
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="62" font-weight="bold" fill="${COLORS.text}">Questions</text>
   
   <!-- Subtitle -->
-  <text x="80" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="500" fill="${COLORS.accent}">In-depth questions with code examples</text>
+  <text x="80" y="360" font-family="Arial, sans-serif" font-size="26" font-weight="500" fill="${COLORS.accent}">In-depth questions with code examples</text>
   
   <!-- Question mark icons -->
   <g opacity="0.1">
     <circle cx="850" cy="200" r="80" fill="${CATEGORY_COLORS.Kubernetes}" />
-    <text x="850" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="100" font-weight="bold" fill="${COLORS.background}" text-anchor="middle">?</text>
+    <text x="850" y="240" font-family="Arial, sans-serif" font-size="100" font-weight="bold" fill="${COLORS.background}" text-anchor="middle">?</text>
     
     <circle cx="1020" cy="320" r="100" fill="${CATEGORY_COLORS.Docker}" />
-    <text x="1020" y="370" font-family="system-ui, -apple-system, sans-serif" font-size="130" font-weight="bold" fill="${COLORS.background}" text-anchor="middle">?</text>
+    <text x="1020" y="370" font-family="Arial, sans-serif" font-size="130" font-weight="bold" fill="${COLORS.background}" text-anchor="middle">?</text>
     
     <circle cx="900" cy="480" r="70" fill="${CATEGORY_COLORS.Terraform}" />
-    <text x="900" y="515" font-family="system-ui, -apple-system, sans-serif" font-size="90" font-weight="bold" fill="${COLORS.background}" text-anchor="middle">?</text>
+    <text x="900" y="515" font-family="Arial, sans-serif" font-size="90" font-weight="bold" fill="${COLORS.background}" text-anchor="middle">?</text>
   </g>
   
   <!-- Bottom branding -->
-  <text x="80" y="${IMAGE_HEIGHT - 70}" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="bold" fill="${COLORS.accent}">DevOps Daily</text>
-  <text x="80" y="${IMAGE_HEIGHT - 30}" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="500" fill="${COLORS.accent}" opacity="0.7">Ace your next interview</text>
+  <text x="80" y="${IMAGE_HEIGHT - 70}" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="${COLORS.accent}">DevOps Daily</text>
+  <text x="80" y="${IMAGE_HEIGHT - 30}" font-family="Arial, sans-serif" font-size="22" font-weight="500" fill="${COLORS.accent}" opacity="0.7">Ace your next interview</text>
 </svg>`;
 }
 

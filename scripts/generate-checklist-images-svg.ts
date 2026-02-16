@@ -86,7 +86,7 @@ function generateChecklistSVG(
       (line, index) =>
         `<text x="80" y="${
           280 + index * 65
-        }" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="${
+        }" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="${
           COLORS.text
         }">${escapeXml(line)}</text>`
     )
@@ -124,14 +124,14 @@ function generateChecklistSVG(
   
   <!-- Top badges -->
   <rect x="80" y="70" width="${categoryWidth}" height="44" rx="22" fill="${categoryColor}" opacity="0.9"/>
-  <text x="102" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="${COLORS.text}">${safeCategory}</text>
+  <text x="102" y="100" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="${COLORS.text}">${safeCategory}</text>
   
   <rect x="${80 + categoryWidth + 20}" y="70" width="${difficultyWidth}" height="44" rx="22" fill="${difficultyColor}" opacity="0.8"/>
-  <text x="${102 + categoryWidth + 20}" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" fill="${COLORS.text}">${safeDifficulty}</text>
+  <text x="${102 + categoryWidth + 20}" y="100" font-family="Arial, sans-serif" font-size="20" font-weight="600" fill="${COLORS.text}">${safeDifficulty}</text>
   
   <!-- Item count badge -->
   <rect x="${IMAGE_WIDTH - 180}" y="70" width="100" height="44" rx="22" fill="${COLORS.primary}" opacity="0.7"/>
-  <text x="${IMAGE_WIDTH - 130}" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="${COLORS.text}" text-anchor="middle">${itemCount} Items</text>
+  <text x="${IMAGE_WIDTH - 130}" y="100" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="${COLORS.text}" text-anchor="middle">${itemCount} Items</text>
   
   <!-- Checklist icon -->
   <g opacity="0.15">
@@ -149,8 +149,8 @@ function generateChecklistSVG(
   ${titleElements}
   
   <!-- Bottom branding -->
-  <text x="80" y="${IMAGE_HEIGHT - 70}" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="${COLORS.accent}">DevOps Daily</text>
-  <text x="80" y="${IMAGE_HEIGHT - 35}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="${COLORS.accent}" opacity="0.7">Interactive Checklists</text>
+  <text x="80" y="${IMAGE_HEIGHT - 70}" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="${COLORS.accent}">DevOps Daily</text>
+  <text x="80" y="${IMAGE_HEIGHT - 35}" font-family="Arial, sans-serif" font-size="20" font-weight="500" fill="${COLORS.accent}" opacity="0.7">Interactive Checklists</text>
 </svg>`;
 }
 
@@ -174,14 +174,14 @@ function generateListingPageSVG(): string {
   
   <!-- Badge -->
   <rect x="80" y="80" width="220" height="50" rx="25" fill="${COLORS.primary}" opacity="0.9"/>
-  <text x="110" y="113" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="${COLORS.text}">CHECKLISTS</text>
+  <text x="110" y="113" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="${COLORS.text}">CHECKLISTS</text>
   
   <!-- Main title -->
-  <text x="80" y="230" font-family="system-ui, -apple-system, sans-serif" font-size="62" font-weight="bold" fill="${COLORS.text}">DevOps &amp; Security</text>
-  <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="62" font-weight="bold" fill="${COLORS.text}">Checklists</text>
+  <text x="80" y="230" font-family="Arial, sans-serif" font-size="62" font-weight="bold" fill="${COLORS.text}">DevOps &amp; Security</text>
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="62" font-weight="bold" fill="${COLORS.text}">Checklists</text>
   
   <!-- Subtitle -->
-  <text x="80" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="500" fill="${COLORS.accent}">Track your progress. Ensure nothing is missed.</text>
+  <text x="80" y="360" font-family="Arial, sans-serif" font-size="26" font-weight="500" fill="${COLORS.accent}">Track your progress. Ensure nothing is missed.</text>
   
   <!-- Checklist icons -->
   <g opacity="0.12">
@@ -191,8 +191,8 @@ function generateListingPageSVG(): string {
   </g>
   
   <!-- Bottom branding -->
-  <text x="80" y="${IMAGE_HEIGHT - 70}" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="bold" fill="${COLORS.accent}">DevOps Daily</text>
-  <text x="80" y="${IMAGE_HEIGHT - 30}" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="500" fill="${COLORS.accent}" opacity="0.7">Interactive DevOps Resources</text>
+  <text x="80" y="${IMAGE_HEIGHT - 70}" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="${COLORS.accent}">DevOps Daily</text>
+  <text x="80" y="${IMAGE_HEIGHT - 30}" font-family="Arial, sans-serif" font-size="22" font-weight="500" fill="${COLORS.accent}" opacity="0.7">Interactive DevOps Resources</text>
 </svg>`;
 }
 

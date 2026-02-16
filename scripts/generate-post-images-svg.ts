@@ -63,7 +63,7 @@ function generateSVG(title: string, category: string): string {
       (line, index) =>
         `<text x="80" y="${
           300 + index * 70
-        }" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="${
+        }" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="${
           COLORS.text
         }">${escapeXml(line)}</text>`
     )
@@ -94,7 +94,7 @@ function generateSVG(title: string, category: string): string {
   <rect x="80" y="80" width="${100 + safeCategory.length * 12}" height="40" rx="20" fill="${
     COLORS.primary
   }"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="${
+  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="${
     COLORS.text
   }">${safeCategory}</text>
   
@@ -104,7 +104,7 @@ function generateSVG(title: string, category: string): string {
   <!-- DevOps Daily branding -->
   <text x="80" y="${
     IMAGE_HEIGHT - 80
-  }" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="${
+  }" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="${
     COLORS.accent
   }">DevOps Daily</text>
 </svg>`;
@@ -149,11 +149,11 @@ function generateAdventSVG(title: string, day: number, category: string): string
   const titleElements = lines
     .map(
       (line, index) =>
-        `<text x="120" y="${
-          250 + index * 60
-        }" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="52" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`
-    )
-    .join('\n');
+       `<text x="120" y="${
+         250 + index * 60
+        }" font-family="'Courier New', monospace" font-size="52" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`
+   )
+   .join('\n');
 
   const template = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
@@ -197,26 +197,26 @@ function generateAdventSVG(title: string, day: number, category: string): string
   <rect x="80" y="60" width="1040" height="3" fill="url(#festiveGrad)" opacity="0.6"/>
   <g>
     <rect x="80" y="90" width="180" height="50" rx="25" fill="url(#festiveGrad)" filter="url(#glow)"/>
-    <text x="170" y="123" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">DAY ${day}</text>
-  </g>
-  <g>
+    <text x="170" y="123" font-family="'Courier New', monospace" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">DAY ${day}</text>
+ </g>
+ <g>
     <rect x="280" y="95" width="${categoryWidth}" height="40" rx="20" fill="#1e3a8a" opacity="0.8"/>
-    <text x="300" y="122" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#60a5fa">${safeCategory}</text>
+    <text x="300" y="122" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa">${safeCategory}</text>
   </g>
-  <g>
-    <text x="80" y="230" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="36" fill="#10b981" opacity="0.6">&gt;</text>
-    ${titleElements}
-  </g>
+ <g>
+    <text x="80" y="230" font-family="'Courier New', monospace" font-size="36" fill="#10b981" opacity="0.6">&gt;</text>
+   ${titleElements}
+ </g>
   <g opacity="0.4">
     <text x="200" y="550" font-size="24" fill="#ffffff" opacity="0.6">❄</text>
     <text x="450" y="580" font-size="20" fill="#ffffff" opacity="0.5">❄</text>
     <text x="750" y="560" font-size="22" fill="#ffffff" opacity="0.7">❄</text>
     <text x="950" y="590" font-size="18" fill="#ffffff" opacity="0.4">❄</text>
   </g>
-  <g>
-    <text x="80" y="580" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="20" font-weight="bold" fill="#10b981" opacity="0.8">ADVENT OF DEVOPS</text>
-    <text x="1120" y="580" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#60a5fa" text-anchor="end" opacity="0.7">DevOps Daily</text>
-  </g>
+ <g>
+    <text x="80" y="580" font-family="'Courier New', monospace" font-size="20" font-weight="bold" fill="#10b981" opacity="0.8">ADVENT OF DEVOPS</text>
+   <text x="1120" y="580" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa" text-anchor="end" opacity="0.7">DevOps Daily</text>
+ </g>
   <g filter="url(#glow)">
     <text x="1150" y="60" font-size="32" fill="#fbbf24">⭐</text>
     <text x="50" y="60" font-size="32" fill="#ef4444">🎄</text>
