@@ -19,6 +19,9 @@ async function convertSvgToPng(svgPath: string, pngPath: string) {
     // Convert SVG to PNG using resvg
     const resvg = new Resvg(svgBuffer, {
       background: 'rgba(255, 255, 255, 1)', // White background
+      font: {
+        loadSystemFonts: false, // Disable system fonts for consistency
+      },
       fitTo: {
         mode: 'width',
         value: 1200, // OG image standard width
