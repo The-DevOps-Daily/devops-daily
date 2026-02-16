@@ -17,28 +17,28 @@
   
   <!-- Badge -->
   <rect x="80" y="80" width="280" height="50" rx="25" fill="#3b82f6" opacity="0.9"/>
-  <text x="115" y="113" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#f8fafc">INTERVIEW PREP</text>
+  <text x="115" y="113" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#f8fafc">INTERVIEW PREP</text>
   
   <!-- Main title -->
-  <text x="80" y="230" font-family="system-ui, -apple-system, sans-serif" font-size="62" font-weight="bold" fill="#f8fafc">DevOps Interview</text>
-  <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="62" font-weight="bold" fill="#f8fafc">Questions</text>
+  <text x="80" y="230" font-family="Arial, sans-serif" font-size="62" font-weight="bold" fill="#f8fafc">DevOps Interview</text>
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="62" font-weight="bold" fill="#f8fafc">Questions</text>
   
   <!-- Subtitle -->
-  <text x="80" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="500" fill="#60a5fa">In-depth questions with code examples</text>
+  <text x="80" y="360" font-family="Arial, sans-serif" font-size="26" font-weight="500" fill="#60a5fa">In-depth questions with code examples</text>
   
   <!-- Question mark icons -->
   <g opacity="0.1">
     <circle cx="850" cy="200" r="80" fill="#326ce5" />
-    <text x="850" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="100" font-weight="bold" fill="#0f172a" text-anchor="middle">?</text>
+    <text x="850" y="240" font-family="Arial, sans-serif" font-size="100" font-weight="bold" fill="#0f172a" text-anchor="middle">?</text>
     
     <circle cx="1020" cy="320" r="100" fill="#2496ed" />
-    <text x="1020" y="370" font-family="system-ui, -apple-system, sans-serif" font-size="130" font-weight="bold" fill="#0f172a" text-anchor="middle">?</text>
+    <text x="1020" y="370" font-family="Arial, sans-serif" font-size="130" font-weight="bold" fill="#0f172a" text-anchor="middle">?</text>
     
     <circle cx="900" cy="480" r="70" fill="#7c3aed" />
-    <text x="900" y="515" font-family="system-ui, -apple-system, sans-serif" font-size="90" font-weight="bold" fill="#0f172a" text-anchor="middle">?</text>
+    <text x="900" y="515" font-family="Arial, sans-serif" font-size="90" font-weight="bold" fill="#0f172a" text-anchor="middle">?</text>
   </g>
   
   <!-- Bottom branding -->
-  <text x="80" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
-  <text x="80" y="600" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="500" fill="#60a5fa" opacity="0.7">Ace your next interview</text>
+  <text x="80" y="560" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+  <text x="80" y="600" font-family="Arial, sans-serif" font-size="22" font-weight="500" fill="#60a5fa" opacity="0.7">Ace your next interview</text>
 </svg>

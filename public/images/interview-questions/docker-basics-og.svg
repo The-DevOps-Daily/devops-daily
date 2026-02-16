@@ -18,25 +18,25 @@
   
   <!-- Top badge -->
   <rect x="80" y="70" width="260" height="44" rx="22" fill="#3b82f6" opacity="0.9"/>
-  <text x="105" y="100" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">INTERVIEW QUESTION</text>
+  <text x="105" y="100" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">INTERVIEW QUESTION</text>
   
   <!-- Category and difficulty badges -->
   <rect x="80" y="130" width="172" height="40" rx="20" fill="#2496ed" opacity="0.9"/>
-  <text x="102" y="157" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#f8fafc">DOCKER</text>
+  <text x="102" y="157" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#f8fafc">DOCKER</text>
   
   <rect x="267" y="130" width="196" height="40" rx="20" fill="#10b981" opacity="0.8"/>
-  <text x="289" y="157" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#f8fafc">BEGINNER</text>
+  <text x="289" y="157" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#f8fafc">BEGINNER</text>
   
   <!-- Question mark icon -->
   <g opacity="0.12">
     <circle cx="1020" cy="400" r="150" fill="#2496ed" />
-    <text x="1020" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="200" font-weight="bold" fill="#0f172a" text-anchor="middle">?</text>
+    <text x="1020" y="450" font-family="Arial, sans-serif" font-size="200" font-weight="bold" fill="#0f172a" text-anchor="middle">?</text>
   </g>
   
   <!-- Title -->
-  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#f8fafc">Docker Container Basics</text>
+  <text x="80" y="280" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="#f8fafc">Docker Container Basics</text>
   
   <!-- Bottom branding -->
-  <text x="80" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
-  <text x="80" y="595" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="500" fill="#60a5fa" opacity="0.7">Interview Prep</text>
+  <text x="80" y="560" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+  <text x="80" y="595" font-family="Arial, sans-serif" font-size="20" font-weight="500" fill="#60a5fa" opacity="0.7">Interview Prep</text>
 </svg>
