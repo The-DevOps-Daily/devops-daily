@@ -13,6 +13,7 @@ import { KonamiCodeListener } from '@/components/konami-code-listener';
 import { BookPromotionPopup } from '@/components/book-promotion-popup';
 import { SkipToContent } from '@/components/skip-to-content';
 import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
+import { BackToTop } from '@/components/back-to-top';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -153,14 +154,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SkipToContent />
           <Header />
           <main id="main-content" className="flex-1">{children}</main>
-          <Footer />
-          <CookieBanner />
-          <PWAInstaller />
-          <BookPromotionPopup />
-          <KonamiCodeListener />
-          <KeyboardShortcuts />
-        </ThemeProvider>
-      </body>
+         <Footer />
+         <CookieBanner />
+         <PWAInstaller />
+         <BookPromotionPopup />
+         <KonamiCodeListener />
+         <KeyboardShortcuts />
+         <BackToTop />
+       </ThemeProvider>
+     </body>
     </html>
   );
 }
