@@ -19,9 +19,9 @@ export function Footer() {
       <BackgroundDecoration />
 
       <div className="container mx-auto px-4 py-16 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Logo and Social Links */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="md:col-span-1 space-y-6">
             <div>
               <Logo size={60} href="/" showText />
               <p className="mt-4 text-base text-muted-foreground leading-relaxed font-medium">
@@ -47,11 +47,38 @@ export function Footer() {
           {/* Content Section */}
           <FooterSection section={contentSection} />
 
-          {/* Resources Section */}
-          <FooterSection section={resourcesSection} />
-
-          {/* Popular Topics Section */}
-          <FooterSection section={topicsSection} />
+          {/* Categories Section (combined resources and topics) */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-bold bg-linear-to-r from-primary to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Categories
+            </h3>
+            <ul className="space-y-3">
+              {[...resourcesSection.links, ...topicsSection.links].map((link) => (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    className="group flex items-center justify-between text-muted-foreground hover:text-primary transition-all duration-300 py-2 px-3 rounded-xl hover:bg-primary/5"
+                  >
+                    <span className="font-medium">{link.label}</span>
+                    <svg
+                      className="w-4 h-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           {/* Newsletter & Legal */}
           <div className="space-y-6">

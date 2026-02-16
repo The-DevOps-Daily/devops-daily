@@ -6,6 +6,8 @@ export interface SocialLink {
   icon: LucideIcon;
   colorFrom: string;
   colorTo: string;
+  colorFromHover: string;
+  colorToHover: string;
   borderColor: string;
   iconColor: string;
   iconHoverColor: string;
@@ -28,6 +30,8 @@ export const socialLinks: SocialLink[] = [
     icon: Rss,
     colorFrom: 'from-orange-500/10',
     colorTo: 'to-orange-600/10',
+    colorFromHover: 'hover:from-orange-500/20',
+    colorToHover: 'hover:to-orange-600/20',
     borderColor: 'border-orange-500/20',
     iconColor: 'text-orange-500',
     iconHoverColor: 'group-hover:text-orange-400',
@@ -38,6 +42,8 @@ export const socialLinks: SocialLink[] = [
     icon: X,
     colorFrom: 'from-slate-500/10',
     colorTo: 'to-slate-600/10',
+    colorFromHover: 'hover:from-slate-500/20',
+    colorToHover: 'hover:to-slate-600/20',
     borderColor: 'border-slate-500/20',
     iconColor: 'text-slate-500',
     iconHoverColor: 'group-hover:text-slate-400',
@@ -48,6 +54,8 @@ export const socialLinks: SocialLink[] = [
     icon: Linkedin,
     colorFrom: 'from-blue-500/10',
     colorTo: 'to-blue-600/10',
+    colorFromHover: 'hover:from-blue-500/20',
+    colorToHover: 'hover:to-blue-600/20',
     borderColor: 'border-blue-500/20',
     iconColor: 'text-blue-500',
     iconHoverColor: 'group-hover:text-blue-400',
@@ -58,6 +66,8 @@ export const socialLinks: SocialLink[] = [
     icon: Github,
     colorFrom: 'from-gray-500/10',
     colorTo: 'to-gray-600/10',
+    colorFromHover: 'hover:from-gray-500/20',
+    colorToHover: 'hover:to-gray-600/20',
     borderColor: 'border-gray-500/20',
     iconColor: 'text-gray-500',
     iconHoverColor: 'group-hover:text-gray-400',
@@ -68,6 +78,8 @@ export const socialLinks: SocialLink[] = [
     icon: Instagram,
     colorFrom: 'from-pink-500/10',
     colorTo: 'to-pink-600/10',
+    colorFromHover: 'hover:from-pink-500/20',
+    colorToHover: 'hover:to-pink-600/20',
     borderColor: 'border-pink-500/20',
     iconColor: 'text-pink-500',
     iconHoverColor: 'group-hover:text-pink-400',
