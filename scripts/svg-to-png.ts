@@ -55,6 +55,9 @@ async function convertSvgToPng(svgPath: string): Promise<void> {
         mode: 'width',
         value: 1200, // OG image standard width
       },
+      font: {
+        loadSystemFonts: false, // Disable system font loading for consistency
+      },
     });
 
     const pngData = resvg.render();
