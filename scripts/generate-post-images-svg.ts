@@ -151,7 +151,7 @@ function generateAdventSVG(title: string, day: number, category: string): string
       (line, index) =>
         `<text x="120" y="${
           250 + index * 60
-        }" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="52" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`
+        }" font-family="'Courier New', monospace" font-size="52" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`
     )
     .join('\n');
 
@@ -197,14 +197,14 @@ function generateAdventSVG(title: string, day: number, category: string): string
   <rect x="80" y="60" width="1040" height="3" fill="url(#festiveGrad)" opacity="0.6"/>
   <g>
     <rect x="80" y="90" width="180" height="50" rx="25" fill="url(#festiveGrad)" filter="url(#glow)"/>
-    <text x="170" y="123" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">DAY ${day}</text>
+    <text x="170" y="123" font-family="'Courier New', monospace" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">DAY ${day}</text>
   </g>
   <g>
     <rect x="280" y="95" width="${categoryWidth}" height="40" rx="20" fill="#1e3a8a" opacity="0.8"/>
     <text x="300" y="122" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa">${safeCategory}</text>
   </g>
   <g>
-    <text x="80" y="230" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="36" fill="#10b981" opacity="0.6">&gt;</text>
+    <text x="80" y="230" font-family="'Courier New', monospace" font-size="36" fill="#10b981" opacity="0.6">&gt;</text>
     ${titleElements}
   </g>
   <g opacity="0.4">
@@ -214,7 +214,7 @@ function generateAdventSVG(title: string, day: number, category: string): string
     <text x="950" y="590" font-size="18" fill="#ffffff" opacity="0.4">❄</text>
   </g>
   <g>
-    <text x="80" y="580" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="20" font-weight="bold" fill="#10b981" opacity="0.8">ADVENT OF DEVOPS</text>
+    <text x="80" y="580" font-family="'Courier New', monospace" font-size="20" font-weight="bold" fill="#10b981" opacity="0.8">ADVENT OF DEVOPS</text>
     <text x="1120" y="580" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa" text-anchor="end" opacity="0.7">DevOps Daily</text>
   </g>
   <g filter="url(#glow)">
