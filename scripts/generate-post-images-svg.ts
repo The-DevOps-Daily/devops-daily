@@ -63,7 +63,7 @@ function generateSVG(title: string, category: string): string {
       (line, index) =>
         `<text x="80" y="${
           300 + index * 70
-        }" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="${
+        }" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="${
           COLORS.text
         }">${escapeXml(line)}</text>`
     )
@@ -94,7 +94,7 @@ function generateSVG(title: string, category: string): string {
   <rect x="80" y="80" width="${100 + safeCategory.length * 12}" height="40" rx="20" fill="${
     COLORS.primary
   }"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="${
+  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="${
     COLORS.text
   }">${safeCategory}</text>
   
@@ -104,7 +104,7 @@ function generateSVG(title: string, category: string): string {
   <!-- DevOps Daily branding -->
   <text x="80" y="${
     IMAGE_HEIGHT - 80
-  }" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="${
+  }" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="${
     COLORS.accent
   }">DevOps Daily</text>
 </svg>`;
@@ -201,7 +201,7 @@ function generateAdventSVG(title: string, day: number, category: string): string
   </g>
   <g>
     <rect x="280" y="95" width="${categoryWidth}" height="40" rx="20" fill="#1e3a8a" opacity="0.8"/>
-    <text x="300" y="122" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#60a5fa">${safeCategory}</text>
+    <text x="300" y="122" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa">${safeCategory}</text>
   </g>
   <g>
     <text x="80" y="230" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="36" fill="#10b981" opacity="0.6">&gt;</text>
@@ -215,7 +215,7 @@ function generateAdventSVG(title: string, day: number, category: string): string
   </g>
   <g>
     <text x="80" y="580" font-family="'SF Mono', 'Monaco', 'Inconsolata', monospace" font-size="20" font-weight="bold" fill="#10b981" opacity="0.8">ADVENT OF DEVOPS</text>
-    <text x="1120" y="580" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#60a5fa" text-anchor="end" opacity="0.7">DevOps Daily</text>
+    <text x="1120" y="580" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa" text-anchor="end" opacity="0.7">DevOps Daily</text>
   </g>
   <g filter="url(#glow)">
     <text x="1150" y="60" font-size="32" fill="#fbbf24">⭐</text>

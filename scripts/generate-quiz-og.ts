@@ -104,7 +104,7 @@ function generateTitleLines(title: string): string {
       const y = baseY + index * lineHeight;
       const fontSize = lines.length === 1 ? 56 : lines.length === 2 ? 52 : 48;
       return `  <!-- Title line ${index + 1} -->
-  <text x="80" y="${y}" font-family="system-ui, -apple-system, sans-serif" font-size="${fontSize}" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`;
+  <text x="80" y="${y}" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`;
     })
     .join('\n');
 }
