@@ -12,21 +12,21 @@
       <line x1="0" y1="0" x2="40" y2="0" stroke="#60a5fa" stroke-width="1" opacity="0.1"/>
     </pattern>
   </defs>
-  
+
   <!-- Background -->
   <rect width="1200" height="630" fill="url(#bgGradient)"/>
-  
+
   <!-- Grid pattern -->
   <rect width="1200" height="630" fill="url(#grid)"/>
-  
+
   <!-- Category badge -->
   <rect x="80" y="80" width="136" height="40" rx="20" fill="#3b82f6"/>
   <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">GIT</text>
-  
+
   <!-- Title -->
   <text x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Git Workflow and Collaboration</text>
 <text x="80" y="370" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Fundamentals</text>
-  
+
   <!-- DevOps Daily branding -->
   <text x="80" y="550" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
 </svg>

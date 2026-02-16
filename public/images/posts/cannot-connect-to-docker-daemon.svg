@@ -21,14 +21,14 @@
   
   <!-- Category badge -->
   <rect x="80" y="80" width="172" height="40" rx="20" fill="#3b82f6"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">DOCKER</text>
+  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">DOCKER</text>
   
   <!-- Title -->
-  <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Cannot Connect to Docker</text>
-<text x="80" y="370" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Daemon at</text>
-<text x="80" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">unix:/var/run/docker.sock - Is</text>
-<text x="80" y="510" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">the Docker Daemon Running?</text>
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Cannot Connect to Docker</text>
+<text x="80" y="370" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Daemon at</text>
+<text x="80" y="440" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">unix:/var/run/docker.sock - Is</text>
+<text x="80" y="510" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">the Docker Daemon Running?</text>
   
   <!-- DevOps Daily branding -->
-  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+  <text x="80" y="550" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
 </svg>

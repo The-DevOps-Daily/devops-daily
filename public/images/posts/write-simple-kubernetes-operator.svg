@@ -21,13 +21,13 @@
 
   <!-- Category badge -->
   <rect x="80" y="80" width="220" height="40" rx="20" fill="#3b82f6"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">KUBERNETES</text>
+  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">KUBERNETES</text>
 
   <!-- Title -->
-  <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Understanding Kubernetes</text>
-<text x="80" y="370" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Operators: A Deep Dive with a</text>
-<text x="80" y="440" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Practical Example</text>
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Understanding Kubernetes</text>
+<text x="80" y="370" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Operators: A Deep Dive with a</text>
+<text x="80" y="440" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Practical Example</text>
 
   <!-- DevOps Daily branding -->
-  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+  <text x="80" y="550" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
 </svg>

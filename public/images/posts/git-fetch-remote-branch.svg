@@ -21,12 +21,12 @@
   
   <!-- Category badge -->
   <rect x="80" y="80" width="136" height="40" rx="20" fill="#3b82f6"/>
-  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">GIT</text>
+  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">GIT</text>
   
   <!-- Title -->
-  <text x="80" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">How to Fetch a Remote Branch</text>
-<text x="80" y="370" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">in Git</text>
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">How to Fetch a Remote Branch</text>
+<text x="80" y="370" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">in Git</text>
   
   <!-- DevOps Daily branding -->
-  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+  <text x="80" y="550" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
 </svg>
