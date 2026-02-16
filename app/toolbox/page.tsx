@@ -255,11 +255,10 @@ const tools: Tool[] = [
     description:
       'Monitoring service for cloud-scale applications, providing observability of servers, databases, tools, and services.',
     href: 'https://www.datadoghq.com/',
-    category: 'monitoring',
-    icon: Gauge,
-    isAffiliate: true,
-    isPremium: true,
-    badges: [
+   category: 'monitoring',
+   icon: Gauge,
+   isPremium: true,
+   badges: [
       { text: 'Monitoring', variant: 'outline' },
       { text: 'APM', variant: 'secondary' },
       { text: 'SaaS', variant: 'default' },
@@ -296,10 +295,23 @@ const tools: Tool[] = [
     category: 'infrastructure',
     icon: PencilRuler,
     badges: [{ text: 'Configuration Management', variant: 'outline' }],
+ },
+ {
+    name: 'Acronis',
+    description: 'Cyber protection solution providing backup, disaster recovery, and ransomware protection for hybrid cloud environments.',
+    href: 'https://www.acronis.com/',
+    category: 'security',
+    icon: Shield,
+    isAffiliate: true,
+    badges: [
+      { text: 'Backup', variant: 'outline' },
+      { text: 'Disaster Recovery', variant: 'secondary' },
+      { text: 'Cyber Protection', variant: 'default' },
+    ],
   },
   {
-    name: 'HashiCorp Vault',
-    description: 'Tool for securely accessing secrets like API keys, passwords, and certificates.',
+   name: 'HashiCorp Vault',
+   description: 'Tool for securely accessing secrets like API keys, passwords, and certificates.',
     href: 'https://www.vaultproject.io/',
     category: 'security',
     icon: Lock,
@@ -325,11 +337,10 @@ const tools: Tool[] = [
     name: 'MongoDB',
     description: 'Document-oriented NoSQL database used for high volume data storage.',
     href: 'https://www.mongodb.com/',
-    category: 'database',
-    icon: Database,
-    isAffiliate: true,
-    badges: [
-      { text: 'NoSQL', variant: 'outline' },
+   category: 'database',
+   icon: Database,
+   badges: [
+     { text: 'NoSQL', variant: 'outline' },
       { text: 'Document DB', variant: 'secondary' },
     ],
   },
@@ -397,11 +408,10 @@ const tools: Tool[] = [
     description:
       'Developer security platform to find and fix vulnerabilities in code, containers, and dependencies.',
     href: 'https://snyk.io/',
-    category: 'security',
-    icon: Shield,
-    isAffiliate: true,
-    isNew: true,
-    badges: [
+   category: 'security',
+   icon: Shield,
+   isNew: true,
+   badges: [
       { text: 'Security', variant: 'outline' },
       { text: 'Vulnerability Scanning', variant: 'secondary' },
       { text: 'New', variant: 'default' },
