@@ -110,7 +110,7 @@
     "react-use": "^17.6.0",
     "recharts": "3.7.0",
     "rss-parser": "^3.13.0",
-    "simple-git": "^3.30.0",
+    "simple-git": "^3.31.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
