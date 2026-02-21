@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     url: '/games',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/pages/simulators.png',
         width: 1200,
         height: 630,
         alt: 'DevOps Games & Interactive Tools',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     title: 'DevOps Games & Interactive Tools - DevOps Daily',
     description:
       'Interactive games and fun simulators for DevOps professionals to learn and practice skills in a playful way. Explore our collection of DevOps-themed games designed to enhance your skills and knowledge.',
-    images: ['/og-image.png'],
+    images: ['/images/pages/simulators.png'],
   },
 };
 
