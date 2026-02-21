@@ -15,6 +15,7 @@ import {
   Newspaper,
   Library,
   ListChecks,
+  Layers,
   Gift,
 } from 'lucide-react';
 
@@ -150,6 +151,13 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           href: '/roadmaps',
           description: 'Browse all learning paths',
           icon: Map,
+        },
+        {
+          label: 'Flashcards',
+          href: '/flashcards',
+          description: 'Study DevOps concepts',
+          icon: Layers,
+        },
         },
         {
           label: 'Quizzes & Tests',

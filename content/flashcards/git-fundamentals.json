@@ -1,0 +1,143 @@
+{
+  "id": "git-fundamentals",
+  "title": "Git Fundamentals",
+  "description": "Master essential Git commands, workflows, and version control concepts.",
+  "category": "Version Control",
+  "icon": "GitBranch",
+  "difficulty": "beginner",
+  "estimatedTime": "15 min",
+  "cardCount": 18,
+  "theme": {
+    "primaryColor": "#F05032",
+    "gradientFrom": "#F05032",
+    "gradientTo": "#D64228"
+  },
+  "cards": [
+    {
+      "id": "git-1",
+      "front": "What command initializes a new Git repository?",
+      "back": "git init - Creates a new .git directory in the current folder, initializing version control.",
+      "category": "Basics",
+      "tags": ["initialization", "setup"]
+    },
+    {
+      "id": "git-2",
+      "front": "How do you stage all changes for commit?",
+      "back": "git add . or git add -A - Stages all modified and new files in the working directory.",
+      "category": "Staging",
+      "tags": ["staging", "add"]
+    },
+    {
+      "id": "git-3",
+      "front": "What's the difference between 'git pull' and 'git fetch'?",
+      "back": "git fetch downloads changes without merging them, while git pull downloads AND merges changes into the current branch.",
+      "category": "Remote Operations",
+      "tags": ["fetch", "pull", "remote"]
+    },
+    {
+      "id": "git-4",
+      "front": "How do you create a new branch?",
+      "back": "git branch <branch-name> or git checkout -b <branch-name> (creates and switches to the new branch).",
+      "category": "Branching",
+      "tags": ["branch", "create"]
+    },
+    {
+      "id": "git-5",
+      "front": "What command shows the commit history?",
+      "back": "git log - Shows commit history with hash, author, date, and message. Use git log --oneline for compact view.",
+      "category": "History",
+      "tags": ["log", "history"]
+    },
+    {
+      "id": "git-6",
+      "front": "How do you undo the last commit (keep changes)?",
+      "back": "git reset --soft HEAD~1 - Moves HEAD back one commit but keeps changes staged.",
+      "category": "Undo Operations",
+      "tags": ["reset", "undo"]
+    },
+    {
+      "id": "git-7",
+      "front": "What's the purpose of .gitignore?",
+      "back": "Specifies intentionally untracked files that Git should ignore (build artifacts, IDE files, secrets, etc.).",
+      "category": "Configuration",
+      "tags": ["gitignore", "config"]
+    },
+    {
+      "id": "git-8",
+      "front": "How do you merge a branch into the current branch?",
+      "back": "git merge <branch-name> - Combines the specified branch's history into the current branch.",
+      "category": "Merging",
+      "tags": ["merge", "integration"]
+    },
+    {
+      "id": "git-9",
+      "front": "What command shows uncommitted changes?",
+      "back": "git diff - Shows unstaged changes. Use git diff --staged to see staged changes.",
+      "category": "Status",
+      "tags": ["diff", "changes"]
+    },
+    {
+      "id": "git-10",
+      "front": "How do you rename a branch?",
+      "back": "git branch -m <old-name> <new-name> or git branch -m <new-name> (if on the branch to rename).",
+      "category": "Branching",
+      "tags": ["branch", "rename"]
+    },
+    {
+      "id": "git-11",
+      "front": "What's the difference between 'git merge' and 'git rebase'?",
+      "back": "merge creates a merge commit and preserves history; rebase replays commits on top of another branch, creating linear history.",
+      "category": "Integration",
+      "tags": ["merge", "rebase"]
+    },
+    {
+      "id": "git-12",
+      "front": "How do you delete a remote branch?",
+      "back": "git push origin --delete <branch-name> or git push origin :<branch-name>",
+      "category": "Remote Operations",
+      "tags": ["remote", "delete"]
+    },
+    {
+      "id": "git-13",
+      "front": "What command creates a commit?",
+      "back": "git commit -m 'message' - Creates a commit with staged changes. Use -a flag to auto-stage modified files.",
+      "category": "Basics",
+      "tags": ["commit", "save"]
+    },
+    {
+      "id": "git-14",
+      "front": "How do you stash uncommitted changes?",
+      "back": "git stash - Saves changes temporarily. Use git stash pop to restore them later.",
+      "category": "Stashing",
+      "tags": ["stash", "temporary"]
+    },
+    {
+      "id": "git-15",
+      "front": "What's a fast-forward merge?",
+      "back": "When target branch hasn't diverged, Git simply moves the branch pointer forward without creating a merge commit.",
+      "category": "Merging",
+      "tags": ["merge", "fast-forward"]
+    },
+    {
+      "id": "git-16",
+      "front": "How do you cherry-pick a commit?",
+      "back": "git cherry-pick <commit-hash> - Applies changes from a specific commit to the current branch.",
+      "category": "Advanced",
+      "tags": ["cherry-pick", "commit"]
+    },
+    {
+      "id": "git-17",
+      "front": "What command shows current branch and status?",
+      "back": "git status - Shows current branch, staged/unstaged changes, and untracked files.",
+      "category": "Status",
+      "tags": ["status", "branch"]
+    },
+    {
+      "id": "git-18",
+      "front": "How do you create an annotated tag?",
+      "back": "git tag -a v1.0 -m 'message' - Creates a tag with metadata (author, date, message). Push with git push --tags.",
+      "category": "Tagging",
+      "tags": ["tag", "release"]
+    }
+  ]
+}

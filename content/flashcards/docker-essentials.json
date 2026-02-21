@@ -1,0 +1,122 @@
+{
+  "id": "docker-essentials",
+  "title": "Docker Essentials",
+  "description": "Learn core Docker concepts including containers, images, volumes, networks, and best practices.",
+  "category": "Docker",
+  "icon": "Container",
+  "difficulty": "beginner",
+  "estimatedTime": "12 minutes",
+  "cardCount": 15,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-600",
+    "gradientTo": "to-cyan-500"
+  },
+  "cards": [
+    {
+      "id": "container-vs-vm",
+      "front": "What's the key difference between containers and VMs?",
+      "back": "Containers share the host OS kernel and isolate at the process level, making them lightweight and fast to start. VMs include a full OS copy and hardware virtualization, consuming more resources.",
+      "category": "Fundamentals",
+      "tags": ["containers", "vm", "basics"]
+    },
+    {
+      "id": "docker-image",
+      "front": "What is a Docker Image?",
+      "back": "A Docker image is a read-only template containing the application code, runtime, libraries, and dependencies. Images are built from Dockerfiles and stored in registries.",
+      "category": "Core Concepts",
+      "tags": ["image", "basics"]
+    },
+    {
+      "id": "docker-container",
+      "front": "What is a Docker Container?",
+      "back": "A container is a runnable instance of an image. It includes the application and its dependencies, isolated from other containers and the host system.",
+      "category": "Core Concepts",
+      "tags": ["container", "basics"]
+    },
+    {
+      "id": "dockerfile",
+      "front": "What is a Dockerfile?",
+      "back": "A Dockerfile is a text file containing instructions to build a Docker image. It defines the base image, commands to run, files to copy, and configuration settings.",
+      "category": "Building Images",
+      "tags": ["dockerfile", "build"]
+    },
+    {
+      "id": "docker-volume",
+      "front": "What is a Docker Volume?",
+      "back": "A volume is a persistent data storage mechanism managed by Docker. Unlike bind mounts, volumes work across different systems and are the preferred way to persist data.",
+      "category": "Storage",
+      "tags": ["volume", "storage", "persistence"]
+    },
+    {
+      "id": "docker-network",
+      "front": "What is a Docker Network?",
+      "back": "A Docker network allows containers to communicate with each other and external systems. Docker provides bridge, host, overlay, and none network drivers.",
+      "category": "Networking",
+      "tags": ["network", "networking"]
+    },
+    {
+      "id": "docker-compose",
+      "front": "What is Docker Compose?",
+      "back": "Docker Compose is a tool for defining and running multi-container applications using a YAML file. It simplifies orchestrating multiple services, networks, and volumes.",
+      "category": "Orchestration",
+      "tags": ["compose", "multi-container"]
+    },
+    {
+      "id": "layer-caching",
+      "front": "What is Docker layer caching?",
+      "back": "Docker caches each instruction in a Dockerfile as a layer. If a layer hasn't changed, Docker reuses the cached version, speeding up builds. Order matters for optimal caching.",
+      "category": "Best Practices",
+      "tags": ["caching", "layers", "optimization"]
+    },
+    {
+      "id": "multi-stage-build",
+      "front": "What is a multi-stage build?",
+      "back": "Multi-stage builds use multiple FROM statements in a Dockerfile. You can copy artifacts from earlier stages to later ones, creating smaller final images by excluding build tools.",
+      "category": "Best Practices",
+      "tags": ["multi-stage", "optimization", "dockerfile"]
+    },
+    {
+      "id": "docker-registry",
+      "front": "What is a Docker Registry?",
+      "back": "A Docker registry stores and distributes Docker images. Docker Hub is the public registry, but you can run private registries for internal images.",
+      "category": "Distribution",
+      "tags": ["registry", "docker-hub"]
+    },
+    {
+      "id": "entrypoint-vs-cmd",
+      "front": "What's the difference between ENTRYPOINT and CMD?",
+      "back": "ENTRYPOINT defines the executable that runs when the container starts. CMD provides default arguments for ENTRYPOINT or the command to run if ENTRYPOINT isn't set.",
+      "category": "Dockerfile Instructions",
+      "tags": ["entrypoint", "cmd", "dockerfile"]
+    },
+    {
+      "id": "healthcheck",
+      "front": "What is a Docker HEALTHCHECK?",
+      "back": "HEALTHCHECK instruction tells Docker how to test if a container is working correctly. It runs a command periodically and marks the container as healthy or unhealthy.",
+      "category": "Monitoring",
+      "tags": ["healthcheck", "monitoring"]
+    },
+    {
+      "id": "bind-mount",
+      "front": "What is a bind mount?",
+      "back": "A bind mount links a host directory or file into a container. Unlike volumes, bind mounts depend on the host's filesystem structure and aren't managed by Docker.",
+      "category": "Storage",
+      "tags": ["bind-mount", "storage"]
+    },
+    {
+      "id": "container-security",
+      "front": "What are key Docker security best practices?",
+      "back": "Run as non-root user, use specific image tags (not 'latest'), scan images for vulnerabilities, minimize image layers, and follow the principle of least privilege.",
+      "category": "Security",
+      "tags": ["security", "best-practices"]
+    },
+    {
+      "id": "docker-exec",
+      "front": "What does 'docker exec' do?",
+      "back": "'docker exec' runs a command in a running container. Commonly used with -it flags to open an interactive shell for debugging or maintenance tasks.",
+      "category": "Commands",
+      "tags": ["exec", "cli", "debugging"]
+    }
+  ]
+}

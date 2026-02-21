@@ -1,0 +1,157 @@
+{
+  "id": "kubernetes-basics",
+  "title": "Kubernetes Fundamentals",
+  "description": "Master essential Kubernetes concepts with these flashcards covering Pods, Services, Deployments, and more.",
+  "category": "Kubernetes",
+  "icon": "Server",
+  "difficulty": "beginner",
+  "estimatedTime": "15 minutes",
+  "cardCount": 20,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "cards": [
+    {
+      "id": "pod-definition",
+      "front": "What is a Pod in Kubernetes?",
+      "back": "A Pod is the smallest deployable unit in Kubernetes. It represents a single instance of a running process and can contain one or more containers that share network and storage resources.",
+      "category": "Core Concepts",
+      "tags": ["pod", "basics", "containers"]
+    },
+    {
+      "id": "service-definition",
+      "front": "What is a Kubernetes Service?",
+      "back": "A Service is an abstraction that defines a logical set of Pods and a policy to access them. It provides stable networking for Pods, even when they're replaced or scaled.",
+      "category": "Networking",
+      "tags": ["service", "networking", "basics"]
+    },
+    {
+      "id": "deployment-definition",
+      "front": "What is a Deployment in Kubernetes?",
+      "back": "A Deployment provides declarative updates for Pods and ReplicaSets. It manages the desired state of your application, handling rolling updates, rollbacks, and scaling.",
+      "category": "Workloads",
+      "tags": ["deployment", "workloads", "basics"]
+    },
+    {
+      "id": "namespace-definition",
+      "front": "What is a Namespace?",
+      "back": "A Namespace provides a mechanism for isolating groups of resources within a single cluster. It's useful for dividing cluster resources between multiple users, teams, or environments.",
+      "category": "Core Concepts",
+      "tags": ["namespace", "isolation", "basics"]
+    },
+    {
+      "id": "configmap-definition",
+      "front": "What is a ConfigMap?",
+      "back": "A ConfigMap is an API object used to store non-confidential configuration data in key-value pairs. It allows you to decouple configuration from container images.",
+      "category": "Configuration",
+      "tags": ["configmap", "configuration"]
+    },
+    {
+      "id": "secret-definition",
+      "front": "What is a Secret in Kubernetes?",
+      "back": "A Secret is an object that contains sensitive data like passwords, tokens, or keys. Unlike ConfigMaps, Secrets are specifically designed for confidential information and are base64 encoded.",
+      "category": "Configuration",
+      "tags": ["secret", "security", "configuration"]
+    },
+    {
+      "id": "replicaset-definition",
+      "front": "What is a ReplicaSet?",
+      "back": "A ReplicaSet ensures a specified number of Pod replicas are running at all times. It's primarily used by Deployments and maintains the desired number of identical Pods.",
+      "category": "Workloads",
+      "tags": ["replicaset", "scaling", "workloads"]
+    },
+    {
+      "id": "statefulset-definition",
+      "front": "What is a StatefulSet?",
+      "back": "A StatefulSet manages stateful applications that require stable network identities, persistent storage, and ordered deployment/scaling. Used for databases and distributed systems.",
+      "category": "Workloads",
+      "tags": ["statefulset", "stateful", "workloads"]
+    },
+    {
+      "id": "daemonset-definition",
+      "front": "What is a DaemonSet?",
+      "back": "A DaemonSet ensures a copy of a Pod runs on all (or selected) nodes in the cluster. Commonly used for node monitoring, log collection, or network plugins.",
+      "category": "Workloads",
+      "tags": ["daemonset", "workloads"]
+    },
+    {
+      "id": "ingress-definition",
+      "front": "What is an Ingress?",
+      "back": "An Ingress manages external HTTP/HTTPS access to services in a cluster. It provides load balancing, SSL termination, and name-based virtual hosting.",
+      "category": "Networking",
+      "tags": ["ingress", "networking", "routing"]
+    },
+    {
+      "id": "persistent-volume",
+      "front": "What is a PersistentVolume (PV)?",
+      "back": "A PersistentVolume is a piece of storage in the cluster provisioned by an administrator or dynamically using Storage Classes. It's a cluster resource independent of Pod lifecycle.",
+      "category": "Storage",
+      "tags": ["storage", "pv", "persistent-volume"]
+    },
+    {
+      "id": "persistent-volume-claim",
+      "front": "What is a PersistentVolumeClaim (PVC)?",
+      "back": "A PersistentVolumeClaim is a request for storage by a user. It's similar to a Pod consuming node resources - PVCs consume PV resources with specific size and access modes.",
+      "category": "Storage",
+      "tags": ["storage", "pvc", "persistent-volume-claim"]
+    },
+    {
+      "id": "kubectl-basics",
+      "front": "What is kubectl?",
+      "back": "kubectl is the command-line tool for interacting with Kubernetes clusters. It communicates with the cluster's API server to deploy applications, inspect resources, and manage cluster operations.",
+      "category": "CLI",
+      "tags": ["kubectl", "cli", "tools"]
+    },
+    {
+      "id": "label-selector",
+      "front": "What are Labels and Selectors?",
+      "back": "Labels are key-value pairs attached to objects for identification. Selectors allow you to query and filter objects based on labels. They're crucial for Service-to-Pod mapping.",
+      "category": "Core Concepts",
+      "tags": ["labels", "selectors", "metadata"]
+    },
+    {
+      "id": "node-definition",
+      "front": "What is a Node in Kubernetes?",
+      "back": "A Node is a worker machine (VM or physical) that runs containerized applications. Each node contains services necessary to run Pods and is managed by the control plane.",
+      "category": "Architecture",
+      "tags": ["node", "architecture", "basics"]
+    },
+    {
+      "id": "control-plane",
+      "front": "What is the Control Plane?",
+      "back": "The Control Plane manages the cluster state and makes decisions about scheduling, scaling, and responding to events. It includes the API server, scheduler, controller manager, and etcd.",
+      "category": "Architecture",
+      "tags": ["control-plane", "architecture"]
+    },
+    {
+      "id": "kubelet",
+      "front": "What is kubelet?",
+      "back": "kubelet is an agent that runs on each node. It ensures containers are running in Pods, monitors their health, and communicates with the control plane about node and Pod status.",
+      "category": "Architecture",
+      "tags": ["kubelet", "node", "agent"]
+    },
+    {
+      "id": "service-types",
+      "front": "What are the main Kubernetes Service types?",
+      "back": "The main Service types are: ClusterIP (internal access only), NodePort (exposes on each node's IP), LoadBalancer (external load balancer), and ExternalName (DNS CNAME record).",
+      "category": "Networking",
+      "tags": ["service", "networking", "types"]
+    },
+    {
+      "id": "rolling-update",
+      "front": "What is a Rolling Update?",
+      "back": "A Rolling Update gradually replaces old Pod instances with new ones, ensuring zero downtime. It's the default update strategy for Deployments.",
+      "category": "Deployments",
+      "tags": ["deployment", "updates", "strategy"]
+    },
+    {
+      "id": "probes",
+      "front": "What are Liveness and Readiness Probes?",
+      "back": "Liveness probes check if a container is alive (restart if failing). Readiness probes check if a container can serve traffic (remove from service if failing). Both ensure application health.",
+      "category": "Health Checks",
+      "tags": ["probes", "health", "monitoring"]
+    }
+  ]
+}
