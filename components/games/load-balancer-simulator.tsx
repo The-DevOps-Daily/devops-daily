@@ -19,8 +19,9 @@ interface ServerState {
 interface RequestPacket {
   id: string;
   targetServer: number;
-  phase: 'to-lb' | 'exit-lb' | 'to-server' | 'failed';
+  phase: 'to-lb' | 'exit-lb' | 'to-server' | 'failed' | 'crashed' | 'retry';
   clientId?: number;
+  retryCount?: number;
 }
 
 // Distinct colors for each server - makes it crystal clear where requests go
@@ -59,10 +60,22 @@ const TRAFFIC_RATES = [
   { label: 'Burst', value: 150 },
 ];
 
+// Server failure rate presets (% chance of crash after accepting request)
+const FAILURE_RATES = [
+  { label: 'None', value: 0 },
+  { label: 'Low (5%)', value: 0.05 },
+  { label: 'Medium (15%)', value: 0.15 },
+  { label: 'High (30%)', value: 0.3 },
+];
+
+const MAX_RETRY_ATTEMPTS = 3;
+
 export default function LoadBalancerSimulator() {
   const [algorithm, setAlgorithm] = useState<AlgorithmType>('round-robin');
   const [isRunning, setIsRunning] = useState(false);
   const [trafficRate, setTrafficRate] = useState(600);
+  const [failureRate, setFailureRate] = useState(0);
+  const [enableRetry, setEnableRetry] = useState(true);
   const [servers, setServers] = useState<ServerState[]>([
     { id: 1, name: 'Server 1', requests: 0, active: 0, healthy: true },
     { id: 2, name: 'Server 2', requests: 0, active: 0, healthy: true },
@@ -72,6 +85,8 @@ export default function LoadBalancerSimulator() {
   const [roundRobinIndex, setRoundRobinIndex] = useState(0);
   const [clientIndex, setClientIndex] = useState(0);
   const [failedRequests, setFailedRequests] = useState(0);
+  const [crashedRequests, setCrashedRequests] = useState(0);
+  const [retriedRequests, setRetriedRequests] = useState(0);
 
   // Simulated clients for IP Hash - each client consistently maps to a server
   const clients = useMemo(
@@ -158,37 +173,79 @@ export default function LoadBalancerSimulator() {
       return;
     }
 
-    setPackets((prev) => [...prev, { id: packetId, targetServer, phase: 'to-lb' }]);
+    const sendPacket = (serverId: number, retryAttempt = 0) => {
+      const newPacketId = retryAttempt > 0 ? `${packetId}-retry${retryAttempt}` : packetId;
+      setPackets((prev) => [
+        ...prev,
+        { id: newPacketId, targetServer: serverId, phase: 'to-lb', retryCount: retryAttempt },
+      ]);
 
-    // Phase 1 complete: arrived at LB center, now exit horizontally to line start
-    setTimeout(() => {
-      setPackets((prev) =>
-        prev.map((p) => (p.id === packetId ? { ...p, phase: 'exit-lb' } : p))
-      );
-    }, 350);
+      // Phase 1 complete: arrived at LB center, now exit horizontally to line start
+      setTimeout(() => {
+        setPackets((prev) =>
+          prev.map((p) => (p.id === newPacketId ? { ...p, phase: 'exit-lb' } : p))
+        );
+      }, 350);
 
-    // Phase 2: at line start point (58%), now follow angled line to server
-    setTimeout(() => {
-      setPackets((prev) =>
-        prev.map((p) => (p.id === packetId ? { ...p, phase: 'to-server' } : p))
-      );
-      setServers((prev) =>
-        prev.map((s) => (s.id === targetServer ? { ...s, active: s.active + 1 } : s))
-      );
-    }, 450);
+      // Phase 2: at line start point (58%), now follow angled line to server
+      setTimeout(() => {
+        setPackets((prev) =>
+          prev.map((p) => (p.id === newPacketId ? { ...p, phase: 'to-server' } : p))
+        );
+        setServers((prev) =>
+          prev.map((s) => (s.id === serverId ? { ...s, active: s.active + 1 } : s))
+        );
+      }, 450);
 
-    // Phase 3: arrived at server, complete request
-    setTimeout(() => {
-      setPackets((prev) => prev.filter((p) => p.id !== packetId));
-      setServers((prev) =>
-        prev.map((s) =>
-          s.id === targetServer
-            ? { ...s, requests: s.requests + 1, active: Math.max(0, s.active - 1) }
-            : s
-        )
-      );
-    }, 950);
-  }, [getTargetServer]);
+      // Phase 3: Server may crash or successfully complete request
+      setTimeout(() => {
+        const willCrash = Math.random() < failureRate;
+
+        if (willCrash) {
+          // Server crashes after accepting request - show red X on server
+          setPackets((prev) =>
+            prev.map((p) => (p.id === newPacketId ? { ...p, phase: 'crashed' } : p))
+          );
+          setCrashedRequests((prev) => prev + 1);
+          setServers((prev) =>
+            prev.map((s) =>
+              s.id === serverId ? { ...s, active: Math.max(0, s.active - 1) } : s
+            )
+          );
+
+          // Show crash animation, then retry or fail
+          setTimeout(() => {
+            setPackets((prev) => prev.filter((p) => p.id !== newPacketId));
+
+            if (enableRetry && retryAttempt < MAX_RETRY_ATTEMPTS) {
+              // Retry with a different server
+              const nextServer = getTargetServer();
+              if (nextServer && nextServer !== serverId) {
+                setRetriedRequests((prev) => prev + 1);
+                sendPacket(nextServer, retryAttempt + 1);
+              } else {
+                setFailedRequests((prev) => prev + 1);
+              }
+            } else {
+              setFailedRequests((prev) => prev + 1);
+            }
+          }, 500);
+        } else {
+          // Success: request completed normally
+          setPackets((prev) => prev.filter((p) => p.id !== newPacketId));
+          setServers((prev) =>
+            prev.map((s) =>
+              s.id === serverId
+                ? { ...s, requests: s.requests + 1, active: Math.max(0, s.active - 1) }
+                : s
+            )
+          );
+        }
+      }, 950);
+    };
+
+    sendPacket(targetServer);
+  }, [getTargetServer, failureRate, enableRetry]);
 
   useEffect(() => {
     if (!isRunning) return;
@@ -207,6 +264,8 @@ export default function LoadBalancerSimulator() {
     setRoundRobinIndex(0);
     setClientIndex(0);
     setFailedRequests(0);
+    setCrashedRequests(0);
+    setRetriedRequests(0);
   };
 
   // Keyboard navigation
@@ -260,9 +319,16 @@ export default function LoadBalancerSimulator() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center justify-between">
             <span>Load Balancer Simulator</span>
-            <span className="text-sm font-normal text-muted-foreground">
-              {totalRequests} total requests{failedRequests > 0 && ` • ${failedRequests} failed`}
-            </span>
+            <div className="flex flex-col items-end text-xs font-normal text-muted-foreground">
+              <span>{totalRequests} successful</span>
+              {(crashedRequests > 0 || failedRequests > 0 || retriedRequests > 0) && (
+                <span className="text-xs">
+                  {crashedRequests > 0 && `${crashedRequests} crashed`}
+                  {retriedRequests > 0 && ` • ${retriedRequests} retried`}
+                  {failedRequests > 0 && ` • ${failedRequests} failed`}
+                </span>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -297,7 +363,7 @@ export default function LoadBalancerSimulator() {
               ))}
             </div>
 
-            <div className="flex gap-1">
+            <div className="flex flex-wrap gap-1">
               {TRAFFIC_RATES.map((rate) => (
                 <Button
                   key={rate.value}
@@ -312,11 +378,41 @@ export default function LoadBalancerSimulator() {
             </div>
           </div>
 
+          {/* Failure Rate Controls */}
+          <div className="flex flex-wrap gap-2 items-center justify-between">
+            <div className="text-sm font-medium">Server Failure Simulation:</div>
+            <div className="flex gap-1">
+              {FAILURE_RATES.map((rate) => (
+                <Button
+                  key={rate.value}
+                  onClick={() => setFailureRate(rate.value)}
+                  variant={failureRate === rate.value ? 'default' : 'outline'}
+                  size="sm"
+                  className="text-xs"
+                >
+                  {rate.label}
+                </Button>
+              ))}
+            </div>
+            {failureRate > 0 && (
+              <Button
+                onClick={() => setEnableRetry(!enableRetry)}
+                variant={enableRetry ? 'secondary' : 'ghost'}
+                size="sm"
+                className="text-xs"
+              >
+                Retry: {enableRetry ? 'On' : 'Off'}
+              </Button>
+            )}
+          </div>
+
           {/* Algorithm Description */}
           <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
             <span className="font-medium">{ALGORITHMS[algorithm].name}:</span>{' '}
             {ALGORITHMS[algorithm].description}
-            <span className="block mt-1 text-xs opacity-75">💡 Click on servers to simulate failures</span>
+            <span className="block mt-1 text-xs opacity-75">
+              💡 Click servers to toggle offline • {failureRate > 0 ? `Simulating ${(failureRate * 100).toFixed(0)}% crash rate after accepting requests` : 'No crash simulation'}
+            </span>
           </div>
 
           {/* Visualization */}
@@ -445,6 +541,20 @@ export default function LoadBalancerSimulator() {
                       className="absolute w-5 h-5 rounded-full shadow-lg z-20 border-2 border-white"
                       style={{ transform: 'translate(-50%, -50%)', backgroundColor: dotColor }}
                     />
+                  );
+                } else if (packet.phase === 'crashed') {
+                  // Red X on server: crashed after accepting request
+                  return (
+                    <motion.div
+                      key={packet.id}
+                      initial={{ left: '82%', top: `${serverY}%`, scale: 1 }}
+                      animate={{ scale: [1, 1.5, 0] }}
+                      transition={{ duration: 0.5 }}
+                      className="absolute z-30 border-2 border-white rounded-full bg-white"
+                      style={{ transform: 'translate(-50%, -50%)' }}
+                    >
+                      <XCircle className="h-6 w-6 text-red-500" />
+                    </motion.div>
                   );
                 } else {
                   // Colored dot: follow angled line from 58% to server
