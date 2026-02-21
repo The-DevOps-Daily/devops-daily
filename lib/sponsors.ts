@@ -45,6 +45,7 @@ export const sponsors: Sponsor[] = [
     url: 'https://www.jdoqocy.com/click-101674709-17135608',
     tagline: 'Technology skills platform',
     description: 'Expert-led courses in software development, IT ops, data, and cybersecurity',
+    className: 'bg-black rounded px-3 py-2',
   },
 ];
 
