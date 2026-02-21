@@ -41,11 +41,11 @@ export const sponsors: Sponsor[] = [
   },
   {
     name: 'Pluralsight',
-    logo: '/pluralsight-logo.png',
+    logo: '/pluralsight-logo.svg',
     url: 'https://www.jdoqocy.com/click-101674709-17135608',
     tagline: 'Technology skills platform',
     description: 'Expert-led courses in software development, IT ops, data, and cybersecurity',
-    className: 'bg-black/80 dark:bg-black/60 rounded px-3 py-2',
+    className: 'text-gray-900 dark:text-white',
   },
 ];
 
