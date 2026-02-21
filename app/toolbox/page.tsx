@@ -122,6 +122,18 @@ const tools: Tool[] = [
     ],
   },
   {
+    name: 'Pluralsight',
+    description: 'Technology skills platform providing expert-led courses in software development, IT ops, data, and cybersecurity.',
+    href: 'https://www.jdoqocy.com/click-101674709-17135608',
+    category: 'developer',
+    icon: Code,
+    isAffiliate: true,
+    badges: [
+      { text: 'Learning Platform', variant: 'outline' },
+      { text: 'Training', variant: 'secondary' },
+    ],
+  },
+  {
    name: 'Terraform',
    description: 'Infrastructure as code tool for provisioning and managing cloud infrastructure.',
     href: 'https://www.terraform.io/',
