@@ -171,11 +171,11 @@ export default function LoadBalancerSimulator() {
       return;
     }
 
-    const sendPacket = (serverId: number, retry = false) => {
-      const newPacketId = retry ? `retry-${packetId}` : packetId;
+    const sendPacket = (serverId: number, retryAttempt = 0) => {
+      const newPacketId = retryAttempt > 0 ? `${packetId}-retry${retryAttempt}` : packetId;
       setPackets((prev) => [
         ...prev,
-        { id: newPacketId, targetServer: serverId, phase: 'to-lb', retryCount: retry ? 1 : 0 },
+        { id: newPacketId, targetServer: serverId, phase: 'to-lb', retryCount: retryAttempt },
       ]);
 
       // Phase 1 complete: arrived at LB center, now exit horizontally to line start
@@ -199,7 +199,7 @@ export default function LoadBalancerSimulator() {
       setTimeout(() => {
         const willCrash = Math.random() < failureRate;
 
-        if (willCrash && !retry) {
+        if (willCrash && retryAttempt === 0) {
           // Server crashes after accepting request - show red X on server
           setPackets((prev) =>
             prev.map((p) => (p.id === newPacketId ? { ...p, phase: 'crashed' } : p))
@@ -220,7 +220,7 @@ export default function LoadBalancerSimulator() {
               const nextServer = getTargetServer();
               if (nextServer && nextServer !== serverId) {
                 setRetriedRequests((prev) => prev + 1);
-                sendPacket(nextServer, true);
+                sendPacket(nextServer, retryAttempt + 1);
               } else {
                 setFailedRequests((prev) => prev + 1);
               }
