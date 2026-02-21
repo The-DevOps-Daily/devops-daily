@@ -39,6 +39,13 @@ export const sponsors: Sponsor[] = [
     tagline: 'The most secure backup',
     description: 'Acronis: the most secure backup solution for your data',
   },
+  {
+    name: 'Pluralsight',
+    logo: '/pluralsight-logo.png',
+    url: 'https://www.jdoqocy.com/click-101674709-17135608',
+    tagline: 'Technology skills platform',
+    description: 'Expert-led courses in software development, IT ops, data, and cybersecurity',
+  },
 ];
 
 /**
