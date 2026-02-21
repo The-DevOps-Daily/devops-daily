@@ -68,6 +68,8 @@ const FAILURE_RATES = [
   { label: 'High (30%)', value: 0.3 },
 ];
 
+const MAX_RETRY_ATTEMPTS = 3;
+
 export default function LoadBalancerSimulator() {
   const [algorithm, setAlgorithm] = useState<AlgorithmType>('round-robin');
   const [isRunning, setIsRunning] = useState(false);
@@ -199,7 +201,7 @@ export default function LoadBalancerSimulator() {
       setTimeout(() => {
         const willCrash = Math.random() < failureRate;
 
-        if (willCrash && retryAttempt === 0) {
+        if (willCrash) {
           // Server crashes after accepting request - show red X on server
           setPackets((prev) =>
             prev.map((p) => (p.id === newPacketId ? { ...p, phase: 'crashed' } : p))
@@ -215,7 +217,7 @@ export default function LoadBalancerSimulator() {
           setTimeout(() => {
             setPackets((prev) => prev.filter((p) => p.id !== newPacketId));
 
-            if (enableRetry) {
+            if (enableRetry && retryAttempt < MAX_RETRY_ATTEMPTS) {
               // Retry with a different server
               const nextServer = getTargetServer();
               if (nextServer && nextServer !== serverId) {
