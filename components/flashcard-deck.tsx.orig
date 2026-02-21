@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { FlashCard } from './flashcard'
+import { FlashCard as FlashCardComponent } from './flashcard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Shuffle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
-import type { FlashCard as FlashCardType } from '@/lib/flashcard-loader'
+import type { FlashCard } from '@/lib/flashcard-loader'
 
 interface FlashCardDeckProps {
   cards: FlashCard[]
@@ -132,7 +132,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
       </div>
 
       {/* Flashcard */}
-      <FlashCard
+      <FlashCardComponent
         card={currentCard}
         theme={theme}
       />

@@ -60,12 +60,12 @@ export async function getFlashCardSet(id: string): Promise<FlashCardSet | null> 
 }
 
 /**
- * Get metadata for all flashcard sets (without full card data)
- */
-export async function getFlashCardSetsMetadata(): Promise<FlashCardSetMetadata[]> {
-  try {
-    if (!fs.existsSync(FLASHCARDS_DIR)) {
-      return [];
+* Get metadata for all flashcard sets (without full card data)
+*/
+export async function getAllFlashCardSets(): Promise<FlashCardSetMetadata[]> {
+ try {
+   if (!fs.existsSync(FLASHCARDS_DIR)) {
+     return [];
     }
 
     const files = fs.readdirSync(FLASHCARDS_DIR).filter((file) => file.endsWith('.json'));
@@ -105,7 +105,7 @@ export async function getFlashCardSetsMetadata(): Promise<FlashCardSetMetadata[]
  * Get all unique categories from flashcard sets
  */
 export async function getFlashCardCategories(): Promise<string[]> {
-  const metadata = await getFlashCardSetsMetadata();
+  const metadata = await getAllFlashCardSets();
   const categories = [...new Set(metadata.map((set) => set.category))];
   return categories.sort();
 }

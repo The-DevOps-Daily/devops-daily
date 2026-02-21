@@ -19,7 +19,7 @@ interface FlashCardComponentProps {
   totalCards?: number;
 }
 
-export function FlashCardComponent({
+export function FlashCard({
   card,
   onNext,
   onPrevious,
