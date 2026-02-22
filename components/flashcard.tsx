@@ -74,7 +74,12 @@ export function FlashCard({
         onClick={handleFlip}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ')         onKeyDown={(e) => e.key === 'Enter' && handleFlip()}        onKeyDown={(e) => e.key === 'Enter' && handleFlip()} handleFlip()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleFlip()
+          }
+        }}
         aria-label="Flip card"
       >
         <div
