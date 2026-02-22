@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCw, Check, X } from 'lucide-react';
+import { MoveHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FlashCard } from '@/lib/flashcard-loader';
 
@@ -14,6 +15,8 @@ interface FlashCardComponentProps {
   onFlip?: () => void;
   onKnown?: () => void;
   onUnknown?: () => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
   showNavigation?: boolean;
   currentIndex?: number;
   totalCards?: number;
@@ -25,11 +28,16 @@ export function FlashCard({
   onFlip: externalOnFlip,
   onKnown,
   onUnknown,
+  onNext,
+  onPrevious,
   showNavigation = true,
   currentIndex = 0,
   totalCards = 1,
 }: FlashCardComponentProps) {
   const [internalIsFlipped, setInternalIsFlipped] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+  const isSwiping = useRef<boolean>(false);
 
   // Use external state if provided, otherwise use internal state
   const isFlipped = externalIsFlipped !== undefined ? externalIsFlipped : internalIsFlipped;
@@ -56,25 +64,85 @@ export function FlashCard({
     onUnknown?.();
   };
 
+  // Touch swipe handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null || touchStartY.current === null) return;
+
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const deltaX = touchEndX - touchStartX.current;
+      const deltaY = touchEndY - touchStartY.current;
+
+      // Only trigger swipe if horizontal movement is greater than vertical (to avoid conflicts with scrolling)
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        const swipeThreshold = 50; // Minimum distance for a swipe
+
+        if (deltaX > swipeThreshold && onPrevious) {
+          // Swipe right - go to previous card
+          isSwiping.current = true;
+          onPrevious();
+        } else if (deltaX < -swipeThreshold && onNext) {
+          // Swipe left - go to next card
+          isSwiping.current = true;
+          onNext();
+        }
+      }
+
+      touchStartX.current = null;
+      touchStartY.current = null;
+    },
+    [onNext, onPrevious]
+  );
+
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6">
+    <div className="w-full max-w-2xl mx-auto space-y-4 px-4 sm:px-0 sm:space-y-6">
       {/* Progress indicator */}
       {showNavigation && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Card {currentIndex + 1} of {totalCards}
-          </span>
-          <Badge variant="outline">{card.category}</Badge>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+            <span>
+              Card {currentIndex + 1} of {totalCards}
+            </span>
+            <Badge variant="outline">{card.category}</Badge>
+          </div>
+          {/* Mobile swipe hint - only show on touch devices */}
+          <div className="sm:hidden flex items-center justify-center gap-2 text-xs text-muted-foreground/70 bg-muted/30 rounded-md py-2 px-3">
+            <MoveHorizontal className="h-3 w-3" />
+            <span>Swipe left/right to navigate cards</span>
+          </div>
         </div>
       )}
 
       {/* Flashcard */}
       <div
-        className="relative h-96 cursor-pointer perspective-1000"
-        onClick={handleFlip}
+        className="relative h-64 sm:h-80 md:h-96 cursor-pointer perspective-1000 touch-manipulation"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => {
+          // Only flip if not swiping
+          if (!isSwiping.current) {
+            handleFlip();
+          }
+          // Reset swiping flag after a short delay
+          setTimeout(() => {
+            isSwiping.current = false;
+          }, 100);
+        }}
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && handleFlip()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            handleFlip()
+          }
+        }}
         aria-label="Flip card"
       >
         <div
@@ -86,7 +154,7 @@ export function FlashCard({
           {/* Front of card */}
           <Card
             className={cn(
-              'absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8 bg-linear-to-br from-primary/5 to-primary/10 border-2',
+              'absolute inset-0 backface-hidden flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-linear-to-br from-primary/5 to-primary/10 border-2',
               'hover:border-primary/50 transition-colors'
             )}
           >
@@ -94,12 +162,13 @@ export function FlashCard({
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center space-y-4">
                   <div className="text-xs font-semibold text-primary uppercase tracking-wider">Question</div>
-                  <p className="text-2xl font-bold leading-tight">{card.front}</p>
+                  <p className="text-lg sm:text-xl md:text-2xl font-bold leading-tight">{card.front}</p>
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm pb-2">
+              <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs sm:text-sm pb-2">
                 <RotateCw className="h-4 w-4" />
-                <span>Click to reveal answer</span>
+                <span className="hidden sm:inline">Click to reveal answer</span>
+                <span className="sm:hidden">Tap to reveal</span>
               </div>
             </div>
           </Card>
@@ -107,7 +176,7 @@ export function FlashCard({
           {/* Back of card */}
           <Card
             className={cn(
-              'absolute inset-0 backface-hidden flex flex-col items-center justify-center p-8 bg-linear-to-br from-blue-500/5 to-cyan-500/10 border-2 border-blue-500/20',
+              'absolute inset-0 backface-hidden flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-linear-to-br from-blue-500/5 to-cyan-500/10 border-2 border-blue-500/20',
               'rotate-y-180'
             )}
           >
@@ -115,7 +184,7 @@ export function FlashCard({
               <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
                 Answer
               </div>
-              <p className="text-lg leading-relaxed">{card.back}</p>
+              <p className="text-base sm:text-lg leading-relaxed">{card.back}</p>
               <div className="pt-4 flex flex-wrap gap-2 justify-center">
                 {card.tags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="text-xs">
@@ -130,12 +199,12 @@ export function FlashCard({
 
       {/* Actions */}
       {isFlipped && (
-        <div className="flex gap-4 justify-center">
-          <Button variant="outline" size="lg" onClick={handleUnknown} className="gap-2">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+          <Button variant="outline" size="lg" onClick={handleUnknown} className="gap-2 w-full sm:w-auto min-h-[48px]">
             <X className="h-4 w-4" />
             Need to review
           </Button>
-          <Button size="lg" onClick={handleKnown} className="gap-2">
+          <Button size="lg" onClick={handleKnown} className="gap-2 w-full sm:w-auto min-h-[48px]">
             <Check className="h-4 w-4" />
             Got it!
           </Button>

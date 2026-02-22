@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#312e81" />
+    </linearGradient>
+    <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#a78bfa" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg-gradient)" />
+  
+  <!-- Grid pattern overlay -->
+  <g opacity="0.1">
+    <line x1="0" y1="210" x2="1200" y2="210" stroke="#ffffff" stroke-width="1"/>
+    <line x1="0" y1="420" x2="1200" y2="420" stroke="#ffffff" stroke-width="1"/>
+    <line x1="400" y1="0" x2="400" y2="630" stroke="#ffffff" stroke-width="1"/>
+    <line x1="800" y1="0" x2="800" y2="630" stroke="#ffffff" stroke-width="1"/>
+  </g>
+  
+  <!-- Flashcard icon -->
+  <g transform="translate(80, 80)">
+    <rect x="0" y="0" width="90" height="120" rx="8" fill="url(#accent-gradient)" opacity="0.8"/>
+    <rect x="10" y="10" width="70" height="100" rx="4" fill="none" stroke="#ffffff" stroke-width="2"/>
+    <line x1="20" y1="40" x2="70" y2="40" stroke="#ffffff" stroke-width="2"/>
+    <line x1="20" y1="60" x2="70" y2="60" stroke="#ffffff" stroke-width="2"/>
+    <line x1="20" y1="80" x2="70" y2="80" stroke="#ffffff" stroke-width="2"/>
+  </g>
+  
+  <!-- Category badge -->
+  <rect x="200" y="110" width="172" height="40" rx="20" fill="#8b5cf6" opacity="0.9"/>
+  <text x="286" y="136" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#ffffff" text-anchor="middle">Docker</text>
+  
+  <!-- Title -->
+  <text x="80" y="260" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#ffffff">Docker Essentials</text>
+  
+  <!-- Card count -->
+  <text x="80" y="480" font-family="Arial, sans-serif" font-size="32" font-weight="600" fill="#a78bfa">15 Cards</text>
+  
+  <!-- Subtitle -->
+  <text x="80" y="530" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="#9ca3af">Interactive Flashcards for DevOps Learning</text>
+  
+  <!-- Logo/branding -->
+  <text x="1120" y="600" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#8b5cf6" text-anchor="end">DevOps Daily</text>
+</svg>
