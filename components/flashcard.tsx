@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RotateCw, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { RotateCw, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FlashCard } from '@/lib/flashcard-loader';
 
@@ -12,8 +12,6 @@ interface FlashCardComponentProps {
   card: FlashCard;
   isFlipped?: boolean;
   onFlip?: () => void;
-  onNext?: () => void;
-  onPrevious?: () => void;
   onKnown?: () => void;
   onUnknown?: () => void;
   showNavigation?: boolean;
@@ -25,8 +23,6 @@ export function FlashCard({
   card,
   isFlipped: externalIsFlipped,
   onFlip: externalOnFlip,
-  onNext,
-  onPrevious,
   onKnown,
   onUnknown,
   showNavigation = true,
@@ -58,20 +54,6 @@ export function FlashCard({
       setInternalIsFlipped(false);
     }
     onUnknown?.();
-  };
-
-  const handleNext = () => {
-    if (!externalOnFlip) {
-      setInternalIsFlipped(false);
-    }
-    onNext?.();
-  };
-
-  const handlePrevious = () => {
-    if (!externalOnFlip) {
-      setInternalIsFlipped(false);
-    }
-    onPrevious?.();
   };
 
   return (
@@ -156,23 +138,6 @@ export function FlashCard({
           <Button size="lg" onClick={handleKnown} className="gap-2">
             <Check className="h-4 w-4" />
             Got it!
-          </Button>
-        </div>
-      )}
-
-      {/* Navigation */}
-      {showNavigation && (
-        <div className="flex gap-4 justify-center">
-          <Button variant="outline" size="icon" onClick={handlePrevious} disabled={currentIndex === 0}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleNext}
-            disabled={currentIndex === totalCards - 1}
-          >
-            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       )}
