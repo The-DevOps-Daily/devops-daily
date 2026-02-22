@@ -532,7 +532,8 @@ export default function PromqlPlayground() {
         e.preventDefault();
         executeQuery();
       }
-      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      // Check for '?' key (which is Shift+/ on most keyboards)
+      if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         setShowKeyboardShortcuts(prev => !prev);
       }
