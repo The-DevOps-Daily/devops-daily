@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RotateCw, ChevronLeft, ChevronRight, Check, X } from 'lucide-react';
+import { RotateCw, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FlashCard } from '@/lib/flashcard-loader';
 
@@ -144,4 +144,3 @@ export function FlashCard({
     </div>
   );
 }
-import { RotateCw, Check, X } from 'lucide-react';
