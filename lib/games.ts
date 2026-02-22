@@ -471,6 +471,21 @@ const games: Game[] = [
     isComingSoon: true,
     category: 'Security',
   },
+  {
+    id: 'promql-playground',
+    title: 'Prometheus Query Builder (PromQL Playground)',
+    description:
+      'Learn Prometheus Query Language (PromQL) with an interactive playground. Master label filtering, rate calculations, aggregations, and histogram quantiles with real-time query execution.',
+    iconName: 'ActivitySquare',
+    badgeText: 'New',
+    color: 'from-orange-500 to-red-600',
+    href: '/games/promql-playground',
+    tags: ['prometheus', 'promql', 'observability', 'sre', 'metrics', 'monitoring'],
+    isNew: true,
+    featured: true,
+    category: 'Observability',
+    createdAt: '2026-02-08',
+  },
 ];
 
 /**

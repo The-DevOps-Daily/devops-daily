@@ -1,0 +1,59 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#f97316;stop-opacity:0.3" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Pattern overlay -->
+  <rect width="1200" height="630" fill="url(#accentGradient)" opacity="0.5"/>
+  
+  <!-- Icon -->
+  <g transform="translate(100, 150)">
+    <rect x="0" y="0" width="120" height="120" rx="20" fill="white" opacity="0.2"/>
+    <path d="M30,30 L90,30 L90,90 L30,90 Z M40,45 L80,60 L40,75 Z" fill="white" opacity="0.9"/>
+    <circle cx="60" cy="45" r="8" fill="white"/>
+    <circle cx="60" cy="75" r="8" fill="white"/>
+  </g>
+  
+  <!-- Title -->
+  <text x="250" y="220" font-family="Inter, system-ui, sans-serif" font-size="64" font-weight="bold" fill="white">
+    PromQL Playground
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="250" y="280" font-family="Inter, system-ui, sans-serif" font-size="32" fill="white" opacity="0.9">
+    Master Prometheus Query Language
+  </text>
+  
+  <!-- Features -->
+  <g transform="translate(250, 330)">
+    <text x="0" y="30" font-family="Inter, system-ui, sans-serif" font-size="24" fill="white" opacity="0.85">Interactive Query Editor</text>
+    <text x="0" y="70" font-family="Inter, system-ui, sans-serif" font-size="24" fill="white" opacity="0.85">Real-time Query Execution</text>
+    <text x="0" y="110" font-family="Inter, system-ui, sans-serif" font-size="24" fill="white" opacity="0.85">7+ Guided Tutorials</text>
+    <text x="450" y="30" font-family="Inter, system-ui, sans-serif" font-size="24" fill="white" opacity="0.85">Sample Metrics Dataset</text>
+    <text x="450" y="70" font-family="Inter, system-ui, sans-serif" font-size="24" fill="white" opacity="0.85">Aggregations and Functions</text>
+    <text x="450" y="110" font-family="Inter, system-ui, sans-serif" font-size="24" fill="white" opacity="0.85">Label Filtering</text>
+  </g>
+  
+  <!-- Code snippet decoration -->
+  <g transform="translate(100, 480)">
+    <rect x="0" y="0" width="1000" height="80" rx="12" fill="white" opacity="0.15"/>
+    <text x="20" y="45" font-family="JetBrains Mono, Courier New, monospace" font-size="28" fill="white" opacity="0.95">
+      rate(http_requests_total{status=&quot;200&quot;}[5m])
+    </text>
+  </g>
+  
+  <!-- Branding -->
+  <text x="1050" y="600" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="600" fill="white" opacity="0.7" text-anchor="end">
+    DevOps Daily
+  </text>
+</svg>
