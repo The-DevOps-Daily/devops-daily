@@ -482,7 +482,6 @@ export default function PromqlPlayground() {
   const [query, setQuery] = useState('http_requests_total');
   const [result, setResult] = useState<QueryResult | null>(null);
   const [currentTutorial, setCurrentTutorial] = useState(0);
-  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [activeTab, setActiveTab] = useState('tutorials');
   const [showWelcome, setShowWelcome] = useState(true);
 
@@ -532,11 +531,6 @@ export default function PromqlPlayground() {
         e.preventDefault();
         executeQuery();
       }
-      // Check for '?' key (which is Shift+/ on most keyboards)
-      if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault();
-        setShowKeyboardShortcuts(prev => !prev);
-      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -552,14 +546,10 @@ export default function PromqlPlayground() {
               <ActivitySquare className="w-8 h-8 text-orange-500" />
               <CardTitle className="text-2xl">Prometheus Query Builder</CardTitle>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowKeyboardShortcuts(!showKeyboardShortcuts)}
-            >
-              <Keyboard className="w-4 h-4 mr-2" />
-              Shortcuts (?)
-            </Button>
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
+              <Keyboard className="w-4 h-4" />
+              <span><kbd className="px-2 py-1 bg-muted rounded text-xs">Cmd/Ctrl + Enter</kbd> Execute Query</span>
+            </div>
           </div>
           <p className="text-sm text-muted-foreground">
             Learn Prometheus queries interactively. No experience needed – start with tutorials below!
@@ -795,33 +785,6 @@ export default function PromqlPlayground() {
             </TabsContent>
           </Tabs>
 
-          {/* Keyboard Shortcuts Panel */}
-          <AnimatePresence>
-            {showKeyboardShortcuts && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <Card className="bg-muted/50">
-                  <CardContent className="pt-6">
-                    <h3 className="font-semibold mb-3">Keyboard Shortcuts</h3>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <kbd className="px-2 py-1 bg-background rounded">Cmd/Ctrl + Enter</kbd>
-                        <span className="ml-2 text-muted-foreground">Execute Query</span>
-                      </div>
-                      <div>
-                        <kbd className="px-2 py-1 bg-background rounded">?</kbd>
-                        <span className="ml-2 text-muted-foreground">Toggle Shortcuts</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </CardContent>
       </Card>
     </div>
