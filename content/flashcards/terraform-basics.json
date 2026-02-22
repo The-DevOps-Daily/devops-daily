@@ -1,0 +1,129 @@
+{
+  "id": "terraform-basics",
+  "title": "Terraform Basics",
+  "description": "Learn Infrastructure as Code fundamentals with Terraform.",
+  "category": "Infrastructure as Code",
+  "icon": "Boxes",
+  "difficulty": "intermediate",
+  "estimatedTime": "20 min",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "#7B42BC",
+    "gradientFrom": "#7B42BC",
+    "gradientTo": "#5C3292"
+  },
+  "cards": [
+    {
+      "id": "tf-1",
+      "front": "What are the main Terraform workflow steps?",
+      "back": "Write → Init → Plan → Apply → Destroy. Write configuration, initialize providers, preview changes, apply infrastructure, and optionally destroy resources.",
+      "category": "Workflow",
+      "tags": ["workflow", "basics"]
+    },
+    {
+      "id": "tf-2",
+      "front": "What does 'terraform init' do?",
+      "back": "Initializes a Terraform working directory by downloading provider plugins and setting up the backend for state storage.",
+      "category": "Commands",
+      "tags": ["init", "setup"]
+    },
+    {
+      "id": "tf-3",
+      "front": "What's the purpose of terraform.tfstate?",
+      "back": "Stores the current state of managed infrastructure, mapping real-world resources to configuration. Critical for tracking changes.",
+      "category": "State Management",
+      "tags": ["state", "tfstate"]
+    },
+    {
+      "id": "tf-4",
+      "front": "What's the difference between 'terraform plan' and 'terraform apply'?",
+      "back": "plan shows a preview of changes without applying them; apply executes the changes and updates infrastructure.",
+      "category": "Commands",
+      "tags": ["plan", "apply"]
+    },
+    {
+      "id": "tf-5",
+      "front": "What are Terraform providers?",
+      "back": "Plugins that enable Terraform to interact with cloud platforms, SaaS providers, and APIs (e.g., AWS, Azure, Kubernetes).",
+      "category": "Providers",
+      "tags": ["providers", "plugins"]
+    },
+    {
+      "id": "tf-6",
+      "front": "What's a Terraform module?",
+      "back": "A reusable collection of Terraform configuration files in a directory. Modules enable code organization and reusability.",
+      "category": "Modules",
+      "tags": ["modules", "reusability"]
+    },
+    {
+      "id": "tf-7",
+      "front": "What are Terraform variables?",
+      "back": "Input parameters that allow customization of infrastructure without modifying source code. Defined with 'variable' blocks.",
+      "category": "Variables",
+      "tags": ["variables", "input"]
+    },
+    {
+      "id": "tf-8",
+      "front": "What's the difference between local and remote backends?",
+      "back": "Local stores state on disk; remote stores state in a shared location (S3, Terraform Cloud) enabling team collaboration.",
+      "category": "State Management",
+      "tags": ["backend", "state"]
+    },
+    {
+      "id": "tf-9",
+      "front": "What command imports existing infrastructure?",
+      "back": "terraform import <resource_type>.<name> <id> - Brings existing resources under Terraform management.",
+      "category": "Commands",
+      "tags": ["import", "migration"]
+    },
+    {
+      "id": "tf-10",
+      "front": "What are Terraform outputs?",
+      "back": "Values exported from Terraform configuration, useful for displaying info or passing to other modules/scripts.",
+      "category": "Outputs",
+      "tags": ["outputs", "export"]
+    },
+    {
+      "id": "tf-11",
+      "front": "What's the purpose of 'terraform fmt'?",
+      "back": "Formats Terraform configuration files to a canonical style for consistency and readability.",
+      "category": "Best Practices",
+      "tags": ["formatting", "style"]
+    },
+    {
+      "id": "tf-12",
+      "front": "What are data sources in Terraform?",
+      "back": "Allow Terraform to fetch information from external sources or existing infrastructure without managing it.",
+      "category": "Data Sources",
+      "tags": ["data", "read"]
+    },
+    {
+      "id": "tf-13",
+      "front": "What's 'terraform taint' used for?",
+      "back": "Marks a resource for destruction and recreation on the next apply. Useful when a resource is damaged or needs replacement.",
+      "category": "Commands",
+      "tags": ["taint", "recreation"]
+    },
+    {
+      "id": "tf-14",
+      "front": "What are provisioners in Terraform?",
+      "back": "Execute scripts or commands on resources during creation/destruction. Use as a last resort; prefer cloud-init or config management.",
+      "category": "Provisioners",
+      "tags": ["provisioners", "scripts"]
+    },
+    {
+      "id": "tf-15",
+      "front": "What's the purpose of .terraform.lock.hcl?",
+      "back": "Lock file that records exact provider versions used, ensuring consistent provider versions across team members.",
+      "category": "State Management",
+      "tags": ["lock", "versions"]
+    },
+    {
+      "id": "tf-16",
+      "front": "What does 'terraform validate' do?",
+      "back": "Checks configuration files for syntax errors and internal consistency without accessing remote services.",
+      "category": "Commands",
+      "tags": ["validate", "syntax"]
+    }
+  ]
+}

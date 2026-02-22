@@ -1,0 +1,431 @@
+'use client'
+
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { FlashCard } from './flashcard'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Shuffle, RefreshCw, ChevronLeft, ChevronRight, List, Grid3x3, Check, X, Circle } from 'lucide-react'
+import type { FlashCard as FlashCardType } from '@/lib/flashcard-loader'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
+
+interface FlashCardDeckProps {
+  cards: FlashCard[]
+  title: string
+  theme?: {
+    primaryColor: string
+    gradientFrom: string
+    gradientTo: string
+  }
+}
+
+export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [knownCards, setKnownCards] = useState<Set<string>>(new Set())
+  const [unknownCards, setUnknownCards] = useState<Set<string>>(new Set())
+  const [shuffledCards, setShuffledCards] = useState<FlashCard[]>(cards)
+  const [showOnlyUnknown, setShowOnlyUnknown] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
+  const [viewMode, setViewMode] = useState<'deck' | 'list'>('deck')
+
+  const displayCards = showOnlyUnknown
+    ? shuffledCards.filter(card => !knownCards.has(card.id))
+    : shuffledCards
+
+  const currentCard = displayCards[currentIndex]
+
+  const handleShuffle = useCallback(() => {
+    const shuffled = [...cards].sort(() => Math.random() - 0.5)
+    setShuffledCards(shuffled)
+    setCurrentIndex(0)
+  }, [cards])
+
+  const handleReset = useCallback(() => {
+    setKnownCards(new Set())
+    setUnknownCards(new Set())
+    setCurrentIndex(0)
+    setShowOnlyUnknown(false)
+  }, [])
+
+  const handleNext = useCallback(() => {
+    if (currentIndex < displayCards.length - 1) {
+      setCurrentIndex(currentIndex + 1)
+      setIsFlipped(false)
+    }
+  }, [currentIndex, displayCards.length])
+
+  const handlePrevious = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex(currentIndex - 1)
+      setIsFlipped(false)
+    }
+  }, [currentIndex])
+
+  const handleMarkKnown = useCallback(() => {
+    if (!currentCard) return
+    setKnownCards(prev => new Set(prev).add(currentCard.id))
+    setUnknownCards(prev => {
+      const next = new Set(prev)
+      next.delete(currentCard.id)
+      return next
+    })
+    handleNext()
+  }, [currentCard, handleNext])
+
+  const handleMarkUnknown = useCallback(() => {
+    if (!currentCard) return
+    setUnknownCards(prev => new Set(prev).add(currentCard.id))
+    setKnownCards(prev => {
+      const next = new Set(prev)
+      next.delete(currentCard.id)
+      return next
+    })
+    handleNext()
+  }, [currentCard, handleNext])
+
+  const handleFlip = useCallback(() => {
+    setIsFlipped(!isFlipped)
+  }, [isFlipped])
+
+  // Group cards by status for list view
+  const cardsByStatus = useMemo(() => {
+    const known: FlashCard[] = []
+    const needReview: FlashCard[] = []
+    const notReviewed: FlashCard[] = []
+
+    shuffledCards.forEach(card => {
+      if (knownCards.has(card.id)) {
+        known.push(card)
+      } else if (unknownCards.has(card.id)) {
+        needReview.push(card)
+      } else {
+        notReviewed.push(card)
+      }
+    })
+
+    return { known, needReview, notReviewed }
+  }, [shuffledCards, knownCards, unknownCards])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      // List view navigation
+      if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault()
+        setViewMode(viewMode === 'deck' ? 'list' : 'deck')
+        return
+      }
+
+      // Only deck view shortcuts below this point
+      if (viewMode === 'list') return
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault()
+          handlePrevious()
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          handleNext()
+          break
+        case ' ':
+        case 'Enter':
+          e.preventDefault()
+          handleFlip()
+          break
+        case 'k':
+        case 'K':
+        case '1':
+          e.preventDefault()
+          handleMarkKnown()
+          break
+        case 'u':
+        case 'U':
+        case '2':
+          e.preventDefault()
+          handleMarkUnknown()
+          break
+        case 's':
+        case 'S':
+          e.preventDefault()
+          handleShuffle()
+          break
+        case 'r':
+        case 'R':
+          e.preventDefault()
+          handleReset()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handlePrevious, handleNext, handleFlip, handleMarkKnown, handleMarkUnknown, handleShuffle, handleReset, isFlipped, viewMode])
+
+  const progress = Math.round((knownCards.size / cards.length) * 100)
+
+  if (!currentCard) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-bold mb-4">All cards reviewed!</h2>
+        <p className="text-muted-foreground mb-6">
+          You've marked {knownCards.size} cards as known and {unknownCards.size} as unknown.
+        </p>
+        <Button onClick={handleReset}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Start Over
+        </Button>
+      </div>
+    )
+  }
+
+  // List view
+  if (viewMode === 'list') {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Card Progress Review</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setViewMode('deck')}>
+              <Grid3x3 className="w-4 h-4 mr-2" />
+              Card View
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="p-4 bg-green-500/10 border-green-500/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <span className="font-semibold text-green-600 dark:text-green-400">Known</span>
+            </div>
+            <p className="text-3xl font-bold">{cardsByStatus.known.length}</p>
+          </Card>
+          <Card className="p-4 bg-red-500/10 border-red-500/20">
+            <div className="flex items-center gap-2 mb-2">
+              <X className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <span className="font-semibold text-red-600 dark:text-red-400">Need Review</span>
+            </div>
+            <p className="text-3xl font-bold">{cardsByStatus.needReview.length}</p>
+          </Card>
+          <Card className="p-4 bg-muted">
+            <div className="flex items-center gap-2 mb-2">
+              <Circle className="w-5 h-5 text-muted-foreground" />
+              <span className="font-semibold text-muted-foreground">Not Reviewed</span>
+            </div>
+            <p className="text-3xl font-bold">{cardsByStatus.notReviewed.length}</p>
+          </Card>
+        </div>
+
+        {/* Known Cards */}
+        {cardsByStatus.known.length > 0 && (
+          <div>
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+              Known Cards ({cardsByStatus.known.length})
+            </h4>
+            <div className="space-y-2">
+              {cardsByStatus.known.map(card => (
+                <Card key={card.id} className="p-4 bg-green-500/5 border-green-500/20">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium mb-1">{card.front}</p>
+                      <p className="text-sm text-muted-foreground">{card.back}</p>
+                      <div className="flex gap-2 mt-2">
+                        {card.tags.map(tag => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400">
+                      <Check className="w-3 h-3" />
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Need Review Cards */}
+        {cardsByStatus.needReview.length > 0 && (
+          <div>
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <X className="w-4 h-4 text-red-600 dark:text-red-400" />
+              Need Review ({cardsByStatus.needReview.length})
+            </h4>
+            <div className="space-y-2">
+              {cardsByStatus.needReview.map(card => (
+                <Card key={card.id} className="p-4 bg-red-500/5 border-red-500/20">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium mb-1">{card.front}</p>
+                      <p className="text-sm text-muted-foreground">{card.back}</p>
+                      <div className="flex gap-2 mt-2">
+                        {card.tags.map(tag => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400">
+                      <X className="w-3 h-3" />
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Not Reviewed Cards */}
+        {cardsByStatus.notReviewed.length > 0 && (
+          <div>
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <Circle className="w-4 h-4 text-muted-foreground" />
+              Not Yet Reviewed ({cardsByStatus.notReviewed.length})
+            </h4>
+            <div className="space-y-2">
+              {cardsByStatus.notReviewed.map(card => (
+                <Card key={card.id} className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium mb-1">{card.front}</p>
+                      <div className="flex gap-2 mt-2">
+                        {card.tags.map(tag => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-muted">
+                      <Circle className="w-3 h-3" />
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Deck view
+  return (
+    <div className="space-y-6">
+      {/* Keyboard shortcuts info */}
+      <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+        <p className="font-medium mb-2">Keyboard Shortcuts:</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">Space/Enter</kbd> Flip</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">←/→</kbd> Navigate</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">K or 1</kbd> Know</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">U or 2</kbd> Review</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">S</kbd> Shuffle</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">R</kbd> Reset</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">L</kbd> List View</span>
+        </div>
+      </div>
+
+      {/* Progress & Stats */}
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex gap-2">
+          <Badge variant="outline">
+            {currentIndex + 1} / {displayCards.length}
+          </Badge>
+          <Badge variant="secondary">
+            {progress}% Known
+          </Badge>
+          <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+            ✓ {knownCards.size}
+          </Badge>
+          <Badge variant="destructive">
+            ? {unknownCards.size}
+          </Badge>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowOnlyUnknown(!showOnlyUnknown)}
+          >
+            {showOnlyUnknown ? 'Show All' : 'Unknown Only'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleShuffle}>
+            <Shuffle className="w-4 h-4 mr-2" />
+            Shuffle
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleReset}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Reset
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setViewMode('list')}>
+            <List className="w-4 h-4 mr-2" />
+            List View
+          </Button>
+        </div>
+      </div>
+
+      {/* Flashcard */}
+      <FlashCard
+        card={currentCard}
+        theme={theme}
+        isFlipped={isFlipped}
+        onFlip={handleFlip}
+      />
+
+      {/* Navigation & Actions */}
+      <div className="flex flex-wrap gap-4 items-center justify-between">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handlePrevious}
+            disabled={currentIndex === 0}
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleNext}
+            disabled={currentIndex === displayCards.length - 1}
+          >
+            Next
+            <ChevronRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="default"
+            className="bg-green-500 hover:bg-green-600"
+            onClick={handleMarkKnown}
+          >
+            ✓ I Know This
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleMarkUnknown}
+          >
+            ? Need Review
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
