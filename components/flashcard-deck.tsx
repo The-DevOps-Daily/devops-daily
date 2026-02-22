@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { FlashCard } from './flashcard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,6 +23,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   const [unknownCards, setUnknownCards] = useState<Set<string>>(new Set())
   const [shuffledCards, setShuffledCards] = useState<FlashCard[]>(cards)
   const [showOnlyUnknown, setShowOnlyUnknown] = useState(false)
+  const [isFlipped, setIsFlipped] = useState(false)
 
   const displayCards = showOnlyUnknown
     ? shuffledCards.filter(card => !knownCards.has(card.id))
@@ -46,12 +47,14 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   const handleNext = useCallback(() => {
     if (currentIndex < displayCards.length - 1) {
       setCurrentIndex(currentIndex + 1)
+      setIsFlipped(false)
     }
   }, [currentIndex, displayCards.length])
 
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1)
+      setIsFlipped(false)
     }
   }, [currentIndex])
 
@@ -77,6 +80,61 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
     handleNext()
   }, [currentCard, handleNext])
 
+  const handleFlip = useCallback(() => {
+    setIsFlipped(!isFlipped)
+  }, [isFlipped])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault()
+          handlePrevious()
+          break
+        case 'ArrowRight':
+          e.preventDefault()
+          handleNext()
+          break
+        case ' ':
+        case 'Enter':
+          e.preventDefault()
+          handleFlip()
+          break
+        case 'k':
+        case 'K':
+        case '1':
+          e.preventDefault()
+          if (isFlipped) handleMarkKnown()
+          break
+        case 'u':
+        case 'U':
+        case '2':
+          e.preventDefault()
+          if (isFlipped) handleMarkUnknown()
+          break
+        case 's':
+        case 'S':
+          e.preventDefault()
+          handleShuffle()
+          break
+        case 'r':
+        case 'R':
+          e.preventDefault()
+          handleReset()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handlePrevious, handleNext, handleFlip, handleMarkKnown, handleMarkUnknown, handleShuffle, handleReset, isFlipped])
+
   const progress = Math.round((knownCards.size / cards.length) * 100)
 
   if (!currentCard) {
@@ -96,6 +154,19 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
 
   return (
     <div className="space-y-6">
+      {/* Keyboard shortcuts info */}
+      <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+        <p className="font-medium mb-2">Keyboard Shortcuts:</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">Space/Enter</kbd> Flip</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">←/→</kbd> Navigate</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">K or 1</kbd> Know</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">U or 2</kbd> Review</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">S</kbd> Shuffle</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">R</kbd> Reset</span>
+        </div>
+      </div>
+
       {/* Progress & Stats */}
       <div className="flex flex-wrap gap-4 items-center justify-between">
         <div className="flex gap-2">
@@ -135,6 +206,8 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
       <FlashCard
         card={currentCard}
         theme={theme}
+        isFlipped={isFlipped}
+        onFlip={handleFlip}
       />
 
       {/* Navigation & Actions */}

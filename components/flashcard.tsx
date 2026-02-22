@@ -10,6 +10,8 @@ import type { FlashCard } from '@/lib/flashcard-loader';
 
 interface FlashCardComponentProps {
   card: FlashCard;
+  isFlipped?: boolean;
+  onFlip?: () => void;
   onNext?: () => void;
   onPrevious?: () => void;
   onKnown?: () => void;
@@ -21,6 +23,8 @@ interface FlashCardComponentProps {
 
 export function FlashCard({
   card,
+  isFlipped: externalIsFlipped,
+  onFlip: externalOnFlip,
   onNext,
   onPrevious,
   onKnown,
@@ -29,27 +33,44 @@ export function FlashCard({
   currentIndex = 0,
   totalCards = 1,
 }: FlashCardComponentProps) {
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [internalIsFlipped, setInternalIsFlipped] = useState(false);
 
-  const handleFlip = () => setIsFlipped(!isFlipped);
+  // Use external state if provided, otherwise use internal state
+  const isFlipped = externalIsFlipped !== undefined ? externalIsFlipped : internalIsFlipped;
+
+  const handleFlip = () => {
+    if (externalOnFlip) {
+      externalOnFlip();
+    } else {
+      setInternalIsFlipped(!internalIsFlipped);
+    }
+  };
 
   const handleKnown = () => {
-    setIsFlipped(false);
+    if (!externalOnFlip) {
+      setInternalIsFlipped(false);
+    }
     onKnown?.();
   };
 
   const handleUnknown = () => {
-    setIsFlipped(false);
+    if (!externalOnFlip) {
+      setInternalIsFlipped(false);
+    }
     onUnknown?.();
   };
 
   const handleNext = () => {
-    setIsFlipped(false);
+    if (!externalOnFlip) {
+      setInternalIsFlipped(false);
+    }
     onNext?.();
   };
 
   const handlePrevious = () => {
-    setIsFlipped(false);
+    if (!externalOnFlip) {
+      setInternalIsFlipped(false);
+    }
     onPrevious?.();
   };
 
