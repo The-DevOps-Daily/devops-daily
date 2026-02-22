@@ -517,6 +517,17 @@ export default function PromqlPlayground() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        // Only allow Cmd+Enter for execute
+        if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          e.preventDefault();
+          executeQuery();
+        }
+        return;
+      }
+
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
         executeQuery();
@@ -779,25 +790,6 @@ export default function PromqlPlayground() {
                     </CardContent>
                   </Card>
                 ))}
-              </div>
-
-              <div className="flex justify-between">
-                <Button
-                  variant="outline"
-                  onClick={() => loadTutorial(currentTutorial - 1)}
-                  disabled={currentTutorial === 0}
-                >
-                  <ChevronLeft className="w-4 h-4 mr-2" />
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => loadTutorial(currentTutorial + 1)}
-                  disabled={currentTutorial === TUTORIALS.length - 1}
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
               </div>
             </TabsContent>
           </Tabs>
