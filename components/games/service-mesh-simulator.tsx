@@ -17,9 +17,47 @@ interface Tutorial {
 }
 
 export default function ServiceMeshSimulator() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTutorial, setCurrentTutorial] = useState(0);
-  const [requestAnimation, setRequestAnimation] = useState(0);
+ const [isPlaying, setIsPlaying] = useState(false);
+ const [currentTutorial, setCurrentTutorial] = useState(0);
+ const [requestAnimation, setRequestAnimation] = useState(0);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          if (currentTutorial > 0) {
+            setCurrentTutorial(currentTutorial - 1);
+            setIsPlaying(false);
+          }
+          break;
+        case 'ArrowRight':
+          if (currentTutorial < tutorials.length - 1) {
+            setCurrentTutorial(currentTutorial + 1);
+            setIsPlaying(false);
+          }
+          break;
+        case ' ':
+        case 'Enter':
+          e.preventDefault();
+          setIsPlaying(!isPlaying);
+          break;
+        case 'r':
+        case 'R':
+          handleReset();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentTutorial, isPlaying, tutorials.length]);
 
   const tutorials: Tutorial[] = [
     {
@@ -250,12 +288,13 @@ export default function ServiceMeshSimulator() {
               </div>
             </div>
 
-            <div className="relative flex flex-col gap-12 mx-4">
-              {/* Top path (90%) */}
-              <div className="relative flex flex-col items-center">
-                <div className="w-32 h-0.5 bg-green-400" />
-                <div className="absolute right-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-green-400" />
-                {isPlaying && Math.random() > 0.1 && (
+           <div className="relative flex flex-col gap-12 mx-4">
+             {/* Top path (90%) */}
+             <div className="relative flex flex-col items-center">
+                <div className="relative w-32 h-0.5 bg-green-400">
+                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-green-400" />
+                </div>
+               {isPlaying && Math.random() > 0.1 && (
                   <div
                     className="absolute top-0 w-3 h-3 bg-green-500 rounded-full shadow-lg"
                     style={{ left: `${progress * 85}%`, transition: 'left 0.05s linear' }}
@@ -266,11 +305,12 @@ export default function ServiceMeshSimulator() {
                 </div>
               </div>
 
-              {/* Bottom path (10%) */}
-              <div className="relative flex flex-col items-center">
-                <div className="w-32 h-0.5 bg-orange-400" />
-                <div className="absolute right-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-orange-400" />
-                {isPlaying && Math.random() < 0.1 && (
+             {/* Bottom path (10%) */}
+             <div className="relative flex flex-col items-center">
+                <div className="relative w-32 h-0.5 bg-orange-400">
+                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-orange-400" />
+                </div>
+               {isPlaying && Math.random() < 0.1 && (
                   <div
                     className="absolute top-0 w-3 h-3 bg-orange-500 rounded-full shadow-lg"
                     style={{ left: `${progress * 85}%`, transition: 'left 0.05s linear' }}
@@ -329,11 +369,12 @@ export default function ServiceMeshSimulator() {
             </div>
 
             <div className="relative flex flex-col items-center gap-4 mx-4">
-              {/* First attempt */}
-              <div className="relative flex flex-col items-center">
-                <div className="w-32 h-0.5 bg-red-400" />
-                <div className="absolute right-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-red-400" />
-                {isPlaying && progress < 0.33 && (
+             {/* First attempt */}
+             <div className="relative flex flex-col items-center">
+                <div className="relative w-32 h-0.5 bg-red-400">
+                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-red-400" />
+                </div>
+               {isPlaying && progress < 0.33 && (
                   <div
                     className="absolute top-0 w-3 h-3 bg-red-500 rounded-full shadow-lg"
                     style={{ left: `${(progress / 0.33) * 85}%`, transition: 'left 0.05s linear' }}
@@ -353,11 +394,12 @@ export default function ServiceMeshSimulator() {
                 </div>
               )}
 
-              {/* Second attempt */}
-              <div className="relative flex flex-col items-center">
-                <div className="w-32 h-0.5 bg-green-400" />
-                <div className="absolute right-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-green-400" />
-                {isPlaying && progress >= 0.38 && (
+             {/* Second attempt */}
+             <div className="relative flex flex-col items-center">
+                <div className="relative w-32 h-0.5 bg-green-400">
+                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-green-400" />
+                </div>
+               {isPlaying && progress >= 0.38 && (
                   <div
                     className="absolute top-0 w-3 h-3 bg-green-500 rounded-full shadow-lg"
                     style={{ left: `${((progress - 0.38) / 0.62) * 85}%`, transition: 'left 0.05s linear' }}
@@ -521,10 +563,20 @@ export default function ServiceMeshSimulator() {
                   </ul>
                 </div>
               </div>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
+           </AlertDescription>
+         </Alert>
+
+          {/* Keyboard Shortcuts */}
+          <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+            <p className="font-medium mb-2">Keyboard Shortcuts:</p>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              <span><kbd className="px-2 py-1 bg-background rounded text-xs">Space/Enter</kbd> Play/Pause</span>
+              <span><kbd className="px-2 py-1 bg-background rounded text-xs">←/→</kbd> Navigate Steps</span>
+              <span><kbd className="px-2 py-1 bg-background rounded text-xs">R</kbd> Reset</span>
+            </div>
+          </div>
+       </CardContent>
+     </Card>
     </div>
   );
 }
