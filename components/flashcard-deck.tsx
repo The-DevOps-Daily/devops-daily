@@ -155,10 +155,12 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
           e.preventDefault()
           handleShuffle()
           break
-        case 'r':
         case 'R':
-          e.preventDefault()
-          handleReset()
+          // Only trigger reset on Shift+R to avoid browser refresh conflict
+          if (e.shiftKey) {
+            e.preventDefault()
+            handleReset()
+          }
           break
       }
     }
@@ -338,7 +340,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">K or 1</kbd> Know</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">U or 2</kbd> Review</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">S</kbd> Shuffle</span>
-          <span><kbd className="px-2 py-1 bg-background rounded text-xs">R</kbd> Reset</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">Shift+R</kbd> Reset</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">L</kbd> List View</span>
         </div>
       </div>
@@ -382,16 +384,18 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
         </div>
       </div>
 
-      {/* Flashcard */}
+      {/* Flashcard with improved spacing */}
+      <div className="mb-8">
       <FlashCard
         card={currentCard}
         theme={theme}
         isFlipped={isFlipped}
         onFlip={handleFlip}
       />
+      </div>
 
       {/* Navigation & Actions */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
+      <div className="flex flex-wrap gap-4 items-center justify-between pt-6 border-t border-border/50">
         <div className="flex gap-2">
           <Button
             variant="outline"
