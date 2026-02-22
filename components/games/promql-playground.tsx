@@ -630,7 +630,7 @@ export default function PromqlPlayground() {
                 <Textarea
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Try: http_requests_total{method=\"GET\"}"
+                  placeholder='Try: http_requests_total{method="GET"}'
                   className="font-mono text-sm min-h-[100px] resize-y"
                   rows={3}
                 />
