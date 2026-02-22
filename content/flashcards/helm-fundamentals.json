@@ -1,0 +1,115 @@
+{
+  "id": "helm-fundamentals",
+  "title": "Helm Fundamentals",
+  "description": "Master Helm package manager for Kubernetes including charts, releases, values, templates, hooks, and repository management.",
+  "category": "Kubernetes",
+  "icon": "Package",
+  "difficulty": "intermediate",
+  "estimatedTime": "15 minutes",
+  "cardCount": 14,
+  "theme": {
+    "primaryColor": "indigo",
+    "gradientFrom": "from-indigo-500",
+    "gradientTo": "to-purple-600"
+  },
+  "cards": [
+    {
+      "id": "helm-definition",
+      "front": "What is Helm?",
+      "back": "Helm is a package manager for Kubernetes that simplifies deploying and managing applications. It packages Kubernetes manifests into charts, supports versioning, templating, and dependency management. Think of it as apt/yum for Kubernetes.",
+      "category": "Fundamentals",
+      "tags": ["helm", "basics", "package-manager"]
+    },
+    {
+      "id": "helm-chart",
+      "front": "What is a Helm Chart?",
+      "back": "A Chart is a collection of files describing a Kubernetes application. Contains templates (K8s manifests with variables), values.yaml (default config), Chart.yaml (metadata), and optional dependencies. Charts are versioned and can be shared.",
+      "category": "Charts",
+      "tags": ["chart", "package", "basics"]
+    },
+    {
+      "id": "helm-release",
+      "front": "What is a Helm Release?",
+      "back": "A Release is an instance of a Chart running in a Kubernetes cluster. Same Chart can be installed multiple times with different names/configurations. Each release has a unique name and maintains its own history for rollbacks.",
+      "category": "Fundamentals",
+      "tags": ["release", "deployment", "basics"]
+    },
+    {
+      "id": "values-yaml",
+      "front": "What is values.yaml?",
+      "back": "values.yaml defines default configuration values for a Chart. Variables like image tags, replicas, resources. Override with custom values: helm install -f custom-values.yaml or --set key=value. Values injected into templates.",
+      "category": "Configuration",
+      "tags": ["values", "configuration", "yaml"]
+    },
+    {
+      "id": "helm-templates",
+      "front": "What are Helm Templates?",
+      "back": "Templates are Kubernetes manifests with Go template syntax. Use {{ .Values.image.tag }} to insert values, {{ if }} for conditionals, {{ range }} for loops. Helm renders templates with values to generate final K8s YAML.",
+      "category": "Templates",
+      "tags": ["templates", "go-templates", "syntax"]
+    },
+    {
+      "id": "chart-structure",
+      "front": "What's the structure of a Helm Chart?",
+      "back": "Chart directory contains: Chart.yaml (metadata), values.yaml (defaults), templates/ (K8s manifests), charts/ (dependencies), .helmignore (ignore files), README.md (docs), and optionally crds/ (Custom Resource Definitions).",
+      "category": "Charts",
+      "tags": ["chart", "structure", "filesystem"]
+    },
+    {
+      "id": "helm-install",
+      "front": "How do you install a Helm Chart?",
+      "back": "helm install [release-name] [chart]: helm install my-nginx bitnami/nginx. Options: --namespace, -f values.yaml, --set key=value, --version (chart version), --wait (wait for ready), --dry-run (simulate).",
+      "category": "Commands",
+      "tags": ["install", "commands", "deployment"]
+    },
+    {
+      "id": "helm-upgrade",
+      "front": "How do you upgrade a Helm Release?",
+      "back": "helm upgrade [release] [chart]: helm upgrade my-nginx bitnami/nginx --set replicas=3. Updates existing release. Options: --reuse-values (keep current), --reset-values (use chart defaults), --install (install if not exists).",
+      "category": "Commands",
+      "tags": ["upgrade", "commands", "update"]
+    },
+    {
+      "id": "helm-rollback",
+      "front": "How do you rollback a Helm Release?",
+      "back": "helm rollback [release] [revision]: helm rollback my-nginx 1. Reverts to previous working state. View history with helm history [release]. Each upgrade creates new revision. Rollback creates new revision pointing to old config.",
+      "category": "Commands",
+      "tags": ["rollback", "commands", "recovery"]
+    },
+    {
+      "id": "helm-hooks",
+      "front": "What are Helm Hooks?",
+      "back": "Hooks are resources that run at specific points in release lifecycle using annotations. Types: pre-install, post-install, pre-upgrade, post-upgrade, pre-delete, post-delete, pre-rollback, post-rollback. Used for migrations, backups, or cleanup.",
+      "category": "Advanced",
+      "tags": ["hooks", "lifecycle", "automation"]
+    },
+    {
+      "id": "helm-dependencies",
+      "front": "How do Chart dependencies work?",
+      "back": "Define dependencies in Chart.yaml: dependencies list with name, version, repository. Run helm dependency update to download to charts/ directory. Parent chart can override child values. Supports condition/tags for optional dependencies.",
+      "category": "Charts",
+      "tags": ["dependencies", "charts", "composition"]
+    },
+    {
+      "id": "helm-repository",
+      "front": "What is a Helm Repository?",
+      "back": "A Repository is an HTTP server hosting packaged charts (index.yaml + .tgz files). Add repo: helm repo add bitnami https://charts.bitnami.com/bitnami. Update: helm repo update. Popular repos: Bitnami, Jetstack, stable (deprecated).",
+      "category": "Repository",
+      "tags": ["repository", "helm-hub", "distribution"]
+    },
+    {
+      "id": "helm-test",
+      "front": "What is helm test?",
+      "back": "helm test runs tests defined in chart's templates/tests/ directory. Test pods with helm.sh/hook: test annotation run validation (e.g., curl health endpoint). Command: helm test [release]. Tests verify deployment success.",
+      "category": "Testing",
+      "tags": ["test", "validation", "quality"]
+    },
+    {
+      "id": "helm-best-practices",
+      "front": "What are Helm best practices?",
+      "back": "Use meaningful release names, version charts semantically (SemVer), document values in values.yaml, use _helpers.tpl for reusable templates, validate with helm lint, test before deploying, use --dry-run, keep charts idempotent, use hooks for setup/teardown.",
+      "category": "Best Practices",
+      "tags": ["best-practices", "guidelines", "quality"]
+    }
+  ]
+}

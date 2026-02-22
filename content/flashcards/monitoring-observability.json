@@ -1,0 +1,129 @@
+{
+  "id": "monitoring-observability",
+  "title": "Monitoring & Observability",
+  "description": "Learn monitoring fundamentals including metrics, logs, traces, Prometheus, Grafana, alerting strategies, and SLIs/SLOs/SLAs.",
+  "category": "Monitoring",
+  "icon": "Activity",
+  "difficulty": "intermediate",
+  "estimatedTime": "18 minutes",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "cyan",
+    "gradientFrom": "from-cyan-500",
+    "gradientTo": "to-blue-600"
+  },
+  "cards": [
+    {
+      "id": "observability-definition",
+      "front": "What is Observability?",
+      "back": "Observability is the ability to understand a system's internal state from its external outputs. Built on three pillars: metrics (what is happening), logs (why it's happening), traces (where it's happening). Enables debugging complex distributed systems.",
+      "category": "Fundamentals",
+      "tags": ["observability", "basics", "pillars"]
+    },
+    {
+      "id": "monitoring-vs-observability",
+      "front": "What's the difference between Monitoring and Observability?",
+      "back": "Monitoring: tracking known failure modes with predefined metrics and alerts. Observability: exploring unknown issues through rich telemetry data. Monitoring answers 'Is there a problem?', Observability answers 'Why is there a problem?'.",
+      "category": "Fundamentals",
+      "tags": ["monitoring", "observability", "comparison"]
+    },
+    {
+      "id": "prometheus-definition",
+      "front": "What is Prometheus?",
+      "back": "Prometheus is an open-source monitoring system with time-series database. Uses pull model to scrape metrics from endpoints. Features: multi-dimensional data model, powerful PromQL query language, built-in alerting, service discovery, no external dependencies.",
+      "category": "Tools",
+      "tags": ["prometheus", "metrics", "monitoring"]
+    },
+    {
+      "id": "metric-types",
+      "front": "What are Prometheus metric types?",
+      "back": "Four types: 1) Counter (monotonically increasing, e.g., requests_total), 2) Gauge (can go up/down, e.g., memory_usage), 3) Histogram (observations in buckets, e.g., request_duration), 4) Summary (similar to histogram with quantiles).",
+      "category": "Metrics",
+      "tags": ["prometheus", "metrics", "types"]
+    },
+    {
+      "id": "promql-basics",
+      "front": "What is PromQL?",
+      "back": "Prometheus Query Language for selecting and aggregating time-series data. Examples: rate(http_requests_total[5m]) (requests per second over 5 minutes), avg(node_cpu_usage) by (instance) (average CPU by instance). Supports functions, operators, aggregations.",
+      "category": "Tools",
+      "tags": ["promql", "prometheus", "queries"]
+    },
+    {
+      "id": "grafana-definition",
+      "front": "What is Grafana?",
+      "back": "Grafana is an open-source visualization and analytics platform. Creates dashboards with graphs, tables, heatmaps from multiple data sources (Prometheus, InfluxDB, Elasticsearch). Features: templating, alerts, annotations, sharing, plugins.",
+      "category": "Tools",
+      "tags": ["grafana", "visualization", "dashboards"]
+    },
+    {
+      "id": "golden-signals",
+      "front": "What are the Four Golden Signals?",
+      "back": "Google SRE's key metrics for monitoring services: 1) Latency (response time), 2) Traffic (request rate), 3) Errors (failure rate), 4) Saturation (resource fullness). Monitor these to understand service health comprehensively.",
+      "category": "Best Practices",
+      "tags": ["golden-signals", "sre", "metrics"]
+    },
+    {
+      "id": "red-method",
+      "front": "What is the RED method?",
+      "back": "RED method for monitoring services: Rate (requests per second), Errors (failed requests per second), Duration (latency distribution). Focused on request-driven services. Simpler alternative to Four Golden Signals.",
+      "category": "Best Practices",
+      "tags": ["red-method", "monitoring", "metrics"]
+    },
+    {
+      "id": "sli-definition",
+      "front": "What is an SLI?",
+      "back": "Service Level Indicator (SLI) is a quantitative measure of service level. Examples: request success rate, latency percentile, availability percentage. SLIs are the metrics used to measure if you're meeting your SLO.",
+      "category": "SRE",
+      "tags": ["sli", "sre", "metrics"]
+    },
+    {
+      "id": "slo-definition",
+      "front": "What is an SLO?",
+      "back": "Service Level Objective (SLO) is a target range for an SLI. Example: '99.9% of requests succeed' or 'p95 latency < 200ms'. Sets reliability goals and guides engineering priorities. Breaching SLO triggers action.",
+      "category": "SRE",
+      "tags": ["slo", "sre", "reliability"]
+    },
+    {
+      "id": "sla-definition",
+      "front": "What is an SLA?",
+      "back": "Service Level Agreement (SLA) is a business contract with consequences for not meeting SLOs. Includes financial penalties or service credits. SLA is stricter than SLO. Example: '99.9% uptime or customers get 10% credit'.",
+      "category": "SRE",
+      "tags": ["sla", "sre", "contract"]
+    },
+    {
+      "id": "error-budget",
+      "front": "What is an Error Budget?",
+      "back": "Error Budget = (100% - SLO). If SLO is 99.9%, error budget is 0.1% (43 minutes/month downtime allowed). When budget exhausted, prioritize reliability over features. Balances innovation with stability.",
+      "category": "SRE",
+      "tags": ["error-budget", "sre", "reliability"]
+    },
+    {
+      "id": "distributed-tracing",
+      "front": "What is Distributed Tracing?",
+      "back": "Tracing tracks requests across multiple services in microservices. Each request gets a trace ID, services add spans with timing data. Tools: Jaeger, Zipkin, OpenTelemetry. Helps identify bottlenecks and failures in complex systems.",
+      "category": "Tracing",
+      "tags": ["tracing", "distributed", "microservices"]
+    },
+    {
+      "id": "logging-strategies",
+      "front": "What are logging best practices?",
+      "back": "Structured logging (JSON format), consistent log levels (DEBUG, INFO, WARN, ERROR), include context (request IDs, user IDs), centralized aggregation (ELK, Loki), retention policies, avoid sensitive data, use correlation IDs for distributed systems.",
+      "category": "Logging",
+      "tags": ["logging", "best-practices", "structured"]
+    },
+    {
+      "id": "alerting-best-practices",
+      "front": "What are alerting best practices?",
+      "back": "Alert on symptoms not causes, keep alerts actionable, avoid alert fatigue (too many alerts), use severity levels, include runbooks in alerts, set appropriate thresholds, alert on SLO burn rate, use escalation policies, test alerts regularly.",
+      "category": "Alerting",
+      "tags": ["alerting", "best-practices", "monitoring"]
+    },
+    {
+      "id": "on-call-practices",
+      "front": "What are on-call best practices?",
+      "back": "Rotate on-call schedules, provide escalation paths, maintain runbooks, post-incident reviews (blameless), compensate on-call time, limit alert volume, automate common fixes, establish response SLOs, practice incident response, use incident commanders for major outages.",
+      "category": "Operations",
+      "tags": ["on-call", "incident-response", "sre"]
+    }
+  ]
+}

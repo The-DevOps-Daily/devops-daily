@@ -1,0 +1,171 @@
+{
+  "id": "aws-essentials",
+  "title": "AWS Essentials",
+  "description": "Learn core AWS services including EC2, S3, VPC, IAM, and best practices for security, cost optimization, and the Well-Architected Framework.",
+  "category": "Cloud",
+  "icon": "Cloud",
+  "difficulty": "beginner",
+  "estimatedTime": "25 minutes",
+  "cardCount": 22,
+  "theme": {
+    "primaryColor": "amber",
+    "gradientFrom": "from-amber-500",
+    "gradientTo": "to-orange-600"
+  },
+  "cards": [
+    {
+      "id": "ec2-definition",
+      "front": "What is Amazon EC2?",
+      "back": "Elastic Compute Cloud (EC2) provides resizable virtual servers (instances) in the cloud. You can launch instances with different CPU, memory, storage, and networking capacity to match your workload requirements.",
+      "category": "Compute",
+      "tags": ["ec2", "compute", "basics"]
+    },
+    {
+      "id": "s3-definition",
+      "front": "What is Amazon S3?",
+      "back": "Simple Storage Service (S3) is an object storage service offering industry-leading scalability, durability (99.999999999%), and availability. Used for backups, data lakes, static websites, and content distribution.",
+      "category": "Storage",
+      "tags": ["s3", "storage", "basics"]
+    },
+    {
+      "id": "vpc-definition",
+      "front": "What is Amazon VPC?",
+      "back": "Virtual Private Cloud (VPC) lets you provision a logically isolated section of AWS cloud with your own IP address range, subnets, route tables, and network gateways. Provides complete network control.",
+      "category": "Networking",
+      "tags": ["vpc", "networking", "basics"]
+    },
+    {
+      "id": "iam-definition",
+      "front": "What is AWS IAM?",
+      "back": "Identity and Access Management (IAM) enables secure control of access to AWS services and resources. You manage users, groups, roles, and policies to define who can access what.",
+      "category": "Security",
+      "tags": ["iam", "security", "basics"]
+    },
+    {
+      "id": "rds-definition",
+      "front": "What is Amazon RDS?",
+      "back": "Relational Database Service (RDS) makes it easy to set up, operate, and scale relational databases (MySQL, PostgreSQL, Oracle, SQL Server, MariaDB). Handles backups, patching, and replication automatically.",
+      "category": "Database",
+      "tags": ["rds", "database", "managed"]
+    },
+    {
+      "id": "lambda-definition",
+      "front": "What is AWS Lambda?",
+      "back": "Lambda is a serverless compute service that runs code in response to events without provisioning servers. You pay only for compute time consumed. Supports multiple languages and auto-scales.",
+      "category": "Compute",
+      "tags": ["lambda", "serverless", "compute"]
+    },
+    {
+      "id": "security-groups",
+      "front": "What are Security Groups?",
+      "back": "Security Groups act as virtual firewalls controlling inbound and outbound traffic for EC2 instances. They're stateful (return traffic automatically allowed) and operate at the instance level.",
+      "category": "Security",
+      "tags": ["security-groups", "firewall", "networking"]
+    },
+    {
+      "id": "cloudwatch",
+      "front": "What is Amazon CloudWatch?",
+      "back": "CloudWatch is a monitoring and observability service that collects metrics, logs, and events from AWS resources. Enables alarms, dashboards, and automated responses to changes in AWS environment.",
+      "category": "Monitoring",
+      "tags": ["cloudwatch", "monitoring", "observability"]
+    },
+    {
+      "id": "iam-policies",
+      "front": "What are IAM Policies?",
+      "back": "IAM Policies are JSON documents that define permissions. They specify allowed or denied actions on AWS resources. Policies can be attached to users, groups, or roles.",
+      "category": "Security",
+      "tags": ["iam", "policies", "permissions"]
+    },
+    {
+      "id": "iam-roles",
+      "front": "What are IAM Roles?",
+      "back": "IAM Roles are identities with permission policies that determine what actions an entity can perform. Unlike users, roles don't have long-term credentials. Used for EC2 instances, Lambda functions, and cross-account access.",
+      "category": "Security",
+      "tags": ["iam", "roles", "security"]
+    },
+    {
+      "id": "ebs-volumes",
+      "front": "What are EBS Volumes?",
+      "back": "Elastic Block Store (EBS) provides persistent block storage volumes for EC2 instances. Data persists independently from instance lifetime. Supports snapshots for backups and offers different volume types (SSD/HDD).",
+      "category": "Storage",
+      "tags": ["ebs", "storage", "volumes"]
+    },
+    {
+      "id": "elb",
+      "front": "What is Elastic Load Balancing (ELB)?",
+      "back": "ELB automatically distributes incoming traffic across multiple targets (EC2, containers, IPs). Three types: Application Load Balancer (HTTP/HTTPS), Network Load Balancer (TCP/UDP), Gateway Load Balancer (network appliances).",
+      "category": "Networking",
+      "tags": ["elb", "load-balancer", "networking"]
+    },
+    {
+      "id": "auto-scaling",
+      "front": "What is AWS Auto Scaling?",
+      "back": "Auto Scaling automatically adjusts compute capacity to maintain performance and minimize costs. Monitors applications and scales EC2 instances based on demand using scaling policies and health checks.",
+      "category": "Compute",
+      "tags": ["auto-scaling", "scaling", "compute"]
+    },
+    {
+      "id": "cloudfront",
+      "front": "What is Amazon CloudFront?",
+      "back": "CloudFront is a Content Delivery Network (CDN) that delivers content globally with low latency. Caches content at edge locations worldwide and integrates with S3, EC2, and custom origins.",
+      "category": "Networking",
+      "tags": ["cloudfront", "cdn", "delivery"]
+    },
+    {
+      "id": "route53",
+      "front": "What is Amazon Route 53?",
+      "back": "Route 53 is a scalable DNS web service that routes users to applications. Offers domain registration, DNS routing, and health checking. Supports multiple routing policies (simple, weighted, latency, failover, geolocation).",
+      "category": "Networking",
+      "tags": ["route53", "dns", "networking"]
+    },
+    {
+      "id": "s3-storage-classes",
+      "front": "What are S3 Storage Classes?",
+      "back": "S3 offers storage classes for different use cases: Standard (frequent access), Standard-IA (infrequent access), One Zone-IA (single AZ), Glacier (archival), Glacier Deep Archive (long-term), Intelligent-Tiering (automatic optimization).",
+      "category": "Storage",
+      "tags": ["s3", "storage-classes", "cost-optimization"]
+    },
+    {
+      "id": "well-architected-pillars",
+      "front": "What are the AWS Well-Architected Framework pillars?",
+      "back": "Six pillars: 1) Operational Excellence, 2) Security, 3) Reliability, 4) Performance Efficiency, 5) Cost Optimization, 6) Sustainability. Framework provides best practices for designing and operating reliable, secure, efficient systems.",
+      "category": "Best Practices",
+      "tags": ["well-architected", "framework", "best-practices"]
+    },
+    {
+      "id": "least-privilege",
+      "front": "What is the Principle of Least Privilege in AWS?",
+      "back": "Grant users and services only the minimum permissions needed to perform tasks. Start with minimal permissions and grant additional as needed. Use IAM policies, SCPs, and permission boundaries to enforce.",
+      "category": "Security",
+      "tags": ["security", "iam", "best-practices"]
+    },
+    {
+      "id": "availability-zones",
+      "front": "What are Availability Zones?",
+      "back": "Availability Zones (AZs) are isolated data centers within an AWS Region with independent power, cooling, and networking. Deploying across multiple AZs provides high availability and fault tolerance.",
+      "category": "Architecture",
+      "tags": ["availability", "regions", "architecture"]
+    },
+    {
+      "id": "mfa",
+      "front": "What is MFA in AWS?",
+      "back": "Multi-Factor Authentication (MFA) adds an extra layer of security requiring both password and unique authentication code. Strongly recommended for root account and privileged users. Supports virtual MFA, hardware tokens, and U2F.",
+      "category": "Security",
+      "tags": ["mfa", "security", "authentication"]
+    },
+    {
+      "id": "cost-optimization",
+      "front": "What are key AWS cost optimization strategies?",
+      "back": "Strategies include: Right-sizing instances, using Reserved Instances or Savings Plans, leveraging Spot Instances, implementing auto-scaling, using S3 lifecycle policies, deleting unused resources, and monitoring with Cost Explorer.",
+      "category": "Cost Management",
+      "tags": ["cost", "optimization", "best-practices"]
+    },
+    {
+      "id": "shared-responsibility",
+      "front": "What is the AWS Shared Responsibility Model?",
+      "back": "AWS secures infrastructure (hardware, facilities, network) - 'Security OF the cloud'. Customers secure data, applications, IAM, OS patches, network config - 'Security IN the cloud'. Responsibilities vary by service type.",
+      "category": "Security",
+      "tags": ["security", "responsibility", "compliance"]
+    }
+  ]
+}
