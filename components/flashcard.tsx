@@ -36,6 +36,7 @@ export function FlashCard({
   const [internalIsFlipped, setInternalIsFlipped] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  const isSwiping = useRef<boolean>(false);
 
   // Use external state if provided, otherwise use internal state
   const isFlipped = externalIsFlipped !== undefined ? externalIsFlipped : internalIsFlipped;
@@ -66,6 +67,7 @@ export function FlashCard({
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
   }, []);
 
   const handleTouchEnd = useCallback(
@@ -83,9 +85,11 @@ export function FlashCard({
 
         if (deltaX > swipeThreshold && onPrevious) {
           // Swipe right - go to previous card
+          isSwiping.current = true;
           onPrevious();
         } else if (deltaX < -swipeThreshold && onNext) {
           // Swipe left - go to next card
+          isSwiping.current = true;
           onNext();
         }
       }
@@ -111,9 +115,18 @@ export function FlashCard({
       {/* Flashcard */}
       <div
         className="relative h-64 sm:h-80 md:h-96 cursor-pointer perspective-1000 touch-manipulation"
-        onClick={handleFlip}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onClick={(e) => {
+          // Only flip if not swiping
+          if (!isSwiping.current) {
+            handleFlip();
+          }
+          // Reset swiping flag after a short delay
+          setTimeout(() => {
+            isSwiping.current = false;
+          }, 100);
+        }}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
