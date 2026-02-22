@@ -191,7 +191,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h3 className="text-lg font-semibold">Card Progress Review</h3>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => setViewMode('deck')}>
@@ -206,7 +206,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card className="p-4 bg-green-500/10 border-green-500/20">
             <div className="flex items-center gap-2 mb-2">
               <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -240,7 +240,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             <div className="space-y-2">
               {cardsByStatus.known.map(card => (
                 <Card key={card.id} className="p-4 bg-green-500/5 border-green-500/20">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div className="flex-1">
                       <p className="font-medium mb-1">{card.front}</p>
                       <p className="text-sm text-muted-foreground">{card.back}</p>
@@ -272,7 +272,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             <div className="space-y-2">
               {cardsByStatus.needReview.map(card => (
                 <Card key={card.id} className="p-4 bg-red-500/5 border-red-500/20">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div className="flex-1">
                       <p className="font-medium mb-1">{card.front}</p>
                       <p className="text-sm text-muted-foreground">{card.back}</p>
@@ -304,7 +304,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             <div className="space-y-2">
               {cardsByStatus.notReviewed.map(card => (
                 <Card key={card.id} className="p-4">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                     <div className="flex-1">
                       <p className="font-medium mb-1">{card.front}</p>
                       <div className="flex gap-2 mt-2">
@@ -332,9 +332,9 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   return (
     <div className="space-y-6">
       {/* Keyboard shortcuts info */}
-      <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+      <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground hidden sm:block">
         <p className="font-medium mb-2">Keyboard Shortcuts:</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-1">
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">Space/Enter</kbd> Flip</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">←/→</kbd> Navigate</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">K or 1</kbd> Know</span>
@@ -346,8 +346,8 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
       </div>
 
       {/* Progress & Stats */}
-      <div className="flex flex-wrap gap-4 items-center justify-between">
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center justify-between">
+        <div className="flex flex-wrap gap-2">
           <Badge variant="outline">
             {currentIndex + 1} / {displayCards.length}
           </Badge>
@@ -361,23 +361,24 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             ? {unknownCards.size}
           </Badge>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             size="sm"
+            className="flex-1 sm:flex-none min-h-[40px]"
             onClick={() => setShowOnlyUnknown(!showOnlyUnknown)}
           >
             {showOnlyUnknown ? 'Show All' : 'Unknown Only'}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleShuffle}>
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-none min-h-[40px]" onClick={handleShuffle}>
             <Shuffle className="w-4 h-4 mr-2" />
             Shuffle
           </Button>
-          <Button variant="outline" size="sm" onClick={handleReset}>
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-none min-h-[40px]" onClick={handleReset}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Reset
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setViewMode('list')}>
+          <Button variant="outline" size="sm" className="flex-1 sm:flex-none min-h-[40px]" onClick={() => setViewMode('list')}>
             <List className="w-4 h-4 mr-2" />
             List View
           </Button>
@@ -395,10 +396,11 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
       </div>
 
       {/* Navigation & Actions */}
-      <div className="flex flex-wrap gap-4 items-center justify-between pt-6 border-t border-border/50">
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-center justify-between pt-6 border-t border-border/50">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
+            className="flex-1 sm:flex-none min-h-[48px]"
             onClick={handlePrevious}
             disabled={currentIndex === 0}
           >
@@ -407,6 +409,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
           </Button>
           <Button
             variant="outline"
+            className="flex-1 sm:flex-none min-h-[48px]"
             onClick={handleNext}
             disabled={currentIndex === displayCards.length - 1}
           >
@@ -414,16 +417,17 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             <ChevronRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="default"
-            className="bg-green-500 hover:bg-green-600"
+            className="bg-green-500 hover:bg-green-600 flex-1 sm:flex-none min-h-[48px]"
             onClick={handleMarkKnown}
           >
             ✓ I Know This
           </Button>
           <Button
             variant="destructive"
+            className="flex-1 sm:flex-none min-h-[48px]"
             onClick={handleMarkUnknown}
           >
             ? Need Review

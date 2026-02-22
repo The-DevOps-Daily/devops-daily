@@ -44,7 +44,7 @@ export async function generateMetadata({ params }: FlashcardPageProps): Promise<
       url: `/flashcards/${id}`,
       images: [
         {
-          url: '/og-image.png',
+          url: `/images/flashcards/${id}-og.png`,
           width: 1200,
           height: 630,
           alt: flashcardSet.title,
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: FlashcardPageProps): Promise<
       card: 'summary_large_image',
       title: `${flashcardSet.title} - DevOps Daily`,
       description: flashcardSet.description,
-      images: ['/og-image.png'],
+      images: [`/images/flashcards/${id}-og.png`],
     },
   }
 }
