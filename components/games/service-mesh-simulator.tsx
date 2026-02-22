@@ -16,50 +16,7 @@ interface Tutorial {
   visualizationType: 'basic' | 'mtls' | 'traffic-split' | 'circuit-breaker' | 'retry';
 }
 
-export default function ServiceMeshSimulator() {
- const [isPlaying, setIsPlaying] = useState(false);
- const [currentTutorial, setCurrentTutorial] = useState(0);
- const [requestAnimation, setRequestAnimation] = useState(0);
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        return;
-      }
-
-      switch (e.key) {
-        case 'ArrowLeft':
-          if (currentTutorial > 0) {
-            setCurrentTutorial(currentTutorial - 1);
-            setIsPlaying(false);
-          }
-          break;
-        case 'ArrowRight':
-          if (currentTutorial < tutorials.length - 1) {
-            setCurrentTutorial(currentTutorial + 1);
-            setIsPlaying(false);
-          }
-          break;
-        case ' ':
-        case 'Enter':
-          e.preventDefault();
-          setIsPlaying(!isPlaying);
-          break;
-        case 'r':
-        case 'R':
-          handleReset();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentTutorial, isPlaying, tutorials.length]);
-
-  const tutorials: Tutorial[] = [
+const TUTORIALS: Tutorial[] = [
     {
       id: 'intro',
       title: '1️⃣ What is a Service Mesh?',
@@ -132,7 +89,53 @@ export default function ServiceMeshSimulator() {
     },
   ];
 
-  const currentTutorialData = tutorials[currentTutorial];
+export default function ServiceMeshSimulator() {
+ const [isPlaying, setIsPlaying] = useState(false);
+ const [currentTutorial, setCurrentTutorial] = useState(0);
+ const [requestAnimation, setRequestAnimation] = useState(0);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      switch (e.key) {
+        case 'ArrowLeft':
+          if (currentTutorial > 0) {
+            setCurrentTutorial(currentTutorial - 1);
+            setIsPlaying(false);
+          }
+          break;
+        case 'ArrowRight':
+          if (currentTutorial < TUTORIALS.length - 1) {
+            setCurrentTutorial(currentTutorial + 1);
+            setIsPlaying(false);
+          }
+          break;
+        case ' ':
+        case 'Enter':
+          e.preventDefault();
+          setIsPlaying(!isPlaying);
+          break;
+        case 'r':
+        case 'R':
+          handleReset();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentTutorial, isPlaying]);
+
+
+  const currentTutorialData = TUTORIALS[currentTutorial];
 
   // Animation effect
   useEffect(() => {
@@ -156,7 +159,7 @@ export default function ServiceMeshSimulator() {
   };
 
   const handleNext = () => {
-    if (currentTutorial < tutorials.length - 1) {
+    if (currentTutorial < TUTORIALS.length - 1) {
       setCurrentTutorial(currentTutorial + 1);
       setIsPlaying(false);
     }
@@ -537,9 +540,9 @@ export default function ServiceMeshSimulator() {
               Previous
             </Button>
             <Badge variant="outline" className="px-3 py-1">
-              {currentTutorial + 1} / {tutorials.length}
+              {currentTutorial + 1} / {TUTORIALS.length}
             </Badge>
-            <Button onClick={handleNext} disabled={currentTutorial === tutorials.length - 1} variant="outline" size="default">
+            <Button onClick={handleNext} disabled={currentTutorial === TUTORIALS.length - 1} variant="outline" size="default">
               Next
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
