@@ -199,7 +199,7 @@ export default function ServiceMeshSimulator() {
             {/* Arrow with animated dot */}
             <div className="relative flex items-center">
               <div className="w-32 h-0.5 bg-gray-300 dark:bg-gray-700" />
-              <div className="absolute right-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-gray-300 dark:border-l-gray-700" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-gray-300 dark:border-l-gray-700" />
               {isPlaying && (
                 <div
                   className="absolute w-4 h-4 bg-blue-500 rounded-full shadow-lg"
@@ -244,7 +244,7 @@ export default function ServiceMeshSimulator() {
 
             <div className="relative flex flex-col items-center">
               <div className="w-32 h-0.5 bg-gray-300 dark:bg-gray-700" />
-              <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-gray-300 dark:border-l-gray-700" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-gray-300 dark:border-l-gray-700" />
               {isPlaying && (
                 <div
                   className="absolute top-0 flex items-center gap-2"
@@ -295,7 +295,7 @@ export default function ServiceMeshSimulator() {
              {/* Top path (90%) */}
              <div className="relative flex flex-col items-center">
                 <div className="relative w-32 h-0.5 bg-green-400">
-                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-green-400" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-green-400" />
                 </div>
                {isPlaying && Math.random() > 0.1 && (
                   <div
@@ -311,7 +311,7 @@ export default function ServiceMeshSimulator() {
              {/* Bottom path (10%) */}
              <div className="relative flex flex-col items-center">
                 <div className="relative w-32 h-0.5 bg-orange-400">
-                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-orange-400" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-orange-400" />
                 </div>
                {isPlaying && Math.random() < 0.1 && (
                   <div
@@ -375,7 +375,7 @@ export default function ServiceMeshSimulator() {
              {/* First attempt */}
              <div className="relative flex flex-col items-center">
                 <div className="relative w-32 h-0.5 bg-red-400">
-                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-red-400" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-red-400" />
                 </div>
                {isPlaying && progress < 0.33 && (
                   <div
@@ -400,7 +400,7 @@ export default function ServiceMeshSimulator() {
              {/* Second attempt */}
              <div className="relative flex flex-col items-center">
                 <div className="relative w-32 h-0.5 bg-green-400">
-                  <div className="absolute right-0 top-0 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-green-400" />
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-green-400" />
                 </div>
                {isPlaying && progress >= 0.38 && (
                   <div
