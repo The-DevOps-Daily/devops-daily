@@ -342,6 +342,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">S</kbd> Shuffle</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">Shift+R</kbd> Reset</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">L</kbd> List View</span>
+          <span className="block sm:hidden col-span-2"><kbd className="px-2 py-1 bg-background rounded text-xs">Swipe</kbd> Navigate (Mobile)</span>
         </div>
       </div>
 
@@ -392,6 +393,11 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
         theme={theme}
         isFlipped={isFlipped}
         onFlip={handleFlip}
+        onNext={handleNext}
+        onPrevious={handlePrevious}
+        showNavigation={true}
+        currentIndex={currentIndex}
+        totalCards={displayCards.length}
       />
       </div>
 

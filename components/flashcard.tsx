@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,8 @@ interface FlashCardComponentProps {
   onFlip?: () => void;
   onKnown?: () => void;
   onUnknown?: () => void;
+  onNext?: () => void;
+  onPrevious?: () => void;
   showNavigation?: boolean;
   currentIndex?: number;
   totalCards?: number;
@@ -25,11 +27,15 @@ export function FlashCard({
   onFlip: externalOnFlip,
   onKnown,
   onUnknown,
+  onNext,
+  onPrevious,
   showNavigation = true,
   currentIndex = 0,
   totalCards = 1,
 }: FlashCardComponentProps) {
   const [internalIsFlipped, setInternalIsFlipped] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   // Use external state if provided, otherwise use internal state
   const isFlipped = externalIsFlipped !== undefined ? externalIsFlipped : internalIsFlipped;
@@ -56,6 +62,40 @@ export function FlashCard({
     onUnknown?.();
   };
 
+  // Touch swipe handlers
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (touchStartX.current === null || touchStartY.current === null) return;
+
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const deltaX = touchEndX - touchStartX.current;
+      const deltaY = touchEndY - touchStartY.current;
+
+      // Only trigger swipe if horizontal movement is greater than vertical (to avoid conflicts with scrolling)
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        const swipeThreshold = 50; // Minimum distance for a swipe
+
+        if (deltaX > swipeThreshold && onPrevious) {
+          // Swipe right - go to previous card
+          onPrevious();
+        } else if (deltaX < -swipeThreshold && onNext) {
+          // Swipe left - go to next card
+          onNext();
+        }
+      }
+
+      touchStartX.current = null;
+      touchStartY.current = null;
+    },
+    [onNext, onPrevious]
+  );
+
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4 px-4 sm:px-0 sm:space-y-6">
       {/* Progress indicator */}
@@ -72,6 +112,8 @@ export function FlashCard({
       <div
         className="relative h-64 sm:h-80 md:h-96 cursor-pointer perspective-1000 touch-manipulation"
         onClick={handleFlip}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
