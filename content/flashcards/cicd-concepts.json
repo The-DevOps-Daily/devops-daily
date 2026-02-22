@@ -1,0 +1,136 @@
+{
+  "id": "cicd-concepts",
+  "title": "CI/CD Concepts",
+  "description": "Understand continuous integration and deployment fundamentals including pipeline stages, testing strategies, deployment patterns, and CI/CD tools.",
+  "category": "CI/CD",
+  "icon": "GitMerge",
+  "difficulty": "beginner",
+  "estimatedTime": "18 minutes",
+  "cardCount": 17,
+  "theme": {
+    "primaryColor": "purple",
+    "gradientFrom": "from-purple-500",
+    "gradientTo": "to-pink-600"
+  },
+  "cards": [
+    {
+      "id": "ci-definition",
+      "front": "What is Continuous Integration (CI)?",
+      "back": "CI is the practice of automatically building and testing code changes frequently (multiple times per day). Developers merge code to a shared repository where automated builds and tests run, catching issues early.",
+      "category": "Fundamentals",
+      "tags": ["ci", "basics", "integration"]
+    },
+    {
+      "id": "cd-definition",
+      "front": "What is Continuous Deployment vs Continuous Delivery?",
+      "back": "Continuous Delivery: code is always in a deployable state; releases require manual approval. Continuous Deployment: every change passing automated tests is automatically deployed to production without manual intervention.",
+      "category": "Fundamentals",
+      "tags": ["cd", "deployment", "delivery"]
+    },
+    {
+      "id": "pipeline-definition",
+      "front": "What is a CI/CD Pipeline?",
+      "back": "A pipeline is an automated workflow that takes code from version control through build, test, and deployment stages. Each stage performs specific tasks (compile, test, scan, deploy) with quality gates between stages.",
+      "category": "Fundamentals",
+      "tags": ["pipeline", "workflow", "automation"]
+    },
+    {
+      "id": "pipeline-stages",
+      "front": "What are typical CI/CD pipeline stages?",
+      "back": "Common stages: 1) Source (checkout code), 2) Build (compile/package), 3) Test (unit, integration, e2e), 4) Security Scan (SAST, dependency check), 5) Artifact Storage, 6) Deploy (staging/production), 7) Verify (smoke tests, monitoring).",
+      "category": "Pipeline Design",
+      "tags": ["pipeline", "stages", "workflow"]
+    },
+    {
+      "id": "testing-pyramid",
+      "front": "What is the Testing Pyramid?",
+      "back": "A testing strategy with three levels: Base (many fast unit tests), Middle (fewer integration tests), Top (few slow end-to-end tests). Balance provides confidence while keeping pipelines fast and maintainable.",
+      "category": "Testing",
+      "tags": ["testing", "pyramid", "strategy"]
+    },
+    {
+      "id": "unit-tests",
+      "front": "What are Unit Tests in CI/CD?",
+      "back": "Unit tests verify individual functions or components in isolation. They're fast, numerous, and run on every commit. Provide immediate feedback on code changes and form the foundation of test automation.",
+      "category": "Testing",
+      "tags": ["unit-tests", "testing", "automation"]
+    },
+    {
+      "id": "integration-tests",
+      "front": "What are Integration Tests?",
+      "back": "Integration tests verify that multiple components work together correctly (API + database, microservices communication). Slower than unit tests but catch interface and interaction issues.",
+      "category": "Testing",
+      "tags": ["integration-tests", "testing"]
+    },
+    {
+      "id": "blue-green-deployment",
+      "front": "What is Blue-Green Deployment?",
+      "back": "Two identical production environments (Blue = current, Green = new). Deploy to Green, test, then switch traffic. If issues arise, instantly rollback by switching back to Blue. Minimizes downtime and risk.",
+      "category": "Deployment Patterns",
+      "tags": ["blue-green", "deployment", "strategy"]
+    },
+    {
+      "id": "canary-deployment",
+      "front": "What is Canary Deployment?",
+      "back": "Gradually roll out changes to a small subset of users (canaries) before full deployment. Monitor metrics and errors. If canaries are healthy, progressively increase traffic. Reduces blast radius of issues.",
+      "category": "Deployment Patterns",
+      "tags": ["canary", "deployment", "progressive"]
+    },
+    {
+      "id": "rolling-deployment",
+      "front": "What is Rolling Deployment?",
+      "back": "Gradually replace old version instances with new ones in batches. At any time, both versions may be running. No downtime but rollback is slower. Common in Kubernetes Deployments.",
+      "category": "Deployment Patterns",
+      "tags": ["rolling", "deployment", "strategy"]
+    },
+    {
+      "id": "artifacts",
+      "front": "What are Build Artifacts in CI/CD?",
+      "back": "Artifacts are compiled, packaged outputs of the build stage (JARs, Docker images, binaries). Stored in artifact repositories (Artifactory, Nexus, ECR). Same artifact deployed through all environments ensures consistency.",
+      "category": "Build",
+      "tags": ["artifacts", "build", "storage"]
+    },
+    {
+      "id": "feature-flags",
+      "front": "How do Feature Flags support CI/CD?",
+      "back": "Feature flags decouple deployment from release. Deploy code to production with features disabled, then enable for specific users/environments. Enables trunk-based development, A/B testing, and quick rollbacks without redeployment.",
+      "category": "Advanced",
+      "tags": ["feature-flags", "deployment", "strategy"]
+    },
+    {
+      "id": "trunk-based",
+      "front": "What is Trunk-Based Development?",
+      "back": "Developers commit frequently to a single main branch (trunk) with short-lived feature branches. Combined with feature flags and automated testing, it enables continuous integration and reduces merge conflicts.",
+      "category": "Development Practices",
+      "tags": ["trunk-based", "git", "workflow"]
+    },
+    {
+      "id": "smoke-tests",
+      "front": "What are Smoke Tests in CI/CD?",
+      "back": "Quick sanity tests run after deployment to verify critical functionality works (app starts, database connects, health endpoints respond). Fast feedback ensures deployment succeeded before running extensive tests.",
+      "category": "Testing",
+      "tags": ["smoke-tests", "testing", "deployment"]
+    },
+    {
+      "id": "github-actions",
+      "front": "What are GitHub Actions?",
+      "back": "GitHub's built-in CI/CD platform using YAML workflows. Triggered by events (push, PR, schedule). Uses runners (hosted or self-hosted) to execute jobs with reusable actions from marketplace.",
+      "category": "Tools",
+      "tags": ["github-actions", "ci", "tools"]
+    },
+    {
+      "id": "gitlab-ci",
+      "front": "What is GitLab CI/CD?",
+      "back": "GitLab's integrated CI/CD system using .gitlab-ci.yml. Features: pipelines as code, built-in container registry, environments, review apps, auto DevOps. Runners execute jobs in isolated environments.",
+      "category": "Tools",
+      "tags": ["gitlab-ci", "ci", "tools"]
+    },
+    {
+      "id": "pipeline-security",
+      "front": "What security practices are important in CI/CD?",
+      "back": "Key practices: Secure secrets management (vaults, not code), SAST/DAST scanning, dependency vulnerability scanning, container image scanning, signed commits, least privilege for pipeline permissions, audit logging.",
+      "category": "Security",
+      "tags": ["security", "best-practices", "scanning"]
+    }
+  ]
+}

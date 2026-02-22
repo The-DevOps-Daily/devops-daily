@@ -1,0 +1,157 @@
+{
+  "id": "linux-fundamentals",
+  "title": "Linux Fundamentals",
+  "description": "Essential Linux knowledge covering file system hierarchy, process management, permissions, common commands, and system monitoring.",
+  "category": "Operating Systems",
+  "icon": "Terminal",
+  "difficulty": "beginner",
+  "estimatedTime": "20 minutes",
+  "cardCount": 20,
+  "theme": {
+    "primaryColor": "green",
+    "gradientFrom": "from-green-500",
+    "gradientTo": "to-teal-600"
+  },
+  "cards": [
+    {
+      "id": "fhs-root",
+      "front": "What is the Linux Filesystem Hierarchy Standard (FHS)?",
+      "back": "FHS defines the directory structure and contents in Linux. Key directories: /bin (essential binaries), /etc (config files), /home (user homes), /var (variable data), /tmp (temp files), /usr (user programs), /opt (optional software).",
+      "category": "File System",
+      "tags": ["fhs", "filesystem", "directories"]
+    },
+    {
+      "id": "permissions-basics",
+      "front": "What do Linux file permissions mean?",
+      "back": "Permissions use rwx format: r=read (4), w=write (2), x=execute (1). Three sets: owner, group, others. Example: rwxr-xr-- (754) = owner can read/write/execute, group can read/execute, others can only read.",
+      "category": "Permissions",
+      "tags": ["permissions", "chmod", "security"]
+    },
+    {
+      "id": "chmod-command",
+      "front": "How do you change file permissions?",
+      "back": "Use chmod: Numeric (chmod 755 file) or symbolic (chmod u+x file). u=user, g=group, o=others, a=all. +/- to add/remove, = to set exactly. Example: chmod g+w,o-r file.",
+      "category": "Commands",
+      "tags": ["chmod", "permissions", "commands"]
+    },
+    {
+      "id": "chown-command",
+      "front": "What does chown do?",
+      "back": "chown changes file ownership. Syntax: chown user:group file. Examples: chown alice file.txt (change owner), chown :developers file.txt (change group), chown alice:developers file.txt (change both).",
+      "category": "Commands",
+      "tags": ["chown", "ownership", "commands"]
+    },
+    {
+      "id": "process-definition",
+      "front": "What is a process in Linux?",
+      "back": "A process is a running instance of a program with its own memory space and resources. Each has a unique Process ID (PID). Parent processes spawn child processes. Init/systemd (PID 1) is the ancestor of all processes.",
+      "category": "Processes",
+      "tags": ["process", "pid", "basics"]
+    },
+    {
+      "id": "ps-command",
+      "front": "How do you view running processes?",
+      "back": "Use ps command: ps aux (all processes, detailed), ps -ef (full format), ps -u username (user's processes). Shows PID, CPU%, memory%, command. Combine with grep for filtering: ps aux | grep nginx.",
+      "category": "Commands",
+      "tags": ["ps", "processes", "monitoring"]
+    },
+    {
+      "id": "top-command",
+      "front": "What does the top command do?",
+      "back": "top displays real-time system resource usage and running processes. Shows CPU, memory, load average, and process list sorted by resource usage. Press 'q' to quit, 'k' to kill process, 'M' to sort by memory.",
+      "category": "Monitoring",
+      "tags": ["top", "monitoring", "performance"]
+    },
+    {
+      "id": "kill-signals",
+      "front": "What are common kill signals?",
+      "back": "SIGTERM (15): graceful shutdown (default), SIGKILL (9): force kill (cannot be caught), SIGHUP (1): reload config, SIGINT (2): interrupt (Ctrl+C). Usage: kill -15 PID or kill -TERM PID.",
+      "category": "Processes",
+      "tags": ["kill", "signals", "processes"]
+    },
+    {
+      "id": "systemctl-basics",
+      "front": "What is systemctl?",
+      "back": "systemctl manages systemd services. Common commands: start, stop, restart, status, enable (start on boot), disable. Example: systemctl status nginx. View logs with journalctl -u service-name.",
+      "category": "System Management",
+      "tags": ["systemctl", "systemd", "services"]
+    },
+    {
+      "id": "grep-command",
+      "front": "How do you search text with grep?",
+      "back": "grep searches for patterns in files. grep 'pattern' file (basic search), grep -r 'pattern' dir (recursive), grep -i (case-insensitive), grep -n (line numbers), grep -v (invert match). Supports regex.",
+      "category": "Commands",
+      "tags": ["grep", "search", "text"]
+    },
+    {
+      "id": "pipe-redirect",
+      "front": "What are pipes and redirects in Linux?",
+      "back": "Pipe (|) sends output of one command to another: ls | grep txt. Redirect: > overwrites file, >> appends, < reads from file, 2> redirects stderr, &> redirects both stdout and stderr. Example: command > output.txt 2>&1.",
+      "category": "Shell",
+      "tags": ["pipe", "redirect", "shell"]
+    },
+    {
+      "id": "find-command",
+      "front": "How do you find files in Linux?",
+      "back": "find searches filesystem: find /path -name 'pattern' (by name), find . -type f (files only), find . -mtime -7 (modified last 7 days), find . -size +100M (larger than 100MB). Can execute commands: find . -name '*.log' -delete.",
+      "category": "Commands",
+      "tags": ["find", "search", "files"]
+    },
+    {
+      "id": "tar-command",
+      "front": "How do you use tar for archiving?",
+      "back": "tar creates/extracts archives. Create: tar -czf archive.tar.gz files (c=create, z=gzip, f=file). Extract: tar -xzf archive.tar.gz (x=extract). View: tar -tzf archive.tar.gz (t=list). Add v for verbose.",
+      "category": "Commands",
+      "tags": ["tar", "archive", "compression"]
+    },
+    {
+      "id": "df-du-commands",
+      "front": "What's the difference between df and du?",
+      "back": "df shows disk space of filesystems: df -h (human-readable). du shows disk usage of directories/files: du -sh /path (s=summary, h=human-readable). df for overall space, du for specific directory usage.",
+      "category": "Monitoring",
+      "tags": ["df", "du", "disk", "storage"]
+    },
+    {
+      "id": "ssh-basics",
+      "front": "What is SSH?",
+      "back": "Secure Shell (SSH) provides encrypted remote access to systems. ssh user@host connects to remote server. Use ssh-keygen to generate keys, ssh-copy-id to install public key. Config in ~/.ssh/config. Default port 22.",
+      "category": "Networking",
+      "tags": ["ssh", "remote", "security"]
+    },
+    {
+      "id": "environment-variables",
+      "front": "What are environment variables?",
+      "back": "Environment variables store system-wide or user settings. View with env or echo $VAR. Set with export VAR=value (current session) or add to ~/.bashrc (permanent). Common: PATH, HOME, USER, SHELL. Accessed with $ prefix.",
+      "category": "Shell",
+      "tags": ["environment", "variables", "shell"]
+    },
+    {
+      "id": "cron-basics",
+      "front": "What is cron?",
+      "back": "cron schedules recurring tasks. Edit with crontab -e. Format: minute hour day month weekday command. Example: 0 2 * * * /backup.sh (runs daily at 2 AM). Special: @reboot, @daily, @weekly. View with crontab -l.",
+      "category": "Automation",
+      "tags": ["cron", "scheduling", "automation"]
+    },
+    {
+      "id": "package-managers",
+      "front": "What are Linux package managers?",
+      "back": "Package managers install/update software. Debian/Ubuntu: apt (apt install pkg, apt update, apt upgrade). RHEL/CentOS: yum/dnf (dnf install pkg). Both handle dependencies automatically. Also snap and flatpak for universal packages.",
+      "category": "System Management",
+      "tags": ["package-manager", "apt", "yum"]
+    },
+    {
+      "id": "log-files",
+      "front": "Where are Linux system logs located?",
+      "back": "Main logs in /var/log: syslog/messages (general system), auth.log/secure (authentication), kern.log (kernel), dmesg (boot messages). Modern systems use journalctl for systemd logs. Use tail -f to follow live logs.",
+      "category": "Monitoring",
+      "tags": ["logs", "monitoring", "troubleshooting"]
+    },
+    {
+      "id": "symbolic-links",
+      "front": "What are symbolic links?",
+      "back": "Symbolic (soft) links are pointers to files/directories. Create with ln -s target linkname. If target deleted, link breaks. Hard links (ln target link) reference same inode, both must be deleted to remove file. Symlinks can cross filesystems.",
+      "category": "File System",
+      "tags": ["symlink", "links", "filesystem"]
+    }
+  ]
+}

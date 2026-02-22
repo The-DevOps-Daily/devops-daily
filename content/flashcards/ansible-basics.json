@@ -1,0 +1,115 @@
+{
+  "id": "ansible-basics",
+  "title": "Ansible Basics",
+  "description": "Learn Ansible automation fundamentals including playbooks, roles, inventory, modules, variables, and configuration management best practices.",
+  "category": "Automation",
+  "icon": "Workflow",
+  "difficulty": "beginner",
+  "estimatedTime": "15 minutes",
+  "cardCount": 14,
+  "theme": {
+    "primaryColor": "red",
+    "gradientFrom": "from-red-500",
+    "gradientTo": "to-orange-600"
+  },
+  "cards": [
+    {
+      "id": "ansible-definition",
+      "front": "What is Ansible?",
+      "back": "Ansible is an agentless automation tool for configuration management, application deployment, and orchestration. Uses SSH for Linux/Unix and WinRM for Windows. Written in Python, uses YAML for playbooks. No agents needed on managed nodes.",
+      "category": "Fundamentals",
+      "tags": ["ansible", "basics", "automation"]
+    },
+    {
+      "id": "playbook-definition",
+      "front": "What is an Ansible Playbook?",
+      "back": "A Playbook is a YAML file defining automation tasks. Contains plays (groups of tasks) targeting hosts. Playbooks are idempotent (safe to run multiple times), declarative (describe desired state), and reusable.",
+      "category": "Playbooks",
+      "tags": ["playbook", "yaml", "basics"]
+    },
+    {
+      "id": "inventory-definition",
+      "front": "What is an Ansible Inventory?",
+      "back": "Inventory lists managed hosts/groups. Format: INI or YAML. Can be static (file) or dynamic (script/plugin generating from cloud APIs). Define variables per host/group. Default: /etc/ansible/hosts. Example groups: [webservers], [databases].",
+      "category": "Inventory",
+      "tags": ["inventory", "hosts", "groups"]
+    },
+    {
+      "id": "modules-definition",
+      "front": "What are Ansible Modules?",
+      "back": "Modules are reusable units executing specific tasks (install package, copy file, manage service). Examples: apt, yum, copy, file, service, user, git, docker_container. Over 3000+ built-in modules. Write custom modules in any language.",
+      "category": "Modules",
+      "tags": ["modules", "tasks", "basics"]
+    },
+    {
+      "id": "roles-definition",
+      "front": "What are Ansible Roles?",
+      "back": "Roles organize playbooks into reusable, structured components. Standard directory structure: tasks/, handlers/, templates/, files/, vars/, defaults/, meta/. Share via Ansible Galaxy. Roles promote modularity and reusability.",
+      "category": "Roles",
+      "tags": ["roles", "organization", "reusability"]
+    },
+    {
+      "id": "tasks-definition",
+      "front": "What are Tasks in Ansible?",
+      "back": "Tasks are individual actions executed by modules. Each task has name, module, and parameters. Run sequentially. Support conditionals (when:), loops (loop:), error handling (ignore_errors, failed_when), and delegation (delegate_to:).",
+      "category": "Playbooks",
+      "tags": ["tasks", "modules", "execution"]
+    },
+    {
+      "id": "handlers-definition",
+      "front": "What are Handlers?",
+      "back": "Handlers are special tasks triggered by notify directive. Run once at play end, even if notified multiple times. Used for service restarts after config changes. Example: notify: restart nginx triggers handler to restart service only if config changed.",
+      "category": "Playbooks",
+      "tags": ["handlers", "notify", "services"]
+    },
+    {
+      "id": "variables-definition",
+      "front": "What are Ansible Variables?",
+      "back": "Variables store values for reuse in playbooks. Define in playbooks, inventory, roles, command-line (--extra-vars). Access with {{ var_name }}. Precedence order: extra-vars (highest), task vars, role vars, inventory vars, role defaults (lowest).",
+      "category": "Variables",
+      "tags": ["variables", "templating", "configuration"]
+    },
+    {
+      "id": "facts-definition",
+      "front": "What are Ansible Facts?",
+      "back": "Facts are system information automatically gathered from managed hosts (OS, IP, memory, disks). Accessed via ansible_facts dictionary. Example: {{ ansible_facts.hostname }}. Gather with setup module. Disable with gather_facts: false for speed.",
+      "category": "Variables",
+      "tags": ["facts", "system-info", "automation"]
+    },
+    {
+      "id": "templates-jinja2",
+      "front": "What are Ansible Templates?",
+      "back": "Templates use Jinja2 syntax to generate dynamic files. Variables, conditionals, loops in .j2 files. Module template copies rendered file to hosts. Example: Deploy config files with environment-specific values. Common for nginx.conf, application.properties.",
+      "category": "Templates",
+      "tags": ["templates", "jinja2", "configuration"]
+    },
+    {
+      "id": "idempotence",
+      "front": "What is Idempotence in Ansible?",
+      "back": "Idempotence means running playbook multiple times produces same result without unwanted changes. Ansible modules are idempotent by design. Example: package installation checks if already installed. Ensures safe reruns and prevents configuration drift.",
+      "category": "Best Practices",
+      "tags": ["idempotence", "best-practices", "safety"]
+    },
+    {
+      "id": "vault-definition",
+      "front": "What is Ansible Vault?",
+      "back": "Ansible Vault encrypts sensitive data (passwords, keys) in playbooks/variables. Commands: ansible-vault create, encrypt, decrypt, edit. Use --ask-vault-pass or --vault-password-file when running. Encrypted files are safe to commit to Git.",
+      "category": "Security",
+      "tags": ["vault", "security", "encryption"]
+    },
+    {
+      "id": "ansible-galaxy",
+      "front": "What is Ansible Galaxy?",
+      "back": "Ansible Galaxy is a repository for sharing Ansible roles and collections. Install roles: ansible-galaxy install username.rolename. Collections bundle modules, plugins, roles. Public hub at galaxy.ansible.com. Create requirements.yml for dependencies.",
+      "category": "Community",
+      "tags": ["galaxy", "roles", "sharing"]
+    },
+    {
+      "id": "ansible-best-practices",
+      "front": "What are Ansible best practices?",
+      "back": "Use roles for organization, name all tasks clearly, use variables for flexibility, encrypt secrets with Vault, use version control, test with --check mode, keep playbooks idempotent, document with comments, use tags for selective execution, follow directory structure conventions.",
+      "category": "Best Practices",
+      "tags": ["best-practices", "guidelines", "quality"]
+    }
+  ]
+}

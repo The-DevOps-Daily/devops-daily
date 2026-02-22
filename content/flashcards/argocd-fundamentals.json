@@ -1,0 +1,143 @@
+{
+  "id": "argocd-fundamentals",
+  "title": "ArgoCD Fundamentals",
+  "description": "Master GitOps principles and ArgoCD essentials including app deployment, sync policies, multi-cluster management, and security best practices.",
+  "category": "GitOps",
+  "icon": "GitBranch",
+  "difficulty": "intermediate",
+  "estimatedTime": "20 minutes",
+  "cardCount": 18,
+  "theme": {
+    "primaryColor": "orange",
+    "gradientFrom": "from-orange-500",
+    "gradientTo": "to-red-600"
+  },
+  "cards": [
+    {
+      "id": "argocd-definition",
+      "front": "What is ArgoCD?",
+      "back": "ArgoCD is a declarative, GitOps continuous delivery tool for Kubernetes. It continuously monitors Git repositories and automatically synchronizes application state with the desired state defined in Git.",
+      "category": "Core Concepts",
+      "tags": ["argocd", "gitops", "basics"]
+    },
+    {
+      "id": "gitops-principles",
+      "front": "What are the core principles of GitOps?",
+      "back": "GitOps principles: 1) Declarative - system state described declaratively, 2) Versioned & Immutable - state stored in Git with full history, 3) Pulled Automatically - software agents auto-pull state from Git, 4) Continuously Reconciled - agents ensure actual state matches desired state.",
+      "category": "GitOps",
+      "tags": ["gitops", "principles", "best-practices"]
+    },
+    {
+      "id": "argocd-application",
+      "front": "What is an ArgoCD Application?",
+      "back": "An Application is a CRD (Custom Resource Definition) that represents a deployed application instance. It defines the source Git repository, target cluster/namespace, and sync policies.",
+      "category": "Core Concepts",
+      "tags": ["application", "crd", "basics"]
+    },
+    {
+      "id": "sync-policy",
+      "front": "What is a Sync Policy in ArgoCD?",
+      "back": "A Sync Policy defines how ArgoCD should synchronize applications. It includes automated sync (auto-sync), self-healing (revert manual changes), and pruning (delete resources not in Git).",
+      "category": "Sync Strategies",
+      "tags": ["sync", "policy", "automation"]
+    },
+    {
+      "id": "health-status",
+      "front": "What are ArgoCD Application Health Statuses?",
+      "back": "Health statuses indicate application state: Healthy (resources are functioning), Progressing (deployment in progress), Degraded (resources not functioning properly), Suspended (resource suspended), Missing (resource not found), Unknown (health cannot be determined).",
+      "category": "Monitoring",
+      "tags": ["health", "status", "monitoring"]
+    },
+    {
+      "id": "sync-status",
+      "front": "What are ArgoCD Sync Statuses?",
+      "back": "Sync statuses show Git vs cluster alignment: Synced (matches Git), OutOfSync (differs from Git), Unknown (cannot determine). OutOfSync triggers manual or automatic sync based on policy.",
+      "category": "Sync Strategies",
+      "tags": ["sync", "status", "git"]
+    },
+    {
+      "id": "manual-sync",
+      "front": "When would you use manual sync vs auto-sync?",
+      "back": "Manual sync: production environments requiring approval, scheduled deployments, critical changes needing validation. Auto-sync: development/staging environments, non-production workloads, applications with comprehensive testing, when rapid iteration is needed.",
+      "category": "Sync Strategies",
+      "tags": ["sync", "deployment", "strategy"]
+    },
+    {
+      "id": "app-of-apps",
+      "front": "What is the App of Apps pattern?",
+      "back": "App of Apps is a pattern where one ArgoCD Application manages other Applications. It's used to bootstrap multiple applications, manage environments, or organize multi-tenant deployments from a single Git repository.",
+      "category": "Patterns",
+      "tags": ["pattern", "app-of-apps", "architecture"]
+    },
+    {
+      "id": "project-definition",
+      "front": "What is an ArgoCD Project?",
+      "back": "An ArgoCD Project provides logical grouping and access control for Applications. It restricts which Git repos, clusters, and namespaces Applications can use, enabling multi-tenancy and security boundaries.",
+      "category": "Security",
+      "tags": ["project", "rbac", "security"]
+    },
+    {
+      "id": "sync-waves",
+      "front": "What are Sync Waves?",
+      "back": "Sync Waves control resource deployment order using annotations (argocd.argoproj.io/sync-wave). Lower wave numbers deploy first. Useful for ensuring dependencies like databases deploy before applications.",
+      "category": "Advanced",
+      "tags": ["sync-waves", "ordering", "dependencies"]
+    },
+    {
+      "id": "sync-hooks",
+      "front": "What are ArgoCD Sync Hooks?",
+      "back": "Sync Hooks are resources that run at specific points during sync: PreSync (before sync), Sync (during sync), PostSync (after successful sync), SyncFail (on failure), Skip (don't sync). Used for migrations, tests, or notifications.",
+      "category": "Advanced",
+      "tags": ["hooks", "lifecycle", "automation"]
+    },
+    {
+      "id": "multi-cluster",
+      "front": "How does ArgoCD handle multi-cluster deployments?",
+      "back": "ArgoCD connects to multiple clusters via kubeconfig credentials. One ArgoCD instance can manage applications across multiple clusters. Applications specify destination cluster, and ArgoCD handles authentication and deployment.",
+      "category": "Multi-Cluster",
+      "tags": ["multi-cluster", "deployment", "architecture"]
+    },
+    {
+      "id": "rbac",
+      "front": "How does ArgoCD implement RBAC?",
+      "back": "ArgoCD RBAC uses policy files mapping users/groups to Projects and Applications. Permissions include: create, get, update, delete, sync, override. Integrates with SSO providers (OIDC, SAML) for authentication.",
+      "category": "Security",
+      "tags": ["rbac", "security", "access-control"]
+    },
+    {
+      "id": "refresh-types",
+      "front": "What are ArgoCD Refresh types?",
+      "back": "Normal refresh: compares live state with Git every 3 minutes. Hard refresh: forces re-fetch from Git, bypassing cache. Useful when Git was force-pushed or external changes occurred.",
+      "category": "Operations",
+      "tags": ["refresh", "sync", "operations"]
+    },
+    {
+      "id": "resource-hooks",
+      "front": "What's the difference between Sync Hooks and Resource Hooks?",
+      "back": "Sync Hooks are Kubernetes Jobs/resources executed during sync lifecycle. Resource Hooks (like lifecycle hooks) are container-level hooks. Sync Hooks are ArgoCD-specific for orchestrating deployment workflows.",
+      "category": "Advanced",
+      "tags": ["hooks", "comparison", "lifecycle"]
+    },
+    {
+      "id": "prune-resources",
+      "front": "What does 'Prune' mean in ArgoCD?",
+      "back": "Pruning automatically deletes resources from the cluster that exist in live state but not in Git. Controlled by sync policy (automated or manual). Ensures cluster matches Git exactly by removing orphaned resources.",
+      "category": "Sync Strategies",
+      "tags": ["prune", "cleanup", "sync"]
+    },
+    {
+      "id": "self-healing",
+      "front": "What is Self-Healing in ArgoCD?",
+      "back": "Self-Healing automatically reverts manual changes made directly to the cluster, forcing state back to Git definition. Part of sync policy. Prevents configuration drift and enforces Git as single source of truth.",
+      "category": "Sync Strategies",
+      "tags": ["self-healing", "automation", "gitops"]
+    },
+    {
+      "id": "app-sources",
+      "front": "What application source types does ArgoCD support?",
+      "back": "ArgoCD supports: Plain YAML/JSON manifests, Helm charts, Kustomize applications, Jsonnet, and custom Config Management Plugins (CMP). Multiple sources can be combined using the multiple sources feature.",
+      "category": "Core Concepts",
+      "tags": ["sources", "helm", "kustomize"]
+    }
+  ]
+}
