@@ -108,10 +108,14 @@ export function FlashCard({
               'hover:border-primary/50 transition-colors'
             )}
           >
-            <div className="text-center space-y-4">
-              <div className="text-xs font-semibold text-primary uppercase tracking-wider">Question</div>
-              <p className="text-2xl font-bold leading-tight">{card.front}</p>
-              <div className="pt-6 flex items-center gap-2 text-muted-foreground text-sm">
+            <div className="flex flex-col h-full w-full">
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center space-y-4">
+                  <div className="text-xs font-semibold text-primary uppercase tracking-wider">Question</div>
+                  <p className="text-2xl font-bold leading-tight">{card.front}</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm pb-2">
                 <RotateCw className="h-4 w-4" />
                 <span>Click to reveal answer</span>
               </div>
