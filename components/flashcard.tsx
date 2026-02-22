@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCw, Check, X } from 'lucide-react';
+import { MoveHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FlashCard } from '@/lib/flashcard-loader';
 
@@ -104,11 +105,18 @@ export function FlashCard({
     <div className="w-full max-w-2xl mx-auto space-y-4 px-4 sm:px-0 sm:space-y-6">
       {/* Progress indicator */}
       {showNavigation && (
-        <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
-          <span>
-            Card {currentIndex + 1} of {totalCards}
-          </span>
-          <Badge variant="outline">{card.category}</Badge>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+            <span>
+              Card {currentIndex + 1} of {totalCards}
+            </span>
+            <Badge variant="outline">{card.category}</Badge>
+          </div>
+          {/* Mobile swipe hint - only show on touch devices */}
+          <div className="sm:hidden flex items-center justify-center gap-2 text-xs text-muted-foreground/70 bg-muted/30 rounded-md py-2 px-3">
+            <MoveHorizontal className="h-3 w-3" />
+            <span>Swipe left/right to navigate cards</span>
+          </div>
         </div>
       )}
 
