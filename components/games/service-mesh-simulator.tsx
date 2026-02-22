@@ -51,9 +51,9 @@ export default function ServiceMeshSimulator() {
       explanation:
         "The sidecars automatically encrypt all messages between services using mTLS (mutual TLS). It's like sealing every letter in an envelope with a tamper-proof seal. Both sender and receiver verify each other's identity.",
       features: [
-        'Every request is encrypted',
-        'Services verify each other's identity',
-        'Zero code changes required',
+       'Every request is encrypted',
+        "Services verify each other's identity",
+       'Zero code changes required',
       ],
       visualizationType: 'mtls',
     },
