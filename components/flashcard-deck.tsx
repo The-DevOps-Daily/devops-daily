@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { FlashCard } from './flashcard'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Shuffle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Shuffle, RefreshCw, ChevronLeft, ChevronRight, List, Grid3x3, Check, X, Circle } from 'lucide-react'
 import type { FlashCard as FlashCardType } from '@/lib/flashcard-loader'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 interface FlashCardDeckProps {
   cards: FlashCard[]
@@ -24,6 +26,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   const [shuffledCards, setShuffledCards] = useState<FlashCard[]>(cards)
   const [showOnlyUnknown, setShowOnlyUnknown] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
+  const [viewMode, setViewMode] = useState<'deck' | 'list'>('deck')
 
   const displayCards = showOnlyUnknown
     ? shuffledCards.filter(card => !knownCards.has(card.id))
@@ -84,6 +87,25 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
     setIsFlipped(!isFlipped)
   }, [isFlipped])
 
+  // Group cards by status for list view
+  const cardsByStatus = useMemo(() => {
+    const known: FlashCard[] = []
+    const needReview: FlashCard[] = []
+    const notReviewed: FlashCard[] = []
+
+    shuffledCards.forEach(card => {
+      if (knownCards.has(card.id)) {
+        known.push(card)
+      } else if (unknownCards.has(card.id)) {
+        needReview.push(card)
+      } else {
+        notReviewed.push(card)
+      }
+    })
+
+    return { known, needReview, notReviewed }
+  }, [shuffledCards, knownCards, unknownCards])
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -91,6 +113,16 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return
       }
+
+      // List view navigation
+      if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault()
+        setViewMode(viewMode === 'deck' ? 'list' : 'deck')
+        return
+      }
+
+      // Only deck view shortcuts below this point
+      if (viewMode === 'list') return
 
       switch (e.key) {
         case 'ArrowLeft':
@@ -110,13 +142,13 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
         case 'K':
         case '1':
           e.preventDefault()
-          if (isFlipped) handleMarkKnown()
+          handleMarkKnown()
           break
         case 'u':
         case 'U':
         case '2':
           e.preventDefault()
-          if (isFlipped) handleMarkUnknown()
+          handleMarkUnknown()
           break
         case 's':
         case 'S':
@@ -133,7 +165,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handlePrevious, handleNext, handleFlip, handleMarkKnown, handleMarkUnknown, handleShuffle, handleReset, isFlipped])
+  }, [handlePrevious, handleNext, handleFlip, handleMarkKnown, handleMarkUnknown, handleShuffle, handleReset, isFlipped, viewMode])
 
   const progress = Math.round((knownCards.size / cards.length) * 100)
 
@@ -152,6 +184,149 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
     )
   }
 
+  // List view
+  if (viewMode === 'list') {
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Card Progress Review</h3>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setViewMode('deck')}>
+              <Grid3x3 className="w-4 h-4 mr-2" />
+              Card View
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleReset}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Reset
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="p-4 bg-green-500/10 border-green-500/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Check className="w-5 h-5 text-green-600 dark:text-green-400" />
+              <span className="font-semibold text-green-600 dark:text-green-400">Known</span>
+            </div>
+            <p className="text-3xl font-bold">{cardsByStatus.known.length}</p>
+          </Card>
+          <Card className="p-4 bg-red-500/10 border-red-500/20">
+            <div className="flex items-center gap-2 mb-2">
+              <X className="w-5 h-5 text-red-600 dark:text-red-400" />
+              <span className="font-semibold text-red-600 dark:text-red-400">Need Review</span>
+            </div>
+            <p className="text-3xl font-bold">{cardsByStatus.needReview.length}</p>
+          </Card>
+          <Card className="p-4 bg-muted">
+            <div className="flex items-center gap-2 mb-2">
+              <Circle className="w-5 h-5 text-muted-foreground" />
+              <span className="font-semibold text-muted-foreground">Not Reviewed</span>
+            </div>
+            <p className="text-3xl font-bold">{cardsByStatus.notReviewed.length}</p>
+          </Card>
+        </div>
+
+        {/* Known Cards */}
+        {cardsByStatus.known.length > 0 && (
+          <div>
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
+              Known Cards ({cardsByStatus.known.length})
+            </h4>
+            <div className="space-y-2">
+              {cardsByStatus.known.map(card => (
+                <Card key={card.id} className="p-4 bg-green-500/5 border-green-500/20">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium mb-1">{card.front}</p>
+                      <p className="text-sm text-muted-foreground">{card.back}</p>
+                      <div className="flex gap-2 mt-2">
+                        {card.tags.map(tag => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400">
+                      <Check className="w-3 h-3" />
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Need Review Cards */}
+        {cardsByStatus.needReview.length > 0 && (
+          <div>
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <X className="w-4 h-4 text-red-600 dark:text-red-400" />
+              Need Review ({cardsByStatus.needReview.length})
+            </h4>
+            <div className="space-y-2">
+              {cardsByStatus.needReview.map(card => (
+                <Card key={card.id} className="p-4 bg-red-500/5 border-red-500/20">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium mb-1">{card.front}</p>
+                      <p className="text-sm text-muted-foreground">{card.back}</p>
+                      <div className="flex gap-2 mt-2">
+                        {card.tags.map(tag => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-red-500/10 text-red-700 dark:text-red-400">
+                      <X className="w-3 h-3" />
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Not Reviewed Cards */}
+        {cardsByStatus.notReviewed.length > 0 && (
+          <div>
+            <h4 className="font-semibold mb-3 flex items-center gap-2">
+              <Circle className="w-4 h-4 text-muted-foreground" />
+              Not Yet Reviewed ({cardsByStatus.notReviewed.length})
+            </h4>
+            <div className="space-y-2">
+              {cardsByStatus.notReviewed.map(card => (
+                <Card key={card.id} className="p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="font-medium mb-1">{card.front}</p>
+                      <div className="flex gap-2 mt-2">
+                        {card.tags.map(tag => (
+                          <Badge key={tag} variant="secondary" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="bg-muted">
+                      <Circle className="w-3 h-3" />
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // Deck view
   return (
     <div className="space-y-6">
       {/* Keyboard shortcuts info */}
@@ -164,6 +339,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">U or 2</kbd> Review</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">S</kbd> Shuffle</span>
           <span><kbd className="px-2 py-1 bg-background rounded text-xs">R</kbd> Reset</span>
+          <span><kbd className="px-2 py-1 bg-background rounded text-xs">L</kbd> List View</span>
         </div>
       </div>
 
@@ -198,6 +374,10 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
           <Button variant="outline" size="sm" onClick={handleReset}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Reset
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setViewMode('list')}>
+            <List className="w-4 h-4 mr-2" />
+            List View
           </Button>
         </div>
       </div>
