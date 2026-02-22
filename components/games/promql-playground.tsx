@@ -18,10 +18,13 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
+  Info,
+  BookOpen,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // ============================================================================
 // TYPES
@@ -178,59 +181,52 @@ const generateMetrics = (): TimeSeries[] => {
 const TUTORIALS: Tutorial[] = [
   {
     id: 'basic-select',
-    title: '1. Basic Metric Selection',
-    description: 'Select all time series for a metric',
+    title: '🎯 Your First Query: See All Requests',
+    description: 'Learn how to view a metric - think of it like looking at your app\'s request counter',
     query: 'http_requests_total',
-    explanation: 'This returns all time series with the metric name "http_requests_total". Each series is identified by unique label combinations.',
-    expectedResult: 'Returns 4 time series with different method/status/instance labels',
+    explanation: 'This shows every HTTP request your app has handled. Each row is a different server or endpoint (like api-1, api-2).',
   },
   {
     id: 'label-filter',
-    title: '2. Label Filtering',
-    description: 'Filter by label values',
+    title: '🔍 Filter What You See: Only GET Requests',
+    description: 'Too much data? Let\'s narrow it down to just GET requests',
     query: 'http_requests_total{method="GET"}',
-    explanation: 'Use curly braces to filter by label values. This returns only GET requests.',
-    expectedResult: 'Returns time series where method="GET"',
+    explanation: 'The {method="GET"} part is like a filter - it says "only show me GET requests, ignore POST, DELETE, etc."',
   },
   {
     id: 'multi-label',
-    title: '3. Multiple Label Filters',
-    description: 'Combine multiple label filters',
+    title: '🎯 Get Specific: Successful GET Requests',
+    description: 'Combine filters to see exactly what you want - only successful (200) GET requests',
     query: 'http_requests_total{method="GET",status="200"}',
-    explanation: 'Combine multiple label filters with commas. This returns only successful GET requests.',
-    expectedResult: 'Returns time series where method="GET" AND status="200"',
+    explanation: 'You can stack filters with commas. This shows GET requests that returned a 200 (success) status code.',
   },
   {
     id: 'rate-function',
-    title: '4. Rate Calculation',
-    description: 'Calculate per-second rate over time',
+    title: '📈 Speed Matters: Requests Per Second',
+    description: 'How fast are requests coming in? Use rate() to see per-second speed',
     query: 'rate(http_requests_total[5m])',
-    explanation: 'rate() calculates the per-second average rate over the specified time range [5m]. Use for counters.',
-    expectedResult: 'Shows requests per second for each series',
+    explanation: 'rate() converts your growing counter into "requests per second over the last 5 minutes". Like checking your car\'s speedometer!',
   },
   {
     id: 'sum-aggregation',
-    title: '5. Sum Aggregation',
-    description: 'Aggregate multiple series',
+    title: '🧮 Total It Up: All Requests Combined',
+    description: 'Add up all servers to get your total request rate',
     query: 'sum(rate(http_requests_total[5m]))',
-    explanation: 'sum() adds values across all time series. This gives total request rate across all methods/statuses/instances.',
-    expectedResult: 'Single value: total requests per second',
+    explanation: 'sum() adds up all your servers\' request rates into one number. Perfect for dashboards!',
   },
   {
     id: 'sum-by',
-    title: '6. Sum by Label',
-    description: 'Aggregate while preserving specific labels',
+    title: '📊 Break It Down: Requests by HTTP Method',
+    description: 'See totals separated by GET, POST, etc.',
     query: 'sum by(method) (rate(http_requests_total[5m]))',
-    explanation: 'sum by(label) groups by specified labels. This gives request rate per HTTP method.',
-    expectedResult: 'One series per method (GET, POST)',
+    explanation: '"sum by(method)" means "give me separate totals for each HTTP method". Like organizing by category!',
   },
   {
     id: 'error-rate',
-    title: '7. Error Rate Calculation',
-    description: 'Calculate percentage of errors',
+    title: '🚨 Real-World: Error Rate Percentage',
+    description: 'What % of requests are failing? This is how SREs monitor health',
     query: 'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100',
-    explanation: 'Regex match status=~"5.." for 5xx errors. Divide error rate by total rate and multiply by 100 for percentage.',
-    expectedResult: 'Percentage of 5xx errors',
+    explanation: 'This divides 5xx errors by total requests and converts to %. If you see 2.5, that means 2.5% of requests are failing.',
   },
 ];
 
@@ -487,10 +483,18 @@ export default function PromqlPlayground() {
   const [result, setResult] = useState<QueryResult | null>(null);
   const [currentTutorial, setCurrentTutorial] = useState(0);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
-  const [activeTab, setActiveTab] = useState('playground');
+  const [activeTab, setActiveTab] = useState('tutorials');
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const metrics = useMemo(() => generateMetrics(), []);
   const executor = useMemo(() => new PromQLExecutor(metrics), [metrics]);
+
+  const quickExamples = [
+    { label: 'Show all requests', query: 'http_requests_total', icon: '📊' },
+    { label: 'Requests per second', query: 'rate(http_requests_total[5m])', icon: '⚡' },
+    { label: 'Error rate %', query: 'sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100', icon: '🚨' },
+    { label: 'Total requests/sec', query: 'sum(rate(http_requests_total[5m]))', icon: '🧮' },
+  ];
 
   const executeQuery = useCallback(() => {
     const queryResult = executor.execute(query);
@@ -546,31 +550,98 @@ export default function PromqlPlayground() {
             </Button>
           </div>
           <p className="text-sm text-muted-foreground">
-            Learn PromQL by executing queries against sample metrics. Try tutorials or write your own queries!
+            Learn Prometheus queries interactively. No experience needed – start with tutorials below!
           </p>
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {/* Welcome Message */}
+          {showWelcome && activeTab === 'playground' && (
+            <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+              <Info className="w-4 h-4 text-blue-600" />
+              <AlertDescription className="text-sm">
+                <strong>New to PromQL?</strong> Start with the{' '}
+                <button
+                  onClick={() => setActiveTab('tutorials')}
+                  className="underline font-medium text-blue-600 hover:text-blue-800"
+                >
+                  Tutorials tab
+                </button>
+                {' '}to learn step-by-step, or try a quick example below!
+                <button
+                  onClick={() => setShowWelcome(false)}
+                  className="ml-4 text-blue-600 hover:text-blue-800 font-bold"
+                  aria-label="Dismiss"
+                >
+                  ×
+                </button>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="playground">Query Editor</TabsTrigger>
+              <TabsTrigger value="playground">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Query Editor
+              </TabsTrigger>
               <TabsTrigger value="tutorials">
                 <Lightbulb className="w-4 h-4 mr-2" />
-                Tutorials ({TUTORIALS.length})
+                Tutorials (Start Here!)
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="playground" className="space-y-4">
+              {/* Quick Examples */}
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="pt-4">
+                  <p className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4 text-orange-600" />
+                    Quick Examples - Click to try:
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {quickExamples.map((example, idx) => (
+                      <Button
+                        key={idx}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setQuery(example.query);
+                          setResult(null);
+                        }}
+                        className="justify-start text-left h-auto py-2 px-3"
+                      >
+                        <span className="mr-2 text-base">{example.icon}</span>
+                        <span className="text-xs">{example.label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Query Input */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">PromQL Query</label>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  PromQL Query:
+                  <span className="text-xs text-muted-foreground font-normal">
+                    (Type your query or use examples above)
+                  </span>
+                </label>
                 <Textarea
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Enter your PromQL query..."
-                  className="font-mono text-sm"
+                  placeholder="Try: http_requests_total{method=\"GET\"}"
+                  className="font-mono text-sm min-h-[100px] resize-y"
                   rows={3}
                 />
+                <p className="text-xs text-muted-foreground flex items-start gap-1">
+                  <span>💡</span>
+                  <span>
+                    <strong>Tip:</strong> Start simple! Just type a metric name like{' '}
+                    <code className="bg-muted px-1 py-0.5 rounded text-xs">http_requests_total</code>{' '}
+                    and hit Execute to see all data for that metric.
+                  </span>
+                </p>
               </div>
 
               {/* Action Buttons */}
