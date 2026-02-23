@@ -106,6 +106,7 @@ export default function ServiceMeshSimulator() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
   const [showSolution, setShowSolution] = useState(false);
+  const [circuitState, setCircuitState] = useState<'closed' | 'open'>('closed');
 
   const scenario = SCENARIOS[currentScenario];
 
@@ -122,14 +123,26 @@ export default function ServiceMeshSimulator() {
 
   // Reset animation when scenario changes
   useEffect(() => {
-    setAnimationProgress(0);
-    setIsPlaying(false);
-    setShowSolution(false);
-  }, [currentScenario]);
+  setAnimationProgress(0);
+  setIsPlaying(false);
+  setShowSolution(false);
+  setCircuitState('closed');
+}, [currentScenario]);
 
-  // Keyboard navigation
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+// Circuit breaker state management
+useEffect(() => {
+  if (scenario.visual === 'circuit-breaker') {
+    if (isPlaying && animationProgress > 50) {
+      setCircuitState('open');
+    } else {
+      setCircuitState('closed');
+    }
+  }
+}, [animationProgress, isPlaying, scenario.visual]);
+
+// Keyboard navigation
+useEffect(() => {
+  if (typeof window === 'undefined') return;
 
     const handleKeyPress = (e: KeyboardEvent) => {
       switch (e.key) {
@@ -546,16 +559,6 @@ export default function ServiceMeshSimulator() {
         );
 
       case 'circuit-breaker':
-        const [circuitState, setCircuitState] = useState<'closed' | 'open'>('closed');
-
-        useEffect(() => {
-          if (isPlaying && animationProgress > 50) {
-            setCircuitState('open');
-          } else {
-            setCircuitState('closed');
-          }
-        }, [animationProgress, isPlaying]);
-
         return (
           <div className="relative w-full h-80 flex items-center justify-center gap-16 bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-950/20 dark:to-rose-950/20 rounded-xl p-8 border-2 border-red-200 dark:border-red-800">
             {/* Service A */}
