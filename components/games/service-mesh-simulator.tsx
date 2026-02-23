@@ -211,18 +211,18 @@ useEffect(() => {
             {/* Traffic Line */}
             <div className="relative flex flex-col items-center gap-3">
               <div className="relative w-48 h-1 bg-red-300 dark:bg-red-700 rounded-full">
-                {isPlaying && (
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                    style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                  >
-                    <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg animate-pulse" />
-                  </div>
-                )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-red-500" />
-              </div>
-              <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-semibold">
-                <AlertTriangle className="w-4 h-4" />
+               {isPlaying && (
+                 <div
+                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
+                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
+                 >
+                   <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg animate-pulse" />
+                 </div>
+               )}
+                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-red-300 dark:text-red-700" />
+             </div>
+             <div className="flex items-center gap-2 text-red-600 dark:text-red-400 text-sm font-semibold">
+               <AlertTriangle className="w-4 h-4" />
                 <span>Unencrypted Data</span>
               </div>
             </div>
@@ -276,18 +276,18 @@ useEffect(() => {
             {/* Traffic Line */}
             <div className="relative flex flex-col items-center gap-3">
               <div className="relative w-48 h-1 bg-green-300 dark:bg-green-700 rounded-full">
-                {isPlaying && (
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                    style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                  >
-                    <div className="w-4 h-4 bg-green-500 rounded-full shadow-lg animate-pulse" />
-                  </div>
-                )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-green-500" />
-              </div>
-              <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-semibold">
-                <Shield className="w-4 h-4" />
+               {isPlaying && (
+                 <div
+                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
+                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
+                 >
+                   <div className="w-4 h-4 bg-green-500 rounded-full shadow-lg animate-pulse" />
+                 </div>
+               )}
+                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-green-300 dark:text-green-700" />
+             </div>
+             <div className="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm font-semibold">
+               <Shield className="w-4 h-4" />
                 <span>Proxied by Sidecars</span>
               </div>
             </div>
@@ -344,19 +344,19 @@ useEffect(() => {
             {/* Encrypted Traffic */}
             <div className="relative flex flex-col items-center gap-3">
               <div className="relative w-48 h-1 bg-yellow-300 dark:bg-yellow-700 rounded-full">
-                {isPlaying && (
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                    style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                  >
-                    <Lock className="w-5 h-5 text-yellow-600 fill-yellow-200 dark:fill-yellow-800" />
-                    <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-lg" />
-                  </div>
-                )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-yellow-500" />
-              </div>
-              <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 text-sm font-semibold bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
-                <Lock className="w-4 h-4" />
+               {isPlaying && (
+                 <div
+                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
+                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
+                 >
+                   <Lock className="w-5 h-5 text-yellow-600 fill-yellow-200 dark:fill-yellow-800" />
+                   <div className="w-4 h-4 bg-yellow-500 rounded-full shadow-lg" />
+                 </div>
+               )}
+                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-yellow-300 dark:text-yellow-700" />
+             </div>
+             <div className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 text-sm font-semibold bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
+               <Lock className="w-4 h-4" />
                 <span>mTLS Encrypted</span>
               </div>
             </div>
@@ -408,35 +408,35 @@ useEffect(() => {
               {/* 90% to v1.0 */}
               <div className="relative flex items-center gap-3">
                 <Badge className="bg-green-500 text-white">90%</Badge>
-                <div className="relative w-32 h-1 bg-green-300 dark:bg-green-700 rounded-full">
-                  {isPlaying && Math.random() > 0.1 && (
-                    <div
-                      className="absolute top-1/2 -translate-y-1/2"
-                      style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                    >
-                      <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg" />
-                    </div>
-                  )}
-                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-green-500" />
-                </div>
-              </div>
+               <div className="relative w-32 h-1 bg-green-300 dark:bg-green-700 rounded-full">
+                 {isPlaying && Math.random() > 0.1 && (
+                   <div
+                     className="absolute top-1/2 -translate-y-1/2"
+                     style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
+                   >
+                     <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg" />
+                   </div>
+                 )}
+                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-green-300 dark:text-green-700" />
+               </div>
+             </div>
 
               {/* 10% to v2.0 */}
               <div className="relative flex items-center gap-3">
                 <Badge className="bg-orange-500 text-white">10%</Badge>
-                <div className="relative w-32 h-1 bg-orange-300 dark:bg-orange-700 rounded-full">
-                  {isPlaying && Math.random() < 0.1 && (
-                    <div
-                      className="absolute top-1/2 -translate-y-1/2"
-                      style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                    >
-                      <div className="w-3 h-3 bg-orange-500 rounded-full shadow-lg" />
-                    </div>
-                  )}
-                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-orange-500" />
-                </div>
-              </div>
-            </div>
+               <div className="relative w-32 h-1 bg-orange-300 dark:bg-orange-700 rounded-full">
+                 {isPlaying && Math.random() < 0.1 && (
+                   <div
+                     className="absolute top-1/2 -translate-y-1/2"
+                     style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
+                   >
+                     <div className="w-3 h-3 bg-orange-500 rounded-full shadow-lg" />
+                   </div>
+                 )}
+                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-orange-300 dark:text-orange-700" />
+               </div>
+             </div>
+           </div>
 
             {/* Destination Services */}
             <div className="flex flex-col gap-8">
@@ -508,19 +508,19 @@ useEffect(() => {
             {/* Traffic with Retry */}
             <div className="relative flex flex-col items-center gap-3">
               <div className="relative w-48 h-1 bg-purple-300 dark:bg-purple-700 rounded-full">
-                {isPlaying && (
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                    style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                  >
-                    <RefreshCw className="w-5 h-5 text-purple-600 animate-spin" />
-                    <div className="w-4 h-4 bg-purple-500 rounded-full shadow-lg" />
-                  </div>
-                )}
-                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-purple-500" />
-              </div>
-              <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-semibold bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-full">
-                <RefreshCw className="w-4 h-4" />
+               {isPlaying && (
+                 <div
+                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
+                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
+                 >
+                   <RefreshCw className="w-5 h-5 text-purple-600 animate-spin" />
+                   <div className="w-4 h-4 bg-purple-500 rounded-full shadow-lg" />
+                 </div>
+               )}
+                <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-purple-300 dark:text-purple-700" />
+             </div>
+             <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-sm font-semibold bg-purple-100 dark:bg-purple-900/30 px-3 py-1 rounded-full">
+               <RefreshCw className="w-4 h-4" />
                 <span>Auto-Retry on Failure</span>
               </div>
             </div>
@@ -573,24 +573,24 @@ useEffect(() => {
             {/* Circuit Breaker Visualization */}
             <div className="relative flex flex-col items-center gap-3">
               <div className="relative w-48 h-1 bg-gray-300 dark:bg-gray-700 rounded-full">
-                {isPlaying && circuitState === 'closed' && (
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                    style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                  >
-                    <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg" />
-                  </div>
-                )}
-                {circuitState === 'open' && (
-                  <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
-                    <Zap className="w-8 h-8 text-red-600 fill-red-200 dark:fill-red-900" />
-                  </div>
-                )}
-                {circuitState === 'closed' && (
-                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-gray-500" />
-                )}
-              </div>
-              <div
+               {isPlaying && circuitState === 'closed' && (
+                 <div
+                   className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
+                   style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
+                 >
+                   <div className="w-4 h-4 bg-red-500 rounded-full shadow-lg" />
+                 </div>
+               )}
+               {circuitState === 'open' && (
+                 <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                   <Zap className="w-8 h-8 text-red-600 fill-red-200 dark:fill-red-900" />
+                 </div>
+               )}
+               {circuitState === 'closed' && (
+                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-6 h-6 text-gray-300 dark:text-gray-700" />
+               )}
+             </div>
+             <div
                 className={`flex items-center gap-2 text-sm font-semibold px-3 py-1 rounded-full ${
                   circuitState === 'open'
                     ? 'text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700'
