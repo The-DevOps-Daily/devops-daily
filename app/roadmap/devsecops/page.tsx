@@ -253,10 +253,11 @@ const milestones: DevSecOpsMilestone[] = [
         name: 'Supply Chain Security',
         description: 'SBOM generation, artifact verification, and Sigstore/cosign',
         icon: Network,
-        priority: 'important',
-        estimatedHours: 15,
-      },
-      {
+       priority: 'important',
+       estimatedHours: 15,
+       link: '/guides/supply-chain-security',
+     },
+     {
         name: 'Security Gates',
         description: 'Implement quality gates that block deployments on security failures',
         icon: ShieldAlert,
