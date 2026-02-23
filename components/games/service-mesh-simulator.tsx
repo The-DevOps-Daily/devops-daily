@@ -247,7 +247,7 @@ export default function ServiceMeshSimulator() {
               <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-gray-300 dark:border-l-gray-700" />
               {isPlaying && (
                 <div
-                  className="absolute top-0 flex items-center gap-2"
+                  className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
                   style={{ left: `${progress * 85}%`, transition: 'left 0.05s linear' }}
                 >
                   <Lock className="w-5 h-5 text-yellow-500" />
