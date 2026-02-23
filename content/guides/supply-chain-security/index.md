@@ -4,8 +4,8 @@ description: 'Secure your software supply chain with SBOM generation, artifact s
 category:
   name: 'Security'
   slug: 'security'
-publishedAt: '2025-01-24'
-updatedAt: '2025-01-24'
+publishedAt: '2026-02-23'
+updatedAt: '2026-02-23'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
