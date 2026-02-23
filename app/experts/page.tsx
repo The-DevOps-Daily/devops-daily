@@ -1,8 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { PageHeader } from '@/components/page-header';
 import { getAllExperts, getAllSpecialties } from '@/lib/experts';
-import { Breadcrumb } from '@/components/breadcrumb';
+import { ExpertsHero } from '@/components/experts/experts-hero';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { Badge } from '@/components/ui/badge';
 import { Mail, MapPin, DollarSign } from 'lucide-react';
@@ -40,9 +39,6 @@ export default async function ExpertsPage() {
   const experts = await getAllExperts();
   const allSpecialties = getAllSpecialties(experts);
 
-  // Breadcrumb items
-  const breadcrumbItems = [{ label: 'Experts', href: '/experts', isCurrent: true }];
-
   // Breadcrumb items for schema
   const schemaItems = [
     { name: 'Home', url: '/' },
@@ -53,14 +49,12 @@ export default async function ExpertsPage() {
     <>
       <BreadcrumbSchema items={schemaItems} />
 
-      <div className="container mx-auto px-4 py-8">
-        <Breadcrumb items={breadcrumbItems} />
+      <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
+        {/* Hero Section */}
+        <ExpertsHero totalExperts={experts.length} specialties={allSpecialties} />
 
-        <PageHeader
-          title="Hire an Expert"
-          description="Find experienced DevOps professionals for consulting, training, and implementation"
-        />
-
+        {/* Experts Grid Section */}
+        <section className="py-8 container mx-auto px-4 mb-16 max-w-7xl">
         {allSpecialties.length > 0 && (
           <div className="mb-8">
             <h3 className="text-sm font-medium text-muted-foreground mb-3">Specialties:</h3>
@@ -74,7 +68,7 @@ export default async function ExpertsPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 my-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {experts.map((expert) => (
             <Link
               key={expert.slug}
@@ -160,6 +154,7 @@ export default async function ExpertsPage() {
             <p>No experts available at the moment. Check back soon!</p>
           </div>
         )}
+        </section>
       </div>
     </>
   );
