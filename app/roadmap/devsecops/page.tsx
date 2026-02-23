@@ -263,6 +263,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: ShieldAlert,
         priority: 'essential',
         estimatedHours: 10,
+        link: '/guides/security-gates',
       },
     ],
     project: {
