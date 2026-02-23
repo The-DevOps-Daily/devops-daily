@@ -486,6 +486,21 @@ const games: Game[] = [
     category: 'Observability',
     createdAt: '2026-02-08',
   },
+  {
+    id: 'service-mesh-simulator',
+    title: 'Service Mesh Traffic Simulator',
+    description:
+      'Visualize how service mesh proxies handle traffic between microservices. Learn mTLS, traffic splitting, retries, circuit breakers, and explore Istio and Linkerd patterns.',
+    iconName: 'Network',
+    badgeText: 'New',
+    color: 'from-blue-500 to-purple-600',
+    href: '/games/service-mesh-simulator',
+    tags: ['kubernetes', 'service-mesh', 'istio', 'linkerd', 'envoy', 'mtls', 'microservices'],
+    isNew: true,
+    featured: true,
+    category: 'Kubernetes',
+    createdAt: '2026-02-08',
+  },
 ];
 
 /**
