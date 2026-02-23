@@ -38,7 +38,8 @@ Burp Suite is the industry-standard web application security testing tool used b
 brew install --cask burp-suite
 
 # Linux (Download JAR)
-wget https://portswigger.net/burp/releases/download -O burpsuite.jar
+# Visit https://portswigger.net/burp/releases to download the latest version
+# Example: wget https://portswigger.net/burp/releases/startdownload?product=community&version=<version>&type=Jar -O burpsuite.jar
 java -jar burpsuite.jar
 
 # Windows (Installer)

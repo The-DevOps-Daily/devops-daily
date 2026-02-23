@@ -34,7 +34,7 @@ DAST complements other security testing approaches:
 Real-world impact:
 
 - **Capital One breach (2019)** — SSRF vulnerability in web application firewall allowed access to 100M+ records
-- **British Airways (2018)** — XSS vulnerability led to £183M GDPR fine
+- **British Airways (2018)** — Magecart attack (compromised third-party script) led to £183M GDPR fine
 - **Heartbleed (2014)** — Runtime vulnerability in OpenSSL affected millions of servers
 
 ## What You'll Learn
