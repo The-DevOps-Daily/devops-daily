@@ -123,10 +123,10 @@ export default function ServiceMeshSimulator() {
 
   // Reset animation when scenario changes
   useEffect(() => {
-  setAnimationProgress(0);
-  setIsPlaying(false);
-  setShowSolution(false);
-  setCircuitState('closed');
+    // Reset animation progress but keep playing state
+    setAnimationProgress(0);
+    setShowSolution(false);
+    setCircuitState('closed');
 }, [currentScenario]);
 
 // Circuit breaker state management
