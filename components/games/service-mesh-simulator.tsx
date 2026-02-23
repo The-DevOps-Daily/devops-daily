@@ -20,7 +20,6 @@ import {
   ArrowRight,
   ChevronRight,
   ChevronLeft,
-  Lightbulb,
 } from 'lucide-react';
 
 interface Scenario {
@@ -105,7 +104,6 @@ export default function ServiceMeshSimulator() {
   const [currentScenario, setCurrentScenario] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [animationProgress, setAnimationProgress] = useState(0);
-  const [showSolution, setShowSolution] = useState(false);
   const [circuitState, setCircuitState] = useState<'closed' | 'open'>('closed');
 
   const scenario = SCENARIOS[currentScenario];
@@ -125,7 +123,6 @@ export default function ServiceMeshSimulator() {
   useEffect(() => {
     // Reset animation progress but keep playing state
     setAnimationProgress(0);
-    setShowSolution(false);
     setCircuitState('closed');
 }, [currentScenario]);
 
@@ -166,16 +163,12 @@ useEffect(() => {
           setAnimationProgress(0);
           setIsPlaying(false);
           break;
-        case 's':
-        case 'S':
-          setShowSolution(!showSolution);
-          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentScenario, isPlaying, showSolution]);
+  }, [currentScenario, isPlaying]);
 
   const handleNext = () => {
     if (currentScenario < SCENARIOS.length - 1) {
@@ -749,20 +742,10 @@ useEffect(() => {
               <RotateCcw className="mr-2 h-5 w-5" />
               Reset
             </Button>
-            <Button
-              onClick={() => setShowSolution(!showSolution)}
-              variant="outline"
-              size="lg"
-              className="ml-4"
-            >
-              <Lightbulb className={`mr-2 h-5 w-5 ${showSolution ? 'text-yellow-500' : ''}`} />
-              {showSolution ? 'Hide' : 'Show'} Explanation
-            </Button>
           </div>
 
           {/* Problem/Solution Cards */}
-          {showSolution && (
-            <div className="grid md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="grid md:grid-cols-2 gap-4">
               <Alert className="border-red-200 bg-red-50 dark:bg-red-950/20">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
                 <AlertDescription>
@@ -778,7 +761,6 @@ useEffect(() => {
                 </AlertDescription>
               </Alert>
             </div>
-          )}
 
           {/* Keyboard Shortcuts */}
           <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
@@ -792,9 +774,6 @@ useEffect(() => {
               </span>
               <span>
                 <kbd className="px-2 py-1 bg-background rounded border text-xs">R</kbd> Reset
-              </span>
-              <span>
-                <kbd className="px-2 py-1 bg-background rounded border text-xs">S</kbd> Show/Hide Solution
               </span>
             </div>
           </div>
