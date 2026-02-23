@@ -407,35 +407,19 @@ useEffect(() => {
             <div className="flex flex-col gap-8">
               {/* 90% to v1.0 */}
               <div className="relative flex items-center gap-3">
-                <Badge className="bg-green-500 text-white">90%</Badge>
-               <div className="relative w-32 h-1 bg-green-300 dark:bg-green-700 rounded-full">
-                 {isPlaying && Math.random() > 0.1 && (
-                   <div
-                     className="absolute top-1/2 -translate-y-1/2"
-                     style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                   >
-                     <div className="w-3 h-3 bg-green-500 rounded-full shadow-lg" />
-                   </div>
-                 )}
-                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-green-300 dark:text-green-700" />
-               </div>
-             </div>
+               <Badge className="bg-green-500 text-white">90%</Badge>
+              <div className="relative w-32 h-1 bg-green-300 dark:bg-green-700 rounded-full">
+                 <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-green-300 dark:text-green-700" />
+              </div>
+            </div>
 
               {/* 10% to v2.0 */}
               <div className="relative flex items-center gap-3">
-                <Badge className="bg-orange-500 text-white">10%</Badge>
-               <div className="relative w-32 h-1 bg-orange-300 dark:bg-orange-700 rounded-full">
-                 {isPlaying && Math.random() < 0.1 && (
-                   <div
-                     className="absolute top-1/2 -translate-y-1/2"
-                     style={{ left: `${progress * 90}%`, transition: 'left 0.05s linear' }}
-                   >
-                     <div className="w-3 h-3 bg-orange-500 rounded-full shadow-lg" />
-                   </div>
-                 )}
-                  <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-orange-300 dark:text-orange-700" />
-               </div>
-             </div>
+               <Badge className="bg-orange-500 text-white">10%</Badge>
+              <div className="relative w-32 h-1 bg-orange-300 dark:bg-orange-700 rounded-full">
+                 <ArrowRight className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 w-5 h-5 text-orange-300 dark:text-orange-700" />
+              </div>
+            </div>
            </div>
 
             {/* Destination Services */}
