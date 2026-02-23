@@ -32,6 +32,8 @@ import InfraTarot from '@/components/games/infra-tarot';
 import DevOpsMemes from '@/components/games/devops-memes';
 import BCDRSimulator from '@/components/games/bcdr-simulator';
 import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
+import PromqlPlayground from '@/components/games/promql-playground';
+import ServiceMeshSimulator from '@/components/games/service-mesh-simulator';
 
 // Map of game slugs to their components
 const GAME_COMPONENTS: Record<string, React.ComponentType> = {
@@ -63,6 +65,8 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   'devops-memes': DevOpsMemes,
   'bcdr-simulator': BCDRSimulator,
   'ssl-tls-handshake': SslTlsHandshakeSimulator,
+  'promql-playground': PromqlPlayground,
+  'service-mesh-simulator': ServiceMeshSimulator,
 };
 
 interface PageProps {
