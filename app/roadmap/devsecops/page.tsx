@@ -247,6 +247,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Bug,
         priority: 'important',
         estimatedHours: 20,
+        link: '/guides/dast-integration',
       },
       {
         name: 'Supply Chain Security',
