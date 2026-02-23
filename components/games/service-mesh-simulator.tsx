@@ -242,19 +242,21 @@ export default function ServiceMeshSimulator() {
               </div>
             </div>
 
-            <div className="relative flex flex-col items-center">
-              <div className="w-32 h-0.5 bg-gray-300 dark:bg-gray-700" />
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-gray-300 dark:border-l-gray-700" />
-              {isPlaying && (
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
-                  style={{ left: `${progress * 85}%`, transition: 'left 0.05s linear' }}
-                >
-                  <Lock className="w-5 h-5 text-yellow-500" />
-                  <div className="w-3 h-3 bg-blue-500 rounded-full shadow-lg" />
-                </div>
-              )}
-              <div className="mt-6 text-sm text-yellow-600 font-semibold whitespace-nowrap flex items-center gap-1">
+            <div className="flex flex-col items-center gap-6">
+              <div className="relative flex items-center">
+                <div className="w-32 h-0.5 bg-gray-300 dark:bg-gray-700" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[10px] border-l-gray-300 dark:border-l-gray-700" />
+                {isPlaying && (
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 flex items-center gap-2"
+                    style={{ left: `${progress * 85}%`, transition: 'left 0.05s linear' }}
+                  >
+                    <Lock className="w-5 h-5 text-yellow-500" />
+                    <div className="w-3 h-3 bg-blue-500 rounded-full shadow-lg" />
+                  </div>
+                )}
+              </div>
+              <div className="text-sm text-yellow-600 font-semibold whitespace-nowrap flex items-center gap-1">
                 <Lock className="w-4 h-4" />
                 Encrypted with mTLS
               </div>
