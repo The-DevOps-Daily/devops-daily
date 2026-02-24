@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { getExpertBySlug, getAllExperts } from '@/lib/experts';
+import { getExpertBySlug, getAllExperts, getPostsByExpert, getGuidesByExpert } from '@/lib/experts';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
@@ -8,6 +8,8 @@ import { parseMarkdown } from '@/lib/markdown';
 import { CodeBlockWrapper } from '@/components/code-block-wrapper';
 import { HeadingWrapper } from '@/components/heading-with-anchor';
 import { Mail, Globe, MapPin, DollarSign, Calendar } from 'lucide-react';
+import { PostsList } from '@/components/posts-list';
+import Link from 'next/link';
 
 export const dynamicParams = false;
 
@@ -67,6 +69,15 @@ export default async function ExpertPage({ params }: { params: Promise<{ slug: s
   if (!expert) {
     notFound();
   }
+
+  // Fetch posts and guides if showPosts is true (default true)
+  const showPosts = expert.showPosts !== false;
+  const [posts, guides] = showPosts
+    ? await Promise.all([
+        getPostsByExpert(slug),
+        getGuidesByExpert(slug),
+      ])
+    : [[], []];
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -196,6 +207,37 @@ export default async function ExpertPage({ params }: { params: Promise<{ slug: s
               />
             </CodeBlockWrapper>
           </HeadingWrapper>
+        )}
+
+        {/* Posts and Guides Sections - only shown if showPosts is true */}
+        {showPosts && posts.length > 0 && (
+          <div className="mt-16">
+            <h2 className="mb-6 text-2xl font-bold">Articles by {expert.name}</h2>
+            <PostsList posts={posts} />
+          </div>
+        )}
+
+        {showPosts && guides.length > 0 && (
+          <div className="mt-12">
+            <h2 className="mb-6 text-2xl font-bold">Guides by {expert.name}</h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              {guides.map((guide) => (
+                <Link
+                  key={guide.slug}
+                  href={`/guides/${guide.slug}`}
+                  className="block p-6 transition-all border rounded-lg bg-card border-border hover:border-primary/50 hover:shadow-md"
+                >
+                  <h3 className="text-xl font-semibold">{guide.title}</h3>
+                  <p className="mt-2 text-muted-foreground">{guide.description}</p>
+                  {guide.parts && guide.parts.length > 0 && (
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {guide.parts.length} {guide.parts.length === 1 ? 'part' : 'parts'}
+                    </p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </>

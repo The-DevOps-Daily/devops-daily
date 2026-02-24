@@ -195,12 +195,6 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           icon: Tags,
         },
         {
-          label: 'Authors',
-          href: '/authors',
-          description: 'Meet our contributors',
-          icon: Users,
-        },
-        {
           label: 'Hire an Expert',
           href: '/experts',
           description: 'Find DevOps experts for hire',
