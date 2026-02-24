@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
+import { getAllPosts } from './posts';
+import { getAllGuides } from './guides';
 
 const EXPERTS_DIR = path.join(process.cwd(), 'content', 'experts');
 
@@ -19,11 +21,16 @@ export type Expert = {
   website?: string;
   email?: string;
   content?: string;
+  showPosts?: boolean;
+  postCount?: number;
+  guideCount?: number;
 };
 
 export async function getAllExperts(): Promise<Expert[]> {
   try {
     const files = await fs.readdir(EXPERTS_DIR);
+    const [posts, guides] = await Promise.all([getAllPosts(), getAllGuides()]);
+
     const experts = await Promise.all(
       files
         .filter((f) => f.endsWith('.md'))
@@ -33,10 +40,15 @@ export async function getAllExperts(): Promise<Expert[]> {
           const { data, content } = matter(file);
           const slug = filename.replace(/\.md$/, '');
 
+          const postCount = posts.filter((post) => post.author?.slug === slug).length;
+          const guideCount = guides.filter((guide) => guide.author?.slug === slug).length;
+
           return {
             ...data,
             slug,
             content,
+            postCount,
+            guideCount,
           } as Expert;
         })
     );
@@ -54,10 +66,16 @@ export async function getExpertBySlug(slug: string): Promise<Expert | null> {
     const file = await fs.readFile(filePath, 'utf-8');
     const { data, content } = matter(file);
 
+    const [posts, guides] = await Promise.all([getAllPosts(), getAllGuides()]);
+    const postCount = posts.filter((post) => post.author?.slug === slug).length;
+    const guideCount = guides.filter((guide) => guide.author?.slug === slug).length;
+
     return {
       ...data,
       slug,
       content,
+      postCount,
+      guideCount,
     } as Expert;
   } catch {
     return null;
@@ -77,4 +95,14 @@ export function getAllSpecialties(experts: Expert[]): string[] {
     expert.specialties?.forEach((specialty) => specialtiesSet.add(specialty));
   });
   return Array.from(specialtiesSet).sort();
+}
+
+export async function getPostsByExpert(expertSlug: string) {
+  const posts = await getAllPosts();
+  return posts.filter((post) => post.author?.slug === expertSlug);
+}
+
+export async function getGuidesByExpert(expertSlug: string) {
+  const guides = await getAllGuides();
+  return guides.filter((guide) => guide.author?.slug === expertSlug);
 }

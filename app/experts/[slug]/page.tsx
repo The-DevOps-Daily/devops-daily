@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { getExpertBySlug, getAllExperts } from '@/lib/experts';
+import { getExpertBySlug, getAllExperts, getPostsByExpert, getGuidesByExpert } from '@/lib/experts';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
@@ -8,6 +8,7 @@ import { parseMarkdown } from '@/lib/markdown';
 import { CodeBlockWrapper } from '@/components/code-block-wrapper';
 import { HeadingWrapper } from '@/components/heading-with-anchor';
 import { Mail, Globe, MapPin, DollarSign, Calendar } from 'lucide-react';
+import { ExpertContentToggle } from '@/components/experts/expert-content-toggle';
 
 export const dynamicParams = false;
 
@@ -67,6 +68,15 @@ export default async function ExpertPage({ params }: { params: Promise<{ slug: s
   if (!expert) {
     notFound();
   }
+
+  // Fetch posts and guides if showPosts is true (default true)
+  const showPosts = expert.showPosts !== false;
+  const [posts, guides] = showPosts
+    ? await Promise.all([
+        getPostsByExpert(slug),
+        getGuidesByExpert(slug),
+      ])
+    : [[], []];
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -197,6 +207,17 @@ export default async function ExpertPage({ params }: { params: Promise<{ slug: s
             </CodeBlockWrapper>
           </HeadingWrapper>
         )}
+
+        {/* Content Toggle Section - Client Component */}
+        <ExpertContentToggle
+          expertName={expert.name}
+          expertSlug={expert.slug}
+          posts={posts}
+          guides={guides}
+          postCount={expert.postCount || 0}
+          guideCount={expert.guideCount || 0}
+          defaultShowPosts={showPosts}
+        />
       </div>
     </>
   );

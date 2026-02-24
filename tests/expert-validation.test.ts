@@ -62,6 +62,12 @@ describe('Expert Validation', () => {
         it('should have content describing services', () => {
           expect(content.trim().length).toBeGreaterThan(0);
         });
+
+        it('should have valid showPosts field if provided', () => {
+          if (data.showPosts !== undefined) {
+            expect(typeof data.showPosts).toBe('boolean');
+          }
+        });
       });
     });
   });

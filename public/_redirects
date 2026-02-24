@@ -1,0 +1,3 @@
+# Redirect authors to experts (merged sections)
+/authors /experts 301
+/authors/* /experts/:splat 301

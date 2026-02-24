@@ -4,6 +4,7 @@ slug: 'devops-daily-team'
 title: 'DevOps Consulting & Training Experts'
 bio: 'The DevOps Daily Team consists of experienced DevOps engineers, cloud architects, and infrastructure specialists. We provide consulting, training, and hands-on implementation services for companies looking to modernize their infrastructure and adopt DevOps best practices.'
 avatar: '/images/devops-daily-team.svg'
+showPosts: true
 specialties:
   - Kubernetes
   - AWS
