@@ -197,19 +197,6 @@ export function FlashCard({
         </div>
       </div>
 
-      {/* Actions */}
-      {isFlipped && (
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-          <Button variant="outline" size="lg" onClick={handleUnknown} className="gap-2 w-full sm:w-auto min-h-[48px]">
-            <X className="h-4 w-4" />
-            Need to review
-          </Button>
-          <Button size="lg" onClick={handleKnown} className="gap-2 w-full sm:w-auto min-h-[48px]">
-            <Check className="h-4 w-4" />
-            Got it!
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
