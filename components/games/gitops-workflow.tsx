@@ -564,56 +564,163 @@ export default function GitOpsWorkflow() {
             </Card>
           </div>
 
-          <div className="relative grid md:grid-cols-2 gap-6 mb-6">
-            {/* Animated Flow Arrow between cards */}
-            <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
-              <AnimatePresence>
-                {animationPhase === 'git-to-argocd' && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center gap-2"
-                  >
+          {/* Workflow Flow Visualization */}
+          <div className="mb-6">
+            <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+              <div className="flex items-center justify-between gap-4">
+                {/* Git Step */}
+                <div className="flex-1 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-950 border-2 border-blue-500 flex items-center justify-center">
+                    <GitBranch className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Git Repository</p>
+                    <p className="text-xs text-muted-foreground">Source of Truth</p>
+                  </div>
+                </div>
+
+                {/* Arrow with Animation */}
+                <div className="hidden md:flex items-center gap-2 flex-1 max-w-[200px]">
+                  <div className="flex-1 h-0.5 bg-slate-300 dark:bg-slate-700 relative">
+                    <AnimatePresence>
+                      {animationPhase === 'git-to-argocd' && (
+                        <motion.div
+                          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-blue-500"
+                          initial={{ left: 0 }}
+                          animate={{ left: '100%' }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.8, ease: 'linear' }}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <div className="text-slate-400">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 0L16 8L8 16V10H0V6H8V0Z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* ArgoCD Step */}
+                <div className="flex-1 flex items-center gap-3">
+                  <div className={cn(
+                    "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors",
+                    animationPhase === 'argocd-to-k8s'
+                      ? "bg-green-100 dark:bg-green-950 border-green-500"
+                      : "bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                  )}>
+                    <RefreshCw className={cn(
+                      "w-6 h-6",
+                      animationPhase === 'argocd-to-k8s'
+                        ? "text-green-600 dark:text-green-400 animate-spin"
+                        : "text-slate-600 dark:text-slate-400"
+                    )} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">ArgoCD</p>
+                    <p className="text-xs text-muted-foreground">GitOps Operator</p>
+                  </div>
+                </div>
+
+                {/* Arrow with Animation */}
+                <div className="hidden md:flex items-center gap-2 flex-1 max-w-[200px]">
+                  <div className="flex-1 h-0.5 bg-slate-300 dark:bg-slate-700 relative">
+                    <AnimatePresence>
+                      {animationPhase === 'argocd-to-k8s' && (
+                        <motion.div
+                          className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-green-500"
+                          initial={{ left: 0 }}
+                          animate={{ left: '100%' }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 1, ease: 'linear' }}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  <div className="text-slate-400">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M8 0L16 8L8 16V10H0V6H8V0Z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Kubernetes Step */}
+                <div className="flex-1 flex items-center gap-3">
+                  <div className={cn(
+                    "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-colors",
+                    healthStatus === 'healthy'
+                      ? "bg-green-100 dark:bg-green-950 border-green-500"
+                      : "bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700"
+                  )}>
+                    <Cloud className={cn(
+                      "w-6 h-6",
+                      healthStatus === 'healthy'
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-slate-600 dark:text-slate-400"
+                    )} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">Kubernetes</p>
+                    <p className="text-xs text-muted-foreground">Live Cluster</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Badge */}
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <AnimatePresence mode="wait">
+                  {animationPhase === 'git-to-argocd' && (
                     <motion.div
-                      animate={{ x: [0, 10, 0] }}
-                      transition={{ repeat: Infinity, duration: 0.6 }}
-                      className="flex items-center gap-1"
+                      key="git-push"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="flex items-center gap-2 text-sm"
                     >
-                      <div className="w-3 h-3 rounded-full bg-blue-500" />
-                      <div className="w-2 h-2 rounded-full bg-blue-400" />
-                      <div className="w-1 h-1 rounded-full bg-blue-300" />
+                      <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                      <span className="text-blue-600 dark:text-blue-400 font-medium">Commit pushed to Git repository...</span>
                     </motion.div>
-                    <div className="px-3 py-1.5 bg-blue-500 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1.5">
-                      <GitCommit className="w-3 h-3" />
-                      Pushed to Git
-                    </div>
-                  </motion.div>
-                )}
-                {animationPhase === 'argocd-to-k8s' && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -100 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center gap-2"
-                  >
+                  )}
+                  {animationPhase === 'argocd-to-k8s' && (
                     <motion.div
-                      animate={{ x: [0, 10, 0] }}
-                      transition={{ repeat: Infinity, duration: 0.6 }}
-                      className="flex items-center gap-1"
+                      key="syncing"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="flex items-center gap-2 text-sm"
                     >
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
-                      <div className="w-2 h-2 rounded-full bg-green-400" />
-                      <div className="w-1 h-1 rounded-full bg-green-300" />
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-green-600 dark:text-green-400 font-medium">ArgoCD syncing to Kubernetes cluster...</span>
                     </motion.div>
-                    <div className="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1.5">
-                      <RefreshCw className="w-3 h-3 animate-spin" />
-                      Syncing to K8s
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  )}
+                  {animationPhase === 'idle' && syncStatus === 'synced' && (
+                    <motion.div
+                      key="idle"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      <span>System in sync - waiting for changes...</span>
+                    </motion.div>
+                  )}
+                  {animationPhase === 'idle' && pendingSync && (
+                    <motion.div
+                      key="pending"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <Clock className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-600 dark:text-orange-400 font-medium">Manual sync required (auto-sync disabled)</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
 
             {/* Git Repository */}
             <Card>
@@ -688,13 +795,7 @@ export default function GitOpsWorkflow() {
               <CardContent>
                 <div className="space-y-4">
                   <motion.div
-                    className="p-4 rounded-lg bg-blue-100/50 border-2 border-blue-300 dark:bg-blue-950/20 dark:border-blue-900"
-                    animate={{
-                      borderColor: animationPhase === 'argocd-to-k8s' 
-                        ? ['rgb(147, 197, 253)', 'rgb(59, 130, 246)', 'rgb(147, 197, 253)']
-                        : 'rgb(147, 197, 253)',
-                    }}
-                    transition={{ duration: 1.5, repeat: animationPhase === 'argocd-to-k8s' ? Infinity : 0 }}
+                    className="p-4 rounded-lg bg-blue-100/50 border border-blue-300 dark:bg-blue-950/20 dark:border-blue-900"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold">GitOps Operator</h3>
@@ -706,25 +807,13 @@ export default function GitOpsWorkflow() {
                       />
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">Continuously reconciles desired state</p>
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex gap-2">
                       <Badge variant="outline" className="text-xs">
                         Watching Git
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         Auto-heal: {autoSync ? 'On' : 'Off'}
                       </Badge>
-                      {animationPhase === 'argocd-to-k8s' && (
-                        <Badge className="bg-green-600 text-white text-xs">
-                          <Activity className="w-3 h-3 mr-1 animate-pulse" />
-                          Syncing
-                        </Badge>
-                      )}
-                      {pendingSync && (
-                        <Badge variant="outline" className="text-xs border-orange-500 text-orange-600 dark:text-orange-400">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Waiting
-                        </Badge>
-                      )}
                     </div>
                   </motion.div>
 
