@@ -49,12 +49,20 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   setShowResults(false)
 }, [])
 
-  const handleNext = useCallback(() => {
+  // Shared function to advance to next card or show results
+  const advanceOrShowResults = useCallback(() => {
     if (currentIndex < displayCards.length - 1) {
       setCurrentIndex(currentIndex + 1)
       setIsFlipped(false)
+    } else {
+      // On last card, show results summary
+      setShowResults(true)
     }
   }, [currentIndex, displayCards.length])
+
+  const handleNext = useCallback(() => {
+    advanceOrShowResults()
+  }, [advanceOrShowResults])
 
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
@@ -64,44 +72,26 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   }, [currentIndex])
 
   const handleMarkKnown = useCallback(() => {
-  if (!currentCard) return
-  setKnownCards(prev => new Set(prev).add(currentCard.id))
-  setUnknownCards(prev => {
-    const next = new Set(prev)
-    next.delete(currentCard.id)
-    return next
-  })
-  
-  // If on last card, show results
-  // Otherwise move to next
-  if (currentIndex < displayCards.length - 1) {
-    setCurrentIndex(currentIndex + 1)
-    setIsFlipped(false)
-  } else {
-    // On last card, show results summary
-    setShowResults(true)
-  }
-}, [currentCard, currentIndex, displayCards.length])
+    if (!currentCard) return
+    setKnownCards(prev => new Set(prev).add(currentCard.id))
+    setUnknownCards(prev => {
+      const next = new Set(prev)
+      next.delete(currentCard.id)
+      return next
+    })
+    advanceOrShowResults()
+  }, [currentCard, advanceOrShowResults])
 
-const handleMarkUnknown = useCallback(() => {
-  if (!currentCard) return
-  setUnknownCards(prev => new Set(prev).add(currentCard.id))
-  setKnownCards(prev => {
-    const next = new Set(prev)
-    next.delete(currentCard.id)
-    return next
-  })
-  
-  // If on last card, show results
-  // Otherwise move to next
-  if (currentIndex < displayCards.length - 1) {
-    setCurrentIndex(currentIndex + 1)
-    setIsFlipped(false)
-  } else {
-    // On last card, show results summary
-    setShowResults(true)
-  }
-}, [currentCard, currentIndex, displayCards.length])
+  const handleMarkUnknown = useCallback(() => {
+    if (!currentCard) return
+    setUnknownCards(prev => new Set(prev).add(currentCard.id))
+    setKnownCards(prev => {
+      const next = new Set(prev)
+      next.delete(currentCard.id)
+      return next
+    })
+    advanceOrShowResults()
+  }, [currentCard, advanceOrShowResults])
 
   const handleFlip = useCallback(() => {
     setIsFlipped(!isFlipped)
