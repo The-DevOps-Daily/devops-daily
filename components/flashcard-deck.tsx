@@ -27,6 +27,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   const [showOnlyUnknown, setShowOnlyUnknown] = useState(false)
   const [isFlipped, setIsFlipped] = useState(false)
   const [viewMode, setViewMode] = useState<'deck' | 'list'>('deck')
+  const [showResults, setShowResults] = useState(false)
 
   const displayCards = showOnlyUnknown
     ? shuffledCards.filter(card => !knownCards.has(card.id))
@@ -41,11 +42,12 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   }, [cards])
 
   const handleReset = useCallback(() => {
-    setKnownCards(new Set())
-    setUnknownCards(new Set())
-    setCurrentIndex(0)
-    setShowOnlyUnknown(false)
-  }, [])
+  setKnownCards(new Set())
+  setUnknownCards(new Set())
+  setCurrentIndex(0)
+  setShowOnlyUnknown(false)
+  setShowResults(false)
+}, [])
 
   const handleNext = useCallback(() => {
     if (currentIndex < displayCards.length - 1) {
@@ -70,14 +72,14 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
     return next
   })
   
-  // If on last card, stay on current card
+  // If on last card, show results
   // Otherwise move to next
   if (currentIndex < displayCards.length - 1) {
     setCurrentIndex(currentIndex + 1)
     setIsFlipped(false)
   } else {
-    // On last card, just flip it back to show visual feedback
-    setIsFlipped(false)
+    // On last card, show results summary
+    setShowResults(true)
   }
 }, [currentCard, currentIndex, displayCards.length])
 
@@ -90,14 +92,14 @@ const handleMarkUnknown = useCallback(() => {
     return next
   })
   
-  // If on last card, stay on current card
+  // If on last card, show results
   // Otherwise move to next
   if (currentIndex < displayCards.length - 1) {
     setCurrentIndex(currentIndex + 1)
     setIsFlipped(false)
   } else {
-    // On last card, just flip it back to show visual feedback
-    setIsFlipped(false)
+    // On last card, show results summary
+    setShowResults(true)
   }
 }, [currentCard, currentIndex, displayCards.length])
 
@@ -342,6 +344,115 @@ const handleMarkUnknown = useCallback(() => {
             </div>
           </div>
         )}
+      </div>
+    )
+  }
+
+  // Results view
+  if (showResults) {
+    const totalCards = cards.length
+    const knownCount = knownCards.size
+    const unknownCount = unknownCards.size
+    const notReviewedCount = totalCards - knownCount - unknownCount
+    const scorePercentage = totalCards > 0 ? Math.round((knownCount / totalCards) * 100) : 0
+
+    return (
+      <div className="space-y-6">
+        <Card className="p-8 text-center">
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">🎉 Session Complete!</h2>
+              <p className="text-muted-foreground">Great work reviewing your flashcards!</p>
+            </div>
+
+            <div className="flex justify-center">
+              <div className="relative w-32 h-32">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    className="text-muted"
+                  />
+                  <circle
+                    cx="64"
+                    cy="64"
+                    r="56"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 56}`}
+                    strokeDashoffset={`${2 * Math.PI * 56 * (1 - scorePercentage / 100)}`}
+                    className="text-green-500 transition-all duration-1000"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-3xl font-bold">{scorePercentage}%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card className="p-4 bg-green-500/10 border-green-500/20">
+                <div className="text-center">
+                  <Check className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                  <div className="text-2xl font-bold text-green-500">{knownCount}</div>
+                  <div className="text-sm text-muted-foreground">Known</div>
+                </div>
+              </Card>
+              <Card className="p-4 bg-red-500/10 border-red-500/20">
+                <div className="text-center">
+                  <X className="w-8 h-8 mx-auto mb-2 text-red-500" />
+                  <div className="text-2xl font-bold text-red-500">{unknownCount}</div>
+                  <div className="text-sm text-muted-foreground">Need Review</div>
+                </div>
+              </Card>
+              <Card className="p-4 bg-muted/50">
+                <div className="text-center">
+                  <Circle className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <div className="text-2xl font-bold">{notReviewedCount}</div>
+                  <div className="text-sm text-muted-foreground">Not Reviewed</div>
+                </div>
+              </Card>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+              <Button
+                onClick={() => {
+                  setShowResults(false)
+                  setCurrentIndex(0)
+                }}
+                className="min-h-[48px]"
+              >
+                Review Again
+              </Button>
+              {unknownCount > 0 && (
+                <Button
+                  onClick={() => {
+                    setShowResults(false)
+                    setShowOnlyUnknown(true)
+                    setCurrentIndex(0)
+                  }}
+                  variant="outline"
+                  className="min-h-[48px]"
+                >
+                  Review Unknown Cards ({unknownCount})
+                </Button>
+              )}
+              <Button
+                onClick={handleReset}
+                variant="outline"
+                className="min-h-[48px]"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Start Over
+              </Button>
+            </div>
+          </div>
+        </Card>
       </div>
     )
   }
