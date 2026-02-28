@@ -913,6 +913,7 @@ export default function GitOpsWorkflow() {
            </Card>
        </div>
      </div>
+   </div>
    );
   }
 
