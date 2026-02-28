@@ -742,13 +742,14 @@ export default function GitOpsWorkflow() {
                 </div>
 
                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                   {commits.map((commit) => (
                     <motion.div
                       key={commit.id}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       className={cn(
-                        'p-3 rounded-lg border',
+                        'p-2.5 rounded-lg border',
                         commit.deployed
                           ? 'bg-green-100 border-green-300 dark:bg-green-950/20 dark:border-green-900'
                           : 'bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-700'
@@ -795,10 +796,10 @@ export default function GitOpsWorkflow() {
               <CardContent>
                 <div className="space-y-4">
                   <motion.div
-                    className="p-4 rounded-lg bg-blue-100/50 border border-blue-300 dark:bg-blue-950/20 dark:border-blue-900"
+                    className="p-3 rounded-lg bg-blue-100/50 border border-blue-300 dark:bg-blue-950/20 dark:border-blue-900"
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold">GitOps Operator</h3>
+                      <h3 className="text-sm font-semibold">GitOps Operator</h3>
                       <RefreshCw
                         className={cn(
                           'w-5 h-5 text-blue-500',
@@ -806,7 +807,7 @@ export default function GitOpsWorkflow() {
                         )}
                       />
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">Continuously reconciles desired state</p>
+                    <p className="text-xs text-muted-foreground mb-2">Continuously reconciles desired state</p>
                     <div className="flex gap-2">
                       <Badge variant="outline" className="text-xs">
                         Watching Git
@@ -817,9 +818,9 @@ export default function GitOpsWorkflow() {
                     </div>
                   </motion.div>
 
-                  <div className="p-4 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700">
+                  <div className="p-3 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold flex items-center">
+                      <h3 className="text-sm font-semibold flex items-center">
                         <Server className="w-4 h-4 mr-2" />
                         Production Deployment
                       </h3>
@@ -887,7 +888,7 @@ export default function GitOpsWorkflow() {
 
           {/* Activity Feed */}
           {insights.length > 0 && (
-            <Card>
+            <Card className="max-h-[250px] overflow-hidden">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Activity className="w-5 h-5 mr-2" />
@@ -895,7 +896,7 @@ export default function GitOpsWorkflow() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2">
                   <AnimatePresence mode="popLayout">
                     {insights.map((insight, index) => (
                       <motion.div
@@ -903,7 +904,7 @@ export default function GitOpsWorkflow() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
-                        className="p-3 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700 text-sm"
+                        className="p-2 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700 text-xs"
                       >
                         {insight}
                       </motion.div>
