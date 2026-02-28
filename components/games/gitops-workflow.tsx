@@ -235,7 +235,8 @@ export default function GitOpsWorkflow() {
 
   const handleDeploy = useCallback(
     (commitId: string) => {
-      const commitHash = `#${commitId}`;
+      const commit = commits.find((c) => c.id === commitId);
+      const commitHash = commit ? `\`${commit.sha}\`` : `#${commitId}`;
 
       // Update commits to show deployed
       setCommits((prev) =>
@@ -276,7 +277,7 @@ export default function GitOpsWorkflow() {
         setPendingSync(true);
       }
     },
-    [addInsight, autoSync]
+    [addInsight, autoSync, commits]
   );
 
   const handleManualSync = useCallback(() => {
