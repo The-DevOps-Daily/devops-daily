@@ -62,26 +62,44 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   }, [currentIndex])
 
   const handleMarkKnown = useCallback(() => {
-    if (!currentCard) return
-    setKnownCards(prev => new Set(prev).add(currentCard.id))
-    setUnknownCards(prev => {
-      const next = new Set(prev)
-      next.delete(currentCard.id)
-      return next
-    })
-    handleNext()
-  }, [currentCard, handleNext])
+  if (!currentCard) return
+  setKnownCards(prev => new Set(prev).add(currentCard.id))
+  setUnknownCards(prev => {
+    const next = new Set(prev)
+    next.delete(currentCard.id)
+    return next
+  })
+  
+  // If on last card, stay on current card
+  // Otherwise move to next
+  if (currentIndex < displayCards.length - 1) {
+    setCurrentIndex(currentIndex + 1)
+    setIsFlipped(false)
+  } else {
+    // On last card, just flip it back to show visual feedback
+    setIsFlipped(false)
+  }
+}, [currentCard, currentIndex, displayCards.length])
 
-  const handleMarkUnknown = useCallback(() => {
-    if (!currentCard) return
-    setUnknownCards(prev => new Set(prev).add(currentCard.id))
-    setKnownCards(prev => {
-      const next = new Set(prev)
-      next.delete(currentCard.id)
-      return next
-    })
-    handleNext()
-  }, [currentCard, handleNext])
+const handleMarkUnknown = useCallback(() => {
+  if (!currentCard) return
+  setUnknownCards(prev => new Set(prev).add(currentCard.id))
+  setKnownCards(prev => {
+    const next = new Set(prev)
+    next.delete(currentCard.id)
+    return next
+  })
+  
+  // If on last card, stay on current card
+  // Otherwise move to next
+  if (currentIndex < displayCards.length - 1) {
+    setCurrentIndex(currentIndex + 1)
+    setIsFlipped(false)
+  } else {
+    // On last card, just flip it back to show visual feedback
+    setIsFlipped(false)
+  }
+}, [currentCard, currentIndex, displayCards.length])
 
   const handleFlip = useCallback(() => {
     setIsFlipped(!isFlipped)
