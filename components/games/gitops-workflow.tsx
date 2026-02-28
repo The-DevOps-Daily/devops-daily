@@ -720,191 +720,203 @@ export default function GitOpsWorkflow() {
             </div>
          </div>
 
-          <div className="space-y-6">
-           {/* Git Repository */}
-           <Card>
+          {/* Three Column Layout */}
+          <div className="grid md:grid-cols-3 gap-4">
+           {/* Column 1: Git Repository */}
+           <Card className="flex flex-col">
              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <GitBranch className="w-5 h-5 mr-2" />
-                  Git Repository (Source of Truth)
-                </CardTitle>
-                <CardDescription>
-                  Push new commits and deploy to Kubernetes cluster
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4">
-                 <Button onClick={generateRandomCommit} variant="outline" className="w-full">
-                   <GitCommit className="w-4 h-4 mr-2" />
-                   Create New Commit
-                 </Button>
-               </div>
+                <CardTitle className="flex items-center text-base">
+                 <GitBranch className="w-5 h-5 mr-2" />
+                  Git Repository
+               </CardTitle>
+                <CardDescription className="text-xs">
+                 Push new commits and deploy to Kubernetes cluster
+               </CardDescription>
+             </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+               <div className="mb-4">
+                <Button onClick={generateRandomCommit} variant="outline" className="w-full">
+                  <GitCommit className="w-4 h-4 mr-2" />
+                  Create New Commit
+                </Button>
+              </div>
 
-               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                 {commits.map((commit) => (
-                    <motion.div
-                      key={commit.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={cn(
-                        'p-2.5 rounded-lg border',
-                        commit.deployed
+               <div className="space-y-2 flex-1 overflow-y-auto pr-2">
+                {commits.map((commit) => (
+                   <motion.div
+                     key={commit.id}
+                     initial={{ opacity: 0, x: -20 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     className={cn(
+                        'p-2 rounded-lg border text-xs',
+                       commit.deployed
                           ? 'bg-green-100 border-green-300 dark:bg-green-950/20 dark:border-green-900'
                           : 'bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-700'
                       )}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <code className="text-xs font-mono bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded">
-                              {commit.sha}
-                            </code>
-                            <span className="text-xs text-muted-foreground">{commit.timestamp}</span>
-                          </div>
-                          <p className="text-sm font-medium mb-1">{commit.message}</p>
-                          <p className="text-xs text-muted-foreground">by {commit.author}</p>
-                        </div>
-                        {commit.deployed ? (
-                          <Badge variant="secondary" className="ml-2">
-                            <CheckCircle2 className="w-3 h-3 mr-1" />
-                            Deployed
-                          </Badge>
-                        ) : (
-                          <Button size="sm" onClick={() => handleDeploy(commit.id)} className="ml-2">
-                            <GitPullRequest className="w-3 h-3 mr-1" />
-                            Deploy
-                          </Button>
-                        )}
+                     <div className="flex items-start justify-between">
+                       <div className="flex-1">
+                          <div className="flex items-center gap-1 mb-1">
+                            <code className="text-[10px] font-mono bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">
+                             {commit.sha}
+                           </code>
+                            <span className="text-[10px] text-muted-foreground">{commit.timestamp}</span>
+                         </div>
+                          <p className="text-xs font-medium">{commit.message}</p>
+                       </div>
+                       {commit.deployed ? (
+                          <Badge variant="secondary" className="ml-2 text-[10px] h-5">
+                            <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                            Done
+                         </Badge>
+                       ) : (
+                          <Button size="sm" onClick={() => handleDeploy(commit.id)} className="ml-2 h-6 text-[10px] px-2">
+                            <GitPullRequest className="w-3 h-3" />
+                           Deploy
+                         </Button>
+                       )}
                       </div>
                     </motion.div>
                   ))}
                 </div>
-             </CardContent>
-           </Card>
+            </CardContent>
+          </Card>
 
-          {/* Activity Feed */}
-          {insights.length > 0 && (
-            <Card className="max-h-[250px] overflow-hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Activity className="w-5 h-5 mr-2" />
-                  Activity Feed
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2">
-                  <AnimatePresence mode="popLayout">
-                    {insights.map((insight, index) => (
-                      <motion.div
-                        key={`${insight}-${index}`}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="p-2 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700 text-xs"
-                      >
-                        {insight}
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+          {/* Column 2: Activity Feed & ArgoCD Status */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center text-base">
+                <RefreshCw className="w-5 h-5 mr-2" />
+                ArgoCD Operator
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Monitors Git and syncs to Kubernetes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col space-y-3">
+              {/* ArgoCD Status */}
+              <div className="p-3 rounded-lg bg-blue-100/50 border border-blue-300 dark:bg-blue-950/20 dark:border-blue-900">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-semibold">Sync Status</h3>
+                  <RefreshCw
+                    className={cn(
+                      'w-4 h-4 text-blue-500',
+                      syncStatus === 'syncing' && 'animate-spin'
+                    )}
+                  />
                 </div>
-              </CardContent>
-            </Card>
-          )}
-
-           {/* Kubernetes Cluster */}
-           <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Cloud className="w-5 h-5 mr-2" />
-                  Kubernetes Cluster (Live State)
-                </CardTitle>
-                <CardDescription>GitOps operator monitors and syncs state</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <motion.div
-                    className="p-3 rounded-lg bg-blue-100/50 border border-blue-300 dark:bg-blue-950/20 dark:border-blue-900"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold">GitOps Operator</h3>
-                      <RefreshCw
-                        className={cn(
-                          'w-5 h-5 text-blue-500',
-                          syncStatus === 'syncing' && 'animate-spin'
-                        )}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-2">Continuously reconciles desired state</p>
-                    <div className="flex gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        Watching Git
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        Auto-heal: {autoSync ? 'On' : 'Off'}
-                      </Badge>
-                    </div>
-                  </motion.div>
-
-                  <div className="p-3 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold flex items-center">
-                        <Server className="w-4 h-4 mr-2" />
-                        Production Deployment
-                      </h3>
-                      {healthStatus === 'healthy' && (
-                        <Badge variant="secondary" className="bg-green-600 text-white dark:bg-green-950 dark:text-green-400">
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
-                          Healthy
-                        </Badge>
-                      )}
-                      {healthStatus === 'degraded' && (
-                        <Badge variant="secondary" className="bg-yellow-600 text-white dark:bg-yellow-950 dark:text-yellow-400">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          Degraded
-                        </Badge>
-                      )}
-                      {healthStatus === 'progressing' && (
-                        <Badge variant="secondary" className="bg-blue-600 text-white dark:bg-blue-950 dark:text-blue-400">
-                          <Activity className="w-3 h-3 mr-1" />
-                          Progressing
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Replicas:</span>
-                        <span className="font-mono">3/3</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Version:</span>
-                        <code className="text-xs bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded">
-                          {commits.find((c) => c.deployed)?.sha || 'none'}
-                        </code>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Last Sync:</span>
-                        <span className="font-mono text-xs">Just now</span>
-                      </div>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-muted-foreground">Mode:</span>
+                    <Badge variant="outline" className="text-[10px] h-4 px-1">
+                      Auto-sync: {autoSync ? 'On' : 'Off'}
+                    </Badge>
                   </div>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-muted-foreground">Status:</span>
+                    <span className="font-medium capitalize">{syncStatus}</span>
+                  </div>
+                </div>
+              </div>
 
-                  <Button variant="outline" onClick={handleDriftScenario} className="w-full">
-                    <Zap className="w-4 h-4 mr-2" />
-                    Simulate Configuration Drift
-                  </Button>
+              {/* Activity Feed */}
+          {insights.length > 0 && (
+            <div className="flex-1 flex flex-col">
+              <h3 className="text-xs font-semibold mb-2 flex items-center">
+                <Activity className="w-3.5 h-3.5 mr-1.5" />
+                Activity Log
+              </h3>
+              <div className="flex-1 overflow-y-auto pr-2 space-y-1.5">
+                 <AnimatePresence mode="popLayout">
+                   {insights.map((insight, index) => (
+                     <motion.div
+                       key={`${insight}-${index}`}
+                       initial={{ opacity: 0, y: -10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       exit={{ opacity: 0 }}
+                        className="p-2 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700 text-[10px] leading-tight"
+                     >
+                       {insight}
+                     </motion.div>
+                   ))}
+                 </AnimatePresence>
+               </div>
+            </div>
+          )}
+            </CardContent>
+          </Card>
 
-                  {pendingSync && (
-                    <Alert className="border-orange-500">
-                      <AlertTriangle className="w-4 h-4" />
-                      <AlertDescription>
-                        <strong>Manual Sync Required</strong>
-                        <p className="text-sm mt-1">
-                          Auto-sync is disabled. Click below to manually sync the cluster.
-                        </p>
-                        <Button onClick={handleManualSync} className="mt-2 w-full" size="sm">
-                          <RefreshCw className="w-3 h-3 mr-2" />
-                          Sync Now
-                        </Button>
+           {/* Column 3: Kubernetes Cluster */}
+           <Card className="flex flex-col">
+             <CardHeader>
+                <CardTitle className="flex items-center text-base">
+                 <Cloud className="w-5 h-5 mr-2" />
+                  Kubernetes Cluster
+               </CardTitle>
+                <CardDescription className="text-xs">Live production state</CardDescription>
+             </CardHeader>
+              <CardContent className="flex-1 flex flex-col">
+               <div className="space-y-4">
+                  <div className="p-2.5 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs font-semibold flex items-center">
+                       <Server className="w-4 h-4 mr-2" />
+                        Deployment
+                     </h3>
+                     {healthStatus === 'healthy' && (
+                        <Badge variant="secondary" className="bg-green-600 text-white dark:bg-green-950 dark:text-green-400 text-[10px] h-4 px-1.5">
+                          <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                         Healthy
+                       </Badge>
+                     )}
+                     {healthStatus === 'degraded' && (
+                        <Badge variant="secondary" className="bg-yellow-600 text-white dark:bg-yellow-950 dark:text-yellow-400 text-[10px] h-4 px-1.5">
+                          <AlertTriangle className="w-2.5 h-2.5 mr-1" />
+                         Degraded
+                       </Badge>
+                     )}
+                     {healthStatus === 'progressing' && (
+                        <Badge variant="secondary" className="bg-blue-600 text-white dark:bg-blue-950 dark:text-blue-400 text-[10px] h-4 px-1.5">
+                          <Activity className="w-2.5 h-2.5 mr-1" />
+                         Progressing
+                       </Badge>
+                     )}
+                   </div>
+                    <div className="space-y-1.5 text-[10px]">
+                     <div className="flex justify-between">
+                       <span className="text-muted-foreground">Replicas:</span>
+                       <span className="font-mono">3/3</span>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-muted-foreground">Version:</span>
+                        <code className="text-[10px] bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                         {commits.find((c) => c.deployed)?.sha || 'none'}
+                       </code>
+                     </div>
+                     <div className="flex justify-between">
+                       <span className="text-muted-foreground">Last Sync:</span>
+                        <span className="font-mono text-[10px]">Just now</span>
+                     </div>
+                   </div>
+                 </div>
+
+                  <Button variant="outline" onClick={handleDriftScenario} className="w-full text-xs h-8">
+                   <Zap className="w-4 h-4 mr-2" />
+                   Simulate Configuration Drift
+                 </Button>
+
+                 {pendingSync && (
+                    <Alert className="border-orange-500 p-2.5">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                     <AlertDescription>
+                        <strong className="text-xs">Manual Sync Required</strong>
+                        <p className="text-[10px] mt-1">
+                         Auto-sync is disabled. Click below to manually sync the cluster.
+                       </p>
+                        <Button onClick={handleManualSync} className="mt-2 w-full text-xs h-7" size="sm">
+                         <RefreshCw className="w-3 h-3 mr-2" />
+                         Sync Now
+                       </Button>
                       </AlertDescription>
                     </Alert>
                   )}
