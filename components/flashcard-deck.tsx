@@ -517,7 +517,6 @@ const handleMarkUnknown = useCallback(() => {
             <ChevronRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
-        {currentIndex < displayCards.length - 1 && (
         <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="default"
@@ -534,7 +533,6 @@ const handleMarkUnknown = useCallback(() => {
             ? Need Review
           </Button>
         </div>
-        )}
       </div>
     </div>
   )
