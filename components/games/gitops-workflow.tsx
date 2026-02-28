@@ -181,6 +181,7 @@ export default function GitOpsWorkflow() {
   const [pendingSync, setPendingSync] = useState(false);
   const [nextCommitId, setNextCommitId] = useState(7);
   const [hasDrift, setHasDrift] = useState(false);
+  const [animationPhase, setAnimationPhase] = useState<'idle' | 'git-to-argocd' | 'argocd-to-k8s' | 'complete'>('idle');
   const [currentChallenge, setCurrentChallenge] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -242,12 +243,22 @@ export default function GitOpsWorkflow() {
         }))
       );
 
+      // Start animation from Git to ArgoCD
+      setAnimationPhase('git-to-argocd');
+      setTimeout(() => setAnimationPhase('idle'), 800);
+
       if (autoSync) {
         // Auto sync enabled - automatically deploy
         addInsight(`🚀 Commit ${commitId} pushed to Git`);
         addInsight('🔄 Auto-sync enabled - deploying automatically...');
         setSyncStatus('syncing');
         setHealthStatus('progressing');
+
+        // Continue animation to Kubernetes
+        setTimeout(() => {
+          setAnimationPhase('argocd-to-k8s');
+          setTimeout(() => setAnimationPhase('idle'), 1000);
+        }, 800);
 
         setTimeout(() => {
           setSyncStatus('synced');
@@ -274,6 +285,10 @@ export default function GitOpsWorkflow() {
     setHealthStatus('progressing');
     setPendingSync(false);
 
+    // Animate ArgoCD to Kubernetes
+    setAnimationPhase('argocd-to-k8s');
+    setTimeout(() => setAnimationPhase('idle'), 1000);
+
     setTimeout(() => {
       setSyncStatus('synced');
       setHealthStatus('healthy');
@@ -293,6 +308,8 @@ export default function GitOpsWorkflow() {
       setTimeout(() => {
         setSyncStatus('syncing');
         addInsight('🔄 Auto-heal: Reconciling to match Git...');
+        setAnimationPhase('argocd-to-k8s');
+        setTimeout(() => setAnimationPhase('idle'), 1000);
         setTimeout(() => {
           setSyncStatus('synced');
           setHealthStatus('healthy');
@@ -316,6 +333,7 @@ export default function GitOpsWorkflow() {
     setAutoSync(true);
     setPendingSync(false);
     setHasDrift(false);
+    setAnimationPhase('idle');
     setNextCommitId(7);
     setCurrentChallenge(0);
     setSelectedAnswer(null);
@@ -546,7 +564,57 @@ export default function GitOpsWorkflow() {
             </Card>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
+          <div className="relative grid md:grid-cols-2 gap-6 mb-6">
+            {/* Animated Flow Arrow between cards */}
+            <div className="hidden md:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+              <AnimatePresence>
+                {animationPhase === 'git-to-argocd' && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <motion.div
+                      animate={{ x: [0, 10, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.6 }}
+                      className="flex items-center gap-1"
+                    >
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                      <div className="w-2 h-2 rounded-full bg-blue-400" />
+                      <div className="w-1 h-1 rounded-full bg-blue-300" />
+                    </motion.div>
+                    <div className="px-3 py-1.5 bg-blue-500 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1.5">
+                      <GitCommit className="w-3 h-3" />
+                      Pushed to Git
+                    </div>
+                  </motion.div>
+                )}
+                {animationPhase === 'argocd-to-k8s' && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <motion.div
+                      animate={{ x: [0, 10, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.6 }}
+                      className="flex items-center gap-1"
+                    >
+                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      <div className="w-2 h-2 rounded-full bg-green-400" />
+                      <div className="w-1 h-1 rounded-full bg-green-300" />
+                    </motion.div>
+                    <div className="px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-full shadow-lg flex items-center gap-1.5">
+                      <RefreshCw className="w-3 h-3 animate-spin" />
+                      Syncing to K8s
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Git Repository */}
             <Card>
               <CardHeader>
@@ -619,7 +687,15 @@ export default function GitOpsWorkflow() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-blue-100/50 border border-blue-300 dark:bg-blue-950/20 dark:border-blue-900">
+                  <motion.div
+                    className="p-4 rounded-lg bg-blue-100/50 border-2 border-blue-300 dark:bg-blue-950/20 dark:border-blue-900"
+                    animate={{
+                      borderColor: animationPhase === 'argocd-to-k8s' 
+                        ? ['rgb(147, 197, 253)', 'rgb(59, 130, 246)', 'rgb(147, 197, 253)']
+                        : 'rgb(147, 197, 253)',
+                    }}
+                    transition={{ duration: 1.5, repeat: animationPhase === 'argocd-to-k8s' ? Infinity : 0 }}
+                  >
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold">GitOps Operator</h3>
                       <RefreshCw
@@ -630,15 +706,27 @@ export default function GitOpsWorkflow() {
                       />
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">Continuously reconciles desired state</p>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Badge variant="outline" className="text-xs">
                         Watching Git
                       </Badge>
                       <Badge variant="outline" className="text-xs">
                         Auto-heal: {autoSync ? 'On' : 'Off'}
                       </Badge>
+                      {animationPhase === 'argocd-to-k8s' && (
+                        <Badge className="bg-green-600 text-white text-xs">
+                          <Activity className="w-3 h-3 mr-1 animate-pulse" />
+                          Syncing
+                        </Badge>
+                      )}
+                      {pendingSync && (
+                        <Badge variant="outline" className="text-xs border-orange-500 text-orange-600 dark:text-orange-400">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Waiting
+                        </Badge>
+                      )}
                     </div>
-                  </div>
+                  </motion.div>
 
                   <div className="p-4 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-3">
