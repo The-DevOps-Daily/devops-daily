@@ -235,6 +235,8 @@ export default function GitOpsWorkflow() {
 
   const handleDeploy = useCallback(
     (commitId: string) => {
+      const commitHash = `#${commitId}`;
+
       // Update commits to show deployed
       setCommits((prev) =>
         prev.map((commit) => ({
@@ -249,7 +251,7 @@ export default function GitOpsWorkflow() {
 
       if (autoSync) {
         // Auto sync enabled - automatically deploy
-        addInsight(`🚀 Commit ${commitId} pushed to Git`);
+        addInsight(`🚀 Commit ${commitHash} pushed to Git`);
         addInsight('🔄 Auto-sync enabled - deploying automatically...');
         setSyncStatus('syncing');
         setHealthStatus('progressing');
@@ -263,11 +265,11 @@ export default function GitOpsWorkflow() {
         setTimeout(() => {
           setSyncStatus('synced');
           setHealthStatus('healthy');
-          addInsight('✅ Deployment successful - cluster synced with Git');
+          addInsight(`✅ Deployment successful - ${commitHash} deployed to cluster`);
         }, 2500);
       } else {
         // Auto sync disabled - manual sync required
-        addInsight(`🚀 Commit ${commitId} pushed to Git`);
+        addInsight(`🚀 Commit ${commitHash} pushed to Git`);
         addInsight('⚠️ Auto-sync disabled - manual sync required');
         setSyncStatus('out-of-sync');
         setHealthStatus('unknown');
@@ -774,9 +776,17 @@ export default function GitOpsWorkflow() {
               </div>
 
               {/* Auto Sync Toggle */}
-              <div className="p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+              <div className={cn(
+                "p-2 rounded border transition-all duration-300",
+                autoSync
+                  ? "border-green-400 bg-green-50 dark:bg-green-950/20 dark:border-green-700"
+                  : "border-orange-400 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-700"
+              )}>
                 <div className="flex items-center gap-1 mb-1">
-                  <Zap className={cn('w-3 h-3', autoSync ? 'text-green-500' : 'text-gray-400')} />
+                  <Zap className={cn(
+                    'w-3 h-3 transition-colors',
+                    autoSync ? 'text-green-600 dark:text-green-500' : 'text-orange-600 dark:text-orange-500'
+                  )} />
                   <span className="text-[10px] font-semibold text-muted-foreground">Auto-Sync</span>
                 </div>
                 <Button
@@ -787,10 +797,14 @@ export default function GitOpsWorkflow() {
                     }
                   }}
                   size="sm"
-                  variant="outline"
-                  className="h-5 px-2 text-[10px] w-full"
+                  className={cn(
+                    "h-5 px-2 text-[10px] w-full font-semibold transition-all duration-300",
+                    autoSync
+                      ? "bg-green-600 hover:bg-green-700 text-white border-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                      : "bg-orange-500 hover:bg-orange-600 text-white border-orange-600 dark:bg-orange-500 dark:hover:bg-orange-600"
+                  )}
                 >
-                  {autoSync ? 'Enabled' : 'Disabled'}
+                  {autoSync ? '✅ Enabled' : '⚠️ Disabled'}
                 </Button>
               </div>
 
