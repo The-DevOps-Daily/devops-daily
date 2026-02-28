@@ -64,38 +64,26 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   }, [currentIndex])
 
   const handleMarkKnown = useCallback(() => {
-    if (!currentCard) return
-    setKnownCards(prev => new Set(prev).add(currentCard.id))
-    setUnknownCards(prev => {
-      const next = new Set(prev)
-      next.delete(currentCard.id)
-      return next
-    })
-    
-    // Check if this is the last card
-    if (currentIndex >= displayCards.length - 1) {
-      setShowResults(true)
-    } else {
-      handleNext()
-    }
-  }, [currentCard, handleNext, currentIndex, displayCards.length])
+  if (!currentCard) return
+  setKnownCards(prev => new Set(prev).add(currentCard.id))
+  setUnknownCards(prev => {
+    const next = new Set(prev)
+    next.delete(currentCard.id)
+    return next
+  })
+  handleNext()
+}, [currentCard, handleNext, currentIndex, displayCards.length])
 
-  const handleMarkUnknown = useCallback(() => {
-    if (!currentCard) return
-    setUnknownCards(prev => new Set(prev).add(currentCard.id))
-    setKnownCards(prev => {
-      const next = new Set(prev)
-      next.delete(currentCard.id)
-      return next
-    })
-    
-    // Check if this is the last card
-    if (currentIndex >= displayCards.length - 1) {
-      setShowResults(true)
-    } else {
-      handleNext()
-    }
-  }, [currentCard, handleNext, currentIndex, displayCards.length])
+const handleMarkUnknown = useCallback(() => {
+  if (!currentCard) return
+  setUnknownCards(prev => new Set(prev).add(currentCard.id))
+  setKnownCards(prev => {
+    const next = new Set(prev)
+    next.delete(currentCard.id)
+    return next
+  })
+  handleNext()
+}, [currentCard, handleNext, currentIndex, displayCards.length])
 
   const handleFlip = useCallback(() => {
     setIsFlipped(!isFlipped)
@@ -529,6 +517,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             <ChevronRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
+        {currentIndex < displayCards.length - 1 && (
         <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="default"
@@ -545,6 +534,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             ? Need Review
           </Button>
         </div>
+        )}
       </div>
     </div>
   )
