@@ -720,6 +720,7 @@ export default function GitOpsWorkflow() {
             </div>
          </div>
 
+          <div className="space-y-6">
            {/* Git Repository */}
            <Card>
              <CardHeader>
@@ -910,8 +911,6 @@ export default function GitOpsWorkflow() {
                 </div>
               </CardContent>
            </Card>
-         </div>
-
        </div>
      </div>
    );
