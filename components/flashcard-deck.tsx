@@ -71,9 +71,6 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
     if (currentIndex < displayCards.length - 1) {
       setCurrentIndex(currentIndex + 1)
       setIsFlipped(false)
-    } else {
-      // On last card, show results
-      setShowResults(true)
     }
   }, [currentIndex, displayCards.length])
 
@@ -87,6 +84,8 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   const handleMarkKnown = useCallback(() => {
   if (!currentCard) return
   
+  const isLastCard = currentIndex >= displayCards.length - 1
+  
   setKnownCards(prev => new Set(prev).add(currentCard.id))
   setUnknownCards(prev => {
     const next = new Set(prev)
@@ -94,13 +93,20 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
     return next
   })
   
-  // Always advance - the useEffect will handle showing results if needed
-  setCurrentIndex(currentIndex + 1)
-  setIsFlipped(false)
+  if (isLastCard) {
+    // On last card, show results immediately
+    setShowResults(true)
+  } else {
+    // Otherwise advance to next card
+    setCurrentIndex(currentIndex + 1)
+    setIsFlipped(false)
+  }
 }, [currentCard, currentIndex, displayCards.length])
 
   const handleMarkUnknown = useCallback(() => {
     if (!currentCard) return
+    
+    const isLastCard = currentIndex >= displayCards.length - 1
     
     setUnknownCards(prev => new Set(prev).add(currentCard.id))
     setKnownCards(prev => {
@@ -109,9 +115,14 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
       return next
     })
     
-    // Always advance - the useEffect will handle showing results if needed
-    setCurrentIndex(currentIndex + 1)
-    setIsFlipped(false)
+    if (isLastCard) {
+      // On last card, show results immediately
+      setShowResults(true)
+    } else {
+      // Otherwise advance to next card
+      setCurrentIndex(currentIndex + 1)
+      setIsFlipped(false)
+    }
   }, [currentCard, currentIndex, displayCards.length])
 
   const handleFlip = useCallback(() => {
@@ -557,6 +568,7 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             variant="outline"
             className="flex-1 sm:flex-none min-h-[48px]"
             onClick={handleNext}
+            disabled={currentIndex === displayCards.length - 1}
           >
             Next
             <ChevronRight className="w-4 h-4 ml-2" />
