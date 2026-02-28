@@ -4,7 +4,7 @@ import { InterviewQuestion, ExperienceTier } from '@/lib/interview-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CodeBlock } from '@/components/code-block';
+import { CodeBlock } from '@/components/code-block-wrapper';
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, Lightbulb, AlertTriangle, Tag } from 'lucide-react';
 
