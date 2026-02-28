@@ -71,8 +71,14 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
     next.delete(currentCard.id)
     return next
   })
-  handleNext()
-}, [currentCard, handleNext, currentIndex, displayCards.length])
+  
+  // Check if this is the last card
+  if (currentIndex >= displayCards.length - 1) {
+    setShowResults(true)
+  } else {
+    handleNext()
+  }
+}, [currentCard, handleNext, currentIndex, displayCards.length, setShowResults])
 
 const handleMarkUnknown = useCallback(() => {
   if (!currentCard) return
@@ -82,8 +88,14 @@ const handleMarkUnknown = useCallback(() => {
     next.delete(currentCard.id)
     return next
   })
-  handleNext()
-}, [currentCard, handleNext, currentIndex, displayCards.length])
+  
+  // Check if this is the last card
+  if (currentIndex >= displayCards.length - 1) {
+    setShowResults(true)
+  } else {
+    handleNext()
+  }
+}, [currentCard, handleNext, currentIndex, displayCards.length, setShowResults])
 
   const handleFlip = useCallback(() => {
     setIsFlipped(!isFlipped)
