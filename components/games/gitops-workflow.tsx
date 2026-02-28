@@ -718,13 +718,11 @@ export default function GitOpsWorkflow() {
                 </AnimatePresence>
               </div>
             </div>
-          </div>
+         </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-
-            {/* Git Repository */}
-            <Card>
-              <CardHeader>
+           {/* Git Repository */}
+           <Card>
+             <CardHeader>
                 <CardTitle className="flex items-center">
                   <GitBranch className="w-5 h-5 mr-2" />
                   Git Repository (Source of Truth)
@@ -780,11 +778,40 @@ export default function GitOpsWorkflow() {
                     </motion.div>
                   ))}
                 </div>
+             </CardContent>
+           </Card>
+
+          {/* Activity Feed */}
+          {insights.length > 0 && (
+            <Card className="max-h-[250px] overflow-hidden">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Activity className="w-5 h-5 mr-2" />
+                  Activity Feed
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2">
+                  <AnimatePresence mode="popLayout">
+                    {insights.map((insight, index) => (
+                      <motion.div
+                        key={`${insight}-${index}`}
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="p-2 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700 text-xs"
+                      >
+                        {insight}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
               </CardContent>
             </Card>
+          )}
 
-            {/* Kubernetes Cluster */}
-            <Card>
+           {/* Kubernetes Cluster */}
+           <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Cloud className="w-5 h-5 mr-2" />
@@ -882,40 +909,12 @@ export default function GitOpsWorkflow() {
                   )}
                 </div>
               </CardContent>
-            </Card>
-          </div>
+           </Card>
+         </div>
 
-          {/* Activity Feed */}
-          {insights.length > 0 && (
-            <Card className="max-h-[250px] overflow-hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Activity className="w-5 h-5 mr-2" />
-                  Activity Feed
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2">
-                  <AnimatePresence mode="popLayout">
-                    {insights.map((insight, index) => (
-                      <motion.div
-                        key={`${insight}-${index}`}
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="p-2 rounded-lg bg-slate-100 border border-slate-300 dark:bg-slate-900 dark:border-slate-700 text-xs"
-                      >
-                        {insight}
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
-    );
+       </div>
+     </div>
+   );
   }
 
   // Challenges Phase
