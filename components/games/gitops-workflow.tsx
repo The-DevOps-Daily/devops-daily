@@ -489,80 +489,8 @@ export default function GitOpsWorkflow() {
             animate={{ opacity: 1 }}
             className="text-3xl font-bold mb-6 text-center"
           >
-            GitOps Workflow Simulator
-          </motion.h1>
-
-          {/* Status Dashboard */}
-          <div className="grid md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Sync Status</p>
-                    <p className="text-lg font-semibold capitalize">{syncStatus}</p>
-                  </div>
-                  {syncStatus === 'synced' && <CheckCircle2 className="w-8 h-8 text-green-500" />}
-                  {syncStatus === 'out-of-sync' && <AlertTriangle className="w-8 h-8 text-yellow-500" />}
-                  {syncStatus === 'syncing' && <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />}
-                  {syncStatus === 'failed' && <XCircle className="w-8 h-8 text-red-500" />}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Health Status</p>
-                    <p className="text-lg font-semibold capitalize">{healthStatus}</p>
-                  </div>
-                  {healthStatus === 'healthy' && <CheckCircle2 className="w-8 h-8 text-green-500" />}
-                  {healthStatus === 'degraded' && <AlertTriangle className="w-8 h-8 text-yellow-500" />}
-                  {healthStatus === 'progressing' && <Activity className="w-8 h-8 text-blue-500 animate-pulse" />}
-                  {healthStatus === 'unknown' && <XCircle className="w-8 h-8 text-gray-500" />}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Auto Sync</p>
-                    <p className="text-lg font-semibold">{autoSync ? 'Enabled' : 'Disabled'}</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newAutoSync = !autoSync;
-                      setAutoSync(newAutoSync);
-                      addInsight(
-                        newAutoSync
-                          ? '🔄 Auto-sync enabled - changes will sync automatically'
-                          : '⏸️ Auto-sync disabled - manual sync required for changes'
-                      );
-                    }}
-                    className={cn(autoSync && 'border-green-500 text-green-600 dark:text-green-400')}
-                  >
-                    {autoSync ? 'On' : 'Off'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Deployed</p>
-                    <p className="text-lg font-semibold">{commits.filter((c) => c.deployed).length} commits</p>
-                  </div>
-                  <GitCommit className="w-8 h-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          GitOps Workflow Simulator
+        </motion.h1>
 
           {/* Workflow Flow Visualization */}
           <div className="mb-6">
@@ -816,12 +744,71 @@ export default function GitOpsWorkflow() {
                     <span className="text-muted-foreground">Status:</span>
                     <span className="font-medium capitalize">{syncStatus}</span>
                   </div>
+              </div>
+            </div>
+
+            {/* Compact Status Indicators */}
+            <div className="grid grid-cols-2 gap-2">
+              {/* Sync Status Indicator */}
+              <div className="p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                <div className="flex items-center gap-1 mb-1">
+                  {syncStatus === 'synced' && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                  {syncStatus === 'syncing' && <RefreshCw className="w-3 h-3 text-blue-500 animate-spin" />}
+                  {syncStatus === 'out-of-sync' && <AlertTriangle className="w-3 h-3 text-orange-500" />}
+                  {syncStatus === 'failed' && <XCircle className="w-3 h-3 text-red-500" />}
+                  <span className="text-[10px] font-semibold text-muted-foreground">Sync</span>
                 </div>
+                <div className="text-[10px] font-medium capitalize">{syncStatus}</div>
               </div>
 
-              {/* Activity Feed */}
-          {insights.length > 0 && (
-            <div className="flex-1 flex flex-col">
+              {/* Health Status Indicator */}
+              <div className="p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                <div className="flex items-center gap-1 mb-1">
+                  {healthStatus === 'healthy' && <CheckCircle2 className="w-3 h-3 text-green-500" />}
+                  {healthStatus === 'progressing' && <Clock className="w-3 h-3 text-blue-500" />}
+                  {healthStatus === 'degraded' && <AlertTriangle className="w-3 h-3 text-orange-500" />}
+                  {healthStatus === 'unknown' && <XCircle className="w-3 h-3 text-gray-500" />}
+                  <span className="text-[10px] font-semibold text-muted-foreground">Health</span>
+                </div>
+                <div className="text-[10px] font-medium capitalize">{healthStatus}</div>
+              </div>
+
+              {/* Auto Sync Toggle */}
+              <div className="p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                <div className="flex items-center gap-1 mb-1">
+                  <Zap className={cn('w-3 h-3', autoSync ? 'text-green-500' : 'text-gray-400')} />
+                  <span className="text-[10px] font-semibold text-muted-foreground">Auto-Sync</span>
+                </div>
+                <Button
+                  onClick={() => {
+                    setAutoSync(!autoSync);
+                    if (!autoSync) {
+                      setPendingSync(false);
+                    }
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="h-5 px-2 text-[10px] w-full"
+                >
+                  {autoSync ? 'Enabled' : 'Disabled'}
+                </Button>
+              </div>
+
+              {/* Deployed Count */}
+              <div className="p-2 rounded border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                <div className="flex items-center gap-1 mb-1">
+                  <GitCommit className="w-3 h-3 text-blue-500" />
+                  <span className="text-[10px] font-semibold text-muted-foreground">Deployed</span>
+                </div>
+                <div className="text-[10px] font-medium">
+                  {commits.filter((c) => c.deployed).length} / {commits.length}
+                </div>
+              </div>
+            </div>
+
+            {/* Activity Feed */}
+        {insights.length > 0 && (
+          <div className="flex-1 flex flex-col">
               <h3 className="text-xs font-semibold mb-2 flex items-center">
                 <Activity className="w-3.5 h-3.5 mr-1.5" />
                 Activity Log
