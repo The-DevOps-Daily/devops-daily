@@ -35,6 +35,13 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
 
   const currentCard = displayCards[currentIndex]
 
+  // Automatically show results when currentIndex exceeds displayCards length
+  useEffect(() => {
+    if (displayCards.length > 0 && currentIndex >= displayCards.length) {
+      setShowResults(true)
+    }
+  }, [currentIndex, displayCards.length])
+
   const handleShuffle = useCallback(() => {
     const shuffled = [...cards].sort(() => Math.random() - 0.5)
     setShuffledCards(shuffled)
@@ -61,8 +68,14 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   }, [currentIndex, displayCards.length])
 
   const handleNext = useCallback(() => {
-    advanceOrShowResults()
-  }, [advanceOrShowResults])
+    if (currentIndex < displayCards.length - 1) {
+      setCurrentIndex(currentIndex + 1)
+      setIsFlipped(false)
+    } else {
+      // On last card, show results
+      setShowResults(true)
+    }
+  }, [currentIndex, displayCards.length])
 
   const handlePrevious = useCallback(() => {
     if (currentIndex > 0) {
@@ -72,26 +85,34 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
   }, [currentIndex])
 
   const handleMarkKnown = useCallback(() => {
-    if (!currentCard) return
-    setKnownCards(prev => new Set(prev).add(currentCard.id))
-    setUnknownCards(prev => {
-      const next = new Set(prev)
-      next.delete(currentCard.id)
-      return next
-    })
-    advanceOrShowResults()
-  }, [currentCard, advanceOrShowResults])
+  if (!currentCard) return
+  
+  setKnownCards(prev => new Set(prev).add(currentCard.id))
+  setUnknownCards(prev => {
+    const next = new Set(prev)
+    next.delete(currentCard.id)
+    return next
+  })
+  
+  // Always advance - the useEffect will handle showing results if needed
+  setCurrentIndex(currentIndex + 1)
+  setIsFlipped(false)
+}, [currentCard, currentIndex, displayCards.length])
 
   const handleMarkUnknown = useCallback(() => {
     if (!currentCard) return
+    
     setUnknownCards(prev => new Set(prev).add(currentCard.id))
     setKnownCards(prev => {
       const next = new Set(prev)
       next.delete(currentCard.id)
       return next
     })
-    advanceOrShowResults()
-  }, [currentCard, advanceOrShowResults])
+    
+    // Always advance - the useEffect will handle showing results if needed
+    setCurrentIndex(currentIndex + 1)
+    setIsFlipped(false)
+  }, [currentCard, currentIndex, displayCards.length])
 
   const handleFlip = useCallback(() => {
     setIsFlipped(!isFlipped)
@@ -536,7 +557,6 @@ export function FlashCardDeck({ cards, title, theme }: FlashCardDeckProps) {
             variant="outline"
             className="flex-1 sm:flex-none min-h-[48px]"
             onClick={handleNext}
-            disabled={currentIndex === displayCards.length - 1}
           >
             Next
             <ChevronRight className="w-4 h-4 ml-2" />
