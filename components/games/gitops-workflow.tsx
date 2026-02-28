@@ -181,6 +181,7 @@ export default function GitOpsWorkflow() {
   const [pendingSync, setPendingSync] = useState(false);
   const [nextCommitId, setNextCommitId] = useState(7);
   const [hasDrift, setHasDrift] = useState(false);
+  const [showFlowAnimation, setShowFlowAnimation] = useState(false);
   const [currentChallenge, setCurrentChallenge] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -242,6 +243,10 @@ export default function GitOpsWorkflow() {
         }))
       );
 
+      // Trigger flow animation
+      setShowFlowAnimation(true);
+      setTimeout(() => setShowFlowAnimation(false), 3500);
+
       if (autoSync) {
         // Auto sync enabled - automatically deploy
         addInsight(`🚀 Commit ${commitId} pushed to Git`);
@@ -274,6 +279,10 @@ export default function GitOpsWorkflow() {
     setHealthStatus('progressing');
     setPendingSync(false);
 
+    // Trigger flow animation
+    setShowFlowAnimation(true);
+    setTimeout(() => setShowFlowAnimation(false), 3500);
+
     setTimeout(() => {
       setSyncStatus('synced');
       setHealthStatus('healthy');
@@ -291,6 +300,8 @@ export default function GitOpsWorkflow() {
 
     if (autoSync) {
       setTimeout(() => {
+        setShowFlowAnimation(true);
+        setTimeout(() => setShowFlowAnimation(false), 3500);
         setSyncStatus('syncing');
         addInsight('🔄 Auto-heal: Reconciling to match Git...');
         setTimeout(() => {
@@ -316,6 +327,7 @@ export default function GitOpsWorkflow() {
     setAutoSync(true);
     setPendingSync(false);
     setHasDrift(false);
+    setShowFlowAnimation(false);
     setNextCommitId(7);
     setCurrentChallenge(0);
     setSelectedAnswer(null);
@@ -545,6 +557,175 @@ export default function GitOpsWorkflow() {
               </CardContent>
             </Card>
           </div>
+
+          {/* GitOps Flow Animation */}
+          {showFlowAnimation && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="mb-6"
+            >
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-300 dark:border-blue-900">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-blue-900 dark:text-blue-400">
+                    <Activity className="w-5 h-5 mr-2 animate-pulse" />
+                    GitOps Workflow in Progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    {/* Git Node */}
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.1 }}
+                      className="flex flex-col items-center gap-2 flex-1"
+                    >
+                      <div className="p-4 rounded-full bg-white dark:bg-slate-800 border-2 border-blue-500 shadow-lg">
+                        <GitBranch className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <p className="text-sm font-semibold text-center">Git Repository</p>
+                      <p className="text-xs text-muted-foreground text-center">Source of Truth</p>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: [0, 1.2, 1] }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        <Badge className="bg-green-600 text-white dark:bg-green-950 dark:text-green-400">
+                          <GitCommit className="w-3 h-3 mr-1" />
+                          Commit Pushed
+                        </Badge>
+                      </motion.div>
+                    </motion.div>
+
+                    {/* Arrow 1: Git -> ArgoCD */}
+                    <div className="flex-1 relative h-1 mx-2">
+                      <motion.div
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ delay: 0.6, duration: 0.5 }}
+                        className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 h-1 rounded origin-left"
+                      />
+                      <motion.div
+                        initial={{ x: -50, opacity: 0 }}
+                        animate={{ x: 0, opacity: [0, 1, 1, 0] }}
+                        transition={{ delay: 0.6, duration: 0.8, repeat: 3 }}
+                        className="absolute -top-2 left-0 w-full flex items-center justify-center"
+                      >
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.8 }}
+                        className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap"
+                      >
+                        Detecting change...
+                      </motion.div>
+                    </div>
+
+                    {/* ArgoCD Node */}
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 1.1 }}
+                      className="flex flex-col items-center gap-2 flex-1"
+                    >
+                      <div className="p-4 rounded-full bg-white dark:bg-slate-800 border-2 border-purple-500 shadow-lg">
+                        <RefreshCw className="w-8 h-8 text-purple-600 dark:text-purple-400 animate-spin" />
+                      </div>
+                      <p className="text-sm font-semibold text-center">ArgoCD</p>
+                      <p className="text-xs text-muted-foreground text-center">GitOps Operator</p>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: [0, 1.2, 1] }}
+                        transition={{ delay: 1.3, duration: 0.4 }}
+                      >
+                        <Badge className="bg-purple-600 text-white dark:bg-purple-950 dark:text-purple-400">
+                          <RefreshCw className="w-3 h-3 mr-1" />
+                          Syncing
+                        </Badge>
+                      </motion.div>
+                    </motion.div>
+
+                    {/* Arrow 2: ArgoCD -> Kubernetes */}
+                    <div className="flex-1 relative h-1 mx-2">
+                      <motion.div
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        transition={{ delay: 1.6, duration: 0.5 }}
+                        className="absolute inset-0 bg-gradient-to-r from-purple-500 to-green-500 h-1 rounded origin-left"
+                      />
+                      <motion.div
+                        initial={{ x: -50, opacity: 0 }}
+                        animate={{ x: 0, opacity: [0, 1, 1, 0] }}
+                        transition={{ delay: 1.6, duration: 0.8, repeat: 3 }}
+                        className="absolute -top-2 left-0 w-full flex items-center justify-center"
+                      >
+                        <div className="w-2 h-2 bg-purple-500 rounded-full" />
+                      </motion.div>
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1.8 }}
+                        className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium text-purple-600 dark:text-purple-400 whitespace-nowrap"
+                      >
+                        Applying to cluster...
+                      </motion.div>
+                    </div>
+
+                    {/* Kubernetes Node */}
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 2.1 }}
+                      className="flex flex-col items-center gap-2 flex-1"
+                    >
+                      <div className="p-4 rounded-full bg-white dark:bg-slate-800 border-2 border-green-500 shadow-lg relative">
+                        <Cloud className="w-8 h-8 text-green-600 dark:text-green-400" />
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: [0, 1.5, 1] }}
+                          transition={{ delay: 2.5, duration: 0.4 }}
+                          className="absolute -top-1 -right-1"
+                        >
+                          <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 bg-white dark:bg-slate-800 rounded-full" />
+                        </motion.div>
+                      </div>
+                      <p className="text-sm font-semibold text-center">Kubernetes</p>
+                      <p className="text-xs text-muted-foreground text-center">Live Cluster</p>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: [0, 1.2, 1] }}
+                        transition={{ delay: 2.3, duration: 0.4 }}
+                      >
+                        <Badge className="bg-green-600 text-white dark:bg-green-950 dark:text-green-400">
+                          <Activity className="w-3 h-3 mr-1" />
+                          Deploying
+                        </Badge>
+                      </motion.div>
+                    </motion.div>
+                  </div>
+
+                  {/* Health Check Feedback */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 2.8 }}
+                    className="mt-6 p-3 rounded-lg bg-green-100 border border-green-300 dark:bg-green-950/30 dark:border-green-900"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      <p className="text-sm font-medium text-green-900 dark:text-green-400">
+                        Deployment Complete - All pods healthy and running
+                      </p>
+                    </div>
+                  </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             {/* Git Repository */}
