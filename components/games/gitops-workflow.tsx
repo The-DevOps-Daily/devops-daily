@@ -735,15 +735,14 @@ export default function GitOpsWorkflow() {
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
-                  <Button onClick={generateRandomCommit} variant="outline" className="w-full">
-                    <GitCommit className="w-4 h-4 mr-2" />
-                    Create New Commit
-                  </Button>
-                </div>
+                 <Button onClick={generateRandomCommit} variant="outline" className="w-full">
+                   <GitCommit className="w-4 h-4 mr-2" />
+                   Create New Commit
+                 </Button>
+               </div>
 
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                  {commits.map((commit) => (
+               <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                 {commits.map((commit) => (
                     <motion.div
                       key={commit.id}
                       initial={{ opacity: 0, x: -20 }}
