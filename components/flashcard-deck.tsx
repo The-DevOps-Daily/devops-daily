@@ -266,7 +266,7 @@ const handleMarkUnknown = useCallback(() => {
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Start Over
               </Button>
-              <Button variant="outline" size="lg" onClick={() => setViewMode('list')}>
+              <Button variant="outline" size="lg" onClick={() => { setShowResults(false); setViewMode('list'); }}>
                 <List className="w-4 h-4 mr-2" />
                 Review List
               </Button>
