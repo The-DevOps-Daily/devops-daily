@@ -2,7 +2,7 @@
 
 import { readFileSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
-import { JSDOM } from 'jsdom'
+import * as cheerio from 'cheerio'
 
 /**
  * Recursively get all HTML files from a directory
@@ -30,22 +30,21 @@ function getHtmlFiles(dir: string): string[] {
  */
 function extractInternalLinks(htmlPath: string): string[] {
   const html = readFileSync(htmlPath, 'utf-8')
-  const dom = new JSDOM(html)
-  const links = Array.from(dom.window.document.querySelectorAll('a[href]'))
+  const $ = cheerio.load(html)
+  const links: string[] = []
 
-  return links
-    .map((link) => link.getAttribute('href'))
-    .filter((href): href is string => {
-      if (!href) return false
-      // Only check internal links that start with /
-      return href.startsWith('/') && !href.startsWith('//')
-    })
-    .map((href) => {
+  $('a[href]').each((_, element) => {
+    const href = $(element).attr('href')
+    if (href && href.startsWith('/') && !href.startsWith('//')) {
       // Remove hash fragments and query params
       const url = href.split('#')[0].split('?')[0]
-      return url
-    })
-    .filter((url) => url.length > 0)
+      if (url.length > 0) {
+        links.push(url)
+      }
+    }
+  })
+
+  return links
 }
 
 /**
