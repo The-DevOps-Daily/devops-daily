@@ -184,7 +184,7 @@ On 2025-12-26, at 07:35 UTC, the SSL certificates for many *.bazel.build domains
 
 **📅 Jan 16, 2026** • **📰 Bazel Blog**
 
-[**🔗 Read more**](https://bazel.build/release/postmortem-ssl-cert-expiry)
+[**🔗 Read more**](/2026/01/16/ssl-cert-expiry.html)
 
 ### 📄 Building an agentic memory system for GitHub Copilot
 

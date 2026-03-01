@@ -1,16 +1,12 @@
 ---
 title: 'Why Your CI/CD Pipeline Is Slower Than It Should Be (and How to Fix It)'
 excerpt: 'Small pipeline changes give big wins. Parallelize jobs, cache dependencies, pin images, reuse build artifacts, and run only the tests you need.'
-category:
-  name: 'CI/CD'
-  slug: 'ci-cd'
+category: 'ci'
 date: '2025-06-10T09:00:00.000Z'
 publishedAt: '2025-06-10T09:00:00.000Z'
 updatedAt: '2025-06-10T09:00:00.000Z'
 readingTime: 4
-author:
-  name: 'DevOps Daily Team'
-  slug: 'devops-daily-team'
+author: 'DevOps Daily'
 tags:
   - ci
   - cicd

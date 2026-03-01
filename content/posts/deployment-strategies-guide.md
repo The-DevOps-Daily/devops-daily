@@ -15,7 +15,7 @@ tags:
   - DevOps
   - Deployment
   - Kubernetes
-  - CICD
+  - CI/CD
   - Blue-Green Deployment
   - Canary Deployment
   - Rolling Deployment

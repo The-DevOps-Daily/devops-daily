@@ -247,6 +247,11 @@
       "url": "https://www.terraform.io/docs/cloud/guides/recommended-practices/index.html",
       "type": "guide",
       "external": true
+    },
+    {
+      "title": "Infrastructure as Code Fundamentals",
+      "url": "/posts/infrastructure-as-code-fundamentals",
+      "type": "tutorial"
     }
   ],
   "troubleshooting": [
