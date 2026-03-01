@@ -64,7 +64,6 @@ export async function generateMetadata({
       ],
       publishedTime: post.publishedAt || post.date,
       modifiedTime: post.updatedAt || post.date,
-      authors: post.author ? [`https://devops-daily.com/authors/${post.author.slug}`] : undefined,
       section: post.category?.name,
       tags: post.tags,
     },
