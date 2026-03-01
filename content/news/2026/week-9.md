@@ -152,7 +152,7 @@ We're thrilled to announce Bazel support in Dependabot Version Updates! 🎉 Thr
 
 **📅 Feb 20, 2026** • **📰 Bazel Blog**
 
-[**🔗 Read more**](/2026/02/20/dependabot.html)
+[**🔗 Read more**](https://blog.bazel.build/2026/02/20/dependabot-bazel-support.html)
 
 ### 📄 How AI is reshaping developer choice (and Octoverse data proves it)
 
