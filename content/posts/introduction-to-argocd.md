@@ -16,7 +16,7 @@ tags:
   - GitOps
   - ArgoCD
   - Kubernetes
-  - CI/CD
+  - CICD
   - Automation
   - Deployment
 ---

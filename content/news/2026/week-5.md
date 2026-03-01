@@ -232,7 +232,7 @@ We're pleased to announce the release of Bazel 9.0! This LTS release is the culm
 
 **📅 Jan 20, 2026** • **📰 Bazel Blog**
 
-[**🔗 Read more**](/2026/01/20/bazel-9.html)
+[**🔗 Read more**](https://blog.bazel.build/2026/01/20/bazel-9.html)
 
 ---
 

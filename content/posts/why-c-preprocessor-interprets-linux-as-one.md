@@ -2,8 +2,8 @@
 title: 'Why Does the C Preprocessor Interpret "linux" as "1"?'
 excerpt: "Discover why the word 'linux' is predefined as the constant 1 in the C preprocessor on Linux systems, and how this historical quirk can cause unexpected compilation errors."
 category:
-  name: 'C'
-  slug: 'c'
+  name: 'Linux'
+  slug: 'linux'
 date: '2025-05-22'
 publishedAt: '2025-05-22T09:00:00Z'
 updatedAt: '2025-05-22T09:00:00Z'

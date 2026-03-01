@@ -2,8 +2,8 @@
 title: 'How to Detect Network Connection Type on Android'
 excerpt: "Learn how to detect WiFi, cellular, and other network types in Android apps using ConnectivityManager, NetworkCapabilities, and handle network changes with callbacks."
 category:
-  name: 'Android'
-  slug: 'android'
+  name: 'Networking'
+  slug: 'networking'
 date: '2024-11-05'
 publishedAt: '2024-11-05T12:00:00Z'
 updatedAt: '2024-11-05T12:00:00Z'

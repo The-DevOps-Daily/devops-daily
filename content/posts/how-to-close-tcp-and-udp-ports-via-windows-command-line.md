@@ -2,8 +2,8 @@
 title: 'How to Close TCP and UDP Ports via Windows Command Line'
 excerpt: 'Learn how to close open ports on Windows using command-line tools. Find and terminate processes listening on ports, manage Windows Firewall rules, and stop services to free up ports.'
 category:
-  name: 'Windows'
-  slug: 'windows'
+  name: 'Networking'
+  slug: 'networking'
 date: '2025-03-28'
 publishedAt: '2025-03-28T13:00:00Z'
 updatedAt: '2025-03-28T13:00:00Z'

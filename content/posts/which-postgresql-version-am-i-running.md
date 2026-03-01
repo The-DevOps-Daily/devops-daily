@@ -2,8 +2,8 @@
 title: 'How to Check Which Version of PostgreSQL You Are Running'
 excerpt: "Learn multiple ways to check your PostgreSQL version, including psql commands, SQL queries, and system commands. Find version numbers from the server, client, and package manager."
 category:
-  name: 'Database'
-  slug: 'database'
+  name: 'Linux'
+  slug: 'linux'
 date: '2024-12-15'
 publishedAt: '2024-12-15T09:00:00Z'
 updatedAt: '2024-12-15T09:00:00Z'

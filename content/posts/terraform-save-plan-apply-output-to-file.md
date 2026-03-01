@@ -14,7 +14,7 @@ author:
 tags:
   - Terraform
   - Infrastructure as Code
-  - CI/CD
+  - CICD
   - Best Practices
   - DevOps
 ---

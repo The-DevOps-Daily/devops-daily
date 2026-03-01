@@ -13,7 +13,7 @@ author:
   slug: 'devops-daily-team'
 tags:
   - DevOps
-  - CI/CD
+  - CICD
   - Kubernetes
   - Terraform
   - SRE

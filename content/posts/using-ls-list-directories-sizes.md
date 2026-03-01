@@ -2,8 +2,8 @@
 title: 'Using ls to list directories and their total sizes'
 excerpt: 'How to show directory sizes from the shell - practical commands for macOS and Linux, and why `ls` alone is not enough.'
 category:
-  name: 'Shell'
-  slug: 'shell'
+  name: 'Bash'
+  slug: 'bash'
 date: '2025-04-22'
 publishedAt: '2025-04-22T09:00:00Z'
 updatedAt: '2025-04-22T09:00:00Z'

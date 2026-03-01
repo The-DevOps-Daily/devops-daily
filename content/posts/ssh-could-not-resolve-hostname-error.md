@@ -2,8 +2,8 @@
 title: 'How to Fix SSH "Could Not Resolve Hostname" Error'
 excerpt: "Troubleshoot and fix the SSH 'nodename nor servname provided, or not known' error with DNS checks, host file configuration, and SSH config debugging."
 category:
-  name: 'SSH'
-  slug: 'ssh'
+  name: 'Networking'
+  slug: 'networking'
 date: '2025-01-18'
 publishedAt: '2025-01-18T09:30:00Z'
 updatedAt: '2025-01-18T09:30:00Z'
