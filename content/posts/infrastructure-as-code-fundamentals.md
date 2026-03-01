@@ -62,7 +62,7 @@ With Infrastructure as Code, you write configuration files that describe what yo
 ```hcl
 # infrastructure.tf
 resource "aws_instance" "web_server" {
-  ami           = "ami-0c55b159cbfafe1f0"
+  ami           = "ami-12345678"  # Example AMI ID (use aws_ami data source in production)
   instance_type = "t3.medium"
   
   tags = {
@@ -72,10 +72,19 @@ resource "aws_instance" "web_server" {
 }
 
 resource "aws_security_group" "web_sg" {
+  name = "web-sg"
+  
   ingress {
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
@@ -542,8 +551,8 @@ Let's create a simple web server on AWS using Terraform.
 brew install terraform
 
 # Linux
-wget https://releases.hashicorp.com/terraform/1.7.0/terraform_1.7.0_linux_amd64.zip
-unzip terraform_1.7.0_linux_amd64.zip
+wget https://releases.hashicorp.com/terraform/1.10.5/terraform_1.10.5_linux_amd64.zip
+unzip terraform_1.10.5_linux_amd64.zip
 sudo mv terraform /usr/local/bin/
 
 # Verify
@@ -555,6 +564,17 @@ terraform version
 Create `main.tf`:
 
 ```hcl
+# Data source to get latest Amazon Linux 2 AMI
+data "aws_ami" "amazon_linux_2" {
+  most_recent = true
+  owners      = ["amazon"]
+  
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+}
+
 # Configure AWS provider
 provider "aws" {
   region = "us-east-1"
@@ -601,7 +621,7 @@ resource "aws_security_group" "web" {
 
 # Launch an EC2 instance
 resource "aws_instance" "web" {
-  ami           = "ami-0c55b159cbfafe1f0"  # Amazon Linux 2
+  ami           = data.aws_ami.amazon_linux_2.id
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.public.id
   
@@ -804,7 +824,7 @@ Result: Confusion, conflicts, drift
 ### Resources to Continue Learning
 
 **Official Documentation:**
-- [Terraform Documentation](https://www.terraform.io/docs)
+- [Terraform Documentation](https://developer.hashicorp.com/terraform/docs)
 - [AWS CloudFormation User Guide](https://docs.aws.amazon.com/cloudformation/)
 - [Pulumi Getting Started](https://www.pulumi.com/docs/get-started/)
 
