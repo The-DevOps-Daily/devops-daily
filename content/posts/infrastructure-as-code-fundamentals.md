@@ -1,5 +1,5 @@
 ---
-title: "Infrastructure as Code (IaC) Fundamentals: A Complete Guide"
+title: "Infrastructure as Code: A Beginner's Guide to IaC Fundamentals"
 excerpt: 'Learn the fundamentals of Infrastructure as Code - what it is, why it matters, key concepts, popular tools, and best practices for managing infrastructure with code.'
 category:
   name: 'DevOps'
@@ -136,15 +136,11 @@ terraform apply
 ### 3. Automation = Speed and Consistency
 
 ```
-Manual Setup Time:
-┌──────────────────────────────────────┐  2-5 days
-│████████████████████████████████████│
-└──────────────────────────────────────┘
+Manual Setup (2-5 days):
+████████████████████████████████████ (100%)
 
-IaC Setup Time:
-┌─┐  5-10 minutes
-│█│
-└─┘
+IaC Setup (5-10 minutes):
+██ (5%)
 ```
 
 ### 4. Documentation = Self-Documenting Infrastructure
@@ -216,14 +212,14 @@ You write explicit steps to execute.
 ### Terraform (Multi-Cloud)
 
 ```
-┌─────────────────────────────────────────┐
-│         Terraform HCL Code              │
-└─────────────────────────────────────────┘
-         │        │        │
-         ▼        ▼        ▼
-     ┌─────┐  ┌─────┐  ┌──────┐
-     │ AWS │  │ GCP │  │Azure │
-     └─────┘  └─────┘  └──────┘
+        Terraform HCL Code
+               │
+    ┌──────────┼──────────┐
+    │          │          │
+    ▼          ▼          ▼
+  ┏━━━┓    ┏━━━┓    ┏━━━━━┓
+  ┃AWS┃    ┃GCP┃    ┃Azure┃
+  ┗━━━┛    ┗━━━┛    ┗━━━━━┛
 ```
 
 **Best for:** Multi-cloud infrastructure, large-scale deployments
