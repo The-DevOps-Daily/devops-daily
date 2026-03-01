@@ -2,8 +2,8 @@
 title: 'How to Find the IP Address of an SSH Client'
 excerpt: "Learn multiple ways to identify the IP address of clients connected to your SSH server, from environment variables to logs and active connection monitoring."
 category:
-  name: 'SSH'
-  slug: 'ssh'
+  name: 'Networking'
+  slug: 'networking'
 date: '2024-12-09'
 publishedAt: '2024-12-09T14:00:00Z'
 updatedAt: '2024-12-09T14:00:00Z'
