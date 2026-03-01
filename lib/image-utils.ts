@@ -95,7 +95,7 @@ export function getAdventImagePath(slug: string): string {
 
 export function getSocialImagePath(
   slug: string,
-  type: 'posts' | 'guides' | 'exercises' | 'news' | 'advent'
+  type: 'posts' | 'guides' | 'exercises' | 'news' | 'advent' | 'interview-questions'
 ): string {
   // Always prefer PNG for social media
   const pngImagePath = `/images/${type}/${slug}.png`;
@@ -111,7 +111,7 @@ export function getSocialImagePath(
 
 export function getImagePath(
   slug: string,
-  type: 'posts' | 'guides' | 'exercises' | 'news' | 'advent',
+  type: 'posts' | 'guides' | 'exercises' | 'news' | 'advent' | 'interview-questions',
   usage: 'web' | 'social' = 'web'
 ): string {
   if (usage === 'social') {
