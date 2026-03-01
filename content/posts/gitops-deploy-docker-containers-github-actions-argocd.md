@@ -14,7 +14,7 @@ author:
 tags:
   - Docker
   - GitHub Actions
-  - CI/CD
+  - CICD
   - GitOps
   - ArgoCD
   - Kubernetes
