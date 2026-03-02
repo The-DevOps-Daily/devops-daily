@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grad)"/>
+  
+  <!-- Title -->
+  <text x="600" y="180" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="#ffffff" text-anchor="middle">
+    Heroku vs Self-Hosting:
+  </text>
+  <text x="600" y="240" font-family="Arial, sans-serif" font-size="52" font-weight="bold" fill="#ffffff" text-anchor="middle">
+    A Cost-Benefit Analysis
+  </text>
+  
+  <!-- Cost Boxes -->
+  <rect x="150" y="320" width="400" height="180" fill="#ef4444" rx="10" opacity="0.9"/>
+  <text x="350" y="365" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#ffffff" text-anchor="middle">
+    Heroku
+  </text>
+  <text x="350" y="420" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#ffffff" text-anchor="middle">
+    $2,300/mo
+  </text>
+  <text x="350" y="460" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">
+    Infrastructure only
+  </text>
+  
+  <rect x="650" y="320" width="400" height="180" fill="#10b981" rx="10" opacity="0.9"/>
+  <text x="850" y="365" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="#ffffff" text-anchor="middle">
+    Self-Hosted
+  </text>
+  <text x="850" y="420" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#ffffff" text-anchor="middle">
+    $233/mo
+  </text>
+  <text x="850" y="460" font-family="Arial, sans-serif" font-size="24" fill="#ffffff" text-anchor="middle">
+    + engineer time
+  </text>
+  
+  <!-- Footer -->
+  <text x="600" y="570" font-family="Arial, sans-serif" font-size="28" fill="#e0e7ff" text-anchor="middle">
+    Real numbers. Honest tradeoffs. Informed decisions.
+  </text>
+</svg>

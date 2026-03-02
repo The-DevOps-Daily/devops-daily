@@ -15,5 +15,6 @@
   "public/images/exercises/ci-cd-github-actions.svg": "5aaff1f2e5ebe319",
   "public/images/exercises/prometheus-grafana-monitoring.svg": "a43a9174ca370551",
   "public/images/posts/gitops-deploy-docker-containers-github-actions-argocd.svg": "5b29267a4bb8a793",
-  "public/images/posts/how-to-publish-helm-chart.svg": "dab2d9f9df96c681"
+  "public/images/posts/how-to-publish-helm-chart.svg": "dab2d9f9df96c681",
+  "public/images/posts/replacing-heroku-with-self-hosting.svg": "dcf751b311450ab6"
 }
