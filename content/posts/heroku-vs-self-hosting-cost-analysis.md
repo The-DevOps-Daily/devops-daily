@@ -428,7 +428,7 @@ Let's apply the framework to specific situations:
 
 **Recommendation**: Migrate to self-hosting
 
-**Why**: Have dedicated DevOps capacity. Heroku bill is significant ($28,800/year). Team has operational maturity. Infrastructure savings ($2,000/month = $24,000/year) fund half a mid-level engineer. Application is stable. Can absorb 2-3 week migration project.
+**Why**: Have dedicated DevOps capacity. Heroku bill is significant ($28,800/year). Team has operational maturity. Infrastructure savings ($2,167/month = $26,004/year) fund 25-50% of a mid-level engineer depending on market rates. Application is stable. Can absorb 2-3 week migration project.
 
 ### Scenario 3: Bootstrapped Business
 
