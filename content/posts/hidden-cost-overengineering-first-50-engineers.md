@@ -76,7 +76,7 @@ At 30 engineers, you probably have 8-15 backend services. Standard Kubernetes In
 
 - **Without service mesh**: 0.5 engineer-weeks/month maintaining ingress + monitoring
 - **With service mesh**: 4-6 engineer-weeks/month managing mesh, debugging sidecars, certificate rotation
-- **Opportunity cost**: ~40 feature-weeks/year redirected to infrastructure
+- **Opportunity cost**: ~50-70 feature-weeks/year redirected to infrastructure
 
 ### 2. Multi-Cloud Before Product-Market Fit
 
@@ -149,6 +149,7 @@ Platform teams succeed when:
 **What it actually delivers at small scale**:
 
 - **Tool sprawl**: Datadog APM ($50K/year) + Honeycomb ($30K/year) + Sentry ($15K/year)
+- **Tool sprawl**: Datadog APM ($25K/year) + Honeycomb ($20K/year) + Sentry ($10K/year)
 - **Configuration burden**: Instrumenting every service with OpenTelemetry, managing trace sampling
 - **Analysis paralysis**: 50 dashboards, 200 alerts, teams ignore most of them
 - **Maintenance debt**: Updating instrumentation libraries across every service
@@ -343,10 +344,13 @@ If metrics improve, expand gradually. If not, abandon without sunk cost fallacy.
 - Migration costs: 3 months, 2 engineers full-time ($75K opportunity cost)
 - Ongoing maintenance: 1 engineer at 50% time ($75K/year)
 - Cost savings: ~$4K/month ($48K/year)
-- **Break-even**: 2.5 years
+- **Net annual impact**: -$27K/year (maintenance costs exceed savings)
+- **Total 3-year cost**: $156K (vs. $0 staying on Heroku)
 - **Velocity impact**: 20-30% slower deploys during/after migration
 
-**Recommendation**: Stay on Heroku. Migrate to Kubernetes when monthly costs exceed $15K or when hitting platform limitations. Skip Istio entirely until 100+ engineers.
+**Why this does not make financial sense**: You would spend $75K upfront, then lose $27K every year in ongoing costs compared to staying on Heroku. Over 3 years, that is $156K wasted ($75K initial + $27K × 3 years) for a platform that makes deploys slower.
+
+**Recommendation**: Stay on Heroku until monthly costs exceed $15K or you hit platform limitations. Even then, move to plain Kubernetes without Istio. Only consider Istio at 100+ engineers.
 
 ### Scenario B: Series B E-commerce Platform
 
