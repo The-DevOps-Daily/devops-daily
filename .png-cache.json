@@ -535,5 +535,14 @@
   "public/images/news/2026-week-6.svg": "24f204f008f50c84",
   "public/images/news/2026-week-7.svg": "36fa0d59c1e18019",
   "public/images/news/2026-week-8.svg": "6f49df62e6344dbd",
-  "public/images/news/2026-week-9.svg": "7f0051cab1adab3d"
+  "public/images/news/2026-week-9.svg": "7f0051cab1adab3d",
+  "public/images/posts/advanced-docker-features.svg": "723f1699b505380b",
+  "public/images/posts/heroku-vs-self-hosting-cost-analysis.svg": "13b475746dce44fc",
+  "public/images/posts/infrastructure-as-code-fundamentals.svg": "28cdefbd5586a215",
+  "public/images/posts/hidden-cost-overengineering-first-50-engineers.svg": "14928df4c1bf905c",
+  "public/images/posts/replacing-heroku-with-self-hosting.svg": "ca0ecd532c26d3fe",
+  "public/images/guides/dast-integration.svg": "d733f8f86d84f7c5",
+  "public/images/guides/security-gates.svg": "2c2a0bccb7b60f6c",
+  "public/images/guides/supply-chain-security.svg": "e324d0d0b4c4def5",
+  "public/images/news/2026-week-10.svg": "029e57bf771bdf2a"
 }
