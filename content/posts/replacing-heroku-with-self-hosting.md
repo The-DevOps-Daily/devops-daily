@@ -4,6 +4,8 @@ excerpt: 'How we migrated from expensive Heroku dynos to a self-managed DigitalO
 category:
   name: 'Cloud'
   slug: 'cloud'
+coverImage: '/images/posts/replacing-heroku-with-self-hosting.png'
+ogImage: '/images/posts/replacing-heroku-with-self-hosting.png'
 date: '2026-03-03'
 publishedAt: '2026-03-03T10:00:00Z'
 updatedAt: '2026-03-03T10:00:00Z'
@@ -46,7 +48,7 @@ Add-ons:
 - Heroku Redis Premium-0 ($60)          = $60
 - Heroku Data for Redis ($15)           = $15
 - SSL Certificates (SNI included)       = $0
-- Papertrail Fixa ($7)                  = $7
+- Papertrail ($7)                       = $7
 
 Data Transfer:
 - Outbound data (~500GB/mo)             = ~$200
@@ -225,9 +227,18 @@ pg_restore --verbose --clean --no-acl --no-owner \\
 For Redis, we chose to start fresh since it was just cache. If you need to migrate:
 
 ```bash
-# Using redis-cli to export/import
-redis-cli --rdb heroku-redis.rdb
-redis-cli --pipe < heroku-redis.rdb
+# Save RDB snapshot from Heroku Redis
+redis-cli -h <heroku-redis-host> -p <port> -a <password> --rdb heroku-redis.rdb
+
+# On your new server, stop Redis temporarily
+sudo systemctl stop redis
+
+# Replace dump.rdb with your backup
+sudo cp heroku-redis.rdb /var/lib/redis/dump.rdb
+sudo chown redis:redis /var/lib/redis/dump.rdb
+
+# Restart Redis to load the data
+sudo systemctl start redis
 ```
 
 ### Phase 3: Application Migration (Day 2-3)
