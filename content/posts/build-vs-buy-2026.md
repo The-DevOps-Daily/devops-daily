@@ -150,6 +150,7 @@ Use this flowchart when considering building vs buying infrastructure:
 
 **Best options:**
 - **Auth0**: $240-$2,400/year (10K-100K MAU)
+- **Auth0**: $500-$5K/year (10K-25K MAU)
 - **Okta**: $2-$6/user/month for B2B
 - **AWS Cognito**: $0.0055/MAU (first 50K free)
 - **Clerk**: $25-$400/month (2.5K-50K MAU)
@@ -177,7 +178,7 @@ Use this flowchart when considering building vs buying infrastructure:
 **Best options:**
 - **GitHub Actions**: $0.008/minute (free for public repos, ~$4K/year for 30-person team)
 - **CircleCI**: $15K-$40K/year for 20-50 engineers
-- **GitLab CI**: Included with GitLab ($19-$99/user/year)
+- **GitLab CI**: Included with GitLab ($19-$99/user/month)
 - **Buildkite**: $15-$40/seat/month for self-hosted agents
 
 **When to consider building:**
@@ -233,7 +234,7 @@ Use this flowchart when considering building vs buying infrastructure:
 - Compliance requirements are strict
 
 **Best options:**
-- **HashiCorp Vault**: $0.03/hour per secret (~$15K-$40K/year for 20-50 engineers)
+- **HashiCorp Vault**: $0.30-$2.50/hour per cluster (~$15K-$40K/year for multi-cluster setup)
 - **AWS Secrets Manager**: $0.40/secret/month + API calls
 - **Doppler**: $0-$249/month (5-50 users)
 - **1Password Secrets Automation**: $7.99/user/month
