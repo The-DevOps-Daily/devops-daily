@@ -27,7 +27,7 @@ tags:
 - **Provisioning**: Manual ops → 2-3 days per change. Scripted → 4-8 hours. Terraform → 30-60 minutes. Platform-abstracted → 5-10 minutes
 - **Environments**: Production-only → fast but risky. Dev/staging/prod → safe but slow (30-90 min deploys). Ephemeral per-PR → fast AND safe (5-15 min feedback loops)
 - **Deployment surface**: Managed platforms = fastest (minutes to production), VMs = moderate (hours to days), Kubernetes = slowest (weeks to months for first deploy)
-- **The velocity tax**: Each additional approval gate, manual step, or environment adds 15-45 minutes per deployment. At 10 deploys/day/team, that's 2.5-7.5 engineer-hours wasted daily
+- **The velocity tax**: Each additional approval gate adds 15-45 minutes per deployment. At 40 deploys/day across a 20-person team, that's ~$31K/month in approval overhead alone
 - **Decision principle**: Choose the simplest option that meets your requirements. Complexity kills velocity faster than any other factor
 
 ---
@@ -206,7 +206,7 @@ Every manual approval step adds latency. Let's quantify:
 - Total deploys: 40/day
 - Each manual approval: 15-30 min average (including context switching for approver)
 - Daily cost: 40 × 22.5 min = **900 minutes = 15 hours/day** of combined waiting + approval time
-- Monthly cost at $16,700/engineer-month: **$4,175/month in pure approval overhead**
+- Monthly cost: 15 hours/day × 20 workdays = 300 hours/month × $104/hour = **~$31,000/month in approval overhead**
 
 And that's assuming approvals happen within 30 minutes. In practice, approvals often wait hours for the right person to be available, multiplying this cost.
 
