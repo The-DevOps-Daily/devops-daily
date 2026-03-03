@@ -512,7 +512,7 @@ When:
 - CTO wants to "save money" by moving to Kubernetes + self-hosted tools
 
 **Build path costs:**
-- Kubernetes setup: 2-3 months for 2 engineers = $100K-$150K
+- Kubernetes setup: 2-3 months for 2 engineers = $67K-$100K
 - Annual maintenance: 30% of 1 engineer = $60K/year
 - Migration risk: 4-8 weeks of reduced velocity
 
@@ -565,9 +565,9 @@ Then it **might** make sense. But be honest about the productivity gains—most 
 - Complex microservices architecture
 
 **Build path costs:**
-- Custom observability platform: 18-24 months for 3-4 engineers = $600K-$1M
+- Custom observability platform: 18-24 months for 3-4 engineers = $900K-$1.6M
 - Annual maintenance: 4-5 FTEs = $800K-$1M/year
-- **Total 3-year cost: $3.2M-$4M**
+- **Total 3-year cost: $3.3M-$4.6M**
 
 **Buy path costs:**
 - Datadog/New Relic at scale: ~$300K-$500K/year
@@ -575,7 +575,7 @@ Then it **might** make sense. But be honest about the productivity gains—most 
 
 **Verdict: STILL PROBABLY BUY**
 
-Even at 200 engineers and $500K/year spend, building custom observability costs 2-3× more over 3 years.
+Even at 200 engineers and $500K/year spend, building custom observability costs 2-4× more over 3 years.
 
 **When to build**: If you're spending $1M+/year on a single tool category AND have specific needs that vendors can't meet.
 
