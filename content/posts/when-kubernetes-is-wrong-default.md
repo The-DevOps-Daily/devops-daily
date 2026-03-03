@@ -38,13 +38,12 @@ This guide gives you a framework for making infrastructure decisions based on wh
 Infrastructure choices exist on a complexity spectrum. Each tier trades operational burden for control:
 
 ```
-MANAGED PLATFORMS          VMs                    KUBERNETES
-(Heroku, Render, etc.)     (EC2, Droplets)        (EKS, GKE, etc.)
-
-Complexity:    ██              ████████               ████████████████
-Control:       ████            ████████████           ████████████████████
-Time-to-Ship:  Days            Weeks                  Months
-Team Size:     1-15            5-30                   20+
+                MANAGED PLATFORMS          VMs                    KUBERNETES
+                (Heroku, Render, etc.)     (EC2, Droplets)        (EKS, GKE, etc.)
+Complexity:     ██                         ████████               ████████████████
+Control:        ████                       ████████████           ████████████████████
+Time-to-Ship:   🚀 Days                    📦 Weeks              ⏳ Months
+Team Size:      1-15                       5-30                   20+
 ```
 
 **Managed Platforms** abstract away infrastructure entirely. You push code, they handle runtime, scaling, SSL, logging, and deployment. Best for web applications, APIs, and background workers.
