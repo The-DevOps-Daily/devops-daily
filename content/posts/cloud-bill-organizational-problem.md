@@ -133,7 +133,7 @@ When infrastructure is centralized:
 
 **What happens:**
 - "We need staging to be production-parity" → 2× infrastructure cost
-- "Let's add a replica for safety" → +40% database cost
+- "Let's add a replica for safety" → +100% database cost
 - "Spin up a new cluster for this experiment" → experiment fails, cluster forgotten
 - "Use large instances to avoid performance issues" → 3× compute cost
 
