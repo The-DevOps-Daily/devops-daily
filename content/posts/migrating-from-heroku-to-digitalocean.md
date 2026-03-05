@@ -1,6 +1,6 @@
 ---
-title: 'Migrating from Heroku to DigitalOcean: A Technical Migration Guide'
-excerpt: 'A step-by-step technical guide to migrating production applications from Heroku to DigitalOcean. Covers App Platform, Managed Databases, Redis, Spaces, and infrastructure-as-code setup with real-world migration strategies.'
+title: 'Migrating from Heroku to DigitalOcean'
+excerpt: 'A complete guide to migrating production applications from Heroku to DigitalOcean. Covers App Platform, Managed Databases, Redis, Spaces, Coolify self-hosted, and infrastructure-as-code setup with real-world migration strategies.'
 category:
   name: 'Cloud'
   slug: 'cloud'
