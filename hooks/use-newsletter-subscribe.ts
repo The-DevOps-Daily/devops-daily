@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { EMAIL_RE, submitToBrevo } from '@/lib/newsletter';
 
 export type SubscribeStatus = 'idle' | 'loading' | 'success' | 'error';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function useNewsletterSubscribe() {
   const [status, setStatus] = useState<SubscribeStatus>('idle');
@@ -16,12 +15,8 @@ export function useNewsletterSubscribe() {
     }
     setStatus('loading');
     try {
-      const res = await fetch('/api/newsletter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      setStatus(res.ok ? 'success' : 'error');
+      await submitToBrevo(email);
+      setStatus('success');
     } catch {
       setStatus('error');
     }

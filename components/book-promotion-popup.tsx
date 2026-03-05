@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, X, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Confetti from 'react-confetti'
+import { EMAIL_RE, submitToBrevo } from '@/lib/newsletter'
 
 export function BookPromotionPopup() {
   const [isVisible, setIsVisible] = useState(false)
@@ -63,14 +64,10 @@ export function BookPromotionPopup() {
   const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!email) return;
+    if (!email || !EMAIL_RE.test(email)) return;
 
     try {
-      await fetch('/api/newsletter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+      await submitToBrevo(email);
     } catch (err) {
       console.error('[newsletter] Popup subscription error:', err);
       // Proceed optimistically – show thank you regardless
