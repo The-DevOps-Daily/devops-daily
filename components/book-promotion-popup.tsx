@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, X, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Confetti from 'react-confetti'
-import { EMAIL_RE, submitToBrevo } from '@/lib/newsletter'
+import { EMAIL_RE, BREVO_FORM_URL, submitToBrevo } from '@/lib/newsletter'
 
 export function BookPromotionPopup() {
   const [isVisible, setIsVisible] = useState(false)
@@ -70,7 +70,10 @@ export function BookPromotionPopup() {
       await submitToBrevo(email);
     } catch (err) {
       console.error('[newsletter] Popup subscription error:', err);
-      // Proceed optimistically – show thank you regardless
+      const w = window.open(BREVO_FORM_URL, '_blank');
+      if (!w) {
+        console.warn('[newsletter] Popup blocked. Direct user to:', BREVO_FORM_URL);
+      }
     }
 
     // Show thank you message
