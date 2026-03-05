@@ -525,7 +525,7 @@ export function ClientContent() {
             <div className="max-w-md mx-auto">
               <div className="p-8 bg-linear-to-br from-primary/5 to-purple-500/5 border-2 border-primary/20 rounded-2xl shadow-2xl backdrop-blur-sm">
                 <form
-                  action="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&amp;id=fd76a4e93f&amp;f_id=0022c6e1f0"
+                  action={process.env.NEXT_PUBLIC_BREVO_FORM_URL ?? '#'}
                   method="post"
                   target="_blank"
                   noValidate
@@ -534,25 +534,19 @@ export function ClientContent() {
                   <input
                     type="email"
                     name="EMAIL"
-                    id="mce-EMAIL-final"
                     required
                     placeholder="your@email.com"
                     className="w-full px-5 py-4 border-2 border-border/50 bg-background/50 backdrop-blur-sm rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
                   />
 
-                  {/* Honeypot bot field */}
+                  {/* Brevo bot-protection fields */}
                   <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
-                    <input
-                      type="text"
-                      name="b_d1128776b290ad8d08c02094f_fd76a4e93f"
-                      tabIndex={-1}
-                      defaultValue=""
-                    />
+                    <input type="text" name="email_address_check" defaultValue="" tabIndex={-1} />
+                    <input type="hidden" name="locale" value="en" />
                   </div>
 
                   <button
                     type="submit"
-                    name="subscribe"
                     className="group inline-flex items-center justify-center w-full px-6 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
                   >
                     <Mail className="mr-2 h-5 w-5" />

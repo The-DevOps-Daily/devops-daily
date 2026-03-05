@@ -98,7 +98,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
           Get the latest DevOps tips and tutorials delivered to your inbox.
         </p>
         <form
-          action="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&amp;id=fd76a4e93f&amp;f_id=0022c6e1f0"
+          action={process.env.NEXT_PUBLIC_BREVO_FORM_URL ?? '#'}
           method="post"
           target="_blank"
           noValidate
@@ -107,25 +107,19 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
           <input
             type="email"
             name="EMAIL"
-            id="mce-EMAIL"
             required
             placeholder="you@example.com"
             className="w-full px-3 py-2 border border-border bg-background rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
-          {/* Honeypot bot field */}
+          {/* Brevo bot-protection fields */}
           <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
-            <input
-              type="text"
-              name="b_d1128776b290ad8d08c02094f_fd76a4e93f"
-              tabIndex={-1}
-              defaultValue=""
-            />
+            <input type="text" name="email_address_check" defaultValue="" tabIndex={-1} />
+            <input type="hidden" name="locale" value="en" />
           </div>
 
           <button
             type="submit"
-            name="subscribe"
             className="inline-flex items-center justify-center w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             Subscribe to Newsletter
