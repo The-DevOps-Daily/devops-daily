@@ -24,7 +24,7 @@ tags:
 
 ## TLDR
 
-Heroku's convenience comes at a premium: typical production workloads cost $500-2,000/month. Self-hosting equivalent infrastructure on DigitalOcean runs $24-100/month. But the real cost difference isn't just dollars—it's engineer time, operational complexity, and risk. This guide breaks down actual costs, hidden expenses, and provides a framework to determine if self-hosting makes sense for your specific situation. Includes transparent Total Cost of Ownership (TCO) calculations and honest tradeoff analysis.
+Heroku's convenience comes at a premium: typical production workloads cost $500-2,000/month. Self-hosting equivalent infrastructure on [DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) runs $24-100/month. But the real cost difference isn't just dollars—it's engineer time, operational complexity, and risk. This guide breaks down actual costs, hidden expenses, and provides a framework to determine if self-hosting makes sense for your specific situation. Includes transparent Total Cost of Ownership (TCO) calculations and honest tradeoff analysis.
 
 ---
 
