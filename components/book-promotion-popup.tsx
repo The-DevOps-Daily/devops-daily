@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, X, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Confetti from 'react-confetti'
+import { BREVO_FORM_URL } from '@/lib/newsletter'
 
 export function BookPromotionPopup() {
   const [isVisible, setIsVisible] = useState(false)
@@ -157,7 +158,7 @@ export function BookPromotionPopup() {
 
                       <form
                         onSubmit={handleSubscribe}
-                        action={process.env.NEXT_PUBLIC_BREVO_FORM_URL ?? '#'}
+                        action={BREVO_FORM_URL}
                         method="post"
                         target="_blank"
                         className="space-y-2"

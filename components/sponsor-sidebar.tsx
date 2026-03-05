@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Clock, Sparkles, ExternalLink } from 'lucide-react';
 import { CarbonAds } from '@/components/carbon-ads';
 import { sponsors } from '@/lib/sponsors';
+import { BREVO_FORM_URL } from '@/lib/newsletter';
 
 interface SponsorSidebarProps {
   className?: string;
@@ -98,7 +99,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
           Get the latest DevOps tips and tutorials delivered to your inbox.
         </p>
         <form
-          action={process.env.NEXT_PUBLIC_BREVO_FORM_URL ?? '#'}
+          action={BREVO_FORM_URL}
           method="post"
           target="_blank"
           noValidate

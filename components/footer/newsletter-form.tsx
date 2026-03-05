@@ -1,8 +1,7 @@
 import { Mail, ArrowRight } from 'lucide-react';
+import { BREVO_FORM_URL } from '@/lib/newsletter';
 
 export function NewsletterForm() {
-  const brevoFormUrl = process.env.NEXT_PUBLIC_BREVO_FORM_URL ?? '#';
-
   return (
     <div className="p-6 bg-linear-to-br from-primary/5 to-purple-500/5 border border-primary/20 rounded-2xl shadow-lg">
       <div className="flex items-center gap-2 mb-3">
@@ -13,7 +12,7 @@ export function NewsletterForm() {
         Get the latest DevOps insights delivered to your inbox weekly.
       </p>
       <form
-        action={brevoFormUrl}
+        action={BREVO_FORM_URL}
         method="post"
         target="_blank"
         noValidate

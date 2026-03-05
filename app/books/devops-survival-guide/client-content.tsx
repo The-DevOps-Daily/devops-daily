@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { BREVO_FORM_URL } from '@/lib/newsletter';
 import {
   BookOpen,
   Rocket,
@@ -525,7 +526,7 @@ export function ClientContent() {
             <div className="max-w-md mx-auto">
               <div className="p-8 bg-linear-to-br from-primary/5 to-purple-500/5 border-2 border-primary/20 rounded-2xl shadow-2xl backdrop-blur-sm">
                 <form
-                  action={process.env.NEXT_PUBLIC_BREVO_FORM_URL ?? '#'}
+                  action={BREVO_FORM_URL}
                   method="post"
                   target="_blank"
                   noValidate
