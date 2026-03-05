@@ -548,3 +548,4 @@ Make an informed decision based on your actual situation, not mythical 98% savin
 **TCO Calculators:**
 - Build your own spreadsheet with this article's framework
 - Include infrastructure costs, engineer time, tooling, and risk factors
+- [DigitalOcean](https://www.jdoqocy.com/click-101674709-15836238) - Simple, predictable pricing
