@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { Clock, Sparkles, ExternalLink } from 'lucide-react';
 import { CarbonAds } from '@/components/carbon-ads';
 import { sponsors } from '@/lib/sponsors';
-import { BREVO_FORM_URL } from '@/lib/newsletter';
+import { NewsletterInlineForm } from '@/components/newsletter-inline-form';
 
 interface SponsorSidebarProps {
   className?: string;
@@ -98,34 +98,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
         <p className="text-sm text-muted-foreground mb-3">
           Get the latest DevOps tips and tutorials delivered to your inbox.
         </p>
-        <form
-          action={BREVO_FORM_URL}
-          method="post"
-          target="_blank"
-          noValidate
-          className="space-y-3"
-        >
-          <input
-            type="email"
-            name="EMAIL"
-            required
-            placeholder="you@example.com"
-            className="w-full px-3 py-2 border border-border bg-background rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-
-          {/* Brevo bot-protection fields */}
-          <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
-            <input type="text" name="email_address_check" defaultValue="" tabIndex={-1} />
-            <input type="hidden" name="locale" value="en" />
-          </div>
-
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            Subscribe to Newsletter
-          </button>
-        </form>
+        <NewsletterInlineForm />
       </div>
 
       {/* Related Posts Section */}

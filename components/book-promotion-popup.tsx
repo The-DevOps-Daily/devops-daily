@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, X, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Confetti from 'react-confetti'
-import { BREVO_FORM_URL } from '@/lib/newsletter'
 
 export function BookPromotionPopup() {
   const [isVisible, setIsVisible] = useState(false)
@@ -61,29 +60,36 @@ export function BookPromotionPopup() {
     }, 300)
   }
 
-  const handleSubscribe = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-    if (!email) return
+    if (!email) return;
 
-    // Submit form to Brevo in a new tab
-    const form = e.currentTarget
-    form.submit()
+    try {
+      await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+    } catch (err) {
+      console.error('[newsletter] Popup subscription error:', err);
+      // Proceed optimistically – show thank you regardless
+    }
 
     // Show thank you message
-    setShowThankYou(true)
-    localStorage.setItem('book-promo-subscribed', 'true')
+    setShowThankYou(true);
+    localStorage.setItem('book-promo-subscribed', 'true');
 
     // Show celebration confetti
-    setShowConfetti(true)
+    setShowConfetti(true);
 
     // Auto-close after 3 seconds
     setTimeout(() => {
-      setShowConfetti(false)
-      setIsLoaded(false)
-      setTimeout(() => setIsVisible(false), 300)
-    }, 3000)
-  }
+      setShowConfetti(false);
+      setIsLoaded(false);
+      setTimeout(() => setIsVisible(false), 300);
+    }, 3000);
+  };
 
   if (!isVisible) return null
 
@@ -158,9 +164,6 @@ export function BookPromotionPopup() {
 
                       <form
                         onSubmit={handleSubscribe}
-                        action={BREVO_FORM_URL}
-                        method="post"
-                        target="_blank"
                         className="space-y-2"
                       >
                         <input
@@ -172,12 +175,6 @@ export function BookPromotionPopup() {
                           required
                           className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         />
-
-                        {/* Brevo bot-protection fields */}
-                        <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
-                          <input type="text" name="email_address_check" defaultValue="" tabIndex={-1} />
-                          <input type="hidden" name="locale" value="en" />
-                        </div>
 
                         <Button
                           type="submit"
