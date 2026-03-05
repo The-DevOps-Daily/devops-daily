@@ -48,7 +48,7 @@ export default async function NewsPage() {
         </div>
         <h1 className="text-3xl md:text-4xl font-bold mb-3">DevOps Weekly Digest</h1>
         <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-          Curated weekly updates from 250+ DevOps sources. AI-powered summaries of the latest in
+          Curated weekly updates from 250+ DevOps sources covering the latest in
           Kubernetes, cloud native, CI/CD, and more.
         </p>
 
@@ -178,7 +178,7 @@ export default async function NewsPage() {
             <div className="bg-card border rounded-lg p-5">
               <h3 className="font-semibold text-base mb-2.5">About the Digest</h3>
               <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                Weekly AI-curated DevOps news from 250+ trusted sources.
+                Weekly DevOps news from 250+ trusted sources.
               </p>
               <div className="space-y-1.5 text-sm">
                 <div className="flex items-start gap-2">
