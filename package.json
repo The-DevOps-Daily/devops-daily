@@ -124,7 +124,7 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@tailwindcss/typography": "0.5.19",
     "@types/js-yaml": "^4.0.9",
-    "@types/node": "^25.2.3",
+    "@types/node": "^25.4.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
