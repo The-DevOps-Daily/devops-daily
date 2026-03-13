@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useNewsletterSubscribe } from '@/hooks/use-newsletter-subscribe';
 import {
   BookOpen,
   Rocket,
@@ -152,6 +153,8 @@ const chapters = [
 export function ClientContent() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isScrolled, setIsScrolled] = useState(false);
+  const [bookEmail, setBookEmail] = useState('');
+  const { status: bookSubscribeStatus, subscribe: bookSubscribe } = useNewsletterSubscribe();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -524,42 +527,43 @@ export function ClientContent() {
             {/* Newsletter Signup Form */}
             <div className="max-w-md mx-auto">
               <div className="p-8 bg-linear-to-br from-primary/5 to-purple-500/5 border-2 border-primary/20 rounded-2xl shadow-2xl backdrop-blur-sm">
-                <form
-                  action="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&amp;id=fd76a4e93f&amp;f_id=0022c6e1f0"
-                  method="post"
-                  target="_blank"
-                  noValidate
-                  className="space-y-4"
-                >
-                  <input
-                    type="email"
-                    name="EMAIL"
-                    id="mce-EMAIL-final"
-                    required
-                    placeholder="your@email.com"
-                    className="w-full px-5 py-4 border-2 border-border/50 bg-background/50 backdrop-blur-sm rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
-                  />
-
-                  {/* Honeypot bot field */}
-                  <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
-                    <input
-                      type="text"
-                      name="b_d1128776b290ad8d08c02094f_fd76a4e93f"
-                      tabIndex={-1}
-                      defaultValue=""
-                    />
+                {bookSubscribeStatus === 'success' ? (
+                  <div className="flex items-center justify-center gap-3 py-4">
+                    <CheckCircle className="w-6 h-6 text-green-500 shrink-0" />
+                    <p className="text-base font-medium">
+                      You&apos;re on the list! We&apos;ll notify you when it launches. 🚀
+                    </p>
                   </div>
-
-                  <button
-                    type="submit"
-                    name="subscribe"
-                    className="group inline-flex items-center justify-center w-full px-6 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
+                ) : (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); if (bookEmail) bookSubscribe(bookEmail); }}
+                    noValidate
+                    className="space-y-4"
                   >
-                    <Mail className="mr-2 h-5 w-5" />
-                    Subscribe for Early Access
-                    <Sparkles className="ml-2 h-5 w-5" />
-                  </button>
-                </form>
+                    <input
+                      type="email"
+                      value={bookEmail}
+                      onChange={(e) => setBookEmail(e.target.value)}
+                      required
+                      placeholder="your@email.com"
+                      className="w-full px-5 py-4 border-2 border-border/50 bg-background/50 backdrop-blur-sm rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                    />
+
+                    {bookSubscribeStatus === 'error' && (
+                      <p className="text-sm text-red-500">Something went wrong. Please try again.</p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={bookSubscribeStatus === 'loading'}
+                      className="group inline-flex items-center justify-center w-full px-6 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      <Mail className="mr-2 h-5 w-5" />
+                      {bookSubscribeStatus === 'loading' ? 'Subscribing…' : 'Subscribe for Early Access'}
+                      {bookSubscribeStatus !== 'loading' && <Sparkles className="ml-2 h-5 w-5" />}
+                    </button>
+                  </form>
+                )}
 
                 <p className="text-center text-sm text-muted-foreground mt-4 flex items-center justify-center gap-2">
                   <Shield className="w-4 h-4" />

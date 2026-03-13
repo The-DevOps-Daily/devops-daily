@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { BookOpen, X, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Confetti from 'react-confetti'
+import { EMAIL_RE, BREVO_FORM_URL, submitToBrevo } from '@/lib/newsletter'
 
 export function BookPromotionPopup() {
   const [isVisible, setIsVisible] = useState(false)
@@ -60,34 +61,35 @@ export function BookPromotionPopup() {
     }, 300)
   }
 
-  const handleSubscribe = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-    if (!email) return
+    if (!email || !EMAIL_RE.test(email)) return;
 
-    // Submit to Mailchimp
-    const form = e.target as HTMLFormElement
-    const formData = new FormData(form)
-
-    // Open in new window (Mailchimp requirement)
-    const mailchimpUrl = 'https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&id=fd76a4e93f&f_id=0022c6e1f0'
-    const params = new URLSearchParams(formData as any).toString()
-    window.open(`${mailchimpUrl}&${params}`, '_blank')
+    try {
+      await submitToBrevo(email);
+    } catch (err) {
+      console.error('[newsletter] Popup subscription error:', err);
+      const w = window.open(BREVO_FORM_URL, '_blank');
+      if (!w) {
+        console.warn('[newsletter] Popup blocked. Direct user to:', BREVO_FORM_URL);
+      }
+    }
 
     // Show thank you message
-    setShowThankYou(true)
-    localStorage.setItem('book-promo-subscribed', 'true')
+    setShowThankYou(true);
+    localStorage.setItem('book-promo-subscribed', 'true');
 
     // Show celebration confetti
-    setShowConfetti(true)
+    setShowConfetti(true);
 
     // Auto-close after 3 seconds
     setTimeout(() => {
-      setShowConfetti(false)
-      setIsLoaded(false)
-      setTimeout(() => setIsVisible(false), 300)
-    }, 3000)
-  }
+      setShowConfetti(false);
+      setIsLoaded(false);
+      setTimeout(() => setIsVisible(false), 300);
+    }, 3000);
+  };
 
   if (!isVisible) return null
 
@@ -160,22 +162,19 @@ export function BookPromotionPopup() {
                         Subscribe for exclusive content & launch updates! ✨
                       </p>
 
-                      <form onSubmit={handleSubscribe} className="space-y-2">
+                      <form
+                        onSubmit={handleSubscribe}
+                        className="space-y-2"
+                      >
                         <input
                           type="email"
                           name="EMAIL"
-                          id="mce-EMAIL"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="your@email.com"
                           required
                           className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                         />
-
-                        {/* Honeypot */}
-                        <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
-                          <input type="text" name="b_d1128776b290ad8d08c02094f_fd76a4e93f" tabIndex={-1} defaultValue="" />
-                        </div>
 
                         <Button
                           type="submit"
