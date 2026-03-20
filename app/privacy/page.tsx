@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div className="container px-4 py-8 mx-auto">
-      <PageHeader title="Privacy Policy" description="Last updated: January 1, 2024" />
+      <PageHeader title="Privacy Policy" description="Last updated: March 20, 2026" />
 
       <div className="max-w-4xl mx-auto prose dark:prose-invert">
         <h2>Introduction</h2>
@@ -105,15 +105,24 @@ export default function PrivacyPage() {
 
         <h3>Analytics</h3>
         <p>
-          We may use services like Google Analytics to track and analyze Site usage. These services
-          may use cookies and similar technologies to collect information about your use of our
-          Site.
+          We use Ahrefs Analytics to track and analyze Site usage. This service may use cookies and
+          similar technologies to collect information about how you use our Site. You can learn more
+          about Ahrefs&apos; privacy practices on their website.
+        </p>
+
+        <h3>Comments</h3>
+        <p>
+          We use Giscus, a comments system powered by GitHub Discussions. When you leave a comment,
+          you authenticate via GitHub, and your comment data is stored in GitHub Discussions on our
+          public repository. GitHub&apos;s privacy policy governs the data collected through this
+          service.
         </p>
 
         <h3>Content Delivery Networks (CDN)</h3>
         <p>
-          We use CDN services to deliver content efficiently. These services may collect basic
-          technical information about your visits.
+          We use Cloudflare Pages to host and deliver our Site. Cloudflare may collect basic
+          technical information about your visits, including IP address and request metadata, as
+          part of their service operation.
         </p>
 
         <h2>Data Security</h2>
