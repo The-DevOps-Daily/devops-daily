@@ -93,6 +93,7 @@ export const contentSection: FooterSection = {
     { href: '/guides', label: 'Guides' },
     { href: '/categories', label: 'Categories' },
     { href: '/experts', label: 'Hire an Expert' },
+    { href: '/about', label: 'About' },
     { href: '/sitemap.xml', label: 'Sitemap' },
   ],
 };
