@@ -77,7 +77,6 @@ Each step has required and optional fields:
 - **Required**: `id`, `title`, `description`
 - **Optional**: `commands`, `codeExample`, `expectedOutput`, `hints`, `validationCriteria`
 - Include as many optional fields as make sense for the step — not every step needs commands or code (e.g., a monitoring/observation step may only need description)
-```
 
 ## Exercise Design Guidelines
 

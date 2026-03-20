@@ -66,6 +66,7 @@ Posts follow this general structure:
 
 ### Technical Content Rules
 - Use fenced code blocks with language identifiers: ```dockerfile, ```yaml, ```bash, ```python, ```hcl, etc.
+- For non-code blocks (ASCII diagrams, directory trees, plain text examples), use ```text as the language identifier
 - Include ASCII diagrams where architecture or flow visualization helps understanding
 - Show both "wrong" and "right" approaches when teaching best practices
 - Add inline comments in code to explain non-obvious lines
