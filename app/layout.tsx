@@ -5,7 +5,10 @@ import './globals.css';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { ThemeProvider } from '@/components/theme-provider';
-import { WebsiteSchema } from '@/components/schema-markup';
+import {
+  OrganizationSchema,
+  WebsiteSchema,
+} from '@/components/schema-markup';
 import { CookieBanner } from '@/components/cookie-banner';
 import { GoogleAnalytics } from '@next/third-parties/google';
 import { PWAInstaller } from '@/components/pwa-installer';
@@ -135,6 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <OrganizationSchema />
         <WebsiteSchema />
         <script
           src="https://analytics.ahrefs.com/analytics.js"
