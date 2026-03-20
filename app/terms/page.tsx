@@ -36,14 +36,16 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
-      <PageHeader title="Terms of Service" description="Last updated: January 1, 2024" />
+      <PageHeader title="Terms of Service" description="Last updated: March 20, 2026" />
 
       <div className="prose dark:prose-invert max-w-4xl mx-auto">
         <h2>1. Agreement to Terms</h2>
         <p>
-          By accessing and using DevOps Daily ("we", "us", or "our") website at devops-daily.com
-          (the "Site"), you agree to be bound by these Terms of Service ("Terms"). If you disagree
-          with any part of these terms, then you may not access the Site.
+          By accessing and using DevOps Daily (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;)
+          website at devops-daily.com (the &quot;Site&quot;), you agree to be bound by these Terms
+          of Service (&quot;Terms&quot;). If you disagree with any part of these terms, then you may
+          not access the Site. These Terms apply to all visitors, users, and others who access the
+          Site.
         </p>
 
         <h2>2. Use License</h2>
@@ -67,16 +69,24 @@ export default function TermsPage() {
 
         <h3>Our Content</h3>
         <p>
-          Unless otherwise indicated, all content on the Site (including text, graphics, logos,
-          images, audio clips, digital downloads, and software) is the property of DevOps Daily or
-          its content suppliers and is protected by international copyright laws.
+          Unless otherwise indicated, all content on the Site — including tutorials, guides,
+          exercises, quizzes, code examples, graphics, logos, and software — is the property of
+          DevOps Daily or its content contributors and is protected by international copyright laws.
+        </p>
+
+        <h3>Open Source and Code Examples</h3>
+        <p>
+          Code examples provided in tutorials and guides are offered for educational purposes. You
+          may use them in your own projects, but the accompanying explanatory text, structure, and
+          presentation remain our intellectual property.
         </p>
 
         <h3>User Contributions</h3>
         <p>
-          If you submit content to our Site (such as comments or guest posts), you grant us a
-          non-exclusive, worldwide, royalty-free, irrevocable, sub-licensable license to use,
-          reproduce, adapt, publish, translate, and distribute your content in any media.
+          If you submit content to our Site (such as comments via GitHub Discussions, pull requests,
+          or guest posts), you grant us a non-exclusive, worldwide, royalty-free, irrevocable,
+          sub-licensable license to use, reproduce, adapt, publish, translate, and distribute your
+          content in any media.
         </p>
 
         <h2>4. Acceptable Use</h2>
@@ -118,16 +128,20 @@ export default function TermsPage() {
 
         <h3>Professional Disclaimer</h3>
         <p>
-          The content on this Site is for informational and educational purposes only. It should not
-          be construed as professional advice. Always seek the advice of qualified professionals for
-          specific questions related to your situation.
+          The content on this Site is for informational and educational purposes only. DevOps
+          tutorials, guides, and code examples are provided as learning resources and should not be
+          construed as professional consulting advice. Always test configurations in non-production
+          environments first, and seek the advice of qualified professionals for production
+          infrastructure decisions.
         </p>
 
         <h3>Accuracy of Information</h3>
         <p>
-          While we strive to provide accurate and up-to-date information, technology and best
-          practices evolve rapidly. We make no representations about the completeness, reliability,
-          or accuracy of this information.
+          While we strive to provide accurate and up-to-date information, DevOps tools, cloud
+          services, and best practices evolve rapidly. Command syntax, API versions, and
+          configuration options may change. We make no representations about the completeness,
+          reliability, or accuracy of this information. Always refer to official documentation for
+          the most current details.
         </p>
 
         <h2>7. Limitations of Liability</h2>
@@ -163,9 +177,10 @@ export default function TermsPage() {
 
         <h2>11. Governing Law</h2>
         <p>
-          These Terms shall be governed and construed in accordance with the laws of [Your
-          Jurisdiction], without regard to its conflict of law provisions. Our failure to enforce
-          any right or provision of these Terms will not be considered a waiver of those rights.
+          These Terms shall be governed and construed in accordance with the laws of the State of
+          Delaware, United States, without regard to its conflict of law provisions. Our failure to
+          enforce any right or provision of these Terms will not be considered a waiver of those
+          rights.
         </p>
 
         <h2>12. Changes to Terms</h2>
