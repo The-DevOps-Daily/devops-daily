@@ -74,3 +74,10 @@ This is handy for debugging or retrieving configuration files.
 Try exploring different images, or automate these checks in your CI pipeline to catch issues early.
 
 Good luck with your project!
+
+## Related Resources
+
+- [Exploring Docker Container File System](/posts/exploring-docker-container-file-system) — browse container files
+- [Docker Image vs Container](/posts/docker-image-vs-container) — understand the difference
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller images
+- [Introduction to Docker: Working with Images](/guides/introduction-to-docker) — image management

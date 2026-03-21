@@ -76,3 +76,11 @@ But this doesn't work if the container is stopped.
 ## Conclusion
 
 You can't change the command of a stopped Docker container when restarting it, but you can create a new container from the same image (or a committed image) with any command you need. This gives you flexibility for debugging, recovery, or running alternate workflows.
+
+
+## Related Resources
+
+- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start) — understand the difference
+- [How to Run a Command on an Existing Container](/posts/how-do-i-run-a-command-on-an-already-existing-docker-container) — exec into containers
+- [Why Docker Container Exits Immediately](/posts/why-docker-container-exits-immediately) — debug exit issues
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

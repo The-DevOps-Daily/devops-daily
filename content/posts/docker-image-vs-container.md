@@ -294,3 +294,12 @@ docker run -d --name db-development postgres:13
 ```
 
 Understanding the image-container relationship is fundamental to working effectively with Docker. Images provide consistency and portability, while containers give you the flexibility to run multiple instances with different configurations. This separation allows you to build once and deploy anywhere, making your applications more reliable and your deployments more predictable.
+
+## Related Resources
+
+- [How to Run a Docker Image as a Container](/posts/docker-run-image-as-container) — put this knowledge into practice
+- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start) — container lifecycle commands
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build better images
+- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine) — deeper comparison
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — comprehensive learning path
+- [Docker Flashcards](/flashcards/docker-essentials) — review core concepts

@@ -120,3 +120,11 @@ curl http://$HOST_IP:5000
 ## Conclusion
 
 Accessing the Docker host from inside a container is easy with the right approach for your platform. Use `host.docker.internal` when available, or fall back to the gateway IP trick on Linux. For advanced setups, check your Docker and network configuration. Test your solution to make sure it works in your environment.
+
+
+## Related Resources
+
+- [Get Docker Container IP from Host](/posts/how-to-get-docker-container-ip-from-host) — reverse direction
+- [Docker Access Host Port](/posts/docker-access-host-port) — host access patterns
+- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker) — host networking
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking guide

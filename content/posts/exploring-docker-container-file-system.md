@@ -315,3 +315,11 @@ docker compose logs -f service1 service2
 ```
 
 Exploring Docker container file systems is a fundamental debugging skill. Whether you use `docker exec` for running containers, `docker cp` for extracting files, or `docker export` for complete dumps, these techniques give you full visibility into what's happening inside your containers.
+
+## Related Resources
+
+- [Copy Files from Docker Container to Host](/posts/copy-files-from-docker-container-to-host) — extract files
+- [Docker Edit File in Container](/posts/docker-edit-file-in-container) — modify files in-place
+- [How to See Docker Image Contents](/posts/docker-see-image-contents) — inspect images before running
+- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty) — interactive debugging
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

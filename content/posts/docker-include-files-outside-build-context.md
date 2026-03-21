@@ -99,3 +99,10 @@ This keeps sensitive files out of your image and source control.
 By understanding Docker's build context, you can design more secure and maintainable images.
 
 Good luck with your project!
+
+## Related Resources
+
+- [COPY with Docker Exclusion](/posts/copy-with-docker-exclusion) — .dockerignore patterns
+- [COPY vs ADD in Dockerfiles](/posts/dockerfile-copy-vs-add-commands) — choose the right instruction
+- [Advanced Docker Features](/posts/advanced-docker-features) — BuildKit and multi-stage builds
+- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker) — Dockerfile guide

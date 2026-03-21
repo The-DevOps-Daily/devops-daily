@@ -357,3 +357,10 @@ This approach makes your applications work correctly both in interactive termina
 You now have the knowledge to diagnose and fix TTY-related issues in Docker across different environments and use cases. Remember that the key is understanding whether your environment provides a TTY and choosing the appropriate Docker flags accordingly.
 
 Start with the simple solutions and progress to more advanced techniques only when needed. Most TTY issues can be resolved by simply removing the `-t` flag in non-interactive environments or adding proper TTY allocation in interactive ones.
+
+## Related Resources
+
+- [Enter a Docker Container with a New TTY](/posts/enter-docker-container-new-tty) — attach to running containers
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — shell access methods
+- [Interactive Shell in Docker Compose](/posts/interactive-shell-docker-compose) — Compose shell access
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

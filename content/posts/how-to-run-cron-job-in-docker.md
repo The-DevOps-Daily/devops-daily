@@ -103,3 +103,11 @@ Make sure your script has a shebang (e.g., `#!/bin/bash`) at the top.
 ## Conclusion
 
 Running cron jobs in Docker is straightforward with the right setup. Keep cron in the foreground, check your logs, and use scripts with proper permissions. For more advanced scheduling, look into orchestrators like Kubernetes CronJobs or external tools.
+
+
+## Related Resources
+
+- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands) — multi-command patterns
+- [How to Clear Docker Container Logs](/posts/how-to-clear-docker-container-logs-properly) — log management
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — secure containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

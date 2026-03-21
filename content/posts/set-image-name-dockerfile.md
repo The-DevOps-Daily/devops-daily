@@ -89,3 +89,11 @@ my-app       latest    abc123def456   5 minutes ago   123MB
 - **Automate Naming**: Use CI/CD pipelines to automate image naming and tagging.
 
 By following these steps, you can effectively set and manage image names in Dockerfiles, ensuring streamlined workflows and better organization of your Docker images.
+
+
+## Related Resources
+
+- [Docker Rename Image Repository](/posts/docker-rename-image-repository) — rename existing images
+- [Push Docker Image to Private Repo](/posts/push-docker-image-private-repo) — push named images
+- [Difference Between RUN and CMD](/posts/difference-run-cmd-dockerfile) — Dockerfile instructions
+- [Introduction to Docker: Building Images](/guides/introduction-to-docker) — Dockerfile guide

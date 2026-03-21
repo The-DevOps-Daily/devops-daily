@@ -145,3 +145,11 @@ Docker Compose will pull the updated image and recreate the container.
   ```
 
 By following these steps, you can efficiently upgrade Docker containers to use new images while maintaining stability and minimizing downtime.
+
+
+## Related Resources
+
+- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers) — force updates
+- [Rebuild Docker Container in Compose](/posts/rebuild-docker-container-compose) — Compose rebuild
+- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits) — preserve data during upgrades
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

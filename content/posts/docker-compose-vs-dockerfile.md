@@ -134,3 +134,12 @@ docker-compose up
 - **Use Version Control**: Track changes to Dockerfile and `docker-compose.yml` in your repository.
 
 By understanding the differences between Docker Compose and Dockerfile, you can optimize your containerized workflows and manage applications more effectively.
+
+## Related Resources
+
+- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile) — Dockerfile instruction details
+- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences) — orchestration comparison
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — Compose networking
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build efficient images
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — comprehensive Docker learning
+- [Docker Quiz](/quizzes/docker-quiz) — test your knowledge

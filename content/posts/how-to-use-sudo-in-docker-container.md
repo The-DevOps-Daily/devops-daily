@@ -89,3 +89,11 @@ docker run -u root my-image whoami
 ## Conclusion
 
 You rarely need `sudo` in Docker containers, since most run as root by default. If you do need it, install and configure it in your Dockerfile, and use the `USER` directive for better security. Keep your images minimal and only add what you need for your use case.
+
+
+## Related Resources
+
+- [Fix Docker Permission Denied](/posts/fix-docker-permission-denied-error) — host-level permissions
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — run as non-root
+- [Docker Alpine: How to Use Bash](/posts/docker-alpine-use-bash) — install tools in containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

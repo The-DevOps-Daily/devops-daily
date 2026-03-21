@@ -92,4 +92,9 @@ The script executed successfully, demonstrating that the custom directory was ad
 
 By updating the PATH in your Dockerfile, you can streamline container workflows and make custom tools easily accessible.
 
-Good luck with your project!
+## Related Resources
+
+- [Difference Between RUN and CMD](/posts/difference-run-cmd-dockerfile) — Dockerfile instruction fundamentals
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — environment config
+- [Docker Alpine: How to Use Bash](/posts/docker-alpine-use-bash) — shell configuration in containers
+- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker) — Dockerfile guide

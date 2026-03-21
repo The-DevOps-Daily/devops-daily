@@ -133,3 +133,11 @@ This will map the container's ports `3000` and `9229` to the host's ports `8080`
 - **Secure Your Ports**: Use firewalls or Docker's network settings to restrict access to sensitive ports.
 
 By following these steps, you can effectively expose and manage multiple ports in Docker, enabling more complex containerized applications.
+
+
+## Related Resources
+
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — port publishing in Compose
+- [Expose vs Publish in Docker](/posts/expose-vs-publish-docker) — understand the difference
+- [Forward Host Port to Docker Container](/posts/forward-host-port-to-docker-container) — port forwarding patterns
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking guide

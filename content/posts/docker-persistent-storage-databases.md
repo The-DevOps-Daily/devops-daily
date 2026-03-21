@@ -273,3 +273,12 @@ You now have the tools to implement persistent storage for databases in Docker. 
 Experiment with different database engines and storage configurations to find what works best for your applications. Consider implementing automated backup procedures and testing your disaster recovery plans regularly.
 
 The combination of Docker's storage flexibility and database persistence opens up possibilities for scalable, maintainable applications that can grow with your needs.
+
+## Related Resources
+
+- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits) — why data disappears
+- [Mount a Host Directory in Docker](/posts/docker-mount-host-directory) — bind mount patterns
+- [Connecting to PostgreSQL in Docker from Outside](/posts/connecting-to-postgresql-in-a-docker-container-from-outside) — database access
+- [How to List Docker Volumes](/posts/how-to-list-docker-volumes-in-containers) — manage volumes
+- [Introduction to Docker: Volumes](/guides/introduction-to-docker) — volume fundamentals
+- [Docker Security Checklist](/checklists/docker-security) — secure your data

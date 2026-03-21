@@ -375,3 +375,11 @@ These specialized commands often work better than equivalent exec commands becau
 The `docker exec` command is your primary tool for interacting with running containers. It's not just for debugging - you'll use it for routine maintenance, testing, and exploration. The key is understanding when to use a quick one-off command versus an interactive shell, and knowing the limitations when containers aren't running.
 
 Once you're comfortable with `docker exec`, you'll find debugging containers much more straightforward. Combined with logs and inspect commands, you have everything you need to understand what's happening inside your containers.
+
+
+## Related Resources
+
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — more shell methods
+- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty) — TTY sessions
+- [Docker Edit File in Container](/posts/docker-edit-file-in-container) — modify files in-place
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

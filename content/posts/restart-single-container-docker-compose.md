@@ -88,3 +88,11 @@ The `State` column should show `Up` for the restarted service.
 - **Minimize Downtime**: Restart services during low-traffic periods if possible.
 
 By following these steps, you can efficiently restart individual containers in a Docker Compose setup, ensuring minimal disruption to your application.
+
+
+## Related Resources
+
+- [Docker Compose: Up Only Certain Containers](/posts/docker-compose-up-only-certain-containers) — selective startup
+- [Rebuild Docker Container in Compose](/posts/rebuild-docker-container-compose) — rebuild patterns
+- [Upgrade Docker Container After Image Changed](/posts/upgrade-docker-container-image-changed) — update images
+- [Introduction to Docker: Compose](/guides/introduction-to-docker) — Compose fundamentals
