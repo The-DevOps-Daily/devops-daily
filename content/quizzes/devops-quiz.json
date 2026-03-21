@@ -4,7 +4,7 @@
   "description": "Test your knowledge of DevOps practices with real-world scenarios covering CI/CD, infrastructure, monitoring, and incident response",
   "category": "DevOps",
   "icon": "Code",
-  "totalPoints": 125,
+  "totalPoints": 155,
   "theme": {
     "primaryColor": "green",
     "gradientFrom": "from-green-500",

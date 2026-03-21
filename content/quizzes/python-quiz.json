@@ -4,7 +4,7 @@
   "description": "Master Python through real-world scenarios covering syntax, data structures, OOP, and advanced concepts",
   "category": "Python",
   "icon": "Code",
-  "totalPoints": 125,
+  "totalPoints": 148,
   "theme": {
     "primaryColor": "green",
     "gradientFrom": "from-green-500",

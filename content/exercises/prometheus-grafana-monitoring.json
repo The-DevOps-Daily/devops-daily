@@ -3,13 +3,21 @@
   "title": "Complete Monitoring Stack Setup",
   "description": "Deploy and configure Prometheus and Grafana for comprehensive application and infrastructure monitoring.",
   "category": {
-    "name": "Monitoring",
-    "slug": "monitoring"
+    "name": "DevOps",
+    "slug": "devops"
   },
   "difficulty": "advanced",
   "estimatedTime": "150 minutes",
-  "technologies": ["Prometheus", "Grafana", "AlertManager", "Node Exporter"],
-  "prerequisites": ["Docker or Kubernetes cluster", "Basic monitoring concepts"],
+  "technologies": [
+    "Prometheus",
+    "Grafana",
+    "AlertManager",
+    "Node Exporter"
+  ],
+  "prerequisites": [
+    "Docker or Kubernetes cluster",
+    "Basic monitoring concepts"
+  ],
   "learningObjectives": [
     "Deploy monitoring infrastructure",
     "Configure metrics collection",
@@ -19,7 +27,12 @@
   "environment": "local",
   "icon": "Activity",
   "publishedAt": "2024-11-15T16:00:00Z",
-  "tags": ["Monitoring", "Prometheus", "Grafana", "Observability"],
+  "tags": [
+    "Monitoring",
+    "Prometheus",
+    "Grafana",
+    "Observability"
+  ],
   "steps": [
     {
       "id": "prometheus-setup",

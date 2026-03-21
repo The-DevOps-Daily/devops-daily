@@ -4,7 +4,7 @@
   "description": "Master database design and SQL through real business scenarios covering queries, optimization, design patterns, and data modeling",
   "category": "SQL",
   "icon": "Database",
-  "totalPoints": 150,
+  "totalPoints": 197,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-600",

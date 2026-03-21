@@ -3,12 +3,19 @@
   "title": "Microservices Observability with OpenTelemetry",
   "description": "Implement comprehensive observability for microservices using OpenTelemetry for distributed tracing, metrics, and logging across multiple services.",
   "category": {
-    "name": "Observability",
-    "slug": "observability"
+    "name": "DevOps",
+    "slug": "devops"
   },
   "difficulty": "advanced",
   "estimatedTime": "140 minutes",
-  "technologies": ["OpenTelemetry", "Jaeger", "Prometheus", "Node.js", "Python", "Kubernetes"],
+  "technologies": [
+    "OpenTelemetry",
+    "Jaeger",
+    "Prometheus",
+    "Node.js",
+    "Python",
+    "Kubernetes"
+  ],
   "prerequisites": [
     "Kubernetes cluster",
     "Docker",
@@ -30,7 +37,13 @@
     "name": "DevOps Daily Team",
     "slug": "devops-daily-team"
   },
-  "tags": ["Observability", "OpenTelemetry", "Distributed Tracing", "Microservices", "Monitoring"],
+  "tags": [
+    "Observability",
+    "OpenTelemetry",
+    "Distributed Tracing",
+    "Microservices",
+    "Monitoring"
+  ],
   "steps": [
     {
       "id": "observability-stack-setup",

@@ -4,7 +4,7 @@
   "description": "Investigate mysterious cost spikes, hunt down wasteful spending, and optimize your cloud bill like a detective solving financial crimes",
   "category": "Cost Optimization",
   "icon": "DollarSign",
-  "totalPoints": 135,
+  "totalPoints": 151,
   "theme": {
     "primaryColor": "emerald",
     "gradientFrom": "from-emerald-500",

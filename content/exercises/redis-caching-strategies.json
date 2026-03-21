@@ -3,13 +3,22 @@
   "title": "Redis Caching Strategies for Scalable Applications",
   "description": "Implement production-ready caching patterns with Redis to dramatically improve application performance and scalability.",
   "category": {
-    "name": "Database",
-    "slug": "database"
+    "name": "DevOps",
+    "slug": "devops"
   },
   "difficulty": "intermediate",
   "estimatedTime": "70 minutes",
-  "technologies": ["Redis", "Node.js", "Docker", "Caching"],
-  "prerequisites": ["Basic Redis knowledge", "Node.js fundamentals", "Understanding of API design"],
+  "technologies": [
+    "Redis",
+    "Node.js",
+    "Docker",
+    "Caching"
+  ],
+  "prerequisites": [
+    "Basic Redis knowledge",
+    "Node.js fundamentals",
+    "Understanding of API design"
+  ],
   "learningObjectives": [
     "Implement cache-aside and write-through patterns",
     "Design effective cache invalidation strategies",
@@ -23,7 +32,13 @@
     "name": "DevOps Daily Team",
     "slug": "devops-daily-team"
   },
-  "tags": ["Redis", "Caching", "Performance", "Scalability", "Database"],
+  "tags": [
+    "Redis",
+    "Caching",
+    "Performance",
+    "Scalability",
+    "Database"
+  ],
   "steps": [
     {
       "id": "setup-redis-environment",

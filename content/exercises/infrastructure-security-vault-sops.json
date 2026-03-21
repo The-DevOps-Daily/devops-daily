@@ -3,12 +3,18 @@
   "title": "Infrastructure Security with Vault and SOPS",
   "description": "Implement enterprise-grade secret management using HashiCorp Vault and SOPS for encrypted GitOps workflows.",
   "category": {
-    "name": "Security",
-    "slug": "security"
+    "name": "DevOps",
+    "slug": "devops"
   },
   "difficulty": "advanced",
   "estimatedTime": "100 minutes",
-  "technologies": ["HashiCorp Vault", "SOPS", "Kubernetes", "GPG", "KMS"],
+  "technologies": [
+    "HashiCorp Vault",
+    "SOPS",
+    "Kubernetes",
+    "GPG",
+    "KMS"
+  ],
   "prerequisites": [
     "Kubernetes cluster",
     "Basic cryptography knowledge",
@@ -29,7 +35,13 @@
     "name": "DevOps Daily Team",
     "slug": "devops-daily-team"
   },
-  "tags": ["Security", "Vault", "SOPS", "Encryption", "Secret Management"],
+  "tags": [
+    "Security",
+    "Vault",
+    "SOPS",
+    "Encryption",
+    "Secret Management"
+  ],
   "steps": [
     {
       "id": "vault-deployment",

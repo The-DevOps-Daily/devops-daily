@@ -4,7 +4,7 @@
   "description": "Master the fundamentals of monitoring, metrics, logging, alerting, and observability concepts for effective system health management",
   "category": "Monitoring",
   "icon": "Activity",
-  "totalPoints": 100,
+  "totalPoints": 99,
   "theme": {
     "primaryColor": "purple",
     "gradientFrom": "from-purple-500",
@@ -169,7 +169,7 @@
       ],
       "correctAnswer": 1,
       "explanation": "99.9% uptime (three nines) means the service can be down for approximately 0.1% of the time. Per month (30 days), this equals about 43.2 minutes of acceptable downtime. 99.99% (four nines) would be about 4.3 minutes per month.",
-      "hint": "Calculate 0.1% of a month (30 days \u00d7 24 hours \u00d7 60 minutes).",
+      "hint": "Calculate 0.1% of a month (30 days × 24 hours × 60 minutes).",
       "difficulty": "beginner",
       "points": 6
     },
