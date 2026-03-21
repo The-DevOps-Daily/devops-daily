@@ -157,6 +157,61 @@ export function ArticleSchema({
   );
 }
 
+export function LearningResourceSchema({
+  title,
+  description,
+  difficulty,
+  estimatedTime,
+  learningObjectives,
+  technologies,
+  url,
+}: {
+  title: string;
+  description: string;
+  difficulty: string;
+  estimatedTime: string;
+  learningObjectives: string[];
+  technologies: string[];
+  url: string;
+}) {
+  // Convert "75 minutes" -> "PT75M", "2 hours" -> "PT2H"
+  const timeMatch = estimatedTime.match(/(\d+)\s*(min|hour|hr)/i);
+  const isoDuration = timeMatch
+    ? timeMatch[2].toLowerCase().startsWith('h')
+      ? `PT${timeMatch[1]}H`
+      : `PT${timeMatch[1]}M`
+    : `PT${estimatedTime.replace(/\D/g, '')}M`;
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'LearningResource',
+    name: title,
+    description,
+    url: `${SITE_URL}${url}`,
+    learningResourceType: 'hands-on exercise',
+    educationalLevel: difficulty.charAt(0).toUpperCase() + difficulty.slice(1),
+    timeRequired: isoDuration,
+    teaches: learningObjectives,
+    about: technologies.map((tech) => ({
+      '@type': 'Thing',
+      name: tech,
+    })),
+    interactivityType: 'active',
+    isAccessibleForFree: true,
+    inLanguage: 'en',
+    provider: {
+      '@id': ORGANIZATION_ID,
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 export function BreadcrumbSchema({ items }: { items: { name: string; url: string }[] }) {
   const siteUrl = SITE_URL;
 
