@@ -3,6 +3,7 @@ import UptimeDefender from '@/components/games/uptime-defender';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
@@ -32,6 +33,18 @@ export default async function UptimeDefenderPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="Uptime Defender"
+        description="Defend your infrastructure uptime against real-world incidents. Handle server failures, network outages, deployment issues, and security incidents in this incident response simulation game."
+        category="SRE"
+        tags={["sre", "incident-response", "uptime", "reliability"]}
+        learningPoints={[
+            "Practice incident response workflows",
+            "Prioritize and triage production issues",
+            "Learn about SLAs, SLOs, and error budgets",
+            "Handle cascading failures",
+        ]}
+      />
 
       {/* Page H1 heading for SEO and accessibility */}
       <h1 className="sr-only">Uptime Defender - SRE Incident Response Game</h1>

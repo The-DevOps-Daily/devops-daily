@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Twitter, Facebook, Linkedin, Activity } from 'lucide-react';
 import K8sScheduler from '@/components/games/k8s-scheduler';
@@ -37,6 +38,18 @@ export default async function K8sSchedulerPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="Kubernetes Scheduler Simulator"
+        description="Learn how the Kubernetes scheduler assigns pods to nodes. Understand resource requests and limits, node affinity, taints and tolerations, and scheduling priorities through interactive simulation."
+        category="Kubernetes"
+        tags={["kubernetes", "scheduling", "pods", "nodes", "resources"]}
+        learningPoints={[
+            "Understand Kubernetes pod scheduling algorithm",
+            "Configure resource requests and limits",
+            "Use node affinity, taints, and tolerations",
+            "Debug scheduling failures",
+        ]}
+      />
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />
