@@ -8,7 +8,7 @@ coverImage: '/images/posts/heroku-vs-self-hosting-cost-analysis.png'
 ogImage: '/images/posts/heroku-vs-self-hosting-cost-analysis.png'
 date: '2026-03-03'
 publishedAt: '2026-03-03T10:00:00Z'
-updatedAt: '2026-03-03T10:00:00Z'
+updatedAt: '2026-03-05T09:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'

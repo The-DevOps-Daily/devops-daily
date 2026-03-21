@@ -6,7 +6,7 @@ category:
   slug: 'ci-cd'
 date: '2024-11-18'
 publishedAt: '2024-11-18T10:00:00Z'
-updatedAt: '2024-11-18T10:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'

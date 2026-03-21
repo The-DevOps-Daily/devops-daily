@@ -8,6 +8,7 @@ coverImage: '/images/posts/cloud-bill-organizational-problem.png'
 ogImage: '/images/posts/cloud-bill-organizational-problem.svg'
 date: '2026-03-06'
 publishedAt: '2026-03-06T10:00:00Z'
+updatedAt: '2026-03-03T09:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'

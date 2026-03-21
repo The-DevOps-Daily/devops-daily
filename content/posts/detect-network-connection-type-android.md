@@ -6,7 +6,7 @@ category:
   slug: 'networking'
 date: '2024-11-05'
 publishedAt: '2024-11-05T12:00:00Z'
-updatedAt: '2024-11-05T12:00:00Z'
+updatedAt: '2026-03-01T09:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'

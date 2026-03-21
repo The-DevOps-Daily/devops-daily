@@ -6,7 +6,7 @@ category:
   slug: 'git'
 date: '2024-11-25'
 publishedAt: '2024-11-25T14:00:00Z'
-updatedAt: '2024-11-25T14:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '7 min'
 author:
   name: 'DevOps Daily Team'

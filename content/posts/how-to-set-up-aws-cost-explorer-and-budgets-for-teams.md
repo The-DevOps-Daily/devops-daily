@@ -6,7 +6,7 @@ category:
   slug: 'aws'
 date: '2025-11-22'
 publishedAt: '2025-11-22T09:00:00Z'
-updatedAt: '2025-11-22T09:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'

@@ -6,7 +6,7 @@ category:
   slug: 'docker'
 date: '2024-05-01'
 publishedAt: '2024-05-01T09:00:00Z'
-updatedAt: '2024-05-01T09:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'

@@ -6,7 +6,7 @@ category:
   slug: 'python'
 date: '2024-08-11'
 publishedAt: '2024-08-11T09:00:00Z'
-updatedAt: '2024-05-30T09:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '6 min read'
 author:
   name: 'DevOps Daily Team'

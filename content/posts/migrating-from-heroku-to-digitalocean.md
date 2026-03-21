@@ -8,6 +8,7 @@ coverImage: '/images/posts/migrating-from-heroku-to-digitalocean.png'
 ogImage: '/images/posts/migrating-from-heroku-to-digitalocean.svg'
 date: '2026-03-08'
 publishedAt: '2026-03-08T10:00:00Z'
+updatedAt: '2026-03-05T09:00:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
