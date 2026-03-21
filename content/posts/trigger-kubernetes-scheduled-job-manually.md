@@ -111,3 +111,11 @@ Imagine you have a CronJob that backs up a database every night. You need to run
 ## Conclusion
 
 Manually triggering a Kubernetes Scheduled Job is a straightforward process that can be invaluable for testing and debugging. By following the methods and best practices outlined here, you can run tasks on demand while maintaining the integrity of your cluster.
+
+
+## Related Resources
+
+- [How to Set Multiple Commands in YAML](/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)
+- [DevOps Roadmap](/roadmap)

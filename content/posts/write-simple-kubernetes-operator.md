@@ -1093,3 +1093,12 @@ From here, you can extend your operator with:
 - **Leader election** for high availability (already built into the Manager)
 
 The Kubebuilder book and Operator SDK documentation provide deeper dives into these topics. Start simple, solve a real problem, and iterate based on actual needs.
+
+
+## Related Resources
+
+- [Kubernetes Operators Quiz](/quizzes/kubernetes-operators-quiz)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
+- [Helm Kubernetes Packaging Exercise](/exercises/helm-kubernetes-packaging)
+- [DevOps Roadmap](/roadmap)
+- [DevOps Survival Guide](/books/devops-survival-guide)

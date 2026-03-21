@@ -76,3 +76,11 @@ For advanced scenarios, use Init Containers to ensure Pods restart when a Config
 ## Conclusion
 
 Restarting Pods when a ConfigMap is updated ensures your application uses the latest configuration. By following these steps, you can automate and manage Pod restarts effectively.
+
+
+## Related Resources
+
+- [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret)
+- [How to Update Kubernetes Secret from File](/posts/how-to-update-kubernetes-secret-from-file)
+- [Introduction to Kubernetes: ConfigMaps and Secrets](/guides/introduction-to-kubernetes)
+- [Kubernetes Security Checklist](/checklists/kubernetes-security)

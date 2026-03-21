@@ -112,3 +112,12 @@ This removes the Deployment and its associated Pods.
 ## Conclusion
 
 Kubernetes' ability to recreate Pods is a powerful feature that ensures application reliability and minimizes downtime. By understanding the mechanisms behind this behavior, you can manage your Pods and controllers effectively.
+
+
+## Related Resources
+
+- [Kubernetes Deployments vs StatefulSets](/posts/kubernetes-deployments-vs-statefulsets)
+- [Fix Pods Stuck Terminating](/posts/fix-pods-stuck-terminating-kubernetes)
+- [Force Kubernetes to Repull Image](/posts/force-kubernetes-repull-image)
+- [Introduction to Kubernetes: Deployments](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)

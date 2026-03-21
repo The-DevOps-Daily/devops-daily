@@ -137,3 +137,11 @@ This can be visualized as follows:
 ## Next Steps
 
 You can expand on this by using Kubernetes Init Containers for pre-start tasks, or by orchestrating more advanced workflows with Jobs and CronJobs. Try experimenting with different shell scripting techniques to make your container startup logic robust and maintainable.
+
+
+## Related Resources
+
+- [Get YAML for Deployed Services](/posts/get-yaml-for-deployed-kubernetes-services)
+- [How to Keep a Container Running](/posts/how-can-i-keep-a-container-running-on-kubernetes)
+- [Introduction to Kubernetes: Pods](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)

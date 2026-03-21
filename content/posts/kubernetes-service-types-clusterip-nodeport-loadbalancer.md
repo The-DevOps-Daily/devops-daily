@@ -426,3 +426,12 @@ Now that you understand Kubernetes service types, consider learning about:
 - Network policies for service security
 - Custom resource definitions for specialized services
 - Monitoring and observability for service performance
+
+
+## Related Resources
+
+- [Ingress vs Load Balancer](/posts/ingress-vs-load-balancer-kubernetes)
+- [Difference Between TargetPort and Port](/posts/difference-between-targetport-and-port-in-kubernetes-service-definition)
+- [Kubernetes Service External IP Pending](/posts/kubernetes-service-external-ip-pending)
+- [Introduction to Kubernetes: Services and Networking](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)

@@ -181,3 +181,11 @@ This configuration ensures your application can recover with its data intact.
 ## Conclusion
 
 By following these configurations and best practices, you can ensure your containers stay running on Kubernetes, providing reliable service to your users.
+
+
+## Related Resources
+
+- [Why Does a Pod Get Recreated When Deleted?](/posts/why-does-kubernetes-pod-get-recreated-when-deleted)
+- [Pods CrashLoopBackOff: No Logs](/posts/kubernetes-pods-crashloopbackoff-no-logs)
+- [Introduction to Kubernetes: Pods](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)

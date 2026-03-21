@@ -113,3 +113,12 @@ If this pod runs, the problem is likely with your original image or entrypoint.
 ## Next Steps
 
 Once you identify the root cause, update your deployment or image as needed. Consider adding better error handling and logging to your application startup scripts. For ongoing reliability, use readiness and liveness probes to catch issues early and automate recovery.
+
+
+## Related Resources
+
+- [Fix Pods Stuck Terminating](/posts/fix-pods-stuck-terminating-kubernetes)
+- [Why Does a Pod Get Recreated When Deleted?](/posts/why-does-kubernetes-pod-get-recreated-when-deleted)
+- [How to Keep a Container Running](/posts/how-can-i-keep-a-container-running-on-kubernetes)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)

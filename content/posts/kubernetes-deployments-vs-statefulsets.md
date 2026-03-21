@@ -137,3 +137,12 @@ With a StatefulSet, each pod has a stable name and order:
 Try deploying both a Deployment and a StatefulSet in your cluster to see the differences in action. Explore how rolling updates, scaling, and pod restarts behave for each controller.
 
 As your workloads grow, understanding these patterns will help you design more reliable and maintainable systems.
+
+
+## Related Resources
+
+- [Why Does a Pod Get Recreated When Deleted?](/posts/why-does-kubernetes-pod-get-recreated-when-deleted)
+- [Kubernetes Persistent Storage](/posts/docker-persistent-storage-databases)
+- [Introduction to Kubernetes: Deployments and ReplicaSets](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)
+- [DevOps Survival Guide](/books/devops-survival-guide)

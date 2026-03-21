@@ -102,3 +102,11 @@ When you decode a secret, the flow looks like this:
 ## Next Steps
 
 Explore how to create and update secrets securely, or look into using external secret management tools like HashiCorp Vault or Azure Key Vault for production environments.
+
+
+## Related Resources
+
+- [How to Update Kubernetes Secret from File](/posts/how-to-update-kubernetes-secret-from-file)
+- [Restart Pods When ConfigMap Updates](/posts/restart-pods-when-configmap-updates-in-kubernetes)
+- [Introduction to Kubernetes: ConfigMaps and Secrets](/guides/introduction-to-kubernetes)
+- [Kubernetes Security Checklist](/checklists/kubernetes-security)

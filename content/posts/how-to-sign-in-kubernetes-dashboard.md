@@ -97,3 +97,11 @@ You should now have full access to the dashboard.
 ## Next Steps
 
 Explore the dashboard's features, or set up role-based access control (RBAC) for more granular permissions. For production clusters, consider integrating with your organization's authentication provider for single sign-on and audit logging.
+
+
+## Related Resources
+
+- [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
+- [Kubernetes Security Checklist](/checklists/kubernetes-security)
+- [DevOps Roadmap](/roadmap)

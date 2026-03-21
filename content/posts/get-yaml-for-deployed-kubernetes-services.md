@@ -83,3 +83,11 @@ This command saves the YAML to a file named `example-service.yaml`.
 ## Conclusion
 
 Retrieving the YAML configuration for Kubernetes Services is a straightforward process that can help with debugging and replication. By using the `kubectl get` command, you can easily access and save these configurations for future use.
+
+
+## Related Resources
+
+- [Kubernetes Service Types](/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer)
+- [Kubernetes List All Pods and Nodes](/posts/kubernetes-list-all-pods-and-nodes)
+- [Set Multiple Commands in One YAML](/posts/how-to-set-multiple-commands-in-one-yaml-file-with-kubernetes)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)

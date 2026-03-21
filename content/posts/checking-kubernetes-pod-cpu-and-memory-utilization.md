@@ -88,3 +88,12 @@ This command provides detailed information, including resource requests and limi
 ## Conclusion
 
 Monitoring CPU and memory utilization of Kubernetes Pods is crucial for maintaining cluster performance. By using `kubectl top` and metrics-server, you can efficiently track resource usage and optimize your applications.
+
+
+## Related Resources
+
+- [5-Minute Kubernetes Cluster Health Check](/posts/5-minute-kubernetes-cluster-health-check)
+- [Right-Sizing Kubernetes Resources](/posts/right-sizing-kubernetes-resources-vpa-karpenter)
+- [Introduction to Kubernetes: Resource Management](/guides/introduction-to-kubernetes)
+- [Kubernetes HPA Lab Exercise](/exercises/kubernetes-hpa-lab)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)

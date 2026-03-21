@@ -95,3 +95,11 @@ Deleting all resources in the cluster is a destructive action. Ensure you have b
 ## Conclusion
 
 Deleting all resources in Kubernetes can be done efficiently using `kubectl` commands. By following these steps, you can clean up namespaces or entire clusters while minimizing risks.
+
+
+## Related Resources
+
+- [Switch Namespace in Kubernetes](/posts/switch-namespace-in-kubernetes)
+- [Fix Pods Stuck Terminating](/posts/fix-pods-stuck-terminating-kubernetes)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)

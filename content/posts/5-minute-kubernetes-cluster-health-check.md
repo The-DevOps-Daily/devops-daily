@@ -133,3 +133,12 @@ k9s lets you browse resources, view logs, and drill into problems without typing
 Once you try k9s, it's hard to go back to plain kubectl for exploratory tasks. It's particularly useful when you need to quickly jump between different namespaces or resource types during troubleshooting.
 
 Five minutes a day is all it takes to stay ahead of most cluster problems. Make this health check part of your daily routine and you'll catch issues before they blow up and before your pager goes off at 3 a.m. Regular monitoring helps you understand your cluster's normal behavior, making it easier to spot anomalies when they occur.
+
+
+## Related Resources
+
+- [Checking Pod CPU and Memory](/posts/checking-kubernetes-pod-cpu-and-memory-utilization)
+- [Kubernetes List All Pods and Nodes](/posts/kubernetes-list-all-pods-and-nodes)
+- [Introduction to Kubernetes: Monitoring](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)
+- [DevOps Roadmap](/roadmap)

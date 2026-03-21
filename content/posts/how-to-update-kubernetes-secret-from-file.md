@@ -75,3 +75,11 @@ Make sure to base64-encode the new file content before updating the YAML.
 ## Next Steps
 
 Explore tools like Sealed Secrets or external secret managers for more advanced workflows. Automate secret updates as part of your CI/CD pipeline to keep your cluster secure and up to date.
+
+
+## Related Resources
+
+- [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret)
+- [Restart Pods When ConfigMap Updates](/posts/restart-pods-when-configmap-updates-in-kubernetes)
+- [Introduction to Kubernetes: ConfigMaps and Secrets](/guides/introduction-to-kubernetes)
+- [Kubernetes Security Checklist](/checklists/kubernetes-security)

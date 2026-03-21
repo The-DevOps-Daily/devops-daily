@@ -351,3 +351,11 @@ If you don't have 3+ of these signals, **simpler infrastructure will ship produc
 The goal isn't to avoid Kubernetes forever. It's to **adopt complexity when it solves real problems**, not when it's fashionable.
 
 Most teams ship faster, learn more, and build better products by starting simple. You can always add complexity later. You can't easily remove it once you're locked in.
+
+
+## Related Resources
+
+- [Right-Sizing Kubernetes Resources](/posts/right-sizing-kubernetes-resources-vpa-karpenter)
+- [Kubernetes Deployments vs StatefulSets](/posts/kubernetes-deployments-vs-statefulsets)
+- [Introduction to Kubernetes: Best Practices](/guides/introduction-to-kubernetes)
+- [DevOps Survival Guide](/books/devops-survival-guide)
