@@ -711,3 +711,12 @@ Start with the feature that addresses your biggest pain point:
 Then progressively adopt the others. The combined effect is greater than the sum of the parts. A well-optimized Dockerfile using all five features builds faster, produces smaller images, runs more reliably, and maintains better security than basic approaches.
 
 The Docker documentation has detailed guides for each feature. The BuildKit documentation in particular covers many additional capabilities beyond what we've covered here. Experiment with these features in development first, measure the impact, and then roll them out to production.
+
+## Related Resources
+
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — harden containers for production
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller, faster images
+- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build) — hands-on practice
+- [Docker Security Checklist](/checklists/docker-security) — verify your setup
+- [Introduction to Docker: Best Practices](/guides/introduction-to-docker) — comprehensive guide
+- [DevOps Survival Guide](/books/devops-survival-guide) — broader DevOps learning path

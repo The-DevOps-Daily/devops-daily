@@ -438,3 +438,11 @@ services:
 This adds timestamps and prefixes to make it easier to follow the initialization process in the logs.
 
 You now have multiple approaches for executing multiple commands in Docker Compose, from simple command chaining to complex multi-service initialization patterns. Choose the approach that best fits your application's complexity and requirements, starting simple and adding sophistication as needed.
+
+## Related Resources
+
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — understand container networking
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — configure services without hardcoding
+- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile) — choose the right Dockerfile instruction
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from the ground up
+- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge

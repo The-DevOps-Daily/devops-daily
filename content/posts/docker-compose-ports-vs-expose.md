@@ -361,3 +361,13 @@ You now understand the fundamental difference between `ports` and `expose` in Do
 Start with minimal external exposure and add ports only when necessary. This approach keeps your applications secure while maintaining the flexibility to access services when needed for development and testing.
 
 Consider using reverse proxies like nginx or Traefik to further control access to your services, especially in production environments where you want fine-grained control over routing and security.
+
+## Related Resources
+
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — configure containers without hardcoding values
+- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands) — chain commands in your Compose services
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — deep dive into Docker networking fundamentals
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — harden containers for production
+- [Docker Security Checklist](/checklists/docker-security) — verify your Docker setup
+- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
+- [DevOps Roadmap](/roadmap) — see where Docker fits in the bigger picture

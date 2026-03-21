@@ -125,3 +125,12 @@ The `app.env` file should use `KEY=VALUE` format, one per line.
 ## Conclusion
 
 Environment variables in docker-compose make your setups more secure, portable, and maintainable. Use `.env` files, variable substitution, and the `environment` key to manage configs cleanly. Always keep secrets safe and document your variables for your team.
+
+## Related Resources
+
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — understand container networking and port publishing
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — keep secrets out of images and more
+- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands) — chain commands in Compose services
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from the ground up
+- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
+- [DevOps Roadmap](/roadmap) — see where Docker fits in the bigger picture
