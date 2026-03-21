@@ -4,7 +4,7 @@
   "description": "Master Kubernetes app deployment through real-world Helm scenarios covering chart creation, dependency management, and complex templating challenges",
   "category": "Helm",
   "icon": "Package",
-  "totalPoints": 140,
+  "totalPoints": 147,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-500",

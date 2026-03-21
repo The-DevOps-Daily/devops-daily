@@ -4,7 +4,7 @@
   "description": "Master cloud architecture through real-world AWS scenarios covering compute, storage, networking, and best practices",
   "category": "AWS",
   "icon": "Cloud",
-  "totalPoints": 135,
+  "totalPoints": 181,
   "theme": {
     "primaryColor": "orange",
     "gradientFrom": "from-orange-500",

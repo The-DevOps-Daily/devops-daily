@@ -4,7 +4,7 @@
   "description": "Master continuous integration and deployment with practical pipeline scenarios and best practices",
   "category": "CI/CD",
   "icon": "Code",
-  "totalPoints": 96,
+  "totalPoints": 110,
   "theme": {
     "primaryColor": "emerald",
     "gradientFrom": "from-emerald-500",

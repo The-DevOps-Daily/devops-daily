@@ -4,7 +4,7 @@
   "description": "Master application monitoring, metrics collection, logging, and observability best practices",
   "category": "Monitoring",
   "icon": "Code",
-  "totalPoints": 108,
+  "totalPoints": 126,
   "theme": {
     "primaryColor": "amber",
     "gradientFrom": "from-amber-500",

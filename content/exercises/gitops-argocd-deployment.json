@@ -3,12 +3,18 @@
   "title": "GitOps with ArgoCD - Automated Kubernetes Deployments",
   "description": "Implement GitOps workflows using ArgoCD for automated, declarative, and auditable Kubernetes application deployments.",
   "category": {
-    "name": "GitOps",
-    "slug": "gitops"
+    "name": "DevOps",
+    "slug": "devops"
   },
   "difficulty": "advanced",
   "estimatedTime": "120 minutes",
-  "technologies": ["ArgoCD", "GitOps", "Kubernetes", "Git", "YAML"],
+  "technologies": [
+    "ArgoCD",
+    "GitOps",
+    "Kubernetes",
+    "Git",
+    "YAML"
+  ],
   "prerequisites": [
     "Kubernetes cluster access",
     "Git repository access",
@@ -30,7 +36,13 @@
     "name": "DevOps Daily Team",
     "slug": "devops-daily-team"
   },
-  "tags": ["GitOps", "ArgoCD", "Kubernetes", "CI/CD", "Automation"],
+  "tags": [
+    "GitOps",
+    "ArgoCD",
+    "Kubernetes",
+    "CI/CD",
+    "Automation"
+  ],
   "steps": [
     {
       "id": "argocd-installation",

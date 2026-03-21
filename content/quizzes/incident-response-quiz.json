@@ -4,7 +4,7 @@
   "description": "Test your skills handling real production outages, performance issues, and system failures under pressure",
   "category": "Incident Response",
   "icon": "AlertTriangle",
-  "totalPoints": 130,
+  "totalPoints": 150,
   "theme": {
     "primaryColor": "red",
     "gradientFrom": "from-red-500",

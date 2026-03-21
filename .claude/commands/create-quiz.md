@@ -92,7 +92,7 @@ Each question MUST follow this format:
 6. Avoid "All of the above" or "None of the above" options
 
 ### Quiz Composition
-- **15 questions minimum** for a full quiz
+- **10 questions minimum** for a full quiz (15+ is ideal for comprehensive coverage)
 - Mix of difficulties: ~20% beginner, ~55% intermediate, ~25% advanced
 - Questions should progress from easier to harder
 - Cover breadth of the topic, not just one subtopic

@@ -3,12 +3,19 @@
   "title": "Complete Web Server Automation with Ansible",
   "description": "Build a comprehensive Ansible playbook to automate web server deployment, configuration, and security hardening across multiple environments.",
   "category": {
-    "name": "Ansible",
-    "slug": "ansible"
+    "name": "DevOps",
+    "slug": "devops"
   },
   "difficulty": "intermediate",
   "estimatedTime": "75 minutes",
-  "technologies": ["Ansible", "Nginx", "SSL/TLS", "UFW", "Ubuntu", "CentOS"],
+  "technologies": [
+    "Ansible",
+    "Nginx",
+    "SSL/TLS",
+    "UFW",
+    "Ubuntu",
+    "CentOS"
+  ],
   "prerequisites": [
     "Basic Ansible knowledge",
     "SSH access to target servers",
@@ -29,7 +36,14 @@
     "name": "DevOps Daily Team",
     "slug": "devops-daily-team"
   },
-  "tags": ["Ansible", "Web Server", "Nginx", "SSL", "Security", "Automation"],
+  "tags": [
+    "Ansible",
+    "Web Server",
+    "Nginx",
+    "SSL",
+    "Security",
+    "Automation"
+  ],
   "steps": [
     {
       "id": "project-setup",
@@ -127,7 +141,9 @@
       "title": "Create Dynamic Index Page Template",
       "description": "Build a dynamic index page that displays server information and deployment details.",
       "codeExample": "# templates/index.html.j2\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>{{ server_name }} - Deployed with Ansible</title>\n    <style>\n        body {\n            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n            max-width: 800px;\n            margin: 0 auto;\n            padding: 20px;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            min-height: 100vh;\n        }\n        .container {\n            background: rgba(255, 255, 255, 0.1);\n            backdrop-filter: blur(10px);\n            border-radius: 15px;\n            padding: 40px;\n            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);\n        }\n        .header {\n            text-align: center;\n            margin-bottom: 40px;\n        }\n        .status {\n            background: rgba(46, 204, 113, 0.2);\n            border: 1px solid #2ecc71;\n            border-radius: 8px;\n            padding: 15px;\n            margin: 20px 0;\n        }\n        .info-grid {\n            display: grid;\n            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));\n            gap: 20px;\n            margin: 30px 0;\n        }\n        .info-card {\n            background: rgba(255, 255, 255, 0.1);\n            border-radius: 10px;\n            padding: 20px;\n        }\n        .info-card h3 {\n            margin-top: 0;\n            color: #3498db;\n        }\n        ul {\n            list-style: none;\n            padding: 0;\n        }\n        li {\n            padding: 5px 0;\n            border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n        }\n        .highlight {\n            color: #f39c12;\n            font-weight: bold;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <div class=\"header\">\n            <h1>🚀 Web Server Successfully Deployed!</h1>\n            <p>Automated deployment with Ansible</p>\n        </div>\n\n        <div class=\"status\">\n            <h2>✅ Deployment Status: SUCCESS</h2>\n            <p>Deployed on: <span class=\"highlight\">{{ ansible_date_time.iso8601 }}</span></p>\n        </div>\n\n        <div class=\"info-grid\">\n            <div class=\"info-card\">\n                <h3>🖥️ Server Information</h3>\n                <ul>\n                    <li><strong>Hostname:</strong> {{ inventory_hostname }}</li>\n                    <li><strong>Server Name:</strong> {{ server_name }}</li>\n                    <li><strong>IP Address:</strong> {{ ansible_default_ipv4.address }}</li>\n                    <li><strong>Operating System:</strong> {{ ansible_distribution }} {{ ansible_distribution_version }}</li>\n                    <li><strong>Architecture:</strong> {{ ansible_architecture }}</li>\n                    <li><strong>CPU Cores:</strong> {{ ansible_processor_vcpus }}</li>\n                    <li><strong>Memory:</strong> {{ (ansible_memtotal_mb / 1024) | round(1) }} GB</li>\n                </ul>\n            </div>\n\n            <div class=\"info-card\">\n                <h3>🌐 Web Server Configuration</h3>\n                <ul>\n                    <li><strong>Web Server:</strong> Nginx {{ nginx_version }}</li>\n                    <li><strong>SSL/TLS:</strong> Enabled ({{ environments[ansible_env].ssl_protocols | default('TLSv1.2 TLSv1.3') }})</li>\n                    <li><strong>Environment:</strong> {{ ansible_env | upper }}</li>\n                    <li><strong>Worker Processes:</strong> {{ nginx_worker_processes }}</li>\n                    <li><strong>Document Root:</strong> {{ document_root }}</li>\n                    <li><strong>App User:</strong> {{ app_user }}</li>\n                </ul>\n            </div>\n\n            <div class=\"info-card\">\n                <h3>🔒 Security Features</h3>\n                <ul>\n                    <li><strong>Firewall:</strong> UFW Enabled</li>\n                    <li><strong>Allowed Ports:</strong> {{ firewall_allowed_ports | join(', ') }}</li>\n                    <li><strong>SSL Certificate:</strong> {{ ssl_cert_file }}</li>\n                    <li><strong>Security Headers:</strong> Enabled</li>\n                    <li><strong>Server Tokens:</strong> Hidden</li>\n                </ul>\n            </div>\n\n            <div class=\"info-card\">\n                <h3>⚡ Performance Settings</h3>\n                <ul>\n                    <li><strong>Gzip Compression:</strong> Enabled</li>\n                    <li><strong>Keep-Alive Timeout:</strong> {{ nginx_keepalive_timeout }}s</li>\n                    <li><strong>Worker Connections:</strong> {{ nginx_worker_connections }}</li>\n                    <li><strong>Client Max Body Size:</strong> {{ nginx_client_max_body_size }}</li>\n                    <li><strong>Static File Caching:</strong> 1 year</li>\n                </ul>\n            </div>\n        </div>\n\n        <div class=\"status\">\n            <h3>🎯 Quick Tests</h3>\n            <p>• SSL Certificate: <a href=\"https://{{ server_name }}\" style=\"color: #3498db;\">https://{{ server_name }}</a></p>\n            <p>• Security Headers: Check with security scanning tools</p>\n            <p>• Performance: Test with tools like GTmetrix or PageSpeed Insights</p>\n        </div>\n\n        <div style=\"text-align: center; margin-top: 40px; font-size: 14px; opacity: 0.8;\">\n            <p>Deployed with ❤️ using Ansible automation</p>\n            <p>Deployment ID: {{ ansible_date_time.epoch }}</p>\n        </div>\n    </div>\n</body>\n</html>",
-      "commands": ["cat templates/index.html.j2"],
+      "commands": [
+        "cat templates/index.html.j2"
+      ],
       "validationCriteria": [
         "Index template is created",
         "Template uses Ansible facts and variables",

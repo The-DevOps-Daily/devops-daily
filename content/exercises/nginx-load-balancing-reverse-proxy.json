@@ -3,13 +3,22 @@
   "title": "Nginx Load Balancing and Reverse Proxy",
   "description": "Master load balancing and reverse proxy patterns with Nginx to build resilient, scalable infrastructure.",
   "category": {
-    "name": "Infrastructure",
-    "slug": "infrastructure"
+    "name": "Networking",
+    "slug": "networking"
   },
   "difficulty": "intermediate",
   "estimatedTime": "75 minutes",
-  "technologies": ["Nginx", "Docker", "Node.js", "Load Balancing"],
-  "prerequisites": ["Basic networking knowledge", "Docker fundamentals", "Command line proficiency"],
+  "technologies": [
+    "Nginx",
+    "Docker",
+    "Node.js",
+    "Load Balancing"
+  ],
+  "prerequisites": [
+    "Basic networking knowledge",
+    "Docker fundamentals",
+    "Command line proficiency"
+  ],
   "learningObjectives": [
     "Configure Nginx as a reverse proxy",
     "Implement load balancing strategies",
@@ -23,7 +32,13 @@
     "name": "DevOps Daily Team",
     "slug": "devops-daily-team"
   },
-  "tags": ["Nginx", "Load Balancing", "Reverse Proxy", "High Availability", "Networking"],
+  "tags": [
+    "Nginx",
+    "Load Balancing",
+    "Reverse Proxy",
+    "High Availability",
+    "Networking"
+  ],
   "steps": [
     {
       "id": "setup-backend-services",

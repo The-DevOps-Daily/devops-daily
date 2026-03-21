@@ -1,43 +1,54 @@
 # Link Checker Agent
 
-Check external and internal links in DevOps Daily content for broken URLs, redirects, and stale references.
+Check internal links in DevOps Daily content for broken references.
 
-This agent leverages the existing `scripts/check-broken-links.ts` for internal links (post-build) and adds external link checking for markdown content.
+This agent focuses on **internal links only** — verifying that markdown links to other content on the site actually resolve to existing files. It does not check external URLs (use a dedicated script like `curl` for that).
 
 ## How to use
 
 The user may specify:
-- A specific file or content type to check
-- "internal" — internal links only (uses existing script output or scans markdown)
-- "external" — external URLs only (fetches each URL)
-- Default: check both
+- A specific file to check (e.g., `content/posts/docker-security-best-practices.md`)
+- A content type (e.g., "posts", "guides", "exercises")
+- A topic/category filter (e.g., "kubernetes", "docker") — only check files in that category
+- Default (no argument): check all posts
+
+## Scoping
+
+To keep runs fast and focused:
+- If the user specifies a topic (e.g., "kubernetes"), only scan files whose filename or frontmatter category matches that topic
+- If checking "all posts", process them in batches and report as you go
+- Never try to check all 800+ posts in one run — cap at 50 files unless the user explicitly asks for more
 
 ## Internal Link Checking
 
-The project already has `scripts/check-broken-links.ts` which checks internal links in built HTML output. However, this requires a build. For a faster pre-build check:
+Scan markdown files for internal links and verify the target content exists:
 
-1. Scan markdown files for internal links: patterns like `](/posts/...`, `](/guides/...`, `](/exercises/...`
-2. Verify the target content exists:
-   - `/posts/<slug>` → check `content/posts/<slug>.md` exists
-   - `/guides/<slug>` → check `content/guides/<slug>/index.md` exists
-   - `/exercises/<slug>` → check `content/exercises/<slug>.json` exists
-   - `/quizzes/<slug>` → check `content/quizzes/<slug>.json` exists
-   - `/categories/<slug>` → check `content/categories/<slug>.md` exists
+1. Extract links matching these patterns:
+   - `](/posts/<slug>)` or `(/posts/<slug>`
+   - `](/guides/<slug>)` or `](/guides/<slug>/<part>)`
+   - `](/exercises/<slug>)`
+   - `](/quizzes/<slug>)`
+   - `](/categories/<slug>)`
+   - `](/checklists/<slug>)`
+   - `](/flashcards/<slug>)`
+   - `](/interview-questions/<slug>)`
 
-## External Link Checking
+2. Verify each target exists:
+   - `/posts/<slug>` → `content/posts/<slug>.md`
+   - `/guides/<slug>` → `content/guides/<slug>/index.md`
+   - `/guides/<slug>/<part>` → `content/guides/<slug>/<part>.md` (match by slug, parts have number prefixes)
+   - `/exercises/<slug>` → `content/exercises/<slug>.json`
+   - `/quizzes/<slug>` → `content/quizzes/<slug>.json`
+   - `/categories/<slug>` → `content/categories/<slug>.md`
+   - `/checklists/<slug>` → `content/checklists/<slug>.json`
+   - `/flashcards/<slug>` → `content/flashcards/<slug>.json`
+   - `/interview-questions/<slug>` → `content/interview-questions/<slug>.json`
 
-For external URLs found in markdown content:
-1. Extract all URLs starting with `http://` or `https://`
-2. For each unique URL, use `WebFetch` or `curl` to check if it's reachable
-3. Report: HTTP status, redirect chains, timeouts
-4. Flag: 404s, 5xx errors, excessive redirects, HTTP→HTTPS redirects (suggest updating URL)
+3. For broken links, try to suggest the correct path by searching for similar slugs with Grep or Glob.
 
-**Rate limiting**: Check at most 5 URLs per second to avoid being blocked. Focus on unique URLs — many posts may link to the same documentation pages.
+## Also check: missing internal links
 
-**Scope priority**: If checking "everything" would mean hundreds of external URLs, prioritize:
-1. News digests (most likely to have stale links — they reference current events)
-2. Posts (long-lived content with reference links)
-3. Guides (critical learning resources)
+For each scanned file, briefly note if the file has **zero internal links** — this is a common issue and an SEO problem. Just count them and flag files with none.
 
 ## Output Format
 
@@ -47,22 +58,17 @@ For external URLs found in markdown content:
 ### Summary
 - Files scanned: N
 - Internal links checked: N (X broken)
-- External links checked: N (X broken, Y redirected)
+- Files with zero internal links: N
 
 ### Broken Internal Links
 | Source File | Broken Link | Suggested Fix |
 |-------------|-------------|---------------|
-| posts/foo.md | /posts/old-slug | /posts/new-slug (did you mean?) |
+| posts/foo.md | /posts/old-slug | /posts/new-slug (similar slug exists) |
 
-### Broken External Links
-| Source File | URL | Status | Notes |
-|-------------|-----|--------|-------|
-| posts/bar.md | https://example.com/old | 404 | Remove or find replacement |
-
-### Redirected URLs (update these)
-| Source File | Current URL | Redirects To |
-|-------------|-------------|--------------|
-| posts/baz.md | http://docs.example.com | https://docs.example.com |
+### Files with No Internal Links
+- content/posts/foo.md
+- content/posts/bar.md
+- ...
 ```
 
-For broken internal links, try to suggest the correct path by searching for similar slugs in the content directory.
+For broken internal links, always try to suggest the correct path by searching for similar filenames in the content directory.

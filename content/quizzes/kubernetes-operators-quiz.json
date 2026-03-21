@@ -4,7 +4,7 @@
   "description": "Test your knowledge of Kubernetes Operators through real-world interview scenarios covering custom resources, controllers, reconciliation loops, and Operator SDK",
   "category": "Kubernetes",
   "icon": "Settings",
-  "totalPoints": 210,
+  "totalPoints": 208,
   "theme": {
     "primaryColor": "purple",
     "gradientFrom": "from-purple-500",

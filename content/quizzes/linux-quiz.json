@@ -4,7 +4,7 @@
   "description": "Master the terminal through real-world system administration scenarios covering file management, process control, and troubleshooting",
   "category": "Linux",
   "icon": "Terminal",
-  "totalPoints": 140,
+  "totalPoints": 187,
   "theme": {
     "primaryColor": "gray",
     "gradientFrom": "from-gray-600",
