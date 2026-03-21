@@ -110,6 +110,8 @@ export default async function AdventDayPage({
         imageUrl={day.image || '/og-image.png'}
         authorName="DevOps Daily"
         url={`/advent-of-devops/${day.slug}`}
+        articleSection={day.category || 'Advent of DevOps'}
+        keywords={day.tags}
       />
       <BreadcrumbSchema items={breadcrumbItems} />
       <ReadingProgressBar />

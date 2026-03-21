@@ -104,6 +104,8 @@ export default async function NewsDigestPage({
         imageUrl={digest.image || '/og-image.png'}
         authorName="DevOps Daily"
         url={`/news/${digest.slug}`}
+        articleSection="DevOps News"
+        keywords={['DevOps', 'News', 'Weekly Digest']}
       />
       <BreadcrumbSchema items={breadcrumbItems} />
 
