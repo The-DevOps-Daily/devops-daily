@@ -1,70 +1,55 @@
 # Content Auditor Agent
 
-Audit DevOps Daily content for quality issues, formatting problems, and missing metadata.
+Audit DevOps Daily content for structural issues and plan fixes.
 
-This agent runs a script for automated checks, then reviews the results and provides a prioritized report.
+This agent uses `scripts/audit-content.ts` for automated checks (fast, zero tokens wasted on file reads) and focuses its reasoning on prioritizing issues and planning fixes.
 
-## How to use
+## Step 1: Run the audit script
 
-The user may specify a scope: a single file, a content type (e.g., "all posts"), a category, or "everything". Default to auditing all content if not specified.
+Run the content audit script. Pass `--json` for machine-readable output.
 
-## Automated Checks
-
-Run these checks programmatically by reading files and validating:
-
-### Posts (`content/posts/*.md`)
-For each post, parse frontmatter with a quick scan and check:
-- All required frontmatter fields present: `title`, `excerpt`, `category` (with `name` and `slug`), `date`, `publishedAt`, `updatedAt`, `readingTime`, `author` (with `name` and `slug`), `tags`
-- Category slug is valid (matches a file in `content/categories/`)
-- Tags array has 3-8 items
-- Code blocks have language identifiers (no bare ```)
-- No broken internal links (paths starting with `/` that reference content that doesn't exist)
-
-### Quizzes (`content/quizzes/*.json`)
-Run: `grep -l "." content/quizzes/*.json` to list files, then for each:
-- Valid JSON
-- `totalPoints` matches sum of question points
-- `difficultyLevels` counts match actual question difficulties
-- All `correctAnswer` values are 0-3
-- No duplicate question IDs
-- All questions have `explanation` (50+ chars)
-
-Note: The project already has `npm run quiz:validate` which does thorough validation. If pnpm/npm is available, prefer running that. Otherwise, do the checks inline.
-
-### Exercises (`content/exercises/*.json`)
-- Valid JSON
-- All steps have `id`, `title`, `description`
-- Has `troubleshooting` array (3+ items)
-- Has `completionCriteria` array (3+ items)
-- Category slug is valid
-
-### Guides (`content/guides/*/`)
-- `index.md` exists with required frontmatter
-- Each part file has `title`, `description`, `order` in frontmatter
-- Part file prefixes match order values
-- No orphan parts (order gaps)
-
-## Output Format
-
-```
-## Content Audit Report
-
-### Summary
-- Posts scanned: N (X issues found)
-- Quizzes scanned: N (X issues found)
-- Exercises scanned: N (X issues found)
-- Guides scanned: N (X issues found)
-
-### Critical Issues (fix immediately)
-- ...
-
-### Warnings (should fix)
-- ...
-
-### Info (nice to have)
-- ...
+```bash
+npx tsx scripts/audit-content.ts --json
 ```
 
-Group issues by type, not by file. For example, "12 posts missing `readingTime`" is more useful than listing each one separately. But do list the specific files in a collapsed details section.
+Filter by content type if the user specified one:
+```bash
+npx tsx scripts/audit-content.ts --type quizzes --json
+npx tsx scripts/audit-content.ts --type exercises --json
+npx tsx scripts/audit-content.ts --type posts --json
+npx tsx scripts/audit-content.ts --type guides --json
+```
 
-Focus on issues that affect the site — a missing frontmatter field that breaks rendering is critical; a slightly short excerpt is a warning.
+The script checks:
+
+**Posts**: Required frontmatter fields (title, excerpt, category, date, publishedAt, author, tags), valid category slugs, tag count (3-8), code blocks with language identifiers
+
+**Quizzes**: Valid JSON, totalPoints matches sum of question points, correctAnswer within range, duplicate question IDs, explanation length (50+ chars), question count (10+)
+
+**Exercises**: Valid JSON, category slug validity, step required fields (id, title, description), troubleshooting count (3+), completionCriteria count (3+)
+
+**Guides**: index.md exists, frontmatter valid, parts have order field
+
+## Step 2: Interpret the results
+
+Read the JSON output and provide a prioritized summary:
+- **Critical issues** (broken rendering, wrong data) — these need fixing now
+- **Warnings** (missing optional fields, low counts) — should fix when convenient
+- Group issues by type, not by file (e.g., "13 quizzes have wrong totalPoints" not listing each file)
+
+## Step 3: Fix issues (if the user wants them)
+
+If the user asks you to fix:
+- For totalPoints mismatches: calculate correct values and update JSON
+- For invalid category slugs: map to closest valid category
+- For missing frontmatter: add sensible defaults
+- For code blocks without labels: identify the language and add it
+
+The agent's value is in **prioritizing what matters** and **planning bulk fixes** — the script handles scanning hundreds of files instantly.
+
+## Available script flags
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--json` | JSON output for agent consumption | `--json` |
+| `--type <type>` | Audit only one content type | `--type quizzes` |

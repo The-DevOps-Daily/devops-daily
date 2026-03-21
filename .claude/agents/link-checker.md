@@ -1,74 +1,50 @@
 # Link Checker Agent
 
-Check internal links in DevOps Daily content for broken references.
+Check internal links in DevOps Daily content and plan fixes for missing links.
 
-This agent focuses on **internal links only** — verifying that markdown links to other content on the site actually resolve to existing files. It does not check external URLs (use a dedicated script like `curl` for that).
+This agent uses `scripts/check-internal-links.ts` for the scanning (fast, zero tokens wasted on file reads) and focuses its reasoning on interpreting results and planning edits.
 
-## How to use
+## Step 1: Run the script
 
-The user may specify:
-- A specific file to check (e.g., `content/posts/docker-security-best-practices.md`)
-- A content type (e.g., "posts", "guides", "exercises")
-- A topic/category filter (e.g., "kubernetes", "docker") — only check files in that category
-- Default (no argument): check all posts
+Run the internal link checker script. Pass `--json` for machine-readable output.
 
-## Scoping
-
-To keep runs fast and focused:
-- If the user specifies a topic (e.g., "kubernetes"), only scan files whose filename or frontmatter category matches that topic
-- If checking "all posts", process them in batches and report as you go
-- Never try to check all 800+ posts in one run — cap at 50 files unless the user explicitly asks for more
-
-## Internal Link Checking
-
-Scan markdown files for internal links and verify the target content exists:
-
-1. Extract links matching these patterns:
-   - `](/posts/<slug>)` or `(/posts/<slug>`
-   - `](/guides/<slug>)` or `](/guides/<slug>/<part>)`
-   - `](/exercises/<slug>)`
-   - `](/quizzes/<slug>)`
-   - `](/categories/<slug>)`
-   - `](/checklists/<slug>)`
-   - `](/flashcards/<slug>)`
-   - `](/interview-questions/<slug>)`
-
-2. Verify each target exists:
-   - `/posts/<slug>` → `content/posts/<slug>.md`
-   - `/guides/<slug>` → `content/guides/<slug>/index.md`
-   - `/guides/<slug>/<part>` → `content/guides/<slug>/<part>.md` (match by slug, parts have number prefixes)
-   - `/exercises/<slug>` → `content/exercises/<slug>.json`
-   - `/quizzes/<slug>` → `content/quizzes/<slug>.json`
-   - `/categories/<slug>` → `content/categories/<slug>.md`
-   - `/checklists/<slug>` → `content/checklists/<slug>.json`
-   - `/flashcards/<slug>` → `content/flashcards/<slug>.json`
-   - `/interview-questions/<slug>` → `content/interview-questions/<slug>.json`
-
-3. For broken links, try to suggest the correct path by searching for similar slugs with Grep or Glob.
-
-## Also check: missing internal links
-
-For each scanned file, briefly note if the file has **zero internal links** — this is a common issue and an SEO problem. Just count them and flag files with none.
-
-## Output Format
-
-```
-## Link Check Report
-
-### Summary
-- Files scanned: N
-- Internal links checked: N (X broken)
-- Files with zero internal links: N
-
-### Broken Internal Links
-| Source File | Broken Link | Suggested Fix |
-|-------------|-------------|---------------|
-| posts/foo.md | /posts/old-slug | /posts/new-slug (similar slug exists) |
-
-### Files with No Internal Links
-- content/posts/foo.md
-- content/posts/bar.md
-- ...
+```bash
+npx tsx scripts/check-internal-links.ts --json
 ```
 
-For broken internal links, always try to suggest the correct path by searching for similar filenames in the content directory.
+Filter by category or content type if the user specified one:
+```bash
+npx tsx scripts/check-internal-links.ts --category docker --json
+npx tsx scripts/check-internal-links.ts --type guides --json
+```
+
+The script outputs a JSON report with:
+- `filesScanned` — how many files were checked
+- `totalLinksChecked` — how many internal links were found
+- `brokenLinkCount` — how many point to non-existent content
+- `zeroLinkFileCount` — how many files have no internal links at all
+- `files[]` — per-file details with broken links and suggestions
+
+## Step 2: Interpret the results
+
+Read the JSON output and provide a summary:
+- How many files have broken links (and what the suggested fixes are)
+- How many files have zero internal links (this is the SEO gap)
+- Which files are highest priority to fix (popular topics, cornerstone content)
+
+## Step 3: Plan fixes (if the user wants them)
+
+If the user asks you to fix the issues:
+- For broken links: suggest the correct target using the script's suggestions
+- For zero-link files: propose contextually relevant links by searching for related content across posts, guides, exercises, quizzes, flashcards, checklists
+- Include links to `/roadmap`, `/books/devops-survival-guide`, and relevant quizzes/flashcards where appropriate
+
+The agent's value is in the **reasoning about what to link where** — the script handles the grunt work of checking 800+ files.
+
+## Available script flags
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--json` | JSON output for agent consumption | `--json` |
+| `--category <name>` | Filter files by category/filename match | `--category kubernetes` |
+| `--type <type>` | Content type to scan (posts, guides) | `--type guides` |
