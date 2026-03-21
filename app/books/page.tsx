@@ -35,6 +35,9 @@ export const metadata: Metadata = {
   title: 'DevOps Books | DevOps Daily',
   description:
     'Curated collection of the best DevOps, SRE, and Cloud Engineering books. From beginner guides to advanced practices.',
+  alternates: {
+    canonical: '/books',
+  },
   openGraph: {
     title: 'DevOps Books | DevOps Daily',
     description:
