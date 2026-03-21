@@ -6,7 +6,7 @@ category:
   slug: 'kubernetes'
 date: '2024-04-25'
 publishedAt: '2024-04-25T09:00:00Z'
-updatedAt: '2026-03-21T09:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'
