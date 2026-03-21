@@ -1,32 +1,7 @@
-'use client';
-
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
 const ORGANIZATION_ID = `${SITE_URL}/#organization`;
-
-type SchemaMarkupProps = {
-  type: 'WebSite' | 'Article' | 'BlogPosting' | 'BreadcrumbList' | 'FAQPage';
-  data: Record<string, unknown>;
-};
-
-export function SchemaMarkup({ type, data }: SchemaMarkupProps) {
-  // Base schema that all types will extend
-  const baseSchema = {
-    '@context': 'https://schema.org',
-    '@type': type,
-  };
-
-  // Merge the base schema with the provided data
-  const schema = { ...baseSchema, ...data };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
 
 export function OrganizationSchema() {
   const schema = {
@@ -91,7 +66,20 @@ export function WebsiteSchema() {
   );
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface PostLike {
+  slug?: string;
+  title?: string;
+  excerpt?: string;
+  image?: string;
+  publishedAt?: string;
+  updatedAt?: string;
+  date?: string;
+  author?: { name?: string };
+  category?: { name?: string };
+  tags?: string[];
+  content?: string;
+}
+
 export function ArticleSchema({
   post,
   title,
@@ -105,7 +93,7 @@ export function ArticleSchema({
   keywords,
   wordCount,
 }: {
-  post?: any;
+  post?: PostLike;
   title?: string;
   description?: string;
   publishedDate?: string;
@@ -117,19 +105,16 @@ export function ArticleSchema({
   keywords?: string[];
   wordCount?: number;
 }) {
-  const siteUrl = SITE_URL;
-
-  // Support both old post object format and new individual props format
-  const articleUrl = url ? `${siteUrl}${url}` : `${siteUrl}/posts/${post?.slug}`;
+  const articleUrl = url ? `${SITE_URL}${url}` : `${SITE_URL}/posts/${post?.slug}`;
   const articleTitle = title || post?.title;
   const articleDescription = description || post?.excerpt;
   const articleImage = imageUrl
     ? imageUrl.startsWith('http')
       ? imageUrl
-      : `${siteUrl}${imageUrl}`
+      : `${SITE_URL}${imageUrl}`
     : post?.image
-      ? `${siteUrl}${post.image}`
-      : `${siteUrl}/og-image.png`;
+      ? `${SITE_URL}${post.image}`
+      : `${SITE_URL}/og-image.png`;
   const articlePublished = publishedDate || post?.publishedAt || post?.date;
   const articleModified = modifiedDate || post?.updatedAt || post?.date;
   const articleAuthor = authorName || post?.author?.name || 'DevOps Daily Team';
@@ -166,6 +151,8 @@ export function ArticleSchema({
       '@type': 'SpeakableSpecification',
       cssSelector: ['article h1', 'article h2', 'article p:first-of-type'],
     },
+    isAccessibleForFree: true,
+    inLanguage: 'en',
   };
 
   return (
@@ -299,13 +286,11 @@ export function LearningResourceSchema({
 }
 
 export function BreadcrumbSchema({ items }: { items: { name: string; url: string }[] }) {
-  const siteUrl = SITE_URL;
-
   const itemListElement = items.map((item, index) => ({
     '@type': 'ListItem',
     position: index + 1,
     name: item.name,
-    item: `${siteUrl}${item.url}`,
+    item: `${SITE_URL}${item.url}`,
   }));
 
   const schema = {
