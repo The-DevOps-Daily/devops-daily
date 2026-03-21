@@ -152,3 +152,11 @@ Now that you understand how to connect to your host machine's services from Dock
 - Set up proper reverse proxy configurations for production environments
 
 Happy containerizing!
+
+## Related Resources
+
+- [Docker Access Host Port from Container](/posts/docker-access-host-port) — more on host-container networking
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — understand port publishing
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — Docker networking fundamentals
+- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
+- [DevOps Roadmap](/roadmap) — where Docker fits in the bigger picture

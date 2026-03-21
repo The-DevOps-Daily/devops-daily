@@ -199,3 +199,12 @@ docker stop task-svc && docker rm task-svc
 - SELinux: use `:Z` or `:z` for bind mounts on Fedora/RHEL/CentOS.
 
 Recreating a container is the safe, repeatable way to add volumes. Once the pattern is in place, future changes are just edits to your command or Compose file followed by a quick recreate.
+
+
+## Related Resources
+
+- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits) — why volumes matter
+- [Docker Persistent Storage for Databases](/posts/docker-persistent-storage-databases) — database patterns
+- [Mount a Host Directory in Docker](/posts/docker-mount-host-directory) — bind mounts
+- [How to List Docker Volumes](/posts/how-to-list-docker-volumes-in-containers) — manage volumes
+- [Introduction to Docker: Volumes](/guides/introduction-to-docker) — volume fundamentals

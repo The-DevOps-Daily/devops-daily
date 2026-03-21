@@ -746,3 +746,12 @@ You now understand the core workflow: Docker packages applications, Kubernetes r
 The best way to learn is to run your own applications. Take a project you've built and containerize it. Then try running it on Kubernetes. You'll run into real problems - networking issues, configuration headaches, resource limits - and solving them will deepen your understanding far more than following tutorials.
 
 The tools themselves matter less than understanding the problems they solve. Once you see why teams adopted containers and orchestration, you'll know when to use them and when simpler solutions work better.
+
+
+## Related Resources
+
+- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine) — deeper comparison
+- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences) — choosing the right tool
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — hands-on Docker learning
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes) — hands-on K8s learning
+- [DevOps Roadmap](/roadmap) — the full learning path

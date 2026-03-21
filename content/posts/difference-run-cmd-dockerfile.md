@@ -117,3 +117,12 @@ In this example:
 - **Avoid Hardcoding**: Avoid hardcoding sensitive information like credentials in `RUN` or `CMD` instructions.
 
 By understanding the differences between `RUN` and `CMD`, you can write more efficient and functional Dockerfiles, ensuring your containers behave as expected.
+
+## Related Resources
+
+- [How Do I Make a Comment in a Dockerfile?](/posts/comment-in-dockerfile) — write clearer Dockerfiles
+- [Advanced Docker Features](/posts/advanced-docker-features) — multi-stage builds, BuildKit, and more
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — harden your containers
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller, faster images
+- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker) — full guide to Dockerfiles
+- [Docker Flashcards](/flashcards/docker-essentials) — review Docker concepts

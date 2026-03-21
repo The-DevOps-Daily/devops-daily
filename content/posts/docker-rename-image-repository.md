@@ -71,3 +71,10 @@ registry.example.com/prod/node-app 1.2.0    1a2b3c4d5e6f   2 hours ago     150MB
 Now you can push your retagged image to a remote registry or use it in your deployments. Try automating this process in your CI/CD pipeline for consistent image naming.
 
 Good luck with your project!
+
+## Related Resources
+
+- [Push Docker Image to Private Repo](/posts/push-docker-image-private-repo) — push renamed images
+- [Docker Push: Denied Access](/posts/docker-push-denied-access) — fix push errors
+- [Copy Docker Images Between Hosts](/posts/copy-docker-images-between-hosts-withouta-repository) — transfer images
+- [Introduction to Docker: Working with Images](/guides/introduction-to-docker) — image management

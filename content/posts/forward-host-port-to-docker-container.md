@@ -464,3 +464,11 @@ services:
 **Plan your port allocation**: Maintain a list of ports used by different containers to avoid conflicts.
 
 Port forwarding is fundamental to using Docker effectively. Whether you're running a simple web server or a complex microservices architecture, understanding how to map ports between your host and containers lets you expose services securely and accessibly. Use `-p` for basic mapping, Docker Compose for complex setups, and remember to bind sensitive services like databases to localhost only.
+
+
+## Related Resources
+
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — Compose port mapping
+- [Docker Access Host Port](/posts/docker-access-host-port) — reverse direction networking
+- [Expose vs Publish in Docker](/posts/expose-vs-publish-docker) — understand the terminology
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking fundamentals

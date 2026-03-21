@@ -116,3 +116,11 @@ CMD ["node", "app/dist/app.js"]
 - **Test Builds**: Test your Docker builds to ensure excluded files are not copied.
 
 By following these steps, you can effectively use the `COPY` instruction in Docker with exclusion patterns, optimizing your Docker builds and improving image efficiency.
+
+## Related Resources
+
+- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile) — Dockerfile instruction fundamentals
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller images
+- [Advanced Docker Features](/posts/advanced-docker-features) — multi-stage builds and BuildKit
+- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build) — hands-on practice
+- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker) — full Dockerfile guide

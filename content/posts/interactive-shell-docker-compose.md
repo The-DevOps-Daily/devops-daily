@@ -110,3 +110,11 @@ npm install
 - **Automate Debugging**: Use scripts to automate common debugging tasks.
 
 By following these steps, you can effectively use Docker Compose to start an interactive shell, making debugging and development more efficient.
+
+
+## Related Resources
+
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — more shell methods
+- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands) — Compose commands
+- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty) — TTY sessions
+- [Introduction to Docker: Compose](/guides/introduction-to-docker) — Compose guide

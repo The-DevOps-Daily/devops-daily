@@ -110,3 +110,11 @@ In this case:
 - Use `--publish` when you need to make a service accessible from outside the Docker host.
 
 By understanding these concepts, you can better manage your containerized applications and their networking requirements.
+
+
+## Related Resources
+
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — the Compose perspective
+- [Expose Multiple Ports in Docker](/posts/expose-multiple-ports-docker) — multi-port setups
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — minimize attack surface
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking deep dive

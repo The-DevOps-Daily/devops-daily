@@ -346,3 +346,10 @@ docker run hello-world
 If you see "Hello from Docker!" you're all set.
 
 The "Cannot connect to the Docker daemon" error is usually either a stopped service or a permissions issue. Start the Docker service with `systemctl start docker`, add your user to the docker group with `usermod -aG docker $USER`, log out and back in, and you should be good to go. For Docker Desktop users, just make sure the application is running.
+
+## Related Resources
+
+- [How to Fix Docker: Permission Denied](/posts/fix-docker-permission-denied-error) — related permissions troubleshooting
+- [Introduction to Docker: Installation](/guides/introduction-to-docker) — set up Docker properly from the start
+- [Docker Flashcards](/flashcards/docker-essentials) — review core Docker concepts
+- [DevOps Roadmap](/roadmap) — where Docker fits in your learning path

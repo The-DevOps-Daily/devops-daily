@@ -221,3 +221,10 @@ Now that you know how to copy files from Docker containers, you might want to ex
 - Using Docker Compose to simplify complex data sharing scenarios
 
 Happy containerizing!
+
+## Related Resources
+
+- [Introduction to Docker: Volumes](/guides/introduction-to-docker) — persistent data management
+- [COPY with Docker Exclusion](/posts/copy-with-docker-exclusion) — control what goes into images
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — configure data paths
+- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge

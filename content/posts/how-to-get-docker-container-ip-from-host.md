@@ -125,3 +125,11 @@ This is more stable than relying on IPs, especially when containers are restarte
 Getting a Docker container's IP address from the host is useful for quick debugging and testing, but it's not ideal for long-term setups. Instead, use Docker networks and container names for more reliable and scalable configurations.
 
 If you find yourself needing container IPs regularly, it might be time to rethink your network strategy.
+
+
+## Related Resources
+
+- [How to Get Docker Host IP from Container](/posts/how-to-get-docker-host-ip-from-container) — reverse direction
+- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker) — host networking
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — networking concepts
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking guide

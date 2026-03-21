@@ -517,3 +517,12 @@ However, it's better practice to use separate containers for each service and li
 ```
 
 The key to preventing containers from exiting immediately is making sure the main process stays in the foreground and doesn't complete. Check logs first, understand what command is running, and adjust it to remain active for the container's intended lifetime.
+
+
+## Related Resources
+
+- [Difference Between RUN and CMD](/posts/difference-run-cmd-dockerfile) — understand CMD behavior
+- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start) — container lifecycle
+- [Start Stopped Container with Different Command](/posts/start-stopped-docker-container-different-command) — override commands
+- [How to Clear Docker Container Logs](/posts/how-to-clear-docker-container-logs-properly) — check logs for clues
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

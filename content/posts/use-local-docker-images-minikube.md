@@ -312,3 +312,11 @@ Now that you can use local Docker images with Minikube, consider learning about:
 - Implementing health checks and monitoring
 - Working with persistent volumes in Minikube
 - Debugging applications running in Kubernetes
+
+
+## Related Resources
+
+- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences) — choosing orchestration
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes) — learn K8s from scratch
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [DevOps Roadmap](/roadmap) — the full DevOps learning path

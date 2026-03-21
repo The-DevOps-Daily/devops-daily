@@ -79,3 +79,10 @@ You can now use `ping` without any issues.
 By following these steps, you can quickly resolve the `ping: command not found` error and ensure your containers have the tools you need.
 
 Good luck with your project!
+
+## Related Resources
+
+- [Docker Alpine: How to Use Bash](/posts/docker-alpine-use-bash) — install tools in Alpine images
+- [PS Command Not Working in Docker](/posts/ps-command-not-working-docker) — install missing utilities
+- [How to Use Sudo in Docker Container](/posts/how-to-use-sudo-in-docker-container) — permissions in containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker basics

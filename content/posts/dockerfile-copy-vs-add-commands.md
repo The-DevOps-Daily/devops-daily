@@ -228,3 +228,11 @@ Now that you understand the differences between `COPY` and `ADD`, you might want
 - Explore Docker security scanning tools to verify the contents of your images
 
 Happy containerizing!
+
+## Related Resources
+
+- [COPY with Docker Exclusion](/posts/copy-with-docker-exclusion) — .dockerignore patterns
+- [Difference Between RUN and CMD](/posts/difference-run-cmd-dockerfile) — more Dockerfile instructions
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller images
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — secure Dockerfiles
+- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build) — hands-on practice

@@ -78,3 +78,11 @@ If your container is on a user-defined bridge network, you can connect another c
 ## Conclusion
 
 You can't expose a new port on a live Docker container, but you have workarounds. The best fix is to stop and re-run the container with the correct port mapping. For emergencies, use tools like `socat` to forward traffic. Plan your port mappings ahead to avoid downtime and surprises.
+
+
+## Related Resources
+
+- [Docker Assign Port Mapping to Existing Container](/posts/docker-assign-port-mapping) — more workarounds
+- [Expose Multiple Ports in Docker](/posts/expose-multiple-ports-docker) — multi-port setup
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — Compose networking
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals

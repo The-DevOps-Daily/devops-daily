@@ -92,4 +92,9 @@ Docker Compose also allows you to scale services and manage dependencies easily.
 
 By understanding Docker's limitations and using these workarounds, you can manage port mappings effectively.
 
-Good luck with your project!
+## Related Resources
+
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — port publishing fundamentals
+- [Docker Access Host Port](/posts/docker-access-host-port) — host-container networking
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — Docker networking guide
+- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge

@@ -654,3 +654,13 @@ kompose convert -f docker-compose.yml
 You now understand the fundamental differences between Docker Compose and Kubernetes. If you're starting with containerization, begin with Docker Compose for development and consider Kubernetes when you need production-grade features. Explore tools like Helm for managing Kubernetes applications and investigate service mesh technologies like Istio for advanced microservices management.
 
 Both tools have their place in the container ecosystem, and understanding when to use each will help you build better containerized applications.
+
+## Related Resources
+
+- [Docker Compose vs Dockerfile](/posts/docker-compose-vs-dockerfile) — understand Docker build vs orchestration
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker fundamentals
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes) — learn Kubernetes from scratch
+- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz) — test your Kubernetes knowledge
+- [DevOps Roadmap](/roadmap) — see the full DevOps learning path
+- [DevOps Survival Guide](/books/devops-survival-guide) — broader DevOps learning

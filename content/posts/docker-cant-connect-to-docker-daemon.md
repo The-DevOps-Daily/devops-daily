@@ -140,3 +140,10 @@ sudo journalctl -u docker
 - **Secure Docker Socket**: Restrict access to the Docker socket to prevent unauthorized use.
 
 By following these steps, you can resolve the "Docker can't connect to Docker daemon" error and ensure smooth operation of your Docker environment.
+
+## Related Resources
+
+- [Cannot Connect to Docker Daemon at unix:/var/run/docker.sock](/posts/cannot-connect-to-docker-daemon) — in-depth troubleshooting for this error
+- [How to Fix Docker: Permission Denied](/posts/fix-docker-permission-denied-error) — solve permission issues
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from scratch
+- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge

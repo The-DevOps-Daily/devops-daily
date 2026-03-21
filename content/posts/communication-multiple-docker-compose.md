@@ -138,3 +138,11 @@ Docker's internal DNS resolves container names to IP addresses, making it easy t
 - **Monitor Traffic**: Use tools like `docker network inspect` to monitor network configurations.
 
 By following these steps, you can enable seamless communication between multiple Docker-Compose projects, making it easier to manage complex containerized applications.
+
+## Related Resources
+
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — understand port publishing vs internal communication
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — manage config across services
+- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker) — host-container networking
+- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking deep dive
+- [Docker Security Checklist](/checklists/docker-security) — secure your multi-service setup

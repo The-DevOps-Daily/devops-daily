@@ -127,3 +127,11 @@ docker-compose up --build --force-recreate
 - **Monitor Logs**: Always check logs after rebuilding to ensure the containers are running as expected.
 
 By following these steps, you can efficiently rebuild Docker containers in a `docker-compose.yml` file and manage changes effectively.
+
+
+## Related Resources
+
+- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers) — force fresh containers
+- [Force Docker Clean Build](/posts/force-docker-clean-build) — no-cache builds
+- [Restart Single Container in Docker Compose](/posts/restart-single-container-docker-compose) — restart without rebuilding
+- [Introduction to Docker: Compose](/guides/introduction-to-docker) — Compose guide

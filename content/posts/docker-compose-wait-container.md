@@ -117,3 +117,10 @@ services:
 - **Monitor Logs**: Use logs to debug and verify container startup order.
 
 By following these steps, you can ensure that Docker Compose starts containers in the correct order, making your applications more reliable and easier to manage.
+
+## Related Resources
+
+- [Docker Compose: Up Only Certain Containers](/posts/docker-compose-up-only-certain-containers) — selective service startup
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — service networking
+- [Connecting to PostgreSQL in Docker from Outside](/posts/connecting-to-postgresql-in-a-docker-container-from-outside) — database readiness patterns
+- [Introduction to Docker: Compose](/guides/introduction-to-docker) — Docker Compose fundamentals

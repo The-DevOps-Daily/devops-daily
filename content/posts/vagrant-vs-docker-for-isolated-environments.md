@@ -116,3 +116,11 @@ Another common pattern is:
 Vagrant and Docker solve different problems. If you need a full OS-level sandbox, go with Vagrant. If you want fast, isolated, and composable services, Docker is the better choice.
 
 Pick the tool that matches the problem you're solving, or use both when it makes sense.
+
+
+## Related Resources
+
+- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine) — deeper VM comparison
+- [Docker Runtime Performance Cost](/posts/docker-runtime-performance-cost) — performance analysis
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker
+- [DevOps Roadmap](/roadmap) — the full learning path

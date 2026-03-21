@@ -144,3 +144,11 @@ Navigate to the URL in your browser to access the application.
 - **Monitor Resources**: Use `kubectl get pods` and `kubectl logs` to monitor your application.
 
 By following these steps, you can efficiently use local Docker images with Minikube for Kubernetes development and testing.
+
+
+## Related Resources
+
+- [Use Local Docker Images with Minikube](/posts/use-local-docker-images-minikube) — updated methods
+- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences) — choosing the right tool
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes) — learn K8s
+- [DevOps Roadmap](/roadmap) — the full learning path

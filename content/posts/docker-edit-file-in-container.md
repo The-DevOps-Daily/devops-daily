@@ -92,4 +92,10 @@ This creates a new image with your changes, but it's better to update the Docker
 
 With these steps, you can quickly edit files inside containers and understand how to make those changes stick.
 
-Good luck with your project!
+## Related Resources
+
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — shell access methods
+- [Copy Files from Docker Container to Host](/posts/copy-files-from-docker-container-to-host) — extract files
+- [Exploring Docker Container File System](/posts/exploring-docker-container-file-system) — navigate containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Docker Flashcards](/flashcards/docker-essentials) — review Docker concepts

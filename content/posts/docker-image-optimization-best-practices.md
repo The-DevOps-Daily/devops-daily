@@ -497,3 +497,13 @@ docker-slim build --http-probe myapp:latest
 Docker image optimization is not optional—it's essential for production deployments. By following these best practices, you can reduce image sizes by 70-96%, improve build times, reduce costs, and enhance security. Start with multi-stage builds and minimal base images, then progressively apply other optimizations.
 
 Remember: every megabyte saved is multiplied across your entire infrastructure—CI/CD pipelines, registries, and production deployments.
+
+## Related Resources
+
+- [Advanced Docker Features](/posts/advanced-docker-features) — BuildKit, health checks, and more
+- [Docker Security Best Practices](/posts/docker-security-best-practices) — secure your optimized images
+- [COPY vs ADD in Dockerfiles](/posts/dockerfile-copy-vs-add-commands) — choose the right instruction
+- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build) — hands-on optimization
+- [Docker Security Checklist](/checklists/docker-security) — verify your setup
+- [Introduction to Docker: Best Practices](/guides/introduction-to-docker) — comprehensive guide
+- [DevOps Survival Guide](/books/devops-survival-guide) — broader DevOps learning

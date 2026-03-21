@@ -93,3 +93,11 @@ This stops or removes just those containers, leaving others running.
 ## Conclusion
 
 Starting only the containers you need with `docker-compose up` is a great way to speed up development and save resources. Just specify the service names, and Docker Compose will handle dependencies for you. Check your service names in the YAML file, and use this trick to streamline your workflow.
+
+## Related Resources
+
+- [Docker Compose: Wait for Container X Before Starting Y](/posts/docker-compose-wait-container) — control startup order
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — networking between services
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — configure services
+- [Restart a Single Container in Docker Compose](/posts/restart-single-container-docker-compose) — manage individual services
+- [Introduction to Docker: Compose](/guides/introduction-to-docker) — Docker Compose guide
