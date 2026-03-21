@@ -6,7 +6,7 @@ category:
   slug: 'linux'
 date: '2025-03-20'
 publishedAt: '2025-03-20T10:30:00Z'
-updatedAt: '2025-03-20T10:30:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'

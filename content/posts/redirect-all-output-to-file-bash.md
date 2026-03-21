@@ -6,7 +6,7 @@ category:
   slug: 'bash'
 date: '2025-01-15'
 publishedAt: '2025-01-15T09:00:00Z'
-updatedAt: '2025-01-15T09:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'

@@ -6,6 +6,7 @@ coverImage: '/images/posts/build-vs-buy-2026.png'
 ogImage: '/images/posts/build-vs-buy-2026.svg'
 date: '2026-03-04'
 publishedAt: '2026-03-04T10:00:00Z'
+updatedAt: '2026-03-03T09:00:00Z'
 readingTime: '12 min read'
 author: {name: 'DevOps Daily Team', slug: 'devops-daily-team'}
 tags: [Engineering Leadership, Infrastructure, Cost Analysis, Platform Engineering, Build vs Buy]

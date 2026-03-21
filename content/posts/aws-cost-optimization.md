@@ -6,7 +6,7 @@ category:
   slug: 'cloud'
 date: '2024-11-20'
 publishedAt: '2024-11-20T08:00:00Z'
-updatedAt: '2024-11-20T08:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'

@@ -6,7 +6,7 @@ category:
   slug: 'terraform'
 date: '2024-10-29'
 publishedAt: '2024-10-29T09:00:00Z'
-updatedAt: '2024-10-29T09:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '5 min read'
 author:
   name: 'DevOps Daily Team'

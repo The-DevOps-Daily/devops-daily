@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2025-07-09'
 publishedAt: '2025-07-09T09:00:00Z'
-updatedAt: '2025-07-09T09:00:00Z'
+updatedAt: '2025-11-23T09:00:00Z'
 readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
