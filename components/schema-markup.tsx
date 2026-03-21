@@ -101,6 +101,9 @@ export function ArticleSchema({
   imageUrl,
   authorName,
   url,
+  articleSection,
+  keywords,
+  wordCount,
 }: {
   post?: any;
   title?: string;
@@ -110,6 +113,9 @@ export function ArticleSchema({
   imageUrl?: string;
   authorName?: string;
   url?: string;
+  articleSection?: string;
+  keywords?: string[];
+  wordCount?: number;
 }) {
   const siteUrl = SITE_URL;
 
@@ -128,7 +134,13 @@ export function ArticleSchema({
   const articleModified = modifiedDate || post?.updatedAt || post?.date;
   const articleAuthor = authorName || post?.author?.name || 'DevOps Daily Team';
 
-  const schema = {
+  // Derive section, keywords, and word count from post object if not passed directly
+  const section = articleSection || post?.category?.name;
+  const tags = keywords || post?.tags;
+  const contentWordCount =
+    wordCount || (post?.content ? post.content.split(/\s+/).length : undefined);
+
+  const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Article',
     mainEntityOfPage: {
@@ -146,6 +158,13 @@ export function ArticleSchema({
     },
     publisher: {
       '@id': ORGANIZATION_ID,
+    },
+    ...(section ? { articleSection: section } : {}),
+    ...(tags && tags.length > 0 ? { keywords: tags.join(', ') } : {}),
+    ...(contentWordCount ? { wordCount: contentWordCount } : {}),
+    speakable: {
+      '@type': 'SpeakableSpecification',
+      cssSelector: ['article h1', 'article h2', 'article p:first-of-type'],
     },
   };
 
