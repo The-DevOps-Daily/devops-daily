@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import { CardsAgainstDevOps } from '@/components/games/cards-against-devops';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
@@ -30,6 +31,17 @@ export default async function CardsAgainstDevOpsPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="Cards Against DevOps"
+        description="A fun card game that combines DevOps humor with learning. Match DevOps terms, tools, and scenarios in this entertaining educational card game."
+        category="Fun"
+        tags={["devops", "humor", "learning", "cards"]}
+        learningPoints={[
+            "Learn DevOps terminology through humor",
+            "Understand common DevOps scenarios",
+            "Team building and knowledge sharing",
+        ]}
+      />
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />

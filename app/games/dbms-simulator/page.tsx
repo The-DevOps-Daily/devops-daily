@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import DbmsSimulator from '@/components/games/dbms-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
@@ -30,6 +31,17 @@ export default async function DbmsSimulatorPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="DBMS Simulator"
+        description="Interactive database management simulator. Learn SQL queries, transactions, indexing strategies, and database operations through hands-on simulation."
+        category="Database"
+        tags={["database", "sql", "transactions", "indexing"]}
+        learningPoints={[
+            "Write and execute SQL queries",
+            "Understand database transactions and ACID properties",
+            "Learn indexing strategies for performance",
+        ]}
+      />
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />

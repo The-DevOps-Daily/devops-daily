@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import DDoSSimulator from '@/components/games/ddos-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
@@ -30,6 +31,17 @@ export default async function DDoSSimulatorPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="DDoS Attack Simulator"
+        description="Understand Distributed Denial of Service attacks and defense mechanisms through interactive simulation. Learn about attack vectors, mitigation strategies, and incident response."
+        category="Security"
+        tags={["security", "ddos", "networking", "incident-response"]}
+        learningPoints={[
+            "Recognize different types of DDoS attacks",
+            "Implement rate limiting and traffic filtering",
+            "Design resilient architectures against DDoS",
+        ]}
+      />
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />

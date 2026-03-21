@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
@@ -30,6 +31,17 @@ export default async function GitOpsWorkflowPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="GitOps Workflow Simulator"
+        description="Simulate GitOps deployment workflows with Git repositories, CI/CD pipelines, and Kubernetes clusters. Learn how changes flow from code commits to production deployments."
+        category="CI/CD"
+        tags={["gitops", "kubernetes", "cicd", "deployment"]}
+        learningPoints={[
+            "Understand the GitOps deployment model",
+            "Trace changes from commit to production",
+            "Learn reconciliation and drift detection",
+        ]}
+      />
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />

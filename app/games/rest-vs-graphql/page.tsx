@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import RestVsGraphqlSimulator from '@/components/games/rest-vs-graphql-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
@@ -30,6 +31,17 @@ export default async function RestVsGraphqlPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="REST vs GraphQL Simulator"
+        description="Compare REST and GraphQL API approaches side by side. Make API requests, observe response payloads, and understand the tradeoffs between over-fetching, under-fetching, and query flexibility."
+        category="API Design"
+        tags={["rest", "graphql", "api", "web-development"]}
+        learningPoints={[
+            "Compare REST and GraphQL request patterns",
+            "Understand over-fetching and under-fetching",
+            "Learn when to choose REST vs GraphQL",
+        ]}
+      />
 
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">

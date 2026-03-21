@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import ScalableSentry from '@/components/games/scalable-sentry';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { getGameById } from '@/lib/games';
@@ -30,6 +31,18 @@ export default async function ScalableSentryPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="Scalable Sentry"
+        description="Design and defend a scalable infrastructure against increasing traffic and failure scenarios. Learn about auto-scaling, load balancing, caching, and high availability patterns."
+        category="Infrastructure"
+        tags={["scaling", "infrastructure", "high-availability", "load-balancing"]}
+        learningPoints={[
+            "Design auto-scaling architectures",
+            "Implement load balancing strategies",
+            "Build high-availability systems",
+            "Handle traffic spikes gracefully",
+        ]}
+      />
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Breadcrumb items={breadcrumbItems} />

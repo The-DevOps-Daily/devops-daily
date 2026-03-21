@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import InfraTarot from '../../../components/games/infra-tarot';
 import { ArrowLeft, Twitter, Facebook, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,17 @@ export default async function InfraTarotPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title="Infrastructure Tarot"
+        description="A lighthearted take on infrastructure predictions. Draw cards representing common infrastructure scenarios, outages, and DevOps wisdom. Fun way to learn about failure modes and best practices."
+        category="Fun"
+        tags={["infrastructure", "devops", "fun", "learning"]}
+        learningPoints={[
+            "Learn about common infrastructure failure modes",
+            "Understand DevOps best practices through metaphors",
+            "Explore incident response scenarios",
+        ]}
+      />
 
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">
