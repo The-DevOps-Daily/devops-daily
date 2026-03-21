@@ -7,7 +7,32 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Sponsorship',
   description:
-    'Partner with DevOps Daily to reach thousands of DevOps professionals and decision-makers',
+    'Partner with DevOps Daily to reach thousands of DevOps professionals and decision-makers.',
+  alternates: {
+    canonical: '/sponsorship',
+  },
+  openGraph: {
+    title: 'Sponsor DevOps Daily',
+    description:
+      'Partner with DevOps Daily to reach thousands of DevOps professionals and decision-makers.',
+    url: '/sponsorship',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'DevOps Daily Sponsorship',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sponsor DevOps Daily',
+    description:
+      'Partner with DevOps Daily to reach thousands of DevOps professionals and decision-makers.',
+    images: ['/og-image.png'],
+  },
 };
 
 export default function SponsorshipPage() {

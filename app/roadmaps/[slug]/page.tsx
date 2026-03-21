@@ -46,6 +46,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           },
         ],
       },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'Junior DevOps Roadmap - Start Your DevOps Journey',
+        description:
+          'A beginner-friendly roadmap for aspiring DevOps engineers. Clear, focused learning path without the overwhelm.',
+        images: ['https://devops-daily.com/images/junior-roadmap-og.png'],
+      },
     },
     devsecops: {
       title: 'DevSecOps Roadmap - Security-First DevOps',
@@ -68,6 +75,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             alt: 'DevSecOps Roadmap - Security-First DevOps',
           },
         ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: 'DevSecOps Roadmap - Security-First DevOps',
+        description:
+          'Master security practices in the DevOps pipeline. Build secure, compliant, and resilient systems.',
+        images: ['https://devops-daily.com/images/devsecops-roadmap-og.png'],
       },
     },
   };

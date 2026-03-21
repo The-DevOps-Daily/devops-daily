@@ -58,6 +58,12 @@ export async function generateMetadata({
           ]
         : undefined,
     },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${expert.name} - ${expert.title || 'DevOps Expert'}`,
+      description: expert.bio || `Hire ${expert.name} for DevOps consulting and services`,
+      images: expert.avatar ? [expert.avatar] : undefined,
+    },
   };
 }
 
