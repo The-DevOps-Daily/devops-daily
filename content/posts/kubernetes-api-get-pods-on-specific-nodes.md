@@ -81,3 +81,11 @@ Replace `<token>` with your API token, `<api-server>` with the API server URL, a
 ## Conclusion
 
 Using the Kubernetes API to retrieve Pods on specific nodes is a powerful way to manage and debug your cluster. By following these steps, you can efficiently filter and monitor Pods.
+
+
+## Related Resources
+
+- [Kubernetes List All Pods and Nodes](/posts/kubernetes-list-all-pods-and-nodes)
+- [5-Minute Cluster Health Check](/posts/5-minute-kubernetes-cluster-health-check)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
+- [Kubernetes Flashcards](/flashcards/kubernetes-basics)

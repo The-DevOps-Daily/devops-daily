@@ -77,3 +77,11 @@ Listing containers cleanly is useful for:
 Try combining these commands with other `kubectl` queries or shell scripts to automate your Kubernetes workflows.
 
 As you get more comfortable, explore how to extract other pod details using JSONPath and `jq` for even more powerful cluster introspection.
+
+
+## Related Resources
+
+- [Kubernetes List All Pods and Nodes](/posts/kubernetes-list-all-pods-and-nodes)
+- [5-Minute Cluster Health Check](/posts/5-minute-kubernetes-cluster-health-check)
+- [Introduction to Kubernetes: Pods](/guides/introduction-to-kubernetes)
+- [Kubernetes Flashcards](/flashcards/kubernetes-basics)

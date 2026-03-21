@@ -74,3 +74,11 @@ Knowing which pods run on which nodes helps you:
 ## Next Steps
 
 Try combining these commands with label selectors or JSONPath queries for more advanced filtering. As your cluster grows, consider using monitoring tools like Lens or K9s for a more visual overview of pod placement.
+
+
+## Related Resources
+
+- [How to List All Containers in a Pod](/posts/how-to-list-all-containers-in-kubernetes-pod)
+- [5-Minute Cluster Health Check](/posts/5-minute-kubernetes-cluster-health-check)
+- [Checking Pod CPU and Memory](/posts/checking-kubernetes-pod-cpu-and-memory-utilization)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)

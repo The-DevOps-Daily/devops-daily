@@ -95,3 +95,11 @@ This forces Kubernetes to pull the image every time the Pod is created.
 ## Conclusion
 
 Forcing Kubernetes to re-pull an image is a straightforward process, but it requires careful consideration to avoid unintended consequences. By following the methods and best practices outlined here, you can ensure your Pods use the latest container images effectively.
+
+
+## Related Resources
+
+- [How to Update a Kubernetes Deployment Image](/posts/kubernetes-how-to-make-deployment-to-update-image)
+- [Kubernetes Deployments vs StatefulSets](/posts/kubernetes-deployments-vs-statefulsets)
+- [Introduction to Kubernetes: Deployments](/guides/introduction-to-kubernetes)
+- [Kubernetes Flashcards](/flashcards/kubernetes-basics)

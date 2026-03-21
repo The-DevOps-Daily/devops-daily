@@ -107,3 +107,11 @@ This setup is common when you want to expose a standard port externally while us
 ## Conclusion
 
 Understanding the difference between `port` and `targetPort` is essential for configuring Kubernetes Services effectively. By knowing how these properties work together, you can make sure that your application is accessible and performs as expected.
+
+
+## Related Resources
+
+- [Kubernetes Service Types: ClusterIP, NodePort, LoadBalancer](/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer)
+- [Ingress vs Load Balancer](/posts/ingress-vs-load-balancer-kubernetes)
+- [Introduction to Kubernetes: Services and Networking](/guides/introduction-to-kubernetes)
+- [Kubernetes Flashcards](/flashcards/kubernetes-basics)

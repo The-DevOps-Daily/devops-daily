@@ -119,3 +119,11 @@ Imagine you are deploying a web application using a LoadBalancer service. The ex
 ## Conclusion
 
 Resolving the issue of a Kubernetes service's external IP being stuck in the Pending state requires a systematic approach to troubleshooting. By understanding the causes and solutions, you can ensure your services are accessible to external clients.
+
+
+## Related Resources
+
+- [Kubernetes Service Types](/posts/kubernetes-service-types-clusterip-nodeport-loadbalancer)
+- [Ingress vs Load Balancer](/posts/ingress-vs-load-balancer-kubernetes)
+- [Introduction to Kubernetes: Services](/guides/introduction-to-kubernetes)
+- [Kubernetes Quiz](/quizzes/kubernetes-quiz)

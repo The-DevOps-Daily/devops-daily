@@ -76,3 +76,11 @@ kubectl rollout undo deployment/<deployment-name>
 ## Conclusion
 
 Updating the container image in a Kubernetes Deployment is straightforward with `kubectl set image`. By following these steps, you can ensure smooth and reliable application updates.
+
+
+## Related Resources
+
+- [Force Kubernetes to Repull Image](/posts/force-kubernetes-repull-image)
+- [Kubernetes Deployments vs StatefulSets](/posts/kubernetes-deployments-vs-statefulsets)
+- [Introduction to Kubernetes: Deployments](/guides/introduction-to-kubernetes)
+- [Kubernetes Flashcards](/flashcards/kubernetes-basics)

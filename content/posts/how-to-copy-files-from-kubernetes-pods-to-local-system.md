@@ -68,3 +68,11 @@ This copies the `/var/log` directory to a local directory named `logs`.
 ## Conclusion
 
 Copying files from Kubernetes Pods to your local system is straightforward with `kubectl cp`. By following these steps, you can efficiently transfer files for debugging and backups.
+
+
+## Related Resources
+
+- [How to List All Containers in a Pod](/posts/how-to-list-all-containers-in-kubernetes-pod)
+- [How to Decode a Kubernetes Secret](/posts/how-to-decode-a-kubernetes-secret)
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes)
+- [Kubernetes Flashcards](/flashcards/kubernetes-basics)

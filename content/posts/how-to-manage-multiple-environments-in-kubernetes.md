@@ -103,3 +103,12 @@ For strict isolation, especially in regulated industries, you might use a separa
 ## Next Steps
 
 Explore tools like Kustomize, Helm, or ArgoCD to further streamline environment management. As your team grows, consider policies and access controls to keep your environments secure and maintainable.
+
+
+## Related Resources
+
+- [Switch Namespace in Kubernetes](/posts/switch-namespace-in-kubernetes)
+- [Helm Kubernetes Packaging Exercise](/exercises/helm-kubernetes-packaging)
+- [Introduction to Kubernetes: Best Practices](/guides/introduction-to-kubernetes)
+- [DevOps Roadmap](/roadmap)
+- [DevOps Survival Guide](/books/devops-survival-guide)
