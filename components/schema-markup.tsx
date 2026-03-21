@@ -176,6 +176,73 @@ export function ArticleSchema({
   );
 }
 
+export function TechArticleSchema({
+  title,
+  description,
+  publishedDate,
+  modifiedDate,
+  imageUrl,
+  authorName,
+  url,
+  articleSection,
+  keywords,
+  partsCount,
+}: {
+  title: string;
+  description?: string;
+  publishedDate?: string;
+  modifiedDate?: string;
+  imageUrl?: string;
+  authorName?: string;
+  url: string;
+  articleSection?: string;
+  keywords?: string[];
+  partsCount?: number;
+}) {
+  const articleImage = imageUrl
+    ? imageUrl.startsWith('http')
+      ? imageUrl
+      : `${SITE_URL}${imageUrl}`
+    : `${SITE_URL}/og-image.png`;
+
+  const schema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'TechArticle',
+    headline: title,
+    description,
+    url: `${SITE_URL}${url}`,
+    image: articleImage,
+    datePublished: publishedDate,
+    dateModified: modifiedDate,
+    author: {
+      '@type': 'Person',
+      name: authorName || 'DevOps Daily Team',
+    },
+    publisher: {
+      '@id': ORGANIZATION_ID,
+    },
+    proficiencyLevel: 'Beginner',
+    ...(articleSection ? { articleSection } : {}),
+    ...(keywords && keywords.length > 0
+      ? { keywords: keywords.join(', ') }
+      : {}),
+    ...(partsCount ? { numberOfPages: partsCount } : {}),
+    speakable: {
+      '@type': 'SpeakableSpecification',
+      cssSelector: ['article h1', 'article > p:first-of-type'],
+    },
+    isAccessibleForFree: true,
+    inLanguage: 'en',
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 export function LearningResourceSchema({
   title,
   description,

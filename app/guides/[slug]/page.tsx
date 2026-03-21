@@ -4,7 +4,7 @@ import { InlineSponsors } from '@/components/inline-sponsors';
 import { getGuideBySlug, getAllGuides, getRelatedGuides } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, TechArticleSchema } from '@/components/schema-markup';
 import { tagToSlug } from '@/lib/tag-utils';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { GuidePartNavigation } from '@/components/guide-part-navigation';
@@ -101,6 +101,18 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <TechArticleSchema
+        title={guide.title}
+        description={guide.description}
+        publishedDate={guide.publishedAt}
+        modifiedDate={guide.updatedAt}
+        imageUrl={getSocialImagePath(guide.slug, 'guides') || guide.image}
+        authorName={guide.author?.name}
+        url={`/guides/${guide.slug}`}
+        articleSection={guide.category?.name}
+        keywords={guide.tags}
+        partsCount={guide.partsCount}
+      />
       <ReadingProgressBar />
 
       <div className="container px-4 py-8 mx-auto">
