@@ -6,6 +6,10 @@ import { getAllExercises } from '@/lib/exercises';
 import { getQuizMetadata } from '@/lib/quiz-loader';
 import { getAllNews } from '@/lib/news';
 import { getActiveGames } from '@/lib/games';
+import { getAllFlashCardSets } from '@/lib/flashcard-loader';
+import { checklists } from '@/content/checklists';
+import { interviewQuestions } from '@/content/interview-questions';
+import { getAllAdventDays } from '@/lib/advent';
 
 export const dynamic = 'force-static';
 
@@ -13,15 +17,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
   // Get all content
-  const [posts, categories, guides, exercises, quizzes, news, games] = await Promise.all([
-    getAllPosts(),
-    getAllCategories(),
-    getAllGuides(),
-    getAllExercises(),
-    getQuizMetadata(),
-    getAllNews(),
-    getActiveGames(),
-  ]);
+  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays] =
+    await Promise.all([
+      getAllPosts(),
+      getAllCategories(),
+      getAllGuides(),
+      getAllExercises(),
+      getQuizMetadata(),
+      getAllNews(),
+      getActiveGames(),
+      getAllFlashCardSets(),
+      getAllAdventDays(),
+    ]);
 
   // Static routes
   const routes = [
@@ -153,6 +160,62 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Flashcard routes
+  const flashcardRoutes = flashcards.map((set) => ({
+    url: `${baseUrl}/flashcards/${set.id}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  // Checklist routes
+  const checklistRoutes = checklists.map((checklist) => ({
+    url: `${baseUrl}/checklists/${checklist.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  // Interview question routes
+  const interviewRoutes = interviewQuestions.map((q) => ({
+    url: `${baseUrl}/interview-questions/${q.tier}/${q.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  // Advent of DevOps routes
+  const adventRoutes = adventDays.map((day) => ({
+    url: `${baseUrl}/advent-of-devops/${day.slug}`,
+    lastModified: new Date(day.updatedAt || day.publishedAt || new Date()),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
+  // Static content pages
+  const contentPages = [
+    '/about',
+    '/editorial',
+    '/privacy',
+    '/terms',
+    '/sponsorship',
+    '/roadmaps',
+    '/roadmaps/junior',
+    '/roadmaps/devsecops',
+    '/books',
+    '/books/devops-survival-guide',
+    '/flashcards',
+    '/checklists',
+    '/interview-questions',
+    '/advent-of-devops',
+    '/search',
+  ].map((path) => ({
+    url: `${baseUrl}${path}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
+  }));
+
   return [
     ...routes,
     ...postRoutes,
@@ -163,5 +226,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...quizRoutes,
     ...newsRoutes,
     ...gameRoutes,
+    ...flashcardRoutes,
+    ...checklistRoutes,
+    ...interviewRoutes,
+    ...adventRoutes,
+    ...contentPages,
   ];
 }
