@@ -126,6 +126,7 @@ export const legalSection: FooterSection = {
   links: [
     { href: '/privacy', label: 'Privacy Policy' },
     { href: '/terms', label: 'Terms of Service' },
+    { href: '/editorial', label: 'Editorial Standards' },
     { href: '/sponsorship', label: 'Sponsorship' },
   ],
 };
