@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',
     type: 'website',
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Search | DevOps Daily',
+    description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',
+  },
 };
 
 export default function SearchPage() {
