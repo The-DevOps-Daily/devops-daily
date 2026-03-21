@@ -37,6 +37,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${meta.title} | The DevOps Daily`,
     description: meta.description,
+    alternates: {
+      canonical: `/interview-questions/${tier}`,
+    },
     openGraph: {
       title: meta.title,
       description: meta.description,

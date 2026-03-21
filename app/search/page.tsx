@@ -5,6 +5,9 @@ import { SearchPageClient } from '@/components/search-page-client';
 export const metadata: Metadata = {
   title: 'Search | DevOps Daily',
   description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',
+  alternates: {
+    canonical: '/search',
+  },
   openGraph: {
     title: 'Search | DevOps Daily',
     description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',

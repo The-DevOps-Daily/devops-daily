@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     'DevOps Daily - Tutorials, Guides, Exercises & News for DevOps Engineers',
   description:
     'Learn DevOps with hands-on tutorials, comprehensive guides, interactive exercises, quizzes, and weekly news. Covering Docker, Kubernetes, Terraform, CI/CD, and more.',
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     title:
       'DevOps Daily - Tutorials, Guides, Exercises & News for DevOps Engineers',
