@@ -1,7 +1,10 @@
 import { notFound } from 'next/navigation';
 import { getExerciseById, getAllExercises } from '@/lib/exercises';
 import { ExerciseDetailClient } from '@/components/exercise-detail-client';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import {
+  BreadcrumbSchema,
+  LearningResourceSchema,
+} from '@/components/schema-markup';
 import { getSocialImagePath } from '@/lib/image-utils';
 import type { Metadata } from 'next';
 
@@ -80,6 +83,15 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <LearningResourceSchema
+        title={exercise.title}
+        description={exercise.description}
+        difficulty={exercise.difficulty}
+        estimatedTime={exercise.estimatedTime}
+        learningObjectives={exercise.learningObjectives}
+        technologies={exercise.technologies}
+        url={`/exercises/${exercise.id}`}
+      />
       <ExerciseDetailClient exercise={exercise} />
     </>
   );
