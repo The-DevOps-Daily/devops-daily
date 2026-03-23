@@ -1,0 +1,294 @@
+{
+  "id": "docker-quiz",
+  "title": "Docker Quiz",
+  "description": "Test your knowledge of Docker containers, images, networking, volumes, and Dockerfile best practices across real-world scenarios.",
+  "category": "Docker",
+  "icon": "Container",
+  "totalPoints": 236,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 8,
+      "advanced": 4
+    },
+    "createdDate": "2026-03-20"
+  },
+  "questions": [
+    {
+      "id": "container-vs-vm",
+      "title": "Containers vs Virtual Machines",
+      "description": "What is the primary reason Docker containers start faster than traditional virtual machines?",
+      "situation": "Your team is migrating from a VM-based deployment to Docker containers. A junior engineer asks why containers boot in seconds while their VMs take minutes.",
+      "codeExample": "$ time docker run --rm alpine echo 'Hello'\nHello\nreal    0m0.438s\n\n$ time vagrant up\n==> default: Booting VM...\nreal    2m14.612s",
+      "options": [
+        "Containers use a hypervisor that is optimized for speed",
+        "Containers share the host OS kernel and do not need to boot a full operating system",
+        "Containers compress the entire OS into a smaller binary format",
+        "Containers run directly on hardware without any abstraction layer"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Containers share the host operating system's kernel, so they skip the entire OS boot process that VMs require. A VM must start its own kernel, init system, and services. Containers simply start a new isolated process using Linux namespaces and cgroups, which takes milliseconds. They do not use a hypervisor (option A), do not compress an OS (option C), and they do have an abstraction layer via the container runtime (option D).",
+      "hint": "Think about what happens at startup. What heavy step do VMs perform that containers skip entirely?"
+    },
+    {
+      "id": "image-layers",
+      "title": "Understanding Image Layers",
+      "description": "How many new layers will be created when building this Dockerfile?",
+      "situation": "You are reviewing a colleague's Dockerfile during a code review and want to understand the layer structure to optimize build caching.",
+      "codeExample": "FROM ubuntu:22.04\nLABEL maintainer=\"team@example.com\"\nENV APP_ENV=production\nRUN apt-get update && apt-get install -y curl\nCOPY app.py /app/\nRUN pip install flask\nCMD [\"python\", \"/app/app.py\"]",
+      "options": [
+        "7 layers — every instruction creates a new layer",
+        "3 layers — only RUN, COPY, and ADD create layers",
+        "4 layers — FROM creates one layer plus the RUN and COPY instructions",
+        "1 layer — Docker compresses everything into a single layer"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "In modern Docker (BuildKit), only RUN, COPY, and ADD instructions create new filesystem layers. Instructions like FROM (which references an existing image), LABEL, ENV, and CMD only add metadata and do not produce new layers. In this Dockerfile, the two RUN instructions and one COPY instruction each create a layer, totaling 3 new layers on top of the base image. Option A incorrectly counts every instruction, option C incorrectly includes FROM, and option D is not how Docker works.",
+      "hint": "Not all Dockerfile instructions are equal. Which ones actually modify the filesystem?"
+    },
+    {
+      "id": "expose-vs-publish",
+      "title": "EXPOSE vs Port Publishing",
+      "description": "A containerized web app has EXPOSE 8080 in its Dockerfile, but you cannot access it from the host browser at localhost:8080. What is the issue?",
+      "situation": "You deployed a new service using docker run myapp and the health check from the host machine is failing. The container logs show the app is listening on port 8080.",
+      "codeExample": "$ docker run myapp\nServer started on port 8080\n\n$ curl http://localhost:8080\ncurl: (7) Failed to connect to localhost port 8080: Connection refused\n\n$ docker inspect myapp-container | jq '.[0].NetworkSettings.Ports'\n{\n  \"8080/tcp\": null\n}",
+      "options": [
+        "The EXPOSE instruction is using the wrong protocol — it should specify EXPOSE 8080/http",
+        "The container's firewall is blocking the connection on port 8080",
+        "EXPOSE only documents the port; you must use -p 8080:8080 at runtime to publish it to the host",
+        "The container needs to be restarted after EXPOSE takes effect"
+      ],
+      "correctAnswer": 2,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "The EXPOSE instruction in a Dockerfile is purely documentation — it signals which ports the application inside the container listens on, but it does not actually publish or map any ports. To make a container port accessible from the host, you must use the -p (or --publish) flag at runtime, e.g., docker run -p 8080:8080 myapp. The inspect output showing null for port mappings confirms no port was published. Option A is wrong because EXPOSE uses transport protocols (tcp/udp), not application protocols. Options B and D are fabricated issues.",
+      "hint": "Look at the docker inspect output carefully. What does null in the port mappings tell you?"
+    },
+    {
+      "id": "layer-caching-order",
+      "title": "Optimizing Layer Cache",
+      "description": "Which reordering of this Dockerfile would best utilize Docker's build cache when application source code changes frequently?",
+      "situation": "Your CI pipeline rebuilds Docker images on every commit. Builds are slow because npm install runs on every build, even when only application code changes.",
+      "codeExample": "# Current Dockerfile (slow rebuilds)\nFROM node:18-alpine\nWORKDIR /app\nCOPY . .\nRUN npm ci --production\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]",
+      "options": [
+        "Add --no-cache flag to the docker build command to avoid stale dependencies",
+        "Copy package.json and package-lock.json first, run npm ci, then copy the rest of the source code",
+        "Combine the COPY and RUN instructions into a single layer using COPY . . && npm ci",
+        "Move the RUN npm ci instruction before the COPY instruction to cache it independently"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Docker's build cache invalidates a layer and all subsequent layers when a change is detected. By copying package.json and package-lock.json first and running npm ci, Docker can cache the expensive dependency installation step. The source code is copied afterward, so code changes only invalidate the final COPY layer, not the npm ci layer. Option A disables caching entirely, making builds slower. Option C is invalid syntax. Option D would fail because npm ci needs package.json to be present.",
+      "hint": "Docker invalidates all layers after the first changed layer. What files change most often vs. least often?"
+    },
+    {
+      "id": "multi-stage-build",
+      "title": "Multi-Stage Build Benefits",
+      "description": "What is the primary advantage of using a multi-stage build in this Dockerfile?",
+      "situation": "Your security team flagged that production images contain gcc, make, and other build tools. You need to reduce the attack surface.",
+      "codeExample": "# Stage 1: Build\nFROM golang:1.21 AS builder\nWORKDIR /src\nCOPY go.mod go.sum ./\nRUN go mod download\nCOPY . .\nRUN CGO_ENABLED=0 go build -o /app\n\n# Stage 2: Production\nFROM alpine:3.19\nCOPY --from=builder /app /app\nENTRYPOINT [\"/app\"]",
+      "options": [
+        "It allows the application to run in two different environments simultaneously",
+        "It enables parallel builds of multiple services in a single Dockerfile",
+        "It produces a minimal final image containing only the compiled binary, without build tools or source code",
+        "It automatically enables BuildKit for faster layer processing"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Multi-stage builds let you use one image for building (with compilers, build tools, source code) and a separate minimal image for production. Only the artifacts you explicitly COPY --from=builder end up in the final image. This dramatically reduces image size and attack surface — the production image has no compiler, no source code, and no build dependencies. Option A describes something multi-stage builds do not do. Option B is incorrect — Docker Compose handles multi-service builds. Option D is unrelated to multi-stage builds.",
+      "hint": "Focus on what ends up in the final image vs. what was needed only during compilation."
+    },
+    {
+      "id": "bridge-network-dns",
+      "title": "Container DNS Resolution",
+      "description": "Why does the web container fail to resolve the database hostname in this setup?",
+      "situation": "You are running a web application and a PostgreSQL database as separate containers. The web app is configured to connect to host 'db' but the connection fails with a DNS resolution error.",
+      "codeExample": "$ docker run -d --name db postgres:15\n$ docker run -d --name web --env DB_HOST=db myapp\n\n$ docker exec web ping db\nping: bad address 'db'\n\n$ docker network ls\nNETWORK ID     NAME      DRIVER    SCOPE\na1b2c3d4e5f6   bridge    bridge    local",
+      "options": [
+        "The PostgreSQL container has not finished starting, so DNS is not yet registered",
+        "The default bridge network does not provide automatic DNS resolution between containers; a user-defined network is required",
+        "The --name flag does not register DNS entries; you need to use --hostname instead",
+        "Docker DNS only works with docker-compose, not with standalone docker run commands"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The default bridge network in Docker does not provide automatic DNS resolution between containers. Containers on the default bridge can only communicate via IP addresses or the legacy --link flag. User-defined bridge networks include an embedded DNS server that resolves container names automatically. The fix is: docker network create mynet, then run both containers with --network mynet. Option A is wrong because DNS registration is not timing-dependent in this way. Option C is incorrect — --name does register DNS on user-defined networks. Option D is false — DNS works with docker run on user-defined networks.",
+      "hint": "There are two types of bridge networks in Docker. What feature does the default one lack?"
+    },
+    {
+      "id": "named-vs-bind-mount",
+      "title": "Named Volumes vs Bind Mounts",
+      "description": "Which volume approach should you use for the PostgreSQL data directory in production?",
+      "situation": "You are containerizing a PostgreSQL database for production. You need data to survive container recreation and host migrations. Your ops team also needs to back up the data using Docker-native tools.",
+      "codeExample": "# Option A\ndocker run -v /home/user/pgdata:/var/lib/postgresql/data postgres\n\n# Option B\ndocker run -v pgdata:/var/lib/postgresql/data postgres\n\n# Option C\ndocker run --tmpfs /var/lib/postgresql/data postgres\n\n# Option D\ndocker run postgres  # rely on writable container layer",
+      "options": [
+        "Bind mount a host directory (-v /home/user/pgdata:/path) for direct filesystem access",
+        "Use a named volume (-v pgdata:/path) managed by Docker for portability and backup support",
+        "Use a tmpfs mount for maximum I/O performance on the data directory",
+        "Use the container's writable layer since Docker preserves data across container lifecycle events"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Named volumes are managed by Docker, work consistently across different host operating systems, support Docker-native backup and migration workflows (docker volume inspect, docker run --volumes-from), and offer better performance on Docker Desktop. Bind mounts (option A) tie you to specific host paths and can cause permission issues. tmpfs (option C) stores data in memory and is lost when the container stops — disastrous for a database. The writable layer (option D) is lost when the container is removed.",
+      "hint": "Consider what happens when you need to migrate this database to a different host or back it up using Docker commands."
+    },
+    {
+      "id": "copy-vs-add",
+      "title": "COPY vs ADD in Dockerfiles",
+      "description": "When should you use ADD instead of COPY in a Dockerfile?",
+      "situation": "During a code review, you notice a Dockerfile using ADD for every file operation. You want to recommend best practices to the team.",
+      "codeExample": "# Current Dockerfile\nFROM python:3.11-slim\nADD requirements.txt /app/\nADD src/ /app/src/\nADD https://example.com/config.tar.gz /app/\nADD data.tar.gz /app/data/\nRUN pip install -r /app/requirements.txt",
+      "options": [
+        "Always use ADD because it is the newer, more capable instruction that replaces COPY",
+        "Use ADD only when you need automatic tar extraction or remote URL fetching; use COPY for simple file copying",
+        "Always use COPY because ADD is deprecated and will be removed in future Docker versions",
+        "Use ADD for directories and COPY for individual files to optimize layer caching"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "COPY and ADD both copy files into the image, but ADD has two additional features: it can automatically extract local tar archives and fetch files from remote URLs. Docker best practice is to use COPY for straightforward file copying because its behavior is more transparent and predictable. ADD should only be used when you specifically need tar extraction (like data.tar.gz in the example) or URL fetching. ADD is not deprecated (option C), nor newer (option A). The directory vs. file distinction (option D) is not how these instructions differ.",
+      "hint": "Look at the four ADD lines in the example. Which ones actually benefit from ADD's special capabilities?"
+    },
+    {
+      "id": "healthcheck-config",
+      "title": "Container Health Checks",
+      "description": "What is wrong with this health check configuration, given that the container keeps being marked as unhealthy?",
+      "situation": "Your orchestrator keeps restarting a container that appears to be functioning correctly. Users can access the application, but Docker reports the container as unhealthy.",
+      "codeExample": "HEALTHCHECK --interval=5s --timeout=2s --retries=1 \\\n  CMD curl -f http://localhost:8080/health || exit 1\n\n$ docker inspect --format='{{.State.Health.Status}}' myapp\nunhealthy\n\n$ docker inspect --format='{{json .State.Health.Log}}' myapp\n[{\"ExitCode\":7,\"Output\":\"curl: not found\"}]",
+      "options": [
+        "The --interval=5s is too frequent and causes resource exhaustion on the health endpoint",
+        "The health check is using the wrong exit code; it should use exit 0 on failure",
+        "The curl binary is not installed in the container image, so the health check command always fails",
+        "The --timeout=2s is too short for the application to respond to health check requests"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The health check log clearly shows ExitCode 7 with the output 'curl: not found'. This means the container image (likely based on a minimal/alpine image) does not have curl installed. The health check command fails not because the application is unhealthy, but because the tool to check health does not exist. The fix is either to install curl in the Dockerfile or use a tool that is available, such as wget or a custom binary. Additionally, --retries=1 is very aggressive — a single failure marks the container unhealthy. Options A and D address timing but are not the root cause shown in the logs.",
+      "hint": "Read the health check log output carefully. What does ExitCode 7 and the output message tell you?"
+    },
+    {
+      "id": "docker-compose-depends-on",
+      "title": "Service Startup Dependencies",
+      "description": "Why does the web service crash on startup even though depends_on is configured?",
+      "situation": "Your docker-compose setup has a web app that depends on PostgreSQL. The web container starts and immediately crashes because it cannot connect to the database.",
+      "codeExample": "services:\n  web:\n    build: .\n    depends_on:\n      - db\n    environment:\n      DATABASE_URL: postgres://user:pass@db:5432/mydb\n  db:\n    image: postgres:15\n    environment:\n      POSTGRES_PASSWORD: pass\n\n$ docker compose up\ndb_1   | PostgreSQL init process in progress...\nweb_1  | Error: connect ECONNREFUSED 172.18.0.2:5432\nweb_1  exited with code 1",
+      "options": [
+        "The DATABASE_URL is using the wrong hostname; it should use localhost instead of db",
+        "depends_on only waits for the container to start, not for the service inside to be ready to accept connections",
+        "PostgreSQL requires a POSTGRES_USER environment variable to be set before it can accept connections",
+        "The web service needs to be on the same network as db, which requires an explicit networks configuration"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The depends_on directive in docker-compose only ensures that the dependency container has started — it does not wait for the application inside the container to be ready. PostgreSQL takes several seconds to initialize its database and start accepting connections. The web container starts as soon as the db container is running, but PostgreSQL is still initializing. The fix is to use depends_on with a condition: service_healthy and configure a healthcheck on the db service, or add retry logic to the web application. Option A is wrong — db is correct for compose DNS. Option C is wrong — POSTGRES_USER has a default. Option D is wrong — compose creates a default network.",
+      "hint": "There is a difference between a container being 'started' and the service inside being 'ready'. What does depends_on actually guarantee?"
+    },
+    {
+      "id": "run-instruction-consolidation",
+      "title": "Consolidating RUN Instructions",
+      "description": "Which version of these RUN instructions produces a smaller image and why?",
+      "situation": "Your Docker image is unexpectedly large. You notice the Dockerfile has many separate RUN instructions for installing packages.",
+      "codeExample": "# Version A\nRUN apt-get update\nRUN apt-get install -y python3\nRUN apt-get install -y nginx\nRUN rm -rf /var/lib/apt/lists/*\n\n# Version B\nRUN apt-get update && \\\n    apt-get install -y python3 nginx && \\\n    rm -rf /var/lib/apt/lists/*",
+      "options": [
+        "Version A is smaller because each layer is independently compressed and optimized",
+        "Both versions produce the same size because Docker automatically squashes layers",
+        "Version B is smaller because the cache cleanup happens in the same layer as the installation, so deleted files do not persist in earlier layers",
+        "Version A is smaller because Docker can deduplicate identical files across layers"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Each RUN instruction creates a new layer. In Version A, the apt-get update and install commands create layers that contain the package cache. Even though the final RUN removes the cache, those files still exist in the earlier layers — layers are immutable and additive. In Version B, the installation and cleanup happen in a single layer, so the deleted cache files never persist. Docker does not automatically squash layers (option B), and layer deduplication (option D) does not help when the cache files exist in separate layers. This is a common source of image bloat.",
+      "hint": "Think about Docker's layer model. Once a file is written to a layer, can a later layer truly remove it from the image?"
+    },
+    {
+      "id": "pid-1-signal-handling",
+      "title": "PID 1 and Signal Handling",
+      "description": "Why does this container take exactly 10 seconds to stop when you run docker stop?",
+      "situation": "Your deployment pipeline is slow because containers take the full 10-second timeout to shut down instead of stopping gracefully. The application itself handles SIGTERM correctly when run outside Docker.",
+      "codeExample": "FROM python:3.11-slim\nWORKDIR /app\nCOPY app.py .\nCMD python app.py\n\n$ docker stop mycontainer\n# Waits exactly 10 seconds, then container is killed\n\n$ docker inspect mycontainer | jq '.[0].Config.Cmd'\n[\"/bin/sh\", \"-c\", \"python app.py\"]",
+      "options": [
+        "Python applications cannot handle SIGTERM signals when running in containers",
+        "The CMD shell form wraps the command in /bin/sh, which does not forward signals to the child process running as PID 1",
+        "Docker always waits the full timeout period before stopping a container regardless of signal handling",
+        "The container needs a STOPSIGNAL instruction to override the default SIGKILL behavior"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "The CMD instruction has two forms: shell form (CMD command arg) and exec form (CMD [\"command\", \"arg\"]). The shell form wraps the command in /bin/sh -c, which means /bin/sh is PID 1, not the Python process. When docker stop sends SIGTERM to PID 1, /bin/sh receives it but does not forward it to the child Python process. After the 10-second grace period, Docker sends SIGKILL. The fix is to use exec form: CMD [\"python\", \"app.py\"], which makes python PID 1 and receives SIGTERM directly. Python can handle SIGTERM outside Docker (option A is wrong). Docker does not always wait the full timeout (option C). The default stop signal is already SIGTERM, not SIGKILL (option D).",
+      "hint": "Look at the docker inspect output. What command is actually running, and what is PID 1 inside the container?"
+    },
+    {
+      "id": "overlay-network-swarm",
+      "title": "Cross-Host Container Networking",
+      "description": "Which Docker network driver enables containers on different physical hosts to communicate as if they were on the same network?",
+      "situation": "Your application is deployed across three physical servers using Docker Swarm. Services on different hosts need to communicate with each other using service names.",
+      "codeExample": "$ docker node ls\nID           HOSTNAME   STATUS  AVAILABILITY  MANAGER STATUS\nabc123       node-1     Ready   Active        Leader\ndef456       node-2     Ready   Active\nghi789       node-3     Ready   Active\n\n$ docker service create --name api --replicas 3 myapi\n$ docker service create --name db --replicas 1 postgres\n\n# api containers on node-1 and node-3 need to reach db on node-2",
+      "options": [
+        "Bridge network with port forwarding between hosts using iptables rules",
+        "Host network mode on all containers so they share the host's network stack directly",
+        "Overlay network, which creates a distributed network spanning multiple Docker daemon hosts using VXLAN encapsulation",
+        "Macvlan network, which assigns each container a unique MAC address on the physical network"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Overlay networks are designed specifically for multi-host communication in Docker Swarm (and Kubernetes). They use VXLAN tunneling to encapsulate container traffic and route it between hosts, providing a flat network where containers can communicate using service names regardless of which host they run on. Bridge networks (option A) are limited to a single host. Host networking (option B) sacrifices isolation and does not provide cross-host service discovery. Macvlan (option D) gives containers real network identities but does not provide the built-in service discovery and load balancing that overlay networks offer in Swarm.",
+      "hint": "Consider which network driver was specifically designed for orchestration scenarios where containers span multiple hosts."
+    },
+    {
+      "id": "build-context-dockerignore",
+      "title": "Build Context and .dockerignore",
+      "description": "Why is this Docker build transferring 2GB of context and taking several minutes before the build even starts?",
+      "situation": "A developer reports that docker build takes forever. You notice the 'Sending build context to Docker daemon' step is transferring gigabytes of data.",
+      "codeExample": "$ ls -la\ntotal 2.1G\ndrwxr-xr-x  node_modules/     (1.8G)\ndrwxr-xr-x  .git/             (250M)\ndrwxr-xr-x  src/              (2M)\n-rw-r--r--  package.json      (2K)\n-rw-r--r--  Dockerfile         (1K)\n\n$ docker build -t myapp .\nSending build context to Docker daemon  2.05GB\n\n$ cat .dockerignore\ncat: .dockerignore: No such file or directory",
+      "options": [
+        "The Dockerfile is too large and should be split into multiple files to reduce context size",
+        "Docker is uploading the built image layers to the daemon, which is expected for large applications",
+        "The build context includes all files in the directory (including node_modules and .git) because there is no .dockerignore file to exclude them",
+        "The node_modules directory is being rebuilt inside the container, causing duplicate data transfer"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "When you run docker build, the Docker CLI sends the entire build context (the directory you specify, usually .) to the Docker daemon. Without a .dockerignore file, everything in that directory is sent — including node_modules (1.8GB) and .git (250MB), which are almost never needed inside the image. Creating a .dockerignore file with node_modules, .git, and other unnecessary files reduces the context to just the relevant source files. The Dockerfile size (option A) is irrelevant to context transfer. Option B confuses context sending with layer upload. Option D describes something that happens during RUN, not during context transfer.",
+      "hint": "The error message says 'Sending build context'. What exactly is the build context, and what controls what gets included?"
+    },
+    {
+      "id": "non-root-user-security",
+      "title": "Running Containers as Non-Root",
+      "description": "What security vulnerability exists in this Dockerfile, and which fix is correct?",
+      "situation": "Your security scanner flagged a production container running as root. An attacker who exploits a vulnerability in the application could gain root access to the container and potentially escape to the host.",
+      "codeExample": "FROM node:18-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --production\nCOPY . .\nEXPOSE 3000\nCMD [\"node\", \"server.js\"]\n\n$ docker exec myapp whoami\nroot\n\n$ docker exec myapp id\nuid=0(root) gid=0(root)",
+      "options": [
+        "Add RUN chmod 755 /app to restrict file permissions, which prevents root escalation",
+        "Add USER node after the COPY instructions to run the application process as a non-root user",
+        "Add --read-only flag to docker run, which prevents root from modifying any files",
+        "Add LABEL security.rootless=true to signal the runtime to drop root privileges automatically"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "The node:18-alpine image already includes a non-root user called 'node'. Adding USER node before the CMD instruction causes the container process to run as this unprivileged user instead of root. This limits the blast radius of any application vulnerability — an attacker who compromises the app gets non-root access, making container escape significantly harder. Option A (chmod) only changes file permissions but the process still runs as root. Option C (--read-only) prevents filesystem writes but the process is still root. Option D is fabricated — no such label behavior exists. Note that you may need to ensure file ownership with chown before switching users.",
+      "hint": "The docker exec output shows the process runs as uid=0 (root). How do you change which user the container process runs as?"
+    }
+  ]
+}

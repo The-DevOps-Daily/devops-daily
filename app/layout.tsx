@@ -124,7 +124,7 @@ export const metadata: Metadata = {
     // bing: 'your-bing-verification-code',
   },
   other: {
-    'facebook-domain-verification': 'evfvq7to4p4pspyuxu8nzgjp0yvtkk',
+    'facebook-domain-verification': 'j9iuktnx8kdm881pb70zvbkjept48t',
   },
 };
 

@@ -1,0 +1,305 @@
+{
+  "id": "kubernetes-hpa-custom-metrics",
+  "title": "Kubernetes HPA with Custom Metrics",
+  "description": "Configure Horizontal Pod Autoscaler to scale applications based on custom application metrics exposed via Prometheus and the Prometheus Adapter. You will deploy a sample app that exposes custom metrics, set up the metrics pipeline, and verify autoscaling driven by application-specific signals.",
+  "category": {
+    "name": "Kubernetes",
+    "slug": "kubernetes"
+  },
+  "difficulty": "advanced",
+  "estimatedTime": "90 minutes",
+  "technologies": ["Kubernetes", "Prometheus", "Prometheus Adapter", "Helm", "kubectl", "YAML"],
+  "prerequisites": [
+    "Running Kubernetes cluster (minikube, kind, or cloud-managed)",
+    "kubectl configured and connected to the cluster",
+    "Helm 3 installed",
+    "Basic understanding of Kubernetes Deployments, Services, and HPA",
+    "Familiarity with Prometheus concepts (scraping, metrics, PromQL)"
+  ],
+  "learningObjectives": [
+    "Deploy Prometheus and the Prometheus Adapter into a Kubernetes cluster",
+    "Instrument an application to expose custom Prometheus metrics",
+    "Configure the Prometheus Adapter to register custom metrics with the Kubernetes API",
+    "Create an HPA that scales based on a custom application metric",
+    "Debug and verify the custom metrics pipeline end-to-end"
+  ],
+  "environment": "local",
+  "icon": "Activity",
+  "publishedAt": "2026-03-20T12:00:00Z",
+  "author": {
+    "name": "DevOps Daily Team",
+    "slug": "devops-daily-team"
+  },
+  "tags": ["Kubernetes", "Autoscaling", "Prometheus", "Custom Metrics", "Monitoring"],
+  "featured": false,
+  "steps": [
+    {
+      "id": "create-namespace-and-verify-cluster",
+      "title": "Create a Namespace and Verify Cluster Readiness",
+      "description": "Before installing any components, create a dedicated namespace for the exercise and verify that your cluster is healthy. Isolating resources in a namespace keeps things organized and makes cleanup straightforward.",
+      "commands": [
+        "kubectl create namespace hpa-custom-metrics",
+        "kubectl cluster-info",
+        "kubectl get nodes -o wide"
+      ],
+      "expectedOutput": "Namespace 'hpa-custom-metrics' created. Cluster info shows a healthy control plane and all nodes are in Ready status.",
+      "validationCriteria": [
+        "Namespace hpa-custom-metrics exists",
+        "All cluster nodes are in Ready state"
+      ]
+    },
+    {
+      "id": "install-prometheus",
+      "title": "Install Prometheus via Helm",
+      "description": "Deploy the kube-prometheus-stack using Helm. Prometheus is the backbone of the custom metrics pipeline — it scrapes metrics from your application pods and stores them. The Prometheus Adapter (installed in the next step) will query Prometheus and expose those metrics to the Kubernetes custom metrics API so that HPA can consume them.",
+      "commands": [
+        "helm repo add prometheus-community https://prometheus-community.github.io/helm-charts",
+        "helm repo update",
+        "helm install prometheus prometheus-community/kube-prometheus-stack --namespace hpa-custom-metrics --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false --wait --timeout 5m"
+      ],
+      "expectedOutput": "The kube-prometheus-stack Helm release is deployed. All pods in the hpa-custom-metrics namespace reach Running status within a few minutes.",
+      "hints": [
+        "If pods are stuck in Pending, check node resources with kubectl describe node",
+        "Use --wait to ensure Helm blocks until all resources are healthy",
+        "Setting serviceMonitorSelectorNilUsesHelmValues=false allows Prometheus to pick up ServiceMonitors from any namespace"
+      ],
+      "validationCriteria": [
+        "Helm release 'prometheus' is listed in 'helm list -n hpa-custom-metrics'",
+        "Prometheus server pod is Running",
+        "Alertmanager and Grafana pods are Running"
+      ]
+    },
+    {
+      "id": "deploy-sample-app",
+      "title": "Deploy a Sample Application with Custom Metrics",
+      "description": "Deploy a sample HTTP application that exposes a custom Prometheus metric called http_requests_total on its /metrics endpoint. This counter increments with every request the app receives. HPA will later use the per-second rate of this metric to make scaling decisions.",
+      "codeExample": "# sample-app.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: sample-app\n  namespace: hpa-custom-metrics\n  labels:\n    app: sample-app\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: sample-app\n  template:\n    metadata:\n      labels:\n        app: sample-app\n      annotations:\n        prometheus.io/scrape: \"true\"\n        prometheus.io/port: \"8080\"\n        prometheus.io/path: \"/metrics\"\n    spec:\n      containers:\n      - name: sample-app\n        image: luxas/autoscale-demo:v0.1.2\n        ports:\n        - name: http\n          containerPort: 8080\n        resources:\n          requests:\n            cpu: 100m\n            memory: 64Mi\n          limits:\n            cpu: 200m\n            memory: 128Mi\n---\napiVersion: v1\nkind: Service\nmetadata:\n  name: sample-app\n  namespace: hpa-custom-metrics\n  labels:\n    app: sample-app\nspec:\n  ports:\n  - name: http\n    port: 80\n    targetPort: 8080\n  selector:\n    app: sample-app\n  type: ClusterIP",
+      "commands": [
+        "kubectl apply -f sample-app.yaml",
+        "kubectl wait --for=condition=available --timeout=120s deployment/sample-app -n hpa-custom-metrics",
+        "kubectl get pods -n hpa-custom-metrics -l app=sample-app"
+      ],
+      "expectedOutput": "Deployment sample-app is available with 1 running pod.",
+      "hints": [
+        "Verify the /metrics endpoint works by port-forwarding: kubectl port-forward svc/sample-app 8080:80 -n hpa-custom-metrics, then curl http://localhost:8080/metrics",
+        "Look for the http_requests_total metric in the output"
+      ],
+      "validationCriteria": [
+        "sample-app Deployment has 1 ready replica",
+        "Pod is in Running status",
+        "Service sample-app exists and targets port 8080",
+        "curl to /metrics endpoint returns http_requests_total"
+      ]
+    },
+    {
+      "id": "create-service-monitor",
+      "title": "Create a ServiceMonitor for Prometheus Scraping",
+      "description": "A ServiceMonitor tells Prometheus how to discover and scrape your application's metrics endpoint. Without it, Prometheus will not collect your custom metrics and the adapter will have nothing to serve. This is the glue between your application and the metrics pipeline.",
+      "codeExample": "# service-monitor.yaml\napiVersion: monitoring.coreos.com/v1\nkind: ServiceMonitor\nmetadata:\n  name: sample-app\n  namespace: hpa-custom-metrics\n  labels:\n    app: sample-app\nspec:\n  selector:\n    matchLabels:\n      app: sample-app\n  endpoints:\n  - port: http\n    interval: 15s\n    path: /metrics",
+      "commands": [
+        "kubectl apply -f service-monitor.yaml",
+        "kubectl get servicemonitor -n hpa-custom-metrics"
+      ],
+      "expectedOutput": "ServiceMonitor sample-app is created in the hpa-custom-metrics namespace.",
+      "hints": [
+        "After creating the ServiceMonitor, wait 30-60 seconds for Prometheus to pick it up",
+        "You can verify Prometheus is scraping the target by port-forwarding to the Prometheus UI (port 9090) and checking Status > Targets"
+      ],
+      "validationCriteria": [
+        "ServiceMonitor resource exists",
+        "Prometheus Targets page shows sample-app as an active scrape target",
+        "Querying http_requests_total in Prometheus returns data"
+      ]
+    },
+    {
+      "id": "install-prometheus-adapter",
+      "title": "Install and Configure the Prometheus Adapter",
+      "description": "The Prometheus Adapter bridges Prometheus and the Kubernetes custom metrics API (custom.metrics.k8s.io). It runs PromQL queries against Prometheus and translates the results into the format that HPA expects. You will configure a rule that exposes the per-second rate of http_requests_total as a custom metric called http_requests_per_second.",
+      "codeExample": "# prometheus-adapter-values.yaml\nprometheus:\n  url: http://prometheus-kube-prometheus-prometheus.hpa-custom-metrics.svc\n  port: 9090\nrules:\n  custom:\n  - seriesQuery: 'http_requests_total{namespace!=\"\",pod!=\"\"}'\n    resources:\n      overrides:\n        namespace: {resource: \"namespace\"}\n        pod: {resource: \"pod\"}\n    name:\n      matches: \"^(.*)_total$\"\n      as: \"${1}_per_second\"\n    metricsQuery: 'sum(rate(<<.Series>>{<<.LabelMatchers>>}[2m])) by (<<.GroupBy>>)'",
+      "commands": [
+        "helm install prometheus-adapter prometheus-community/prometheus-adapter --namespace hpa-custom-metrics --values prometheus-adapter-values.yaml --wait --timeout 3m",
+        "kubectl get pods -n hpa-custom-metrics -l app.kubernetes.io/name=prometheus-adapter"
+      ],
+      "expectedOutput": "Prometheus Adapter pod is Running. The adapter is configured with the custom rule to expose http_requests_per_second.",
+      "hints": [
+        "The Prometheus URL must match the actual service name — check with: kubectl get svc -n hpa-custom-metrics | grep prometheus",
+        "If the adapter pod CrashLoops, inspect logs: kubectl logs -n hpa-custom-metrics -l app.kubernetes.io/name=prometheus-adapter",
+        "The metricsQuery template uses <<.Series>>, <<.LabelMatchers>>, and <<.GroupBy>> placeholders that the adapter fills in at query time"
+      ],
+      "validationCriteria": [
+        "Prometheus Adapter pod is Running",
+        "Helm release prometheus-adapter is listed",
+        "Adapter logs show no connection errors to Prometheus"
+      ]
+    },
+    {
+      "id": "verify-custom-metrics-api",
+      "title": "Verify Custom Metrics Are Available via the API",
+      "description": "Before creating the HPA, confirm that the custom metrics pipeline is working end-to-end. Query the Kubernetes custom metrics API to ensure http_requests_per_second is registered and returning values. If this step fails, HPA will not be able to scale on the custom metric.",
+      "commands": [
+        "kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1' | python3 -m json.tool | head -30",
+        "kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/hpa-custom-metrics/pods/*/http_requests_per_second' | python3 -m json.tool"
+      ],
+      "expectedOutput": "The first command lists all available custom metrics. The second command returns metric values for the sample-app pod, with a non-zero value for http_requests_per_second.",
+      "hints": [
+        "If the custom metrics API returns a 404, ensure the Prometheus Adapter is running and its APIService is registered: kubectl get apiservice v1beta1.custom.metrics.k8s.io",
+        "If the metric is not listed, generate a few requests first: kubectl run curl-test --image=curlimages/curl --rm -it --restart=Never -n hpa-custom-metrics -- curl http://sample-app.hpa-custom-metrics.svc/",
+        "It can take 1-2 minutes after initial requests for the rate query to produce non-zero values"
+      ],
+      "validationCriteria": [
+        "custom.metrics.k8s.io API is available",
+        "http_requests_per_second metric appears in the metric list",
+        "Querying the metric for the sample-app pod returns a numeric value"
+      ]
+    },
+    {
+      "id": "create-custom-metrics-hpa",
+      "title": "Create the HPA with Custom Metrics",
+      "description": "Now create the HPA that scales the sample-app based on the custom http_requests_per_second metric. The target is set to 10 requests per second per pod — when the average exceeds this threshold, HPA will add more pods to distribute the load.",
+      "codeExample": "# hpa-custom-metrics.yaml\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nmetadata:\n  name: sample-app-hpa\n  namespace: hpa-custom-metrics\nspec:\n  scaleTargetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: sample-app\n  minReplicas: 1\n  maxReplicas: 10\n  metrics:\n  - type: Pods\n    pods:\n      metric:\n        name: http_requests_per_second\n      target:\n        type: AverageValue\n        averageValue: \"10\"\n  behavior:\n    scaleUp:\n      stabilizationWindowSeconds: 30\n      policies:\n      - type: Pods\n        value: 2\n        periodSeconds: 30\n    scaleDown:\n      stabilizationWindowSeconds: 120\n      policies:\n      - type: Percent\n        value: 25\n        periodSeconds: 60",
+      "commands": [
+        "kubectl apply -f hpa-custom-metrics.yaml",
+        "kubectl get hpa sample-app-hpa -n hpa-custom-metrics",
+        "kubectl describe hpa sample-app-hpa -n hpa-custom-metrics"
+      ],
+      "expectedOutput": "HPA is created and shows the current value of http_requests_per_second alongside the target of 10. TARGETS column should display a real value (e.g., 0/10 or 500m/10) rather than <unknown>/10.",
+      "hints": [
+        "If TARGETS shows <unknown>, the custom metrics API is not returning data — revisit the previous step",
+        "The 'type: Pods' metric means HPA averages the metric value across all pods in the Deployment",
+        "AverageValue of 10 means HPA targets 10 requests/second per pod"
+      ],
+      "validationCriteria": [
+        "HPA sample-app-hpa exists in the namespace",
+        "HPA references the sample-app Deployment",
+        "TARGETS column shows a numeric value, not <unknown>",
+        "Min/Max replicas are 1 and 10 respectively"
+      ]
+    },
+    {
+      "id": "generate-load",
+      "title": "Generate Load to Trigger Scale-Up",
+      "description": "Deploy a load generator that sends a high volume of HTTP requests to the sample-app service. This will push the http_requests_per_second metric above the HPA target of 10, triggering a scale-up event. Watch the HPA and pod count as the system responds.",
+      "codeExample": "# load-generator.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: load-generator\n  namespace: hpa-custom-metrics\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: load-generator\n  template:\n    metadata:\n      labels:\n        app: load-generator\n    spec:\n      containers:\n      - name: load-generator\n        image: busybox:1.36\n        command:\n        - /bin/sh\n        - -c\n        - |\n          while true; do\n            for i in $(seq 1 50); do\n              wget -q -O- http://sample-app.hpa-custom-metrics.svc/ > /dev/null 2>&1 &\n            done\n            sleep 0.5\n          done\n        resources:\n          requests:\n            cpu: 50m\n            memory: 32Mi",
+      "commands": [
+        "kubectl apply -f load-generator.yaml",
+        "kubectl get pods -n hpa-custom-metrics -l app=load-generator",
+        "echo 'Waiting 90 seconds for load to build and HPA to react...'",
+        "sleep 90",
+        "kubectl get hpa sample-app-hpa -n hpa-custom-metrics",
+        "kubectl get pods -n hpa-custom-metrics -l app=sample-app"
+      ],
+      "expectedOutput": "After 60-90 seconds, http_requests_per_second should exceed the target of 10. HPA increases the replica count, and you should see multiple sample-app pods.",
+      "hints": [
+        "Monitor in real time with: kubectl get hpa sample-app-hpa -n hpa-custom-metrics -w",
+        "It typically takes 1-2 minutes for the metric rate to spike and HPA to make a scaling decision",
+        "If no scale-up occurs, check the metric value: kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/hpa-custom-metrics/pods/*/http_requests_per_second' | python3 -m json.tool"
+      ],
+      "validationCriteria": [
+        "Load generator is running",
+        "http_requests_per_second exceeds the target value of 10",
+        "HPA has scaled the Deployment to more than 1 replica",
+        "New sample-app pods are in Running state"
+      ]
+    },
+    {
+      "id": "verify-and-observe",
+      "title": "Verify Scaling and Observe Metrics",
+      "description": "Confirm that the autoscaling is working correctly by examining HPA events, checking that load is distributed across pods, and verifying the custom metric values per pod. This step validates the entire pipeline from application metrics through Prometheus to HPA decisions.",
+      "commands": [
+        "kubectl describe hpa sample-app-hpa -n hpa-custom-metrics",
+        "kubectl get events -n hpa-custom-metrics --sort-by='.lastTimestamp' --field-selector reason=SuccessfulRescale",
+        "kubectl get pods -n hpa-custom-metrics -l app=sample-app -o wide",
+        "kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1/namespaces/hpa-custom-metrics/pods/*/http_requests_per_second' | python3 -m json.tool"
+      ],
+      "expectedOutput": "HPA describe shows scaling events. Events list SuccessfulRescale entries. Multiple sample-app pods are running. The per-pod metric value should be lower now that load is distributed.",
+      "validationCriteria": [
+        "HPA events show at least one SuccessfulRescale event",
+        "Multiple sample-app pods are running and ready",
+        "Per-pod http_requests_per_second is closer to the target value now that load is distributed",
+        "No error conditions in HPA status"
+      ]
+    },
+    {
+      "id": "cleanup",
+      "title": "Remove Load and Clean Up Resources",
+      "description": "Delete the load generator and observe the scale-down behavior. Once the request rate drops below the target, HPA will gradually reduce the replica count back to the minimum. After verifying scale-down, clean up all resources created during this exercise.",
+      "commands": [
+        "kubectl delete deployment load-generator -n hpa-custom-metrics",
+        "echo 'Load removed. Waiting 3 minutes for scale-down...'",
+        "sleep 180",
+        "kubectl get hpa sample-app-hpa -n hpa-custom-metrics",
+        "kubectl get pods -n hpa-custom-metrics -l app=sample-app",
+        "echo '--- Cleaning up all resources ---'",
+        "helm uninstall prometheus-adapter -n hpa-custom-metrics",
+        "helm uninstall prometheus -n hpa-custom-metrics",
+        "kubectl delete namespace hpa-custom-metrics"
+      ],
+      "expectedOutput": "After removing load, the metric drops and HPA scales the Deployment back to 1 replica. All Helm releases and the namespace are deleted.",
+      "hints": [
+        "Scale-down respects the stabilizationWindowSeconds (120s) configured in the HPA behavior section",
+        "If you want to keep the setup for further experimentation, skip the cleanup commands"
+      ],
+      "validationCriteria": [
+        "Load generator is deleted",
+        "HPA scales back to minReplicas (1)",
+        "All Helm releases are uninstalled",
+        "Namespace hpa-custom-metrics is deleted"
+      ]
+    }
+  ],
+  "completionCriteria": [
+    "Prometheus is scraping custom application metrics via a ServiceMonitor",
+    "Prometheus Adapter exposes http_requests_per_second through the custom.metrics.k8s.io API",
+    "HPA successfully scales pods up when the custom metric exceeds the target",
+    "HPA scales pods back down when load is removed",
+    "The full metrics pipeline (app -> Prometheus -> Adapter -> HPA) is verified end-to-end"
+  ],
+  "troubleshooting": [
+    {
+      "issue": "HPA shows <unknown> in the TARGETS column for the custom metric",
+      "solution": "Verify the custom metrics API is working: kubectl get --raw '/apis/custom.metrics.k8s.io/v1beta1'. If it returns a 404, check the Prometheus Adapter pod logs and ensure the APIService is registered: kubectl get apiservice v1beta1.custom.metrics.k8s.io"
+    },
+    {
+      "issue": "Prometheus Adapter pod is CrashLooping",
+      "solution": "Check the adapter logs: kubectl logs -n hpa-custom-metrics -l app.kubernetes.io/name=prometheus-adapter. The most common cause is an incorrect Prometheus URL in the values file. Verify the URL matches the actual Prometheus service: kubectl get svc -n hpa-custom-metrics | grep prometheus"
+    },
+    {
+      "issue": "Custom metric returns zero even after generating load",
+      "solution": "The rate() function needs at least two data points. Wait 2-3 minutes after starting the load generator. Also verify Prometheus is actually scraping the app by checking the Targets page in the Prometheus UI (port-forward to port 9090)."
+    },
+    {
+      "issue": "ServiceMonitor is created but Prometheus is not scraping the app",
+      "solution": "Ensure the Prometheus operator is configured to pick up ServiceMonitors from the namespace. Check that the ServiceMonitor labels match and that Prometheus was installed with serviceMonitorSelectorNilUsesHelmValues=false."
+    },
+    {
+      "issue": "Helm install fails with timeout or resource quota errors",
+      "solution": "The kube-prometheus-stack requires significant resources. Ensure your cluster has at least 4GB of available memory and 2 CPUs. If using minikube, start it with: minikube start --memory=4096 --cpus=2"
+    }
+  ],
+  "resources": [
+    {
+      "title": "Kubernetes HPA with Custom Metrics Documentation",
+      "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/#autoscaling-on-multiple-metrics-and-custom-metrics",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "Prometheus Adapter Configuration Guide",
+      "url": "https://github.com/kubernetes-sigs/prometheus-adapter/blob/master/docs/config-walkthrough.md",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "Kubernetes Custom Metrics API Design",
+      "url": "https://github.com/kubernetes/design-proposals-archive/blob/main/instrumentation/custom-metrics-api.md",
+      "type": "reference",
+      "external": true
+    },
+    {
+      "title": "Kubernetes HPA Basics Exercise",
+      "url": "/exercises/kubernetes-hpa-lab",
+      "type": "tutorial",
+      "external": false
+    }
+  ]
+}
