@@ -123,6 +123,9 @@ export const metadata: Metadata = {
     // yandex: 'your-yandex-verification-code',
     // bing: 'your-bing-verification-code',
   },
+  other: {
+    'facebook-domain-verification': 'evfvq7to4p4pspyuxu8nzgjp0yvtkk',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
