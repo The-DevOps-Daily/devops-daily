@@ -1,0 +1,18 @@
+{
+  "eval_id": 4,
+  "eval_name": "create-quiz-linux",
+  "expectations": [
+    {"text": "Valid JSON", "passed": true, "evidence": "Parses as valid JSON"},
+    {"text": "Theme uses gray for Linux", "passed": true, "evidence": "primaryColor: gray, from-gray-600, to-slate-700"},
+    {"text": "Has 15+ questions", "passed": true, "evidence": "15 questions"},
+    {"text": "All questions have situation", "passed": true, "evidence": "0 missing"},
+    {"text": "All questions have codeExample", "passed": true, "evidence": "0 missing"},
+    {"text": "totalPoints matches sum", "passed": true, "evidence": "claimed=223, actual=223"},
+    {"text": "difficultyLevels match", "passed": true, "evidence": "beginner:4, intermediate:7, advanced:4 — matches"},
+    {"text": "All correctAnswer valid (0-3)", "passed": true, "evidence": "0 invalid"},
+    {"text": "Explanations are educational (50+ chars)", "passed": true, "evidence": "0 short explanations"},
+    {"text": "No duplicate IDs", "passed": true, "evidence": "All 15 IDs unique"}
+  ],
+  "pass_rate": 1.0,
+  "notes": "Perfect score. Covers all 4 requested topics: file permissions (4q), processes (3q), networking (3q), shell scripting (5q). Difficulty mix is close to target."
+}

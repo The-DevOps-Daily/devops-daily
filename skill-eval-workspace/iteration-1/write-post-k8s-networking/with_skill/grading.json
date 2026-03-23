@@ -1,0 +1,18 @@
+{
+  "eval_id": 1,
+  "eval_name": "write-post-k8s-networking",
+  "expectations": [
+    {"text": "Post saved with .md extension", "passed": true, "evidence": "File at outputs/kubernetes-pod-networking-fundamentals.md"},
+    {"text": "Has all required frontmatter fields", "passed": true, "evidence": "title, excerpt, category, date, publishedAt, updatedAt, readingTime, author, featured, tags all present"},
+    {"text": "Category slug is kubernetes", "passed": true, "evidence": "category.slug: 'kubernetes'"},
+    {"text": "Has Prerequisites section", "passed": true, "evidence": "## Prerequisites with bulleted list"},
+    {"text": "All code blocks have language identifiers", "passed": false, "evidence": "Multiple ASCII diagrams and text examples use bare ``` without language identifier (e.g., network diagrams at lines 53, 93, 189, 251; text at 284, 374)"},
+    {"text": "No emojis in body", "passed": true, "evidence": "No emojis found in post content"},
+    {"text": "OG image reminder", "passed": true, "evidence": "Includes npm run generate:images:parallel commands"},
+    {"text": "Has TL;DR section", "passed": true, "evidence": "## TL;DR section present"},
+    {"text": "Tags include category name", "passed": true, "evidence": "7 tags, first is 'Kubernetes'"},
+    {"text": "Practical real-world examples", "passed": true, "evidence": "Pod-to-pod ping, iptables inspection, DNS debugging, Service manifests — very practical"}
+  ],
+  "pass_rate": 0.9,
+  "notes": "Same issue as Terraform post: ASCII diagrams and text examples use bare ``` without language identifiers. Skill needs to specify to use ```text or ```plaintext for non-code blocks. Content quality is excellent."
+}
