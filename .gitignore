@@ -32,3 +32,6 @@ package-lock.json
 /public/posts/
 /public/guides/
 /public/advent-of-devops/
+
+# skill eval workspace
+skill-eval-workspace/
