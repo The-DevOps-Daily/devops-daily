@@ -13,12 +13,12 @@ author:
   slug: 'devops-daily-team'
 featured: false
 tags:
-  - Feature Flags
-  - Progressive Delivery
-  - CI/CD
-  - Canary Releases
-  - Deployment Strategies
-  - DevOps
+  - feature-flags
+  - progressive-delivery
+  - cicd
+  - canary-releases
+  - deployment-strategies
+  - devops
 ---
 
 Deploying code to production does not have to be an all-or-nothing event. Traditional deployment strategies push changes to every user at once, which means a single bug can bring down your entire application. Progressive delivery changes that equation by decoupling **deployment** (putting code on servers) from **release** (exposing features to users). At the heart of this approach are **feature flags**, which give you fine-grained control over who sees what and when.
