@@ -27,12 +27,12 @@
       "situation": "Your engineering organization has grown to 150 developers. Teams spend significant time filing tickets to the platform team for infrastructure provisioning, environment setup, and deployment configuration. Leadership asks you to propose a solution.",
       "codeExample": "# Current workflow:\n# 1. Developer opens Jira ticket for new service\n# 2. Platform team provisions infrastructure (2-3 days)\n# 3. Developer opens ticket for CI/CD pipeline (1-2 days)\n# 4. Developer opens ticket for monitoring setup (1 day)\n# Total lead time: 4-6 days per new service",
       "options": [
-        "Replace all infrastructure engineers with automation scripts",
         "Reduce developer cognitive load by providing self-service capabilities with golden paths and sensible defaults",
+        "Replace all infrastructure engineers with automation scripts",
         "Force all developers to learn Kubernetes and Terraform so they can manage infrastructure themselves",
         "Centralize all deployment decisions with a dedicated release management team"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 10,
       "difficulty": "beginner",
       "explanation": "An IDP reduces cognitive load by abstracting infrastructure complexity behind self-service interfaces. Developers get golden paths (pre-configured, opinionated workflows) with sensible defaults while retaining the ability to customize when needed. The goal is not to eliminate platform engineers or force developers to learn infrastructure tools, but to create a productive middle ground where developers can self-serve common tasks.",
@@ -63,12 +63,12 @@
       "situation": "Your organization runs 200+ microservices. New developers struggle to understand service ownership, dependencies, and how to get started. On-call engineers waste time figuring out who owns what during incidents.",
       "codeExample": "# Backstage catalog-info.yaml\napiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: payment-service\n  description: Handles payment processing\n  annotations:\n    github.com/project-slug: org/payment-service\n    pagerduty.com/service-id: P12345\n  tags:\n    - payments\n    - java\nspec:\n  type: service\n  lifecycle: production\n  owner: team-payments\n  dependsOn:\n    - component:user-service\n    - resource:payments-db\n  providesApis:\n    - payment-api",
       "options": [
-        "A searchable list of service names and their Git repository URLs only",
         "A comprehensive registry showing ownership, dependencies, APIs, documentation links, health status, and scaffolding templates for new services",
+        "A searchable list of service names and their Git repository URLs only",
         "A spreadsheet maintained manually by engineering managers with service information",
         "An auto-generated list from Kubernetes namespace labels with no additional metadata"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 12,
       "difficulty": "beginner",
       "explanation": "A well-designed service catalog (like Backstage) serves as the single source of truth for all software assets. It should include ownership information for incident response, dependency graphs for impact analysis, API documentation for integration, health status for operational awareness, and scaffolding templates for consistent service creation. A simple list of repos or a manual spreadsheet quickly becomes outdated and lacks the rich context teams need.",
@@ -118,11 +118,11 @@
       "codeExample": "// Custom Backstage plugin structure\nplugins/\n  cost-dashboard/\n    src/\n      plugin.ts\n      components/\n        CostOverview.tsx\n      api/\n        CostClient.ts\n    package.json\n\n// plugin.ts\nexport const costDashboardPlugin = createPlugin({\n  id: 'cost-dashboard',\n  apis: [\n    createApiFactory({\n      api: costApiRef,\n      deps: { fetchApi: fetchApiRef },\n      factory: ({ fetchApi }) =>\n        new CostClient({ fetchApi }),\n    }),\n  ],\n});",
       "options": [
         "Fork the Backstage repository and modify core source code directly for each integration",
-        "Build custom plugins using Backstage's plugin architecture, keeping integrations modular and independently deployable",
         "Embed each external tool as an iframe within Backstage pages",
-        "Skip the portal and have developers bookmark each tool's native UI separately"
+        "Skip the portal and have developers bookmark each tool's native UI separately",
+        "Build custom plugins using Backstage's plugin architecture, keeping integrations modular and independently deployable"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "Backstage's plugin architecture is designed for exactly this use case. Custom plugins are modular, independently testable, and upgradeable without modifying Backstage core. Each plugin registers its own APIs, components, and routes. Forking the core makes upgrades extremely difficult. Iframes provide a poor user experience with no data integration. Separate bookmarks defeat the purpose of a unified developer portal. The plugin model lets you maintain clean separation while presenting a unified experience.",
@@ -136,11 +136,11 @@
       "codeExample": "# Developer-facing resource request\napiVersion: platform.internal/v1\nkind: Database\nmetadata:\n  name: orders-db\n  owner: team-orders\nspec:\n  engine: postgresql\n  version: \"15\"\n  tier: standard        # Maps to predefined instance size\n  backup: daily\n  environment: production\n---\n# Platform translates to Terraform/Crossplane behind the scenes\n# Enforces: encryption at rest, VPC placement, backup policy,\n# credential rotation, cost limits per tier",
       "options": [
         "Give developers direct access to the AWS console to create resources manually",
-        "Provide a self-service API with predefined tiers that enforces guardrails (encryption, networking, cost limits) while abstracting infrastructure complexity",
         "Pre-provision a fixed pool of resources and assign them on request",
-        "Require developers to write their own Terraform modules for each resource"
+        "Require developers to write their own Terraform modules for each resource",
+        "Provide a self-service API with predefined tiers that enforces guardrails (encryption, networking, cost limits) while abstracting infrastructure complexity"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "A self-service API with predefined tiers gives developers speed and autonomy while the platform team maintains control through guardrails. The platform translates simple, high-level specs into properly configured infrastructure (using tools like Crossplane or Terraform). Guardrails enforce encryption, network policies, backup schedules, and cost limits automatically. Direct AWS access risks misconfiguration and cost overruns. Pre-provisioned pools waste resources. Requiring Terraform expertise from every developer increases cognitive load.",
@@ -153,12 +153,12 @@
       "situation": "Six months after launching your IDP, leadership asks for evidence of its impact. You need to present metrics that demonstrate real value, not vanity metrics.",
       "codeExample": "# Potential metrics to track\nmetrics:\n  dora:\n    deployment_frequency: \"3x/week -> 5x/day\"\n    lead_time_for_changes: \"2 weeks -> 2 days\"\n    change_failure_rate: \"15% -> 5%\"\n    mttr: \"4 hours -> 45 minutes\"\n  platform_specific:\n    time_to_first_deploy: \"6 days -> 30 minutes\"\n    self_service_ratio: \"23% -> 85%\"\n    developer_satisfaction: \"3.2 -> 8.1\"\n    support_tickets: \"200/month -> 45/month\"",
       "options": [
-        "Number of platform features shipped and lines of platform code written",
         "DORA metrics (deployment frequency, lead time, change failure rate, MTTR) combined with platform-specific metrics (time to first deploy, self-service ratio, developer satisfaction)",
+        "Number of platform features shipped and lines of platform code written",
         "Total cost savings from reducing infrastructure team headcount",
         "Number of developers who logged into the portal at least once"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 0,
       "points": 15,
       "difficulty": "intermediate",
       "explanation": "Effective IDP measurement combines DORA metrics (which measure software delivery performance) with platform-specific metrics. DORA metrics show improvement in deployment frequency, lead time, failure rate, and recovery time. Platform metrics like time-to-first-deploy, self-service ratio, and developer satisfaction directly measure the platform's impact. Features shipped and login counts are vanity metrics. Cost savings from headcount reduction misrepresents the platform's purpose, which is to amplify productivity, not eliminate roles.",
@@ -244,11 +244,11 @@
       "codeExample": "# Adoption tracking\nteams_total: 25\nteams_onboarded: 4\n\n# Adoption blockers (from developer survey)\nblockers:\n  - \"Didn't know the platform existed\"        # 35%\n  - \"Existing process works fine for us\"       # 25%\n  - \"Missing features we need\"                 # 20%\n  - \"Too complex to migrate\"                   # 15%\n  - \"Don't trust it for production\"            # 5%",
       "options": [
         "Mandate adoption through an executive decree with a hard deadline for all teams",
-        "Start with enthusiastic early adopters, collect feedback, iterate on pain points, provide migration support, showcase success stories, and gradually expand while addressing blockers systematically",
         "Wait for organic adoption as developers naturally discover the platform",
-        "Rebuild the platform from scratch to address all reported missing features before promoting it further"
+        "Rebuild the platform from scratch to address all reported missing features before promoting it further",
+        "Start with enthusiastic early adopters, collect feedback, iterate on pain points, provide migration support, showcase success stories, and gradually expand while addressing blockers systematically"
       ],
-      "correctAnswer": 1,
+      "correctAnswer": 3,
       "points": 12,
       "difficulty": "beginner",
       "explanation": "Successful IDP adoption follows a product-led growth strategy. Start with early adopters who are eager to try new tools, use their feedback to improve the platform, then leverage their success stories to attract the next wave of teams. Address blockers systematically: improve documentation for awareness, provide migration guides and hands-on support, and prioritize the most impactful missing features. Mandating adoption creates resistance and surfaces problems at scale. Waiting passively wastes momentum. Rebuilding delays value delivery indefinitely.",
