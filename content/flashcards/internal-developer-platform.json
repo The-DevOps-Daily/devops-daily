@@ -1,0 +1,136 @@
+{
+  "id": "internal-developer-platform",
+  "title": "Building an Internal Developer Platform",
+  "description": "Step-by-step guide to designing and building an internal developer platform (IDP) that improves developer productivity, self-service capabilities, and platform engineering best practices.",
+  "category": "Platform Engineering",
+  "icon": "Layers",
+  "difficulty": "intermediate",
+  "estimatedTime": "25 minutes",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "purple",
+    "gradientFrom": "from-purple-500",
+    "gradientTo": "to-indigo-600"
+  },
+  "cards": [
+    {
+      "id": "idp-definition",
+      "front": "What is an Internal Developer Platform (IDP)?",
+      "back": "An Internal Developer Platform is a self-service layer built on top of infrastructure and tooling that enables developers to independently provision resources, deploy applications, and manage services without needing deep infrastructure knowledge or waiting on a platform team.",
+      "category": "Core Concepts",
+      "tags": ["platform-engineering", "idp", "developer-experience"]
+    },
+    {
+      "id": "platform-engineering-role",
+      "front": "What is the role of a platform engineering team?",
+      "back": "A platform engineering team builds and maintains the IDP, creating golden paths and self-service abstractions. They reduce cognitive load on development teams by providing curated toolchains, templates, and automated workflows while enforcing organizational standards for security, compliance, and reliability.",
+      "category": "Core Concepts",
+      "tags": ["platform-engineering", "team-structure", "developer-experience"]
+    },
+    {
+      "id": "golden-paths",
+      "front": "What are 'golden paths' in platform engineering?",
+      "back": "Golden paths are opinionated, well-supported workflows and templates that guide developers through common tasks like creating a new service, deploying to production, or setting up a database. They are not enforced constraints but rather the recommended, lowest-friction way to accomplish a task with built-in best practices.",
+      "category": "Core Concepts",
+      "tags": ["platform-engineering", "golden-paths", "developer-experience"]
+    },
+    {
+      "id": "idp-five-planes",
+      "front": "What are the five core planes of an Internal Developer Platform?",
+      "back": "1) Developer Portal - UI for discovery and self-service. 2) Integration and Delivery Plane - CI/CD pipelines and artifact management. 3) Monitoring and Logging Plane - observability stack. 4) Security Plane - policy enforcement, secrets, and access control. 5) Resource Plane - infrastructure provisioning and management.",
+      "category": "Architecture",
+      "tags": ["platform-engineering", "architecture", "idp"]
+    },
+    {
+      "id": "backstage-purpose",
+      "front": "What is Backstage and how does it fit into an IDP?",
+      "back": "Backstage is an open-source developer portal framework created by Spotify. It serves as the UI layer of an IDP, providing a service catalog, software templates, TechDocs, and a plugin ecosystem. Teams use it to discover services, create new projects from templates, and access documentation in one place.",
+      "category": "Tools and Frameworks",
+      "tags": ["backstage", "developer-portal", "platform-engineering"]
+    },
+    {
+      "id": "service-catalog",
+      "front": "What is a service catalog and why is it important for an IDP?",
+      "back": "A service catalog is a centralized registry of all software components, APIs, resources, and their ownership. It helps developers discover existing services, understand dependencies, find documentation, and identify who owns what. It reduces duplication and improves cross-team collaboration.",
+      "category": "Architecture",
+      "tags": ["service-catalog", "backstage", "developer-portal"]
+    },
+    {
+      "id": "platform-as-product",
+      "front": "What does 'platform as a product' mean?",
+      "back": "Treating the platform as a product means applying product management practices to the IDP. This includes gathering developer feedback, prioritizing features based on user needs, measuring adoption and satisfaction, iterating with releases, and treating developers as internal customers rather than building tools in isolation.",
+      "category": "Strategy",
+      "tags": ["platform-engineering", "product-management", "developer-experience"]
+    },
+    {
+      "id": "self-service-infrastructure",
+      "front": "How does self-service infrastructure provisioning work in an IDP?",
+      "back": "Developers request resources through a portal or CLI using predefined templates. Behind the scenes, the platform triggers Infrastructure as Code (Terraform, Crossplane, or Pulumi) to provision resources with built-in guardrails for security, cost, and compliance. Developers get their resources without filing tickets or waiting for ops teams.",
+      "category": "Self-Service",
+      "tags": ["self-service", "infrastructure", "idp"]
+    },
+    {
+      "id": "crossplane-role",
+      "front": "What is Crossplane and how is it used in an IDP?",
+      "back": "Crossplane is a Kubernetes-based framework that lets platform teams define custom resource abstractions (Composite Resources) for cloud infrastructure. Developers request resources using simple Kubernetes manifests, while Crossplane provisions and manages the actual cloud resources, enabling a declarative, self-service infrastructure model.",
+      "category": "Tools and Frameworks",
+      "tags": ["crossplane", "kubernetes", "infrastructure"]
+    },
+    {
+      "id": "developer-experience-metrics",
+      "front": "What key metrics should you track to measure IDP success?",
+      "back": "Key IDP metrics include: 1) Time to first deployment for new developers. 2) Lead time for changes (DORA metric). 3) Developer satisfaction scores (surveys). 4) Self-service adoption rate. 5) Number of support tickets to platform team. 6) Time to provision new environments. 7) Percentage of teams using golden paths.",
+      "category": "Measurement",
+      "tags": ["metrics", "dora", "developer-experience"]
+    },
+    {
+      "id": "starting-an-idp",
+      "front": "What are the recommended first steps when building an IDP from scratch?",
+      "back": "1) Interview developers to identify top pain points. 2) Map the current development workflow end to end. 3) Start with the highest-impact, lowest-effort improvement. 4) Build a thin MVP (often starting with templates and CI/CD). 5) Get early adopters and iterate based on feedback. Avoid trying to build everything at once.",
+      "category": "Strategy",
+      "tags": ["platform-engineering", "strategy", "idp"]
+    },
+    {
+      "id": "software-templates",
+      "front": "What are software templates in a developer platform?",
+      "back": "Software templates are scaffolding tools that generate new projects, services, or components with pre-configured CI/CD pipelines, monitoring, security policies, and documentation. In Backstage, templates use a YAML definition and can run actions like creating a Git repo, registering in the catalog, and provisioning infrastructure.",
+      "category": "Self-Service",
+      "tags": ["templates", "backstage", "scaffolding"]
+    },
+    {
+      "id": "platform-api-abstraction",
+      "front": "Why is API abstraction critical in platform engineering?",
+      "back": "API abstractions hide infrastructure complexity from developers. Instead of writing raw Terraform or Kubernetes YAML, developers interact with higher-level APIs or custom resources that expose only the knobs they need. This reduces cognitive load, enforces standards, and allows the platform team to change underlying implementations without breaking developer workflows.",
+      "category": "Architecture",
+      "tags": ["api", "abstraction", "platform-engineering"]
+    },
+    {
+      "id": "idp-security-guardrails",
+      "front": "How should security be integrated into an IDP?",
+      "back": "Security should be embedded as guardrails, not gates. This includes: policy-as-code (OPA/Kyverno) enforcing standards at deploy time, automated vulnerability scanning in CI pipelines, secrets management via Vault or cloud-native tools, RBAC baked into templates, and supply chain security with signed images and SBOMs. Developers should stay secure by default.",
+      "category": "Security and Compliance",
+      "tags": ["security", "policy-as-code", "guardrails"]
+    },
+    {
+      "id": "platform-team-antipatterns",
+      "front": "What are common anti-patterns when building an IDP?",
+      "back": "1) Building without developer input (ivory tower platform). 2) Trying to support every possible use case from day one. 3) Mandating platform adoption instead of earning it. 4) Treating the platform as a one-time project rather than a product. 5) Over-abstracting and removing necessary flexibility. 6) Ignoring the migration path for existing services.",
+      "category": "Strategy",
+      "tags": ["anti-patterns", "platform-engineering", "best-practices"]
+    },
+    {
+      "id": "idp-developer-portal-features",
+      "front": "What features should a developer portal include?",
+      "back": "A developer portal should include: service catalog with ownership info, software templates for self-service scaffolding, API documentation and discovery, TechDocs for rendered markdown docs, CI/CD pipeline visibility, environment and deployment status, cost dashboards, and search across all registered components.",
+      "category": "Architecture",
+      "tags": ["developer-portal", "backstage", "features"]
+    },
+    {
+      "id": "platform-adoption-strategy",
+      "front": "How do you drive adoption of an Internal Developer Platform?",
+      "back": "1) Solve a real, painful problem first to prove value. 2) Start with willing early adopters, not mandates. 3) Provide excellent documentation and onboarding. 4) Show measurable improvements (faster deployments, fewer tickets). 5) Build internal champions across teams. 6) Continuously gather feedback and iterate. Make the platform the easiest path, not the required path.",
+      "category": "Strategy",
+      "tags": ["adoption", "platform-engineering", "developer-experience"]
+    }
+  ]
+}
