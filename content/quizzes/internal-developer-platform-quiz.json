@@ -1,0 +1,258 @@
+{
+  "id": "internal-developer-platform-quiz",
+  "title": "Building an Internal Developer Platform Quiz",
+  "description": "Test your knowledge of designing and building internal developer platforms that improve developer productivity and self-service capabilities",
+  "category": "Platform Engineering",
+  "icon": "Layers",
+  "totalPoints": 193,
+  "theme": {
+    "primaryColor": "indigo",
+    "gradientFrom": "from-indigo-500",
+    "gradientTo": "to-purple-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-23 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-03-24"
+  },
+  "questions": [
+    {
+      "id": "idp-core-purpose",
+      "title": "IDP Core Purpose",
+      "description": "What is the primary goal of building an internal developer platform (IDP)?",
+      "situation": "Your engineering organization has grown to 150 developers. Teams spend significant time filing tickets to the platform team for infrastructure provisioning, environment setup, and deployment configuration. Leadership asks you to propose a solution.",
+      "codeExample": "# Current workflow:\n# 1. Developer opens Jira ticket for new service\n# 2. Platform team provisions infrastructure (2-3 days)\n# 3. Developer opens ticket for CI/CD pipeline (1-2 days)\n# 4. Developer opens ticket for monitoring setup (1 day)\n# Total lead time: 4-6 days per new service",
+      "options": [
+        "Replace all infrastructure engineers with automation scripts",
+        "Reduce developer cognitive load by providing self-service capabilities with golden paths and sensible defaults",
+        "Force all developers to learn Kubernetes and Terraform so they can manage infrastructure themselves",
+        "Centralize all deployment decisions with a dedicated release management team"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "An IDP reduces cognitive load by abstracting infrastructure complexity behind self-service interfaces. Developers get golden paths (pre-configured, opinionated workflows) with sensible defaults while retaining the ability to customize when needed. The goal is not to eliminate platform engineers or force developers to learn infrastructure tools, but to create a productive middle ground where developers can self-serve common tasks.",
+      "hint": "Think about what would reduce wait times without requiring every developer to become an infrastructure expert."
+    },
+    {
+      "id": "platform-api-abstraction",
+      "title": "Platform Abstraction Layer",
+      "description": "You are designing the abstraction layer for your IDP. Which approach best balances developer experience with flexibility?",
+      "situation": "Your platform currently supports AWS EKS for compute. However, some teams have expressed interest in serverless workloads, and the company may expand to multi-cloud in the future. You need to define how developers interact with the platform.",
+      "codeExample": "# Option A: Direct Kubernetes manifests\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: my-service\nspec:\n  replicas: 3\n  template:\n    spec:\n      containers:\n      - name: app\n        image: my-service:v1.2\n        resources:\n          requests:\n            memory: \"256Mi\"\n            cpu: \"250m\"\n\n# Option B: Platform-level spec\napiVersion: platform.internal/v1\nkind: Service\nmetadata:\n  name: my-service\nspec:\n  tier: standard\n  scaling:\n    min: 2\n    max: 10\n  ports:\n    - 8080",
+      "options": [
+        "Expose raw Kubernetes YAML directly so developers have full control over every field",
+        "Build a higher-level abstraction (like Option B) that maps to underlying infrastructure, hiding implementation details while allowing overrides",
+        "Use a GUI-only approach with no configuration files so developers never see YAML",
+        "Let each team define their own custom resource definitions and deployment formats"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A higher-level abstraction like a platform-specific API (Option B) gives developers a simpler interface focused on what they care about (scaling, ports, tier) while the platform team manages the translation to underlying infrastructure. This approach enables portability across cloud providers, enforces organizational standards, and allows power users to add overrides when needed. Raw Kubernetes YAML creates tight coupling, GUI-only lacks version control, and per-team formats create fragmentation.",
+      "hint": "Consider what happens when you need to change the underlying infrastructure without disrupting developers."
+    },
+    {
+      "id": "service-catalog-design",
+      "title": "Service Catalog Design",
+      "description": "What should a well-designed service catalog in an IDP provide?",
+      "situation": "Your organization runs 200+ microservices. New developers struggle to understand service ownership, dependencies, and how to get started. On-call engineers waste time figuring out who owns what during incidents.",
+      "codeExample": "# Backstage catalog-info.yaml\napiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: payment-service\n  description: Handles payment processing\n  annotations:\n    github.com/project-slug: org/payment-service\n    pagerduty.com/service-id: P12345\n  tags:\n    - payments\n    - java\nspec:\n  type: service\n  lifecycle: production\n  owner: team-payments\n  dependsOn:\n    - component:user-service\n    - resource:payments-db\n  providesApis:\n    - payment-api",
+      "options": [
+        "A searchable list of service names and their Git repository URLs only",
+        "A comprehensive registry showing ownership, dependencies, APIs, documentation links, health status, and scaffolding templates for new services",
+        "A spreadsheet maintained manually by engineering managers with service information",
+        "An auto-generated list from Kubernetes namespace labels with no additional metadata"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "A well-designed service catalog (like Backstage) serves as the single source of truth for all software assets. It should include ownership information for incident response, dependency graphs for impact analysis, API documentation for integration, health status for operational awareness, and scaffolding templates for consistent service creation. A simple list of repos or a manual spreadsheet quickly becomes outdated and lacks the rich context teams need.",
+      "hint": "Think about all the questions someone asks when they encounter a service for the first time or during an incident."
+    },
+    {
+      "id": "golden-path-templates",
+      "title": "Golden Path Templates",
+      "description": "How should you implement golden path templates for new service creation in your IDP?",
+      "situation": "Your organization wants to standardize how new services are created. Currently, developers copy an existing service repo and manually modify it, often missing security configurations, monitoring setup, or CI/CD pipeline definitions.",
+      "codeExample": "# Backstage software template\napiVersion: scaffolder.backstage.io/v1beta3\nkind: Template\nmetadata:\n  name: microservice-template\n  title: Standard Microservice\nspec:\n  owner: platform-team\n  type: service\n  parameters:\n    - title: Service Info\n      properties:\n        name:\n          type: string\n        owner:\n          type: string\n          ui:field: OwnerPicker\n        tier:\n          type: string\n          enum: [standard, critical]\n  steps:\n    - id: create-repo\n      action: publish:github\n    - id: register-catalog\n      action: catalog:register\n    - id: create-infra\n      action: custom:provision-infra",
+      "options": [
+        "Provide a wiki page with step-by-step instructions for manually setting up each component",
+        "Use scaffolding templates that generate complete, production-ready projects with CI/CD, monitoring, security configs, and catalog registration in a single workflow",
+        "Clone a reference repository and let developers figure out what to change",
+        "Require developers to submit a form and have the platform team manually create everything"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Scaffolding templates (like Backstage Software Templates) automate the entire service creation workflow. They collect required inputs through a form, then execute steps to create the repository with proper structure, configure CI/CD pipelines, provision infrastructure, set up monitoring, and register the service in the catalog. This ensures consistency, enforces security standards, and eliminates the error-prone manual copying approach. Wiki instructions and manual processes do not scale with team growth.",
+      "hint": "Which approach ensures every new service is consistent AND reduces time-to-first-deploy?"
+    },
+    {
+      "id": "platform-as-product",
+      "title": "Platform as a Product",
+      "description": "What does it mean to treat your internal developer platform 'as a product'?",
+      "situation": "Your platform team has built several tools, but adoption is low. Developers complain the tools are hard to use, poorly documented, and do not solve their actual pain points. The team has been building features based on what they think developers need.",
+      "codeExample": "# Platform adoption metrics dashboard\n┌──────────────────────────────────────┐\n│ Platform Adoption (Q1 2026)          │\n├──────────────────────────────────────┤\n│ Self-service deploys:     23%  ↓     │\n│ Template usage:           15%  ↓     │\n│ Portal daily active users: 8%  ↓     │\n│ Support tickets:         +40%  ↑     │\n│ Developer satisfaction:   3.2/10     │\n└──────────────────────────────────────┘",
+      "options": [
+        "Mandate platform usage through company policy and block alternative tools",
+        "Build as many features as possible to cover every possible use case",
+        "Apply product management practices: research user needs, prioritize based on impact, iterate with feedback, measure adoption, and market the platform internally",
+        "Hire more platform engineers to build tools faster"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Treating a platform as a product means applying the same practices used for external products: conducting user research (developer interviews, surveys), defining a product roadmap based on actual pain points, iterating quickly with feedback loops, measuring success through adoption metrics and developer satisfaction, and actively marketing features to internal users. Mandating usage creates resentment and workarounds. Building everything at once leads to bloated, unfocused tools. The platform should be so good that developers choose to use it.",
+      "hint": "Think about how successful SaaS products gain and retain users -- the same principles apply internally."
+    },
+    {
+      "id": "backstage-plugin-architecture",
+      "title": "Backstage Plugin Architecture",
+      "description": "Your team chose Backstage as the foundation for your IDP portal. How should you extend it to integrate with your internal systems?",
+      "situation": "You need to display deployment status from ArgoCD, on-call schedules from PagerDuty, and cost data from your cloud billing system in the Backstage portal. These integrations do not exist as community plugins.",
+      "codeExample": "// Custom Backstage plugin structure\nplugins/\n  cost-dashboard/\n    src/\n      plugin.ts\n      components/\n        CostOverview.tsx\n      api/\n        CostClient.ts\n    package.json\n\n// plugin.ts\nexport const costDashboardPlugin = createPlugin({\n  id: 'cost-dashboard',\n  apis: [\n    createApiFactory({\n      api: costApiRef,\n      deps: { fetchApi: fetchApiRef },\n      factory: ({ fetchApi }) =>\n        new CostClient({ fetchApi }),\n    }),\n  ],\n});",
+      "options": [
+        "Fork the Backstage repository and modify core source code directly for each integration",
+        "Build custom plugins using Backstage's plugin architecture, keeping integrations modular and independently deployable",
+        "Embed each external tool as an iframe within Backstage pages",
+        "Skip the portal and have developers bookmark each tool's native UI separately"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Backstage's plugin architecture is designed for exactly this use case. Custom plugins are modular, independently testable, and upgradeable without modifying Backstage core. Each plugin registers its own APIs, components, and routes. Forking the core makes upgrades extremely difficult. Iframes provide a poor user experience with no data integration. Separate bookmarks defeat the purpose of a unified developer portal. The plugin model lets you maintain clean separation while presenting a unified experience.",
+      "hint": "Consider which approach lets you upgrade Backstage independently from your custom integrations."
+    },
+    {
+      "id": "self-service-infrastructure",
+      "title": "Self-Service Infrastructure",
+      "description": "How should your IDP enable developers to provision infrastructure resources like databases and message queues?",
+      "situation": "Developers need PostgreSQL databases, Redis caches, and RabbitMQ instances for their services. Currently, they submit tickets to the infrastructure team, leading to 3-5 day wait times. You want to enable self-service while maintaining security and cost controls.",
+      "codeExample": "# Developer-facing resource request\napiVersion: platform.internal/v1\nkind: Database\nmetadata:\n  name: orders-db\n  owner: team-orders\nspec:\n  engine: postgresql\n  version: \"15\"\n  tier: standard        # Maps to predefined instance size\n  backup: daily\n  environment: production\n---\n# Platform translates to Terraform/Crossplane behind the scenes\n# Enforces: encryption at rest, VPC placement, backup policy,\n# credential rotation, cost limits per tier",
+      "options": [
+        "Give developers direct access to the AWS console to create resources manually",
+        "Provide a self-service API with predefined tiers that enforces guardrails (encryption, networking, cost limits) while abstracting infrastructure complexity",
+        "Pre-provision a fixed pool of resources and assign them on request",
+        "Require developers to write their own Terraform modules for each resource"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A self-service API with predefined tiers gives developers speed and autonomy while the platform team maintains control through guardrails. The platform translates simple, high-level specs into properly configured infrastructure (using tools like Crossplane or Terraform). Guardrails enforce encryption, network policies, backup schedules, and cost limits automatically. Direct AWS access risks misconfiguration and cost overruns. Pre-provisioned pools waste resources. Requiring Terraform expertise from every developer increases cognitive load.",
+      "hint": "What approach gives developers speed while ensuring every resource meets security and compliance standards?"
+    },
+    {
+      "id": "measuring-platform-success",
+      "title": "Measuring Platform Success",
+      "description": "Which metrics best indicate that your IDP is successfully improving developer productivity?",
+      "situation": "Six months after launching your IDP, leadership asks for evidence of its impact. You need to present metrics that demonstrate real value, not vanity metrics.",
+      "codeExample": "# Potential metrics to track\nmetrics:\n  dora:\n    deployment_frequency: \"3x/week -> 5x/day\"\n    lead_time_for_changes: \"2 weeks -> 2 days\"\n    change_failure_rate: \"15% -> 5%\"\n    mttr: \"4 hours -> 45 minutes\"\n  platform_specific:\n    time_to_first_deploy: \"6 days -> 30 minutes\"\n    self_service_ratio: \"23% -> 85%\"\n    developer_satisfaction: \"3.2 -> 8.1\"\n    support_tickets: \"200/month -> 45/month\"",
+      "options": [
+        "Number of platform features shipped and lines of platform code written",
+        "DORA metrics (deployment frequency, lead time, change failure rate, MTTR) combined with platform-specific metrics (time to first deploy, self-service ratio, developer satisfaction)",
+        "Total cost savings from reducing infrastructure team headcount",
+        "Number of developers who logged into the portal at least once"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Effective IDP measurement combines DORA metrics (which measure software delivery performance) with platform-specific metrics. DORA metrics show improvement in deployment frequency, lead time, failure rate, and recovery time. Platform metrics like time-to-first-deploy, self-service ratio, and developer satisfaction directly measure the platform's impact. Features shipped and login counts are vanity metrics. Cost savings from headcount reduction misrepresents the platform's purpose, which is to amplify productivity, not eliminate roles.",
+      "hint": "Think about metrics that measure outcomes (developer productivity) rather than outputs (features built)."
+    },
+    {
+      "id": "platform-team-topology",
+      "title": "Platform Team Topology",
+      "description": "According to Team Topologies, how should a platform team interact with stream-aligned (feature) teams?",
+      "situation": "Your organization is adopting the Team Topologies model. The platform team currently operates as a gatekeeper -- every infrastructure change must go through them. Stream-aligned teams feel blocked and frustrated by the bottleneck.",
+      "codeExample": "# Current interaction model (anti-pattern)\nStream Team -> Ticket -> Platform Team -> Review -> Approve -> Provision\nAvg cycle time: 5 days\n\n# Target interaction model\nStream Team -> Self-Service Platform API -> Automated Provisioning\nPlatform Team: Maintains APIs, guardrails, golden paths\nAvg cycle time: 15 minutes",
+      "options": [
+        "The platform team should review and approve every change to ensure quality",
+        "Platform teams should be embedded within each stream-aligned team",
+        "The platform team should provide self-service APIs and golden paths, acting as an enabling team that reduces cognitive load for stream-aligned teams",
+        "Stream-aligned teams should build and maintain their own platform tools independently"
+      ],
+      "correctAnswer": 2,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "In Team Topologies, a platform team provides self-service capabilities that reduce the cognitive load of stream-aligned teams. The platform acts as a 'thinnest viable platform' with golden paths and self-service APIs. The platform team is not a gatekeeper (which creates bottlenecks) or embedded (which does not scale). Stream-aligned teams consuming platform capabilities through well-designed interfaces is the key to scaling engineering organizations. The platform team focuses on making the platform so easy to use that it becomes the path of least resistance.",
+      "hint": "In Team Topologies, what is the recommended interaction mode between platform and stream-aligned teams?"
+    },
+    {
+      "id": "crossplane-vs-terraform",
+      "title": "Infrastructure Orchestration Choice",
+      "description": "When building the infrastructure provisioning layer of your IDP, when would you choose Crossplane over Terraform?",
+      "situation": "Your platform team is designing the self-service infrastructure layer. Developers will request resources through the platform API. You need to decide the underlying orchestration engine. Your organization already runs Kubernetes clusters and wants infrastructure provisioning to integrate with GitOps workflows.",
+      "codeExample": "# Crossplane Composite Resource Definition\napiVersion: apiextensions.crossplane.io/v1\nkind: CompositeResourceDefinition\nmetadata:\n  name: xdatabases.platform.example.com\nspec:\n  group: platform.example.com\n  names:\n    kind: XDatabase\n  versions:\n    - name: v1alpha1\n      schema:\n        openAPIV3Schema:\n          properties:\n            spec:\n              properties:\n                engine:\n                  type: string\n                  enum: [postgresql, mysql]\n                tier:\n                  type: string\n                  enum: [small, medium, large]",
+      "options": [
+        "Always choose Terraform because it has more provider support and is the industry standard",
+        "Choose Crossplane when you want Kubernetes-native infrastructure management with continuous reconciliation, GitOps integration, and the ability to expose custom APIs (XRDs) to developers as platform abstractions",
+        "Always choose Crossplane because it is newer and therefore better",
+        "Use both simultaneously for every resource to ensure redundancy"
+      ],
+      "correctAnswer": 1,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Crossplane excels in IDP scenarios where you want Kubernetes-native infrastructure management. Its key advantages for IDPs include: Composite Resource Definitions (XRDs) that let you create custom platform APIs, continuous reconciliation that detects and corrects drift automatically, native GitOps integration with tools like ArgoCD, and a familiar Kubernetes API model. Terraform is still excellent for one-time provisioning and has broader provider coverage, but Crossplane's reconciliation loop and custom API capabilities make it particularly well-suited for self-service platforms. Neither tool is universally better; the choice depends on your requirements.",
+      "hint": "Think about which tool aligns with Kubernetes-native workflows and can continuously reconcile desired state."
+    },
+    {
+      "id": "developer-portal-architecture",
+      "title": "Portal Architecture Decisions",
+      "description": "What is the recommended architecture for a developer portal that serves as the UI layer of your IDP?",
+      "situation": "You are architecting the developer portal (UI) for your IDP. It needs to aggregate data from 15+ backend systems (Git, CI/CD, monitoring, cloud providers, on-call, documentation). Some systems have slow APIs, and the portal must remain responsive.",
+      "codeExample": "# Architecture options\n\n# Option A: Direct API calls from frontend\nBrowser -> GitHub API\nBrowser -> ArgoCD API\nBrowser -> PagerDuty API\n# Problem: CORS, auth sprawl, slow rendering\n\n# Option B: Backend-for-frontend (BFF)\nBrowser -> Portal BFF -> GitHub API\n                      -> ArgoCD API\n                      -> PagerDuty API\n# Benefits: caching, auth consolidation, data aggregation\n\n# Option C: Portal BFF + async data pipeline\nBrowser -> Portal BFF -> Cache Layer\nCollector Service -> GitHub/ArgoCD/PagerDuty -> Cache Layer",
+      "options": [
+        "Direct browser-to-API calls for each backend system to minimize latency",
+        "A monolithic backend that stores copies of all data from every system",
+        "A backend-for-frontend pattern with caching and optional async data collection for slow sources, providing a unified API to the portal frontend",
+        "Server-side rendering that calls all 15 APIs on each page load"
+      ],
+      "correctAnswer": 2,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "A backend-for-frontend (BFF) pattern is ideal for developer portals aggregating many data sources. The BFF provides a unified API that handles authentication to backend systems, caches responses from slow APIs, aggregates data from multiple sources into single responses, and shields the frontend from backend API changes. For particularly slow data sources, an async collector can pre-fetch and cache data. Direct browser calls create CORS and auth issues. A monolithic data store becomes a synchronization nightmare. Server-side rendering blocking on 15 APIs creates unacceptable page load times.",
+      "hint": "Consider how to handle authentication, caching, and aggregation when dealing with many backend data sources."
+    },
+    {
+      "id": "environment-management",
+      "title": "Environment Management",
+      "description": "How should your IDP handle developer environment provisioning for testing and staging?",
+      "situation": "Your organization runs 50 microservices. Developers need isolated environments to test changes that span multiple services. Currently, there is a single shared staging environment that is constantly broken due to conflicting deployments from different teams.",
+      "codeExample": "# Namespace-per-PR approach\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: preview-pr-1234\n  labels:\n    managed-by: platform\n    ttl: 24h\n    owner: team-checkout\n---\n# Platform creates:\n# - Isolated namespace with service dependencies\n# - Routes: pr-1234.preview.internal.dev\n# - Seeded test data\n# - Auto-cleanup after TTL or PR merge",
+      "options": [
+        "Maintain multiple full copies of the entire production environment for each team",
+        "Use a single shared staging environment with a deployment calendar to avoid conflicts",
+        "Provide on-demand, ephemeral preview environments (namespace-per-PR or similar) with automatic provisioning of dependencies, routing, and TTL-based cleanup",
+        "Have developers test everything locally using Docker Compose with mocked dependencies"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Ephemeral preview environments (namespace-per-PR) give each developer or PR an isolated environment with real service dependencies. The platform handles provisioning, DNS routing, test data seeding, and automatic cleanup. This eliminates staging conflicts, enables parallel development, and provides production-like testing. Full environment copies are prohibitively expensive. Shared staging with calendars slows teams down. Local Docker Compose testing with mocks misses integration issues. Ephemeral environments balance cost, isolation, and fidelity.",
+      "hint": "What approach eliminates environment conflicts while keeping costs manageable through automatic cleanup?"
+    },
+    {
+      "id": "idp-adoption-strategy",
+      "title": "IDP Adoption Strategy",
+      "description": "What is the most effective strategy for driving adoption of a newly built IDP across your organization?",
+      "situation": "Your platform team has built the first version of the IDP with self-service deployments and a service catalog. However, most teams continue using their existing manual processes. You have 6 months to reach 80% adoption.",
+      "codeExample": "# Adoption tracking\nteams_total: 25\nteams_onboarded: 4\n\n# Adoption blockers (from developer survey)\nblockers:\n  - \"Didn't know the platform existed\"        # 35%\n  - \"Existing process works fine for us\"       # 25%\n  - \"Missing features we need\"                 # 20%\n  - \"Too complex to migrate\"                   # 15%\n  - \"Don't trust it for production\"            # 5%",
+      "options": [
+        "Mandate adoption through an executive decree with a hard deadline for all teams",
+        "Start with enthusiastic early adopters, collect feedback, iterate on pain points, provide migration support, showcase success stories, and gradually expand while addressing blockers systematically",
+        "Wait for organic adoption as developers naturally discover the platform",
+        "Rebuild the platform from scratch to address all reported missing features before promoting it further"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Successful IDP adoption follows a product-led growth strategy. Start with early adopters who are eager to try new tools, use their feedback to improve the platform, then leverage their success stories to attract the next wave of teams. Address blockers systematically: improve documentation for awareness, provide migration guides and hands-on support, and prioritize the most impactful missing features. Mandating adoption creates resistance and surfaces problems at scale. Waiting passively wastes momentum. Rebuilding delays value delivery indefinitely.",
+      "hint": "Think about how successful developer tools gain traction -- is it through mandates or through demonstrated value?"
+    }
+  ]
+}
