@@ -1,0 +1,129 @@
+{
+  "id": "slos-slis-error-budgets",
+  "title": "SLOs, SLIs, and Error Budgets",
+  "description": "A practical guide to defining service level objectives, choosing meaningful service level indicators, and managing error budgets for production services.",
+  "category": "SRE",
+  "icon": "Target",
+  "difficulty": "intermediate",
+  "estimatedTime": "20 minutes",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "amber",
+    "gradientFrom": "from-amber-500",
+    "gradientTo": "to-orange-600"
+  },
+  "cards": [
+    {
+      "id": "sli-definition",
+      "front": "What is a Service Level Indicator (SLI)?",
+      "back": "An SLI is a quantitative measure of some aspect of the level of service being provided. It is a carefully defined metric that captures how well a service is performing from the user's perspective. Common SLIs include request latency, error rate, availability, and throughput. SLIs are expressed as a ratio: good events / total events.",
+      "category": "Core Concepts",
+      "tags": ["sre", "slis", "metrics"]
+    },
+    {
+      "id": "slo-definition",
+      "front": "What is a Service Level Objective (SLO)?",
+      "back": "An SLO is a target value or range for an SLI, measured over a specific time window. For example: '99.9% of requests will complete in under 200ms over a rolling 30-day window.' SLOs set the reliability target that a team commits to. They should be ambitious but achievable, and directly tied to user experience.",
+      "category": "Core Concepts",
+      "tags": ["sre", "slos", "reliability"]
+    },
+    {
+      "id": "sla-definition",
+      "front": "What is the difference between an SLO and an SLA?",
+      "back": "An SLA (Service Level Agreement) is a contractual commitment to customers with financial consequences if violated. An SLO is an internal reliability target used by engineering teams. SLOs should always be stricter than SLAs to provide a buffer before contractual obligations are breached. Example: SLA of 99.9% uptime externally, SLO of 99.95% internally.",
+      "category": "Core Concepts",
+      "tags": ["sre", "slos", "slas"]
+    },
+    {
+      "id": "error-budget-definition",
+      "front": "What is an Error Budget?",
+      "back": "An error budget is the allowed amount of unreliability derived from the SLO. If your SLO is 99.9% availability, your error budget is 0.1% of total requests or time. Over a 30-day window, that is roughly 43 minutes of downtime. Error budgets create a shared framework between reliability and velocity: as long as the budget is not exhausted, teams can ship features and take risks.",
+      "category": "Core Concepts",
+      "tags": ["sre", "error-budgets", "reliability"]
+    },
+    {
+      "id": "error-budget-calculation",
+      "front": "How do you calculate an error budget for a 30-day window?",
+      "back": "Error Budget = (1 - SLO target) x total time or requests.\n\nFor a 99.9% availability SLO over 30 days:\n- Budget = (1 - 0.999) x 30 x 24 x 60 = 43.2 minutes of allowed downtime\n\nFor a 99.95% latency SLO with 1M daily requests:\n- Budget = (1 - 0.9995) x 1,000,000 x 30 = 15,000 allowed slow requests per month",
+      "category": "Error Budgets",
+      "tags": ["sre", "error-budgets", "math"]
+    },
+    {
+      "id": "choosing-slis",
+      "front": "How do you choose the right SLIs for a service?",
+      "back": "Start from the user journey. Ask: 'What does the user care about?' Common SLI categories:\n\n1. Availability: Could the user complete their request?\n2. Latency: How long did it take?\n3. Quality: Was the response correct and complete?\n4. Freshness: How up-to-date is the data?\n\nAvoid vanity metrics (CPU usage, pod count). Focus on signals that directly reflect user happiness.",
+      "category": "Implementation",
+      "tags": ["sre", "slis", "best-practices"]
+    },
+    {
+      "id": "sli-specification-vs-implementation",
+      "front": "What is the difference between an SLI specification and an SLI implementation?",
+      "back": "An SLI specification describes what you want to measure in user-centric terms (e.g., 'the proportion of requests that load in under 200ms'). An SLI implementation defines how you actually measure it (e.g., 'count of requests with response_time < 200ms in the load balancer logs divided by total request count'). Start with the specification, then find the best available implementation.",
+      "category": "Implementation",
+      "tags": ["sre", "slis", "measurement"]
+    },
+    {
+      "id": "time-vs-event-based-slos",
+      "front": "What is the difference between time-based and event-based SLOs?",
+      "back": "Time-based SLOs measure the proportion of time a system is in a good state (e.g., '99.9% of minutes have zero errors'). Event-based SLOs measure the proportion of events that are good (e.g., '99.9% of requests succeed'). Event-based SLOs are generally preferred because they are more granular, handle variable traffic better, and more accurately reflect user experience.",
+      "category": "Implementation",
+      "tags": ["sre", "slos", "measurement"]
+    },
+    {
+      "id": "error-budget-policy",
+      "front": "What is an Error Budget Policy and why is it important?",
+      "back": "An error budget policy defines what actions the team takes based on remaining error budget. Examples:\n\n- Budget > 50%: Normal feature development\n- Budget 20-50%: Prioritize reliability work alongside features\n- Budget < 20%: Freeze non-critical launches, focus on reliability\n- Budget exhausted: All engineering effort shifts to reliability\n\nWithout a policy, error budgets become informational only and lose their power to drive decisions.",
+      "category": "Error Budgets",
+      "tags": ["sre", "error-budgets", "policy"]
+    },
+    {
+      "id": "burn-rate",
+      "front": "What is a burn rate and how is it used for alerting?",
+      "back": "Burn rate measures how fast the error budget is being consumed relative to the SLO window. A burn rate of 1 means the budget will be exactly exhausted by the end of the window. A burn rate of 10 means the budget will be consumed 10x faster than sustainable.\n\nMulti-window burn rate alerts (e.g., 14.4x over 1 hour AND 6x over 6 hours) provide fast, accurate alerting with low false-positive rates. This is the recommended approach from Google's SRE workbook.",
+      "category": "Alerting",
+      "tags": ["sre", "error-budgets", "alerting", "burn-rate"]
+    },
+    {
+      "id": "multi-window-alerting",
+      "front": "Why use multi-window, multi-burn-rate alerting instead of simple threshold alerts?",
+      "back": "Simple threshold alerts (e.g., 'error rate > 1%') suffer from either slow detection or high false-positive rates. Multi-window burn rate alerts solve this by combining:\n\n- A short window for fast detection (e.g., 1-hour burn rate > 14.4x)\n- A longer window to confirm sustained impact (e.g., 6-hour burn rate > 6x)\n\nThis catches both sudden outages and slow-burn degradations while filtering out brief spikes that do not meaningfully affect the error budget.",
+      "category": "Alerting",
+      "tags": ["sre", "alerting", "burn-rate", "best-practices"]
+    },
+    {
+      "id": "rolling-vs-calendar-windows",
+      "front": "Should SLOs use rolling windows or calendar-aligned windows?",
+      "back": "Rolling windows (e.g., last 30 days) provide continuous measurement and avoid the 'reset effect' at month boundaries where teams might tolerate degradation early in a period. Calendar windows (e.g., per month) are simpler to report on and align with business cycles.\n\nBest practice: use rolling windows for operational decisions and alerting. Use calendar windows for business reporting and review meetings.",
+      "category": "Implementation",
+      "tags": ["sre", "slos", "measurement"]
+    },
+    {
+      "id": "setting-slo-targets",
+      "front": "How do you set the right SLO target? What if you have no historical data?",
+      "back": "With historical data: measure current performance, then set the SLO slightly below actual performance to start. Tighten it over time as reliability improves.\n\nWithout historical data: start with industry benchmarks (e.g., 99.9% for most web services) and adjust after collecting 2-4 weeks of data.\n\nKey principles:\n- Do not aim for 100%, it is infinitely expensive\n- SLOs should reflect user expectations\n- Tighter SLOs mean less room for feature velocity\n- Different user tiers may warrant different SLOs",
+      "category": "Implementation",
+      "tags": ["sre", "slos", "best-practices"]
+    },
+    {
+      "id": "where-to-measure-slis",
+      "front": "Where should SLIs be measured in the request path?",
+      "back": "Measure as close to the user as possible:\n\n1. Best: Client-side instrumentation or Real User Monitoring (RUM)\n2. Good: Load balancer or API gateway logs\n3. Acceptable: Application-level metrics\n4. Avoid: Backend infrastructure metrics (database CPU, pod memory)\n\nMeasuring at the edge captures issues like DNS failures, TLS errors, and network latency that internal metrics miss. The further from the user you measure, the more failure modes you miss.",
+      "category": "Implementation",
+      "tags": ["sre", "slis", "measurement", "monitoring"]
+    },
+    {
+      "id": "slo-document",
+      "front": "What should an SLO document include?",
+      "back": "A complete SLO document should contain:\n\n1. Service overview and stakeholders\n2. SLI definitions (specification and implementation)\n3. SLO targets and measurement windows\n4. Error budget policy with escalation steps\n5. Rationale for chosen targets\n6. Review schedule (quarterly is common)\n\nThe document should be co-owned by the engineering team and product stakeholders, and reviewed regularly to ensure SLOs still reflect user needs.",
+      "category": "Process",
+      "tags": ["sre", "slos", "documentation"]
+    },
+    {
+      "id": "common-slo-mistakes",
+      "front": "What are common mistakes teams make when implementing SLOs?",
+      "back": "1. Setting SLOs based on infrastructure metrics instead of user experience\n2. Targeting 100% reliability (impossible and blocks all change)\n3. Having too many SLOs per service (aim for 2-4)\n4. No error budget policy, making SLOs purely informational\n5. Not involving product owners in setting targets\n6. Measuring at the wrong layer (server-side only)\n7. Never revising SLOs after initial setup\n8. Using SLOs to blame teams instead of driving improvement",
+      "category": "Process",
+      "tags": ["sre", "slos", "anti-patterns"]
+    }
+  ]
+}
