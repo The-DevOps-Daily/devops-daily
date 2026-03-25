@@ -1,0 +1,14 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="40" y="40" width="1120" height="550" rx="20" fill="none" stroke="#3b82f6" stroke-width="2" opacity="0.3"/>
+  <text x="600" y="180" text-anchor="middle" fill="#60a5fa" font-size="24" font-family="system-ui, sans-serif" font-weight="600">SRE</text>
+  <text x="600" y="280" text-anchor="middle" fill="#f8fafc" font-size="48" font-family="system-ui, sans-serif" font-weight="700">SLOs, SLIs, and Error Budgets</text>
+  <text x="600" y="380" text-anchor="middle" fill="#94a3b8" font-size="28" font-family="system-ui, sans-serif">16 Flashcards</text>
+  <text x="600" y="540" text-anchor="middle" fill="#475569" font-size="20" font-family="system-ui, sans-serif">devops-daily.com</text>
+</svg>
