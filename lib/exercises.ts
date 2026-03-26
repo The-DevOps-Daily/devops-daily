@@ -118,6 +118,13 @@ export async function getLatestExercises(limit = 6): Promise<Exercise[]> {
   return exercises.slice(0, limit);
 }
 
+export async function getExercisesInSeries(seriesId: string): Promise<Exercise[]> {
+  const exercises = await getAllExercises();
+  return exercises
+    .filter((e) => e.series?.id === seriesId)
+    .sort((a, b) => (a.series?.order || 0) - (b.series?.order || 0));
+}
+
 export async function getExerciseStats(): Promise<{
   total: number;
   byDifficulty: Record<Exercise['difficulty'], number>;

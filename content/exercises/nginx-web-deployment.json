@@ -1,0 +1,275 @@
+{
+  "id": "nginx-web-deployment",
+  "title": "Deploying a Web Application with Nginx and SSL",
+  "description": "Install Nginx on your Ubuntu server, configure server blocks for your domain, and set up free SSL certificates with Let's Encrypt and Certbot.",
+  "category": {
+    "name": "Linux",
+    "slug": "linux"
+  },
+  "difficulty": "intermediate",
+  "estimatedTime": "60 minutes",
+  "technologies": [
+    "Ubuntu 24.04",
+    "Nginx",
+    "Certbot",
+    "Let's Encrypt",
+    "SSL/TLS"
+  ],
+  "prerequisites": [
+    "A secured Ubuntu 24.04 server (see exercise 2: Securing Your Linux Server)",
+    "A domain name pointed to your server's IP address",
+    "SSH access as a sudo user",
+    "UFW firewall configured with ports 80 and 443 open"
+  ],
+  "learningObjectives": [
+    "Install and configure Nginx as a web server",
+    "Set up server blocks (virtual hosts) for a domain",
+    "Deploy a static website to the server",
+    "Install Certbot and obtain a free SSL certificate from Let's Encrypt",
+    "Configure automatic HTTP to HTTPS redirection",
+    "Set up automatic certificate renewal"
+  ],
+  "environment": "cloud",
+  "icon": "Server",
+  "publishedAt": "2026-03-26T09:00:00Z",
+  "author": {
+    "name": "DevOps Daily Team",
+    "slug": "devops-daily-team"
+  },
+  "tags": [
+    "linux",
+    "nginx",
+    "ssl",
+    "certbot",
+    "lets-encrypt",
+    "web server",
+    "https"
+  ],
+  "series": {
+    "id": "digitalocean-linux-server",
+    "name": "DigitalOcean Linux Server Setup",
+    "order": 3,
+    "total": 5
+  },
+  "sponsorCta": {
+    "text": "You will need a secured Linux server for this exercise. DigitalOcean makes it easy to spin one up in under a minute.",
+    "url": "https://www.jdoqocy.com/click-101674709-15836238",
+    "buttonText": "Get Started with DigitalOcean"
+  },
+  "steps": [
+    {
+      "id": "install-nginx",
+      "title": "Install Nginx",
+      "description": "Install Nginx from the Ubuntu package repository and verify it is running.",
+      "commands": [
+        "sudo apt update",
+        "sudo apt install -y nginx",
+        "sudo systemctl status nginx",
+        "nginx -v"
+      ],
+      "expectedOutput": "● nginx.service - A high performance web server and a reverse proxy server\n     Loaded: loaded (/lib/systemd/system/nginx.service; enabled; preset: enabled)\n     Active: active (running) since ...\n...\n\nnginx version: nginx/1.24.0 (Ubuntu)",
+      "hints": [
+        "Nginx starts automatically after installation on Ubuntu",
+        "If you visit your server's IP in a browser, you should see the default Nginx welcome page",
+        "If UFW is running, ports 80 and 443 should already be allowed from the security exercise"
+      ],
+      "validationCriteria": [
+        "Nginx is installed and running",
+        "systemctl status shows 'active (running)'",
+        "Visiting http://YOUR_SERVER_IP in a browser shows the Nginx welcome page"
+      ]
+    },
+    {
+      "id": "create-site-directory",
+      "title": "Create the Website Directory and a Sample Page",
+      "description": "Set up the directory structure for your website and create a simple HTML page to test the configuration.",
+      "commands": [
+        "sudo mkdir -p /var/www/yourdomain.com/html",
+        "sudo chown -R $USER:$USER /var/www/yourdomain.com",
+        "sudo chmod -R 755 /var/www/yourdomain.com"
+      ],
+      "codeExample": "# Create /var/www/yourdomain.com/html/index.html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>My Server</title>\n    <style>\n        body {\n            font-family: system-ui, sans-serif;\n            max-width: 600px;\n            margin: 80px auto;\n            padding: 0 20px;\n            color: #333;\n        }\n        h1 { color: #0066cc; }\n    </style>\n</head>\n<body>\n    <h1>It works!</h1>\n    <p>Your Nginx server block is serving this page.</p>\n</body>\n</html>",
+      "expectedOutput": "No output on success. Verify with:\nls -la /var/www/yourdomain.com/html/\ntotal 12\ndrwxr-xr-x 2 deploy deploy 4096 ... .\ndrwxr-xr-x 3 deploy deploy 4096 ... ..\n-rw-r--r-- 1 deploy deploy  XXX ... index.html",
+      "hints": [
+        "Replace 'yourdomain.com' with your actual domain name throughout this exercise",
+        "The $USER variable expands to your current username",
+        "You can create the index.html file with nano or vim: nano /var/www/yourdomain.com/html/index.html"
+      ],
+      "validationCriteria": [
+        "The directory /var/www/yourdomain.com/html exists",
+        "index.html is present in the html directory",
+        "The file is owned by your user, not root"
+      ]
+    },
+    {
+      "id": "create-server-block",
+      "title": "Create an Nginx Server Block",
+      "description": "Nginx uses server blocks (similar to Apache virtual hosts) to serve different sites. Create one for your domain.",
+      "commands": [
+        "sudo tee /etc/nginx/sites-available/yourdomain.com << 'EOF'\nserver {\n    listen 80;\n    listen [::]:80;\n\n    server_name yourdomain.com www.yourdomain.com;\n    root /var/www/yourdomain.com/html;\n    index index.html index.htm;\n\n    location / {\n        try_files $uri $uri/ =404;\n    }\n\n    # Logging\n    access_log /var/log/nginx/yourdomain.com.access.log;\n    error_log /var/log/nginx/yourdomain.com.error.log;\n}\nEOF"
+      ],
+      "expectedOutput": "The tee command prints the file contents back to your terminal as confirmation.",
+      "hints": [
+        "Replace 'yourdomain.com' with your actual domain everywhere in the config",
+        "The try_files directive tells Nginx to serve the requested file, then try it as a directory, then return 404",
+        "Separate log files per site make debugging much easier"
+      ],
+      "validationCriteria": [
+        "The config file exists at /etc/nginx/sites-available/yourdomain.com",
+        "server_name matches your domain",
+        "root points to your website directory"
+      ]
+    },
+    {
+      "id": "enable-server-block",
+      "title": "Enable the Server Block and Test",
+      "description": "Create a symlink to enable the site, test the Nginx configuration, and reload.",
+      "commands": [
+        "sudo ln -s /etc/nginx/sites-available/yourdomain.com /etc/nginx/sites-enabled/",
+        "sudo nginx -t",
+        "sudo systemctl reload nginx"
+      ],
+      "expectedOutput": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful",
+      "hints": [
+        "Always run nginx -t before reloading to catch config errors",
+        "Reload is safer than restart because it applies changes without dropping connections",
+        "If nginx -t fails, check for typos in your server block file",
+        "Visit http://yourdomain.com in your browser to verify the site is working"
+      ],
+      "validationCriteria": [
+        "Symlink exists in /etc/nginx/sites-enabled/",
+        "nginx -t reports no errors",
+        "Your domain serves the custom index.html page"
+      ]
+    },
+    {
+      "id": "point-domain",
+      "title": "Verify Your Domain Points to the Server",
+      "description": "Before requesting an SSL certificate, your domain must resolve to your server's IP address. Verify this with dig or nslookup.",
+      "commands": [
+        "dig +short yourdomain.com",
+        "dig +short www.yourdomain.com",
+        "curl -I http://yourdomain.com"
+      ],
+      "expectedOutput": "YOUR_SERVER_IP\nYOUR_SERVER_IP\n\nHTTP/1.1 200 OK\nServer: nginx/1.24.0 (Ubuntu)\nContent-Type: text/html\n...",
+      "hints": [
+        "Set an A record for yourdomain.com and www.yourdomain.com in your DNS provider",
+        "DNS changes can take up to 48 hours to propagate, but usually take 5-15 minutes",
+        "If dig is not installed, run: sudo apt install -y dnsutils",
+        "Certbot will fail if the domain does not resolve to your server"
+      ],
+      "validationCriteria": [
+        "Both the bare domain and www subdomain resolve to your server's IP",
+        "curl returns a 200 status from your Nginx server"
+      ]
+    },
+    {
+      "id": "install-certbot",
+      "title": "Install Certbot and Obtain an SSL Certificate",
+      "description": "Certbot is the official Let's Encrypt client. It handles obtaining and installing SSL certificates automatically.",
+      "commands": [
+        "sudo apt install -y certbot python3-certbot-nginx",
+        "sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com"
+      ],
+      "expectedOutput": "Saving debug log to /var/log/letsencrypt/letsencrypt.log\nEnter email address (used for urgent renewal and security notices):\n...\nSuccessfully received certificate.\nCertificate is saved at: /etc/letsencrypt/live/yourdomain.com/fullchain.pem\nKey is saved at:         /etc/letsencrypt/live/yourdomain.com/privkey.pem\n...\nDeploying certificate\nSuccessfully deployed certificate for yourdomain.com\nSuccessfully deployed certificate for www.yourdomain.com\n...\nCongratulations! You have successfully enabled HTTPS",
+      "hints": [
+        "Certbot will ask for your email and to agree to the terms of service",
+        "The --nginx flag tells Certbot to automatically modify your Nginx config",
+        "Let's Encrypt certificates are free and valid for 90 days",
+        "If Certbot fails, check that your domain resolves to this server and ports 80/443 are open"
+      ],
+      "validationCriteria": [
+        "Certbot runs without errors",
+        "Certificate files exist in /etc/letsencrypt/live/yourdomain.com/",
+        "Visiting https://yourdomain.com works and shows a valid certificate"
+      ]
+    },
+    {
+      "id": "verify-https",
+      "title": "Verify HTTPS and HTTP Redirect",
+      "description": "Certbot should have configured Nginx to redirect HTTP traffic to HTTPS automatically. Verify both the redirect and the SSL certificate.",
+      "commands": [
+        "curl -I http://yourdomain.com",
+        "curl -I https://yourdomain.com",
+        "sudo nginx -t",
+        "cat /etc/nginx/sites-available/yourdomain.com"
+      ],
+      "expectedOutput": "HTTP/1.1 301 Moved Permanently\nServer: nginx/1.24.0 (Ubuntu)\nLocation: https://yourdomain.com/\n...\n\nHTTP/2 200\nserver: nginx/1.24.0 (Ubuntu)\ncontent-type: text/html\nstrict-transport-security: max-age=31536000\n...",
+      "hints": [
+        "HTTP requests should return a 301 redirect to HTTPS",
+        "HTTPS requests should return 200 with your page content",
+        "Certbot adds SSL configuration lines and a redirect block to your Nginx config",
+        "Check the certificate in your browser by clicking the padlock icon"
+      ],
+      "validationCriteria": [
+        "HTTP requests redirect to HTTPS with a 301 status",
+        "HTTPS requests return 200 OK",
+        "The SSL certificate is valid and issued by Let's Encrypt",
+        "Nginx config test passes"
+      ]
+    },
+    {
+      "id": "auto-renewal",
+      "title": "Set Up Automatic Certificate Renewal",
+      "description": "Let's Encrypt certificates expire after 90 days. Certbot installs a systemd timer to renew them automatically. Verify it is set up and test a dry run.",
+      "commands": [
+        "sudo systemctl list-timers | grep certbot",
+        "sudo certbot renew --dry-run",
+        "sudo cat /etc/systemd/system/snap.certbot.renew.timer 2>/dev/null || sudo systemctl status certbot.timer"
+      ],
+      "expectedOutput": "... certbot.timer    certbot.service    ...\n\nSaving debug log to /var/log/letsencrypt/letsencrypt.log\n\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\nProcessing /etc/letsencrypt/renewal/yourdomain.com.conf\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\nSimulating renewal of an existing certificate...\n\nCongratulations, all simulated renewals succeeded:\n  /etc/letsencrypt/live/yourdomain.com/fullchain.pem (success)",
+      "hints": [
+        "The dry run simulates renewal without actually requesting a new certificate",
+        "Certbot's timer runs twice daily and renews certificates that expire within 30 days",
+        "You do not need to set up a cron job; the systemd timer handles it",
+        "To manually renew: sudo certbot renew"
+      ],
+      "validationCriteria": [
+        "The certbot timer is listed and active",
+        "The dry run completes without errors",
+        "Automatic renewal is confirmed working"
+      ]
+    }
+  ],
+  "completionCriteria": [
+    "Nginx is installed and serving your website",
+    "A server block is configured for your domain",
+    "SSL certificate is installed and HTTPS is working",
+    "HTTP requests redirect to HTTPS",
+    "Automatic certificate renewal is set up and tested"
+  ],
+  "resources": [
+    {
+      "title": "How To Install Nginx on Ubuntu 24.04",
+      "url": "https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu",
+      "type": "tutorial",
+      "external": true
+    },
+    {
+      "title": "Certbot Instructions for Nginx on Ubuntu",
+      "url": "https://certbot.eff.org/instructions?ws=nginx&os=ubuntufocal",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "Nginx Server Block Configuration",
+      "url": "https://nginx.org/en/docs/http/server_names.html",
+      "type": "documentation",
+      "external": true
+    }
+  ],
+  "troubleshooting": [
+    {
+      "issue": "Certbot fails with 'Could not automatically find a matching server block'",
+      "solution": "Make sure the server_name in your Nginx config exactly matches the domain you pass to certbot with -d. Also verify the site is enabled (symlinked in sites-enabled) and that you ran nginx -t and reloaded."
+    },
+    {
+      "issue": "Certbot fails with a connection timeout or 'urn:ietf:params:acme:error:connection'",
+      "solution": "Let's Encrypt needs to reach your server on port 80. Verify your DNS points to the correct IP, UFW allows port 80, and no other firewall or cloud security group is blocking traffic."
+    },
+    {
+      "issue": "Browser shows 'Your connection is not private' after installing the certificate",
+      "solution": "Clear your browser cache or try an incognito window. If the issue persists, check 'sudo certbot certificates' to verify the certificate is valid and covers the correct domains."
+    }
+  ]
+}

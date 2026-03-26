@@ -1,0 +1,288 @@
+{
+  "id": "linux-server-security",
+  "title": "Securing Your Linux Server: Essential First Steps",
+  "description": "Harden a fresh Ubuntu 24.04 server by creating a non-root user, locking down SSH, configuring a firewall with UFW, and setting up fail2ban to block brute-force attacks.",
+  "category": {
+    "name": "Linux",
+    "slug": "linux"
+  },
+  "difficulty": "beginner",
+  "estimatedTime": "45 minutes",
+  "technologies": [
+    "Ubuntu 24.04",
+    "SSH",
+    "UFW",
+    "fail2ban"
+  ],
+  "prerequisites": [
+    "A running Ubuntu 24.04 server (see exercise 1: Creating and Connecting to Your First Linux Server)",
+    "SSH access as root to your server",
+    "Basic terminal knowledge"
+  ],
+  "learningObjectives": [
+    "Create a non-root user with sudo privileges",
+    "Disable root login and password authentication over SSH",
+    "Configure UFW to allow only necessary traffic",
+    "Install and configure fail2ban to block repeated login attempts",
+    "Verify that security settings are working correctly"
+  ],
+  "environment": "cloud",
+  "icon": "Server",
+  "publishedAt": "2026-03-26T09:00:00Z",
+  "author": {
+    "name": "DevOps Daily Team",
+    "slug": "devops-daily-team"
+  },
+  "tags": [
+    "linux",
+    "security",
+    "ssh",
+    "ufw",
+    "firewall",
+    "fail2ban",
+    "ubuntu"
+  ],
+  "series": {
+    "id": "digitalocean-linux-server",
+    "name": "DigitalOcean Linux Server Setup",
+    "order": 2,
+    "total": 5
+  },
+  "sponsorCta": {
+    "text": "You will need a running Linux server for this exercise. If you do not have one yet, you can spin up an Ubuntu droplet on DigitalOcean in under a minute.",
+    "url": "https://www.jdoqocy.com/click-101674709-15836238",
+    "buttonText": "Get Started with DigitalOcean"
+  },
+  "steps": [
+    {
+      "id": "create-sudo-user",
+      "title": "Create a Non-Root User with Sudo Access",
+      "description": "Running everything as root is risky. A single typo can destroy your system. Create a regular user and give it sudo privileges so you can run admin commands only when needed.",
+      "commands": [
+        "adduser deploy",
+        "usermod -aG sudo deploy",
+        "id deploy"
+      ],
+      "expectedOutput": "Adding user `deploy' ...\nAdding new group `deploy' (1001) ...\nAdding new user `deploy' (1001) with group `deploy' ...\nCreating home directory `/home/deploy' ...\nCopying files from `/etc/skel' ...\nNew password:\nRetype new password:\npasswd: password updated successfully\n...\nuid=1001(deploy) gid=1001(deploy) groups=1001(deploy),27(sudo)",
+      "hints": [
+        "Choose a strong password for the new user",
+        "The -aG flag appends the user to the sudo group without removing existing groups",
+        "You can use any username you want instead of 'deploy'"
+      ],
+      "validationCriteria": [
+        "User 'deploy' exists on the system",
+        "User is a member of the sudo group",
+        "id command shows sudo (group 27) in the output"
+      ]
+    },
+    {
+      "id": "copy-ssh-key",
+      "title": "Copy SSH Key to the New User",
+      "description": "Copy your SSH public key from the root account to the new user so you can log in directly without a password.",
+      "commands": [
+        "mkdir -p /home/deploy/.ssh",
+        "cp /root/.ssh/authorized_keys /home/deploy/.ssh/authorized_keys",
+        "chown -R deploy:deploy /home/deploy/.ssh",
+        "chmod 700 /home/deploy/.ssh",
+        "chmod 600 /home/deploy/.ssh/authorized_keys"
+      ],
+      "expectedOutput": "No output means success. Verify with:\nls -la /home/deploy/.ssh/\ntotal 12\ndrwx------ 2 deploy deploy 4096 ... .\ndrwxr-xr-x 4 deploy deploy 4096 ... ..\n-rw------- 1 deploy deploy  XXX ... authorized_keys",
+      "hints": [
+        "The .ssh directory must be 700 and authorized_keys must be 600, or SSH will refuse to use them",
+        "chown -R changes ownership recursively for the directory and all files inside it",
+        "Test the new user login from your local machine: ssh deploy@YOUR_DROPLET_IP"
+      ],
+      "validationCriteria": [
+        "The file /home/deploy/.ssh/authorized_keys exists",
+        "Permissions on .ssh are 700",
+        "Permissions on authorized_keys are 600",
+        "You can SSH in as the deploy user from your local machine"
+      ]
+    },
+    {
+      "id": "test-sudo-access",
+      "title": "Test Sudo Access for the New User",
+      "description": "Open a new terminal window and SSH in as the deploy user. Verify that sudo works before locking down root access.",
+      "commands": [
+        "ssh deploy@YOUR_DROPLET_IP",
+        "sudo whoami",
+        "sudo cat /etc/shadow | head -3"
+      ],
+      "expectedOutput": "[sudo] password for deploy:\nroot\n\nroot:*:19500:0:99999:7:::\ndaemon:*:19500:0:99999:7:::\nbin:*:19500:0:99999:7:::",
+      "hints": [
+        "You will be prompted for the deploy user's password when running sudo for the first time",
+        "If sudo fails, go back to the root session and verify the user is in the sudo group",
+        "Keep your root SSH session open until you confirm the deploy user works"
+      ],
+      "validationCriteria": [
+        "sudo whoami returns 'root'",
+        "You can read protected files with sudo",
+        "The deploy user is confirmed working before proceeding"
+      ]
+    },
+    {
+      "id": "disable-root-ssh",
+      "title": "Disable Root Login and Password Authentication",
+      "description": "Now that you have a working sudo user, disable root SSH login and password authentication. This blocks the two most common attack vectors on Linux servers.",
+      "commands": [
+        "sudo sed -i 's/^#\\?PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config",
+        "sudo sed -i 's/^#\\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",
+        "sudo grep -E '^(PermitRootLogin|PasswordAuthentication)' /etc/ssh/sshd_config",
+        "sudo systemctl restart ssh"
+      ],
+      "expectedOutput": "PermitRootLogin no\nPasswordAuthentication no",
+      "hints": [
+        "Always verify the grep output before restarting SSH",
+        "Do NOT close your current SSH session until you test logging in from a new terminal",
+        "If you lock yourself out, use the DigitalOcean console from the dashboard to fix it",
+        "On Ubuntu 24.04, the service is called 'ssh', not 'sshd'"
+      ],
+      "validationCriteria": [
+        "PermitRootLogin is set to 'no'",
+        "PasswordAuthentication is set to 'no'",
+        "SSH service restarts without errors",
+        "You can still log in as the deploy user from a new terminal",
+        "Root login is rejected from a new terminal"
+      ]
+    },
+    {
+      "id": "configure-ufw",
+      "title": "Configure UFW Firewall",
+      "description": "UFW (Uncomplicated Firewall) is the default firewall tool on Ubuntu. Set it up to allow only SSH, HTTP, and HTTPS traffic, and block everything else.",
+      "commands": [
+        "sudo ufw default deny incoming",
+        "sudo ufw default allow outgoing",
+        "sudo ufw allow 22/tcp comment 'SSH'",
+        "sudo ufw allow 80/tcp comment 'HTTP'",
+        "sudo ufw allow 443/tcp comment 'HTTPS'",
+        "sudo ufw --force enable",
+        "sudo ufw status verbose"
+      ],
+      "expectedOutput": "Default incoming policy changed to 'deny'\nDefault outgoing policy changed to 'allow'\nRule added\nRule added (v6)\nRule added\nRule added (v6)\nRule added\nRule added (v6)\nFirewall is active and enabled on system startup\n\nStatus: active\nLogging: on (low)\nDefault: deny (incoming), allow (outgoing), disabled (routed)\nNew profiles: skip\n\nTo                         Action      From\n--                         ------      ----\n22/tcp                     ALLOW IN    Anywhere                   # SSH\n80/tcp                     ALLOW IN    Anywhere                   # HTTP\n443/tcp                    ALLOW IN    Anywhere                   # HTTPS\n22/tcp (v6)                ALLOW IN    Anywhere (v6)              # SSH\n80/tcp (v6)                ALLOW IN    Anywhere (v6)              # HTTP\n443/tcp (v6)               ALLOW IN    Anywhere (v6)              # HTTPS",
+      "hints": [
+        "Always allow SSH (port 22) BEFORE enabling the firewall, or you will lock yourself out",
+        "The --force flag skips the confirmation prompt",
+        "You can add comments to rules so you remember why they were created",
+        "If you need to remove a rule later: sudo ufw delete allow 80/tcp"
+      ],
+      "validationCriteria": [
+        "UFW is active and enabled on boot",
+        "Default incoming policy is deny",
+        "SSH (22), HTTP (80), and HTTPS (443) are allowed",
+        "You are still connected via SSH after enabling the firewall"
+      ]
+    },
+    {
+      "id": "install-fail2ban",
+      "title": "Install and Configure fail2ban",
+      "description": "fail2ban monitors log files for repeated failed login attempts and temporarily bans the offending IP addresses. It is one of the best defenses against brute-force SSH attacks.",
+      "commands": [
+        "sudo apt install -y fail2ban",
+        "sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local",
+        "sudo tee /etc/fail2ban/jail.d/sshd.conf << 'EOF'\n[sshd]\nenabled = true\nport = ssh\nfilter = sshd\nlogpath = /var/log/auth.log\nmaxretry = 5\nbantime = 3600\nfindtime = 600\nEOF",
+        "sudo systemctl enable fail2ban",
+        "sudo systemctl restart fail2ban"
+      ],
+      "expectedOutput": "Reading package lists... Done\n...\nSetting up fail2ban ...\n\nSynchronizing state of fail2ban.service...\nCreated symlink /etc/systemd/system/multi-user.target.wants/fail2ban.service ...",
+      "hints": [
+        "Never edit jail.conf directly; always use jail.local or files in jail.d/",
+        "maxretry = 5 means an IP gets banned after 5 failed attempts",
+        "bantime = 3600 bans the IP for 1 hour (3600 seconds)",
+        "findtime = 600 means the 5 failed attempts must happen within 10 minutes"
+      ],
+      "validationCriteria": [
+        "fail2ban is installed and running",
+        "The sshd jail is enabled",
+        "fail2ban is set to start on boot"
+      ]
+    },
+    {
+      "id": "verify-fail2ban",
+      "title": "Verify fail2ban is Working",
+      "description": "Check that fail2ban is running, the SSH jail is active, and review the current ban status.",
+      "commands": [
+        "sudo fail2ban-client status",
+        "sudo fail2ban-client status sshd",
+        "sudo fail2ban-client get sshd bantime",
+        "sudo fail2ban-client get sshd maxretry"
+      ],
+      "expectedOutput": "Status\n|- Number of jail:      1\n`- Jail list:   sshd\n\nStatus for the jail: sshd\n|- Filter\n|  |- Currently failed: 0\n|  |- Total failed:     0\n|  `- Journal matches:  _SYSTEMD_UNIT=ssh.service + _COMM=sshd\n`- Actions\n   |- Currently banned: 0\n   |- Total banned:     0\n   `- Banned IP list:\n\n3600\n5",
+      "hints": [
+        "The 'Currently banned' count will increase as bots try to brute-force your server",
+        "To manually unban an IP: sudo fail2ban-client set sshd unbanip IP_ADDRESS",
+        "Check /var/log/fail2ban.log to see ban/unban activity"
+      ],
+      "validationCriteria": [
+        "fail2ban status shows the sshd jail is active",
+        "Ban time and max retry values match your configuration",
+        "No errors in the fail2ban output"
+      ]
+    },
+    {
+      "id": "verify-security",
+      "title": "Run a Final Security Check",
+      "description": "Verify that all security settings are in place by running a series of checks.",
+      "commands": [
+        "sudo sshd -T | grep -i 'permitrootlogin'",
+        "sudo sshd -T | grep -i 'passwordauthentication'",
+        "sudo ufw status",
+        "sudo systemctl is-enabled fail2ban",
+        "sudo ss -tlnp | grep -E ':(22|80|443)\\b'"
+      ],
+      "expectedOutput": "permitrootlogin no\npasswordauthentication no\n\nStatus: active\nTo                         Action      From\n--                         ------      ----\n22/tcp                     ALLOW       Anywhere\n80/tcp                     ALLOW       Anywhere\n443/tcp                    ALLOW       Anywhere\n...\n\nenabled\n\nLISTEN 0      128          0.0.0.0:22        0.0.0.0:*    users:((\"sshd\",pid=...,fd=3))",
+      "hints": [
+        "sshd -T shows the active SSH configuration, which is more reliable than reading the config file",
+        "ss -tlnp shows listening TCP ports and the processes using them",
+        "If any check fails, go back and review the corresponding step"
+      ],
+      "validationCriteria": [
+        "Root login is disabled",
+        "Password authentication is disabled",
+        "UFW is active with the correct rules",
+        "fail2ban is enabled",
+        "Only expected ports are listening"
+      ]
+    }
+  ],
+  "completionCriteria": [
+    "A non-root user with sudo privileges can log in via SSH",
+    "Root SSH login is disabled",
+    "Password authentication is disabled",
+    "UFW firewall is active and allows only SSH, HTTP, and HTTPS",
+    "fail2ban is running and monitoring SSH login attempts"
+  ],
+  "resources": [
+    {
+      "title": "Initial Server Setup with Ubuntu 24.04",
+      "url": "https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu",
+      "type": "tutorial",
+      "external": true
+    },
+    {
+      "title": "UFW Essentials: Common Firewall Rules and Commands",
+      "url": "https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands",
+      "type": "tutorial",
+      "external": true
+    },
+    {
+      "title": "fail2ban Documentation",
+      "url": "https://github.com/fail2ban/fail2ban/wiki",
+      "type": "documentation",
+      "external": true
+    }
+  ],
+  "troubleshooting": [
+    {
+      "issue": "Locked out of the server after disabling root login",
+      "solution": "Use the DigitalOcean console (in the dashboard under your droplet, click 'Access' then 'Launch Droplet Console') to log in as root and fix the SSH config. Then re-test your deploy user login."
+    },
+    {
+      "issue": "UFW blocks SSH and you lose connection",
+      "solution": "Use the DigitalOcean console to log in and run 'sudo ufw allow 22/tcp' followed by 'sudo ufw reload'. Always allow SSH before enabling the firewall."
+    },
+    {
+      "issue": "fail2ban does not start or shows errors",
+      "solution": "Check the logs with 'sudo journalctl -u fail2ban -n 50'. A common problem is syntax errors in the jail config. Verify your config with 'sudo fail2ban-client -t'."
+    }
+  ]
+}
