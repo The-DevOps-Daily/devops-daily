@@ -69,7 +69,7 @@ It's dense. Don't try to read it cover to cover. Treat it as a reference you com
 
 **[Read SRE for free on Google's site](https://sre.google/books/sre-book/)**
 
-**Want to test your SRE knowledge?** Take our [SRE quiz](/quizzes/sre-quiz) or study with the [SRE flashcards](/flashcards/sre-fundamentals).
+**Want to test your SRE knowledge?** Take our [SRE quiz](/quizzes/sre-quiz) or study with the [SLOs and Error Budgets flashcards](/flashcards/slos-slis-error-budgets).
 
 ## 3. Kubernetes in Action
 
