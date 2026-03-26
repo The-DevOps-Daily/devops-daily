@@ -328,6 +328,9 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     </div>
+                    <p className="text-[10px] text-muted-foreground mt-3">
+                      Disclosure: This is an affiliate link. We may earn a commission at no extra cost to you.
+                    </p>
                   </CardContent>
                 </Card>
               )}
