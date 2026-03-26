@@ -55,6 +55,8 @@ The pay-what-you-want pricing means there's zero risk in picking it up. Even if 
 **Authors:** Betsy Beyer, Chris Jones, Jennifer Petoff, Niall Murphy (Google)
 **Best for:** Anyone who wants to understand how large-scale systems actually stay running
 
+![Site Reliability Engineering](/images/posts/books/sre-book.jpg)
+
 This is the book that defined SRE as a discipline. Google released it for free, and it's still the most referenced book in production engineering conversations.
 
 The key ideas that stick with you: error budgets (you get a "budget" of acceptable failures, and you spend it on shipping faster), SLOs as the foundation of reliability (not uptime percentages but actual user-facing indicators), and the concept that operations is a software engineering problem.
@@ -72,6 +74,8 @@ It's dense. Don't try to read it cover to cover. Treat it as a reference you com
 **Author:** Marko Luksa
 **Best for:** Engineers who need to actually understand Kubernetes, not just copy-paste YAML
 
+![Kubernetes in Action](/images/posts/books/k8s-in-action.jpg)
+
 There are dozens of Kubernetes books, but this one stands out because it explains the "why" behind every concept. You don't just learn that a Pod is a group of containers. You understand why Kubernetes uses Pods instead of running containers directly, and what that design decision means for your applications.
 
 The book starts with containers and builds up through Pods, Services, Deployments, StatefulSets, and custom resources. Each chapter includes hands-on examples you run on a real cluster. By the end, you understand the Kubernetes API well enough to debug problems without Googling every error message.
@@ -86,6 +90,8 @@ The second edition covers the latest Kubernetes features, but even the first edi
 
 **Authors:** Gene Kim, Kevin Behr, George Spafford
 **Best for:** Understanding why DevOps matters as a culture shift, not just a set of tools
+
+![The Phoenix Project](/images/posts/books/phoenix-project.jpg)
 
 This is a novel, not a textbook. You follow Bill Palmer, an IT manager at a company called Parts Unlimited, as everything falls apart and he has to figure out how to fix it. Along the way, you see the principles behind DevOps play out in a real (fictional) organization.
 
