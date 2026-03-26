@@ -1,0 +1,249 @@
+{
+  "id": "digitalocean-droplet-setup",
+  "title": "Creating and Connecting to Your First Linux Server",
+  "description": "Spin up an Ubuntu 24.04 Linux server in the cloud, configure SSH key authentication, and learn to navigate your new server. This exercise uses DigitalOcean but the steps work with any cloud provider.",
+  "category": {
+    "name": "Linux",
+    "slug": "linux"
+  },
+  "difficulty": "beginner",
+  "estimatedTime": "30 minutes",
+  "technologies": [
+    "Ubuntu 24.04",
+    "SSH",
+    "DigitalOcean"
+  ],
+  "prerequisites": [
+    "A computer with a terminal (macOS, Linux, or Windows with WSL)",
+    "A cloud server (we use DigitalOcean in this exercise, but any Ubuntu 24.04 server works)",
+    "Basic familiarity with typing commands in a terminal"
+  ],
+  "learningObjectives": [
+    "Create a cloud Linux server running Ubuntu 24.04",
+    "Generate and configure SSH keys for secure access",
+    "Connect to a remote server via SSH",
+    "Navigate the Linux filesystem and run basic commands",
+    "Understand the difference between root and regular user access"
+  ],
+  "environment": "cloud",
+  "icon": "Server",
+  "publishedAt": "2026-03-26T09:00:00Z",
+  "author": {
+    "name": "DevOps Daily Team",
+    "slug": "devops-daily-team"
+  },
+  "tags": [
+    "linux",
+    "digitalocean",
+    "ssh",
+    "ubuntu",
+    "server setup",
+    "beginner"
+  ],
+  "series": {
+    "id": "digitalocean-linux-server",
+    "name": "Linux Server Setup Series",
+    "order": 1,
+    "total": 5
+  },
+  "sponsorCta": {
+    "text": "You need a Linux server to follow along. Any cloud provider works, but we recommend DigitalOcean for its simple interface and fast setup.",
+    "url": "https://www.jdoqocy.com/click-101674709-15836238",
+    "buttonText": "Get Started with DigitalOcean"
+  },
+  "steps": [
+    {
+      "id": "generate-ssh-key",
+      "title": "Generate an SSH Key Pair",
+      "description": "Before creating a server, generate an SSH key pair on your local machine. This lets you log in securely without a password.",
+      "commands": [
+        "ssh-keygen -t ed25519 -C \"your_email@example.com\"",
+        "cat ~/.ssh/id_ed25519.pub"
+      ],
+      "expectedOutput": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... your_email@example.com",
+      "hints": [
+        "Press Enter to accept the default file location (~/.ssh/id_ed25519)",
+        "You can set a passphrase for extra security or leave it empty",
+        "If you already have an SSH key, you can skip generation and just copy your public key"
+      ],
+      "validationCriteria": [
+        "The file ~/.ssh/id_ed25519 exists",
+        "The file ~/.ssh/id_ed25519.pub exists",
+        "You can see your public key output"
+      ]
+    },
+    {
+      "id": "create-droplet",
+      "title": "Create an Ubuntu 24.04 Droplet",
+      "description": "Log in to DigitalOcean, add your SSH public key, and create a new droplet. Choose Ubuntu 24.04 LTS as the image. A Basic plan with 1 GB RAM and 1 vCPU ($6/month) is enough for learning. Pick the datacenter region closest to you.",
+      "commands": [
+        "cat ~/.ssh/id_ed25519.pub"
+      ],
+      "expectedOutput": "Copy this output and paste it into the DigitalOcean SSH key form during droplet creation.",
+      "hints": [
+        "Go to cloud.digitalocean.com and click 'Create' then 'Droplets'",
+        "Select Ubuntu 24.04 (LTS) x64 as your image",
+        "Choose the $6/month Basic plan for testing",
+        "Under Authentication, select 'SSH keys' and add your public key",
+        "Give your droplet a hostname like 'ubuntu-lab'"
+      ],
+      "validationCriteria": [
+        "Droplet is created and shows a 'Running' status in the DigitalOcean dashboard",
+        "The droplet has a public IPv4 address assigned",
+        "Your SSH key is listed under the droplet's access settings"
+      ]
+    },
+    {
+      "id": "connect-ssh",
+      "title": "Connect to Your Server via SSH",
+      "description": "Use SSH to connect to your new droplet. Replace the IP address below with the one shown in your DigitalOcean dashboard.",
+      "commands": [
+        "ssh root@YOUR_DROPLET_IP"
+      ],
+      "expectedOutput": "Welcome to Ubuntu 24.04 LTS (GNU/Linux 6.8.0-xx-generic x86_64)\n\n * Documentation:  https://help.ubuntu.com\n * Management:     https://landscape.canonical.com\n * Support:        https://ubuntu.com/pro\n\nroot@ubuntu-lab:~#",
+      "hints": [
+        "Replace YOUR_DROPLET_IP with the actual IP from your dashboard",
+        "Type 'yes' when asked to confirm the host fingerprint on first connection",
+        "If connection times out, verify the droplet is running and your IP is correct",
+        "If you get 'Permission denied', double check that you added the correct SSH public key"
+      ],
+      "validationCriteria": [
+        "You see the Ubuntu welcome message",
+        "Your prompt shows root@your-hostname",
+        "You are logged in as root"
+      ]
+    },
+    {
+      "id": "explore-system",
+      "title": "Explore Your Server",
+      "description": "Run some basic commands to understand what you are working with. Check the OS version, available resources, and disk space.",
+      "commands": [
+        "cat /etc/os-release",
+        "uname -a",
+        "free -h",
+        "df -h",
+        "nproc"
+      ],
+      "expectedOutput": "PRETTY_NAME=\"Ubuntu 24.04 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\n...\n\nLinux ubuntu-lab 6.8.0-xx-generic #xx-Ubuntu SMP x86_64 GNU/Linux\n\n               total        used        free\nMem:           976Mi       150Mi       500Mi\n\nFilesystem      Size  Used Avail Use% Mounted on\n/dev/vda1        25G  2.1G   22G   9% /\n\n1",
+      "hints": [
+        "free -h shows memory in human-readable format (MB, GB)",
+        "df -h shows disk usage for all mounted filesystems",
+        "nproc shows the number of CPU cores available"
+      ],
+      "validationCriteria": [
+        "OS version shows Ubuntu 24.04",
+        "Memory and disk info are displayed",
+        "CPU count matches your droplet plan"
+      ]
+    },
+    {
+      "id": "navigate-filesystem",
+      "title": "Navigate the Linux Filesystem",
+      "description": "Learn to move around the filesystem, list files, and understand the directory structure of a Linux server.",
+      "commands": [
+        "pwd",
+        "ls -la /",
+        "ls -la /etc/",
+        "ls -la /var/log/",
+        "cd /tmp && pwd",
+        "cd ~ && pwd"
+      ],
+      "expectedOutput": "/root\n\ntotal 68\ndrwxr-xr-x  19 root root  4096 ... .\ndrwxr-xr-x  19 root root  4096 ... ..\ndrwxr-xr-x   2 root root  4096 ... bin\ndrwxr-xr-x   3 root root  4096 ... boot\ndrwxr-xr-x   5 root root   380 ... dev\ndrwxr-xr-x  92 root root  4096 ... etc\n...\n\n/tmp\n/root",
+      "hints": [
+        "pwd prints your current working directory",
+        "ls -la shows all files including hidden ones, with permissions and ownership",
+        "cd ~ always takes you back to your home directory",
+        "The root user's home directory is /root, not /home/root"
+      ],
+      "validationCriteria": [
+        "You can navigate between directories",
+        "You understand the top-level directory layout",
+        "You can return to your home directory with cd ~"
+      ]
+    },
+    {
+      "id": "update-system",
+      "title": "Update the System Packages",
+      "description": "Always update your server packages right after creating it. This ensures you have the latest security patches.",
+      "commands": [
+        "apt update",
+        "apt upgrade -y"
+      ],
+      "expectedOutput": "Hit:1 http://mirrors.digitalocean.com/ubuntu noble InRelease\nGet:2 http://mirrors.digitalocean.com/ubuntu noble-updates InRelease [126 kB]\n...\nReading package lists... Done\nBuilding dependency tree... Done\nAll packages are up to date.\n\nOR\n\nThe following packages will be upgraded:\n  ...\nX upgraded, 0 newly installed, 0 to remove and 0 not upgraded.",
+      "hints": [
+        "apt update refreshes the list of available packages",
+        "apt upgrade actually installs the updates",
+        "The -y flag automatically answers 'yes' to prompts",
+        "Run both commands every time you start working on a fresh server"
+      ],
+      "validationCriteria": [
+        "apt update completes without errors",
+        "apt upgrade installs any available updates",
+        "No errors in the output"
+      ]
+    },
+    {
+      "id": "install-basic-tools",
+      "title": "Install Essential Tools",
+      "description": "Install a few commonly used tools that are not included by default. These will be useful throughout the rest of this series.",
+      "commands": [
+        "apt install -y curl wget vim htop unzip git",
+        "htop --version",
+        "git --version",
+        "curl --version | head -1"
+      ],
+      "expectedOutput": "Reading package lists... Done\n...\nThe following NEW packages will be installed:\n  curl git htop unzip vim wget\n...\n\nhtop 3.3.0\ngit version 2.43.0\ncurl 8.5.0 (x86_64-pc-linux-gnu)",
+      "hints": [
+        "You can install multiple packages in a single apt install command",
+        "These tools are useful for downloading files, editing configs, monitoring, and version control",
+        "htop is an interactive process viewer, much better than plain top"
+      ],
+      "validationCriteria": [
+        "All packages install without errors",
+        "htop, git, and curl are available and show version output",
+        "You can run htop to see the process viewer (press q to quit)"
+      ]
+    }
+  ],
+  "completionCriteria": [
+    "You have a running Ubuntu 24.04 droplet on DigitalOcean",
+    "You can connect via SSH using your key pair",
+    "You can navigate the filesystem and run basic commands",
+    "System packages are updated",
+    "Essential tools are installed"
+  ],
+  "resources": [
+    {
+      "title": "DigitalOcean Droplet Quickstart",
+      "url": "https://docs.digitalocean.com/products/droplets/quickstart/",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "How to Set Up SSH Keys on Ubuntu",
+      "url": "https://www.digitalocean.com/community/tutorials/how-to-set-up-ssh-keys-on-ubuntu-22-04",
+      "type": "tutorial",
+      "external": true
+    },
+    {
+      "title": "Linux Filesystem Hierarchy Standard",
+      "url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html",
+      "type": "reference",
+      "external": true
+    }
+  ],
+  "troubleshooting": [
+    {
+      "issue": "SSH connection refused or times out",
+      "solution": "Verify the droplet is running in the DigitalOcean dashboard. Check that you are using the correct IP address. If you just created the droplet, wait 30 seconds for it to finish booting."
+    },
+    {
+      "issue": "Permission denied (publickey) when connecting via SSH",
+      "solution": "Make sure you added the correct public key (id_ed25519.pub, not the private key) to DigitalOcean before creating the droplet. You can also add it via the dashboard under Settings > Security > SSH Keys."
+    },
+    {
+      "issue": "apt update fails with repository errors",
+      "solution": "This can happen if DigitalOcean mirrors are temporarily slow. Wait a minute and try again. If the problem persists, check your server's internet connectivity with ping 8.8.8.8."
+    }
+  ]
+}

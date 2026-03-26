@@ -47,6 +47,17 @@ export interface Exercise {
   }[];
   image?: string;
   featured?: boolean;
+  series?: {
+    id: string;
+    name: string;
+    order: number;
+    total: number;
+  };
+  sponsorCta?: {
+    text: string;
+    url: string;
+    buttonText: string;
+  };
 }
 
 export interface ExerciseProgress {

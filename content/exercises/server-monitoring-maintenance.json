@@ -1,0 +1,269 @@
+{
+  "id": "server-monitoring-maintenance",
+  "title": "Linux Server Monitoring and Maintenance Essentials",
+  "description": "Learn to monitor system resources, manage logs, configure automatic security updates, and set up basic alerting with cron jobs on your Ubuntu server.",
+  "category": {
+    "name": "Linux",
+    "slug": "linux"
+  },
+  "difficulty": "intermediate",
+  "estimatedTime": "45 minutes",
+  "technologies": [
+    "Ubuntu 24.04",
+    "systemd",
+    "journalctl",
+    "logrotate",
+    "cron",
+    "unattended-upgrades"
+  ],
+  "prerequisites": [
+    "A running Ubuntu 24.04 server with sudo access",
+    "Basic familiarity with the command line",
+    "SSH access to your server"
+  ],
+  "learningObjectives": [
+    "Monitor CPU, memory, and disk usage with standard Linux tools",
+    "Use journalctl to read and filter systemd logs",
+    "Configure logrotate to manage log file sizes",
+    "Set up automatic security updates with unattended-upgrades",
+    "Write a simple monitoring script and schedule it with cron"
+  ],
+  "environment": "cloud",
+  "icon": "Server",
+  "publishedAt": "2026-03-26T09:00:00Z",
+  "author": {
+    "name": "DevOps Daily Team",
+    "slug": "devops-daily-team"
+  },
+  "tags": [
+    "linux",
+    "monitoring",
+    "logs",
+    "cron",
+    "maintenance",
+    "security updates"
+  ],
+  "series": {
+    "id": "digitalocean-linux-server",
+    "name": "Linux Server Setup Series",
+    "order": 4,
+    "total": 5
+  },
+  "sponsorCta": {
+    "text": "You need a running Linux server for this exercise. Any Ubuntu server works, but we recommend DigitalOcean for quick setup.",
+    "url": "https://www.jdoqocy.com/click-101674709-15836238",
+    "buttonText": "Get Started with DigitalOcean"
+  },
+  "steps": [
+    {
+      "id": "system-resources",
+      "title": "Monitor System Resources",
+      "description": "Get a quick overview of your server's health using built-in tools. These commands are the first thing you run when something feels slow or a service stops responding.",
+      "commands": [
+        "uptime",
+        "free -h",
+        "df -h",
+        "htop"
+      ],
+      "expectedOutput": " 14:23:07 up 3 days,  2:15,  1 user,  load average: 0.08, 0.03, 0.01\n\n               total        used        free      shared  buff/cache   available\nMem:           976Mi       210Mi       120Mi       1.0Mi       645Mi       610Mi\nSwap:            0B          0B          0B\n\nFilesystem      Size  Used Avail Use% Mounted on\n/dev/vda1        25G  4.2G   20G  18% /\ntmpfs           489M     0  489M   0% /dev/shm\n\n[htop opens an interactive process viewer - press q to exit]",
+      "hints": [
+        "The load average in uptime shows system load over 1, 5, and 15 minutes",
+        "Values in 'available' under free -h are more useful than 'free' because Linux uses free RAM for disk cache",
+        "If df shows a filesystem over 80% used, plan to clean up or expand the disk",
+        "In htop, press F6 to sort by different columns (CPU%, MEM%, etc.)"
+      ],
+      "validationCriteria": [
+        "You can read the load average from uptime output",
+        "You understand the difference between 'free' and 'available' memory",
+        "You can identify disk usage percentages",
+        "You can launch and navigate htop"
+      ]
+    },
+    {
+      "id": "process-network-monitoring",
+      "title": "Monitor Processes and Network Connections",
+      "description": "Identify what processes are using the most resources and which network ports are in use.",
+      "commands": [
+        "ps aux --sort=-%mem | head -10",
+        "ps aux --sort=-%cpu | head -10",
+        "sudo ss -tlnp",
+        "sudo ss -s"
+      ],
+      "expectedOutput": "USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\nroot           1  0.0  1.1 168344 11200 ?        Ss   Mar23   0:05 /lib/systemd/systemd\nmysql        845  0.1  8.2 1234567 82340 ?       Ssl  Mar23   1:23 /usr/sbin/mysqld\nwww-data     902  0.0  0.5  55432  5120 ?        S    Mar23   0:00 nginx: worker process\n...\n\nState    Recv-Q   Send-Q   Local Address:Port   Peer Address:Port   Process\nLISTEN   0        511      0.0.0.0:80           0.0.0.0:*           users:((\"nginx\",pid=901,fd=6))\nLISTEN   0        511      0.0.0.0:443          0.0.0.0:*           users:((\"nginx\",pid=901,fd=7))\nLISTEN   0        128      0.0.0.0:22           0.0.0.0:*           users:((\"sshd\",pid=700,fd=3))\n\nTotal: 45\nTCP:   8 (estab 2, closed 1, orphaned 0, timewait 0)\n...",
+      "hints": [
+        "ps aux --sort=-%mem sorts processes by memory usage, highest first",
+        "ss replaced the older netstat command; it is faster and shows more detail",
+        "The -t flag filters for TCP connections, -l for listening, -n for numeric ports, -p for process names",
+        "If you see unexpected ports listening, investigate with: sudo lsof -i :PORT"
+      ],
+      "validationCriteria": [
+        "You can identify the top memory and CPU consumers",
+        "You can list all listening ports and their associated processes",
+        "You can read the ss connection summary"
+      ]
+    },
+    {
+      "id": "journalctl-logs",
+      "title": "Read and Filter Logs with journalctl",
+      "description": "systemd's journal collects logs from all services. journalctl is how you read them. Learning to filter effectively saves a lot of time when debugging.",
+      "commands": [
+        "sudo journalctl -n 20",
+        "sudo journalctl -u nginx --since '1 hour ago'",
+        "sudo journalctl -u ssh --since today",
+        "sudo journalctl -p err -n 20",
+        "sudo journalctl --disk-usage"
+      ],
+      "expectedOutput": "-- Journal begins at ... --\nMar 26 14:00:01 ubuntu-lab CRON[12345]: ...\nMar 26 14:01:23 ubuntu-lab nginx[901]: ...\n...\n\n-- No entries --\n(or relevant SSH log entries)\n\nMar 26 12:00:00 ubuntu-lab kernel: ...\n\nArchived and active journals take up 48.0M in the file system.",
+      "hints": [
+        "-n 20 shows the last 20 log entries",
+        "-u filters by systemd unit (service name)",
+        "--since and --until accept human-readable dates like 'yesterday', '2 hours ago', '2026-03-25'",
+        "-p err shows only error-level messages and above (crit, alert, emerg)",
+        "Add -f to follow logs in real time, like tail -f"
+      ],
+      "validationCriteria": [
+        "You can view recent journal entries",
+        "You can filter logs by service and time range",
+        "You can find error-level messages",
+        "You know the journal's disk usage"
+      ]
+    },
+    {
+      "id": "configure-logrotate",
+      "title": "Configure Log Rotation",
+      "description": "Log files grow over time and can fill your disk. logrotate compresses and rotates old logs automatically. Nginx installs its own logrotate config, but you should understand how to create one for custom applications.",
+      "commands": [
+        "cat /etc/logrotate.d/nginx",
+        "sudo tee /etc/logrotate.d/myapp << 'EOF'\n/var/log/myapp/*.log {\n    daily\n    missingok\n    rotate 14\n    compress\n    delaycompress\n    notifempty\n    create 0640 www-data www-data\n    sharedscripts\n    postrotate\n        systemctl reload nginx > /dev/null 2>&1 || true\n    endscript\n}\nEOF",
+        "sudo logrotate -d /etc/logrotate.d/myapp"
+      ],
+      "expectedOutput": "# Nginx's default logrotate config will be displayed\n\n# Your custom config is created\n\nreading config file /etc/logrotate.d/myapp\n...\nrotating pattern: /var/log/myapp/*.log  after 1 days (14 rotations)\nempty log files are not rotated, old logs are removed\n...",
+      "hints": [
+        "The -d flag runs logrotate in debug mode without actually rotating anything",
+        "daily means rotate once per day; you can also use weekly or monthly",
+        "rotate 14 keeps the last 14 rotated files before deleting them",
+        "compress uses gzip; delaycompress skips compression on the most recent rotated file",
+        "missingok prevents errors if the log file does not exist yet"
+      ],
+      "validationCriteria": [
+        "You understand the Nginx logrotate config",
+        "Your custom logrotate config is valid (no errors in debug mode)",
+        "The rotation settings match your requirements"
+      ]
+    },
+    {
+      "id": "automatic-updates",
+      "title": "Set Up Automatic Security Updates",
+      "description": "Keeping your server patched is critical. Ubuntu's unattended-upgrades package can automatically install security updates so you do not have to do it manually every day.",
+      "commands": [
+        "sudo apt install -y unattended-upgrades",
+        "sudo dpkg-reconfigure -plow unattended-upgrades",
+        "cat /etc/apt/apt.conf.d/20auto-upgrades",
+        "sudo unattended-upgrade --dry-run -v"
+      ],
+      "expectedOutput": "The following NEW packages will be installed:\n  unattended-upgrades\n...\n\n(dpkg-reconfigure shows a dialog - select Yes)\n\nAPT::Periodic::Update-Package-Lists \"1\";\nAPT::Periodic::Unattended-Upgrade \"1\";\n\nStarting unattended upgrades script\n...\nNo packages found that can be upgraded unattended and target reboot_required\nUnattended upgrade returned: True",
+      "hints": [
+        "Select 'Yes' when dpkg-reconfigure asks to enable automatic updates",
+        "The '1' in 20auto-upgrades means run daily; '0' would disable it",
+        "By default, only security updates are installed automatically",
+        "Check /var/log/unattended-upgrades/ for logs of what was updated",
+        "The dry run shows what would be updated without actually installing anything"
+      ],
+      "validationCriteria": [
+        "unattended-upgrades is installed",
+        "Automatic updates are enabled in /etc/apt/apt.conf.d/20auto-upgrades",
+        "The dry run completes without errors"
+      ]
+    },
+    {
+      "id": "monitoring-script",
+      "title": "Create a Simple Monitoring Script",
+      "description": "Write a shell script that checks disk usage, memory, and load average. If any value crosses a threshold, it writes a warning to a log file. You can later extend this to send email or Slack notifications.",
+      "commands": [
+        "sudo mkdir -p /opt/scripts",
+        "sudo tee /opt/scripts/server-health.sh << 'SCRIPT'\n#!/bin/bash\n\nLOG_FILE=\"/var/log/server-health.log\"\nDISK_THRESHOLD=80\nMEM_THRESHOLD=90\nLOAD_THRESHOLD=$(nproc)\n\ntimestamp=$(date '+%Y-%m-%d %H:%M:%S')\n\n# Check disk usage\ndisk_usage=$(df / | awk 'NR==2 {print $5}' | tr -d '%')\nif [ \"$disk_usage\" -gt \"$DISK_THRESHOLD\" ]; then\n    echo \"[$timestamp] WARNING: Disk usage is ${disk_usage}% (threshold: ${DISK_THRESHOLD}%)\" >> \"$LOG_FILE\"\nfi\n\n# Check memory usage\nmem_usage=$(free | awk '/Mem:/ {printf \"%.0f\", $3/$2 * 100}')\nif [ \"$mem_usage\" -gt \"$MEM_THRESHOLD\" ]; then\n    echo \"[$timestamp] WARNING: Memory usage is ${mem_usage}% (threshold: ${MEM_THRESHOLD}%)\" >> \"$LOG_FILE\"\nfi\n\n# Check load average (1 minute)\nload_avg=$(awk '{print $1}' /proc/loadavg)\noverloaded=$(echo \"$load_avg > $LOAD_THRESHOLD\" | bc -l)\nif [ \"$overloaded\" -eq 1 ]; then\n    echo \"[$timestamp] WARNING: Load average is ${load_avg} (threshold: ${LOAD_THRESHOLD})\" >> \"$LOG_FILE\"\nfi\n\n# Always log a health check entry\necho \"[$timestamp] Health check: disk=${disk_usage}% mem=${mem_usage}% load=${load_avg}\" >> \"$LOG_FILE\"\nSCRIPT",
+        "sudo chmod +x /opt/scripts/server-health.sh",
+        "sudo /opt/scripts/server-health.sh",
+        "cat /var/log/server-health.log"
+      ],
+      "expectedOutput": "[2026-03-26 14:30:00] Health check: disk=18% mem=22% load=0.05",
+      "hints": [
+        "The LOAD_THRESHOLD is set to the number of CPU cores, which is a reasonable default",
+        "You can test threshold alerts by temporarily lowering the values in the script",
+        "bc -l is needed for floating-point comparison (load average is a decimal)",
+        "To add email alerts, you can install mailutils and use the mail command"
+      ],
+      "validationCriteria": [
+        "The script runs without errors",
+        "A health check entry appears in /var/log/server-health.log",
+        "Threshold comparisons work correctly"
+      ]
+    },
+    {
+      "id": "schedule-cron",
+      "title": "Schedule the Monitoring Script with Cron",
+      "description": "Use cron to run the health check script every 5 minutes. Cron is the standard job scheduler on Linux and is useful for any recurring task.",
+      "commands": [
+        "sudo crontab -l 2>/dev/null; echo 'Current crontab (may be empty)'",
+        "echo '*/5 * * * * /opt/scripts/server-health.sh' | sudo tee -a /var/spool/cron/crontabs/root > /dev/null || (sudo crontab -l 2>/dev/null; echo '*/5 * * * * /opt/scripts/server-health.sh') | sudo crontab -",
+        "sudo crontab -l",
+        "# Wait a few minutes, then check the log",
+        "cat /var/log/server-health.log"
+      ],
+      "expectedOutput": "*/5 * * * * /opt/scripts/server-health.sh\n\n[2026-03-26 14:30:00] Health check: disk=18% mem=22% load=0.05\n[2026-03-26 14:35:00] Health check: disk=18% mem=21% load=0.02",
+      "hints": [
+        "*/5 * * * * means every 5 minutes",
+        "The five fields in a cron expression are: minute, hour, day-of-month, month, day-of-week",
+        "Use crontab -e to edit the crontab in a text editor if you prefer",
+        "cron runs as root when you use sudo crontab, so the script has full access",
+        "To remove the job later: sudo crontab -e and delete the line"
+      ],
+      "validationCriteria": [
+        "The cron job is listed in root's crontab",
+        "New entries appear in server-health.log every 5 minutes",
+        "The script runs without errors under cron"
+      ]
+    }
+  ],
+  "completionCriteria": [
+    "You can check CPU, memory, and disk usage with standard tools",
+    "You can filter systemd journal logs by service, time, and severity",
+    "A custom logrotate config is in place",
+    "Automatic security updates are enabled",
+    "A monitoring script runs on a cron schedule and logs health data"
+  ],
+  "resources": [
+    {
+      "title": "journalctl Man Page",
+      "url": "https://www.freedesktop.org/software/systemd/man/journalctl.html",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "Ubuntu Automatic Updates Documentation",
+      "url": "https://help.ubuntu.com/community/AutomaticSecurityUpdates",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "Crontab Guru - Cron Expression Editor",
+      "url": "https://crontab.guru/",
+      "type": "tool",
+      "external": true
+    }
+  ],
+  "troubleshooting": [
+    {
+      "issue": "Cron job does not seem to run",
+      "solution": "Check that the script is executable (chmod +x). Verify the cron job is listed with 'sudo crontab -l'. Look at /var/log/syslog for cron-related errors: sudo grep CRON /var/log/syslog."
+    },
+    {
+      "issue": "unattended-upgrades dry run shows errors",
+      "solution": "Run 'sudo apt update' first to refresh the package list. If you see lock file errors, wait for any running apt process to finish, or check with 'ps aux | grep apt'."
+    },
+    {
+      "issue": "journalctl shows 'No journal files were found'",
+      "solution": "The journal storage may not be persistent. Run 'sudo mkdir -p /var/log/journal && sudo systemctl restart systemd-journald' to enable persistent storage."
+    }
+  ]
+}

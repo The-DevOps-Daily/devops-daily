@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation';
-import { getExerciseById, getAllExercises } from '@/lib/exercises';
+import { getExerciseById, getAllExercises, getExercisesInSeries } from '@/lib/exercises';
 import { ExerciseDetailClient } from '@/components/exercise-detail-client';
 import {
   BreadcrumbSchema,
   LearningResourceSchema,
 } from '@/components/schema-markup';
+import { ExerciseSeriesNav } from '@/components/exercise-series-nav';
 import { getSocialImagePath } from '@/lib/image-utils';
 import type { Metadata } from 'next';
 
@@ -80,6 +81,11 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
     { name: exercise.title, url: `/exercises/${exercise.id}` },
   ];
 
+  // Fetch series exercises if this exercise is part of a series
+  const seriesExercises = exercise.series
+    ? await getExercisesInSeries(exercise.series.id)
+    : [];
+
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
@@ -93,6 +99,12 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
         url={`/exercises/${exercise.id}`}
       />
       <ExerciseDetailClient exercise={exercise} />
+      <div className="max-w-4xl mx-auto px-4 pb-12">
+        <ExerciseSeriesNav
+          currentExercise={exercise}
+          seriesExercises={seriesExercises}
+        />
+      </div>
     </>
   );
 }

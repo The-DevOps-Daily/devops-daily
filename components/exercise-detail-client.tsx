@@ -219,6 +219,19 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                 <h1 className="mb-2 text-3xl font-bold">{exercise.title}</h1>
                 <p className="mb-4 text-lg text-muted-foreground">{exercise.description}</p>
 
+                {exercise.sponsorCta && (
+                  <a
+                    href={exercise.sponsorCta.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 text-sm rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                  >
+                    <Cloud className="w-3.5 h-3.5" />
+                    Need a server? Get $200 free credits on DigitalOcean
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+
                 <div className="flex flex-wrap items-center gap-3">
                   <Badge className={cn('text-sm', difficultyColors[exercise.difficulty])}>
                     {exercise.difficulty}
@@ -288,6 +301,36 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                         </li>
                       ))}
                     </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Sponsor CTA */}
+              {exercise.sponsorCta && (
+                <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex-grow">
+                        <p className="text-sm text-foreground font-medium">
+                          {exercise.sponsorCta.text}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Get $200 in free credits to get started.
+                        </p>
+                      </div>
+                      <a
+                        href={exercise.sponsorCta.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors"
+                      >
+                        {exercise.sponsorCta.buttonText}
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-3">
+                      Disclosure: This is an affiliate link. We may earn a commission at no extra cost to you.
+                    </p>
                   </CardContent>
                 </Card>
               )}

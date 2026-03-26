@@ -1,0 +1,304 @@
+{
+  "id": "docker-server-deployment",
+  "title": "Running Docker Containers on Your Linux Server",
+  "description": "Install Docker and Docker Compose on Ubuntu, run your first container, deploy a WordPress stack with docker-compose, and set up Nginx as a reverse proxy in front of your containers.",
+  "category": {
+    "name": "Linux",
+    "slug": "linux"
+  },
+  "difficulty": "intermediate",
+  "estimatedTime": "60 minutes",
+  "technologies": [
+    "Ubuntu 24.04",
+    "Docker",
+    "Docker Compose",
+    "Nginx",
+    "WordPress",
+    "MySQL"
+  ],
+  "prerequisites": [
+    "A running Ubuntu 24.04 server with sudo access",
+    "Basic understanding of the Linux command line",
+    "Familiarity with YAML syntax is helpful but not required"
+  ],
+  "learningObjectives": [
+    "Install Docker Engine and Docker Compose on Ubuntu 24.04",
+    "Run and manage Docker containers from the command line",
+    "Write a docker-compose.yml file for a multi-container application",
+    "Use Docker volumes for persistent data",
+    "Configure Nginx as a reverse proxy for Docker containers"
+  ],
+  "environment": "cloud",
+  "icon": "Server",
+  "publishedAt": "2026-03-26T09:00:00Z",
+  "author": {
+    "name": "DevOps Daily Team",
+    "slug": "devops-daily-team"
+  },
+  "tags": [
+    "linux",
+    "docker",
+    "docker compose",
+    "nginx",
+    "reverse proxy",
+    "wordpress",
+    "containers"
+  ],
+  "series": {
+    "id": "digitalocean-linux-server",
+    "name": "Linux Server Setup Series",
+    "order": 5,
+    "total": 5
+  },
+  "sponsorCta": {
+    "text": "You need a running Linux server for this exercise. Any Ubuntu server works, but we recommend DigitalOcean for quick setup.",
+    "url": "https://www.jdoqocy.com/click-101674709-15836238",
+    "buttonText": "Get Started with DigitalOcean"
+  },
+  "steps": [
+    {
+      "id": "install-docker",
+      "title": "Install Docker Engine",
+      "description": "Install Docker from the official Docker repository. The Ubuntu default repository often has an older version, so we add Docker's own apt source.",
+      "commands": [
+        "sudo apt update",
+        "sudo apt install -y ca-certificates curl",
+        "sudo install -m 0755 -d /etc/apt/keyrings",
+        "sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc",
+        "sudo chmod a+r /etc/apt/keyrings/docker.asc",
+        "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"${VERSION_CODENAME}\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null",
+        "sudo apt update",
+        "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+      ],
+      "expectedOutput": "Reading package lists... Done\n...\nThe following NEW packages will be installed:\n  containerd.io docker-buildx-plugin docker-ce docker-ce-cli docker-compose-plugin\n...\nSetting up docker-ce ...\nCreated symlink /etc/systemd/system/multi-user.target.wants/docker.service ...",
+      "hints": [
+        "These commands come directly from Docker's official installation guide for Ubuntu",
+        "Do not install docker.io from the Ubuntu repos; it is outdated",
+        "The docker-compose-plugin installs Compose V2, which uses 'docker compose' (without the hyphen)",
+        "If you get GPG errors, check that the keyring file was created correctly"
+      ],
+      "validationCriteria": [
+        "Docker is installed from the official repository",
+        "The docker service is running",
+        "docker-compose-plugin is installed"
+      ]
+    },
+    {
+      "id": "configure-docker",
+      "title": "Configure Docker and Verify the Installation",
+      "description": "Add your user to the docker group so you do not need sudo for every docker command, then run a test container.",
+      "commands": [
+        "sudo usermod -aG docker $USER",
+        "newgrp docker",
+        "docker --version",
+        "docker compose version",
+        "docker run hello-world"
+      ],
+      "expectedOutput": "Docker version 27.x.x, build ...\nDocker Compose version v2.x.x\n\nUnable to find image 'hello-world:latest' locally\nlatest: Pulling from library/hello-world\n...\nHello from Docker!\nThis message shows that your installation appears to be working correctly.\n...",
+      "hints": [
+        "After adding your user to the docker group, you need to log out and back in, or use newgrp",
+        "If 'docker run hello-world' fails with a permission error, you probably need to re-login",
+        "docker compose (without hyphen) is the V2 syntax; docker-compose (with hyphen) is the legacy V1"
+      ],
+      "validationCriteria": [
+        "docker --version shows the installed version",
+        "docker compose version works",
+        "hello-world container runs successfully without sudo"
+      ]
+    },
+    {
+      "id": "docker-basics",
+      "title": "Run and Manage Containers",
+      "description": "Practice the basic Docker commands by running an Nginx container, checking logs, and cleaning up.",
+      "commands": [
+        "docker run -d --name test-nginx -p 8080:80 nginx:latest",
+        "docker ps",
+        "curl http://localhost:8080",
+        "docker logs test-nginx",
+        "docker stop test-nginx",
+        "docker rm test-nginx"
+      ],
+      "expectedOutput": "Unable to find image 'nginx:latest' locally\n...\nStatus: Downloaded newer image for nginx:latest\nabc123def456...\n\nCONTAINER ID   IMAGE         COMMAND                  CREATED         STATUS         PORTS                  NAMES\nabc123def456   nginx:latest  \"/docker-entrypoint...\"   5 seconds ago   Up 4 seconds   0.0.0.0:8080->80/tcp   test-nginx\n\n<!DOCTYPE html>\n<html>\n<head>\n<title>Welcome to nginx!</title>\n...\n\ntest-nginx\ntest-nginx",
+      "hints": [
+        "-d runs the container in detached (background) mode",
+        "--name gives the container a memorable name instead of a random one",
+        "-p 8080:80 maps port 8080 on the host to port 80 inside the container",
+        "docker ps shows only running containers; use docker ps -a to see stopped ones too",
+        "Always stop and remove test containers when you are done"
+      ],
+      "validationCriteria": [
+        "The Nginx container starts and serves the default page on port 8080",
+        "docker ps shows the running container",
+        "You can view container logs",
+        "The container is stopped and removed cleanly"
+      ]
+    },
+    {
+      "id": "compose-wordpress",
+      "title": "Deploy WordPress with Docker Compose",
+      "description": "Create a docker-compose.yml file that runs WordPress with a MySQL database. This is a realistic multi-container setup that you would actually use in production.",
+      "commands": [
+        "mkdir -p ~/wordpress && cd ~/wordpress"
+      ],
+      "codeExample": "# ~/wordpress/docker-compose.yml\nservices:\n  db:\n    image: mysql:8.0\n    restart: unless-stopped\n    environment:\n      MYSQL_ROOT_PASSWORD: rootpassword123\n      MYSQL_DATABASE: wordpress\n      MYSQL_USER: wpuser\n      MYSQL_PASSWORD: wppassword123\n    volumes:\n      - db_data:/var/lib/mysql\n    healthcheck:\n      test: [\"CMD\", \"mysqladmin\", \"ping\", \"-h\", \"localhost\"]\n      interval: 10s\n      timeout: 5s\n      retries: 5\n\n  wordpress:\n    image: wordpress:latest\n    restart: unless-stopped\n    depends_on:\n      db:\n        condition: service_healthy\n    environment:\n      WORDPRESS_DB_HOST: db:3306\n      WORDPRESS_DB_USER: wpuser\n      WORDPRESS_DB_PASSWORD: wppassword123\n      WORDPRESS_DB_NAME: wordpress\n    ports:\n      - \"8080:80\"\n    volumes:\n      - wp_data:/var/www/html\n\nvolumes:\n  db_data:\n  wp_data:",
+      "expectedOutput": "Create the file, then proceed to the next step to start the stack.",
+      "hints": [
+        "Use strong, unique passwords in a real deployment; these are just examples",
+        "Named volumes (db_data, wp_data) persist data even if the container is removed",
+        "depends_on with condition: service_healthy ensures MySQL is ready before WordPress starts",
+        "Create the file with: nano ~/wordpress/docker-compose.yml"
+      ],
+      "validationCriteria": [
+        "docker-compose.yml is created in ~/wordpress/",
+        "The file defines two services: db and wordpress",
+        "Named volumes are defined for data persistence",
+        "Environment variables are set for database connection"
+      ]
+    },
+    {
+      "id": "start-wordpress",
+      "title": "Start the WordPress Stack",
+      "description": "Use docker compose to bring up the WordPress and MySQL containers. Docker will pull the images, create volumes, and start everything.",
+      "commands": [
+        "cd ~/wordpress",
+        "docker compose up -d",
+        "docker compose ps",
+        "docker compose logs -f --tail 20"
+      ],
+      "expectedOutput": "[+] Running 3/3\n ✔ Network wordpress_default  Created\n ✔ Container wordpress-db-1   Started\n ✔ Container wordpress-wordpress-1  Started\n\nNAME                    IMAGE              COMMAND                  SERVICE     CREATED          STATUS                    PORTS\nwordpress-db-1          mysql:8.0          \"docker-entrypoint...\"   db          30 seconds ago   Up 29 seconds (healthy)   3306/tcp, 33060/tcp\nwordpress-wordpress-1   wordpress:latest   \"docker-entrypoint...\"   wordpress   30 seconds ago   Up 20 seconds             0.0.0.0:8080->80/tcp",
+      "hints": [
+        "docker compose up -d starts all services in the background",
+        "docker compose logs -f follows the logs in real time; press Ctrl+C to stop",
+        "Wait for the db service to show (healthy) before testing WordPress",
+        "Visit http://YOUR_SERVER_IP:8080 to see the WordPress installation wizard"
+      ],
+      "validationCriteria": [
+        "Both containers are running",
+        "The db container shows a healthy status",
+        "WordPress is accessible on port 8080",
+        "No errors in the container logs"
+      ]
+    },
+    {
+      "id": "manage-containers",
+      "title": "Manage the Docker Compose Stack",
+      "description": "Learn the essential docker compose commands for day-to-day management: stopping, starting, viewing resource usage, and accessing container shells.",
+      "commands": [
+        "cd ~/wordpress",
+        "docker compose ps",
+        "docker stats --no-stream",
+        "docker compose exec wordpress bash -c 'ls /var/www/html/wp-config.php'",
+        "docker compose exec db mysql -u wpuser -pwppassword123 -e 'SHOW DATABASES;'",
+        "docker volume ls"
+      ],
+      "expectedOutput": "NAME                    IMAGE              ... STATUS\nwordpress-db-1          mysql:8.0          ... Up (healthy)\nwordpress-wordpress-1   wordpress:latest   ... Up\n\nCONTAINER ID   NAME                    CPU %   MEM USAGE / LIMIT     MEM %   NET I/O       BLOCK I/O\nabc123         wordpress-db-1          0.30%   180MiB / 976MiB       18.4%   1.2kB / 0B    25MB / 1MB\ndef456         wordpress-wordpress-1   0.05%   45MiB / 976MiB        4.6%    800B / 0B     12MB / 0B\n\n/var/www/html/wp-config.php\n\n+--------------------+\n| Database           |\n+--------------------+\n| information_schema |\n| wordpress          |\n+--------------------+\n\nDRIVER    VOLUME NAME\nlocal     wordpress_db_data\nlocal     wordpress_wp_data",
+      "hints": [
+        "docker stats shows real-time resource usage for all containers",
+        "--no-stream prints stats once instead of updating continuously",
+        "docker compose exec runs a command inside a running container",
+        "Use docker compose stop to pause services and docker compose start to resume them",
+        "docker compose down stops and removes containers but keeps volumes; add -v to also remove volumes"
+      ],
+      "validationCriteria": [
+        "You can check container status and resource usage",
+        "You can execute commands inside running containers",
+        "You can access the MySQL database from the db container",
+        "You can list Docker volumes"
+      ]
+    },
+    {
+      "id": "nginx-reverse-proxy",
+      "title": "Set Up Nginx as a Reverse Proxy",
+      "description": "Instead of exposing WordPress directly on port 8080, put Nginx in front of it as a reverse proxy. This lets you use your domain name, add SSL later, and serve multiple apps from one server.",
+      "commands": [
+        "sudo tee /etc/nginx/sites-available/wordpress << 'EOF'\nserver {\n    listen 80;\n    server_name yourdomain.com www.yourdomain.com;\n\n    location / {\n        proxy_pass http://127.0.0.1:8080;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n        proxy_set_header X-Forwarded-Proto $scheme;\n\n        # WebSocket support (useful for some apps)\n        proxy_http_version 1.1;\n        proxy_set_header Upgrade $http_upgrade;\n        proxy_set_header Connection \"upgrade\";\n    }\n\n    client_max_body_size 64M;\n}\nEOF",
+        "sudo ln -sf /etc/nginx/sites-available/wordpress /etc/nginx/sites-enabled/",
+        "sudo rm -f /etc/nginx/sites-enabled/default",
+        "sudo nginx -t",
+        "sudo systemctl reload nginx"
+      ],
+      "expectedOutput": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful",
+      "hints": [
+        "proxy_pass forwards all requests to the WordPress container on port 8080",
+        "The proxy_set_header lines pass the real client IP and protocol to WordPress",
+        "client_max_body_size 64M allows uploading larger files through WordPress",
+        "After this, update your docker-compose.yml to bind port 8080 to 127.0.0.1 only: '127.0.0.1:8080:80'",
+        "You can add SSL with Certbot just like in exercise 3"
+      ],
+      "validationCriteria": [
+        "Nginx config test passes",
+        "WordPress is accessible through Nginx on port 80",
+        "The proxy headers are correctly forwarded",
+        "The default Nginx site is removed"
+      ]
+    },
+    {
+      "id": "secure-docker-port",
+      "title": "Lock Down the Direct Docker Port",
+      "description": "Now that Nginx proxies traffic to WordPress, stop exposing port 8080 to the public internet. Update docker-compose.yml to bind only to localhost.",
+      "commands": [
+        "cd ~/wordpress",
+        "sed -i 's/- \"8080:80\"/- \"127.0.0.1:8080:80\"/' docker-compose.yml",
+        "docker compose up -d",
+        "docker compose ps",
+        "curl -I http://localhost:8080",
+        "curl -I http://yourdomain.com"
+      ],
+      "expectedOutput": "[+] Running 2/2\n ✔ Container wordpress-db-1          Running\n ✔ Container wordpress-wordpress-1   Started\n\nNAME                    ... PORTS\nwordpress-db-1          ... 3306/tcp, 33060/tcp\nwordpress-wordpress-1   ... 127.0.0.1:8080->80/tcp\n\nHTTP/1.1 200 OK\n...\n\nHTTP/1.1 200 OK\nServer: nginx\n...",
+      "hints": [
+        "Binding to 127.0.0.1 means only local connections are accepted on port 8080",
+        "External visitors can only reach WordPress through Nginx on port 80",
+        "docker compose up -d recreates only the containers that changed",
+        "This is a security best practice for any service behind a reverse proxy"
+      ],
+      "validationCriteria": [
+        "Port 8080 is bound to 127.0.0.1 only",
+        "WordPress is not accessible on port 8080 from outside the server",
+        "WordPress is accessible through Nginx on port 80",
+        "Both containers are running"
+      ]
+    }
+  ],
+  "completionCriteria": [
+    "Docker and Docker Compose are installed and working",
+    "You can run, manage, and remove Docker containers",
+    "A WordPress + MySQL stack is running with docker compose",
+    "Data persists in named Docker volumes",
+    "Nginx reverse proxy is configured in front of the Docker containers",
+    "Direct container ports are not exposed to the public internet"
+  ],
+  "resources": [
+    {
+      "title": "Install Docker Engine on Ubuntu",
+      "url": "https://docs.docker.com/engine/install/ubuntu/",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "Docker Compose Documentation",
+      "url": "https://docs.docker.com/compose/",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "Nginx Reverse Proxy Guide",
+      "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/",
+      "type": "documentation",
+      "external": true
+    }
+  ],
+  "troubleshooting": [
+    {
+      "issue": "Docker compose up fails with 'port is already allocated'",
+      "solution": "Another process is using port 8080. Find it with 'sudo ss -tlnp | grep 8080' and stop it, or change the port mapping in docker-compose.yml to a different port like 8081:80."
+    },
+    {
+      "issue": "WordPress shows 'Error establishing a database connection'",
+      "solution": "The MySQL container might not be ready yet. Check its health status with 'docker compose ps'. Verify the database credentials in docker-compose.yml match between the db and wordpress services. Check MySQL logs with 'docker compose logs db'."
+    },
+    {
+      "issue": "Nginx returns 502 Bad Gateway",
+      "solution": "The upstream (WordPress container) is not responding. Verify the container is running with 'docker compose ps'. Check that the port in proxy_pass matches the mapped port. Test the upstream directly: 'curl http://127.0.0.1:8080'."
+    }
+  ]
+}
