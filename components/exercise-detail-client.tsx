@@ -219,6 +219,19 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                 <h1 className="mb-2 text-3xl font-bold">{exercise.title}</h1>
                 <p className="mb-4 text-lg text-muted-foreground">{exercise.description}</p>
 
+                {exercise.sponsorCta && (
+                  <a
+                    href={exercise.sponsorCta.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 text-sm rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                  >
+                    <Cloud className="w-3.5 h-3.5" />
+                    Need a server? Get $200 free credits on DigitalOcean
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+
                 <div className="flex flex-wrap items-center gap-3">
                   <Badge className={cn('text-sm', difficultyColors[exercise.difficulty])}>
                     {exercise.difficulty}
