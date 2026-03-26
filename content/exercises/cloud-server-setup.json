@@ -1,5 +1,5 @@
 {
-  "id": "digitalocean-droplet-setup",
+  "id": "cloud-server-setup",
   "title": "Creating and Connecting to Your First Linux Server",
   "description": "Spin up an Ubuntu 24.04 Linux server in the cloud, configure SSH key authentication, and learn to navigate your new server. This exercise uses DigitalOcean but the steps work with any cloud provider.",
   "category": {

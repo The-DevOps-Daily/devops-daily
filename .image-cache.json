@@ -16,5 +16,12 @@
   "public/images/exercises/prometheus-grafana-monitoring.svg": "819c99b801fd778c",
   "public/images/posts/gitops-deploy-docker-containers-github-actions-argocd.svg": "5b29267a4bb8a793",
   "public/images/posts/how-to-publish-helm-chart.svg": "dab2d9f9df96c681",
-  "public/images/posts/replacing-heroku-with-self-hosting.svg": "dcf751b311450ab6"
+  "public/images/posts/replacing-heroku-with-self-hosting.svg": "dcf751b311450ab6",
+  "public/images/posts/how-to-implement-progressive-delivery-with-feature-flags.svg": "a1d85501513514e5",
+  "public/images/exercises/digitalocean-droplet-setup.svg": "4f2bad46d0b9a544",
+  "public/images/exercises/server-monitoring-maintenance.svg": "5cc0c34f0b799b51",
+  "public/images/exercises/linux-server-security.svg": "fe76ccfc02828efb",
+  "public/images/exercises/docker-server-deployment.svg": "5358b8f5870e94dc",
+  "public/images/exercises/nginx-web-deployment.svg": "8e3e4aa30cbbd3ce",
+  "public/images/exercises/cloud-server-setup.svg": "4f2bad46d0b9a544"
 }
