@@ -40,6 +40,8 @@ Here are five books that I keep coming back to and recommending to engineers at 
 **Author:** Bobby Iliev
 **Best for:** Beginners who want a clear path from Linux basics to infrastructure management
 
+![Linux DevOps eBook Bundle](/images/posts/books/linux-devops-bundle.png)
+
 If you're starting your DevOps journey, the biggest hurdle is knowing where to begin. This bundle solves that by walking you through Linux fundamentals, Bash scripting, Git, and Terraform in a logical sequence. Each book builds on the previous one.
 
 What makes this different from random blog posts and YouTube tutorials: it's structured as a learning path. You start with basic Linux commands, move into shell scripting, learn version control with Git, and then graduate to infrastructure as code with Terraform. No jumping between unrelated topics.
