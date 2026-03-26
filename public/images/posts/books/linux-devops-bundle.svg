@@ -1,0 +1,41 @@
+<svg width="600" height="800" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#bg)" rx="12"/>
+  <rect x="30" y="30" width="540" height="740" rx="8" fill="none" stroke="#3b82f6" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Category badge -->
+  <rect x="200" y="80" width="200" height="32" rx="16" fill="url(#accent)" opacity="0.9"/>
+  <text x="300" y="102" text-anchor="middle" fill="white" font-size="14" font-family="system-ui, sans-serif" font-weight="600">EBOOK BUNDLE</text>
+  
+  <!-- Book icon -->
+  <text x="300" y="220" text-anchor="middle" font-size="80">📚</text>
+  
+  <!-- Title -->
+  <text x="300" y="320" text-anchor="middle" fill="#f8fafc" font-size="36" font-family="system-ui, sans-serif" font-weight="700">Linux DevOps</text>
+  <text x="300" y="370" text-anchor="middle" fill="#f8fafc" font-size="36" font-family="system-ui, sans-serif" font-weight="700">eBook Bundle</text>
+  
+  <!-- Subtitle -->
+  <text x="300" y="430" text-anchor="middle" fill="#94a3b8" font-size="18" font-family="system-ui, sans-serif">Linux · Bash · Git · Terraform</text>
+  
+  <!-- Divider -->
+  <rect x="200" y="470" width="200" height="2" fill="#3b82f6" opacity="0.4" rx="1"/>
+  
+  <!-- Author -->
+  <text x="300" y="520" text-anchor="middle" fill="#60a5fa" font-size="20" font-family="system-ui, sans-serif" font-weight="500">Bobby Iliev</text>
+  
+  <!-- Price badge -->
+  <rect x="190" y="570" width="220" height="36" rx="18" fill="#22c55e" opacity="0.15"/>
+  <text x="300" y="594" text-anchor="middle" fill="#4ade80" font-size="15" font-family="system-ui, sans-serif" font-weight="600">Pay What You Want</text>
+  
+  <!-- Branding -->
+  <text x="300" y="720" text-anchor="middle" fill="#475569" font-size="14" font-family="system-ui, sans-serif">devops-daily.com</text>
+</svg>
