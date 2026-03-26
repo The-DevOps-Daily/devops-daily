@@ -40,8 +40,6 @@ Here are five books that I keep coming back to and recommending to engineers at 
 **Author:** Bobby Iliev
 **Best for:** Beginners who want a clear path from Linux basics to infrastructure management
 
-![Linux DevOps eBook Bundle](https://d2sofvawe08yqg.cloudfront.net/b/linux-devops-ebook-bundle/c/cover.jpg?1712090379)
-
 If you're starting your DevOps journey, the biggest hurdle is knowing where to begin. This bundle solves that by walking you through Linux fundamentals, Bash scripting, Git, and Terraform in a logical sequence. Each book builds on the previous one.
 
 What makes this different from random blog posts and YouTube tutorials: it's structured as a learning path. You start with basic Linux commands, move into shell scripting, learn version control with Git, and then graduate to infrastructure as code with Terraform. No jumping between unrelated topics.
@@ -56,8 +54,6 @@ The pay-what-you-want pricing means there's zero risk in picking it up. Even if 
 
 **Authors:** Betsy Beyer, Chris Jones, Jennifer Petoff, Niall Murphy (Google)
 **Best for:** Anyone who wants to understand how large-scale systems actually stay running
-
-![Site Reliability Engineering Book](https://sre.google/static/images/books/sre-book-cover.png)
 
 This is the book that defined SRE as a discipline. Google released it for free, and it's still the most referenced book in production engineering conversations.
 
@@ -75,8 +71,6 @@ It's dense. Don't try to read it cover to cover. Treat it as a reference you com
 
 **Author:** Marko Luksa
 **Best for:** Engineers who need to actually understand Kubernetes, not just copy-paste YAML
-
-![Kubernetes in Action Book Cover](https://m.media-amazon.com/images/I/61RRjzaGBDL._SY466_.jpg)
 
 There are dozens of Kubernetes books, but this one stands out because it explains the "why" behind every concept. You don't just learn that a Pod is a group of containers. You understand why Kubernetes uses Pods instead of running containers directly, and what that design decision means for your applications.
 
