@@ -552,5 +552,12 @@
   "public/images/posts/when-kubernetes-is-wrong-default.svg": "60eac608ea52cc59",
   "public/images/news/2026-week-11.svg": "61aa71c9bb3979e9",
   "public/images/news/2026-week-12.svg": "0037ecbc94fc14db",
-  "public/images/news/2026-week-13.svg": "0e633c061b4c508c"
+  "public/images/news/2026-week-13.svg": "0e633c061b4c508c",
+  "public/images/posts/how-to-implement-progressive-delivery-with-feature-flags.svg": "046c02a462d9f573",
+  "public/images/exercises/docker-server-deployment.svg": "bb13b1de1af4d929",
+  "public/images/exercises/linux-server-security.svg": "0475714d1c9112b8",
+  "public/images/exercises/server-monitoring-maintenance.svg": "637defb252fb8494",
+  "public/images/exercises/digitalocean-droplet-setup.svg": "40935b9594e86bae",
+  "public/images/exercises/nginx-web-deployment.svg": "df6024bd6bd4d6c9",
+  "public/images/exercises/cloud-server-setup.svg": "40935b9594e86bae"
 }
