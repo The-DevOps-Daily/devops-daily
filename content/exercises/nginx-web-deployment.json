@@ -47,12 +47,12 @@
   ],
   "series": {
     "id": "digitalocean-linux-server",
-    "name": "DigitalOcean Linux Server Setup",
+    "name": "Linux Server Setup Series",
     "order": 3,
     "total": 5
   },
   "sponsorCta": {
-    "text": "You will need a secured Linux server for this exercise. DigitalOcean makes it easy to spin one up in under a minute.",
+    "text": "You need a running Linux server for this exercise. Any Ubuntu server works, but we recommend DigitalOcean for quick setup.",
     "url": "https://www.jdoqocy.com/click-101674709-15836238",
     "buttonText": "Get Started with DigitalOcean"
   },

@@ -1,7 +1,7 @@
 {
   "id": "digitalocean-droplet-setup",
   "title": "Creating and Connecting to Your First Linux Server",
-  "description": "Set up a DigitalOcean account, create an Ubuntu 24.04 droplet, configure SSH key authentication, and learn to navigate your new server.",
+  "description": "Spin up an Ubuntu 24.04 Linux server in the cloud, configure SSH key authentication, and learn to navigate your new server. This exercise uses DigitalOcean but the steps work with any cloud provider.",
   "category": {
     "name": "Linux",
     "slug": "linux"
@@ -15,11 +15,11 @@
   ],
   "prerequisites": [
     "A computer with a terminal (macOS, Linux, or Windows with WSL)",
-    "A DigitalOcean account (or willingness to create one)",
+    "A cloud server (we use DigitalOcean in this exercise, but any Ubuntu 24.04 server works)",
     "Basic familiarity with typing commands in a terminal"
   ],
   "learningObjectives": [
-    "Create a DigitalOcean droplet running Ubuntu 24.04",
+    "Create a cloud Linux server running Ubuntu 24.04",
     "Generate and configure SSH keys for secure access",
     "Connect to a remote server via SSH",
     "Navigate the Linux filesystem and run basic commands",
@@ -42,12 +42,12 @@
   ],
   "series": {
     "id": "digitalocean-linux-server",
-    "name": "DigitalOcean Linux Server Setup",
+    "name": "Linux Server Setup Series",
     "order": 1,
     "total": 5
   },
   "sponsorCta": {
-    "text": "To follow along, you will need a DigitalOcean account. Sign up and get started with a Linux server in under a minute.",
+    "text": "You need a Linux server to follow along. Any cloud provider works, but we recommend DigitalOcean for its simple interface and fast setup.",
     "url": "https://www.jdoqocy.com/click-101674709-15836238",
     "buttonText": "Get Started with DigitalOcean"
   },
