@@ -577,9 +577,9 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                       <h4 className="mb-1 font-medium text-green-800 dark:text-green-200">
                         Expected Output
                       </h4>
-                      <p className="text-sm text-green-700 dark:text-green-300">
+                      <pre className="text-sm text-green-700 dark:text-green-300 whitespace-pre-wrap font-mono overflow-x-auto">
                         {currentStepData.expectedOutput}
-                      </p>
+                      </pre>
                     </div>
                   )}
 
