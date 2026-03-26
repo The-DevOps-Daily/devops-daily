@@ -292,6 +292,33 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
                 </Card>
               )}
 
+              {/* Sponsor CTA */}
+              {exercise.sponsorCta && (
+                <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      <div className="flex-grow">
+                        <p className="text-sm text-foreground font-medium">
+                          {exercise.sponsorCta.text}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Get $200 in free credits to get started.
+                        </p>
+                      </div>
+                      <a
+                        href={exercise.sponsorCta.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors"
+                      >
+                        {exercise.sponsorCta.buttonText}
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {/* Learning Objectives */}
               <Card>
                 <CardHeader>
