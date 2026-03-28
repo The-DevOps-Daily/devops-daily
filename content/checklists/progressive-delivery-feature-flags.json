@@ -1,0 +1,250 @@
+{
+  "id": "progressive-delivery-feature-flags",
+  "slug": "progressive-delivery-feature-flags",
+  "title": "How to Implement Progressive Delivery with Feature Flags",
+  "description": "A step-by-step checklist for implementing progressive delivery using feature flags, canary releases, and gradual rollouts so you can ship to production without breaking things.",
+  "category": "CI/CD",
+  "difficulty": "intermediate",
+  "estimatedTime": "45-90 minutes",
+  "tags": [
+    "feature-flags",
+    "progressive-delivery",
+    "ci-cd",
+    "canary-releases",
+    "rollouts"
+  ],
+  "items": [
+    {
+      "id": "choose-feature-flag-system",
+      "title": "Pick a feature flag system and install it",
+      "description": "You need a central place to manage flags before you can do anything else. Self-hosted options like Unleash or Flagsmith give you full control. Managed services like LaunchDarkly or Split handle the infrastructure for you. Pick one and wire it into your app.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Deploy Unleash with Docker Compose",
+          "code": "cat > docker-compose.yml << 'EOF'\nversion: '3.8'\nservices:\n  unleash:\n    image: unleashorg/unleash-server:latest\n    ports:\n      - \"4242:4242\"\n    environment:\n      DATABASE_URL: postgres://unleash:password@db:5432/unleash\n      DATABASE_SSL: \"false\"\n    depends_on:\n      db:\n        condition: service_healthy\n  db:\n    image: postgres:15\n    environment:\n      POSTGRES_USER: unleash\n      POSTGRES_PASSWORD: password\n      POSTGRES_DB: unleash\n    healthcheck:\n      test: [\"CMD-SHELL\", \"pg_isready -U unleash\"]\n      interval: 5s\n      timeout: 3s\n      retries: 10\nEOF\n\ndocker compose up -d"
+        },
+        {
+          "language": "bash",
+          "label": "Install the SDK in your app (Node.js example)",
+          "code": "npm install unleash-client\n\n# Or for LaunchDarkly:\nnpm install @launchdarkly/node-server-sdk\n\n# Or for open-source Flagsmith:\nnpm install flagsmith-nodejs"
+        }
+      ]
+    },
+    {
+      "id": "initialize-flag-client",
+      "title": "Initialize the flag client at app startup",
+      "description": "The flag client needs to connect early so flags are ready before your first request hits. Initialize it once at startup and reuse the instance. Never create a new client per request - that will hammer your flag service and add latency.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Initialize Unleash client (Python)",
+          "code": "from UnleashClient import UnleashClient\nimport os\n\nclient = UnleashClient(\n    url=os.environ[\"UNLEASH_URL\"],\n    app_name=\"my-service\",\n    instance_id=\"production-1\",\n    custom_headers={\n        \"Authorization\": os.environ[\"UNLEASH_API_KEY\"]\n    },\n    refresh_interval=10,  # seconds between flag syncs\n)\nclient.initialize_client()\n\n# Check a flag:\nif client.is_enabled(\"new-checkout-flow\"):\n    return new_checkout()\nelse:\n    return old_checkout()"
+        },
+        {
+          "language": "yaml",
+          "label": "Pass flag config via environment variables",
+          "code": "# kubernetes deployment\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: my-service\nspec:\n  template:\n    spec:\n      containers:\n        - name: my-service\n          env:\n            - name: UNLEASH_URL\n              value: \"https://flags.internal.example.com/api\"\n            - name: UNLEASH_API_KEY\n              valueFrom:\n                secretKeyRef:\n                  name: unleash-credentials\n                  key: api-key"
+        }
+      ]
+    },
+    {
+      "id": "define-flag-naming-convention",
+      "title": "Set a naming convention for flags",
+      "description": "Without a naming convention, you end up with flags like 'test_flag_2', 'johns-experiment', and 'new_thing_v3' scattered everywhere. Agree on a pattern upfront. Include the team, type, and purpose. This makes it easy to search, audit, and clean up later.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Flag naming convention examples",
+          "code": "# Pattern: <type>.<team>.<feature>\n# Types: release, experiment, ops, permission\n\n# Examples:\nrelease.checkout.new-payment-flow    # shipping a new feature\nexperiment.growth.signup-redesign    # A/B test\nops.platform.enable-redis-cache      # operational toggle\npermission.billing.enterprise-sso    # entitlement flag"
+        },
+        {
+          "language": "json",
+          "label": "Flag metadata template",
+          "code": "{\n  \"name\": \"release.checkout.new-payment-flow\",\n  \"description\": \"New Stripe-based payment flow replacing Braintree\",\n  \"owner\": \"checkout-team\",\n  \"created\": \"2026-03-28\",\n  \"expected_removal\": \"2026-05-01\",\n  \"jira_ticket\": \"CHECKOUT-1234\",\n  \"type\": \"release\"\n}"
+        }
+      ]
+    },
+    {
+      "id": "implement-percentage-rollout",
+      "title": "Implement percentage-based rollouts",
+      "description": "Flipping a flag for 100% of users on day one defeats the purpose. Start with 1-5% of traffic and increase gradually. Use consistent hashing on user ID so the same user always sees the same version - otherwise you get weird behavior where features appear and disappear between page loads.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Percentage rollout with sticky assignment",
+          "code": "import hashlib\n\ndef is_feature_enabled(feature_name: str, user_id: str, percentage: int) -> bool:\n    \"\"\"Sticky percentage rollout based on user ID hash.\"\"\"\n    hash_input = f\"{feature_name}:{user_id}\"\n    hash_value = int(hashlib.sha256(hash_input.encode()).hexdigest(), 16)\n    bucket = hash_value % 100\n    return bucket < percentage\n\n# Rollout schedule:\n# Day 1: 1% (internal users + small slice)\n# Day 2: 5%\n# Day 3: 25%\n# Day 5: 50%\n# Day 7: 100%\n\nif is_feature_enabled(\"new-search\", request.user.id, percentage=5):\n    return new_search_handler(request)\nelse:\n    return old_search_handler(request)"
+        },
+        {
+          "language": "yaml",
+          "label": "Unleash gradual rollout strategy",
+          "code": "# Unleash API - create a gradual rollout\n# POST /api/admin/projects/default/features\nname: release.search.new-algorithm\nenabled: true\nstrategies:\n  - name: flexibleRollout\n    parameters:\n      rollout: \"5\"          # start at 5%\n      stickiness: \"userId\"  # consistent per user\n      groupId: \"new-search\" # rollout group"
+        }
+      ]
+    },
+    {
+      "id": "set-up-canary-deployment",
+      "title": "Set up canary deployments in your infrastructure",
+      "description": "Feature flags control behavior inside your app. Canary deployments control which version of your app serves traffic. Use both together: deploy the new version to a canary pod, route a small percentage of traffic to it, and watch for errors. If something breaks, the blast radius is tiny.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Kubernetes canary deployment with Argo Rollouts",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: my-service\nspec:\n  replicas: 10\n  strategy:\n    canary:\n      steps:\n        - setWeight: 5      # 5% traffic to canary\n        - pause: {duration: 10m}\n        - setWeight: 25\n        - pause: {duration: 10m}\n        - setWeight: 50\n        - pause: {duration: 10m}\n        - setWeight: 100\n      canaryMetadata:\n        labels:\n          role: canary\n      stableMetadata:\n        labels:\n          role: stable\n  selector:\n    matchLabels:\n      app: my-service\n  template:\n    metadata:\n      labels:\n        app: my-service\n    spec:\n      containers:\n        - name: my-service\n          image: my-service:v2.1.0"
+        },
+        {
+          "language": "bash",
+          "label": "Monitor canary with Argo Rollouts CLI",
+          "code": "# Install the kubectl plugin\nkubectl argo rollouts get rollout my-service --watch\n\n# Promote canary to next step manually:\nkubectl argo rollouts promote my-service\n\n# Something wrong? Roll back immediately:\nkubectl argo rollouts abort my-service"
+        }
+      ]
+    },
+    {
+      "id": "add-automated-rollback-triggers",
+      "title": "Add automated rollback triggers",
+      "description": "Manual rollbacks depend on someone watching a dashboard at 2am. Automated rollbacks don't. Connect your canary deployment to your metrics pipeline and define clear failure thresholds. If error rate jumps or latency spikes, the rollout stops and reverts automatically.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Argo Rollouts with Prometheus analysis",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: AnalysisTemplate\nmetadata:\n  name: canary-success-rate\nspec:\n  metrics:\n    - name: error-rate\n      interval: 60s\n      failureLimit: 3\n      provider:\n        prometheus:\n          address: http://prometheus:9090\n          query: |\n            sum(rate(http_requests_total{\n              status=~\"5..\",\n              app=\"my-service\",\n              role=\"canary\"\n            }[5m])) /\n            sum(rate(http_requests_total{\n              app=\"my-service\",\n              role=\"canary\"\n            }[5m])) * 100\n      successCondition: result[0] < 1.0   # fail if error rate > 1%\n    - name: latency-p99\n      interval: 60s\n      failureLimit: 3\n      provider:\n        prometheus:\n          address: http://prometheus:9090\n          query: |\n            histogram_quantile(0.99,\n              sum(rate(http_request_duration_seconds_bucket{\n                app=\"my-service\",\n                role=\"canary\"\n              }[5m])) by (le)\n            )\n      successCondition: result[0] < 0.5   # fail if p99 > 500ms"
+        },
+        {
+          "language": "yaml",
+          "label": "Wire analysis into rollout steps",
+          "code": "# Add to the canary strategy in your Rollout spec:\nstrategy:\n  canary:\n    steps:\n      - setWeight: 5\n      - pause: {duration: 5m}\n      - analysis:\n          templates:\n            - templateName: canary-success-rate\n      - setWeight: 25\n      - pause: {duration: 10m}\n      - analysis:\n          templates:\n            - templateName: canary-success-rate\n      - setWeight: 100"
+        }
+      ]
+    },
+    {
+      "id": "instrument-flag-metrics",
+      "title": "Instrument feature flag metrics and logging",
+      "description": "When something goes wrong in production, the first question is always 'what changed?' If you don't log which flags are active for each request, you're debugging blind. Emit metrics for every flag evaluation so you can correlate flag changes with error spikes in your dashboards.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Log flag evaluations with structured logging",
+          "code": "import structlog\nfrom prometheus_client import Counter\n\nlogger = structlog.get_logger()\n\nflag_evaluation = Counter(\n    \"feature_flag_evaluation_total\",\n    \"Number of feature flag evaluations\",\n    [\"flag_name\", \"result\"]\n)\n\ndef check_flag(flag_name: str, user_id: str) -> bool:\n    result = client.is_enabled(flag_name, {\"userId\": user_id})\n\n    flag_evaluation.labels(\n        flag_name=flag_name,\n        result=str(result)\n    ).inc()\n\n    logger.info(\n        \"flag_evaluated\",\n        flag=flag_name,\n        user_id=user_id,\n        enabled=result\n    )\n    return result"
+        },
+        {
+          "language": "yaml",
+          "label": "Grafana dashboard query for flag evaluations",
+          "code": "# Prometheus query to track rollout progress\n# Shows % of evaluations returning true per flag\nsum(rate(feature_flag_evaluation_total{result=\"True\"}[5m])) by (flag_name)\n/\nsum(rate(feature_flag_evaluation_total[5m])) by (flag_name)\n* 100"
+        }
+      ]
+    },
+    {
+      "id": "create-kill-switch-flags",
+      "title": "Create kill switches for new features",
+      "description": "A kill switch is a flag that lets you turn off a feature instantly without a deployment. Every new feature that touches critical paths (payments, auth, data pipelines) should have one. The difference between a 5-minute incident and a 30-minute incident is often just a kill switch.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Kill switch pattern",
+          "code": "from functools import wraps\n\ndef with_kill_switch(flag_name: str, fallback_fn=None):\n    \"\"\"Decorator that wraps a function with a kill switch.\"\"\"\n    def decorator(func):\n        @wraps(func)\n        def wrapper(*args, **kwargs):\n            if not client.is_enabled(flag_name):\n                if fallback_fn:\n                    return fallback_fn(*args, **kwargs)\n                raise FeatureDisabledError(flag_name)\n            return func(*args, **kwargs)\n        return wrapper\n    return decorator\n\n# Usage:\n@with_kill_switch(\"ops.payments.stripe-processing\", fallback_fn=legacy_payment)\ndef process_payment(order):\n    return stripe.charges.create(amount=order.total)\n\n# In an incident, disable in one API call:\n# curl -X POST https://flags.internal/api/admin/features/ops.payments.stripe-processing/toggle/off"
+        }
+      ]
+    },
+    {
+      "id": "implement-user-targeting",
+      "title": "Implement user targeting for internal testing",
+      "description": "Before rolling out to real users, test with your own team first. Target by email domain, user ID list, or custom attributes. This catches bugs that only show up with real infrastructure (not just local dev) without risking customer-facing issues.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Target internal users first",
+          "code": "# Evaluation context with user attributes\ncontext = {\n    \"userId\": request.user.id,\n    \"properties\": {\n        \"email\": request.user.email,\n        \"plan\": request.user.subscription.plan,\n        \"region\": request.headers.get(\"X-Region\", \"us-east-1\"),\n        \"employee\": request.user.email.endswith(\"@mycompany.com\")\n    }\n}\n\nenabled = client.is_enabled(\"release.search.new-algorithm\", context)"
+        },
+        {
+          "language": "json",
+          "label": "Unleash targeting strategy",
+          "code": "{\n  \"name\": \"release.search.new-algorithm\",\n  \"strategies\": [\n    {\n      \"name\": \"userWithId\",\n      \"parameters\": {\n        \"userIds\": \"user-42,user-99,user-107\"\n      }\n    },\n    {\n      \"name\": \"flexibleRollout\",\n      \"parameters\": {\n        \"rollout\": \"0\",\n        \"stickiness\": \"userId\"\n      },\n      \"constraints\": [\n        {\n          \"contextName\": \"email\",\n          \"operator\": \"STR_ENDS_WITH\",\n          \"values\": [\"@mycompany.com\"]\n        }\n      ]\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "id": "add-flag-to-cicd-pipeline",
+      "title": "Wire feature flags into your CI/CD pipeline",
+      "description": "Your pipeline should know about flags. Run tests with flags both on and off to catch issues in both code paths. And when you deploy, automatically update flag states instead of doing it by hand in a dashboard.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions - test both flag states",
+          "code": "name: Test with feature flags\non: [push, pull_request]\n\njobs:\n  test-flags-off:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n        env:\n          FEATURE_NEW_CHECKOUT: \"false\"\n          FEATURE_NEW_SEARCH: \"false\"\n\n  test-flags-on:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: npm ci\n      - run: npm test\n        env:\n          FEATURE_NEW_CHECKOUT: \"true\"\n          FEATURE_NEW_SEARCH: \"true\""
+        },
+        {
+          "language": "bash",
+          "label": "Update flag percentage after successful deploy",
+          "code": "#!/bin/bash\n# post-deploy.sh - bump rollout after deploy succeeds\nFLAG_NAME=\"release.checkout.new-payment-flow\"\nNEW_PERCENTAGE=${1:-5}\n\ncurl -s -X PATCH \\\n  \"${UNLEASH_URL}/api/admin/projects/default/features/${FLAG_NAME}/strategies\" \\\n  -H \"Authorization: ${UNLEASH_API_KEY}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"parameters\": {\"rollout\": \"'${NEW_PERCENTAGE}'\"}}'\n\necho \"Rolled out ${FLAG_NAME} to ${NEW_PERCENTAGE}%\""
+        }
+      ]
+    },
+    {
+      "id": "set-up-flag-driven-alerts",
+      "title": "Set up alerts that are flag-aware",
+      "description": "Standard alerts fire based on overall error rates. But if you just turned on a flag for 5% of users, a small error spike might not trigger a global alert. Create alerts that compare metrics between flag-on and flag-off cohorts. That way you catch regressions even at low rollout percentages.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Prometheus alert comparing canary vs stable",
+          "code": "groups:\n  - name: progressive-delivery\n    rules:\n      - alert: CanaryErrorRateHigh\n        expr: |\n          (\n            sum(rate(http_requests_total{status=~\"5..\", role=\"canary\"}[5m]))\n            / sum(rate(http_requests_total{role=\"canary\"}[5m]))\n          ) > 2 * (\n            sum(rate(http_requests_total{status=~\"5..\", role=\"stable\"}[5m]))\n            / sum(rate(http_requests_total{role=\"stable\"}[5m]))\n          )\n        for: 5m\n        labels:\n          severity: critical\n        annotations:\n          summary: \"Canary error rate is 2x higher than stable\"\n          description: \"Canary: {{ $value }}% errors vs stable baseline\"\n          runbook: \"https://wiki.internal/runbooks/canary-rollback\""
+        }
+      ]
+    },
+    {
+      "id": "handle-flag-defaults-gracefully",
+      "title": "Handle flag service outages with safe defaults",
+      "description": "Your flag service will go down at some point. When it does, your app needs to keep working. Set safe defaults for every flag - usually 'off' for new features and 'on' for existing behavior. Cache the last known flag state locally so a flag service blip does not cascade into a full outage.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Local cache with fallback defaults",
+          "code": "import json\nimport os\n\nFLAG_DEFAULTS = {\n    \"release.checkout.new-payment-flow\": False,  # new feature: default off\n    \"ops.payments.stripe-processing\": True,       # existing feature: default on\n    \"experiment.growth.signup-redesign\": False,\n}\n\nCACHE_FILE = \"/tmp/flag-cache.json\"\n\ndef get_flag(flag_name: str, context: dict) -> bool:\n    try:\n        result = client.is_enabled(flag_name, context)\n        # Update local cache on success\n        _update_cache(flag_name, result)\n        return result\n    except Exception:\n        # Try local cache first\n        cached = _read_cache(flag_name)\n        if cached is not None:\n            return cached\n        # Fall back to hardcoded defaults\n        return FLAG_DEFAULTS.get(flag_name, False)\n\ndef _update_cache(flag_name, value):\n    cache = {}\n    if os.path.exists(CACHE_FILE):\n        with open(CACHE_FILE) as f:\n            cache = json.load(f)\n    cache[flag_name] = value\n    with open(CACHE_FILE, \"w\") as f:\n        json.dump(cache, f)\n\ndef _read_cache(flag_name):\n    if os.path.exists(CACHE_FILE):\n        with open(CACHE_FILE) as f:\n            return json.load(f).get(flag_name)\n    return None"
+        }
+      ]
+    },
+    {
+      "id": "schedule-flag-cleanup",
+      "title": "Schedule regular flag cleanup",
+      "description": "Stale flags are tech debt that compounds fast. A codebase with 200 flags where half are permanently on is harder to reason about and test than one with 30 active flags. Set an expiration date when you create a flag. Run a monthly audit. Remove flags that have been at 100% for more than two weeks.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Find stale flags with the Unleash API",
+          "code": "#!/bin/bash\n# find-stale-flags.sh - list flags that are fully rolled out\nSTALE_DAYS=14\n\ncurl -s \"${UNLEASH_URL}/api/admin/features\" \\\n  -H \"Authorization: ${UNLEASH_API_KEY}\" | \\\n  jq --arg days \"$STALE_DAYS\" '[\n    .features[] |\n    select(.enabled == true) |\n    select(.strategies[0].parameters.rollout == \"100\") |\n    select(\n      (now - (.createdAt | fromdateiso8601)) > ($days | tonumber * 86400)\n    ) |\n    {name, createdAt, type}\n  ]'\n\n# Example output:\n# [\n#   {\"name\": \"release.search.new-algorithm\", \"createdAt\": \"2026-02-10\", \"type\": \"release\"},\n#   {\"name\": \"release.checkout.redesign\", \"createdAt\": \"2026-01-15\", \"type\": \"release\"}\n# ]"
+        },
+        {
+          "language": "bash",
+          "label": "Find dead flag references in code",
+          "code": "# Search for flag names in your codebase\n# If a flag is archived but still referenced, it needs cleanup\ngrep -rn \"release\\.checkout\\.redesign\" src/ --include=\"*.py\" --include=\"*.ts\"\n\n# Or scan all flags at once:\ncurl -s \"${UNLEASH_URL}/api/admin/archive/features\" \\\n  -H \"Authorization: ${UNLEASH_API_KEY}\" | \\\n  jq -r '.features[].name' | while read flag; do\n    count=$(grep -rn \"$flag\" src/ | wc -l)\n    if [ \"$count\" -gt 0 ]; then\n      echo \"STALE CODE: $flag found $count times\"\n    fi\n  done"
+        }
+      ]
+    },
+    {
+      "id": "document-rollout-runbook",
+      "title": "Write a rollout runbook for your team",
+      "description": "Progressive delivery only works if your whole team follows the same process. Write a short runbook that covers: how to create a flag, what the rollout stages are, when to pause or roll back, and who has permission to push to 100%. Keep it in your repo so it stays up to date.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "markdown",
+          "label": "Rollout runbook template",
+          "code": "# Progressive Delivery Runbook\n\n## Rollout stages\n| Stage  | Traffic | Duration | Action if errors spike |\n|--------|---------|----------|------------------------|\n| 1      | 1%      | 1 hour   | Roll back immediately  |\n| 2      | 5%      | 4 hours  | Roll back immediately  |\n| 3      | 25%     | 24 hours | Pause and investigate  |\n| 4      | 50%     | 24 hours | Pause and investigate  |\n| 5      | 100%    | -        | Monitor for 48 hours   |\n\n## Roll back checklist\n1. Set flag to 0% in Unleash dashboard\n2. Post in #incidents Slack channel\n3. Check error rate returns to baseline within 5 min\n4. If errors persist, check if other flags changed recently\n\n## When to skip stages\n- Never for payment or auth changes\n- Bug fixes with tests can go 1% -> 25% -> 100%\n- Config-only changes can go 5% -> 100%\n\n## Who can promote to 100%?\n- Any engineer on the owning team\n- Must have passed all analysis steps in Argo Rollouts\n- Must have monitored for at least 24h at 50%"
+        }
+      ]
+    }
+  ]
+}
