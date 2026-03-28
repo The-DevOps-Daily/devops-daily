@@ -7,7 +7,7 @@ import { getQuizMetadata } from '@/lib/quiz-loader';
 import { getAllNews } from '@/lib/news';
 import { getActiveGames } from '@/lib/games';
 import { getAllFlashCardSets } from '@/lib/flashcard-loader';
-import { checklists } from '@/content/checklists';
+import { getAllChecklists } from '@/lib/checklists';
 import { interviewQuestions } from '@/content/interview-questions';
 import { getAllAdventDays } from '@/lib/advent';
 
@@ -17,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
   // Get all content
-  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays] =
+  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays, checklists] =
     await Promise.all([
       getAllPosts(),
       getAllCategories(),
@@ -28,6 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getActiveGames(),
       getAllFlashCardSets(),
       getAllAdventDays(),
+      getAllChecklists(),
     ]);
 
   // Static routes

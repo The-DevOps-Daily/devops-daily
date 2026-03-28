@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { checklists } from '@/content/checklists';
+import { getAllChecklists } from '@/lib/checklists';
 import { ChecklistsHero } from '@/components/checklists/checklists-hero';
 import { ChecklistsList } from '@/components/checklists/checklists-list';
 
@@ -51,7 +51,8 @@ export const metadata: Metadata = {
  },
 };
 
-export default function ChecklistsPage() {
+export default async function ChecklistsPage() {
+  const checklists = await getAllChecklists();
   const categories = Array.from(new Set(checklists.map((c) => c.category)));
 
   return (

@@ -1,9 +1,10 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { checklists, getChecklistBySlug } from '@/content/checklists';
+import { getAllChecklists, getChecklistBySlug } from '@/lib/checklists';
 import { ChecklistPageClient } from '@/components/checklists/checklist-page-client';
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const checklists = await getAllChecklists();
   return checklists.map((checklist) => ({
     slug: checklist.slug,
   }));
@@ -13,7 +14,7 @@ export async function generateMetadata(
   { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   const resolvedParams = await params;
-  const checklist = getChecklistBySlug(resolvedParams.slug);
+  const checklist = await getChecklistBySlug(resolvedParams.slug);
 
   if (!checklist) {
     return {
@@ -74,7 +75,7 @@ export default async function ChecklistPage(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const resolvedParams = await params;
-  const checklist = getChecklistBySlug(resolvedParams.slug);
+  const checklist = await getChecklistBySlug(resolvedParams.slug);
 
   if (!checklist) {
     notFound();
