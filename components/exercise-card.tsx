@@ -74,9 +74,10 @@ export function ExerciseCard({
     : 0;
 
   return (
+    <Link href={`/exercises/${exercise.id}`} className="block">
     <Card
       className={cn(
-        'group relative overflow-hidden transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 border-2',
+        'group relative overflow-hidden transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 border-2 cursor-pointer h-full',
         exercise.featured && 'ring-2 ring-primary/20 border-primary/30',
         className
       )}
@@ -203,16 +204,8 @@ export function ExerciseCard({
           </ul>
         </div>
 
-        {/* Hover overlay with CTA */}
-        <div className="absolute inset-0 flex items-end justify-center pb-6 transition-all duration-300 opacity-0 bg-linear-to-t from-background/95 via-background/70 to-transparent group-hover:opacity-100">
-          <Link
-            href={`/exercises/${exercise.id}`}
-            className="px-4 py-2 text-sm font-medium transition-transform duration-300 transform translate-y-4 rounded-lg bg-primary text-primary-foreground group-hover:translate-y-0 hover:bg-primary/90"
-          >
-            Start Exercise
-          </Link>
-        </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
