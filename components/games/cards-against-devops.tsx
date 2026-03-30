@@ -202,8 +202,8 @@ function GameCard({
           'transition-all duration-300 shadow-lg border-2',
           variant === 'preview' ? 'h-32' : 'h-40 sm:h-48',
           isBlack
-            ? 'bg-linear-to-br from-gray-900 via-gray-800 to-black text-white border-gray-600 hover:border-gray-500 hover:shadow-2xl'
-            : 'bg-linear-to-br from-white via-gray-50 to-white border-gray-200 hover:border-primary/40 hover:shadow-xl dark:from-gray-800 dark:to-gray-900 dark:border-gray-700',
+            ? 'bg-gray-900 text-white border-gray-600 hover:border-gray-500 hover:shadow-2xl'
+            : 'bg-white dark:bg-gray-800 border-gray-200 hover:border-primary/40 hover:shadow-xl dark:border-gray-600',
           isSelected &&
             !isBlack &&
             'border-primary/80 bg-linear-to-br from-primary/5 to-purple-500/5 shadow-xl ring-2 ring-primary/20',
