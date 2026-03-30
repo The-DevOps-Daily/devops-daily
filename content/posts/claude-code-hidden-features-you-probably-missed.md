@@ -29,19 +29,23 @@ Boris Cherny, the creator of Claude Code, recently shared a [thread on X](https:
 
 Claude Code has mobile sessions, automated scheduling, voice input, parallel agents, git worktrees, hooks, and a browser extension. Most people use about 20% of what it can do.
 
-## Move Your Session Anywhere with /teleport
+## Move Your Session Anywhere
 
-You can start a session on your laptop and pick it up on your phone. Or move it to the web. The `/teleport` command transfers your full session context between devices.
+You can start a session on your workstation and access it from your phone or browser. The `--remote-control` flag (or `/remote-control` command inside a session) lets you connect to a running local session from another device via claude.ai/code or the mobile app.
 
-The reverse also works. If you're reviewing something on your phone during a commute, you can `/teleport` it back to your terminal when you sit down.
+The session stays on your machine. The web or mobile interface is just a window into it.
 
-There's also `/remote-control` which lets you connect to a running session from another device without transferring it.
+If you started a session on the web and want to pull it into your terminal, `claude --teleport` brings it back to your local CLI.
 
 ```bash
-# On your laptop
-/teleport
+# Start a session with remote control enabled
+claude --remote-control
 
-# On your phone or web - enter the code to pick up the session
+# Or enable it mid-session
+/remote-control
+
+# Pull a web session back to your terminal
+claude --teleport
 ```
 
 This is useful when you kick off a long-running task on your workstation and want to check progress from your phone.
@@ -54,9 +58,11 @@ This one is a genuine workflow changer. You can tell Claude Code to run a task o
 # Review PRs every 30 minutes
 /loop 30m review open PRs and post comments
 
-# Run a health check every hour
-/schedule every 1h check if the staging environment is healthy
+# Check staging health every hour
+/loop 1h check if the staging environment is healthy
 ```
+
+For persistent scheduling that survives restarts, use the `/schedule` command on claude.ai/code or the Desktop app's scheduled tasks feature.
 
 Think about what you do repeatedly: reviewing PRs, checking CI status, monitoring deployments, updating dependencies. You can automate all of it without writing a single script.
 
@@ -93,12 +99,15 @@ Why this matters: you can have Claude refactoring module A while simultaneously 
 
 This pairs well with `/batch`, which fans out work across dozens of parallel agents. Need to update 50 files? `/batch` can process them concurrently instead of one at a time.
 
-## Voice Input with /voice
+## Voice Input
 
-You can dictate to Claude instead of typing. This sounds gimmicky until you try it for longer explanations.
+You can dictate to Claude instead of typing. Toggle it on with `/voice`, then hold the Space key to talk. This sounds gimmicky until you try it for longer explanations.
 
 ```bash
+# Toggle voice mode on
 /voice
+
+# Then hold Space to dictate your prompt
 ```
 
 It's particularly useful for:
@@ -109,25 +118,22 @@ It's particularly useful for:
 
 Typing detailed prompts takes time. Talking is faster for anything longer than a few sentences.
 
-## The Chrome Extension for Frontend Work
+## Browser Integration for Frontend Work
 
-Claude Code has a Chrome extension that lets the AI see what your app looks like in the browser. Instead of describing UI bugs, Claude can verify its own output visually.
+Claude Code has a built-in browser tool that lets the AI see what your app looks like. Enable it with `claude --chrome` and Claude can take screenshots, inspect elements, and verify its own output visually.
 
 This closes the feedback loop for frontend work. Claude makes a change, checks the browser, adjusts if something looks off. You stop being the human screenshot tool.
 
-## /branch and --fork-session for Experiments
+## Fork Sessions for Experiments
 
-Want to try two different approaches to the same problem? `/branch` creates a copy of your current session so you can explore a different path without losing your progress.
+Want to try two different approaches to the same problem? The `--fork-session` flag creates a copy of your current session so you can explore a different path without losing your progress.
 
 ```bash
-# Fork the current session
-/branch
-
-# Or fork when starting
-claude --fork-session <session-id>
+# Fork an existing session
+claude --resume my-session --fork-session
 ```
 
-This is like git branches but for your AI conversation. Try approach A in one branch, approach B in another, then pick the winner.
+This is like git branches but for your AI conversation. Try approach A in one fork, approach B in another, then pick the winner.
 
 ## /btw for Side Questions
 
