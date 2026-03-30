@@ -127,19 +127,27 @@ async function convertAllSvgImages() {
         const pngFile = svgFile.replace('.svg', '.png');
         const pngPath = path.join(dir, pngFile);
 
-        // Check if PNG needs regeneration based on content hash
+        // Check if PNG needs regeneration
         if (!FORCE_REGENERATE) {
           try {
             // Check if PNG exists
-            await fs.stat(pngPath);
-            
+            const pngStat = await fs.stat(pngPath);
+            const svgStat = await fs.stat(svgPath);
+
             // Get current SVG hash
             const currentHash = await generateSvgHash(svgPath);
             const relativePath = getRelativePath(svgPath);
             const cachedHash = cache[relativePath];
 
             if (currentHash && currentHash === cachedHash) {
-              // Skip if PNG is up to date (content hasn't changed)
+              // Cache hit - skip
+              continue;
+            }
+
+            // No cache entry but PNG exists and is newer than SVG - skip and backfill cache
+            if (!cachedHash && pngStat.mtimeMs >= svgStat.mtimeMs && pngStat.size > 100) {
+              cache[relativePath] = currentHash;
+              cacheUpdated = true;
               continue;
             }
           } catch {

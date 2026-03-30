@@ -288,16 +288,25 @@ async function main() {
       if (!results[index]) {
         // File doesn't exist or is corrupted
         task.skip = false;
+      } else if (FORCE_REGENERATE) {
+        task.skip = false;
       } else {
-        // Check if content hash matches cache
+        // File exists and is valid - check if content changed via cache
         const currentHash = generateContentHash(task.title, task.category);
         const relativePath = getRelativePath(task.outputPath);
         const cachedHash = cache[relativePath];
-        
-        if (!FORCE_REGENERATE && currentHash === cachedHash) {
-          task.skip = true; // Cache hit
+
+        if (cachedHash && currentHash !== cachedHash) {
+          task.skip = false; // Content changed since last generation
         } else {
-          task.skip = false; // Content changed
+          // Either cache hit OR file exists but no cache entry (first run after deploy)
+          // In both cases, skip - the existing file is fine
+          task.skip = true;
+          // Backfill cache if missing
+          if (!cachedHash) {
+            cache[relativePath] = currentHash;
+            cacheUpdated = true;
+          }
         }
       }
     });
