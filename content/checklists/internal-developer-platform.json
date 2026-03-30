@@ -1,0 +1,255 @@
+{
+  "id": "internal-developer-platform",
+  "slug": "internal-developer-platform",
+  "title": "Building an Internal Developer Platform from Scratch",
+  "description": "A step-by-step checklist for designing and building an internal developer platform (IDP) that gives your engineers self-service access to infrastructure, environments, and deployments without filing tickets.",
+  "category": "Platform Engineering",
+  "difficulty": "advanced",
+  "estimatedTime": "60-120 minutes",
+  "tags": [
+    "platform-engineering",
+    "developer-experience",
+    "idp",
+    "self-service",
+    "backstage"
+  ],
+  "items": [
+    {
+      "id": "identify-developer-pain-points",
+      "title": "Map your developers' biggest time sinks",
+      "description": "Before building anything, figure out where developers waste time. Common culprits: waiting for environments, writing boilerplate configs, asking ops to provision resources. Run a quick survey or check your ticket system for the most frequent requests. Build the platform around real pain, not theoretical improvements.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Find the most common ops/infra tickets (Jira example)",
+          "code": "# Pull the top request types from the last 90 days\ncurl -s -u \"$JIRA_USER:$JIRA_TOKEN\" \\\n  \"https://your-org.atlassian.net/rest/api/3/search?jql=project=OPS+AND+created>=-90d&maxResults=100\" \\\n  | jq '[.issues[].fields.summary] | group_by(.) | map({request: .[0], count: length}) | sort_by(-.count) | .[:10]'\n\n# Example output:\n# [\n#   {\"request\": \"Create new dev environment\", \"count\": 34},\n#   {\"request\": \"Add database for service X\", \"count\": 28},\n#   {\"request\": \"Update nginx config\", \"count\": 22},\n#   {\"request\": \"Grant access to staging\", \"count\": 19}\n# ]"
+        },
+        {
+          "language": "bash",
+          "label": "Quick developer survey template",
+          "code": "# Questions to ask your team:\n# 1. What takes the longest when starting a new service?\n# 2. What do you need ops help for that you wish was self-service?\n# 3. How long does it take to get a working dev environment?\n# 4. What manual steps do you repeat for every deployment?\n# 5. Where do you go to find docs about your service dependencies?"
+        }
+      ]
+    },
+    {
+      "id": "define-platform-api-contract",
+      "title": "Define your platform's API contract",
+      "description": "Your IDP needs a clear interface that developers interact with. This is usually a combination of a service catalog, templates, and APIs. Define what actions developers can take (create a service, spin up a database, deploy to staging) before picking any tools. The API contract is your platform's product - everything else is implementation detail.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Platform API contract example",
+          "code": "# platform-api-contract.yaml\n# Define what your IDP exposes to developers\nplatform:\n  actions:\n    - name: create-service\n      inputs:\n        - service_name: string\n        - language: [go, python, node, java]\n        - team: string\n      outputs:\n        - git_repo_url\n        - ci_pipeline_url\n        - dev_environment_url\n\n    - name: provision-database\n      inputs:\n        - engine: [postgres, mysql, redis]\n        - size: [small, medium, large]\n        - environment: [dev, staging, prod]\n      outputs:\n        - connection_string\n        - credentials_secret_path\n\n    - name: deploy\n      inputs:\n        - service_name: string\n        - environment: [dev, staging, prod]\n        - version: string\n      outputs:\n        - deployment_url\n        - rollback_command"
+        }
+      ]
+    },
+    {
+      "id": "set-up-service-catalog",
+      "title": "Set up a service catalog with Backstage",
+      "description": "A service catalog is the front door of your IDP. Developers need one place to see all services, who owns them, their status, and their docs. Backstage by Spotify is the most adopted open-source option. It is not the only choice, but it has the largest ecosystem of plugins and community support.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Bootstrap a Backstage instance",
+          "code": "# Install Backstage CLI and create a new app\nnpx @backstage/create-app@latest\n\n# Follow the prompts:\n# ? Enter a name for the app: my-platform\n\ncd my-platform\n\n# Start the dev server\nyarn dev\n\n# Backstage runs on http://localhost:3000 (frontend)\n# and http://localhost:7007 (backend)"
+        },
+        {
+          "language": "yaml",
+          "label": "Register a service in the catalog",
+          "code": "# catalog-info.yaml (lives in each service's repo root)\napiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: payment-service\n  description: Handles payment processing via Stripe\n  annotations:\n    github.com/project-slug: my-org/payment-service\n    backstage.io/techdocs-ref: dir:.\n  tags:\n    - python\n    - payments\n  links:\n    - url: https://grafana.internal/d/payment-service\n      title: Grafana Dashboard\n    - url: https://pagerduty.com/services/P123ABC\n      title: PagerDuty\nspec:\n  type: service\n  lifecycle: production\n  owner: team-payments\n  system: checkout\n  dependsOn:\n    - resource:payments-db\n    - component:user-service\n  providesApis:\n    - payments-api"
+        }
+      ]
+    },
+    {
+      "id": "create-service-templates",
+      "title": "Build golden path templates for new services",
+      "description": "Every new service at your company should start from a template that includes CI/CD, logging, health checks, and standard configs out of the box. This is the highest-impact feature of an IDP. Developers pick a template, fill in a few fields, and get a production-ready repo in minutes instead of days of copy-paste from other services.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Backstage scaffolder template definition",
+          "code": "# templates/go-service/template.yaml\napiVersion: scaffolder.backstage.io/v1beta3\nkind: Template\nmetadata:\n  name: go-service\n  title: Go Microservice\n  description: Creates a Go service with CI/CD, Dockerfile, and Kubernetes manifests\n  tags:\n    - go\n    - recommended\nspec:\n  owner: platform-team\n  type: service\n  parameters:\n    - title: Service Info\n      required:\n        - name\n        - owner\n      properties:\n        name:\n          title: Service Name\n          type: string\n          pattern: '^[a-z0-9-]+$'\n        owner:\n          title: Owner Team\n          type: string\n          ui:field: OwnerPicker\n        description:\n          title: Description\n          type: string\n  steps:\n    - id: fetch-template\n      name: Fetch Template\n      action: fetch:template\n      input:\n        url: ./skeleton\n        values:\n          name: ${{ parameters.name }}\n          owner: ${{ parameters.owner }}\n    - id: publish\n      name: Create GitHub Repo\n      action: publish:github\n      input:\n        repoUrl: github.com?owner=my-org&repo=${{ parameters.name }}\n        defaultBranch: main\n    - id: register\n      name: Register in Catalog\n      action: catalog:register\n      input:\n        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}\n        catalogInfoPath: /catalog-info.yaml"
+        },
+        {
+          "language": "bash",
+          "label": "Template skeleton directory structure",
+          "code": "# templates/go-service/skeleton/\n.\n├── catalog-info.yaml\n├── Dockerfile\n├── .github/\n│   └── workflows/\n│       └── ci.yaml\n├── cmd/\n│   └── server/\n│       └── main.go\n├── internal/\n│   └── handler/\n│       └── health.go\n├── k8s/\n│   ├── deployment.yaml\n│   ├── service.yaml\n│   └── ingress.yaml\n├── go.mod\n├── go.sum\n├── Makefile\n└── README.md"
+        }
+      ]
+    },
+    {
+      "id": "implement-self-service-infrastructure",
+      "title": "Wire up self-service infrastructure provisioning",
+      "description": "Developers should not file tickets to get a database or a message queue. Use Crossplane or Terraform with a GitOps workflow to let them provision infrastructure through the platform. The platform team defines what is available and sets guardrails. Developers request resources through templates or a UI, and the platform handles the rest.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Crossplane composition for a PostgreSQL database",
+          "code": "# crossplane/compositions/postgres.yaml\napiVersion: apiextensions.crossplane.io/v1\nkind: Composition\nmetadata:\n  name: postgres-instance\nspec:\n  compositeTypeRef:\n    apiVersion: database.platform.io/v1alpha1\n    kind: PostgresInstance\n  resources:\n    - name: rds-instance\n      base:\n        apiVersion: rds.aws.upbound.io/v1beta1\n        kind: Instance\n        spec:\n          forProvider:\n            engine: postgres\n            engineVersion: \"16\"\n            instanceClass: db.t3.medium\n            allocatedStorage: 20\n            masterUsername: admin\n            autoMinorVersionUpgrade: true\n            backupRetentionPeriod: 7\n            region: us-east-1\n      patches:\n        - fromFieldPath: spec.size\n          toFieldPath: spec.forProvider.instanceClass\n          transforms:\n            - type: map\n              map:\n                small: db.t3.micro\n                medium: db.t3.medium\n                large: db.r6g.large\n---\n# What developers actually write:\napiVersion: database.platform.io/v1alpha1\nkind: PostgresInstance\nmetadata:\n  name: orders-db\nspec:\n  size: medium\n  environment: staging"
+        },
+        {
+          "language": "yaml",
+          "label": "Backstage plugin to trigger provisioning",
+          "code": "# Add a provisioning step in your Backstage template\nsteps:\n  - id: provision-db\n    name: Provision PostgreSQL\n    action: kubernetes:apply\n    input:\n      manifest:\n        apiVersion: database.platform.io/v1alpha1\n        kind: PostgresInstance\n        metadata:\n          name: ${{ parameters.name }}-db\n          namespace: ${{ parameters.team }}\n        spec:\n          size: ${{ parameters.dbSize }}\n          environment: dev"
+        }
+      ]
+    },
+    {
+      "id": "set-up-environment-management",
+      "title": "Automate ephemeral environment creation",
+      "description": "Shared staging environments are a bottleneck. When three teams deploy to the same staging, they step on each other. Give developers on-demand preview environments that spin up per pull request and tear down when the PR closes. This removes the \"can I deploy to staging?\" Slack messages and speeds up the review cycle.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "GitHub Actions workflow for preview environments",
+          "code": "# .github/workflows/preview-env.yaml\nname: Preview Environment\non:\n  pull_request:\n    types: [opened, synchronize, reopened, closed]\n\njobs:\n  deploy-preview:\n    if: github.event.action != 'closed'\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Build and push image\n        run: |\n          IMAGE=\"ghcr.io/${{ github.repository }}:pr-${{ github.event.number }}\"\n          docker build -t $IMAGE .\n          docker push $IMAGE\n\n      - name: Deploy preview environment\n        run: |\n          NAMESPACE=\"preview-pr-${{ github.event.number }}\"\n          kubectl create namespace $NAMESPACE --dry-run=client -o yaml | kubectl apply -f -\n\n          helm upgrade --install preview-${{ github.event.number }} ./chart \\\n            --namespace $NAMESPACE \\\n            --set image.tag=pr-${{ github.event.number }} \\\n            --set ingress.host=pr-${{ github.event.number }}.preview.example.com\n\n      - name: Comment PR with environment URL\n        uses: actions/github-script@v7\n        with:\n          script: |\n            github.rest.issues.createComment({\n              owner: context.repo.owner,\n              repo: context.repo.repo,\n              issue_number: context.issue.number,\n              body: `Preview: https://pr-${context.issue.number}.preview.example.com`\n            })\n\n  teardown-preview:\n    if: github.event.action == 'closed'\n    runs-on: ubuntu-latest\n    steps:\n      - name: Delete preview environment\n        run: |\n          kubectl delete namespace preview-pr-${{ github.event.number }} --ignore-not-found"
+        }
+      ]
+    },
+    {
+      "id": "build-developer-portal-ui",
+      "title": "Build a portal UI that surfaces everything in one place",
+      "description": "Developers should not need to context-switch between GitHub, Grafana, PagerDuty, ArgoCD, and Jira just to understand the state of their service. The portal pulls data from all these tools into a single view per service: recent deployments, open incidents, SLO status, and team ownership. Backstage plugins handle most of this.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Install common Backstage plugins",
+          "code": "// In packages/app/src/App.tsx, add plugin pages:\nimport { EntityKubernetesContent } from '@backstage/plugin-kubernetes';\nimport { EntityGithubActionsContent } from '@backstage-community/plugin-github-actions';\nimport { EntityGrafanaDashboardsCard } from '@k-phoen/backstage-plugin-grafana';\nimport { EntityPagerDutyCard } from '@pagerduty/backstage-plugin';\n\n// Then wire them into your entity page:\n// packages/app/src/components/catalog/EntityPage.tsx\nconst serviceEntityPage = (\n  <EntityLayout>\n    <EntityLayout.Route path=\"/\" title=\"Overview\">\n      <Grid container spacing={3}>\n        <Grid item md={6}><EntityAboutCard /></Grid>\n        <Grid item md={6}><EntityPagerDutyCard /></Grid>\n        <Grid item md={12}><EntityGrafanaDashboardsCard /></Grid>\n      </Grid>\n    </EntityLayout.Route>\n    <EntityLayout.Route path=\"/ci-cd\" title=\"CI/CD\">\n      <EntityGithubActionsContent />\n    </EntityLayout.Route>\n    <EntityLayout.Route path=\"/kubernetes\" title=\"Kubernetes\">\n      <EntityKubernetesContent />\n    </EntityLayout.Route>\n  </EntityLayout>\n);"
+        }
+      ]
+    },
+    {
+      "id": "add-rbac-and-team-ownership",
+      "title": "Set up RBAC and team ownership boundaries",
+      "description": "Without access controls, your platform is either too open (anyone can delete production databases) or too locked down (back to filing tickets). Map your org's team structure into the platform and set clear ownership. Every resource should have an owner. Every action should check permissions. Start strict and loosen based on feedback.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Define teams and ownership in Backstage",
+          "code": "# org-data/teams.yaml\napiVersion: backstage.io/v1alpha1\nkind: Group\nmetadata:\n  name: team-payments\n  description: Handles all payment processing\nspec:\n  type: team\n  profile:\n    displayName: Payments Team\n    slack: '#team-payments'\n  children: []\n  members:\n    - user:jane.doe\n    - user:john.smith\n---\napiVersion: backstage.io/v1alpha1\nkind: Group\nmetadata:\n  name: platform-team\nspec:\n  type: team\n  profile:\n    displayName: Platform Team\n  children: []\n  members:\n    - user:alice.engineer"
+        },
+        {
+          "language": "yaml",
+          "label": "Kubernetes RBAC tied to team namespaces",
+          "code": "# Each team gets their own namespace with scoped permissions\napiVersion: v1\nkind: Namespace\nmetadata:\n  name: team-payments\n  labels:\n    team: payments\n    managed-by: platform\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: team-payments-dev\n  namespace: team-payments\nsubjects:\n  - kind: Group\n    name: team-payments\n    apiGroup: rbac.authorization.k8s.io\nroleRef:\n  kind: ClusterRole\n  name: namespace-admin\n  apiGroup: rbac.authorization.k8s.io"
+        }
+      ]
+    },
+    {
+      "id": "standardize-ci-cd-pipelines",
+      "title": "Create shared CI/CD pipeline templates",
+      "description": "If every team writes their own CI/CD pipeline from scratch, you end up with 50 slightly different ways to build and deploy. Create shared pipeline templates that teams inherit. They get security scanning, artifact publishing, and deployment steps for free. Teams can extend the templates but cannot skip the required steps.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Reusable GitHub Actions workflow",
+          "code": "# .github/workflows/platform-build.yaml (in a shared repo)\nname: Platform Build\non:\n  workflow_call:\n    inputs:\n      language:\n        required: true\n        type: string\n      deploy_target:\n        required: false\n        type: string\n        default: 'kubernetes'\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Run security scan\n        uses: aquasecurity/trivy-action@master\n        with:\n          scan-type: fs\n          exit-code: 1\n          severity: HIGH,CRITICAL\n\n      - name: Build container image\n        run: |\n          docker build -t ${{ github.repository }}:${{ github.sha }} .\n\n      - name: Push to registry\n        run: |\n          echo ${{ secrets.REGISTRY_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin\n          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}\n\n      - name: Deploy to Kubernetes\n        if: inputs.deploy_target == 'kubernetes'\n        run: |\n          kubectl set image deployment/${{ github.event.repository.name }} \\\n            app=ghcr.io/${{ github.repository }}:${{ github.sha }}"
+        },
+        {
+          "language": "yaml",
+          "label": "How teams consume the shared workflow",
+          "code": "# In each service repo: .github/workflows/ci.yaml\nname: CI\non:\n  push:\n    branches: [main]\n  pull_request:\n\njobs:\n  build-and-deploy:\n    uses: my-org/platform-pipelines/.github/workflows/platform-build.yaml@main\n    with:\n      language: go\n      deploy_target: kubernetes\n    secrets: inherit"
+        }
+      ]
+    },
+    {
+      "id": "add-secrets-management",
+      "title": "Integrate secrets management into the platform",
+      "description": "Developers should never copy secrets from Slack messages or shared spreadsheets. Wire a secrets manager into your platform so developers can request and access secrets through a standard interface. The platform injects secrets at runtime - developers never see the raw values in configs or environment variables.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Set up External Secrets Operator with AWS Secrets Manager",
+          "code": "# Install External Secrets Operator\nhelm repo add external-secrets https://charts.external-secrets.io\nhelm install external-secrets external-secrets/external-secrets \\\n  -n external-secrets --create-namespace\n\n# Create a SecretStore pointing to AWS\ncat <<EOF | kubectl apply -f -\napiVersion: external-secrets.io/v1beta1\nkind: ClusterSecretStore\nmetadata:\n  name: aws-secrets\nspec:\n  provider:\n    aws:\n      service: SecretsManager\n      region: us-east-1\n      auth:\n        jwt:\n          serviceAccountRef:\n            name: external-secrets-sa\n            namespace: external-secrets\nEOF"
+        },
+        {
+          "language": "yaml",
+          "label": "How developers request a secret",
+          "code": "# Developers add this to their service's k8s manifests:\napiVersion: external-secrets.io/v1beta1\nkind: ExternalSecret\nmetadata:\n  name: payment-service-secrets\n  namespace: team-payments\nspec:\n  refreshInterval: 1h\n  secretStoreRef:\n    name: aws-secrets\n    kind: ClusterSecretStore\n  target:\n    name: payment-service-secrets\n  data:\n    - secretKey: STRIPE_API_KEY\n      remoteRef:\n        key: prod/payments/stripe\n        property: api_key\n    - secretKey: DATABASE_URL\n      remoteRef:\n        key: prod/payments/database\n        property: connection_string"
+        }
+      ]
+    },
+    {
+      "id": "define-platform-slos",
+      "title": "Set SLOs for the platform itself",
+      "description": "Your platform is a product. It needs SLOs just like any production service. If service creation takes 30 minutes, that is your problem. Track things like: time to create a new service, time to provision a database, portal uptime, and deployment pipeline duration. If you do not measure these, you will not know if the platform is helping or hurting.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Platform SLO definitions",
+          "code": "# platform-slos.yaml\nslos:\n  - name: service-creation-time\n    description: Time from template selection to working service\n    target: 95th percentile under 10 minutes\n    measurement: backstage_scaffolder_task_duration_seconds\n\n  - name: environment-provisioning\n    description: Time to spin up a preview environment\n    target: 95th percentile under 5 minutes\n    measurement: preview_env_creation_duration_seconds\n\n  - name: portal-availability\n    description: Backstage portal uptime\n    target: 99.9% monthly\n    measurement: backstage_http_request_duration_seconds\n\n  - name: pipeline-duration\n    description: Shared CI/CD pipeline p95 duration\n    target: 95th percentile under 15 minutes\n    measurement: github_actions_workflow_duration_seconds\n\n  - name: secret-sync-latency\n    description: Time for a secret update to reach pods\n    target: 99th percentile under 5 minutes\n    measurement: external_secrets_sync_duration_seconds"
+        },
+        {
+          "language": "bash",
+          "label": "Track platform SLOs in Prometheus",
+          "code": "# Grafana query for service creation time SLO\nhistogram_quantile(0.95,\n  rate(backstage_scaffolder_task_duration_seconds_bucket[7d])\n)\n\n# Alert when SLO is at risk\n# promql: burn rate alert\n(\n  sum(rate(backstage_http_request_duration_seconds_count{code=~\"5..\"}[1h]))\n  /\n  sum(rate(backstage_http_request_duration_seconds_count[1h]))\n) > 0.001"
+        }
+      ]
+    },
+    {
+      "id": "build-developer-docs-as-code",
+      "title": "Generate docs from code and serve them in the portal",
+      "description": "Documentation that lives in Confluence gets stale. Documentation that lives next to the code stays current because it is part of the same pull request. Use TechDocs (Backstage's docs plugin) to render Markdown from each repo and serve it in the portal. Developers write docs in their repo and the platform publishes them automatically.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Set up TechDocs in a service repo",
+          "code": "# mkdocs.yml in the service repo root\nsite_name: Payment Service\nnav:\n  - Home: index.md\n  - Architecture: architecture.md\n  - API Reference: api.md\n  - Runbooks:\n      - On-Call Guide: runbooks/oncall.md\n      - Incident Response: runbooks/incidents.md\n\nplugins:\n  - techdocs-core\n\n# Then in catalog-info.yaml, add:\n# metadata:\n#   annotations:\n#     backstage.io/techdocs-ref: dir:."
+        },
+        {
+          "language": "bash",
+          "label": "Build and preview docs locally",
+          "code": "# Install the TechDocs CLI\nnpm install -g @techdocs/cli\n\n# Generate and preview docs\ntechdocs-cli generate\ntechdocs-cli serve\n\n# Output:\n# Starting local server at http://localhost:3000\n# Serving docs for payment-service"
+        }
+      ]
+    },
+    {
+      "id": "implement-cost-tracking",
+      "title": "Add per-team cost visibility",
+      "description": "Self-service infrastructure is great until the cloud bill triples. Tag every resource the platform creates with team and service labels, then surface costs per team in the portal. Developers who can see their costs make better decisions. Set budget alerts so teams know when they are trending above expectations.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Enforce cost labels on all platform-managed resources",
+          "code": "# Kyverno policy to require cost labels\napiVersion: kyverno.io/v1\nkind: ClusterPolicy\nmetadata:\n  name: require-cost-labels\nspec:\n  validationFailureAction: Enforce\n  rules:\n    - name: check-labels\n      match:\n        any:\n          - resources:\n              kinds:\n                - Deployment\n                - StatefulSet\n                - Service\n      validate:\n        message: \"All resources must have 'team' and 'service' labels for cost tracking\"\n        pattern:\n          metadata:\n            labels:\n              team: \"?*\"\n              service: \"?*\""
+        },
+        {
+          "language": "bash",
+          "label": "Query AWS costs by team tag",
+          "code": "# Get cost breakdown by team for last month\naws ce get-cost-and-usage \\\n  --time-period Start=2026-03-01,End=2026-03-31 \\\n  --granularity MONTHLY \\\n  --metrics BlendedCost \\\n  --group-by Type=TAG,Key=team \\\n  --query '{\"And\": [{\"Tags\": {\"Key\": \"managed-by\", \"Values\": [\"platform\"]}}]}' \\\n  | jq '.ResultsByTime[].Groups[] | {team: .Keys[0], cost: .Metrics.BlendedCost.Amount}'\n\n# Example output:\n# {\"team\": \"team-payments\", \"cost\": \"1,247.83\"}\n# {\"team\": \"team-search\", \"cost\": \"3,891.22\"}\n# {\"team\": \"team-auth\", \"cost\": \"412.56\"}"
+        }
+      ]
+    },
+    {
+      "id": "collect-platform-adoption-metrics",
+      "title": "Track adoption and measure developer satisfaction",
+      "description": "An IDP that nobody uses is wasted effort. Track how many teams are using the platform, which features get the most usage, and whether developers are actually faster. Run quarterly developer satisfaction surveys (keep them short - 5 questions max). The best signal is whether developers choose to use the platform when they have other options.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Platform adoption dashboard metrics",
+          "code": "# Key metrics to track in your Grafana dashboard\nmetrics:\n  adoption:\n    - name: services_in_catalog\n      query: count(backstage_catalog_entities{kind=\"Component\"})\n      target: 80% of all services registered within 6 months\n\n    - name: templates_used_weekly\n      query: sum(increase(backstage_scaffolder_tasks_total[7d]))\n      target: At least 3 new services per week via templates\n\n    - name: self_service_ratio\n      query: |\n        platform_automated_requests / \n        (platform_automated_requests + manual_ops_tickets)\n      target: Above 70% self-service within 3 months\n\n  developer_experience:\n    - name: time_to_first_deploy\n      description: How long from repo creation to first production deploy\n      target: Under 1 day\n\n    - name: dora_deployment_frequency\n      description: How often teams deploy per week\n      target: Improving quarter over quarter"
+        },
+        {
+          "language": "bash",
+          "label": "Quick adoption check script",
+          "code": "#!/bin/bash\n# platform-health-check.sh\necho \"=== Platform Adoption Report ===\"\necho \"\"\n\n# Count services in catalog\nSERVICES=$(curl -s http://backstage.internal/api/catalog/entities?filter=kind=component | jq length)\necho \"Services in catalog: $SERVICES\"\n\n# Templates used this month\nTEMPLATES=$(curl -s http://backstage.internal/api/scaffolder/v2/tasks | jq '[.tasks[] | select(.createdAt > \"2026-03-01\")] | length')\necho \"Templates used this month: $TEMPLATES\"\n\n# Average deploy time\necho \"\"\necho \"Deploy times (p95, last 7 days):\"\ncurl -s \"http://prometheus:9090/api/v1/query?query=histogram_quantile(0.95,rate(deploy_duration_seconds_bucket[7d]))\" \\\n  | jq '.data.result[] | {service: .metric.service, p95_seconds: .value[1]}'"
+        }
+      ]
+    }
+  ]
+}
