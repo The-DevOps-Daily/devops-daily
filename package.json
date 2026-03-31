@@ -123,7 +123,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@resvg/resvg-js": "^2.6.2",
-    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/postcss": "^4.2.2",
     "@tailwindcss/typography": "0.5.19",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.5.0",
