@@ -14,6 +14,7 @@ export interface Game {
   isComingSoon?: boolean;
   featured?: boolean;
   category?: string;
+  type?: 'game' | 'simulator';
   createdAt?: string; // ISO 8601 date string for sorting
 }
 
@@ -24,6 +25,7 @@ export interface Game {
 const games: Game[] = [
   {
     id: 'aws-vpc-simulator',
+    type: 'simulator',
     title: 'AWS VPC Networking Simulator',
     description:
       'Learn AWS networking fundamentals with an interactive VPC simulator. Visualize how traffic flows through public and private subnets, understand NAT Gateways, Internet Gateways, and route tables.',
@@ -38,6 +40,7 @@ const games: Game[] = [
   },
   {
     id: 'dns-simulator',
+    type: 'simulator',
     title: 'DNS Resolution Simulator',
     description:
       'Learn how DNS works with an interactive step-by-step simulator. Visualize the DNS hierarchy, understand caching at different levels, and see the difference between recursive and iterative queries.',
@@ -53,6 +56,7 @@ const games: Game[] = [
   },
   {
     id: 'db-indexing-simulator',
+    type: 'simulator',
     title: 'Database Indexing Simulator',
     description:
       'Learn how database indexes work with an interactive simulator. See the difference between full table scans and index seeks, understand B-tree structure, and learn when to create indexes.',
@@ -68,6 +72,7 @@ const games: Game[] = [
   },
   {
     id: 'caching-simulator',
+    type: 'simulator',
    title: 'Caching Strategies Simulator',
    description:
      'Learn caching fundamentals with an interactive simulator. Visualize cache hits, misses, eviction policies (LRU, LFU, FIFO), and understand write strategies.',
@@ -82,6 +87,7 @@ const games: Game[] = [
   },
   {
     id: 'deployment-strategies',
+    type: 'simulator',
    title: 'Deployment Strategies Simulator',
    description:
      'Learn deployment strategies like Blue-Green, Canary, Rolling Updates, and Recreate. Visualize how each strategy handles traffic routing, downtime, and rollbacks.',
@@ -96,6 +102,7 @@ const games: Game[] = [
   },
   {
     id: 'rest-vs-graphql',
+    type: 'simulator',
    title: 'REST API vs GraphQL Simulator',
    description:
      'Compare REST and GraphQL side-by-side. Understand over-fetching, under-fetching, the N+1 problem, and when to use each approach with interactive scenarios.',
@@ -110,6 +117,7 @@ const games: Game[] = [
   },
   {
     id: 'scaling-simulator',
+    type: 'simulator',
    title: 'Horizontal vs Vertical Scaling Simulator',
    description:
      'Interactive game to learn scaling strategies for web applications. Experiment with horizontal and vertical scaling, see the effects on performance, cost, and reliability with realistic pricing simulation and budget constraints.',
@@ -125,6 +133,7 @@ const games: Game[] = [
   },
   {
     id: 'bcdr-simulator',
+    type: 'simulator',
     title: 'BCDR Simulator',
     description:
       'Learn Business Continuity & Disaster Recovery with interactive RTO/RPO planning, failover strategies, and disaster scenarios. Understand hot, warm, and cold DR sites.',
@@ -139,6 +148,7 @@ const games: Game[] = [
   },
   {
     id: 'ssl-tls-handshake',
+    type: 'simulator',
     title: 'SSL/TLS Handshake Simulator',
     description:
       'Visualize how SSL/TLS handshakes work with certificate verification, key exchange, and cipher negotiation. Compare TLS 1.2 and 1.3 protocols.',
@@ -153,6 +163,7 @@ const games: Game[] = [
   },
   {
     id: 'linux-terminal',
+    type: 'game',
     title: 'Learn Linux - Interactive Tutorial',
     description:
       'Master essential Linux commands through interactive lessons. Practice pwd, ls, cd, cat, grep, chmod, pipes, and more in a simulated terminal environment with 6 progressive lessons.',
@@ -167,6 +178,7 @@ const games: Game[] = [
   },
   {
     id: 'load-balancer-simulator',
+    type: 'simulator',
    title: 'Load Balancer Algorithm Simulator',
    description:
      'Learn how different load balancing algorithms distribute traffic across servers. Experiment with Round Robin, Least Connections, IP Hash, and more. See how load balancers handle failures and optimize performance.',
@@ -182,6 +194,7 @@ const games: Game[] = [
   },
   {
     id: 'dbms-simulator',
+    type: 'simulator',
     title: 'Database Management Systems',
     description:
       'Learn about different database types (SQL, NoSQL, Graph, Time-Series) and their use cases. Explore CAP theorem trade-offs and make informed database choices.',
@@ -196,6 +209,7 @@ const games: Game[] = [
   },
   {
     id: 'gitops-workflow',
+    type: 'simulator',
     title: 'GitOps Workflow Simulator',
     description:
       'Learn GitOps principles through interactive scenarios. Understand Git as source of truth, automated sync, and drift detection.',
@@ -210,6 +224,7 @@ const games: Game[] = [
   },
   {
     id: 'bug-hunter',
+    type: 'game',
     title: 'Bug Hunter',
     description:
       'DevOps-themed Snake game where you control a bug that infects healthy servers. Grow longer with each infection, but avoid crashing into walls or yourself!',
@@ -224,6 +239,7 @@ const games: Game[] = [
   },
   {
     id: 'tcp-vs-udp',
+    type: 'simulator',
    title: 'TCP vs UDP Simulator',
    description:
      'Interactive visualization showing the differences between TCP\'s reliable connection-oriented protocol and UDP\'s fast connectionless approach. See the 3-way handshake, packet loss, and retransmissions in action.',
@@ -239,6 +255,7 @@ const games: Game[] = [
   },
   {
     id: 'devops-scorecard',
+    type: 'game',
     title: 'DevOps Scorecard',
     description:
       'Evaluate your DevOps skills across 8 key areas and generate a beautiful, shareable scorecard with personalized insights.',
@@ -253,6 +270,7 @@ const games: Game[] = [
   },
   {
     id: 'microservices-simulator',
+    type: 'simulator',
     title: 'Microservices Architecture Simulator',
     description:
       'Design and deploy microservices. See communication patterns, handle failures, and scale independently. Learn when to use microservices and understand the trade-offs.',
@@ -267,6 +285,7 @@ const games: Game[] = [
   },
   {
     id: 'k8s-scheduler',
+    type: 'simulator',
    title: 'Kubernetes Scheduler Challenge',
    description:
      'Drag-and-drop Pods onto Nodes while honoring kube scheduling rules: resources, taints/tolerations, selectors, and topology spread.',
@@ -279,6 +298,7 @@ const games: Game[] = [
   },
   {
     id: 'rate-limit-simulator',
+    type: 'simulator',
     title: 'Rate Limit Simulator',
     description:
       'Learn API rate limiting, backoff strategies, and throttling with real-time visualization and interactive charts.',
@@ -293,6 +313,7 @@ const games: Game[] = [
   },
   {
     id: 'ddos-simulator',
+    type: 'simulator',
    title: 'DDoS Attack Simulator',
    description:
      'Educational simulator to understand how DDoS attacks work with stunning real-time visualizations, multiple attack vectors, and protection mechanisms.',
@@ -306,6 +327,7 @@ const games: Game[] = [
   },
   {
     id: 'scalable-sentry',
+    type: 'game',
     title: 'Scalable Sentry',
     description:
       'Tower defense game where you defend your infrastructure against waves of network traffic. Deploy servers, manage resources, and survive boss waves!',
@@ -320,6 +342,7 @@ const games: Game[] = [
   },
   {
     id: 'packet-journey',
+    type: 'simulator',
     title: 'Network Packet Journey',
     description:
       'Follow a single HTTP/HTTPS packet through the entire network stack with stunning animations. Learn DNS, TCP, TLS, CDN, load balancing, and more!',
@@ -334,6 +357,7 @@ const games: Game[] = [
   },
   {
     id: 'cicd-stack-generator',
+    type: 'game',
     title: 'CI/CD Stack Generator',
     description: 'Spin the reels to generate your perfect (or perfectly cursed) DevOps stack!',
     iconName: 'Workflow',
@@ -347,6 +371,7 @@ const games: Game[] = [
   },
   {
     id: 'infra-tarot',
+    type: 'game',
     title: 'Infra Tarot Cards',
     description:
       'Draw mystical cards to discover your infrastructure destiny! Get humorous readings about your DevOps future.',
@@ -360,6 +385,7 @@ const games: Game[] = [
   },
   {
     id: 'devops-memes',
+    type: 'game',
     title: 'You Might Be a DevOps Engineer If...',
     description:
       'Auto-generating hilarious and painfully accurate DevOps memes. Each reload brings a new dose of reality!',
@@ -374,6 +400,7 @@ const games: Game[] = [
   },
   {
     id: 'cards-against-devops',
+    type: 'game',
     title: 'Cards Against DevOps',
     description:
       'A hilariously inappropriate DevOps party game. Fill in the blanks with the most outrageous DevOps scenarios!',
@@ -386,6 +413,7 @@ const games: Game[] = [
   },
   {
     id: 'git-quiz',
+    type: 'game',
     title: 'Git Command Quiz',
     description: 'Test your Git knowledge with interactive scenarios and real-world challenges.',
     iconName: 'Activity',
@@ -399,6 +427,7 @@ const games: Game[] = [
   },
   {
     id: 'uptime-defender',
+    type: 'game',
     title: 'Uptime Defender',
     description:
       'Fast-paced SRE game where you defend your infrastructure uptime! Handle incoming incidents by adding nodes, rotating logs, failing over, restarting pods, and scaling databases.',
@@ -413,6 +442,7 @@ const games: Game[] = [
   },
   {
     id: 'incident-commander',
+    type: 'simulator',
     title: 'Incident Commander Simulator',
     description: 'Lead your team through production incidents and learn incident management best practices.',
     iconName: 'Zap',
@@ -425,6 +455,7 @@ const games: Game[] = [
   },
   {
     id: 'terraform-puzzle',
+    type: 'simulator',
     title: 'Terraform State Puzzle',
     description: 'Fix complex Terraform state issues and learn advanced IaC troubleshooting techniques.',
     iconName: 'Shield',
@@ -437,6 +468,7 @@ const games: Game[] = [
   },
   {
     id: 'database-performance',
+    type: 'simulator',
     title: 'Database Performance Tuning',
     description: 'Optimize slow queries and database configurations in real-world scenarios.',
     iconName: 'Database',
@@ -449,6 +481,7 @@ const games: Game[] = [
   },
   {
     id: 'cloud-cost-optimizer',
+    type: 'simulator',
     title: 'Cloud Cost Optimizer Game',
     description: 'Make architectural decisions to reduce cloud costs while maintaining performance and reliability.',
     iconName: 'Cloud',
@@ -461,6 +494,7 @@ const games: Game[] = [
   },
   {
     id: 'docker-escape',
+    type: 'simulator',
     title: 'Container Security Challenge',
     description: 'Learn container security by identifying and fixing vulnerabilities in Docker configurations.',
     iconName: 'Shield',
@@ -473,6 +507,7 @@ const games: Game[] = [
   },
   {
     id: 'promql-playground',
+    type: 'simulator',
     title: 'Prometheus Query Builder (PromQL Playground)',
     description:
       'Learn Prometheus Query Language (PromQL) with an interactive playground. Master label filtering, rate calculations, aggregations, and histogram quantiles with real-time query execution.',
@@ -488,6 +523,7 @@ const games: Game[] = [
   },
   {
     id: 'service-mesh-simulator',
+    type: 'simulator',
     title: 'Service Mesh Traffic Simulator',
     description:
       'Visualize how service mesh proxies handle traffic between microservices. Learn mTLS, traffic splitting, retries, circuit breakers, and explore Istio and Linkerd patterns.',
