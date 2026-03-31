@@ -214,9 +214,22 @@ function GameCard({ game, featured = false }: { game: SerializableGame; featured
   );
 }
 
+// Classify games into types based on category
+const SIMULATOR_CATEGORIES = new Set([
+  'Cloud', 'Networking', 'Database', 'Infrastructure', 'Security',
+  'Architecture', 'Kubernetes', 'APIs', 'API Design', 'SRE',
+  'Infrastructure as Code',
+]);
+
+function getGameType(game: SerializableGame): 'game' | 'simulator' {
+  if (!game.category) return 'game';
+  return SIMULATOR_CATEGORIES.has(game.category) ? 'simulator' : 'game';
+}
+
 export function GamesList({ games, className, showSearch = true, showFilters = true }: GamesListProps) {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<'all' | 'game' | 'simulator'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'unpopular' | 'title' | 'title-desc' | 'featured'>('newest');
 
   // Get unique categories and tags
@@ -230,30 +243,63 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
     let filtered = games.filter((game) => {
       if (searchQuery && !matchesSearchQuery(game, searchQuery)) return false;
       if (selectedCategory !== 'all' && game.category !== selectedCategory) return false;
+      if (selectedType !== 'all' && getGameType(game) !== selectedType) return false;
       return true;
     });
 
     filtered.sort((a, b) => compareGamesBySort(a, b, sortBy));
     return filtered;
-  }, [games, searchQuery, selectedCategory, sortBy]);
+  }, [games, searchQuery, selectedCategory, selectedType, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedCategory('all');
+    setSelectedType('all');
     setSortBy('newest');
   };
 
   const activeFiltersCount = [
     searchQuery,
     selectedCategory !== 'all',
+    selectedType !== 'all',
     sortBy !== 'newest',
   ].filter(Boolean).length;
+
+  // Counts for tabs
+  const gameCount = games.filter((g) => getGameType(g) === 'game' && !g.isComingSoon).length;
+  const simulatorCount = games.filter((g) => getGameType(g) === 'simulator' && !g.isComingSoon).length;
 
   const featuredGames = filteredGames.filter((game) => game.featured);
   const regularGames = filteredGames.filter((game) => !game.featured);
 
   return (
     <div className={cn('w-full', className)}>
+      {/* Type Tabs */}
+      <div className="mb-6 flex items-center gap-1 p-1 bg-muted/50 rounded-xl w-fit">
+        {[
+          { value: 'all' as const, label: 'All', count: games.filter(g => !g.isComingSoon).length, icon: '🎯' },
+          { value: 'game' as const, label: 'Games', count: gameCount, icon: '🎮' },
+          { value: 'simulator' as const, label: 'Simulators', count: simulatorCount, icon: '🔬' },
+        ].map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setSelectedType(tab.value)}
+            className={cn(
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2',
+              selectedType === tab.value
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+            <Badge variant="secondary" className="text-xs h-5 min-w-[20px] flex items-center justify-center">
+              {tab.count}
+            </Badge>
+          </button>
+        ))}
+      </div>
+
       {/* Search and Filters */}
       {(showSearch || showFilters) && (
         <div className="mb-8 space-y-4">
