@@ -63,6 +63,7 @@ export interface SerializableGame {
   isNew?: boolean;
   featured?: boolean;
   category?: string;
+  type?: 'game' | 'simulator';
   isPopular?: boolean;
   isComingSoon?: boolean;
   createdAt?: string; // ISO 8601 date string for sorting
@@ -214,16 +215,8 @@ function GameCard({ game, featured = false }: { game: SerializableGame; featured
   );
 }
 
-// Classify games into types based on category
-const SIMULATOR_CATEGORIES = new Set([
-  'Cloud', 'Networking', 'Database', 'Infrastructure', 'Security',
-  'Architecture', 'Kubernetes', 'APIs', 'API Design', 'SRE',
-  'Infrastructure as Code',
-]);
-
 function getGameType(game: SerializableGame): 'game' | 'simulator' {
-  if (!game.category) return 'game';
-  return SIMULATOR_CATEGORIES.has(game.category) ? 'simulator' : 'game';
+  return game.type || 'game';
 }
 
 export function GamesList({ games, className, showSearch = true, showFilters = true }: GamesListProps) {
