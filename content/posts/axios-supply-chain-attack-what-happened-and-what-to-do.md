@@ -190,6 +190,26 @@ npm profile enable-2fa auth-and-writes
 
 The `auth-and-writes` level requires 2FA for both login and publishing. This is the setting that would have prevented this attack.
 
+### 7. Set a minimum release age
+
+This one is underrated. You can tell npm to refuse any package version that was published less than 7 days ago:
+
+```bash
+# Add to ~/.npmrc
+min-release-age=7
+```
+
+If you use Python with uv, the equivalent is:
+
+```toml
+# ~/.config/uv/uv.toml
+exclude-newer = "7 days"
+```
+
+This gives security scanners a 7-day window to catch malicious packages before your systems ever pull them. The axios attack was flagged within minutes, but if your build ran in that window, you were hit. A 7-day delay would have saved you.
+
+The tradeoff: you cannot install brand-new versions, including your own packages or urgent security patches, for a week. For CI/CD pipelines this is usually fine. For local development, you can override it when needed with `--min-release-age=0`.
+
 ## The Bigger Problem
 
 This is not the first supply chain attack on npm and it will not be the last. The JavaScript ecosystem's dependency model means a single compromised package can cascade into millions of installations within hours.
@@ -207,6 +227,7 @@ Every one of those defaults worked in the attacker's favor.
 3. **Disable postinstall scripts in CI.** The `--ignore-scripts` flag blocks the most common malware delivery mechanism in npm.
 4. **Pin critical dependencies.** Use exact versions for packages that touch networking, auth, or crypto.
 5. **Enable 2FA on npm.** If you publish packages, `auth-and-writes` is the only setting that matters.
+6. **Set `min-release-age=7` in your `.npmrc`.** Gives scanners time to catch malicious packages before you install them.
 6. **Run dependency scanning.** Socket, Snyk, or even `npm audit` catch known malicious packages automatically.
 
 Supply chain security is not somebody else's problem. If your application has a `node_modules` directory, it is your problem.
