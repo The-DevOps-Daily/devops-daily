@@ -47,11 +47,8 @@
     "audit-content": "tsx scripts/audit-content.ts"
   },
   "dependencies": {
-    "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/utilities": "^3.2.2",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@giscus/react": "^3.1.0",
-    "@hookform/resolvers": "^5.2.2",
     "@next/third-parties": "^16.1.6",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -83,7 +80,6 @@
     "@radix-ui/react-visually-hidden": "^1.2.4",
     "autoprefixer": "^10.4.27",
     "axios": "^1.14.0",
-    "canvas": "^3.2.1",
     "canvas-confetti": "^1.9.4",
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
@@ -110,7 +106,6 @@
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
     "react-resizable-panels": "^4.8.0",
-    "react-use": "^17.6.0",
     "recharts": "3.8.0",
     "rss-parser": "^3.13.0",
     "simple-git": "^3.32.3",
