@@ -1,0 +1,258 @@
+{
+  "id": "slos-slis-error-budgets-quiz",
+  "title": "SLOs, SLIs, and Error Budgets Quiz",
+  "description": "Test your ability to define service level objectives, pick the right service level indicators, calculate error budgets, and make real decisions when budget runs low.",
+  "category": "SRE",
+  "icon": "Target",
+  "totalPoints": 195,
+  "theme": {
+    "primaryColor": "amber",
+    "gradientFrom": "from-amber-500",
+    "gradientTo": "to-orange-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-03-31"
+  },
+  "questions": [
+    {
+      "id": "sli-slo-sla-difference",
+      "title": "SLI vs SLO vs SLA",
+      "description": "Which statement correctly describes the relationship between SLIs, SLOs, and SLAs in this scenario?",
+      "situation": "Your company signed a contract with an enterprise customer promising 99.95% uptime. Your internal reliability target is 99.99%. You measure actual availability from load balancer access logs.",
+      "codeExample": "Contract clause:\n  \"Provider guarantees 99.95% monthly uptime.\n   Breach results in 10% service credit.\"\n\nInternal target: 99.99% availability\n\nPrometheus query:\n  sum(rate(http_requests_total{code!~\"5..\"}[30d]))\n  /\n  sum(rate(http_requests_total[30d]))",
+      "options": [
+        "The Prometheus query is the SLO, 99.99% is the SLI, and 99.95% is the SLA",
+        "The Prometheus query is the SLI, 99.99% is the SLO, and the contract with its penalty clause is the SLA",
+        "The Prometheus query is the SLA, 99.95% is the SLO, and 99.99% is the SLI",
+        "The contract is the SLO, 99.99% is the SLA, and the Prometheus query is the SLI"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "An SLI (Service Level Indicator) is the measurement itself, like the ratio of successful requests. An SLO (Service Level Objective) is your internal target for that measurement, here 99.99%. An SLA (Service Level Agreement) is a contract with consequences for missing the target, here the 99.95% uptime promise with service credits. SLOs should always be stricter than SLAs so you have a buffer before contractual penalties kick in.",
+      "hint": "Think about which one is a measurement, which is a target, and which has a legal penalty attached."
+    },
+    {
+      "id": "choosing-sli-for-api",
+      "title": "Picking the Right SLI",
+      "description": "Which SLI best captures what users actually care about for this payment API?",
+      "situation": "You run a payment processing API. Users submit charges and expect a quick response. Lately, support tickets complain about 'slow payments' even though your uptime dashboard shows 99.99%. You need to pick a better SLI.",
+      "codeExample": "Current monitoring:\n  uptime_check: ping /healthz every 60s\n  result: 99.99% uptime\n\nSupport tickets (last 7 days):\n  - \"Payment took 12 seconds, customer left\"\n  - \"Timeout on checkout page\"\n  - \"Got 200 OK but charge never went through\"\n\nTraffic: ~2,000 req/s to POST /v1/charges",
+      "options": [
+        "Percentage of /healthz pings that return 200 within 1 second",
+        "Number of support tickets filed per week about payment issues",
+        "Average response time of all API endpoints over a 24-hour window",
+        "Percentage of POST /v1/charges requests that return a successful response (non-5xx) within 2 seconds"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Good SLIs measure what users experience on the critical path. A healthz ping (option A) misses slow queries and partial failures entirely. Support tickets (option B) are lagging indicators with too much noise. Average response time (option C) hides outliers since a few 30-second requests vanish in the average. Option D directly measures the user-facing endpoint, combines availability (non-5xx) with latency (under 2s), and matches the complaints you are getting.",
+      "hint": "The support tickets tell you exactly what users care about. Which SLI would catch all three complaint types?"
+    },
+    {
+      "id": "error-budget-math",
+      "title": "Error Budget Calculation",
+      "description": "How much error budget does this team have left, and what should they do?",
+      "situation": "Your team's SLO is 99.9% successful requests over a 30-day rolling window. It is day 20 of the month. You had a bad deploy on day 5 that caused errors for 4 hours, and a network blip on day 15 that caused 30 minutes of partial failures.",
+      "codeExample": "SLO: 99.9% success rate (30-day window)\nTotal requests (30 days): ~50,000,000\nError budget: 0.1% = 50,000 failed requests allowed\n\nDay 5 incident:  38,000 failed requests\nDay 15 incident:  6,000 failed requests\nBudget used:      44,000 / 50,000 = 88%\n\nPending deploy: new checkout flow (estimated risk: moderate)",
+      "options": [
+        "88% budget used is fine. Ship the new checkout flow since you still have 12% remaining.",
+        "You have 12% budget left with 10 days remaining. Proceed with the deploy but add extra monitoring and a quick rollback plan.",
+        "Cancel the deploy entirely. With 88% budget consumed, no deploys should happen until the window resets.",
+        "Renegotiate the SLO to 99.5% so the incidents no longer count against you."
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "With 12% budget remaining and 10 days left, you are not in crisis but you are tight. Blindly shipping (option A) ignores the risk. A full freeze (option C) is too aggressive since you still have budget to spend. Changing the SLO to hide past incidents (option D) defeats the purpose. The right call is to proceed carefully: deploy with extra monitoring, have a rollback plan ready, and be prepared to freeze if this deploy eats more budget. Error budgets exist to make exactly this kind of risk-aware decision.",
+      "hint": "Error budgets are meant to be spent, but how you spend them matters. What is the responsible middle ground?"
+    },
+    {
+      "id": "rolling-vs-calendar-window",
+      "title": "SLO Window Types",
+      "description": "Why is the team seeing different SLO compliance numbers for the same service?",
+      "situation": "It is March 3rd. On February 27th, your service had a major outage lasting 6 hours. The SRE dashboard shows two panels for the same 99.9% availability SLO, but they disagree.",
+      "codeExample": "Dashboard Panel A (Calendar Month - March):\n  SLO: 99.9% availability\n  Current: 99.98% ✅\n  Status: Healthy\n\nDashboard Panel B (30-day Rolling):\n  SLO: 99.9% availability\n  Current: 99.72% ❌\n  Status: Budget Exhausted\n\nOutage: Feb 27, 14:00 - 20:00 UTC (6 hours)",
+      "options": [
+        "Panel A uses a calendar month reset, so the February outage does not count in March. Panel B uses a rolling 30-day window, so February 27th is still within range.",
+        "Panel B is broken. A 6-hour outage 4 days ago should not show as budget exhausted.",
+        "Both panels are wrong because they should use the same window type for consistency.",
+        "Panel A is correct. Calendar windows are the industry standard and rolling windows inflate incident impact."
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Calendar windows reset at the start of each month, so Panel A sees a fresh slate on March 1st. Rolling windows look back exactly 30 days from right now, so Panel B still includes the Feb 27 outage until March 29. Rolling windows are generally better for SLOs because they do not create a 'free pass' at the start of each month or a panic zone at the end. Calendar windows can incentivize bad behavior like pushing risky deploys on the 1st of the month when the budget is full.",
+      "hint": "Think about what date range each window type covers on March 3rd."
+    },
+    {
+      "id": "burn-rate-alerting",
+      "title": "Multi-Window Burn Rate Alerts",
+      "description": "Which alerting setup will catch real problems without flooding the team with false alarms?",
+      "situation": "Your on-call team is drowning in SLO alerts. The current setup fires whenever the error rate exceeds 0.1% in any 5-minute window. You get paged 15 times a week, but only 2 of those pages lead to actual error budget impact. You need to redesign the alerting.",
+      "codeExample": "Current alert (too noisy):\n  IF error_rate > 0.1% FOR 5m\n  THEN page oncall\n  Result: 15 pages/week, 87% false positive rate\n\nOption A:\n  IF error_rate > 14.4x budget burn FOR 1h\n  AND error_rate > 14.4x budget burn FOR 5m\n  THEN page oncall\n\nOption B:\n  IF error_rate > 1x budget burn FOR 30d\n  THEN page oncall\n\nOption C:\n  IF total_errors_today > daily_budget\n  THEN send email",
+      "options": [
+        "Option A: Multi-window burn rate alert, fast burn detection with short confirmation window",
+        "Option B: Single long window catches all budget-impacting events",
+        "Option C: Daily email is less disruptive than pages",
+        "Keep the current setup but increase the threshold to 0.5%"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Option A implements the Google SRE multi-window, multi-burn-rate approach. The 1-hour window detects if you are burning budget 14.4x faster than normal (you would exhaust the entire month's budget in about 2 days at that rate). The 5-minute window confirms the problem is still happening right now, filtering out brief spikes. Option B with a 30-day window reacts too slowly since by the time it fires, the budget is already gone. Option C is not actionable for urgent issues. Simply raising the threshold (option D) does not fix the structural problem of using a single short window.",
+      "hint": "Good alerting needs two things: evidence that budget is draining fast AND evidence that the problem is still ongoing."
+    },
+    {
+      "id": "error-budget-policy",
+      "title": "Error Budget Policy Enforcement",
+      "description": "What should happen when the error budget is fully consumed mid-month?",
+      "situation": "Your team's 99.95% availability SLO has burned through 100% of its error budget on day 18 of the month. The product manager is pushing for a large feature release scheduled for tomorrow. The VP of Engineering asks what the error budget policy says.",
+      "codeExample": "Error Budget Status:\n  SLO: 99.95% availability (30-day rolling)\n  Budget: 21.6 minutes of downtime allowed\n  Used: 25 minutes (115% consumed)\n  Remaining: -3.4 minutes\n\nPending work:\n  - Feature release (large, touches payment flow)\n  - 3 reliability improvements (P1)\n  - Database index optimization (reduces p99 latency)\n\nError Budget Policy (approved by VP Eng):\n  Budget > 50%: normal development\n  Budget 20-50%: deploy with extra caution\n  Budget < 20%: reliability work only\n  Budget exhausted: freeze features, reliability only",
+      "options": [
+        "Ship the feature anyway since error budget policies are guidelines, not rules",
+        "Reset the error budget early and ship everything since the incidents were not the team's fault",
+        "Negotiate with the PM to split the feature into smaller releases to reduce risk",
+        "Follow the policy: freeze feature releases and focus only on the three reliability improvements and the database optimization"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The error budget policy exists precisely for this situation. When budget is exhausted, the team shifts to reliability-only work. This is not punishment; it is the mechanism that balances feature velocity against reliability. Option A undermines the entire SLO framework. Option C sounds reasonable but still ships features when the policy says not to. Option B removes accountability. The policy was pre-approved by the VP, so the decision is already made. The reliability improvements and database optimization directly help recover the budget for next month.",
+      "hint": "The policy was signed off by leadership for a reason. What does it say to do when budget hits zero?"
+    },
+    {
+      "id": "slo-target-selection",
+      "title": "Setting the Right SLO Target",
+      "description": "What SLO target should this team set for their new internal microservice?",
+      "situation": "Your team is launching an internal inventory service that other teams depend on. You are deciding between 99.9% and 99.99% availability. The service runs on a single Kubernetes cluster, uses a managed PostgreSQL database, and has no multi-region failover.",
+      "codeExample": "Infrastructure:\n  - Single k8s cluster (us-east-1)\n  - Managed PostgreSQL (single-region, automated backups)\n  - No multi-region failover\n  - 3 replicas behind a service mesh\n\nDependencies:\n  - Cloud provider SLA: 99.99% for compute\n  - Managed DB SLA: 99.95%\n  - Network SLA: 99.99%\n\nTeam size: 4 engineers, no dedicated SRE\nOn-call: shared rotation with another team",
+      "options": [
+        "99.99% (52 minutes downtime/year) since that matches the cloud provider SLA",
+        "99.9% (8.7 hours downtime/year) since the infrastructure and team size cannot realistically support anything higher",
+        "99.999% (5 minutes downtime/year) to set an ambitious target that pushes the team to improve",
+        "99.95% as a compromise between the database SLA and the compute SLA"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Your SLO cannot be higher than what your weakest dependency can deliver. The managed DB only promises 99.95%, so 99.99% (option A) is already impossible to guarantee. 99.999% (option C) is fantasy for a single-region setup with 4 engineers. More importantly, a 4-person team with shared on-call cannot realistically respond fast enough to maintain 99.99%. Setting an unreachable SLO just means the budget is always exhausted and the policy is always triggered, making the entire system meaningless. 99.9% gives a realistic target with enough budget to ship features while still holding a meaningful reliability bar.",
+      "hint": "Look at the weakest link in the dependency chain and the team's actual capacity to respond to incidents."
+    },
+    {
+      "id": "sli-measurement-point",
+      "title": "Where to Measure Your SLI",
+      "description": "Where should this team measure their availability SLI to get the most accurate picture of user experience?",
+      "situation": "Your web application sits behind a CDN, then a load balancer, then an API gateway, then the application servers. Users report intermittent 502 errors, but your application logs show zero errors. You need to figure out where to measure.",
+      "codeExample": "Request path:\n  User → CDN → Load Balancer → API Gateway → App Server\n\nMeasurement options:\n  A: App server access logs\n     Shows: 0 errors (all requests it receives succeed)\n\n  B: Load balancer access logs\n     Shows: 0.3% 502 errors (gateway timeouts)\n\n  C: CDN edge logs\n     Shows: 0.5% errors (includes CDN-level issues)\n\n  D: Synthetic monitoring (external)\n     Shows: 0.8% failures (includes DNS, network issues)",
+      "options": [
+        "App server logs (A) since that is where your code runs and you control the quality",
+        "Load balancer logs (B) since they capture gateway issues the app server misses",
+        "CDN edge logs (C) since they are closest to the full user experience without external noise",
+        "Synthetic monitoring (D) since it captures everything the user experiences including network issues"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The best SLI measurement point is as close to the user as possible while still being within your control. App server logs (A) miss the 502s entirely since the requests never reach the app. Load balancer logs (B) catch more but miss CDN-level failures. CDN edge logs (C) capture nearly the full user experience and represent infrastructure you control and can act on. Synthetic monitoring (D) includes external network issues you cannot fix, which would burn error budget on problems outside your control. The gap between C (0.5%) and A (0%) explains exactly why users see errors your app logs miss.",
+      "hint": "You want to measure as close to the user as possible, but only include failures you can actually do something about."
+    },
+    {
+      "id": "burn-rate-calculation",
+      "title": "Understanding Burn Rate",
+      "description": "At this burn rate, when will the error budget be fully consumed?",
+      "situation": "A deploy went out at 10:00 AM and the error rate jumped. It is now 10:30 AM. You need to decide whether to roll back immediately or wait to see if it stabilizes.",
+      "codeExample": "SLO: 99.9% success rate (30-day window)\nTotal monthly requests: ~100,000,000\nError budget: 100,000 failed requests\n\nSince deploy (10:00 - 10:30):\n  Total requests: 500,000\n  Failed requests: 5,000\n  Error rate: 1.0%\n  Normal error rate: 0.05%\n\nBurn rate = actual_error_rate / budget_error_rate\n         = 1.0% / 0.1%\n         = 10x",
+      "options": [
+        "At 10x burn rate, the entire monthly budget will be gone in about 72 hours. Roll back now since every minute costs 10x the normal budget.",
+        "At 10x burn rate, the entire monthly budget will be gone in about 3 days. Wait an hour to see if it stabilizes.",
+        "The burn rate math does not matter. 1% error rate is within acceptable range for a new deploy.",
+        "At 10x burn rate, the budget is already gone. Declare an incident immediately."
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A 10x burn rate means you are consuming 10 days worth of error budget every day. A 30-day budget at 10x burn rate lasts 30/10 = 3 days (72 hours). While 72 hours sounds like you have time, every minute at this rate costs 10 minutes of budget. Waiting an hour to see (option B) burns 10 hours of budget for no reason. The budget is not gone yet (option D) since 30 minutes at 10x only consumed about 0.7% of monthly budget. But the trend is clear: roll back now, investigate, and redeploy when the root cause is fixed.",
+      "hint": "If you burn 10 days of budget per day, how many days until 30 days of budget is gone?"
+    },
+    {
+      "id": "what-counts-as-error",
+      "title": "Defining What Counts as an Error",
+      "description": "Which of these HTTP responses should count against the availability SLI for this API?",
+      "situation": "You are configuring the error classification for your REST API's availability SLI. The API handles CRUD operations on user profiles. You need to decide which responses count as 'bad' events in your SLI ratio.",
+      "codeExample": "Recent response codes from access logs:\n  200 OK              - 89.2%  (successful requests)\n  201 Created          -  4.1%  (new resources created)\n  400 Bad Request      -  3.2%  (invalid user input)\n  401 Unauthorized     -  1.5%  (expired tokens)\n  404 Not Found        -  1.1%  (missing resources)\n  429 Too Many Requests -  0.5%  (rate limited)\n  500 Internal Error   -  0.3%  (bugs/crashes)\n  503 Service Unavail  -  0.1%  (overloaded)\n\nQuestion: which codes are 'errors' for the SLI?",
+      "options": [
+        "All non-2xx responses (400, 401, 404, 429, 500, 503) since any non-success response is a failure",
+        "Only 5xx responses (500, 503) since those indicate the server failed to do its job",
+        "5xx responses plus 429 (500, 503, 429) since rate limiting and server errors both mean the user could not complete their request",
+        "All 4xx and 5xx responses except 401 since authentication failures are the user's problem"
+      ],
+      "correctAnswer": 2,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "The key question is: did the service fail to serve a valid request? 400s are the client sending bad data, not a service failure. 401 means the token expired, which is expected behavior. 404 for a missing resource is correct behavior. But 429 means the service refused a valid request because it is overloaded, which is a service-side problem the user should not have to deal with. 500 and 503 are clear server failures. Counting all non-2xx (option A) would mean every typo in a request hurts your SLO, which makes the metric useless for measuring service health.",
+      "hint": "Ask yourself: if a user sends a perfectly valid request, which responses mean the service let them down?"
+    },
+    {
+      "id": "composite-slo-design",
+      "title": "Composite SLOs for User Journeys",
+      "description": "How should you define an SLO for a multi-step user journey that spans several services?",
+      "situation": "Your checkout flow involves 4 microservices: cart, pricing, payment, and notification. Each has its own SLO. But users only care whether checkout works end-to-end. The product team wants a single SLO for 'checkout success rate'.",
+      "codeExample": "Individual service SLOs:\n  cart-service:     99.95% availability\n  pricing-service:  99.9%  availability\n  payment-service:  99.95% availability\n  notification-svc: 99.5%  availability\n\nCheckout flow (sequential):\n  1. GET  /cart/summary     (cart-service)\n  2. POST /pricing/calculate (pricing-service)\n  3. POST /payment/charge   (payment-service)\n  4. POST /notify/receipt   (notification-service)\n\nTheoretical combined availability:\n  0.9995 × 0.999 × 0.9995 × 0.995 = 0.9930 (99.30%)",
+      "options": [
+        "Set the checkout SLO at 99.30% since that is the mathematical product of all service availabilities",
+        "Do not create a composite SLO. Monitor each service independently and let teams own their own SLOs.",
+        "Set the checkout SLO at 99.95% since that is what most of the individual services promise",
+        "Set the checkout SLO at 99.9% to match the lowest-availability critical service, and make step 4 (notification) async so it does not block checkout success"
+      ],
+      "correctAnswer": 3,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "The mathematical worst case (option A) is too pessimistic and does not account for design choices. The notification service is the weakest link at 99.5%, but a failed receipt email should not mean 'checkout failed' since the payment went through. Making notification async removes it from the critical path. With the remaining three services (99.95% × 99.9% × 99.95% = 99.80%), a 99.9% composite SLO is achievable with some headroom by investing in retry logic and graceful degradation. Option B misses the point: users do not care which microservice failed, they care that checkout worked.",
+      "hint": "Not every step in a user journey is equally critical. Which step could fail without the user considering the checkout 'broken'?"
+    },
+    {
+      "id": "error-budget-exhaustion-response",
+      "title": "Diagnosing Silent Budget Drain",
+      "description": "The error budget is draining faster than expected but there are no incidents. What is the most likely cause?",
+      "situation": "Your API has a 99.9% success rate SLO. No incidents were declared this month, but the error budget dashboard shows 70% consumed on day 10. The on-call log has zero pages. Something is silently eating your budget.",
+      "codeExample": "Error budget consumption:\n  Day 1-5:   15% consumed (normal)\n  Day 6:     25% consumed (jumped 10%)\n  Day 7-10:  70% consumed (steady drain)\n\nRecent changes:\n  Day 5: Deploy v2.4.1 (new search feature)\n  Day 6: No deploys\n  Day 7: Deploy v2.4.2 (config update)\n\nAlert config:\n  Page if: error_rate > 1% for 5 minutes\n  Current error rate: 0.15% (below page threshold)\n  Normal error rate:  0.05%\n\nError breakdown:\n  500 errors on /api/search: +200% since day 5\n  All other endpoints: normal",
+      "options": [
+        "The alerting threshold is too low and needs to be raised to catch these errors",
+        "The v2.4.1 deploy introduced a bug in the search endpoint that errors at a rate too low to trigger alerts but high enough to steadily drain the budget",
+        "The error budget dashboard is miscalculating. A 0.15% error rate cannot consume 70% of budget in 10 days.",
+        "The config update in v2.4.2 is the likely cause since config changes are riskier than code changes"
+      ],
+      "correctAnswer": 1,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "This is a classic slow-burn scenario. The error rate tripled from 0.05% to 0.15% after the v2.4.1 deploy. That is below the 1% paging threshold, so no one gets alerted. But 0.15% against a 0.1% error budget means you are consuming budget 1.5x faster than allowed, every hour, every day. Over 5 days, that adds up fast. The fix is twofold: roll back or fix the search bug, and implement burn-rate alerting (like multi-window alerts) that catches slow burns before they drain the budget. This is exactly why simple threshold-based alerts are insufficient for SLO monitoring.",
+      "hint": "Compare the current error rate (0.15%) to the error budget rate (0.1%). Even small overages compound over days."
+    },
+    {
+      "id": "slo-for-async-systems",
+      "title": "SLOs for Async Processing",
+      "description": "How should you define an SLO for a system that processes messages from a queue instead of serving HTTP requests?",
+      "situation": "Your data pipeline consumes events from Kafka, transforms them, and writes to a data warehouse. There are no HTTP endpoints. The analytics team needs data to appear in the warehouse within 15 minutes of the event occurring. You need to define an SLO.",
+      "codeExample": "Pipeline:\n  Source: Kafka topic (user-events, ~10M events/day)\n  Processing: Flink job (transform + enrich)\n  Sink: BigQuery table (analytics.user_events)\n\nCurrent metrics:\n  Kafka consumer lag: usually < 1 minute\n  Processing time: avg 30s, p99 5 minutes\n  End-to-end latency (event time to warehouse): p50=2min, p99=12min\n\nData quality:\n  ~0.01% events fail schema validation → dead letter queue\n  ~0.001% events duplicated in warehouse",
+      "options": [
+        "SLO: 99.9% of events processed successfully within 15 minutes of event timestamp, measured by comparing event_time to warehouse ingestion_time",
+        "SLO: Kafka consumer lag must stay below 1 minute, 99.9% of the time",
+        "SLO: Average end-to-end latency under 5 minutes measured daily",
+        "SLO: Zero events in the dead letter queue per day"
+      ],
+      "correctAnswer": 0,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Option A directly measures what the analytics team cares about: events appearing in the warehouse within 15 minutes. It uses event_time (when it happened) not processing_time (when your system saw it), which is the right anchor. Consumer lag (option B) only measures one piece of the pipeline and misses processing delays. Average latency (option C) hides outliers, and a daily measurement cannot catch problems in time. Zero DLQ events (option D) is unrealistic and does not capture the latency requirement at all. The 99.9% target with 10M events/day allows up to 10,000 events to be slow, which is a reasonable error budget for a data pipeline.",
+      "hint": "The analytics team told you exactly what they need: data within 15 minutes. Your SLI should measure that directly."
+    }
+  ]
+}
