@@ -1,0 +1,129 @@
+{
+  "id": "cloud-cost-allocation-tags",
+  "title": "Cloud Cost Allocation Tags Across AWS, GCP, and Azure",
+  "description": "Learn how to set up consistent cost allocation tagging strategies across multi-cloud environments for accurate chargeback and showback reporting.",
+  "category": "FinOps",
+  "icon": "Tags",
+  "difficulty": "intermediate",
+  "estimatedTime": "20 minutes",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "green",
+    "gradientFrom": "from-green-500",
+    "gradientTo": "to-emerald-600"
+  },
+  "cards": [
+    {
+      "id": "why-cost-allocation-tags",
+      "front": "Why do teams end up with surprise cloud bills even when they have budgets set up?",
+      "back": "Because without cost allocation tags, you can see total spend but not who or what is driving it. Tags let you break costs down by team, project, environment, or service -- so you can answer 'why did our bill jump 40%?' in minutes instead of days.",
+      "category": "Fundamentals",
+      "tags": ["finops", "tagging", "cloud-costs"]
+    },
+    {
+      "id": "chargeback-vs-showback",
+      "front": "What is the difference between chargeback and showback in cloud cost management?",
+      "back": "Chargeback actually bills each team or business unit for their cloud usage -- real money moves between budgets. Showback just reports costs per team for visibility without transferring funds. Most orgs start with showback because it is less politically messy.",
+      "category": "Fundamentals",
+      "tags": ["finops", "chargeback", "showback"]
+    },
+    {
+      "id": "tag-vs-label-terminology",
+      "front": "What do AWS, GCP, and Azure each call their resource metadata key-value pairs for cost tracking?",
+      "back": "AWS and Azure call them **tags**. GCP calls them **labels**. They work the same way -- key-value pairs attached to resources. GCP also has a separate concept called 'tags' used for firewall rules, which is confusing. For cost allocation, use GCP labels.",
+      "category": "Fundamentals",
+      "tags": ["multi-cloud", "tagging", "terminology"]
+    },
+    {
+      "id": "minimum-tag-set",
+      "front": "What is a good minimum set of cost allocation tags that works across all three major clouds?",
+      "back": "Start with these five:\n- `environment` (prod, staging, dev)\n- `team` or `cost-center` (who owns it)\n- `project` (what initiative)\n- `service` (which application component)\n- `managed-by` (terraform, manual, pulumi)\n\nKeep the list short. Every tag you add is one more thing people forget to apply.",
+      "category": "Strategy",
+      "tags": ["tagging", "best-practices", "multi-cloud"]
+    },
+    {
+      "id": "tag-naming-conventions",
+      "front": "Why should you enforce a strict naming convention for tags across clouds, and what format works best?",
+      "back": "Without a convention, you end up with `Environment`, `env`, `ENV`, and `environment` -- all meaning the same thing but impossible to aggregate. Use lowercase with hyphens: `cost-center`, `managed-by`. Pick one format and enforce it everywhere. AWS tags are case-sensitive, so `Env` and `env` are different tags.",
+      "category": "Strategy",
+      "tags": ["tagging", "naming-conventions", "best-practices"]
+    },
+    {
+      "id": "aws-activate-cost-tags",
+      "front": "You added tags to your AWS resources but they don't show up in Cost Explorer. What did you forget?",
+      "back": "You need to activate tags for cost allocation in the AWS Billing console. Go to **Billing > Cost Allocation Tags** and activate each tag. It takes up to 24 hours for tags to appear in cost reports.\n\n```bash\naws ce list-cost-allocation-tags \\\n  --status Active\n```\n\nOnly activated tags appear in Cost Explorer and CUR (Cost and Usage Reports).",
+      "category": "AWS",
+      "tags": ["aws", "cost-allocation", "tagging"]
+    },
+    {
+      "id": "aws-tag-policies",
+      "front": "How do you enforce tagging standards across all AWS accounts in an organization?",
+      "back": "Use **AWS Tag Policies** in AWS Organizations. They enforce allowed tag keys and values across member accounts.\n\n```json\n{\n  \"tags\": {\n    \"environment\": {\n      \"tag_key\": { \"@@assign\": \"environment\" },\n      \"tag_value\": {\n        \"@@assign\": [\"prod\", \"staging\", \"dev\"]\n      },\n      \"enforced_for\": {\n        \"@@assign\": [\"ec2:instance\", \"s3:bucket\"]\n      }\n    }\n  }\n}\n```\n\nAttach the policy to the OU or account where you want it enforced.",
+      "category": "AWS",
+      "tags": ["aws", "tag-policies", "enforcement"]
+    },
+    {
+      "id": "gcp-labels-cost",
+      "front": "How do you apply labels in GCP and see them in billing reports?",
+      "back": "Add labels to resources via gcloud:\n\n```bash\ngcloud compute instances update my-vm \\\n  --update-labels=team=platform,environment=prod\n```\n\nLabels appear automatically in BigQuery billing export. No activation step needed (unlike AWS). Export billing to BigQuery, then query:\n\n```sql\nSELECT labels.value AS team,\n       SUM(cost) AS total_cost\nFROM `project.dataset.gcp_billing_export`\nLEFT JOIN UNNEST(labels) AS labels\n  ON labels.key = 'team'\nGROUP BY team\n```",
+      "category": "GCP",
+      "tags": ["gcp", "labels", "billing"]
+    },
+    {
+      "id": "azure-cost-tags",
+      "front": "How do you enforce required tags on Azure resources at the subscription or resource group level?",
+      "back": "Use **Azure Policy** with the built-in 'Require a tag' definition:\n\n```bash\naz policy assignment create \\\n  --name 'require-environment-tag' \\\n  --policy '/providers/Microsoft.Authorization/policyDefinitions/871b6d14-10aa-478d-b466-208cb7424adc' \\\n  --params '{\"tagName\": {\"value\": \"environment\"}}' \\\n  --scope '/subscriptions/<sub-id>'\n```\n\nThis blocks resource creation if the tag is missing. Use 'audit' effect first to find untagged resources before switching to 'deny'.",
+      "category": "Azure",
+      "tags": ["azure", "policy", "tagging"]
+    },
+    {
+      "id": "tag-inheritance",
+      "front": "If you tag an AWS resource group or Azure subscription, do child resources automatically inherit those tags?",
+      "back": "Not by default on any cloud.\n\n- **AWS**: No inheritance. Each resource must be tagged individually. You can use Tag Editor to bulk-tag.\n- **Azure**: Resource groups have tags, but resources inside do NOT inherit them. Use Azure Policy with 'modify' effect to copy tags down.\n- **GCP**: Projects have labels, but resources don't inherit them either.\n\nThis is the #1 reason orgs end up with untagged resources. Automate tag propagation.",
+      "category": "Multi-Cloud",
+      "tags": ["tagging", "inheritance", "multi-cloud"]
+    },
+    {
+      "id": "terraform-default-tags",
+      "front": "How do you make sure every resource created by Terraform in AWS gets a standard set of tags?",
+      "back": "Use `default_tags` in the AWS provider block:\n\n```hcl\nprovider \"aws\" {\n  region = \"us-east-1\"\n  default_tags {\n    tags = {\n      environment = var.environment\n      team        = var.team\n      managed-by  = \"terraform\"\n      project     = var.project\n    }\n  }\n}\n```\n\nEvery resource created by this provider gets these tags automatically. No need to add `tags {}` on each resource.",
+      "category": "Automation",
+      "tags": ["terraform", "tagging", "aws", "iac"]
+    },
+    {
+      "id": "find-untagged-resources",
+      "front": "How do you find all untagged resources in an AWS account?",
+      "back": "Use AWS Resource Groups Tagging API:\n\n```bash\naws resourcegroupstaggingapi get-resources \\\n  --tags-per-page 100 \\\n  | jq '[.ResourceTagMappingList[] | select(.Tags | length == 0)] | length'\n```\n\nOr use AWS Config with a rule like `required-tags` to continuously audit. For a quick count, AWS Tag Editor in the console lets you search for resources missing specific tags across all regions.",
+      "category": "Automation",
+      "tags": ["aws", "untagged", "audit"]
+    },
+    {
+      "id": "cost-allocation-report-delay",
+      "front": "You tagged a resource today. When will it show up in cost allocation reports on each cloud?",
+      "back": "- **AWS**: Up to 24 hours after tag activation. Tags only apply to costs going forward -- they are NOT retroactive.\n- **GCP**: Labels appear in BigQuery billing export within a few hours. Also not retroactive.\n- **Azure**: Tags show in Cost Management within 24-48 hours. Not retroactive.\n\nKey takeaway: tag early. Every day without tags is a day of costs you can never attribute.",
+      "category": "Multi-Cloud",
+      "tags": ["billing", "tagging", "multi-cloud"]
+    },
+    {
+      "id": "tag-compliance-cicd",
+      "front": "How do you prevent untagged resources from being deployed through your CI/CD pipeline?",
+      "back": "Add a policy check in your pipeline before `terraform apply`:\n\n```bash\n# Using OPA/Conftest\nconftest test --policy policy/ tfplan.json\n```\n\nExample Rego policy:\n```rego\ndeny[msg] {\n  resource := input.resource_changes[_]\n  not resource.change.after.tags.environment\n  msg := sprintf(\"%s missing 'environment' tag\", [resource.address])\n}\n```\n\nFail the pipeline if required tags are missing. This catches issues before they hit production.",
+      "category": "Automation",
+      "tags": ["cicd", "opa", "tagging", "enforcement"]
+    },
+    {
+      "id": "shared-resource-tagging",
+      "front": "How do you allocate costs for shared resources like a centralized load balancer or a shared VPC?",
+      "back": "Three common approaches:\n\n1. **Tag as 'shared-infra'** and split costs proportionally across teams based on usage metrics\n2. **Use cloud-native splitting** -- AWS lets you split shared costs in CUR using allocation rules\n3. **Tag with the platform team** that owns it and treat it as a platform cost\n\nDon't try to split every penny. Allocate 80% accurately and call it good. Chasing 100% accuracy costs more than the savings.",
+      "category": "Strategy",
+      "tags": ["finops", "shared-costs", "tagging"]
+    },
+    {
+      "id": "gcp-project-vs-labels",
+      "front": "In GCP, when should you use separate projects for cost isolation instead of labels?",
+      "back": "Use **separate projects** when you need hard billing boundaries, different IAM permissions, or quota isolation. Use **labels** when you just need to slice costs in reports.\n\nRule of thumb: one project per environment per service (e.g., `myapp-prod`, `myapp-staging`). Then use labels for finer breakdowns like `team` and `feature` within each project. Projects give you budget alerts and IAM boundaries that labels cannot.",
+      "category": "GCP",
+      "tags": ["gcp", "projects", "labels", "cost-isolation"]
+    }
+  ]
+}
