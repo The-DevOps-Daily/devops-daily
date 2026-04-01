@@ -153,11 +153,19 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 ```
 
+## What the Claude Code Creator Said
+
+Boris Cherny, the creator of Claude Code, [responded directly on X](https://x.com/bcherny/status/2039207155069505693): "It was human error. Our deploy process has a few manual steps, and we didn't do one of the steps correctly."
+
+What he said next is the most interesting part for DevOps teams: "The counter-intuitive answer is to solve the problem by finding ways to go faster, rather than introducing more process. In this case more automation and claude checking the results."
+
+That is a textbook SRE response. When something breaks because a human missed a step, the fix is not to add another checklist item that a different human will eventually miss. The fix is to remove the human from that step entirely. Automate the check. Let CI catch it. In their case, they are even using their own AI to validate the results.
+
 ## The Repeat Problem
 
-The most concerning aspect of this incident is not the leak itself. It is that [this is the second time it happened](https://venturebeat.com/technology/claude-codes-source-code-appears-to-have-leaked-heres-what-we-know/) with the same product.
+The most concerning aspect of this incident is not the leak itself. It is that [this is the second time it happened](https://venturebeat.com/technology/claude-codes-source-code-appears-to-have-leaked-heres-what-we-know/) with the same product, with a nearly identical source map leak in February 2025.
 
-That suggests the fix after the first incident was not systemic. A pipeline check that catches source maps before publish would have prevented the second occurrence. The fact that it happened again means either the check was not added, not enforced, or was bypassed.
+That is exactly why Boris's response matters. After the first incident, the fix was apparently procedural (a manual step). The manual step was missed again. Now they are moving toward automation, which is the correct long-term fix.
 
 For your own team, the takeaway is clear: when you fix a packaging mistake, fix it in the pipeline, not just in the config. A human will forget. A CI step will not.
 
