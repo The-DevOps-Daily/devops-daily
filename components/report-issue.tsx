@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 
 interface ReportIssueProps {
   title?: string;
-  type?: 'post' | 'guide' | 'exercise' | 'quiz' | 'page';
+  type?: 'post' | 'guide' | 'exercise' | 'quiz' | 'page' | 'comparison';
   slug?: string;
   className?: string;
   variant?: 'default' | 'compact' | 'inline';
