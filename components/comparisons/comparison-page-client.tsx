@@ -10,7 +10,6 @@ import { ToolProsCons } from './tool-pros-cons';
 import { DecisionMatrix } from './decision-matrix';
 import { UseCasesSection } from './use-cases-section';
 import { VerdictSection } from './verdict-section';
-import { CommunityPoll } from './community-poll';
 import { ComparisonFAQ } from './comparison-faq';
 import { RelatedContent } from './related-content';
 import {
@@ -191,16 +190,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
             />
           </section>
 
-          {/* Section 9: Community Poll */}
-          <section className="mb-10">
-            <CommunityPoll
-              comparisonId={comparison.id}
-              toolA={comparison.toolA}
-              toolB={comparison.toolB}
-            />
-          </section>
-
-          {/* Section 10: FAQ */}
+          {/* Section 9: FAQ */}
           <section className="mb-10">
             <h2 className="flex items-center gap-2 text-2xl font-bold mb-6">
               <HelpCircle className="w-6 h-6 text-primary" />
