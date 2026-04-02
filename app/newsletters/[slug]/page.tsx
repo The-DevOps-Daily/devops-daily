@@ -102,7 +102,7 @@ export default async function NewsletterDetailPage({
               Subscribe to receive the DevOps Daily newsletter every Monday.
             </p>
             <a
-              href="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&id=fd76a4e93f"
+              href="https://devops-daily.us2.list-manage.com/subscribe?u=d1128776b290ad8d08c02094f&id=fd76a4e93f"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors"

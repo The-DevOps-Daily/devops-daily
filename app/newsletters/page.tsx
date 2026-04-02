@@ -33,7 +33,7 @@ export default async function NewslettersPage() {
           Browse past issues or subscribe to get the next one in your inbox.
         </p>
         <a
-          href="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&id=fd76a4e93f"
+          href="https://devops-daily.us2.list-manage.com/subscribe?u=d1128776b290ad8d08c02094f&id=fd76a4e93f"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
