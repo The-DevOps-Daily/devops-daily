@@ -107,6 +107,8 @@
     "react-hook-form": "^7.71.2",
     "react-resizable-panels": "^4.8.0",
     "recharts": "3.8.0",
+    "remark": "^15.0.1",
+    "remark-html": "^16.0.1",
     "rss-parser": "^3.13.0",
     "simple-git": "^3.32.3",
     "sonner": "^2.0.7",

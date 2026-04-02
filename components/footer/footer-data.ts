@@ -91,6 +91,7 @@ export const contentSection: FooterSection = {
   links: [
     { href: '/posts', label: 'All Posts' },
     { href: '/guides', label: 'Guides' },
+    { href: '/newsletters', label: 'Newsletter Archive' },
     { href: '/categories', label: 'Categories' },
     { href: '/experts', label: 'Hire an Expert' },
     { href: '/about', label: 'About' },

@@ -11,6 +11,7 @@ import { checklists } from '@/content/checklists';
 import { interviewQuestions } from '@/content/interview-questions';
 import { getAllAdventDays } from '@/lib/advent';
 import { getAllComparisons } from '@/lib/comparisons';
+import { getAllNewsletters } from '@/lib/newsletters';
 
 export const dynamic = 'force-static';
 
@@ -18,7 +19,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
   // Get all content
-  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays, comparisons] =
+  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays, comparisons, newsletters] =
     await Promise.all([
       getAllPosts(),
       getAllCategories(),
@@ -30,6 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getAllFlashCardSets(),
       getAllAdventDays(),
       getAllComparisons(),
+      getAllNewsletters(),
     ]);
 
   // Static routes
@@ -194,6 +196,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Newsletter routes
+  const newsletterRoutes = newsletters.map((n) => ({
+    url: `${baseUrl}/newsletters/${n.slug}`,
+    lastModified: new Date(n.date || new Date()),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
   // Advent of DevOps routes
   const adventRoutes = adventDays.map((day) => ({
     url: `${baseUrl}/advent-of-devops/${day.slug}`,
@@ -219,6 +229,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/interview-questions',
     '/advent-of-devops',
     '/comparisons',
+    '/newsletters',
     '/search',
   ].map((path) => ({
     url: `${baseUrl}${path}`,
@@ -242,6 +253,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...interviewRoutes,
     ...adventRoutes,
     ...comparisonRoutes,
+    ...newsletterRoutes,
     ...contentPages,
   ];
 }

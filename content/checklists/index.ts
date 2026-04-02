@@ -12,6 +12,7 @@ import monitoringObservability from './monitoring-observability.json';
 import awsWellArchitected from './aws-well-architected.json';
 import gitopsImplementation from './gitops-implementation.json';
 import progressiveDelivery from './progressive-delivery-feature-flags.json';
+import internalDeveloperPlatform from './internal-developer-platform.json';
 
 export const checklists: Checklist[] = [
   sshHardening as Checklist,
@@ -26,6 +27,7 @@ export const checklists: Checklist[] = [
   awsWellArchitected as Checklist,
   gitopsImplementation as Checklist,
   progressiveDelivery as Checklist,
+  internalDeveloperPlatform as Checklist,
 ];
 
 export const getChecklistBySlug = (slug: string): Checklist | undefined => {

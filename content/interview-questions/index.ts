@@ -27,6 +27,7 @@ import gitWorkflowStrategies from './git-workflow-strategies.json';
 import shellScriptingFundamentals from './shell-scripting-fundamentals.json';
 import configurationManagementBasics from './configuration-management-basics.json';
 import yamlJsonBasics from './yaml-json-basics.json';
+import progressiveDeliveryFeatureFlagsBasics from './progressive-delivery-feature-flags-basics.json';
 // Mid tier
 import kubernetesPodLifecycle from './kubernetes-pod-lifecycle.json';
 import dockerLayersCaching from './docker-layers-caching.json';
@@ -45,6 +46,8 @@ import databaseBackupRecovery from './database-backup-recovery.json';
 import logAggregationStrategies from './log-aggregation-strategies.json';
 import performanceOptimization from './performance-optimization.json';
 import gitopsPrinciples from './gitops-principles.json';
+import progressiveDeliveryCanaryReleases from './progressive-delivery-canary-releases.json';
+import progressiveDeliveryFeatureFlagTypes from './progressive-delivery-feature-flag-types.json';
 // Senior tier
 import linuxProcessDebugging from './linux-process-debugging.json';
 import chaosEngineering from './chaos-engineering.json';
@@ -59,6 +62,8 @@ import capacityPlanning from './capacity-planning.json';
 import platformTeamScaling from './platform-team-scaling.json';
 import finopsCostManagement from './finops-cost-management.json';
 import zeroTrustArchitecture from './zero-trust-architecture.json';
+import progressiveDeliveryFlagArchitecture from './progressive-delivery-flag-architecture.json';
+import progressiveDeliveryRollbackStrategy from './progressive-delivery-rollback-strategy.json';
 
 export const interviewQuestions: InterviewQuestion[] = [
   // Junior tier
@@ -87,6 +92,7 @@ export const interviewQuestions: InterviewQuestion[] = [
   shellScriptingFundamentals as InterviewQuestion,
   configurationManagementBasics as InterviewQuestion,
   yamlJsonBasics as InterviewQuestion,
+  progressiveDeliveryFeatureFlagsBasics as InterviewQuestion,
   // Mid tier
   kubernetesPodLifecycle as InterviewQuestion,
   dockerLayersCaching as InterviewQuestion,
@@ -105,6 +111,8 @@ export const interviewQuestions: InterviewQuestion[] = [
   logAggregationStrategies as InterviewQuestion,
   performanceOptimization as InterviewQuestion,
   gitopsPrinciples as InterviewQuestion,
+  progressiveDeliveryCanaryReleases as InterviewQuestion,
+  progressiveDeliveryFeatureFlagTypes as InterviewQuestion,
   // Senior tier
   linuxProcessDebugging as InterviewQuestion,
   chaosEngineering as InterviewQuestion,
@@ -119,6 +127,8 @@ export const interviewQuestions: InterviewQuestion[] = [
   platformTeamScaling as InterviewQuestion,
   finopsCostManagement as InterviewQuestion,
   zeroTrustArchitecture as InterviewQuestion,
+  progressiveDeliveryFlagArchitecture as InterviewQuestion,
+  progressiveDeliveryRollbackStrategy as InterviewQuestion,
 ];
 
 export const getQuestionBySlug = (slug: string): InterviewQuestion | undefined => {
