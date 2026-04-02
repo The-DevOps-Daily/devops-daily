@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
+import { remark } from 'remark';
+import remarkHtml from 'remark-html';
 
 const NEWSLETTERS_DIR = path.join(process.cwd(), 'content', 'newsletters');
 
@@ -45,13 +47,15 @@ async function loadNewsletters(): Promise<Newsletter[]> {
         const { data, content } = matter(raw);
         const slug = file.replace(/\.md$/, '');
 
+        const rendered = await remark().use(remarkHtml).process(content);
+
         newsletters.push({
           slug,
           title: data.title || `Newsletter ${slug}`,
           date: data.date || '',
           week: data.week || 0,
           year: data.year || 0,
-          content,
+          content: String(rendered),
         });
       } catch {
         // skip invalid files
