@@ -1,0 +1,53 @@
+{
+  "id": "progressive-delivery-flag-architecture",
+  "slug": "progressive-delivery-flag-architecture",
+  "title": "Feature Flag Architecture at Scale",
+  "question": "Your team has 200+ microservices and wants to adopt feature flags across all of them. How would you design the feature flag infrastructure?",
+  "answer": "I'd use a centralized feature flag service rather than having each team roll their own. The architecture has three layers. First, the management plane: a central service where teams define flags, set targeting rules, and configure rollout percentages. This is backed by a database and has a UI for non-engineers to manage flags too. Second, the evaluation layer: lightweight SDKs embedded in each service that evaluate flags locally. The SDKs pull flag definitions from the central service on startup and receive updates via streaming (SSE or WebSockets), not by polling. Evaluations happen in-memory with no network call per flag check, so latency impact is near zero. Third, the data plane: all flag evaluations emit events to a pipeline for analytics, audit trails, and debugging. You need to know which users saw which flag values and when. For resilience, the SDKs cache the last known flag state locally. If the flag service goes down, services keep running with the cached values. You also need a bootstrapping strategy for cold starts when the flag service is unreachable. I'd ship a default config baked into each deployment as a fallback. On the operational side, flag changes should go through the same review process as code changes. A single flag flip can affect all 200 services, so you need change tracking, approval workflows, and the ability to audit who changed what and when.",
+  "explanation": "This question tests system design thinking and whether the candidate has dealt with feature flags beyond a single application. Look for awareness of the latency implications of remote flag evaluation, resilience when the flag service is unavailable, and governance concerns at scale. Strong candidates will talk about caching, local evaluation, and the blast radius of flag changes.",
+  "category": "CI/CD",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "feature-flags",
+    "progressive-delivery",
+    "system-design",
+    "microservices",
+    "ci-cd"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Feature flag service deployment with caching and streaming",
+      "code": "# flag-service/docker-compose.yaml\nservices:\n  flag-service:\n    image: your-org/flag-service:latest\n    ports:\n      - \"8080:8080\"     # REST API for management\n      - \"8081:8081\"     # SSE stream for real-time updates\n    environment:\n      DATABASE_URL: postgres://flags-db:5432/flags\n      REDIS_URL: redis://flags-cache:6379\n      AUDIT_LOG_TOPIC: flag-changes\n    depends_on:\n      - flags-db\n      - flags-cache\n      - kafka\n\n  flags-db:\n    image: postgres:16\n    volumes:\n      - flags-data:/var/lib/postgresql/data\n\n  flags-cache:\n    image: redis:7\n    # Cache for flag definitions - reduces DB load\n    # SDKs also maintain their own in-memory cache"
+    },
+    {
+      "language": "python",
+      "label": "SDK with local evaluation and resilient caching",
+      "code": "import json\nimport threading\nfrom pathlib import Path\n\nclass FeatureFlagClient:\n    def __init__(self, service_url, fallback_path=\"/etc/flags/defaults.json\"):\n        self._flags = {}\n        self._lock = threading.Lock()\n        self._service_url = service_url\n        self._fallback_path = Path(fallback_path)\n\n        # Try to connect; fall back to cached/default config\n        try:\n            self._flags = self._fetch_flags()\n            self._start_streaming()\n        except ConnectionError:\n            self._flags = self._load_fallback()\n\n    def is_enabled(self, flag_key, user_id=None, attributes=None):\n        \"\"\"Evaluate flag locally - no network call.\"\"\"\n        with self._lock:\n            flag = self._flags.get(flag_key)\n            if not flag:\n                return False\n            return self._evaluate(flag, user_id, attributes)\n\n    def _evaluate(self, flag, user_id, attributes):\n        if not flag[\"enabled\"]:\n            return False\n        if flag[\"rollout\"][\"strategy\"] == \"percentage\":\n            bucket = hash(f\"{flag['key']}:{user_id}\") % 100\n            return bucket < flag[\"rollout\"][\"percentage\"]\n        return flag.get(\"default\", False)\n\n    def _load_fallback(self):\n        \"\"\"Load baked-in defaults when flag service is down.\"\"\"\n        if self._fallback_path.exists():\n            return json.loads(self._fallback_path.read_text())\n        return {}"
+    },
+    {
+      "language": "bash",
+      "label": "Audit trail query for flag change investigation",
+      "code": "# Who changed the 'new-checkout' flag in the last 24 hours?\ncurl -s \"http://flag-service:8080/api/audit\" \\\n  --header \"Authorization: Bearer $TOKEN\" \\\n  --data-urlencode \"flag=new-checkout\" \\\n  --data-urlencode \"since=24h\" | jq '.events[] | {\n    time: .timestamp,\n    user: .changed_by,\n    field: .field_changed,\n    old: .old_value,\n    new: .new_value\n  }'\n\n# Output:\n# {\n#   \"time\": \"2026-04-01T14:23:00Z\",\n#   \"user\": \"alice@company.com\",\n#   \"field\": \"rollout.percentage\",\n#   \"old\": \"10\",\n#   \"new\": \"50\"\n# }"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens during a deployment if the feature flag service is completely down?",
+    "How would you prevent a single bad flag change from causing a cascading failure across all 200 services?",
+    "How do you handle feature flags that need to be consistent across multiple services in a single user request?",
+    "Would you build this in-house or use a managed service like LaunchDarkly? What's the tradeoff?"
+  ],
+  "commonMistakes": [
+    "Making a remote API call for every flag evaluation, adding latency to every request in the hot path",
+    "No fallback strategy when the flag service is unavailable, causing all services to fail or default to wrong values",
+    "Treating flag changes as less risky than code changes and skipping review and audit processes"
+  ],
+  "relatedTopics": [
+    "microservices",
+    "system-design",
+    "launchdarkly",
+    "split-io",
+    "distributed-systems"
+  ]
+}
