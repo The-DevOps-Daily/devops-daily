@@ -18,6 +18,7 @@ import {
   ListChecks,
   Layers,
   Gift,
+  Scale,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -171,6 +172,12 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           description: 'Practice DevOps interview Q&A',
           icon: Briefcase,
           badge: 'New',
+        },
+        {
+          label: 'Tool Comparisons',
+          href: '/comparisons',
+          description: 'Side-by-side DevOps tool comparisons',
+          icon: Scale,
         },
       ],
     },

@@ -10,6 +10,7 @@ import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { checklists } from '@/content/checklists';
 import { interviewQuestions } from '@/content/interview-questions';
 import { getAllAdventDays } from '@/lib/advent';
+import { getAllComparisons } from '@/lib/comparisons';
 
 export const dynamic = 'force-static';
 
@@ -17,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
   // Get all content
-  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays] =
+  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays, comparisons] =
     await Promise.all([
       getAllPosts(),
       getAllCategories(),
@@ -28,6 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getActiveGames(),
       getAllFlashCardSets(),
       getAllAdventDays(),
+      getAllComparisons(),
     ]);
 
   // Static routes
@@ -184,6 +186,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Comparison routes
+  const comparisonRoutes = comparisons.map((c) => ({
+    url: `${baseUrl}/comparisons/${c.slug}`,
+    lastModified: new Date(c.updatedDate || c.createdDate),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
   // Advent of DevOps routes
   const adventRoutes = adventDays.map((day) => ({
     url: `${baseUrl}/advent-of-devops/${day.slug}`,
@@ -208,6 +218,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/checklists',
     '/interview-questions',
     '/advent-of-devops',
+    '/comparisons',
     '/search',
   ].map((path) => ({
     url: `${baseUrl}${path}`,
@@ -230,6 +241,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...checklistRoutes,
     ...interviewRoutes,
     ...adventRoutes,
+    ...comparisonRoutes,
     ...contentPages,
   ];
 }

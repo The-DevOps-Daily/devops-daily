@@ -9,6 +9,7 @@ import { getActiveGames } from '@/lib/games';
 import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { checklists } from '@/content/checklists';
 import { interviewQuestions } from '@/content/interview-questions';
+import { getAllComparisons } from '@/lib/comparisons';
 
 export const dynamic = 'force-static';
 
