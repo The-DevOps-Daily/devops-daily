@@ -1,0 +1,46 @@
+{
+  "id": "progressive-delivery-feature-flags-basics",
+  "slug": "progressive-delivery-feature-flags-basics",
+  "title": "Progressive Delivery Basics",
+  "question": "What is progressive delivery and how does it differ from traditional continuous delivery?",
+  "answer": "Progressive delivery is an extension of continuous delivery where new versions are released to a small subset of users first, then gradually rolled out to the full user base while monitoring for problems. Traditional CD typically deploys to all users at once after passing automated tests. Progressive delivery adds a controlled exposure phase between 'deployed' and 'released to everyone.' You ship the code to production but control who sees it using feature flags, canary releases, or traffic splitting. If error rates spike or latency increases for the small group, you stop the rollout and roll back before most users are affected. The key idea is that deploying code and releasing features are two separate steps. You can deploy a feature to production on Monday but only enable it for 1% of users, watch the dashboards for a day, bump to 10%, then 50%, and finally 100%.",
+  "explanation": "This question checks whether the candidate understands the core principle of progressive delivery: decoupling deployment from release. Strong candidates will mention the feedback loop between exposure and observability. Weak candidates will confuse it with blue-green deployments or describe it as just 'deploying slowly.'",
+  "category": "CI/CD",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "progressive-delivery",
+    "feature-flags",
+    "ci-cd",
+    "deployment",
+    "release-management"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Basic feature flag config separating deploy from release",
+      "code": "# feature-flags.yaml\nflags:\n  new-checkout-flow:\n    enabled: true\n    rollout:\n      strategy: percentage\n      percentage: 5        # Only 5% of users see this\n    kill-switch: true       # Instantly disable if something breaks\n    owner: payments-team\n    created: 2026-03-15"
+    },
+    {
+      "language": "python",
+      "label": "Simple progressive rollout check in application code",
+      "code": "from featureflag import client as ff\n\ndef checkout(user, cart):\n    if ff.is_enabled('new-checkout-flow', user_id=user.id):\n        return new_checkout_flow(user, cart)\n    else:\n        return legacy_checkout(user, cart)"
+    }
+  ],
+  "followUpQuestions": [
+    "What signals would you watch to decide whether to increase the rollout percentage?",
+    "How is progressive delivery different from a canary deployment?",
+    "What happens if you deploy a database migration but only 5% of users see the new feature?"
+  ],
+  "commonMistakes": [
+    "Describing progressive delivery as just 'slow deployments' without mentioning observability and feedback loops",
+    "Confusing deploying code with releasing a feature to users",
+    "Thinking feature flags alone are progressive delivery without the monitoring and gradual rollout process"
+  ],
+  "relatedTopics": [
+    "feature-flags",
+    "canary-deployment",
+    "continuous-delivery",
+    "observability"
+  ]
+}

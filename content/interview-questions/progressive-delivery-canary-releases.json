@@ -1,0 +1,46 @@
+{
+  "id": "progressive-delivery-canary-releases",
+  "slug": "progressive-delivery-canary-releases",
+  "title": "Canary Releases in Progressive Delivery",
+  "question": "You're deploying a new version of a critical payment service. Walk me through how you'd set up a canary release for it.",
+  "answer": "First, I'd deploy the new version alongside the current one but route only a small slice of traffic to it, say 2-5%. The canary gets real production traffic while the stable version handles the rest. I'd set up automated analysis on key metrics: error rate, p99 latency, and business metrics like payment success rate. These metrics would be compared between the canary and the stable version. If the canary's error rate is more than 0.5% higher or its p99 latency is more than 50ms worse, the rollout automatically stops and traffic shifts back to the stable version. If metrics look healthy after 15-30 minutes, I'd step up to 10%, then 25%, then 50%, and finally 100%, with the same automated checks at each step. For a payment service specifically, I'd also watch for downstream effects like increased charge disputes or webhook delivery failures. The whole process might take 2-4 hours for a low-risk change or a full day for something significant. Tools like Flagger or Argo Rollouts can automate the traffic shifting and metric analysis so you're not manually watching dashboards.",
+  "explanation": "This scenario-based question forces the candidate to think through a real deployment instead of reciting definitions. Strong answers include specific metrics, thresholds, and time windows. Listen for whether they mention automated rollback, business-level metrics beyond just error rates, and how they'd size the initial canary percentage based on the service's criticality.",
+  "category": "CI/CD",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "canary-deployment",
+    "progressive-delivery",
+    "ci-cd",
+    "kubernetes",
+    "release-management"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Argo Rollouts canary strategy with automated analysis",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: Rollout\nmetadata:\n  name: payment-service\nspec:\n  replicas: 10\n  strategy:\n    canary:\n      steps:\n      - setWeight: 5\n      - pause: { duration: 15m }\n      - analysis:\n          templates:\n          - templateName: payment-success-rate\n      - setWeight: 25\n      - pause: { duration: 15m }\n      - analysis:\n          templates:\n          - templateName: payment-success-rate\n      - setWeight: 50\n      - pause: { duration: 30m }\n      - setWeight: 100\n      canaryMetadata:\n        labels:\n          version: canary\n      stableMetadata:\n        labels:\n          version: stable"
+    },
+    {
+      "language": "yaml",
+      "label": "Prometheus-based canary analysis template",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: AnalysisTemplate\nmetadata:\n  name: payment-success-rate\nspec:\n  metrics:\n  - name: error-rate\n    interval: 2m\n    failureLimit: 3\n    provider:\n      prometheus:\n        address: http://prometheus:9090\n        query: |\n          sum(rate(http_requests_total{\n            service=\"payment-service\",\n            status=~\"5..\",\n            version=\"canary\"\n          }[5m])) /\n          sum(rate(http_requests_total{\n            service=\"payment-service\",\n            version=\"canary\"\n          }[5m]))\n    successCondition: result[0] < 0.005  # Less than 0.5% error rate"
+    }
+  ],
+  "followUpQuestions": [
+    "How would you handle a canary release for a service that processes async jobs instead of HTTP requests?",
+    "What's the minimum amount of traffic you need through the canary before the metrics are statistically meaningful?",
+    "How do you do canary releases when the change involves a database schema migration?"
+  ],
+  "commonMistakes": [
+    "Setting the initial canary percentage too high for a critical service, defeating the purpose of gradual rollout",
+    "Only checking error rates without looking at latency, business metrics, or downstream service health",
+    "Not waiting long enough at each step to collect statistically significant data"
+  ],
+  "relatedTopics": [
+    "argo-rollouts",
+    "flagger",
+    "service-mesh",
+    "observability"
+  ]
+}

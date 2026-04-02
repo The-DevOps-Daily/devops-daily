@@ -1,0 +1,51 @@
+{
+  "id": "progressive-delivery-rollback-strategy",
+  "slug": "progressive-delivery-rollback-strategy",
+  "title": "Progressive Delivery Rollback Strategy",
+  "question": "Your team just enabled a new feature for 20% of users via feature flags, and your monitoring shows a 3x increase in p99 latency for those users. Walk me through exactly what you'd do in the next 10 minutes.",
+  "answer": "First, kill the flag immediately. Don't investigate first, don't wait for more data. Flip the flag to 0% rollout. This should take under 30 seconds if your flag system supports instant updates. With the flag off, confirm that p99 latency drops back to baseline. If it does, the bleeding has stopped and you can investigate calmly. If latency stays high even after disabling the flag, you have a bigger problem - the feature may have caused a state change (corrupted cache, filled a queue, triggered a slow database migration). In that case, check downstream systems: is a queue backing up, did the feature write bad data, is a connection pool exhausted? Next, send a quick incident notification to the team with what happened and that the flag is off. Then investigate the root cause. Pull up traces from the canary cohort. Compare slow requests against the baseline. Often the problem is an N+1 query, a missing index for a new query pattern, or an external API call that works fine at 1% but chokes at 20% traffic. Before re-enabling, fix the issue and test it. Don't just bump to 20% again. Restart at 2% and step up more slowly this time. Add the specific metric that caught this problem to your canary analysis automation so it triggers an automatic rollback next time.",
+  "explanation": "This incident-response question tests composure and prioritization under pressure. The strongest signal is whether the candidate's first instinct is to stop the bleeding (disable the flag) before investigating. Weak candidates will say 'I'd look at the logs first' or try to debug while users are still affected. Also listen for awareness that disabling a flag doesn't always fix the damage if the feature caused side effects.",
+  "category": "CI/CD",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "progressive-delivery",
+    "feature-flags",
+    "incident-response",
+    "rollback",
+    "ci-cd"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Emergency flag kill and verification",
+      "code": "# Step 1: Kill the flag immediately\ncurl -X PATCH \"https://flags.internal/api/flags/new-checkout-flow\" \\\n  -H \"Authorization: Bearer $FLAG_TOKEN\" \\\n  -d '{\"rollout\": {\"percentage\": 0}}'\n\n# Step 2: Verify latency is recovering\n# Check p99 over last 5 minutes vs previous hour\ncurl -s \"http://prometheus:9090/api/v1/query\" \\\n  --data-urlencode 'query=\n    histogram_quantile(0.99,\n      rate(http_request_duration_seconds_bucket{\n        service=\"checkout\"\n      }[5m])\n    )' | jq '.data.result[0].value[1]'\n\n# Step 3: Check for lingering damage\n# Queue depth - should be draining, not growing\ncurl -s \"http://prometheus:9090/api/v1/query\" \\\n  --data-urlencode 'query=\n    rabbitmq_queue_messages{queue=\"checkout-events\"}' \\\n  | jq '.data.result[0].value[1]'"
+    },
+    {
+      "language": "yaml",
+      "label": "Automated rollback rule in Argo Rollouts",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: AnalysisTemplate\nmetadata:\n  name: latency-check\nspec:\n  metrics:\n  - name: p99-latency\n    interval: 1m\n    count: 5\n    failureLimit: 2         # 2 failures out of 5 checks = auto rollback\n    provider:\n      prometheus:\n        address: http://prometheus:9090\n        query: |\n          histogram_quantile(0.99,\n            rate(http_request_duration_seconds_bucket{\n              service=\"checkout\",\n              version=\"canary\"\n            }[2m])\n          )\n    # Fail if canary p99 is more than 3x the stable version\n    successCondition: \"result[0] < 0.9\"\n    failureCondition: \"result[0] >= 0.9\""
+    },
+    {
+      "language": "python",
+      "label": "Post-incident: automated flag rollback on metric breach",
+      "code": "# progressive_delivery/auto_rollback.py\nimport requests\nfrom prometheus_client import CollectorRegistry\n\ndef check_and_rollback(flag_key, metric_query, threshold, flag_service_url):\n    \"\"\"Auto-disable flag if metric exceeds threshold.\"\"\"\n    result = requests.get(\n        \"http://prometheus:9090/api/v1/query\",\n        params={\"query\": metric_query}\n    ).json()\n\n    current_value = float(result[\"data\"][\"result\"][0][\"value\"][1])\n\n    if current_value > threshold:\n        # Kill the flag\n        requests.patch(\n            f\"{flag_service_url}/api/flags/{flag_key}\",\n            json={\"rollout\": {\"percentage\": 0}},\n            headers={\"Authorization\": f\"Bearer {FLAG_TOKEN}\"}\n        )\n        # Alert the team\n        requests.post(SLACK_WEBHOOK, json={\n            \"text\": f\":rotating_light: Auto-rolled back flag `{flag_key}`. \"\n                    f\"Metric breached threshold: {current_value:.2f} > {threshold}\"\n        })\n        return False\n    return True"
+    }
+  ],
+  "followUpQuestions": [
+    "What if the feature flag service itself is down and you can't disable the flag remotely?",
+    "How would you handle a rollback if the feature wrote data in a new format that the old code can't read?",
+    "At what rollout percentage would you trust automated rollback versus requiring a human decision?"
+  ],
+  "commonMistakes": [
+    "Trying to debug the issue before disabling the flag, leaving users impacted while investigating",
+    "Assuming that disabling the flag fully reverts the system, ignoring state changes like database writes or queue messages",
+    "Re-enabling the flag at the same percentage after fixing the bug instead of starting the rollout over from a small percentage"
+  ],
+  "relatedTopics": [
+    "incident-response",
+    "observability",
+    "automated-rollback",
+    "canary-analysis"
+  ]
+}
