@@ -1,0 +1,305 @@
+{
+  "id": "pulumi-vs-cdk",
+  "slug": "pulumi-vs-cdk",
+  "title": "Pulumi vs AWS CDK",
+  "description": "A detailed comparison of Pulumi and AWS CDK for Infrastructure as Code using general-purpose programming languages. Covers cloud support, language options, constructs, testing, and real-world use cases to help you choose the right developer-friendly IaC tool.",
+  "category": "Infrastructure as Code",
+  "tags": [
+    "Pulumi",
+    "AWS CDK",
+    "IaC",
+    "TypeScript",
+    "Infrastructure",
+    "DevOps"
+  ],
+  "createdDate": "2026-05-26T10:00:00Z",
+  "updatedDate": "2026-05-26T10:00:00Z",
+  "estimatedReadTime": "11 min read",
+  "introduction": "Both Pulumi and AWS CDK share the same fundamental idea: let developers define infrastructure using real programming languages instead of YAML, JSON, or domain-specific languages. They both support TypeScript, Python, Go, Java, and C#. They both let you use loops, conditionals, classes, and functions to build reusable infrastructure abstractions. But under the hood, they work very differently.\n\nAWS CDK (Cloud Development Kit), launched in 2019, is Amazon's answer to the verbosity of CloudFormation. You write infrastructure in a supported language, and CDK synthesizes it into CloudFormation templates that get deployed through the CloudFormation service. This means you get the developer experience of TypeScript or Python with the deployment reliability of CloudFormation - automatic rollback, drift detection, and managed state. CDK has a rich construct library with L1 (raw CloudFormation), L2 (opinionated defaults), and L3 (patterns) abstraction levels.\n\nPulumi, launched in 2018, takes a different approach. Instead of synthesizing to an intermediate format, Pulumi talks directly to cloud provider APIs through its own engine. This means Pulumi is not limited to AWS - it supports GCP, Azure, Kubernetes, and 100+ other providers. Pulumi manages its own state (via Pulumi Cloud, S3, or other backends) and has its own component model for building reusable abstractions.\n\nThe choice between these two tools often comes down to whether you are building exclusively on AWS or across multiple clouds. CDK gives you the deepest AWS integration because it is CloudFormation under the hood. Pulumi gives you the broadest cloud coverage with a consistent experience. Both tools are actively developed and have growing communities in 2026.\n\nThis comparison examines the practical differences across 11 dimensions and walks through concrete scenarios to help you pick the right tool. We will not pretend one is universally better - the right choice depends entirely on your cloud strategy and team context.",
+  "toolA": {
+    "name": "Pulumi",
+    "icon": "Code",
+    "website": "https://www.pulumi.com",
+    "description": "A modern IaC platform that lets you define infrastructure using general-purpose programming languages. Supports 100+ cloud providers through its own engine and manages state via Pulumi Cloud or self-hosted backends.",
+    "color": "#F7BF2A",
+    "pros": [
+      "Multi-cloud support with 100+ native providers plus Terraform provider bridge",
+      "Direct API communication without intermediate template synthesis",
+      "Built-in secrets management with per-value encryption in state",
+      "Apache 2.0 open-source license for the engine",
+      "Pulumi AI generates infrastructure code from natural language descriptions",
+      "Strong component model for building and publishing reusable infrastructure packages",
+      "Supports automation API for embedding Pulumi in custom tooling and workflows"
+    ],
+    "cons": [
+      "Smaller community and fewer examples compared to CDK for AWS-specific patterns",
+      "Pulumi Cloud is practically required for team collaboration and state management",
+      "Provider SDK updates can lag behind cloud provider API releases",
+      "Debugging errors can be confusing when runtime exceptions mix with provider errors",
+      "Fewer high-level abstractions compared to CDK's L2/L3 construct library for AWS"
+    ]
+  },
+  "toolB": {
+    "name": "AWS CDK",
+    "icon": "Blocks",
+    "website": "https://aws.amazon.com/cdk/",
+    "description": "AWS Cloud Development Kit is an open-source framework that lets you define AWS infrastructure using familiar programming languages. It synthesizes to CloudFormation templates, giving you the developer experience of code with the deployment engine of CloudFormation.",
+    "color": "#FF9900",
+    "pros": [
+      "Rich L2 construct library with smart defaults that reduce boilerplate for common AWS patterns",
+      "Synthesizes to CloudFormation - gets automatic rollback, drift detection, and managed state",
+      "Day-one support for new AWS services through L1 constructs auto-generated from CloudFormation spec",
+      "No state management overhead - CloudFormation handles it on the AWS side",
+      "Large and active community with extensive examples for AWS-specific patterns",
+      "CDK Pipelines provides a self-mutating CI/CD pipeline construct out of the box"
+    ],
+    "cons": [
+      "AWS-only - CDKTF exists for Terraform but is a separate project with different ergonomics",
+      "CloudFormation limits apply: 500 resources per stack, 1MB template size",
+      "Synthesis step adds complexity and can produce hard-to-debug CloudFormation errors",
+      "L1 constructs (raw CloudFormation) are verbose and lack the ergonomics of L2s",
+      "Breaking changes between CDK major versions have caused upgrade pain",
+      "cdk diff output is less detailed than Pulumi preview for complex changes"
+    ]
+  },
+  "features": [
+    {
+      "name": "Cloud Provider Support",
+      "category": "Providers & Scope",
+      "toolA": {
+        "value": "100+ native providers; AWS, GCP, Azure, Kubernetes, and SaaS services",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "AWS-only natively; CDKTF bridges to Terraform providers but is a separate tool",
+        "rating": "bad"
+      }
+    },
+    {
+      "name": "Supported Languages",
+      "category": "Language & Syntax",
+      "toolA": {
+        "value": "TypeScript, Python, Go, C#, Java, YAML",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "TypeScript, Python, Go, C#, Java",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Deployment Engine",
+      "category": "Architecture",
+      "toolA": {
+        "value": "Pulumi engine communicates directly with cloud provider APIs",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Synthesizes to CloudFormation templates deployed via CloudFormation service",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "State Management",
+      "category": "State & Backend",
+      "toolA": {
+        "value": "Pulumi Cloud (default), S3, Azure Blob, GCS, or local filesystem",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Managed by CloudFormation - no state files to configure or maintain",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Abstraction Model",
+      "category": "Code Organization",
+      "toolA": {
+        "value": "Component resources as classes; published via npm, pip, or Go modules",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "L1/L2/L3 constructs with tiered abstraction; Construct Hub for discovery",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "AWS Service Coverage",
+      "category": "Providers & Scope",
+      "toolA": {
+        "value": "Good coverage but new AWS features can lag; uses Terraform bridge for gaps",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Complete day-one coverage via auto-generated L1 constructs from CloudFormation spec",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Change Preview",
+      "category": "Operations",
+      "toolA": {
+        "value": "pulumi preview shows detailed resource-level diffs with property changes",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "cdk diff shows construct-level changes; CloudFormation change sets for deployment",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Testing",
+      "category": "Testing & Quality",
+      "toolA": {
+        "value": "Native unit testing with mocks in Jest, pytest, Go test; property testing",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Assertions library for CDK constructs; snapshot testing; fine-grained assertions",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Secrets Management",
+      "category": "Security",
+      "toolA": {
+        "value": "Built-in per-value encryption with passphrase, AWS KMS, or Vault",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Relies on AWS Secrets Manager, SSM Parameter Store, or external tools",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Rollback Behavior",
+      "category": "Operations",
+      "toolA": {
+        "value": "No automatic rollback; failed deployments leave partial state to resolve",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "Automatic CloudFormation rollback on stack creation or update failure",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "CI/CD Integration",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "GitHub Actions, GitLab CI, Pulumi Deployments; automation API for custom workflows",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "CDK Pipelines (self-mutating), CodePipeline, GitHub Actions via cdk-nag and cdk-diff",
+        "rating": "good"
+      }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "TypeScript team building a serverless application on AWS with API Gateway, Lambda, and DynamoDB",
+      "recommendation": "toolB",
+      "explanation": "CDK's L2 constructs for API Gateway, Lambda, and DynamoDB have smart defaults and built-in integrations. For example, granting a Lambda function read access to a DynamoDB table is a single method call. The CDK Pipelines construct also provides a self-mutating CI/CD pipeline that deploys your application alongside your infrastructure."
+    },
+    {
+      "scenario": "Platform team managing infrastructure across AWS, GCP, and Kubernetes clusters",
+      "recommendation": "toolA",
+      "explanation": "Pulumi is the only option here. CDK is AWS-only, so managing GCP resources or Kubernetes manifests requires a separate tool. Pulumi lets you define AWS VPCs, GKE clusters, and Kubernetes deployments in the same program with proper dependency ordering across providers."
+    },
+    {
+      "scenario": "Team that wants infrastructure code with no state management burden",
+      "recommendation": "toolB",
+      "explanation": "CDK synthesizes to CloudFormation, which means AWS manages all state tracking. You never configure a backend, worry about state locking, or deal with state file corruption. Pulumi requires either Pulumi Cloud or a self-managed backend, which adds operational overhead."
+    },
+    {
+      "scenario": "Organization with strict security requirements needing encrypted secrets in infrastructure state",
+      "recommendation": "toolA",
+      "explanation": "Pulumi encrypts secret values directly in state using your choice of encryption provider (passphrase, AWS KMS, Azure Key Vault, GCP KMS, or HashiCorp Vault). CDK relies on CloudFormation, which does not encrypt parameter values in stack state. You need to use AWS Secrets Manager or SSM Parameter Store separately."
+    },
+    {
+      "scenario": "AWS-focused team that wants the richest library of pre-built infrastructure patterns",
+      "recommendation": "toolB",
+      "explanation": "CDK's Construct Hub has thousands of community-contributed constructs, and the official L2 library covers almost every AWS service with opinionated defaults. Pulumi has fewer pre-built AWS-specific abstractions, so you often end up writing more boilerplate for common patterns."
+    },
+    {
+      "scenario": "Team building a self-service developer platform that provisions infrastructure across multiple cloud accounts",
+      "recommendation": "toolA",
+      "explanation": "Pulumi's Automation API lets you embed infrastructure provisioning into custom applications, CLIs, or web portals. You can programmatically create stacks, set configurations, and run deployments from your own code. CDK does not have an equivalent API for embedding in custom tooling."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Can I migrate from CDK to Pulumi without recreating resources?",
+      "answer": "Yes. Since CDK deploys through CloudFormation, your resources exist as regular AWS resources. You can use pulumi import to adopt them into Pulumi state. The tricky part is removing them from CloudFormation management without deleting them - you need to set DeletionPolicy: Retain in your CDK constructs before destroying the CloudFormation stack. Pulumi also has tooling to help convert CDK code to Pulumi programs."
+    },
+    {
+      "question": "What is CDKTF and how does it compare to Pulumi?",
+      "answer": "CDKTF (CDK for Terraform) uses the CDK construct programming model but synthesizes to Terraform JSON instead of CloudFormation. This gives you multi-cloud support through Terraform providers while using CDK-style constructs. However, CDKTF is less mature than both CDK and Pulumi, has a smaller community, and the synthesis-to-Terraform step can introduce its own debugging challenges. If you want a programming-language IaC tool with multi-cloud support, Pulumi is the more mature choice."
+    },
+    {
+      "question": "Which tool has better TypeScript support?",
+      "answer": "Both have excellent TypeScript support with full type checking and autocompletion. CDK has a slight edge for AWS because its L2 constructs provide richer TypeScript interfaces with builder-pattern methods and typed property objects. Pulumi's TypeScript experience is very good across all providers but the type definitions can sometimes be less ergonomic for complex AWS resources."
+    },
+    {
+      "question": "Do CloudFormation limits affect CDK?",
+      "answer": "Yes. Since CDK synthesizes to CloudFormation, all CloudFormation limits apply. The 500-resource limit per stack is the most common pain point for large CDK applications. You can work around it by splitting your application into multiple stacks, but this adds cross-stack reference complexity. Pulumi does not have these limits since it communicates directly with cloud APIs."
+    },
+    {
+      "question": "Is Pulumi free to use?",
+      "answer": "The Pulumi engine is Apache 2.0 open source and free. You can self-manage state using S3 or other backends at no cost. Pulumi Cloud has a free individual tier that includes state management, secrets encryption, and deployment history. Team and enterprise tiers with RBAC, audit logs, and policy enforcement are paid. For personal projects and small teams, you can use Pulumi without paying anything."
+    },
+    {
+      "question": "Can CDK and Pulumi coexist in the same AWS account?",
+      "answer": "Yes. CDK manages resources through CloudFormation stacks and Pulumi manages resources through its own state. As long as each resource is owned by exactly one tool, they do not conflict. Some teams use CDK for application infrastructure (where its L2 constructs shine) and Pulumi for cross-cloud or non-AWS resources."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You are building exclusively on AWS",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need multi-cloud infrastructure management",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the richest library of pre-built AWS abstractions",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need built-in secrets encryption in state",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want zero state management overhead",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want to embed infrastructure provisioning in custom applications",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need automatic rollback on failed deployments",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You care about open-source licensing and avoiding vendor lock-in",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "AWS CDK is the stronger choice for AWS-only teams who want rich abstractions, managed state, and automatic rollback. Pulumi wins when you need multi-cloud support, secrets encryption, or the ability to embed IaC in custom tooling. Both tools deliver on the promise of using real programming languages for infrastructure, but they serve different architectural strategies.",
+    "toolAScore": 4.1,
+    "toolBScore": 4,
+    "recommendation": "Choose Pulumi if you manage infrastructure across multiple clouds or need embedded automation. Choose AWS CDK if you are all-in on AWS and want the deepest construct library with zero state management overhead."
+  },
+  "relatedTags": [
+    "Pulumi",
+    "AWS CDK",
+    "IaC",
+    "TypeScript",
+    "Cloud",
+    "DevOps"
+  ]
+}
