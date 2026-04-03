@@ -53,6 +53,7 @@ export default async function QuizzesPage() {
     <div className="min-h-screen">
       <PageHero
         title="Challenge Yourself, Level Up Your Skills"
+        accentWord="Level Up"
         description="Master DevOps with interactive quizzes designed by industry experts. Test your knowledge, track your progress, and earn achievements as you advance."
         icon={Trophy}
         breadcrumbs={[{ label: 'Quizzes' }]}

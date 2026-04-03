@@ -62,10 +62,10 @@ export async function Hero() {
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
           Learn DevOps by{' '}
-          <span className="text-primary relative">
+          <span className="text-primary relative inline-block">
             doing
-            <svg className="absolute -bottom-1 left-0 w-full h-2 text-primary/30" viewBox="0 0 100 8" preserveAspectRatio="none">
-              <path d="M0 7 Q25 0 50 5 Q75 2 100 6" stroke="currentColor" strokeWidth="2" fill="none" />
+            <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/40" viewBox="0 0 120 12" preserveAspectRatio="none">
+              <path d="M2 9 Q15 2 30 8 Q45 1 60 7 Q75 2 90 9 Q105 4 118 7" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
             </svg>
           </span>,
           <br />

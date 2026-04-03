@@ -42,7 +42,8 @@ export default async function ExercisesPage() {
   return (
     <div className="min-h-screen">
       <PageHero
-        title="Master DevOps Through Real-World Exercises"
+        title="Learn DevOps Through Real-World Exercises"
+        accentWord="Real-World"
         description="Strengthen your DevOps expertise with hands-on exercises designed to simulate real-world environments. Build skills through practice, not theory."
         icon={Target}
         breadcrumbs={[{ label: 'Exercises' }]}

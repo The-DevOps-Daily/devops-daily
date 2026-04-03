@@ -44,6 +44,7 @@ export default async function ComparisonsPage() {
     <div className="min-h-screen">
       <PageHero
         title="DevOps Tool Comparisons"
+        accentWord="Comparisons"
         description="Compare popular DevOps tools side by side. Feature comparison tables, pros and cons, use cases, and honest verdicts."
         icon={Scale}
         breadcrumbs={[{ label: 'Comparisons' }]}

@@ -55,7 +55,8 @@ export default async function FlashcardsPage() {
   return (
     <div className="min-h-screen">
       <PageHero
-        title="Master DevOps Concepts"
+        title="Learn DevOps Concepts"
+        accentWord="Concepts"
         description="Learn and memorize key DevOps concepts with interactive flashcards. Perfect for exam prep, interviews, or daily practice."
         icon={Layers}
         breadcrumbs={[{ label: 'Flashcards' }]}

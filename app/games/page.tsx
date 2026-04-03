@@ -48,6 +48,7 @@ export default async function GamesPage() {
     <div className="min-h-screen">
       <PageHero
         title="DevOps Games & Simulators"
+        accentWord="Simulators"
         description="Master DevOps with interactive games and simulators designed by industry experts. Test your knowledge, track your progress, and earn achievements as you advance."
         icon={Gamepad2}
         breadcrumbs={[{ label: 'Games & Simulators' }]}

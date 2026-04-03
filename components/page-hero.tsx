@@ -9,6 +9,8 @@ interface BreadcrumbItem {
 
 interface PageHeroProps {
   title: string;
+  /** Word to highlight in the title with accent color + underline */
+  accentWord?: string;
   description: string;
   icon?: LucideIcon;
   iconColor?: string;
@@ -20,6 +22,7 @@ interface PageHeroProps {
 
 export function PageHero({
   title,
+  accentWord,
   description,
   icon: Icon,
   iconColor = 'text-primary',
@@ -28,6 +31,27 @@ export function PageHero({
   badge,
   children,
 }: PageHeroProps) {
+  // Build title with optional accent word
+  const renderTitle = () => {
+    if (!accentWord) return title;
+    const idx = title.toLowerCase().indexOf(accentWord.toLowerCase());
+    if (idx === -1) return title;
+    const before = title.slice(0, idx);
+    const word = title.slice(idx, idx + accentWord.length);
+    const after = title.slice(idx + accentWord.length);
+    return (
+      <>
+        {before}
+        <span className="text-primary relative inline-block">
+          {word}
+          <svg className="absolute -bottom-1 left-0 w-full h-2 text-primary/30" viewBox="0 0 100 8" preserveAspectRatio="none">
+            <path d="M0 7 Q20 1 40 5 Q60 0 80 6 Q90 3 100 5" stroke="currentColor" strokeWidth="2" fill="none" />
+          </svg>
+        </span>
+        {after}
+      </>
+    );
+  };
   return (
     <div className="relative border-b border-border/50 overflow-hidden">
       {/* Layered background with depth */}
@@ -113,7 +137,7 @@ export function PageHero({
             )}
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground leading-tight">
-                {title}
+                {renderTitle()}
               </h1>
               <p className="mt-3 text-muted-foreground text-lg leading-relaxed max-w-2xl">
                 {description}
