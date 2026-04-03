@@ -29,8 +29,15 @@ export function PageHero({
   children,
 }: PageHeroProps) {
   return (
-    <div className="border-b border-border/50 bg-muted/20">
-      <div className="container mx-auto px-4 py-10 sm:py-14">
+    <div className="relative border-b border-border/50 overflow-hidden">
+      {/* Subtle background with slight color wash */}
+      <div className="absolute inset-0 bg-muted/30" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-transparent" />
+
+      {/* Top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/40 via-primary/10 to-transparent" />
+
+      <div className="relative container mx-auto px-4 py-10 sm:py-14">
         {/* Breadcrumbs */}
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav aria-label="Breadcrumb" className="mb-6">
@@ -67,7 +74,7 @@ export function PageHero({
           {/* Title with optional icon */}
           <div className="flex items-start gap-4">
             {Icon && (
-              <div className={`mt-1 flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center`}>
+              <div className="mt-1.5 flex-shrink-0 w-11 h-11 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                 <Icon className={`w-5 h-5 ${iconColor}`} />
               </div>
             )}
@@ -78,20 +85,20 @@ export function PageHero({
               <p className="mt-3 text-muted-foreground text-lg leading-relaxed max-w-2xl">
                 {description}
               </p>
+
+              {/* Stats row - inline with description */}
+              {stats && stats.length > 0 && (
+                <div className="flex flex-wrap gap-5 mt-4">
+                  {stats.map((stat, i) => (
+                    <div key={i} className="flex items-baseline gap-1.5 text-sm">
+                      <span className="font-bold text-primary text-lg">{stat.value}</span>
+                      <span className="text-muted-foreground">{stat.label}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Stats row */}
-          {stats && stats.length > 0 && (
-            <div className="flex flex-wrap gap-6 mt-6 pl-14">
-              {stats.map((stat, i) => (
-                <div key={i} className="text-sm">
-                  <span className="font-semibold text-foreground">{stat.value}</span>
-                  <span className="text-muted-foreground ml-1">{stat.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
 
           {/* Optional extra content (filters, CTAs, etc.) */}
           {children && <div className="mt-6">{children}</div>}
