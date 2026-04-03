@@ -1,6 +1,6 @@
 ---
 title: "How to Access a Docker Container's Shell"
-excerpt: 'Learn various ways to get shell access to your Docker containers for debugging, configuration, and maintenance tasks.'
+excerpt: 'Learn how to get into a Docker container shell using exec, attach, and other methods for debugging, configuration, and maintenance.'
 category:
   name: 'Docker'
   slug: 'docker'

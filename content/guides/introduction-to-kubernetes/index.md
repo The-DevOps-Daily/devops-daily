@@ -1,6 +1,6 @@
 ---
 title: Introduction to Kubernetes
-description: Learn how to orchestrate containerized applications at scale with Kubernetes
+description: Kubernetes introduction covering architecture, pods, deployments, services, and scaling for container orchestration
 category:
   name: Kubernetes
   slug: kubernetes

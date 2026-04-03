@@ -61,6 +61,10 @@ export async function generateMetadata({
           alt: guide.title,
         },
       ],
+      publishedTime: guide.publishedAt,
+      modifiedTime: guide.updatedAt || guide.publishedAt,
+      section: guide.category?.name,
+      tags: guide.tags,
     },
     twitter: {
       card: 'summary_large_image',
