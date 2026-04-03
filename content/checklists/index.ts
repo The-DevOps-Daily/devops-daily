@@ -13,6 +13,7 @@ import awsWellArchitected from './aws-well-architected.json';
 import gitopsImplementation from './gitops-implementation.json';
 import progressiveDelivery from './progressive-delivery-feature-flags.json';
 import internalDeveloperPlatform from './internal-developer-platform.json';
+import slosSisErrorBudgets from './slos-slis-error-budgets.json';
 
 export const checklists: Checklist[] = [
   sshHardening as Checklist,
@@ -28,6 +29,7 @@ export const checklists: Checklist[] = [
   gitopsImplementation as Checklist,
   progressiveDelivery as Checklist,
   internalDeveloperPlatform as Checklist,
+  slosSisErrorBudgets as Checklist,
 ];
 
 export const getChecklistBySlug = (slug: string): Checklist | undefined => {
