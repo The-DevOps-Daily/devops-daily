@@ -19,11 +19,10 @@ export async function Hero() {
   const latestPost = posts[0];
 
   return (
-    <div className="relative pb-8 overflow-hidden">
-      {/* Subtle background decoration */}
+    <div className="relative pb-8">
+      {/* Subtle background - fades to transparent at bottom */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.03] to-transparent" />
       </div>
 
       {/* Floating tech icons - right side only */}
@@ -37,8 +36,8 @@ export async function Hero() {
         </div>
       </div>
 
-      {/* Decorative arcs - right side */}
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block pointer-events-none">
+      {/* Decorative arcs - right side, bleeds off edge */}
+      <div className="absolute -right-10 top-1/2 -translate-y-1/2 hidden lg:block pointer-events-none">
         <svg className="w-96 h-96 opacity-[0.03]" viewBox="0 0 400 400" fill="none">
           <circle cx="400" cy="200" r="80" stroke="currentColor" strokeWidth="1" className="text-primary" />
           <circle cx="400" cy="200" r="130" stroke="currentColor" strokeWidth="0.8" className="text-primary" />
