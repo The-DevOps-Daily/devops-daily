@@ -46,7 +46,7 @@ export default async function Home() {
   return (
     <div>
       {/* Full-width hero background */}
-      <div className="relative">
+      <div className="relative overflow-x-hidden">
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-muted/40 via-muted/15 to-transparent" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
         <div className="container px-4 pt-8 mx-auto">
