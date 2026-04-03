@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+
+    <linearGradient id="bombGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#eab308;stop-opacity:1" />
+    </linearGradient>
+
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="bigGlow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Grid pattern -->
+  <g opacity="0.06">
+    <line x1="0" y1="157.5" x2="1200" y2="157.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="315" x2="1200" y2="315" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="472.5" x2="1200" y2="472.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="900" y1="0" x2="900" y2="630" stroke="#94a3b8" stroke-width="1"/>
+  </g>
+
+  <!-- Process tree visualization (left side) -->
+  <!-- Root process -->
+  <circle cx="200" cy="300" r="14" fill="#ef4444" filter="url(#bigGlow)"/>
+
+  <!-- Level 1 -->
+  <line x1="200" y1="300" x2="140" y2="200" stroke="#ef4444" stroke-width="2" opacity="0.4"/>
+  <line x1="200" y1="300" x2="260" y2="200" stroke="#ef4444" stroke-width="2" opacity="0.4"/>
+  <circle cx="140" cy="200" r="10" fill="#f97316" filter="url(#glow)"/>
+  <circle cx="260" cy="200" r="10" fill="#f97316" filter="url(#glow)"/>
+
+  <!-- Level 1 - bottom -->
+  <line x1="200" y1="300" x2="140" y2="400" stroke="#ef4444" stroke-width="2" opacity="0.4"/>
+  <line x1="200" y1="300" x2="260" y2="400" stroke="#ef4444" stroke-width="2" opacity="0.4"/>
+  <circle cx="140" cy="400" r="10" fill="#f97316" filter="url(#glow)"/>
+  <circle cx="260" cy="400" r="10" fill="#f97316" filter="url(#glow)"/>
+
+  <!-- Level 2 -->
+  <line x1="140" y1="200" x2="100" y2="130" stroke="#f97316" stroke-width="1.5" opacity="0.3"/>
+  <line x1="140" y1="200" x2="170" y2="130" stroke="#f97316" stroke-width="1.5" opacity="0.3"/>
+  <line x1="260" y1="200" x2="230" y2="130" stroke="#f97316" stroke-width="1.5" opacity="0.3"/>
+  <line x1="260" y1="200" x2="300" y2="130" stroke="#f97316" stroke-width="1.5" opacity="0.3"/>
+  <circle cx="100" cy="130" r="7" fill="#eab308" filter="url(#glow)"/>
+  <circle cx="170" cy="130" r="7" fill="#eab308" filter="url(#glow)"/>
+  <circle cx="230" cy="130" r="7" fill="#eab308" filter="url(#glow)"/>
+  <circle cx="300" cy="130" r="7" fill="#eab308" filter="url(#glow)"/>
+
+  <!-- Level 2 - bottom -->
+  <line x1="140" y1="400" x2="100" y2="470" stroke="#f97316" stroke-width="1.5" opacity="0.3"/>
+  <line x1="140" y1="400" x2="170" y2="470" stroke="#f97316" stroke-width="1.5" opacity="0.3"/>
+  <line x1="260" y1="400" x2="230" y2="470" stroke="#f97316" stroke-width="1.5" opacity="0.3"/>
+  <line x1="260" y1="400" x2="300" y2="470" stroke="#f97316" stroke-width="1.5" opacity="0.3"/>
+  <circle cx="100" cy="470" r="7" fill="#eab308" filter="url(#glow)"/>
+  <circle cx="170" cy="470" r="7" fill="#eab308" filter="url(#glow)"/>
+  <circle cx="230" cy="470" r="7" fill="#eab308" filter="url(#glow)"/>
+  <circle cx="300" cy="470" r="7" fill="#eab308" filter="url(#glow)"/>
+
+  <!-- Level 3 - scattered small dots -->
+  <circle cx="75" cy="85" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="115" cy="80" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="155" cy="85" r="4" fill="#fde047" opacity="0.6"/>
+  <circle cx="185" cy="80" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="215" cy="85" r="4" fill="#fde047" opacity="0.6"/>
+  <circle cx="250" cy="80" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="285" cy="85" r="4" fill="#fde047" opacity="0.6"/>
+  <circle cx="320" cy="80" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="75" cy="520" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="115" cy="525" r="4" fill="#fde047" opacity="0.6"/>
+  <circle cx="155" cy="520" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="185" cy="525" r="4" fill="#fde047" opacity="0.6"/>
+  <circle cx="215" cy="520" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="250" cy="525" r="4" fill="#fde047" opacity="0.6"/>
+  <circle cx="285" cy="520" r="4" fill="#fde047" opacity="0.7"/>
+  <circle cx="320" cy="525" r="4" fill="#fde047" opacity="0.6"/>
+
+  <!-- Scattered extra dots for chaos effect -->
+  <circle cx="50" cy="250" r="3" fill="#fde047" opacity="0.4"/>
+  <circle cx="340" cy="180" r="3" fill="#fde047" opacity="0.4"/>
+  <circle cx="360" cy="300" r="3" fill="#fde047" opacity="0.4"/>
+  <circle cx="55" cy="350" r="3" fill="#fde047" opacity="0.4"/>
+  <circle cx="340" cy="430" r="3" fill="#fde047" opacity="0.4"/>
+  <circle cx="370" cy="250" r="3" fill="#fde047" opacity="0.3"/>
+
+  <!-- Decorative background circles -->
+  <circle cx="900" cy="120" r="100" fill="#ef4444" opacity="0.03"/>
+  <circle cx="1050" cy="400" r="80" fill="#f97316" opacity="0.03"/>
+  <circle cx="400" cy="550" r="60" fill="#eab308" opacity="0.03"/>
+
+  <!-- Main content -->
+  <g transform="translate(750, 200)">
+    <!-- Warning badge -->
+    <g transform="translate(-100, -70)">
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="#7c2d12" opacity="0.3"/>
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="none" stroke="#ea580c" stroke-width="2"/>
+      <text x="100" y="21" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#fb923c" text-anchor="middle">
+        Interactive Simulator
+      </text>
+    </g>
+
+    <!-- Title -->
+    <text x="0" y="10" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="url(#bombGradient)" text-anchor="middle">
+      Fork Bomb
+    </text>
+    <text x="0" y="70" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="url(#bombGradient)" text-anchor="middle">
+      Simulator
+    </text>
+
+    <!-- Fork bomb code -->
+    <g transform="translate(0, 110)">
+      <rect x="-140" y="-5" width="280" height="38" rx="8" fill="#1e293b" stroke="#374151" stroke-width="1"/>
+      <text x="0" y="22" font-family="ui-monospace, monospace" font-size="24" fill="#ef4444" text-anchor="middle">
+        :() { : | : &amp; } ; :
+      </text>
+    </g>
+
+    <!-- Subtitle -->
+    <text x="0" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">
+      Visualize Exponential Process Growth
+    </text>
+
+    <!-- Features -->
+    <g transform="translate(-130, 210)">
+      <circle cx="0" cy="0" r="5" fill="#ef4444"/>
+      <text x="14" y="5" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#cbd5e1">Process tree visualization</text>
+
+      <circle cx="0" cy="28" r="5" fill="#f97316"/>
+      <text x="14" y="33" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#cbd5e1">Resource exhaustion monitoring</text>
+
+      <circle cx="0" cy="56" r="5" fill="#22c55e"/>
+      <text x="14" y="61" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#cbd5e1">Protection mechanisms</text>
+    </g>
+  </g>
+
+  <!-- devops-daily.com watermark -->
+  <text x="1170" y="610" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569" text-anchor="end">
+    devops-daily.com
+  </text>
+</svg>
