@@ -20,12 +20,6 @@ export async function Hero() {
 
   return (
     <div className="relative pb-8">
-      {/* Background with gentle glow and gradient */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-b from-muted/40 via-muted/20 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-transparent" />
-        <div className="absolute top-20 left-1/4 w-[500px] h-[300px] bg-primary/[0.04] rounded-full blur-[100px]" />
-      </div>
 
       {/* Floating tech icons - right side only */}
       <div className="absolute inset-0 pointer-events-none hidden md:block">

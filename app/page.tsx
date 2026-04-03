@@ -44,8 +44,17 @@ export const metadata: Metadata = {
 
 export default async function Home() {
   return (
-    <div className="container px-4 py-8 mx-auto">
-      <Hero />
+    <div>
+      {/* Full-width hero background */}
+      <div className="relative">
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-muted/40 via-muted/15 to-transparent" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
+        <div className="container px-4 pt-8 mx-auto">
+          <Hero />
+        </div>
+      </div>
+
+      <div className="container px-4 mx-auto">
       <CategoryGrid
         className="my-16"
         limit={8}
@@ -149,6 +158,7 @@ export default async function Home() {
           <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
+      </div>
     </div>
   );
 }
