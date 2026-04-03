@@ -63,7 +63,7 @@ export default async function Home() {
         <div className="mb-8">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Core DevOps Practices</h2>
           <p className="mt-2 text-muted-foreground">
-            The building blocks every DevOps engineer needs to master
+            The building blocks every DevOps engineer should know
           </p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">

@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getAllChecklists, getChecklistBySlug } from '@/lib/checklists';
 import { ChecklistPageClient } from '@/components/checklists/checklist-page-client';
+import { PageHero } from '@/components/page-hero';
+import { ListChecks } from 'lucide-react';
 
 export async function generateStaticParams() {
   const checklists = await getAllChecklists();
@@ -65,5 +67,23 @@ export default async function ChecklistPage(
     notFound();
   }
 
-  return <ChecklistPageClient checklist={checklist} />;
+  return (
+    <>
+      <PageHero
+        title={checklist.title}
+        description={checklist.description}
+        icon={ListChecks}
+        breadcrumbs={[
+          { label: 'Checklists', href: '/checklists' },
+          { label: checklist.title },
+        ]}
+        stats={[
+          { label: 'items', value: checklist.items.length },
+          { label: checklist.difficulty, value: '' },
+          { label: checklist.estimatedTime, value: '' },
+        ].filter(s => s.value !== '')}
+      />
+      <ChecklistPageClient checklist={checklist} />
+    </>
+  );
 }
