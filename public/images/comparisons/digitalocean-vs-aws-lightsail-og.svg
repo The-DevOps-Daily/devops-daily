@@ -47,13 +47,13 @@
 
   <!-- Tool A card -->
   <rect x="40" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(0,128,255,0.3)" stroke-width="1.5"/>
-  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#0080FF" text-anchor="middle" filter="url(#glow)">DigitalOcean</text>
+  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="bold" fill="#0080FF" text-anchor="middle" filter="url(#glow)">DigitalOcean</text>
   <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#0080FF" text-anchor="middle" opacity="0.8">4.3</text>
   <text x="332" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- Tool B card -->
   <rect x="640" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(255,153,0,0.3)" stroke-width="1.5"/>
-  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#FF9900" text-anchor="middle" filter="url(#glow)">AWS Lightsail</text>
+  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="bold" fill="#FF9900" text-anchor="middle" filter="url(#glow)">AWS Lightsail</text>
   <text x="900" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#FF9900" text-anchor="middle" opacity="0.8">3.8</text>
   <text x="932" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 

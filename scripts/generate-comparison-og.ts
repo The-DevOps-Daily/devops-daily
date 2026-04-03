@@ -28,12 +28,35 @@ function generateSVG(comparison: Comparison): string {
   const toolBName = escapeXml(comparison.toolB.name);
   const category = escapeXml(comparison.category);
   const featureCount = comparison.features.length;
-  const toolAColor = comparison.toolA.color;
-  const toolBColor = comparison.toolB.color;
-  const rgbA = hexToRgb(toolAColor);
-  const rgbB = hexToRgb(toolBColor);
 
-  // Just use the verdict scores
+  // Ensure colors have enough contrast against dark background
+  function ensureContrast(hex: string): string {
+    const rgb = hexToRgb(hex);
+    const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b);
+    // If too dark (like #000000 for Vercel), lighten it
+    if (luminance < 80) return '#a0a0ff';
+    // If too bright/washed out (like #FFEC6E, #FBF0DF), make it more saturated
+    if (luminance > 200) {
+      return `rgb(${Math.min(255, rgb.r)}, ${Math.max(0, rgb.g - 40)}, ${Math.max(0, rgb.b - 80)})`;
+    }
+    return hex;
+  }
+
+  const toolAColor = ensureContrast(comparison.toolA.color);
+  const toolBColor = ensureContrast(comparison.toolB.color);
+  const rgbA = hexToRgb(comparison.toolA.color);
+  const rgbB = hexToRgb(comparison.toolB.color);
+
+  // Auto-scale font size for long tool names
+  function fontSize(name: string): number {
+    if (name.length > 20) return 32;
+    if (name.length > 15) return 38;
+    if (name.length > 10) return 46;
+    return 56;
+  }
+
+  const fontSizeA = fontSize(comparison.toolA.name);
+  const fontSizeB = fontSize(comparison.toolB.name);
 
   return `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -84,13 +107,13 @@ function generateSVG(comparison: Comparison): string {
 
   <!-- Tool A card -->
   <rect x="40" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(${rgbA.r},${rgbA.g},${rgbA.b},0.3)" stroke-width="1.5"/>
-  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="${toolAColor}" text-anchor="middle" filter="url(#glow)">${toolAName}</text>
+  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeA}" font-weight="bold" fill="${toolAColor}" text-anchor="middle" filter="url(#glow)">${toolAName}</text>
   <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="${toolAColor}" text-anchor="middle" opacity="0.8">${comparison.verdict.toolAScore}</text>
   <text x="332" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- Tool B card -->
   <rect x="640" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(${rgbB.r},${rgbB.g},${rgbB.b},0.3)" stroke-width="1.5"/>
-  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="${toolBColor}" text-anchor="middle" filter="url(#glow)">${toolBName}</text>
+  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeB}" font-weight="bold" fill="${toolBColor}" text-anchor="middle" filter="url(#glow)">${toolBName}</text>
   <text x="900" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="${toolBColor}" text-anchor="middle" opacity="0.8">${comparison.verdict.toolBScore}</text>
   <text x="932" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 

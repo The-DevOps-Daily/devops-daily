@@ -53,7 +53,7 @@
 
   <!-- Tool B card -->
   <rect x="640" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(255,153,0,0.3)" stroke-width="1.5"/>
-  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#FF9900" text-anchor="middle" filter="url(#glow)">CloudFormation</text>
+  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="bold" fill="#FF9900" text-anchor="middle" filter="url(#glow)">CloudFormation</text>
   <text x="900" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#FF9900" text-anchor="middle" opacity="0.8">3.9</text>
   <text x="932" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 

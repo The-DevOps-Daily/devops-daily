@@ -47,7 +47,7 @@
 
   <!-- Tool A card -->
   <rect x="40" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(36,150,237,0.3)" stroke-width="1.5"/>
-  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#2496ED" text-anchor="middle" filter="url(#glow)">Docker Swarm</text>
+  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="bold" fill="#2496ED" text-anchor="middle" filter="url(#glow)">Docker Swarm</text>
   <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#2496ED" text-anchor="middle" opacity="0.8">3.5</text>
   <text x="332" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 

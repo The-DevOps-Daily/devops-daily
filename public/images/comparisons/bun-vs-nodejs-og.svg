@@ -5,8 +5,8 @@
       <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="glowA" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FBF0DF;stop-opacity:0.15" />
-      <stop offset="100%" style="stop-color:#FBF0DF;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:rgb(251, 200, 143);stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:rgb(251, 200, 143);stop-opacity:0" />
     </linearGradient>
     <linearGradient id="glowB" x1="100%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#339933;stop-opacity:0.15" />
@@ -35,7 +35,7 @@
   <rect width="1200" height="630" fill="url(#grid)"/>
 
   <!-- Top accent lines -->
-  <rect x="0" y="0" width="600" height="4" fill="#FBF0DF"/>
+  <rect x="0" y="0" width="600" height="4" fill="rgb(251, 200, 143)"/>
   <rect x="600" y="0" width="600" height="4" fill="#339933"/>
 
   <!-- Branding top-left -->
@@ -47,8 +47,8 @@
 
   <!-- Tool A card -->
   <rect x="40" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(251,240,223,0.3)" stroke-width="1.5"/>
-  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#FBF0DF" text-anchor="middle" filter="url(#glow)">Bun</text>
-  <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#FBF0DF" text-anchor="middle" opacity="0.8">4.1</text>
+  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="rgb(251, 200, 143)" text-anchor="middle" filter="url(#glow)">Bun</text>
+  <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="rgb(251, 200, 143)" text-anchor="middle" opacity="0.8">4.1</text>
   <text x="332" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- Tool B card -->

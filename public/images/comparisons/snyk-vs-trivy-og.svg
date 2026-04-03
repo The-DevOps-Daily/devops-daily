@@ -5,12 +5,12 @@
       <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="glowA" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4C4A73;stop-opacity:0.15" />
-      <stop offset="100%" style="stop-color:#4C4A73;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#a0a0ff;stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:#a0a0ff;stop-opacity:0" />
     </linearGradient>
     <linearGradient id="glowB" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#1904DA;stop-opacity:0.15" />
-      <stop offset="100%" style="stop-color:#1904DA;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#a0a0ff;stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:#a0a0ff;stop-opacity:0" />
     </linearGradient>
     <filter id="glow">
       <feGaussianBlur stdDeviation="3" result="blur"/>
@@ -35,8 +35,8 @@
   <rect width="1200" height="630" fill="url(#grid)"/>
 
   <!-- Top accent lines -->
-  <rect x="0" y="0" width="600" height="4" fill="#4C4A73"/>
-  <rect x="600" y="0" width="600" height="4" fill="#1904DA"/>
+  <rect x="0" y="0" width="600" height="4" fill="#a0a0ff"/>
+  <rect x="600" y="0" width="600" height="4" fill="#a0a0ff"/>
 
   <!-- Branding top-left -->
   <text x="40" y="50" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="bold" fill="#6366f1" opacity="0.8">devops-daily.com</text>
@@ -47,14 +47,14 @@
 
   <!-- Tool A card -->
   <rect x="40" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(76,74,115,0.3)" stroke-width="1.5"/>
-  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#4C4A73" text-anchor="middle" filter="url(#glow)">Snyk</text>
-  <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#4C4A73" text-anchor="middle" opacity="0.8">4.2</text>
+  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#a0a0ff" text-anchor="middle" filter="url(#glow)">Snyk</text>
+  <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#a0a0ff" text-anchor="middle" opacity="0.8">4.2</text>
   <text x="332" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- Tool B card -->
   <rect x="640" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(25,4,218,0.3)" stroke-width="1.5"/>
-  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#1904DA" text-anchor="middle" filter="url(#glow)">Trivy</text>
-  <text x="900" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#1904DA" text-anchor="middle" opacity="0.8">4.3</text>
+  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#a0a0ff" text-anchor="middle" filter="url(#glow)">Trivy</text>
+  <text x="900" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#a0a0ff" text-anchor="middle" opacity="0.8">4.3</text>
   <text x="932" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- VS badge center -->
