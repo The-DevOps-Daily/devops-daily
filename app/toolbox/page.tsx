@@ -1,4 +1,5 @@
 import { PageHero } from '@/components/page-hero';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
