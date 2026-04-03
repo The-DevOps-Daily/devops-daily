@@ -6,12 +6,12 @@
       <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="toolAGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#D33833;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#D33833;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#43B02A;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#43B02A;stop-opacity:0" />
     </linearGradient>
     <linearGradient id="toolBGrad" x1="100%" y1="0%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:#2088FF;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#2088FF;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#2EAD33;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#2EAD33;stop-opacity:0" />
     </linearGradient>
   </defs>
 
@@ -30,14 +30,14 @@
   <text x="600" y="325" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#a5b4fc" text-anchor="middle">VS</text>
 
   <!-- Tool A name -->
-  <text x="300" y="300" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="bold" fill="#D33833" text-anchor="middle">Jenkins</text>
+  <text x="300" y="300" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="bold" fill="#43B02A" text-anchor="middle">Selenium</text>
 
   <!-- Tool B name -->
-  <text x="900" y="300" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="bold" fill="#2088FF" text-anchor="middle">GitHub Actions</text>
+  <text x="900" y="300" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="bold" fill="#2EAD33" text-anchor="middle">Playwright</text>
 
   <!-- Category badge -->
-  <rect x="550" y="400" width="100" height="36" rx="18" fill="#312e81" stroke="#6366f1" stroke-width="1"/>
-  <text x="600" y="424" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#a5b4fc" text-anchor="middle">CI/CD</text>
+  <rect x="436" y="400" width="328" height="36" rx="18" fill="#312e81" stroke="#6366f1" stroke-width="1"/>
+  <text x="600" y="424" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#a5b4fc" text-anchor="middle">Testing &amp; Automation</text>
 
   <!-- Subtitle -->
   <text x="600" y="480" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Feature Comparison, Pros/Cons, and Verdict</text>
@@ -46,6 +46,6 @@
   <text x="600" y="570" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#6366f1" text-anchor="middle">devops-daily.com</text>
 
   <!-- Top accent line -->
-  <rect x="0" y="0" width="600" height="4" fill="#D33833"/>
-  <rect x="600" y="0" width="600" height="4" fill="#2088FF"/>
+  <rect x="0" y="0" width="600" height="4" fill="#43B02A"/>
+  <rect x="600" y="0" width="600" height="4" fill="#2EAD33"/>
 </svg>

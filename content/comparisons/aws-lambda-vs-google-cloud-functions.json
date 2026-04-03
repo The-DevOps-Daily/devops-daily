@@ -1,0 +1,233 @@
+{
+  "id": "aws-lambda-vs-google-cloud-functions",
+  "slug": "aws-lambda-vs-google-cloud-functions",
+  "title": "AWS Lambda vs Google Cloud Functions",
+  "description": "A detailed comparison of AWS Lambda and Google Cloud Functions for serverless computing. Covers runtime support, cold starts, pricing, integrations, and real-world use cases to help you pick the right serverless platform.",
+  "category": "Serverless",
+  "tags": ["AWS Lambda", "Google Cloud Functions", "Serverless", "FaaS", "Cloud", "DevOps"],
+  "createdDate": "2026-07-14T10:00:00Z",
+  "updatedDate": "2026-07-14T10:00:00Z",
+  "estimatedReadTime": "11 min read",
+  "introduction": "Serverless functions changed how teams think about deploying backend logic. Instead of provisioning servers, configuring auto-scaling groups, and babysitting EC2 instances at 3am, you write a function, deploy it, and the cloud provider handles the rest. In 2026, AWS Lambda and Google Cloud Functions are the two most popular function-as-a-service platforms, each backed by its respective cloud giant's ecosystem.\n\nAWS Lambda launched in 2014 and essentially created the serverless category. Over the past decade-plus, it has grown into a deeply integrated part of the AWS ecosystem, with triggers from over 200 AWS services and support for runtimes ranging from Node.js and Python to custom container images. Lambda's execution model, cold start optimizations with SnapStart and provisioned concurrency, and tight integration with services like API Gateway, SQS, and DynamoDB make it the default choice for teams already invested in AWS.\n\nGoogle Cloud Functions, now in its second generation built on Cloud Run, takes a slightly different approach. GCF v2 functions are essentially Cloud Run services under the hood, which means you get longer timeouts, concurrency within a single instance, and access to the full Cloud Run feature set. Google has also leaned heavily into event-driven architectures with Eventarc, making it straightforward to trigger functions from Pub/Sub, Cloud Storage, Firestore, and dozens of other Google Cloud services.\n\nThe differences between these two platforms go beyond just which cloud you happen to use. They differ in concurrency models, cold start behavior, pricing structures, runtime support, and how tightly they integrate with surrounding services. For teams running multi-cloud or evaluating which cloud to standardize on, these details matter.\n\nThis comparison walks through 12 key dimensions, covers real-world scenarios, and provides a decision matrix to help you figure out which serverless platform fits your workload. We focus on practical differences you will actually feel in production, not marketing bullet points.",
+  "toolA": {
+    "name": "AWS Lambda",
+    "icon": "Zap",
+    "website": "https://aws.amazon.com/lambda",
+    "description": "Amazon's serverless compute service that runs code in response to events and automatically manages the underlying compute resources. The original FaaS platform with the deepest integration into the AWS ecosystem.",
+    "color": "#FF9900",
+    "pros": [
+      "Deepest integration with the AWS ecosystem - triggers from 200+ AWS services",
+      "Mature cold start mitigation with SnapStart (Java) and provisioned concurrency",
+      "Support for custom container images up to 10 GB, not just zip packages",
+      "Lambda@Edge and CloudFront Functions for edge computing use cases",
+      "Extensive monitoring via CloudWatch, X-Ray, and third-party APM tools",
+      "Graviton2 (ARM) support for better price-performance on compute-heavy functions",
+      "Largest serverless community with the most tutorials, examples, and Stack Overflow answers"
+    ],
+    "cons": [
+      "15-minute maximum execution timeout limits long-running workloads",
+      "Single-request-per-instance concurrency model can lead to more cold starts under load",
+      "Pricing can be hard to predict for bursty workloads with provisioned concurrency",
+      "VPC-attached Lambda functions still add latency despite improvements",
+      "CloudWatch Logs can be expensive at high log volumes",
+      "IAM permission model is powerful but complex to configure correctly"
+    ]
+  },
+  "toolB": {
+    "name": "Google Cloud Functions",
+    "icon": "Cloud",
+    "website": "https://cloud.google.com/functions",
+    "description": "Google Cloud's serverless compute platform for event-driven functions. The second generation is built on Cloud Run, offering longer timeouts, concurrency per instance, and access to the full Cloud Run feature set.",
+    "color": "#4285F4",
+    "pros": [
+      "GCF v2 supports concurrency within a single instance, reducing cold starts significantly",
+      "Up to 60-minute timeout in v2, four times longer than Lambda's 15-minute cap",
+      "Built on Cloud Run, so you can graduate functions to full containers without rewriting",
+      "Native integration with Eventarc for unified event routing across Google Cloud",
+      "Simpler pricing model with per-second billing and no separate request charge in v2",
+      "Strong integration with Firebase for mobile and web backend use cases",
+      "Automatic min instances configuration to eliminate cold starts for critical paths"
+    ],
+    "cons": [
+      "Smaller ecosystem compared to Lambda - fewer triggers and third-party integrations",
+      "Fewer supported runtimes out of the box compared to Lambda",
+      "Community and tutorial coverage is significantly smaller than Lambda's",
+      "Eventarc is still maturing and can be less intuitive than Lambda's direct trigger model",
+      "Limited edge computing story compared to Lambda@Edge and CloudFront Functions",
+      "Google Cloud's smaller market share means fewer engineers have production experience with GCF"
+    ]
+  },
+  "features": [
+    {
+      "name": "Maximum Execution Timeout",
+      "category": "Runtime & Limits",
+      "toolA": { "value": "15 minutes per invocation", "rating": "neutral" },
+      "toolB": { "value": "60 minutes per invocation (v2)", "rating": "good" }
+    },
+    {
+      "name": "Concurrency Model",
+      "category": "Runtime & Limits",
+      "toolA": { "value": "One request per instance; scale by adding instances", "rating": "neutral" },
+      "toolB": { "value": "Up to 1000 concurrent requests per instance (v2)", "rating": "good" }
+    },
+    {
+      "name": "Cold Start Performance",
+      "category": "Runtime & Limits",
+      "toolA": { "value": "SnapStart for Java; provisioned concurrency for guaranteed warm starts", "rating": "good" },
+      "toolB": { "value": "Min instances setting; concurrency per instance reduces cold start frequency", "rating": "good" }
+    },
+    {
+      "name": "Supported Runtimes",
+      "category": "Language & Runtime",
+      "toolA": { "value": "Node.js, Python, Java, Go, .NET, Ruby, custom via container images", "rating": "good" },
+      "toolB": { "value": "Node.js, Python, Java, Go, .NET, Ruby, PHP", "rating": "neutral" }
+    },
+    {
+      "name": "Container Image Support",
+      "category": "Language & Runtime",
+      "toolA": { "value": "Up to 10 GB container images from ECR", "rating": "good" },
+      "toolB": { "value": "Supported via Cloud Run backing; standard container deployment", "rating": "good" }
+    },
+    {
+      "name": "Event Sources & Triggers",
+      "category": "Integration",
+      "toolA": { "value": "200+ AWS service integrations including S3, SQS, DynamoDB, API Gateway", "rating": "good" },
+      "toolB": { "value": "Eventarc, Pub/Sub, Cloud Storage, Firestore, HTTP; growing but smaller set", "rating": "neutral" }
+    },
+    {
+      "name": "API Gateway Integration",
+      "category": "Integration",
+      "toolA": { "value": "API Gateway and HTTP API with custom domains, auth, rate limiting", "rating": "good" },
+      "toolB": { "value": "Built-in HTTPS trigger; API Gateway available but less commonly used", "rating": "neutral" }
+    },
+    {
+      "name": "Edge Computing",
+      "category": "Distribution",
+      "toolA": { "value": "Lambda@Edge and CloudFront Functions for CDN-level compute", "rating": "good" },
+      "toolB": { "value": "No direct equivalent; requires separate Cloud CDN or Cloudflare setup", "rating": "bad" }
+    },
+    {
+      "name": "Monitoring & Observability",
+      "category": "Operations",
+      "toolA": { "value": "CloudWatch Logs, X-Ray tracing, third-party APM support", "rating": "good" },
+      "toolB": { "value": "Cloud Logging, Cloud Trace, Cloud Monitoring; integrated but less third-party tooling", "rating": "neutral" }
+    },
+    {
+      "name": "Pricing Model",
+      "category": "Cost",
+      "toolA": { "value": "Per-request + per-GB-second; free tier of 1M requests/month", "rating": "neutral" },
+      "toolB": { "value": "Per-GB-second + CPU-second; v2 no separate request charge; free tier of 2M requests/month", "rating": "good" }
+    },
+    {
+      "name": "Local Development & Testing",
+      "category": "Developer Experience",
+      "toolA": { "value": "SAM CLI, LocalStack, or serverless-offline for local emulation", "rating": "good" },
+      "toolB": { "value": "Functions Framework for local testing; less mature third-party tooling", "rating": "neutral" }
+    },
+    {
+      "name": "Deployment Packaging",
+      "category": "Developer Experience",
+      "toolA": { "value": "Zip files up to 250 MB uncompressed, or container images up to 10 GB", "rating": "good" },
+      "toolB": { "value": "Source deployment or container images; source deploys are simpler but less flexible", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "REST API backend for a web application with unpredictable traffic spikes",
+      "recommendation": "toolA",
+      "explanation": "Lambda's tight integration with API Gateway, proven auto-scaling at massive scale, and the ability to use provisioned concurrency for consistent latency make it the more battle-tested choice for production API backends."
+    },
+    {
+      "scenario": "Long-running data processing jobs triggered by file uploads (10-30 minutes per job)",
+      "recommendation": "toolB",
+      "explanation": "Google Cloud Functions v2 supports up to 60-minute timeouts, while Lambda caps at 15 minutes. For processing jobs that regularly exceed 15 minutes, GCF v2 avoids the need to break work into chunks or move to a different compute service."
+    },
+    {
+      "scenario": "Mobile app backend with Firebase for authentication and real-time database",
+      "recommendation": "toolB",
+      "explanation": "Google Cloud Functions has first-class Firebase integration. Triggering functions from Firestore document changes, Authentication events, or Firebase hosting is seamless and well-documented. The Firebase CLI handles deployment directly."
+    },
+    {
+      "scenario": "Event-driven microservices processing messages from multiple queues and streams",
+      "recommendation": "toolA",
+      "explanation": "Lambda's native integration with SQS, SNS, Kinesis, and EventBridge is more mature and offers better batching controls, dead-letter queue handling, and error retry configuration than GCF's Pub/Sub integration."
+    },
+    {
+      "scenario": "Edge computing for image optimization or A/B testing at the CDN level",
+      "recommendation": "toolA",
+      "explanation": "Lambda@Edge and CloudFront Functions let you run code at AWS edge locations worldwide. Google Cloud Functions has no direct equivalent for CDN-level compute, requiring you to use a separate edge platform."
+    },
+    {
+      "scenario": "Team already running workloads on Google Cloud looking to add serverless without vendor lock-in concerns",
+      "recommendation": "toolB",
+      "explanation": "GCF v2 is built on Cloud Run, which runs standard containers. This means your function code can be packaged as a container and moved to any platform that supports containers, reducing lock-in compared to Lambda's proprietary execution model."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Can I run the same function code on both AWS Lambda and Google Cloud Functions?",
+      "answer": "Not directly without an abstraction layer. Each platform has its own event format, handler signature, and SDK. However, frameworks like the Serverless Framework and SST can abstract some of these differences. If portability matters, write your business logic as a standalone module and keep platform-specific handler code thin."
+    },
+    {
+      "question": "Which platform has better cold start performance in 2026?",
+      "answer": "It depends on the runtime and your configuration. Lambda's SnapStart virtually eliminates cold starts for Java functions, and provisioned concurrency guarantees warm instances for any runtime. GCF v2's concurrency-per-instance model means a single warm instance can handle many concurrent requests, so you experience fewer cold starts overall. For Node.js and Python, cold starts on both platforms are typically under 500ms without special configuration."
+    },
+    {
+      "question": "How do costs compare for a typical API workload doing 10 million requests per month?",
+      "answer": "At 10M requests per month with an average duration of 200ms and 256 MB memory, both platforms cost roughly $15-25/month after free tier. Lambda's separate per-request charge ($0.20 per 1M) adds up at high volumes, while GCF v2 dropped the per-request fee. The actual difference depends heavily on memory allocation, execution duration, and whether you use provisioned concurrency on Lambda."
+    },
+    {
+      "question": "Can Google Cloud Functions v2 really handle the same scale as Lambda?",
+      "answer": "GCF v2 is built on Cloud Run, which supports auto-scaling to thousands of instances. For most workloads, the scale ceiling is similar. Lambda has a documented track record of handling millions of concurrent executions for customers like Netflix and iRobot. If you need proven hyper-scale with documented case studies, Lambda has a longer track record. For typical production workloads, both platforms scale well."
+    },
+    {
+      "question": "What happens when my Lambda function hits the 15-minute timeout?",
+      "answer": "The function execution is terminated and an error is returned. For long-running tasks, you have three options: break the work into smaller chunks using Step Functions, move to AWS Fargate or ECS for longer compute jobs, or switch to Google Cloud Functions v2 which supports up to 60-minute timeouts. Step Functions is the most common pattern for orchestrating multi-step workflows that exceed Lambda's timeout."
+    },
+    {
+      "question": "Is it possible to migrate functions from Lambda to Google Cloud Functions or vice versa?",
+      "answer": "Yes, but it requires code changes. The core business logic can usually be reused, but you will need to rewrite the handler function signature, update event parsing code, replace SDK calls (e.g., AWS SDK to Google Cloud client libraries), and reconfigure triggers. The migration effort is moderate for simple functions and significant for functions deeply integrated with platform-specific services like DynamoDB or Firestore."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "Your team is already heavily invested in the AWS ecosystem",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your team is already running workloads on Google Cloud",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need functions that run longer than 15 minutes",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need edge computing at CDN locations",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want to minimize cold starts without paying for provisioned capacity",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need the widest set of event source integrations",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You are building a Firebase-backed mobile or web app",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want the largest community and the most hiring options for serverless engineers",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "AWS Lambda is the more mature and widely adopted platform with deeper integrations and a larger community. Google Cloud Functions v2 brings compelling features like per-instance concurrency, longer timeouts, and a simpler pricing model. For most teams, the deciding factor is which cloud ecosystem you are already using rather than the platforms' individual merits.",
+    "toolAScore": 4.3,
+    "toolBScore": 4.0,
+    "recommendation": "Choose AWS Lambda if you are in the AWS ecosystem and need maximum integration breadth and community support. Choose Google Cloud Functions if you are on Google Cloud, need longer timeouts, or want the concurrency-per-instance model to reduce cold starts."
+  },
+  "relatedTags": ["AWS Lambda", "Google Cloud Functions", "Serverless", "FaaS", "Cloud", "DevOps"]
+}

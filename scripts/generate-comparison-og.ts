@@ -16,12 +16,38 @@ function escapeXml(text: string): string {
     .replace(/'/g, '&apos;');
 }
 
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
+    : { r: 100, g: 100, b: 200 };
+}
+
+function ensureContrast(hex: string): string {
+  const rgb = hexToRgb(hex);
+  const luminance = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+  if (luminance < 80) return '#94a3f8';
+  if (luminance > 200) {
+    return `rgb(${Math.min(255, rgb.r)}, ${Math.max(0, rgb.g - 40)}, ${Math.max(0, rgb.b - 80)})`;
+  }
+  return hex;
+}
+
+function fontSize(name: string): number {
+  if (name.length > 20) return 30;
+  if (name.length > 15) return 36;
+  if (name.length > 10) return 44;
+  return 52;
+}
+
 function generateSVG(comparison: Comparison): string {
   const toolAName = escapeXml(comparison.toolA.name);
   const toolBName = escapeXml(comparison.toolB.name);
   const category = escapeXml(comparison.category);
-  const toolAColor = comparison.toolA.color;
-  const toolBColor = comparison.toolB.color;
+  const toolAColor = ensureContrast(comparison.toolA.color);
+  const toolBColor = ensureContrast(comparison.toolB.color);
+  const fontSizeA = fontSize(comparison.toolA.name);
+  const fontSizeB = fontSize(comparison.toolB.name);
 
   return `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -31,12 +57,12 @@ function generateSVG(comparison: Comparison): string {
       <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="toolAGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:${toolAColor};stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:${toolAColor};stop-opacity:0" />
+      <stop offset="0%" style="stop-color:${comparison.toolA.color};stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:${comparison.toolA.color};stop-opacity:0" />
     </linearGradient>
     <linearGradient id="toolBGrad" x1="100%" y1="0%" x2="0%" y2="0%">
-      <stop offset="0%" style="stop-color:${toolBColor};stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:${toolBColor};stop-opacity:0" />
+      <stop offset="0%" style="stop-color:${comparison.toolB.color};stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:${comparison.toolB.color};stop-opacity:0" />
     </linearGradient>
   </defs>
 
@@ -55,10 +81,10 @@ function generateSVG(comparison: Comparison): string {
   <text x="600" y="325" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#a5b4fc" text-anchor="middle">VS</text>
 
   <!-- Tool A name -->
-  <text x="300" y="300" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="bold" fill="${toolAColor}" text-anchor="middle">${toolAName}</text>
+  <text x="300" y="300" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeA}" font-weight="bold" fill="${toolAColor}" text-anchor="middle">${toolAName}</text>
 
   <!-- Tool B name -->
-  <text x="900" y="300" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="bold" fill="${toolBColor}" text-anchor="middle">${toolBName}</text>
+  <text x="900" y="300" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeB}" font-weight="bold" fill="${toolBColor}" text-anchor="middle">${toolBName}</text>
 
   <!-- Category badge -->
   <rect x="${600 - category.length * 6 - 20}" y="400" width="${category.length * 12 + 40}" height="36" rx="18" fill="#312e81" stroke="#6366f1" stroke-width="1"/>
@@ -91,10 +117,10 @@ async function main() {
     const svgPath = path.join(OUTPUT_DIR, `${comparison.slug}-og.svg`);
     const svg = generateSVG(comparison);
     await fs.writeFile(svgPath, svg, 'utf-8');
-    console.log(`Created: ${svgPath}`);
+    console.log(`Created: ${comparison.slug}-og.svg`);
   }
 
-  console.log('Done! Run the SVG-to-PNG converter to generate PNG files.');
+  console.log(`\nDone! ${jsonFiles.length} SVGs generated.`);
 }
 
 main().catch((err) => {

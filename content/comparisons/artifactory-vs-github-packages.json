@@ -1,0 +1,232 @@
+{
+  "id": "artifactory-vs-github-packages",
+  "slug": "artifactory-vs-github-packages",
+  "title": "JFrog Artifactory vs GitHub Packages",
+  "description": "A hands-on comparison of JFrog Artifactory and GitHub Packages for artifact management. Covers package format support, security scanning, storage, pricing, and enterprise features to help you pick the right artifact registry.",
+  "category": "Artifact Management",
+  "tags": ["Artifactory", "GitHub Packages", "Artifacts", "Package Management", "DevOps", "CI/CD"],
+  "createdDate": "2026-08-11T10:00:00Z",
+  "updatedDate": "2026-08-11T10:00:00Z",
+  "estimatedReadTime": "13 min read",
+  "introduction": "Artifact management is one of those things you do not think about until it becomes a bottleneck. Every CI pipeline produces artifacts - Docker images, npm packages, Maven JARs, Python wheels, Helm charts - and those artifacts need to live somewhere reliable, secure, and fast. In 2026, the two most common choices for teams evaluating an artifact registry are JFrog Artifactory and GitHub Packages.\n\nArtifactory has been in the artifact management space since 2008 and has grown into a universal binary repository manager. It supports over 30 package formats natively, offers remote repository proxying and caching, and integrates deeply with JFrog's broader platform (Xray for security scanning, Distribution for release bundles, Pipelines for CI/CD). It is the enterprise default and the go-to for organizations that need a single registry for everything from Docker images to Conan C++ packages.\n\nGitHub Packages takes the opposite approach: tight integration with the platform developers already use. If your code lives in GitHub, your CI runs in GitHub Actions, and your team collaborates through pull requests, GitHub Packages keeps everything in one place. It supports npm, Maven, Gradle, NuGet, RubyGems, and container images via ghcr.io. The free tier is generous enough for small teams, and the proximity to your source code simplifies access control.\n\nThe choice between these two usually comes down to scope. Artifactory is for organizations that need a universal artifact repository supporting dozens of formats with enterprise-grade features like replication, access federation, and fine-grained security policies. GitHub Packages is for teams that want a low-friction registry tightly coupled to their GitHub workflow without managing another platform.\n\nThis comparison walks through the key differences across 12 dimensions, from format support and security scanning to pricing models and self-hosting options. We focus on what matters for day-to-day DevOps workflows rather than feature-list checkbox comparisons.",
+  "toolA": {
+    "name": "JFrog Artifactory",
+    "icon": "Package",
+    "website": "https://jfrog.com/artifactory",
+    "description": "A universal binary repository manager that supports 30+ package formats. Serves as a single source of truth for all your build artifacts with remote proxying, replication, and deep integration with JFrog's security and distribution platform.",
+    "color": "#40BE46",
+    "pros": [
+      "Supports 30+ package formats natively - Docker, npm, Maven, PyPI, Go, Helm, Conan, NuGet, and more",
+      "Remote repository proxying and caching reduces external dependency on public registries",
+      "Xray integration provides deep security and license compliance scanning",
+      "Multi-site replication for geographically distributed teams",
+      "Flexible deployment options: SaaS, self-hosted, hybrid, and air-gapped environments",
+      "Mature RBAC with project-level isolation and access federation",
+      "Build info integration captures full dependency graph and provenance"
+    ],
+    "cons": [
+      "Expensive - enterprise pricing starts at thousands per month",
+      "Complex to administer, especially multi-site self-hosted deployments",
+      "UI feels dated compared to modern developer tools",
+      "Steep learning curve for new administrators configuring repositories and permissions",
+      "Resource-heavy self-hosted installations require dedicated infrastructure",
+      "JFrog platform lock-in if you adopt Xray, Pipelines, and Distribution together"
+    ]
+  },
+  "toolB": {
+    "name": "GitHub Packages",
+    "icon": "Github",
+    "website": "https://github.com/features/packages",
+    "description": "A package hosting service integrated directly into GitHub. Supports container images (ghcr.io), npm, Maven, Gradle, NuGet, and RubyGems with permissions tied to GitHub repositories and organizations.",
+    "color": "#181717",
+    "pros": [
+      "Seamless integration with GitHub repos, Actions, and organization permissions",
+      "Free for public repositories with generous free tier for private repos",
+      "ghcr.io container registry is fast and supports OCI artifacts",
+      "No additional tool to manage - permissions follow your existing GitHub org structure",
+      "Simple setup - publish from GitHub Actions with a few YAML lines",
+      "Dependabot integration for automated vulnerability alerts and updates"
+    ],
+    "cons": [
+      "Limited format support - no PyPI, Go modules, Helm charts, or Conan packages",
+      "No remote proxying or caching of external registries",
+      "Storage and bandwidth limits on free and Team plans can be restrictive",
+      "No self-hosted option - fully dependent on GitHub's cloud infrastructure",
+      "Less granular access control compared to Artifactory's RBAC",
+      "No built-in replication for multi-region deployments"
+    ]
+  },
+  "features": [
+    {
+      "name": "Supported Package Formats",
+      "category": "Format Support",
+      "toolA": { "value": "30+ formats: Docker, npm, Maven, PyPI, Go, Helm, NuGet, Conan, RPM, Debian, and more", "rating": "good" },
+      "toolB": { "value": "6 formats: Container images, npm, Maven, Gradle, NuGet, RubyGems", "rating": "neutral" }
+    },
+    {
+      "name": "Container Registry",
+      "category": "Format Support",
+      "toolA": { "value": "Full Docker and OCI registry with virtual repositories and promotion workflows", "rating": "good" },
+      "toolB": { "value": "ghcr.io - solid OCI registry with good performance and visibility settings", "rating": "good" }
+    },
+    {
+      "name": "Remote Proxying & Caching",
+      "category": "Repository Features",
+      "toolA": { "value": "Proxy and cache any remote registry (npmjs.org, Docker Hub, PyPI) locally", "rating": "good" },
+      "toolB": { "value": "Not supported - all packages must be published directly", "rating": "bad" }
+    },
+    {
+      "name": "Security Scanning",
+      "category": "Security",
+      "toolA": { "value": "JFrog Xray provides CVE scanning, license compliance, and policy enforcement", "rating": "good" },
+      "toolB": { "value": "Dependabot alerts and GitHub Advanced Security for vulnerability detection", "rating": "neutral" }
+    },
+    {
+      "name": "Access Control",
+      "category": "Security",
+      "toolA": { "value": "Fine-grained RBAC with projects, groups, permissions targets, and access tokens", "rating": "good" },
+      "toolB": { "value": "Permissions tied to GitHub repo and org roles - simple but less granular", "rating": "neutral" }
+    },
+    {
+      "name": "CI/CD Integration",
+      "category": "Workflow",
+      "toolA": { "value": "Integrates with Jenkins, GitHub Actions, GitLab CI, CircleCI, and most CI platforms", "rating": "good" },
+      "toolB": { "value": "Native GitHub Actions integration; usable from other CI systems via tokens", "rating": "neutral" }
+    },
+    {
+      "name": "Self-Hosting Option",
+      "category": "Deployment",
+      "toolA": { "value": "Self-hosted, SaaS, hybrid, and air-gapped deployments available", "rating": "good" },
+      "toolB": { "value": "Cloud-only; available on GitHub Enterprise Server but with limited features", "rating": "bad" }
+    },
+    {
+      "name": "Multi-Region Replication",
+      "category": "Deployment",
+      "toolA": { "value": "Built-in push and pull replication across multiple Artifactory instances", "rating": "good" },
+      "toolB": { "value": "No replication - single region only", "rating": "bad" }
+    },
+    {
+      "name": "Pricing",
+      "category": "Cost",
+      "toolA": { "value": "Free tier (limited), Pro from $150/month, Enterprise pricing is custom and expensive", "rating": "bad" },
+      "toolB": { "value": "Free for public repos; private repos get 500MB storage and 1GB transfer free", "rating": "good" }
+    },
+    {
+      "name": "Setup Complexity",
+      "category": "Operations",
+      "toolA": { "value": "Moderate to high - requires configuration of repositories, permissions, and storage backends", "rating": "bad" },
+      "toolB": { "value": "Minimal - just enable and publish from your existing GitHub workflow", "rating": "good" }
+    },
+    {
+      "name": "Build Provenance",
+      "category": "Supply Chain",
+      "toolA": { "value": "Build info captures full dependency graph, environment details, and artifact promotion history", "rating": "good" },
+      "toolB": { "value": "Attestations and SLSA provenance support via GitHub Actions", "rating": "neutral" }
+    },
+    {
+      "name": "Cleanup Policies",
+      "category": "Operations",
+      "toolA": { "value": "Flexible cleanup policies based on age, download count, and property filters", "rating": "good" },
+      "toolB": { "value": "Basic version deletion; limited automated cleanup options", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Enterprise with 500+ developers using Java, Python, npm, Docker, and C++ across multiple regions",
+      "recommendation": "toolA",
+      "explanation": "Artifactory's universal format support and multi-site replication are built for this exact scenario. A single platform handling Maven, PyPI, npm, Docker, and Conan with consistent RBAC and security scanning across regions is exactly what large enterprises need."
+    },
+    {
+      "scenario": "Small team of 10 developers building a SaaS product with GitHub Actions CI/CD",
+      "recommendation": "toolB",
+      "explanation": "GitHub Packages removes the overhead of managing a separate artifact registry. Permissions follow your GitHub org, publishing from Actions is a few lines of YAML, and the free tier covers most small team needs. Adding Artifactory at this scale would be unnecessary complexity."
+    },
+    {
+      "scenario": "Organization operating in an air-gapped or regulated environment with no external internet access",
+      "recommendation": "toolA",
+      "explanation": "Artifactory supports fully air-gapped deployments with local proxying and caching of all external registries. GitHub Packages is cloud-only and cannot function without internet access. For classified or highly regulated environments, Artifactory is often the only option."
+    },
+    {
+      "scenario": "Open-source project publishing npm packages and container images for community use",
+      "recommendation": "toolB",
+      "explanation": "GitHub Packages is free for public repositories and tightly integrated with the platform where open-source collaboration happens. Contributors can find packages alongside the source code, and publishing is automated through GitHub Actions. No reason to pay for Artifactory here."
+    },
+    {
+      "scenario": "Platform team that needs to proxy and cache public registries to reduce external dependency risk",
+      "recommendation": "toolA",
+      "explanation": "Remote proxying is one of Artifactory's strongest features. When npmjs.org or Docker Hub has an outage, your builds keep working because Artifactory serves cached copies. GitHub Packages has no proxying capability, so you are fully dependent on upstream availability."
+    },
+    {
+      "scenario": "Startup that wants to start simple but may need to scale artifact management over time",
+      "recommendation": "toolB",
+      "explanation": "Start with GitHub Packages while your needs are simple and your team is small. If you outgrow it - needing more formats, proxying, or multi-region replication - you can migrate to Artifactory later. The cost of starting with Artifactory before you need it is high."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Can GitHub Packages replace Artifactory for a team that only uses Docker and npm?",
+      "answer": "Yes, for many teams it can. If your artifacts are limited to container images and npm packages, and you do not need remote proxying, multi-region replication, or air-gapped deployments, GitHub Packages handles those two formats well. The ghcr.io registry is performant, and npm publishing from Actions is straightforward. You would miss Artifactory's cleanup policies and advanced RBAC, but for smaller teams this is an acceptable trade-off."
+    },
+    {
+      "question": "Does Artifactory support GitHub Actions integration?",
+      "answer": "Yes. JFrog provides official GitHub Actions for publishing and downloading artifacts, configuring CLI tools (jfrog-cli), and collecting build info. The setup-jfrog-cli action handles authentication and configuration. It works but requires more YAML configuration than GitHub Packages' native integration."
+    },
+    {
+      "question": "How does pricing compare for a team of 50 developers?",
+      "answer": "GitHub Packages on a GitHub Enterprise plan includes a generous storage and bandwidth allocation. Additional storage is billed at $0.25/GB/month. Artifactory Pro starts at $150/month with limited storage, and Enterprise plans with Xray, replication, and advanced features can run $2,000-5,000+/month depending on the tier and usage. For teams that only need a few package formats, GitHub Packages is significantly cheaper."
+    },
+    {
+      "question": "Can I use both Artifactory and GitHub Packages together?",
+      "answer": "Yes, and some organizations do exactly this. A common pattern is using GitHub Packages for container images published from GitHub Actions (leveraging the native integration) while running Artifactory for other formats like Maven, PyPI, or Helm charts. Artifactory can even proxy ghcr.io as a remote Docker registry, giving you caching and a unified view."
+    },
+    {
+      "question": "Is GitHub Packages reliable enough for production deployments?",
+      "answer": "ghcr.io has been stable and performant for production container image pulls. However, it does not offer an SLA separate from the general GitHub SLA, and there is no multi-region replication. If you need guaranteed uptime for production deployments across regions, Artifactory's replication and self-hosting options provide more control."
+    },
+    {
+      "question": "What about supply chain security features?",
+      "answer": "Both platforms have invested in supply chain security. Artifactory with Xray provides deep recursive scanning of dependencies and license compliance. GitHub Packages benefits from Dependabot, GitHub Advanced Security, artifact attestations, and SLSA provenance through Actions. For most teams, GitHub's supply chain features are sufficient, but Artifactory's Xray offers deeper analysis for organizations with strict compliance requirements."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You need to host more than 6 different package formats in one registry",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your entire workflow is already on GitHub (code, CI/CD, issues)",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need to proxy and cache public registries for reliability",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the simplest possible setup with minimal administration",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You operate in air-gapped or highly regulated environments",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Budget is a primary concern and you need free or low-cost artifact hosting",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need multi-region artifact replication for global teams",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You publish open-source packages alongside your source code",
+      "recommendation": "toolB"
+    }
+  ],
+  "verdict": {
+    "summary": "Artifactory is the enterprise standard for organizations that need universal format support, remote proxying, multi-region replication, and deep security scanning. GitHub Packages is the right choice for teams that live in the GitHub ecosystem and want a low-friction registry without managing additional infrastructure. Most small-to-medium teams will find GitHub Packages sufficient, while larger enterprises typically need what Artifactory offers.",
+    "toolAScore": 4.3,
+    "toolBScore": 3.8,
+    "recommendation": "Choose Artifactory if you need universal format support, remote proxying, or self-hosted deployments. Choose GitHub Packages if you want tight GitHub integration, simple setup, and your needs are limited to containers, npm, Maven, or NuGet."
+  },
+  "relatedTags": ["Artifactory", "GitHub Packages", "Artifacts", "Package Management", "DevOps", "CI/CD"]
+}

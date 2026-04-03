@@ -1,0 +1,319 @@
+{
+  "id": "prometheus-vs-datadog",
+  "slug": "prometheus-vs-datadog",
+  "title": "Prometheus vs Datadog",
+  "description": "A detailed comparison of Prometheus and Datadog for monitoring and observability. Covers metrics collection, alerting, scalability, cost, and real-world use cases to help you choose the right monitoring stack.",
+  "category": "Monitoring & Observability",
+  "tags": [
+    "Prometheus",
+    "Datadog",
+    "Monitoring",
+    "Observability",
+    "Metrics",
+    "DevOps"
+  ],
+  "createdDate": "2026-04-14T10:00:00Z",
+  "updatedDate": "2026-04-14T10:00:00Z",
+  "estimatedReadTime": "14 min read",
+  "introduction": "Monitoring is the backbone of any production system. Without it, you are flying blind - waiting for users to tell you something is broken instead of catching it yourself. In 2026, teams building their observability stack almost always end up comparing Prometheus, the open-source standard for metrics, against Datadog, the full-featured commercial platform that wants to be your single pane of glass.\n\nPrometheus started as an internal project at SoundCloud in 2012 and became the second project to graduate from the Cloud Native Computing Foundation (after Kubernetes). Its pull-based metrics model, powerful PromQL query language, and tight Kubernetes integration have made it the default choice for cloud-native metrics collection. The ecosystem around it - Alertmanager, Thanos, Cortex, Mimir - has matured significantly, solving earlier pain points around long-term storage and high availability.\n\nDatadog, founded in 2010 and publicly traded since 2019, takes a different approach. It is a fully managed SaaS platform that covers metrics, logs, traces, synthetics, security, and more under one roof. You install an agent, configure integrations, and Datadog handles storage, querying, dashboarding, and alerting. By 2026, Datadog has over 800 integrations and has expanded into application security, CI visibility, and database monitoring.\n\nThe core trade-off is control versus convenience. Prometheus gives you full ownership of your monitoring data and zero vendor lock-in, but you are responsible for running, scaling, and maintaining the infrastructure. Datadog removes that operational burden entirely but comes with meaningful per-host and per-metric pricing that can surprise teams at scale.\n\nThis comparison walks through the practical differences across 12 dimensions, from cost modeling to alerting capabilities, so you can make an informed choice based on your team size, budget, and operational maturity.",
+  "toolA": {
+    "name": "Prometheus",
+    "icon": "Flame",
+    "website": "https://prometheus.io",
+    "description": "An open-source systems monitoring and alerting toolkit originally built at SoundCloud. Now a CNCF graduated project, Prometheus is the standard for metrics collection in cloud-native environments with its pull-based model and PromQL query language.",
+    "color": "#E6522C",
+    "pros": [
+      "Completely free and open-source under Apache 2.0 license",
+      "PromQL is an extremely powerful and flexible query language for metrics",
+      "Native Kubernetes service discovery and tight integration with the cloud-native ecosystem",
+      "Massive community with exporters available for virtually every system and service",
+      "No per-metric or per-host pricing - cost scales with infrastructure, not vendor fees",
+      "Battle-tested at enormous scale by companies like GitLab, DigitalOcean, and Shopify",
+      "Long-term storage solved by Thanos, Cortex, and Grafana Mimir"
+    ],
+    "cons": [
+      "Requires you to run and maintain monitoring infrastructure yourself",
+      "Single-node Prometheus does not support high availability or long-term storage natively",
+      "No built-in dashboarding - you need Grafana or another visualization tool",
+      "Alertmanager configuration can be fiddly and YAML-heavy",
+      "Pull-based model can be tricky for short-lived jobs (though Pushgateway exists)",
+      "Scaling beyond a single Prometheus instance requires additional tools like Thanos or Mimir"
+    ]
+  },
+  "toolB": {
+    "name": "Datadog",
+    "icon": "Dog",
+    "website": "https://www.datadoghq.com",
+    "description": "A cloud-scale monitoring and security platform that provides full-stack observability through metrics, logs, traces, and more. Offers 800+ integrations and a fully managed SaaS experience with no infrastructure to operate.",
+    "color": "#632CA6",
+    "pros": [
+      "Fully managed SaaS - zero monitoring infrastructure to operate or scale",
+      "800+ out-of-the-box integrations with pre-built dashboards and alerts",
+      "Unified platform covering metrics, logs, traces, synthetics, and security",
+      "Excellent dashboarding with drag-and-drop UI and template variables",
+      "Built-in anomaly detection and forecasting using machine learning",
+      "Strong collaboration features with notebook-style investigations and team workflows",
+      "Dedicated support and SLAs for enterprise customers"
+    ],
+    "cons": [
+      "Pricing can escalate quickly - per-host fees plus charges for custom metrics, logs, and traces",
+      "Vendor lock-in for queries, dashboards, monitors, and alert definitions",
+      "Custom metrics pricing discourages high-cardinality instrumentation",
+      "Query language is less flexible than PromQL for complex aggregations",
+      "Data egress and retention can be expensive for compliance-heavy teams",
+      "You do not own your monitoring data - it lives on Datadog's infrastructure"
+    ]
+  },
+  "features": [
+    {
+      "name": "Metrics Collection Model",
+      "category": "Data Collection",
+      "toolA": {
+        "value": "Pull-based scraping with service discovery; push via Pushgateway for short-lived jobs",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Agent-based push model with 800+ pre-built integrations",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Query Language",
+      "category": "Data Collection",
+      "toolA": {
+        "value": "PromQL - powerful, flexible, and widely adopted as the metrics query standard",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Datadog query syntax with functions and formulas; less expressive than PromQL",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Dashboarding",
+      "category": "Visualization",
+      "toolA": {
+        "value": "Requires Grafana or another external tool; no built-in UI for dashboards",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Built-in drag-and-drop dashboards with templates, widgets, and sharing",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Alerting",
+      "category": "Alerting & Notifications",
+      "toolA": {
+        "value": "Alertmanager with YAML config; supports grouping, silencing, and routing",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "GUI-based alert creation with anomaly detection, forecasting, and composite monitors",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "High Availability",
+      "category": "Scalability",
+      "toolA": {
+        "value": "Requires running duplicate Prometheus instances or using Thanos/Mimir",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Built-in - fully managed with SLA guarantees",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Long-Term Storage",
+      "category": "Scalability",
+      "toolA": {
+        "value": "Default 15-day retention; extend with Thanos, Cortex, or Mimir for years of data",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "15-month default retention; configurable with rehydration for older data",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Kubernetes Integration",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "Native service discovery, kube-state-metrics, and the de facto K8s monitoring standard",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Datadog Agent with Cluster Agent; auto-discovery and pre-built K8s dashboards",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Log Management",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "Not included - metrics only; pair with Loki or ELK for logs",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "Built-in log management with indexing, patterns, and log-to-trace correlation",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Distributed Tracing",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "Not included - pair with Jaeger or Tempo for tracing; exemplars link metrics to traces",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "Built-in APM with distributed tracing, service maps, and error tracking",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Cost Model",
+      "category": "Pricing",
+      "toolA": {
+        "value": "Free software; you pay only for compute and storage infrastructure",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Per-host pricing starting at $15-23/host/month plus per-metric and per-GB charges",
+        "rating": "bad"
+      }
+    },
+    {
+      "name": "Setup and Time to Value",
+      "category": "Operations",
+      "toolA": {
+        "value": "Requires deploying Prometheus, configuring scrape targets, setting up Grafana and Alertmanager",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "Install agent, enable integrations, get pre-built dashboards in minutes",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Vendor Independence",
+      "category": "Operations",
+      "toolA": {
+        "value": "Fully open-source; no vendor lock-in, data stays on your infrastructure",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Proprietary SaaS; migrating away requires rebuilding dashboards, alerts, and queries",
+        "rating": "bad"
+      }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Cloud-native startup running 50+ microservices on Kubernetes with a small platform team",
+      "recommendation": "toolA",
+      "explanation": "Prometheus is the natural fit for Kubernetes environments. With kube-prometheus-stack (Prometheus Operator, Grafana, Alertmanager), you get a production-ready setup via a single Helm chart. The cost savings at scale are significant compared to per-host Datadog pricing."
+    },
+    {
+      "scenario": "Enterprise with 500+ hosts that wants unified metrics, logs, traces, and security in one platform",
+      "recommendation": "toolB",
+      "explanation": "Datadog's unified platform means one agent, one UI, and correlated data across all telemetry types. For large enterprises with budget and a preference for managed services, this reduces tool sprawl and makes cross-team collaboration easier."
+    },
+    {
+      "scenario": "Team with no dedicated SRE or platform engineering capacity",
+      "recommendation": "toolB",
+      "explanation": "Running Prometheus, Grafana, Alertmanager, and a long-term storage backend is real operational work. If your team cannot dedicate engineering time to maintaining monitoring infrastructure, Datadog's managed approach removes that burden entirely."
+    },
+    {
+      "scenario": "Cost-conscious organization monitoring 1,000+ nodes with high-cardinality metrics",
+      "recommendation": "toolA",
+      "explanation": "Datadog's custom metrics pricing penalizes high-cardinality data. With Prometheus and Mimir or Thanos, you pay for object storage and compute - which is dramatically cheaper at scale. Teams monitoring large fleets often see 5-10x cost differences."
+    },
+    {
+      "scenario": "Multi-cloud environment spanning AWS, GCP, and on-premises data centers",
+      "recommendation": "either",
+      "explanation": "Both tools handle multi-cloud well. Prometheus with federation or Thanos can aggregate metrics across environments. Datadog's agent works anywhere and provides a single view. The deciding factor is usually budget and operational capacity."
+    },
+    {
+      "scenario": "Regulated industry needing data residency and full control over telemetry data",
+      "recommendation": "toolA",
+      "explanation": "With Prometheus, all monitoring data stays on your infrastructure in your chosen region. Datadog stores data in their cloud, and while they offer some data residency options, you have less control over where your telemetry lives and who can access it."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "How much does Datadog actually cost compared to running Prometheus yourself?",
+      "answer": "It depends heavily on scale. For a small team with 10-20 hosts, Datadog's Pro plan at $15/host/month is often cheaper than the engineering time to run Prometheus. At 200+ hosts with custom metrics and logs, Datadog bills can easily reach $50,000-100,000+ per year, while a self-managed Prometheus stack with Mimir and S3 storage might cost $5,000-15,000 per year in infrastructure. The break-even point varies, but most teams find Prometheus becomes cheaper once they have the platform engineering capacity to support it."
+    },
+    {
+      "question": "Can I use Prometheus metrics with Datadog?",
+      "answer": "Yes. Datadog's agent can scrape Prometheus-format metrics endpoints directly using its OpenMetrics integration. This means you can instrument your applications using Prometheus client libraries and still send metrics to Datadog. It is also a practical migration path - start with Prometheus instrumentation and decide on the backend later."
+    },
+    {
+      "question": "How do I handle long-term storage with Prometheus?",
+      "answer": "Prometheus's local storage is designed for short-term retention (typically 15-30 days). For long-term storage, the most popular options in 2026 are Grafana Mimir (successor to Cortex), Thanos, and VictoriaMetrics. All three support object storage backends like S3 or GCS, provide global query views across multiple Prometheus instances, and handle data compaction and downsampling."
+    },
+    {
+      "question": "Is Datadog's anomaly detection worth the premium?",
+      "answer": "For teams that do not have data science capacity to build their own anomaly detection, Datadog's ML-based monitors can catch issues that static thresholds miss. It works well for metrics with seasonal patterns like traffic or latency. That said, Prometheus with recording rules and careful threshold tuning can achieve similar results for well-understood systems - it just requires more manual effort."
+    },
+    {
+      "question": "Can I start with Datadog and migrate to Prometheus later?",
+      "answer": "You can, but it is not painless. Your application instrumentation can stay the same if you used Prometheus client libraries or OpenTelemetry. However, Datadog dashboards, monitors, and alert configurations do not export to Prometheus or Grafana format. Plan for rebuilding your dashboards and alert rules from scratch. The longer you stay on Datadog, the more migration work accumulates."
+    },
+    {
+      "question": "What about OpenTelemetry - does it change this comparison?",
+      "answer": "OpenTelemetry is increasingly the standard instrumentation layer in 2026. Both Prometheus and Datadog accept OTLP data. This means you can instrument with OpenTelemetry SDKs and send data to either backend, reducing lock-in on the instrumentation side. The comparison then shifts entirely to the backend: self-managed open-source versus managed SaaS."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "Your team has platform engineering capacity to run monitoring infrastructure",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want a fully managed solution with zero operational overhead",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are running Kubernetes and want the tightest native integration",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need unified metrics, logs, traces, and security in a single platform",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Your monitoring budget is limited and you have hundreds of hosts",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need pre-built dashboards and fast time-to-value with minimal setup",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Data residency and ownership of telemetry data are requirements",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your organization prefers vendor support with SLAs over community support",
+      "recommendation": "toolB"
+    }
+  ],
+  "verdict": {
+    "summary": "Prometheus is the better choice for teams with platform engineering skills who want cost control, flexibility, and vendor independence. Datadog wins for teams that prioritize speed of setup, unified observability, and are willing to pay for a managed experience. At small scale, Datadog is often the pragmatic choice. At large scale, Prometheus with Mimir or Thanos is significantly more cost-effective.",
+    "toolAScore": 4.3,
+    "toolBScore": 4.1,
+    "recommendation": "Choose Prometheus if you have the engineering capacity and want to control costs at scale. Choose Datadog if you want a turnkey observability platform and your budget can absorb per-host pricing."
+  },
+  "relatedTags": [
+    "Prometheus",
+    "Datadog",
+    "Monitoring",
+    "Observability",
+    "Metrics",
+    "DevOps"
+  ]
+}
