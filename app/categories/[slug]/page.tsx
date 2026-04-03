@@ -1,12 +1,12 @@
 import { PostsList } from '@/components/posts-list';
-import { PageHeader } from '@/components/page-header';
+import { PageHero } from '@/components/page-hero';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { getCategoryBySlug, getAllCategories } from '@/lib/categories';
 import { getPostsByCategory } from '@/lib/posts';
 import { getGuidesByCategory } from '@/lib/guides';
 import { notFound } from 'next/navigation';
-import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { FolderOpen } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -76,11 +76,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   const posts = await getPostsByCategory(slug);
   const guides = await getGuidesByCategory(slug);
 
-  // Breadcrumb items
-  const breadcrumbItems = [
-    { label: 'Categories', href: '/categories' },
-    { label: category.name, href: `/categories/${category.slug}`, isCurrent: true },
-  ];
+  const totalCount = posts.length + guides.length;
 
   // Breadcrumb items for schema
   const schemaItems = [
@@ -93,21 +89,18 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
     <>
       <BreadcrumbSchema items={schemaItems} />
 
+      <PageHero
+        title={category.name}
+        description={category.longDescription || category.description || `Browse all articles, tutorials, and guides about ${category.name}`}
+        icon={FolderOpen}
+        breadcrumbs={[
+          { label: 'Categories', href: '/categories' },
+          { label: category.name },
+        ]}
+        stats={[{ label: 'posts', value: totalCount }]}
+      />
+
       <div className="container mx-auto px-4 py-8">
-        <Breadcrumb items={breadcrumbItems} />
-
-        <PageHeader
-          title={category.name}
-          description={`Browse all articles, tutorials, and guides about ${category.name}`}
-        />
-
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-2">About {category.name}</h2>
-          <p className="text-muted-foreground">
-            {category.longDescription || category.description}
-          </p>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Guides List */}
           <div className="lg:col-span-9">

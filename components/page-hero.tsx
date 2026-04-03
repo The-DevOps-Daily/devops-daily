@@ -30,12 +30,21 @@ export function PageHero({
 }: PageHeroProps) {
   return (
     <div className="relative border-b border-border/50 overflow-hidden">
-      {/* Subtle background with slight color wash */}
+      {/* Layered background */}
       <div className="absolute inset-0 bg-muted/30" />
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.03] via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
 
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/40 via-primary/10 to-transparent" />
+      {/* Subtle animated gradient accent */}
+      <div className="absolute top-0 left-0 right-0 h-[2px]">
+        <div className="h-full bg-gradient-to-r from-primary/50 via-primary/20 to-transparent" />
+      </div>
+
+      {/* Decorative corner dot pattern */}
+      <div className="absolute top-6 right-6 hidden lg:grid grid-cols-4 gap-2 opacity-[0.08]">
+        {Array.from({ length: 16 }).map((_, i) => (
+          <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary" />
+        ))}
+      </div>
 
       <div className="relative container mx-auto px-4 py-10 sm:py-14">
         {/* Breadcrumbs */}
@@ -66,7 +75,7 @@ export function PageHero({
         <div className="max-w-3xl">
           {/* Badge */}
           {badge && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary mb-4">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20 mb-4">
               {badge}
             </span>
           )}
@@ -74,7 +83,7 @@ export function PageHero({
           {/* Title with optional icon */}
           <div className="flex items-start gap-4">
             {Icon && (
-              <div className="mt-1.5 flex-shrink-0 w-11 h-11 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <div className="mt-1.5 flex-shrink-0 w-11 h-11 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
                 <Icon className={`w-5 h-5 ${iconColor}`} />
               </div>
             )}
@@ -86,13 +95,13 @@ export function PageHero({
                 {description}
               </p>
 
-              {/* Stats row - inline with description */}
+              {/* Stats row */}
               {stats && stats.length > 0 && (
-                <div className="flex flex-wrap gap-5 mt-4">
+                <div className="flex flex-wrap gap-5 mt-5">
                   {stats.map((stat, i) => (
-                    <div key={i} className="flex items-baseline gap-1.5 text-sm">
-                      <span className="font-bold text-primary text-lg">{stat.value}</span>
-                      <span className="text-muted-foreground">{stat.label}</span>
+                    <div key={i} className="flex items-baseline gap-1.5">
+                      <span className="font-bold text-primary text-xl tabular-nums">{stat.value}</span>
+                      <span className="text-sm text-muted-foreground">{stat.label}</span>
                     </div>
                   ))}
                 </div>
