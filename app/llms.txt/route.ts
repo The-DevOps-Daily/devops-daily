@@ -7,7 +7,7 @@ import { getAllAdventDays } from '@/lib/advent';
 import { getAllNews } from '@/lib/news';
 import { getActiveGames } from '@/lib/games';
 import { getAllFlashCardSets } from '@/lib/flashcard-loader';
-import { checklists } from '@/content/checklists';
+import { getAllChecklists } from '@/lib/checklists';
 import { interviewQuestions } from '@/content/interview-questions';
 import { getAllComparisons } from '@/lib/comparisons';
 
@@ -16,7 +16,7 @@ export const dynamic = 'force-static';
 export async function GET() {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
-  const [posts, categories, guides, exercises, quizzes, adventDays, news, games, flashcards] =
+  const [posts, categories, guides, exercises, quizzes, adventDays, news, games, flashcards, checklists] =
     await Promise.all([
       getAllPosts(),
       getAllCategories(),
@@ -27,6 +27,7 @@ export async function GET() {
       getAllNews(),
       getActiveGames(),
       getAllFlashCardSets(),
+      getAllChecklists(),
     ]);
 
   const md = `# DevOps Daily

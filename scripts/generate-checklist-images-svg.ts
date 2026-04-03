@@ -1,7 +1,28 @@
 // scripts/generate-checklist-images-svg.ts
 import fs from 'fs/promises';
 import path from 'path';
-import { checklists } from '../content/checklists/index.js';
+
+interface Checklist {
+  slug: string;
+  title: string;
+  category: string;
+  difficulty: string;
+  items: Array<{ id: string }>;
+}
+
+async function loadChecklists(): Promise<Checklist[]> {
+  const dir = path.join(process.cwd(), 'content', 'checklists');
+  const files = await fs.readdir(dir);
+  const jsonFiles = files.filter(f => f.endsWith('.json'));
+  const results: Checklist[] = [];
+  for (const file of jsonFiles) {
+    try {
+      const content = await fs.readFile(path.join(dir, file), 'utf-8');
+      results.push(JSON.parse(content));
+    } catch {}
+  }
+  return results;
+}
 
 // Configuration
 const IMAGE_WIDTH = 1200;
@@ -197,7 +218,8 @@ function generateListingPageSVG(): string {
 }
 
 async function main() {
-  console.log('🎨 Generating checklist OG images...');
+  const checklists = await loadChecklists();
+  console.log('Generating checklist OG images...');
 
   const outputDir = path.join(process.cwd(), 'public', 'images', 'checklists');
   await fs.mkdir(outputDir, { recursive: true });
