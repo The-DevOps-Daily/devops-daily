@@ -12,14 +12,6 @@
       <stop offset="0%" style="stop-color:#326CE5;stop-opacity:0.15" />
       <stop offset="100%" style="stop-color:#326CE5;stop-opacity:0" />
     </linearGradient>
-    <linearGradient id="barA" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#2496ED;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#2496ED;stop-opacity:0.6" />
-    </linearGradient>
-    <linearGradient id="barB" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#326CE5;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#326CE5;stop-opacity:0.6" />
-    </linearGradient>
     <filter id="glow">
       <feGaussianBlur stdDeviation="3" result="blur"/>
       <feMerge>
@@ -55,25 +47,15 @@
 
   <!-- Tool A card -->
   <rect x="40" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(36,150,237,0.3)" stroke-width="1.5"/>
-  <text x="300" y="200" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#2496ED" text-anchor="middle" filter="url(#glow)">Docker Swarm</text>
-
-  <!-- Tool A score bar -->
-  <text x="120" y="290" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#94a3b8">Wins 5 of 12 categories</text>
-  <rect x="120" y="305" width="280" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
-  <rect x="120" y="305" width="83" height="8" rx="4" fill="url(#barA)"/>
-  <text x="120" y="340" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#2496ED">3.5</text>
-  <text x="172" y="340" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">/5</text>
+  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#2496ED" text-anchor="middle" filter="url(#glow)">Docker Swarm</text>
+  <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#2496ED" text-anchor="middle" opacity="0.8">3.5</text>
+  <text x="332" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- Tool B card -->
   <rect x="640" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(50,108,229,0.3)" stroke-width="1.5"/>
-  <text x="900" y="200" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#326CE5" text-anchor="middle" filter="url(#glow)">Kubernetes</text>
-
-  <!-- Tool B score bar -->
-  <text x="720" y="290" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#94a3b8">Wins 10 of 12 categories</text>
-  <rect x="720" y="305" width="280" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
-  <rect x="720" y="305" width="167" height="8" rx="4" fill="url(#barB)"/>
-  <text x="720" y="340" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#326CE5">4.5</text>
-  <text x="772" y="340" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">/5</text>
+  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#326CE5" text-anchor="middle" filter="url(#glow)">Kubernetes</text>
+  <text x="900" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#326CE5" text-anchor="middle" opacity="0.8">4.5</text>
+  <text x="932" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- VS badge center -->
   <circle cx="600" cy="230" r="36" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>

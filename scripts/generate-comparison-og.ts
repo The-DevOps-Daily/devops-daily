@@ -33,16 +33,7 @@ function generateSVG(comparison: Comparison): string {
   const rgbA = hexToRgb(toolAColor);
   const rgbB = hexToRgb(toolBColor);
 
-  // Count ratings for a mini score visualization
-  let toolAGood = 0;
-  let toolBGood = 0;
-  for (const f of comparison.features) {
-    if (f.toolA.rating === 'good') toolAGood++;
-    if (f.toolB.rating === 'good') toolBGood++;
-  }
-
-  const toolABarWidth = Math.round((toolAGood / featureCount) * 200);
-  const toolBBarWidth = Math.round((toolBGood / featureCount) * 200);
+  // Just use the verdict scores
 
   return `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -57,14 +48,6 @@ function generateSVG(comparison: Comparison): string {
     <linearGradient id="glowB" x1="100%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:${toolBColor};stop-opacity:0.15" />
       <stop offset="100%" style="stop-color:${toolBColor};stop-opacity:0" />
-    </linearGradient>
-    <linearGradient id="barA" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:${toolAColor};stop-opacity:1" />
-      <stop offset="100%" style="stop-color:${toolAColor};stop-opacity:0.6" />
-    </linearGradient>
-    <linearGradient id="barB" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:${toolBColor};stop-opacity:1" />
-      <stop offset="100%" style="stop-color:${toolBColor};stop-opacity:0.6" />
     </linearGradient>
     <filter id="glow">
       <feGaussianBlur stdDeviation="3" result="blur"/>
@@ -101,25 +84,15 @@ function generateSVG(comparison: Comparison): string {
 
   <!-- Tool A card -->
   <rect x="40" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(${rgbA.r},${rgbA.g},${rgbA.b},0.3)" stroke-width="1.5"/>
-  <text x="300" y="200" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="${toolAColor}" text-anchor="middle" filter="url(#glow)">${toolAName}</text>
-
-  <!-- Tool A score bar -->
-  <text x="120" y="290" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#94a3b8">Wins ${toolAGood} of ${featureCount} categories</text>
-  <rect x="120" y="305" width="280" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
-  <rect x="120" y="305" width="${toolABarWidth}" height="8" rx="4" fill="url(#barA)"/>
-  <text x="120" y="340" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="${toolAColor}">${comparison.verdict.toolAScore}</text>
-  <text x="172" y="340" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">/5</text>
+  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="${toolAColor}" text-anchor="middle" filter="url(#glow)">${toolAName}</text>
+  <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="${toolAColor}" text-anchor="middle" opacity="0.8">${comparison.verdict.toolAScore}</text>
+  <text x="332" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- Tool B card -->
   <rect x="640" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(${rgbB.r},${rgbB.g},${rgbB.b},0.3)" stroke-width="1.5"/>
-  <text x="900" y="200" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="${toolBColor}" text-anchor="middle" filter="url(#glow)">${toolBName}</text>
-
-  <!-- Tool B score bar -->
-  <text x="720" y="290" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#94a3b8">Wins ${toolBGood} of ${featureCount} categories</text>
-  <rect x="720" y="305" width="280" height="8" rx="4" fill="rgba(255,255,255,0.08)"/>
-  <rect x="720" y="305" width="${toolBBarWidth}" height="8" rx="4" fill="url(#barB)"/>
-  <text x="720" y="340" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="${toolBColor}">${comparison.verdict.toolBScore}</text>
-  <text x="772" y="340" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">/5</text>
+  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="${toolBColor}" text-anchor="middle" filter="url(#glow)">${toolBName}</text>
+  <text x="900" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="${toolBColor}" text-anchor="middle" opacity="0.8">${comparison.verdict.toolBScore}</text>
+  <text x="932" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
 
   <!-- VS badge center -->
   <circle cx="600" cy="230" r="36" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
