@@ -1,6 +1,6 @@
 ---
 title: 'Terraform Infrastructure as Code Best Practices'
-excerpt: 'How to write scalable and maintainable Terraform code for your cloud infrastructure.'
+excerpt: 'Terraform best practices for writing scalable, maintainable infrastructure as code - covering directory structure, state management, modules, and security.'
 category:
   name: 'Terraform'
   slug: 'terraform'
@@ -15,6 +15,8 @@ tags:
   - Terraform
   - IaC
   - Cloud
+  - Best Practices
+  - Infrastructure as Code
 featured: true
 ---
 

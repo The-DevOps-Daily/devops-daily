@@ -12,11 +12,11 @@ author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
 tags:
-  - Linux
-  - Networking
-  - Troubleshooting
+  - Git
+  - Branch
+  - Remote
+  - Version Control
   - Command Line
-  - Ports
 ---
 
 When you create a new branch locally in Git, it exists only on your local machine until you push it to a remote repository. Additionally, you'll want to set up tracking so that future pushes and pulls work seamlessly. This tutorial covers the complete process of pushing a new local branch to a remote repository and establishing proper tracking relationships.
