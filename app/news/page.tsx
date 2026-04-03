@@ -1,9 +1,9 @@
-import { PageHeader } from '@/components/page-header';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { getAllNews } from '@/lib/news';
 import Link from 'next/link';
 import { OptimizedImage } from '@/components/optimized-image';
-import { CalendarDays, TrendingUp, Newspaper } from 'lucide-react';
+import { CalendarDays, Newspaper } from 'lucide-react';
+import { PageHero } from '@/components/page-hero';
 
 export const metadata = {
   title: 'DevOps Weekly Digest',
@@ -40,39 +40,20 @@ export default async function NewsPage() {
   const news = await getAllNews();
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Hero Section */}
-      <div className="mb-10 text-center">
-        <div className="inline-flex items-center justify-center p-2.5 bg-primary/10 rounded-full mb-4">
-          <Newspaper className="w-5 h-5 text-primary" />
-        </div>
-        <h1 className="text-3xl md:text-4xl font-bold mb-3">DevOps Weekly Digest</h1>
-        <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-          Curated weekly updates from 250+ DevOps sources covering the latest in
-          Kubernetes, cloud native, CI/CD, and more.
-        </p>
+    <div className="min-h-screen">
+      <PageHero
+        icon={Newspaper}
+        title="DevOps Weekly Digest"
+        description="Curated weekly updates from 250+ DevOps sources covering the latest in Kubernetes, cloud native, CI/CD, and more."
+        breadcrumbs={[{ label: 'News' }]}
+        stats={[
+          { label: 'Sources', value: '250+' },
+          { label: news.length === 1 ? 'Digest' : 'Digests', value: news.length },
+          { label: 'Updates', value: 'Weekly' },
+        ]}
+      />
 
-        {/* Stats Bar */}
-        {news.length > 0 && (
-          <div className="mt-6 flex flex-wrap justify-center gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-muted-foreground">250+ Sources</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-primary" />
-              <span className="text-muted-foreground">
-                {news.length} {news.length === 1 ? 'Digest' : 'Digests'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Newspaper className="w-4 h-4 text-primary" />
-              <span className="text-muted-foreground">Weekly Updates</span>
-            </div>
-          </div>
-        )}
-      </div>
-
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* News List */}
         <div className="lg:col-span-9">
@@ -225,6 +206,7 @@ export default async function NewsPage() {
           </div>
         </aside>
       </div>
+    </div>
     </div>
   );
 }

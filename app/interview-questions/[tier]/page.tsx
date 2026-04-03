@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { interviewQuestions, getQuestionsByTier, getAllCategories } from '@/content/interview-questions';
 import { InterviewTierPage } from '@/components/interview-questions/interview-tier-page';
+import { PageHero } from '@/components/page-hero';
+import { Briefcase } from 'lucide-react';
 import type { ExperienceTier } from '@/lib/interview-utils';
 
 const validTiers: ExperienceTier[] = ['junior', 'mid', 'senior'];
@@ -67,12 +69,26 @@ export default async function TierPage({ params }: PageProps) {
 
   const questions = getQuestionsByTier(tier as ExperienceTier);
   const categories = getAllCategories();
+  const meta = tierMeta[tier as ExperienceTier];
+  const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
 
   return (
-    <InterviewTierPage
-      tier={tier as ExperienceTier}
-      questions={questions}
-      categories={categories}
-    />
+    <>
+      <PageHero
+        title={`${tierLabel} Interview Practice`}
+        description={meta.description}
+        icon={Briefcase}
+        breadcrumbs={[
+          { label: 'Interview Questions', href: '/interview-questions' },
+          { label: tierLabel },
+        ]}
+        stats={[{ label: 'questions', value: questions.length }]}
+      />
+      <InterviewTierPage
+        tier={tier as ExperienceTier}
+        questions={questions}
+        categories={categories}
+      />
+    </>
   );
 }

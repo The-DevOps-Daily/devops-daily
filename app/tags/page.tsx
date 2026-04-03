@@ -1,9 +1,9 @@
-import { PageHeader } from '@/components/page-header';
+import { PageHero } from '@/components/page-hero';
 import { getAllTags } from '@/lib/tags';
-import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Tags } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Tags',
@@ -39,10 +39,6 @@ export const metadata: Metadata = {
 export default async function TagsPage() {
   const tags = await getAllTags();
 
-  // Breadcrumb items
-  const breadcrumbItems = [{ label: 'Tags', href: '/tags', isCurrent: true }];
-
-  // Breadcrumb items for schema
   const schemaItems = [
     { name: 'Home', url: '/' },
     { name: 'Tags', url: '/tags' },
@@ -52,17 +48,21 @@ export default async function TagsPage() {
     <>
       <BreadcrumbSchema items={schemaItems} />
 
+      <PageHero
+        title="Tags"
+        description="Browse all DevOps topics and tags."
+        icon={Tags}
+        breadcrumbs={[{ label: 'Tags' }]}
+        stats={[{ label: 'tags', value: tags.length }]}
+      />
+
       <div className="container mx-auto px-4 py-8">
-        <Breadcrumb items={breadcrumbItems} />
-
-        <PageHeader title="Tags" description="Browse all DevOps topics and tags" />
-
-        <div className="flex flex-wrap gap-3 my-8">
+        <div className="flex flex-wrap gap-3">
           {tags.map((tag) => (
             <Link
               key={tag.slug}
               href={`/tags/${tag.slug}`}
-              className="px-4 py-2 bg-card text-card-foreground rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all"
+              className="px-4 py-2 bg-card text-card-foreground rounded-lg border border-border hover:border-primary/50 hover:shadow-sm transition-all"
             >
               <span className="font-medium">{tag.name}</span>
               <span className="ml-2 text-sm text-muted-foreground">({tag.count})</span>

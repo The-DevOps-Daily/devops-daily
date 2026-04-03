@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Briefcase } from 'lucide-react';
 import { interviewQuestions, getQuestionBySlug } from '@/content/interview-questions';
 import { InterviewQuestionPage } from '@/components/interview-questions/interview-question-page';
+import { PageHero } from '@/components/page-hero';
 import { getSocialImagePath } from '@/lib/image-utils';
 import type { ExperienceTier } from '@/lib/interview-utils';
 
@@ -78,5 +80,21 @@ export default async function QuestionPage({ params }: PageProps) {
     notFound();
   }
 
-  return <InterviewQuestionPage question={question} tier={tier as ExperienceTier} />;
+  const capitalizedTier = tier.charAt(0).toUpperCase() + tier.slice(1);
+
+  return (
+    <>
+      <PageHero
+        title={question.title}
+        description={question.question}
+        icon={Briefcase}
+        breadcrumbs={[
+          { label: 'Interview Questions', href: '/interview-questions' },
+          { label: capitalizedTier },
+          { label: question.title },
+        ]}
+      />
+      <InterviewQuestionPage question={question} tier={tier as ExperienceTier} />
+    </>
+  );
 }

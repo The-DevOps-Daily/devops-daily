@@ -1,12 +1,9 @@
 import { ExercisesList } from '@/components/exercises-list';
-import { PageHeader } from '@/components/page-header';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { getAllExercises, getExerciseStats } from '@/lib/exercises';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Target, Clock, TrendingUp, Users } from 'lucide-react';
+import { Target } from 'lucide-react';
 import type { Metadata } from 'next';
-import { ExerciseHero } from '@/components/exercises-hero';
+import { PageHero } from '@/components/page-hero';
 
 export const metadata: Metadata = {
   title: 'DevOps Exercises & Labs - Hands-On Learning',
@@ -43,9 +40,18 @@ export default async function ExercisesPage() {
   const [exercises, stats] = await Promise.all([getAllExercises(), getExerciseStats()]);
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
-
-      <ExerciseHero totalExercises={stats.total} averageTime={Math.round(stats.averageTime)}/>
+    <div className="min-h-screen">
+      <PageHero
+        title="Learn DevOps Through Real-World Exercises"
+        accentWord="Real-World"
+        description="Strengthen your DevOps expertise with hands-on exercises designed to simulate real-world environments. Build skills through practice, not theory."
+        icon={Target}
+        breadcrumbs={[{ label: 'Exercises' }]}
+        stats={[
+          { label: 'exercises', value: stats.total },
+          { label: 'min avg. time', value: Math.round(stats.averageTime) },
+        ]}
+      />
 
       <div className="py-8 container mx-auto px-4 grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Main Content */}

@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { Map, ArrowRight, Clock, Target, Users, Sparkles, GraduationCap, Shield } from 'lucide-react';
+import { Map, ArrowRight, Clock, GraduationCap, Shield } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { PageHero } from '@/components/page-hero';
 
 interface Roadmap {
   slug: string;
@@ -91,49 +92,14 @@ function getDifficultyColor(difficulty: string) {
 
 export default function RoadmapsPage() {
   return (
-    <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20">
-      {/* Hero Section */}
-      <section className="relative py-16 md:py-24 overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-linear-to-bl from-primary/10 to-purple-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-linear-to-tr from-blue-500/10 to-primary/10 rounded-full blur-3xl" />
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <Map className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Learning Paths</span>
-            </div>
-
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">
-              <span className="bg-linear-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-transparent">
-                DevOps Roadmaps
-              </span>
-            </h1>
-
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              Structured learning paths to guide your DevOps journey. From beginner fundamentals to
-              advanced security practices, find the roadmap that fits your goals.
-            </p>
-
-            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-primary" />
-                <span>Community Driven</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-primary" />
-                <span>Goal Oriented</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span>Regularly Updated</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="min-h-screen">
+      <PageHero
+        icon={Map}
+        title="DevOps Roadmaps"
+        description="Structured learning paths to guide your DevOps journey. From beginner fundamentals to advanced security practices, find the roadmap that fits your goals."
+        breadcrumbs={[{ label: 'Roadmaps' }]}
+        badge="Learning Paths"
+      />
 
       {/* Roadmaps Grid */}
       <section className="py-12 md:py-16">

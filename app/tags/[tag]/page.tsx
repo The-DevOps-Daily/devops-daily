@@ -1,9 +1,9 @@
-import { PageHeader } from '@/components/page-header';
+import { PageHero } from '@/components/page-hero';
 import { PostsList } from '@/components/posts-list';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { getPostsByTagSlug, getGuidesByTagSlug, getAllTags, getTagBySlug } from '@/lib/tags';
-import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { Tags } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -81,11 +81,7 @@ export default async function TagPage({ params }: TagPageProps) {
     notFound();
   }
 
-  // Breadcrumb items
-  const breadcrumbItems = [
-    { label: 'Tags', href: '/tags' },
-    { label: tagName, href: `/tags/${tag}`, isCurrent: true },
-  ];
+  const totalCount = posts.length + guides.length;
 
   // Breadcrumb items for schema
   const schemaItems = [
@@ -98,14 +94,18 @@ export default async function TagPage({ params }: TagPageProps) {
     <>
       <BreadcrumbSchema items={schemaItems} />
 
+      <PageHero
+        title={tagName}
+        description={`Browse all articles, tutorials, and guides about ${tagName}`}
+        icon={Tags}
+        breadcrumbs={[
+          { label: 'Tags', href: '/tags' },
+          { label: tagName },
+        ]}
+        stats={[{ label: 'posts', value: totalCount }]}
+      />
+
       <div className="container mx-auto px-4 py-8">
-        <Breadcrumb items={breadcrumbItems} />
-
-        <PageHeader
-          title={`Tag: ${tagName}`}
-          description={`Browse all articles, tutorials, and guides about ${tagName}`}
-        />
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-9">
             {guides.length > 0 && (

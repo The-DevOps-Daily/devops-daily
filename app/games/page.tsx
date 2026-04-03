@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Dice6, Sparkles } from 'lucide-react';
+import { Dice6, Gamepad2, Sparkles } from 'lucide-react';
 import { getAllGames } from '@/lib/games';
-import { GamesHero } from '@/components/games-hero';
+import { PageHero } from '@/components/page-hero';
 import { GamesList, SerializableGame } from '@/components/games-list';
 
 export const metadata: Metadata = {
@@ -45,9 +45,18 @@ export default async function GamesPage() {
   const comingSoonGames = games.filter((game) => game.isComingSoon);
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
-      {/* Hero Section */}
-      <GamesHero countAvailableGames={availableGames.length} countComingSoonGames={comingSoonGames.length}/>
+    <div className="min-h-screen">
+      <PageHero
+        title="DevOps Games & Simulators"
+        accentWord="Simulators"
+        description="Master DevOps with interactive games and simulators designed by industry experts. Test your knowledge, track your progress, and earn achievements as you advance."
+        icon={Gamepad2}
+        breadcrumbs={[{ label: 'Games & Simulators' }]}
+        stats={[
+          { label: 'available', value: availableGames.length },
+          { label: 'coming soon', value: comingSoonGames.length },
+        ]}
+      />
 
       {/* Games List with Filters */}
       <section className="py-8 container mx-auto px-4 mb-16">

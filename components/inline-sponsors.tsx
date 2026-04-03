@@ -90,54 +90,28 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
   if (variant === 'compact') {
   return (
     <div className={cn('my-8', className)}>
-      <div className="rounded-xl border border-border/50 bg-muted/30 p-6 max-w-2xl mx-auto">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Our Sponsors
-          </span>
-        </div>
-         <p className="text-xs text-muted-foreground text-center mb-4">
-           We earn commissions when you shop through the links below.
-         </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-4">
-           {sponsors.map((sponsor) => (
-             <Link
-               key={sponsor.name}
-               href={sponsor.url}
-               target="_blank"
-               rel="noopener noreferrer sponsored"
-               className="group relative inline-flex items-center justify-center px-6 py-3 bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md min-w-[180px]"
-               title={sponsor.tagline}
-             >
-               {/* External link indicator positioned absolutely */}
-               <ExternalLink className="absolute top-2 right-2 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-               <Image
-                 src={sponsor.logo || '/placeholder.svg'}
-                 alt={sponsor.name}
-                 width={120}
-                 height={60}
-                 className={cn('h-auto w-auto max-h-12', sponsor.className)}
-               />
-             </Link>
-           ))}
-         </div>
-
-          {showCTA && (
-            <div className="mt-4 pt-4 border-t border-border/50 text-center">
-              <Link
-                href="/sponsorship"
-                className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-              >
-                <span>Become a sponsor</span>
-                <span>→</span>
-              </Link>
-            </div>
-          )}
-        </div>
+      <div className="flex flex-wrap items-center justify-center gap-6">
+        <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">Supported by</span>
+        {sponsors.map((sponsor) => (
+          <Link
+            key={sponsor.name}
+            href={sponsor.url}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="group inline-flex items-center justify-center px-4 py-2 rounded-md hover:bg-muted/50 transition-colors"
+            title={sponsor.tagline}
+          >
+            <Image
+              src={sponsor.logo || '/placeholder.svg'}
+              alt={sponsor.name}
+              width={100}
+              height={40}
+              className={cn('h-auto w-auto max-h-8 opacity-50 group-hover:opacity-80 transition-opacity', sponsor.className)}
+            />
+          </Link>
+        ))}
       </div>
+    </div>
     );
   }
 

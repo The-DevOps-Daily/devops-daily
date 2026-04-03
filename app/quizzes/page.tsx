@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { QuizManager } from '@/components/games/quiz-manager';
 import { getQuizMetadata } from '@/lib/quiz-loader';
-import { QuizzesHero } from '@/components/quizzes-hero';
-import { Badge } from '@/components/ui/badge';
+import { PageHero } from '@/components/page-hero';
 import { Button } from '@/components/ui/button';
 import {
   Trophy,
@@ -51,8 +50,15 @@ export default async function QuizzesPage() {
   const quizzes = await getQuizMetadata();
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
-      <QuizzesHero quizCount={quizzes.length} />
+    <div className="min-h-screen">
+      <PageHero
+        title="Challenge Yourself, Level Up Your Skills"
+        accentWord="Level Up"
+        description="Master DevOps with interactive quizzes designed by industry experts. Test your knowledge, track your progress, and earn achievements as you advance."
+        icon={Trophy}
+        breadcrumbs={[{ label: 'Quizzes' }]}
+        stats={[{ label: 'quizzes', value: quizzes.length }]}
+      />
 
       {/* Quizzes Section */}
       {quizzes.length > 0 ? (

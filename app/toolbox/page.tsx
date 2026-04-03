@@ -1,5 +1,6 @@
-import { Button } from '@/components/ui/button';
+import { PageHero } from '@/components/page-hero';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -428,46 +429,12 @@ const getCategoryCount = (categoryId: string) => {
 export default function ToolboxPage() {
   return (
     <div className="min-h-screen pb-16">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-linear-to-b from-background via-background to-muted/20 py-20">
-        {/* Background decoration */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-grid opacity-[0.02]" />
-          <div className="absolute top-20 right-20 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-20 left-20 w-72 h-72 bg-purple-500/10 rounded-full blur-[100px]" />
-        </div>
-
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 px-4 py-1.5 border-blue-500/50 bg-blue-500/5 backdrop-blur-sm"
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-2 text-blue-500" />
-              Curated DevOps Resources
-            </Badge>
-
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              DevOps{' '}
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 via-purple-500 to-pink-500">
-                Toolbox
-              </span>
-            </h1>
-
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Discover essential tools and resources to streamline your DevOps workflow, enhance
-              productivity, and keep your infrastructure running smoothly.
-            </p>
-
-            <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground max-w-2xl mx-auto">
-              <p>
-                <span className="font-semibold">Affiliate Notice:</span> We earn commissions when
-                you shop through the links below.
-             </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        title="DevOps Toolbox"
+        description="Curated tools and resources to streamline your DevOps workflow."
+        icon={PencilRuler}
+        breadcrumbs={[{ label: 'Toolbox' }]}
+      />
 
       {/* Tools Section */}
       <section className="py-8">
