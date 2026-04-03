@@ -19,7 +19,7 @@ export async function Hero() {
   const latestPost = posts[0];
 
   return (
-    <div className="relative pb-8">
+    <div className="pb-8">
 
       {/* Floating tech icons - right side only */}
       <div className="absolute inset-0 pointer-events-none hidden md:block">
