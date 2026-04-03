@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import { getAllFlashCardSets } from '@/lib/flashcard-loader'
+import { PageHero } from '@/components/page-hero'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   BookOpen,
   Clock,
+  Layers,
   Sparkles,
   GitFork,
   Zap,
@@ -51,25 +53,14 @@ export default async function FlashcardsPage() {
   const flashcardSets = await getAllFlashCardSets()
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden border-b bg-linear-to-br from-purple-500/10 via-blue-500/5 to-indigo-500/10 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-4" variant="secondary">
-              <BookOpen className="mr-2 h-3 w-3" />
-              {flashcardSets.length} Flashcard Sets
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-clip-text text-transparent bg-linear-to-r from-purple-600 via-blue-600 to-indigo-600">
-              Master DevOps Concepts
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Learn and memorize key DevOps concepts with interactive flashcards. Perfect for
-              exam prep, interviews, or daily practice.
-            </p>
-          </div>
-        </div>
-      </section>
+    <div className="min-h-screen">
+      <PageHero
+        title="Master DevOps Concepts"
+        description="Learn and memorize key DevOps concepts with interactive flashcards. Perfect for exam prep, interviews, or daily practice."
+        icon={Layers}
+        breadcrumbs={[{ label: 'Flashcards' }]}
+        stats={[{ label: 'flashcard sets', value: flashcardSets.length }]}
+      />
 
       {/* Flashcard Sets Grid */}
       {flashcardSets.length > 0 ? (

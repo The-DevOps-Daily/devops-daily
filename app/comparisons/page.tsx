@@ -1,9 +1,9 @@
-import { ComparisonsHero } from '@/components/comparisons/comparisons-hero';
+import { PageHero } from '@/components/page-hero';
 import { ComparisonsList } from '@/components/comparisons/comparisons-list';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { getAllComparisons } from '@/lib/comparisons';
 import { Card, CardContent } from '@/components/ui/card';
-import { MessageSquarePlus } from 'lucide-react';
+import { MessageSquarePlus, Scale } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -41,8 +41,14 @@ export default async function ComparisonsPage() {
   const comparisons = await getAllComparisons();
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
-      <ComparisonsHero totalComparisons={comparisons.length} />
+    <div className="min-h-screen">
+      <PageHero
+        title="DevOps Tool Comparisons"
+        description="Compare popular DevOps tools side by side. Feature comparison tables, pros and cons, use cases, and honest verdicts."
+        icon={Scale}
+        breadcrumbs={[{ label: 'Comparisons' }]}
+        stats={[{ label: 'comparisons', value: comparisons.length }]}
+      />
 
       <div className="py-8 container mx-auto px-4 grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* Main Content */}
