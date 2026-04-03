@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import {
   Activity,
   ShieldCheck,
   Settings,
+  Terminal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,16 +30,22 @@ interface Process {
   x: number;
   y: number;
   depth: number;
-  spawned: number; // timestamp tick when spawned
+  spawned: number;
   dead: boolean;
+}
+
+interface LogEntry {
+  tick: number;
+  text: string;
+  type: 'fork' | 'error' | 'info';
 }
 
 type SimState = 'idle' | 'running' | 'crashed' | 'protected';
 
 const MAX_PID_LIMIT = 512;
-const MEMORY_PER_PROCESS = 0.4; // MB per process
-const TOTAL_MEMORY = 256; // MB simulated
-const CPU_PER_PROCESS = 0.3; // % per process base
+const MEMORY_PER_PROCESS = 0.4;
+const TOTAL_MEMORY = 256;
+const CPU_PER_PROCESS = 0.3;
 
 const CODE_PARTS = [
   { text: ':', label: 'Function name (yes, just a colon)' },
@@ -59,23 +66,56 @@ const PROTECTION_METHODS = [
     name: 'ulimit -u',
     description: 'Limit max user processes',
     command: 'ulimit -u 100',
-    effective: true,
   },
   {
     id: 'cgroup',
     name: 'cgroups',
     description: 'Kernel-level process limits',
     command: 'echo 100 > /sys/fs/cgroup/pids/user/pids.max',
-    effective: true,
   },
   {
     id: 'systemd',
     name: 'systemd',
     description: 'TasksMax in unit files',
     command: 'TasksMax=100 in [Service]',
-    effective: true,
   },
 ];
+
+function ConnectionLines({ processes }: { processes: Process[] }) {
+  const visible = processes.slice(-300);
+  const processMap = useMemo(() => {
+    const map = new Map<number, Process>();
+    for (const p of visible) map.set(p.id, p);
+    return map;
+  }, [visible]);
+
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+      {visible.map((proc) => {
+        if (proc.parentId === null || proc.dead) return null;
+        const parent = processMap.get(proc.parentId);
+        if (!parent) return null;
+        return (
+          <line
+            key={`line-${proc.id}`}
+            x1={`${parent.x}%`}
+            y1={`${parent.y}%`}
+            x2={`${proc.x}%`}
+            y2={`${proc.y}%`}
+            stroke={
+              proc.depth < 3
+                ? 'rgba(239,68,68,0.25)'
+                : proc.depth < 6
+                  ? 'rgba(249,115,22,0.15)'
+                  : 'rgba(234,179,8,0.08)'
+            }
+            strokeWidth={Math.max(0.5, 2 - proc.depth * 0.2)}
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 function ProcessNode({ process, tick }: { process: Process; tick: number }) {
   const age = tick - process.spawned;
@@ -142,18 +182,79 @@ function ResourceBar({
         <motion.div
           className={cn(
             'h-full rounded-full transition-colors duration-300',
-            pct > 90
-              ? 'bg-red-500'
-              : pct > 70
-                ? 'bg-orange-500'
-                : pct > 50
-                  ? 'bg-yellow-500'
-                  : 'bg-emerald-500'
+            pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-orange-500' : pct > 50 ? 'bg-yellow-500' : 'bg-emerald-500'
           )}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.3 }}
         />
       </div>
+    </div>
+  );
+}
+
+function GrowthCounter({ activeCount, state }: { activeCount: number; state: SimState }) {
+  const powers = [];
+  let val = 1;
+  while (val <= activeCount && powers.length < 12) {
+    powers.push(val);
+    val *= 2;
+  }
+
+  if (state === 'idle') return null;
+
+  return (
+    <div className="flex items-center gap-1 flex-wrap justify-center">
+      {powers.map((p, i) => (
+        <React.Fragment key={p}>
+          <span
+            className={cn(
+              'font-mono text-xs px-1.5 py-0.5 rounded transition-all duration-300',
+              p <= activeCount ? 'bg-red-500/20 text-red-400' : 'bg-secondary text-muted-foreground'
+            )}
+          >
+            {p.toLocaleString()}
+          </span>
+          {i < powers.length - 1 && <span className="text-muted-foreground text-xs">{'>'}</span>}
+        </React.Fragment>
+      ))}
+      {activeCount > (powers[powers.length - 1] || 1) && (
+        <>
+          <span className="text-muted-foreground text-xs">{'>'}</span>
+          <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-red-500/30 text-red-400 font-bold">
+            {activeCount.toLocaleString()}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function TerminalLog({ logs }: { logs: LogEntry[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
+
+  return (
+    <div
+      ref={scrollRef}
+      className="h-28 overflow-y-auto font-mono text-[10px] leading-relaxed bg-black/40 rounded-lg p-2 border border-border/50"
+    >
+      {logs.length === 0 && <span className="text-muted-foreground">$ waiting...</span>}
+      {logs.map((log, i) => (
+        <div
+          key={i}
+          className={cn(
+            log.type === 'error' ? 'text-red-400' : log.type === 'info' ? 'text-emerald-400' : 'text-muted-foreground'
+          )}
+        >
+          <span className="text-muted-foreground/50">[{log.tick.toString().padStart(3, '0')}]</span>{' '}
+          {log.text}
+        </div>
+      ))}
     </div>
   );
 }
@@ -168,15 +269,16 @@ export default function ForkBombSimulator() {
   const [highlightedPart, setHighlightedPart] = useState<number | null>(null);
   const [showExplainer, setShowExplainer] = useState(true);
   const [peakProcesses, setPeakProcesses] = useState(0);
-  const [crashTick, setCrashTick] = useState<number | null>(null);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [shaking, setShaking] = useState(false);
   const nextPid = useRef(1);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const effectiveLimit = protection ? 100 : pidLimit;
 
-  const memoryUsed = processes.filter((p) => !p.dead).length * MEMORY_PER_PROCESS;
-  const cpuUsage = Math.min(100, processes.filter((p) => !p.dead).length * CPU_PER_PROCESS);
-  const activeCount = processes.filter((p) => !p.dead).length;
+  const activeCount = useMemo(() => processes.filter((p) => !p.dead).length, [processes]);
+  const memoryUsed = activeCount * MEMORY_PER_PROCESS;
+  const cpuUsage = Math.min(100, activeCount * CPU_PER_PROCESS);
 
   const reset = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -185,7 +287,8 @@ export default function ForkBombSimulator() {
     setTick(0);
     nextPid.current = 1;
     setPeakProcesses(0);
-    setCrashTick(null);
+    setLogs([]);
+    setShaking(false);
   }, []);
 
   const spawnProcess = useCallback(
@@ -222,49 +325,78 @@ export default function ForkBombSimulator() {
     setProcesses([root]);
     setState('running');
     setShowExplainer(false);
-  }, [reset, spawnProcess]);
+    setLogs([{ tick: 0, text: '$ :(){ :|:& };:', type: 'info' }, { tick: 0, text: 'fork() -> PID 1', type: 'fork' }]);
+  }, [reset]);
 
   // Main simulation loop
   useEffect(() => {
     if (state !== 'running') return;
 
     intervalRef.current = setInterval(() => {
-      setTick((t) => t + 1);
-      setProcesses((prev) => {
-        const alive = prev.filter((p) => !p.dead);
-        const currentTick = prev.length > 0 ? Math.max(...prev.map((p) => p.spawned)) + 1 : 1;
+      setTick((t) => {
+        const newTick = t + 1;
 
-        if (alive.length >= effectiveLimit) {
-          if (protection) {
-            setState('protected');
-          } else {
-            setState('crashed');
-            setCrashTick(currentTick);
+        setProcesses((prev) => {
+          const alive = prev.filter((p) => !p.dead);
+
+          if (alive.length >= effectiveLimit) {
+            if (protection) {
+              setState('protected');
+              setLogs((l) => [
+                ...l.slice(-50),
+                { tick: newTick, text: `ulimit: max processes (${effectiveLimit}) reached - fork bomb contained`, type: 'info' },
+              ]);
+            } else {
+              setState('crashed');
+              setShaking(true);
+              setTimeout(() => setShaking(false), 1000);
+              setLogs((l) => [
+                ...l.slice(-50),
+                { tick: newTick, text: `FATAL: fork() failed - Resource temporarily unavailable`, type: 'error' },
+                { tick: newTick, text: `kernel: PID limit (${effectiveLimit}) exhausted. System unresponsive.`, type: 'error' },
+              ]);
+            }
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            return prev;
           }
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          return prev;
-        }
 
-        // Each alive process tries to fork twice (: | : &)
-        const newProcesses: Process[] = [];
-        const maxNewPerTick = Math.min(alive.length * 2, effectiveLimit - alive.length);
-        let spawned = 0;
+          const newProcesses: Process[] = [];
+          const maxNewPerTick = Math.min(alive.length * 2, effectiveLimit - alive.length);
+          let spawned = 0;
 
-        for (const proc of alive) {
-          if (spawned >= maxNewPerTick) break;
-          // Fork #1
-          newProcesses.push(spawnProcess(proc.id, proc.x, proc.y, proc.depth + 1, currentTick));
-          spawned++;
-          if (spawned >= maxNewPerTick) break;
-          // Fork #2
-          newProcesses.push(spawnProcess(proc.id, proc.x, proc.y, proc.depth + 1, currentTick));
-          spawned++;
-        }
+          for (const proc of alive) {
+            if (spawned >= maxNewPerTick) break;
+            newProcesses.push(spawnProcess(proc.id, proc.x, proc.y, proc.depth + 1, newTick));
+            spawned++;
+            if (spawned >= maxNewPerTick) break;
+            newProcesses.push(spawnProcess(proc.id, proc.x, proc.y, proc.depth + 1, newTick));
+            spawned++;
+          }
 
-        const total = [...prev, ...newProcesses];
-        const aliveCount = total.filter((p) => !p.dead).length;
-        setPeakProcesses((peak) => Math.max(peak, aliveCount));
-        return total;
+          const total = [...prev, ...newProcesses];
+          const aliveCount = total.filter((p) => !p.dead).length;
+          setPeakProcesses((peak) => Math.max(peak, aliveCount));
+
+          // Add log entries (sample to avoid flooding)
+          if (newProcesses.length > 0) {
+            const sample = newProcesses.slice(0, 2);
+            setLogs((l) => [
+              ...l.slice(-50),
+              ...sample.map((p) => ({
+                tick: newTick,
+                text: `fork() -> PID ${p.id} (parent: ${p.parentId}, depth: ${p.depth})`,
+                type: 'fork' as const,
+              })),
+              ...(newProcesses.length > 2
+                ? [{ tick: newTick, text: `  ...and ${newProcesses.length - 2} more forks`, type: 'fork' as const }]
+                : []),
+            ]);
+          }
+
+          return total;
+        });
+
+        return newTick;
       });
     }, Math.max(50, 300 / speed));
 
@@ -285,8 +417,7 @@ export default function ForkBombSimulator() {
           <Zap className="w-6 h-6 text-red-500" />
         </div>
         <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-          Visualize how the infamous fork bomb works
-          and why it crashes systems in seconds
+          Visualize how the infamous fork bomb works and why it crashes systems in seconds
         </p>
       </div>
 
@@ -341,12 +472,21 @@ export default function ForkBombSimulator() {
         )}
       </AnimatePresence>
 
+      {/* Exponential Growth Counter */}
+      <GrowthCounter activeCount={activeCount} state={state} />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Visualization Panel */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-4">
           <Card className="overflow-hidden">
             <CardContent className="p-0">
-              <div
+              <motion.div
+                animate={
+                  shaking
+                    ? { x: [0, -8, 8, -6, 6, -3, 3, 0], y: [0, 4, -4, 3, -3, 1, -1, 0] }
+                    : { x: 0, y: 0 }
+                }
+                transition={shaking ? { duration: 0.6, ease: 'easeOut' } : {}}
                 className={cn(
                   'relative w-full aspect-[4/3] overflow-hidden transition-colors duration-500',
                   state === 'crashed'
@@ -366,13 +506,16 @@ export default function ForkBombSimulator() {
                   ))}
                 </div>
 
+                {/* Connection lines */}
+                <ConnectionLines processes={processes} />
+
                 {/* Process nodes */}
                 {processes.slice(-500).map((proc) => (
                   <ProcessNode key={proc.id} process={proc} tick={tick} />
                 ))}
 
                 {/* Idle state */}
-                {state === 'idle' && (
+                {state === 'idle' && processes.length === 0 && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                     <TreePine className="w-16 h-16 text-muted-foreground/30" />
                     <p className="text-muted-foreground/50 text-sm">Press Start to unleash the fork bomb</p>
@@ -397,9 +540,7 @@ export default function ForkBombSimulator() {
                       <p className="text-red-400/70 text-sm mt-1">
                         PID limit ({effectiveLimit}) reached in {timeElapsed}s
                       </p>
-                      <p className="text-red-400/50 text-xs mt-1">
-                        Peak: {peakProcesses} processes
-                      </p>
+                      <p className="text-red-400/50 text-xs mt-1">Peak: {peakProcesses} processes</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -419,9 +560,7 @@ export default function ForkBombSimulator() {
                       <p className="text-emerald-400/70 text-sm mt-1">
                         Process limit enforced at 100 - system remains stable
                       </p>
-                      <p className="text-emerald-400/50 text-xs mt-1">
-                        Fork bomb contained after {timeElapsed}s
-                      </p>
+                      <p className="text-emerald-400/50 text-xs mt-1">Fork bomb contained after {timeElapsed}s</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -437,7 +576,38 @@ export default function ForkBombSimulator() {
                     </Badge>
                   </div>
                 )}
-              </div>
+
+                {/* Color legend */}
+                {(state === 'running' || state === 'idle') && processes.length > 0 && (
+                  <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded px-2 py-1">
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> root
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <span className="w-2 h-2 rounded-full bg-orange-500 inline-block" /> gen 1-2
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" /> gen 3-5
+                    </span>
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <span className="w-2 h-2 rounded-full bg-yellow-300 inline-block" /> gen 6+
+                    </span>
+                  </div>
+                )}
+              </motion.div>
+            </CardContent>
+          </Card>
+
+          {/* Terminal Log */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-green-500" />
+                Process Log
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <TerminalLog logs={logs} />
             </CardContent>
           </Card>
         </div>
@@ -477,7 +647,6 @@ export default function ForkBombSimulator() {
                 </Button>
               </div>
 
-              {/* Speed */}
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Speed: {speed}x</label>
                 <input
@@ -492,7 +661,6 @@ export default function ForkBombSimulator() {
                 />
               </div>
 
-              {/* PID Limit */}
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">PID Limit: {pidLimit}</label>
                 <input
@@ -528,30 +696,9 @@ export default function ForkBombSimulator() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <ResourceBar
-                label="Processes"
-                value={activeCount}
-                max={effectiveLimit}
-                unit=""
-                icon={TreePine}
-                danger={activeCount > effectiveLimit * 0.8}
-              />
-              <ResourceBar
-                label="CPU"
-                value={cpuUsage}
-                max={100}
-                unit="%"
-                icon={Cpu}
-                danger={cpuUsage > 80}
-              />
-              <ResourceBar
-                label="Memory"
-                value={memoryUsed}
-                max={TOTAL_MEMORY}
-                unit="MB"
-                icon={MemoryStick}
-                danger={memoryUsed > TOTAL_MEMORY * 0.8}
-              />
+              <ResourceBar label="Processes" value={activeCount} max={effectiveLimit} unit="" icon={TreePine} danger={activeCount > effectiveLimit * 0.8} />
+              <ResourceBar label="CPU" value={cpuUsage} max={100} unit="%" icon={Cpu} danger={cpuUsage > 80} />
+              <ResourceBar label="Memory" value={memoryUsed} max={TOTAL_MEMORY} unit="MB" icon={MemoryStick} danger={memoryUsed > TOTAL_MEMORY * 0.8} />
             </CardContent>
           </Card>
 
