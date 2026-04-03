@@ -1,0 +1,229 @@
+{
+  "id": "slos-slis-error-budgets",
+  "slug": "slos-slis-error-budgets",
+  "title": "SLOs, SLIs, and Error Budgets: A Practical Implementation Guide",
+  "description": "A step-by-step checklist for defining service level objectives, picking the right service level indicators, and using error budgets to make better decisions about reliability vs. feature velocity.",
+  "category": "SRE",
+  "difficulty": "intermediate",
+  "estimatedTime": "45-90 minutes",
+  "tags": ["sre", "slos", "slis", "error-budgets", "monitoring", "reliability"],
+  "items": [
+    {
+      "id": "identify-critical-user-journeys",
+      "title": "Identify your critical user journeys",
+      "description": "Before you touch any metrics, figure out what your users actually care about. A checkout flow matters more than an admin settings page. If you skip this step, you'll end up with SLOs that protect things nobody uses while ignoring the paths that make or break your business.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Document critical user journeys",
+          "code": "# critical-journeys.yaml\nservice: payment-api\njourneys:\n  - name: checkout\n    description: \"User completes a purchase\"\n    priority: P0\n    endpoints:\n      - POST /api/v1/orders\n      - POST /api/v1/payments\n      - GET /api/v1/orders/{id}/status\n    expected_latency_p99: 800ms\n    expected_availability: 99.95%\n\n  - name: product-search\n    description: \"User searches and browses products\"\n    priority: P1\n    endpoints:\n      - GET /api/v1/search\n      - GET /api/v1/products/{id}\n    expected_latency_p99: 200ms\n    expected_availability: 99.9%\n\n  - name: admin-reports\n    description: \"Internal team generates reports\"\n    priority: P2\n    endpoints:\n      - GET /api/v1/admin/reports\n    expected_latency_p99: 5000ms\n    expected_availability: 99.5%"
+        }
+      ]
+    },
+    {
+      "id": "choose-meaningful-slis",
+      "title": "Pick SLIs that reflect real user experience",
+      "description": "Your SLIs should measure what users feel, not what your servers report. A health check returning 200 means nothing if the checkout page takes 12 seconds to load. Stick to the four golden signals: latency, error rate, throughput, and saturation. Measure at the edge, not deep inside your stack.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "promql",
+          "label": "SLI: Availability (success rate at the load balancer)",
+          "code": "# Good: measures what users see at the edge\nsum(rate(http_requests_total{job=\"api-gateway\", status!~\"5..\"}[5m]))\n/\nsum(rate(http_requests_total{job=\"api-gateway\"}[5m]))\n\n# Bad: internal health check (tells you nothing about user experience)\n# up{job=\"api-gateway\"} == 1"
+        },
+        {
+          "language": "promql",
+          "label": "SLI: Latency (p99 request duration)",
+          "code": "# Percentage of requests faster than 300ms\nsum(rate(http_request_duration_seconds_bucket{le=\"0.3\", job=\"api-gateway\"}[5m]))\n/\nsum(rate(http_request_duration_seconds_count{job=\"api-gateway\"}[5m]))"
+        },
+        {
+          "language": "promql",
+          "label": "SLI: Correctness (application-level errors)",
+          "code": "# Catches business logic errors, not just HTTP 500s\n1 - (\n  sum(rate(app_errors_total{job=\"api-gateway\", type=~\"validation|timeout|upstream\"}[5m]))\n  /\n  sum(rate(http_requests_total{job=\"api-gateway\"}[5m]))\n)"
+        }
+      ]
+    },
+    {
+      "id": "set-realistic-slo-targets",
+      "title": "Set SLO targets based on actual data, not wishful thinking",
+      "description": "Run your service for 2-4 weeks and look at the real numbers before setting targets. If your current availability is 99.5%, setting a 99.99% SLO is a fantasy. Start with what you can actually hit, then tighten over time. An SLO you consistently miss is worse than useless -- it trains everyone to ignore alerts.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Query historical performance to inform SLO targets",
+          "code": "# Check your actual availability over the last 30 days\ncurl -s 'http://prometheus:9090/api/v1/query' \\\n  --data-urlencode 'query=\n    avg_over_time(\n      (sum(rate(http_requests_total{status!~\"5..\"}[1h]))\n       / sum(rate(http_requests_total[1h])))[30d:1h]\n    )' | jq '.data.result[0].value[1]'\n\n# Output: \"0.9987\"  <- your real availability is 99.87%\n# Don't set an SLO of 99.99% if this is where you are"
+        },
+        {
+          "language": "yaml",
+          "label": "SLO definition based on measured performance",
+          "code": "# slo-spec.yaml\napiVersion: sloth.slok.dev/v1\nkind: PrometheusServiceLevel\nmetadata:\n  name: payment-api\nspec:\n  service: payment-api\n  labels:\n    team: platform\n  slos:\n    - name: requests-availability\n      objective: 99.9  # 43.8 min/month downtime budget\n      description: \"99.9% of payment requests succeed\"\n      sli:\n        events:\n          error_query: sum(rate(http_requests_total{job=\"payment-api\", status=~\"5..\"}[{{.window}}]))\n          total_query: sum(rate(http_requests_total{job=\"payment-api\"}[{{.window}}]))\n      alerting:\n        name: PaymentAvailability\n        labels:\n          severity: critical\n        page_alert:\n          labels:\n            severity: page\n        ticket_alert:\n          labels:\n            severity: ticket"
+        }
+      ]
+    },
+    {
+      "id": "calculate-error-budget",
+      "title": "Calculate and track your error budget",
+      "description": "An error budget is the amount of unreliability you can afford. With a 99.9% SLO, you get 0.1% of requests as your budget. This is not a target to hit -- it is the line where you stop shipping features and start fixing reliability. Without a visible error budget, the conversation about reliability vs. speed never has numbers behind it.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "promql",
+          "label": "Error budget remaining (30-day rolling window)",
+          "code": "# Error budget consumption percentage\n# SLO target: 99.9% (0.999)\n(\n  1 - (\n    sum(rate(http_requests_total{job=\"payment-api\", status!~\"5..\"}[30d]))\n    /\n    sum(rate(http_requests_total{job=\"payment-api\"}[30d]))\n  )\n) / (1 - 0.999) * 100\n\n# Result interpretation:\n# 0-70%   = healthy, keep shipping\n# 70-90%  = slow down, prioritize reliability work\n# 90-100% = freeze feature deployments\n# >100%   = SLO violated, all hands on reliability"
+        },
+        {
+          "language": "bash",
+          "label": "Quick error budget math",
+          "code": "# Monthly error budget in minutes and requests\n# 99.9% SLO over 30 days:\n# Time budget:    30 * 24 * 60 * 0.001 = 43.2 minutes of downtime\n# Request budget: 1,000,000 requests/month * 0.001 = 1,000 failed requests allowed\n\necho \"SLO: 99.9%\"\necho \"Monthly downtime budget: $(echo '30 * 24 * 60 * 0.001' | bc) minutes\"\necho \"At 1M requests/month: $(echo '1000000 * 0.001' | bc | cut -d. -f1) failed requests allowed\"\n\n# Output:\n# SLO: 99.9%\n# Monthly downtime budget: 43.2 minutes\n# At 1M requests/month: 1000 failed requests allowed"
+        }
+      ]
+    },
+    {
+      "id": "create-slo-burn-rate-alerts",
+      "title": "Set up burn rate alerts instead of threshold alerts",
+      "description": "Don't alert when availability drops below 99.9% in a 5-minute window. That fires constantly and means nothing. Use burn rate alerts instead: they tell you how fast you're consuming your error budget. A 14.4x burn rate means you'll exhaust your monthly budget in 2 days. That's worth waking someone up for. A 1x burn rate means you're on track -- no action needed.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Multi-window burn rate alerting rules",
+          "code": "# prometheus-rules.yaml\ngroups:\n  - name: slo-burn-rate\n    rules:\n      # Fast burn: 2% of budget in 1 hour -> pages oncall\n      - alert: HighErrorBudgetBurn_Page\n        expr: |\n          (\n            sum(rate(http_requests_total{job=\"payment-api\", status=~\"5..\"}[1h]))\n            / sum(rate(http_requests_total{job=\"payment-api\"}[1h]))\n          ) > (14.4 * 0.001)\n          and\n          (\n            sum(rate(http_requests_total{job=\"payment-api\", status=~\"5..\"}[5m]))\n            / sum(rate(http_requests_total{job=\"payment-api\"}[5m]))\n          ) > (14.4 * 0.001)\n        for: 2m\n        labels:\n          severity: page\n        annotations:\n          summary: \"Payment API burning error budget 14.4x faster than allowed\"\n          description: \"At this rate, the 30-day error budget will be exhausted in ~2 days.\"\n          runbook: \"https://wiki.internal/runbooks/payment-api-slo-burn\"\n\n      # Slow burn: 10% of budget in 3 days -> creates a ticket\n      - alert: HighErrorBudgetBurn_Ticket\n        expr: |\n          (\n            sum(rate(http_requests_total{job=\"payment-api\", status=~\"5..\"}[6h]))\n            / sum(rate(http_requests_total{job=\"payment-api\"}[6h]))\n          ) > (3 * 0.001)\n          and\n          (\n            sum(rate(http_requests_total{job=\"payment-api\", status=~\"5..\"}[3h]))\n            / sum(rate(http_requests_total{job=\"payment-api\"}[3h]))\n          ) > (3 * 0.001)\n        for: 15m\n        labels:\n          severity: ticket\n        annotations:\n          summary: \"Payment API burning error budget 3x faster than allowed\"\n          description: \"At this rate, the 30-day error budget will be exhausted in ~10 days.\""
+        }
+      ]
+    },
+    {
+      "id": "build-error-budget-dashboard",
+      "title": "Build an error budget dashboard everyone can see",
+      "description": "Your error budget is useless if only the SRE team knows about it. Put it on a dashboard that product managers and engineering leads check weekly. When the budget is running low, the conversation about whether to ship that risky migration or fix that flaky retry logic happens naturally.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "json",
+          "label": "Grafana dashboard panel for error budget",
+          "code": "{\n  \"panels\": [\n    {\n      \"title\": \"Error Budget Remaining - Payment API\",\n      \"type\": \"gauge\",\n      \"targets\": [\n        {\n          \"expr\": \"1 - (sum(rate(http_requests_total{job='payment-api', status=~'5..'}[30d])) / sum(rate(http_requests_total{job='payment-api'}[30d]))) / (1 - 0.999)\",\n          \"legendFormat\": \"Budget Remaining\"\n        }\n      ],\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"unit\": \"percentunit\",\n          \"thresholds\": {\n            \"steps\": [\n              { \"value\": 0, \"color\": \"red\" },\n              { \"value\": 0.1, \"color\": \"orange\" },\n              { \"value\": 0.3, \"color\": \"green\" }\n            ]\n          },\n          \"min\": 0,\n          \"max\": 1\n        }\n      }\n    },\n    {\n      \"title\": \"Error Budget Burn Rate (30d window)\",\n      \"type\": \"timeseries\",\n      \"targets\": [\n        {\n          \"expr\": \"sum(rate(http_requests_total{job='payment-api', status=~'5..'}[1h])) / sum(rate(http_requests_total{job='payment-api'}[1h])) / 0.001\",\n          \"legendFormat\": \"Burn rate (1x = on budget)\"\n        }\n      ],\n      \"fieldConfig\": {\n        \"defaults\": {\n          \"custom\": {\n            \"thresholdsStyle\": { \"mode\": \"line\" }\n          },\n          \"thresholds\": {\n            \"steps\": [\n              { \"value\": 1, \"color\": \"green\" },\n              { \"value\": 3, \"color\": \"orange\" },\n              { \"value\": 14.4, \"color\": \"red\" }\n            ]\n          }\n        }\n      }\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "id": "define-error-budget-policy",
+      "title": "Write an error budget policy and get sign-off",
+      "description": "An error budget without a policy is just a number on a dashboard. You need written rules that say what happens when the budget runs low or runs out. Does deployment freeze? Do engineers switch to reliability work? Who decides when to override the freeze? Get your VP of Engineering and product lead to sign this. If nobody agreed to follow the rules, nobody will.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Error budget policy document",
+          "code": "# error-budget-policy.yaml\nservice: payment-api\nslo_target: 99.9%\nwindow: 30d\napproved_by:\n  - VP Engineering\n  - Director of Product\n  - SRE Lead\n\npolicy:\n  budget_healthy:  # 0-70% consumed\n    actions:\n      - \"Normal feature development continues\"\n      - \"Standard deployment cadence\"\n      - \"SRE reviews weekly burn rate in standup\"\n\n  budget_warning:  # 70-90% consumed\n    actions:\n      - \"Risky deployments require SRE approval\"\n      - \"Team prioritizes one reliability item per sprint\"\n      - \"Daily error budget check in standup\"\n      - \"No new experimental features\"\n\n  budget_critical:  # 90-100% consumed\n    actions:\n      - \"Feature freeze -- only bug fixes and reliability work\"\n      - \"All deployments require SRE sign-off\"\n      - \"Rollback plan required for every change\"\n      - \"Incident review for top error contributors\"\n\n  budget_exhausted:  # >100% consumed\n    actions:\n      - \"Full deployment freeze\"\n      - \"All engineering effort on reliability\"\n      - \"Executive escalation within 24 hours\"\n      - \"Post-mortem required before freeze lifts\"\n\n  override_conditions:\n    - \"Security patches always ship regardless of budget\"\n    - \"Legal/compliance changes always ship\"\n    - \"VP Engineering can override freeze with written justification\""
+        }
+      ]
+    },
+    {
+      "id": "instrument-sli-metrics",
+      "title": "Instrument your code to emit SLI metrics",
+      "description": "Your SLIs are only as good as the data feeding them. Add instrumentation at the HTTP layer and the application layer. HTTP status codes miss a lot -- a 200 response with an empty cart is still a failure for the user. Track both infrastructure-level and business-level signals.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Flask app with SLI instrumentation",
+          "code": "from prometheus_client import Counter, Histogram, generate_latest\nimport time\n\n# SLI metrics\nrequest_total = Counter(\n    'http_requests_total',\n    'Total HTTP requests',\n    ['method', 'endpoint', 'status']\n)\n\nrequest_duration = Histogram(\n    'http_request_duration_seconds',\n    'Request duration in seconds',\n    ['method', 'endpoint'],\n    buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0]\n)\n\n# Business-level SLI: tracks actual user-facing failures\nbusiness_errors = Counter(\n    'business_operation_errors_total',\n    'Business logic failures (user-visible)',\n    ['operation', 'reason']\n)\n\n@app.before_request\ndef start_timer():\n    g.start_time = time.time()\n\n@app.after_request\ndef record_metrics(response):\n    duration = time.time() - g.start_time\n    endpoint = request.endpoint or 'unknown'\n    request_total.labels(\n        method=request.method,\n        endpoint=endpoint,\n        status=response.status_code\n    ).inc()\n    request_duration.labels(\n        method=request.method,\n        endpoint=endpoint\n    ).observe(duration)\n    return response\n\n@app.route('/api/checkout', methods=['POST'])\ndef checkout():\n    try:\n        result = process_payment(request.json)\n        if not result.success:\n            # This is a 200 OK but a business failure\n            business_errors.labels(\n                operation='checkout',\n                reason=result.error_code\n            ).inc()\n        return jsonify(result.to_dict())\n    except Exception as e:\n        business_errors.labels(\n            operation='checkout',\n            reason='unhandled_exception'\n        ).inc()\n        raise"
+        }
+      ]
+    },
+    {
+      "id": "use-slo-windows-correctly",
+      "title": "Use rolling windows, not calendar windows",
+      "description": "A calendar-month SLO resets on the 1st. That means your team blows through the budget on the 3rd and then coasts for 27 days knowing nothing matters until next month. Use a 30-day rolling window instead. Every hour matters equally. Yesterday's incident is always in the window.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "promql",
+          "label": "Rolling 30-day window SLO calculation",
+          "code": "# Rolling 30-day availability (every hour counts)\nsum(rate(http_requests_total{job=\"payment-api\", status!~\"5..\"}[30d]))\n/\nsum(rate(http_requests_total{job=\"payment-api\"}[30d]))\n\n# Compare: calendar month (resets, creates bad incentives)\n# sum(increase(http_requests_total{job=\"payment-api\", status!~\"5..\"}[30d]))\n# This resets on the 1st -- avoid this pattern"
+        },
+        {
+          "language": "yaml",
+          "label": "Prometheus recording rules for SLO windows",
+          "code": "# Recording rules to pre-compute SLO values\n# Needed because 30d range queries are expensive\ngroups:\n  - name: slo-recording-rules\n    interval: 1m\n    rules:\n      # 5m error rate (for burn rate alerts)\n      - record: slo:http_error_rate:ratio_rate5m\n        expr: |\n          sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (job)\n          / sum(rate(http_requests_total[5m])) by (job)\n\n      # 1h error rate\n      - record: slo:http_error_rate:ratio_rate1h\n        expr: |\n          sum(rate(http_requests_total{status=~\"5..\"}[1h])) by (job)\n          / sum(rate(http_requests_total[1h])) by (job)\n\n      # 6h error rate\n      - record: slo:http_error_rate:ratio_rate6h\n        expr: |\n          sum(rate(http_requests_total{status=~\"5..\"}[6h])) by (job)\n          / sum(rate(http_requests_total[6h])) by (job)\n\n      # 30d error rate (for overall SLO tracking)\n      - record: slo:http_error_rate:ratio_rate30d\n        expr: |\n          sum(rate(http_requests_total{status=~\"5..\"}[30d])) by (job)\n          / sum(rate(http_requests_total[30d])) by (job)"
+        }
+      ]
+    },
+    {
+      "id": "automate-slo-reporting",
+      "title": "Automate weekly SLO status reports",
+      "description": "Send a weekly SLO report to your team's Slack channel or email list. Include current SLO status, error budget remaining, top error contributors, and trending direction. This keeps SLOs visible without anyone needing to check a dashboard. Automation beats good intentions every time.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Weekly SLO report script",
+          "code": "#!/usr/bin/env python3\n\"\"\"Weekly SLO report generator - run via cron every Monday 9am.\"\"\"\nimport requests\nimport json\n\nPROMETHEUS = \"http://prometheus:9090\"\nSLACK_WEBHOOK = \"https://hooks.slack.com/services/T.../B.../xxx\"\n\nSLOS = [\n    {\"name\": \"Payment API\", \"job\": \"payment-api\", \"target\": 0.999},\n    {\"name\": \"Search API\", \"job\": \"search-api\", \"target\": 0.995},\n]\n\ndef query_prometheus(query):\n    r = requests.get(f\"{PROMETHEUS}/api/v1/query\", params={\"query\": query})\n    return float(r.json()[\"data\"][\"result\"][0][\"value\"][1])\n\ndef get_slo_status(job, target):\n    availability = query_prometheus(\n        f'sum(rate(http_requests_total{{job=\"{job}\",status!~\"5..\"}}[30d]))'\n        f' / sum(rate(http_requests_total{{job=\"{job}\"}}[30d]))'\n    )\n    budget_consumed = (1 - availability) / (1 - target)\n    return availability, budget_consumed\n\nblocks = [{\"type\": \"header\", \"text\": {\"type\": \"plain_text\", \"text\": \"Weekly SLO Report\"}}]\n\nfor slo in SLOS:\n    avail, consumed = get_slo_status(slo[\"job\"], slo[\"target\"])\n    budget_pct = (1 - consumed) * 100\n    emoji = \":white_check_mark:\" if budget_pct > 30 else \":warning:\" if budget_pct > 10 else \":fire:\"\n    blocks.append({\n        \"type\": \"section\",\n        \"text\": {\n            \"type\": \"mrkdwn\",\n            \"text\": f\"{emoji} *{slo['name']}*\\n\"\n                   f\"Availability: {avail:.4%} (target: {slo['target']:.2%})\\n\"\n                   f\"Error budget remaining: {budget_pct:.1f}%\"\n        }\n    })\n\nrequests.post(SLACK_WEBHOOK, json={\"blocks\": blocks})"
+        },
+        {
+          "language": "bash",
+          "label": "Cron job for weekly SLO report",
+          "code": "# Add to crontab: run every Monday at 9am UTC\n0 9 * * 1 /usr/local/bin/python3 /opt/sre/slo-report.py >> /var/log/slo-report.log 2>&1"
+        }
+      ]
+    },
+    {
+      "id": "handle-slo-violations",
+      "title": "Define a clear response process for SLO violations",
+      "description": "When your SLO is violated, you need a playbook, not a panic. Who gets paged? What's the first thing they check? When does it escalate? Write this down before the incident happens. During an outage is the worst time to figure out your process.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "SLO violation response playbook",
+          "code": "# slo-violation-runbook.yaml\nservice: payment-api\nslo: 99.9% availability\n\nresponse_process:\n  immediate:  # within 5 minutes of page\n    - \"Acknowledge the alert in PagerDuty\"\n    - \"Check error budget dashboard: is this a spike or slow burn?\"\n    - \"Run: kubectl get pods -n payment | grep -v Running\"\n    - \"Check recent deployments: kubectl rollout history deploy/payment-api -n payment\"\n    - \"If a deploy happened in last 2h, roll back first, investigate second\"\n\n  triage:  # within 15 minutes\n    - \"Identify top error contributor from logs\"\n    - \"Check upstream dependencies (database, cache, third-party APIs)\"\n    - \"Determine blast radius: all users or a segment?\"\n    - \"Update #incidents channel with status\"\n\n  escalation:\n    - condition: \"Budget burn rate >14x for 15+ minutes\"\n      action: \"Page secondary oncall and engineering lead\"\n    - condition: \"Budget exhausted (>100% consumed)\"\n      action: \"Page VP Engineering, initiate full incident response\"\n    - condition: \"Customer-facing impact confirmed\"\n      action: \"Notify support team, prepare status page update\"\n\n  post_violation:\n    - \"Schedule blameless post-mortem within 48 hours\"\n    - \"Identify and assign reliability action items\"\n    - \"Review SLO target: was it realistic?\"\n    - \"Update runbook with lessons learned\""
+        }
+      ]
+    },
+    {
+      "id": "separate-slos-from-slas",
+      "title": "Keep your SLOs tighter than your SLAs",
+      "description": "Your SLA is a contract with customers. Your SLO is your internal target. Always set your SLO higher than your SLA. If your SLA promises 99.9%, set your SLO at 99.95%. This gives you a buffer zone. You'll know you're in trouble before your customers do, and before you owe anyone credits.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "SLA vs SLO gap configuration",
+          "code": "# The SLO-SLA gap gives you early warning\nservice: payment-api\n\nsla:  # what you promise customers (contractual)\n  availability: 99.9%\n  latency_p95: 1000ms\n  penalty: \"10% credit per 0.1% below SLA\"\n\nslo:  # what you target internally (aspirational)\n  availability: 99.95%  # tighter than SLA\n  latency_p95: 500ms    # tighter than SLA\n  # When SLO breaches, you have time to fix before SLA breach\n\nbuffer_analysis:\n  sla_downtime_per_month: \"43.2 minutes\"   # 99.9%\n  slo_downtime_per_month: \"21.6 minutes\"   # 99.95%\n  early_warning_buffer: \"21.6 minutes\"     # this is your safety net"
+        }
+      ]
+    },
+    {
+      "id": "track-slo-per-endpoint",
+      "title": "Track SLOs per endpoint, not just per service",
+      "description": "A service-level SLO averages your healthcheck endpoint (always fast) with your report generation endpoint (always slow). The result? Your SLO looks great while your checkout page is on fire. Break SLOs down by endpoint or user journey. The extra work pays off the first time you catch a problem that a service-wide metric would hide.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "promql",
+          "label": "Per-endpoint SLO tracking",
+          "code": "# Per-endpoint availability\nsum(rate(http_requests_total{job=\"payment-api\", endpoint=\"/api/checkout\", status!~\"5..\"}[30d]))\n/ sum(rate(http_requests_total{job=\"payment-api\", endpoint=\"/api/checkout\"}[30d]))\n\n# Per-endpoint latency SLI\nhistogram_quantile(0.99,\n  sum(rate(http_request_duration_seconds_bucket{job=\"payment-api\", endpoint=\"/api/checkout\"}[5m])) by (le)\n)"
+        },
+        {
+          "language": "yaml",
+          "label": "Per-endpoint SLO definitions",
+          "code": "# slo-per-endpoint.yaml\nservice: payment-api\nslos:\n  - endpoint: /api/checkout\n    availability_target: 99.95%\n    latency_p99_target: 800ms\n    priority: P0\n\n  - endpoint: /api/products\n    availability_target: 99.9%\n    latency_p99_target: 200ms\n    priority: P1\n\n  - endpoint: /api/admin/reports\n    availability_target: 99.5%\n    latency_p99_target: 5000ms\n    priority: P2\n    # Lower target is fine here: internal users,\n    # pre-computed data, occasional slow queries expected"
+        }
+      ]
+    },
+    {
+      "id": "review-slos-quarterly",
+      "title": "Review and adjust SLOs every quarter",
+      "description": "SLOs are not set-and-forget. Your traffic patterns change, your architecture changes, and your users' expectations change. Review every quarter. If you're always at 100%, your SLO is too loose and you're probably over-investing in reliability. If you're always burning budget, tighten your deployment practices or loosen the target.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Quarterly SLO review queries",
+          "code": "#!/bin/bash\n# quarterly-slo-review.sh\n# Run this before your quarterly SLO review meeting\n\nPROM=\"http://prometheus:9090/api/v1/query\"\nSERVICE=\"payment-api\"\n\necho \"=== Quarterly SLO Review: $SERVICE ===\"\necho \"\"\n\n# 1. Actual availability over the quarter\necho \"Availability (last 90 days):\"\ncurl -s \"$PROM\" --data-urlencode \"query=\n  sum(rate(http_requests_total{job=\\\"$SERVICE\\\", status!~\\\"5..\\\"}[90d]))\n  / sum(rate(http_requests_total{job=\\\"$SERVICE\\\"}[90d]))\" \\\n  | jq -r '.data.result[0].value[1]' | xargs printf \"  %.4f%%\\n\"\n\n# 2. Number of SLO violations\necho \"SLO violation events (last 90 days):\"\ncurl -s \"$PROM\" --data-urlencode \"query=\n  count_over_time(\n    (sum(rate(http_requests_total{job=\\\"$SERVICE\\\", status=~\\\"5..\\\"}[1h]))\n     / sum(rate(http_requests_total{job=\\\"$SERVICE\\\"}[1h])) > 0.001)[90d:1h]\n  )\" | jq -r '.data.result[0].value[1]' | xargs printf \"  %s hours\\n\"\n\n# 3. P99 latency trend\necho \"P99 latency (last 90 days):\"\ncurl -s \"$PROM\" --data-urlencode \"query=\n  histogram_quantile(0.99,\n    sum(rate(http_request_duration_seconds_bucket{job=\\\"$SERVICE\\\"}[90d])) by (le)\n  )\" | jq -r '.data.result[0].value[1]' | xargs printf \"  %.3f seconds\\n\"\n\necho \"\"\necho \"Questions to answer:\"\necho \"  - Is the SLO target still right for this service?\"\necho \"  - Did we spend too much time on reliability vs features?\"\necho \"  - Are there new user journeys that need their own SLOs?\""
+        }
+      ]
+    }
+  ]
+}
