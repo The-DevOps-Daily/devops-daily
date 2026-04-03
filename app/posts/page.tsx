@@ -1,6 +1,7 @@
 import { PostsList } from '@/components/posts-list';
 import { PostsListWithoutSearch } from '@/components/posts-list-without-search';
-import { PageHeader } from '@/components/page-header';
+import { PageHero } from '@/components/page-hero';
+import { FileText } from 'lucide-react';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { getAllPosts } from '@/lib/posts';
@@ -44,13 +45,16 @@ export default async function PostsPage() {
   const postsAfterSponsor = posts.slice(6);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <PageHeader
+    <div>
+      <PageHero
         title="All Posts"
-        description="Browse all our DevOps articles, tutorials, and guides"
+        description="Browse all our DevOps articles, tutorials, and guides."
+        icon={FileText}
+        breadcrumbs={[{ label: 'Posts' }]}
+        stats={[{ label: 'articles', value: posts.length }]}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 my-8">
+      <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 my-8">
         {/* Posts List */}
         <div className="lg:col-span-9">
           <PostsList posts={postsBeforeSponsor} />

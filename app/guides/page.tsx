@@ -1,5 +1,6 @@
 import { GuidesList } from '@/components/guides-list';
-import { PageHeader } from '@/components/page-header';
+import { PageHero } from '@/components/page-hero';
+import { BookOpen } from 'lucide-react';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { getAllGuides } from '@/lib/guides';
 
@@ -36,10 +37,16 @@ export default async function GuidesPage() {
   const guides = await getAllGuides();
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <PageHeader title="Guides" description="In-depth guides for DevOps professionals" />
+    <div>
+      <PageHero
+        title="Guides"
+        description="In-depth guides for DevOps professionals."
+        icon={BookOpen}
+        breadcrumbs={[{ label: 'Guides' }]}
+        stats={[{ label: 'guides', value: guides.length }]}
+      />
       
-      <div className="container mx-auto max-w-6xl">
+      <div className="container mx-auto px-4 max-w-6xl">
         {/* Inline Sponsors */}
         <InlineSponsors variant="compact" className="my-8" />
       </div>

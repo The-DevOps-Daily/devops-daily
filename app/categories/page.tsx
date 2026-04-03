@@ -1,5 +1,6 @@
 import { CategoryGrid } from '@/components/category-grid';
-import { PageHeader } from '@/components/page-header';
+import { PageHero } from '@/components/page-hero';
+import { FolderOpen } from 'lucide-react';
 import { getAllCategories } from '@/lib/categories';
 
 export const metadata = {
@@ -35,9 +36,17 @@ export default async function CategoriesPage() {
   const categories = await getAllCategories();
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <PageHeader title="Categories" description="Browse all our DevOps categories" />
-      <CategoryGrid categories={categories} className="my-8" />
+    <div>
+      <PageHero
+        title="Categories"
+        description="Browse all our DevOps categories."
+        icon={FolderOpen}
+        breadcrumbs={[{ label: 'Categories' }]}
+        stats={[{ label: 'categories', value: categories.length }]}
+      />
+      <div className="container mx-auto px-4">
+        <CategoryGrid categories={categories} className="my-8" />
+      </div>
     </div>
   );
 }
