@@ -6,7 +6,7 @@ import { getAllGuides } from '../lib/guides.js';
 import { getAllExercises } from '../lib/exercises.js';
 import { getAllNews } from '../lib/news.js';
 import { getActiveGames } from '../lib/games.js';
-import { checklists } from '../content/checklists/index.js';
+import { getAllChecklists } from '../lib/checklists.js';
 import { interviewQuestions } from '../content/interview-questions/index.js';
 
 interface SearchItem {
@@ -295,7 +295,8 @@ async function generateSearchIndex() {
   }
 
   // Add checklists
-  console.log('✅ Adding checklists...');
+  console.log('Adding checklists...');
+  const checklists = await getAllChecklists();
   const checklistItems: SearchItem[] = checklists.map((checklist) => ({
     id: `checklist-${checklist.slug}`,
     type: 'checklist',
