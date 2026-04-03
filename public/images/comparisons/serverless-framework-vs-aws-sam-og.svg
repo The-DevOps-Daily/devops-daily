@@ -1,77 +1,117 @@
 <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#0c1222;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#141830;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0c1222;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="glowA" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#FD5750;stop-opacity:0.15" />
+    <radialGradient id="glowA" cx="30%" cy="40%" r="40%">
+      <stop offset="0%" style="stop-color:#FD5750;stop-opacity:0.2" />
       <stop offset="100%" style="stop-color:#FD5750;stop-opacity:0" />
-    </linearGradient>
-    <linearGradient id="glowB" x1="100%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#FF9900;stop-opacity:0.15" />
+    </radialGradient>
+    <radialGradient id="glowB" cx="70%" cy="40%" r="40%">
+      <stop offset="0%" style="stop-color:#FF9900;stop-opacity:0.2" />
       <stop offset="100%" style="stop-color:#FF9900;stop-opacity:0" />
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="blur"/>
+    </radialGradient>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+    <linearGradient id="scoreGradA" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FD5750;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#FD5750;stop-opacity:0.05" />
+    </linearGradient>
+    <linearGradient id="scoreGradB" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF9900;stop-opacity:0.2" />
+      <stop offset="100%" style="stop-color:#FF9900;stop-opacity:0.05" />
+    </linearGradient>
   </defs>
 
   <!-- Background -->
   <rect width="1200" height="630" fill="url(#bg)"/>
 
-  <!-- Ambient glow from each tool's color -->
-  <ellipse cx="250" cy="280" rx="350" ry="300" fill="url(#glowA)"/>
-  <ellipse cx="950" cy="280" rx="350" ry="300" fill="url(#glowB)"/>
+  <!-- Ambient glow -->
+  <rect width="1200" height="630" fill="url(#glowA)"/>
+  <rect width="1200" height="630" fill="url(#glowB)"/>
 
-  <!-- Grid pattern overlay -->
-  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.3" opacity="0.05"/>
+  <!-- Subtle dot grid -->
+  <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse">
+    <circle cx="15" cy="15" r="0.8" fill="#ffffff" opacity="0.07"/>
   </pattern>
-  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
 
-  <!-- Top accent lines -->
-  <rect x="0" y="0" width="600" height="4" fill="#FD5750"/>
-  <rect x="600" y="0" width="600" height="4" fill="#FF9900"/>
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="600" height="3" fill="#FD5750" opacity="0.8"/>
+  <rect x="600" y="0" width="600" height="3" fill="#FF9900" opacity="0.8"/>
 
-  <!-- Branding top-left -->
-  <text x="40" y="50" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="bold" fill="#6366f1" opacity="0.8">devops-daily.com</text>
+  <!-- Branding -->
+  <text x="48" y="46" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#6366f1" opacity="0.7">devops-daily.com</text>
 
-  <!-- Category badge top-right -->
-  <rect x="1061" y="28" width="99" height="30" rx="15" fill="rgba(99,102,241,0.15)" stroke="#6366f1" stroke-width="1" opacity="0.8"/>
-  <text x="1122.5" y="48" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#a5b4fc" text-anchor="middle" opacity="0.9">Serverless</text>
+  <!-- Category pill top-right -->
+  <rect x="1062" y="24" width="90" height="28" rx="14" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.4)" stroke-width="1"/>
+  <text x="1117" y="43" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#a5b4fc" text-anchor="middle">Serverless</text>
 
-  <!-- Tool A card -->
-  <rect x="40" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(253,87,80,0.3)" stroke-width="1.5"/>
-  <text x="300" y="220" font-family="Arial, Helvetica, sans-serif" font-size="38" font-weight="bold" fill="#FD5750" text-anchor="middle" filter="url(#glow)">Serverless Framework</text>
-  <text x="300" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#FD5750" text-anchor="middle" opacity="0.8">4</text>
-  <text x="332" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
+  <!-- Tool A section -->
+  <rect x="40" y="80" width="520" height="300" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(253,87,80,0.2)" stroke-width="1"/>
 
-  <!-- Tool B card -->
-  <rect x="640" y="90" width="520" height="280" rx="16" fill="rgba(255,255,255,0.03)" stroke="rgba(255,153,0,0.3)" stroke-width="1.5"/>
-  <text x="900" y="220" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="bold" fill="#FF9900" text-anchor="middle" filter="url(#glow)">AWS SAM</text>
-  <text x="900" y="310" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="bold" fill="#FF9900" text-anchor="middle" opacity="0.8">4.1</text>
-  <text x="932" y="310" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#64748b" opacity="0.6">/5</text>
+  <!-- Tool A colored top edge -->
+  <rect x="40" y="80" width="520" height="3" rx="0" fill="#FD5750" opacity="0.6"/>
 
-  <!-- VS badge center -->
-  <circle cx="600" cy="230" r="36" fill="#1e1b4b" stroke="#6366f1" stroke-width="2"/>
-  <text x="600" y="240" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="bold" fill="#a5b4fc" text-anchor="middle">VS</text>
+  <!-- Tool A name -->
+  <text x="300" y="200" font-family="Arial, Helvetica, sans-serif" font-size="36" font-weight="bold" fill="#FD5750" text-anchor="middle" filter="url(#softglow)">Serverless Framework</text>
+
+  <!-- Tool A score badge -->
+  <rect x="240" y="240" width="120" height="56" rx="12" fill="url(#scoreGradA)" stroke="rgba(253,87,80,0.3)" stroke-width="1"/>
+  <text x="288" y="278" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="bold" fill="#FD5750" text-anchor="middle">4</text>
+  <text x="318" y="272" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">/5</text>
+
+  <!-- Tool A pros count -->
+  <text x="300" y="330" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">7 pros  -  6 cons</text>
+
+  <!-- VS badge -->
+  <circle cx="600" cy="230" r="32" fill="#1e1b4b" stroke="#6366f1" stroke-width="2" opacity="0.9"/>
+  <text x="600" y="238" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#c7d2fe" text-anchor="middle">VS</text>
+
+  <!-- Tool B section -->
+  <rect x="640" y="80" width="520" height="300" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,153,0,0.2)" stroke-width="1"/>
+
+  <!-- Tool B colored top edge -->
+  <rect x="640" y="80" width="520" height="3" rx="0" fill="#FF9900" opacity="0.6"/>
+
+  <!-- Tool B name -->
+  <text x="900" y="190" font-family="Arial, Helvetica, sans-serif" font-size="52" font-weight="bold" fill="#FF9900" text-anchor="middle" filter="url(#softglow)">AWS SAM</text>
+
+  <!-- Tool B score badge -->
+  <rect x="840" y="240" width="120" height="56" rx="12" fill="url(#scoreGradB)" stroke="rgba(255,153,0,0.3)" stroke-width="1"/>
+  <text x="888" y="278" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="bold" fill="#FF9900" text-anchor="middle">4.1</text>
+  <text x="918" y="272" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">/5</text>
+
+  <!-- Tool B pros count -->
+  <text x="900" y="330" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">7 pros  -  6 cons</text>
 
   <!-- Bottom section -->
-  <rect x="0" y="420" width="1200" height="210" fill="rgba(0,0,0,0.3)"/>
-  <line x1="40" y1="420" x2="1160" y2="420" stroke="#334155" stroke-width="1"/>
+  <rect x="0" y="394" width="1200" height="236" fill="rgba(0,0,0,0.25)"/>
+  <line x1="48" y1="394" x2="1152" y2="394" stroke="#1e293b" stroke-width="1"/>
 
-  <!-- Feature count and stats -->
-  <text x="600" y="470" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#e2e8f0" text-anchor="middle">11 Features Compared  |  Pros &amp; Cons  |  Use Cases  |  Verdict</text>
+  <!-- Feature category tags -->
+  <rect x="200" y="408" width="148" height="26" rx="13" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.3)" stroke-width="1"/>
+    <text x="274" y="426" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#a5b4fc" text-anchor="middle">Platform Support</text>
+  <rect x="480" y="408" width="124" height="26" rx="13" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.3)" stroke-width="1"/>
+    <text x="542" y="426" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#a5b4fc" text-anchor="middle">Configuration</text>
+  <rect x="760" y="408" width="180" height="26" rx="13" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.3)" stroke-width="1"/>
+    <text x="850" y="426" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#a5b4fc" text-anchor="middle">Developer Experience</text>
 
-  <!-- CTA -->
-  <rect x="440" y="500" width="320" height="48" rx="24" fill="#4f46e5"/>
-  <text x="600" y="530" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="bold" fill="#ffffff" text-anchor="middle">Read the Full Comparison</text>
+  <!-- Stats line -->
+  <text x="600" y="480" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#cbd5e1" text-anchor="middle">11 Features  |  Pros &amp; Cons  |  Use Cases  |  Verdict</text>
 
-  <!-- Bottom branding -->
-  <text x="600" y="600" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#475569" text-anchor="middle">devops-daily.com/comparisons</text>
+  <!-- CTA button -->
+  <rect x="430" y="506" width="340" height="50" rx="25" fill="#4f46e5"/>
+  <rect x="430" y="506" width="340" height="50" rx="25" fill="none" stroke="#6366f1" stroke-width="1"/>
+  <text x="600" y="537" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">Read the Full Comparison  &#8594;</text>
+
+  <!-- Bottom URL -->
+  <text x="600" y="596" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569" text-anchor="middle">devops-daily.com/comparisons/serverless-framework-vs-aws-sam</text>
 </svg>
