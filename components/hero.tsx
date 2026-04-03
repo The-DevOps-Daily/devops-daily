@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight, Terminal, GitBranch, Cloud, Cpu } from 'lucide-react';
 import { getAllPosts } from '@/lib/posts';
 import { getAllGuides } from '@/lib/guides';
 import { getActiveGames } from '@/lib/games';
@@ -20,6 +20,16 @@ export async function Hero() {
 
   return (
     <div className="relative pb-8">
+      {/* Floating tech icons */}
+      <div className="absolute inset-0 pointer-events-none hidden sm:block">
+        <div className="relative h-full mx-auto max-w-7xl">
+          <Terminal className="absolute w-8 h-8 top-16 right-10 text-primary/15 animate-float" />
+          <GitBranch className="absolute w-8 h-8 top-1/3 right-32 text-primary/10 animate-float animation-delay-2000" />
+          <Cloud className="absolute w-7 h-7 bottom-1/3 right-16 text-primary/10 animate-float animation-delay-4000" />
+          <Cpu className="absolute w-7 h-7 bottom-20 right-40 text-primary/10 animate-float animation-delay-3000" />
+        </div>
+      </div>
+
       <div className="max-w-3xl pt-6 sm:pt-10">
         {/* Latest post link */}
         {latestPost && (
