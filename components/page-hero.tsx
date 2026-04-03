@@ -30,30 +30,40 @@ export function PageHero({
 }: PageHeroProps) {
   return (
     <div className="relative border-b border-border/50 overflow-hidden">
-      {/* Layered background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-muted/50 to-background" />
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
+      {/* Layered background with depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-muted/60 via-muted/30 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.05] via-transparent to-transparent" />
 
-      {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/60 via-primary/20 to-transparent" />
+      {/* Top accent line with shimmer */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-primary/60 via-primary/30 to-transparent" />
+        <div className="absolute inset-0 h-full w-1/3 bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-[shimmer_3s_ease-in-out_infinite]" />
+      </div>
 
-      {/* Decorative elements - right side */}
-      <div className="absolute right-0 top-0 bottom-0 w-1/3 hidden lg:block pointer-events-none">
-        {/* Geometric lines */}
-        <svg className="absolute right-8 top-8 w-48 h-48 opacity-[0.04]" viewBox="0 0 200 200" fill="none">
-          <rect x="20" y="20" width="160" height="160" rx="8" stroke="currentColor" strokeWidth="1.5" className="text-primary" />
-          <rect x="40" y="40" width="120" height="120" rx="6" stroke="currentColor" strokeWidth="1" className="text-primary" />
-          <rect x="60" y="60" width="80" height="80" rx="4" stroke="currentColor" strokeWidth="0.75" className="text-primary" />
-          <line x1="0" y1="100" x2="200" y2="100" stroke="currentColor" strokeWidth="0.5" className="text-primary" />
-          <line x1="100" y1="0" x2="100" y2="200" stroke="currentColor" strokeWidth="0.5" className="text-primary" />
+      {/* Decorative right side */}
+      <div className="absolute right-0 top-0 bottom-0 w-2/5 hidden lg:block pointer-events-none">
+        {/* Concentric arcs */}
+        <svg className="absolute right-0 top-1/2 -translate-y-1/2 w-80 h-80 opacity-[0.03]" viewBox="0 0 320 320" fill="none">
+          <circle cx="320" cy="160" r="60" stroke="currentColor" strokeWidth="1" className="text-primary" />
+          <circle cx="320" cy="160" r="100" stroke="currentColor" strokeWidth="0.8" className="text-primary" />
+          <circle cx="320" cy="160" r="140" stroke="currentColor" strokeWidth="0.6" className="text-primary" />
+          <circle cx="320" cy="160" r="180" stroke="currentColor" strokeWidth="0.4" className="text-primary" strokeDasharray="4 6" />
         </svg>
 
         {/* Dot grid */}
-        <div className="absolute bottom-8 right-12 grid grid-cols-5 gap-3 opacity-[0.06]">
-          {Array.from({ length: 25 }).map((_, i) => (
+        <div className="absolute bottom-10 right-10 grid grid-cols-4 gap-3 opacity-[0.05]">
+          {Array.from({ length: 16 }).map((_, i) => (
             <div key={i} className="w-1.5 h-1.5 rounded-full bg-primary" />
           ))}
         </div>
+
+        {/* Small diagonal lines */}
+        <svg className="absolute top-10 right-48 w-16 h-16 opacity-[0.04]" viewBox="0 0 64 64" fill="none">
+          <line x1="0" y1="16" x2="16" y2="0" stroke="currentColor" strokeWidth="1" className="text-primary" />
+          <line x1="0" y1="32" x2="32" y2="0" stroke="currentColor" strokeWidth="1" className="text-primary" />
+          <line x1="0" y1="48" x2="48" y2="0" stroke="currentColor" strokeWidth="1" className="text-primary" />
+          <line x1="0" y1="64" x2="64" y2="0" stroke="currentColor" strokeWidth="1" className="text-primary" />
+        </svg>
       </div>
 
       <div className="relative container mx-auto px-4 py-10 sm:py-14">
@@ -93,12 +103,12 @@ export function PageHero({
           {/* Title with optional icon */}
           <div className="flex items-start gap-4">
             {Icon && (
-              <div className="mt-1 flex-shrink-0 relative">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
+              <div className="mt-1 flex-shrink-0 relative group">
+                {/* Glow behind icon */}
+                <div className="absolute inset-0 rounded-xl bg-primary/20 blur-md scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20 flex items-center justify-center shadow-sm">
                   <Icon className={`w-6 h-6 ${iconColor}`} />
                 </div>
-                {/* Small accent dot */}
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-primary/20 border-2 border-background" />
               </div>
             )}
             <div>

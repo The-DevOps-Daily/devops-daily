@@ -4,9 +4,10 @@ import { getFlashCardSet, getAllFlashCardSets } from '@/lib/flashcard-loader'
 import { FlashCardDeck } from '@/components/flashcard-deck'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, BookOpen, Clock } from 'lucide-react'
+import { ArrowLeft, BookOpen, Clock, Layers } from 'lucide-react'
 import Link from 'next/link'
 import * as Icons from 'lucide-react'
+import { PageHero } from '@/components/page-hero'
 
 interface FlashcardPageProps {
   params: Promise<{
@@ -77,19 +78,15 @@ export default async function FlashcardPage({ params }: FlashcardPageProps) {
 
   return (
     <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
-      {/* Header */}
-      <section className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/flashcards">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                All Flashcards
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        title={flashcardSet.title}
+        description={flashcardSet.description}
+        icon={Layers}
+        breadcrumbs={[
+          { label: 'Flashcards', href: '/flashcards' },
+          { label: flashcardSet.title },
+        ]}
+      />
 
       {/* Flashcard Set Info */}
       <section className="py-12 container mx-auto px-4">
