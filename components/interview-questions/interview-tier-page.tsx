@@ -351,29 +351,7 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-      {/* Header */}
-      <div className={`bg-gradient-to-r ${config.gradient} py-8`}>
-        <div className="container mx-auto px-4 max-w-4xl">
-          <Link
-            href="/interview-questions"
-            className="inline-flex items-center text-white/80 hover:text-white mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to all levels
-          </Link>
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-xl">
-              <Icon className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">{config.title} Interview Practice</h1>
-              <p className="text-white/80">{config.subtitle} • {filteredQuestions.length} questions</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 max-w-4xl py-8">
         {/* Progress Bar */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-6 border border-gray-200 dark:border-gray-700">

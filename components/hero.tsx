@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ChevronRight, Terminal, GitBranch, Cloud, Cpu } from 'lucide-react';
+import { ArrowRight, ChevronRight, Terminal, GitBranch, Cloud, Cpu, Server } from 'lucide-react';
 import { getAllPosts } from '@/lib/posts';
 import { getAllGuides } from '@/lib/guides';
 import { getActiveGames } from '@/lib/games';
@@ -19,25 +19,41 @@ export async function Hero() {
   const latestPost = posts[0];
 
   return (
-    <div className="relative pb-8">
-      {/* Floating tech icons */}
-      <div className="absolute inset-0 pointer-events-none hidden sm:block">
+    <div className="relative pb-8 overflow-hidden">
+      {/* Subtle background decoration */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/50 via-primary/20 to-transparent" />
+      </div>
+
+      {/* Floating tech icons - right side only */}
+      <div className="absolute inset-0 pointer-events-none hidden md:block">
         <div className="relative h-full mx-auto max-w-7xl">
-          <Terminal className="absolute w-8 h-8 top-16 right-10 text-primary/15 animate-float" />
-          <GitBranch className="absolute w-8 h-8 top-1/3 right-32 text-primary/10 animate-float animation-delay-2000" />
-          <Cloud className="absolute w-7 h-7 bottom-1/3 right-16 text-primary/10 animate-float animation-delay-4000" />
-          <Cpu className="absolute w-7 h-7 bottom-20 right-40 text-primary/10 animate-float animation-delay-3000" />
+          <Terminal className="absolute w-7 h-7 top-16 right-8 text-primary/[0.12] animate-float" />
+          <GitBranch className="absolute w-6 h-6 top-40 right-28 text-primary/[0.08] animate-float animation-delay-2000" />
+          <Cloud className="absolute w-8 h-8 bottom-32 right-12 text-primary/[0.08] animate-float animation-delay-4000" />
+          <Cpu className="absolute w-6 h-6 bottom-16 right-36 text-primary/[0.06] animate-float animation-delay-3000" />
+          <Server className="absolute w-7 h-7 top-28 right-52 text-primary/[0.06] animate-float animation-delay-1000" />
         </div>
       </div>
 
-      <div className="max-w-3xl pt-6 sm:pt-10">
+      {/* Decorative arcs - right side */}
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:block pointer-events-none">
+        <svg className="w-96 h-96 opacity-[0.03]" viewBox="0 0 400 400" fill="none">
+          <circle cx="400" cy="200" r="80" stroke="currentColor" strokeWidth="1" className="text-primary" />
+          <circle cx="400" cy="200" r="130" stroke="currentColor" strokeWidth="0.8" className="text-primary" />
+          <circle cx="400" cy="200" r="180" stroke="currentColor" strokeWidth="0.5" className="text-primary" strokeDasharray="4 8" />
+        </svg>
+      </div>
+
+      <div className="max-w-3xl pt-8 sm:pt-12 relative z-10">
         {/* Latest post link */}
         {latestPost && (
           <Link
             href={`/posts/${latestPost.slug}`}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 group"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 group"
           >
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
               New
             </span>
             <span className="truncate max-w-[300px] sm:max-w-none">{latestPost.title}</span>
@@ -47,19 +63,24 @@ export async function Hero() {
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
           Learn DevOps by{' '}
-          <span className="text-primary">doing</span>,
+          <span className="text-primary relative">
+            doing
+            <svg className="absolute -bottom-1 left-0 w-full h-2 text-primary/30" viewBox="0 0 100 8" preserveAspectRatio="none">
+              <path d="M0 7 Q25 0 50 5 Q75 2 100 6" stroke="currentColor" strokeWidth="2" fill="none" />
+            </svg>
+          </span>,
           <br />
           not just reading.
         </h1>
 
-        <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
+        <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
           Hands-on exercises, interactive simulators, and practical guides.
           Built for engineers who prefer a terminal over a slide deck.
         </p>
 
         {/* CTA buttons */}
         <div className="flex flex-wrap items-center gap-3 mt-8">
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="shadow-md shadow-primary/10">
             <Link href="/exercises" className="group">
               Start an Exercise
               <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
@@ -72,10 +93,10 @@ export async function Hero() {
       </div>
 
       {/* Terminal-style stats block */}
-      <div className="mt-12 max-w-2xl">
+      <div className="mt-12 max-w-2xl relative z-10">
         <div className="rounded-lg border border-border/80 bg-card overflow-hidden font-mono text-sm shadow-sm">
           {/* Terminal header */}
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 border-b border-border/80">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b border-border/80">
             <div className="flex gap-1.5">
               <div className="w-3 h-3 rounded-full bg-red-400/70" />
               <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
