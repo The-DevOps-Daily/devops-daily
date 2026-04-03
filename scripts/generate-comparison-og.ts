@@ -44,133 +44,61 @@ function generateSVG(comparison: Comparison): string {
   const toolAName = escapeXml(comparison.toolA.name);
   const toolBName = escapeXml(comparison.toolB.name);
   const category = escapeXml(comparison.category);
-  const featureCount = comparison.features.length;
   const toolAColor = ensureContrast(comparison.toolA.color);
   const toolBColor = ensureContrast(comparison.toolB.color);
-  const rawRgbA = hexToRgb(comparison.toolA.color);
-  const rawRgbB = hexToRgb(comparison.toolB.color);
   const fontSizeA = fontSize(comparison.toolA.name);
   const fontSizeB = fontSize(comparison.toolB.name);
-
-  // Pick top 3 feature categories to show as tags
-  const categories = [...new Set(comparison.features.map(f => f.category))].slice(0, 3);
-  const catTags = categories.map((c, i) => {
-    const x = 200 + i * 280;
-    return `<rect x="${x}" y="408" width="${c.length * 8 + 20}" height="26" rx="13" fill="rgba(99,102,241,0.15)" stroke="rgba(99,102,241,0.3)" stroke-width="1"/>
-    <text x="${x + c.length * 4 + 10}" y="426" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#a5b4fc" text-anchor="middle">${escapeXml(c)}</text>`;
-  }).join('\n  ');
 
   return `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0c1222;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#141830;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0c1222;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e1b4b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
     </linearGradient>
-    <radialGradient id="glowA" cx="30%" cy="40%" r="40%">
-      <stop offset="0%" style="stop-color:${comparison.toolA.color};stop-opacity:0.2" />
+    <linearGradient id="toolAGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:${comparison.toolA.color};stop-opacity:0.3" />
       <stop offset="100%" style="stop-color:${comparison.toolA.color};stop-opacity:0" />
-    </radialGradient>
-    <radialGradient id="glowB" cx="70%" cy="40%" r="40%">
-      <stop offset="0%" style="stop-color:${comparison.toolB.color};stop-opacity:0.2" />
-      <stop offset="100%" style="stop-color:${comparison.toolB.color};stop-opacity:0" />
-    </radialGradient>
-    <filter id="softglow">
-      <feGaussianBlur stdDeviation="2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <linearGradient id="scoreGradA" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:${comparison.toolA.color};stop-opacity:0.2" />
-      <stop offset="100%" style="stop-color:${comparison.toolA.color};stop-opacity:0.05" />
     </linearGradient>
-    <linearGradient id="scoreGradB" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:${comparison.toolB.color};stop-opacity:0.2" />
-      <stop offset="100%" style="stop-color:${comparison.toolB.color};stop-opacity:0.05" />
+    <linearGradient id="toolBGrad" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:${comparison.toolB.color};stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:${comparison.toolB.color};stop-opacity:0" />
     </linearGradient>
   </defs>
 
   <!-- Background -->
   <rect width="1200" height="630" fill="url(#bg)"/>
 
-  <!-- Ambient glow -->
-  <rect width="1200" height="630" fill="url(#glowA)"/>
-  <rect width="1200" height="630" fill="url(#glowB)"/>
+  <!-- Subtle tool color accents -->
+  <rect x="0" y="0" width="600" height="630" fill="url(#toolAGrad)" opacity="0.4"/>
+  <rect x="600" y="0" width="600" height="630" fill="url(#toolBGrad)" opacity="0.4"/>
 
-  <!-- Subtle dot grid -->
-  <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse">
-    <circle cx="15" cy="15" r="0.8" fill="#ffffff" opacity="0.07"/>
-  </pattern>
-  <rect width="1200" height="630" fill="url(#dots)"/>
+  <!-- Center divider -->
+  <line x1="600" y1="120" x2="600" y2="510" stroke="#4b5563" stroke-width="1" stroke-dasharray="8,8" opacity="0.5"/>
 
-  <!-- Top accent bar -->
-  <rect x="0" y="0" width="600" height="3" fill="${toolAColor}" opacity="0.8"/>
-  <rect x="600" y="0" width="600" height="3" fill="${toolBColor}" opacity="0.8"/>
-
-  <!-- Branding -->
-  <text x="48" y="46" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="bold" fill="#6366f1" opacity="0.7">devops-daily.com</text>
-
-  <!-- Category pill top-right -->
-  <rect x="${1152 - category.length * 7 - 20}" y="24" width="${category.length * 7 + 20}" height="28" rx="14" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.4)" stroke-width="1"/>
-  <text x="${1152 - category.length * 3.5}" y="43" font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#a5b4fc" text-anchor="middle">${category}</text>
-
-  <!-- Tool A section -->
-  <rect x="40" y="80" width="520" height="300" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(${rawRgbA.r},${rawRgbA.g},${rawRgbA.b},0.2)" stroke-width="1"/>
-
-  <!-- Tool A colored top edge -->
-  <rect x="40" y="80" width="520" height="3" rx="0" fill="${toolAColor}" opacity="0.6"/>
+  <!-- VS circle -->
+  <circle cx="600" cy="315" r="40" fill="#312e81" stroke="#6366f1" stroke-width="2"/>
+  <text x="600" y="325" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#a5b4fc" text-anchor="middle">VS</text>
 
   <!-- Tool A name -->
-  <text x="300" y="${fontSizeA > 44 ? 190 : 200}" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeA}" font-weight="bold" fill="${toolAColor}" text-anchor="middle" filter="url(#softglow)">${toolAName}</text>
-
-  <!-- Tool A score badge -->
-  <rect x="240" y="240" width="120" height="56" rx="12" fill="url(#scoreGradA)" stroke="rgba(${rawRgbA.r},${rawRgbA.g},${rawRgbA.b},0.3)" stroke-width="1"/>
-  <text x="288" y="278" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="bold" fill="${toolAColor}" text-anchor="middle">${comparison.verdict.toolAScore}</text>
-  <text x="318" y="272" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">/5</text>
-
-  <!-- Tool A pros count -->
-  <text x="300" y="330" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">${comparison.toolA.pros.length} pros  -  ${comparison.toolA.cons.length} cons</text>
-
-  <!-- VS badge -->
-  <circle cx="600" cy="230" r="32" fill="#1e1b4b" stroke="#6366f1" stroke-width="2" opacity="0.9"/>
-  <text x="600" y="238" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#c7d2fe" text-anchor="middle">VS</text>
-
-  <!-- Tool B section -->
-  <rect x="640" y="80" width="520" height="300" rx="16" fill="rgba(255,255,255,0.02)" stroke="rgba(${rawRgbB.r},${rawRgbB.g},${rawRgbB.b},0.2)" stroke-width="1"/>
-
-  <!-- Tool B colored top edge -->
-  <rect x="640" y="80" width="520" height="3" rx="0" fill="${toolBColor}" opacity="0.6"/>
+  <text x="300" y="300" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeA}" font-weight="bold" fill="${toolAColor}" text-anchor="middle">${toolAName}</text>
 
   <!-- Tool B name -->
-  <text x="900" y="${fontSizeB > 44 ? 190 : 200}" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeB}" font-weight="bold" fill="${toolBColor}" text-anchor="middle" filter="url(#softglow)">${toolBName}</text>
+  <text x="900" y="300" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeB}" font-weight="bold" fill="${toolBColor}" text-anchor="middle">${toolBName}</text>
 
-  <!-- Tool B score badge -->
-  <rect x="840" y="240" width="120" height="56" rx="12" fill="url(#scoreGradB)" stroke="rgba(${rawRgbB.r},${rawRgbB.g},${rawRgbB.b},0.3)" stroke-width="1"/>
-  <text x="888" y="278" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="bold" fill="${toolBColor}" text-anchor="middle">${comparison.verdict.toolBScore}</text>
-  <text x="918" y="272" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#64748b">/5</text>
+  <!-- Category badge -->
+  <rect x="${600 - category.length * 6 - 20}" y="400" width="${category.length * 12 + 40}" height="36" rx="18" fill="#312e81" stroke="#6366f1" stroke-width="1"/>
+  <text x="600" y="424" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#a5b4fc" text-anchor="middle">${category}</text>
 
-  <!-- Tool B pros count -->
-  <text x="900" y="330" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#64748b" text-anchor="middle">${comparison.toolB.pros.length} pros  -  ${comparison.toolB.cons.length} cons</text>
+  <!-- Subtitle -->
+  <text x="600" y="480" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Feature Comparison, Pros/Cons, and Verdict</text>
 
-  <!-- Bottom section -->
-  <rect x="0" y="394" width="1200" height="236" fill="rgba(0,0,0,0.25)"/>
-  <line x1="48" y1="394" x2="1152" y2="394" stroke="#1e293b" stroke-width="1"/>
+  <!-- Branding -->
+  <text x="600" y="570" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#6366f1" text-anchor="middle">devops-daily.com</text>
 
-  <!-- Feature category tags -->
-  ${catTags}
-
-  <!-- Stats line -->
-  <text x="600" y="480" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#cbd5e1" text-anchor="middle">${featureCount} Features  |  Pros &amp; Cons  |  Use Cases  |  Verdict</text>
-
-  <!-- CTA button -->
-  <rect x="430" y="506" width="340" height="50" rx="25" fill="#4f46e5"/>
-  <rect x="430" y="506" width="340" height="50" rx="25" fill="none" stroke="#6366f1" stroke-width="1"/>
-  <text x="600" y="537" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">Read the Full Comparison  &#8594;</text>
-
-  <!-- Bottom URL -->
-  <text x="600" y="596" font-family="Arial, Helvetica, sans-serif" font-size="13" fill="#475569" text-anchor="middle">devops-daily.com/comparisons/${escapeXml(comparison.slug)}</text>
+  <!-- Top accent line -->
+  <rect x="0" y="0" width="600" height="4" fill="${toolAColor}"/>
+  <rect x="600" y="0" width="600" height="4" fill="${toolBColor}"/>
 </svg>`;
 }
 
