@@ -1,0 +1,233 @@
+{
+  "id": "spinnaker-vs-argocd",
+  "slug": "spinnaker-vs-argocd",
+  "title": "Spinnaker vs Argo CD",
+  "description": "A detailed comparison of Spinnaker and Argo CD for continuous delivery. Covers deployment strategies, Kubernetes support, pipeline management, extensibility, and real-world use cases to help you pick the right CD platform.",
+  "category": "Continuous Delivery",
+  "tags": ["Spinnaker", "Argo CD", "Continuous Delivery", "Kubernetes", "GitOps", "DevOps"],
+  "createdDate": "2026-07-28T10:00:00Z",
+  "updatedDate": "2026-07-28T10:00:00Z",
+  "estimatedReadTime": "12 min read",
+  "introduction": "Continuous delivery is the backbone of modern software operations, and in 2026 the CD tool landscape has settled into two clear camps: multi-cloud pipeline engines and Kubernetes-native GitOps controllers. Spinnaker and Argo CD represent these two philosophies, and picking between them has real consequences for how your team ships, rolls back, and sleeps at night.\n\nSpinnaker was originally built at Netflix to handle deployments across AWS at massive scale. It grew into a multi-cloud CD platform under the Continuous Delivery Foundation, supporting AWS, GCP, Azure, and Kubernetes with built-in deployment strategies like canary, blue-green, and rolling updates. It is a full pipeline engine with stages, approvals, and integrations - not just a deployment tool.\n\nArgo CD took a fundamentally different approach. Born in the Kubernetes ecosystem and now a CNCF graduated project, it treats Git as the single source of truth for cluster state. You define your desired state in a Git repository, and Argo CD continuously reconciles your clusters to match. There are no pipelines in the traditional sense - just declarations of what should exist and an agent that makes it so.\n\nThe trade-off between these tools is really about scope and complexity. Spinnaker can orchestrate deployments across VMs, serverless functions, and containers with complex approval workflows. Argo CD does one thing extremely well: keeping Kubernetes clusters in sync with Git. Teams that try to use Spinnaker when they only need Kubernetes GitOps end up over-engineering. Teams that try to stretch Argo CD beyond Kubernetes end up bolting on workarounds.\n\nThis comparison walks through 12 key dimensions, practical use cases, and a decision framework to help you figure out which tool fits your team's actual needs - not the needs you think you might have in two years.",
+  "toolA": {
+    "name": "Spinnaker",
+    "icon": "Rocket",
+    "website": "https://spinnaker.io",
+    "description": "An open-source, multi-cloud continuous delivery platform originally built by Netflix. Supports complex deployment pipelines across Kubernetes, VMs, and serverless with built-in strategies like canary, blue-green, and rolling updates.",
+    "color": "#139BB4",
+    "pros": [
+      "Multi-cloud support including AWS, GCP, Azure, and Kubernetes",
+      "Built-in canary analysis with Kayenta integration for automated rollback decisions",
+      "Rich pipeline model with stages, approvals, manual judgments, and triggers",
+      "Battle-tested at Netflix scale with thousands of deployments per day",
+      "Supports VM-based deployments alongside container workloads",
+      "Pluggable architecture with CI integrations for Jenkins, GitHub Actions, and others",
+      "Managed deployment strategies out of the box without extra tooling"
+    ],
+    "cons": [
+      "Notoriously complex to install, configure, and operate (Halyard is painful)",
+      "Resource-hungry - requires significant compute just to run Spinnaker itself",
+      "Steep learning curve for pipeline authoring and cloud provider configuration",
+      "Smaller active community compared to CNCF projects in the Kubernetes ecosystem",
+      "UI can feel sluggish and dated compared to modern alternatives",
+      "Not a natural fit for pure Kubernetes shops that want GitOps workflows"
+    ]
+  },
+  "toolB": {
+    "name": "Argo CD",
+    "icon": "RefreshCw",
+    "website": "https://argo-cd.readthedocs.io",
+    "description": "A declarative, GitOps continuous delivery tool for Kubernetes. A CNCF graduated project that continuously monitors running applications and compares their live state against the desired state defined in Git.",
+    "color": "#EF7B4D",
+    "pros": [
+      "Purpose-built for Kubernetes with deep understanding of K8s resources and health",
+      "GitOps model provides a clear audit trail and easy rollbacks via git revert",
+      "Lightweight footprint - runs as a set of controllers inside your cluster",
+      "Excellent UI with real-time sync status, resource tree visualization, and diff views",
+      "CNCF graduated project with a massive and growing community",
+      "Supports Helm, Kustomize, Jsonnet, and plain YAML out of the box",
+      "ApplicationSets enable templated multi-cluster and multi-tenant deployments"
+    ],
+    "cons": [
+      "Kubernetes-only - cannot deploy to VMs, Lambda, or other non-K8s targets",
+      "No built-in pipeline orchestration for multi-stage workflows",
+      "Canary and blue-green deployments require Argo Rollouts as a separate install",
+      "Secrets management in Git requires external tools like Sealed Secrets or SOPS",
+      "Multi-cluster management adds operational complexity",
+      "Limited support for non-Git sources without custom plugins"
+    ]
+  },
+  "features": [
+    {
+      "name": "Deployment Targets",
+      "category": "Core Capabilities",
+      "toolA": { "value": "Kubernetes, AWS EC2/ECS, GCE, Azure, Cloud Foundry, Lambda", "rating": "good" },
+      "toolB": { "value": "Kubernetes only", "rating": "neutral" }
+    },
+    {
+      "name": "GitOps Support",
+      "category": "Core Capabilities",
+      "toolA": { "value": "Possible but not native; requires pipeline configuration", "rating": "neutral" },
+      "toolB": { "value": "Core design principle with continuous reconciliation", "rating": "good" }
+    },
+    {
+      "name": "Deployment Strategies",
+      "category": "Core Capabilities",
+      "toolA": { "value": "Built-in canary, blue-green, rolling, and highlander strategies", "rating": "good" },
+      "toolB": { "value": "Rolling only natively; canary and blue-green via Argo Rollouts add-on", "rating": "neutral" }
+    },
+    {
+      "name": "Pipeline Orchestration",
+      "category": "Workflow",
+      "toolA": { "value": "Full pipeline engine with stages, approvals, wait steps, and triggers", "rating": "good" },
+      "toolB": { "value": "No pipeline concept; sync operations with optional hooks and waves", "rating": "neutral" }
+    },
+    {
+      "name": "Installation Complexity",
+      "category": "Operations",
+      "toolA": { "value": "Complex; Halyard CLI with many microservices to configure and run", "rating": "bad" },
+      "toolB": { "value": "Simple; single kubectl apply or Helm chart gets you running in minutes", "rating": "good" }
+    },
+    {
+      "name": "Resource Footprint",
+      "category": "Operations",
+      "toolA": { "value": "Heavy; 10+ microservices needing several GB of RAM minimum", "rating": "bad" },
+      "toolB": { "value": "Lightweight; runs comfortably on 512MB-1GB RAM for small clusters", "rating": "good" }
+    },
+    {
+      "name": "UI and Visualization",
+      "category": "Developer Experience",
+      "toolA": { "value": "Pipeline-centric UI with execution history and stage details", "rating": "neutral" },
+      "toolB": { "value": "Real-time resource tree, sync status, diff views, and logs", "rating": "good" }
+    },
+    {
+      "name": "Multi-Cluster Support",
+      "category": "Scale",
+      "toolA": { "value": "Native multi-cloud and multi-cluster with cloud provider accounts", "rating": "good" },
+      "toolB": { "value": "Supports multiple clusters via cluster secrets and ApplicationSets", "rating": "good" }
+    },
+    {
+      "name": "Rollback Mechanism",
+      "category": "Reliability",
+      "toolA": { "value": "Pipeline-based rollback with automated canary analysis via Kayenta", "rating": "good" },
+      "toolB": { "value": "Git revert triggers automatic resync to previous desired state", "rating": "good" }
+    },
+    {
+      "name": "Community and Ecosystem",
+      "category": "Ecosystem",
+      "toolA": { "value": "CDF project; active but smaller community; fewer new contributors", "rating": "neutral" },
+      "toolB": { "value": "CNCF graduated; very active community, frequent releases, large plugin ecosystem", "rating": "good" }
+    },
+    {
+      "name": "Secrets Management",
+      "category": "Security",
+      "toolA": { "value": "Integrates with cloud provider secret stores and Vault natively", "rating": "good" },
+      "toolB": { "value": "Requires external tools like Sealed Secrets, SOPS, or External Secrets Operator", "rating": "neutral" }
+    },
+    {
+      "name": "Manifest Templating",
+      "category": "Developer Experience",
+      "toolA": { "value": "Helm and raw manifests; pipeline expressions for templating", "rating": "neutral" },
+      "toolB": { "value": "Helm, Kustomize, Jsonnet, plain YAML, and custom config management plugins", "rating": "good" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Pure Kubernetes shop with 5-20 microservices and a team that wants GitOps workflows",
+      "recommendation": "toolB",
+      "explanation": "Argo CD was designed exactly for this. Git-driven deployments to Kubernetes with automatic reconciliation, clear audit trails, and simple rollbacks via git revert. You will be productive in a day, not a week."
+    },
+    {
+      "scenario": "Enterprise deploying across AWS EC2, Lambda, and Kubernetes with complex approval chains",
+      "recommendation": "toolA",
+      "explanation": "Spinnaker's multi-cloud provider support and pipeline orchestration with manual judgment stages are built for this exact use case. Argo CD simply cannot deploy to non-Kubernetes targets without heavy workarounds."
+    },
+    {
+      "scenario": "Team running canary deployments with automated traffic analysis and rollback",
+      "recommendation": "toolA",
+      "explanation": "Spinnaker's Kayenta integration provides built-in automated canary analysis that compares metrics between baseline and canary versions. While Argo Rollouts can do canary, the analysis engine is less mature than Kayenta."
+    },
+    {
+      "scenario": "Platform team managing 50+ Kubernetes clusters with consistent configuration",
+      "recommendation": "toolB",
+      "explanation": "Argo CD's ApplicationSets with generators (Git, cluster, matrix) let you template applications across dozens of clusters with a single definition. The declarative model scales better than maintaining pipelines per cluster."
+    },
+    {
+      "scenario": "Small team with limited infrastructure budget and operational capacity",
+      "recommendation": "toolB",
+      "explanation": "Spinnaker's operational overhead is significant - you are running a distributed system just to deploy your distributed system. Argo CD runs as a lightweight set of controllers and can be managed with minimal effort."
+    },
+    {
+      "scenario": "Organization migrating from VMs to Kubernetes over 2-3 years and needs to support both during the transition",
+      "recommendation": "toolA",
+      "explanation": "Spinnaker can orchestrate deployments to both VM-based infrastructure and Kubernetes clusters in the same pipeline. This lets you migrate incrementally without switching CD tools mid-transition."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Can I use Argo CD and Spinnaker together?",
+      "answer": "Yes, and some organizations do exactly this. Spinnaker handles the pipeline orchestration and multi-cloud deployments, while Argo CD manages the Kubernetes-specific GitOps sync. Spinnaker can trigger an Argo CD sync as part of a pipeline stage. This gives you the best of both worlds but adds operational complexity since you are running two CD platforms."
+    },
+    {
+      "question": "Does Argo CD support canary deployments?",
+      "answer": "Not natively. Argo CD handles sync operations - getting your cluster to match Git. For progressive delivery strategies like canary and blue-green, you need Argo Rollouts, which is a separate Kubernetes controller. Argo Rollouts integrates tightly with Argo CD and adds custom resource types (Rollout) that replace standard Deployments with traffic-shifting capabilities."
+    },
+    {
+      "question": "How hard is it to operate Spinnaker in production?",
+      "answer": "Honestly, it is one of the more operationally demanding tools in the DevOps ecosystem. Spinnaker consists of 10+ microservices (Clouddriver, Orca, Gate, Deck, etc.) that each need configuration, monitoring, and updates. Many teams use Armory or OpsMx managed offerings to avoid the operational burden. If you do not have a dedicated platform team, the maintenance cost may outweigh the benefits."
+    },
+    {
+      "question": "Can Argo CD handle secrets without storing them in Git?",
+      "answer": "Yes, through external tooling. The most common approaches are Sealed Secrets (encrypts secrets that only the cluster can decrypt), External Secrets Operator (syncs secrets from Vault, AWS Secrets Manager, etc.), and SOPS with age or KMS encryption. Argo CD also supports Vault plugin for injecting secrets at sync time. None of these are built into Argo CD itself, but they are well-documented patterns."
+    },
+    {
+      "question": "Which tool has better Terraform or infrastructure integration?",
+      "answer": "Spinnaker has native pipeline stages for running Terraform and interacting with cloud provider APIs. Argo CD is focused on Kubernetes manifests and does not natively handle infrastructure provisioning. Some teams use Crossplane or the Terraform Kubernetes operator with Argo CD to bridge this gap, but it is an indirect approach compared to Spinnaker's native support."
+    },
+    {
+      "question": "Is Spinnaker still actively maintained in 2026?",
+      "answer": "Yes, but the pace of development has slowed compared to 2020-2022. It remains under the Continuous Delivery Foundation with contributions from Netflix, Google, and Armory. The community is smaller than Argo CD's, and some features get less attention. Managed Spinnaker offerings from Armory and OpsMx add enterprise features and support. It is not abandoned, but it is fair to say the ecosystem momentum has shifted toward GitOps tools."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You only deploy to Kubernetes and want Git-driven workflows",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need to deploy to VMs, serverless, and containers in one pipeline",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your team has limited operational capacity for running CD infrastructure",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need complex multi-stage pipelines with manual approval gates",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want automated canary analysis with metric comparison",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want a CNCF-backed project with a large active community",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You manage 20+ Kubernetes clusters and need templated deployments",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are migrating from VMs to Kubernetes and need to support both during transition",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "Argo CD is the better choice for most teams in 2026, especially if you are running Kubernetes-only workloads and want GitOps workflows. It is simpler to operate, has a larger community, and the CNCF backing gives it strong momentum. Spinnaker remains the right tool when you need multi-cloud pipeline orchestration, VM deployments, or built-in canary analysis - but be ready for the operational overhead.",
+    "toolAScore": 3.8,
+    "toolBScore": 4.4,
+    "recommendation": "Choose Spinnaker if you need multi-cloud deployments and complex pipeline orchestration. Choose Argo CD if you are a Kubernetes shop that wants lightweight, Git-driven continuous delivery."
+  },
+  "relatedTags": ["Spinnaker", "Argo CD", "Continuous Delivery", "Kubernetes", "GitOps", "DevOps"]
+}

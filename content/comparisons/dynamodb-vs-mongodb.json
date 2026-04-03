@@ -1,0 +1,233 @@
+{
+  "id": "dynamodb-vs-mongodb",
+  "slug": "dynamodb-vs-mongodb",
+  "title": "DynamoDB vs MongoDB",
+  "description": "A detailed comparison of AWS DynamoDB and MongoDB for NoSQL database workloads. Covers data modeling, scaling, pricing, query flexibility, and real-world use cases to help you choose the right NoSQL database.",
+  "category": "NoSQL Databases",
+  "tags": ["DynamoDB", "MongoDB", "NoSQL", "Databases", "AWS", "DevOps"],
+  "createdDate": "2026-07-07T10:00:00Z",
+  "updatedDate": "2026-07-07T10:00:00Z",
+  "estimatedReadTime": "13 min read",
+  "introduction": "NoSQL databases have moved well past the hype phase. In 2026, they are standard infrastructure for workloads that do not fit neatly into relational schemas - session stores, content management, IoT telemetry, user profiles, and event logging, among others. The two most prominent NoSQL databases are AWS DynamoDB and MongoDB, and they take fundamentally different approaches to the same problem space.\n\nDynamoDB is a fully managed key-value and document database service from AWS. You do not run servers, manage storage, or worry about replication - AWS handles all of that. It scales to virtually unlimited throughput and storage with single-digit millisecond latency at any scale. The trade-off is that DynamoDB demands careful upfront data modeling. You need to understand your access patterns before you design your tables, because the query flexibility is deliberately limited to keep performance predictable. DynamoDB's pricing model (on-demand or provisioned capacity) can be extremely cost-effective for the right workloads and surprisingly expensive for the wrong ones.\n\nMongoDB is an open-source document database that stores data as flexible JSON-like documents (BSON). Unlike DynamoDB, MongoDB gives you rich query capabilities - secondary indexes, aggregation pipelines, text search, geospatial queries, and time-series collections. You can run MongoDB self-hosted on any cloud or on-premises, or use MongoDB Atlas as a fully managed service across AWS, GCP, and Azure. MongoDB 8.0 brought queryable encryption, improved performance for time-series workloads, and better cluster-to-cluster sync. The flexibility comes at the cost of more operational responsibility if you self-host, and potentially less predictable latency at extreme scale.\n\nThe choice between DynamoDB and MongoDB is really a choice between two design philosophies. DynamoDB says: tell us your access patterns upfront and we will guarantee performance at any scale. MongoDB says: store your data as documents, query it flexibly, and we will optimize as you go. Both approaches work, but they fit different teams and different problems.\n\nThis comparison covers 12 key dimensions from data modeling to pricing, walks through 6 concrete scenarios, and provides a decision matrix to help you pick the right database for your specific situation. We assume you are evaluating both for a new project or considering a migration.",
+  "toolA": {
+    "name": "DynamoDB",
+    "icon": "Table",
+    "website": "https://aws.amazon.com/dynamodb",
+    "description": "A fully managed, serverless, key-value and document database from AWS. Designed for single-digit millisecond performance at any scale with automatic scaling, built-in security, and zero operational overhead.",
+    "color": "#4053D6",
+    "pros": [
+      "Zero operational overhead - no servers to manage, patch, or scale manually",
+      "Single-digit millisecond latency that stays consistent as tables grow to petabytes",
+      "DynamoDB Accelerator (DAX) adds microsecond caching without code changes",
+      "On-demand pricing mode means you pay exactly for what you use with zero capacity planning",
+      "Global tables provide active-active multi-region replication with automatic conflict resolution",
+      "Streams enable event-driven architectures with Lambda triggers on every table change",
+      "SLA of 99.999% availability for global tables"
+    ],
+    "cons": [
+      "Requires careful upfront data modeling around specific access patterns",
+      "Limited query flexibility - no ad-hoc queries without full table scans",
+      "Item size limit of 400KB makes it unsuitable for large documents",
+      "On-demand pricing can become expensive for high and predictable throughput workloads",
+      "Vendor lock-in to AWS (DynamoDB Local exists for testing but is not a production alternative)",
+      "Aggregation and analytics require exporting data to other services like Athena or Redshift"
+    ]
+  },
+  "toolB": {
+    "name": "MongoDB",
+    "icon": "Leaf",
+    "website": "https://www.mongodb.com",
+    "description": "A general-purpose, document-oriented database that stores data as flexible JSON-like documents. Available as open source (SSPL license) or as a fully managed service via MongoDB Atlas across all major cloud providers.",
+    "color": "#47A248",
+    "pros": [
+      "Flexible document model that adapts to changing application requirements without migrations",
+      "Rich query language with secondary indexes, aggregation pipeline, text search, and geospatial queries",
+      "Runs on any cloud or on-premises - no vendor lock-in to a single provider",
+      "MongoDB Atlas provides a fully managed experience across AWS, GCP, and Azure",
+      "Time-series collections and change streams built into the core database",
+      "Atlas Search integrates full-text and vector search without a separate search engine",
+      "Large developer community with drivers for every major programming language"
+    ],
+    "cons": [
+      "Self-hosted deployments require significant operational effort for replication, backups, and upgrades",
+      "Performance at extreme scale requires careful sharding key selection and index management",
+      "SSPL license is not considered true open source by many organizations and the OSI",
+      "Memory usage can be high - WiredTiger storage engine benefits from large amounts of RAM",
+      "Transactions across shards add latency and complexity",
+      "Atlas managed service costs can escalate quickly for large clusters"
+    ]
+  },
+  "features": [
+    {
+      "name": "Data Model",
+      "category": "Data Modeling",
+      "toolA": { "value": "Key-value and document items; single-table design pattern for related entities", "rating": "neutral" },
+      "toolB": { "value": "Flexible JSON documents with nested objects and arrays; one collection per entity", "rating": "good" }
+    },
+    {
+      "name": "Query Flexibility",
+      "category": "Query Capabilities",
+      "toolA": { "value": "Query by partition key + sort key; limited filter expressions on other attributes", "rating": "bad" },
+      "toolB": { "value": "Rich queries on any field, aggregation pipelines, text search, regex, geospatial", "rating": "good" }
+    },
+    {
+      "name": "Secondary Indexes",
+      "category": "Query Capabilities",
+      "toolA": { "value": "Global and local secondary indexes; max 20 GSIs per table with separate capacity", "rating": "neutral" },
+      "toolB": { "value": "Unlimited secondary indexes on any field; compound, multikey, text, and geospatial indexes", "rating": "good" }
+    },
+    {
+      "name": "Scaling Model",
+      "category": "Scalability",
+      "toolA": { "value": "Automatic horizontal scaling; partitions managed by AWS transparently", "rating": "good" },
+      "toolB": { "value": "Manual sharding with shard key selection; Atlas auto-scaling available", "rating": "neutral" }
+    },
+    {
+      "name": "Latency at Scale",
+      "category": "Performance",
+      "toolA": { "value": "Consistent single-digit ms latency regardless of table size; DAX for microsecond reads", "rating": "good" },
+      "toolB": { "value": "Low latency for indexed queries; can degrade with poor index design or large working sets", "rating": "neutral" }
+    },
+    {
+      "name": "Transactions",
+      "category": "Data Integrity",
+      "toolA": { "value": "ACID transactions across up to 100 items within a single region", "rating": "neutral" },
+      "toolB": { "value": "Multi-document ACID transactions including across shards (with latency cost)", "rating": "good" }
+    },
+    {
+      "name": "Operational Overhead",
+      "category": "Operations",
+      "toolA": { "value": "Zero - fully serverless with no infrastructure to manage", "rating": "good" },
+      "toolB": { "value": "Low with Atlas; significant if self-hosted (replica sets, backups, upgrades)", "rating": "neutral" }
+    },
+    {
+      "name": "Multi-Cloud / Portability",
+      "category": "Portability",
+      "toolA": { "value": "AWS only; no equivalent on GCP or Azure", "rating": "bad" },
+      "toolB": { "value": "Runs anywhere - self-hosted, Atlas on AWS/GCP/Azure, or on-premises", "rating": "good" }
+    },
+    {
+      "name": "Event Streaming",
+      "category": "Features",
+      "toolA": { "value": "DynamoDB Streams with Lambda triggers for change data capture", "rating": "good" },
+      "toolB": { "value": "Change Streams for real-time event processing with application listeners", "rating": "good" }
+    },
+    {
+      "name": "Full-Text Search",
+      "category": "Features",
+      "toolA": { "value": "Not built in; requires Amazon OpenSearch integration", "rating": "bad" },
+      "toolB": { "value": "Atlas Search provides Lucene-based full-text and vector search integrated into the query API", "rating": "good" }
+    },
+    {
+      "name": "Pricing Model",
+      "category": "Cost",
+      "toolA": { "value": "On-demand (per-request) or provisioned capacity (per-hour); storage is separate", "rating": "neutral" },
+      "toolB": { "value": "Atlas charges by cluster tier; self-hosted is infrastructure cost only", "rating": "neutral" }
+    },
+    {
+      "name": "License",
+      "category": "Licensing",
+      "toolA": { "value": "Proprietary AWS service; no open-source option", "rating": "bad" },
+      "toolB": { "value": "SSPL (Server Side Public License); community and enterprise editions available", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Serverless application on AWS with predictable access patterns and Lambda-based architecture",
+      "recommendation": "toolA",
+      "explanation": "DynamoDB is the natural fit for AWS serverless stacks. It pairs natively with Lambda (triggers via DynamoDB Streams), API Gateway, and AppSync. There are no connection pools to manage, no servers to scale, and pricing aligns with serverless pay-per-use models. If your access patterns are known upfront, DynamoDB delivers unmatched operational simplicity."
+    },
+    {
+      "scenario": "Content management system or product catalog with complex queries and evolving schema",
+      "recommendation": "toolB",
+      "explanation": "MongoDB's flexible document model and rich query capabilities make it ideal for content and catalog workloads where the schema changes frequently and users need to filter, search, and aggregate data in unpredictable ways. DynamoDB's query limitations would force you into awkward data duplication or external search services."
+    },
+    {
+      "scenario": "IoT platform ingesting millions of sensor readings per second",
+      "recommendation": "toolA",
+      "explanation": "DynamoDB's on-demand mode can absorb massive write spikes without pre-provisioning, and its consistent latency at any scale means ingestion performance stays stable as data grows. Time-series queries are possible with well-designed sort keys. For IoT at scale on AWS, DynamoDB's hands-off scaling is hard to beat."
+    },
+    {
+      "scenario": "Multi-cloud application that needs to run on AWS, GCP, and Azure",
+      "recommendation": "toolB",
+      "explanation": "DynamoDB is an AWS-only service with no equivalent on other clouds. MongoDB runs everywhere - self-hosted or via Atlas on all three major clouds. If multi-cloud portability is a real requirement (not just a theoretical one), MongoDB is the only viable option of the two."
+    },
+    {
+      "scenario": "Real-time analytics dashboard with aggregation queries over recent data",
+      "recommendation": "toolB",
+      "explanation": "MongoDB's aggregation pipeline supports grouping, sorting, joining (via $lookup), windowing, and statistical operations directly in the database. DynamoDB has no built-in aggregation - you would need to stream data to Athena, Redshift, or a separate analytics service. For interactive analytics, MongoDB is significantly more capable."
+    },
+    {
+      "scenario": "User session and profile storage for a high-traffic mobile application",
+      "recommendation": "either",
+      "explanation": "Both databases handle session and profile storage well. DynamoDB offers guaranteed single-digit millisecond reads with TTL-based automatic cleanup. MongoDB provides more query flexibility if you need to search profiles by various attributes. Choose based on your cloud provider and whether you need flexible queries on profile data or just key-based lookups."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is DynamoDB really cheaper than MongoDB for most workloads?",
+      "answer": "It depends entirely on your access patterns. DynamoDB on-demand pricing is excellent for spiky or unpredictable workloads where you would otherwise over-provision. For steady, high-throughput workloads, provisioned capacity with reserved pricing can be cost-effective. However, DynamoDB costs can surprise you - each GSI doubles your write costs, and scan operations are expensive. MongoDB Atlas pricing is more predictable (you pay for the cluster tier) but you may pay for idle capacity. Run the numbers for your specific workload rather than relying on general claims."
+    },
+    {
+      "question": "Can I migrate from MongoDB to DynamoDB or vice versa?",
+      "answer": "Migrating between these databases is not trivial because they have fundamentally different data models. MongoDB-to-DynamoDB migrations require rethinking your data access patterns and often consolidating multiple collections into single-table designs. DynamoDB-to-MongoDB is easier since MongoDB's flexible schema can accommodate any DynamoDB item structure. AWS DMS supports both directions but the hard part is redesigning queries, not moving data."
+    },
+    {
+      "question": "What about single-table design in DynamoDB - is it really necessary?",
+      "answer": "Single-table design is a recommended pattern for DynamoDB that stores multiple entity types in one table to enable fetching related data in a single query. It is powerful but adds complexity to your data model and application code. For simpler applications with few access patterns, multiple tables work fine. The key principle is: design your tables around your queries, not your entities. If you find single-table design confusing, start with one table per entity and consolidate only where you need to eliminate extra queries."
+    },
+    {
+      "question": "Is MongoDB's SSPL license a problem for most users?",
+      "answer": "For end users running MongoDB as their database, the SSPL has no practical impact. The license only restricts organizations that want to offer MongoDB as a managed service (which is why cloud providers built their own compatible products or use the Atlas partnership). If you are running MongoDB for your own application, the SSPL does not limit you. That said, some organizations have legal policies against SSPL dependencies - check with your legal team if this applies."
+    },
+    {
+      "question": "Can DynamoDB handle relational data?",
+      "answer": "DynamoDB can model relational data using techniques like composite sort keys, GSIs, and single-table design - but it is not natural. You lose JOIN operations, foreign key constraints, and ad-hoc query flexibility. If your data is fundamentally relational, a relational database is the right tool. DynamoDB works best for access patterns where you know exactly what you need to fetch and can design your keys accordingly."
+    },
+    {
+      "question": "How does MongoDB Atlas compare to self-hosted MongoDB?",
+      "answer": "Atlas removes the operational burden of running replica sets, managing backups, handling upgrades, and monitoring performance. It also adds features not available in community self-hosted MongoDB: Atlas Search (Lucene-based), Atlas Vector Search, Data Federation, and online archive. The trade-off is cost - Atlas is significantly more expensive than self-hosting for equivalent resources. If your team has strong database operations skills, self-hosting saves money. If not, Atlas saves you from operational incidents."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You are building on AWS and want zero operational overhead",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need flexible queries on arbitrary fields without knowing access patterns upfront",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need consistent single-digit millisecond latency at petabyte scale",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need full-text search integrated into your database",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need multi-cloud or on-premises deployment options",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are building a serverless architecture with Lambda and API Gateway",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need aggregation pipelines for analytics and reporting",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want predictable pricing for spiky, unpredictable workloads",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "DynamoDB and MongoDB serve different needs despite both being NoSQL databases. DynamoDB is the right choice when you are on AWS, know your access patterns upfront, and want zero operational overhead with guaranteed performance at any scale. MongoDB is the better fit when you need query flexibility, aggregation capabilities, multi-cloud portability, or a schema that evolves frequently. DynamoDB optimizes for operational simplicity and performance guarantees; MongoDB optimizes for developer productivity and query power.",
+    "toolAScore": 4.1,
+    "toolBScore": 4.3,
+    "recommendation": "Choose DynamoDB for AWS-native serverless workloads with well-defined access patterns. Choose MongoDB when you need rich queries, aggregation, full-text search, or cloud portability."
+  },
+  "relatedTags": ["DynamoDB", "MongoDB", "NoSQL", "Databases", "AWS", "DevOps"]
+}

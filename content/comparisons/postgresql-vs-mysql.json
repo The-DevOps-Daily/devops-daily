@@ -1,0 +1,232 @@
+{
+  "id": "postgresql-vs-mysql",
+  "slug": "postgresql-vs-mysql",
+  "title": "PostgreSQL vs MySQL",
+  "description": "A detailed comparison of PostgreSQL and MySQL for relational database workloads. Covers performance, extensibility, replication, JSON support, and real-world use cases to help you pick the right database for your project.",
+  "category": "Databases",
+  "tags": ["PostgreSQL", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"],
+  "createdDate": "2026-06-30T10:00:00Z",
+  "updatedDate": "2026-06-30T10:00:00Z",
+  "estimatedReadTime": "14 min read",
+  "introduction": "Choosing a relational database in 2026 still comes down to the same two heavyweights it did a decade ago: PostgreSQL and MySQL. Both are open source, both are battle-tested at massive scale, and both have loyal communities that will argue endlessly about which one is better. The truth is more nuanced than either camp admits.\n\nPostgreSQL has spent the last several years gaining serious momentum. With version 17 and the ongoing development of version 18, Postgres has doubled down on its strengths - advanced query planning, extensibility through custom types and extensions, native JSON support that rivals document databases, and a standards-compliant SQL implementation that makes purists happy. The rise of managed services like Neon, Supabase, and Crunchy Bridge alongside the traditional AWS RDS and Google Cloud SQL offerings has made Postgres easier to run than ever.\n\nMySQL, now under Oracle's stewardship with the 9.x release line, remains the most deployed relational database in the world. It powers a huge portion of the web, from WordPress installations to large-scale SaaS platforms. MySQL's replication story has matured significantly with Group Replication and InnoDB Cluster, and the HeatWave analytics engine gives it capabilities that would have required a separate data warehouse a few years ago. The MySQL ecosystem also benefits from drop-in replacements like MariaDB and Percona Server that extend its capabilities.\n\nThe performance gap between these two databases has narrowed considerably. MySQL used to win on simple read-heavy workloads while Postgres dominated complex queries, but modern versions of both handle a wide range of workloads well. The real differences in 2026 are about extensibility, standards compliance, data type support, and the specific features your application actually needs.\n\nThis comparison walks through 12 key dimensions, from indexing strategies to replication topologies, and provides concrete guidance on which database fits which workload. We skip the religious arguments and focus on practical trade-offs that actually affect your production systems.",
+  "toolA": {
+    "name": "PostgreSQL",
+    "icon": "Database",
+    "website": "https://www.postgresql.org",
+    "description": "An advanced open-source relational database known for standards compliance, extensibility, and support for complex queries. Often called 'the world's most advanced open source relational database' with a strong focus on data integrity and correctness.",
+    "color": "#4169E1",
+    "pros": [
+      "Most standards-compliant SQL implementation among open-source databases",
+      "Extensibility through custom types, operators, index methods, and extensions like PostGIS and pgvector",
+      "Native JSONB support that performs well enough to replace document databases for many use cases",
+      "Advanced indexing options including GiST, GIN, BRIN, and partial indexes",
+      "Strong MVCC implementation with true serializable isolation",
+      "Excellent support for CTEs, window functions, lateral joins, and recursive queries",
+      "Vibrant extension ecosystem including pgvector for AI/ML embeddings and TimescaleDB for time-series"
+    ],
+    "cons": [
+      "VACUUM process requires tuning and can cause performance issues if misconfigured",
+      "Replication setup is more complex than MySQL's out-of-the-box options",
+      "Connection handling requires external poolers like PgBouncer for high-concurrency workloads",
+      "Write-heavy workloads can hit WAL bottlenecks without careful tuning",
+      "Upgrade process between major versions historically requires more effort than MySQL"
+    ]
+  },
+  "toolB": {
+    "name": "MySQL",
+    "icon": "Cylinder",
+    "website": "https://www.mysql.com",
+    "description": "The world's most popular open-source relational database, known for ease of use, fast reads, and a massive ecosystem. Owned by Oracle with both community and enterprise editions available.",
+    "color": "#4479A1",
+    "pros": [
+      "Simplest setup and administration among major relational databases",
+      "Excellent read performance for simple queries with proper indexing",
+      "Mature replication with Group Replication, InnoDB Cluster, and InnoDB ReplicaSet",
+      "HeatWave engine adds in-database analytics and ML without data movement",
+      "Massive community with the most tutorials, hosting providers, and tooling support",
+      "Drop-in compatible alternatives like MariaDB and Percona Server add flexibility",
+      "MySQL Shell provides modern administration and scripting capabilities"
+    ],
+    "cons": [
+      "Less strict SQL standards compliance can lead to silent data truncation or unexpected behavior",
+      "Limited support for advanced SQL features like full outer joins (workarounds needed) and recursive CTEs arrived late",
+      "JSON support exists but is slower and less feature-rich than PostgreSQL's JSONB",
+      "Extension ecosystem is far smaller - no equivalent to PostGIS or pgvector built into the community edition",
+      "Oracle's stewardship creates uncertainty about the long-term open-source commitment",
+      "CHECK constraints were ignored until MySQL 8.0.16 - legacy schemas may have unenforced constraints"
+    ]
+  },
+  "features": [
+    {
+      "name": "SQL Standards Compliance",
+      "category": "Query Language",
+      "toolA": { "value": "Closest to SQL standard among open-source databases; strict type checking", "rating": "good" },
+      "toolB": { "value": "Permissive by default; STRICT mode available but not always enabled", "rating": "neutral" }
+    },
+    {
+      "name": "JSON Support",
+      "category": "Data Types",
+      "toolA": { "value": "Native JSONB with indexing, operators, and path queries; excellent performance", "rating": "good" },
+      "toolB": { "value": "JSON type with generated columns and indexes; functional but slower than JSONB", "rating": "neutral" }
+    },
+    {
+      "name": "Full-Text Search",
+      "category": "Query Language",
+      "toolA": { "value": "Built-in tsvector/tsquery with ranking, stemming, and custom dictionaries", "rating": "good" },
+      "toolB": { "value": "FULLTEXT indexes with natural language and boolean modes; simpler but less flexible", "rating": "neutral" }
+    },
+    {
+      "name": "Replication",
+      "category": "High Availability",
+      "toolA": { "value": "Streaming replication, logical replication; requires Patroni or similar for HA", "rating": "neutral" },
+      "toolB": { "value": "Group Replication, InnoDB Cluster, semi-sync replication; easier HA out of the box", "rating": "good" }
+    },
+    {
+      "name": "Connection Handling",
+      "category": "Performance",
+      "toolA": { "value": "Process-per-connection model; needs PgBouncer or pgpool for high concurrency", "rating": "bad" },
+      "toolB": { "value": "Thread-per-connection model; handles more concurrent connections natively", "rating": "good" }
+    },
+    {
+      "name": "Indexing Options",
+      "category": "Performance",
+      "toolA": { "value": "B-tree, Hash, GiST, GIN, BRIN, SP-GiST; partial and expression indexes", "rating": "good" },
+      "toolB": { "value": "B-tree, Hash, Full-text, Spatial; fewer specialized index types", "rating": "neutral" }
+    },
+    {
+      "name": "Extensibility",
+      "category": "Ecosystem",
+      "toolA": { "value": "Custom types, operators, index methods, procedural languages, extensions", "rating": "good" },
+      "toolB": { "value": "Plugins and storage engines; less flexible extension model", "rating": "neutral" }
+    },
+    {
+      "name": "Geospatial Support",
+      "category": "Data Types",
+      "toolA": { "value": "PostGIS extension is the gold standard for geospatial data in any database", "rating": "good" },
+      "toolB": { "value": "Built-in spatial types and indexes; functional but far less capable than PostGIS", "rating": "neutral" }
+    },
+    {
+      "name": "Vector/AI Embeddings",
+      "category": "Data Types",
+      "toolA": { "value": "pgvector extension with HNSW and IVFFlat indexes; production-ready for RAG workloads", "rating": "good" },
+      "toolB": { "value": "HeatWave ML offers some vector capabilities; no community equivalent to pgvector", "rating": "bad" }
+    },
+    {
+      "name": "Partitioning",
+      "category": "Performance",
+      "toolA": { "value": "Declarative partitioning (range, list, hash) with partition pruning", "rating": "good" },
+      "toolB": { "value": "Range, list, hash, key partitioning; mature and well-optimized", "rating": "good" }
+    },
+    {
+      "name": "Managed Service Options",
+      "category": "Operations",
+      "toolA": { "value": "AWS RDS/Aurora, Cloud SQL, Azure, Neon, Supabase, Crunchy Bridge, Tembo", "rating": "good" },
+      "toolB": { "value": "AWS RDS/Aurora, Cloud SQL, Azure, PlanetScale, Vitess-based services", "rating": "good" }
+    },
+    {
+      "name": "License",
+      "category": "Licensing",
+      "toolA": { "value": "PostgreSQL License (permissive, similar to MIT/BSD)", "rating": "good" },
+      "toolB": { "value": "GPL v2 for Community Edition; proprietary Enterprise Edition", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "SaaS application with complex reporting queries, CTEs, and window functions",
+      "recommendation": "toolA",
+      "explanation": "PostgreSQL's query planner handles complex analytical queries significantly better than MySQL. CTEs, window functions, lateral joins, and recursive queries all work as expected and are well-optimized. If your app mixes OLTP with non-trivial reporting, Postgres is the safer bet."
+    },
+    {
+      "scenario": "High-traffic web application with mostly simple reads and writes (blog, CMS, e-commerce catalog)",
+      "recommendation": "toolB",
+      "explanation": "MySQL excels at simple CRUD workloads with proper indexing. The thread-per-connection model handles high concurrency without external poolers, and the sheer volume of hosting providers, tutorials, and WordPress/Drupal integrations makes MySQL the path of least resistance for web workloads."
+    },
+    {
+      "scenario": "Application requiring geospatial queries (mapping, delivery routing, location-based search)",
+      "recommendation": "toolA",
+      "explanation": "PostGIS is the most capable geospatial database extension available anywhere, open source or commercial. It supports 2D and 3D geometries, raster data, topology, and routing. MySQL's spatial features exist but are not in the same league for anything beyond basic point-in-polygon queries."
+    },
+    {
+      "scenario": "AI/ML application that needs to store and query vector embeddings alongside relational data",
+      "recommendation": "toolA",
+      "explanation": "pgvector has become the standard way to add vector similarity search to a relational database. With HNSW indexing and integration into the broader Postgres ecosystem, you can run RAG queries alongside your normal application queries without managing a separate vector database."
+    },
+    {
+      "scenario": "Large-scale horizontal sharding across multiple regions",
+      "recommendation": "toolB",
+      "explanation": "MySQL's ecosystem for horizontal sharding is more mature. Vitess (used by PlanetScale) and ProxySQL provide battle-tested sharding layers. PostgreSQL has Citus for sharding, but the MySQL sharding ecosystem has more production deployments at extreme scale."
+    },
+    {
+      "scenario": "Startup building a new product and wanting maximum flexibility for future requirements",
+      "recommendation": "toolA",
+      "explanation": "PostgreSQL's extensibility means you are less likely to outgrow it. Need full-text search? Built in. JSON document storage? JSONB handles it. Vector embeddings? pgvector. Time-series? TimescaleDB. Geospatial? PostGIS. This flexibility reduces the chance of needing a database migration later."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is PostgreSQL really faster than MySQL in 2026?",
+      "answer": "It depends on the workload. For complex queries with joins, CTEs, subqueries, and aggregations, PostgreSQL's query planner generally produces better execution plans. For simple primary key lookups and basic CRUD operations, MySQL is often slightly faster due to its lighter connection model. The performance difference for typical web application workloads is small enough that other factors (team expertise, ecosystem fit) should drive your decision."
+    },
+    {
+      "question": "Can I use PostgreSQL as a document database instead of MongoDB?",
+      "answer": "For many use cases, yes. PostgreSQL's JSONB type supports indexing (GIN indexes), path-based queries, partial updates, and aggregation over JSON data. If your application needs both relational and document-style storage, using JSONB columns in Postgres can eliminate the need for a separate MongoDB instance. However, if your entire data model is document-oriented with no relational needs, a dedicated document database may offer a simpler developer experience."
+    },
+    {
+      "question": "What about MariaDB as an alternative to MySQL?",
+      "answer": "MariaDB forked from MySQL in 2009 and maintains wire-protocol compatibility for most use cases. It adds features like columnar storage (ColumnStore), temporal tables, and a more open governance model. However, MariaDB and MySQL have diverged enough that they are no longer drop-in replacements for each other in all cases. If Oracle's stewardship of MySQL concerns you, MariaDB is worth evaluating, but test your specific workload rather than assuming compatibility."
+    },
+    {
+      "question": "How do connection limits compare between the two databases?",
+      "answer": "MySQL handles concurrent connections more efficiently with its thread-per-connection (or thread pool in Enterprise) model. PostgreSQL uses a process-per-connection model that consumes more memory per connection. For PostgreSQL deployments expecting hundreds or thousands of concurrent connections, a connection pooler like PgBouncer or PgCat is essentially required. Most managed PostgreSQL services include built-in connection pooling for this reason."
+    },
+    {
+      "question": "Which database has better cloud support?",
+      "answer": "Both are first-class citizens on every major cloud provider. AWS offers RDS and Aurora for both. Google Cloud SQL and Azure Database support both. The difference is in the specialty managed services: PostgreSQL has Neon (serverless), Supabase (backend-as-a-service), and Crunchy Bridge. MySQL has PlanetScale (Vitess-based sharding) and TiDB Cloud (distributed MySQL-compatible). Pick based on which managed service model fits your needs."
+    },
+    {
+      "question": "Should I use PostgreSQL just because it supports pgvector for AI workloads?",
+      "answer": "Not necessarily. pgvector is excellent for moderate-scale vector search (millions of vectors) alongside relational data. If you are already using or planning to use PostgreSQL, adding pgvector is a no-brainer. But if your primary need is billion-scale vector search with minimal relational requirements, purpose-built vector databases like Pinecone, Weaviate, or Qdrant may perform better. The advantage of pgvector is avoiding a separate database, not being the fastest vector engine."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "Your application relies on complex SQL queries with CTEs, window functions, and lateral joins",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need the simplest possible setup with the most hosting options",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Your application stores and queries geospatial data",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need horizontal sharding across multiple database nodes",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want to store vector embeddings alongside relational data",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your team has deep MySQL experience and existing tooling",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need strict data integrity with enforced constraints and standards compliance",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You are running a WordPress, Drupal, or other PHP-based CMS",
+      "recommendation": "toolB"
+    }
+  ],
+  "verdict": {
+    "summary": "PostgreSQL is the more capable database for complex workloads, offering better SQL compliance, superior extensibility, and a richer type system. MySQL remains the easier database to get started with and has a larger installed base, particularly in web application hosting. In 2026, PostgreSQL's momentum is undeniable - pgvector for AI, JSONB for documents, and PostGIS for geospatial make it a Swiss Army knife. But MySQL's simplicity and ecosystem size mean it is far from obsolete.",
+    "toolAScore": 4.4,
+    "toolBScore": 3.9,
+    "recommendation": "Choose PostgreSQL for new projects where you want maximum flexibility and advanced SQL features. Choose MySQL when simplicity, read performance, and ecosystem compatibility (especially with PHP frameworks and CMS platforms) are your top priorities."
+  },
+  "relatedTags": ["PostgreSQL", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"]
+}

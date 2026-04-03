@@ -1,0 +1,233 @@
+{
+  "id": "cilium-vs-calico",
+  "slug": "cilium-vs-calico",
+  "title": "Cilium vs Calico",
+  "description": "A detailed comparison of Cilium and Calico for Kubernetes networking and security. Covers eBPF vs iptables, network policies, observability, performance, and real-world use cases to help you pick the right CNI plugin.",
+  "category": "Kubernetes Networking",
+  "tags": ["Cilium", "Calico", "Kubernetes", "CNI", "eBPF", "Networking"],
+  "createdDate": "2026-06-23T10:00:00Z",
+  "updatedDate": "2026-06-23T10:00:00Z",
+  "estimatedReadTime": "12 min read",
+  "introduction": "Kubernetes networking is one of those things that works invisibly when done right and causes massive headaches when done wrong. Your choice of CNI (Container Network Interface) plugin determines how pods communicate, how network policies are enforced, and how much visibility you have into what is happening on the wire. In 2026, Cilium and Calico are the two most deployed CNI plugins in production Kubernetes clusters, and each represents a different philosophy about how networking should work.\n\nCilium, created by Isovalent (acquired by Cisco in 2024), is built on eBPF - a technology that lets you run sandboxed programs directly in the Linux kernel. Instead of relying on iptables for packet filtering and routing, Cilium programs the kernel's data path directly. This gives it significant performance advantages at scale and enables deep observability features like Hubble, which provides per-flow visibility without any application instrumentation. Cilium is a CNCF graduated project and is the default CNI for GKE, AKS, and EKS in many configurations.\n\nCalico, created by Tigera, has been in the Kubernetes networking space since the early days. It originally used iptables for network policy enforcement and BGP for routing, making it a natural fit for organizations with existing network engineering expertise. Calico has since added an eBPF data plane as an alternative to iptables, narrowing the performance gap with Cilium. The open-source version covers networking and network policies, while Calico Enterprise adds threat detection, compliance reporting, and a management UI.\n\nBoth tools handle the core CNI job well: assigning pod IPs, enabling pod-to-pod communication, and enforcing Kubernetes NetworkPolicy resources. The differences show up in how they do it, what additional capabilities they offer, and where they perform best. Cilium's eBPF foundation gives it advantages in observability and performance at high scale. Calico's maturity and BGP support make it strong in environments that need to integrate with existing network infrastructure.\n\nThis comparison covers the practical differences across architecture, performance, network policies, observability, and operational experience. We will help you figure out which one fits your cluster's needs rather than picking a theoretical winner.",
+  "toolA": {
+    "name": "Cilium",
+    "icon": "Shield",
+    "website": "https://cilium.io",
+    "description": "An eBPF-based Kubernetes CNI plugin that provides networking, security, and observability. Bypasses iptables by programming the Linux kernel data path directly, enabling high-performance networking and deep flow-level visibility through Hubble.",
+    "color": "#F5C544",
+    "pros": [
+      "eBPF data plane delivers better performance than iptables at scale",
+      "Hubble provides deep network observability with per-flow visibility and service maps",
+      "Identity-based network policies that work at L3/L4/L7 including HTTP and gRPC filtering",
+      "No iptables dependency - avoids the scaling issues of large iptables rule sets",
+      "CNCF graduated project and default CNI for GKE, AKS, and many managed K8s offerings",
+      "Built-in transparent encryption with WireGuard or IPsec",
+      "Cluster mesh for multi-cluster pod-to-pod connectivity and service discovery"
+    ],
+    "cons": [
+      "Requires Linux kernel 4.19+ (5.10+ recommended for full feature set)",
+      "eBPF debugging requires specialized knowledge that most teams do not have",
+      "Higher memory usage on each node due to eBPF maps and Hubble agent",
+      "Some advanced features (Tetragon, enterprise observability) are in the Isovalent/Cisco commercial offering",
+      "BGP support is newer and less mature than Calico's long-standing BGP implementation",
+      "Steeper learning curve for network engineers accustomed to traditional networking tools"
+    ]
+  },
+  "toolB": {
+    "name": "Calico",
+    "icon": "Network",
+    "website": "https://www.tigera.io/project-calico",
+    "description": "A widely deployed Kubernetes CNI plugin that provides networking and network policy enforcement. Originally built on iptables and BGP routing, now also supports an eBPF data plane. Known for its maturity, BGP integration, and broad platform support.",
+    "color": "#FF6600",
+    "pros": [
+      "Battle-tested in production since the earliest days of Kubernetes",
+      "Mature BGP support for integration with existing network infrastructure and peering",
+      "Supports both iptables and eBPF data planes - choose based on your environment",
+      "Broad platform support including OpenShift, Rancher, and on-premises deployments",
+      "Straightforward NetworkPolicy enforcement that is easy to understand and debug",
+      "Calico Enterprise adds compliance dashboards, threat detection, and flow logs",
+      "Lower node-level resource overhead in iptables mode for small clusters"
+    ],
+    "cons": [
+      "iptables data plane has known scaling issues with thousands of services and policies",
+      "No built-in observability comparable to Cilium's Hubble",
+      "eBPF mode is newer and less feature-complete than Cilium's eBPF implementation",
+      "L7 network policies require Envoy sidecar injection rather than in-kernel filtering",
+      "Enterprise features like threat detection and compliance require a commercial license",
+      "Flow logging and visualization require Calico Enterprise or manual Prometheus setup"
+    ]
+  },
+  "features": [
+    {
+      "name": "Data Plane Technology",
+      "category": "Architecture",
+      "toolA": { "value": "eBPF-native; programs Linux kernel data path directly", "rating": "good" },
+      "toolB": { "value": "iptables (default) or eBPF; flexible choice per environment", "rating": "neutral" }
+    },
+    {
+      "name": "Network Performance at Scale",
+      "category": "Performance",
+      "toolA": { "value": "Excellent; eBPF avoids iptables rule scaling issues", "rating": "good" },
+      "toolB": { "value": "Good with eBPF; degrades with iptables at thousands of services", "rating": "neutral" }
+    },
+    {
+      "name": "L3/L4 Network Policies",
+      "category": "Security",
+      "toolA": { "value": "Kubernetes NetworkPolicy plus Cilium-specific CiliumNetworkPolicy", "rating": "good" },
+      "toolB": { "value": "Kubernetes NetworkPolicy plus Calico-specific GlobalNetworkPolicy", "rating": "good" }
+    },
+    {
+      "name": "L7 Network Policies",
+      "category": "Security",
+      "toolA": { "value": "In-kernel L7 filtering for HTTP, gRPC, Kafka, and DNS", "rating": "good" },
+      "toolB": { "value": "L7 policies via Envoy sidecar injection; additional overhead", "rating": "neutral" }
+    },
+    {
+      "name": "Observability",
+      "category": "Monitoring",
+      "toolA": { "value": "Hubble provides flow logs, service maps, DNS monitoring, and a UI", "rating": "good" },
+      "toolB": { "value": "Basic flow logs; rich observability requires Calico Enterprise", "rating": "bad" }
+    },
+    {
+      "name": "BGP Routing",
+      "category": "Networking",
+      "toolA": { "value": "BGP support available but relatively new", "rating": "neutral" },
+      "toolB": { "value": "Mature BGP implementation with full peering and route reflection", "rating": "good" }
+    },
+    {
+      "name": "Multi-Cluster Networking",
+      "category": "Networking",
+      "toolA": { "value": "Cluster mesh with cross-cluster pod connectivity and service discovery", "rating": "good" },
+      "toolB": { "value": "Federation through BGP peering or Calico Enterprise multi-cluster", "rating": "neutral" }
+    },
+    {
+      "name": "Encryption",
+      "category": "Security",
+      "toolA": { "value": "Transparent WireGuard or IPsec encryption for pod traffic", "rating": "good" },
+      "toolB": { "value": "WireGuard encryption available in both iptables and eBPF modes", "rating": "good" }
+    },
+    {
+      "name": "Service Mesh Integration",
+      "category": "Service Mesh",
+      "toolA": { "value": "Can replace sidecar proxies for some service mesh functions via eBPF", "rating": "good" },
+      "toolB": { "value": "Works alongside Istio/Linkerd but does not replace mesh functionality", "rating": "neutral" }
+    },
+    {
+      "name": "Node Resource Usage",
+      "category": "Performance",
+      "toolA": { "value": "Moderate - eBPF maps and Hubble agent consume memory on each node", "rating": "neutral" },
+      "toolB": { "value": "Low in iptables mode; moderate in eBPF mode", "rating": "good" }
+    },
+    {
+      "name": "Platform Support",
+      "category": "Operations",
+      "toolA": { "value": "GKE, EKS, AKS, k3s, self-managed; requires kernel 4.19+", "rating": "good" },
+      "toolB": { "value": "GKE, EKS, AKS, OpenShift, Rancher, k3s; works on older kernels too", "rating": "good" }
+    },
+    {
+      "name": "License",
+      "category": "Licensing",
+      "toolA": { "value": "Apache 2.0; CNCF graduated project", "rating": "good" },
+      "toolB": { "value": "Apache 2.0 (open source); Enterprise features require commercial license", "rating": "good" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Large Kubernetes cluster with 500+ services that needs network policies and flow-level observability",
+      "recommendation": "toolA",
+      "explanation": "Cilium's eBPF data plane scales to hundreds of services without the iptables bottleneck, and Hubble gives you per-flow visibility, DNS monitoring, and service dependency maps without any application changes. This combination is hard to match."
+    },
+    {
+      "scenario": "On-premises Kubernetes deployment that needs to peer with existing BGP routers and integrate with the physical network",
+      "recommendation": "toolB",
+      "explanation": "Calico's BGP implementation is mature and battle-tested. It can peer with top-of-rack switches, advertise pod CIDR ranges, and integrate with existing IP address management workflows that network teams are already comfortable with."
+    },
+    {
+      "scenario": "Security-focused team that needs L7 network policies to control HTTP paths and gRPC methods between services",
+      "recommendation": "toolA",
+      "explanation": "Cilium enforces L7 policies in the kernel via eBPF without injecting sidecars. You can restrict which HTTP paths or gRPC methods a service can call, filter DNS queries, and inspect Kafka topics - all without additional proxy overhead."
+    },
+    {
+      "scenario": "Mixed environment with some clusters running older kernel versions (pre-4.19)",
+      "recommendation": "toolB",
+      "explanation": "Calico's iptables mode works on virtually any Linux kernel. If you have clusters on older operating systems that cannot run a recent enough kernel for Cilium's eBPF requirements, Calico is the pragmatic choice."
+    },
+    {
+      "scenario": "Multi-cluster setup that needs transparent pod-to-pod connectivity across clusters",
+      "recommendation": "toolA",
+      "explanation": "Cilium's cluster mesh feature provides transparent cross-cluster pod networking and service discovery. Pods in one cluster can reach pods in another cluster by their service name without any application-level changes or additional proxies."
+    },
+    {
+      "scenario": "Regulated environment that needs compliance reporting and network threat detection",
+      "recommendation": "toolB",
+      "explanation": "Calico Enterprise includes compliance dashboards that map network policies to regulatory frameworks, plus threat detection for known malicious IPs and anomalous traffic patterns. This is purpose-built for compliance teams that need audit-ready reports."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Can I switch from Calico to Cilium without recreating my cluster?",
+      "answer": "It is possible but not trivial. The general approach is to install Cilium alongside Calico in a migration mode, shift traffic node by node, and then remove Calico. Cilium provides a migration guide for this process. Existing Kubernetes NetworkPolicy resources will continue to work since both tools support the standard API. Calico-specific CRDs would need to be translated to Cilium equivalents."
+    },
+    {
+      "question": "Does Calico's eBPF mode make it equivalent to Cilium?",
+      "answer": "Not quite. Calico's eBPF mode provides similar performance benefits for L3/L4 networking and avoids iptables scaling issues. However, Cilium's eBPF implementation is more mature and offers additional capabilities like in-kernel L7 filtering and the Hubble observability platform that Calico's eBPF mode does not include."
+    },
+    {
+      "question": "What is Hubble and do I need it?",
+      "answer": "Hubble is Cilium's built-in observability platform. It captures network flows at the eBPF level and provides a CLI, UI, and Prometheus metrics for flow logs, DNS queries, HTTP requests, and service dependency maps. If you currently lack visibility into pod-to-pod traffic, Hubble is one of the strongest reasons to choose Cilium."
+    },
+    {
+      "question": "Which CNI do managed Kubernetes services use by default?",
+      "answer": "GKE uses Cilium-based GKE Dataplane V2 by default. EKS uses the Amazon VPC CNI by default but supports both Cilium and Calico as alternatives. AKS offers Azure CNI with Cilium overlay as an option. Each managed service has its own default, but both Cilium and Calico are supported across all major providers."
+    },
+    {
+      "question": "Can I run both Cilium and Calico in the same cluster?",
+      "answer": "Not in a standard setup. Only one CNI plugin should manage pod networking in a cluster. Running both would create conflicts in IP address assignment and routing. During migration you can temporarily have both installed using Cilium's migration mode, but the end state should be one or the other."
+    },
+    {
+      "question": "Which is better for small clusters with under 50 nodes?",
+      "answer": "For small clusters, the performance difference between eBPF and iptables is negligible. Calico in iptables mode is lighter on resources and simpler to operate at this scale. Cilium still works fine for small clusters, but you are paying the memory overhead of eBPF maps and Hubble without hitting the scale where it matters. Choose based on whether you want Hubble observability (Cilium) or BGP integration (Calico)."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You need deep network observability with flow logs and service maps",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need to integrate Kubernetes networking with BGP routers",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want L7 network policies without sidecar proxies",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You run clusters on older Linux kernels (pre-4.19)",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need multi-cluster pod-to-pod connectivity",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need compliance reporting and threat detection dashboards",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want the lowest possible node resource overhead on small clusters",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want the CNI that major cloud providers are standardizing on",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "Cilium is the forward-looking choice for teams that want eBPF-native networking, deep observability through Hubble, and L7 security policies without sidecars. It is becoming the industry default as cloud providers adopt it. Calico remains the practical choice for teams that need mature BGP integration, work on older kernels, or want flexibility between iptables and eBPF data planes. Both are production-proven at scale.",
+    "toolAScore": 4.3,
+    "toolBScore": 4.0,
+    "recommendation": "Choose Cilium if you want eBPF-native performance, Hubble observability, and L7 network policies. Choose Calico if you need BGP integration, support for older kernels, or a lower resource footprint on smaller clusters."
+  },
+  "relatedTags": ["Cilium", "Calico", "Kubernetes", "CNI", "eBPF", "Networking"]
+}

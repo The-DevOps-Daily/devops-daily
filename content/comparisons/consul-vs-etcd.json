@@ -1,0 +1,233 @@
+{
+  "id": "consul-vs-etcd",
+  "slug": "consul-vs-etcd",
+  "title": "Consul vs etcd",
+  "description": "A detailed comparison of Consul and etcd for service discovery and distributed key-value storage. Covers architecture, consistency models, health checking, Kubernetes integration, and real-world use cases to help you pick the right tool.",
+  "category": "Service Discovery",
+  "tags": ["Consul", "etcd", "Service Discovery", "Key-Value Store", "Kubernetes", "DevOps"],
+  "createdDate": "2026-06-23T10:00:00Z",
+  "updatedDate": "2026-06-23T10:00:00Z",
+  "estimatedReadTime": "11 min read",
+  "introduction": "Distributed systems need a reliable way to find services and share configuration. In 2026, Consul and etcd are the two most common tools for this job, but they approach the problem from fundamentally different angles. Understanding where they overlap and where they diverge is important because picking the wrong one creates operational headaches that are hard to undo once your infrastructure depends on it.\n\nConsul, built by HashiCorp, is a full-featured service networking platform. It started as a service discovery tool with a built-in key-value store, but it has grown to include service mesh capabilities (Consul Connect), health checking, multi-datacenter federation, and access control policies. Consul is designed to be the single source of truth for service-to-service communication across your entire infrastructure, whether that is Kubernetes, VMs, bare metal, or a mix of all three.\n\netcd, originally developed by CoreOS (now part of Red Hat), is a distributed key-value store built on the Raft consensus algorithm. It is best known as the backing store for Kubernetes - every cluster runs etcd to store cluster state, configuration, and secrets. While etcd can be used for service discovery and configuration management, it is fundamentally a consistent, highly available key-value store rather than a service networking platform. It does one thing and does it very well.\n\nThe overlap between these tools is smaller than it first appears. Consul is a service discovery and networking platform that happens to have a KV store. etcd is a KV store that happens to be useful for service discovery patterns. Teams that need multi-datacenter service discovery with health checks, DNS-based routing, and a service mesh will lean toward Consul. Teams that need a fast, consistent KV store for configuration, leader election, or distributed coordination will lean toward etcd.\n\nThis comparison breaks down the differences across architecture, consistency, service discovery features, operational experience, and Kubernetes integration. We will focus on helping you understand which use cases each tool is built for rather than which one is \"better\" in the abstract.",
+  "toolA": {
+    "name": "Consul",
+    "icon": "Radar",
+    "website": "https://www.consul.io",
+    "description": "A service networking platform by HashiCorp that provides service discovery, health checking, KV storage, multi-datacenter federation, and service mesh capabilities. Designed for heterogeneous infrastructure spanning Kubernetes, VMs, and bare metal.",
+    "color": "#DC477D",
+    "pros": [
+      "Full service discovery with DNS and HTTP interfaces out of the box",
+      "Built-in health checking for services and nodes (HTTP, TCP, gRPC, script-based)",
+      "Multi-datacenter federation with WAN gossip and cross-DC service discovery",
+      "Service mesh capabilities through Consul Connect with mTLS and intentions",
+      "Works across Kubernetes, VMs, and bare metal from a single control plane",
+      "Rich ACL system with policies, tokens, and namespace-based access control",
+      "Built-in UI for browsing services, health status, and KV data"
+    ],
+    "cons": [
+      "More complex to deploy and operate than a standalone KV store",
+      "BSL license since 2023 restricts competitive commercial use",
+      "Higher resource requirements - server nodes need meaningful CPU and memory",
+      "Learning curve is steep due to the breadth of features (agents, servers, connect, intentions)",
+      "KV store performance is lower than etcd for high-throughput write workloads",
+      "Gossip protocol can produce noisy logs and occasional membership flaps in large clusters"
+    ]
+  },
+  "toolB": {
+    "name": "etcd",
+    "icon": "Database",
+    "website": "https://etcd.io",
+    "description": "A distributed, reliable key-value store built on Raft consensus, primarily known as the backing store for Kubernetes. Provides strong consistency, watch capabilities, and lease-based key management for distributed coordination.",
+    "color": "#419EDA",
+    "pros": [
+      "Strong consistency guarantees through Raft consensus with linearizable reads",
+      "Proven reliability as the backing store for every Kubernetes cluster worldwide",
+      "Watch API enables efficient real-time notifications on key changes",
+      "Low latency for reads and writes - single-digit millisecond operations",
+      "Simple operational model - a cluster is just 3 or 5 nodes running the same binary",
+      "Lease-based TTL keys enable leader election and distributed locks natively",
+      "Apache 2.0 open-source license with CNCF graduated status"
+    ],
+    "cons": [
+      "No built-in service discovery - you build discovery patterns on top of the KV API",
+      "No health checking for services - application-level health must be managed separately",
+      "Single-datacenter only - no native multi-datacenter replication",
+      "Database size limit of 8GB (default 2GB) can be a constraint for large datasets",
+      "No built-in UI - requires third-party tools like etcdkeeper for visual management",
+      "Compaction and defragmentation require operational attention to prevent disk bloat"
+    ]
+  },
+  "features": [
+    {
+      "name": "Service Discovery",
+      "category": "Service Discovery",
+      "toolA": { "value": "Native service catalog with DNS and HTTP API; automatic registration", "rating": "good" },
+      "toolB": { "value": "Not built-in; requires custom code to implement discovery on top of KV", "rating": "bad" }
+    },
+    {
+      "name": "Health Checking",
+      "category": "Service Discovery",
+      "toolA": { "value": "Built-in HTTP, TCP, gRPC, TTL, and script-based health checks", "rating": "good" },
+      "toolB": { "value": "Lease-based TTL only; no application health checking", "rating": "bad" }
+    },
+    {
+      "name": "Key-Value Store Performance",
+      "category": "Data Store",
+      "toolA": { "value": "Adequate for config and metadata; not designed for high-throughput KV workloads", "rating": "neutral" },
+      "toolB": { "value": "Optimized for fast reads/writes; single-digit ms latency under load", "rating": "good" }
+    },
+    {
+      "name": "Consistency Model",
+      "category": "Data Store",
+      "toolA": { "value": "Raft-based for KV; gossip-based (eventually consistent) for service catalog", "rating": "neutral" },
+      "toolB": { "value": "Linearizable reads and writes through Raft; strong consistency by default", "rating": "good" }
+    },
+    {
+      "name": "Watch/Notification",
+      "category": "Data Store",
+      "toolA": { "value": "Blocking queries and Consul watches for change notification", "rating": "neutral" },
+      "toolB": { "value": "Efficient gRPC-based watch API with revision tracking", "rating": "good" }
+    },
+    {
+      "name": "Multi-Datacenter Support",
+      "category": "Operations",
+      "toolA": { "value": "Native WAN federation with cross-DC service discovery and failover", "rating": "good" },
+      "toolB": { "value": "Single-datacenter only; multi-DC requires external replication tooling", "rating": "bad" }
+    },
+    {
+      "name": "Kubernetes Integration",
+      "category": "Kubernetes",
+      "toolA": { "value": "Consul on Kubernetes via Helm; syncs K8s services with Consul catalog", "rating": "neutral" },
+      "toolB": { "value": "Core Kubernetes component - every cluster uses etcd as its backing store", "rating": "good" }
+    },
+    {
+      "name": "Service Mesh",
+      "category": "Service Mesh",
+      "toolA": { "value": "Consul Connect provides sidecar proxy with mTLS and traffic intentions", "rating": "good" },
+      "toolB": { "value": "No service mesh capabilities", "rating": "bad" }
+    },
+    {
+      "name": "Access Control",
+      "category": "Security",
+      "toolA": { "value": "Rich ACL system with tokens, policies, roles, and namespaces", "rating": "good" },
+      "toolB": { "value": "Role-based access control with user/role authentication", "rating": "neutral" }
+    },
+    {
+      "name": "DNS Interface",
+      "category": "Service Discovery",
+      "toolA": { "value": "Built-in DNS server for service discovery (service.consul domain)", "rating": "good" },
+      "toolB": { "value": "No DNS interface; API-only access", "rating": "bad" }
+    },
+    {
+      "name": "Operational Complexity",
+      "category": "Operations",
+      "toolA": { "value": "Moderate to high - agents on every node, server quorum, ACL bootstrapping", "rating": "neutral" },
+      "toolB": { "value": "Low - 3 or 5 node cluster with straightforward configuration", "rating": "good" }
+    },
+    {
+      "name": "License",
+      "category": "Licensing",
+      "toolA": { "value": "BSL 1.1 (source available with restrictions on competitive use)", "rating": "bad" },
+      "toolB": { "value": "Apache 2.0; CNCF graduated project", "rating": "good" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Hybrid infrastructure with services running on Kubernetes, VMs, and bare metal that need unified service discovery",
+      "recommendation": "toolA",
+      "explanation": "Consul is designed for heterogeneous environments. Its agent-based model works on any platform, and the service catalog provides a single view of all services regardless of where they run. etcd would require you to build all of this from scratch."
+    },
+    {
+      "scenario": "Kubernetes platform team that needs a reliable backing store for cluster state and distributed coordination",
+      "recommendation": "toolB",
+      "explanation": "etcd is literally what Kubernetes was built on. For KV storage, leader election, and distributed locking within a Kubernetes context, etcd is the natural and proven choice."
+    },
+    {
+      "scenario": "Multi-datacenter deployment that needs cross-DC service discovery and failover routing",
+      "recommendation": "toolA",
+      "explanation": "Consul's WAN federation is built for this. Services in one datacenter can discover and fail over to services in another datacenter using prepared queries and DNS. etcd has no multi-datacenter capabilities."
+    },
+    {
+      "scenario": "Application that needs real-time configuration updates pushed to all instances when a setting changes",
+      "recommendation": "toolB",
+      "explanation": "etcd's watch API is highly efficient for this pattern. Clients can watch keys or prefixes and receive immediate notifications on changes with low latency. While Consul can do this too, etcd's watch implementation is faster and more suited to high-frequency config updates."
+    },
+    {
+      "scenario": "Team needing a service mesh with mTLS between services without deploying Istio or Linkerd",
+      "recommendation": "toolA",
+      "explanation": "Consul Connect provides a lightweight service mesh with automatic mTLS and intention-based authorization. If you are already using Consul for service discovery, adding Connect is simpler than deploying a separate mesh."
+    },
+    {
+      "scenario": "Distributed application that needs leader election and distributed locks with strong consistency",
+      "recommendation": "toolB",
+      "explanation": "etcd's lease-based primitives and linearizable operations make it a reliable choice for distributed coordination. Many open-source projects use etcd for leader election because its consistency guarantees are well-understood and well-tested."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is etcd only for Kubernetes?",
+      "answer": "No. While etcd is best known as the Kubernetes backing store, it is a general-purpose distributed KV store. Projects like CoreDNS, Patroni (PostgreSQL HA), and various microservice frameworks use etcd independently of Kubernetes for configuration management, leader election, and distributed coordination."
+    },
+    {
+      "question": "Can Consul replace etcd in a Kubernetes cluster?",
+      "answer": "No. Kubernetes requires etcd specifically as its backing store - this is hard-coded into the kube-apiserver. However, Consul can run alongside Kubernetes to provide cross-platform service discovery that includes both K8s services and non-K8s workloads."
+    },
+    {
+      "question": "Is Consul still open source after the BSL license change?",
+      "answer": "Consul is source-available under BSL 1.1 since 2023. You can use it freely for most purposes, but you cannot build a competing commercial product with it. If the license is a concern, etcd under Apache 2.0 has no such restrictions. There is no community fork of Consul equivalent to OpenTofu for Terraform."
+    },
+    {
+      "question": "Which tool handles more data?",
+      "answer": "Neither is designed for large datasets. etcd has a default 2GB limit (configurable to 8GB) and is meant for metadata and configuration, not application data. Consul's KV store has a 512KB per-value limit. If you need to store large amounts of data, use a proper database."
+    },
+    {
+      "question": "Can I use both Consul and etcd together?",
+      "answer": "Yes, and many organizations do. A common pattern is etcd backing Kubernetes for cluster state, while Consul provides service discovery and mesh capabilities across the broader infrastructure including VMs and other platforms. They serve different roles without conflict."
+    },
+    {
+      "question": "How do they compare for high availability?",
+      "answer": "Both use Raft consensus and recommend 3 or 5 node clusters for HA. Both tolerate the loss of a minority of nodes (1 node in a 3-node cluster, 2 in a 5-node cluster). etcd is slightly simpler to operate for HA since it is just the KV cluster, while Consul HA involves both server nodes and client agents across the infrastructure."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You need service discovery with DNS and health checking built in",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need a fast, consistent KV store for configuration and coordination",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You run a hybrid infrastructure spanning Kubernetes, VMs, and bare metal",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need multi-datacenter service discovery and failover",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need distributed locking and leader election primitives",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want an open-source license with no usage restrictions",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want a service mesh included with your service discovery tool",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the simplest possible deployment and operational model",
+      "recommendation": "toolB"
+    }
+  ],
+  "verdict": {
+    "summary": "Consul and etcd serve different primary purposes despite surface-level overlap. Consul is a service networking platform for teams that need service discovery, health checking, multi-DC federation, and optionally a service mesh across heterogeneous infrastructure. etcd is a distributed KV store for teams that need fast, consistent data storage for configuration, coordination, and Kubernetes cluster state. Pick based on your primary use case, not feature count.",
+    "toolAScore": 4.0,
+    "toolBScore": 4.1,
+    "recommendation": "Choose Consul if you need cross-platform service discovery with health checks, DNS, and multi-datacenter support. Choose etcd if you need a fast, reliable KV store for configuration management, distributed coordination, or Kubernetes backing."
+  },
+  "relatedTags": ["Consul", "etcd", "Service Discovery", "Key-Value Store", "Kubernetes", "HashiCorp"]
+}
