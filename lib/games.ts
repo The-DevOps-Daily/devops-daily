@@ -24,6 +24,22 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'fork-bomb-simulator',
+    type: 'simulator',
+    title: 'Fork Bomb Simulator',
+    description:
+      'Visualize how the infamous :(){ :|:& };: fork bomb works. Watch processes multiply exponentially, exhaust system resources, and learn how to protect against it with ulimit, cgroups, and systemd.',
+    iconName: 'Zap',
+    badgeText: 'New',
+    color: 'from-red-500 to-orange-600',
+    href: '/games/fork-bomb-simulator',
+    tags: ['linux', 'bash', 'security', 'processes', 'educational', 'interactive'],
+    isNew: true,
+    featured: true,
+    category: 'Security',
+    createdAt: '2026-04-03',
+  },
+  {
     id: 'aws-vpc-simulator',
     type: 'simulator',
     title: 'AWS VPC Networking Simulator',
