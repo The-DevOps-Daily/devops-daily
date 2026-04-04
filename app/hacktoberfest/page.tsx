@@ -1,4 +1,4 @@
-import { Calendar, GitPullRequest, Users, Star, Github, ArrowRight, CheckCircle2, ExternalLink, Trophy, Zap, BookOpen, Heart, FileCode } from 'lucide-react';
+import { Calendar, GitPullRequest, Users, Star, Github, ArrowRight, CheckCircle2, ExternalLink, Trophy, Zap, BookOpen, Heart, FileCode, Clock, Award, Megaphone, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BreadcrumbSchema, FAQSchema } from '@/components/schema-markup';
@@ -322,21 +322,52 @@ export default function HacktoberfestPage() {
       </div>
 
       <div className="container mx-auto px-4">
+        {/* What You'll Need */}
+        <section className="my-16 max-w-3xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-8">
+            What You Need
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="rounded-lg border bg-card p-4 text-center">
+              <Github className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+              <h3 className="font-semibold text-sm mb-1">GitHub Account</h3>
+              <p className="text-xs text-muted-foreground">Free account to fork repos and submit PRs</p>
+            </div>
+            <div className="rounded-lg border bg-card p-4 text-center">
+              <FileCode className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+              <h3 className="font-semibold text-sm mb-1">Text Editor</h3>
+              <p className="text-xs text-muted-foreground">VS Code, Vim, or any editor for JSON/Markdown</p>
+            </div>
+            <div className="rounded-lg border bg-card p-4 text-center">
+              <Clock className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+              <h3 className="font-semibold text-sm mb-1">5-15 min/day</h3>
+              <p className="text-xs text-muted-foreground">Each challenge is quick and focused</p>
+            </div>
+          </div>
+        </section>
+
         {/* How It Works */}
         <section className="my-16 max-w-4xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-10">
             How It Works
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 sm:gap-0">
             {STEPS.map((s, i) => (
-              <div key={s.step} className="relative text-center">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center mx-auto mb-3">
-                  {s.step}
+              <div key={s.step} className="flex items-center gap-3 sm:flex-col sm:gap-0 sm:text-center flex-1">
+                <div className="flex items-center gap-0 sm:flex-col">
+                  <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center sm:mb-3 flex-shrink-0">
+                    {s.step}
+                  </div>
+                  {i < STEPS.length - 1 && (
+                    <div className="hidden sm:block w-full h-0.5 bg-primary/20 mt-0 absolute" />
+                  )}
                 </div>
-                <h3 className="font-semibold text-sm mb-1">{s.title}</h3>
-                <p className="text-xs text-muted-foreground">{s.description}</p>
+                <div>
+                  <h3 className="font-semibold text-sm mb-0.5">{s.title}</h3>
+                  <p className="text-xs text-muted-foreground">{s.description}</p>
+                </div>
                 {i < STEPS.length - 1 && (
-                  <ArrowRight className="hidden sm:block absolute top-5 -right-2 w-4 h-4 text-muted-foreground/30" />
+                  <ArrowRight className="hidden sm:block absolute top-5 -right-3 w-4 h-4 text-primary/30" />
                 )}
               </div>
             ))}
@@ -396,38 +427,59 @@ export default function HacktoberfestPage() {
           </div>
         </section>
 
-        {/* What You Get */}
+        {/* Rewards */}
         <section className="my-16 max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-10">
-            What You Get
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-4">
+            Rewards
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-lg border bg-card p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
-                <GitPullRequest className="w-6 h-6 text-emerald-500" />
+          <p className="text-center text-muted-foreground mb-8 max-w-xl mx-auto">
+            Every contribution earns you something. Complete all 8 days for a chance to win prizes.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-lg border bg-card p-5 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                <GitPullRequest className="w-5 h-5 text-emerald-500" />
               </div>
-              <h3 className="font-semibold mb-2">Hacktoberfest PRs</h3>
-              <p className="text-sm text-muted-foreground">
-                Each day counts as a valid Hacktoberfest pull request toward your badge or tree.
-              </p>
+              <div>
+                <h3 className="font-semibold text-sm mb-1">Hacktoberfest PRs</h3>
+                <p className="text-xs text-muted-foreground">Each day counts toward your Hacktoberfest badge or tree.</p>
+              </div>
             </div>
-            <div className="rounded-lg border bg-card p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
-                <Users className="w-6 h-6 text-blue-500" />
+            <div className="rounded-lg border bg-card p-5 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <Users className="w-5 h-5 text-blue-500" />
               </div>
-              <h3 className="font-semibold mb-2">Your Profile on the Site</h3>
-              <p className="text-sm text-muted-foreground">
-                Day 1 gives you a profile on our <Link href="/experts" className="text-primary hover:underline">Experts Directory</Link> with a backlink to your own site.
-              </p>
+              <div>
+                <h3 className="font-semibold text-sm mb-1">Expert Profile + Backlink</h3>
+                <p className="text-xs text-muted-foreground">Day 1 gives you a public profile on our <Link href="/experts" className="text-primary hover:underline">Experts Directory</Link>.</p>
+              </div>
             </div>
-            <div className="rounded-lg border bg-card p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-4">
-                <Trophy className="w-6 h-6 text-purple-500" />
+            <div className="rounded-lg border bg-card p-5 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                <Award className="w-5 h-5 text-purple-500" />
               </div>
-              <h3 className="font-semibold mb-2">Recognition</h3>
-              <p className="text-sm text-muted-foreground">
-                Top contributors get featured in our newsletter and a shoutout on social media.
-              </p>
+              <div>
+                <h3 className="font-semibold text-sm mb-1">Featured Profile</h3>
+                <p className="text-xs text-muted-foreground">Top 3 contributors get a highlighted profile on the experts page for a month.</p>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card p-5 flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+                <Megaphone className="w-5 h-5 text-orange-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm mb-1">Newsletter Shoutout</h3>
+                <p className="text-xs text-muted-foreground">Contributors get featured in the DevOps Daily weekly newsletter.</p>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card p-5 flex items-start gap-4 md:col-span-2 border-yellow-500/20 bg-yellow-500/[0.02]">
+              <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
+                <Trophy className="w-5 h-5 text-yellow-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm mb-1">Complete All 8 Days</h3>
+                <p className="text-xs text-muted-foreground">Everyone who finishes all 8 days gets DevOps Daily stickers shipped to them, plus a chance to win DigitalOcean credit in our raffle.</p>
+              </div>
             </div>
           </div>
         </section>
