@@ -42,6 +42,7 @@ const CHALLENGE_DAYS = [
     day: 1,
     title: 'Add Yourself',
     description: 'Add your profile to the DevOps Experts directory. Get a profile page with a backlink to your site.',
+    share: 'Share your new expert profile on X and tag @thedevopsdaily!',
     difficulty: 'Beginner',
     time: '5 min',
     icon: Users,
@@ -52,6 +53,7 @@ const CHALLENGE_DAYS = [
     day: 2,
     title: 'Add Your Favorite Tool',
     description: 'Add a DevOps tool you love to the Toolbox page. Name, description, link, and category.',
+    share: 'Tell everyone about your favorite tool - post your PR and tag @thedevopsdaily!',
     difficulty: 'Beginner',
     time: '5 min',
     icon: Zap,
@@ -60,53 +62,70 @@ const CHALLENGE_DAYS = [
   },
   {
     day: 3,
-    title: 'Fix Something',
-    description: 'Find and fix a typo, broken link, or formatting issue in any post or guide.',
+    title: 'Add a Quiz Question',
+    description: 'Add 1 multiple-choice question to an existing quiz. Include an explanation for the answer.',
+    share: 'Challenge your followers with your quiz question - share it with #DevOpsDaily!',
     difficulty: 'Beginner',
-    time: '10 min',
-    icon: CheckCircle2,
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
-  },
-  {
-    day: 4,
-    title: 'Add Quiz Questions',
-    description: 'Add 3 multiple-choice questions to an existing quiz. Include explanations for each answer.',
-    difficulty: 'Beginner',
-    time: '15 min',
+    time: '5 min',
     icon: Trophy,
     color: 'text-purple-500',
     bg: 'bg-purple-500/10',
   },
   {
-    day: 5,
-    title: 'Add Flashcards',
-    description: 'Add 5 flashcards to an existing flashcard set. Front/back format in JSON.',
+    day: 4,
+    title: 'Add a Flashcard',
+    description: 'Add 1-2 flashcards to an existing flashcard set. Front/back format in JSON.',
+    share: 'Share a DevOps concept you think everyone should know - tag @thedevopsdaily!',
     difficulty: 'Beginner',
-    time: '15 min',
+    time: '5 min',
     icon: BookOpen,
     color: 'text-cyan-500',
     bg: 'bg-cyan-500/10',
   },
   {
-    day: 6,
+    day: 5,
     title: 'Share a Tip',
     description: 'Add a practical tip or gotcha to an existing blog post or guide. Something you learned the hard way.',
-    difficulty: 'Intermediate',
+    share: 'Share your hard-earned DevOps tip on LinkedIn and tag DevOps Daily!',
+    difficulty: 'Beginner',
     time: '10 min',
     icon: Star,
     color: 'text-orange-500',
     bg: 'bg-orange-500/10',
   },
   {
+    day: 6,
+    title: 'Find & Fix Something',
+    description: 'Browse the site and fix a typo, broken link, outdated info, or formatting issue you spot.',
+    share: 'Found and fixed a bug in an open source project! Share your detective work with #Hacktoberfest!',
+    difficulty: 'Intermediate',
+    time: '10 min',
+    icon: CheckCircle2,
+    color: 'text-amber-500',
+    bg: 'bg-amber-500/10',
+  },
+  {
     day: 7,
     title: 'Share Your Stack',
     description: 'Write a short profile of your DevOps setup. What tools you use, how they fit together, and why.',
+    share: 'Show off your DevOps stack! Post it on X/LinkedIn and tag @thedevopsdaily!',
     difficulty: 'Intermediate',
     time: '15 min',
     icon: Heart,
     color: 'text-pink-500',
     bg: 'bg-pink-500/10',
+  },
+  {
+    day: 8,
+    title: 'Bonus: Build Something',
+    description: 'Go big! Create a new quiz, write a tool comparison, build a checklist, or contribute a game/simulator.',
+    share: 'Completed all 8 days of the DevOps Daily Hacktoberfest challenge! #DevOpsDaily #Hacktoberfest',
+    difficulty: 'Advanced',
+    time: '30+ min',
+    icon: Trophy,
+    color: 'text-yellow-500',
+    bg: 'bg-yellow-500/10',
+    bonus: true,
   },
 ];
 
@@ -242,7 +261,7 @@ export default function HacktoberfestPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
               Hacktoberfest 2026
               <br />
-              <span className="text-primary">7-Day DevOps Challenge</span>
+              <span className="text-primary">DevOps Challenge</span>
             </h1>
 
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
@@ -254,11 +273,11 @@ export default function HacktoberfestPage() {
             <div className="flex flex-wrap justify-center gap-6 mb-10">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4 text-primary" />
-                <span>7 days</span>
+                <span>7 days + bonus</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <GitPullRequest className="w-4 h-4 text-primary" />
-                <span>7 PRs</span>
+                <span>8 PRs</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Star className="w-4 h-4 text-primary" />
@@ -322,7 +341,7 @@ export default function HacktoberfestPage() {
         {/* Challenge Cards */}
         <section id="challenges" className="my-16 max-w-5xl mx-auto scroll-mt-20">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-4">
-            The 7-Day Challenge
+            The Challenge
           </h2>
           <p className="text-center text-muted-foreground mb-10 max-w-xl mx-auto">
             One task per day, each building on your familiarity with the project. All contributions are JSON or Markdown edits.
@@ -334,7 +353,7 @@ export default function HacktoberfestPage() {
               return (
                 <div
                   key={day.day}
-                  className="group rounded-lg border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-sm"
+                  className={`group rounded-lg border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-sm ${day.bonus ? 'md:col-span-2 border-yellow-500/20 bg-yellow-500/[0.02]' : ''}`}
                 >
                   <div className="flex items-start gap-4">
                     <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${day.bg} flex items-center justify-center`}>
@@ -347,12 +366,20 @@ export default function HacktoberfestPage() {
                           {day.difficulty}
                         </span>
                         <span className="text-xs text-muted-foreground/60">{day.time}</span>
+                        {day.bonus && (
+                          <span className="text-xs px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-600 font-medium">
+                            Bonus
+                          </span>
+                        )}
                       </div>
                       <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
                         {day.title}
                       </h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {day.description}
+                      </p>
+                      <p className="text-xs text-primary/70 mt-2 italic">
+                        {day.share}
                       </p>
                     </div>
                   </div>
@@ -446,6 +473,30 @@ export default function HacktoberfestPage() {
             </a>{' '}
             to spin up a droplet.
           </p>
+        </section>
+
+        {/* Share Your Progress */}
+        <section className="my-16 max-w-3xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-4">
+            Share Your Progress
+          </h2>
+          <p className="text-center text-muted-foreground mb-8 max-w-xl mx-auto">
+            Each day you contribute, share your PR on social media. Tag us and use <span className="font-mono text-primary">#DevOpsDaily</span> - we repost the best ones!
+          </p>
+          <div className="space-y-3">
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs text-muted-foreground mb-2 font-semibold">Copy-paste for X / Twitter:</p>
+              <p className="text-sm text-foreground font-mono bg-muted/50 rounded p-3 leading-relaxed">
+                {"I just completed Day [X] of the @thedevopsdaily Hacktoberfest challenge! 🎃\n\n[What you did]\n\nJoin the challenge: devops-daily.com/hacktoberfest\n\n#Hacktoberfest #DevOpsDaily #OpenSource"}
+              </p>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <p className="text-xs text-muted-foreground mb-2 font-semibold">Copy-paste for LinkedIn:</p>
+              <p className="text-sm text-foreground font-mono bg-muted/50 rounded p-3 leading-relaxed">
+                {"Day [X] of the DevOps Daily Hacktoberfest challenge done! ✅\n\n[What you contributed and what you learned]\n\nIt's beginner-friendly and takes just 5-15 minutes per day. Check it out: devops-daily.com/hacktoberfest\n\n#Hacktoberfest #DevOps #OpenSource"}
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* Follow Us */}
