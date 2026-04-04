@@ -1,8 +1,9 @@
-import { Calendar, GitPullRequest, Users, Star, Github, ArrowRight, CheckCircle2, ExternalLink, Trophy, Zap, BookOpen, Heart } from 'lucide-react';
+import { Calendar, GitPullRequest, Users, Star, Github, ArrowRight, CheckCircle2, ExternalLink, Trophy, Zap, BookOpen, Heart, FileCode } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, FAQSchema } from '@/components/schema-markup';
 import { InlineSponsors } from '@/components/inline-sponsors';
+import { HacktoberfestCountdown } from '@/components/hacktoberfest/countdown';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -40,7 +41,7 @@ const CHALLENGE_DAYS = [
   {
     day: 1,
     title: 'Add Yourself',
-    description: 'Add your profile to the DevOps Engineers Directory. Get a profile page with a backlink to your site.',
+    description: 'Add your profile to the DevOps Experts directory. Get a profile page with a backlink to your site.',
     difficulty: 'Beginner',
     time: '5 min',
     icon: Users,
@@ -109,6 +110,78 @@ const CHALLENGE_DAYS = [
   },
 ];
 
+const FAQ_ITEMS = [
+  {
+    question: 'Do I need to know React or Next.js to participate?',
+    answer: 'No! Most contributions are JSON or Markdown files. You just need to know how to fork a repo and submit a pull request.',
+  },
+  {
+    question: 'Do I have to complete all 7 days?',
+    answer: 'No, you can pick whichever days interest you. Each day is an independent contribution.',
+  },
+  {
+    question: 'Do these PRs count toward Hacktoberfest?',
+    answer: 'Yes! As long as the PRs are accepted and the repo has the hacktoberfest topic, they count toward your Hacktoberfest total.',
+  },
+  {
+    question: 'When does the challenge start?',
+    answer: 'October 1, 2026. But you can start exploring the repo and setting up your environment anytime before that.',
+  },
+  {
+    question: 'What is the Experts Directory?',
+    answer: 'A page on DevOps Daily where you can list yourself as a DevOps expert with your bio, skills, and links. It gives you a public profile with a backlink to your own site.',
+  },
+  {
+    question: 'Can I contribute outside of the 7-day challenge?',
+    answer: 'Absolutely! The challenge is just a structured starting point. We welcome all contributions year-round.',
+  },
+];
+
+const TEMPLATES = [
+  {
+    day: 'Day 1',
+    title: 'Expert Profile',
+    file: 'content/experts/your-name.json',
+    template: `{
+  "name": "Your Name",
+  "title": "DevOps Engineer",
+  "bio": "Short bio about yourself...",
+  "avatar": "/images/experts/your-name.jpg",
+  "skills": ["Docker", "Kubernetes", "Terraform"],
+  "location": "City, Country",
+  "website": "https://yoursite.com",
+  "github": "your-github",
+  "linkedin": "your-linkedin",
+  "available": true
+}`,
+  },
+  {
+    day: 'Day 4',
+    title: 'Quiz Question',
+    file: 'content/quizzes/<quiz-name>.json',
+    template: `{
+  "question": "What command lists running containers?",
+  "options": [
+    "docker ps",
+    "docker list",
+    "docker show",
+    "docker containers"
+  ],
+  "correct": 0,
+  "explanation": "docker ps lists running containers. Add -a to see all."
+}`,
+  },
+  {
+    day: 'Day 5',
+    title: 'Flashcard',
+    file: 'content/flashcards/<set-name>.json',
+    template: `{
+  "front": "What is a Kubernetes Pod?",
+  "back": "The smallest deployable unit in Kubernetes. A pod wraps one or more containers that share storage and network."
+}`,
+  },
+];
+
 const STEPS = [
   { step: 1, title: 'Star the repo', description: 'Star the DevOps Daily repository on GitHub' },
   { step: 2, title: 'Fork it', description: 'Fork the repo to your own GitHub account' },
@@ -126,6 +199,7 @@ export default function HacktoberfestPage() {
   return (
     <>
       <BreadcrumbSchema items={breadcrumbItems} />
+      <FAQSchema questions={FAQ_ITEMS} />
 
       {/* Hero Section */}
       <div className="relative overflow-hidden">
@@ -194,6 +268,11 @@ export default function HacktoberfestPage() {
                 <Users className="w-4 h-4 text-primary" />
                 <span>Beginner friendly</span>
               </div>
+            </div>
+
+            {/* Countdown */}
+            <div className="flex justify-center mb-10">
+              <HacktoberfestCountdown />
             </div>
 
             {/* CTA buttons */}
@@ -304,7 +383,7 @@ export default function HacktoberfestPage() {
               </div>
               <h3 className="font-semibold mb-2">Your Profile on the Site</h3>
               <p className="text-sm text-muted-foreground">
-                Day 1 gives you a profile on our Engineers Directory with a backlink to your own site.
+                Day 1 gives you a profile on our <Link href="/experts" className="text-primary hover:underline">Experts Directory</Link> with a backlink to your own site.
               </p>
             </div>
             <div className="rounded-lg border bg-card p-6 text-center">
@@ -431,41 +510,42 @@ export default function HacktoberfestPage() {
           <InlineSponsors variant="compact" />
         </div>
 
+        {/* Contribution Templates */}
+        <section className="my-16 max-w-4xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-4">
+            Contribution Templates
+          </h2>
+          <p className="text-center text-muted-foreground mb-8 max-w-xl mx-auto">
+            Copy these templates to get started. Each one shows the exact JSON structure you need.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {TEMPLATES.map((tmpl) => (
+              <div key={tmpl.day} className="rounded-lg border bg-card overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-muted/60 border-b border-border/80">
+                  <span className="text-xs font-semibold">{tmpl.day}: {tmpl.title}</span>
+                  <FileCode className="w-3.5 h-3.5 text-muted-foreground" />
+                </div>
+                <div className="p-3">
+                  <p className="text-[10px] text-muted-foreground font-mono mb-2">{tmpl.file}</p>
+                  <pre className="text-[11px] font-mono text-muted-foreground overflow-x-auto leading-relaxed">
+                    {tmpl.template}
+                  </pre>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* FAQ */}
         <section className="my-16 max-w-3xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-8">
             Frequently Asked Questions
           </h2>
           <div className="space-y-4">
-            {[
-              {
-                q: 'Do I need to know React or Next.js to participate?',
-                a: 'No! Most contributions are JSON or Markdown files. You just need to know how to fork a repo and submit a pull request.',
-              },
-              {
-                q: 'Do I have to complete all 7 days?',
-                a: 'No, you can pick whichever days interest you. Each day is an independent contribution.',
-              },
-              {
-                q: 'Do these PRs count toward Hacktoberfest?',
-                a: 'Yes! As long as the PRs are accepted and the repo has the hacktoberfest topic, they count toward your Hacktoberfest total.',
-              },
-              {
-                q: 'When does the challenge start?',
-                a: 'October 1, 2026. But you can start exploring the repo and setting up your environment anytime before that.',
-              },
-              {
-                q: 'What is the Engineers Directory?',
-                a: 'A page on DevOps Daily where you can list yourself as a DevOps engineer with your bio, skills, and links. It gives you a public profile with a backlink to your own site.',
-              },
-              {
-                q: 'Can I contribute outside of the 7-day challenge?',
-                a: 'Absolutely! The challenge is just a structured starting point. We welcome all contributions year-round.',
-              },
-            ].map((faq) => (
-              <div key={faq.q} className="rounded-lg border bg-card p-5">
-                <h3 className="font-semibold mb-2">{faq.q}</h3>
-                <p className="text-sm text-muted-foreground">{faq.a}</p>
+            {FAQ_ITEMS.map((faq) => (
+              <div key={faq.question} className="rounded-lg border bg-card p-5">
+                <h3 className="font-semibold mb-2">{faq.question}</h3>
+                <p className="text-sm text-muted-foreground">{faq.answer}</p>
               </div>
             ))}
           </div>
