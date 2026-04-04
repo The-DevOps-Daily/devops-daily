@@ -19,6 +19,7 @@ import {
   Layers,
   Gift,
   Scale,
+  GitPullRequest,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -215,6 +216,14 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
       description: 'Seasonal challenges',
       color: 'pink',
       items: [
+        {
+          label: 'Hacktoberfest 2026',
+          href: '/hacktoberfest',
+          description: '7-day open source contribution challenge',
+          icon: GitPullRequest,
+          featured: true,
+          badge: '2026',
+        },
         {
           label: 'Advent of DevOps',
           href: '/advent-of-devops',

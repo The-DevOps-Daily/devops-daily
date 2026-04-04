@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#183d5d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#93c2db;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5bbad5;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Grid -->
+  <g opacity="0.05">
+    <line x1="0" y1="157.5" x2="1200" y2="157.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="315" x2="1200" y2="315" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="472.5" x2="1200" y2="472.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="900" y1="0" x2="900" y2="630" stroke="#94a3b8" stroke-width="1"/>
+  </g>
+
+  <!-- PR icons scattered -->
+  <g opacity="0.08">
+    <!-- Git branch symbols -->
+    <circle cx="100" cy="120" r="8" fill="#93c2db"/>
+    <line x1="100" y1="128" x2="100" y2="170" stroke="#93c2db" stroke-width="2"/>
+    <circle cx="100" cy="178" r="6" fill="#93c2db"/>
+
+    <circle cx="1050" cy="150" r="8" fill="#93c2db"/>
+    <line x1="1050" y1="158" x2="1050" y2="200" stroke="#93c2db" stroke-width="2"/>
+    <circle cx="1050" cy="208" r="6" fill="#93c2db"/>
+
+    <circle cx="180" cy="450" r="6" fill="#5bbad5"/>
+    <line x1="180" y1="456" x2="180" y2="490" stroke="#5bbad5" stroke-width="2"/>
+    <circle cx="180" cy="496" r="5" fill="#5bbad5"/>
+
+    <circle cx="1000" cy="420" r="7" fill="#5bbad5"/>
+    <line x1="1000" y1="427" x2="1000" y2="465" stroke="#5bbad5" stroke-width="2"/>
+    <circle cx="1000" cy="471" r="5" fill="#5bbad5"/>
+  </g>
+
+  <!-- Decorative circles -->
+  <circle cx="900" cy="100" r="100" fill="#93c2db" opacity="0.03"/>
+  <circle cx="300" cy="500" r="80" fill="#5bbad5" opacity="0.03"/>
+
+  <!-- 7 day dots across the left side -->
+  <g transform="translate(120, 250)">
+    <circle cx="0" cy="0" r="20" fill="#10b981" opacity="0.15"/>
+    <text x="0" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#10b981" text-anchor="middle">1</text>
+
+    <circle cx="0" cy="55" r="20" fill="#3b82f6" opacity="0.15"/>
+    <text x="0" y="61" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#3b82f6" text-anchor="middle">2</text>
+
+    <circle cx="0" cy="110" r="20" fill="#f59e0b" opacity="0.15"/>
+    <text x="0" y="116" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#f59e0b" text-anchor="middle">3</text>
+
+    <circle cx="55" cy="27" r="20" fill="#a855f7" opacity="0.15"/>
+    <text x="55" y="33" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#a855f7" text-anchor="middle">4</text>
+
+    <circle cx="55" cy="82" r="20" fill="#06b6d4" opacity="0.15"/>
+    <text x="55" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#06b6d4" text-anchor="middle">5</text>
+
+    <circle cx="110" cy="0" r="20" fill="#f97316" opacity="0.15"/>
+    <text x="110" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#f97316" text-anchor="middle">6</text>
+
+    <circle cx="110" cy="55" r="20" fill="#ec4899" opacity="0.15"/>
+    <text x="110" y="61" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#ec4899" text-anchor="middle">7</text>
+
+    <!-- Connection lines -->
+    <line x1="20" y1="0" x2="35" y2="27" stroke="#93c2db" stroke-width="1" opacity="0.1"/>
+    <line x1="20" y1="55" x2="35" y2="27" stroke="#93c2db" stroke-width="1" opacity="0.1"/>
+    <line x1="20" y1="55" x2="35" y2="82" stroke="#93c2db" stroke-width="1" opacity="0.1"/>
+    <line x1="75" y1="27" x2="90" y2="0" stroke="#93c2db" stroke-width="1" opacity="0.1"/>
+    <line x1="75" y1="82" x2="90" y2="55" stroke="#93c2db" stroke-width="1" opacity="0.1"/>
+  </g>
+
+  <!-- Main content -->
+  <g transform="translate(600, 200)">
+    <!-- Badge -->
+    <g transform="translate(-100, -80)">
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="#183d5d" opacity="0.5"/>
+      <rect x="0" y="0" width="200" height="32" rx="16" fill="none" stroke="#5bbad5" stroke-width="1.5"/>
+      <text x="100" y="21" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#93c2db" text-anchor="middle">
+        October 1-7, 2026
+      </text>
+    </g>
+
+    <!-- Title -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="58" font-weight="bold" fill="#ffffff" text-anchor="middle">
+      Hacktoberfest
+    </text>
+    <text x="0" y="65" font-family="system-ui, -apple-system, sans-serif" font-size="58" font-weight="bold" fill="url(#titleGradient)" text-anchor="middle">
+      2026
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="120" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#94a3b8" text-anchor="middle">
+      7-Day DevOps Contribution Challenge
+    </text>
+
+    <!-- Features -->
+    <g transform="translate(-150, 155)">
+      <circle cx="0" cy="0" r="5" fill="#10b981"/>
+      <text x="14" y="5" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#cbd5e1">No coding required</text>
+
+      <circle cx="0" cy="30" r="5" fill="#3b82f6"/>
+      <text x="14" y="35" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#cbd5e1">Beginner friendly</text>
+
+      <circle cx="0" cy="60" r="5" fill="#a855f7"/>
+      <text x="14" y="65" font-family="system-ui, -apple-system, sans-serif" font-size="15" fill="#cbd5e1">Get your profile on the site</text>
+    </g>
+  </g>
+
+  <!-- devops-daily.com -->
+  <text x="1170" y="610" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#475569" text-anchor="end">
+    devops-daily.com
+  </text>
+</svg>
