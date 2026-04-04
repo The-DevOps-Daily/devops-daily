@@ -12,6 +12,7 @@ import { interviewQuestions } from '@/content/interview-questions';
 import { getAllAdventDays } from '@/lib/advent';
 import { getAllComparisons } from '@/lib/comparisons';
 import { getAllNewsletters } from '@/lib/newsletters';
+import { getAllHacktoberfestDays } from '@/lib/hacktoberfest';
 
 export const dynamic = 'force-static';
 
@@ -19,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
   // Get all content
-  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays, comparisons, newsletters, checklists] =
+  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays, comparisons, newsletters, checklists, hacktoberfestDays] =
     await Promise.all([
       getAllPosts(),
       getAllCategories(),
@@ -33,6 +34,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getAllComparisons(),
       getAllNewsletters(),
       getAllChecklists(),
+      getAllHacktoberfestDays(),
     ]);
 
   // Static routes
@@ -213,6 +215,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Hacktoberfest routes
+  const hacktoberfestRoutes = hacktoberfestDays.map((day) => ({
+    url: `${baseUrl}/hacktoberfest/${day.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
   // Static content pages
   const contentPages = [
     '/about',
@@ -254,6 +264,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...checklistRoutes,
     ...interviewRoutes,
     ...adventRoutes,
+    ...hacktoberfestRoutes,
     ...comparisonRoutes,
     ...newsletterRoutes,
     ...contentPages,

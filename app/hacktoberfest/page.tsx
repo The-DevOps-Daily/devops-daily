@@ -261,7 +261,12 @@ export default function HacktoberfestPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
               Hacktoberfest 2026
               <br />
-              <span className="text-primary">DevOps Challenge</span>
+              <span className="text-primary relative inline-block">
+                DevOps Challenge
+                <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/40" viewBox="0 0 200 12" preserveAspectRatio="none">
+                  <path d="M2 9 Q25 2 50 8 Q75 1 100 7 Q125 2 150 9 Q175 4 198 7" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
             </h1>
 
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
@@ -351,8 +356,9 @@ export default function HacktoberfestPage() {
             {CHALLENGE_DAYS.map((day) => {
               const Icon = day.icon;
               return (
-                <div
+                <Link
                   key={day.day}
+                  href={`/hacktoberfest/day-${day.day}`}
                   className={`group rounded-lg border bg-card p-5 transition-all hover:border-primary/30 hover:shadow-sm ${day.bonus ? 'md:col-span-2 border-yellow-500/20 bg-yellow-500/[0.02]' : ''}`}
                 >
                   <div className="flex items-start gap-4">
@@ -378,12 +384,13 @@ export default function HacktoberfestPage() {
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {day.description}
                       </p>
-                      <p className="text-xs text-primary/70 mt-2 italic">
-                        {day.share}
-                      </p>
+                      <div className="flex items-center gap-1 mt-2 text-xs text-primary/70">
+                        <span>View full instructions</span>
+                        <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                      </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
