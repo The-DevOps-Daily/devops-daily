@@ -351,26 +351,37 @@ export default function HacktoberfestPage() {
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-10">
             How It Works
           </h2>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 sm:gap-0">
-            {STEPS.map((s, i) => (
-              <div key={s.step} className="flex items-center gap-3 sm:flex-col sm:gap-0 sm:text-center flex-1">
-                <div className="flex items-center gap-0 sm:flex-col">
-                  <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center sm:mb-3 flex-shrink-0">
-                    {s.step}
-                  </div>
-                  {i < STEPS.length - 1 && (
-                    <div className="hidden sm:block w-full h-0.5 bg-primary/20 mt-0 absolute" />
-                  )}
+          {/* Mobile: vertical list */}
+          <div className="flex flex-col gap-4 sm:hidden">
+            {STEPS.map((s) => (
+              <div key={s.step} className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center flex-shrink-0">
+                  {s.step}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm mb-0.5">{s.title}</h3>
+                  <h3 className="font-semibold text-sm">{s.title}</h3>
                   <p className="text-xs text-muted-foreground">{s.description}</p>
                 </div>
-                {i < STEPS.length - 1 && (
-                  <ArrowRight className="hidden sm:block absolute top-5 -right-3 w-4 h-4 text-primary/30" />
-                )}
               </div>
             ))}
+          </div>
+          {/* Desktop: horizontal with connecting line */}
+          <div className="hidden sm:block">
+            <div className="relative">
+              {/* Connecting line */}
+              <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-primary/15" />
+              <div className="grid grid-cols-5 gap-4">
+                {STEPS.map((s) => (
+                  <div key={s.step} className="text-center relative">
+                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold flex items-center justify-center mx-auto mb-3 relative z-10">
+                      {s.step}
+                    </div>
+                    <h3 className="font-semibold text-sm mb-1">{s.title}</h3>
+                    <p className="text-xs text-muted-foreground">{s.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
