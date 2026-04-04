@@ -229,6 +229,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/checklists',
     '/interview-questions',
     '/advent-of-devops',
+    '/hacktoberfest',
     '/comparisons',
     '/newsletters',
     '/search',
