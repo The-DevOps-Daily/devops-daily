@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="40" stroke="#60a5fa" stroke-width="1" opacity="0.1"/>
+      <line x1="0" y1="0" x2="40" y2="0" stroke="#60a5fa" stroke-width="1" opacity="0.1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect x="80" y="80" width="172" height="40" rx="20" fill="#3b82f6"/>
+  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">DEVOPS</text>
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Building an Internal Developer</text>
+<text x="80" y="370" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Platform from Scratch</text>
+  <line x1="80" y1="460" x2="400" y2="460" stroke="#3b82f6" stroke-width="4" stroke-linecap="round"/>
+  <text x="80" y="590" font-family="Arial, sans-serif" font-size="24" fill="#94a3b8">devops-daily.com</text>
+  <circle cx="1100" cy="530" r="60" fill="#3b82f6" opacity="0.15"/>
+  <circle cx="1050" cy="100" r="40" fill="#60a5fa" opacity="0.1"/>
+</svg>
