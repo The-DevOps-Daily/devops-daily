@@ -106,7 +106,7 @@
     "react-dom": "^19.2.4",
     "react-hook-form": "^7.71.2",
     "react-resizable-panels": "^4.8.0",
-    "recharts": "3.8.0",
+    "recharts": "3.8.1",
     "remark": "^15.0.1",
     "remark-html": "^16.0.1",
     "rss-parser": "^3.13.0",
