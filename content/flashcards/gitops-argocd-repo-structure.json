@@ -1,0 +1,129 @@
+{
+  "id": "gitops-argocd-repo-structure",
+  "title": "GitOps with Argo CD: Structuring Your Repository for Multi-Environment Deployments",
+  "description": "Best practices for organizing Git repositories when using Argo CD to manage deployments across development, staging, and production environments.",
+  "category": "GitOps",
+  "icon": "FolderTree",
+  "difficulty": "intermediate",
+  "estimatedTime": "20 minutes",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "orange",
+    "gradientFrom": "from-orange-500",
+    "gradientTo": "to-red-600"
+  },
+  "cards": [
+    {
+      "id": "why-separate-app-and-config-repos",
+      "front": "Why should you keep your application source code and your Kubernetes manifests in separate Git repositories?",
+      "back": "Mixing app code and deploy configs means every code commit triggers a config repo scan, and deploy changes pollute your app commit history. Separate repos give you independent access control (devs vs. SREs), cleaner audit trails, and let Argo CD watch only the config repo without noisy webhooks from code changes.",
+      "category": "Repository Layout",
+      "tags": ["gitops", "argocd", "repository-structure"]
+    },
+    {
+      "id": "monorepo-vs-multi-repo",
+      "front": "When managing configs for 10+ microservices, should you use one config repo (monorepo) or one repo per service?",
+      "back": "Start with a monorepo. One repo is simpler to manage, search across, and enforce standards in. You only need multiple repos when teams genuinely need different access controls or the repo gets too large for Git to handle well. Most orgs under 50 services do fine with a single config monorepo.",
+      "category": "Repository Layout",
+      "tags": ["gitops", "monorepo", "repository-structure"]
+    },
+    {
+      "id": "directory-per-environment",
+      "front": "What does a directory-per-environment layout look like for an Argo CD config repo, and why is it the most common pattern?",
+      "back": "```\nconfig-repo/\n  apps/\n    my-app/\n      base/\n      overlays/\n        dev/\n        staging/\n        production/\n```\nEach environment gets its own directory with env-specific overrides. It is popular because diffs between environments are easy to spot, PRs clearly show which environment changes, and Argo CD Applications can point to a single directory path.",
+      "category": "Repository Layout",
+      "tags": ["gitops", "argocd", "directory-structure"]
+    },
+    {
+      "id": "branch-per-env-antipattern",
+      "front": "Why is using a separate Git branch for each environment (dev branch, staging branch, prod branch) usually a bad idea?",
+      "back": "Branch-per-environment makes promotions painful -- you end up cherry-picking or merging between branches and losing track of what is where. Merge conflicts pile up because branches drift apart. You also cannot see the full state of all environments in one place. Use directories per environment instead, with a single main branch as the source of truth.",
+      "category": "Repository Layout",
+      "tags": ["gitops", "branching", "anti-patterns"]
+    },
+    {
+      "id": "kustomize-base-overlays",
+      "front": "How does Kustomize's base/overlay model help manage multi-environment deployments in Argo CD?",
+      "back": "Put shared manifests in `base/` (Deployment, Service, ConfigMap). Each environment overlay patches only what differs -- replica count, image tag, resource limits, env vars. Argo CD points each Application at the overlay directory.\n\n```yaml\n# overlays/production/kustomization.yaml\nresources:\n  - ../../base\npatchesStrategicMerge:\n  - replica-patch.yaml\nimages:\n  - name: my-app\n    newTag: v1.4.2\n```",
+      "category": "Kustomize",
+      "tags": ["kustomize", "argocd", "multi-environment"]
+    },
+    {
+      "id": "helm-values-per-env",
+      "front": "How do you structure Helm-based deployments in Argo CD so each environment uses different values?",
+      "back": "Keep one chart (or reference an external chart) and create a values file per environment:\n\n```\nmy-app/\n  Chart.yaml\n  values.yaml          # defaults\n  values-dev.yaml\n  values-staging.yaml\n  values-production.yaml\n```\n\nIn the Argo CD Application spec, set `spec.source.helm.valueFiles` to the right file:\n```yaml\nhelm:\n  valueFiles:\n    - values.yaml\n    - values-production.yaml\n```",
+      "category": "Helm",
+      "tags": ["helm", "argocd", "multi-environment"]
+    },
+    {
+      "id": "applicationset-generator",
+      "front": "What is an ApplicationSet in Argo CD, and how does it simplify multi-environment setups?",
+      "back": "An ApplicationSet is a template that generates multiple Argo CD Applications from a single definition. Instead of writing three nearly identical Application manifests for dev/staging/prod, you define one ApplicationSet with a generator:\n\n```yaml\nspec:\n  generators:\n    - list:\n        elements:\n          - env: dev\n            cluster: dev-cluster\n          - env: staging\n            cluster: staging-cluster\n          - env: production\n            cluster: prod-cluster\n  template:\n    spec:\n      source:\n        path: apps/my-app/overlays/{{env}}\n```",
+      "category": "Argo CD Patterns",
+      "tags": ["argocd", "applicationset", "multi-environment"]
+    },
+    {
+      "id": "app-of-apps-pattern",
+      "front": "What is the App of Apps pattern in Argo CD, and when should you use it?",
+      "back": "A parent Application that manages child Application manifests stored in Git. The parent points to a directory of Application YAMLs, and Argo CD creates and manages all of them.\n\n```\nargo-apps/\n  dev/\n    app-a.yaml\n    app-b.yaml\n  production/\n    app-a.yaml\n    app-b.yaml\n```\n\nUse it when you need to bootstrap an entire environment in one shot or manage dozens of applications as a group. For simpler setups, ApplicationSets are usually easier.",
+      "category": "Argo CD Patterns",
+      "tags": ["argocd", "app-of-apps", "deployment-patterns"]
+    },
+    {
+      "id": "promoting-changes-across-envs",
+      "front": "What is the recommended way to promote a change from dev to staging to production in a GitOps workflow?",
+      "back": "Update the image tag or config in the dev overlay, merge via PR. After testing, open another PR that updates the staging overlay with the same change. Repeat for production. Each promotion is a separate, reviewable PR.\n\nAutomate this with CI: after dev tests pass, a pipeline opens a PR to staging automatically. Keep production promotions manual (require human approval on the PR) until you have strong confidence in your test suite.",
+      "category": "Workflows",
+      "tags": ["gitops", "promotion", "multi-environment"]
+    },
+    {
+      "id": "image-updater-automation",
+      "front": "How does Argo CD Image Updater help automate deployments without manual config repo commits?",
+      "back": "Argo CD Image Updater watches container registries for new image tags. When it finds one matching your policy (semver, latest, regex), it automatically commits the updated tag to your config repo.\n\n```yaml\nannotations:\n  argocd-image-updater.argoproj.io/image-list: my-app=registry.io/my-app\n  argocd-image-updater.argoproj.io/my-app.update-strategy: semver\n  argocd-image-updater.argoproj.io/my-app.allow-tags: regexp:^v[0-9]+\\\\.[0-9]+\\\\.[0-9]+$\n```\n\nUse it for dev/staging. For production, stick with explicit PRs so humans approve what ships.",
+      "category": "Workflows",
+      "tags": ["argocd", "image-updater", "automation"]
+    },
+    {
+      "id": "sync-waves-ordering",
+      "front": "How do sync waves work in Argo CD, and why do they matter for multi-component deployments?",
+      "back": "Sync waves control the order resources are applied during a sync. Lower wave numbers go first. Use them when resources have dependencies -- for example, create a Namespace (wave 0) before the Deployment (wave 1) that lives in it.\n\n```yaml\nmetadata:\n  annotations:\n    argocd.argoproj.io/sync-wave: \"0\"  # applied first\n```\n\nWithout sync waves, Argo CD applies everything at once, which can cause failures when resources depend on each other.",
+      "category": "Argo CD Patterns",
+      "tags": ["argocd", "sync-waves", "deployments"]
+    },
+    {
+      "id": "secrets-in-gitops",
+      "front": "You cannot store plain-text secrets in Git. What are the common approaches for handling secrets in a GitOps workflow with Argo CD?",
+      "back": "Three popular options:\n\n1. **Sealed Secrets** -- encrypt secrets client-side with `kubeseal`. Only the cluster can decrypt them. Safe to commit to Git.\n2. **External Secrets Operator** -- syncs secrets from AWS Secrets Manager, Vault, or GCP Secret Manager into Kubernetes Secrets. Git stores only the ExternalSecret reference.\n3. **SOPS + Argo CD** -- encrypt secret files with Mozilla SOPS using KMS keys. Argo CD decrypts at sync time via a plugin.\n\nExternal Secrets Operator is the most common choice for production because secrets stay out of Git entirely.",
+      "category": "Security",
+      "tags": ["gitops", "secrets", "security"]
+    },
+    {
+      "id": "argocd-project-rbac",
+      "front": "How do Argo CD Projects help enforce access control across environments?",
+      "back": "An Argo CD Project (AppProject) restricts what an Application can do:\n- Which Git repos it can pull from\n- Which clusters and namespaces it can deploy to\n- Which resource kinds it can create\n\n```yaml\nspec:\n  destinations:\n    - namespace: 'production-*'\n      server: https://prod-cluster\n  sourceRepos:\n    - https://github.com/org/config-repo\n  clusterResourceWhitelist:\n    - group: ''\n      kind: Namespace\n```\n\nCreate one Project per environment so a misconfigured dev app cannot accidentally deploy to production.",
+      "category": "Security",
+      "tags": ["argocd", "rbac", "security"]
+    },
+    {
+      "id": "drift-detection-self-heal",
+      "front": "Someone runs `kubectl edit` and changes a production Deployment directly. What happens if Argo CD self-heal is enabled?",
+      "back": "Argo CD detects the drift between the live state and Git, then automatically reverts the manual change to match what is in Git. This is the self-heal feature:\n\n```yaml\nsyncPolicy:\n  automated:\n    selfHeal: true\n```\n\nSelf-heal is the whole point of GitOps -- Git is the single source of truth. Enable it in production so manual `kubectl` edits never persist. The change gets overwritten within a few minutes (default poll interval is 3 minutes).",
+      "category": "Sync and Reconciliation",
+      "tags": ["argocd", "self-heal", "drift-detection"]
+    },
+    {
+      "id": "auto-prune-resources",
+      "front": "You delete a Kubernetes manifest file from your config repo. What happens in Argo CD if pruning is disabled vs. enabled?",
+      "back": "**Pruning disabled (default):** The resource stays running in the cluster. Argo CD marks it as OutOfSync but will not delete it. You accumulate orphaned resources over time.\n\n**Pruning enabled:**\n```yaml\nsyncPolicy:\n  automated:\n    prune: true\n```\nArgo CD deletes the resource from the cluster on the next sync. Enable pruning so your cluster matches Git exactly. Without it, you end up with ghost resources that nobody manages.",
+      "category": "Sync and Reconciliation",
+      "tags": ["argocd", "pruning", "sync"]
+    },
+    {
+      "id": "git-generator-applicationset",
+      "front": "How does the Git generator in ApplicationSet automatically discover and deploy new services added to your config repo?",
+      "back": "The Git directory generator scans a repo path and creates an Application for each subdirectory it finds:\n\n```yaml\nspec:\n  generators:\n    - git:\n        repoURL: https://github.com/org/config-repo\n        revision: HEAD\n        directories:\n          - path: apps/*/overlays/production\n  template:\n    metadata:\n      name: '{{path.basename}}'\n    spec:\n      source:\n        path: '{{path}}'\n```\n\nAdd a new service directory, push to Git, and Argo CD picks it up automatically. No need to create Application manifests by hand.",
+      "category": "Argo CD Patterns",
+      "tags": ["argocd", "applicationset", "git-generator"]
+    }
+  ]
+}
