@@ -91,7 +91,7 @@ export function NewsDigestContent({ content }: NewsDigestContentProps) {
             prose-strong:text-foreground prose-strong:font-semibold
             prose-ul:list-none prose-ul:pl-0
             prose-p:text-muted-foreground prose-p:leading-relaxed prose-p:mb-3
-            prose-table:overflow-hidden prose-table:rounded-lg prose-table:shadow
+            prose-table:rounded-lg prose-table:shadow
             prose-th:bg-muted prose-td:border-border"
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />

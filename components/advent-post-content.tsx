@@ -30,7 +30,7 @@ export function AdventPostContent({ content }: AdventPostContentProps) {
               prose-a:text-primary hover:prose-a:text-primary/80 prose-a:transition-colors
               prose-strong:text-foreground
               prose-ul:list-disc prose-ol:list-decimal
-              prose-table:overflow-hidden prose-table:rounded-lg prose-table:shadow
+              prose-table:rounded-lg prose-table:shadow
               prose-th:bg-muted prose-td:border-border"
             dangerouslySetInnerHTML={{ __html: htmlContent }}
           />
@@ -73,7 +73,7 @@ export function AdventPostContent({ content }: AdventPostContentProps) {
             prose-a:text-primary hover:prose-a:text-primary/80 prose-a:transition-colors
             prose-strong:text-foreground
             prose-ul:list-disc prose-ol:list-decimal
-            prose-table:overflow-hidden prose-table:rounded-lg prose-table:shadow
+            prose-table:rounded-lg prose-table:shadow
             prose-th:bg-muted prose-td:border-border"
           dangerouslySetInnerHTML={{ __html: beforeHtml }}
         />
@@ -90,7 +90,7 @@ export function AdventPostContent({ content }: AdventPostContentProps) {
               prose-a:text-primary hover:prose-a:text-primary/80 prose-a:transition-colors
               prose-strong:text-foreground
               prose-ul:list-disc prose-ol:list-decimal
-              prose-table:overflow-hidden prose-table:rounded-lg prose-table:shadow
+              prose-table:rounded-lg prose-table:shadow
               prose-th:bg-muted prose-td:border-border"
             dangerouslySetInnerHTML={{ __html: solutionHtml }}
           />
@@ -108,7 +108,7 @@ export function AdventPostContent({ content }: AdventPostContentProps) {
               prose-a:text-primary hover:prose-a:text-primary/80 prose-a:transition-colors
               prose-strong:text-foreground
               prose-ul:list-disc prose-ol:list-decimal
-              prose-table:overflow-hidden prose-table:rounded-lg prose-table:shadow
+              prose-table:rounded-lg prose-table:shadow
               prose-th:bg-muted prose-td:border-border"
             dangerouslySetInnerHTML={{ __html: afterHtml }}
           />
