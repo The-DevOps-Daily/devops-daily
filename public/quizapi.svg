@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 32" fill="none">
+  <rect x="0" y="4" width="24" height="24" rx="6" fill="currentColor"/>
+  <path d="M8 16l3 3 5-6" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="32" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="currentColor">QuizAPI</text>
+</svg>

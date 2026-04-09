@@ -40,12 +40,11 @@ export const sponsors: Sponsor[] = [
     description: 'Acronis: the most secure backup solution for your data',
   },
   {
-    name: 'Pluralsight',
-    logo: 'https://github.com/user-attachments/assets/9a93398d-dbc1-458c-9900-563b15e4acd9',
-    url: 'https://www.jdoqocy.com/click-101674709-17135608',
-    tagline: 'Technology skills platform',
-    description: 'Expert-led courses in software development, IT ops, data, and cybersecurity',
-    className: 'bg-[#0a0a0a] rounded px-3 py-2',
+    name: 'QuizAPI',
+    logo: '/quizapi.svg',
+    url: 'https://quizapi.io?ref=devops-daily',
+    tagline: 'Developer-first quiz platform',
+    description: 'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',
   },
 ];
 
