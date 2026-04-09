@@ -64,6 +64,7 @@ import finopsCostManagement from './finops-cost-management.json';
 import zeroTrustArchitecture from './zero-trust-architecture.json';
 import progressiveDeliveryFlagArchitecture from './progressive-delivery-flag-architecture.json';
 import progressiveDeliveryRollbackStrategy from './progressive-delivery-rollback-strategy.json';
+import idpWhatAndWhy from './idp-what-and-why.json';
 
 export const interviewQuestions: InterviewQuestion[] = [
   // Junior tier
@@ -129,6 +130,7 @@ export const interviewQuestions: InterviewQuestion[] = [
   zeroTrustArchitecture as InterviewQuestion,
   progressiveDeliveryFlagArchitecture as InterviewQuestion,
   progressiveDeliveryRollbackStrategy as InterviewQuestion,
+  idpWhatAndWhy as InterviewQuestion,
 ];
 
 export const getQuestionBySlug = (slug: string): InterviewQuestion | undefined => {

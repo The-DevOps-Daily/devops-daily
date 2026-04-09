@@ -1,0 +1,47 @@
+{
+  "id": "idp-service-catalog-design",
+  "slug": "idp-service-catalog-design",
+  "title": "Service Catalog and Ownership",
+  "question": "You are building a service catalog for your IDP. Your company has 200 microservices, and nobody knows who owns half of them. How do you fix this, and what does a good service catalog look like?",
+  "answer": "A service catalog is the single source of truth for 'what do we run, and who owns it?' Without one, every incident starts with 20 minutes of Slack threads asking 'does anyone know who owns this service?'\n\nHere is how I would fix the ownership mess:\n\nFirst, require every service to have a catalog-info.yaml in its repo. This file declares the service name, owning team, dependencies, and API specs. If a repo does not have one, it shows up as 'unowned' in the catalog, which creates social pressure to fix it.\n\nSecond, automate catalog discovery. Do not rely on people manually registering services. Scan your GitHub org, pull in metadata from Kubernetes (what is actually running), and cross-reference with your cloud provider. If a service is running in production but is not in the catalog, flag it.\n\nThird, make the catalog useful, not just a registry. A good service catalog shows: who owns this, what it depends on, its current health, recent deployments, on-call rotation, API docs, and cost. If the catalog is just a list of names, nobody will maintain it.\n\nThe ownership model matters too. Use team ownership, not individual ownership. People leave. Teams persist. And every service must have exactly one owning team. Shared ownership means no ownership.\n\nTools like Backstage, Cortex, or OpsLevel do this well, but you can start with a simple YAML file per repo and a script that aggregates them.",
+  "explanation": "This question tests real operational experience. Anyone who has dealt with a microservices mess knows that the catalog is the foundation of everything else in an IDP. Without knowing what you run and who owns it, you cannot build self-service, you cannot route incidents, and you cannot track costs. Listen for whether the candidate talks about keeping the catalog accurate over time, not just the initial setup.",
+  "category": "Platform Engineering",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "platform-engineering",
+    "service-catalog",
+    "idp",
+    "backstage",
+    "developer-experience"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "catalog-info.yaml that lives in each service repo",
+      "code": "# catalog-info.yaml - every repo gets one of these\napiVersion: backstage.io/v1alpha1\nkind: Component\nmetadata:\n  name: payments-api\n  description: Handles payment processing and refunds\n  annotations:\n    github.com/project-slug: myorg/payments-api\n    backstage.io/techdocs-ref: dir:.\n    pagerduty.com/service-id: P1234ABC\n    grafana/dashboard-selector: \"payments-api\"\n  tags:\n    - python\n    - fastapi\n    - tier-1\n  links:\n    - url: https://grafana.internal/d/payments-api\n      title: Grafana Dashboard\n    - url: https://myorg.atlassian.net/wiki/spaces/PAY\n      title: Team Wiki\nspec:\n  type: service\n  lifecycle: production\n  owner: team-payments\n  system: checkout\n  providesApis:\n    - payments-api\n  consumesApis:\n    - stripe-gateway\n    - notifications-api\n  dependsOn:\n    - resource:payments-db\n    - resource:payments-redis"
+    },
+    {
+      "language": "bash",
+      "label": "Script to find unowned services running in production",
+      "code": "#!/bin/bash\n# Find services running in Kubernetes that are not in the catalog\n\necho \"=== Services in Kubernetes but NOT in catalog ===\"\n\n# Get all deployments from Kubernetes\nk8s_services=$(kubectl get deployments -A \\\n  -o jsonpath='{range .items[*]}{.metadata.name}{\"\\n\"}{end}' \\\n  | sort -u)\n\n# Get all services registered in Backstage catalog\ncatalog_services=$(curl -s \\\n  'https://backstage.internal/api/catalog/entities?filter=kind=component' \\\n  | jq -r '.[].metadata.name' \\\n  | sort -u)\n\n# Find the diff\ncomm -23 <(echo \"$k8s_services\") <(echo \"$catalog_services\")\n\n# Example output:\n# legacy-auth-proxy\n# temp-data-migrator\n# unknown-cronjob-handler\n# ^^^ These 3 services are running but nobody claimed them"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you keep the catalog accurate when teams forget to update their catalog-info.yaml?",
+    "How would you handle the 100 services that currently have no owner? You cannot just assign them randomly.",
+    "What is the difference between a service catalog and a CMDB?"
+  ],
+  "commonMistakes": [
+    "Building a catalog that requires manual registration and then wondering why it is always out of date",
+    "Assigning ownership to individuals instead of teams, so it breaks when someone leaves",
+    "Treating the catalog as a one-time project instead of something that needs ongoing data quality checks"
+  ],
+  "relatedTopics": [
+    "backstage",
+    "service-ownership",
+    "microservices",
+    "incident-management",
+    "developer-portal"
+  ]
+}
