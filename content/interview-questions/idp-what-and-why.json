@@ -1,0 +1,47 @@
+{
+  "id": "idp-what-and-why",
+  "slug": "idp-what-and-why",
+  "title": "Internal Developer Platform Purpose",
+  "question": "Your team keeps filing tickets for things like creating new services, setting up databases, and getting access to staging environments. Your CTO asks you to fix this. What would you build, and why?",
+  "answer": "I would build an Internal Developer Platform (IDP) - a self-service layer that sits on top of your existing infrastructure and lets developers do common tasks without waiting on the platform team. The core idea is simple: instead of a developer opening a ticket that says 'I need a PostgreSQL database for my new service,' they go to a portal or run a CLI command and get one provisioned automatically, with the right security policies, backups, and monitoring already configured.\n\nThe 'why' matters more than the 'what' here. Every ticket a developer files is blocked time. If it takes 2 days to get a database, that is 2 days of lost productivity. Multiply that across 50 engineers and you are burning weeks of engineering time on things that should take minutes.\n\nAn IDP typically has these layers: a service catalog (what can I use?), a self-service portal or CLI (how do I get it?), golden paths (pre-approved ways to build things), and an orchestration backend that actually provisions resources through IaC tools like Terraform or Crossplane.\n\nThe key principle is that you are not removing guardrails. You are encoding them. Developers get freedom to move fast, but every resource they create automatically meets your security, compliance, and cost policies.",
+  "explanation": "This question tests whether a candidate understands the business problem behind IDPs, not just the technology. Weak candidates jump straight to tool names. Strong candidates start with the developer pain point and work backward to a solution. Listen for whether they mention the tension between speed and governance - that is the core challenge an IDP solves.",
+  "category": "Platform Engineering",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "platform-engineering",
+    "developer-experience",
+    "idp",
+    "self-service",
+    "devops"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Backstage service catalog entry showing a self-service database request",
+      "code": "apiVersion: backstage.io/v1alpha1\nkind: Resource\nmetadata:\n  name: postgres-standard\n  description: Standard PostgreSQL instance with backups and monitoring\n  annotations:\n    backstage.io/techdocs-ref: dir:.\nspec:\n  type: database\n  owner: platform-team\n  lifecycle: production\n  dependsOn:\n    - resource:aws-rds-module\n  providesApis:\n    - postgres-connection-string"
+    },
+    {
+      "language": "bash",
+      "label": "Developer self-service workflow before and after an IDP",
+      "code": "# BEFORE: Developer opens a Jira ticket, waits 2 days\n# \"Hey platform team, I need a Postgres DB for my new service\"\n# Platform engineer manually runs Terraform, shares credentials\n\n# AFTER: Developer runs one command, gets a database in 5 minutes\n$ platform db create \\\n    --name orders-db \\\n    --engine postgres \\\n    --size small \\\n    --team checkout-squad\n\nCreating PostgreSQL instance 'orders-db'...\n✓ Instance provisioned (db.t3.medium, 20GB)\n✓ Backup policy applied (daily, 7-day retention)\n✓ Monitoring dashboard created\n✓ Connection string stored in Vault at secret/checkout-squad/orders-db\n✓ IAM roles configured for checkout-squad members\n\nConnect: psql $(platform db connect orders-db)"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you decide what to include in your IDP versus what stays as a manual process?",
+    "How would you measure whether your IDP is actually saving developer time?",
+    "What is the difference between an IDP and just writing more Terraform modules?"
+  ],
+  "commonMistakes": [
+    "Describing an IDP as just a UI on top of Kubernetes - it is much broader than container orchestration",
+    "Focusing only on the tools (Backstage, Humanitec, Kratix) without explaining the problem they solve",
+    "Forgetting that an IDP needs to enforce governance, not just speed things up"
+  ],
+  "relatedTopics": [
+    "backstage",
+    "platform-engineering",
+    "developer-experience",
+    "self-service-infrastructure",
+    "golden-paths"
+  ]
+}

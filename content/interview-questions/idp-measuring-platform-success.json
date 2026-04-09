@@ -1,0 +1,48 @@
+{
+  "id": "idp-measuring-platform-success",
+  "slug": "idp-measuring-platform-success",
+  "title": "Measuring IDP Success and Adoption",
+  "question": "You have spent six months building an internal developer platform. Your VP of Engineering asks: 'Is this thing actually working? How do we know it was worth the investment?' What do you show them?",
+  "answer": "You need both quantitative metrics and qualitative signals. Here is what I would track:\n\nDeveloper productivity metrics:\n- Time from 'I need a new service' to 'it is running in staging.' If this went from 2 weeks to 30 minutes, that is your headline number.\n- Lead time for changes (DORA metric). How fast can a developer go from commit to production?\n- Number of self-service requests versus tickets filed to the platform team. If 90% of requests go through self-service, the platform is working.\n\nPlatform health metrics:\n- Adoption rate: what percentage of teams are using the golden paths? If only 3 out of 20 teams use it, you have a product problem.\n- Platform reliability: what is the uptime of your self-service tools? If the platform itself is down, developers go back to filing tickets.\n- Time-to-onboard: how long does it take a new engineer to ship their first change? This is a killer metric for showing the IDP value.\n\nCost and toil metrics:\n- Tickets per developer per month to the platform team. This should trend down.\n- Platform team size relative to total engineering headcount. A good IDP lets you support 200 developers with a team of 5, not 20.\n\nDeveloper satisfaction:\n- Run a quarterly developer experience survey. Ask: 'How easy is it to get your work done?' Score it 1-10. Track the trend.\n- Net Promoter Score for internal tools: 'Would you recommend this platform to a colleague at another company?'\n\nThe most important thing: do not just show numbers. Show the story. 'Six months ago, creating a new service took 2 weeks and 4 tickets. Today it takes 30 minutes and zero tickets. Here is the chart.'",
+  "explanation": "This is a leadership-level question that tests whether a candidate can connect platform work to business outcomes. Many platform engineers build great tools but cannot explain their value to non-technical stakeholders. The best answers include DORA metrics, developer satisfaction data, and a clear before/after narrative. Watch for candidates who only mention technical metrics (uptime, latency) without tying them to developer productivity.",
+  "category": "Platform Engineering",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "platform-engineering",
+    "idp",
+    "dora-metrics",
+    "developer-experience",
+    "engineering-leadership"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Grafana dashboard definition tracking key IDP metrics",
+      "code": "# grafana-dashboard-platform-metrics.yaml\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: platform-metrics-dashboard\n  labels:\n    grafana_dashboard: \"true\"\ndata:\n  platform-metrics.json: |\n    {\n      \"title\": \"IDP Health & Adoption\",\n      \"panels\": [\n        {\n          \"title\": \"Self-Service vs Ticket Requests (Weekly)\",\n          \"type\": \"timeseries\",\n          \"targets\": [{\n            \"expr\": \"sum(rate(platform_self_service_requests_total[7d]))\",\n            \"legendFormat\": \"Self-service\"\n          }, {\n            \"expr\": \"sum(rate(platform_ticket_requests_total[7d]))\",\n            \"legendFormat\": \"Manual tickets\"\n          }]\n        },\n        {\n          \"title\": \"Time to First Deploy (New Services)\",\n          \"type\": \"stat\",\n          \"targets\": [{\n            \"expr\": \"histogram_quantile(0.50, platform_service_creation_duration_seconds_bucket)\",\n            \"legendFormat\": \"p50 creation time\"\n          }]\n        },\n        {\n          \"title\": \"Golden Path Adoption Rate\",\n          \"type\": \"gauge\",\n          \"targets\": [{\n            \"expr\": \"sum(platform_services_on_golden_path) / sum(platform_services_total) * 100\",\n            \"legendFormat\": \"% on golden path\"\n          }]\n        },\n        {\n          \"title\": \"Developer Satisfaction (Quarterly Survey)\",\n          \"type\": \"stat\",\n          \"targets\": [{\n            \"expr\": \"platform_developer_satisfaction_score\",\n            \"legendFormat\": \"Satisfaction (1-10)\"\n          }]\n        }\n      ]\n    }"
+    },
+    {
+      "language": "python",
+      "label": "Script to track platform adoption metrics from the catalog",
+      "code": "#!/usr/bin/env python3\n\"\"\"Weekly IDP adoption report.\"\"\"\nimport requests\nfrom datetime import datetime, timedelta\n\nBACKSTAGE_API = \"https://backstage.internal/api\"\n\ndef get_adoption_metrics():\n    # Total services in catalog\n    entities = requests.get(\n        f\"{BACKSTAGE_API}/catalog/entities?filter=kind=component\"\n    ).json()\n\n    total = len(entities)\n    on_golden_path = sum(\n        1 for e in entities\n        if e[\"metadata\"].get(\"annotations\", {})\n        .get(\"platform.io/golden-path-version\")\n    )\n    has_owner = sum(\n        1 for e in entities\n        if e.get(\"spec\", {}).get(\"owner\") != \"unknown\"\n    )\n\n    # Self-service requests this week\n    week_ago = (datetime.now() - timedelta(days=7)).isoformat()\n    requests_data = requests.get(\n        f\"{BACKSTAGE_API}/platform/requests?since={week_ago}\"\n    ).json()\n\n    self_service = sum(1 for r in requests_data if r[\"type\"] == \"self-service\")\n    tickets = sum(1 for r in requests_data if r[\"type\"] == \"ticket\")\n\n    print(f\"=== IDP Adoption Report ({datetime.now():%Y-%m-%d}) ===\")\n    print(f\"Services in catalog:     {total}\")\n    print(f\"On golden path:          {on_golden_path}/{total} ({on_golden_path/total*100:.0f}%)\")\n    print(f\"With valid owner:        {has_owner}/{total} ({has_owner/total*100:.0f}%)\")\n    print(f\"Self-service this week:  {self_service}\")\n    print(f\"Tickets this week:       {tickets}\")\n    print(f\"Self-service ratio:      {self_service/(self_service+tickets)*100:.0f}%\")\n\n    # Example output:\n    # === IDP Adoption Report (2026-04-09) ===\n    # Services in catalog:     187\n    # On golden path:          142/187 (76%)\n    # With valid owner:        179/187 (96%)\n    # Self-service this week:  34\n    # Tickets this week:       6\n    # Self-service ratio:      85%\n\nif __name__ == \"__main__\":\n    get_adoption_metrics()"
+    }
+  ],
+  "followUpQuestions": [
+    "Your golden path adoption is at 40% after six months. What do you do?",
+    "How do you separate the impact of the IDP from other improvements happening at the same time?",
+    "A team lead says their developers hate the platform. How do you respond?",
+    "At what point do you decide the IDP is not working and you should change direction?"
+  ],
+  "commonMistakes": [
+    "Only tracking vanity metrics like 'number of services in the catalog' instead of outcome metrics like time-to-deploy",
+    "Not surveying developers and assuming adoption equals satisfaction",
+    "Presenting raw metrics without the before/after story that leadership needs to justify the investment"
+  ],
+  "relatedTopics": [
+    "dora-metrics",
+    "developer-experience",
+    "engineering-metrics",
+    "platform-engineering",
+    "developer-surveys"
+  ]
+}

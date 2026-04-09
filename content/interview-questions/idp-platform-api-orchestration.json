@@ -1,0 +1,49 @@
+{
+  "id": "idp-platform-api-orchestration",
+  "slug": "idp-platform-api-orchestration",
+  "title": "Platform API and Orchestration Layer",
+  "question": "You are designing the orchestration layer for your IDP. A developer clicks 'Create New Service' and behind the scenes it needs to create a GitHub repo, provision a database, set up a CI/CD pipeline, configure monitoring, and register the service in the catalog. How do you architect this?",
+  "answer": "The orchestration layer is the engine of your IDP. It takes a high-level intent ('I want a new service') and breaks it into steps that talk to different systems. The architecture I would use:\n\n1. Platform API: A single API that accepts requests from the UI, CLI, or Backstage. It validates the request, checks permissions, and kicks off a workflow. This should be a proper API with versioning, not a collection of scripts.\n\n2. Workflow engine: Use something like Argo Workflows, Temporal, or even a simple state machine to orchestrate the steps. Each step (create repo, provision DB, set up CI) is an independent action. The workflow engine handles ordering, retries, and partial failures.\n\n3. Resource providers: Each backend system (GitHub, AWS, ArgoCD) gets its own provider with a standard interface. This is where Crossplane or Terraform do the heavy lifting. The orchestrator does not talk to AWS directly - it tells the Terraform provider 'create this database' and the provider handles it.\n\n4. State tracking: Every request gets a status page. The developer can see 'repo created, database provisioning, CI pipeline pending.' If something fails at step 3, you need to be able to retry from that point, not start over.\n\nThe hard part is partial failures. What happens when the repo is created but the database fails? You need compensating actions (delete the repo) or the ability to resume from the failed step. Most teams get this wrong on v1 and have to rebuild it.\n\nFor the Kubernetes-native approach, Crossplane with compositions works well. You define a composite resource that represents 'a service' and Crossplane reconciles all the child resources. The Kubernetes reconciliation loop handles retries for free.",
+  "explanation": "This is a system design question that separates people who have built platforms from people who have read about them. The orchestration layer is where most IDP projects struggle. Weak candidates describe a linear script. Strong candidates immediately talk about partial failures, idempotency, and state tracking. The best candidates have battle scars from a workflow that failed halfway through and left orphaned resources everywhere.",
+  "category": "Platform Engineering",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "platform-engineering",
+    "idp",
+    "system-design",
+    "crossplane",
+    "orchestration"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Crossplane Composition defining what 'a service' means in your platform",
+      "code": "apiVersion: apiextensions.crossplane.io/v1\nkind: Composition\nmetadata:\n  name: service.platform.example.com\nspec:\n  compositeTypeRef:\n    apiVersion: platform.example.com/v1alpha1\n    kind: Service\n  resources:\n    # 1. GitHub repository\n    - name: repo\n      base:\n        apiVersion: repo.github.upbound.io/v1alpha1\n        kind: Repository\n        spec:\n          forProvider:\n            visibility: private\n            hasIssues: true\n            autoInit: true\n            template:\n              - owner: myorg\n                repository: service-template\n      patches:\n        - fromFieldPath: spec.name\n          toFieldPath: metadata.name\n\n    # 2. PostgreSQL database\n    - name: database\n      base:\n        apiVersion: rds.aws.upbound.io/v1beta1\n        kind: Instance\n        spec:\n          forProvider:\n            engine: postgres\n            engineVersion: \"15\"\n            instanceClass: db.t3.micro\n            allocatedStorage: 20\n            backupRetentionPeriod: 7\n      patches:\n        - fromFieldPath: spec.name\n          toFieldPath: \"metadata.name\"\n          transforms:\n            - type: string\n              string:\n                fmt: \"%s-db\"\n        - fromFieldPath: spec.database.size\n          toFieldPath: spec.forProvider.instanceClass\n          transforms:\n            - type: map\n              map:\n                small: db.t3.micro\n                medium: db.t3.medium\n                large: db.r6g.large\n\n    # 3. ArgoCD Application for GitOps\n    - name: argocd-app\n      base:\n        apiVersion: kubernetes.crossplane.io/v1alpha1\n        kind: Object\n        spec:\n          forProvider:\n            manifest:\n              apiVersion: argoproj.io/v1alpha1\n              kind: Application\n              spec:\n                project: default\n                source:\n                  repoURL: \"\" # patched\n                  path: k8s/\n                  targetRevision: main\n                destination:\n                  server: https://kubernetes.default.svc\n      patches:\n        - fromFieldPath: spec.name\n          toFieldPath: spec.forProvider.manifest.metadata.name"
+    },
+    {
+      "language": "yaml",
+      "label": "Developer creates a full service with one YAML file",
+      "code": "# This is all the developer writes.\n# The platform handles everything else.\napiVersion: platform.example.com/v1alpha1\nkind: Service\nmetadata:\n  name: orders-api\n  namespace: checkout-team\nspec:\n  name: orders-api\n  team: checkout\n  language: go\n  database:\n    enabled: true\n    engine: postgres\n    size: small\n  monitoring:\n    enabled: true\n    slo:\n      availability: \"99.9\"\n      latencyP99Ms: 200\n\n# $ kubectl apply -f service.yaml\n# service.platform.example.com/orders-api created\n#\n# $ kubectl get service.platform orders-api\n# NAME        REPO     DATABASE   CICD    MONITORING   READY\n# orders-api  True     True       True    True         True"
+    }
+  ],
+  "followUpQuestions": [
+    "The database provisioning step fails after the repo is already created. What happens next?",
+    "How do you make this orchestration idempotent so retrying a failed request does not create duplicate resources?",
+    "Why would you choose Crossplane over Terraform for this? When would Terraform be the better choice?",
+    "How do you handle day-2 operations like scaling the database or rotating credentials through this same layer?"
+  ],
+  "commonMistakes": [
+    "Building a linear script that breaks halfway through and leaves orphaned resources with no way to clean up",
+    "Not tracking the state of each step, so when something fails you have to manually figure out what was already created",
+    "Trying to build the orchestration from scratch instead of using existing workflow engines like Temporal or Argo Workflows"
+  ],
+  "relatedTopics": [
+    "crossplane",
+    "terraform",
+    "argo-workflows",
+    "temporal",
+    "platform-api",
+    "kubernetes-operators"
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "idp-golden-paths",
+  "slug": "idp-golden-paths",
+  "title": "Designing Golden Paths",
+  "question": "We want our developers to follow best practices, but we do not want to slow them down with mandatory reviews for every infrastructure change. How would you design 'golden paths' in an internal developer platform?",
+  "answer": "Golden paths are pre-approved, opinionated templates that let developers build things the 'right way' by default. The trick is making the golden path the easiest path, not just the compliant one.\n\nStart by looking at what your teams build most often. If 80% of new services are REST APIs with a PostgreSQL database, build a template for exactly that. It should include the Dockerfile, CI/CD pipeline, Terraform for the database, monitoring dashboards, and alerting rules. A developer runs one command and gets a working, production-ready service in minutes.\n\nThe key design principles:\n\n1. Golden paths are optional, not mandatory. If a team needs something custom, they can go off-path. But going off-path should require more effort, not less.\n\n2. Encode your standards into the template. Do not write a doc that says 'all services must have health checks.' Instead, bake the health check endpoint into the template so it exists from day one.\n\n3. Keep templates versioned and upgradeable. When you update the base template (say, to add OpenTelemetry tracing), teams on older versions should be able to pull in the update without rewriting their service.\n\n4. Use policy-as-code (OPA, Kyverno) as the safety net for off-path cases. If someone deploys without a health check, the admission controller catches it.\n\nThe goal is that following best practices requires zero extra effort. Breaking them requires a deliberate choice.",
+  "explanation": "This question gets at a fundamental platform engineering tension: how do you provide guardrails without creating bottlenecks? Candidates who have actually built platforms will talk about making the right thing easy, not making the wrong thing hard. Listen for whether they understand the difference between a template and a mandate. The best answers reference real trade-offs, like how to handle template versioning when you have 50 services on v3 of your template and you just shipped v5.",
+  "category": "Platform Engineering",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "platform-engineering",
+    "golden-paths",
+    "developer-experience",
+    "idp",
+    "templates"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Backstage scaffolder template for a golden path microservice",
+      "code": "apiVersion: scaffolder.backstage.io/v1beta3\nkind: Template\nmetadata:\n  name: golden-path-rest-api\n  title: REST API Service (Golden Path)\n  description: Production-ready REST API with database, CI/CD, and monitoring\nspec:\n  owner: platform-team\n  type: service\n  parameters:\n    - title: Service Details\n      required: [name, team, database]\n      properties:\n        name:\n          title: Service Name\n          type: string\n          pattern: '^[a-z][a-z0-9-]*$'\n        team:\n          title: Owning Team\n          type: string\n          ui:field: OwnerPicker\n        database:\n          title: Database Type\n          type: string\n          enum: [postgres, mysql, none]\n          default: postgres\n  steps:\n    - id: fetch-skeleton\n      name: Fetch service skeleton\n      action: fetch:template\n      input:\n        url: ./skeleton\n        values:\n          name: ${{ parameters.name }}\n          team: ${{ parameters.team }}\n    - id: create-repo\n      name: Create GitHub repo\n      action: publish:github\n      input:\n        repoUrl: github.com?owner=myorg&repo=${{ parameters.name }}\n        defaultBranch: main\n        protectDefaultBranch: true\n    - id: provision-infra\n      name: Provision infrastructure\n      action: custom:terraform-apply\n      input:\n        module: modules/service-infra\n        vars:\n          service_name: ${{ parameters.name }}\n          database_type: ${{ parameters.database }}\n    - id: register\n      name: Register in catalog\n      action: catalog:register"
+    },
+    {
+      "language": "yaml",
+      "label": "OPA policy catching services that skip the golden path health check",
+      "code": "# policy/require-healthcheck.rego\npackage kubernetes.admission\n\nimport data.kubernetes.deployments\n\n# Deny deployments without a readiness probe\ndeny[msg] {\n  input.request.kind.kind == \"Deployment\"\n  container := input.request.object.spec.template.spec.containers[_]\n  not container.readinessProbe\n  msg := sprintf(\n    \"Container '%s' in Deployment '%s' has no readiness probe. \"\n    \"Use the golden path template or add one manually. \"\n    \"Docs: https://platform.internal/docs/health-checks\",\n    [container.name, input.request.object.metadata.name]\n  )\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you handle upgrading 50 services from template v3 to v5 without breaking them?",
+    "A team says the golden path does not fit their use case. What do you do?",
+    "How do you decide when a one-off request should become a new golden path?",
+    "What metrics tell you whether your golden paths are actually being adopted?"
+  ],
+  "commonMistakes": [
+    "Making golden paths mandatory and creating a bottleneck when teams need something the template does not support",
+    "Building templates that are too rigid - every field hardcoded, no room for customization",
+    "Not versioning templates, so updates to the golden path break existing services"
+  ],
+  "relatedTopics": [
+    "backstage-scaffolder",
+    "platform-engineering",
+    "policy-as-code",
+    "opa",
+    "service-templates"
+  ]
+}
