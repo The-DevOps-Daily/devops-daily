@@ -14,6 +14,7 @@ import gitopsImplementation from './gitops-implementation.json';
 import progressiveDelivery from './progressive-delivery-feature-flags.json';
 import internalDeveloperPlatform from './internal-developer-platform.json';
 import slosSisErrorBudgets from './slos-slis-error-budgets.json';
+import cloudCostAllocationTags from './cloud-cost-allocation-tags.json';
 
 export const checklists: Checklist[] = [
   sshHardening as Checklist,
@@ -30,6 +31,7 @@ export const checklists: Checklist[] = [
   progressiveDelivery as Checklist,
   internalDeveloperPlatform as Checklist,
   slosSisErrorBudgets as Checklist,
+  cloudCostAllocationTags as Checklist,
 ];
 
 export const getChecklistBySlug = (slug: string): Checklist | undefined => {

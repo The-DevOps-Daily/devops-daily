@@ -1,0 +1,219 @@
+{
+  "id": "cloud-cost-allocation-tags",
+  "slug": "cloud-cost-allocation-tags",
+  "title": "How to Set Up Cloud Cost Allocation Tags Across AWS, GCP, and Azure",
+  "description": "A practical guide to implementing consistent cost allocation tagging strategies across multi-cloud environments for accurate chargeback and showback.",
+  "category": "FinOps",
+  "difficulty": "intermediate",
+  "estimatedTime": "60-120 minutes",
+  "tags": ["finops", "cloud-costs", "tagging", "multi-cloud"],
+  "items": [
+    {
+      "id": "define-mandatory-tag-schema",
+      "title": "Define a mandatory tag schema before touching any cloud console",
+      "description": "Without a single, agreed-upon tag schema, every team invents their own. You end up with \"env\", \"environment\", \"Environment\", and \"ENV\" all meaning the same thing. Lock down the exact keys, allowed values, and casing rules first. This is the foundation everything else depends on.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Tag schema definition (save as tag-schema.yaml in your infra repo)",
+          "code": "# tag-schema.yaml\n# This is your single source of truth for all cloud resource tags.\nmandatory_tags:\n  - key: \"cost-center\"\n    description: \"Finance-assigned cost center code\"\n    allowed_values: [\"eng-platform\", \"eng-product\", \"data\", \"security\", \"shared\"]\n  - key: \"environment\"\n    description: \"Deployment environment\"\n    allowed_values: [\"production\", \"staging\", \"development\", \"sandbox\"]\n  - key: \"team\"\n    description: \"Owning team\"\n    allowed_values: [\"platform\", \"checkout\", \"search\", \"data-eng\", \"sre\"]\n  - key: \"service\"\n    description: \"Service or application name\"\n    pattern: \"^[a-z][a-z0-9-]{2,30}$\"\n  - key: \"managed-by\"\n    description: \"How this resource was created\"\n    allowed_values: [\"terraform\", \"pulumi\", \"manual\", \"helm\"]\n\noptional_tags:\n  - key: \"project\"\n    description: \"Short-lived project or initiative name\"\n  - key: \"ttl\"\n    description: \"Auto-delete date for temporary resources (YYYY-MM-DD)\""
+        }
+      ]
+    },
+    {
+      "id": "activate-cost-allocation-tags-aws",
+      "title": "Activate cost allocation tags in AWS",
+      "description": "AWS has a gotcha that catches everyone: tags exist on resources, but they don't show up in Cost Explorer or CUR reports until you explicitly activate them. If you skip this, you'll tag everything perfectly and still see \"untagged\" in your billing dashboard. It takes up to 24 hours to take effect.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Activate user-defined cost allocation tags in AWS",
+          "code": "# List all available tag keys that aren't activated yet\naws ce list-cost-allocation-tags \\\n  --status Inactive \\\n  --query 'CostAllocationTags[].TagKey' \\\n  --output table\n\n# Activate your mandatory tags\naws ce update-cost-allocation-tags-status \\\n  --cost-allocation-tags-status \\\n    '[{\"TagKey\": \"cost-center\", \"Status\": \"Active\"},\n      {\"TagKey\": \"environment\", \"Status\": \"Active\"},\n      {\"TagKey\": \"team\", \"Status\": \"Active\"},\n      {\"TagKey\": \"service\", \"Status\": \"Active\"},\n      {\"TagKey\": \"managed-by\", \"Status\": \"Active\"}]'\n\n# Verify activation (may take up to 24h to appear in Cost Explorer)\naws ce list-cost-allocation-tags \\\n  --status Active \\\n  --output table"
+        }
+      ]
+    },
+    {
+      "id": "set-up-gcp-labels",
+      "title": "Set up GCP labels and link them to billing exports",
+      "description": "GCP calls them \"labels\" instead of \"tags\" (GCP \"tags\" are a network-level concept, not billing). Labels appear in BigQuery billing exports automatically once you enable billing export. But if billing export isn't set up, you're flying blind.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Enable BigQuery billing export and apply labels in GCP",
+          "code": "# Apply labels to a GCP project\ngcloud projects update my-project \\\n  --update-labels=\"cost-center=eng-platform,environment=production,team=platform\"\n\n# Apply labels to a Compute Engine instance\ngcloud compute instances update my-instance \\\n  --zone=us-central1-a \\\n  --update-labels=\"service=api-gateway,team=checkout,environment=production\"\n\n# Apply labels to a GKE cluster\ngcloud container clusters update my-cluster \\\n  --zone=us-central1-a \\\n  --update-labels=\"cost-center=eng-platform,team=platform\"\n\n# Query billing data by labels in BigQuery\n# (requires billing export to be enabled in Billing > Billing export)\nbq query --nouse_legacy_sql '\nSELECT\n  labels.value AS team,\n  SUM(cost) AS total_cost\nFROM\n  `my-billing-dataset.gcp_billing_export_v1_XXXXXX`,\n  UNNEST(labels) AS labels\nWHERE\n  labels.key = \"team\"\n  AND invoice.month = \"202604\"\nGROUP BY team\nORDER BY total_cost DESC'"
+        }
+      ]
+    },
+    {
+      "id": "configure-azure-tags-and-cost-management",
+      "title": "Configure Azure tags and connect them to Cost Management",
+      "description": "Azure tags flow into Cost Management automatically, which is simpler than AWS. But Azure has its own trap: not all resource types support tags, and tags don't inherit from resource groups to child resources by default. You need Azure Policy for inheritance.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Apply tags to Azure resources and set up inheritance",
+          "code": "# Tag a resource group\naz tag update --resource-id \\\n  \"/subscriptions/<sub-id>/resourceGroups/rg-production\" \\\n  --operation merge \\\n  --tags cost-center=eng-platform environment=production team=platform\n\n# Tag individual resources\naz tag update --resource-id \\\n  \"/subscriptions/<sub-id>/resourceGroups/rg-production/providers/Microsoft.Compute/virtualMachines/api-vm-01\" \\\n  --operation merge \\\n  --tags service=api-gateway team=checkout\n\n# Check for untagged resources in a subscription\naz resource list \\\n  --query \"[?tags.\\\"cost-center\\\"==null].{Name:name, Type:type, RG:resourceGroup}\" \\\n  --output table"
+        },
+        {
+          "language": "json",
+          "label": "Azure Policy to inherit tags from resource group",
+          "code": "{\n  \"mode\": \"Indexed\",\n  \"policyRule\": {\n    \"if\": {\n      \"allOf\": [\n        {\n          \"field\": \"[concat('tags[', parameters('tagName'), ']')]\",\n          \"exists\": \"false\"\n        },\n        {\n          \"value\": \"[resourceGroup().tags[parameters('tagName')]]\",\n          \"notEquals\": \"\"\n        }\n      ]\n    },\n    \"then\": {\n      \"effect\": \"modify\",\n      \"details\": {\n        \"roleDefinitionIds\": [\n          \"/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c\"\n        ],\n        \"operations\": [\n          {\n            \"operation\": \"addOrReplace\",\n            \"field\": \"[concat('tags[', parameters('tagName'), ']')]\",\n            \"value\": \"[resourceGroup().tags[parameters('tagName')]]\"\n          }\n        ]\n      }\n    }\n  },\n  \"parameters\": {\n    \"tagName\": {\n      \"type\": \"String\",\n      \"metadata\": {\n        \"displayName\": \"Tag Name\",\n        \"description\": \"Name of the tag to inherit from resource group\"\n      }\n    }\n  }\n}"
+        }
+      ]
+    },
+    {
+      "id": "enforce-tags-in-terraform",
+      "title": "Enforce tags at the Terraform level with default_tags",
+      "description": "If your infra is in Terraform (and it should be), enforce tags in the provider config so every resource gets them automatically. This catches the 80% case. Engineers don't need to remember to add tags -- they're there by default.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "Terraform provider config with default tags for all three clouds",
+          "code": "# AWS provider - default_tags apply to every resource automatically\nprovider \"aws\" {\n  region = \"us-east-1\"\n  default_tags {\n    tags = {\n      cost-center = var.cost_center\n      environment = var.environment\n      team        = var.team\n      managed-by  = \"terraform\"\n    }\n  }\n}\n\n# GCP provider - labels on the project level\nresource \"google_project\" \"main\" {\n  project_id = \"my-project\"\n  name       = \"My Project\"\n  labels = {\n    cost-center = var.cost_center\n    environment = var.environment\n    team        = var.team\n    managed-by  = \"terraform\"\n  }\n}\n\n# Azure provider - use azurerm_resource_group tags + policy for inheritance\nresource \"azurerm_resource_group\" \"main\" {\n  name     = \"rg-${var.environment}\"\n  location = var.location\n  tags = {\n    cost-center = var.cost_center\n    environment = var.environment\n    team        = var.team\n    managed-by  = \"terraform\"\n  }\n}"
+        }
+      ]
+    },
+    {
+      "id": "add-tag-validation-to-ci",
+      "title": "Add tag validation to your CI pipeline",
+      "description": "Default tags cover most resources, but some Terraform resources need extra tags (like \"service\"). Catch missing or invalid tags in CI before they reach production. A 5-minute CI check saves hours of chasing untagged resources in billing reports.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "OPA/Conftest policy to enforce mandatory tags on Terraform plans",
+          "code": "# policy/tags.rego\npackage main\n\nmandatory_tags := [\"cost-center\", \"environment\", \"team\", \"service\", \"managed-by\"]\n\ndeny[msg] {\n  resource := input.resource_changes[_]\n  resource.change.actions[_] == \"create\"\n  tags := object.get(resource.change.after, \"tags\", {})\n  tag := mandatory_tags[_]\n  not tags[tag]\n  msg := sprintf(\"Resource %s (%s) is missing mandatory tag: %s\",\n    [resource.address, resource.type, tag])\n}"
+        },
+        {
+          "language": "yaml",
+          "label": "GitHub Actions step to validate tags on every PR",
+          "code": "# Add to your Terraform CI workflow\n- name: Validate resource tags\n  run: |\n    terraform plan -out=tfplan\n    terraform show -json tfplan > tfplan.json\n    conftest test tfplan.json --policy policy/\n    # Fails the PR if any resource is missing mandatory tags"
+        }
+      ]
+    },
+    {
+      "id": "tag-existing-untagged-resources",
+      "title": "Tag existing untagged resources with a bulk script",
+      "description": "You probably have hundreds of untagged resources already running. Ignoring them means your cost reports will always have a big \"unallocated\" bucket that finance keeps asking about. Run a one-time sweep to tag what you can, then use policies to prevent new untagged resources.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Find and tag untagged AWS resources using Resource Groups Tagging API",
+          "code": "# Find all resources missing the 'cost-center' tag\naws resourcegroupstaggingapi get-resources \\\n  --query 'ResourceTagMappingList[?!Tags[?Key==`cost-center`]].ResourceARN' \\\n  --output text | tr '\\t' '\\n' > untagged-resources.txt\n\necho \"Found $(wc -l < untagged-resources.txt) untagged resources\"\n\n# Bulk-tag resources (review the list first!)\nwhile IFS= read -r arn; do\n  aws resourcegroupstaggingapi tag-resources \\\n    --resource-arn-list \"$arn\" \\\n    --tags cost-center=shared,environment=unknown,team=unknown\n  echo \"Tagged: $arn\"\ndone < untagged-resources.txt"
+        },
+        {
+          "language": "bash",
+          "label": "Find untagged resources in GCP",
+          "code": "# List Compute instances without the 'team' label\ngcloud compute instances list \\\n  --filter=\"NOT labels.team:*\" \\\n  --format=\"table(name, zone, labels)\" \\\n  --project=my-project"
+        }
+      ]
+    },
+    {
+      "id": "set-up-tag-enforcement-policies",
+      "title": "Set up cloud-native policies to block untagged resource creation",
+      "description": "CI checks only catch Terraform-managed resources. For anything created through the console, CLI, or other tools, you need cloud-native policies. AWS SCPs, GCP Org Policies, and Azure Policies act as your last line of defense against untagged resources.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "json",
+          "label": "AWS SCP to deny resource creation without mandatory tags",
+          "code": "{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Sid\": \"RequireCostCenterTag\",\n      \"Effect\": \"Deny\",\n      \"Action\": [\n        \"ec2:RunInstances\",\n        \"ec2:CreateVolume\",\n        \"rds:CreateDBInstance\",\n        \"s3:CreateBucket\",\n        \"lambda:CreateFunction\"\n      ],\n      \"Resource\": \"*\",\n      \"Condition\": {\n        \"Null\": {\n          \"aws:RequestTag/cost-center\": \"true\"\n        }\n      }\n    }\n  ]\n}"
+        },
+        {
+          "language": "bash",
+          "label": "What happens when someone forgets the tag",
+          "code": "# Trying to create an EC2 instance without cost-center tag:\naws ec2 run-instances --image-id ami-12345 --instance-type t3.micro\n\n# Output:\n# An error occurred (AccessDeniedException): User is not authorized\n# to perform: ec2:RunInstances because no identity-based policy\n# allows the ec2:RunInstances action with the required tags."
+        }
+      ]
+    },
+    {
+      "id": "normalize-tag-keys-across-clouds",
+      "title": "Create a tag key mapping table for cross-cloud reporting",
+      "description": "AWS uses \"tags\", GCP uses \"labels\", and Azure uses \"tags\" but with different casing rules. GCP labels must be lowercase with underscores, while AWS and Azure allow mixed case and hyphens. If you don't normalize these, your multi-cloud cost reports will have duplicate categories that are actually the same thing.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Tag key mapping for multi-cloud normalization",
+          "code": "# tag-mapping.yaml\n# Use this to normalize tag keys when aggregating costs across clouds\nmappings:\n  - canonical_key: \"cost_center\"\n    aws_key: \"cost-center\"        # AWS allows hyphens\n    gcp_key: \"cost-center\"        # GCP labels: lowercase, hyphens or underscores\n    azure_key: \"cost-center\"      # Azure allows almost anything\n\n  - canonical_key: \"environment\"\n    aws_key: \"environment\"\n    gcp_key: \"environment\"\n    azure_key: \"environment\"\n\n  - canonical_key: \"team\"\n    aws_key: \"team\"\n    gcp_key: \"team\"\n    azure_key: \"team\"\n\n  - canonical_key: \"service\"\n    aws_key: \"service\"\n    gcp_key: \"service\"\n    azure_key: \"service\"\n\n# Tag value constraints per cloud:\n# AWS:   128 Unicode chars, case-sensitive\n# GCP:   63 chars, lowercase + hyphens/underscores only\n# Azure: 256 chars, case-insensitive\n# Rule: use lowercase + hyphens everywhere for compatibility"
+        }
+      ]
+    },
+    {
+      "id": "build-cost-allocation-report",
+      "title": "Build a unified cost-by-tag report across all clouds",
+      "description": "Tags are useless if nobody looks at the reports. Set up a weekly cost breakdown grouped by your mandatory tags. Start simple with CLI queries, then move to a dashboard tool like Grafana or your FinOps platform once the data is clean.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "AWS cost breakdown by cost-center tag",
+          "code": "# Get last month's costs grouped by cost-center tag\naws ce get-cost-and-usage \\\n  --time-period Start=2026-03-01,End=2026-04-01 \\\n  --granularity MONTHLY \\\n  --metrics BlendedCost \\\n  --group-by Type=TAG,Key=cost-center \\\n  --query 'ResultsByTime[0].Groups[].{Tag:Keys[0],Cost:Metrics.BlendedCost.Amount}' \\\n  --output table\n\n# Example output:\n# ------------------------------------------\n# |           GetCostAndUsage              |\n# +------------------------+---------------+\n# |          Tag           |     Cost      |\n# +------------------------+---------------+\n# |  cost-center$eng-plat  |  12847.32     |\n# |  cost-center$data      |  8234.10      |\n# |  cost-center$checkout  |  5621.78      |\n# |  cost-center$          |  3102.44      |  <- untagged!\n# +------------------------+---------------+"
+        },
+        {
+          "language": "bash",
+          "label": "GCP cost breakdown by team label in BigQuery",
+          "code": "bq query --nouse_legacy_sql '\nSELECT\n  IFNULL(\n    (SELECT value FROM UNNEST(labels) WHERE key = \"team\"),\n    \"UNTAGGED\"\n  ) AS team,\n  ROUND(SUM(cost), 2) AS total_cost,\n  ROUND(SUM(cost) / SUM(SUM(cost)) OVER() * 100, 1) AS pct\nFROM\n  `billing_dataset.gcp_billing_export_v1_XXXXXX`\nWHERE\n  invoice.month = \"202603\"\nGROUP BY team\nORDER BY total_cost DESC'"
+        }
+      ]
+    },
+    {
+      "id": "track-tag-coverage-metric",
+      "title": "Track tag coverage as a metric and set a target",
+      "description": "You need a number to track progress. \"Tag coverage\" is the percentage of your cloud spend that has all mandatory tags. Most orgs start around 30-50%. Set a target (like 90% in 90 days) and review it weekly. Without a metric, tagging becomes one of those things that's always \"in progress\" but never done.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Calculate tag coverage percentage for AWS",
+          "code": "# Get tagged vs total spend for last month\nTOTAL=$(aws ce get-cost-and-usage \\\n  --time-period Start=2026-03-01,End=2026-04-01 \\\n  --granularity MONTHLY \\\n  --metrics BlendedCost \\\n  --query 'ResultsByTime[0].Total.BlendedCost.Amount' \\\n  --output text)\n\nUNTAGGED=$(aws ce get-cost-and-usage \\\n  --time-period Start=2026-03-01,End=2026-04-01 \\\n  --granularity MONTHLY \\\n  --metrics BlendedCost \\\n  --group-by Type=TAG,Key=cost-center \\\n  --query 'ResultsByTime[0].Groups[?Keys[0]==`cost-center$`].Metrics.BlendedCost.Amount | [0]' \\\n  --output text)\n\nCOVERAGE=$(echo \"scale=1; (1 - $UNTAGGED / $TOTAL) * 100\" | bc)\necho \"Tag coverage (cost-center): ${COVERAGE}%\"\n\n# Output: Tag coverage (cost-center): 87.3%"
+        }
+      ]
+    },
+    {
+      "id": "handle-shared-and-untaggable-costs",
+      "title": "Create a strategy for shared and untaggable costs",
+      "description": "Some costs can't be tagged: data transfer, support plans, marketplace subscriptions, some managed services. If you ignore them, your chargeback numbers won't add up and finance will lose trust in the data. Decide upfront how to split these -- proportional to tagged spend is the simplest approach.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Shared cost allocation rules",
+          "code": "# shared-cost-rules.yaml\nshared_costs:\n  - category: \"AWS Support (Enterprise)\"\n    allocation_method: proportional   # split by each team's % of total spend\n    source: \"AWS Support\"\n\n  - category: \"Data Transfer\"\n    allocation_method: proportional\n    source: \"AWS Data Transfer\"\n\n  - category: \"Shared VPC / Networking\"\n    allocation_method: even_split     # divide equally among all teams\n    teams: [\"platform\", \"checkout\", \"search\", \"data-eng\"]\n\n  - category: \"Reserved Instance Savings\"\n    allocation_method: usage_based    # credit teams based on RI utilization\n    source: \"AWS RI Coverage Report\"\n\nuntaggable_default:\n  cost-center: \"shared\"\n  team: \"platform\"     # platform team owns unallocated costs by default"
+        }
+      ]
+    },
+    {
+      "id": "set-up-anomaly-alerts-by-tag",
+      "title": "Set up cost anomaly alerts grouped by tag",
+      "description": "Tagging lets you go from \"cloud bill went up $5K\" to \"the checkout team's staging environment costs jumped 400% on Tuesday.\" Set up anomaly detection on your tagged cost groups so the right team gets paged when their spend spikes.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "AWS Cost Anomaly Detection by cost-center tag",
+          "code": "# Create a cost monitor grouped by cost-center tag\naws ce create-anomaly-monitor \\\n  --anomaly-monitor '{\n    \"MonitorName\": \"CostCenter-Monitor\",\n    \"MonitorType\": \"DIMENSIONAL\",\n    \"MonitorDimension\": \"SERVICE\"\n  }'\n\n# Create an alert subscription (notify when anomaly > $100)\naws ce create-anomaly-subscription \\\n  --anomaly-subscription '{\n    \"SubscriptionName\": \"CostCenter-Alerts\",\n    \"MonitorArnList\": [\"arn:aws:ce::123456789:anomalymonitor/monitor-id\"],\n    \"Subscribers\": [\n      {\"Address\": \"finops-alerts@company.com\", \"Type\": \"EMAIL\"},\n      {\"Address\": \"arn:aws:sns:us-east-1:123456789:cost-alerts\", \"Type\": \"SNS\"}\n    ],\n    \"Threshold\": 100.0,\n    \"Frequency\": \"DAILY\"\n  }'"
+        }
+      ]
+    },
+    {
+      "id": "automate-tag-compliance-reporting",
+      "title": "Automate a weekly tag compliance report to stakeholders",
+      "description": "Send a weekly report showing each team's tag coverage and untagged spend. Nothing motivates tagging like showing a team lead that their group has $4K in untagged resources. Make it visible, make it regular, and watch coverage climb.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Script to generate and send a weekly tag compliance report",
+          "code": "#!/usr/bin/env python3\n\"\"\"Weekly tag compliance report - run via cron or scheduled Lambda.\"\"\"\nimport boto3\nfrom datetime import datetime, timedelta\n\nce = boto3.client('ce')\nend = datetime.now().replace(day=1).strftime('%Y-%m-%d')\nstart = (datetime.now().replace(day=1) - timedelta(days=1)).replace(day=1).strftime('%Y-%m-%d')\n\ndef get_tag_coverage(tag_key):\n    result = ce.get_cost_and_usage(\n        TimePeriod={'Start': start, 'End': end},\n        Granularity='MONTHLY',\n        Metrics=['BlendedCost'],\n        GroupBy=[{'Type': 'TAG', 'Key': tag_key}]\n    )\n    tagged, untagged = 0.0, 0.0\n    for group in result['ResultsByTime'][0]['Groups']:\n        cost = float(group['Metrics']['BlendedCost']['Amount'])\n        if group['Keys'][0] == f'{tag_key}$':\n            untagged = cost\n        else:\n            tagged += cost\n    total = tagged + untagged\n    coverage = (tagged / total * 100) if total > 0 else 0\n    return {'tagged': tagged, 'untagged': untagged, 'coverage': round(coverage, 1)}\n\nfor tag in ['cost-center', 'team', 'environment', 'service']:\n    stats = get_tag_coverage(tag)\n    print(f\"{tag}: {stats['coverage']}% covered \"\n          f\"(${stats['untagged']:,.0f} untagged out of ${stats['tagged'] + stats['untagged']:,.0f})\")\n\n# Output:\n# cost-center: 87.3% covered ($3,102 untagged out of $24,433)\n# team: 82.1% covered ($4,371 untagged out of $24,433)\n# environment: 94.6% covered ($1,318 untagged out of $24,433)\n# service: 71.8% covered ($6,890 untagged out of $24,433)"
+        }
+      ]
+    }
+  ]
+}
