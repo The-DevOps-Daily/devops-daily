@@ -41,7 +41,7 @@ export const sponsors: Sponsor[] = [
   },
   {
     name: 'QuizAPI',
-    logo: '/quizapi.svg',
+    logo: '/quizapi.png',
     url: 'https://quizapi.io?ref=devops-daily',
     tagline: 'Developer-first quiz platform',
     description: 'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',
