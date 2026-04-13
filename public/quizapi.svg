@@ -1,4 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <rect width="48" height="48" rx="12" fill="#3b82f6"/>
-  <path d="M14 24l7 7 13-15" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="40" viewBox="0 0 180 40">
+  <rect x="2" y="4" width="32" height="32" rx="8" fill="#3b82f6"/>
+  <path d="M12 20l5 5 9-11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <g transform="translate(42, 8)">
+    <rect width="138" height="24" rx="5" fill="#3b82f6"/>
+    <g fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="700">
+      <text x="69" y="17" text-anchor="middle">QuizAPI</text>
+    </g>
+  </g>
 </svg>
