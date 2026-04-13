@@ -22,6 +22,11 @@ export async function generateMetadata({
 
   if (!newsletter) return {};
 
+  const ogImage = `/images/newsletters/${slug}-og.png`;
+  const ogExists = await import('fs/promises')
+    .then((fs) => fs.access(`${process.cwd()}/public${ogImage}`).then(() => true).catch(() => false));
+  const image = ogExists ? ogImage : '/og-image.png';
+
   return {
     title: `${newsletter.title} | DevOps Daily`,
     description: `DevOps Daily Newsletter - Week ${newsletter.week}, ${newsletter.year}. Weekly roundup of new content and learning resources.`,
@@ -31,6 +36,20 @@ export async function generateMetadata({
       description: `Weekly roundup - Week ${newsletter.week}, ${newsletter.year}`,
       type: 'article',
       publishedTime: newsletter.date,
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: newsletter.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: newsletter.title,
+      description: `Weekly roundup - Week ${newsletter.week}, ${newsletter.year}`,
+      images: [image],
     },
   };
 }

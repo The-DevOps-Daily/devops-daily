@@ -39,6 +39,7 @@
     "generate-search-index": "tsx scripts/generate-search-index.ts",
     "devops-daily:generate-news": "tsx scripts/devops-daily/index.ts",
     "devops-daily:generate-news:no-ai": "tsx scripts/devops-daily/index.ts --skip-ai",
+    "og:newsletters": "tsx scripts/generate-newsletter-og.ts",
     "og:validate": "tsx scripts/git-hooks/validate-og-data.ts",
     "og:validate:staged": "tsx scripts/git-hooks/validate-og-data.ts --staged-only",
     "hooks:install": "sh scripts/git-hooks/install.sh",
