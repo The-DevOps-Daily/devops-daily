@@ -1,0 +1,258 @@
+{
+  "id": "argocd-multi-environment-quiz",
+  "title": "GitOps with Argo CD: Multi-Environment Repository Structure Quiz",
+  "description": "Test your knowledge of structuring Git repositories for Argo CD deployments across dev, staging, and production environments. Covers repo layout patterns, ApplicationSets, Kustomize overlays, Helm value files, and sync policies.",
+  "category": "GitOps",
+  "icon": "GitBranch",
+  "totalPoints": 193,
+  "theme": {
+    "primaryColor": "orange",
+    "gradientFrom": "from-orange-500",
+    "gradientTo": "to-red-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-04-14"
+  },
+  "questions": [
+    {
+      "id": "mono-vs-multi-repo",
+      "title": "Choosing a Repo Strategy",
+      "description": "Your team is adopting Argo CD and needs to decide how to organize the Git repositories for application code and Kubernetes manifests.",
+      "situation": "You have 8 microservices, each with its own CI pipeline. Developers push code changes daily. The platform team manages the Kubernetes manifests. A junior developer just pushed a Helm values change directly to the app repo and accidentally broke staging. The team lead asks you to propose a repo layout that prevents this from happening again.",
+      "codeExample": "# Current structure (single repo per service):\nmy-service/\n├── src/\n├── Dockerfile\n├── ci/\n│   └── pipeline.yaml\n└── k8s/\n    ├── base/\n    ├── dev/\n    └── prod/\n\n# What the team lead wants:\n# - App devs can't directly change prod manifests\n# - Platform team reviews all deployment config changes\n# - CI pipeline still auto-deploys to dev",
+      "options": [
+        "Keep manifests in each app repo but add a CODEOWNERS file to protect the k8s/ directory",
+        "Move all Kubernetes manifests to a separate config repo with branch protection and require platform team review for staging/prod changes",
+        "Use a mono-repo for all services and manifests with path-based access controls",
+        "Store manifests in a separate branch of each app repo so platform team can manage them independently"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Separating application code from deployment config into different repos is the most common pattern with Argo CD. It gives you clear ownership boundaries: developers own the app repo, the platform team owns the config repo. Branch protection rules on the config repo mean no one can push directly to main without review. CI pipelines can still auto-update dev values in the config repo via a bot commit, while staging and prod changes require a pull request. CODEOWNERS helps but still lets developers push to the same repo. A mono-repo works for small teams but gets unwieldy at scale. Separate branches in the same repo create confusion about which branch Argo CD should watch.",
+      "hint": "Think about who should have write access to production deployment configs vs. application source code."
+    },
+    {
+      "id": "directory-layout-kustomize",
+      "title": "Kustomize Overlay Structure",
+      "description": "You need to set up the directory structure in your config repo so Argo CD can deploy the same app to three environments using Kustomize.",
+      "situation": "Your team just created a new config repo. You have three environments: dev, staging, and prod. Each environment runs in a different Kubernetes cluster. Dev needs 1 replica with debug logging, staging needs 2 replicas, and prod needs 3 replicas with resource limits enforced. A colleague suggests putting everything in flat directories per environment, but you want to avoid duplicating the entire manifest set three times.",
+      "codeExample": "# Your colleague's proposal (lots of duplication):\nconfig-repo/\n├── dev/\n│   ├── deployment.yaml    # 1 replica, debug logging\n│   ├── service.yaml       # identical across envs\n│   └── configmap.yaml\n├── staging/\n│   ├── deployment.yaml    # 2 replicas\n│   ├── service.yaml       # identical across envs\n│   └── configmap.yaml\n└── prod/\n    ├── deployment.yaml    # 3 replicas, resource limits\n    ├── service.yaml       # identical across envs\n    └── configmap.yaml",
+      "options": [
+        "Use Kustomize with a base/ directory for shared manifests and overlays/ for per-environment patches that only change what differs",
+        "Use Helm with a single values.yaml per environment since Kustomize doesn't support per-environment config",
+        "Keep the flat structure but use Git branches (dev, staging, prod) instead of directories to separate environments",
+        "Use a single directory with environment variables injected at deploy time by Argo CD's built-in templating"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Kustomize's base + overlays pattern is exactly designed for this. You put shared manifests in base/ and only the differences in each overlay. For example, the overlay for prod might just be a patch that sets replicas: 3 and adds resource limits, while the service.yaml stays in base/ since it's identical. This avoids the duplication problem where you have to update service.yaml in three places. Helm is also a valid tool, but the question is about Kustomize, and Kustomize absolutely supports per-environment config. Git branches for environments is an anti-pattern because it makes it hard to see what's different between environments and leads to painful merge conflicts. Argo CD doesn't have built-in templating that replaces Kustomize or Helm.",
+      "hint": "Think about the DRY principle. Which approach lets you define common resources once and only specify differences?"
+    },
+    {
+      "id": "argocd-app-of-apps",
+      "title": "Bootstrapping Multiple Applications",
+      "description": "You need to register 15 microservices across 3 environments in Argo CD without manually creating 45 Application resources.",
+      "situation": "You just finished setting up Argo CD in your cluster. Now you need to create Application resources for each service in each environment. Doing this manually through the UI or kubectl is going to be painful and error-prone. Your team lead says, 'There has to be a better way than clicking through the UI 45 times.' You need an approach that's itself GitOps-managed.",
+      "codeExample": "# You currently create apps one at a time:\napiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: payment-service-prod\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/org/config-repo\n    path: apps/payment-service/overlays/prod\n    targetRevision: main\n  destination:\n    server: https://prod-cluster-api:6443\n    namespace: payments\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true\n\n# You need 44 more of these...",
+      "options": [
+        "Write a shell script that generates all 45 Application YAML files and apply them with kubectl",
+        "Use the Argo CD CLI to batch-create applications from a CSV file",
+        "Use the App of Apps pattern: create one parent Application that points to a directory containing all child Application manifests",
+        "Use Argo CD Projects to automatically generate Applications for each service"
+      ],
+      "correctAnswer": 2,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "The App of Apps pattern is a core Argo CD concept. You create one 'root' Application that watches a directory in your config repo. That directory contains Application manifests for all your services and environments. When you add a new service, you just add a new Application YAML to that directory, and the root app picks it up automatically. This keeps everything in Git (true GitOps) and avoids manual steps. A shell script works but isn't GitOps since those resources aren't managed declaratively. The Argo CD CLI doesn't have CSV import. Projects define RBAC and allowed sources, they don't auto-generate Applications.",
+      "hint": "Argo CD can manage its own Application resources. What if you had an Application that watched a directory full of other Application definitions?"
+    },
+    {
+      "id": "applicationset-generators",
+      "title": "ApplicationSet for Environment Matrix",
+      "description": "You want to generate Argo CD Applications automatically for every combination of service and environment without maintaining individual Application manifests.",
+      "situation": "Your App of Apps setup works, but maintaining 45 Application YAML files is getting tedious. Every time someone adds a new service, they have to create three nearly identical Application files (one per environment). Last week someone forgot to create the staging Application for a new service, and it wasn't caught until a week later. You want a single template that automatically creates Applications for all service/environment combinations.",
+      "codeExample": "# What you want: ONE template that generates all 45 apps\napiVersion: argoproj.io/v1alpha1\nkind: ApplicationSet\nmetadata:\n  name: all-services\n  namespace: argocd\nspec:\n  generators:\n    - ???\n  template:\n    metadata:\n      name: '{{service}}-{{env}}'\n    spec:\n      source:\n        repoURL: https://github.com/org/config-repo\n        path: 'apps/{{service}}/overlays/{{env}}'\n      destination:\n        server: '{{clusterUrl}}'",
+      "options": [
+        "Use a List generator with every service-environment pair manually listed",
+        "Use a Matrix generator that combines a List of services with a List of environments to produce all combinations",
+        "Use a Git directory generator pointed at the apps/ directory since it auto-discovers subdirectories",
+        "Use a Cluster generator that creates one Application per registered cluster"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The Matrix generator is the right tool here. It takes two or more generators and produces the Cartesian product. You define a list of services and a list of environments (with cluster URLs), and Matrix gives you every combination. A List generator would work but defeats the purpose since you'd manually list all 45 pairs. The Git directory generator is useful but only gives you one dimension (it finds directories, not the cross-product of services x environments). The Cluster generator creates one app per cluster, not per service. The Matrix generator is the most scalable approach because adding a new service means adding one entry to the services list, and it automatically gets deployed to all environments.",
+      "hint": "You need the Cartesian product of two lists. There's a generator specifically designed to combine other generators."
+    },
+    {
+      "id": "helm-values-per-env",
+      "title": "Helm Values File Organization",
+      "description": "You are switching from Kustomize to Helm for a service and need to structure values files so Argo CD picks the right config per environment.",
+      "situation": "Your team decided to use Helm for a new service because it needs complex templating. You have a Helm chart in your config repo and need separate values for dev, staging, and prod. The dev environment should use an in-cluster database, staging should use a shared RDS instance, and prod should use a dedicated RDS with read replicas. You need Argo CD to apply the correct values file for each environment.",
+      "codeExample": "# Your Helm chart structure:\ncharts/order-service/\n├── Chart.yaml\n├── templates/\n│   ├── deployment.yaml\n│   ├── service.yaml\n│   └── configmap.yaml\n├── values.yaml            # defaults\n├── values-dev.yaml        # in-cluster postgres\n├── values-staging.yaml    # shared RDS\n└── values-prod.yaml       # dedicated RDS + read replicas\n\n# How do you tell Argo CD which values file to use?",
+      "options": [
+        "Use Argo CD environment variables to dynamically select the values file at sync time",
+        "Create separate Helm charts per environment, each with its own values.yaml",
+        "Use Argo CD's parameter overrides in the UI to set values per environment",
+        "Set the valueFiles field in the Application spec's Helm source to point to the environment-specific values file"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The Argo CD Application spec has a helm.valueFiles field that lets you specify which values files to layer on top of the default values.yaml. For your prod Application, you'd set valueFiles: [values-prod.yaml]. Argo CD applies them in order, so environment-specific values override the defaults. This keeps everything in Git and is easy to review in PRs. Argo CD doesn't have environment variables that select files dynamically at sync time. Creating separate charts per environment means massive duplication of templates. UI parameter overrides work but aren't stored in Git, which breaks the GitOps model.",
+      "hint": "Look at the Argo CD Application spec's source section. There's a Helm-specific field for specifying additional values files."
+    },
+    {
+      "id": "sync-policy-prod",
+      "title": "Sync Policy for Production",
+      "description": "Your team is debating whether to enable automated sync for production Applications in Argo CD.",
+      "situation": "Your dev and staging environments have automated sync enabled, and it works great. Changes merged to main are deployed within minutes. Now the VP of Engineering asks, 'Why isn't prod doing the same thing?' The platform lead pushes back, saying automated sync in prod is risky. Last month, a bad config change in staging took 20 minutes to detect because the automated sync applied it instantly. You need to propose a sync policy for production.",
+      "codeExample": "# Current staging config (auto-sync ON):\nsyncPolicy:\n  automated:\n    prune: true\n    selfHeal: true\n  syncOptions:\n    - CreateNamespace=true\n\n# Proposed prod config - which is safest?\n# Option A:\nsyncPolicy:\n  automated:\n    prune: true\n    selfHeal: true\n\n# Option B:\nsyncPolicy: {}\n# (manual sync only)\n\n# Option C:\nsyncPolicy:\n  automated:\n    selfHeal: true\n  syncOptions:\n    - ApplyOutOfSyncOnly=true",
+      "options": [
+        "Enable full automated sync with prune and selfHeal in prod, same as staging, to maintain consistency across environments",
+        "Use manual sync for prod so every deployment requires a human to click Sync in the Argo CD UI or run argocd app sync",
+        "Enable automated sync with selfHeal but disable prune, and add a sync window that only allows syncs during business hours",
+        "Disable sync entirely and use kubectl apply directly for prod deployments"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "For production, the sweet spot is usually automated sync with selfHeal enabled but prune disabled, combined with sync windows. SelfHeal means if someone manually edits a resource in the cluster (kubectl edit), Argo CD reverts it back to what's in Git. That's important for production to prevent config drift. Disabling prune means Argo CD won't automatically delete resources that are removed from Git, which prevents accidental data loss from a bad commit. Sync windows restrict when syncs can happen, so a merge at 2 AM doesn't auto-deploy when no one is watching. Full auto-sync with prune in prod is risky because a bad merge can delete resources. Fully manual sync loses the drift-correction benefit. Kubectl apply bypasses GitOps entirely.",
+      "hint": "Think about which parts of automated sync are dangerous in production (deleting resources) vs. helpful (preventing drift)."
+    },
+    {
+      "id": "sealed-secrets-config-repo",
+      "title": "Managing Secrets in the Config Repo",
+      "description": "You need to store database credentials for each environment in your config repo without exposing them in plain text.",
+      "situation": "You're setting up the config repo for a service that connects to PostgreSQL. Each environment has different credentials. A new team member asks, 'Can't we just put the Secret manifests in the repo? It's a private repo.' You need to explain why that's a bad idea and propose the right approach for Argo CD.",
+      "codeExample": "# What the new team member proposed (DON'T DO THIS):\napiVersion: v1\nkind: Secret\nmetadata:\n  name: db-credentials\n  namespace: orders\ntype: Opaque\ndata:\n  # base64 is NOT encryption\n  DB_PASSWORD: cHJvZC1wYXNzd29yZC0xMjM=\n  DB_HOST: cHJvZC1kYi5leGFtcGxlLmNvbQ==\n\n# $ echo 'cHJvZC1wYXNzd29yZC0xMjM=' | base64 -d\n# prod-password-123\n# Anyone with repo access can read this!",
+      "options": [
+        "Use Sealed Secrets or SOPS to encrypt secrets before committing them, so only the cluster can decrypt them",
+        "Store secrets in a .gitignore'd file and copy them manually to each cluster",
+        "Use Kubernetes ConfigMaps instead of Secrets since ConfigMaps are not base64-encoded",
+        "Keep secrets in the private repo since base64 encoding provides sufficient protection for internal teams"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Sealed Secrets (from Bitnami) or SOPS (from Mozilla) let you encrypt secrets so they can safely live in Git. Sealed Secrets uses asymmetric encryption: you encrypt with the cluster's public key, and only the Sealed Secrets controller in the cluster can decrypt them. SOPS encrypts individual values in YAML files using KMS, PGP, or age keys. Both work well with Argo CD. Base64 is encoding, not encryption. Anyone with read access to the repo can decode the values. A .gitignore'd file breaks the GitOps model since it's not tracked in Git. ConfigMaps store data in plain text too, and they're not designed for sensitive data. For the most secure option, consider External Secrets Operator, which pulls secrets from Vault or AWS Secrets Manager at runtime, keeping them out of Git entirely.",
+      "hint": "Base64 is not encryption. You need actual cryptographic protection for secrets in Git."
+    },
+    {
+      "id": "promotion-strategy",
+      "title": "Environment Promotion Workflow",
+      "description": "You need to design a process for promoting a new container image version from dev through staging to prod using GitOps.",
+      "situation": "Your CI pipeline builds a new image, pushes it to the registry, and updates the dev values in the config repo. You need a promotion flow where the same image tag is tested in staging before going to prod. Right now, developers manually edit the staging and prod values files to update the image tag, which is error-prone and slow. Last week someone promoted to prod with a typo in the image tag, causing a rollout failure.",
+      "codeExample": "# CI pipeline updates dev automatically:\n# values-dev.yaml\nimage:\n  repository: registry.example.com/order-service\n  tag: \"v1.4.2\"  # CI just updated this\n\n# values-staging.yaml\nimage:\n  repository: registry.example.com/order-service\n  tag: \"v1.4.1\"  # still on old version\n\n# values-prod.yaml\nimage:\n  repository: registry.example.com/order-service\n  tag: \"v1.3.8\"  # even older",
+      "options": [
+        "Use a single values file for all environments with Argo CD parameter overrides to set the image tag per environment",
+        "Use Argo CD Image Updater to automatically detect new images and update all environments at once",
+        "Tag the config repo with environment-specific Git tags (e.g., staging-v1.4.2) and point each Application at its tag",
+        "Create a promotion script or CI job that opens a PR to update the image tag in the next environment's values file, triggered after successful tests"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A promotion pipeline that opens PRs is the standard GitOps promotion pattern. After CI deploys to dev and tests pass, a job opens a PR to update staging's values file with the same image tag. A human (or automated test gate) approves the PR, Argo CD syncs staging, and after staging tests pass, another PR promotes to prod. This gives you an audit trail (PRs), review gates, and eliminates manual typos. Parameter overrides in Argo CD bypass Git and break the GitOps model. Argo CD Image Updater auto-updates based on tag patterns, but you don't want all environments updated simultaneously since that skips testing. Git tags for environments create a complex workflow that's hard to track and roll back.",
+      "hint": "In GitOps, every change goes through Git. What mechanism gives you both automation and a review gate?"
+    },
+    {
+      "id": "out-of-sync-debugging",
+      "title": "Debugging OutOfSync Status",
+      "description": "Your production Application in Argo CD shows OutOfSync, but you didn't make any changes to the config repo.",
+      "situation": "It's Monday morning. You check Argo CD and see that the payment-service-prod Application has been OutOfSync since Saturday. No one on your team merged anything to the config repo over the weekend. The app is running fine, but the OutOfSync status is making the on-call engineer nervous. You need to figure out what happened.",
+      "codeExample": "$ argocd app diff payment-service-prod\n===== apps/Deployment payment-service/payment-service ======\n--- /tmp/live-manifest.yaml\n+++ /tmp/desired-manifest.yaml\n@@ -18,7 +18,7 @@\n     spec:\n       containers:\n       - name: payment-service\n-        resources:\n-          requests:\n-            memory: \"512Mi\"\n+        resources:\n+          requests:\n+            memory: \"256Mi\"\n\n# The live cluster has 512Mi but Git says 256Mi",
+      "options": [
+        "The Argo CD repo cache is stale and needs to be cleared with argocd cache clear",
+        "Someone used kubectl edit or a mutating admission webhook to change the resource requests directly in the cluster",
+        "Argo CD lost connection to the cluster over the weekend and is showing a stale diff",
+        "The Helm chart was updated upstream and Argo CD is comparing against the new chart version"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The diff clearly shows that the live cluster has different values (512Mi) than what Git specifies (256Mi). Since no one changed Git, someone (or something) changed the live cluster directly. The most common culprits are: someone ran kubectl edit to quickly fix a memory issue, or a mutating admission webhook (like a VPA - Vertical Pod Autoscaler) automatically adjusted the resource requests. This is exactly why selfHeal is valuable in production: if enabled, Argo CD would have reverted this change back to what Git says. Without selfHeal, the drift persists until someone syncs manually. The diff output is real and accurate, so it's not a cache issue. Argo CD connection issues would show as Unknown status, not OutOfSync.",
+      "hint": "The diff shows the cluster has different values than Git. If Git didn't change, what changed the cluster?"
+    },
+    {
+      "id": "wave-ordering",
+      "title": "Controlling Sync Order with Sync Waves",
+      "description": "Your application needs its database migration Job to complete before the Deployment rolls out, but Argo CD applies them in the wrong order.",
+      "situation": "You added a Kubernetes Job that runs database migrations to your config repo. The Job and the Deployment are in the same Argo CD Application. When you sync, Argo CD applies them at the same time. The new Deployment starts before migrations finish, hits missing columns, and crashes. You need to control the order.",
+      "codeExample": "# migration-job.yaml - needs to run FIRST\napiVersion: batch/v1\nkind: Job\nmetadata:\n  name: db-migrate-v42\n  annotations:\n    ???: ???\nspec:\n  template:\n    spec:\n      containers:\n      - name: migrate\n        image: registry.example.com/order-service:v1.5.0\n        command: [\"python\", \"manage.py\", \"migrate\"]\n      restartPolicy: Never\n\n# deployment.yaml - needs to run AFTER migration\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: order-service\n  annotations:\n    ???: ???",
+      "options": [
+        "Add argocd.argoproj.io/sync-wave annotations with a lower number on the Job and higher on the Deployment",
+        "Split them into two separate Applications and configure an Argo CD sync dependency between them",
+        "Add an initContainer to the Deployment that waits for the migration Job to complete",
+        "Use Argo CD's sync-order field in the Application spec to define the resource apply sequence"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Sync waves are Argo CD's built-in mechanism for ordering resource application. You add argocd.argoproj.io/sync-wave: \"0\" to the migration Job and argocd.argoproj.io/sync-wave: \"1\" to the Deployment. Argo CD applies wave 0 first, waits for those resources to become healthy (the Job must complete), then applies wave 1. This is clean and declarative. An initContainer would work but it couples the migration logic to the Deployment and runs the migration on every pod restart, not just during deployments. Splitting into separate Applications adds unnecessary complexity. There's no sync-order field in the Application spec; sync waves use annotations on the individual resources.",
+      "hint": "Argo CD has an annotation-based mechanism that lets you assign numeric priorities to resources within the same Application."
+    },
+    {
+      "id": "multi-cluster-setup",
+      "title": "Multi-Cluster Argo CD Architecture",
+      "description": "Your company runs separate Kubernetes clusters for dev, staging, and prod. You need to decide how to set up Argo CD to manage all three.",
+      "situation": "You currently have Argo CD installed in each cluster independently. This means three Argo CD instances to maintain, three sets of credentials, and three UIs to check. The CTO wants a single pane of glass for all deployments. But the security team is concerned about a single Argo CD having credentials to all clusters, especially production.",
+      "codeExample": "# Current setup: one Argo CD per cluster\ndev-cluster:    argocd namespace → manages dev apps only\nstaging-cluster: argocd namespace → manages staging apps only\nprod-cluster:    argocd namespace → manages prod apps only\n\n# Option A: Hub-and-spoke (single management cluster)\nmgmt-cluster: argocd namespace → manages dev + staging + prod\n\n# Option B: Hub-and-spoke with separate prod\nmgmt-cluster: argocd namespace → manages dev + staging\nprod-cluster: argocd namespace → manages prod only\n\n# Option C: Argo CD per cluster + Argo CD UI aggregation\nEach cluster has its own Argo CD, with a dashboard that aggregates all three",
+      "options": [
+        "Install Argo CD in a management cluster and register all three clusters as destinations using argocd cluster add",
+        "Keep one Argo CD per cluster and use Argo CD Notifications to send deployment events to a shared dashboard",
+        "Install Argo CD only in the management cluster for dev and staging, but keep a separate Argo CD in the prod cluster for isolation",
+        "Use a single Argo CD instance running in dev that deploys to all clusters since dev is the least restricted environment"
+      ],
+      "correctAnswer": 2,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Option C is the pragmatic middle ground. You get a single UI for dev and staging (the environments where you want fast feedback and unified visibility), while production keeps its own Argo CD with tighter access controls and a separate credential boundary. This satisfies the security team because the management Argo CD never has credentials to the prod cluster. It satisfies the CTO because developers get a single pane of glass for their day-to-day work. A fully centralized setup (Option A) is simpler to operate but creates a security blast radius concern. Running Argo CD from the dev cluster is a bad idea because dev is typically the least secured environment. Notifications to a dashboard give you visibility but not unified management.",
+      "hint": "Consider the security team's concern about blast radius. Is there a way to centralize most management while keeping the most sensitive environment isolated?"
+    },
+    {
+      "id": "git-directory-generator-drift",
+      "title": "ApplicationSet Git Generator Auto-Discovery",
+      "description": "You set up an ApplicationSet with a Git directory generator, but new services aren't being picked up automatically.",
+      "situation": "You configured an ApplicationSet with a Git directory generator to auto-discover services. When a team adds a new service directory to the config repo, Argo CD should create an Application automatically. But the team added the auth-service directory 30 minutes ago, and nothing happened. The existing services are working fine.",
+      "codeExample": "apiVersion: argoproj.io/v1alpha1\nkind: ApplicationSet\nmetadata:\n  name: all-services\n  namespace: argocd\nspec:\n  generators:\n    - git:\n        repoURL: https://github.com/org/config-repo\n        revision: main\n        directories:\n          - path: apps/*\n  template:\n    metadata:\n      name: '{{path.basename}}'\n    spec:\n      source:\n        repoURL: https://github.com/org/config-repo\n        path: '{{path}}'\n        targetRevision: main\n      destination:\n        server: https://kubernetes.default.svc\n\n# Config repo structure:\napps/\n├── order-service/     ✓ Application exists\n├── payment-service/   ✓ Application exists\n└── auth-service/      ✗ No Application created\n    └── kustomization.yaml",
+      "options": [
+        "The ApplicationSet controller has a default polling interval of 3 minutes, so you just need to wait a bit longer or configure a webhook",
+        "The Git directory generator only detects directories that contain a Chart.yaml file, not kustomization.yaml",
+        "The auth-service directory was added but the commit wasn't pushed to the main branch yet",
+        "ApplicationSets only scan directories at initial creation and need to be deleted and recreated to pick up new directories"
+      ],
+      "correctAnswer": 0,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "The ApplicationSet controller polls the Git repository at a configurable interval (default is around 3 minutes). If the directory was just added, the controller may not have polled yet. You can speed this up by configuring a Git webhook that notifies Argo CD of changes, reducing detection time to seconds. The Git directory generator detects any directory matching the glob pattern, regardless of what files it contains. It doesn't require Chart.yaml specifically. The commit being on a different branch is a reasonable guess but the scenario says it was added 30 minutes ago (and existing services work, confirming the repo connection). ApplicationSets absolutely do re-scan on each poll cycle, they don't need recreation. In practice, if it's been 30 minutes, you should also check the ApplicationSet controller logs for errors.",
+      "hint": "How often does the ApplicationSet controller check Git for changes? Is there a way to make it react faster?"
+    },
+    {
+      "id": "rollback-strategy",
+      "title": "GitOps Rollback in Production",
+      "description": "A bad deployment just went to production and you need to roll back. But you're using GitOps with Argo CD, so kubectl rollout undo won't stick.",
+      "situation": "At 3 PM, a new version of the payment service was deployed to prod via a merged PR. At 3:15 PM, error rates spike to 40%. The on-call engineer runs kubectl rollout undo deployment/payment-service, which brings back the old version. But 2 minutes later, Argo CD syncs and redeploys the bad version because it's what Git says. The on-call engineer is panicking.",
+      "codeExample": "# Timeline:\n# 15:00 - PR merged: image tag v2.1.0 → v2.2.0\n# 15:05 - Argo CD syncs, deploys v2.2.0\n# 15:15 - Error rate spikes to 40%\n# 15:17 - kubectl rollout undo → reverts to v2.1.0\n# 15:19 - Argo CD selfHeal kicks in → redeploys v2.2.0 💀\n\n$ argocd app history payment-service-prod\nID  DATE                 REVISION\n4   2026-04-14 15:05:00  abc123f (main)\n3   2026-04-14 09:30:00  def456a (main)\n\n# What's the right way to roll back in GitOps?",
+      "options": [
+        "Disable Argo CD auto-sync, then use kubectl rollout undo to revert the Deployment",
+        "Revert the PR in Git (git revert the merge commit), which creates a new commit that Argo CD will sync to roll back the change",
+        "Use argocd app rollback payment-service-prod to go back to the previous Argo CD revision",
+        "Delete the Application in Argo CD, fix the issue, then recreate it"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "In GitOps, Git is the source of truth. The correct way to roll back is to revert the bad commit in Git. Run git revert <merge-commit-hash> and push it to main (or open and immediately merge a revert PR). Argo CD detects the new commit and syncs back to the previous good state. This gives you a clean audit trail: the Git history shows exactly when the bad change went in and when it was reverted. Disabling auto-sync and using kubectl rollout undo is a temporary band-aid that will break again when sync is re-enabled. argocd app rollback exists but is only for emergencies and is not recommended as the standard approach because it puts the cluster in a state that doesn't match Git. Deleting the Application is destructive and may remove the running resources (depending on finalizer settings). For the immediate 3 AM emergency, disabling sync temporarily while you prepare the Git revert is a valid tactic, but the actual fix must go through Git.",
+      "hint": "In GitOps, where is the source of truth? If the source of truth says 'deploy the bad version,' what do you need to change?"
+    }
+  ]
+}
