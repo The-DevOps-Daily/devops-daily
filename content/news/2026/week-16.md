@@ -200,7 +200,7 @@ Announcements Mark Your Calendars: BazelCon 2026 is Heading to Amsterdam! Get re
 
 **📅 Apr 8, 2026** • **📰 Bazel Blog**
 
-[**🔗 Read more**](/2026/04/08/bazel-q1-2026-community-update.html)
+[**🔗 Read more**](https://blog.bazel.build/2026/04/08/bazel-q1-2026-community-update.html)
 
 ### 📄 Streamline test management with the SmartBear QMetry GitLab component
 
