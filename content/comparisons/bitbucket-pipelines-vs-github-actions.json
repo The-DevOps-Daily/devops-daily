@@ -1,0 +1,309 @@
+{
+  "id": "bitbucket-pipelines-vs-github-actions",
+  "slug": "bitbucket-pipelines-vs-github-actions",
+  "title": "Bitbucket Pipelines vs GitHub Actions",
+  "description": "A focused comparison of Bitbucket Pipelines and GitHub Actions as CI/CD platforms. Covers YAML syntax, runner types, marketplace, pricing, build minutes, and workflow capabilities to help you choose the right CI/CD tool.",
+  "category": "CI/CD",
+  "tags": [
+    "Bitbucket Pipelines",
+    "GitHub Actions",
+    "CI/CD",
+    "DevOps",
+    "Automation",
+    "Build",
+    "Deployment"
+  ],
+  "createdDate": "2026-04-15T10:00:00Z",
+  "updatedDate": "2026-04-15T10:00:00Z",
+  "estimatedReadTime": "13 min read",
+  "introduction": "Bitbucket Pipelines and GitHub Actions are the built-in CI/CD solutions for their respective Git platforms. Both use YAML configuration files, both run builds in containers or virtual machines, and both handle the standard build-test-deploy workflow. But the similarities end at the surface level. Under the hood, these tools differ significantly in their approach to pipeline design, ecosystem size, pricing structure, and advanced capabilities.\n\nGitHub Actions launched in 2019 and grew fast. The marketplace now has over 20,000 community-contributed actions covering everything from deploying to AWS to posting Slack notifications to generating changelogs. Actions supports Linux, macOS, and Windows runners out of the box, offers self-hosted runners for custom environments, and allows reusable workflows that can be shared across repositories. The workflow YAML syntax is event-driven - you define triggers (push, pull request, schedule, workflow dispatch) and jobs run in response.\n\nBitbucket Pipelines takes a simpler approach. Every step runs in a Docker container, which makes builds reproducible and environment management straightforward. The YAML syntax is more linear - you define a pipeline with sequential steps rather than a graph of jobs. Pipes are Bitbucket's equivalent of Actions marketplace items: pre-built integration steps for common tasks like deploying to AWS, running SonarQube scans, or sending notifications. The Pipes catalog is smaller (a few hundred vs. 20,000+) but covers the most common use cases.\n\nPricing is where teams often make their final decision. GitHub Actions gives 2,000 free minutes per month for private repositories on the Free plan, with additional minutes at $0.008/minute for Linux runners. Bitbucket's free tier includes only 50 build minutes - barely enough for a hobby project. Bitbucket Standard ($3/user/month) bumps that to 2,500 minutes and Premium ($6/user/month) to 3,500 minutes. Both platforms charge more for macOS and Windows runners.\n\nThis comparison goes deep on 10 specific areas where Pipelines and Actions differ. If you are choosing between Bitbucket and GitHub primarily for CI/CD capabilities, this is the comparison that matters.",
+  "toolA": {
+    "name": "Bitbucket Pipelines",
+    "icon": "GitBranch",
+    "website": "https://bitbucket.org/product/features/pipelines",
+    "description": "Bitbucket's built-in CI/CD service that runs builds in Docker containers. Uses a bitbucket-pipelines.yml file for configuration. Supports parallel steps, caching, artifacts, and deployment environments. Integrated with the Atlassian ecosystem.",
+    "color": "#0052CC",
+    "pros": [
+      "Every step runs in a Docker container by default, making builds reproducible",
+      "Simple YAML syntax with a low learning curve",
+      "Built-in deployment environments with environment-level variables and permissions",
+      "Automatic Jira integration - deployments show up in Jira issues",
+      "Caching and artifacts are straightforward to configure",
+      "Services (databases, Redis) can be attached to steps as sidecar containers"
+    ],
+    "cons": [
+      "Only 50 build minutes on the free tier - barely usable",
+      "Pipes marketplace is small compared to GitHub Actions marketplace",
+      "No macOS runners - only Linux and Windows (with limited availability)",
+      "No reusable workflow mechanism for sharing full pipeline configs across repos",
+      "Limited to Docker-based builds - no native VM runner option",
+      "No matrix builds for testing across multiple versions/platforms simultaneously",
+      "No equivalent to GitHub Actions' workflow_dispatch for manual triggers with inputs"
+    ]
+  },
+  "toolB": {
+    "name": "GitHub Actions",
+    "icon": "Github",
+    "website": "https://github.com/features/actions",
+    "description": "GitHub's CI/CD and automation platform that runs workflows in response to events. Uses YAML workflow files with support for Linux, macOS, and Windows runners. Features a marketplace of 20,000+ community actions and support for reusable workflows.",
+    "color": "#2088FF",
+    "pros": [
+      "20,000+ community actions in the marketplace covering nearly every tool and service",
+      "Supports Linux, macOS, and Windows runners (hosted and self-hosted)",
+      "Reusable workflows allow sharing pipeline logic across repositories",
+      "Matrix builds for testing across multiple OS versions, language versions, and configurations",
+      "Event-driven model supports push, PR, schedule, workflow_dispatch, repository_dispatch, and more",
+      "Self-hosted runners with labels for routing jobs to specific machines",
+      "2,000 free minutes per month on the free tier"
+    ],
+    "cons": [
+      "YAML syntax is more verbose and has a steeper learning curve",
+      "Debugging failed workflows can be frustrating - logs are not always clear",
+      "Self-hosted runner security requires careful configuration",
+      "Marketplace actions can be a supply chain risk if not pinned to specific versions",
+      "macOS runner minutes cost 10x Linux minutes, which adds up quickly",
+      "No built-in Docker service containers as clean as Bitbucket's services syntax"
+    ]
+  },
+  "features": [
+    {
+      "name": "YAML Syntax & Learning Curve",
+      "category": "Configuration",
+      "toolA": {
+        "value": "Simple, linear YAML with steps running sequentially in Docker containers; easy to learn",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Event-driven YAML with jobs, steps, and complex expression syntax; more powerful but harder to learn",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Marketplace & Reusable Components",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "A few hundred Pipes covering common integrations (AWS, Slack, SonarQube, Docker)",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "20,000+ community actions; reusable workflows for sharing entire pipeline definitions",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Runner Types",
+      "category": "Infrastructure",
+      "toolA": {
+        "value": "Docker-based Linux runners; Windows runners in limited availability; no macOS",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Linux, macOS, and Windows hosted runners; self-hosted runners with custom labels",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Free Tier Build Minutes",
+      "category": "Pricing",
+      "toolA": {
+        "value": "50 minutes/month on free tier; 2,500 on Standard ($3/user/month); 3,500 on Premium ($6/user/month)",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "2,000 minutes/month on free tier; 3,000 on Team ($4/user/month); 50,000 on Enterprise ($21/user/month)",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Matrix Builds",
+      "category": "Testing",
+      "toolA": {
+        "value": "No native matrix build support; parallel steps can simulate it but require manual configuration",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "Built-in matrix strategy for testing across multiple OS, language versions, and configurations",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Service Containers",
+      "category": "Testing",
+      "toolA": {
+        "value": "Services section attaches sidecar containers (Postgres, Redis, Elasticsearch) to build steps",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Service containers supported but syntax is more verbose; works well once configured",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Deployment Environments",
+      "category": "Deployment",
+      "toolA": {
+        "value": "Built-in deployment environments with environment variables, permissions, and Jira deployment tracking",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "GitHub Environments with protection rules, required reviewers, and deployment logs",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Caching",
+      "category": "Performance",
+      "toolA": {
+        "value": "Built-in caching with key-based cache invalidation; 1 GB cache per pipeline",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Cache action with key-based invalidation; 10 GB cache limit per repository",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Secrets Management",
+      "category": "Security",
+      "toolA": {
+        "value": "Repository, workspace, and deployment environment variables; secured variables are masked in logs",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Repository, organization, and environment secrets; OIDC support for cloud provider authentication",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Manual Triggers & Inputs",
+      "category": "Workflow",
+      "toolA": {
+        "value": "Custom pipelines can be triggered manually from the UI but do not support input parameters",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "workflow_dispatch trigger with typed input parameters (string, boolean, choice, environment)",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Pipeline as Code Sharing",
+      "category": "Configuration",
+      "toolA": {
+        "value": "No mechanism for sharing full pipeline configurations across repositories; copy-paste is common",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "Reusable workflows and composite actions allow sharing pipeline logic across an organization",
+        "rating": "good"
+      }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Team new to CI/CD that wants the fastest path to running builds and deployments",
+      "recommendation": "toolA",
+      "explanation": "Bitbucket Pipelines has a simpler YAML syntax with fewer concepts to learn. The Docker-first model means you pick an image and write your commands. For teams that just need build, test, and deploy without complex orchestration, Pipelines gets you productive faster."
+    },
+    {
+      "scenario": "Open-source project that needs CI/CD across Linux, macOS, and Windows",
+      "recommendation": "toolB",
+      "explanation": "GitHub Actions supports all three major operating systems with hosted runners and offers generous free minutes for public repositories (unlimited). Bitbucket Pipelines has no macOS runners and limited Windows support."
+    },
+    {
+      "scenario": "Platform team managing CI/CD standards across 50+ repositories",
+      "recommendation": "toolB",
+      "explanation": "GitHub Actions' reusable workflows let you define pipeline templates in a central repository and reference them from every project. Composite actions provide smaller reusable building blocks. Bitbucket Pipelines has no equivalent - you end up copying YAML across repos and maintaining it manually."
+    },
+    {
+      "scenario": "Atlassian shop that wants deployment tracking in Jira automatically",
+      "recommendation": "toolA",
+      "explanation": "Bitbucket Pipelines' deployment environments integrate directly with Jira. When a pipeline deploys to staging or production, Jira issues linked to the commits automatically show the deployment status. This is built in and requires zero configuration beyond naming your deployment environment."
+    },
+    {
+      "scenario": "Team that tests across multiple Node.js versions, Python versions, or database versions",
+      "recommendation": "toolB",
+      "explanation": "GitHub Actions' matrix strategy handles this natively. Define the versions as a matrix and Actions spins up parallel jobs for each combination. Bitbucket Pipelines has no matrix feature - you would need to create separate steps or duplicate pipeline definitions manually."
+    },
+    {
+      "scenario": "Small team on a tight budget that uses Bitbucket for Git hosting",
+      "recommendation": "toolA",
+      "explanation": "If you are already on Bitbucket for Git hosting, Pipelines is included and works well for standard workflows. Moving to GitHub just for Actions means managing two platforms. The included build minutes on Bitbucket Standard (2,500/month) are enough for most small teams."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You need the largest ecosystem of reusable CI/CD components",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Simplicity and a low learning curve for CI/CD are priorities",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need macOS or cross-platform builds",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Jira deployment tracking is important to your workflow",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need matrix builds for multi-version testing",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want to standardize CI/CD with reusable pipeline templates across repos",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Your team is already on Bitbucket and just needs basic CI/CD",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Free tier build minutes matter to you",
+      "recommendation": "toolB"
+    }
+  ],
+  "verdict": {
+    "summary": "GitHub Actions is the better CI/CD platform by a clear margin. It has a vastly larger marketplace, supports all three major operating systems, offers matrix builds, reusable workflows, and a more generous free tier. Bitbucket Pipelines is simpler to learn and works well if you are already in the Atlassian ecosystem, but it falls short on advanced features, marketplace depth, and build minute allowances. If CI/CD capability is a primary factor in choosing between Bitbucket and GitHub, Actions wins decisively.",
+    "toolAScore": 3.2,
+    "toolBScore": 4.6,
+    "recommendation": "Choose Bitbucket Pipelines if you are already on Bitbucket, need Jira deployment tracking, and your CI/CD needs are straightforward. Choose GitHub Actions for everything else - the marketplace, cross-platform support, matrix builds, and reusable workflows put it in a different league."
+  },
+  "relatedTags": [
+    "Bitbucket Pipelines",
+    "GitHub Actions",
+    "CI/CD",
+    "DevOps",
+    "Automation",
+    "Build",
+    "Deployment"
+  ],
+  "faqs": [
+    {
+      "question": "Can I use GitHub Actions with Bitbucket repositories?",
+      "answer": "Not directly. GitHub Actions only works with repositories hosted on GitHub. If your code is on Bitbucket, you would need to mirror it to GitHub or use a third-party CI/CD tool that supports both platforms (like CircleCI, Jenkins, or GitLab CI). Some teams mirror their Bitbucket repos to GitHub specifically to use Actions, but this adds complexity."
+    },
+    {
+      "question": "How do Bitbucket Pipes compare to GitHub Actions marketplace items?",
+      "answer": "Both serve the same purpose - pre-built integration steps for common tasks. Bitbucket has a few hundred Pipes covering the most popular services (AWS, Docker, Slack, SonarQube). GitHub has over 20,000 Actions covering nearly everything imaginable. For common use cases, both work fine. The gap shows when you need something niche - there is almost always a GitHub Action for it, while on Bitbucket you may need to write a custom script."
+    },
+    {
+      "question": "Which platform gives more free CI/CD minutes?",
+      "answer": "GitHub Actions by a wide margin. GitHub's free tier includes 2,000 minutes per month for private repos and unlimited minutes for public repos. Bitbucket's free tier gives only 50 minutes, which runs out after a handful of builds. Even at the paid level, GitHub Team ($4/user/month) includes 3,000 minutes while Bitbucket Standard ($3/user/month) includes 2,500 minutes."
+    },
+    {
+      "question": "Can Bitbucket Pipelines run builds on macOS?",
+      "answer": "No. Bitbucket Pipelines does not offer macOS runners. If you need to build iOS apps, macOS desktop applications, or run macOS-specific tests, you need either GitHub Actions (which has hosted macOS runners) or a third-party CI service like CircleCI or Buildkite with macOS support. This is a significant limitation for teams doing Apple platform development."
+    },
+    {
+      "question": "Is it hard to migrate from Bitbucket Pipelines to GitHub Actions?",
+      "answer": "The concepts are similar enough that migration is manageable but not automated. Both use YAML, both define steps with commands, and both support environment variables and secrets. The main work is rewriting the YAML syntax (different structure and keywords), replacing Pipes with equivalent Actions from the marketplace, and reconfiguring secrets and environment variables. For a simple build-test-deploy pipeline, expect a few hours. For complex pipelines with many Pipes and custom scripts, budget a day or two per pipeline."
+    },
+    {
+      "question": "Do both platforms support self-hosted runners?",
+      "answer": "GitHub Actions supports self-hosted runners with a well-documented setup process. You install a runner agent on your machine, assign labels, and route jobs to it. Bitbucket Pipelines supports self-hosted runners through Bitbucket Runners, available on Premium plans. Both work, but GitHub's self-hosted runner ecosystem is more mature with better documentation, auto-scaling options (via tools like actions-runner-controller for Kubernetes), and community tooling."
+    }
+  ]
+}

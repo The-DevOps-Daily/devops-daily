@@ -1,0 +1,296 @@
+{
+  "id": "bitbucket-vs-github",
+  "slug": "bitbucket-vs-github",
+  "title": "Bitbucket vs GitHub",
+  "description": "A head-to-head comparison of Bitbucket and GitHub covering CI/CD, code review, pricing, integrations, security, project management, and community to help you pick the right Git platform.",
+  "category": "Source Control & DevOps Platforms",
+  "tags": [
+    "Bitbucket",
+    "GitHub",
+    "Git",
+    "CI/CD",
+    "DevOps",
+    "Source Control",
+    "Atlassian"
+  ],
+  "createdDate": "2026-04-15T10:00:00Z",
+  "updatedDate": "2026-04-15T10:00:00Z",
+  "estimatedReadTime": "14 min read",
+  "introduction": "Bitbucket and GitHub are two of the most widely used Git hosting platforms, but they come from very different worlds. GitHub grew out of the open-source community and became the default home for public projects. Bitbucket was born inside the Atlassian ecosystem and built its reputation as the Git platform for teams already running Jira, Confluence, and Trello. Both have evolved significantly, but their DNA still shapes every product decision.\n\nGitHub in 2026 is a developer-first platform with over 400 million repositories, a thriving marketplace of Actions, and Copilot baked into every corner of the experience. Microsoft's backing since 2018 gave GitHub enterprise credibility and deep Azure integration. The community angle remains GitHub's strongest card - if you want your project found, forked, and contributed to, there is no real alternative.\n\nBitbucket Cloud leans heavily on its Atlassian integration story. If your team tracks work in Jira, Bitbucket connects issue keys to branches, commits, pull requests, and deployments automatically. Bitbucket Pipelines provides built-in CI/CD with a straightforward YAML configuration. The platform supports both Git and Mercurial (though Mercurial support was dropped years ago), and Bitbucket Data Center offers a self-managed option for enterprises that need to keep code on their own infrastructure.\n\nThe pricing models tell different stories too. Bitbucket's free tier covers up to 5 users with unlimited private repositories. GitHub's free tier has no user limit for public repos and offers unlimited private repos as well. For paid plans, Bitbucket Standard starts at $3/user/month while GitHub Team is $4/user/month. The gap widens at the enterprise level where Atlassian bundles and GitHub Enterprise pricing diverge significantly.\n\nThis comparison walks through 10 key areas where Bitbucket and GitHub differ in meaningful ways. We look at CI/CD, code review, security, integrations, pricing, and more - with clear recommendations for each scenario rather than fence-sitting.",
+  "toolA": {
+    "name": "Bitbucket",
+    "icon": "GitBranch",
+    "website": "https://bitbucket.org",
+    "description": "Atlassian's Git hosting platform with built-in CI/CD via Bitbucket Pipelines. Deeply integrated with Jira, Confluence, and other Atlassian products. Available as Bitbucket Cloud (SaaS) and Bitbucket Data Center (self-managed).",
+    "color": "#0052CC",
+    "pros": [
+      "Best-in-class Jira integration - automatic issue linking, smart commits, and deployment tracking",
+      "Bitbucket Pipelines is simple to configure with built-in Docker support",
+      "Free tier includes 5 users with unlimited private repos and 50 build minutes",
+      "Bitbucket Data Center provides a self-managed option with clustering for high availability",
+      "Built-in code review with inline comments, tasks, and merge checks",
+      "IP allowlisting and required two-step verification on all paid plans"
+    ],
+    "cons": [
+      "Much smaller community than GitHub - harder to attract open-source contributors",
+      "Bitbucket Pipelines has a limited pipe marketplace compared to GitHub Actions",
+      "The UI feels dated compared to GitHub's polished interface",
+      "No AI coding assistant equivalent to GitHub Copilot",
+      "Free tier is capped at 5 users - GitHub has no user limit on free plans",
+      "Third-party tool integrations are narrower outside the Atlassian ecosystem",
+      "Bitbucket Cloud and Data Center have different feature sets, which can be confusing"
+    ]
+  },
+  "toolB": {
+    "name": "GitHub",
+    "icon": "Github",
+    "website": "https://github.com",
+    "description": "The world's largest source code hosting platform with over 400 million repositories. Offers pull requests, GitHub Actions for CI/CD, Copilot for AI code assistance, Advanced Security for vulnerability scanning, and a massive open-source community.",
+    "color": "#181717",
+    "pros": [
+      "Largest developer community and open-source ecosystem by a wide margin",
+      "GitHub Copilot is the most mature AI coding assistant with agent and workspace features",
+      "GitHub Actions has a massive marketplace with 20,000+ community actions",
+      "Polished developer experience with a clean UI and fast performance",
+      "GitHub Codespaces provides cloud-based development environments",
+      "Strong third-party integration ecosystem - nearly every DevOps tool integrates with GitHub",
+      "Free unlimited private repositories with no user cap"
+    ],
+    "cons": [
+      "Advanced Security (SAST, secret scanning for private repos) requires GitHub Enterprise",
+      "No native Jira integration as deep as Bitbucket's - relies on third-party connectors",
+      "GitHub Actions pricing for private repos can get expensive with heavy CI usage",
+      "GitHub Enterprise Server features lag behind github.com",
+      "Project management features (Projects) are less mature than Jira or dedicated tools"
+    ]
+  },
+  "features": [
+    {
+      "name": "CI/CD",
+      "category": "DevOps Pipeline",
+      "toolA": {
+        "value": "Bitbucket Pipelines with YAML config; built-in Docker support; Pipes for reusable steps",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "GitHub Actions with YAML workflows; 20,000+ community actions in the marketplace",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Code Review",
+      "category": "Collaboration",
+      "toolA": {
+        "value": "Pull requests with inline comments, tasks, merge checks, and default reviewers per path",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Pull requests with inline comments, suggested changes, CODEOWNERS, and required reviews",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Project Management Integration",
+      "category": "Planning",
+      "toolA": {
+        "value": "Native Jira integration with automatic issue transitions, smart commits, and deployment tracking",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "GitHub Projects with boards and tables; Jira integration available via third-party apps",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "AI Code Assistance",
+      "category": "AI Features",
+      "toolA": {
+        "value": "Atlassian Intelligence features are limited; no dedicated coding assistant comparable to Copilot",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "GitHub Copilot with code completion, chat, agents, and workspace context",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Security Scanning",
+      "category": "Security",
+      "toolA": {
+        "value": "Basic security features; relies on Pipes for SAST/DAST; no built-in dependency scanning on par with GitHub",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Dependabot (free), secret scanning (free for public repos); SAST via Advanced Security on Enterprise",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Pricing (Small Teams)",
+      "category": "Cost",
+      "toolA": {
+        "value": "Free for up to 5 users; Standard at $3/user/month; Premium at $6/user/month",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Free for unlimited users (public repos); Team at $4/user/month; Enterprise at $21/user/month",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Third-Party Integrations",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "Strong Atlassian ecosystem; narrower third-party support outside Jira/Confluence",
+        "rating": "neutral"
+      },
+      "toolB": {
+        "value": "Nearly every DevOps tool integrates with GitHub; largest integration ecosystem in the industry",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Open Source Community",
+      "category": "Ecosystem",
+      "toolA": {
+        "value": "Minimal open-source presence; most public projects have moved to GitHub",
+        "rating": "bad"
+      },
+      "toolB": {
+        "value": "The center of open-source; 400M+ repos, strongest network effect, social coding features",
+        "rating": "good"
+      }
+    },
+    {
+      "name": "Self-Hosted Option",
+      "category": "Deployment",
+      "toolA": {
+        "value": "Bitbucket Data Center with clustering and high availability; requires Atlassian licensing",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "GitHub Enterprise Server available but features lag behind github.com",
+        "rating": "neutral"
+      }
+    },
+    {
+      "name": "Compliance & Access Control",
+      "category": "Enterprise",
+      "toolA": {
+        "value": "IP allowlisting, required 2FA, merge checks, deployment permissions on Premium",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Audit log, branch protection, SAML SSO on Enterprise; compliance reports available",
+        "rating": "good"
+      }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Team of 20 developers already using Jira and Confluence for project management",
+      "recommendation": "toolA",
+      "explanation": "Bitbucket's Jira integration is unmatched. Issue keys in branch names and commits automatically link to Jira tickets, trigger status transitions, and show deployment information. No third-party connector matches this level of integration."
+    },
+    {
+      "scenario": "Open-source project looking for maximum community visibility and contributions",
+      "recommendation": "toolB",
+      "explanation": "GitHub is where open-source lives. The network effect of 100+ million developers, Stars, trending repositories, and Sponsors for funding make it the only realistic choice for open-source projects."
+    },
+    {
+      "scenario": "Startup with 3 developers who want free private repos and basic CI/CD",
+      "recommendation": "toolB",
+      "explanation": "GitHub's free tier has no user limit, includes 2,000 CI/CD minutes per month, and offers Copilot Free. Bitbucket's free tier works for up to 5 users but only provides 50 build minutes, which is barely enough for any real project."
+    },
+    {
+      "scenario": "Enterprise that needs a self-managed Git platform with high availability clustering",
+      "recommendation": "toolA",
+      "explanation": "Bitbucket Data Center supports active-active clustering for high availability and runs on your own infrastructure. GitHub Enterprise Server is single-node and does not offer the same level of clustering support."
+    },
+    {
+      "scenario": "Developer team that wants AI-assisted coding across their entire workflow",
+      "recommendation": "toolB",
+      "explanation": "GitHub Copilot is far ahead of anything Atlassian offers. Code completion, chat, agent mode, and workspace awareness make Copilot a genuine productivity multiplier. Bitbucket has no equivalent."
+    },
+    {
+      "scenario": "Organization with strict budget constraints needing paid features for a 50-person team",
+      "recommendation": "toolA",
+      "explanation": "Bitbucket Standard at $3/user/month ($150/month) is cheaper than GitHub Team at $4/user/month ($200/month). At the Premium tier, Bitbucket at $6/user/month ($300/month) still undercuts GitHub Enterprise at $21/user/month ($1,050/month), though the feature sets differ."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "Your team already uses Jira and needs tight issue tracking integration",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Open-source visibility and community engagement are priorities",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want the best AI coding assistant available",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need a self-managed Git platform with active-active clustering",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "CI/CD marketplace and reusable workflow ecosystem matter to your team",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Budget is the primary concern and you need the lowest per-user price",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the widest ecosystem of third-party DevOps tool integrations",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Your organization is already invested in the Atlassian ecosystem",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "GitHub wins this comparison for most teams. It has the larger community, better CI/CD marketplace, superior AI tooling with Copilot, and a more polished developer experience. Bitbucket's strongest play is its Atlassian ecosystem integration - if your team lives in Jira and Confluence, Bitbucket provides a level of workflow automation that GitHub cannot match through third-party plugins alone. But outside the Atlassian world, GitHub is the stronger platform across nearly every dimension.",
+    "toolAScore": 3.6,
+    "toolBScore": 4.5,
+    "recommendation": "Choose Bitbucket if your team is deeply invested in the Atlassian ecosystem and Jira integration is a must-have. Choose GitHub for everything else - open-source, community, CI/CD flexibility, AI-assisted development, and third-party integrations."
+  },
+  "relatedTags": [
+    "Bitbucket",
+    "GitHub",
+    "Git",
+    "CI/CD",
+    "Source Control",
+    "Atlassian",
+    "DevOps"
+  ],
+  "faqs": [
+    {
+      "question": "Can I migrate from Bitbucket to GitHub easily?",
+      "answer": "Yes, for the code itself. GitHub has a built-in importer that handles Bitbucket repositories including commit history. Pull requests and their comments do not migrate automatically - you will need third-party tools or scripts for that. CI/CD pipelines need to be rewritten from bitbucket-pipelines.yml to GitHub Actions YAML, which is the most time-consuming part."
+    },
+    {
+      "question": "Does Bitbucket have anything like GitHub Actions?",
+      "answer": "Bitbucket Pipelines is the CI/CD equivalent. It uses a bitbucket-pipelines.yml file and supports Docker-based build steps. Bitbucket has 'Pipes' which are reusable pipeline components, similar to Actions. However, the Pipes marketplace is much smaller - a few hundred compared to GitHub's 20,000+ Actions. For common tasks like deploying to AWS or running tests, Pipes work fine. For niche workflows, you may need to write custom scripts."
+    },
+    {
+      "question": "Is Bitbucket cheaper than GitHub for a small team?",
+      "answer": "It depends on the team size. Bitbucket's free tier covers up to 5 users, which works for very small teams but the 50 build minute limit is restrictive. GitHub's free tier has no user cap and includes 2,000 CI/CD minutes. At the paid level, Bitbucket Standard ($3/user/month) is slightly cheaper than GitHub Team ($4/user/month), but GitHub's free tier is more generous for teams under 5."
+    },
+    {
+      "question": "Can I use Jira with GitHub instead of Bitbucket?",
+      "answer": "Yes, Atlassian offers a GitHub for Jira app that links commits and pull requests to Jira issues. It works, but it is not as deep as the native Bitbucket integration. With Bitbucket, you get automatic issue transitions via smart commits, deployment tracking in Jira, and branch creation directly from Jira issues. The GitHub integration covers basic linking but misses the workflow automation features."
+    },
+    {
+      "question": "Which platform is better for enterprise compliance and security?",
+      "answer": "GitHub has stronger security scanning with Dependabot, secret scanning, and Advanced Security (SAST). Bitbucket offers solid access controls with IP allowlisting, required 2FA, and merge checks. For security scanning specifically, GitHub is ahead. For access control and deployment permissions, both platforms are capable at their premium tiers. If security scanning is a priority, GitHub Enterprise with Advanced Security is the better choice."
+    },
+    {
+      "question": "Does Bitbucket still support Mercurial?",
+      "answer": "No. Atlassian dropped Mercurial support from Bitbucket Cloud in 2020. All repositories must use Git. This was a painful change for teams that had chosen Bitbucket specifically for Mercurial support, but Git has become the industry standard and Atlassian decided to focus entirely on it."
+    }
+  ]
+}

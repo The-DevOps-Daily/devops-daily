@@ -3,6 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb } from '@/components/breadcrumb';
+import { ensureContrastOnDark } from '@/lib/color-contrast';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { ReportIssue } from '@/components/report-issue';
 import { FeatureComparisonTable } from './feature-comparison-table';
@@ -65,9 +66,9 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-              <span style={{ color: comparison.toolA.color }}>{comparison.toolA.name}</span>
+              <span style={{ color: ensureContrastOnDark(comparison.toolA.color) }}>{comparison.toolA.name}</span>
               <span className="text-muted-foreground mx-3 text-2xl sm:text-3xl lg:text-4xl font-normal">vs</span>
-              <span style={{ color: comparison.toolB.color }}>{comparison.toolB.name}</span>
+              <span style={{ color: ensureContrastOnDark(comparison.toolB.color) }}>{comparison.toolB.name}</span>
             </h1>
 
             <p className="text-lg text-muted-foreground mb-4">{comparison.description}</p>
