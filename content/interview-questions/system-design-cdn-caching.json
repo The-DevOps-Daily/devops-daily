@@ -1,0 +1,56 @@
+{
+  "id": "system-design-cdn-caching",
+  "slug": "system-design-cdn-caching",
+  "title": "CDN Image Delivery Under 50ms",
+  "question": "Explain how a CDN serves images to users worldwide in under 50ms.",
+  "answer": "A CDN (Content Delivery Network) places copies of your images on hundreds of edge servers distributed across the globe. When a user requests an image, DNS routes them to the nearest edge server (often called a Point of Presence or PoP), typically within 20-50km. If that edge server already has the image cached, it serves it directly from memory or local SSD, which takes 1-5ms of server processing plus the network round-trip to the nearby PoP, totaling well under 50ms. If the edge does not have the image (a cache miss), it fetches from a regional mid-tier cache or the origin server, caches the response, and then serves it. The key is that after the first request, all subsequent users in that region get the cached copy. CDNs also use anycast routing, where multiple servers share the same IP address and the network layer routes packets to the closest one, and persistent TCP/TLS connections between PoPs to minimize connection setup overhead.",
+  "explanation": "This question tests whether candidates understand the physical constraints of network latency and how CDNs work around them by moving data closer to users. Light in fiber travels at roughly 200,000 km/s, so a round-trip from New York to London (11,000 km) takes at least 55ms just from physics. No amount of server optimization can beat the speed of light, which is why geographic distribution is the only solution for global sub-50ms delivery. Interviewers want to see that you grasp the caching hierarchy, cache invalidation challenges, and the tradeoffs between freshness and speed.",
+  "category": "System Design",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "system-design",
+    "cdn",
+    "caching",
+    "networking",
+    "performance",
+    "latency"
+  ],
+  "codeExamples": [
+    {
+      "language": "text",
+      "label": "CDN caching hierarchy and request flow",
+      "code": "User in Tokyo requests: https://cdn.example.com/images/hero.jpg\n\n1. DNS Resolution (anycast)\n   -> DNS returns IP 198.51.100.1\n   -> Anycast routes to nearest PoP: Tokyo edge server\n\n2. Edge Server (Tokyo PoP)\n   Cache HIT?  -> Serve from memory/SSD (1-5ms processing)\n                  Total latency: ~10-20ms (nearby network hop)\n\n   Cache MISS? -> Check regional mid-tier cache\n\n3. Mid-Tier Cache (Asia-Pacific region, e.g. Singapore)\n   Cache HIT?  -> Return to Tokyo edge, cache locally, serve user\n                  Added latency: ~30-60ms for regional hop\n\n   Cache MISS? -> Fetch from origin\n\n4. Origin Server (US-East)\n   -> Serves the image\n   -> Mid-tier caches it (TTL: 24 hours)\n   -> Edge caches it (TTL: 1 hour)\n   -> User gets the image\n   Total first-request latency: ~200-300ms\n   All subsequent Tokyo requests: ~10-20ms"
+    },
+    {
+      "language": "nginx",
+      "label": "Nginx edge cache configuration",
+      "code": "# Simplified CDN edge server config\nproxy_cache_path /var/cache/cdn levels=1:2\n    keys_zone=images:100m\n    max_size=50g\n    inactive=24h\n    use_temp_path=off;\n\nserver {\n    listen 443 ssl http2;\n    server_name cdn.example.com;\n\n    location /images/ {\n        proxy_cache images;\n        proxy_cache_valid 200 1h;\n        proxy_cache_valid 404 1m;\n\n        # Serve stale content while revalidating in background\n        proxy_cache_use_stale updating error timeout;\n        proxy_cache_background_update on;\n\n        # Add cache status header for debugging\n        add_header X-Cache-Status $upstream_cache_status;\n        add_header Cache-Control \"public, max-age=3600\";\n\n        # Conditional requests to origin\n        proxy_cache_revalidate on;\n\n        proxy_pass http://origin-servers;\n    }\n}"
+    },
+    {
+      "language": "bash",
+      "label": "Inspect CDN cache headers",
+      "code": "# Check if an image is served from cache\ncurl -sI https://cdn.example.com/images/hero.jpg | grep -E '(X-Cache|Age|Cache-Control|CF-Cache)'\n\n# Example output:\n# X-Cache: HIT\n# Age: 3542           <- seconds since edge cached it\n# Cache-Control: public, max-age=3600\n# CF-Cache-Status: HIT   <- Cloudflare-specific header\n\n# Purge a specific cached image (Cloudflare API example)\ncurl -X POST \"https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache\" \\\n  -H \"Authorization: Bearer $CF_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  --data '{\"files\":[\"https://cdn.example.com/images/hero.jpg\"]}'"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you invalidate or purge cached content across all edge servers when the original image changes?",
+    "What is the difference between push-based and pull-based CDN strategies?",
+    "How would you handle personalized or user-specific content that cannot be cached at the edge?",
+    "What role does HTTP/2 and HTTP/3 (QUIC) play in reducing latency for CDN-served content?",
+    "How do you decide on TTL values for different types of content?"
+  ],
+  "commonMistakes": [
+    "Not understanding that network latency is bounded by the speed of light, so geographic proximity is the primary optimization",
+    "Confusing CDN caching with browser caching or application-level caching",
+    "Ignoring cache invalidation, which is the hardest part of running a CDN",
+    "Thinking all requests hit the origin server and the CDN just provides 'faster pipes'",
+    "Forgetting about cache warming and the cold-start problem when deploying to new PoPs"
+  ],
+  "relatedTopics": [
+    "caching-strategies",
+    "http-headers",
+    "dns-routing",
+    "network-latency"
+  ]
+}

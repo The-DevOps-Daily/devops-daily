@@ -1,0 +1,52 @@
+{
+  "id": "system-design-autocomplete",
+  "slug": "system-design-autocomplete",
+  "title": "Search Autocomplete System Design",
+  "question": "Design the backend for a search autocomplete system that returns suggestions within 100ms as the user types.",
+  "answer": "The core data structure is a trie (prefix tree) that stores popular search queries. Each node represents a character, and nodes are annotated with frequency scores so you can return the top-k suggestions for any prefix. To meet the 100ms target at scale, you partition the trie across multiple servers by prefix range (a-f on server 1, g-m on server 2, etc.) and keep the working set in memory. A separate offline pipeline aggregates search logs, computes query frequencies, and rebuilds the trie periodically. When the user types, the frontend debounces keystrokes (typically 150-300ms delay), sends the prefix to an API gateway, which routes to the correct shard. The shard walks the trie to the prefix node and returns the top-k results. A CDN or edge cache sits in front for the most common prefixes, since queries like 'how' or 'what' are nearly identical across users.",
+  "explanation": "Autocomplete is one of the most common system design interview questions because it touches on data structures, caching, ranking, and latency budgets all at once. A strong answer addresses the full pipeline: data collection, offline processing, serving infrastructure, and client-side optimizations. Senior candidates should discuss how to handle personalization, freshness of trending queries, and multi-language support. The interviewer is looking for the ability to make tradeoffs between serving speed and data freshness.",
+  "category": "System Design",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "system-design",
+    "trie",
+    "autocomplete",
+    "search",
+    "caching",
+    "scalability"
+  ],
+  "codeExamples": [
+    {
+      "language": "python",
+      "label": "Trie-based autocomplete with frequency ranking",
+      "code": "from collections import defaultdict\nimport heapq\n\nclass TrieNode:\n    def __init__(self):\n        self.children = {}\n        self.is_end = False\n        self.frequency = 0\n        # Cache top-k results at each node to avoid recomputation\n        self.top_suggestions = []\n\nclass AutocompleteService:\n    def __init__(self, top_k=5):\n        self.root = TrieNode()\n        self.top_k = top_k\n\n    def insert(self, query: str, frequency: int):\n        node = self.root\n        for char in query.lower():\n            if char not in node.children:\n                node.children[char] = TrieNode()\n            node = node.children[char]\n        node.is_end = True\n        node.frequency = frequency\n\n    def _collect_suggestions(self, node, prefix, results):\n        if node.is_end:\n            results.append((node.frequency, prefix))\n        for char, child in node.children.items():\n            self._collect_suggestions(child, prefix + char, results)\n\n    def build_cache(self):\n        \"\"\"Pre-compute top-k suggestions at every node.\"\"\"\n        self._build_cache_recursive(self.root, \"\")\n\n    def _build_cache_recursive(self, node, prefix):\n        results = []\n        self._collect_suggestions(node, prefix, results)\n        # Keep top-k by frequency\n        node.top_suggestions = [\n            query for freq, query\n            in heapq.nlargest(self.top_k, results)\n        ]\n        for char, child in node.children.items():\n            self._build_cache_recursive(child, prefix + char)\n\n    def search(self, prefix: str) -> list:\n        node = self.root\n        for char in prefix.lower():\n            if char not in node.children:\n                return []\n            node = node.children[char]\n        # O(1) lookup thanks to pre-computed cache\n        return node.top_suggestions\n\n# Build the trie from aggregated search logs\nservice = AutocompleteService(top_k=5)\nqueries = [\n    (\"how to learn python\", 50000),\n    (\"how to learn javascript\", 45000),\n    (\"how to learn go\", 30000),\n    (\"how to cook rice\", 28000),\n    (\"how are you\", 90000),\n    (\"holiday deals\", 15000),\n]\n\nfor query, freq in queries:\n    service.insert(query, freq)\n\nservice.build_cache()\n\nprint(service.search(\"how to l\"))\n# ['how to learn python', 'how to learn javascript', 'how to learn go']"
+    },
+    {
+      "language": "yaml",
+      "label": "System architecture overview",
+      "code": "# Autocomplete system components\n\ndata_pipeline:\n  input: search_query_logs (Kafka topic)\n  processing: Apache Spark job (runs every 15 minutes)\n  steps:\n    - aggregate query counts over rolling 7-day window\n    - filter offensive or low-quality queries\n    - weight recent queries higher (time decay)\n    - merge with curated trending topics\n  output: ranked_queries.json -> pushed to trie servers\n\nserving_layer:\n  edge_cache:\n    technology: CloudFront / Fastly\n    cache_key: first 3 characters of prefix\n    ttl: 5 minutes\n    hit_rate: ~60% of all requests\n\n  api_gateway:\n    rate_limit: 10 requests/sec per user\n    routes_to: trie shard based on first character\n\n  trie_servers:\n    instances: 6 shards (partitioned by prefix range)\n    memory: 16 GB per shard\n    data: in-memory trie with pre-computed top-k\n    refresh: hot-swap new trie every 15 minutes\n\nclient_side:\n  debounce: 200ms between keystrokes\n  min_prefix_length: 2 characters\n  local_cache: LRU cache of last 50 prefix results\n  fallback: show recent user searches if backend is slow"
+    }
+  ],
+  "followUpQuestions": [
+    "How would you handle trending or breaking-news queries that spike suddenly?",
+    "How do you personalize autocomplete results per user without adding latency?",
+    "What happens if one of the trie shards goes down? How do you ensure availability?",
+    "How would you filter out offensive or inappropriate suggestions?",
+    "How does the system handle multiple languages and character sets?"
+  ],
+  "commonMistakes": [
+    "Proposing a simple SQL LIKE query against a database, which cannot meet the latency requirement at scale",
+    "Forgetting client-side optimizations like debouncing and local caching, which reduce backend load significantly",
+    "Not discussing how the trie data stays fresh or how you handle trending queries",
+    "Ignoring the ranking component and treating all prefix matches as equally relevant",
+    "Overcomplicating the design with ML ranking models before addressing the basic infrastructure",
+    "Not mentioning how to partition or replicate the trie when it outgrows a single server"
+  ],
+  "relatedTopics": [
+    "trie-data-structure",
+    "caching-strategies",
+    "search-systems",
+    "system-design-scalability"
+  ]
+}

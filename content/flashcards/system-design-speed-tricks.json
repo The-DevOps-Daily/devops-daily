@@ -1,0 +1,115 @@
+{
+  "id": "system-design-speed-tricks",
+  "title": "System Design Speed Tricks - How Things Work So Fast",
+  "description": "Learn the algorithms, data structures, and infrastructure patterns that make modern systems respond in milliseconds. From client-side validation to global routing, understand why things feel instant.",
+  "category": "System Design",
+  "icon": "Zap",
+  "difficulty": "intermediate",
+  "estimatedTime": "25 minutes",
+  "cardCount": 14,
+  "theme": {
+    "primaryColor": "orange",
+    "gradientFrom": "from-orange-500",
+    "gradientTo": "to-amber-600"
+  },
+  "cards": [
+    {
+      "id": "o1-vs-on-lookups",
+      "front": "You need to check if a user ID exists in a set of 10 million active sessions. A list scan takes seconds, but a different approach answers in microseconds. What is the difference between O(1) and O(n) lookups, and which data structure gives you O(1)?",
+      "back": "O(n) means you potentially scan every element (a list). O(1) means constant-time access regardless of size.\n\nA **hash table** (hash map, dictionary, set) gives O(1) average lookup by computing an index from the key:\n\n```python\n# O(n) - scanning a list\nuser_ids = [1, 2, 3, ..., 10_000_000]\nif target in user_ids:  # checks up to 10M items\n\n# O(1) - hash set\nuser_ids = {1, 2, 3, ..., 10_000_000}\nif target in user_ids:  # one hash computation\n```\n\nThis single distinction underpins nearly every speed trick in system design.",
+      "category": "Fundamentals",
+      "tags": ["time-complexity", "hash-tables", "lookups"]
+    },
+    {
+      "id": "luhn-algorithm",
+      "front": "A checkout form validates a 16-digit credit card number in microseconds without making any network request. What algorithm makes this possible?",
+      "back": "The **Luhn algorithm** (mod-10 check). It catches typos and random digit errors by running a simple checksum on the card number:\n\n```\nCard: 4539 1488 0343 6467\n\n1. From right, double every second digit\n2. If result > 9, subtract 9\n3. Sum all digits\n4. Valid if sum % 10 == 0\n```\n\n```python\ndef luhn_check(num: str) -> bool:\n    digits = [int(d) for d in num]\n    digits.reverse()\n    for i in range(1, len(digits), 2):\n        digits[i] *= 2\n        if digits[i] > 9:\n            digits[i] -= 9\n    return sum(digits) % 10 == 0\n```\n\nIt runs entirely client-side, so validation feels instant.",
+      "category": "Algorithms",
+      "tags": ["luhn", "validation", "client-side"]
+    },
+    {
+      "id": "trie-data-structure",
+      "front": "A search bar suggests completions for 'netw' from a dictionary of 500,000 words in under a millisecond. Scanning every word would be too slow. What data structure is purpose-built for prefix lookups?",
+      "back": "A **trie** (prefix tree). Each node represents one character, and shared prefixes share nodes:\n\n```\n        root\n         |\n         n\n         |\n         e\n         |\n         t\n        / \\\n       w   s  (-> \"nets\")\n       |\n       o\n       |\n       r\n       |\n       k  (-> \"network\")\n```\n\nLooking up a prefix of length k takes O(k) time regardless of how many words exist. For 'netw', you traverse exactly 4 nodes, then collect all children as suggestions. This is how autocomplete, IP routing tables, and spell checkers stay fast.",
+      "category": "Data Structures",
+      "tags": ["trie", "prefix-tree", "autocomplete"]
+    },
+    {
+      "id": "base62-encoding",
+      "front": "A URL shortener turns 'https://example.com/very/long/path?with=params' into 'https://sho.rt/a9Kz3B' using only 6 characters. How does it pack a unique ID into such a short string?",
+      "back": "**Base62 encoding** uses `[a-zA-Z0-9]` (62 characters) to represent numbers compactly. A 6-character Base62 string can represent 62^6 = 56.8 billion unique values.\n\n```python\nALPHABET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'\n\ndef base62_encode(num: int) -> str:\n    if num == 0:\n        return ALPHABET[0]\n    result = []\n    while num:\n        num, remainder = divmod(num, 62)\n        result.append(ALPHABET[remainder])\n    return ''.join(reversed(result))\n\nbase62_encode(1_000_000)  # -> '4c92'\n```\n\nThe service stores a mapping from the short code's numeric ID back to the original URL in a hash table or database.",
+      "category": "Algorithms",
+      "tags": ["base62", "url-shortener", "encoding"]
+    },
+    {
+      "id": "bloom-filter",
+      "front": "Before querying a database of 1 billion usernames, a system instantly tells you 'this username is definitely not taken' without hitting disk. It uses only 1.2 GB of memory. What data structure enables this?",
+      "back": "A **Bloom filter** -- a probabilistic data structure that can say 'definitely not in the set' or 'probably in the set' using a bit array and multiple hash functions.\n\n```\nInsert \"alice\":\n  hash1(\"alice\") = 3  -> set bit 3\n  hash2(\"alice\") = 7  -> set bit 7\n  hash3(\"alice\") = 12 -> set bit 12\n\nBit array: [0,0,0,1,0,0,0,1,0,0,0,0,1,0,0...]\n\nCheck \"bob\":\n  hash1(\"bob\") = 3  -> bit is 1\n  hash2(\"bob\") = 5  -> bit is 0  -> DEFINITELY NOT IN SET\n```\n\nFalse positives are possible (all bits happen to be set), but false negatives are not. This lets you skip expensive DB lookups for the majority of queries.",
+      "category": "Data Structures",
+      "tags": ["bloom-filter", "probabilistic", "membership-testing"]
+    },
+    {
+      "id": "probabilistic-data-structures",
+      "front": "An analytics service counts approximately 45 million unique visitors per day using only 12 KB of memory. Storing each visitor ID would require gigabytes. What category of data structures trades perfect accuracy for massive memory savings?",
+      "back": "**Probabilistic data structures** accept a small error rate in exchange for dramatically lower memory and faster operations.\n\nCommon examples:\n\n| Structure | Purpose | Accuracy |\n|---|---|---|\n| **Bloom filter** | Set membership | No false negatives |\n| **HyperLogLog** | Cardinality counting | ~0.8% error |\n| **Count-Min Sketch** | Frequency estimation | Overestimates only |\n| **Cuckoo filter** | Membership + deletion | Better than Bloom |\n\nThe 12 KB unique visitor counter is a **HyperLogLog**. Redis supports it natively:\n\n```bash\nPFADD visitors user:12345\nPFCOUNT visitors  # ~45,000,000 (within 0.8%)\n```\n\nWhen you need approximate answers at scale, these structures are the right tool.",
+      "category": "Data Structures",
+      "tags": ["probabilistic", "hyperloglog", "count-min-sketch"]
+    },
+    {
+      "id": "debouncing",
+      "front": "A search box fires an API call on every keystroke. A user typing 'kubernetes' triggers 10 requests, but only the last one matters. What client-side technique prevents this wasted work?",
+      "back": "**Debouncing** delays execution until input stops for a set period. Each new keystroke resets the timer:\n\n```javascript\nfunction debounce(fn, delay) {\n  let timer;\n  return (...args) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), delay);\n  };\n}\n\nconst search = debounce((query) => {\n  fetch(`/api/search?q=${query}`);\n}, 300);\n\ninput.addEventListener('keyup', (e) => search(e.target.value));\n```\n\nTyping 'kubernetes' fires 0 requests until 300ms of silence, then fires 1. Related concept: **throttling** limits to at most one call per interval rather than waiting for a pause.",
+      "category": "Client Patterns",
+      "tags": ["debouncing", "throttling", "performance"]
+    },
+    {
+      "id": "dns-caching-hierarchy",
+      "front": "You type 'github.com' in your browser. The DNS lookup resolves in under 1ms even though the authoritative nameserver is 200ms away. Why is it so fast?",
+      "back": "DNS uses a **multi-level caching hierarchy**. Each layer can short-circuit the full lookup:\n\n```\nBrowser cache     (seconds)     <- check first\n  |\nOS resolver cache (minutes)     <- check second\n  |\nRouter cache      (minutes)\n  |\nISP recursive     (hours)       <- most queries stop here\nresolver cache\n  |\nAuthoritative     (TTL-based)   <- only on cold miss\nnameserver\n```\n\nAfter the first lookup, the result is cached at every layer. The TTL (time to live) on the DNS record controls how long each cache holds it. A TTL of 300 means caches keep the answer for 5 minutes before re-querying upstream.",
+      "category": "Infrastructure",
+      "tags": ["dns", "caching", "hierarchy"]
+    },
+    {
+      "id": "ttl-cache-invalidation",
+      "front": "You deploy a fix and need users to get the new version immediately, but your CDN has a 24-hour TTL on cached assets. What are your options, and why is cache invalidation considered one of the hardest problems?",
+      "back": "Options for busting the cache:\n\n1. **Cache-busting URLs** (best): append a hash to the filename\n   `app.js` -> `app.a3f9c2.js` (new URL = automatic miss)\n2. **Purge/invalidate API**: tell the CDN to drop specific paths\n   `curl -X PURGE https://cdn.example.com/app.js`\n3. **Lower the TTL** preemptively for assets that change often\n\nThe hard part: you cannot instantly reach every cache layer (browser, CDN edge, intermediate proxies). Phil Karlton's famous line: 'There are only two hard things in CS: cache invalidation and naming things.'\n\nPractical rule: use content-hashed filenames for static assets and short TTLs (30-60s) for API responses.",
+      "category": "Infrastructure",
+      "tags": ["ttl", "cache-invalidation", "cdn"]
+    },
+    {
+      "id": "cache-hit-rates-power-law",
+      "front": "A cache that stores only 1% of your total content handles 90% of all requests. How is that possible?",
+      "back": "Real-world access patterns follow a **power-law distribution** (Zipf's law). A tiny fraction of content receives the vast majority of requests.\n\n```\nRequests\n|  *\n|  *\n|   *\n|    **\n|       ****\n|            **********\n+----------------------------> Content items\n  (few hot)    (long tail)\n```\n\nThe top 1% of URLs might get 90%+ of traffic. So caching just those hot items yields a 90% hit rate. This is why CDNs work so well despite not caching everything.\n\n**Hit rate** = cache_hits / total_requests. Even a small cache is effective because you are not caching randomly -- LRU/LFU eviction policies naturally keep the hot items in memory.",
+      "category": "Infrastructure",
+      "tags": ["caching", "power-law", "zipf", "hit-rate"]
+    },
+    {
+      "id": "websocket-presence",
+      "front": "A chat app shows 'Alice is typing...' to Bob in real time with under 100ms latency. Polling the server every second would be too slow and wasteful. What protocol and pattern enable this?",
+      "back": "**WebSocket presence channels**. Unlike HTTP (request-response), a WebSocket holds a persistent, full-duplex TCP connection:\n\n```\nHTTP polling:  Client -> Server -> Client  (repeated)\nWebSocket:     Client <=======> Server     (persistent)\n```\n\n```javascript\n// Client subscribes to a presence channel\nconst ws = new WebSocket('wss://chat.example.com/room/42');\n\nws.send(JSON.stringify({ type: 'typing', user: 'alice' }));\n\n// Server broadcasts to all subscribers instantly\nws.onmessage = (event) => {\n  const data = JSON.parse(event.data);\n  if (data.type === 'typing') {\n    showTypingIndicator(data.user);\n  }\n};\n```\n\nPresence channels also track who is online/offline by detecting connection drops. This is how Slack, Discord, and collaborative editors deliver real-time state.",
+      "category": "Networking",
+      "tags": ["websocket", "presence", "real-time"]
+    },
+    {
+      "id": "lb-health-checks",
+      "front": "One of your 5 backend servers crashes. Users never see an error because traffic is automatically rerouted within seconds. How does the load balancer know which servers are healthy?",
+      "back": "**Health checks** -- the load balancer probes each backend on a regular interval:\n\n```\nLB ----> GET /healthz ----> Server A (200 OK)     [healthy]\nLB ----> GET /healthz ----> Server B (200 OK)     [healthy]\nLB ----> GET /healthz ----> Server C (timeout)    [unhealthy]\n```\n\nTypical configuration (NGINX example):\n```nginx\nupstream backend {\n    server 10.0.1.1:8080;\n    server 10.0.1.2:8080;\n    server 10.0.1.3:8080;\n}\n\nserver {\n    location /healthz {\n        access_log off;\n        return 200 'ok';\n    }\n}\n```\n\nThe LB removes failed servers from rotation after N consecutive failures (usually 2-3) and re-adds them once they pass checks again. This is why users stay unaware of backend failures.",
+      "category": "Infrastructure",
+      "tags": ["load-balancer", "health-checks", "availability"]
+    },
+    {
+      "id": "anycast-vs-unicast",
+      "front": "A user in Tokyo and a user in London both resolve your CDN's domain to the same IP address, yet their requests reach different servers on different continents. How is one IP address served from multiple locations?",
+      "back": "**Anycast routing** vs **unicast routing**:\n\n```\nUnicast: 1 IP = 1 destination\n  Tokyo user  -----> IP 1.2.3.4 -----> US server (200ms)\n  London user -----> IP 1.2.3.4 -----> US server (100ms)\n\nAnycast: 1 IP = nearest destination\n  Tokyo user  -----> IP 1.2.3.4 -----> Tokyo PoP (5ms)\n  London user -----> IP 1.2.3.4 -----> London PoP (5ms)\n```\n\nWith anycast, the same IP is announced via BGP from multiple locations. Routers naturally send packets to the closest announcement. CDNs like Cloudflare use anycast so every user hits their nearest edge node without any client-side logic. It also provides automatic DDoS absorption since attack traffic gets distributed across all PoPs.",
+      "category": "Networking",
+      "tags": ["anycast", "unicast", "bgp", "cdn"]
+    },
+    {
+      "id": "cdn-anycast-full-picture",
+      "front": "A static image loads in 40ms for users worldwide, even though your origin server is in us-east-1. Trace the full path of a CDN request and explain every layer that contributes to the speed.",
+      "back": "Here is the full chain for a CDN-served asset:\n\n```\n1. Browser cache    -> HIT? Done (0ms)\n2. DNS lookup       -> Anycast IP resolved (cached, <1ms)\n3. TCP to edge PoP  -> Nearest via anycast (5-20ms)\n4. Edge cache       -> HIT? Serve + done (1ms)\n5. Shield/mid-tier  -> HIT? Serve to edge (10ms)\n6. Origin fetch     -> Only on full miss (100ms+)\n```\n\nEach layer avoids the next:\n- **Browser cache** avoids any network call\n- **DNS caching** avoids recursive resolution\n- **Anycast** picks the closest edge (not the origin)\n- **Edge cache** avoids origin round-trip\n- **Shield cache** collapses multiple edge misses into one origin request\n\nFor popular content, steps 1-4 handle 99%+ of requests. The origin barely sees traffic. That is how 40ms is possible from anywhere on the planet.",
+      "category": "Infrastructure",
+      "tags": ["cdn", "anycast", "caching", "system-design"]
+    }
+  ]
+}

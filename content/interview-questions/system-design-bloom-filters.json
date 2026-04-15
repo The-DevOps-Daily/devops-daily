@@ -1,0 +1,50 @@
+{
+  "id": "system-design-bloom-filters",
+  "slug": "system-design-bloom-filters",
+  "title": "Username Availability with Bloom Filters",
+  "question": "Explain how you'd check username availability for a service with billions of users without hitting the database on every keystroke.",
+  "answer": "Use a Bloom filter as the first layer. A Bloom filter is a space-efficient probabilistic data structure that can tell you with certainty that a username is available (not in the set) or with high probability that it is taken. You load all existing usernames into the filter at startup. When a user types a username, you check the Bloom filter first. If the filter says 'not present,' the username is definitely available and you skip the database entirely. If the filter says 'possibly present,' you then query the database to confirm. For billions of usernames, a Bloom filter with a 1% false positive rate needs roughly 1.2 GB of memory, which fits comfortably on a single server. This eliminates the vast majority of database lookups.",
+  "explanation": "This question tests whether candidates can identify the right data structure for a probabilistic membership check at scale. Bloom filters appear in many production systems: Chrome uses one to check malicious URLs, databases use them to skip unnecessary disk reads, and CDNs use them for cache filtering. The interviewer wants to see that you understand the false-positive tradeoff, can reason about memory usage, and know when an approximate answer is good enough to avoid an expensive exact lookup.",
+  "category": "System Design",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "system-design",
+    "bloom-filters",
+    "data-structures",
+    "scalability",
+    "performance"
+  ],
+  "codeExamples": [
+    {
+      "language": "python",
+      "label": "Simple Bloom filter implementation",
+      "code": "import hashlib\nimport math\n\nclass BloomFilter:\n    def __init__(self, expected_items, false_positive_rate=0.01):\n        # Calculate optimal size and hash count\n        self.size = self._optimal_size(expected_items, false_positive_rate)\n        self.hash_count = self._optimal_hashes(self.size, expected_items)\n        self.bit_array = bytearray(self.size // 8 + 1)\n        print(f\"Filter size: {self.size / 8 / 1024 / 1024:.1f} MB\")\n        print(f\"Hash functions: {self.hash_count}\")\n\n    def _optimal_size(self, n, p):\n        return int(-n * math.log(p) / (math.log(2) ** 2))\n\n    def _optimal_hashes(self, m, n):\n        return int((m / n) * math.log(2))\n\n    def _get_hashes(self, item):\n        hashes = []\n        for i in range(self.hash_count):\n            h = hashlib.sha256(f\"{item}:{i}\".encode()).hexdigest()\n            hashes.append(int(h, 16) % self.size)\n        return hashes\n\n    def add(self, item):\n        for pos in self._get_hashes(item):\n            self.bit_array[pos // 8] |= (1 << (pos % 8))\n\n    def might_contain(self, item):\n        return all(\n            self.bit_array[pos // 8] & (1 << (pos % 8))\n            for pos in self._get_hashes(item)\n        )\n\n# For 1 billion usernames at 1% false positive rate\nbf = BloomFilter(expected_items=1_000_000_000, false_positive_rate=0.01)\n# Output: Filter size: ~1144.5 MB, Hash functions: 7\n\nbf.add(\"alice\")\nbf.add(\"bob\")\n\nprint(bf.might_contain(\"alice\"))   # True (definitely added)\nprint(bf.might_contain(\"charlie\")) # False (definitely NOT added)\nprint(bf.might_contain(\"bob\"))     # True (definitely added)"
+    },
+    {
+      "language": "python",
+      "label": "Username availability API with Bloom filter layer",
+      "code": "from fastapi import FastAPI\nimport redis\n\napp = FastAPI()\nr = redis.Redis()\n\n# Redis has built-in Bloom filter support via RedisBloom module\n# BF.RESERVE usernames 0.01 1000000000\n# BF.ADD usernames \"alice\"\n\n@app.get(\"/check-username/{username}\")\nasync def check_username(username: str):\n    username = username.lower().strip()\n\n    # Layer 1: format validation (instant, no I/O)\n    if len(username) < 3 or len(username) > 30:\n        return {\"available\": False, \"reason\": \"invalid_length\"}\n\n    # Layer 2: Bloom filter check (sub-millisecond, in-memory)\n    possibly_taken = r.execute_command(\"BF.EXISTS\", \"usernames\", username)\n    if not possibly_taken:\n        # Bloom filter says NO -> definitely available\n        return {\"available\": True}\n\n    # Layer 3: database confirmation (only for Bloom positives)\n    # This path is hit for ~1% false positives + actual taken names\n    taken = await db.check_username_exists(username)\n    return {\"available\": not taken}"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens when a new user registers? How do you keep the Bloom filter in sync?",
+    "Can you remove an element from a Bloom filter? If not, what alternatives exist?",
+    "How would you handle the filter across multiple application servers?",
+    "What is a counting Bloom filter, and when would you use one instead?",
+    "How does a cuckoo filter compare to a Bloom filter for this use case?"
+  ],
+  "commonMistakes": [
+    "Saying you would query the database on every keystroke for real-time feedback",
+    "Confusing false positives and false negatives: Bloom filters never produce false negatives, only false positives",
+    "Not knowing how to estimate the memory required for a given number of items and false positive rate",
+    "Forgetting that Bloom filters do not support deletion without switching to a counting variant",
+    "Proposing a simple HashSet, which would require far more memory for billions of entries"
+  ],
+  "relatedTopics": [
+    "probabilistic-data-structures",
+    "caching",
+    "redis",
+    "system-design-scalability"
+  ]
+}

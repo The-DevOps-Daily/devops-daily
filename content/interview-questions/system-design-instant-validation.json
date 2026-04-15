@@ -1,0 +1,48 @@
+{
+  "id": "system-design-instant-validation",
+  "slug": "system-design-instant-validation",
+  "title": "Instant Credit Card Validation",
+  "question": "How does a credit card form validate numbers instantly, before even contacting the bank?",
+  "answer": "Credit card numbers follow a mathematical pattern called the Luhn algorithm (also known as the mod-10 check). The form runs this algorithm entirely on the client side, in the browser, with zero network calls. Starting from the rightmost digit, you double every second digit. If doubling produces a number greater than 9, subtract 9. Then sum all the digits. If the total is divisible by 10, the number is structurally valid. This catches roughly 99% of accidental typos instantly. The first 1-6 digits (the BIN or IIN range) also identify the card network: Visa starts with 4, Mastercard with 51-55 or 2221-2720, Amex with 34 or 37. So the form can show the correct card logo before the user finishes typing.",
+  "explanation": "This question tests whether candidates understand that not every validation requires a server round-trip. The Luhn check is a classic example of a checksum that provides instant feedback at minimal cost. It also opens the door to discussing client-side vs. server-side validation, UX responsiveness, and the layered approach to input validation (format check, then network check, then authorization). Interviewers want to see that you think about reducing latency by doing cheap checks first before expensive ones.",
+  "category": "System Design",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "system-design",
+    "validation",
+    "algorithms",
+    "client-side",
+    "performance"
+  ],
+  "codeExamples": [
+    {
+      "language": "javascript",
+      "label": "Luhn algorithm implementation",
+      "code": "function isValidCardNumber(number) {\n  const digits = number.replace(/\\s/g, '').split('').reverse();\n  let sum = 0;\n\n  for (let i = 0; i < digits.length; i++) {\n    let digit = parseInt(digits[i], 10);\n\n    // Double every second digit (odd index in reversed array)\n    if (i % 2 === 1) {\n      digit *= 2;\n      if (digit > 9) digit -= 9;\n    }\n\n    sum += digit;\n  }\n\n  return sum % 10 === 0;\n}\n\n// Identify card network from first digits\nfunction getCardNetwork(number) {\n  const cleaned = number.replace(/\\s/g, '');\n  if (/^4/.test(cleaned)) return 'Visa';\n  if (/^5[1-5]/.test(cleaned)) return 'Mastercard';\n  if (/^3[47]/.test(cleaned)) return 'Amex';\n  if (/^6011/.test(cleaned)) return 'Discover';\n  return 'Unknown';\n}\n\nconsole.log(isValidCardNumber('4539 1488 0343 6467')); // true\nconsole.log(getCardNetwork('4539 1488 0343 6467'));     // Visa"
+    },
+    {
+      "language": "python",
+      "label": "Luhn check in Python",
+      "code": "def luhn_check(card_number: str) -> bool:\n    digits = [int(d) for d in card_number.replace(' ', '')][::-1]\n    total = 0\n    for i, digit in enumerate(digits):\n        if i % 2 == 1:\n            digit *= 2\n            if digit > 9:\n                digit -= 9\n        total += digit\n    return total % 10 == 0\n\n# Valid test number\nprint(luhn_check('4539 1488 0343 6467'))  # True\n# One digit off\nprint(luhn_check('4539 1488 0343 6468'))  # False"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens after the Luhn check passes and the user submits the form? Walk me through the full authorization flow.",
+    "Why is client-side validation alone never sufficient for security?",
+    "How would you validate an email address instantly without sending a verification email?",
+    "What other checksums or check digits are used in everyday systems (ISBNs, routing numbers, etc.)?"
+  ],
+  "commonMistakes": [
+    "Saying the form contacts the bank or payment processor for every keystroke",
+    "Not knowing that the card number format itself carries information like the network and issuer",
+    "Forgetting to mention that client-side validation is a UX optimization, not a security measure, and server-side checks are still required",
+    "Overlooking that the Luhn algorithm only catches accidental errors, not intentional fraud"
+  ],
+  "relatedTopics": [
+    "client-side-validation",
+    "checksums",
+    "payment-systems",
+    "ux-performance"
+  ]
+}
