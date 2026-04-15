@@ -12,6 +12,7 @@ import {
   Layers,
   Lock,
   Network,
+  Shield,
   Terminal,
   Workflow,
   LucideIcon,
@@ -36,6 +37,7 @@ const iconComponents: Record<string, LucideIcon> = {
   GitBranch,
   Lock,
   Network,
+  Shield,
   Terminal,
   SquareTerminal,
   ShipWheel,
@@ -103,7 +105,7 @@ export async function CategoryGrid({
       <div className={gridClasses}>
         {displayCategories.map((category) => {
           // Get the icon component
-          const IconComponent = category.icon ? iconComponents[category.icon] : Terminal;
+          const IconComponent = (category.icon && iconComponents[category.icon]) || Terminal;
 
           return (
             <Link

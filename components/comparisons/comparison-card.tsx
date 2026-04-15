@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock, ArrowRight } from 'lucide-react';
 import type { Comparison } from '@/lib/comparison-types';
+import { ensureContrastOnDark } from '@/lib/color-contrast';
 
 interface ComparisonCardProps {
   comparison: Comparison;
@@ -29,7 +30,7 @@ export function ComparisonCard({ comparison }: ComparisonCardProps) {
             <div className="flex-1 text-right">
               <div
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
-                style={{ backgroundColor: `${comparison.toolA.color}15`, color: comparison.toolA.color }}
+                style={{ backgroundColor: `${comparison.toolA.color}15`, color: ensureContrastOnDark(comparison.toolA.color) }}
               >
                 {comparison.toolA.name}
               </div>
@@ -42,7 +43,7 @@ export function ComparisonCard({ comparison }: ComparisonCardProps) {
             <div className="flex-1 text-left">
               <div
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold"
-                style={{ backgroundColor: `${comparison.toolB.color}15`, color: comparison.toolB.color }}
+                style={{ backgroundColor: `${comparison.toolB.color}15`, color: ensureContrastOnDark(comparison.toolB.color) }}
               >
                 {comparison.toolB.name}
               </div>

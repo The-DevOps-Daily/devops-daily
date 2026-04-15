@@ -3,6 +3,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Award, ArrowRight } from 'lucide-react';
 import type { Verdict, ToolInfo } from '@/lib/comparison-types';
+import { ensureContrastOnDark } from '@/lib/color-contrast';
 
 interface VerdictSectionProps {
   verdict: Verdict;
@@ -16,7 +17,7 @@ function ScoreBar({ score, maxScore, color, label }: { score: number; maxScore: 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-sm">
-        <span className="font-medium" style={{ color }}>{label}</span>
+        <span className="font-medium" style={{ color: ensureContrastOnDark(color) }}>{label}</span>
         <span className="font-bold">{score.toFixed(1)} / {maxScore}</span>
       </div>
       <div className="h-3 bg-muted rounded-full overflow-hidden">
