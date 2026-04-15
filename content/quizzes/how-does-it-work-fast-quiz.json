@@ -1,0 +1,259 @@
+{
+  "id": "how-does-it-work-fast-quiz",
+  "title": "How Does It Work So Fast? - System Design Speed Tricks",
+  "description": "Test your knowledge of the clever algorithms and infrastructure patterns that make everyday features feel instant. Covers credit card validation, bloom filters, tries, URL shorteners, typing indicators, CDNs, DNS caching, and load balancer health checks.",
+  "category": "System Design",
+  "icon": "Zap",
+  "totalPoints": 195,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-04-12"
+  },
+  "tags": ["system-design", "algorithms", "performance", "infrastructure", "caching"],
+  "questions": [
+    {
+      "id": "luhn-algorithm-basics",
+      "title": "Instant Credit Card Validation",
+      "description": "You need to understand how e-commerce checkout forms can validate a credit card number before sending anything to the payment processor.",
+      "situation": "You are building a checkout page for an online store. Users keep getting frustrated because they submit their card number, wait 3 seconds for the payment API to respond, and then learn they mistyped a digit. Your product manager asks you to catch obvious typos instantly, right in the browser, before the form is submitted. A colleague mentions that credit card numbers have a built-in checksum.",
+      "codeExample": "# The Luhn Algorithm (Mod 10 check):\n# Card number: 4539 1488 0343 6467\n#\n# Step 1: Starting from the rightmost digit, double every second digit:\n#   4  5  3  9  1  4  8  8  0  3  4  3  6  4  6  7\n#   8  5  6  9  2  4  16 8  0  3  8  3  12 4  12 7\n#\n# Step 2: If doubling produces a number > 9, subtract 9:\n#   8  5  6  9  2  4  7  8  0  3  8  3  3  4  3  7\n#\n# Step 3: Sum all digits:\n#   8+5+6+9+2+4+7+8+0+3+8+3+3+4+3+7 = 80\n#\n# Step 4: If total mod 10 == 0, the number is valid\n#   80 % 10 == 0 -> Valid!",
+      "options": [
+        "The Luhn algorithm, which uses a checksum built into the card number to detect single-digit typos without any network call",
+        "A local database of valid card number prefixes that the browser checks against to verify the issuing bank",
+        "A lightweight HEAD request to the payment processor that validates the number faster than a full charge request",
+        "A regex pattern that matches the format rules for Visa, Mastercard, and Amex card numbers"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "The Luhn algorithm is a checksum formula that catches the vast majority of accidental typos in credit card numbers. It works entirely client-side with no network call. The last digit of every card number is a check digit calculated so that the Luhn formula produces a total divisible by 10. If you mistype a single digit, the checksum fails instantly. It catches about 95% of random single-digit errors and all single transposition errors. Regex can check format (length, prefix) but cannot verify the checksum. A network call defeats the purpose of instant validation. Bank prefix databases exist (BIN tables) but they verify the issuer, not whether the full number is correctly typed.",
+      "hint": "Think about what you can verify using only the digits themselves, with no external data or network access."
+    },
+    {
+      "id": "bloom-filter-concept",
+      "title": "Username Availability at Scale",
+      "description": "You need to check if a username is already taken across hundreds of millions of accounts without hitting the database for every keystroke.",
+      "situation": "You work on the signup flow for a social platform with 400 million registered usernames. As users type a desired username, you want to show a green check or red X in real time. Querying the database on every keystroke would generate tens of thousands of queries per second during peak registration hours. The team needs a data structure that can answer 'is this username taken?' in constant time and fits entirely in memory.",
+      "codeExample": "# Bloom Filter for username lookup:\n# Size: ~500 MB for 400M usernames at 1% false positive rate\n#\n# Insert 'alice_dev':\n#   hash1('alice_dev') -> bit 14209\n#   hash2('alice_dev') -> bit 87432\n#   hash3('alice_dev') -> bit 203847\n#   Set bits 14209, 87432, 203847 to 1\n#\n# Check 'bob_codes':\n#   hash1('bob_codes') -> bit 55123  (is it 1? yes)\n#   hash2('bob_codes') -> bit 87432  (is it 1? yes)\n#   hash3('bob_codes') -> bit 99201  (is it 1? no)\n#   -> At least one bit is 0 -> DEFINITELY NOT in the set\n#\n# Key property:\n#   'Possibly taken' -> confirm with DB query\n#   'Definitely available' -> no DB query needed",
+      "options": [
+        "A bloom filter - a probabilistic data structure that can definitively say 'not taken' but may have false positives for 'taken'",
+        "A hash table of all usernames loaded into memory, using consistent hashing to distribute across multiple app servers",
+        "A Redis sorted set with all usernames, using binary search to check availability in O(log n) time",
+        "A pre-computed trie of all username prefixes that returns availability predictions as the user types"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "A bloom filter is the go-to data structure for this problem. It uses a bit array and multiple hash functions to test set membership. The critical property: if any hash position is 0, the item is definitely not in the set (username is available, no DB query needed). If all positions are 1, the item might be in the set (possible false positive), so you fall back to a DB query. For 400 million usernames with a 1% false positive rate, the bloom filter needs roughly 500 MB of RAM, which is very manageable. A full hash table of 400M usernames would need tens of gigabytes. Redis sorted sets still require a network round-trip per check. A trie would use even more memory than a hash table for this many entries.",
+      "hint": "You need a data structure that trades a small chance of false positives for massive memory savings and O(1) lookups."
+    },
+    {
+      "id": "trie-autocomplete",
+      "title": "Autocomplete Search Suggestions",
+      "description": "You need to understand which data structure powers the instant dropdown suggestions that appear as you type in a search bar.",
+      "situation": "You are building an autocomplete feature for a search bar on a documentation site with 50,000 page titles. When the user types 'kub', the dropdown should instantly show 'Kubernetes', 'Kubernetes Pods', 'Kubelet Configuration', etc. The suggestions must appear within 10ms. A naive approach of scanning all 50,000 titles with a string prefix match takes too long when the prefix is short (like 'k'), returning thousands of candidates.",
+      "codeExample": "# Trie structure for autocomplete:\n#\n#           (root)\n#          /     \\\n#        k        d\n#        |         \\\n#        u          n\n#        |           \\\n#        b            s\n#       / \\\n#      e    l\n#      |    |\n#   rnetes  et  <- 'kubelet'\n#      |\n# 'kubernetes'\n#\n# Lookup 'kub':\n#   1. Walk: root -> k -> u -> b  (3 steps)\n#   2. Collect all leaf nodes below 'b'\n#   3. Return ranked results\n#   Time: O(prefix_length + results)",
+      "options": [
+        "A trie (prefix tree) that organizes strings by shared prefixes, allowing you to find all matches by walking the tree to the prefix node",
+        "An inverted index that maps every possible substring to a list of matching documents",
+        "A hash map with every possible prefix as a key and pre-computed result lists as values",
+        "A B-tree index on the titles column, using a SQL LIKE query with a prefix wildcard"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "A trie (also called a prefix tree) is the classic data structure for autocomplete. Each node represents a character, and paths from root to leaf spell out complete strings. To find all completions for 'kub', you walk the tree in 3 steps to reach the 'b' node, then collect all descendants. The time complexity is O(prefix_length + number_of_results), which is independent of the total dataset size. An inverted index of all substrings would use enormous memory (every substring of every title). Pre-computing all prefix results in a hash map works but uses a lot of memory and is hard to update. SQL LIKE queries with short prefixes are slow because they scan too many rows, even with a B-tree index.",
+      "hint": "Think about a tree structure where characters form the edges, and shared prefixes share the same path from the root."
+    },
+    {
+      "id": "url-shortener-design",
+      "title": "URL Shortener Redirect Speed",
+      "description": "You need to design a URL shortener that redirects users in under 5ms, even with billions of stored URLs.",
+      "situation": "Your company runs a link shortener handling 50,000 redirects per second. Each short URL (like sho.rt/a3Bf9x) must resolve to the original long URL as fast as possible. The database has 8 billion URL mappings. Reading from the database takes 5-15ms, but most redirects go to a small set of popular links (the top 1% of links account for 80% of traffic). You need to bring the p99 redirect latency under 5ms.",
+      "codeExample": "# Base62 encoding for short URL generation:\n# Characters: [0-9a-zA-Z] = 62 chars\n# 6 chars = 62^6 = 56.8 billion combinations\n#\n# ID: 1234567890\n# Base62: 1234567890 -> '1LY7VK'\n#\n# Redirect flow:\n#   GET /a3Bf9x\n#   1. Check in-memory cache (LRU, ~10M entries)\n#      -> HIT: return 301 redirect (~0.5ms)\n#      -> MISS: continue\n#   2. Check Redis cache\n#      -> HIT: return 301, promote to memory cache (~2ms)\n#      -> MISS: continue\n#   3. Query database\n#      -> Return 301, populate both caches (~10ms)\n#\n# Cache hit rate: ~99.2% (memory + Redis combined)",
+      "options": [
+        "Use a hash table with consistent hashing to distribute all 8 billion URLs across application servers, keeping everything in memory",
+        "Use Base62 encoding to generate short codes from sequential IDs, combined with a multi-layer cache (in-memory LRU + Redis) in front of the database",
+        "Store all mappings in a distributed key-value store like DynamoDB with global tables for sub-5ms reads from any region",
+        "Pre-compute redirects as static files served by a CDN, regenerating the files hourly"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The standard URL shortener design uses Base62 encoding to convert a numeric ID into a compact alphanumeric string (6 characters give you 56.8 billion possible URLs). The speed comes from multi-layer caching. An in-memory LRU cache on each app server handles the hottest links in sub-millisecond time. Redis serves as a shared second-layer cache for warm links. The database is only hit for cold links that nobody has accessed recently. With the 80/20 distribution described, the combined cache hit rate exceeds 99%, meaning fewer than 1% of requests ever touch the database. Keeping all 8 billion URLs in memory would require terabytes of RAM. DynamoDB global tables add complexity and still have higher latency than local memory. Static CDN files cannot work for billions of dynamic URLs that are created continuously.",
+      "hint": "When a small percentage of links gets most of the traffic, what strategy lets you serve those fast while still handling the long tail?"
+    },
+    {
+      "id": "websocket-typing-indicator",
+      "title": "Real-Time Typing Indicators",
+      "description": "You need to understand how messaging apps show 'User is typing...' with near-zero latency.",
+      "situation": "You are building a team chat application. When someone starts typing in a channel, other members should see a 'typing...' indicator within 200ms. The app currently uses REST API polling every 2 seconds to check for new messages, but a 2-second delay on typing indicators feels sluggish. The team needs a protocol that pushes typing events to connected clients instantly without polling.",
+      "codeExample": "# WebSocket typing indicator flow:\n#\n# 1. Client A opens WebSocket connection (persistent TCP):\n#    ws://chat.example.com/ws?channel=engineering\n#\n# 2. Client A starts typing:\n#    Client A -> Server: {\"type\": \"typing\", \"user\": \"alice\"}\n#\n# 3. Server broadcasts to channel subscribers:\n#    Server -> Client B: {\"type\": \"typing\", \"user\": \"alice\"}\n#    Server -> Client C: {\"type\": \"typing\", \"user\": \"alice\"}\n#\n# 4. Client A stops typing (3-second timeout):\n#    Server -> Client B: {\"type\": \"stop_typing\", \"user\": \"alice\"}\n#\n# Latency: ~50ms (no HTTP overhead, no polling delay)\n# Connection: persistent, full-duplex",
+      "options": [
+        "Server-Sent Events (SSE) with a dedicated endpoint that streams typing events to each client as they occur",
+        "WebSocket connections that maintain a persistent full-duplex channel, allowing the server to push typing events to subscribers instantly",
+        "HTTP long polling where the client holds an open request and the server responds only when a typing event occurs",
+        "gRPC bidirectional streaming over HTTP/2, using protocol buffers for efficient typing event serialization"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "WebSockets are the standard choice for typing indicators in chat apps. They provide a persistent, full-duplex TCP connection between client and server. Once established, either side can send messages at any time with minimal overhead (just a 2-byte frame header vs. hundreds of bytes for HTTP headers). When Alice types, her client sends a small JSON frame to the server, which broadcasts it to all channel members over their existing WebSocket connections. The total latency is typically under 50ms. SSE is one-directional (server to client only), so the typing event from the client would still need a separate HTTP request. Long polling has higher latency because each event requires a new HTTP response/request cycle. gRPC streaming works but is uncommon in browser-based chat apps due to limited browser support for gRPC.",
+      "hint": "You need data flowing in both directions - from the typist to the server and from the server to the viewers - on a single persistent connection."
+    },
+    {
+      "id": "cdn-anycast-routing",
+      "title": "CDN Edge Server Selection",
+      "description": "You need to understand how a CDN routes a user's request to the nearest edge server without a centralized routing service.",
+      "situation": "Your company serves static assets (images, CSS, JS) through a CDN with 300 edge locations worldwide. A user in Tokyo requests an image. Without any special routing, the DNS for your CDN domain resolves to a single IP address pointing to your origin server in Virginia, adding 200ms of round-trip latency. You need every user to automatically reach the closest edge server. The networking team mentions anycast as the solution.",
+      "codeExample": "# Anycast routing for CDN:\n#\n# Traditional unicast: 1 IP = 1 server\n#   cdn.example.com -> 203.0.113.50 (Virginia)\n#   User in Tokyo -> 200ms RTT to Virginia\n#\n# Anycast: 1 IP = 300 servers\n#   cdn.example.com -> 198.51.100.1 (same IP, all 300 PoPs)\n#   BGP routing sends packets to the nearest PoP\n#\n#   User in Tokyo -> Tokyo PoP (5ms RTT)\n#   User in London -> London PoP (3ms RTT)\n#   User in Sao Paulo -> Sao Paulo PoP (8ms RTT)\n#\n# How it works:\n#   1. All 300 edge servers announce the SAME IP prefix via BGP\n#   2. Internet routers pick the shortest AS path\n#   3. User traffic naturally flows to the closest PoP\n#   4. If a PoP goes down, BGP withdraws the route\n#      -> traffic shifts to next-closest PoP automatically",
+      "options": [
+        "GeoDNS resolves the CDN domain to different IP addresses based on the client's geographic location derived from their DNS resolver IP",
+        "Anycast routing where all edge servers announce the same IP address via BGP, and internet routing protocols deliver packets to the topologically nearest server",
+        "A centralized load balancer that inspects the client's source IP, determines their region, and proxies the request to the nearest edge server",
+        "HTTP redirect chains where the origin server responds with a 302 redirect to the nearest edge URL based on the client's IP geolocation"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Anycast is the primary routing mechanism used by major CDNs (Cloudflare, AWS CloudFront, Fastly). Every edge server in the network advertises the same IP address prefix via BGP. When a user sends a packet to that IP, the internet's BGP routing tables direct it to the topologically closest server, which is typically also the geographically closest. This happens at the network layer with zero application involvement. If an edge server fails, it stops announcing the BGP route, and traffic automatically shifts to the next closest location within seconds. GeoDNS is a complementary technique but is less precise because it relies on the DNS resolver's location, not the client's. A centralized load balancer would be a single point of failure and add latency. HTTP redirects add an extra round trip before the user gets their content.",
+      "hint": "Think about how routing works at the network layer. What if multiple servers could share the same IP address and let the network decide which one receives each packet?"
+    },
+    {
+      "id": "cdn-edge-caching",
+      "title": "Edge Cache Hit Optimization",
+      "description": "You need to maximize the cache hit rate at CDN edge servers for a media-heavy website.",
+      "situation": "Your news website serves 2 million unique images. After enabling a CDN, you expected a big performance boost, but your cache hit rate is only 35%. Investigation reveals that each edge PoP has limited storage and your images have low individual popularity - most images are viewed only a few times before being evicted from the edge cache. The CDN provider suggests a tiered caching architecture to improve hit rates without increasing edge storage.",
+      "codeExample": "# Two-tier CDN caching:\n#\n# Without tiered caching:\n#   User -> Edge PoP (MISS) -> Origin (slow)\n#   Each of 300 PoPs maintains its own cache\n#   Same image fetched from origin 300 times\n#\n# With tiered caching (shield / mid-tier):\n#   User -> Edge PoP (MISS) -> Regional Shield (HIT) -> done\n#   User -> Edge PoP (MISS) -> Regional Shield (MISS) -> Origin\n#\n#   300 edge PoPs -> 8 regional shields -> 1 origin\n#   Image fetched from origin at most 8 times (once per region)\n#\n# Cache-Control header strategy:\n#   Images:     Cache-Control: public, max-age=86400\n#   HTML:       Cache-Control: public, max-age=60, s-maxage=300\n#   API:        Cache-Control: private, no-store\n#              (s-maxage = CDN cache time, separate from browser)",
+      "options": [
+        "Increase the TTL on all assets to 30 days so images stay cached longer at each edge PoP",
+        "Use origin shield (tiered caching) to add a regional mid-tier cache between edge PoPs and the origin, reducing origin fetches and improving aggregate hit rates",
+        "Pre-warm all 2 million images to every edge PoP using a background job that requests each URL from each location",
+        "Switch to a pull-through cache architecture where edge servers proxy directly to the origin with no caching, relying on HTTP keep-alive for speed"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Origin shield (also called tiered caching or mid-tier caching) adds a caching layer between the edge PoPs and your origin server. Instead of 300 edge PoPs each independently fetching images from the origin, requests from a region funnel through a single regional shield node. That shield has a much larger effective cache because it aggregates traffic from dozens of edge PoPs. If an image is popular in Asia, the Tokyo shield caches it once and serves all Asian edge PoPs. This collapses cache misses dramatically. Increasing TTL helps but does not solve the problem of low per-PoP popularity - the images are evicted due to limited storage, not expired TTLs. Pre-warming 2 million images to 300 PoPs means 600 million requests, which is impractical and wasteful. Disabling caching entirely defeats the purpose of a CDN.",
+      "hint": "If 300 edge servers each independently miss on the same image, is there a way to reduce that to a smaller number of origin fetches?"
+    },
+    {
+      "id": "dns-caching-layers",
+      "title": "DNS Resolution Speed",
+      "description": "You need to understand why most DNS lookups resolve in under 1ms despite the hierarchical nature of the DNS system.",
+      "situation": "A junior engineer on your team is confused about DNS performance. She points out that resolving example.com requires contacting the root nameserver, then the .com TLD server, then the authoritative nameserver - at least three network round trips. Yet when she runs dig example.com, the response comes back in 0.3ms. She asks you to explain where the caching happens and why DNS feels instant for most requests.",
+      "codeExample": "# DNS caching layers (from fastest to slowest):\n#\n# Layer 1: Browser cache\n#   Chrome caches DNS for up to 60 seconds\n#   Lookup time: ~0ms (in-process memory)\n#\n# Layer 2: OS resolver cache\n#   Linux: systemd-resolved, nscd\n#   macOS: mDNSResponder\n#   Windows: DNS Client service\n#   Lookup time: ~0.1ms (local IPC)\n#\n# Layer 3: Router / home gateway cache\n#   Most home routers run a caching DNS forwarder\n#   Lookup time: ~1ms (LAN hop)\n#\n# Layer 4: ISP recursive resolver\n#   Or public resolver: 8.8.8.8, 1.1.1.1\n#   Caches responses for thousands of users\n#   Lookup time: ~5-20ms (network hop)\n#\n# Layer 5: Full recursive resolution\n#   Root -> TLD -> Authoritative\n#   Only happens on cold cache across all layers\n#   Lookup time: ~50-200ms (3+ network hops)\n#\n# Typical TTL: 300s (5 min) to 86400s (24 hours)\n# Cache hit rate at ISP resolver: ~90%+",
+      "options": [
+        "DNS is fast because modern resolvers use UDP instead of TCP, and UDP packets are processed faster by network hardware",
+        "Multiple caching layers - browser, OS, router, and ISP resolver - mean that full recursive lookups rarely happen, and most queries are answered from a nearby cache",
+        "DNS uses anycast so the root and TLD nameservers are always located within a few milliseconds of any user",
+        "Modern DNS resolvers prefetch records before they expire, so there is never a cache miss during normal browsing"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "DNS performance comes from aggressive caching at every layer of the resolution path. The browser caches recent lookups for 60 seconds or more. The OS maintains its own resolver cache. Home routers typically cache DNS responses for all devices on the network. The ISP's recursive resolver caches results shared across thousands of subscribers, giving it a very high hit rate. By the time a query reaches the ISP resolver, the chance of needing a full recursive lookup (root -> TLD -> authoritative) is small. When it does happen, it takes 50-200ms, but the result is cached for the duration of the TTL (often 5 minutes to 24 hours). UDP helps with speed, but the primary reason DNS feels instant is caching, not protocol choice. Anycast is used by root servers but does not eliminate the multi-hop resolution process. Prefetching exists in some resolvers but is not the main reason for fast lookups.",
+      "hint": "Count how many places between your browser and the authoritative nameserver could already have the answer stored."
+    },
+    {
+      "id": "load-balancer-health-checks",
+      "title": "Load Balancer Health Check Design",
+      "description": "You need to configure health checks that remove unhealthy backends quickly without causing false positives.",
+      "situation": "Your application runs behind an Nginx load balancer with 10 backend servers. Last night, one backend's database connection pool was exhausted, causing it to return 500 errors. The load balancer kept sending traffic to it for 5 minutes because health checks were only pinging the / endpoint, which returned 200 even though the app could not process real requests. You need to design health checks that detect this kind of failure.",
+      "codeExample": "# Shallow health check (what you have now):\nGET /healthz -> 200 OK  # just checks if the process is alive\n\n# Deep health check (what you need):\nGET /health/ready -> checks:\n  - Database connection: SELECT 1\n  - Redis connection: PING\n  - Disk space: > 500MB free\n  - Memory: < 90% used\n  Response: 200 if ALL pass, 503 if ANY fail\n\n# Nginx upstream health check config:\nupstream backend {\n    server 10.0.1.1:8080;\n    server 10.0.1.2:8080;\n    # ...\n}\n\n# Check every 5 seconds, mark unhealthy after 3 failures,\n# mark healthy again after 2 successes\n# interval=5s fails=3 passes=2",
+      "options": [
+        "Use TCP-level health checks that verify the port is open, since they have lower overhead than HTTP checks",
+        "Implement a deep health check endpoint that verifies database, cache, and resource availability - not just process liveness - and configure the load balancer to check it with a failure threshold",
+        "Monitor error rates from real user traffic and remove backends that exceed a 5% error threshold",
+        "Run a separate monitoring agent on each backend that kills the process if dependencies are unreachable, relying on process restarts"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A deep health check (also called a readiness check) verifies that the application can actually serve requests, not just that the process is running. It tests critical dependencies like the database connection pool, cache connectivity, and system resources. The load balancer sends this check at a regular interval (e.g., every 5 seconds) and removes a backend after a configurable number of consecutive failures (e.g., 3 failures = 15 seconds to detect). The passes threshold prevents flapping when a backend recovers. TCP checks only confirm the port is open, which would have missed the database pool exhaustion scenario. Real-traffic error monitoring works but reacts slower because you need enough requests to calculate a reliable error rate. Killing the process is heavy-handed and causes connection drops for in-flight requests.",
+      "hint": "The problem was that the health check did not test what actually broke. What should the check verify to catch dependency failures?"
+    },
+    {
+      "id": "bloom-filter-false-positives",
+      "title": "Bloom Filter Tuning Trade-offs",
+      "description": "You need to configure a bloom filter's parameters to balance memory usage against false positive rates for a production system.",
+      "situation": "Your team deployed the bloom filter for username checks, but the false positive rate is 8%, meaning 8% of available usernames are incorrectly flagged as 'possibly taken,' triggering unnecessary database queries. The product team complains that users see brief loading spinners too often when typing available names. You need to reduce the false positive rate to under 1% while keeping the bloom filter in memory on a server with 4 GB of RAM available for this purpose.",
+      "codeExample": "# Bloom filter math:\n#\n# n = number of items (400 million usernames)\n# m = number of bits in the filter\n# k = number of hash functions\n# p = false positive probability\n#\n# Formula: m = -(n * ln(p)) / (ln(2))^2\n#\n# Current config (p = 8%, too high):\n#   m = -(400M * ln(0.08)) / (ln(2))^2\n#   m = ~1.2 billion bits = ~150 MB\n#   k = (m/n) * ln(2) = ~3 hash functions\n#\n# Target config (p = 1%):\n#   m = -(400M * ln(0.01)) / (ln(2))^2\n#   m = ~3.83 billion bits = ~478 MB\n#   k = (m/n) * ln(2) = ~7 hash functions\n#\n# Target config (p = 0.1%):\n#   m = -(400M * ln(0.001)) / (ln(2))^2\n#   m = ~5.75 billion bits = ~718 MB\n#   k = ~10 hash functions",
+      "options": [
+        "Double the number of hash functions from 3 to 6 while keeping the bit array the same size, since more hashes reduce false positives",
+        "Increase the bit array from 1.2 billion to 3.83 billion bits (~478 MB) and use 7 hash functions to achieve a 1% false positive rate",
+        "Replace the bloom filter with a cuckoo filter, which eliminates false positives entirely while using the same amount of memory",
+        "Partition the bloom filter by first character of the username so each partition has fewer items and a lower false positive rate"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "The false positive rate of a bloom filter depends on both the bit array size (m) and the number of hash functions (k), relative to the number of items (n). Simply adding more hash functions without increasing the bit array actually makes things worse - more bits get set to 1, increasing collisions. The correct approach is to increase the bit array size. For 400 million items at a 1% false positive rate, you need approximately 3.83 billion bits (478 MB), well within the 4 GB budget. The optimal number of hash functions is k = (m/n) * ln(2), which works out to about 7. Cuckoo filters do support deletion (which bloom filters do not) and can be more space-efficient, but they do not eliminate false positives. Partitioning by first character does not change the overall false positive rate because the formula depends on the ratio m/n, not the absolute values.",
+      "hint": "The false positive rate depends on how full the bit array is. If too many bits are set to 1, everything looks like a match."
+    },
+    {
+      "id": "websocket-presence-scaling",
+      "title": "Scaling WebSocket Presence Across Servers",
+      "description": "You need to design a system where typing indicators work correctly when channel members are connected to different WebSocket servers.",
+      "situation": "Your chat app has grown to 500,000 concurrent WebSocket connections. A single server can handle about 50,000 connections, so you now run 12 WebSocket servers behind a load balancer. The problem: when Alice is connected to Server 3 and starts typing, only users on Server 3 see the typing indicator. Users on Servers 1, 2, and 4-12 see nothing because the broadcast is local to Server 3. You need cross-server event delivery.",
+      "codeExample": "# Problem: local broadcast only reaches one server\n#\n# Server 3 (Alice's connection):\n#   Alice types -> broadcast to Server 3 clients -> OK\n#\n# Server 7 (Bob's connection):\n#   Bob is in the same channel but sees nothing\n#\n# Solution: pub/sub backbone\n#\n# Redis Pub/Sub:\n#   Server 3: Alice types\n#   Server 3: PUBLISH channel:engineering:typing '{\"user\":\"alice\"}'\n#   Server 7: SUBSCRIBE channel:engineering:typing\n#   Server 7: receives event -> broadcasts to local clients\n#\n# All 12 servers subscribe to channels they have members in\n# Redis handles fan-out between servers\n# Each server handles fan-out to its own clients",
+      "options": [
+        "Use sticky sessions to ensure all members of a channel are routed to the same WebSocket server",
+        "Store typing state in a shared database and have each server poll every 200ms for changes",
+        "Use a pub/sub system like Redis Pub/Sub as a message backbone where all servers subscribe to channel events and broadcast locally",
+        "Use WebSocket server-to-server direct connections where each server maintains TCP connections to all other servers"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Redis Pub/Sub (or similar systems like NATS or Kafka) is the standard solution for cross-server WebSocket event delivery. Each WebSocket server subscribes to Redis channels corresponding to the chat channels it has active members in. When Alice types on Server 3, that server publishes the event to Redis, which fans it out to all subscribing servers. Each server then broadcasts locally to its connected clients. This decouples servers cleanly. Sticky sessions by channel do not work because a single user might be in dozens of channels, and channels have members scattered across servers. Database polling at 200ms intervals introduces unacceptable latency and database load. Direct server-to-server mesh connections create O(n^2) connections and become unmanageable as you scale beyond a handful of servers.",
+      "hint": "You need a message broker that sits between all WebSocket servers and delivers events from any server to every other server interested in that channel."
+    },
+    {
+      "id": "lb-algorithm-selection",
+      "title": "Load Balancer Algorithm for Mixed Workloads",
+      "description": "You need to select the right load balancing algorithm for a service with highly variable request processing times.",
+      "situation": "Your API gateway load-balances across 6 backend servers. Most requests (image metadata lookups) complete in 5ms, but about 10% of requests (image processing jobs) take 2-3 seconds. With round-robin balancing, you notice that some servers accumulate slow requests and their response times spike while other servers sit idle. During peak traffic last Tuesday, one server had 15 in-flight image processing requests while another had zero, causing timeout errors for users routed to the overloaded server.",
+      "codeExample": "# Round-robin problem with mixed workloads:\n#\n# Time 0: All servers at 0 active requests\n# Server 1: gets 3 slow (image processing) requests\n# Server 2: gets 3 fast (metadata) requests\n# Server 3: gets 2 slow + 1 fast request\n#\n# After 100ms:\n# Server 1: 3 active (all still processing)\n# Server 2: 0 active (all completed)\n# Server 3: 2 active (slow ones still running)\n#\n# Round-robin sends next request to Server 1 (worst choice!)\n#\n# Least-connections approach:\n# Server 1: 3 active -> skip\n# Server 2: 0 active -> PICK THIS ONE\n# Server 3: 2 active -> skip\n#\n# Nginx config:\n# upstream api_backend {\n#     least_conn;\n#     server 10.0.1.1:8080;\n#     server 10.0.1.2:8080;\n#     server 10.0.1.3:8080;\n# }",
+      "options": [
+        "Weighted round-robin with higher weights assigned to servers with more CPU cores",
+        "Random selection, which statistically distributes load evenly across all servers",
+        "Least-connections algorithm, which routes each new request to the server with the fewest active in-flight requests",
+        "IP hash, which ensures the same client always reaches the same server for connection affinity"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Least-connections is the right algorithm when request durations vary significantly. It tracks the number of active (in-flight) requests per backend server and routes new requests to the server currently handling the fewest. This naturally avoids piling up slow requests on one server. When Server 1 has 3 active slow requests, new traffic goes to Server 2 (which has 0 active). This self-balances regardless of whether requests take 5ms or 3 seconds. Round-robin (even weighted) ignores current server load and can overload servers that happen to receive a batch of slow requests. Random selection has the same problem. IP hash provides session affinity but does nothing for load distribution across mixed workloads. Some advanced load balancers also support 'least latency' or 'peak EWMA' algorithms that consider response time in addition to connection count.",
+      "hint": "Round-robin treats all requests as equal. You need an algorithm that accounts for the fact that some requests hold onto server resources much longer than others."
+    },
+    {
+      "id": "dns-ttl-migration",
+      "title": "DNS TTL Strategy for Zero-Downtime Migration",
+      "description": "You need to plan a DNS change for a server migration without causing downtime due to stale cached records.",
+      "situation": "Your team is migrating the production API from an on-premise data center (IP 10.20.30.40) to AWS (IP 54.200.100.50). The current DNS record for api.example.com has a TTL of 86400 seconds (24 hours). If you update the DNS record right when the migration happens, some clients will still resolve the old IP for up to 24 hours because their resolvers cached the previous answer. The old servers will be decommissioned 2 hours after migration. You need a plan to minimize the window where clients hit a dead IP.",
+      "codeExample": "# DNS migration timeline:\n#\n# Current state:\n#   api.example.com  A  10.20.30.40  TTL=86400 (24h)\n#\n# Phase 1: Lower TTL (48 hours before migration)\n#   api.example.com  A  10.20.30.40  TTL=60 (1 min)\n#   Wait 24h+ for old cached records to expire\n#\n# Phase 2: Update the record (migration day)\n#   api.example.com  A  54.200.100.50  TTL=60\n#   All resolvers pick up new IP within ~60 seconds\n#\n# Phase 3: Raise TTL back (after confirming success)\n#   api.example.com  A  54.200.100.50  TTL=3600 (1h)\n#\n# $ dig +short api.example.com\n# 54.200.100.50",
+      "options": [
+        "Update the DNS record and the old server simultaneously, relying on clients to retry failed connections to the new IP automatically",
+        "Lower the DNS TTL to 60 seconds at least 24 hours before the migration, then update the A record on migration day so all caches refresh within a minute",
+        "Add the new IP as a second A record so clients can reach either server, then remove the old record after migration",
+        "Use a CNAME record pointing to a load balancer hostname so you only need to update the load balancer target, not the DNS"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The standard approach for DNS migrations is the TTL step-down pattern. You lower the TTL well in advance (at least as long as the current TTL, so all existing cached entries expire under the old TTL). By the time you change the IP, all resolvers are caching with the short TTL and will pick up the new address within 60 seconds. After confirming the migration is successful, you raise the TTL back to a reasonable value to reduce DNS query volume. Simply updating the record without lowering TTL first means some clients cache the old IP for up to 24 hours. Adding dual A records causes split traffic, which is unpredictable and hard to monitor. A CNAME to a load balancer is a good long-term architecture, but it does not solve the immediate problem because the CNAME itself has a TTL that must be managed the same way.",
+      "hint": "You cannot force remote DNS resolvers to refresh their cache. But you can control how long they are allowed to cache your records before the change happens."
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "id": "system-design-dns-resolution",
+  "slug": "system-design-dns-resolution",
+  "title": "DNS Resolution When You Type a URL",
+  "question": "Walk me through what happens when you type a URL and press Enter, focusing specifically on the DNS resolution process.",
+  "answer": "When you type 'example.com' and press Enter, the browser first checks its own DNS cache. If there is no cached result, it asks the operating system's stub resolver, which checks the OS-level cache (and on Linux, potentially systemd-resolved or nscd). If still unresolved, the query goes to your configured recursive resolver, usually provided by your ISP or a public resolver like 8.8.8.8 or 1.1.1.1. The recursive resolver checks its own cache, and if it has nothing, it starts the iterative resolution process: first it asks a root name server (one of 13 root server clusters, like a.root-servers.net) which responds with the TLD name servers for '.com'. Then it asks a '.com' TLD server, which responds with the authoritative name servers for 'example.com'. Finally, it asks the authoritative server, which returns the actual IP address (e.g., 93.184.216.34). The recursive resolver caches the answer according to the TTL and returns it to your machine. The entire process, when fully uncached, involves 4 network round-trips but typically completes in 20-120ms. Most queries hit a cache at some level and resolve in under 5ms.",
+  "explanation": "DNS is the entry point for virtually every internet interaction, yet many developers treat it as a black box. This question separates candidates who understand the layered architecture of the internet from those who just know 'DNS translates names to IPs.' It also opens the door to discussions about caching behavior, TTLs, security (DNS spoofing, DNSSEC), and how DNS-based load balancing and failover work. For a junior candidate, the interviewer wants to see awareness of the recursive vs. iterative resolution distinction and the caching hierarchy.",
+  "category": "System Design",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "system-design",
+    "dns",
+    "networking",
+    "fundamentals",
+    "internet"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Tracing DNS resolution step by step",
+      "code": "# Full iterative trace from root servers down\n# This shows every step the recursive resolver takes\ndig +trace example.com\n\n# Output (simplified):\n# .                  IN NS   a.root-servers.net.    <- Step 1: Root\n# com.               IN NS   a.gtld-servers.net.    <- Step 2: TLD\n# example.com.       IN NS   ns1.example.com.       <- Step 3: Authoritative\n# example.com.       IN A    93.184.216.34          <- Step 4: Answer\n\n# Check which resolver you are using\ndig whoami.akamai.net\n\n# See the TTL (time-to-live) for a domain\n# The TTL tells caches how long to keep this answer\ndig example.com | grep -E 'ANSWER SECTION' -A 2\n# example.com.    3600  IN  A  93.184.216.34\n#                 ^^ TTL = 3600 seconds (1 hour)\n\n# Query a specific DNS server directly\ndig @8.8.8.8 example.com\n\n# Check all the DNS record types for a domain\ndig example.com ANY +noall +answer"
+    },
+    {
+      "language": "python",
+      "label": "Simulating the DNS resolution hierarchy",
+      "code": "import dns.resolver  # pip install dnspython\nimport time\n\ndef trace_dns(domain: str):\n    \"\"\"Walk through DNS resolution and measure timing.\"\"\"\n    print(f\"Resolving: {domain}\\n\")\n\n    # Step 1: Check what the default resolver returns\n    start = time.time()\n    answers = dns.resolver.resolve(domain, 'A')\n    elapsed = (time.time() - start) * 1000\n\n    for rdata in answers:\n        print(f\"IP Address: {rdata.address}\")\n    print(f\"Resolution time: {elapsed:.1f}ms\")\n    print(f\"TTL: {answers.rrset.ttl} seconds\")\n\n    # Step 2: Check NS records (who is authoritative)\n    ns_answers = dns.resolver.resolve(domain, 'NS')\n    print(f\"\\nAuthoritative name servers:\")\n    for ns in ns_answers:\n        print(f\"  {ns.target}\")\n\n    # Step 3: Resolve again to show caching effect\n    start = time.time()\n    dns.resolver.resolve(domain, 'A')\n    cached_elapsed = (time.time() - start) * 1000\n    print(f\"\\nSecond query (cached): {cached_elapsed:.1f}ms\")\n\ntrace_dns(\"example.com\")\n\n# Typical output:\n# IP Address: 93.184.216.34\n# Resolution time: 45.2ms\n# TTL: 3600 seconds\n#\n# Authoritative name servers:\n#   ns1.example.com.\n#   ns2.example.com.\n#\n# Second query (cached): 0.3ms"
+    },
+    {
+      "language": "text",
+      "label": "DNS resolution flow diagram",
+      "code": "Browser Cache -> OS Cache -> Recursive Resolver Cache -> [Full Resolution]\n\nFull Resolution (iterative, only when all caches miss):\n\n  Your Machine           Recursive Resolver        Root Server\n  -----------           ------------------        -----------\n  \"example.com?\" -----> checks cache... MISS\n                        \"example.com?\" ---------> \"Go ask .com TLD\"\n                                                   (referral)\n\n                        .com TLD Server\n                        ---------------\n                        \"example.com?\" ---------> \"Go ask ns1.example.com\"\n                                                   (referral)\n\n                        Authoritative Server\n                        --------------------\n                        \"example.com?\" ---------> \"93.184.216.34, TTL=3600\"\n                                                   (final answer)\n\n                        Caches answer (TTL=3600)\n  <---- 93.184.216.34 --\n  Caches answer\n  Connects to 93.184.216.34"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens if the authoritative DNS server is down? How does redundancy work in DNS?",
+    "How does DNS-based load balancing work, and what are its limitations?",
+    "What is a TTL, and what are the tradeoffs of setting it very low vs. very high?",
+    "What is DNSSEC, and what problem does it solve?",
+    "How does DNS prefetching in browsers improve page load performance?"
+  ],
+  "commonMistakes": [
+    "Describing DNS as a single lookup rather than a multi-step hierarchical process",
+    "Not mentioning caching at any level, which is what makes DNS fast in practice",
+    "Confusing the recursive resolver with the authoritative server",
+    "Forgetting that DNS uses UDP by default (port 53), not TCP, for standard queries",
+    "Skipping the root server step and jumping straight to the authoritative server",
+    "Not knowing that there are 13 root server clusters (not 13 individual machines)"
+  ],
+  "relatedTopics": [
+    "networking-fundamentals",
+    "dns-records",
+    "load-balancing",
+    "cdn-routing"
+  ]
+}
