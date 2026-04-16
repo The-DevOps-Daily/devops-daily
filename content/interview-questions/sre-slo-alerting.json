@@ -1,0 +1,36 @@
+{
+  "id": "sre-slo-alerting",
+  "slug": "sre-slo-alerting",
+  "title": "SLO-Based Alerting and Burn Rates",
+  "question": "Traditional alerting fires when error rate crosses a static threshold, like 'alert if errors > 1%'. What's wrong with that approach, and how would you set up SLO-based alerting instead?",
+  "answer": "Static threshold alerts have two problems. First, they fire too often on things that don't matter. A brief 2% error spike for 30 seconds won't affect your monthly SLO at all, but a static alert pages someone at 3am for it. Second, they miss slow burns. If your error rate sits at 0.5% for days, that might look fine against a 1% threshold, but it's quietly eating your 99.9% error budget.\n\nSLO-based alerting fixes both problems by alerting on burn rate -- how fast you're consuming your error budget relative to your window.\n\nThe approach uses multi-window, multi-burn-rate alerts. You set up two kinds:\n\n1. A fast-burn alert for acute incidents: \"At this rate, you'll exhaust your entire 30-day error budget in 2 hours.\" This is a 36x burn rate (burning 36 times faster than sustainable). You check this over a short window (5 minutes) and a longer confirmation window (1 hour). This pages someone immediately.\n\n2. A slow-burn alert for gradual degradation: \"At this rate, you'll exhaust your budget in 3 days.\" This is a 10x burn rate, checked over a 30-minute short window and 6-hour long window. This creates a ticket, not a page.\n\nThe two-window check prevents false positives. The short window catches the current condition, while the long window confirms it's not just a blip. Both must be true before the alert fires.\n\nThis directly maps to Google's SRE book approach and it works well in practice because you only get paged for things that actually threaten your SLO.",
+  "explanation": "This is a strong mid-to-senior question because it tests whether the candidate has actually operated SLO-based systems or just read about them. The multi-window burn rate concept trips up a lot of people. Listen for whether they understand why two windows are needed (short window alone gives false positives, long window alone alerts too late). Candidates who have done this in practice will mention specific burn rate numbers and the tradeoff between alert sensitivity and noise.",
+  "category": "SRE",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": ["sre", "slos", "alerting", "burn-rate", "observability", "on-call"],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Prometheus alerting rules for multi-window burn rate",
+      "code": "groups:\n  - name: slo-burn-rate-alerts\n    rules:\n      # Fast burn: 36x burn rate -- pages immediately\n      # Will exhaust 30-day budget in ~2 hours\n      - alert: HighErrorBudgetBurn_Critical\n        expr: |\n          (\n            1 - (sum(rate(http_requests_total{service=\"checkout\", status!~\"5..\"}[5m]))\n            / sum(rate(http_requests_total{service=\"checkout\"}[5m])))\n          ) > (36 * 0.001)\n          and\n          (\n            1 - (sum(rate(http_requests_total{service=\"checkout\", status!~\"5..\"}[1h]))\n            / sum(rate(http_requests_total{service=\"checkout\"}[1h])))\n          ) > (36 * 0.001)\n        for: 2m\n        labels:\n          severity: critical\n        annotations:\n          summary: \"Checkout error budget burning fast (36x rate)\"\n          description: \"At current rate, 30-day error budget exhausts in ~2 hours.\"\n          runbook: \"https://runbooks.internal/slo-budget-burn\"\n\n      # Slow burn: 10x burn rate -- creates a ticket\n      # Will exhaust 30-day budget in ~3 days\n      - alert: HighErrorBudgetBurn_Warning\n        expr: |\n          (\n            1 - (sum(rate(http_requests_total{service=\"checkout\", status!~\"5..\"}[30m]))\n            / sum(rate(http_requests_total{service=\"checkout\"}[30m])))\n          ) > (10 * 0.001)\n          and\n          (\n            1 - (sum(rate(http_requests_total{service=\"checkout\", status!~\"5..\"}[6h]))\n            / sum(rate(http_requests_total{service=\"checkout\"}[6h])))\n          ) > (10 * 0.001)\n        for: 5m\n        labels:\n          severity: warning\n        annotations:\n          summary: \"Checkout error budget burn elevated (10x rate)\"\n          description: \"At current rate, 30-day error budget exhausts in ~3 days.\""
+    },
+    {
+      "language": "bash",
+      "label": "Calculate current burn rate from Prometheus",
+      "code": "# Query current 1-hour error rate\nERROR_RATE=$(curl -s 'http://prometheus:9090/api/v1/query' \\\n  --data-urlencode 'query=1 - (sum(rate(http_requests_total{service=\"checkout\", status!~\"5..\"}[1h])) / sum(rate(http_requests_total{service=\"checkout\"}[1h])))' \\\n  | jq -r '.data.result[0].value[1]')\n\n# Calculate burn rate relative to SLO budget\nSLO_BUDGET=0.001  # 1 - 0.999\nBURN_RATE=$(echo \"scale=2; $ERROR_RATE / $SLO_BUDGET\" | bc)\n\necho \"Current error rate: $ERROR_RATE\"\necho \"Burn rate: ${BURN_RATE}x\"\necho \"Time to budget exhaustion: $(echo \"scale=1; 720 / $BURN_RATE\" | bc) hours\"\n# Output:\n# Current error rate: 0.0035\n# Burn rate: 3.50x\n# Time to budget exhaustion: 205.7 hours"
+    }
+  ],
+  "followUpQuestions": [
+    "Why do you need both a short window and a long window? What goes wrong if you only use one?",
+    "How would you tune these burn rates for a service that has natural traffic spikes, like an e-commerce site during sales events?",
+    "What's the relationship between burn rate multiplier and the time to budget exhaustion? How do you pick the right multipliers?",
+    "How do you handle SLO alerting for services with very low traffic where statistical significance is a problem?"
+  ],
+  "commonMistakes": [
+    "Setting up SLO alerts but still keeping the old static threshold alerts running alongside them. This leads to alert fatigue because you get paged twice for the same incident from different systems.",
+    "Using only a single window for burn rate alerts. A short window alone gives false positives on brief spikes. A long window alone means you don't catch fast-moving incidents until significant budget is already gone.",
+    "Forgetting that burn rate alerts need enough request volume to be meaningful. For low-traffic services, a single failed request can show a 100x burn rate over a 5-minute window."
+  ],
+  "relatedTopics": ["sre-error-budget-management", "sre-slo-sli-sla-differences", "monitoring-alerting-strategies"]
+}

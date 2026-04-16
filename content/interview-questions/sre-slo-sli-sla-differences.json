@@ -1,0 +1,35 @@
+{
+  "id": "sre-slo-sli-sla-differences",
+  "slug": "sre-slo-sli-sla-differences",
+  "title": "SLO vs SLI vs SLA Differences",
+  "question": "Your team just launched a new API service. Your manager asks you to set up SLOs for it. Can you walk me through what SLOs, SLIs, and SLAs are, and how they relate to each other?",
+  "answer": "An SLI (Service Level Indicator) is a measurement of your service's behavior -- something you can actually observe and put a number on. For example, the percentage of HTTP requests that return in under 300ms, or the ratio of successful responses to total responses.\n\nAn SLO (Service Level Objective) is a target you set for an SLI. You're saying \"we want this SLI to meet this threshold over this time window.\" For example, \"99.9% of requests should succeed over a rolling 30-day window.\"\n\nAn SLA (Service Level Agreement) is a contract with your customers that says what happens if you miss your targets. It has business consequences -- refunds, credits, or penalties. Not every service needs an SLA, but every production service should have SLOs.\n\nThe relationship flows like this: you pick SLIs (what to measure), set SLOs (what target to hit), and if you make a promise to customers, that becomes an SLA. Your SLOs should always be tighter than your SLAs. If your SLA promises 99.9% availability, your internal SLO should be something like 99.95%. That gap gives you a buffer to catch problems before they become contract violations.",
+  "explanation": "This is a foundational SRE question. You're testing whether the candidate understands the relationship between these three concepts or just memorized definitions. Strong candidates will explain the hierarchy (SLI feeds SLO, SLO is stricter than SLA) and give concrete examples. Weak candidates mix up SLOs and SLAs or can't give real numbers.",
+  "category": "SRE",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": ["sre", "slos", "slis", "slas", "reliability"],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "SLO definition in a config file (OpenSLO format)",
+      "code": "apiVersion: openslo/v1\nkind: SLO\nmetadata:\n  name: api-availability\nspec:\n  service: payment-api\n  description: Payment API availability SLO\n  budgetingMethod: Occurrences\n  objectives:\n    - displayName: Availability\n      target: 0.999\n      op: gte\n  indicator:\n    metadata:\n      name: availability-ratio\n    spec:\n      ratioMetric:\n        good:\n          source: prometheus\n          queryType: promql\n          query: sum(rate(http_requests_total{status!~\"5..\"}[5m]))\n        total:\n          source: prometheus\n          queryType: promql\n          query: sum(rate(http_requests_total[5m]))"
+    },
+    {
+      "language": "bash",
+      "label": "Quick availability calculation from logs",
+      "code": "# Count total requests and errors in the last hour\ntotal=$(grep \"$(date -d '1 hour ago' '+%Y-%m-%d %H')\" access.log | wc -l)\nerrors=$(grep \"$(date -d '1 hour ago' '+%Y-%m-%d %H')\" access.log | grep ' 5[0-9][0-9] ' | wc -l)\n\n# Calculate availability\necho \"scale=6; ($total - $errors) / $total * 100\" | bc\n# Output: 99.972000"
+    }
+  ],
+  "followUpQuestions": [
+    "Why should your SLO always be stricter than your SLA?",
+    "Can you have SLOs without SLAs? When would you do that?",
+    "What happens if you set your SLO target too high, like 99.99% for an internal tool?"
+  ],
+  "commonMistakes": [
+    "Treating SLOs and SLAs as the same thing. SLAs are contracts with business consequences; SLOs are internal engineering targets.",
+    "Setting SLOs at 100%. No service should target 100% reliability -- it leaves zero room for deployments, maintenance, or any changes at all.",
+    "Picking SLIs that don't reflect user experience, like CPU usage instead of request latency or error rate."
+  ],
+  "relatedTopics": ["sre-error-budget-management", "sre-slo-alerting", "monitoring-basics"]
+}
