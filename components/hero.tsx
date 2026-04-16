@@ -6,24 +6,20 @@ import { getAllGuides } from '@/lib/guides';
 import { getActiveGames } from '@/lib/games';
 import { getAllQuizzes } from '@/lib/quiz-loader';
 import { getAllExercises } from '@/lib/exercises';
-import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { getAllChecklists } from '@/lib/checklists';
-import { getAllComparisons } from '@/lib/comparisons';
 
 export async function Hero() {
-  const [posts, guides, games, quizzes, exercises, flashcards, checklists, comparisons] = await Promise.all([
+  const [posts, guides, games, quizzes, exercises, checklists] = await Promise.all([
     getAllPosts(),
     getAllGuides(),
     getActiveGames(),
     getAllQuizzes(),
     getAllExercises(),
-    getAllFlashCardSets(),
     getAllChecklists(),
-    getAllComparisons(),
   ]);
 
   const latestPost = posts[0];
-  const totalContent = posts.length + guides.length + games.length + quizzes.length + exercises.length + flashcards.length + checklists.length + comparisons.length;
+  const totalContent = posts.length + guides.length + games.length + quizzes.length + exercises.length + checklists.length;
 
   return (
     <div className="pb-8">
@@ -100,7 +96,7 @@ export async function Hero() {
       </div>
 
       {/* Terminal-style stats block */}
-      <div className="mt-12 max-w-3xl relative z-10">
+      <div className="mt-12 max-w-2xl relative z-10">
         <div className="rounded-lg border border-border/80 bg-card overflow-hidden font-mono text-sm shadow-sm">
           {/* Terminal header */}
           <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b border-border/80">
@@ -117,38 +113,26 @@ export async function Hero() {
               <span className="text-green-500">$</span>
               <span className="text-muted-foreground">cat content-overview.txt</span>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-y-2 gap-x-4 pl-4 py-1">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-y-2 gap-x-4 pl-4 py-1">
               <Link href="/games" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
                 <span className="text-primary font-semibold">{games.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors text-xs"> games</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> simulators</span>
               </Link>
               <Link href="/quizzes" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
                 <span className="text-primary font-semibold">{quizzes.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors text-xs"> quizzes</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> quizzes</span>
               </Link>
               <Link href="/exercises" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
                 <span className="text-primary font-semibold">{exercises.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors text-xs"> exercises</span>
-              </Link>
-              <Link href="/flashcards" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
-                <span className="text-primary font-semibold">{flashcards.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors text-xs"> flashcards</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> exercises</span>
               </Link>
               <Link href="/checklists" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
                 <span className="text-primary font-semibold">{checklists.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors text-xs"> checklists</span>
-              </Link>
-              <Link href="/comparisons" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
-                <span className="text-primary font-semibold">{comparisons.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors text-xs"> compares</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> checklists</span>
               </Link>
               <Link href="/posts" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
                 <span className="text-primary font-semibold">{posts.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors text-xs"> posts</span>
-              </Link>
-              <Link href="/guides" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
-                <span className="text-primary font-semibold">{guides.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors text-xs"> guides</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> articles</span>
               </Link>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground/50">
