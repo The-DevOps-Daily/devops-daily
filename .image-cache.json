@@ -29,5 +29,13 @@
   "public/images/posts/claude-code-source-leak-what-devops-engineers-should-learn.svg": "0371f33827d2e8d6",
   "public/images/posts/react2shell-cve-2025-55182-nextjs-breach.svg": "83fbc9ec3e54916b",
   "public/images/posts/composer-command-injection-cve-2026.svg": "08f12985e5941b37",
-  "public/images/posts/how-does-it-work-so-fast.svg": "1a7f0893dd8f2702"
+  "public/images/posts/how-does-it-work-so-fast.svg": "1a7f0893dd8f2702",
+  "public/images/posts/cicd-pipeline-hardening-guide.svg": "67b26eb8a412ca56",
+  "public/images/posts/dependency-scanning-guide.svg": "8b0c73bfe75c06a7",
+  "public/images/posts/dast-integration-guide.svg": "34a98b29164c2edd",
+  "public/images/posts/secure-coding-practices-guide.svg": "756ee6548125fe7f",
+  "public/images/posts/secrets-management-guide.svg": "7113c86270154b12",
+  "public/images/posts/software-supply-chain-security.svg": "e931dc813716f8c6",
+  "public/images/posts/pre-commit-hooks-security-guide.svg": "efa86dbb204f8cb6",
+  "public/images/posts/security-focused-code-reviews.svg": "7d3c8432dd4feb7a"
 }

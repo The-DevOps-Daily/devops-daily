@@ -163,7 +163,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Code,
         priority: 'essential',
         estimatedHours: 25,
-        link: '/guides/secure-coding-practices',
+        link: '/posts/secure-coding-practices-guide',
       },
      {
        name: 'SAST Tools',
@@ -179,7 +179,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Scan,
         priority: 'essential',
         estimatedHours: 10,
-       link: '/guides/dependency-scanning',
+       link: '/posts/dependency-scanning-guide',
       },
       {
         name: 'Pre-commit Hooks',
@@ -187,7 +187,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: GitBranch,
         priority: 'important',
         estimatedHours: 8,
-        link: '/guides/pre-commit-hooks',
+        link: '/posts/pre-commit-hooks-security-guide',
       },
       {
         name: 'Code Review for Security',
@@ -195,7 +195,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Eye,
         priority: 'important',
         estimatedHours: 15,
-        link: '/guides/code-review-security',
+        link: '/posts/security-focused-code-reviews',
       },
     ],
     project: {
@@ -228,7 +228,7 @@ const milestones: DevSecOpsMilestone[] = [
       {
        name: 'Pipeline Hardening',
        description: 'Secure CI/CD configurations, runner isolation, and artifact signing',
-        link: '/guides/pipeline-hardening',
+        link: '/posts/cicd-pipeline-hardening-guide',
        icon: Workflow,
        priority: 'essential',
         estimatedHours: 20,
@@ -239,7 +239,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Key,
         priority: 'essential',
         estimatedHours: 25,
-        link: '/guides/secrets-management',
+        link: '/posts/secrets-management-guide',
       },
       {
         name: 'DAST Integration',
@@ -247,7 +247,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Bug,
         priority: 'important',
         estimatedHours: 20,
-        link: '/guides/dast-integration',
+        link: '/posts/dast-integration-guide',
       },
       {
         name: 'Supply Chain Security',
@@ -255,7 +255,7 @@ const milestones: DevSecOpsMilestone[] = [
         icon: Network,
        priority: 'important',
        estimatedHours: 15,
-       link: '/guides/supply-chain-security',
+       link: '/posts/software-supply-chain-security',
      },
      {
         name: 'Security Gates',
