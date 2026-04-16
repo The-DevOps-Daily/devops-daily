@@ -1,0 +1,36 @@
+{
+  "id": "sre-error-budget-management",
+  "slug": "sre-error-budget-management",
+  "title": "Error Budget Management",
+  "question": "Your service has a 99.9% availability SLO over a 30-day window. How much downtime does that give you, and what do you actually do with that error budget day-to-day?",
+  "answer": "A 99.9% SLO over 30 days gives you an error budget of 0.1%, which is about 43.2 minutes of total downtime (or roughly 4,320 failed requests out of every 4.32 million).\n\nThe error budget is not just a number to watch -- it's a decision-making tool. Here's how I'd use it:\n\nWhen the budget is healthy (say, 70%+ remaining), the team moves fast. Ship features, run experiments, do risky deployments. You have room to absorb failures. This is the whole point -- error budgets turn the reliability vs. velocity argument into a data-driven decision.\n\nWhen the budget is getting low (under 30% remaining with time left in the window), slow down. Require extra review on deployments, hold off on risky changes, and focus on reliability work like adding retry logic or improving rollback speed.\n\nWhen the budget is burned (0% remaining), stop feature deployments entirely. The team shifts to reliability work only: fixing the issues that burned the budget, improving monitoring, adding automated rollbacks. This is the error budget policy, and it needs to be agreed on before you need it, not during an incident.\n\nThe key insight is that error budgets align incentives. Product teams want to ship fast, SRE teams want reliability. The error budget gives both sides a shared framework: \"We can ship this risky feature because we have budget\" or \"We need to pause and fix things because we're out of budget.\"",
+  "explanation": "This question separates candidates who understand error budgets as a cultural and operational tool from those who just know the math. The calculation is table stakes -- what matters is whether they can explain the error budget policy and how it changes team behavior. Strong candidates will talk about the policy being pre-agreed and about using budgets to balance velocity and reliability.",
+  "category": "SRE",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": ["sre", "error-budgets", "slos", "reliability", "incident-management"],
+  "codeExamples": [
+    {
+      "language": "python",
+      "label": "Error budget calculation and burn rate",
+      "code": "from datetime import datetime, timedelta\n\ndef calculate_error_budget(slo_target: float, window_days: int, total_requests: int, failed_requests: int):\n    \"\"\"Calculate remaining error budget.\"\"\"\n    budget_fraction = 1 - slo_target  # e.g., 0.001 for 99.9%\n    total_allowed_failures = total_requests * budget_fraction\n    remaining_failures = total_allowed_failures - failed_requests\n    budget_remaining_pct = (remaining_failures / total_allowed_failures) * 100\n\n    return {\n        \"slo_target\": f\"{slo_target * 100}%\",\n        \"allowed_failures\": int(total_allowed_failures),\n        \"actual_failures\": failed_requests,\n        \"remaining_failures\": int(remaining_failures),\n        \"budget_remaining\": f\"{budget_remaining_pct:.1f}%\",\n        \"budget_exhausted\": budget_remaining_pct <= 0,\n    }\n\n# Example: 99.9% SLO, 30-day window\nresult = calculate_error_budget(\n    slo_target=0.999,\n    window_days=30,\n    total_requests=4_320_000,\n    failed_requests=2_800\n)\nprint(result)\n# {'slo_target': '99.9%', 'allowed_failures': 4320,\n#  'actual_failures': 2800, 'remaining_failures': 1520,\n#  'budget_remaining': '35.2%', 'budget_exhausted': False}"
+    },
+    {
+      "language": "yaml",
+      "label": "Error budget policy document (team agreement)",
+      "code": "error_budget_policy:\n  service: payment-api\n  slo_target: \"99.9%\"\n  window: 30d\n\n  thresholds:\n    healthy:\n      budget_remaining: \">50%\"\n      actions:\n        - Normal deployment cadence\n        - Feature work proceeds as planned\n        - Risky experiments allowed with rollback plan\n\n    warning:\n      budget_remaining: \"20-50%\"\n      actions:\n        - Reduce deployment frequency\n        - Require extra review on risky changes\n        - Start investigating top error sources\n        - No experimental features\n\n    critical:\n      budget_remaining: \"<20%\"\n      actions:\n        - Feature freeze -- reliability work only\n        - All hands on fixing error sources\n        - Post-incident reviews for budget-burning events\n        - Escalate to engineering leadership\n\n    exhausted:\n      budget_remaining: \"0%\"\n      actions:\n        - Full deployment freeze\n        - Mandatory blameless postmortem\n        - Reliability improvements before any new features\n        - Weekly check-ins until budget recovers"
+    }
+  ],
+  "followUpQuestions": [
+    "What's the difference between a time-based and request-based error budget, and when would you pick one over the other?",
+    "How do you handle a situation where a single incident burns 80% of the error budget? Is that different from many small incidents adding up to 80%?",
+    "What do you do when the product team pushes back on a feature freeze because of a burned error budget?",
+    "How do rolling windows vs. calendar windows affect error budget behavior?"
+  ],
+  "commonMistakes": [
+    "Treating the error budget as just a monitoring metric instead of a decision-making tool with real consequences (like deployment freezes).",
+    "Not having a pre-agreed error budget policy. If you decide what to do after the budget is burned, the conversation becomes political instead of data-driven.",
+    "Confusing burn rate with budget remaining. A high burn rate with 90% budget left is more urgent than a low burn rate with 20% left -- you need to react to the rate of consumption, not just the current level."
+  ],
+  "relatedTopics": ["sre-slo-sli-sla-differences", "sre-slo-alerting", "sre-burn-rate-alerting"]
+}

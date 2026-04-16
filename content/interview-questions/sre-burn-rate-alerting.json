@@ -1,0 +1,40 @@
+{
+  "id": "sre-burn-rate-alerting",
+  "slug": "sre-burn-rate-alerting",
+  "title": "Error Budget Burn Investigation",
+  "question": "It's Monday morning. You check the dashboard and see that your service burned 80% of its monthly error budget over the weekend. Walk me through how you'd investigate this and what you'd do next.",
+  "answer": "First, I need to understand the shape of the burn. Was it one big incident or a slow leak?\n\nI'd start by pulling up the error budget burn-down chart for the weekend. If I see a cliff -- a steep drop at a specific time -- that's an incident. I'd look at the deployment history: did someone ship something Friday afternoon? Check the change log, git history, and any config changes. Most budget burns trace back to a change.\n\nIf the chart shows a steady downward slope, that's a slow degradation. This is harder to track down. I'd look at the error breakdown by endpoint, by error code, and by dependency. Often it's a single endpoint or a downstream service that started flaking. Maybe a database connection pool is saturating under weekend batch job load, or a third-party API started rate-limiting you.\n\nOnce I know the cause, here's what I'd do:\n\n1. Fix the immediate problem. Roll back the bad deploy, scale up the bottleneck, or disable the flaky feature behind a feature flag.\n\n2. Trigger the error budget policy. With only 20% budget left, we're in the critical zone. That means feature freeze -- no new deployments except reliability fixes. I'd communicate this to the product team immediately, not as a request but as the policy kicking in.\n\n3. Run a blameless postmortem. Focus on why the burn wasn't caught sooner. Were the burn rate alerts misconfigured? Was nobody watching the on-call channel? Did the slow-burn alert fire but get ignored?\n\n4. Build in prevention. If a Friday deploy caused this, maybe we need a policy of no deploys after Thursday, or better canary analysis. If a dependency caused it, we need circuit breakers or fallbacks.\n\nThe bigger question is why 80% of the budget burned before anyone noticed. That's a monitoring and alerting gap, and it's usually more important to fix than the original incident.",
+  "explanation": "This is a scenario-based senior question that tests incident response thinking, not just SLO knowledge. You want to see structured investigation (not random guessing), awareness of the error budget policy, and a focus on systemic improvements. The best candidates will immediately ask about the burn shape (cliff vs. slope) because the investigation path is completely different. Watch for whether they mention the process gap (why wasn't this caught?) -- that's what separates senior from mid-level thinking.",
+  "category": "SRE",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": ["sre", "error-budgets", "incident-response", "slos", "postmortems", "on-call"],
+  "codeExamples": [
+    {
+      "language": "promql",
+      "label": "Investigation queries to diagnose budget burn",
+      "code": "# 1. Error budget remaining over time (burn-down chart)\n1 - (\n  sum(increase(http_requests_total{service=\"checkout\", status=~\"5..\"}[30d]))\n  /\n  (sum(increase(http_requests_total{service=\"checkout\"}[30d])) * 0.001)\n)\n\n# 2. Error rate by endpoint -- find the hot spot\nsum by (endpoint) (\n  rate(http_requests_total{service=\"checkout\", status=~\"5..\"}[1h])\n)\n/ sum by (endpoint) (\n  rate(http_requests_total{service=\"checkout\"}[1h])\n)\n\n# 3. Error rate by status code -- understand the failure mode\nsum by (status) (\n  increase(http_requests_total{service=\"checkout\", status=~\"5..\"}[2d])\n)\n\n# 4. Dependency error rates -- is it us or a downstream?\nsum by (dependency) (\n  rate(dependency_requests_total{service=\"checkout\", status=\"error\"}[2d])\n)"
+    },
+    {
+      "language": "bash",
+      "label": "Quick weekend incident timeline from deploy history",
+      "code": "# Check what was deployed over the weekend\nkubectl rollout history deployment/checkout-api -n production\n# REVISION  CHANGE-CAUSE\n# 14        deploy: v2.3.1 (Thu Apr 9 17:42:00)\n# 15        deploy: v2.3.2 (Fri Apr 10 16:58:00)  <-- Friday afternoon deploy\n# 16        rollback to v2.3.1 (Mon Apr 13 09:15:00)\n\n# Check the diff between the Friday deploy and the previous version\ngit log --oneline v2.3.1..v2.3.2\n# a1b2c3d Update payment retry logic\n# d4e5f6g Remove connection pool size limit  <-- suspicious\n\n# Correlate with error spike timing\nkubectl logs deployment/checkout-api -n production --since=48h \\\n  | grep -c 'connection refused'\n# 14,832"
+    },
+    {
+      "language": "yaml",
+      "label": "Postmortem template for budget burn events",
+      "code": "postmortem:\n  title: \"80% error budget burn - checkout API (Apr 10-12)\"\n  date: 2025-04-13\n  authors: [\"oncall-engineer\"]\n  status: action-items-pending\n\n  summary: |\n    Friday deploy v2.3.2 removed connection pool limits,\n    causing DB connection exhaustion under weekend batch load.\n    80% of monthly error budget consumed over 48 hours.\n\n  timeline:\n    - time: \"Fri 16:58\" \n      event: \"v2.3.2 deployed to production\"\n    - time: \"Fri 23:00\"\n      event: \"Weekend batch jobs begin, connection pool grows unbounded\"\n    - time: \"Sat 02:15\"\n      event: \"Slow-burn alert fires (10x burn rate)\"\n    - time: \"Sat 02:15\"\n      event: \"Alert acknowledged but not investigated (oncall assumed transient)\"\n    - time: \"Mon 09:00\"\n      event: \"Budget burn discovered during morning review\"\n    - time: \"Mon 09:15\"\n      event: \"Rollback to v2.3.1\"\n\n  root_cause: |\n    Connection pool size limit was removed in v2.3.2.\n    Under normal weekday traffic this was fine, but weekend\n    batch jobs created enough concurrent connections to\n    exhaust the database connection limit.\n\n  action_items:\n    - owner: sre-team\n      action: \"Add connection pool limits to deploy-time config validation\"\n      priority: P1\n    - owner: oncall-lead\n      action: \"Update runbook: slow-burn alerts require investigation, not just ack\"\n      priority: P1\n    - owner: platform-team\n      action: \"Add canary analysis gate for Friday deploys\"\n      priority: P2"
+    }
+  ],
+  "followUpQuestions": [
+    "How would your response differ if the burn was caused by a third-party dependency you don't control?",
+    "The product team has a major launch next week and is pushing back on the feature freeze. How do you handle that conversation?",
+    "Should you adjust the SLO target after repeated budget burns, or is the problem always in the system?"
+  ],
+  "commonMistakes": [
+    "Jumping straight to 'fix the bug' without first understanding the full scope. Is it one endpoint or the whole service? Is it still happening or did it stop? You need the full picture before acting.",
+    "Skipping the process failure analysis. The budget burned over a weekend and nobody noticed until Monday -- that's a bigger problem than whatever caused the errors. Always ask why the alerting and response process failed.",
+    "Treating the error budget policy as optional. If the policy says feature freeze at 20% budget remaining, enforce it. Making exceptions undermines the entire system and trains teams to ignore SLOs."
+  ],
+  "relatedTopics": ["sre-error-budget-management", "sre-slo-alerting", "sre-incident-response"]
+}

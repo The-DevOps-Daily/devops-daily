@@ -1,0 +1,36 @@
+{
+  "id": "sre-choosing-slis",
+  "slug": "sre-choosing-slis",
+  "title": "Choosing the Right SLIs",
+  "question": "You're joining a team that runs a checkout service for an e-commerce platform. There are no SLOs yet. How would you decide which SLIs to track?",
+  "answer": "Start with what your users care about. For a checkout service, users care about three things: can I complete my purchase (availability), how long does it take (latency), and does it charge me the right amount (correctness).\n\nI'd pick SLIs from the four golden signals: latency, error rate, throughput, and saturation. But not all of them become SLOs. For a checkout service, I'd focus on:\n\n1. Availability -- the ratio of successful checkout requests (non-5xx) to total requests. This is your most important SLI because a broken checkout directly costs money.\n\n2. Latency -- the 95th percentile response time for checkout completion. Not the average, because averages hide tail latency. A p95 of 2 seconds means 5% of your users are waiting longer than that, and those are often paying customers mid-purchase.\n\n3. Correctness -- the percentage of checkout transactions where the charged amount matches the cart total. This is easy to overlook but a wrong charge is worse than a slow page.\n\nI'd skip throughput as an SLO target because it varies naturally with traffic patterns. It's good to monitor but bad as an objective. I'd also look at the SLIs from the user's perspective, not from the server's. Measure at the load balancer or edge, not inside your application, because that's closer to what the user actually experiences.",
+  "explanation": "This question tests practical thinking. You want to see if the candidate can connect SLIs to business impact rather than just listing textbook metrics. Strong candidates will reason from user experience backward to metrics. They'll mention why certain metrics matter more for this specific service type. Watch for candidates who just list generic metrics without tying them to the checkout use case.",
+  "category": "SRE",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": ["sre", "slis", "slos", "monitoring", "observability"],
+  "codeExamples": [
+    {
+      "language": "promql",
+      "label": "Prometheus queries for checkout SLIs",
+      "code": "# Availability SLI: ratio of successful requests\nsum(rate(http_requests_total{service=\"checkout\", status!~\"5..\"}[30d]))\n/\nsum(rate(http_requests_total{service=\"checkout\"}[30d]))\n\n# Latency SLI: proportion of requests under 2s (good events / total events)\nsum(rate(http_request_duration_seconds_bucket{service=\"checkout\", le=\"2.0\"}[30d]))\n/\nsum(rate(http_request_duration_seconds_count{service=\"checkout\"}[30d]))\n\n# Correctness SLI: transactions with matching amounts\nsum(rate(checkout_transactions_correct_total[30d]))\n/\nsum(rate(checkout_transactions_total[30d]))"
+    },
+    {
+      "language": "yaml",
+      "label": "Grafana dashboard panel for SLI tracking",
+      "code": "panels:\n  - title: \"Checkout Availability (30d rolling)\"\n    type: stat\n    targets:\n      - expr: |\n          sum(rate(http_requests_total{service=\"checkout\", status!~\"5..\"}[30d]))\n          /\n          sum(rate(http_requests_total{service=\"checkout\"}[30d]))\n          * 100\n    fieldConfig:\n      defaults:\n        unit: percent\n        thresholds:\n          steps:\n            - color: red\n              value: 99.0\n            - color: orange\n              value: 99.5\n            - color: green\n              value: 99.9"
+    }
+  ],
+  "followUpQuestions": [
+    "Would you pick different SLIs for an internal batch processing service vs. this user-facing checkout service?",
+    "How do you handle SLIs when the service depends on third-party payment providers?",
+    "Where would you instrument the measurement -- at the load balancer, in the application code, or using synthetic probes?",
+    "How many SLOs should a single service have? What's the risk of having too many?"
+  ],
+  "commonMistakes": [
+    "Using averages instead of percentiles for latency. An average of 200ms can hide a p99 of 10 seconds, which means some users are having a terrible experience.",
+    "Picking infrastructure metrics (CPU, memory, disk) as SLIs instead of user-facing metrics. High CPU doesn't necessarily mean users are affected.",
+    "Setting the same SLIs for every service regardless of what the service does. A batch job and a real-time API need very different indicators."
+  ],
+  "relatedTopics": ["sre-slo-sli-sla-differences", "sre-error-budget-management", "monitoring-golden-signals"]
+}
