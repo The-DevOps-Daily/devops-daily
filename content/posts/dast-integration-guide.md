@@ -350,3 +350,13 @@ If you are not running DAST today, start small:
 5. Track metrics over time: vulnerability density, false positive rate, and mean time to remediate.
 
 The goal is not to catch every vulnerability on day one. The goal is to build a security feedback loop that gets better over time. Start with passive scans, tune the noise, and gradually increase coverage.
+
+---
+
+## Related Security Posts
+
+- [Dependency Scanning: Finding Vulnerabilities Before Attackers Do](/posts/dependency-scanning-guide) - Catch known CVEs in your libraries before DAST even runs, so your scans focus on application-level flaws
+- [Secure Coding Practices Every DevOps Engineer Should Know](/posts/secure-coding-practices-guide) - Fix the root causes DAST finds: input validation, output encoding, and proper error handling
+- [CI/CD Pipeline Hardening](/posts/cicd-pipeline-hardening-guide) - Secure the pipeline that runs your DAST scans so attackers cannot tamper with results or skip security gates
+
+For guidance on setting pass/fail thresholds in your pipeline, see our guide on [security gates](/guides/security-gates).

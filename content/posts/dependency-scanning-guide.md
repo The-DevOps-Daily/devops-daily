@@ -349,3 +349,13 @@ Start with whatever tool is easiest to adopt. If you are on GitHub, enable Depen
 The goal is not zero vulnerabilities. The goal is knowing what you are shipping and making informed decisions about risk. Always commit your lock files, scan on every PR and on a daily schedule, document your ignores with reasons and expiration dates, and prioritize based on exploitability rather than raw CVSS scores.
 
 Your dependencies are your responsibility, even the ones you did not choose directly.
+
+---
+
+## Related Security Posts
+
+- [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security) - Generate SBOMs from your dependency tree and verify that nothing was injected between build and deploy
+- [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide) - Complement your dependency scans with runtime testing that finds vulnerabilities in how your app actually behaves
+- [Secure Coding Practices Every DevOps Engineer Should Know](/posts/secure-coding-practices-guide) - Even with clean dependencies, your own code can introduce injection flaws and broken auth
+
+For a deeper look at choosing and configuring static analysis tools, see our guide on [SAST tools](/guides/sast-tools).

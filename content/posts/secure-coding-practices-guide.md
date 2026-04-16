@@ -447,3 +447,13 @@ These are the non-negotiable practices:
 12. **Regenerate session IDs** after login and privilege changes
 
 None of these are difficult. None of them require expensive tools. They just require discipline and the decision to treat security as a first-class concern in your code, not something to add before the audit.
+
+---
+
+## Related Security Posts
+
+- [Security-Focused Code Reviews](/posts/security-focused-code-reviews) - Turn these coding practices into a review checklist that catches injection flaws, auth bypasses, and unsafe deserialization in PRs
+- [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide) - Verify your secure coding holds up at runtime by probing for XSS, SQL injection, and broken authentication in staging
+- [Dependency Scanning: Finding Vulnerabilities Before Attackers Do](/posts/dependency-scanning-guide) - Your own code might be solid, but one vulnerable dependency can undo all of it
+
+For a deeper dive into encryption, hashing, and key management, see our guide on [cryptography essentials](/guides/cryptography-essentials).

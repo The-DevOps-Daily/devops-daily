@@ -386,3 +386,14 @@ Run through this list for your existing pipelines:
 If you checked fewer than half of these, your pipeline is likely more exposed than you think. Start with OIDC, explicit permissions, and ephemeral runners. Those three changes alone eliminate the most common attack vectors.
 
 Pipeline security is not a one-time project. It is an ongoing practice of reducing attack surface, limiting blast radius, and verifying that what you deploy is exactly what you built.
+
+---
+
+## Related Security Posts
+
+- [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security) - Sign your artifacts with Cosign and generate SLSA provenance to prove your builds have not been tampered with
+- [Secrets Management Guide: Vault, AWS Secrets Manager, and Azure Key Vault](/posts/secrets-management-guide) - Replace long-lived CI credentials with dynamic secrets and OIDC-based authentication
+- [Pre-commit Hooks for Security](/posts/pre-commit-hooks-security-guide) - Catch leaked credentials and misconfigurations before they ever reach your pipeline
+- [Dependency Scanning: Finding Vulnerabilities Before Attackers Do](/posts/dependency-scanning-guide) - Automate vulnerability checks for every dependency your pipeline pulls in
+
+For a broader security strategy, see our guides on [security gates in CI/CD](/guides/security-gates) and [threat modeling](/guides/threat-modeling).

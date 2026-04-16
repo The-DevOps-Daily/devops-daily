@@ -382,3 +382,13 @@ No tool catches everything. When a secret does get committed:
 Pre-commit hooks are not a silver bullet. They are one layer in a defense-in-depth strategy. Combine them with CI scanning, secret rotation policies, and OIDC-based authentication to minimize both the likelihood and impact of credential exposure.
 
 The cost of adding pre-commit hooks to your workflow is about 30 minutes of setup and a few seconds per commit. The cost of not having them is one leaked credential away from becoming very real.
+
+---
+
+## Related Security Posts
+
+- [Secrets Management Guide: Vault, AWS Secrets Manager, and Azure Key Vault](/posts/secrets-management-guide) - What to do after you stop leaking secrets: rotate automatically, use dynamic credentials, and eliminate .env files
+- [Dependency Scanning: Finding Vulnerabilities Before Attackers Do](/posts/dependency-scanning-guide) - Extend your pre-commit safety net by scanning every dependency for known CVEs in CI
+- [Security-Focused Code Reviews](/posts/security-focused-code-reviews) - The human layer that catches logic flaws, auth bypasses, and injection patterns your hooks will miss
+
+For static analysis beyond secrets detection, see our guide on [SAST tools](/guides/sast-tools).

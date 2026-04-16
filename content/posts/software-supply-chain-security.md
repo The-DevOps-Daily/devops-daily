@@ -408,3 +408,13 @@ Supply chain security is a journey, not a weekend project. Here is a practical o
 6. **Monitor and improve.** Track signing rates, SBOM coverage, and SLSA levels across your organization. Alert on unsigned deployments.
 
 The tools are mature, the workflows are documented, and most of this can be automated in a single CI/CD pipeline. The only thing worse than a supply chain attack is one that you could have prevented with a few hours of setup.
+
+---
+
+## Related Security Posts
+
+- [Dependency Scanning: Finding Vulnerabilities Before Attackers Do](/posts/dependency-scanning-guide) - Pair your SBOMs with automated scanning to catch vulnerable transitive dependencies before they ship
+- [CI/CD Pipeline Hardening](/posts/cicd-pipeline-hardening-guide) - Lock down the pipeline that builds and signs your artifacts: ephemeral runners, pinned actions, and restricted egress
+- [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide) - Test your deployed artifacts at runtime to catch vulnerabilities that static analysis and signing cannot detect
+
+For a framework to decide which supply chain risks to address first, see our guide on [threat modeling](/guides/threat-modeling).

@@ -366,3 +366,13 @@ Tools like gitleaks, truffleHog, and GitHub's built-in Secret Scanning catch cre
 Pick Vault if you run multi-cloud or need dynamic secrets. Pick AWS Secrets Manager if you are all-in on AWS and want the simplest integration. Pick Azure Key Vault if you live in the Microsoft ecosystem.
 
 Whichever tool you choose, the principles stay the same: least privilege, short-lived credentials, audit everything, and automate rotation. Start with one tool, get your most critical secrets managed properly, and expand from there. The worst secrets management strategy is no strategy at all.
+
+---
+
+## Related Security Posts
+
+- [CI/CD Pipeline Hardening](/posts/cicd-pipeline-hardening-guide) - Use OIDC and ephemeral runners so your pipelines never store long-lived credentials in the first place
+- [Pre-commit Hooks for Security](/posts/pre-commit-hooks-security-guide) - Catch AWS keys, database passwords, and API tokens before they get committed to Git history
+- [Software Supply Chain Security: SBOMs, Sigstore, and SLSA in Practice](/posts/software-supply-chain-security) - Pair proper secrets management with artifact signing to secure every step from build to deploy
+
+For foundational concepts like least privilege and defense in depth, see our guide on [security principles](/guides/security-principles).

@@ -336,3 +336,13 @@ Keep this list handy during every review:
 - Hardcoded secrets or passwords
 
 Security review is a skill that improves with practice. Start by picking one category from this guide and focusing on it during your next review cycle. Once it becomes second nature, add another. Within a few months, you will catch issues that both automated tools and other reviewers miss.
+
+---
+
+## Related Security Posts
+
+- [Secure Coding Practices Every DevOps Engineer Should Know](/posts/secure-coding-practices-guide) - The defensive patterns you should expect to see in every PR: input validation, parameterized queries, and proper output encoding
+- [Pre-commit Hooks for Security](/posts/pre-commit-hooks-security-guide) - Automate the easy catches (hardcoded secrets, large binaries) so reviewers can focus on logic and architecture
+- [How to Integrate DAST Into Your CI/CD Pipeline](/posts/dast-integration-guide) - Validate your review findings at runtime with automated scans that probe for the vulnerabilities you flagged
+
+For a structured approach to identifying what to review first, see our guide on [threat modeling](/guides/threat-modeling).
