@@ -6,17 +6,20 @@ import { getAllGuides } from '@/lib/guides';
 import { getActiveGames } from '@/lib/games';
 import { getAllQuizzes } from '@/lib/quiz-loader';
 import { getAllExercises } from '@/lib/exercises';
+import { getAllChecklists } from '@/lib/checklists';
 
 export async function Hero() {
-  const [posts, guides, games, quizzes, exercises] = await Promise.all([
+  const [posts, guides, games, quizzes, exercises, checklists] = await Promise.all([
     getAllPosts(),
     getAllGuides(),
     getActiveGames(),
     getAllQuizzes(),
     getAllExercises(),
+    getAllChecklists(),
   ]);
 
   const latestPost = posts[0];
+  const totalContent = posts.length + guides.length + games.length + quizzes.length + exercises.length + checklists.length;
 
   return (
     <div className="pb-8">
@@ -69,22 +72,27 @@ export async function Hero() {
         </h1>
 
         <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
-          Hands-on exercises, interactive simulators, and practical guides.
-          Built for engineers who prefer a terminal over a slide deck.
+          Interactive simulators, quizzes, flashcards, and hands-on exercises.
+          {totalContent}+ pieces of free content built for engineers who prefer a terminal over a slide deck.
         </p>
 
         {/* CTA buttons */}
         <div className="flex flex-wrap items-center gap-3 mt-8">
           <Button asChild size="lg" className="shadow-md shadow-primary/10">
-            <Link href="/exercises" className="group">
-              Start an Exercise
+            <Link href="/games" className="group">
+              Try a Simulator
               <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link href="/posts">Read the Blog</Link>
+            <Link href="/exercises">Start an Exercise</Link>
           </Button>
         </div>
+
+        {/* Social proof */}
+        <p className="mt-4 text-sm text-muted-foreground">
+          Join 5,000+ DevOps engineers learning every week
+        </p>
       </div>
 
       {/* Terminal-style stats block */}
@@ -106,25 +114,25 @@ export async function Hero() {
               <span className="text-muted-foreground">cat content-overview.txt</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-y-2 gap-x-4 pl-4 py-1">
-              <Link href="/posts" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
-                <span className="text-primary font-semibold">{posts.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> posts</span>
-              </Link>
-              <Link href="/guides" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
-                <span className="text-primary font-semibold">{guides.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> guides</span>
-              </Link>
-              <Link href="/exercises" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
-                <span className="text-primary font-semibold">{exercises.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> exercises</span>
+              <Link href="/games" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
+                <span className="text-primary font-semibold">{games.length}</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> simulators</span>
               </Link>
               <Link href="/quizzes" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
                 <span className="text-primary font-semibold">{quizzes.length}</span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors"> quizzes</span>
               </Link>
-              <Link href="/games" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
-                <span className="text-primary font-semibold">{games.length}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> simulators</span>
+              <Link href="/exercises" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
+                <span className="text-primary font-semibold">{exercises.length}</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> exercises</span>
+              </Link>
+              <Link href="/checklists" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
+                <span className="text-primary font-semibold">{checklists.length}</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> checklists</span>
+              </Link>
+              <Link href="/posts" className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors">
+                <span className="text-primary font-semibold">{posts.length}</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors"> articles</span>
               </Link>
             </div>
             <div className="flex items-center gap-2 text-muted-foreground/50">
