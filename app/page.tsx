@@ -149,6 +149,68 @@ export default async function Home() {
         </Link>
       </section>
 
+      {/* Why DevOps Daily */}
+      <section className="my-20">
+        <div className="text-center mb-12">
+          <p className="text-sm font-medium text-primary uppercase tracking-wider mb-2">Why DevOps Daily</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Learn DevOps the way it actually sticks</h2>
+        </div>
+
+        <div className="space-y-12 max-w-3xl mx-auto">
+          {/* Feature 1 */}
+          <div className="flex gap-5">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center mt-0.5">
+              <Gamepad2 className="w-5 h-5 text-blue-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-1">Interactive, not passive</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                30+ simulators let you build load balancers, schedule Kubernetes pods, resolve DNS queries, and defend against DDoS attacks. You learn by doing, not by scrolling through walls of text.
+              </p>
+            </div>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="flex gap-5">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mt-0.5">
+              <Terminal className="w-5 h-5 text-emerald-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-1">Built for engineers, not students</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Real terminal output, production-realistic configs, and actual error messages. Every exercise and guide starts with a problem you have faced in production, not a textbook definition.
+              </p>
+            </div>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="flex gap-5">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mt-0.5">
+              <Activity className="w-5 h-5 text-amber-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-1">Multiple ways to learn the same topic</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Every topic comes with a blog post for context, a quiz to test your knowledge, flashcards for quick review, and a checklist for implementation. Pick the format that works for how you learn.
+              </p>
+            </div>
+          </div>
+
+          {/* Feature 4 */}
+          <div className="flex gap-5">
+            <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center mt-0.5">
+              <Mail className="w-5 h-5 text-purple-500" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-1">Fresh content every week</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                New posts, quizzes, and simulators published weekly. A curated newsletter with the latest DevOps news lands in your inbox every Monday. All free, no paywall.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <CategoryGrid
         className="my-16"
         limit={8}
