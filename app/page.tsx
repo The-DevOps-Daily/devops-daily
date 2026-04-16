@@ -10,17 +10,17 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title:
-    'DevOps Daily - Interactive Tutorials, Simulators & Quizzes for DevOps Engineers',
+    'DevOps Daily - Tutorials, Guides, Simulators & News for DevOps Engineers',
   description:
-    'Learn DevOps with interactive simulators, quizzes, flashcards, hands-on exercises, and practical guides. Free content covering Docker, Kubernetes, Terraform, CI/CD, and more.',
+    'Learn DevOps with hands-on tutorials, interactive simulators, quizzes, exercises, and weekly news. Covering Docker, Kubernetes, Terraform, CI/CD, and more.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title:
-      'DevOps Daily - Interactive Tutorials, Simulators & Quizzes for DevOps Engineers',
+      'DevOps Daily - Tutorials, Guides, Simulators & News for DevOps Engineers',
     description:
-      'Learn DevOps with interactive simulators, quizzes, flashcards, hands-on exercises, and practical guides. Free content covering Docker, Kubernetes, Terraform, CI/CD, and more.',
+      'Learn DevOps with hands-on tutorials, interactive simulators, quizzes, exercises, and weekly news. Covering Docker, Kubernetes, Terraform, CI/CD, and more.',
     url: '/',
     type: 'website',
     images: [
@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title:
-      'DevOps Daily - Interactive Tutorials, Simulators & Quizzes for DevOps Engineers',
+      'DevOps Daily - Tutorials, Guides, Simulators & News for DevOps Engineers',
     description:
-      'Learn DevOps with interactive simulators, quizzes, flashcards, and hands-on exercises. 250+ pieces of free content.',
+      'Learn DevOps with hands-on tutorials, interactive simulators, quizzes, and weekly news. 250+ free resources.',
     images: ['/og-image.png'],
   },
 };
