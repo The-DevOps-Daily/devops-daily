@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import RestVsGraphqlSimulator from '@/components/games/rest-vs-graphql-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
@@ -31,6 +31,15 @@ export default async function RestVsGraphqlPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      {game && (
+        <SoftwareApplicationSchema
+          name={game.title}
+          description={game.description}
+          url={game.href}
+          category={game.category || 'DevOps Simulator'}
+          keywords={game.tags}
+        />
+      )}
       <GameSeoContent
         title="REST vs GraphQL Simulator"
         description="Compare REST and GraphQL API approaches side by side. Make API requests, observe response payloads, and understand the tradeoffs between over-fetching, under-fetching, and query flexibility."

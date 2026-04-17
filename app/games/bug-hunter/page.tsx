@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import BugHunter from '@/components/games/bug-hunter';
 import { generateGameMetadata } from '@/lib/game-metadata';
@@ -29,6 +29,13 @@ export default function BugHunterPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <SoftwareApplicationSchema
+        name="Bug Hunter"
+        description="Find and fix bugs in code snippets across multiple programming languages. Practice debugging skills with realistic code examples from DevOps tools and scripts."
+        url="/games/bug-hunter"
+        category="Debugging"
+        keywords={['debugging', 'coding', 'devops']}
+      />
       <GameSeoContent
         title="Bug Hunter"
         description="Find and fix bugs in code snippets across multiple programming languages. Practice debugging skills with realistic code examples from DevOps tools and scripts."

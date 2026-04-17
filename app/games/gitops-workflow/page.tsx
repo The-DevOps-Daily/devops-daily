@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import { generateGameMetadata } from '@/lib/game-metadata';
@@ -31,6 +31,15 @@ export default async function GitOpsWorkflowPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      {game && (
+        <SoftwareApplicationSchema
+          name={game.title}
+          description={game.description}
+          url={game.href}
+          category={game.category || 'DevOps Simulator'}
+          keywords={game.tags}
+        />
+      )}
       <GameSeoContent
         title="GitOps Workflow Simulator"
         description="Simulate GitOps deployment workflows with Git repositories, CI/CD pipelines, and Kubernetes clusters. Learn how changes flow from code commits to production deployments."

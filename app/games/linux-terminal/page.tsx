@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import LinuxTerminal from '@/components/games/linux-terminal';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
@@ -55,6 +55,13 @@ export default function LinuxTerminalPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <SoftwareApplicationSchema
+        name="Linux Terminal Challenge"
+        description="Practice Linux commands in an interactive terminal simulator. Learn essential commands for DevOps work through hands-on challenges."
+        url="/games/linux-terminal"
+        category="Linux"
+        keywords={['linux', 'terminal', 'bash', 'commands']}
+      />
 
       <div className="container px-4 py-8 mx-auto">
         <div className="flex items-center justify-between mb-4">

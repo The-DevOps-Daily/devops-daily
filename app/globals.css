@@ -259,7 +259,8 @@
 }
 
 .prose pre code {
-  @apply block p-4 text-sm font-mono overflow-x-auto;
+  @apply block p-4 text-xs sm:text-sm font-mono overflow-x-auto;
+  /* Better mobile readability: smaller font prevents horizontal overflow on narrow screens */
 }
 
 /* Code block wrapper */

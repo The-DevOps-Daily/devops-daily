@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import UptimeDefender from '@/components/games/uptime-defender';
 import { generateGameMetadata } from '@/lib/game-metadata';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import { getGameById } from '@/lib/games';
 import { GameActions } from '@/components/games/game-actions';
@@ -33,6 +33,15 @@ export default async function UptimeDefenderPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      {game && (
+        <SoftwareApplicationSchema
+          name={game.title}
+          description={game.description}
+          url={game.href}
+          category={game.category || 'DevOps Simulator'}
+          keywords={game.tags}
+        />
+      )}
       <GameSeoContent
         title="Uptime Defender"
         description="Defend your infrastructure uptime against real-world incidents. Handle server failures, network outages, deployment issues, and security incidents in this incident response simulation game."
