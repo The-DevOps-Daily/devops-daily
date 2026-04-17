@@ -1,0 +1,235 @@
+{
+  "id": "argocd-multi-environment-repo-structure",
+  "slug": "argocd-multi-environment-repo-structure",
+  "title": "Argo CD Multi-Environment Repository Structure Checklist",
+  "description": "How to organize your Git repositories when running Argo CD across dev, staging, and production. Covers folder layout, app-of-apps, ApplicationSets, secrets, RBAC, and promotion flow.",
+  "category": "GitOps",
+  "difficulty": "intermediate",
+  "estimatedTime": "60-90 minutes",
+  "tags": [
+    "gitops",
+    "argocd",
+    "deployments",
+    "repository-structure",
+    "kubernetes"
+  ],
+  "items": [
+    {
+      "id": "split-app-code-from-manifests",
+      "title": "Split application code from deployment manifests",
+      "description": "Keep your app source code in one repo and your Kubernetes manifests in a separate config repo. Mixing them means every code commit triggers a sync and your Argo CD diff history becomes noisy. A dedicated config repo also lets platform engineers control deployments without touching application code.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Two-repo layout",
+          "code": "# App repo (built by CI, produces container images)\norg/api-service\n├── src/\n├── Dockerfile\n├── .github/workflows/build.yaml   # builds image, opens PR to config repo\n└── README.md\n\n# Config repo (consumed by Argo CD)\norg/k8s-config\n├── apps/\n├── infrastructure/\n├── clusters/\n└── README.md\n\n# Why two repos:\n# - revert a bad deploy without reverting code\n# - different review rules (config repo needs platform approval)\n# - smaller blast radius for credentials"
+        }
+      ]
+    },
+    {
+      "id": "pick-overlay-pattern",
+      "title": "Pick a base + overlay pattern (Kustomize or Helm)",
+      "description": "Do not copy-paste manifests across environments. Three months in you will have drift between dev and prod that nobody can explain. Use Kustomize overlays or Helm values files so each environment is a thin diff over a shared base.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Kustomize base + overlays layout",
+          "code": "k8s-config/\n└── apps/\n    └── api-service/\n        ├── base/\n        │   ├── deployment.yaml\n        │   ├── service.yaml\n        │   ├── hpa.yaml\n        │   └── kustomization.yaml\n        └── overlays/\n            ├── dev/\n            │   ├── kustomization.yaml\n            │   └── replicas-patch.yaml\n            ├── staging/\n            │   ├── kustomization.yaml\n            │   └── replicas-patch.yaml\n            └── prod/\n                ├── kustomization.yaml\n                ├── replicas-patch.yaml\n                └── pdb.yaml"
+        },
+        {
+          "language": "yaml",
+          "label": "Production overlay",
+          "code": "# apps/api-service/overlays/prod/kustomization.yaml\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\n\nnamespace: api-prod\n\nresources:\n  - ../../base\n  - pdb.yaml\n\nimages:\n  - name: api-service\n    newTag: v1.4.2  # pinned, never :latest\n\npatches:\n  - path: replicas-patch.yaml\n    target:\n      kind: Deployment\n      name: api-service\n\ncommonLabels:\n  environment: production\n  team: platform"
+        }
+      ]
+    },
+    {
+      "id": "use-app-of-apps",
+      "title": "Use the app-of-apps pattern as your entry point",
+      "description": "Bootstrap each cluster with a single root Application that points to a folder of child Applications. Without this you will be running kubectl apply by hand every time you onboard a new service. The root app gives you one place to add or remove workloads per environment.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Root app for the prod cluster",
+          "code": "# clusters/prod/root-app.yaml\napiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: root-prod\n  namespace: argocd\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/org/k8s-config\n    targetRevision: main\n    path: clusters/prod/apps   # folder full of Application manifests\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: argocd\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true"
+        },
+        {
+          "language": "bash",
+          "label": "Bootstrap the cluster",
+          "code": "# Apply the root app once per cluster\nkubectl apply -f clusters/prod/root-app.yaml\n\n# Argo CD will now create every child Application in clusters/prod/apps/\n# From here on you add a new YAML file to that folder and Argo CD picks it up\n\nls clusters/prod/apps/\n# api-service.yaml\n# web-frontend.yaml\n# worker.yaml\n# cron-jobs.yaml"
+        }
+      ]
+    },
+    {
+      "id": "applicationset-for-environments",
+      "title": "Use ApplicationSet to fan out across environments",
+      "description": "Once you have more than two environments, hand-writing one Application per env per service gets old fast. ApplicationSet generators read a list of clusters or directories and produce Applications automatically. New environment? Add one entry, get every app deployed.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Cluster generator ApplicationSet",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: ApplicationSet\nmetadata:\n  name: api-service\n  namespace: argocd\nspec:\n  generators:\n    - list:\n        elements:\n          - env: dev\n            cluster: https://kubernetes.default.svc\n            revision: main\n          - env: staging\n            cluster: https://staging.example.com\n            revision: main\n          - env: prod\n            cluster: https://prod.example.com\n            revision: release-1.4\n  template:\n    metadata:\n      name: 'api-service-{{env}}'\n    spec:\n      project: '{{env}}'\n      source:\n        repoURL: https://github.com/org/k8s-config\n        targetRevision: '{{revision}}'\n        path: 'apps/api-service/overlays/{{env}}'\n      destination:\n        server: '{{cluster}}'\n        namespace: 'api-{{env}}'\n      syncPolicy:\n        automated:\n          prune: true\n          selfHeal: true"
+        }
+      ]
+    },
+    {
+      "id": "pin-revisions-per-environment",
+      "title": "Pin production to a tag or branch, not HEAD",
+      "description": "Tracking main on production means any merge ships to prod. That is fine for dev. It is not fine for prod. Use a release branch or signed tag for prod and let staging track main. Promotion becomes a controlled merge instead of a race.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Different revisions per environment",
+          "code": "# Dev: track main, deploy on every merge\nspec:\n  source:\n    targetRevision: main\n\n# Staging: track a moving release-candidate branch\nspec:\n  source:\n    targetRevision: release-candidate\n\n# Prod: pinned to a release branch, updated by PR\nspec:\n  source:\n    targetRevision: release-1.4\n\n# Or pin to an immutable tag\nspec:\n  source:\n    targetRevision: v1.4.2"
+        },
+        {
+          "language": "bash",
+          "label": "Promote by merging branches",
+          "code": "# Promote main to staging\ngit checkout release-candidate\ngit merge --ff-only main\ngit push origin release-candidate\n\n# Promote staging to prod (via PR for review)\ngit checkout release-1.4\ngit merge --no-ff release-candidate\n# open PR -> require 2 approvals -> merge\n\n# Argo CD picks up each environment on its own schedule"
+        }
+      ]
+    },
+    {
+      "id": "appproject-per-environment",
+      "title": "Define one AppProject per environment",
+      "description": "AppProjects are the security boundary inside Argo CD. Without them, any Application can deploy any resource to any cluster. Create one project per environment so dev apps cannot accidentally target the prod cluster, and staging cannot deploy ClusterRoles.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "AppProject for production",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: AppProject\nmetadata:\n  name: prod\n  namespace: argocd\nspec:\n  description: Production workloads\n\n  sourceRepos:\n    - https://github.com/org/k8s-config\n\n  destinations:\n    - server: https://prod.example.com\n      namespace: 'api-prod'\n    - server: https://prod.example.com\n      namespace: 'web-prod'\n\n  clusterResourceWhitelist:\n    - group: ''\n      kind: Namespace\n\n  namespaceResourceBlacklist:\n    - group: ''\n      kind: ResourceQuota\n    - group: ''\n      kind: LimitRange\n\n  roles:\n    - name: deployer\n      policies:\n        - p, proj:prod:deployer, applications, sync, prod/*, allow\n        - p, proj:prod:deployer, applications, get, prod/*, allow\n      groups:\n        - org:platform-ops"
+        }
+      ]
+    },
+    {
+      "id": "namespace-per-environment",
+      "title": "Isolate environments by cluster or namespace",
+      "description": "Pick one: separate clusters per environment, or shared cluster with strict namespace isolation. Separate clusters cost more but eliminate blast radius. Shared clusters are cheaper but you must enforce NetworkPolicies, ResourceQuotas, and PodSecurity admission. Do not pretend a shared cluster is isolated when you have not configured these.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Namespace with quotas and policies",
+          "code": "apiVersion: v1\nkind: Namespace\nmetadata:\n  name: api-prod\n  labels:\n    environment: production\n    pod-security.kubernetes.io/enforce: restricted\n---\napiVersion: v1\nkind: ResourceQuota\nmetadata:\n  name: api-prod-quota\n  namespace: api-prod\nspec:\n  hard:\n    requests.cpu: '20'\n    requests.memory: 40Gi\n    limits.cpu: '40'\n    limits.memory: 80Gi\n    persistentvolumeclaims: '10'\n---\napiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: deny-cross-namespace\n  namespace: api-prod\nspec:\n  podSelector: {}\n  policyTypes: [Ingress]\n  ingress:\n    - from:\n        - namespaceSelector:\n            matchLabels:\n              environment: production"
+        }
+      ]
+    },
+    {
+      "id": "automated-sync-by-environment",
+      "title": "Automated sync for dev, gated for prod",
+      "description": "Auto-sync on dev keeps the feedback loop tight. Auto-sync on prod means a typo in main goes live before anyone reviews it. Disable auto-sync on prod and require a manual sync (or a PR-driven release branch update) so a human looks at the diff before traffic moves.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Dev: auto-sync with self-heal",
+          "code": "spec:\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true\n    syncOptions:\n      - CreateNamespace=true\n      - ApplyOutOfSyncOnly=true\n    retry:\n      limit: 3\n      backoff:\n        duration: 10s\n        factor: 2\n        maxDuration: 2m"
+        },
+        {
+          "language": "yaml",
+          "label": "Prod: manual sync only",
+          "code": "spec:\n  syncPolicy:\n    # No automated block. A human runs:\n    #   argocd app sync api-service-prod\n    # after reviewing the diff.\n    syncOptions:\n      - CreateNamespace=false\n      - ServerSideApply=true\n      - RespectIgnoreDifferences=true\n  ignoreDifferences:\n    - group: apps\n      kind: Deployment\n      jsonPointers:\n        - /spec/replicas  # HPA owns this"
+        }
+      ]
+    },
+    {
+      "id": "secrets-out-of-git",
+      "title": "Keep secrets out of Git, always",
+      "description": "Plain Secrets in your config repo is a breach waiting to happen. Pick one of: External Secrets Operator (pulls from Vault, AWS Secrets Manager, GCP), Sealed Secrets (encrypted in repo, decrypted in cluster), or SOPS (encrypted files Argo CD decrypts via a plugin). Pick one and use it everywhere. Mixing approaches is how secrets leak.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "External Secret per environment",
+          "code": "# apps/api-service/overlays/prod/external-secret.yaml\napiVersion: external-secrets.io/v1beta1\nkind: ExternalSecret\nmetadata:\n  name: api-db\n  namespace: api-prod\nspec:\n  refreshInterval: 1h\n  secretStoreRef:\n    name: aws-secrets-manager-prod\n    kind: ClusterSecretStore\n  target:\n    name: api-db\n  data:\n    - secretKey: DATABASE_URL\n      remoteRef:\n        key: prod/api-service/db\n        property: connection_string"
+        },
+        {
+          "language": "bash",
+          "label": "Sealed Secret per environment",
+          "code": "# Each environment uses its own sealing key\nkubectl create secret generic api-db \\\n  --from-literal=password=$(op read 'op://prod/api/db-password') \\\n  --dry-run=client -o yaml \\\n  | kubeseal --controller-namespace=kube-system \\\n             --scope=namespace-wide \\\n             --namespace=api-prod \\\n             -o yaml > apps/api-service/overlays/prod/api-db-sealed.yaml\n\n# A sealed secret encrypted for staging will not decrypt in prod\n# That is the point. Do not share keys across environments."
+        }
+      ]
+    },
+    {
+      "id": "promote-via-pull-requests",
+      "title": "Promote with pull requests, not by editing prod folders directly",
+      "description": "Direct edits to overlays/prod skip review and audit. Wire up a workflow where promotion opens a PR that bumps the image tag, runs validation, and waits for approval. Your audit trail becomes git log and your rollback becomes git revert.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Promotion workflow",
+          "code": "# .github/workflows/promote-to-prod.yaml\nname: Promote to prod\non:\n  workflow_dispatch:\n    inputs:\n      version:\n        description: Image tag from staging\n        required: true\n\njobs:\n  promote:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n\n      - name: Bump prod overlay\n        run: |\n          cd apps/api-service/overlays/prod\n          kustomize edit set image api-service=api-service:${{ inputs.version }}\n\n      - name: Validate manifests\n        run: |\n          kustomize build apps/api-service/overlays/prod | \\\n            kubeconform -strict -summary -\n\n      - uses: peter-evans/create-pull-request@v6\n        with:\n          branch: promote/api-${{ inputs.version }}\n          title: 'Promote api-service ${{ inputs.version }} to prod'\n          labels: production,promotion\n          reviewers: platform-oncall"
+        }
+      ]
+    },
+    {
+      "id": "branch-protection-on-config-repo",
+      "title": "Lock down the config repo with branch protection",
+      "description": "Your config repo is now your deployment control plane. Anyone who can push to main can deploy anywhere. Require PR reviews, signed commits on the prod branch, status checks for manifest validation, and CODEOWNERS for sensitive paths.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "CODEOWNERS for sensitive paths",
+          "code": "# .github/CODEOWNERS\n\n# Anything under prod needs platform team approval\n/clusters/prod/                    @org/platform-team\n/apps/*/overlays/prod/             @org/platform-team\n\n# Cluster bootstrap and AppProjects need security review\n/clusters/**/*root-app.yaml        @org/platform-team @org/security\n/projects/                         @org/security\n\n# Service teams own their dev and staging overlays\n/apps/api-service/overlays/dev/    @org/api-team\n/apps/api-service/overlays/staging/ @org/api-team"
+        },
+        {
+          "language": "bash",
+          "label": "Required status checks",
+          "code": "# In GitHub branch protection for main:\n# - Require pull request reviews: 2 approvals\n# - Dismiss stale reviews on new commits\n# - Require review from CODEOWNERS\n# - Require status checks:\n#     kustomize-build\n#     kubeconform-validate\n#     conftest-policy\n#     argocd-diff-preview\n# - Require signed commits\n# - Include administrators\n\n# Verify with gh CLI:\ngh api repos/org/k8s-config/branches/main/protection"
+        }
+      ]
+    },
+    {
+      "id": "sync-windows-for-prod",
+      "title": "Set sync windows on the prod project",
+      "description": "Even with manual sync, you do not want someone shipping at 4am Friday. Sync windows let you allow deploys during business hours and block them during change freezes. The window applies to auto-sync; you can still run manual sync if you flip the override.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Sync windows on prod project",
+          "code": "apiVersion: argoproj.io/v1alpha1\nkind: AppProject\nmetadata:\n  name: prod\n  namespace: argocd\nspec:\n  syncWindows:\n    - kind: allow\n      schedule: '0 9-16 * * 1-4'   # Mon-Thu, 9am-4pm\n      duration: 7h\n      applications: ['*']\n      manualSync: true\n\n    - kind: deny\n      schedule: '0 0 * * 5,6,0'    # Fri-Sun all day\n      duration: 24h\n      applications: ['*']\n      manualSync: false\n\n    - kind: deny\n      schedule: '0 0 20 12 *'      # Holiday freeze: Dec 20 onwards\n      duration: 336h\n      applications: ['*']"
+        }
+      ]
+    },
+    {
+      "id": "drift-and-notifications",
+      "title": "Wire up drift alerts and Slack notifications",
+      "description": "When prod drifts from Git, you want to know in seconds, not at the next standup. Argo CD Notifications hooks into sync failures, health degradation, and out-of-sync events. Push them to Slack or PagerDuty so the on-call sees them.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Notification triggers",
+          "code": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: argocd-notifications-cm\n  namespace: argocd\ndata:\n  service.slack: |\n    token: $slack-token\n\n  trigger.on-sync-failed: |\n    - when: app.status.operationState.phase in ['Error', 'Failed']\n      send: [slack-alert]\n\n  trigger.on-health-degraded: |\n    - when: app.status.health.status == 'Degraded'\n      send: [slack-alert]\n\n  trigger.on-out-of-sync: |\n    - when: app.status.sync.status == 'OutOfSync' and app.metadata.labels.environment == 'production'\n      send: [slack-alert]\n\n  template.slack-alert: |\n    slack:\n      attachments: |\n        [{\n          \"title\": \"{{.app.metadata.name}}\",\n          \"color\": \"#ff0000\",\n          \"fields\": [\n            {\"title\": \"Sync\", \"value\": \"{{.app.status.sync.status}}\"},\n            {\"title\": \"Health\", \"value\": \"{{.app.status.health.status}}\"},\n            {\"title\": \"Revision\", \"value\": \"{{.app.status.sync.revision}}\"}\n          ]\n        }]"
+        },
+        {
+          "language": "bash",
+          "label": "Subscribe an app to a channel",
+          "code": "# Annotate the Application to route alerts\nkubectl annotate application api-service-prod \\\n  -n argocd \\\n  notifications.argoproj.io/subscribe.on-sync-failed.slack=platform-alerts \\\n  notifications.argoproj.io/subscribe.on-health-degraded.slack=platform-alerts\n\n# Verify drift in real time\nargocd app diff api-service-prod\nargocd app get api-service-prod --refresh"
+        }
+      ]
+    },
+    {
+      "id": "document-the-layout",
+      "title": "Document the layout in a README at the repo root",
+      "description": "Six months from now a new engineer needs to ship to staging. If they have to reverse-engineer your folder structure from Argo CD's UI, you have already lost. A short README explaining where each environment lives, how to add a service, and how promotion works pays for itself the first time someone uses it.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "README.md template",
+          "code": "cat > README.md << 'EOF'\n# k8s-config\n\nArgo CD reads from this repo. Pushing to main deploys to dev. Promoting to\nstaging and prod is gated.\n\n## Layout\n\n    apps/<service>/base/                shared manifests\n    apps/<service>/overlays/<env>/      per-environment patches\n    clusters/<env>/root-app.yaml        bootstrap Application for the cluster\n    clusters/<env>/apps/                child Application manifests\n    projects/                           AppProject definitions (RBAC boundary)\n    infrastructure/                     ingress, cert-manager, monitoring\n\n## Adding a new service\n\n1. Create apps/<service>/base/ with deployment, service, kustomization.yaml\n2. Create overlays/dev, overlays/staging, overlays/prod\n3. Add an Application manifest to clusters/dev/apps/<service>.yaml\n4. Open a PR. CI runs kustomize build + kubeconform.\n\n## Promoting to prod\n\nRun the \"Promote to prod\" workflow in GitHub Actions. It opens a PR\nbumping the image tag in overlays/prod/. Two approvals required.\n\n## Rollback\n\n    git revert <commit-sha>\n    git push origin main\n\nArgo CD will sync the reverted state on the next reconcile.\nEOF"
+        }
+      ]
+    }
+  ]
+}
