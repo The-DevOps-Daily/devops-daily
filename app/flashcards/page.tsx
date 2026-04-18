@@ -156,9 +156,9 @@ export default async function FlashcardsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-xl border border-border bg-card/50 backdrop-blur-sm">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-linear-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                <Target className="w-6 h-6 text-white" />
+            <div className="text-center p-6 rounded-md border border-border bg-card/50 backdrop-blur-sm">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-md bg-primary/10 flex items-center justify-center">
+                <Target className="w-6 h-6 text-primary" strokeWidth={1.5} />
               </div>
               <h3 className="text-xl font-semibold mb-2">Active Recall</h3>
               <p className="text-muted-foreground">
@@ -166,9 +166,9 @@ export default async function FlashcardsPage() {
               </p>
             </div>
 
-            <div className="text-center p-6 rounded-xl border border-border bg-card/50 backdrop-blur-sm">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                <Activity className="w-6 h-6 text-white" />
+            <div className="text-center p-6 rounded-md border border-border bg-card/50 backdrop-blur-sm">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-md bg-primary/10 flex items-center justify-center">
+                <Activity className="w-6 h-6 text-primary" strokeWidth={1.5} />
               </div>
               <h3 className="text-xl font-semibold mb-2">Track Progress</h3>
               <p className="text-muted-foreground">
@@ -176,9 +176,9 @@ export default async function FlashcardsPage() {
               </p>
             </div>
 
-            <div className="text-center p-6 rounded-xl border border-border bg-card/50 backdrop-blur-sm">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-linear-to-br from-indigo-500 to-indigo-600 flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-white" />
+            <div className="text-center p-6 rounded-md border border-border bg-card/50 backdrop-blur-sm">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-md bg-primary/10 flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-primary" strokeWidth={1.5} />
               </div>
               <h3 className="text-xl font-semibold mb-2">Quick Sessions</h3>
               <p className="text-muted-foreground">

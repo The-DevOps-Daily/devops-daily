@@ -595,8 +595,8 @@ function BookCard({ book, index }: { book: Book; index: number }) {
       <CardHeader className="pb-4">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div className="relative shrink-0">
-            <div className="absolute inset-0 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity" />
-            <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-lg bg-linear-to-br from-blue-500 to-purple-600 text-white shadow-lg group-hover:scale-110 transition-transform">
+            <div className="absolute inset-0 bg-primary/60 rounded-md blur-md opacity-50 group-hover:opacity-75 transition-opacity" />
+            <div className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-md bg-primary text-primary-foreground group-hover:scale-110 transition-transform">
               <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
           </div>

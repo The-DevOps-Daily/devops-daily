@@ -46,7 +46,7 @@ export const sectionColors = {
     bg: 'bg-primary/10',
     border: 'border-primary/30',
     text: 'text-primary',
-    gradient: 'from-primary to-purple-600',
+    gradient: 'from-primary to-primary/70',
   },
   blue: {
     bg: 'bg-blue-500/10',
