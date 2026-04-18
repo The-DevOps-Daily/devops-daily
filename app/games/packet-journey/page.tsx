@@ -1,72 +1,30 @@
 import type { Metadata } from 'next';
-import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import PacketJourney from '@/components/games/packet-journey';
+import { SimulatorShell } from '@/components/games/simulator-shell';
 import { generateGameMetadata } from '@/lib/game-metadata';
-import { getGameById } from '@/lib/games';
-import { GameActions } from '@/components/games/game-actions';
-import { GameSponsors } from '@/components/games/game-sponsors';
-import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('packet-journey');
 }
 
-export default async function PacketJourneyPage() {
-  const game = await getGameById('packet-journey');
-  const gameTitle = game?.title || 'Packet Journey';
-
-  const breadcrumbItems = [
-    { label: 'Games', href: '/games' },
-    { label: gameTitle, href: '/games/packet-journey', isCurrent: true },
-  ];
-
-  const schemaItems = [
-    { name: 'Home', url: '/' },
-    { name: 'Games', url: '/games' },
-    { name: gameTitle, url: '/games/packet-journey' },
-  ];
-
+export default function PacketJourneyPage() {
   return (
     <>
-      <BreadcrumbSchema items={schemaItems} />
-      {game && (
-        <SoftwareApplicationSchema
-          name={game.title}
-          description={game.description}
-          url={game.href}
-          category={game.category || 'DevOps Simulator'}
-          keywords={game.tags}
-        />
-      )}
       <GameSeoContent
         title="Packet Journey"
         description="Follow a network packet from source to destination through the TCP/IP stack. Visualize how data travels through layers, routers, switches, and firewalls in this interactive networking simulator."
         category="Networking"
-        tags={["networking", "tcp-ip", "packets", "routing"]}
+        tags={['networking', 'tcp-ip', 'packets', 'routing']}
         learningPoints={[
-            "Understand the TCP/IP network model",
-            "Trace packet routing through network hops",
-            "Learn about DNS resolution, NAT, and firewalls",
+          'Understand the TCP/IP network model',
+          'Trace packet routing through network hops',
+          'Learn about DNS resolution, NAT, and firewalls',
         ]}
       />
-      <div className="container px-4 py-8 mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <Breadcrumb items={breadcrumbItems} />
-          <GameActions gameSlug="packet-journey" gameTitle={gameTitle} />
-       </div>
-
-       {/* Sponsors */}
-       <GameSponsors />
-
-      <PacketJourney />
-
-        {/* Carbon Ads */}
-        <div className="w-full max-w-md mx-auto my-8">
-          <CarbonAds />
-        </div>
-     </div>
-   </>
+      <SimulatorShell slug="packet-journey">
+        <PacketJourney />
+      </SimulatorShell>
+    </>
   );
 }

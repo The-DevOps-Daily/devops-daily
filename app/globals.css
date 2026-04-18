@@ -125,6 +125,21 @@
   }
 }
 
+/* Terminal CRT-style cursor blink — sharp on/off, not a soft pulse */
+@keyframes cursor-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.animate-cursor-blink {
+  animation: cursor-blink 1.06s steps(2, jump-none) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-cursor-blink {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
 /* Syntax Highlighting for Light Mode */
 .hljs {
   @apply bg-muted text-foreground;

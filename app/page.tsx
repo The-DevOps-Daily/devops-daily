@@ -3,6 +3,9 @@ import { Hero } from '@/components/hero';
 import LatestPosts from '@/components/latest-posts';
 import LatestGuides from '@/components/latest-guides';
 import FeaturedExercises from '@/components/featured-exercises';
+import FeaturedQuizzes from '@/components/featured-quizzes';
+import { SectionHeader } from '@/components/section-header';
+import { SectionSeparator } from '@/components/section-separator';
 import { ArrowRight, Globe, Anchor, Scale, GitBranch, Database, Shield } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -83,9 +86,21 @@ const FEATURED_SIMULATORS = [
 export default async function Home() {
   return (
     <div>
-      {/* Full-width hero background */}
+      {/* Full-width hero with dot-grid background */}
       <div className="relative overflow-x-hidden">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-muted/40 via-muted/15 to-transparent" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 opacity-[0.07] dark:opacity-[0.09]"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle, currentColor 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+            maskImage:
+              'linear-gradient(to bottom, black 60%, transparent 100%)',
+            WebkitMaskImage:
+              'linear-gradient(to bottom, black 60%, transparent 100%)',
+          }}
+        />
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
         <div className="container px-4 pt-8 mx-auto">
           <Hero />
@@ -94,54 +109,16 @@ export default async function Home() {
 
       <div className="container px-4 mx-auto">
 
-      {/* About - terminal block, citable for AI search */}
-      <section className="my-12 max-w-3xl mx-auto" aria-label="About DevOps Daily">
-        <div className="rounded-lg border bg-card overflow-hidden font-mono text-sm">
-          {/* Terminal header */}
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b">
-            <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-400/70" />
-              <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
-              <div className="w-3 h-3 rounded-full bg-green-400/70" />
-            </div>
-            <span className="text-xs text-muted-foreground ml-2">devops-daily --about</span>
-          </div>
-          {/* Terminal body */}
-          <div className="p-6 space-y-3">
-            <div>
-              <span className="text-green-500">$</span>{' '}
-              <span className="text-muted-foreground">cat about.md</span>
-            </div>
-            <p className="pl-4 text-foreground leading-relaxed">
-              DevOps Daily is a free educational platform covering Kubernetes, Docker, Terraform,
-              CI/CD, cloud platforms, observability, and security through hands-on tutorials,
-              30+ interactive simulators, quizzes, and a weekly newsletter read by 5,000+ engineers.
-            </p>
-            <div className="text-xs text-muted-foreground/60 pl-4 pt-1">
-              <span className="text-green-500/70">$</span> <span className="animate-pulse">_</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <SectionSeparator command="ls /simulators" />
 
       {/* Featured Simulators */}
       <section className="my-16">
-        <div className="flex items-end justify-between mb-8 border-b pb-4">
-          <div>
-            <p className="text-xs font-mono text-muted-foreground mb-1">// featured</p>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Interactive Simulators
-            </h2>
-          </div>
-          <Link
-            href="/games"
-            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-primary transition-colors"
-          >
-            Browse all
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-3 bg-border border rounded-lg overflow-hidden">
+        <SectionHeader
+          label="featured"
+          title="Interactive Simulators"
+          viewAllHref="/games"
+        />
+        <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-3 bg-border border rounded-md overflow-hidden">
           {FEATURED_SIMULATORS.map((sim) => {
             const Icon = sim.icon;
             return (
@@ -168,6 +145,8 @@ export default async function Home() {
         </Link>
       </section>
 
+      <SectionSeparator command="cd /categories" />
+
       <CategoryGrid
         className="my-16"
         limit={8}
@@ -175,14 +154,63 @@ export default async function Home() {
         showViewAll
         gridClassName="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
       />
+
+      <SectionSeparator command="ls /exercises --recent" />
+
       <FeaturedExercises className="my-16" />
+
+      <SectionSeparator command="ls /quizzes --latest" />
+
+      <FeaturedQuizzes className="my-16" />
+
+      <SectionSeparator command="ls /posts --latest" />
+
       <LatestPosts className="my-16" />
+
+      <SectionSeparator command="ls /guides --latest" />
+
       <LatestGuides className="my-16" />
+
+      {/* About - editorial identity block, citable for AI search */}
+      <section
+        className="my-16 max-w-4xl mx-auto px-4"
+        aria-label="About DevOps Daily"
+      >
+        <p className="text-xs font-mono text-muted-foreground mb-3">// about</p>
+        <p className="text-xl sm:text-2xl leading-relaxed tracking-tight">
+          <span className="font-semibold text-foreground">DevOps Daily</span>{' '}
+          <span className="text-muted-foreground">is a free, independent education platform for engineers who want to
+          learn by running things, not by reading pitch decks. Kubernetes, Docker, Terraform, CI/CD, observability,
+          and security, through</span>{' '}
+          <span className="text-foreground">hands-on simulators, quizzes, exercises, and a weekly newsletter.</span>
+        </p>
+        <dl className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-px bg-border border rounded-md overflow-hidden font-mono">
+          <div className="bg-card p-4">
+            <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">Free</dt>
+            <dd className="text-lg tabular-nums font-semibold mt-1">$0</dd>
+            <dd className="text-xs text-muted-foreground/80 mt-0.5">forever</dd>
+          </div>
+          <div className="bg-card p-4">
+            <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">Simulators</dt>
+            <dd className="text-lg tabular-nums font-semibold mt-1">30+</dd>
+            <dd className="text-xs text-muted-foreground/80 mt-0.5">interactive</dd>
+          </div>
+          <div className="bg-card p-4">
+            <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">Subscribers</dt>
+            <dd className="text-lg tabular-nums font-semibold mt-1">5,000+</dd>
+            <dd className="text-xs text-muted-foreground/80 mt-0.5">engineers</dd>
+          </div>
+          <div className="bg-card p-4">
+            <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">Cadence</dt>
+            <dd className="text-lg tabular-nums font-semibold mt-1">Weekly</dd>
+            <dd className="text-xs text-muted-foreground/80 mt-0.5">no spam</dd>
+          </div>
+        </dl>
+      </section>
 
       {/* Newsletter CTA - terminal style */}
       <section className="my-20 max-w-3xl mx-auto">
-        <div className="rounded-lg border bg-card overflow-hidden font-mono text-sm">
-          {/* Terminal header */}
+        <div className="rounded-md border bg-card overflow-hidden font-mono text-sm">
           <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b">
             <div className="flex gap-1.5">
               <div className="w-3 h-3 rounded-full bg-red-400/70" />
@@ -191,7 +219,6 @@ export default async function Home() {
             </div>
             <span className="text-xs text-muted-foreground ml-2">devops-daily --subscribe</span>
           </div>
-          {/* Terminal body */}
           <div className="p-6 space-y-3">
             <div>
               <span className="text-green-500">$</span>{' '}
@@ -236,11 +263,12 @@ export default async function Home() {
               </button>
             </form>
             <div className="text-xs text-muted-foreground pl-4 pt-1">
-              <span className="text-green-500/70">$</span> <span className="animate-pulse">_</span>
+              <span className="text-green-500/70">$</span>{' '}
+              <span className="inline-block w-[0.6em] h-[1em] align-middle bg-foreground/60 animate-cursor-blink" />
             </div>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-4">
+        <p className="text-xs text-muted-foreground text-center mt-4 font-mono tabular-nums">
           5,000+ engineers subscribed
         </p>
       </section>

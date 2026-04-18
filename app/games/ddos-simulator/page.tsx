@@ -1,72 +1,30 @@
 import type { Metadata } from 'next';
-import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import DDoSSimulator from '@/components/games/ddos-simulator';
+import { SimulatorShell } from '@/components/games/simulator-shell';
 import { generateGameMetadata } from '@/lib/game-metadata';
-import { getGameById } from '@/lib/games';
-import { GameActions } from '@/components/games/game-actions';
-import { GameSponsors } from '@/components/games/game-sponsors';
-import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateMetadata(): Promise<Metadata> {
   return generateGameMetadata('ddos-simulator');
 }
 
-export default async function DDoSSimulatorPage() {
-  const game = await getGameById('ddos-simulator');
-  const gameTitle = game?.title || 'DDoS Attack Simulator';
-
-  const breadcrumbItems = [
-    { label: 'Games', href: '/games' },
-    { label: gameTitle, href: '/games/ddos-simulator', isCurrent: true },
-  ];
-
-  const schemaItems = [
-    { name: 'Home', url: '/' },
-    { name: 'Games', url: '/games' },
-    { name: gameTitle, url: '/games/ddos-simulator' },
-  ];
-
+export default function DDoSSimulatorPage() {
   return (
     <>
-      <BreadcrumbSchema items={schemaItems} />
-      {game && (
-        <SoftwareApplicationSchema
-          name={game.title}
-          description={game.description}
-          url={game.href}
-          category={game.category || 'DevOps Simulator'}
-          keywords={game.tags}
-        />
-      )}
       <GameSeoContent
         title="DDoS Attack Simulator"
         description="Understand Distributed Denial of Service attacks and defense mechanisms through interactive simulation. Learn about attack vectors, mitigation strategies, and incident response."
         category="Security"
-        tags={["security", "ddos", "networking", "incident-response"]}
+        tags={['security', 'ddos', 'networking', 'incident-response']}
         learningPoints={[
-            "Recognize different types of DDoS attacks",
-            "Implement rate limiting and traffic filtering",
-            "Design resilient architectures against DDoS",
+          'Recognize different types of DDoS attacks',
+          'Implement rate limiting and traffic filtering',
+          'Design resilient architectures against DDoS',
         ]}
       />
-      <div className="container px-4 py-8 mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <Breadcrumb items={breadcrumbItems} />
-          <GameActions gameSlug="ddos-simulator" gameTitle={gameTitle} />
-        </div>
-
-        {/* Sponsors */}
-        <GameSponsors />
-
+      <SimulatorShell slug="ddos-simulator">
         <DDoSSimulator />
-
-        {/* Carbon Ads */}
-        <div className="w-full max-w-md mx-auto my-8">
-          <CarbonAds />
-        </div>
-      </div>
+      </SimulatorShell>
     </>
   );
 }

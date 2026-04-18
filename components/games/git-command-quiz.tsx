@@ -373,24 +373,15 @@ export default function GitCommandQuiz() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <Card className="relative overflow-hidden border-2 border-primary/20 bg-linear-to-br from-blue-50/80 to-purple-50/80 dark:from-blue-950/30 dark:to-purple-950/30">
-            {/* Animated background elements */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/10 rounded-full blur-xl animate-pulse" />
-              <div
-                className="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-500/10 rounded-full blur-xl animate-pulse"
-                style={{ animationDelay: '1s' }}
-              />
-            </div>
-
+          <Card className="relative overflow-hidden border border-primary/20 bg-muted/30 rounded-md">
             <CardHeader className="text-center pb-4 relative">
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
-                className="mx-auto mb-6 p-6 bg-linear-to-br from-blue-500 to-purple-600 rounded-full w-fit shadow-xl"
+                className="mx-auto mb-6 p-6 bg-primary/10 rounded-full w-fit"
               >
-                <GitFork className="h-10 w-10 text-white" />
+                <GitFork className="h-10 w-10 text-primary" />
               </motion.div>
 
               <motion.div
@@ -398,7 +389,7 @@ export default function GitCommandQuiz() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
               >
-                <CardTitle className="text-4xl md:text-5xl font-bold mb-4 bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <CardTitle className="text-4xl md:text-5xl font-bold mb-4 text-primary">
                   Git Command Quiz
                 </CardTitle>
                 <CardDescription className="text-lg md:text-xl text-muted-foreground">
@@ -414,7 +405,7 @@ export default function GitCommandQuiz() {
                 transition={{ delay: 0.6 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
               >
-                <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-green-200 dark:border-green-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-center p-6 bg-card rounded-md border border-green-200 dark:border-green-800">
                   <Badge className="mb-3 bg-green-500 hover:bg-green-600 text-white border-0 px-4 py-1">
                     <Target className="w-3 h-3 mr-1" />
                     Beginner
@@ -425,7 +416,7 @@ export default function GitCommandQuiz() {
                   <div className="mt-2 text-xs text-green-600 dark:text-green-400">3 scenarios</div>
                 </div>
 
-                <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-yellow-200 dark:border-yellow-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-center p-6 bg-card rounded-md border border-yellow-200 dark:border-yellow-800">
                   <Badge className="mb-3 bg-yellow-500 hover:bg-yellow-600 text-white border-0 px-4 py-1">
                     <Zap className="w-3 h-3 mr-1" />
                     Intermediate
@@ -438,7 +429,7 @@ export default function GitCommandQuiz() {
                   </div>
                 </div>
 
-                <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-red-200 dark:border-red-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-center p-6 bg-card rounded-md border border-red-200 dark:border-red-800">
                   <Badge className="mb-3 bg-red-500 hover:bg-red-600 text-white border-0 px-4 py-1">
                     <BookOpen className="w-3 h-3 mr-1" />
                     Advanced
@@ -481,7 +472,7 @@ export default function GitCommandQuiz() {
                 <Button
                   size="lg"
                   onClick={() => setGameStarted(true)}
-                  className="bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 px-8 py-4 text-lg"
+                  className="px-8 py-4 text-lg"
                 >
                   <Play className="mr-2 h-5 w-5" />
                   Start Quiz
@@ -505,15 +496,15 @@ export default function GitCommandQuiz() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <Card className="text-center border-2 border-primary/20 bg-linear-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20">
+          <Card className="text-center border border-primary/20 bg-muted/30 rounded-md">
             <CardHeader>
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                className={`mx-auto mb-4 p-4 bg-linear-to-br from-blue-500 to-purple-600 rounded-full w-fit`}
+                className="mx-auto mb-4 p-4 bg-primary/10 rounded-full w-fit"
               >
-                <RatingIcon className={`h-8 w-8 text-white`} />
+                <RatingIcon className="h-8 w-8 text-primary" />
               </motion.div>
               <CardTitle className="text-3xl mb-2">Quiz Complete!</CardTitle>
               <CardDescription className="text-xl">
@@ -573,7 +564,6 @@ export default function GitCommandQuiz() {
                   <Button
                     onClick={handleRestart}
                     size="lg"
-                    className="bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Play Again
@@ -672,7 +662,7 @@ export default function GitCommandQuiz() {
           <div className="space-y-3">
             <h4 className="font-semibold">What's the correct approach?</h4>
             {scenario.options.map((option, index) => (
-              <motion.div key={index} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <motion.div key={index} whileTap={{ scale: 0.98 }}>
                 <Button
                   variant="outline"
                   className={cn(
@@ -801,14 +791,12 @@ export default function GitCommandQuiz() {
                 <Button
                   onClick={handleSubmit}
                   disabled={selectedAnswer === null}
-                  className="bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                 >
                   Submit Answer
                 </Button>
               ) : (
                 <Button
                   onClick={handleNext}
-                  className="bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                 >
                   {currentScenario < scenarios.length - 1 ? 'Next Scenario' : 'See Results'}
                   <Sparkles className="ml-2 h-4 w-4" />

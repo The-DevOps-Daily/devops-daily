@@ -1269,7 +1269,7 @@ export default function ScalableSentry() {
               "absolute inset-0 flex flex-col items-center justify-center backdrop-blur-sm rounded-lg z-20",
               isDark ? "bg-slate-950/95" : "bg-white/95"
             )}>
-                <h1 className="text-5xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-indigo-500 mb-2">SCALABLE SENTRY</h1>
+                <h1 className="text-5xl font-black text-primary mb-2">SCALABLE SENTRY</h1>
                 <p className={cn(
                   "mb-8 tracking-widest uppercase text-sm",
                   isDark ? "text-slate-400" : "text-gray-600"
@@ -1297,7 +1297,7 @@ export default function ScalableSentry() {
                     })}
                 </div>
 
-                <button onClick={() => setGameState('playing')} className="px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-xl transition-all hover:scale-105 shadow-[0_0_25px_rgba(37,99,235,0.6)]">
+                <button onClick={() => setGameState('playing')} className="px-12 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-xl transition-colors">
                     BOOTSTRAP SYSTEM
                 </button>
             </div>

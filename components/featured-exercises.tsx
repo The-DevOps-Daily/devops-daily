@@ -20,6 +20,7 @@ import {
   Settings,
   LucideIcon,
 } from 'lucide-react';
+import { SectionHeader } from '@/components/section-header';
 import { getFeaturedExercises } from '@/lib/exercises';
 import type { Exercise } from '@/lib/exercises-types';
 
@@ -102,21 +103,12 @@ export default async function FeaturedExercises({ className }: FeaturedExercises
 
   return (
     <section className={cn(className)}>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Hands-On Exercises</h2>
-          <p className="mt-2 text-muted-foreground">
-            Practice real-world DevOps scenarios with step-by-step guidance
-          </p>
-        </div>
-        <Link
-          href="/exercises"
-          className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-        >
-          View all
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+      <SectionHeader
+        label="exercises"
+        title="Hands-On Exercises"
+        description="Practice real-world DevOps scenarios with step-by-step guidance"
+        viewAllHref="/exercises"
+      />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {featuredExercises.map((exercise) => (

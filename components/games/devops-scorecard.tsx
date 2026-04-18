@@ -381,7 +381,6 @@ export default function DevOpsScorecard() {
           <Button
             onClick={shareScorecard}
             size="lg"
-            className="bg-linear-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
           >
             <Share2 className="mr-2 h-4 w-4" />
             Share Results
@@ -409,7 +408,7 @@ export default function DevOpsScorecard() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
-        <h2 className="text-4xl md:text-5xl font-bold bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+        <h2 className="text-4xl md:text-5xl font-bold text-primary">
           DevOps Scorecard
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -480,7 +479,6 @@ export default function DevOpsScorecard() {
                         {[1, 2, 3, 4, 5].map((rating) => (
                           <motion.button
                             key={rating}
-                            whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => updateSkillScore(category.id, skillIndex, rating)}
                             className={cn(
@@ -528,7 +526,6 @@ export default function DevOpsScorecard() {
         <Button
           onClick={generateScorecard}
           size="lg"
-          className="bg-linear-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-lg"
           disabled={categories.every((cat) => cat.skills.every((skill) => skill.score === 0))}
         >
           <Trophy className="mr-2 h-4 w-4" />

@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar } from 'lucide-react';
 import { OptimizedImage } from '@/components/optimized-image';
+import { SectionHeader } from '@/components/section-header';
 import { getLatestGuides } from '@/lib/guides';
 import type { Guide } from '@/lib/guides';
 
@@ -15,18 +16,18 @@ export default async function LatestGuides({ className }: LatestGuidesProps) {
 
   return (
     <section className={cn('', className)}>
-      <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold tracking-tight">Latest Guides</h2>
-        <p className="mt-4 text-lg text-muted-foreground">
-          Step-by-step tutorials to boost your DevOps skills
-        </p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <SectionHeader
+        label="guides"
+        title="Latest Guides"
+        description="Step-by-step tutorials to boost your DevOps skills"
+        viewAllHref="/guides"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {latestGuides.map((guide, index) => (
           <Link
             key={guide.slug}
             href={`/guides/${guide.slug}`}
-            className="group flex flex-col overflow-hidden rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all"
+            className="group flex flex-col overflow-hidden rounded-md border border-border hover:border-primary/40 hover:bg-muted/30 transition-colors"
           >
             <div className="relative h-48 overflow-hidden">
               <OptimizedImage
