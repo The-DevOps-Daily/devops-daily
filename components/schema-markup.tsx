@@ -285,6 +285,54 @@ export function LearningResourceSchema({
   );
 }
 
+export function SoftwareApplicationSchema({
+  name,
+  description,
+  url,
+  category,
+  keywords,
+}: {
+  name: string;
+  description: string;
+  url: string;
+  category?: string;
+  keywords?: string[];
+}) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': ['SoftwareApplication', 'LearningResource'],
+    name,
+    description,
+    url: `${SITE_URL}${url}`,
+    applicationCategory: 'EducationalApplication',
+    applicationSubCategory: category || 'DevOps Simulator',
+    operatingSystem: 'Web Browser',
+    browserRequirements: 'Requires JavaScript. Requires HTML5.',
+    learningResourceType: 'Simulation',
+    educationalUse: ['practice', 'self-directed learning'],
+    interactivityType: 'active',
+    isAccessibleForFree: true,
+    inLanguage: 'en',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    provider: {
+      '@id': ORGANIZATION_ID,
+    },
+    ...(keywords && keywords.length > 0 ? { keywords: keywords.join(', ') } : {}),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 export function FAQSchema({ questions }: { questions: { question: string; answer: string }[] }) {
   if (!questions || questions.length === 0) return null;
 

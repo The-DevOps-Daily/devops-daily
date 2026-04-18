@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import DDoSSimulator from '@/components/games/ddos-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
@@ -31,6 +31,15 @@ export default async function DDoSSimulatorPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      {game && (
+        <SoftwareApplicationSchema
+          name={game.title}
+          description={game.description}
+          url={game.href}
+          category={game.category || 'DevOps Simulator'}
+          keywords={game.tags}
+        />
+      )}
       <GameSeoContent
         title="DDoS Attack Simulator"
         description="Understand Distributed Denial of Service attacks and defense mechanisms through interactive simulation. Learn about attack vectors, mitigation strategies, and incident response."

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import ForkBombSimulator from '@/components/games/fork-bomb-simulator';
 import { generateGameMetadata } from '@/lib/game-metadata';
@@ -31,6 +31,15 @@ export default async function ForkBombSimulatorPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      {game && (
+        <SoftwareApplicationSchema
+          name={game.title}
+          description={game.description}
+          url={game.href}
+          category={game.category || 'DevOps Simulator'}
+          keywords={game.tags}
+        />
+      )}
       <GameSeoContent
         title="Fork Bomb Simulator"
         description="Visualize how the :(){ :|:& };: fork bomb works. Watch exponential process growth, understand resource exhaustion, and learn prevention with ulimit and cgroups."

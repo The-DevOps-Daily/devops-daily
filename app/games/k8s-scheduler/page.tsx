@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Twitter, Facebook, Linkedin, Activity } from 'lucide-react';
@@ -38,6 +38,15 @@ export default async function K8sSchedulerPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      {game && (
+        <SoftwareApplicationSchema
+          name={game.title}
+          description={game.description}
+          url={game.href}
+          category={game.category || 'DevOps Simulator'}
+          keywords={game.tags}
+        />
+      )}
       <GameSeoContent
         title="Kubernetes Scheduler Simulator"
         description="Learn how the Kubernetes scheduler assigns pods to nodes. Understand resource requests and limits, node affinity, taints and tolerations, and scheduling priorities through interactive simulation."

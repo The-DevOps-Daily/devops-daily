@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameSeoContent } from '@/components/games/game-seo-content';
 import PacketJourney from '@/components/games/packet-journey';
 import { generateGameMetadata } from '@/lib/game-metadata';
@@ -31,6 +31,15 @@ export default async function PacketJourneyPage() {
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      {game && (
+        <SoftwareApplicationSchema
+          name={game.title}
+          description={game.description}
+          url={game.href}
+          category={game.category || 'DevOps Simulator'}
+          keywords={game.tags}
+        />
+      )}
       <GameSeoContent
         title="Packet Journey"
         description="Follow a network packet from source to destination through the TCP/IP stack. Visualize how data travels through layers, routers, switches, and firewalls in this interactive networking simulator."

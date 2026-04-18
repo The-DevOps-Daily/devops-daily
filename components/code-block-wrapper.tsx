@@ -37,7 +37,7 @@ export function CodeBlock({ children, language }: CodeBlockProps) {
       <pre className="bg-muted/50 backdrop-blur-sm rounded-lg overflow-hidden border border-border/50 shadow-sm">
         <code
           ref={codeRef}
-          className={`block p-4 text-sm font-mono overflow-x-auto ${language ? 'pt-8' : ''}`}
+          className={`block p-4 text-xs sm:text-sm font-mono overflow-x-auto ${language ? 'pt-8' : ''}`}
         >
           {children}
         </code>

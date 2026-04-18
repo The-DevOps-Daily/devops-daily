@@ -72,8 +72,7 @@ export async function Hero() {
         </h1>
 
         <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
-          Interactive simulators, quizzes, flashcards, and hands-on exercises.
-          {totalContent}+ pieces of free content built for engineers who prefer a terminal over a slide deck.
+          {totalContent}+ simulators, quizzes, and hands-on exercises for engineers who prefer a terminal over a slide deck.
         </p>
 
         {/* CTA buttons */}
