@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronRight } from 'lucide-react';
-import { HeroActivity } from '@/components/hero-activity';
+import { HeroDemoTerminal } from '@/components/hero-demo-terminal';
 import { getAllPosts } from '@/lib/posts';
 import { getAllGuides } from '@/lib/guides';
 import { getActiveGames } from '@/lib/games';
@@ -92,9 +92,9 @@ export async function Hero() {
         </p>
       </div>
 
-      {/* Right column — recent activity terminal */}
+      {/* Right column — animated command demo terminal */}
       <div className="lg:col-span-5 w-full lg:pt-4">
-        <HeroActivity />
+        <HeroDemoTerminal />
       </div>
       </div>
 

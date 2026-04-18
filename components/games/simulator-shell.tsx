@@ -91,15 +91,13 @@ export async function SimulatorShell({
         </div>
 
         <div className="flex flex-col mx-auto max-w-7xl">
-          <h1 className="sr-only">{title}</h1>
-
           {/* Monospace label matches the homepage section chrome */}
           <p className="text-xs font-mono text-muted-foreground mb-1">
             // simulator
           </p>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1">
             {title}
-          </h2>
+          </h1>
           {description && (
             <p className="text-sm text-muted-foreground max-w-3xl mb-6">{description}</p>
           )}
