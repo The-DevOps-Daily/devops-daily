@@ -3,8 +3,8 @@ title: 'Day 1 - Build a Minimal Docker Image'
 day: 1
 excerpt: 'Learn to create the smallest possible Docker image for a Go application. Optimize for size, security, and performance using static compilation.'
 description: 'Create a minimal Docker image under 25MB using Go, multi-stage builds, Alpine Linux, and best practices for containerization.'
-publishedAt: '2025-12-01T00:00:00Z'
-updatedAt: '2025-12-14T00:00:00Z'
+publishedAt: '2026-12-01T00:00:00Z'
+updatedAt: '2026-12-14T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Docker'
 tags:

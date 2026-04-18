@@ -3,8 +3,8 @@ title: 'Day 4 - Speed Up CI with Caching'
 day: 4
 excerpt: 'Optimize a slow GitHub Actions workflow by adding intelligent caching for dependencies. Achieve 40% faster run times.'
 description: 'Learn GitHub Actions caching strategies to dramatically reduce CI/CD pipeline execution times.'
-publishedAt: '2025-12-04T00:00:00Z'
-updatedAt: '2025-12-04T00:00:00Z'
+publishedAt: '2026-12-04T00:00:00Z'
+updatedAt: '2026-12-04T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'CI/CD'
 tags:

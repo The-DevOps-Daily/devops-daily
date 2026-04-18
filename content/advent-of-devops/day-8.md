@@ -3,8 +3,8 @@ title: 'Day 8 - Deploy a Small App on Kubernetes'
 day: 8
 excerpt: 'Deploy your first application to Kubernetes using Deployments, Services, and ConfigMaps. Learn the fundamentals of K8s.'
 description: 'Master Kubernetes basics by deploying a containerized application with proper configuration, service discovery, and health checks.'
-publishedAt: '2025-12-08T00:00:00Z'
-updatedAt: '2025-12-08T00:00:00Z'
+publishedAt: '2026-12-08T00:00:00Z'
+updatedAt: '2026-12-08T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Kubernetes'
 tags:

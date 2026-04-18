@@ -3,8 +3,8 @@ title: 'Day 12 - Log Parsing'
 day: 12
 excerpt: 'Parse and analyze application logs to extract meaningful insights and debug production issues.'
 description: 'Learn log parsing techniques using tools like jq, grep, awk, and LogQL to troubleshoot applications and extract valuable metrics from logs.'
-publishedAt: '2025-12-12T00:00:00Z'
-updatedAt: '2025-12-12T00:00:00Z'
+publishedAt: '2026-12-12T00:00:00Z'
+updatedAt: '2026-12-12T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Observability'
 tags:
