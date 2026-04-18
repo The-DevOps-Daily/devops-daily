@@ -1,5 +1,4 @@
 import { CategoryGrid } from '@/components/category-grid';
-import FeaturedPosts from '@/components/featured-posts';
 import { Hero } from '@/components/hero';
 import LatestPosts from '@/components/latest-posts';
 import LatestGuides from '@/components/latest-guides';
@@ -95,13 +94,34 @@ export default async function Home() {
 
       <div className="container px-4 mx-auto">
 
-      {/* About - citable paragraph for AI search engines */}
-      <section className="my-12 max-w-3xl" aria-label="About DevOps Daily">
-        <p className="text-base text-muted-foreground leading-relaxed">
-          DevOps Daily is a free educational platform covering Kubernetes, Docker, Terraform, CI/CD,
-          cloud platforms, observability, and security through hands-on tutorials, 30+ interactive
-          simulators, quizzes, and a weekly newsletter read by 5,000+ engineers.
-        </p>
+      {/* About - terminal block, citable for AI search */}
+      <section className="my-12 max-w-3xl mx-auto" aria-label="About DevOps Daily">
+        <div className="rounded-lg border bg-card overflow-hidden font-mono text-sm">
+          {/* Terminal header */}
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-400/70" />
+              <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
+              <div className="w-3 h-3 rounded-full bg-green-400/70" />
+            </div>
+            <span className="text-xs text-muted-foreground ml-2">devops-daily --about</span>
+          </div>
+          {/* Terminal body */}
+          <div className="p-6 space-y-3">
+            <div>
+              <span className="text-green-500">$</span>{' '}
+              <span className="text-muted-foreground">cat about.md</span>
+            </div>
+            <p className="pl-4 text-foreground leading-relaxed">
+              DevOps Daily is a free educational platform covering Kubernetes, Docker, Terraform,
+              CI/CD, cloud platforms, observability, and security through hands-on tutorials,
+              30+ interactive simulators, quizzes, and a weekly newsletter read by 5,000+ engineers.
+            </p>
+            <div className="text-xs text-muted-foreground/60 pl-4 pt-1">
+              <span className="text-green-500/70">$</span> <span className="animate-pulse">_</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Featured Simulators */}
@@ -155,7 +175,6 @@ export default async function Home() {
         showViewAll
         gridClassName="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
       />
-      <FeaturedPosts className="my-16" />
       <FeaturedExercises className="my-16" />
       <LatestPosts className="my-16" />
       <LatestGuides className="my-16" />
