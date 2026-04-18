@@ -35,12 +35,12 @@ export function ExpertsHero({ totalExperts, specialties }: ExpertsHeroProps) {
   };
 
   return (
-    <section className="relative w-full overflow-hidden bg-gradient-to-br from-background via-background/95 to-emerald-50/30 dark:to-emerald-950/20 pt-24 pb-20">
+    <section className="relative w-full overflow-hidden bg-gradient-to-br from-background via-background/95 to-primary/5 pt-24 pb-20">
       {/* Background - static, no animations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Static gradient orbs - no animation, just CSS */}
-        <div className="absolute -top-32 -right-32 w-96 h-96 bg-emerald-400/15 dark:bg-emerald-600/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-teal-400/15 dark:bg-teal-600/10 rounded-full blur-3xl" />
+        <div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/15 rounded-full blur-3xl" />
+        <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
 
         {/* Subtle grid pattern */}
         <div
@@ -66,10 +66,10 @@ export function ExpertsHero({ totalExperts, specialties }: ExpertsHeroProps) {
             <div className="relative">
               {/* Single subtle pulse ring - CSS only on desktop */}
               {!shouldReduceMotion && (
-                <div className="absolute inset-0 bg-emerald-400/20 rounded-full animate-ping hidden md:block" style={{ animationDuration: '3s' }} />
+                <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping hidden md:block" style={{ animationDuration: '3s' }} />
               )}
-              <div className="relative p-5 bg-gradient-to-br from-emerald-500 via-teal-600 to-cyan-600 rounded-full shadow-2xl">
-                <Users className="w-10 h-10 text-white" />
+              <div className="relative p-5 bg-primary rounded-full shadow-2xl">
+                <Users className="w-10 h-10 text-primary-foreground" />
               </div>
             </div>
           </motion.div>
@@ -80,7 +80,7 @@ export function ExpertsHero({ totalExperts, specialties }: ExpertsHeroProps) {
             className="mb-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
           >
             <span className="text-foreground">Hire a DevOps </span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400">
+            <span className="text-primary">
               Expert
             </span>
           </motion.h1>
@@ -100,15 +100,15 @@ export function ExpertsHero({ totalExperts, specialties }: ExpertsHeroProps) {
             className="flex flex-wrap justify-center gap-4 mb-10 text-sm text-muted-foreground"
           >
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full" />
+              <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/60 rounded-full" />
               <span>{totalExperts} {totalExperts === 1 ? 'Expert' : 'Experts'} Available</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gradient-to-r from-teal-500 to-cyan-600 rounded-full" />
+              <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/60 rounded-full" />
               <span>{specialties.length}+ Specialties</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full" />
+              <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/60 rounded-full" />
               <span>Vetted Professionals</span>
             </div>
           </motion.div>

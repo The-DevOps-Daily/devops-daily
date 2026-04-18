@@ -42,21 +42,21 @@ export default function SponsorshipPage() {
       <section className="relative overflow-hidden bg-background py-20">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-linear-to-br from-blue-600/10 via-background to-background" />
-          <div className="absolute top-20 right-20 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-20 left-20 w-72 h-72 bg-purple-500/10 rounded-full blur-[100px]" />
+          <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-background to-background" />
+          <div className="absolute top-20 right-20 w-96 h-96 bg-primary/10 rounded-full blur-[120px]" />
+          <div className="absolute bottom-20 left-20 w-72 h-72 bg-primary/10 rounded-full blur-[100px]" />
         </div>
 
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="outline" className="mb-6 px-4 py-1.5 border-blue-500/50 bg-blue-500/5">
+            <Badge variant="outline" className="mb-6 px-4 py-1.5 border-primary/50 bg-primary/5">
               <Sparkles className="w-3.5 h-3.5 mr-2" />
               Limited Sponsorship Spots Available
             </Badge>
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Reach{' '}
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-600">
+              <span className="text-primary">
                 10,000+
               </span>{' '}
               DevOps Professionals
@@ -68,7 +68,7 @@ export default function SponsorshipPage() {
             </p>
 
             <div className="flex gap-4 justify-center flex-wrap">
-              <Button asChild size="lg" className="shadow-lg shadow-blue-500/20">
+              <Button asChild size="lg" className="shadow-lg shadow-primary/20">
                 <a href="mailto:info@devops-daily.com?subject=Sponsorship Inquiry">
                   <Mail className="mr-2 h-4 w-4" />
                   Contact Us
@@ -87,19 +87,19 @@ export default function SponsorshipPage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">10k+</div>
+              <div className="text-4xl font-bold text-primary mb-2">10k+</div>
               <div className="text-muted-foreground">Monthly Readers</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">85%</div>
+              <div className="text-4xl font-bold text-primary mb-2">85%</div>
               <div className="text-muted-foreground">Senior Engineers</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">65%</div>
+              <div className="text-4xl font-bold text-primary mb-2">65%</div>
               <div className="text-muted-foreground">Decision Makers</div>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600 mb-2">92%</div>
+              <div className="text-4xl font-bold text-primary mb-2">92%</div>
               <div className="text-muted-foreground">Engagement Rate</div>
             </div>
           </div>
@@ -203,7 +203,7 @@ export default function SponsorshipPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Starter Package */}
-              <Card className="relative overflow-hidden border-2 hover:border-blue-500/50 transition-all">
+              <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all">
                 <CardHeader>
                   <CardTitle className="text-2xl">Starter</CardTitle>
                   <CardDescription>Perfect for emerging companies</CardDescription>
@@ -229,8 +229,8 @@ export default function SponsorshipPage() {
               </Card>
 
               {/* Professional Package */}
-              <Card className="relative overflow-hidden border-2 border-blue-500 shadow-lg shadow-blue-500/10">
-                <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 text-sm rounded-bl-lg">
+              <Card className="relative overflow-hidden border-2 border-primary shadow-lg shadow-primary/10">
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-sm rounded-bl-lg">
                   Popular
                 </div>
                 <CardHeader>
@@ -256,7 +256,7 @@ export default function SponsorshipPage() {
               </Card>
 
               {/* Enterprise Package */}
-              <Card className="relative overflow-hidden border-2 hover:border-purple-500/50 transition-all">
+              <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all">
                 <CardHeader>
                   <CardTitle className="text-2xl">Enterprise</CardTitle>
                   <CardDescription>Maximum visibility & impact</CardDescription>
@@ -288,7 +288,7 @@ export default function SponsorshipPage() {
       <section className="py-20 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-linear-to-br from-blue-600/5 via-background to-background" />
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-background to-background" />
         </div>
 
         <div className="container mx-auto px-4">
@@ -301,7 +301,7 @@ export default function SponsorshipPage() {
             </p>
 
             <div className="flex gap-4 justify-center flex-wrap">
-              <Button asChild size="lg" className="shadow-lg shadow-blue-500/20">
+              <Button asChild size="lg" className="shadow-lg shadow-primary/20">
                 <a href="mailto:info@devops-daily.com?subject=Sponsorship Inquiry">
                   <Mail className="mr-2 h-4 w-4" />
                   Email: info@devops-daily.com

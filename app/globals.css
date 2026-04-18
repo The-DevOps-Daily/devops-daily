@@ -46,6 +46,27 @@
   }
 }
 
+/*
+  THEME COLOR SYSTEM
+  ------------------
+  The brand/UI color is driven entirely by `--primary`. To change the site's
+  primary color, edit `--primary` (and its dark-mode counterpart below) here
+  and nothing else — every brand surface uses `bg-primary`, `text-primary`,
+  `from-primary`, or `border-primary` and will update automatically.
+
+  Rules for future changes:
+  - NEVER hardcode `bg-blue-500`, `text-purple-600`, `from-pink-*`, etc. for
+    brand surfaces (buttons, hero accents, links, badges). Always use `primary`.
+  - Gradients on brand surfaces use `from-primary to-primary/60` or similar
+    single-hue variants, not multi-color rainbows.
+  - Semantic colors stay as semantic Tailwind classes:
+      `bg-red-*`    → destructive / errors
+      `bg-green-*`  → success
+      `bg-amber-*`  → warnings (may overlap primary — use `bg-yellow-*` instead)
+      `bg-emerald-*`/`bg-violet-*` → tier/category coding (Junior / Senior badges, etc.)
+  - Terminal accents (`text-green-500` for `$` prompts) stay as-is — they represent
+    actual terminal output, not brand.
+*/
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -54,6 +75,7 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
+    /* Brand color — change here to rebrand the entire site */
     --primary: 32 95% 44%;
     --primary-foreground: 0 0% 100%;
     --secondary: 240 4.8% 95.9%;
@@ -67,7 +89,7 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 32 95% 44%;
-    --radius: 0.5rem;
+    --radius: 0.375rem;
   }
 
   .dark {
@@ -77,6 +99,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
+    /* Brand color (dark mode) — typically a lighter variant of the light-mode primary */
     --primary: 38 92% 55%;
     --primary-foreground: 240 10% 6%;
     --secondary: 240 3.7% 15.9%;

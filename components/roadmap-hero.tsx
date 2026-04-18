@@ -90,20 +90,20 @@ export function RoadmapHero() {
   };
 
  return (
-    <section className="relative overflow-hidden bg-linear-to-b from-blue-50 via-purple-50/30 to-background dark:from-blue-950/20 dark:via-purple-950/10 dark:to-background">
+    <section className="relative overflow-hidden bg-linear-to-b from-primary/5 via-primary/[0.02] to-background">
      {/* Animated gradient orbs */}
      <div className="absolute inset-0 overflow-hidden pointer-events-none">
        <motion.div
          custom={1}
          variants={orbVariants}
          animate="animate"
-         className="absolute w-[500px] h-[500px] bg-linear-to-r from-blue-400 to-cyan-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -top-48 -left-48"
+         className="absolute w-[500px] h-[500px] bg-linear-to-r from-primary/40 to-primary/20 rounded-full blur-3xl opacity-20 dark:opacity-10 -top-48 -left-48"
        />
        <motion.div
          custom={1.5}
          variants={orbVariants}
          animate="animate"
-         className="absolute w-[600px] h-[600px] bg-linear-to-r from-purple-400 to-pink-400 rounded-full blur-3xl opacity-20 dark:opacity-10 -bottom-48 -right-48"
+         className="absolute w-[600px] h-[600px] bg-linear-to-r from-primary/30 to-primary/10 rounded-full blur-3xl opacity-20 dark:opacity-10 -bottom-48 -right-48"
        />
        <motion.div
          custom={2}
@@ -121,7 +121,7 @@ export function RoadmapHero() {
            custom={i}
            variants={particleVariants}
            animate="animate"
-           className="absolute w-2 h-2 bg-linear-to-br from-blue-400 to-purple-400 rounded-full"
+           className="absolute w-2 h-2 bg-linear-to-br from-primary to-primary/60 rounded-full"
            style={{
              left: `${10 + (i * 8) % 80}%`,
              bottom: '10%',
@@ -153,7 +153,7 @@ export function RoadmapHero() {
           <motion.div variants={itemVariants} className="flex justify-center mb-6">
             <Badge
               variant="secondary"
-              className="px-4 py-2 text-sm font-medium bg-linear-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 border-blue-200 dark:border-blue-800"
+              className="px-4 py-2 text-sm font-medium bg-primary/10 border-primary/20 text-primary"
             >
               <Sparkles className="inline-block w-4 h-4 mr-2 text-yellow-500 animate-pulse" />
               Your Complete DevOps Learning Path
@@ -168,10 +168,7 @@ export function RoadmapHero() {
            <motion.span
              variants={shimmerVariants}
              animate="animate"
-             className="block text-transparent bg-clip-text bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400"
-             style={{
-               backgroundSize: '200% 200%',
-             }}
+             className="block text-primary"
            >
              Excel in DevOps
            </motion.span>
@@ -193,20 +190,20 @@ export function RoadmapHero() {
             className="grid max-w-3xl grid-cols-1 gap-6 mx-auto mb-12 sm:grid-cols-3"
           >
             {[
-              { icon: Target, label: '6 Career Stages', color: 'text-blue-600 dark:text-blue-400' },
+              { icon: Target, label: '6 Career Stages', color: 'text-primary' },
               {
                 icon: TrendingUp,
                 label: '150+ Skills',
-                color: 'text-purple-600 dark:text-purple-400',
+                color: 'text-primary',
               },
-              { icon: Rocket, label: '500+ Resources', color: 'text-pink-600 dark:text-pink-400' },
+              { icon: Rocket, label: '500+ Resources', color: 'text-primary' },
             ].map((stat, index) => (
              <motion.div
                key={stat.label}
                whileHover={{ scale: 1.08, y: -8, rotateY: 5 }}
                whileTap={{ scale: 0.95 }}
                transition={{ duration: 0.2 }}
-               className="p-6 transition-all duration-300 border shadow-lg bg-background/80 backdrop-blur-sm rounded-xl hover:shadow-2xl hover:border-blue-300 dark:hover:border-blue-700 border-border relative overflow-hidden group"
+               className="p-6 transition-all duration-300 border shadow-lg bg-background/80 backdrop-blur-sm rounded-xl hover:shadow-2xl hover:border-primary/50 border-border relative overflow-hidden group"
              >
                {/* Card shine effect on hover */}
                <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -234,7 +231,7 @@ export function RoadmapHero() {
                  repeat: Infinity,
                  ease: 'easeOut',
                }}
-               className="absolute inset-0 bg-blue-400 rounded-full"
+               className="absolute inset-0 bg-primary/40 rounded-full"
              />
              <motion.div
                animate={{
@@ -247,13 +244,13 @@ export function RoadmapHero() {
                  ease: 'easeOut',
                  delay: 0.5,
                }}
-               className="absolute inset-0 bg-purple-400 rounded-full"
+               className="absolute inset-0 bg-primary/30 rounded-full"
              />
              {/* Pulse background effect */}
              <motion.div
                variants={pulseVariants}
                animate="animate"
-               className="absolute inset-0 bg-blue-400 rounded-full blur-xl"
+               className="absolute inset-0 bg-primary/40 rounded-full blur-xl"
              />
              <motion.div
                animate={{
@@ -264,7 +261,7 @@ export function RoadmapHero() {
                  repeat: Infinity,
                  ease: 'easeInOut',
                }}
-               className="relative p-4 bg-linear-to-br from-blue-500 via-purple-600 to-pink-600 rounded-full shadow-2xl"
+               className="relative p-4 bg-primary rounded-full shadow-2xl"
              >
                <Rocket className="w-8 h-8 text-white" />
              </motion.div>
