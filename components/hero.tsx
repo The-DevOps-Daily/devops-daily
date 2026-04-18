@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, ChevronRight } from 'lucide-react';
+import { HeroActivity } from '@/components/hero-activity';
 import { getAllPosts } from '@/lib/posts';
 import { getAllGuides } from '@/lib/guides';
 import { getActiveGames } from '@/lib/games';
@@ -29,7 +30,8 @@ export async function Hero() {
 
   return (
     <div className="pb-8">
-      <div className="max-w-3xl pt-8 sm:pt-12 relative z-10">
+      <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-start pt-8 sm:pt-12 relative z-10">
+      <div className="lg:col-span-7 max-w-3xl">
         {/* Latest post link */}
         {latestPost && (
           <Link
@@ -90,8 +92,14 @@ export async function Hero() {
         </p>
       </div>
 
+      {/* Right column — recent activity terminal */}
+      <div className="lg:col-span-5 w-full lg:pt-4">
+        <HeroActivity />
+      </div>
+      </div>
+
       {/* Terminal-style stats block */}
-      <div className="mt-12 max-w-2xl relative z-10">
+      <div className="mt-10 max-w-2xl relative z-10">
         <div className="rounded-md border border-border/80 bg-card overflow-hidden font-mono text-sm">
           <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b border-border/80">
             <div className="flex gap-1.5">

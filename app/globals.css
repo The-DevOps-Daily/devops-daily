@@ -133,6 +133,12 @@
 .animate-cursor-blink {
   animation: cursor-blink 1.06s steps(2, jump-none) infinite;
 }
+@media (prefers-reduced-motion: reduce) {
+  .animate-cursor-blink {
+    animation: none;
+    opacity: 0.6;
+  }
+}
 
 /* Syntax Highlighting for Light Mode */
 .hljs {

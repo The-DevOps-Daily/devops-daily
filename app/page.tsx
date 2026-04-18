@@ -3,6 +3,7 @@ import { Hero } from '@/components/hero';
 import LatestPosts from '@/components/latest-posts';
 import LatestGuides from '@/components/latest-guides';
 import FeaturedExercises from '@/components/featured-exercises';
+import FeaturedQuizzes from '@/components/featured-quizzes';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
 import { ArrowRight, Globe, Anchor, Scale, GitBranch, Database, Shield } from 'lucide-react';
@@ -108,35 +109,6 @@ export default async function Home() {
 
       <div className="container px-4 mx-auto">
 
-      {/* About - terminal block, citable for AI search */}
-      <section className="my-12 max-w-3xl mx-auto" aria-label="About DevOps Daily">
-        <div className="rounded-md border bg-card overflow-hidden font-mono text-sm">
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b">
-            <div className="flex gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-red-400/70" />
-              <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
-              <div className="w-3 h-3 rounded-full bg-green-400/70" />
-            </div>
-            <span className="text-xs text-muted-foreground ml-2">devops-daily --about</span>
-          </div>
-          <div className="p-6 space-y-3">
-            <div>
-              <span className="text-green-500">$</span>{' '}
-              <span className="text-muted-foreground">cat about.md</span>
-            </div>
-            <p className="pl-4 text-foreground leading-relaxed">
-              DevOps Daily is a free educational platform covering Kubernetes, Docker, Terraform,
-              CI/CD, cloud platforms, observability, and security through hands-on tutorials,
-              30+ interactive simulators, quizzes, and a weekly newsletter read by 5,000+ engineers.
-            </p>
-            <div className="text-xs text-muted-foreground/60 pl-4 pt-1">
-              <span className="text-green-500/70">$</span>{' '}
-              <span className="inline-block w-[0.6em] h-[1em] align-middle bg-foreground/60 animate-cursor-blink" />
-            </div>
-          </div>
-        </div>
-      </section>
-
       <SectionSeparator command="ls /simulators" />
 
       {/* Featured Simulators */}
@@ -187,6 +159,10 @@ export default async function Home() {
 
       <FeaturedExercises className="my-16" />
 
+      <SectionSeparator command="ls /quizzes --latest" />
+
+      <FeaturedQuizzes className="my-16" />
+
       <SectionSeparator command="ls /posts --latest" />
 
       <LatestPosts className="my-16" />
@@ -194,6 +170,35 @@ export default async function Home() {
       <SectionSeparator command="ls /guides --latest" />
 
       <LatestGuides className="my-16" />
+
+      {/* About - terminal block, citable for AI search — placed near newsletter as identity moment */}
+      <section className="my-16 max-w-3xl mx-auto" aria-label="About DevOps Daily">
+        <div className="rounded-md border bg-card overflow-hidden font-mono text-sm">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-muted/60 border-b">
+            <div className="flex gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-red-400/70" />
+              <div className="w-3 h-3 rounded-full bg-yellow-400/70" />
+              <div className="w-3 h-3 rounded-full bg-green-400/70" />
+            </div>
+            <span className="text-xs text-muted-foreground ml-2">devops-daily --about</span>
+          </div>
+          <div className="p-6 space-y-3">
+            <div>
+              <span className="text-green-500">$</span>{' '}
+              <span className="text-muted-foreground">cat about.md</span>
+            </div>
+            <p className="pl-4 text-foreground leading-relaxed">
+              DevOps Daily is a free educational platform covering Kubernetes, Docker, Terraform,
+              CI/CD, cloud platforms, observability, and security through hands-on tutorials,
+              30+ interactive simulators, quizzes, and a weekly newsletter read by 5,000+ engineers.
+            </p>
+            <div className="text-xs text-muted-foreground/60 pl-4 pt-1">
+              <span className="text-green-500/70">$</span>{' '}
+              <span className="inline-block w-[0.6em] h-[1em] align-middle bg-foreground/60 animate-cursor-blink" />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Newsletter CTA - terminal style */}
       <section className="my-20 max-w-3xl mx-auto">
