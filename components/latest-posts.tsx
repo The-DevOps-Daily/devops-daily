@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Clock, Calendar, ArrowRight } from 'lucide-react';
+import { Clock, Calendar } from 'lucide-react';
+import { SectionHeader } from '@/components/section-header';
 import { getLatestPosts } from '@/lib/posts';
 import type { Post } from '@/lib/posts';
 
@@ -14,26 +14,18 @@ export default async function LatestPosts({ className }: LatestPostsProps) {
   const latestPosts: Post[] = await getLatestPosts(6);
   return (
     <section className={cn('', className)}>
-      <div className="flex justify-between items-center mb-10">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Latest Posts</h2>
-          <p className="mt-2 text-lg text-muted-foreground">
-            Stay up to date with the latest DevOps content
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/posts">
-            View All
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
-      </div>
+      <SectionHeader
+        label="posts"
+        title="Latest Posts"
+        description="Stay up to date with the latest DevOps content"
+        viewAllHref="/posts"
+      />
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {latestPosts.map((post) => (
           <Link
             key={post.slug}
             href={`/posts/${post.slug}`}
-            className="group p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all"
+            className="group p-6 bg-card rounded-md border border-border hover:border-primary/40 hover:bg-muted/30 transition-colors"
           >
             <Badge variant="secondary" className="mb-2">
               <span>{post.category?.name ?? 'Uncategorized'}</span>

@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { SectionHeader } from '@/components/section-header';
 import {
   Cloud,
   Container,
@@ -92,35 +92,45 @@ export async function CategoryGrid({
   const displayCategories =
     typeof limit === 'number' ? categoriesWithContent.slice(0, limit) : categoriesWithContent;
 
-  const gridClasses = cn('grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6', gridClassName);
+  const gridClasses = cn(
+    'grid gap-px sm:grid-cols-2 lg:grid-cols-3 bg-border border rounded-md overflow-hidden',
+    gridClassName
+  );
 
   return (
     <section className={cn('', className)}>
       {showHeader && (
-        <div className="mb-10 text-center">
-          <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
-          {description && <p className="mt-4 text-lg text-muted-foreground">{description}</p>}
-        </div>
+        <SectionHeader
+          label="categories"
+          title={title}
+          description={description}
+          viewAllHref={showViewAll ? '/categories' : undefined}
+          viewAllLabel="Browse all"
+        />
       )}
       <div className={gridClasses}>
         {displayCategories.map((category) => {
-          // Get the icon component
           const IconComponent = (category.icon && iconComponents[category.icon]) || Terminal;
 
           return (
             <Link
               key={category.slug}
               href={`/categories/${category.slug}`}
-              className="flex flex-col items-center p-6 transition-all border rounded-lg group bg-card border-border hover:border-primary/50 hover:shadow-md"
+              className="group flex flex-col bg-card p-5 transition-colors hover:bg-muted/40"
             >
-              <div className={cn('p-3 rounded-full', category.color || 'bg-muted')}>
-                <IconComponent className="w-6 h-6" />
-              </div>
-              <h3 className="mt-4 font-semibold">{category.name}</h3>
-              <p className="mt-1 text-sm text-center text-muted-foreground">
-                {category.description}
-              </p>
-              <div className="mt-4 text-sm text-muted-foreground">
+              <IconComponent
+                className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-3"
+                strokeWidth={1.5}
+              />
+              <h3 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
+                {category.name}
+              </h3>
+              {category.description && (
+                <p className="text-muted-foreground text-xs leading-relaxed line-clamp-2">
+                  {category.description}
+                </p>
+              )}
+              <div className="mt-3 text-[11px] font-mono tabular-nums text-muted-foreground/80">
                 {category.count} {category.count === 1 ? 'item' : 'items'}
               </div>
             </Link>
@@ -128,18 +138,11 @@ export async function CategoryGrid({
         })}
 
         {displayCategories.length === 0 && (
-          <div className="py-12 text-center col-span-full">
+          <div className="py-12 text-center col-span-full bg-card">
             <p className="text-muted-foreground">No categories with content yet.</p>
           </div>
         )}
       </div>
-      {showViewAll && (
-        <div className="mt-10 text-center">
-          <Button asChild variant="outline">
-            <Link href="/categories">View All Categories</Link>
-          </Button>
-        </div>
-      )}
     </section>
   );
 }
