@@ -17,7 +17,7 @@ function DnsEducational() {
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
               <strong className="text-foreground">Root Servers (.):</strong> The top of the DNS
-              hierarchy — 13 root server clusters worldwide direct queries to TLD servers.
+              hierarchy. 13 root server clusters worldwide direct queries to TLD servers.
             </li>
             <li>
               <strong className="text-foreground">TLD Servers (.com, .org):</strong> Manage

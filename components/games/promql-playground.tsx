@@ -552,7 +552,7 @@ export default function PromqlPlayground() {
             </div>
           </div>
           <p className="text-sm text-muted-foreground">
-            Learn Prometheus queries interactively. No experience needed – start with tutorials below!
+            Learn Prometheus queries interactively. No experience needed, start with tutorials below!
           </p>
         </CardHeader>
 

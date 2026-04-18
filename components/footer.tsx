@@ -64,7 +64,8 @@ export function Footer() {
             </p>
             <EasterEggTerminal variant="text" />
             <p>
-              <span className="text-green-500/70">$</span> uptime —{' '}
+              <span className="text-green-500/70">$</span> uptime{' '}
+              <span className="text-muted-foreground/70">#</span>{' '}
               <span className="text-foreground">built for DevOps engineers</span>
             </p>
           </div>

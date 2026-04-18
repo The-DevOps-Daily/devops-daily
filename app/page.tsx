@@ -171,7 +171,7 @@ export default async function Home() {
 
       <LatestGuides className="my-16" />
 
-      {/* About — editorial identity block, citable for AI search */}
+      {/* About - editorial identity block, citable for AI search */}
       <section
         className="my-16 max-w-4xl mx-auto px-4"
         aria-label="About DevOps Daily"
@@ -180,7 +180,7 @@ export default async function Home() {
         <p className="text-xl sm:text-2xl leading-relaxed tracking-tight">
           <span className="font-semibold text-foreground">DevOps Daily</span>{' '}
           <span className="text-muted-foreground">is a free, independent education platform for engineers who want to
-          learn by running things — not by reading pitch decks. Kubernetes, Docker, Terraform, CI/CD, observability,
+          learn by running things, not by reading pitch decks. Kubernetes, Docker, Terraform, CI/CD, observability,
           and security, through</span>{' '}
           <span className="text-foreground">hands-on simulators, quizzes, exercises, and a weekly newsletter.</span>
         </p>

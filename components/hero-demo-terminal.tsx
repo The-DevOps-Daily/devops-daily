@@ -27,7 +27,7 @@ const SCENES: Scene[] = [
       { text: 'monitoring    prometheus-0         Running   14d', tone: 'green' },
       { text: 'ingress-nginx nginx-ctrl-xyz       CrashLoop 38s', tone: 'red' },
       { text: '$ kubectl describe pod nginx-ctrl-xyz', tone: 'default', typed: true },
-      { text: '  Events: OOMKilled — retrying (3/5)', tone: 'amber' },
+      { text: '  Events: OOMKilled, retrying (3/5)', tone: 'amber' },
     ],
   },
   {
@@ -88,7 +88,7 @@ export function HeroDemoTerminal() {
 
     const renderNextLine = () => {
       if (lineIndex >= scene.lines.length) {
-        // Scene finished — hold, then next scene
+        // Scene finished. Hold, then next scene
         timerRef.current = setTimeout(() => {
           setSceneIdx((i) => (i + 1) % SCENES.length);
         }, SCENE_PAUSE);
@@ -114,7 +114,7 @@ export function HeroDemoTerminal() {
         };
         typeChar();
       } else {
-        // Output line — appear instantly, small delay before next
+        // Output line appears instantly with small delay before next
         setVisibleLines((prev) => [...prev, line]);
         lineIndex += 1;
         timerRef.current = setTimeout(renderNextLine, LINE_DELAY);

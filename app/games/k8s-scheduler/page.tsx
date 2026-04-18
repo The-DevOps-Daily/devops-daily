@@ -25,7 +25,7 @@ export default function K8sSchedulerPage() {
       />
       <SimulatorShell
         slug="k8s-scheduler"
-        shareText="Try the Kubernetes Scheduler Challenge — place pods onto nodes while honoring K8s rules."
+        shareText="Try the Kubernetes Scheduler Challenge: place pods onto nodes while honoring K8s rules."
       >
         <K8sScheduler />
       </SimulatorShell>
