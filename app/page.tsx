@@ -98,9 +98,9 @@ export default async function Home() {
       {/* About - citable paragraph for AI search engines */}
       <section className="my-12 max-w-3xl" aria-label="About DevOps Daily">
         <p className="text-base text-muted-foreground leading-relaxed">
-          DevOps Daily is a free educational platform founded by Docker Captain Bobby Iliev. It covers
-          Kubernetes, Docker, Terraform, CI/CD, cloud platforms, observability, and security through
-          hands-on tutorials, 30+ interactive simulators, quizzes, and a weekly newsletter read by 5,000+ engineers.
+          DevOps Daily is a free educational platform covering Kubernetes, Docker, Terraform, CI/CD,
+          cloud platforms, observability, and security through hands-on tutorials, 30+ interactive
+          simulators, quizzes, and a weekly newsletter read by 5,000+ engineers.
         </p>
       </section>
 
