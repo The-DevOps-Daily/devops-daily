@@ -94,22 +94,8 @@ export function ReadingProgressBar() {
         animate={{ width: `${progress}%` }}
         transition={{ type: 'spring', stiffness: 400, damping: 40 }}
       >
-        {/* Animated gradient background */}
-        <div
-          className="absolute inset-0 h-full"
-          style={{
-            background: `linear-gradient(
-              90deg,
-              #3b82f6 0%,
-              #8b5cf6 25%,
-              #ec4899 50%,
-              #f59e0b 75%,
-              #3b82f6 100%
-            )`,
-            backgroundSize: '200% 100%',
-            animation: 'gradient 8s ease infinite',
-          }}
-        />
+        {/* Solid primary-color bar */}
+        <div className="absolute inset-0 h-full bg-primary" />
 
         {/* Shimmer effect */}
         <motion.div
