@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { execSync } from 'child_process';
+import { Resvg } from '@resvg/resvg-js';
 
 interface FlashcardOGOptions {
   title: string;
@@ -96,12 +96,12 @@ async function generateFlashcardOG(options: FlashcardOGOptions): Promise<void> {
   <!-- Background gradient -->
   <defs>
     <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e1b4b" />
-      <stop offset="100%" stop-color="#312e81" />
+      <stop offset="0%" stop-color="#1c1917" />
+      <stop offset="100%" stop-color="#292524" />
     </linearGradient>
     <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#8b5cf6" />
-      <stop offset="100%" stop-color="#a78bfa" />
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#fbbf24" />
     </linearGradient>
   </defs>
   
@@ -126,29 +126,33 @@ async function generateFlashcardOG(options: FlashcardOGOptions): Promise<void> {
   </g>
   
   <!-- Category badge -->
-  <rect x="200" y="110" width="${100 + category.length * 12}" height="40" rx="20" fill="#8b5cf6" opacity="0.9"/>
+  <rect x="200" y="110" width="${100 + category.length * 12}" height="40" rx="20" fill="#d97706" opacity="0.9"/>
   <text x="${200 + (100 + category.length * 12) / 2}" y="136" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#ffffff" text-anchor="middle">${escapeXml(category)}</text>
   
   <!-- Title -->
   ${titleLines}
   
   <!-- Card count -->
-  <text x="80" y="480" font-family="Arial, sans-serif" font-size="32" font-weight="600" fill="#a78bfa">${cardCount} Cards</text>
+  <text x="80" y="480" font-family="Arial, sans-serif" font-size="32" font-weight="600" fill="#fbbf24">${cardCount} Cards</text>
   
   <!-- Subtitle -->
   <text x="80" y="530" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="#9ca3af">Interactive Flashcards for DevOps Learning</text>
   
   <!-- Logo/branding -->
-  <text x="1120" y="600" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#8b5cf6" text-anchor="end">DevOps Daily</text>
+  <text x="1120" y="600" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#d97706" text-anchor="end">DevOps Daily</text>
 </svg>`;
 
   // Write SVG file
   await fs.writeFile(outputSvgPath, svgContent, 'utf-8');
   console.log(`✅ Created: ${outputSvgPath}`);
 
-  // Generate PNG from SVG
+  // Generate PNG from SVG via resvg (portable; no shell-out)
   try {
-    execSync(`pnpm svg2png "${outputSvgPath}"`, { stdio: 'inherit' });
+    const svgBuffer = await fs.readFile(outputSvgPath);
+    const pngBuffer = new Resvg(svgBuffer, { fitTo: { mode: 'width', value: 1200 } })
+      .render()
+      .asPng();
+    await fs.writeFile(outputPngPath, pngBuffer);
     console.log(`✅ Created: ${outputPngPath}`);
   } catch (error) {
     console.error(`❌ Failed to generate PNG: ${error}`);

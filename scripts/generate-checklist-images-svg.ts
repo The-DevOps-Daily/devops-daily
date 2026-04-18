@@ -28,20 +28,20 @@ async function loadChecklists(): Promise<Checklist[]> {
 const IMAGE_WIDTH = 1200;
 const IMAGE_HEIGHT = 630;
 
-// Brand colors
+// Brand amber palette (matches app/globals.css --primary)
 const COLORS = {
   background: '#0f172a',
-  primary: '#3b82f6',
+  primary: '#d97706',
   text: '#f8fafc',
-  accent: '#60a5fa',
+  accent: '#fbbf24',
   secondary: '#1e293b',
 };
 
-// Category-specific colors
+// Category-specific colors (DevOps now uses brand amber)
 const CATEGORY_COLORS: Record<string, string> = {
   Security: '#ef4444',
   Cloud: '#8b5cf6',
-  DevOps: '#3b82f6',
+  DevOps: '#d97706',
   'Infrastructure as Code': '#10b981',
 };
 

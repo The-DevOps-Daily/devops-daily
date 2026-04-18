@@ -3,12 +3,12 @@
   <!-- Background gradient -->
   <defs>
     <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e1b4b" />
-      <stop offset="100%" stop-color="#312e81" />
+      <stop offset="0%" stop-color="#1c1917" />
+      <stop offset="100%" stop-color="#292524" />
     </linearGradient>
     <linearGradient id="accent-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#8b5cf6" />
-      <stop offset="100%" stop-color="#a78bfa" />
+      <stop offset="0%" stop-color="#d97706" />
+      <stop offset="100%" stop-color="#fbbf24" />
     </linearGradient>
   </defs>
   
@@ -33,18 +33,18 @@
   </g>
   
   <!-- Category badge -->
-  <rect x="200" y="110" width="220" height="40" rx="20" fill="#8b5cf6" opacity="0.9"/>
+  <rect x="200" y="110" width="220" height="40" rx="20" fill="#d97706" opacity="0.9"/>
   <text x="310" y="136" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#ffffff" text-anchor="middle">Automation</text>
   
   <!-- Title -->
   <text x="80" y="260" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#ffffff">Ansible Basics</text>
   
   <!-- Card count -->
-  <text x="80" y="480" font-family="Arial, sans-serif" font-size="32" font-weight="600" fill="#a78bfa">14 Cards</text>
+  <text x="80" y="480" font-family="Arial, sans-serif" font-size="32" font-weight="600" fill="#fbbf24">14 Cards</text>
   
   <!-- Subtitle -->
   <text x="80" y="530" font-family="Arial, sans-serif" font-size="24" font-weight="400" fill="#9ca3af">Interactive Flashcards for DevOps Learning</text>
   
   <!-- Logo/branding -->
-  <text x="1120" y="600" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#8b5cf6" text-anchor="end">DevOps Daily</text>
+  <text x="1120" y="600" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#d97706" text-anchor="end">DevOps Daily</text>
 </svg>

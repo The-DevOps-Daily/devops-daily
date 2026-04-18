@@ -11,12 +11,12 @@ import { getAllAdventDays } from '../lib/advent.js';
 const IMAGE_WIDTH = 1200;
 const IMAGE_HEIGHT = 630;
 
-// Brand colors
+// Brand amber palette (matches app/globals.css --primary)
 const COLORS = {
   background: '#0f172a',
-  primary: '#3b82f6',
+  primary: '#d97706', // amber-600 (light-mode primary)
   text: '#f8fafc',
-  accent: '#60a5fa',
+  accent: '#fbbf24', // amber-400 (for highlights on dark bg)
 };
 
 function generateSVG(title: string, category: string): string {
@@ -200,8 +200,8 @@ function generateAdventSVG(title: string, day: number, category: string): string
     <text x="170" y="123" font-family="'Courier New', monospace" font-size="24" font-weight="bold" fill="#ffffff" text-anchor="middle">DAY ${day}</text>
  </g>
  <g>
-    <rect x="280" y="95" width="${categoryWidth}" height="40" rx="20" fill="#1e3a8a" opacity="0.8"/>
-    <text x="300" y="122" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa">${safeCategory}</text>
+    <rect x="280" y="95" width="${categoryWidth}" height="40" rx="20" fill="#78350f" opacity="0.8"/>
+    <text x="300" y="122" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#fbbf24">${safeCategory}</text>
   </g>
  <g>
     <text x="80" y="230" font-family="'Courier New', monospace" font-size="36" fill="#10b981" opacity="0.6">&gt;</text>
@@ -215,7 +215,7 @@ function generateAdventSVG(title: string, day: number, category: string): string
   </g>
  <g>
     <text x="80" y="580" font-family="'Courier New', monospace" font-size="20" font-weight="bold" fill="#10b981" opacity="0.8">ADVENT OF DEVOPS</text>
-   <text x="1120" y="580" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#60a5fa" text-anchor="end" opacity="0.7">DevOps Daily</text>
+   <text x="1120" y="580" font-family="Arial, sans-serif" font-size="18" font-weight="600" fill="#fbbf24" text-anchor="end" opacity="0.7">DevOps Daily</text>
  </g>
   <g filter="url(#glow)">
     <text x="1150" y="60" font-size="32" fill="#fbbf24">⭐</text>

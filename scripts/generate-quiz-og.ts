@@ -21,9 +21,9 @@ interface ThemeConfig {
 const THEMES: Record<string, ThemeConfig> = {
   default: {
     template: 'quiz-template-default.svg',
-    bgGradient: ['#1e1b4b', '#312e81'],
-    accentGradient: ['#8b5cf6', '#a78bfa'],
-    textColor: '#a78bfa',
+    bgGradient: ['#1c1917', '#292524'],
+    accentGradient: ['#d97706', '#fbbf24'],
+    textColor: '#fbbf24',
   },
   security: {
     template: 'quiz-template-security.svg',

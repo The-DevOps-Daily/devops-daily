@@ -77,8 +77,8 @@
   </text>
   
   <!-- Badge -->
-  <rect x="520" y="540" width="160" height="40" rx="20" fill="#3b82f6" opacity="0.2"/>
-  <text x="600" y="567" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#3b82f6" text-anchor="middle">
+  <rect x="520" y="540" width="160" height="40" rx="20" fill="#d97706" opacity="0.2"/>
+  <text x="600" y="567" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#fbbf24" text-anchor="middle">
     ⚡ Interactive
   </text>
   
