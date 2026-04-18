@@ -49,7 +49,7 @@ function ExerciseCard({ exercise }: { exercise: Exercise }) {
 
   return (
     <Link href={`/exercises/${exercise.id}`} className="group block">
-      <div className="rounded-lg border bg-card p-5 h-full transition-all hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5">
+      <div className="rounded-md border bg-card p-5 h-full transition-colors hover:border-primary/40 hover:bg-muted/30">
         <div className="flex items-start gap-3 mb-3">
           <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
             <IconComponent className="w-5 h-5 text-primary" />

@@ -50,9 +50,9 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
           <CardWrapper
             key={day.slug}
             {...cardProps}
-            className={`group relative block rounded-xl border transition-all duration-300 overflow-hidden ${
+            className={`group relative block rounded-md border transition-colors overflow-hidden ${
               isUnlocked
-                ? 'border-border hover:border-primary hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-1 cursor-pointer'
+                ? 'border-border hover:border-primary/40 hover:bg-muted/30 cursor-pointer'
                 : 'border-border/50 opacity-60 cursor-not-allowed pointer-events-none'
             } ${completed ? 'ring-2 ring-green-500/50' : ''}`}
             style={{

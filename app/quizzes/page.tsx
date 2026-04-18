@@ -143,7 +143,7 @@ export default async function QuizzesPage() {
               passionate about. Share your expertise with the DevOps community!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
+              <Button size="lg">
                 <GitFork className="mr-2 h-4 w-4" />
                 <Link href="https://github.com/The-DevOps-Daily/devops-daily/issues/new/choose">
                   Contribute Questions

@@ -42,7 +42,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                   href={sponsor.url}
                   target="_blank"
                   rel="noopener noreferrer sponsored"
-                  className="group relative flex items-center gap-4 p-4 bg-background/80 backdrop-blur-sm rounded-xl border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-1"
+                  className="group relative flex items-center gap-4 p-4 bg-background/80 backdrop-blur-sm rounded-md border border-border hover:border-primary/40 hover:bg-muted/30 transition-colors"
                 >
                   {/* External link indicator */}
                   <ExternalLink className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -145,7 +145,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                 rel="noopener noreferrer sponsored"
                 className="group relative"
               >
-                <div className="relative h-full p-6 rounded-xl border border-border bg-background hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1">
+                <div className="relative h-full p-6 rounded-md border border-border bg-background hover:border-primary/40 hover:bg-muted/30 transition-colors">
                   {/* Hover gradient overlay */}
                   <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

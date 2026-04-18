@@ -113,8 +113,8 @@ export default function RoadmapsPage() {
                 <Link key={roadmap.slug} href={`/roadmaps/${roadmap.slug}`}>
                   <Card
                     className={cn(
-                      'group h-full transition-all duration-300 hover:shadow-xl hover:scale-[1.02] cursor-pointer',
-                      'border-2 hover:border-primary/30',
+                      'group h-full transition-colors cursor-pointer',
+                      'border hover:border-primary/40 hover:bg-muted/30',
                       roadmap.featured && 'ring-2 ring-primary/20'
                     )}
                   >

@@ -1363,7 +1363,7 @@ const SkillModal = ({
                   return (
                     <div
                       key={index}
-                      className="p-4 transition-all duration-300 border rounded-lg border-border/50 hover:border-primary/50 group hover:shadow-md"
+                      className="p-4 transition-colors border rounded-md border-border/50 hover:border-primary/40 hover:bg-muted/30 group"
                     >
                       <div className="flex items-start gap-3">
                         <div className="p-2 transition-colors rounded-md bg-muted/50 group-hover:bg-primary/10">
@@ -1465,7 +1465,7 @@ const SkillCard = ({
   const SkillIcon = skill.icon || TypeIcon;
 
   const content = (
-    <div className="relative p-4 transition-all duration-300 border cursor-pointer group/skill rounded-xl border-border/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 bg-card/50 backdrop-blur-sm">
+    <div className="relative p-4 transition-colors border cursor-pointer group/skill rounded-md border-border/50 hover:border-primary/40 hover:bg-muted/30 bg-card/50 backdrop-blur-sm">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div
@@ -1606,7 +1606,7 @@ const ProjectCard = ({ project, stageColor }: { project: RoadmapProject; stageCo
   };
 
   const content = (
-    <div className="p-4 transition-all duration-300 border group/project rounded-xl border-border/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 bg-card/50 backdrop-blur-sm">
+    <div className="p-4 transition-colors border group/project rounded-md border-border/50 hover:border-primary/40 hover:bg-muted/30 bg-card/50 backdrop-blur-sm">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div
@@ -1801,7 +1801,7 @@ export default function RoadmapPage() {
                   <div className="grid grid-cols-2 gap-8">
                     {/* Left Side - Skills */}
                     <div className="pr-8">
-                      <Card className="group hover:shadow-xl transition-all duration-500 transform hover:scale-[1.02] border-2">
+                      <Card className="group hover:border-primary/40 hover:bg-muted/30 transition-colors border">
                         <div
                           className={cn(
                             'absolute inset-0 rounded-lg opacity-5 transition-opacity duration-300 group-hover:opacity-10',
@@ -2001,9 +2001,9 @@ export default function RoadmapPage() {
 
                   <Card
                     className={cn(
-                      'group hover:shadow-xl transition-all duration-300 border-2',
+                      'group hover:border-primary/40 hover:bg-muted/30 transition-colors border',
                       stage.id === 'lifetime' &&
-                        'border-gradient-to-r from-yellow-500 via-pink-500 to-purple-500 shadow-xl shadow-primary/10'
+                        'border-gradient-to-r from-yellow-500 via-pink-500 to-purple-500'
                     )}
                   >
                     <div
@@ -2220,33 +2220,19 @@ export default function RoadmapPage() {
                 </p>
 
                 <div className="flex flex-wrap justify-center gap-4 mb-8">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="transition-all duration-300 transform shadow-lg hover:scale-105"
-                  >
+                  <Button asChild size="lg">
                     <Link href="/guides">
                       <BookOpen className="w-4 h-4 mr-2" />
                       Browse Learning Resources
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="transition-all duration-300 border-2 shadow-md hover:shadow-lg"
-                  >
+                  <Button asChild variant="outline" size="lg">
                     <Link href="/posts">
                       <TrendingUp className="w-4 h-4 mr-2" />
                       Read Latest Articles
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="transition-all duration-300 border-2 shadow-md hover:shadow-lg"
-                  >
+                  <Button asChild variant="outline" size="lg">
                     <Link href="/games">
                       <PlayCircle className="w-4 h-4 mr-2" />
                       Practice with Quizzes

@@ -85,7 +85,7 @@ export default async function FlashcardsPage() {
                 <Link
                   key={set.id}
                   href={`/flashcards/${set.id}`}
-                  className="group relative overflow-hidden rounded-xl border border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
+                  className="group relative overflow-hidden rounded-md border border-border bg-card hover:border-primary/40 hover:bg-muted/30 transition-colors"
                 >
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
@@ -200,7 +200,7 @@ export default async function FlashcardsPage() {
               Share your knowledge with the DevOps community!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
+              <Button size="lg">
                 <GitFork className="mr-2 h-4 w-4" />
                 <Link href="https://github.com/The-DevOps-Daily/devops-daily/issues/new/choose">
                   Contribute Flashcards

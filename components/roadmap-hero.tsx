@@ -203,7 +203,7 @@ export function RoadmapHero() {
                whileHover={{ scale: 1.08, y: -8, rotateY: 5 }}
                whileTap={{ scale: 0.95 }}
                transition={{ duration: 0.2 }}
-               className="p-6 transition-all duration-300 border shadow-lg bg-background/80 backdrop-blur-sm rounded-xl hover:shadow-2xl hover:border-primary/50 border-border relative overflow-hidden group"
+               className="p-6 transition-colors border bg-background/80 backdrop-blur-sm rounded-md hover:border-primary/40 hover:bg-muted/30 border-border relative overflow-hidden group"
              >
                {/* Card shine effect on hover */}
                <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />

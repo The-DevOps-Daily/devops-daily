@@ -111,7 +111,7 @@ export default async function AdventOfDevOpsPage() {
             <div className="flex flex-wrap items-center justify-center gap-4 animate-fade-in-up delay-300">
               <Link
                 href="#challenges"
-                className="group inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-linear-to-r from-primary to-blue-500 text-white font-medium hover:shadow-lg hover:shadow-primary/50 transition-all hover:-translate-y-0.5"
+                className="group inline-flex items-center gap-2 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
               >
                 <Sparkles className="h-5 w-5" />
                 Start Challenge
@@ -173,7 +173,7 @@ export default async function AdventOfDevOpsPage() {
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <Link
                   href="/advent-of-devops/day-1"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-linear-to-r from-primary to-blue-500 text-white font-medium hover:shadow-lg hover:shadow-primary/50 transition-all"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
                 >
                   <Trophy className="h-5 w-5" />
                   Start Day 1

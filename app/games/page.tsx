@@ -75,7 +75,7 @@ export default async function GamesPage() {
               We're always looking to expand our collection with fun and useful games for the DevOps
               community. Share your ideas and we might build it next!
             </p>
-            <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
+            <Button size="lg">
               <Dice6 className="mr-2 h-4 w-4" />
               <Link href="https://github.com/The-DevOps-Daily/devops-daily/issues/new/choose">
                 Suggest a Game

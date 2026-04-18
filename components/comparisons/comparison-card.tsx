@@ -12,7 +12,7 @@ interface ComparisonCardProps {
 export function ComparisonCard({ comparison }: ComparisonCardProps) {
   return (
     <Link href={`/comparisons/${comparison.slug}`} className="group block">
-      <Card className="h-full transition-all duration-300 hover:shadow-lg hover:border-primary/30 hover:-translate-y-1">
+      <Card className="h-full transition-colors hover:border-primary/40 hover:bg-muted/30">
         <CardContent className="p-6">
           {/* Category & Read Time */}
           <div className="flex items-center justify-between mb-4">

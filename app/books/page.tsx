@@ -536,7 +536,7 @@ export default function BooksPage() {
                 Have a recommendation for a DevOps, SRE, or Cloud book that should be on this list?
                 Let us know!
               </p>
-              <Button size="lg" asChild className="shadow-lg hover:shadow-xl transition-all group">
+              <Button size="lg" asChild className="group">
                 <a
                   href={`https://github.com/The-DevOps-Daily/devops-daily/issues/new?${new URLSearchParams(
                     {
@@ -587,7 +587,7 @@ function BookCard({ book, index }: { book: Book; index: number }) {
 
   return (
     <Card
-      className="group flex h-full flex-col transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 hover:-translate-y-1 bg-linear-to-br from-background to-muted/20"
+      className="group flex h-full flex-col transition-colors hover:border-primary/40 hover:bg-muted/30"
       style={{
         animation: `fade-in 0.5s ease-out ${index * 0.05}s both`,
       }}

@@ -130,11 +130,11 @@ function GameCard({ game, featured = false }: { game: SerializableGame; featured
       className={`group block ${game.isComingSoon ? 'pointer-events-none' : ''}`}
     >
       <Card
-        className={`h-full transition-all duration-300 overflow-hidden relative ${
+        className={`h-full transition-colors overflow-hidden relative ${
           game.isComingSoon
             ? 'opacity-60 grayscale hover:grayscale-0 hover:opacity-80'
-            : 'hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 hover:-translate-y-1'
-        } ${featured ? 'ring-2 ring-primary/20 shadow-lg border-primary/30' : 'border-border'}`}
+            : 'hover:border-primary/40 hover:bg-muted/30'
+        } ${featured ? 'ring-2 ring-primary/20 border-primary/30' : 'border-border'}`}
       >
         {/* Top gradient bar */}
         <div className={`h-2 w-full bg-linear-to-r ${game.color}`}></div>

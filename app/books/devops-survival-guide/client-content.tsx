@@ -259,9 +259,8 @@ export function ClientContent() {
             <div className="relative inline-block">
               <div className="absolute -inset-1 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-75 transition duration-1000 animate-pulse" />
               <Button
-                asChild
               size="lg"
-              className="relative text-lg px-10 py-7 shadow-2xl bg-linear-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all hover:scale-105"
+              className="relative text-lg px-10 py-7"
               asChild
             >
               <Link href="#subscribe">
@@ -296,7 +295,7 @@ export function ClientContent() {
               {chapters.map((chapter, idx) => (
                 <Card
                   key={chapter.slug}
-                  className="group relative overflow-hidden border-border/50 hover:border-primary/50 transition-all duration-500 hover:shadow-2xl hover:scale-105"
+                  className="group relative overflow-hidden border-border/50 hover:border-primary/40 hover:bg-muted/30 transition-colors"
                   style={{
                     animationDelay: `${idx * 50}ms`,
                   }}
@@ -392,7 +391,7 @@ export function ClientContent() {
               ].map((benefit, idx) => (
                 <Card
                   key={idx}
-                  className="group relative overflow-hidden border-border/50 hover:border-primary/50 transition-all hover:shadow-xl hover:-translate-y-2"
+                  className="group relative overflow-hidden border-border/50 hover:border-primary/40 hover:bg-muted/30 transition-colors"
                   style={{ animationDelay: `${idx * 100}ms` }}
                 >
                   <div
