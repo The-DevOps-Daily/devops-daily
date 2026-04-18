@@ -26,7 +26,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
 function ensureContrast(hex: string): string {
   const rgb = hexToRgb(hex);
   const luminance = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
-  if (luminance < 80) return '#94a3f8';
+  if (luminance < 80) return '#fbbf24';
   if (luminance > 200) {
     return `rgb(${Math.min(255, rgb.r)}, ${Math.max(0, rgb.g - 40)}, ${Math.max(0, rgb.b - 80)})`;
   }
@@ -53,7 +53,7 @@ function generateSVG(comparison: Comparison): string {
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#1e1b4b;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1c1917;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="toolAGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -77,8 +77,8 @@ function generateSVG(comparison: Comparison): string {
   <line x1="600" y1="120" x2="600" y2="510" stroke="#4b5563" stroke-width="1" stroke-dasharray="8,8" opacity="0.5"/>
 
   <!-- VS circle -->
-  <circle cx="600" cy="315" r="40" fill="#312e81" stroke="#6366f1" stroke-width="2"/>
-  <text x="600" y="325" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#a5b4fc" text-anchor="middle">VS</text>
+  <circle cx="600" cy="315" r="40" fill="#78350f" stroke="#d97706" stroke-width="2"/>
+  <text x="600" y="325" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="bold" fill="#fbbf24" text-anchor="middle">VS</text>
 
   <!-- Tool A name -->
   <text x="300" y="300" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeA}" font-weight="bold" fill="${toolAColor}" text-anchor="middle">${toolAName}</text>
@@ -87,14 +87,14 @@ function generateSVG(comparison: Comparison): string {
   <text x="900" y="300" font-family="Arial, Helvetica, sans-serif" font-size="${fontSizeB}" font-weight="bold" fill="${toolBColor}" text-anchor="middle">${toolBName}</text>
 
   <!-- Category badge -->
-  <rect x="${600 - category.length * 6 - 20}" y="400" width="${category.length * 12 + 40}" height="36" rx="18" fill="#312e81" stroke="#6366f1" stroke-width="1"/>
-  <text x="600" y="424" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#a5b4fc" text-anchor="middle">${category}</text>
+  <rect x="${600 - category.length * 6 - 20}" y="400" width="${category.length * 12 + 40}" height="36" rx="18" fill="#78350f" stroke="#d97706" stroke-width="1"/>
+  <text x="600" y="424" font-family="Arial, Helvetica, sans-serif" font-size="16" fill="#fbbf24" text-anchor="middle">${category}</text>
 
   <!-- Subtitle -->
   <text x="600" y="480" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Feature Comparison, Pros/Cons, and Verdict</text>
 
   <!-- Branding -->
-  <text x="600" y="570" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#6366f1" text-anchor="middle">devops-daily.com</text>
+  <text x="600" y="570" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#d97706" text-anchor="middle">devops-daily.com</text>
 
   <!-- Top accent line -->
   <rect x="0" y="0" width="600" height="4" fill="${toolAColor}"/>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, X, Sparkles } from 'lucide-react'
+import { BookOpen, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Confetti from 'react-confetti'
 
@@ -119,7 +119,7 @@ export function BookPromotionPopup() {
             className="fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] sm:w-96 max-w-sm shadow-2xl"
           >
             {/* Compact card */}
-            <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-background via-background to-primary/5 border-2 border-primary/20 shadow-2xl backdrop-blur-sm">
+            <div className="relative overflow-hidden rounded-md bg-background border border-primary/30 shadow-2xl backdrop-blur-sm">
               {/* Close button */}
               <button
                 onClick={handleDismiss}
@@ -131,33 +131,30 @@ export function BookPromotionPopup() {
 
               {/* Subtle glow effects */}
               <div className="absolute -top-10 -left-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
-              <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl" />
+              <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-primary/5 rounded-full blur-2xl" />
 
               <div className="relative p-4">
                 {!showThankYou ? (
                   <>
                     {/* Compact header */}
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="shrink-0 p-2 rounded-xl bg-gradient-to-br from-primary to-purple-600 shadow-lg">
-                        <BookOpen className="h-5 w-5 text-white" />
+                      <div className="shrink-0 p-2 rounded-md bg-primary/10 border border-primary/20">
+                        <BookOpen className="h-5 w-5 text-primary" strokeWidth={1.5} />
                       </div>
                       <div className="flex-1 min-w-0 pr-6">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <h3 className="text-base font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                            Free DevOps eBook
-                          </h3>
-                          <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-                        </div>
+                        <h3 className="text-base font-bold text-foreground mb-1">
+                          Free DevOps eBook
+                        </h3>
                         <p className="text-xs text-muted-foreground">
-                          Coming soon! Get early access 📚
+                          Coming soon. Get early access.
                         </p>
                       </div>
                     </div>
 
                     {/* Newsletter signup */}
-                    <div className="bg-gradient-to-br from-primary/5 to-purple-500/5 rounded-lg p-3 border border-primary/20">
+                    <div className="bg-muted/30 rounded-md p-3 border border-border/50">
                       <p className="text-xs text-muted-foreground mb-2.5">
-                        Subscribe for exclusive content & launch updates! ✨
+                        Subscribe for exclusive content and launch updates.
                       </p>
 
                       <form onSubmit={handleSubscribe} className="space-y-2">
@@ -169,7 +166,7 @@ export function BookPromotionPopup() {
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="your@email.com"
                           required
-                          className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+                          className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                         />
 
                         {/* Honeypot */}
@@ -177,12 +174,8 @@ export function BookPromotionPopup() {
                           <input type="text" name="b_d1128776b290ad8d08c02094f_fd76a4e93f" tabIndex={-1} defaultValue="" />
                         </div>
 
-                        <Button
-                          type="submit"
-                          className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold py-2.5 text-sm rounded-lg transition-all duration-200 hover:shadow-lg"
-                        >
-                          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                          Subscribe 🚀
+                        <Button type="submit" className="w-full">
+                          Subscribe
                         </Button>
                       </form>
                     </div>

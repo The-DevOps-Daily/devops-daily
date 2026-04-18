@@ -16,8 +16,8 @@ const tierConfig = {
     subtitle: '0-2 years',
     description: 'Linux, Git, Docker basics, CI/CD fundamentals',
     icon: Users,
-    gradient: 'from-emerald-500 to-teal-600',
-    bgGradient: 'from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30',
+    gradient: 'bg-emerald-500',
+    bgGradient: 'bg-emerald-50 dark:bg-emerald-950/30',
     borderColor: 'border-emerald-200 dark:border-emerald-800',
     hoverBorder: 'hover:border-emerald-400 dark:hover:border-emerald-600',
   },
@@ -26,20 +26,20 @@ const tierConfig = {
     subtitle: '2-5 years',
     description: 'Kubernetes, Terraform, monitoring, architecture',
     icon: TrendingUp,
-    gradient: 'from-blue-500 to-indigo-600',
-    bgGradient: 'from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30',
-    borderColor: 'border-blue-200 dark:border-blue-800',
-    hoverBorder: 'hover:border-blue-400 dark:hover:border-blue-600',
+    gradient: 'bg-primary',
+    bgGradient: 'bg-primary/10',
+    borderColor: 'border-primary/20',
+    hoverBorder: 'hover:border-primary/50',
   },
   senior: {
     title: 'Senior',
     subtitle: '5+ years',
     description: 'System design, incident management, leadership',
     icon: Award,
-    gradient: 'from-purple-500 to-pink-600',
-    bgGradient: 'from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30',
-    borderColor: 'border-purple-200 dark:border-purple-800',
-    hoverBorder: 'hover:border-purple-400 dark:hover:border-purple-600',
+    gradient: 'bg-violet-500',
+    bgGradient: 'bg-violet-50 dark:bg-violet-950/30',
+    borderColor: 'border-violet-200 dark:border-violet-800',
+    hoverBorder: 'hover:border-violet-400 dark:hover:border-violet-600',
   },
 };
 
@@ -113,11 +113,11 @@ export function InterviewQuestionsHero({
               <Link
                 key={tier}
                 href={`/interview-questions/${tier}`}
-                className={`group relative overflow-hidden rounded-xl border-2 ${config.borderColor} ${config.hoverBorder} bg-gradient-to-br ${config.bgGradient} p-4 transition-all duration-300 hover:shadow-lg`}
+                className={`group relative overflow-hidden rounded-xl border-2 ${config.borderColor} ${config.hoverBorder} ${config.bgGradient} p-4 transition-all duration-300 hover:shadow-lg`}
               >
                 <div className="flex items-center gap-4">
                   <div
-                    className={`flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br ${config.gradient}`}
+                    className={`flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-lg ${config.gradient}`}
                   >
                     <Icon className="w-5 h-5 text-white" />
                   </div>
@@ -145,7 +145,7 @@ export function InterviewQuestionsHero({
                 </div>
 
                 <div
-                  className={`absolute -right-8 -top-8 w-20 h-20 rounded-full bg-gradient-to-br ${config.gradient} opacity-10 group-hover:opacity-20 transition-opacity`}
+                  className={`absolute -right-8 -top-8 w-20 h-20 rounded-full ${config.gradient} opacity-10 group-hover:opacity-20 transition-opacity`}
                 />
               </Link>
             );

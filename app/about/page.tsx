@@ -181,7 +181,7 @@ export default function AboutPage() {
                 </Badge>
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
                   Making DevOps Knowledge{' '}
-                  <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-600">
+                  <span className="text-primary">
                     Accessible
                   </span>
                 </h2>
@@ -255,7 +255,7 @@ export default function AboutPage() {
                 </Badge>
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
                   Multiple Formats,{' '}
-                  <span className="text-transparent bg-clip-text bg-linear-to-r from-purple-500 to-cyan-500">
+                  <span className="text-primary">
                     One Goal
                   </span>
                 </h2>
@@ -312,7 +312,7 @@ export default function AboutPage() {
                 </Badge>
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
                   Comprehensive{' '}
-                  <span className="text-transparent bg-clip-text bg-linear-to-r from-cyan-500 to-blue-600">
+                  <span className="text-primary">
                     Coverage
                   </span>
                 </h2>
@@ -364,7 +364,7 @@ export default function AboutPage() {
                 </Badge>
                 <h2 className="text-3xl md:text-4xl font-bold mb-4">
                   What We{' '}
-                  <span className="text-transparent bg-clip-text bg-linear-to-r from-green-500 to-emerald-600">
+                  <span className="text-primary">
                     Stand For
                   </span>
                 </h2>
@@ -400,20 +400,20 @@ export default function AboutPage() {
         {/* Open Source & Contact CTA */}
         <section className="py-20 relative overflow-hidden">
           <div className="absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-linear-to-br from-blue-600/5 via-background to-purple-600/5" />
-            <div className="absolute top-20 right-20 w-96 h-96 bg-blue-500/5 rounded-full blur-[120px]" />
-            <div className="absolute bottom-20 left-20 w-72 h-72 bg-purple-500/5 rounded-full blur-[100px]" />
+            <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-background to-primary/5" />
+            <div className="absolute top-20 right-20 w-96 h-96 bg-primary/5 rounded-full blur-[120px]" />
+            <div className="absolute bottom-20 left-20 w-72 h-72 bg-primary/5 rounded-full blur-[100px]" />
           </div>
 
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-flex items-center justify-center p-3 rounded-full bg-linear-to-br from-blue-500 via-purple-600 to-cyan-600 mb-6 shadow-lg">
-                <Github className="h-8 w-8 text-white" />
+              <div className="inline-flex items-center justify-center p-3 rounded-full bg-primary mb-6 shadow-lg">
+                <Github className="h-8 w-8 text-primary-foreground" />
               </div>
 
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Open Source &{' '}
-                <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-500 to-purple-600">
+                <span className="text-primary">
                   Community Driven
                 </span>
               </h2>
@@ -423,7 +423,7 @@ export default function AboutPage() {
               </p>
 
               <div className="flex gap-4 justify-center flex-wrap mb-10">
-                <Button asChild size="lg" className="shadow-lg shadow-blue-500/20">
+                <Button asChild size="lg" className="shadow-lg shadow-primary/20">
                   <a
                     href="https://github.com/The-DevOps-Daily"
                     target="_blank"

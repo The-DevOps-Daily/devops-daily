@@ -14,11 +14,12 @@ const CONCURRENCY_LIMIT = 10; // Process 10 files at a time
 const FORCE_REGENERATE = process.argv.includes('--force');
 
 // Brand colors
+// Brand amber palette (matches app/globals.css --primary)
 const COLORS = {
   background: '#0f172a',
-  primary: '#3b82f6',
+  primary: '#d97706', // amber-600 (light-mode primary)
   text: '#f8fafc',
-  accent: '#60a5fa',
+  accent: '#fbbf24', // amber-400 (for highlights on dark bg)
 };
 
 function generateSVG(title: string, category: string): string {

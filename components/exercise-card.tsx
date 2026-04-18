@@ -77,7 +77,7 @@ export function ExerciseCard({
     <Link href={`/exercises/${exercise.id}`} className="block">
     <Card
       className={cn(
-        'group relative overflow-hidden transition-all duration-500 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 border-2 cursor-pointer h-full',
+        'group relative overflow-hidden transition-colors hover:border-primary/40 hover:bg-muted/30 border cursor-pointer h-full',
         exercise.featured && 'ring-2 ring-primary/20 border-primary/30',
         className
       )}

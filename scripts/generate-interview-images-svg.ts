@@ -7,12 +7,12 @@ import { interviewQuestions } from '../content/interview-questions/index.js';
 const IMAGE_WIDTH = 1200;
 const IMAGE_HEIGHT = 630;
 
-// Brand colors
+// Brand amber palette (matches app/globals.css --primary)
 const COLORS = {
   background: '#0f172a',
-  primary: '#3b82f6',
+  primary: '#d97706',
   text: '#f8fafc',
-  accent: '#60a5fa',
+  accent: '#fbbf24',
   secondary: '#1e293b',
 };
 

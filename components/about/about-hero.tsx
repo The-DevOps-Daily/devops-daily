@@ -87,7 +87,7 @@ export function AboutHero() {
   };
 
   return (
-    <section className="relative w-full overflow-hidden bg-linear-to-br from-background via-background/95 to-blue-50/30 dark:to-blue-950/20 pt-24 pb-20">
+    <section className="relative w-full overflow-hidden bg-linear-to-br from-background via-background/95 to-primary/5 pt-24 pb-20">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {!shouldReduceMotion && (
@@ -96,19 +96,19 @@ export function AboutHero() {
               custom={1}
               variants={orbVariants}
               animate="animate"
-              className="absolute -top-32 -right-32 w-96 h-96 bg-blue-400/20 dark:bg-blue-600/10 rounded-full blur-3xl"
+              className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 rounded-full blur-3xl"
             />
             <motion.div
               custom={-1}
               variants={orbVariants}
               animate="animate"
-              className="absolute -bottom-32 -left-32 w-96 h-96 bg-purple-400/20 dark:bg-purple-600/10 rounded-full blur-3xl"
+              className="absolute -bottom-32 -left-32 w-96 h-96 bg-primary/15 rounded-full blur-3xl"
             />
             <motion.div
               custom={0.5}
               variants={orbVariants}
               animate="animate"
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-400/10 dark:bg-cyan-600/5 rounded-full blur-3xl"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
             />
           </>
         )}
@@ -140,10 +140,7 @@ export function AboutHero() {
             <motion.span
               variants={shimmerVariants}
               animate="animate"
-              className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 via-purple-600 to-cyan-600 dark:from-blue-400 dark:via-purple-400 dark:to-cyan-400"
-              style={{
-                backgroundSize: '200% 200%',
-              }}
+              className="text-primary"
             >
               DevOps Daily
             </motion.span>
@@ -172,7 +169,7 @@ export function AboutHero() {
                       repeat: Infinity,
                       ease: 'easeOut',
                     }}
-                    className="absolute inset-0 bg-blue-400 rounded-full"
+                    className="absolute inset-0 bg-primary/40 rounded-full"
                   />
                   <motion.div
                     animate={{
@@ -185,14 +182,14 @@ export function AboutHero() {
                       ease: 'easeOut',
                       delay: 0.6,
                     }}
-                    className="absolute inset-0 bg-purple-400 rounded-full"
+                    className="absolute inset-0 bg-primary/30 rounded-full"
                   />
                 </>
               )}
               <motion.div
                 variants={pulseVariants}
                 animate="animate"
-                className="absolute inset-0 bg-blue-400 rounded-full blur-xl"
+                className="absolute inset-0 bg-primary/40 rounded-full blur-xl"
               />
               <motion.div
                 animate={
@@ -207,9 +204,9 @@ export function AboutHero() {
                   repeat: Infinity,
                   ease: 'easeInOut',
                 }}
-                className="relative p-5 bg-linear-to-br from-blue-500 via-purple-600 to-cyan-600 rounded-full shadow-2xl"
+                className="relative p-5 bg-primary rounded-full shadow-2xl"
               >
-                <BookOpen className="w-10 h-10 text-white" />
+                <BookOpen className="w-10 h-10 text-primary-foreground" />
               </motion.div>
             </div>
           </motion.div>
@@ -220,19 +217,19 @@ export function AboutHero() {
             className="flex flex-wrap justify-center gap-4 mb-10 text-sm text-muted-foreground"
           >
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-linear-to-r from-blue-500 to-purple-600 rounded-full" />
+              <div className="w-3 h-3 bg-linear-to-r from-primary to-primary/60 rounded-full" />
               <span>413+ Articles</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-linear-to-r from-purple-500 to-cyan-600 rounded-full" />
+              <div className="w-3 h-3 bg-linear-to-r from-primary to-primary/60 rounded-full" />
               <span>28+ Guides</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-linear-to-r from-cyan-500 to-blue-600 rounded-full" />
+              <div className="w-3 h-3 bg-linear-to-r from-primary to-primary/60 rounded-full" />
               <span>15+ Hands-On Labs</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-linear-to-r from-blue-500 to-indigo-600 rounded-full" />
+              <div className="w-3 h-3 bg-linear-to-r from-primary to-primary/60 rounded-full" />
               <span>Open Source</span>
             </div>
           </motion.div>

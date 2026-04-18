@@ -529,7 +529,7 @@ export default function DevSecOpsRoadmapPage() {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       {/* Hero Section */}
       <section className="relative py-16 md:py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-purple-500/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
         <div className="container mx-auto px-4 max-w-6xl relative">
           <div className="text-center space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-sm font-medium">
@@ -539,7 +539,7 @@ export default function DevSecOpsRoadmapPage() {
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
               DevSecOps{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-purple-500">
+              <span className="text-primary">
                 Roadmap
               </span>
             </h1>

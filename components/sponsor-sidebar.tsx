@@ -43,7 +43,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative flex flex-col items-center p-5 bg-linear-to-b from-background to-muted/50 rounded-lg border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5"
+                className="group relative flex flex-col items-center p-5 bg-linear-to-b from-background to-muted/50 rounded-md border border-border hover:border-primary/40 hover:bg-muted/30 transition-colors"
               >
                 {/* Subtle background pattern */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">

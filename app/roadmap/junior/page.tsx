@@ -380,12 +380,12 @@ export default function JuniorDevOpsRoadmap() {
   const progressPercentage = Math.round((completedCount / totalSkills) * 100);
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-blue-50/50 via-background to-background dark:from-blue-950/20">
+    <div className="min-h-screen bg-linear-to-b from-primary/5 via-background to-background">
       {/* Hero Section */}
       <section className="relative py-16 overflow-hidden border-b md:py-24">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute w-96 h-96 bg-blue-400/20 rounded-full blur-3xl -top-48 -left-48" />
-          <div className="absolute w-96 h-96 bg-purple-400/20 rounded-full blur-3xl -bottom-48 -right-48" />
+          <div className="absolute w-96 h-96 bg-primary/20 rounded-full blur-3xl -top-48 -left-48" />
+          <div className="absolute w-96 h-96 bg-primary/15 rounded-full blur-3xl -bottom-48 -right-48" />
         </div>
 
         <div className="container relative px-4 mx-auto">
@@ -397,7 +397,7 @@ export default function JuniorDevOpsRoadmap() {
 
             <h1 className="mb-4 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
               Junior DevOps{' '}
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-purple-600">
+              <span className="text-primary">
                 Roadmap
               </span>
             </h1>
@@ -519,7 +519,7 @@ export default function JuniorDevOpsRoadmap() {
                   )}
                 >
                   {/* Milestone number indicator */}
-                  <div className="absolute top-0 left-0 w-1 h-full bg-linear-to-b from-blue-500 via-purple-500 to-pink-500" />
+                  <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
 
                   <CardHeader
                     className="cursor-pointer"
@@ -634,7 +634,7 @@ export default function JuniorDevOpsRoadmap() {
                       </div>
 
                       {/* Project */}
-                      <div className="mb-6 p-4 rounded-lg bg-linear-to-br from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border">
+                      <div className="mb-6 p-4 rounded-lg bg-primary/5 border">
                         <h4 className="mb-2 text-sm font-semibold flex items-center gap-2">
                           <Trophy className="w-4 h-4 text-yellow-500" />
                           Milestone Project
@@ -692,7 +692,7 @@ export default function JuniorDevOpsRoadmap() {
             </div>
 
             {/* Next Steps */}
-            <Card className="mt-12 bg-linear-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10">
+            <Card className="mt-12 bg-primary/10">
               <CardContent className="p-8 text-center">
                 <Sparkles className="w-10 h-10 mx-auto mb-4 text-yellow-500" />
                 <h3 className="mb-2 text-xl font-bold">Ready for More?</h3>

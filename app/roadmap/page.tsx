@@ -1363,7 +1363,7 @@ const SkillModal = ({
                   return (
                     <div
                       key={index}
-                      className="p-4 transition-all duration-300 border rounded-lg border-border/50 hover:border-primary/50 group hover:shadow-md"
+                      className="p-4 transition-colors border rounded-md border-border/50 hover:border-primary/40 hover:bg-muted/30 group"
                     >
                       <div className="flex items-start gap-3">
                         <div className="p-2 transition-colors rounded-md bg-muted/50 group-hover:bg-primary/10">
@@ -1465,7 +1465,7 @@ const SkillCard = ({
   const SkillIcon = skill.icon || TypeIcon;
 
   const content = (
-    <div className="relative p-4 transition-all duration-300 border cursor-pointer group/skill rounded-xl border-border/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 bg-card/50 backdrop-blur-sm">
+    <div className="relative p-4 transition-colors border cursor-pointer group/skill rounded-md border-border/50 hover:border-primary/40 hover:bg-muted/30 bg-card/50 backdrop-blur-sm">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div
@@ -1606,7 +1606,7 @@ const ProjectCard = ({ project, stageColor }: { project: RoadmapProject; stageCo
   };
 
   const content = (
-    <div className="p-4 transition-all duration-300 border group/project rounded-xl border-border/50 hover:border-primary/50 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1 bg-card/50 backdrop-blur-sm">
+    <div className="p-4 transition-colors border group/project rounded-md border-border/50 hover:border-primary/40 hover:bg-muted/30 bg-card/50 backdrop-blur-sm">
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div
@@ -1755,13 +1755,13 @@ export default function RoadmapPage() {
                 can practice immediately.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
-                <Link 
+                <Link
                   href="/roadmap/junior"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 hover:border-blue-500/40 hover:from-blue-500/20 hover:to-purple-500/20 transition-all duration-300 group"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-primary/10 border border-primary/20 hover:border-primary/40 hover:bg-primary/20 transition-all duration-300 group"
                 >
-                  <GraduationCap className="w-4 h-4 text-blue-500" />
-                  <span>New to DevOps? <span className="text-blue-600 dark:text-blue-400">Junior Roadmap</span></span>
-                  <ArrowRight className="w-4 h-4 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                  <GraduationCap className="w-4 h-4 text-primary" />
+                  <span>New to DevOps? <span className="text-primary">Junior Roadmap</span></span>
+                  <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link 
                   href="/roadmap/devsecops"
@@ -1777,8 +1777,8 @@ export default function RoadmapPage() {
             {/* Desktop Timeline */}
             <div className="relative hidden lg:block">
               <div className="absolute w-2 h-full transform -translate-x-1/2 left-1/2">
-                <div className="w-full h-full rounded-full bg-linear-to-b from-blue-500 via-purple-500 to-pink-500 opacity-20" />
-                <div className="absolute inset-0 w-1 mx-auto rounded-full bg-linear-to-b from-blue-500 via-purple-500 to-pink-500 animate-pulse" />
+                <div className="w-full h-full rounded-full bg-primary opacity-20" />
+                <div className="absolute inset-0 w-1 mx-auto rounded-full bg-primary animate-pulse" />
               </div>
 
               {roadmapStages.map((stage, index) => (
@@ -1801,7 +1801,7 @@ export default function RoadmapPage() {
                   <div className="grid grid-cols-2 gap-8">
                     {/* Left Side - Skills */}
                     <div className="pr-8">
-                      <Card className="group hover:shadow-xl transition-all duration-500 transform hover:scale-[1.02] border-2">
+                      <Card className="group hover:border-primary/40 hover:bg-muted/30 transition-colors border">
                         <div
                           className={cn(
                             'absolute inset-0 rounded-lg opacity-5 transition-opacity duration-300 group-hover:opacity-10',
@@ -2001,9 +2001,9 @@ export default function RoadmapPage() {
 
                   <Card
                     className={cn(
-                      'group hover:shadow-xl transition-all duration-300 border-2',
+                      'group hover:border-primary/40 hover:bg-muted/30 transition-colors border',
                       stage.id === 'lifetime' &&
-                        'border-gradient-to-r from-yellow-500 via-pink-500 to-purple-500 shadow-xl shadow-primary/10'
+                        'border-gradient-to-r from-yellow-500 via-pink-500 to-purple-500'
                     )}
                   >
                     <div
@@ -2206,11 +2206,11 @@ export default function RoadmapPage() {
       <section className="bg-linear-to-b from-background via-muted/20 to-background">
         <div>
           <div>
-            <Card className="border-0 shadow-2xl bg-linear-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 backdrop-blur-sm">
+            <Card className="border-0 shadow-2xl bg-primary/10 backdrop-blur-sm">
               <CardContent className="p-12 text-center">
                 <Sparkles className="w-12 h-12 mx-auto mb-6 text-yellow-500 animate-pulse" />
 
-                <h2 className="mb-6 text-3xl font-bold text-transparent md:text-4xl bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text">
+                <h2 className="mb-6 text-3xl font-bold text-primary md:text-4xl">
                   Ready to Begin Your DevOps Journey?
                 </h2>
 
@@ -2220,33 +2220,19 @@ export default function RoadmapPage() {
                 </p>
 
                 <div className="flex flex-wrap justify-center gap-4 mb-8">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="transition-all duration-300 transform shadow-lg bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 hover:scale-105"
-                  >
+                  <Button asChild size="lg">
                     <Link href="/guides">
                       <BookOpen className="w-4 h-4 mr-2" />
                       Browse Learning Resources
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="transition-all duration-300 border-2 shadow-md hover:shadow-lg"
-                  >
+                  <Button asChild variant="outline" size="lg">
                     <Link href="/posts">
                       <TrendingUp className="w-4 h-4 mr-2" />
                       Read Latest Articles
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="transition-all duration-300 border-2 shadow-md hover:shadow-lg"
-                  >
+                  <Button asChild variant="outline" size="lg">
                     <Link href="/games">
                       <PlayCircle className="w-4 h-4 mr-2" />
                       Practice with Quizzes

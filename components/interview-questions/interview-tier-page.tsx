@@ -37,7 +37,7 @@ const tierConfig = {
     title: 'Junior',
     subtitle: '0-2 years experience',
     icon: Users,
-    gradient: 'from-emerald-500 to-teal-600',
+    gradient: 'bg-emerald-500',
     accentColor: 'text-emerald-600 dark:text-emerald-400',
     bgColor: 'bg-emerald-50 dark:bg-emerald-950/30',
   },
@@ -45,17 +45,17 @@ const tierConfig = {
     title: 'Mid-Level',
     subtitle: '2-5 years experience',
     icon: TrendingUp,
-    gradient: 'from-blue-500 to-indigo-600',
-    accentColor: 'text-blue-600 dark:text-blue-400',
-    bgColor: 'bg-blue-50 dark:bg-blue-950/30',
+    gradient: 'bg-primary',
+    accentColor: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   senior: {
     title: 'Senior',
     subtitle: '5+ years experience',
     icon: Award,
-    gradient: 'from-purple-500 to-pink-600',
-    accentColor: 'text-purple-600 dark:text-purple-400',
-    bgColor: 'bg-purple-50 dark:bg-purple-950/30',
+    gradient: 'bg-violet-500',
+    accentColor: 'text-violet-600 dark:text-violet-400',
+    bgColor: 'bg-violet-50 dark:bg-violet-950/30',
   },
 };
 
@@ -110,13 +110,13 @@ function PracticeCard({ question, onComplete }: { question: InterviewQuestion; o
       </div>
 
       {/* Question */}
-      <div className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+      <div className="p-6 bg-primary/5">
         <div className="flex items-start gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
-            <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div className="p-2 bg-primary/10 rounded-lg">
+            <Lightbulb className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">Interview Question</p>
+            <p className="text-sm font-medium text-primary mb-2">Interview Question</p>
             <p className="text-lg text-gray-800 dark:text-gray-200 leading-relaxed">
               {question.question}
             </p>
@@ -139,7 +139,6 @@ function PracticeCard({ question, onComplete }: { question: InterviewQuestion; o
             </p>
             <Button
               onClick={() => setShowAnswer(true)}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
             >
               <Eye className="w-4 h-4 mr-2" />
               Reveal Sample Answer
@@ -255,7 +254,7 @@ function PracticeCard({ question, onComplete }: { question: InterviewQuestion; o
               <ul className="space-y-2">
                 {question.followUpQuestions.map((fq, index) => (
                   <li key={index} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span className="text-blue-500">→</span>
+                    <span className="text-primary">→</span>
                     {fq}
                   </li>
                 ))}
@@ -380,7 +379,7 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
               setSelectedCategory(e.target.value || null);
               setCurrentIndex(0);
             }}
-            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">All Categories</option>
             {categories.map((cat) => (
@@ -457,7 +456,7 @@ export function InterviewTierPage({ tier, questions, categories }: InterviewTier
                   onClick={() => setCurrentIndex(index)}
                   className={`text-left p-3 rounded-lg border transition-all flex items-center gap-3 ${
                     isCurrent
-                      ? 'bg-blue-50 dark:bg-blue-950/30 border-blue-300 dark:border-blue-700'
+                      ? 'bg-primary/10 border-primary/30'
                       : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >

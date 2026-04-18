@@ -67,8 +67,7 @@ export function Logo({ className, size = 40, href, showText = false, textClassNa
       {showText && (
         <span className={cn(
           'ml-2 text-xl font-bold transition-all duration-700',
-          'group-hover:bg-gradient-to-r group-hover:from-primary group-hover:via-purple-600 group-hover:to-blue-600',
-          'group-hover:bg-clip-text group-hover:text-transparent',
+          'group-hover:text-primary',
           textClassName
         )}>
           DevOps Daily

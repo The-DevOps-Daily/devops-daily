@@ -65,7 +65,7 @@ export default async function GamesPage() {
 
       {/* CTA Section */}
       <section className="py-16 container mx-auto px-4">
-        <div className="bg-linear-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10 backdrop-blur-sm border border-border/50 rounded-xl p-8 md:p-12">
+        <div className="bg-primary/5 backdrop-blur-sm border border-border/50 rounded-md p-8 md:p-12">
           <div className="max-w-3xl mx-auto text-center">
             <Sparkles className="h-12 w-12 mx-auto mb-6 text-primary" />
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
@@ -75,7 +75,7 @@ export default async function GamesPage() {
               We're always looking to expand our collection with fun and useful games for the DevOps
               community. Share your ideas and we might build it next!
             </p>
-            <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
+            <Button size="lg">
               <Dice6 className="mr-2 h-4 w-4" />
               <Link href="https://github.com/The-DevOps-Daily/devops-daily/issues/new/choose">
                 Suggest a Game

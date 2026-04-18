@@ -85,7 +85,7 @@ export default async function FlashcardsPage() {
                 <Link
                   key={set.id}
                   href={`/flashcards/${set.id}`}
-                  className="group relative overflow-hidden rounded-xl border border-border bg-card hover:border-primary/50 transition-all duration-300 hover:shadow-lg"
+                  className="group relative overflow-hidden rounded-md border border-border bg-card hover:border-primary/40 hover:bg-muted/30 transition-colors"
                 >
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
@@ -156,9 +156,9 @@ export default async function FlashcardsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-xl border border-border bg-card/50 backdrop-blur-sm">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-linear-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-                <Target className="w-6 h-6 text-white" />
+            <div className="text-center p-6 rounded-md border border-border bg-card/50 backdrop-blur-sm">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-md bg-primary/10 flex items-center justify-center">
+                <Target className="w-6 h-6 text-primary" strokeWidth={1.5} />
               </div>
               <h3 className="text-xl font-semibold mb-2">Active Recall</h3>
               <p className="text-muted-foreground">
@@ -166,9 +166,9 @@ export default async function FlashcardsPage() {
               </p>
             </div>
 
-            <div className="text-center p-6 rounded-xl border border-border bg-card/50 backdrop-blur-sm">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                <Activity className="w-6 h-6 text-white" />
+            <div className="text-center p-6 rounded-md border border-border bg-card/50 backdrop-blur-sm">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-md bg-primary/10 flex items-center justify-center">
+                <Activity className="w-6 h-6 text-primary" strokeWidth={1.5} />
               </div>
               <h3 className="text-xl font-semibold mb-2">Track Progress</h3>
               <p className="text-muted-foreground">
@@ -176,9 +176,9 @@ export default async function FlashcardsPage() {
               </p>
             </div>
 
-            <div className="text-center p-6 rounded-xl border border-border bg-card/50 backdrop-blur-sm">
-              <div className="w-12 h-12 mx-auto mb-4 rounded-lg bg-linear-to-br from-indigo-500 to-indigo-600 flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-white" />
+            <div className="text-center p-6 rounded-md border border-border bg-card/50 backdrop-blur-sm">
+              <div className="w-12 h-12 mx-auto mb-4 rounded-md bg-primary/10 flex items-center justify-center">
+                <Trophy className="w-6 h-6 text-primary" strokeWidth={1.5} />
               </div>
               <h3 className="text-xl font-semibold mb-2">Quick Sessions</h3>
               <p className="text-muted-foreground">
@@ -191,7 +191,7 @@ export default async function FlashcardsPage() {
 
       {/* CTA Section */}
       <section className="py-16 container mx-auto px-4">
-        <div className="bg-linear-to-br from-purple-500/10 via-blue-500/5 to-indigo-500/10 backdrop-blur-sm border border-border/50 rounded-xl p-8 md:p-12">
+        <div className="bg-primary/5 backdrop-blur-sm border border-border/50 rounded-md p-8 md:p-12">
           <div className="max-w-3xl mx-auto text-center">
             <Sparkles className="h-12 w-12 mx-auto mb-6 text-primary" />
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Want to contribute flashcards?</h2>
@@ -200,7 +200,7 @@ export default async function FlashcardsPage() {
               Share your knowledge with the DevOps community!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
+              <Button size="lg">
                 <GitFork className="mr-2 h-4 w-4" />
                 <Link href="https://github.com/The-DevOps-Daily/devops-daily/issues/new/choose">
                   Contribute Flashcards
