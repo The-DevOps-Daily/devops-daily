@@ -382,7 +382,7 @@ export default function BooksPage() {
         {/* Background decorations */}
         <div className="absolute inset-0 -z-10">
           {/* Gradient background */}
-          <div className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-purple-500/5 to-pink-500/10" />
+          <div className="absolute inset-0 bg-primary/5" />
 
           {/* Grid pattern */}
           <div
@@ -397,17 +397,17 @@ export default function BooksPage() {
           />
 
           {/* Gradient orbs */}
-          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full filter blur-[100px] animate-pulse" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/10 rounded-full filter blur-[120px]" />
+          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full filter blur-[100px] animate-pulse" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary/10 rounded-full filter blur-[120px]" />
         </div>
 
         {/* Floating book icons */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="relative h-full mx-auto max-w-7xl">
-            <BookOpen className="absolute w-8 h-8 top-20 left-10 text-blue-500/20 animate-float" />
-            <BookMarked className="absolute w-8 h-8 top-1/3 right-10 lg:right-20 text-purple-500/15 animate-float animation-delay-2000" />
-            <Library className="absolute w-8 h-8 bottom-1/3 left-10 lg:left-32 text-pink-500/10 animate-float animation-delay-4000" />
-            <Award className="absolute w-8 h-8 bottom-20 right-10 lg:right-40 text-blue-500/15 animate-float animation-delay-3000" />
+            <BookOpen className="absolute w-8 h-8 top-20 left-10 text-primary/20 animate-float" />
+            <BookMarked className="absolute w-8 h-8 top-1/3 right-10 lg:right-20 text-primary/15 animate-float animation-delay-2000" />
+            <Library className="absolute w-8 h-8 bottom-1/3 left-10 lg:left-32 text-primary/10 animate-float animation-delay-4000" />
+            <Award className="absolute w-8 h-8 bottom-20 right-10 lg:right-40 text-primary/15 animate-float animation-delay-3000" />
           </div>
         </div>
 
@@ -415,14 +415,14 @@ export default function BooksPage() {
           <div className="mx-auto max-w-3xl text-center">
             <Badge
               variant="outline"
-              className="mb-6 border-blue-500/50 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-4 py-1.5"
+              className="mb-6 border-primary/50 bg-primary/10 text-primary px-4 py-1.5"
             >
               <Library className="mr-2 h-3.5 w-3.5" />
               Curated Book Collection
             </Badge>
             <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
               <span className="block mb-2 text-foreground">DevOps Books</span>
-              <span className="block bg-clip-text text-transparent bg-linear-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient leading-[1.2]">
+              <span className="block text-primary leading-[1.2]">
                 Level Up Your Skills
               </span>
             </h1>
@@ -509,7 +509,7 @@ export default function BooksPage() {
       {/* CTA Section */}
       <section className="py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="border-2 bg-linear-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 overflow-hidden relative">
+          <Card className="border-2 bg-primary/5 overflow-hidden relative">
             {/* Background decoration */}
             <div className="absolute inset-0 opacity-[0.02]">
               <div

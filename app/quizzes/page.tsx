@@ -134,7 +134,7 @@ export default async function QuizzesPage() {
 
       {/* CTA Section */}
       <section className="py-16 container mx-auto px-4">
-        <div className="bg-linear-to-br from-purple-500/10 via-blue-500/5 to-indigo-500/10 backdrop-blur-sm border border-border/50 rounded-xl p-8 md:p-12">
+        <div className="bg-primary/5 backdrop-blur-sm border border-border/50 rounded-md p-8 md:p-12">
           <div className="max-w-3xl mx-auto text-center">
             <Sparkles className="h-12 w-12 mx-auto mb-6 text-primary" />
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Want to contribute a quiz?</h2>
