@@ -1,27 +1,32 @@
 import Link from 'next/link';
-import { ArrowRight, Sparkles } from 'lucide-react';
 import { type FooterSection as FooterSectionType } from './footer-data';
 
 interface FooterSectionProps {
   section: FooterSectionType;
+  /** Override the mono label; defaults to slugified section.title */
+  label?: string;
 }
 
-export function FooterSection({ section }: FooterSectionProps) {
+export function FooterSection({ section, label }: FooterSectionProps) {
+  const resolvedLabel =
+    label ??
+    section.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
   return (
-    <div className="space-y-6">
-      <h3 className="text-lg font-bold bg-linear-to-r from-primary to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
-        <Sparkles className="w-5 h-5 text-primary" />
-        {section.title}
-      </h3>
-      <ul className="space-y-3">
+    <div className="space-y-3">
+      <p className="text-xs font-mono text-muted-foreground">// {resolvedLabel}</p>
+      <h3 className="text-sm font-semibold text-foreground">{section.title}</h3>
+      <ul className="space-y-1.5">
         {section.links.map((link) => (
           <li key={link.href}>
             <Link
               href={link.href}
-              className="group flex items-center justify-between text-muted-foreground hover:text-primary transition-all duration-300 py-2 px-3 rounded-xl hover:bg-primary/5"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              <span className="font-medium">{link.label}</span>
-              <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-300" />
+              {link.label}
             </Link>
           </li>
         ))}
