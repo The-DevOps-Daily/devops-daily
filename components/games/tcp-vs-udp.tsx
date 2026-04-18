@@ -416,7 +416,7 @@ export default function TcpVsUdpSimulator() {
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700 pb-4">
           <div>
-            <h1 className="text-3xl font-bold bg-linear-to-r from-cyan-400 to-green-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-primary">
               Protocol Simulator
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
@@ -603,9 +603,9 @@ export default function TcpVsUdpSimulator() {
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-30">
               <div className="text-center">
                 <p className="text-slate-700 dark:text-slate-300 mb-2">Ready to simulate</p>
-                <button 
+                <button
                   onClick={handleStartStop}
-                  className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2 rounded-full font-bold hover:scale-105 transition-transform flex items-center gap-2 mx-auto"
+                  className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2 rounded-full font-bold transition-colors flex items-center gap-2 mx-auto"
                 >
                   <Play size={18} fill="currentColor" /> Start Traffic
                 </button>

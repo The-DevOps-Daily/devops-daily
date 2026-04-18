@@ -61,7 +61,7 @@ export default async function FeaturedQuizzes({
           return (
             <Link
               key={quiz.id}
-              href={`/games/${quiz.id}`}
+              href={`/quizzes/${quiz.id}`}
               className="group rounded-md border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-muted/30"
             >
               <div className="flex items-start gap-3 mb-3">

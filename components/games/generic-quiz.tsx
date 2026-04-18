@@ -248,7 +248,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                 transition={{ delay: 0.6 }}
                 className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
               >
-                <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-green-200 dark:border-green-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-center p-6 bg-card rounded-md border border-green-200 dark:border-green-800">
                   <Badge className="mb-3 bg-green-500 hover:bg-green-600 text-white border-0 px-4 py-1">
                     <Target className="w-3 h-3 mr-1" />
                     Beginner
@@ -261,7 +261,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                   </div>
                 </div>
 
-                <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-yellow-200 dark:border-yellow-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-center p-6 bg-card rounded-md border border-yellow-200 dark:border-yellow-800">
                   <Badge className="mb-3 bg-yellow-500 hover:bg-yellow-600 text-white border-0 px-4 py-1">
                     <Zap className="w-3 h-3 mr-1" />
                     Intermediate
@@ -274,7 +274,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                   </div>
                 </div>
 
-                <div className="text-center p-6 bg-white/50 dark:bg-gray-800/50 rounded-xl border border-red-200 dark:border-red-800 shadow-sm hover:shadow-md transition-all">
+                <div className="text-center p-6 bg-card rounded-md border border-red-200 dark:border-red-800">
                   <Badge className="mb-3 bg-red-500 hover:bg-red-600 text-white border-0 px-4 py-1">
                     <BookOpen className="w-3 h-3 mr-1" />
                     Advanced
@@ -319,7 +319,7 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
                 <Button
                   size="lg"
                   onClick={() => setGameStarted(true)}
-                  className={`bg-linear-to-r ${quizConfig.theme.gradientFrom} ${quizConfig.theme.gradientTo} hover:opacity-90 text-white shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 px-8 py-4 text-lg`}
+                  className="px-8 py-4 text-lg"
                 >
                   <Play className="mr-2 h-5 w-5" />
                   Start Quiz
@@ -527,11 +527,11 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
           <div className="space-y-3">
             <h4 className="font-semibold">Select the correct answer:</h4>
             {question.options.map((option, index) => (
-              <motion.div key={index} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <motion.div key={index} whileTap={{ scale: 0.98 }}>
                 <Button
                   variant="outline"
                   className={cn(
-                    'w-full text-left justify-start h-auto p-4 transition-all',
+                    'w-full text-left justify-start h-auto p-4 transition-colors hover:border-primary/40 hover:bg-muted/30',
                     selectedAnswer === index &&
                       !showResult &&
                       'border-primary bg-primary/10 text-primary',
