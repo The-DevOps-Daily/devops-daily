@@ -29,6 +29,7 @@ import {
   PencilRuler,
   Webhook,
   Shield,
+  Calculator,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -435,6 +436,27 @@ export default function ToolboxPage() {
         icon={PencilRuler}
         breadcrumbs={[{ label: 'Toolbox' }]}
       />
+
+      {/* Cross-link to /tools */}
+      <section className="container mx-auto px-4 mt-4">
+        <div className="rounded-md border bg-primary/5 border-primary/20 p-4 flex items-start gap-3">
+          <Calculator className="w-5 h-5 text-primary shrink-0 mt-0.5" strokeWidth={1.5} />
+          <div className="flex-1 text-sm">
+            <span className="text-foreground font-medium">Need a calculator or decoder?</span>{' '}
+            <span className="text-muted-foreground">
+              For first-party browser tools (CIDR, JWT, cron, base64, UUID, K8s resources),
+              head to{' '}
+            </span>
+            <Link
+              href="/tools"
+              className="text-primary hover:underline font-medium"
+            >
+              /tools
+            </Link>
+            <span className="text-muted-foreground">.</span>
+          </div>
+        </div>
+      </section>
 
       {/* Tools Section */}
       <section className="py-8">

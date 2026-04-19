@@ -110,7 +110,10 @@ export function Base64Encoder() {
             <span className="text-xs font-mono text-muted-foreground">// encoded</span>
             <CopyButton text={encoded} />
           </div>
-          <pre className="p-4 text-xs sm:text-sm font-mono break-all whitespace-pre-wrap min-h-[120px]">
+          <pre
+          aria-live="polite"
+          className="p-4 text-xs sm:text-sm font-mono break-all whitespace-pre-wrap min-h-[120px]"
+        >
             {encoded || <span className="text-muted-foreground/60">…</span>}
           </pre>
         </div>
@@ -119,7 +122,10 @@ export function Base64Encoder() {
             <span className="text-xs font-mono text-muted-foreground">// decoded</span>
             <CopyButton text={decoded} />
           </div>
-          <pre className="p-4 text-xs sm:text-sm font-mono break-all whitespace-pre-wrap min-h-[120px]">
+          <pre
+          aria-live="polite"
+          className="p-4 text-xs sm:text-sm font-mono break-all whitespace-pre-wrap min-h-[120px]"
+        >
             {decoded || <span className="text-muted-foreground/60">…</span>}
           </pre>
         </div>

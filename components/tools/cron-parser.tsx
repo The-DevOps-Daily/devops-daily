@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useUrlState } from './use-url-state';
 
 interface Parsed {
   minute: string;
@@ -213,7 +214,7 @@ function formatDate(d: Date): string {
 }
 
 export function CronParser() {
-  const [expr, setExpr] = useState('0 9 * * 1-5');
+  const [expr, setExpr] = useUrlState('cron', '0 9 * * 1-5');
   const parsed = useMemo(() => parseCron(expr), [expr]);
   const runs = useMemo(() => {
     if ('error' in parsed) return null;
@@ -252,12 +253,16 @@ export function CronParser() {
       </div>
 
       {'error' in parsed ? (
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 p-4 text-sm font-mono text-red-500">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-md border border-red-500/30 bg-red-500/5 p-4 text-sm font-mono text-red-500"
+        >
           {parsed.error}
         </div>
       ) : (
         <>
-          <div className="rounded-md border bg-card p-5">
+          <div className="rounded-md border bg-card p-5" aria-live="polite">
             <p className="text-xs font-mono text-muted-foreground mb-2">// human readable</p>
             <p className="text-lg text-foreground leading-relaxed">{parsed.description}</p>
           </div>

@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import {
+  BreadcrumbSchema,
+  FAQSchema,
+  SoftwareApplicationSchema,
+} from '@/components/schema-markup';
 import { CarbonAds } from '@/components/carbon-ads';
 import { getToolBySlug } from '@/lib/tools';
 import { getGameById } from '@/lib/games';
@@ -15,6 +19,21 @@ interface ToolShellProps {
   hideAds?: boolean;
   className?: string;
 }
+
+const CATEGORY_SCHEMA: Record<
+  | 'networking'
+  | 'encoding'
+  | 'security'
+  | 'scheduling'
+  | 'kubernetes',
+  string
+> = {
+  networking: 'NetworkingApplication',
+  encoding: 'UtilitiesApplication',
+  security: 'SecurityApplication',
+  scheduling: 'UtilitiesApplication',
+  kubernetes: 'DeveloperApplication',
+};
 
 /**
  * Shared chrome for every page under `/tools/*`. Mirrors SimulatorShell in
@@ -51,9 +70,22 @@ export async function ToolShell({
     (g): g is NonNullable<typeof g> => !!g
   );
 
+  const faqForSchema = tool.faqs?.map((f) => ({
+    question: f.question,
+    answer: f.answer,
+  }));
+
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <SoftwareApplicationSchema
+        name={tool.title}
+        description={tool.description}
+        url={`/tools/${tool.slug}`}
+        category={CATEGORY_SCHEMA[tool.category]}
+        keywords={tool.keywords}
+      />
+      {faqForSchema && faqForSchema.length > 0 && <FAQSchema questions={faqForSchema} />}
 
       <div className={cn('container px-4 py-8 mx-auto', className)}>
         <Breadcrumb items={breadcrumbItems} />
