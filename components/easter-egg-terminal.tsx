@@ -263,12 +263,12 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
         </div>
 
         {/* Pipeline Stages */}
-        <div className="p-4 sm:p-6 border-b border-slate-700 overflow-x-auto">
-          <div className="flex justify-between items-center min-w-max sm:min-w-0">
+        <div className="px-3 sm:px-4 py-3 border-b border-slate-800">
+          <div className="flex items-center justify-between gap-1 sm:gap-1.5">
             {stages.map((s, i) => (
-              <div key={i} className="flex items-center">
+              <div key={i} className="flex items-center flex-1 min-w-0">
                 <div
-                  className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-md border transition-all font-mono ${
+                  className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded border transition-all font-mono text-[10px] sm:text-xs flex-1 min-w-0 justify-center ${
                     i < stage
                       ? 'bg-green-500/10 border-green-500/40 text-green-400'
                       : i === stage
@@ -276,19 +276,19 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
                         : 'bg-slate-800 border-slate-700 text-slate-500'
                   }`}
                 >
-                  <span className="text-base sm:text-xl" aria-hidden="true">
+                  <span className="text-sm sm:text-base leading-none" aria-hidden="true">
                     {s.icon}
                   </span>
-                  <span className="text-xs sm:text-sm font-medium">
+                  <span className="font-medium truncate">
                     {s.name.replace(s.icon, '').trim()}
                   </span>
                   {i < stage && (
-                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" aria-label="Complete" />
+                    <CheckCircle className="w-3 h-3 shrink-0" aria-label="Complete" />
                   )}
                 </div>
                 {i < stages.length - 1 && (
                   <div
-                    className={`w-2 sm:w-4 h-px mx-0.5 sm:mx-1 transition-all ${
+                    className={`w-2 sm:w-3 h-px mx-0.5 transition-all shrink-0 ${
                       i < stage ? 'bg-green-500/60' : 'bg-slate-700'
                     }`}
                   />

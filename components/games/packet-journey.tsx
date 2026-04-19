@@ -517,18 +517,13 @@ export default function PacketJourney() {
   }
 
   return (
-    <div className={cn(
-      "min-h-screen p-4",
-      isDark
-        ? "bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white"
-        : "bg-gradient-to-br from-blue-50 via-white to-cyan-50 text-gray-900"
-    )}>
+    <div className="p-4 bg-background text-foreground">
      <div className="max-w-7xl mx-auto space-y-6">
        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-bold bg-linear-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent flex items-center gap-3">
-              <Sparkles className="w-8 h-8 text-cyan-400" />
+            <h1 className="text-4xl font-bold text-primary flex items-center gap-3">
+              <Sparkles className="w-8 h-8 text-primary" />
               Network Packet Journey
             </h1>
             <p className={cn(
@@ -563,8 +558,8 @@ export default function PacketJourney() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Alert className="bg-linear-to-r from-cyan-500/10 to-blue-500/10 border-cyan-400/50">
-                <Sparkles className="h-4 w-4 text-cyan-400" />
+              <Alert className="bg-primary/5 border-primary/20">
+                <Sparkles className="h-4 w-4 text-primary" />
                 <AlertDescription className="text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <span>
                     <strong>Pro tip:</strong> Use keyboard shortcuts - <kbd className={cn("px-2 py-1 rounded text-xs", isDark ? "bg-slate-700" : "bg-gray-200")}>Space</kbd> to play/pause, <kbd className={cn("px-2 py-1 rounded text-xs", isDark ? "bg-slate-700" : "bg-gray-200")}>R</kbd> to reset, <kbd className={cn("px-2 py-1 rounded text-xs", isDark ? "bg-slate-700" : "bg-gray-200")}>Esc</kbd> to close details
@@ -603,7 +598,7 @@ export default function PacketJourney() {
               isDark ? "bg-slate-700" : "bg-gray-200"
             )}>
               <motion.div
-                className="h-full bg-linear-to-r from-cyan-500 to-blue-500"
+                className="h-full bg-primary"
                 initial={{ width: 0 }}
                 animate={{ width: `${stageProgress * 100}%` }}
                 transition={{ duration: 0.1 }}
@@ -935,7 +930,7 @@ export default function PacketJourney() {
                   </div>
                   <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                     <motion.div
-                      className="h-full bg-linear-to-r from-cyan-500 to-blue-500"
+                      className="h-full bg-primary"
                       initial={{ width: 0 }}
                       animate={{ width: `${((currentStageIndex + (isReturning ? journeyStages.length : 0)) / (journeyStages.length * 2)) * 100}%` }}
                       transition={{ duration: 0.3 }}
@@ -953,12 +948,7 @@ export default function PacketJourney() {
             </CardHeader>
             <CardContent>
               {/* SVG Canvas - Redesigned for clarity */}
-              <div className={cn(
-                "relative w-full rounded-lg border overflow-hidden min-h-[400px] sm:min-h-[600px]",
-                isDark
-                  ? "bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700"
-                  : "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-300"
-              )}>
+              <div className="relative w-full rounded-md border bg-card overflow-hidden min-h-[400px] sm:min-h-[600px]">
                 <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                   <defs>
                     {/* Gradient for the path */}
@@ -1333,7 +1323,7 @@ export default function PacketJourney() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className="mt-4 p-4 bg-linear-to-r from-green-500/20 to-blue-500/20 border border-green-400 rounded-lg"
+                    className="mt-4 p-4 bg-green-500/10 border border-green-500/40 rounded-md"
                   >
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className="w-8 h-8 text-green-400" />
@@ -1359,7 +1349,7 @@ export default function PacketJourney() {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0 }}
-                    className="mt-4 p-4 bg-linear-to-r from-red-500/20 to-orange-500/20 border border-red-400 rounded-lg"
+                    className="mt-4 p-4 bg-red-500/10 border border-red-500/40 rounded-md"
                   >
                     <div className="flex items-center gap-3">
                       <XCircle className="w-8 h-8 text-red-400" />
@@ -1660,10 +1650,10 @@ export default function PacketJourney() {
 
         {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-linear-to-br from-blue-500/20 to-cyan-500/20 border-blue-400">
+          <Card className="bg-muted/30 border">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <Sparkles className="w-8 h-8 text-blue-400" />
+                <Sparkles className="w-8 h-8 text-primary" />
                 <div>
                   <div className="text-2xl font-bold">{journeyStages.length}</div>
                   <div className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-600")}>Network Hops</div>
@@ -1672,10 +1662,10 @@ export default function PacketJourney() {
             </CardContent>
           </Card>
 
-          <Card className="bg-linear-to-br from-purple-500/20 to-pink-500/20 border-purple-400">
+          <Card className="bg-muted/30 border">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <Timer className="w-8 h-8 text-purple-400" />
+                <Timer className="w-8 h-8 text-primary" />
                 <div>
                   <div className="text-2xl font-bold">{totalJourneyTime}ms</div>
                   <div className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-600")}>Total Latency</div>
@@ -1684,10 +1674,10 @@ export default function PacketJourney() {
             </CardContent>
           </Card>
 
-          <Card className="bg-linear-to-br from-green-500/20 to-teal-500/20 border-green-400">
+          <Card className="bg-muted/30 border">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <TrendingUp className="w-8 h-8 text-green-400" />
+                <TrendingUp className="w-8 h-8 text-green-500" />
                 <div>
                   <div className="text-2xl font-bold">{(totalJourneyTime * 2).toFixed(0)}ms</div>
                   <div className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-600")}>Round-Trip Time</div>
@@ -1789,7 +1779,7 @@ export default function PacketJourney() {
         </Card>
 
         {/* Educational Footer */}
-        <Card className="bg-linear-to-r from-indigo-500/10 to-purple-500/10 border-indigo-400">
+        <Card className="bg-primary/5 border-primary/20">
           <CardContent className="pt-6">
             <div className="space-y-3">
               <h3 className="font-bold flex items-center gap-2">
