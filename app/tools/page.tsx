@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { ArrowRight } from 'lucide-react';
-import { SectionHeader } from '@/components/section-header';
-import { SectionSeparator } from '@/components/section-separator';
+import { ArrowRight, Wrench } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
-import { TOOLS, CATEGORY_LABEL, type Tool } from '@/lib/tools';
+import { ToolsIndexList } from '@/components/tools/tools-index-list';
+import { TOOLS } from '@/lib/tools';
 
 export const metadata: Metadata = {
   title: 'DevOps Tools and Calculators | DevOps Daily',
@@ -28,15 +27,7 @@ export const metadata: Metadata = {
   },
 };
 
-function groupByCategory(tools: Tool[]): Record<string, Tool[]> {
-  return tools.reduce<Record<string, Tool[]>>((acc, tool) => {
-    (acc[tool.category] ||= []).push(tool);
-    return acc;
-  }, {});
-}
-
 export default function ToolsIndexPage() {
-  const grouped = groupByCategory(TOOLS);
   const breadcrumbItems = [{ label: 'Tools', href: '/tools', isCurrent: true }];
   const schemaItems = [
     { name: 'Home', url: '/' },
@@ -93,42 +84,26 @@ export default function ToolsIndexPage() {
       </div>
 
       <div className="container mx-auto px-4">
-        {Object.entries(grouped).map(([category, tools]) => (
-          <section key={category} className="my-10">
-            <SectionSeparator command={`ls /tools/${category}`} />
-            <SectionHeader
-              label={category}
-              title={CATEGORY_LABEL[category as Tool['category']]}
-            />
-            <div className="grid gap-px sm:grid-cols-2 lg:grid-cols-3 bg-border border rounded-md overflow-hidden">
-              {tools.map((tool) => {
-                const Icon = tool.icon;
-                return (
-                  <Link
-                    key={tool.slug}
-                    href={`/tools/${tool.slug}`}
-                    className="group bg-card p-5 transition-colors hover:bg-muted/40"
-                  >
-                    <Icon
-                      className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-3"
-                      strokeWidth={1.5}
-                    />
-                    <h3 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
-                      {tool.shortTitle}
-                    </h3>
-                    <p className="text-muted-foreground text-xs leading-relaxed line-clamp-2">
-                      {tool.description}
-                    </p>
-                    <div className="flex items-center gap-1 mt-3 text-[11px] font-mono text-primary/80">
-                      <span>Open</span>
-                      <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </section>
-        ))}
+        <ToolsIndexList tools={TOOLS} />
+
+        {/* Cross-link to /toolbox */}
+        <section className="my-8 rounded-md border bg-muted/30 p-5 flex items-start gap-4">
+          <Wrench className="w-5 h-5 text-primary shrink-0 mt-0.5" strokeWidth={1.5} />
+          <div className="flex-1">
+            <h3 className="font-semibold text-sm mb-1">Looking for third-party tools?</h3>
+            <p className="text-sm text-muted-foreground mb-2">
+              The calculators above are things we built. For curated links to external DevOps
+              tools, see the DevOps Toolbox.
+            </p>
+            <Link
+              href="/toolbox"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              Browse the DevOps Toolbox
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </section>
 
         <section className="my-16 max-w-2xl mx-auto text-center">
           <h2 className="text-lg font-semibold mb-2">Want a tool we haven&apos;t built?</h2>

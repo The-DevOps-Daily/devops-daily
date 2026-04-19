@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useUrlState } from './use-url-state';
 
 interface CidrResult {
   networkAddress: string;
@@ -100,7 +101,7 @@ function Row({ label, value, highlight }: RowProps) {
 }
 
 export function CidrCalculator() {
-  const [cidr, setCidr] = useState('10.0.0.0/16');
+  const [cidr, setCidr] = useUrlState('cidr', '10.0.0.0/16');
   const [ipCheck, setIpCheck] = useState('');
 
   const result = useMemo(() => parseCidr(cidr), [cidr]);
@@ -147,11 +148,19 @@ export function CidrCalculator() {
 
       {/* Result */}
       {'error' in result ? (
-        <div className="rounded-md border border-red-500/30 bg-red-500/5 p-4 text-sm font-mono text-red-500">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-md border border-red-500/30 bg-red-500/5 p-4 text-sm font-mono text-red-500"
+        >
           {result.error}
         </div>
       ) : (
-        <div className="rounded-md border bg-card overflow-hidden">
+        <div
+          aria-live="polite"
+          aria-atomic="false"
+          className="rounded-md border bg-card overflow-hidden"
+        >
           <Row label="Network address" value={result.networkAddress} highlight />
           <Row label="Broadcast address" value={result.broadcast} />
           <Row label="First usable" value={result.firstUsable} />
@@ -184,7 +193,7 @@ export function CidrCalculator() {
             spellCheck="false"
           />
           {ipCheck.trim() && (
-            <p className="mt-3 font-mono text-sm">
+            <p className="mt-3 font-mono text-sm" role="status" aria-live="polite">
               {inRange === null ? (
                 <span className="text-red-500">Invalid IP address</span>
               ) : inRange ? (
@@ -200,6 +209,100 @@ export function CidrCalculator() {
               )}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Subnet splitter */}
+      {!('error' in result) && <SubnetSplitter parent={result} />}
+    </div>
+  );
+}
+
+interface SubnetSplitterProps {
+  parent: CidrResult;
+}
+
+function SubnetSplitter({ parent }: SubnetSplitterProps) {
+  const [targetPrefix, setTargetPrefix] = useState<number>(
+    Math.min(32, parent.prefix + 2),
+  );
+
+  const subnets = useMemo(() => {
+    if (targetPrefix <= parent.prefix) return [];
+    if (targetPrefix > 32) return [];
+    const count = 2 ** (targetPrefix - parent.prefix);
+    if (count > 256) return null; // hard cap to avoid rendering explosion
+    const networkInt = ipv4ToInt(parent.networkAddress)!;
+    const subnetSize = 2 ** (32 - targetPrefix);
+    const list: CidrResult[] = [];
+    for (let i = 0; i < count; i++) {
+      const base = networkInt + i * subnetSize;
+      const next = parseCidr(`${intToIpv4(base)}/${targetPrefix}`);
+      if (!('error' in next)) list.push(next);
+    }
+    return list;
+  }, [parent, targetPrefix]);
+
+  return (
+    <div className="rounded-md border bg-card p-5">
+      <div className="flex items-center justify-between gap-4 mb-3">
+        <div>
+          <p className="text-xs font-mono text-muted-foreground">
+            // split /{parent.prefix} into smaller subnets
+          </p>
+        </div>
+        <label className="flex items-center gap-2 text-xs font-mono">
+          <span className="text-muted-foreground">target /</span>
+          <select
+            value={targetPrefix}
+            onChange={(e) => setTargetPrefix(Number(e.target.value))}
+            className="bg-background border border-input rounded-md px-2 py-1 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          >
+            {Array.from({ length: 32 - parent.prefix }, (_, i) => parent.prefix + 1 + i).map(
+              (p) => (
+                <option key={p} value={p}>
+                  /{p}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+      </div>
+
+      {subnets === null ? (
+        <p className="text-sm text-muted-foreground font-mono">
+          Too many subnets to list (over 256). Pick a smaller gap.
+        </p>
+      ) : subnets.length === 0 ? (
+        <p className="text-sm text-muted-foreground font-mono">Pick a target prefix larger than /{parent.prefix}.</p>
+      ) : (
+        <div className="overflow-hidden rounded-md border border-border/70">
+          <table className="w-full text-xs font-mono tabular-nums">
+            <thead className="bg-muted/60 border-b border-border/70">
+              <tr>
+                <th className="text-left px-3 py-2 text-muted-foreground font-normal">#</th>
+                <th className="text-left px-3 py-2 text-muted-foreground font-normal">Network</th>
+                <th className="text-left px-3 py-2 text-muted-foreground font-normal">Range</th>
+                <th className="text-right px-3 py-2 text-muted-foreground font-normal">Usable</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {subnets.map((s, i) => (
+                <tr key={i}>
+                  <td className="px-3 py-2 text-muted-foreground">{i}</td>
+                  <td className="px-3 py-2 text-primary">
+                    {s.networkAddress}/{s.prefix}
+                  </td>
+                  <td className="px-3 py-2 text-foreground">
+                    {s.firstUsable} - {s.lastUsable}
+                  </td>
+                  <td className="px-3 py-2 text-right text-muted-foreground">
+                    {s.usable.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
