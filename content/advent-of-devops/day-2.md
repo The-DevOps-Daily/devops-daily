@@ -3,8 +3,8 @@ title: 'Day 2 - Fix the Slow Docker Build'
 day: 2
 excerpt: 'Debug and optimize a poorly written Dockerfile to reduce build time by at least 50%. Learn layer caching, build optimization, and best practices.'
 description: 'Improve Docker build performance through layer caching, dependency optimization, and efficient Dockerfile practices.'
-publishedAt: '2025-12-02T00:00:00Z'
-updatedAt: '2025-12-02T00:00:00Z'
+publishedAt: '2026-12-02T00:00:00Z'
+updatedAt: '2026-12-02T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Docker'
 tags:

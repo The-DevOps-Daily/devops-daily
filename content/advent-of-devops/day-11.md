@@ -3,8 +3,8 @@ title: 'Day 11 - Basic Observability'
 day: 11
 excerpt: 'Set up monitoring and logging for your Kubernetes application with Prometheus and Grafana.'
 description: 'Implement observability fundamentals: metrics collection with Prometheus, visualization with Grafana, and centralized logging.'
-publishedAt: '2025-12-11T00:00:00Z'
-updatedAt: '2025-12-11T00:00:00Z'
+publishedAt: '2026-12-11T00:00:00Z'
+updatedAt: '2026-12-11T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Observability'
 tags:

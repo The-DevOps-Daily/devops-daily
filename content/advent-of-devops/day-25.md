@@ -3,8 +3,8 @@ title: 'Day 25 - Write Your DevOps Journey'
 day: 25
 excerpt: 'Reflect on your DevOps learning journey, document what you built, and share your knowledge with the community.'
 description: 'Celebrate completing the Advent of DevOps by documenting your journey, creating a portfolio, and sharing your learnings with the world.'
-publishedAt: '2025-12-25T00:00:00Z'
-updatedAt: '2025-12-25T00:00:00Z'
+publishedAt: '2026-12-25T00:00:00Z'
+updatedAt: '2026-12-25T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Career'
 tags:

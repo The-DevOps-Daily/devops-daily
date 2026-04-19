@@ -97,6 +97,21 @@ export async function CategoryGrid({
     gridClassName
   );
 
+  // Pad the grid with empty `bg-card` cells so the last row doesn't show
+  // gapped strips of the outer bg-border. We pad to the max column count
+  // implied by the gridClassName (defaulting to 3), and pad up to `maxCols - 1`
+  // cells which is enough to cover any single incomplete row.
+  const maxCols = gridClassName?.includes('lg:grid-cols-4')
+    ? 4
+    : gridClassName?.includes('lg:grid-cols-3') ||
+      !gridClassName
+    ? 3
+    : gridClassName?.includes('lg:grid-cols-2')
+    ? 2
+    : 3;
+  const remainder = displayCategories.length % maxCols;
+  const fillerCount = remainder === 0 ? 0 : maxCols - remainder;
+
   return (
     <section className={cn('', className)}>
       {showHeader && (
@@ -136,6 +151,10 @@ export async function CategoryGrid({
             </Link>
           );
         })}
+
+        {Array.from({ length: fillerCount }).map((_, i) => (
+          <div key={`filler-${i}`} aria-hidden="true" className="bg-card hidden lg:block" />
+        ))}
 
         {displayCategories.length === 0 && (
           <div className="py-12 text-center col-span-full bg-card">

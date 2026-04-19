@@ -28,9 +28,10 @@ export function AdventLandingClient({ days }: AdventLandingClientProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main content */}
           <div className="lg:col-span-9">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Daily Challenges</h2>
-              <p className="text-lg text-muted-foreground">
+            <div className="mb-8">
+              <p className="text-xs font-mono text-muted-foreground mb-1">// daily challenges</p>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Daily Challenges</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
                 Choose any day to start your DevOps learning journey
               </p>
             </div>
