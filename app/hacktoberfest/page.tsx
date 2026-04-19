@@ -218,12 +218,37 @@ const TEMPLATES = [
   },
 ];
 
-const STEPS = [
-  { step: 1, title: 'Star the repo', description: 'Star the DevOps Daily repository on GitHub' },
-  { step: 2, title: 'Fork it', description: 'Fork the repo to your own GitHub account' },
-  { step: 3, title: 'Pick a day', description: 'Choose a challenge and follow the instructions' },
-  { step: 4, title: 'Submit a PR', description: 'Open a pull request with your contribution' },
-  { step: 5, title: 'Share it', description: 'Share your PR on social media with #DevOpsDaily' },
+const STEPS: { step: number; title: string; description: string; icon: LucideIcon }[] = [
+  {
+    step: 1,
+    title: 'Star the repo',
+    description: 'Star the DevOps Daily repository on GitHub',
+    icon: Star,
+  },
+  {
+    step: 2,
+    title: 'Fork it',
+    description: 'Fork the repo to your own GitHub account',
+    icon: GitPullRequest,
+  },
+  {
+    step: 3,
+    title: 'Pick a day',
+    description: 'Choose a challenge and follow the instructions',
+    icon: Calendar,
+  },
+  {
+    step: 4,
+    title: 'Submit a PR',
+    description: 'Open a pull request with your contribution',
+    icon: CheckCircle2,
+  },
+  {
+    step: 5,
+    title: 'Share it',
+    description: 'Share your PR on social media with #DevOpsDaily',
+    icon: Megaphone,
+  },
 ];
 
 export default function HacktoberfestPage() {
@@ -365,31 +390,43 @@ export default function HacktoberfestPage() {
         <section className="my-12 max-w-4xl mx-auto">
           <SectionHeader label="how it works" title="How It Works" />
           <div className="flex flex-col gap-3 sm:hidden">
-            {STEPS.map((s) => (
-              <div key={s.step} className="flex items-center gap-4">
-                <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 text-primary font-mono font-semibold flex items-center justify-center flex-shrink-0 tabular-nums">
-                  {s.step}
+            {STEPS.map((s) => {
+              const Icon = s.icon;
+              return (
+                <div key={s.step} className="flex items-center gap-4">
+                  <div className="relative flex-shrink-0 w-12 h-12 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                    <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-background border border-primary/30 text-primary text-[10px] font-mono tabular-nums font-semibold flex items-center justify-center">
+                      {s.step}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-sm">{s.title}</h3>
+                    <p className="text-xs text-muted-foreground">{s.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-sm">{s.title}</h3>
-                  <p className="text-xs text-muted-foreground">{s.description}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="hidden sm:block">
             <div className="relative">
-              <div className="absolute top-[18px] left-[10%] right-[10%] h-px bg-border" />
+              <div className="absolute top-6 left-[10%] right-[10%] h-px bg-border" />
               <div className="grid grid-cols-5 gap-4">
-                {STEPS.map((s) => (
-                  <div key={s.step} className="text-center relative">
-                    <div className="w-9 h-9 rounded-md bg-primary/10 border border-primary/20 text-primary font-mono font-semibold flex items-center justify-center mx-auto mb-3 relative z-10 tabular-nums bg-background">
-                      {s.step}
+                {STEPS.map((s) => {
+                  const Icon = s.icon;
+                  return (
+                    <div key={s.step} className="text-center relative">
+                      <div className="relative w-12 h-12 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3 z-10 bg-background">
+                        <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                        <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-background border border-primary/30 text-primary text-[10px] font-mono tabular-nums font-semibold flex items-center justify-center">
+                          {s.step}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-sm mb-1">{s.title}</h3>
+                      <p className="text-xs text-muted-foreground">{s.description}</p>
                     </div>
-                    <h3 className="font-semibold text-sm mb-1">{s.title}</h3>
-                    <p className="text-xs text-muted-foreground">{s.description}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -405,51 +442,88 @@ export default function HacktoberfestPage() {
             description="One task per day, each building on your familiarity with the project. All contributions are JSON or Markdown edits."
           />
 
-          <div className="grid gap-px sm:grid-cols-2 bg-border border rounded-md overflow-hidden">
-            {CHALLENGE_DAYS.map((day) => {
-              const Icon = day.icon;
-              return (
-                <Link
-                  key={day.day}
-                  href={`/hacktoberfest/day-${day.day}`}
-                  className={`group bg-card p-5 transition-colors hover:bg-muted/40 ${
-                    day.bonus ? 'sm:col-span-2' : ''
-                  }`}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 font-mono text-xs text-muted-foreground tabular-nums">
-                        <span>Day {day.day}</span>
-                        <span className="text-muted-foreground/60">·</span>
-                        <span>{day.difficulty}</span>
-                        <span className="text-muted-foreground/60">·</span>
-                        <span>{day.time}</span>
-                        {day.bonus && (
-                          <>
-                            <span className="text-muted-foreground/60">·</span>
-                            <span className="text-primary">bonus</span>
-                          </>
-                        )}
+          {(() => {
+            const regularDays = CHALLENGE_DAYS.filter((d) => !d.bonus);
+            const bonusDay = CHALLENGE_DAYS.find((d) => d.bonus);
+            const regularRemainder = regularDays.length % 2;
+            return (
+              <>
+                <div className="grid gap-px sm:grid-cols-2 bg-border border rounded-md overflow-hidden">
+                  {regularDays.map((day) => {
+                    const Icon = day.icon;
+                    return (
+                      <Link
+                        key={day.day}
+                        href={`/hacktoberfest/day-${day.day}`}
+                        className="group bg-card p-5 transition-colors hover:bg-muted/40"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="flex-shrink-0 w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
+                            <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 font-mono text-xs text-muted-foreground tabular-nums">
+                              <span>Day {day.day}</span>
+                              <span className="text-muted-foreground/60">·</span>
+                              <span>{day.difficulty}</span>
+                              <span className="text-muted-foreground/60">·</span>
+                              <span>{day.time}</span>
+                            </div>
+                            <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
+                              {day.title}
+                            </h3>
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                              {day.description}
+                            </p>
+                            <div className="flex items-center gap-1 mt-2 text-xs text-primary/80">
+                              <span>View full instructions</span>
+                              <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                  {regularRemainder === 1 && (
+                    <div aria-hidden="true" className="bg-card hidden sm:block" />
+                  )}
+                </div>
+                {bonusDay && (
+                  <Link
+                    href={`/hacktoberfest/day-${bonusDay.day}`}
+                    className="group block mt-px rounded-md border bg-primary/5 p-5 transition-colors hover:bg-primary/10"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-md bg-primary/15 flex items-center justify-center">
+                        <bonusDay.icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
                       </div>
-                      <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
-                        {day.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {day.description}
-                      </p>
-                      <div className="flex items-center gap-1 mt-2 text-xs text-primary/80">
-                        <span>View full instructions</span>
-                        <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 font-mono text-xs text-muted-foreground tabular-nums">
+                          <span>Day {bonusDay.day}</span>
+                          <span className="text-muted-foreground/60">·</span>
+                          <span>{bonusDay.difficulty}</span>
+                          <span className="text-muted-foreground/60">·</span>
+                          <span>{bonusDay.time}</span>
+                          <span className="text-muted-foreground/60">·</span>
+                          <span className="text-primary font-semibold">bonus</span>
+                        </div>
+                        <h3 className="font-semibold mb-1 group-hover:text-primary transition-colors">
+                          {bonusDay.title}
+                        </h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {bonusDay.description}
+                        </p>
+                        <div className="flex items-center gap-1 mt-2 text-xs text-primary/80">
+                          <span>View full instructions</span>
+                          <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+                  </Link>
+                )}
+              </>
+            );
+          })()}
         </section>
 
         <SectionSeparator command="cat rewards.md" />

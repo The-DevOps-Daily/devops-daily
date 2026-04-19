@@ -230,7 +230,7 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           description: '25 days of DevOps challenges',
           icon: Gift,
           featured: true,
-          badge: '2025',
+          badge: '2026',
         },
       ],
     },
