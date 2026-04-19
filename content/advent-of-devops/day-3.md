@@ -3,8 +3,8 @@ title: 'Day 3 - Add GitHub Actions CI'
 day: 3
 excerpt: 'Set up continuous integration for a repository without automation. Create a GitHub Actions workflow that runs tests on every push.'
 description: 'Learn to create GitHub Actions workflows for continuous integration, automated testing, and quality checks.'
-publishedAt: '2026-12-03T00:00:00Z'
-updatedAt: '2026-12-03T00:00:00Z'
+publishedAt: '2025-12-03T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Beginner'
 category: 'CI/CD'
 tags:

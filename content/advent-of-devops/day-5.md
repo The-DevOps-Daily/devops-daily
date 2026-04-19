@@ -3,8 +3,8 @@ title: 'Day 5 - Debug a Broken Container'
 day: 5
 excerpt: 'Troubleshoot and fix a container that fails to start. Learn essential debugging techniques for containerized applications.'
 description: 'Master Docker debugging skills by diagnosing and fixing common container issues including crashes, networking problems, and misconfiguration.'
-publishedAt: '2026-12-05T00:00:00Z'
-updatedAt: '2026-12-05T00:00:00Z'
+publishedAt: '2025-12-05T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Docker'
 tags:

@@ -3,8 +3,8 @@ title: 'Day 18 - Deploy a Static Site'
 day: 18
 excerpt: 'Deploy a static website to AWS S3 with CloudFront CDN for global performance and HTTPS support.'
 description: 'Learn static site deployment using S3, CloudFront, and automation with GitHub Actions for continuous deployment.'
-publishedAt: '2026-12-18T00:00:00Z'
-updatedAt: '2026-12-18T00:00:00Z'
+publishedAt: '2025-12-18T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Cloud'
 tags:

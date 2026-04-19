@@ -3,8 +3,8 @@ title: 'Day 22 - Run a Local Cluster'
 day: 22
 excerpt: 'Set up a local Kubernetes cluster with Minikube or Kind for development and testing without cloud costs.'
 description: 'Learn to run local Kubernetes clusters using Minikube, Kind, or k3d for fast development, testing, and learning.'
-publishedAt: '2026-12-22T00:00:00Z'
-updatedAt: '2026-12-22T00:00:00Z'
+publishedAt: '2025-12-22T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Kubernetes'
 tags:

@@ -3,8 +3,8 @@ title: 'Day 23 - Container Networking Puzzle'
 day: 23
 excerpt: 'Solve complex container networking challenges involving multi-container apps, custom networks, and service discovery.'
 description: 'Master Docker networking by solving real-world challenges with custom networks, DNS, port mapping, and container communication.'
-publishedAt: '2026-12-23T00:00:00Z'
-updatedAt: '2026-12-23T00:00:00Z'
+publishedAt: '2025-12-23T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Advanced'
 category: 'Docker'
 tags:
