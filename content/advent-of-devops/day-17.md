@@ -4,7 +4,7 @@ day: 17
 excerpt: 'Deploy a serverless function to AWS Lambda with API Gateway, learning modern serverless architecture patterns.'
 description: 'Learn serverless deployment with AWS Lambda, API Gateway, and Infrastructure as Code using AWS SAM or Serverless Framework.'
 publishedAt: '2025-12-17T00:00:00Z'
-updatedAt: '2025-12-17T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Serverless'
 tags:

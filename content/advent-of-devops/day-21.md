@@ -4,7 +4,7 @@ day: 21
 excerpt: 'Build a GitHub template repository with DevOps best practices baked in for quick project bootstrapping.'
 description: 'Create a comprehensive template repository with CI/CD, testing, linting, Docker, and documentation for rapid project initialization.'
 publishedAt: '2025-12-21T00:00:00Z'
-updatedAt: '2025-12-21T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Automation'
 tags:

@@ -234,22 +234,23 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
       aria-labelledby="deployment-title"
       aria-describedby="deployment-description"
     >
-      <div className="w-full max-w-4xl bg-slate-900 rounded-lg border-2 border-blue-500 shadow-2xl overflow-hidden my-4">
+      <div className="w-full max-w-4xl bg-slate-950 rounded-md border border-primary/40 shadow-2xl overflow-hidden my-4">
         {/* Header */}
-        <div className="bg-linear-to-r from-blue-600 to-purple-600 p-4">
+        <div className="bg-slate-900 border-b border-primary/30 p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <Rocket
-                className="w-5 h-5 sm:w-6 sm:h-6 text-white animate-pulse"
+                className="w-5 h-5 sm:w-6 sm:h-6 text-primary animate-pulse"
+                strokeWidth={1.5}
                 aria-hidden="true"
               />
-              <h2 id="deployment-title" className="text-lg sm:text-xl font-bold text-white">
+              <h2 id="deployment-title" className="text-lg sm:text-xl font-semibold text-slate-100">
                 Production Deployment Pipeline
               </h2>
             </div>
             <button
               onClick={onComplete}
-              className="text-white hover:text-gray-200 transition-colors p-2"
+              className="text-slate-400 hover:text-slate-100 transition-colors p-2"
               aria-label="Close deployment"
             >
               <X className="w-5 h-5" />
@@ -262,33 +263,33 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
         </div>
 
         {/* Pipeline Stages */}
-        <div className="p-4 sm:p-6 border-b border-slate-700 overflow-x-auto">
-          <div className="flex justify-between items-center min-w-max sm:min-w-0">
+        <div className="px-3 sm:px-4 py-3 border-b border-slate-800">
+          <div className="flex items-center justify-between gap-1 sm:gap-1.5">
             {stages.map((s, i) => (
-              <div key={i} className="flex items-center">
+              <div key={i} className="flex items-center flex-1 min-w-0">
                 <div
-                  className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 rounded-full transition-all ${
+                  className={`flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded border transition-all font-mono text-[10px] sm:text-xs flex-1 min-w-0 justify-center ${
                     i < stage
-                      ? 'bg-green-600 text-white'
+                      ? 'bg-green-500/10 border-green-500/40 text-green-400'
                       : i === stage
-                        ? 'bg-blue-600 text-white animate-pulse'
-                        : 'bg-slate-700 text-slate-400'
+                        ? 'bg-primary/10 border-primary/50 text-primary animate-pulse'
+                        : 'bg-slate-800 border-slate-700 text-slate-500'
                   }`}
                 >
-                  <span className="text-base sm:text-xl" aria-hidden="true">
+                  <span className="text-sm sm:text-base leading-none" aria-hidden="true">
                     {s.icon}
                   </span>
-                  <span className="text-xs sm:text-sm font-medium">
+                  <span className="font-medium truncate">
                     {s.name.replace(s.icon, '').trim()}
                   </span>
                   {i < stage && (
-                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" aria-label="Complete" />
+                    <CheckCircle className="w-3 h-3 shrink-0" aria-label="Complete" />
                   )}
                 </div>
                 {i < stages.length - 1 && (
                   <div
-                    className={`w-2 sm:w-4 h-1 mx-0.5 sm:mx-1 transition-all ${
-                      i < stage ? 'bg-green-600' : 'bg-slate-700'
+                    className={`w-2 sm:w-3 h-px mx-0.5 transition-all shrink-0 ${
+                      i < stage ? 'bg-green-500/60' : 'bg-slate-700'
                     }`}
                   />
                 )}
@@ -309,11 +310,11 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
                 log?.startsWith('✓')
                   ? 'text-green-400'
                   : log?.startsWith('→')
-                    ? 'text-blue-400'
+                    ? 'text-primary'
                     : log?.startsWith('🎉')
-                      ? 'text-yellow-400 font-bold text-lg'
+                      ? 'text-primary font-bold text-lg'
                       : log?.startsWith('🚀') || log?.startsWith('📊') || log?.startsWith('📈')
-                        ? 'text-purple-400'
+                        ? 'text-primary/80'
                         : 'text-slate-300'
               }`}
             >
@@ -324,17 +325,17 @@ const DeploymentAnimation = ({ onComplete }: { onComplete: () => void }) => {
         </div>
 
         {/* Progress Bar */}
-        <div className="p-4 bg-slate-900">
-          <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
+        <div className="p-4 bg-slate-900 border-t border-slate-800">
+          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
             <div
-              className="bg-linear-to-r from-blue-500 to-purple-500 h-full transition-all duration-500 ease-out"
+              className="bg-primary h-full transition-all duration-500 ease-out"
               style={{ width: `${((stage + 1) / stages.length) * 100}%` }}
             />
           </div>
-          <p className="text-center text-slate-400 text-sm mt-2">
+          <p className="text-center text-slate-400 text-xs mt-2 font-mono tabular-nums">
             {stage < stages.length
-              ? `Stage ${stage + 1} of ${stages.length}`
-              : 'Deployment Complete!'}
+              ? `stage ${stage + 1} / ${stages.length}`
+              : 'deployment complete'}
           </p>
         </div>
       </div>
@@ -355,13 +356,16 @@ const AchievementModal = ({ open, onClose }: { open: boolean; onClose: () => voi
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4" id="achievement-description">
-          <div className="bg-linear-to-r from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500 rounded-lg p-6 text-center">
+          <div className="bg-primary/10 border border-primary/40 rounded-md p-6 text-center">
             <div className="text-6xl mb-4" aria-hidden="true">
               🚀
             </div>
             <h3 className="text-2xl font-bold mb-2">DevOps Master</h3>
             <p className="text-muted-foreground mb-4">You successfully deployed to production!</p>
-            <Badge variant="secondary" className="text-lg px-4 py-2">
+            <Badge
+              variant="secondary"
+              className="text-sm px-3 py-1 font-mono bg-primary/10 border border-primary/20 text-primary"
+            >
               Easter Egg Found
             </Badge>
           </div>

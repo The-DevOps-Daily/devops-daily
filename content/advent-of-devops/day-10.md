@@ -4,7 +4,7 @@ day: 10
 excerpt: 'Package your Kubernetes application as a Helm chart for easy deployment and management across environments.'
 description: 'Learn Helm fundamentals by creating a reusable chart with templates, values, and helpers for deploying applications to Kubernetes.'
 publishedAt: '2025-12-10T00:00:00Z'
-updatedAt: '2025-12-10T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Advanced'
 category: 'Kubernetes'
 tags:

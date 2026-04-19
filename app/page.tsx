@@ -152,7 +152,7 @@ export default async function Home() {
         limit={8}
         showHeader
         showViewAll
-        gridClassName="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+        gridClassName="lg:grid-cols-4"
       />
 
       <SectionSeparator command="ls /exercises --recent" />

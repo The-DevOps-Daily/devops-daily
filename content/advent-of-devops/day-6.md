@@ -4,7 +4,7 @@ day: 6
 excerpt: 'Create your first reusable Terraform module to provision cloud infrastructure. Learn infrastructure as code fundamentals.'
 description: 'Build a practical Terraform module for AWS S3 bucket creation with proper configuration, variables, and outputs.'
 publishedAt: '2025-12-06T00:00:00Z'
-updatedAt: '2025-12-06T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Infrastructure as Code'
 tags:

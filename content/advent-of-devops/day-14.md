@@ -4,7 +4,7 @@ day: 14
 excerpt: 'Debug network connectivity issues in Kubernetes including DNS, service discovery, and network policies.'
 description: 'Master Kubernetes networking troubleshooting by debugging DNS resolution, service connectivity, network policies, and inter-pod communication.'
 publishedAt: '2025-12-14T00:00:00Z'
-updatedAt: '2025-12-14T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Advanced'
 category: 'Kubernetes'
 tags:

@@ -4,7 +4,7 @@ day: 15
 excerpt: 'Write a practical bash script to automate common DevOps tasks like deployments, backups, and health checks.'
 description: 'Master bash scripting fundamentals by creating robust automation scripts with error handling, logging, and best practices.'
 publishedAt: '2025-12-15T00:00:00Z'
-updatedAt: '2025-12-15T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Automation'
 tags:

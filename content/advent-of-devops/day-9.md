@@ -4,7 +4,7 @@ day: 9
 excerpt: 'Debug and fix a Kubernetes pod that crashes on startup. Master essential troubleshooting techniques.'
 description: 'Learn systematic Kubernetes debugging by diagnosing and fixing common pod failures including CrashLoopBackOff, ImagePullBackOff, and configuration errors.'
 publishedAt: '2025-12-09T00:00:00Z'
-updatedAt: '2025-12-09T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Kubernetes'
 tags:

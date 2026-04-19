@@ -166,7 +166,7 @@ export function DropdownMenu({ sections, isOpen, onClose }: DropdownMenuProps) {
                                 {item.label}
                               </h4>
                               {item.badge && (
-                                <span className="px-2 py-0.5 bg-linear-to-r from-primary to-purple-600 text-white text-xs rounded-full font-bold">
+                                <span className="px-1.5 py-0.5 bg-primary/10 border border-primary/20 text-primary text-[10px] font-mono tabular-nums rounded">
                                   {item.badge}
                                 </span>
                               )}

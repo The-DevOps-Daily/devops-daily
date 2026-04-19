@@ -4,7 +4,7 @@ day: 13
 excerpt: 'Scan container images and infrastructure code for security vulnerabilities and misconfigurations.'
 description: 'Learn container and infrastructure security scanning with Trivy, Checkov, and automated security checks in CI/CD pipelines.'
 publishedAt: '2025-12-13T00:00:00Z'
-updatedAt: '2025-12-13T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Security'
 tags:

@@ -416,7 +416,7 @@ export default function LoadBalancerSimulator() {
           </div>
 
           {/* Visualization */}
-          <div className="relative h-72 bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-xl overflow-hidden">
+          <div className="relative h-72 bg-muted/30 rounded-md border overflow-hidden">
             {/* Connection Lines */}
             <svg className="absolute inset-0 w-full h-full">
               {/* Users to Load Balancer */}

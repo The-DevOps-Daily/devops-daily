@@ -4,7 +4,7 @@ day: 20
 excerpt: 'Securely manage application secrets and credentials using AWS Secrets Manager, Kubernetes Secrets, and best practices.'
 description: 'Learn proper secrets management with AWS Secrets Manager, Kubernetes Secrets, and External Secrets Operator for secure credential handling.'
 publishedAt: '2025-12-20T00:00:00Z'
-updatedAt: '2025-12-20T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Security'
 tags:

@@ -108,9 +108,9 @@ const skillResourcesDatabase: Record<string, SkillResource[]> = {
     {
       title: 'Introduction to Linux',
       url: 'https://leanpub.com/introduction-to-linux',
-      type: 'tutorial',
+      type: 'book',
       external: true,
-      description: 'Free ebook covering Linux fundamentals end-to-end',
+      description: 'Comprehensive Linux fundamentals ebook on Leanpub',
     },
   ],
   'Shell Scripting (Bash)': [

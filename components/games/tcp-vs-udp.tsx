@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, Pause, RefreshCw, Wifi, WifiOff, Shield, Zap, Activity, AlertTriangle, Info, Lock, ArrowRightLeft, Keyboard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 /**
  * TCP vs UDP Visual Simulator
@@ -410,7 +411,7 @@ export default function TcpVsUdpSimulator() {
   // --- Renderers ---
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans selection:bg-cyan-500/30">
+    <div className="bg-background text-foreground font-sans selection:bg-primary/30">
       <div className="max-w-6xl mx-auto p-4 md:p-6 flex flex-col gap-6">
         
         {/* Header */}
@@ -507,8 +508,8 @@ export default function TcpVsUdpSimulator() {
         </div>
 
         {/* Main Simulation Canvas */}
-        <div 
-          className="relative w-full h-96 bg-slate-100 dark:bg-slate-950 rounded-xl border-2 border-slate-300 dark:border-slate-800 overflow-hidden shadow-2xl"
+        <div
+          className="relative w-full h-96 rounded-md border bg-background overflow-hidden"
           ref={containerRef}
         >
           {/* Background Grid */}
@@ -603,12 +604,9 @@ export default function TcpVsUdpSimulator() {
             <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px] z-30">
               <div className="text-center">
                 <p className="text-slate-700 dark:text-slate-300 mb-2">Ready to simulate</p>
-                <button
-                  onClick={handleStartStop}
-                  className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-2 rounded-full font-bold transition-colors flex items-center gap-2 mx-auto"
-                >
+                <Button onClick={handleStartStop} className="gap-2">
                   <Play size={18} fill="currentColor" /> Start Traffic
-                </button>
+                </Button>
               </div>
             </div>
           )}

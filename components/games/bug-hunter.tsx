@@ -508,7 +508,7 @@ return (
                         className={cn(
                           'w-full h-full rounded shadow-lg flex items-center justify-center',
                           index === 0
-                            ? 'bg-gradient-to-br from-red-500 to-orange-600 animate-glitch'
+                            ? 'bg-gradient-to-br from-red-500 to-orange-600'
                             : 'bg-gradient-to-br from-red-600 to-orange-700'
                         )}
                       >
@@ -536,11 +536,7 @@ return (
                             <p>• Speed increases as you infect more servers</p>
                             <p>• Unlock achievements as you progress</p>
                           </div>
-                          <Button
-                            onClick={startGame}
-                            size="lg"
-                            className="bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700"
-                          >
+                          <Button onClick={startGame} size="lg">
                             Start Game
                           </Button>
                         </div>
@@ -764,18 +760,6 @@ return (
           background-image: linear-gradient(to right, rgba(100, 100, 100, 0.1) 1px, transparent 1px),
             linear-gradient(to bottom, rgba(100, 100, 100, 0.1) 1px, transparent 1px);
           background-size: ${CELL_SIZE}px ${CELL_SIZE}px;
-        }
-
-        @keyframes glitch {
-          0%, 100% { transform: translate(0); }
-          20% { transform: translate(-2px, 2px); }
-          40% { transform: translate(2px, -2px); }
-          60% { transform: translate(-2px, -2px); }
-          80% { transform: translate(2px, 2px); }
-        }
-
-        .animate-glitch {
-          animation: glitch 0.3s ease-in-out infinite;
         }
       `}</style>
     </div>

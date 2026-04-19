@@ -3,37 +3,38 @@ import { PostContent } from '@/components/post-content';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { AdventLandingClient } from '@/components/advent-landing-client';
 import { AdventHeroProgress } from '@/components/advent-hero-progress';
-import { Calendar, Trophy, Star, Sparkles, Target, Gift, ChevronRight } from 'lucide-react';
+import { SectionSeparator } from '@/components/section-separator';
+import { Calendar, Trophy, Target, ChevronRight, Github } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Advent of DevOps - 25 Day Challenge | DevOps Daily',
+  title: 'Advent of DevOps 2026 - 25 Day Challenge | DevOps Daily',
   description:
-    'Join the Advent of DevOps challenge! 25 days of hands-on DevOps tasks covering Docker, Kubernetes, CI/CD, security, monitoring, and more. Level up your DevOps skills this December.',
+    'Join the Advent of DevOps 2026 challenge! 25 days of hands-on DevOps tasks covering Docker, Kubernetes, CI/CD, security, monitoring, and more. Level up your DevOps skills this December.',
   alternates: {
     canonical: '/advent-of-devops',
   },
   openGraph: {
     type: 'website',
-    title: 'Advent of DevOps - 25 Day Challenge',
+    title: 'Advent of DevOps 2026 - 25 Day Challenge',
     description:
-      'Join 25 days of hands-on DevOps challenges covering Docker, Kubernetes, CI/CD, and more!',
+      'Join 25 days of hands-on DevOps challenges covering Docker, Kubernetes, CI/CD, and more.',
     url: '/advent-of-devops',
     images: [
       {
         url: '/images/advent/advent-of-devops.png',
         width: 1200,
         height: 630,
-        alt: 'Advent of DevOps - 25 Day Challenge',
+        alt: 'Advent of DevOps 2026 - 25 Day Challenge',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Advent of DevOps - 25 Day Challenge',
+    title: 'Advent of DevOps 2026 - 25 Day Challenge',
     description:
-      'Join 25 days of hands-on DevOps challenges covering Docker, Kubernetes, CI/CD, and more!',
+      'Join 25 days of hands-on DevOps challenges covering Docker, Kubernetes, CI/CD, and more.',
     images: ['/images/advent/advent-of-devops.png'],
   },
 };
@@ -44,90 +45,87 @@ export default async function AdventOfDevOpsPage() {
 
   return (
     <>
-      {/* Hero Section with Gradient Background */}
+      {/* Hero */}
       <div className="relative overflow-hidden">
-        {/* Animated Background */}
-        <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-background to-green-500/5" />
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-green-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-500/5 rounded-full blur-3xl animate-pulse delay-500" />
-        </div>
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 opacity-[0.07] dark:opacity-[0.09]"
+          style={{
+            backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+            maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+          }}
+        />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
 
-        {/* Snowflakes Effect */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute animate-fall"
-              style={{
-                left: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${10 + Math.random() * 10}s`,
-              }}
-            >
-              <Star
-                className="text-primary/20"
-                size={8 + Math.random() * 8}
-                fill="currentColor"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="container relative mx-auto px-4 py-16 md:py-24">
-          {/* Hero Content */}
+        <div className="container relative mx-auto px-4 py-16 md:py-20">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-linear-to-r from-red-500/20 to-green-500/20 border border-primary/30 mb-6 animate-fade-in">
-              <Gift className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">25 Days of DevOps Challenges</span>
+            <p className="text-xs font-mono text-muted-foreground mb-3">// advent-of-devops</p>
+
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-primary/20 bg-primary/5 text-xs font-mono text-primary mb-6 tabular-nums">
+              <Calendar className="w-3.5 h-3.5" strokeWidth={1.5} />
+              December 1-25, 2026
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 animate-fade-in-up">
-              <span className="bg-linear-to-r from-red-500 via-primary to-green-500 bg-clip-text text-transparent">
-                Advent of DevOps
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
+              Advent of DevOps{' '}
+              <span className="text-primary relative inline-block">
+                2026
+                <svg
+                  className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
+                  viewBox="0 0 120 12"
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M2 9 Q15 2 30 8 Q45 1 60 7 Q75 2 90 9 Q105 4 118 7"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    fill="none"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 animate-fade-in-up delay-100">
-              Level up your DevOps skills with 25 days of hands-on challenges
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
+              Level up your DevOps skills with 25 days of hands-on challenges. One task a day
+              through December, covering Docker, Kubernetes, CI/CD, security, monitoring, and more.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-4 mb-12 animate-fade-in-up delay-200">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card/50 backdrop-blur border border-border">
-                <Calendar className="h-5 w-5 text-primary" />
-                <span className="font-medium">25 Days</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card/50 backdrop-blur border border-border">
-                <Trophy className="h-5 w-5 text-yellow-500" />
-                <span className="font-medium">Hands-on Challenges</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card/50 backdrop-blur border border-border">
-                <Target className="h-5 w-5 text-green-500" />
-                <span className="font-medium">Real-world Skills</span>
-              </div>
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-10 font-mono text-sm text-muted-foreground tabular-nums">
+              <span className="inline-flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+                25 days
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+                Hands-on tasks
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-primary" strokeWidth={1.5} />
+                Real-world skills
+              </span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-4 animate-fade-in-up delay-300">
+            <div className="flex flex-wrap justify-center gap-3">
               <Link
                 href="#challenges"
                 className="group inline-flex items-center gap-2 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
               >
-                <Sparkles className="h-5 w-5" />
                 Start Challenge
-                <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <a
                 href="https://x.com/thedevopsdaily"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border hover:border-primary hover:bg-primary/5 font-medium transition-all"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-md border border-border hover:border-primary/50 hover:bg-muted/30 font-medium transition-colors"
               >
                 Follow @thedevopsdaily
               </a>
             </div>
 
-            {/* Progress Bar - Client Component */}
             <AdventHeroProgress />
           </div>
         </div>
@@ -135,7 +133,8 @@ export default async function AdventOfDevOpsPage() {
 
       {/* Introduction Section */}
       {indexContent && (
-        <div className="container mx-auto px-4 py-12">
+        <div className="container mx-auto px-4 py-8">
+          <SectionSeparator command="cat intro.md" />
           <div className="max-w-4xl mx-auto prose dark:prose-invert">
             <PostContent content={indexContent.content} />
           </div>
@@ -144,49 +143,50 @@ export default async function AdventOfDevOpsPage() {
 
       {/* Challenges Grid with Progress Tracking */}
       <div id="challenges">
+        <div className="container mx-auto px-4">
+          <SectionSeparator command="ls /advent-of-devops/days" />
+        </div>
         <AdventLandingClient days={days} />
       </div>
 
-      {/* Sponsors Section */}
-      <div className="container mx-auto px-4 py-12">
+      {/* Sponsors */}
+      <div className="container mx-auto px-4 py-8">
         <InlineSponsors variant="banner" />
       </div>
 
-      {/* CTA Section */}
-      <div className="container mx-auto px-4 py-16">
+      {/* CTA */}
+      <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto">
-          <div className="relative rounded-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-blue-500/20 to-green-500/20" />
-            <div className="relative px-8 py-12 text-center">
-              <h2 className="text-3xl font-bold mb-4">Ready to Start Your Journey?</h2>
-              <p className="text-lg text-muted-foreground mb-8">
-                Join the community and share your progress with{' '}
-                <a
-                  href="https://x.com/thedevopsdaily"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline font-medium"
-                >
-                  @thedevopsdaily
-                </a>
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-4">
-                <Link
-                  href="/advent-of-devops/day-1"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-                >
-                  <Trophy className="h-5 w-5" />
-                  Start Day 1
-                </Link>
-                <a
-                  href="https://github.com/The-DevOps-Daily/devops-daily"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border hover:border-primary hover:bg-primary/5 font-medium transition-all"
-                >
-                  View on GitHub
-                </a>
-              </div>
+          <div className="rounded-md border bg-primary/5 px-8 py-10 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3">Ready to Start Your Journey?</h2>
+            <p className="text-muted-foreground mb-6">
+              Join the community and share your progress with{' '}
+              <a
+                href="https://x.com/thedevopsdaily"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline font-medium"
+              >
+                @thedevopsdaily
+              </a>
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/advent-of-devops/day-1"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
+              >
+                <Trophy className="h-4 w-4" strokeWidth={1.5} />
+                Start Day 1
+              </Link>
+              <a
+                href="https://github.com/The-DevOps-Daily/devops-daily"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-md border border-border hover:border-primary/50 hover:bg-muted/30 font-medium transition-colors"
+              >
+                <Github className="h-4 w-4" strokeWidth={1.5} />
+                View on GitHub
+              </a>
             </div>
           </div>
         </div>

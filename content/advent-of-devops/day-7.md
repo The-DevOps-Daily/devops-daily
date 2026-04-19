@@ -4,7 +4,7 @@ day: 7
 excerpt: 'Enhance your Terraform module with advanced features like testing, documentation, and CI/CD integration.'
 description: 'Level up your Terraform module with comprehensive documentation, automated testing, and publishing to the Terraform Registry.'
 publishedAt: '2025-12-07T00:00:00Z'
-updatedAt: '2025-12-07T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Advanced'
 category: 'Infrastructure as Code'
 tags:

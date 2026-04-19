@@ -65,7 +65,7 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                       </div>
                       <span className="flex-1">{item.label}</span>
                       {item.badge && (
-                        <span className="px-3 py-1 text-xs font-bold text-white rounded-full bg-linear-to-r from-primary to-purple-600">
+                        <span className="px-1.5 py-0.5 bg-primary/10 border border-primary/20 text-primary text-[10px] font-mono tabular-nums rounded">
                           {item.badge}
                         </span>
                       )}

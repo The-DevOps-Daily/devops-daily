@@ -379,48 +379,50 @@ export default function CICDStackGenerator() {
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto my-8">
-      <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center">
-        <span className="text-transparent bg-clip-text bg-linear-to-r from-green-500 via-blue-500 to-purple-500">
-          CI/CD Stack Generator
-        </span>
+      <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center text-primary">
+        CI/CD Stack Generator
       </h1>
 
       <p className="text-center text-muted-foreground mb-8 max-w-2xl">
         Spin the wheels to get your perfect (or perfectly cursed) DevOps stack!
       </p>
 
-      {/* Slot Machine */}
-      <div className="relative w-full max-w-2xl bg-linear-to-b from-slate-800 to-slate-950 rounded-xl shadow-2xl border border-slate-700 p-6 mb-6">
-        {/* Top decoration */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 w-32 h-6 bg-slate-700 rounded-full flex items-center justify-center">
-          <div className="w-24 h-4 bg-linear-to-r from-red-500 via-amber-500 to-green-500 rounded-full animate-pulse"></div>
+      {/* Slot Machine (terminal-styled) */}
+      <div className="relative w-full max-w-2xl rounded-md border bg-card overflow-hidden font-mono text-sm p-6 mb-6">
+        {/* Terminal traffic-light header */}
+        <div className="absolute top-0 left-0 right-0 h-7 bg-muted/50 border-b flex items-center gap-1.5 px-3">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-400/70"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/70"></span>
+          <span className="w-2.5 h-2.5 rounded-full bg-green-400/70"></span>
+          <span className="ml-3 text-xs text-muted-foreground">$ generate stack</span>
         </div>
+        <div className="h-4" />
 
         {/* Reels Container */}
-        <div className="relative bg-slate-900 rounded-lg p-4 mb-6 overflow-hidden min-h-[200px]">
+        <div className="relative bg-muted/40 border rounded-md p-4 mb-6 overflow-hidden min-h-[200px]">
           {/* Selection highlight */}
           <div className="absolute left-0 right-0 top-1/2 h-16 -translate-y-1/2 bg-primary/20 border-y-2 border-primary/50 z-10 pointer-events-none rounded"></div>
 
           {/* Column separators */}
-          <div className="absolute left-1/3 top-0 bottom-0 w-px bg-slate-700 z-10"></div>
-          <div className="absolute left-2/3 top-0 bottom-0 w-px bg-slate-700 z-10"></div>
+          <div className="absolute left-1/3 top-0 bottom-0 w-px bg-border z-10"></div>
+          <div className="absolute left-2/3 top-0 bottom-0 w-px bg-border z-10"></div>
 
           {/* Column Headers */}
           <div className="grid grid-cols-3 gap-0 mb-2">
-            <div className="text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <div className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
               CI/CD Tool
             </div>
-            <div className="text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <div className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Infrastructure
             </div>
-            <div className="text-center text-xs font-medium text-slate-400 uppercase tracking-wider">
+            <div className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
               Platform
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-0">
             {reels.map((reel, index) => (
-              <div key={index} className="h-48 overflow-hidden bg-slate-800 relative">
+              <div key={index} className="h-48 overflow-hidden bg-background/60 relative">
                 <AnimatePresence mode="wait">
                   {reel.spinning ? (
                     <motion.div
@@ -437,7 +439,7 @@ export default function CICDStackGenerator() {
                       {reel.displayItems.map((item, itemIndex) => (
                         <div
                           key={itemIndex}
-                          className="h-12 flex items-center justify-center px-2 text-center font-medium text-white/90 text-sm leading-tight shrink-0 border-b border-slate-700/50"
+                          className="h-12 flex items-center justify-center px-2 text-center font-medium text-foreground/90 text-sm leading-tight shrink-0 border-b border-border/50"
                         >
                           {item}
                         </div>
@@ -460,8 +462,8 @@ export default function CICDStackGenerator() {
                   )}
                 </AnimatePresence>
 
-                {/* Subtle gradient overlay to create depth */}
-                <div className="absolute inset-0 bg-linear-to-b from-slate-800/20 via-transparent to-slate-800/20 pointer-events-none" />
+                {/* Subtle overlay to create depth */}
+                <div className="absolute inset-0 bg-linear-to-b from-background/30 via-transparent to-background/30 pointer-events-none" />
               </div>
             ))}
           </div>
@@ -474,7 +476,7 @@ export default function CICDStackGenerator() {
             disabled={isSpinning}
             size="lg"
             className={cn(
-              'px-8 font-bold text-lg bg-linear-to-r from-amber-500 to-red-500 hover:from-amber-400 hover:to-red-400 shadow-lg',
+              'px-8 font-bold text-lg',
               isSpinning && 'opacity-50 cursor-not-allowed'
             )}
           >
@@ -498,10 +500,7 @@ export default function CICDStackGenerator() {
             size="lg"
             disabled={!rating}
             onClick={shareResult}
-            className={cn(
-              'border-slate-600 hover:bg-slate-800',
-              !rating && 'opacity-50 cursor-not-allowed'
-            )}
+            className={cn(!rating && 'opacity-50 cursor-not-allowed')}
           >
             <Share2 className="h-4 w-4 mr-2" />
             Share
@@ -509,32 +508,49 @@ export default function CICDStackGenerator() {
         </div>
       </div>
 
-      {/* Results */}
+      {/* Results - terminal-styled output */}
       <AnimatePresence mode="wait">
         {rating && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
             className="w-full max-w-2xl"
           >
-            <div
-              className={cn(
-                'rounded-xl p-8 text-white text-center shadow-xl border border-white/20',
-                rating.color
-              )}
-            >
-              <motion.div
-                className="text-6xl mb-4"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              >
-                {rating.emoji}
-              </motion.div>
-              <h3 className="text-2xl font-bold mb-3">Your Stack Rating</h3>
-              <p className="text-lg leading-relaxed">{rating.text}</p>
+            <div className="rounded-md border bg-card overflow-hidden font-mono text-sm">
+              {/* Terminal header with traffic lights */}
+              <div className="h-7 bg-muted/50 border-b flex items-center gap-1.5 px-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400/70"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/70"></span>
+                <span className="w-2.5 h-2.5 rounded-full bg-green-400/70"></span>
+                <span className="ml-3 text-xs text-muted-foreground">stack.yml</span>
+              </div>
+              <div className="p-5 space-y-1 leading-relaxed">
+                <div className="text-muted-foreground"># Generated DevOps Stack</div>
+                <div>
+                  <span className="text-primary">ci_cd</span>
+                  <span className="text-muted-foreground">:</span>{' '}
+                  <span className="text-foreground">{reels[0].value}</span>
+                </div>
+                <div>
+                  <span className="text-primary">infrastructure</span>
+                  <span className="text-muted-foreground">:</span>{' '}
+                  <span className="text-foreground">{reels[1].value}</span>
+                </div>
+                <div>
+                  <span className="text-primary">platform</span>
+                  <span className="text-muted-foreground">:</span>{' '}
+                  <span className="text-foreground">{reels[2].value}</span>
+                </div>
+                <div className="pt-3 border-t mt-3">
+                  <div className="text-muted-foreground"># verdict</div>
+                  <div className="flex items-start gap-2 mt-1">
+                    <span className="text-xl leading-none mt-0.5">{rating.emoji}</span>
+                    <span className="text-foreground font-sans">{rating.text}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

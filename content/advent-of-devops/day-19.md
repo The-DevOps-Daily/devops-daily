@@ -4,7 +4,7 @@ day: 19
 excerpt: 'Perform load testing on your application to identify performance bottlenecks and capacity limits.'
 description: 'Learn load testing fundamentals with k6, Apache Bench, and wrk to measure application performance under stress.'
 publishedAt: '2025-12-19T00:00:00Z'
-updatedAt: '2025-12-19T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Performance'
 tags:

@@ -4,7 +4,7 @@ day: 24
 excerpt: 'Apply security hardening best practices to application configurations, containers, and infrastructure.'
 description: 'Learn security hardening by applying CIS benchmarks, security best practices, and defensive configurations to your infrastructure.'
 publishedAt: '2025-12-24T00:00:00Z'
-updatedAt: '2025-12-24T00:00:00Z'
+updatedAt: '2026-04-19T00:00:00Z'
 difficulty: 'Advanced'
 category: 'Security'
 tags:
