@@ -104,9 +104,16 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
       color: 'blue',
       items: [
         {
+          label: 'Calculators & Utilities',
+          href: '/tools',
+          description: 'CIDR, JWT, base64, UUID, cron, all in-browser',
+          icon: Wrench,
+          featured: true,
+        },
+        {
           label: 'DevOps Toolbox',
           href: '/toolbox',
-          description: 'Essential DevOps tools collection',
+          description: 'Curated third-party DevOps tools',
           icon: Wrench,
           featured: false,
         },
