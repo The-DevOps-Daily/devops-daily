@@ -1,24 +1,8 @@
-import type { Metadata } from 'next';
 import { YamlJsonFormatter } from '@/components/tools/yaml-json-formatter';
 import { ToolShell } from '@/components/tools/tool-shell';
+import { buildToolMetadata } from '@/lib/tools';
 
-export const metadata: Metadata = {
-  title: 'YAML / JSON Formatter and Linter | DevOps Daily',
-  description:
-    'Validate, pretty-print, and convert between YAML and JSON. Browser-only, no data leaves your machine. Perfect for Kubernetes manifests, Helm values, and API payloads.',
-  alternates: { canonical: '/tools/yaml-json-formatter' },
-  openGraph: {
-    title: 'YAML / JSON Formatter and Linter',
-    description: 'Validate, format, and convert YAML and JSON in your browser.',
-    url: '/tools/yaml-json-formatter',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'YAML / JSON Formatter and Linter',
-    description: 'Validate, format, and convert YAML and JSON in your browser.',
-  },
-};
+export const metadata = buildToolMetadata('yaml-json-formatter');
 
 function Explainer() {
   return (

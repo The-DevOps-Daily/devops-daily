@@ -1,25 +1,8 @@
-import type { Metadata } from 'next';
 import { CidrCalculator } from '@/components/tools/cidr-calculator';
 import { ToolShell } from '@/components/tools/tool-shell';
+import { buildToolMetadata } from '@/lib/tools';
 
-export const metadata: Metadata = {
-  title: 'CIDR Subnet Calculator | DevOps Daily',
-  description:
-    'Calculate network range, usable IPs, subnet mask, and broadcast address from a CIDR block. Check whether an IP is inside a network. Runs entirely in your browser.',
-  alternates: { canonical: '/tools/cidr-calculator' },
-  openGraph: {
-    title: 'CIDR Subnet Calculator',
-    description:
-      'Parse CIDR blocks, compute ranges, and check whether an IP lives inside a network.',
-    url: '/tools/cidr-calculator',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'CIDR Subnet Calculator',
-    description: 'Parse CIDR blocks in your browser. No sign-up.',
-  },
-};
+export const metadata = buildToolMetadata('cidr-calculator');
 
 function Explainer() {
   return (

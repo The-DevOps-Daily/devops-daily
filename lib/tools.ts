@@ -262,6 +262,44 @@ export function getToolBySlug(slug: string): Tool | undefined {
   return TOOLS.find((t) => t.slug === slug);
 }
 
+/**
+ * Build Next.js Metadata for a tool page. Keeps title / description /
+ * canonical / OG / Twitter image consistent across all tools so adding a
+ * new one only requires writing the page body.
+ */
+export function buildToolMetadata(slug: string) {
+  const tool = getToolBySlug(slug);
+  if (!tool) {
+    return { title: 'Tool | DevOps Daily' };
+  }
+  const imagePath = `/images/tools/${tool.slug}.png`;
+  return {
+    title: `${tool.title} | DevOps Daily`,
+    description: tool.description,
+    alternates: { canonical: `/tools/${tool.slug}` },
+    openGraph: {
+      title: tool.title,
+      description: tool.tagline,
+      url: `/tools/${tool.slug}`,
+      type: 'website' as const,
+      images: [
+        {
+          url: imagePath,
+          width: 1200,
+          height: 630,
+          alt: tool.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image' as const,
+      title: tool.title,
+      description: tool.tagline,
+      images: [imagePath],
+    },
+  };
+}
+
 export const CATEGORY_LABEL: Record<Tool['category'], string> = {
   networking: 'Networking',
   encoding: 'Encoding',

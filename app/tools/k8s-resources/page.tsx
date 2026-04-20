@@ -1,24 +1,8 @@
-import type { Metadata } from 'next';
 import { K8sResourcesCalculator } from '@/components/tools/k8s-resources';
 import { ToolShell } from '@/components/tools/tool-shell';
+import { buildToolMetadata } from '@/lib/tools';
 
-export const metadata: Metadata = {
-  title: 'Kubernetes Resource Calculator | DevOps Daily',
-  description:
-    'Plan CPU and memory requests and limits for your Kubernetes Pods. Size from observed peak usage, add headroom, and copy the YAML block into your manifest.',
-  alternates: { canonical: '/tools/k8s-resources' },
-  openGraph: {
-    title: 'Kubernetes Resource Calculator',
-    description: 'Size Kubernetes requests and limits from observed peak usage.',
-    url: '/tools/k8s-resources',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Kubernetes Resource Calculator',
-    description: 'Size Kubernetes requests and limits from peak usage.',
-  },
-};
+export const metadata = buildToolMetadata('k8s-resources');
 
 function Explainer() {
   return (
