@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Calendar, Info } from 'lucide-react';
+import { Clock, Calendar, Info, User } from 'lucide-react';
 
 interface PostHeaderProps {
   post: {
@@ -34,6 +34,17 @@ export function PostHeader({ post, hasAffiliateLinks = false }: PostHeaderProps)
           <Clock className="mr-1 h-4 w-4" />
           <span>{post.readingTime}</span>
         </div>
+        {post.author && (
+          <div className="flex items-center text-sm text-muted-foreground">
+            <User className="mr-1 h-4 w-4" strokeWidth={1.5} />
+            <Link
+              href={`/authors/${post.author.slug}`}
+              className="hover:text-primary transition-colors"
+            >
+              {post.author.name}
+            </Link>
+          </div>
+        )}
       </div>
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{post.title}</h1>
       {hasAffiliateLinks && (
