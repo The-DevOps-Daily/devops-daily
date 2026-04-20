@@ -4,7 +4,6 @@ import { ArrowRight, Wrench } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { ToolsIndexList } from '@/components/tools/tools-index-list';
-import { TOOLS } from '@/lib/tools';
 
 export const metadata: Metadata = {
   title: 'DevOps Tools and Calculators | DevOps Daily',
@@ -84,7 +83,7 @@ export default function ToolsIndexPage() {
       </div>
 
       <div className="container mx-auto px-4">
-        <ToolsIndexList tools={TOOLS} />
+        <ToolsIndexList />
 
         {/* Cross-link to /toolbox */}
         <section className="my-8 rounded-md border bg-muted/30 p-5 flex items-start gap-4">

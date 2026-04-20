@@ -5,11 +5,12 @@ import Link from 'next/link';
 import { ArrowRight, Search } from 'lucide-react';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
-import { CATEGORY_LABEL, type Tool } from '@/lib/tools';
+import { TOOLS, CATEGORY_LABEL, type Tool } from '@/lib/tools';
 
-interface ToolsIndexListProps {
-  tools: Tool[];
-}
+// Note: TOOLS is imported directly (not passed as a prop) because its `icon`
+// field holds lucide component functions. Functions can't be serialized across
+// the server → client boundary during static export, so we keep the data
+// inside the client bundle instead.
 
 function groupByCategory(tools: Tool[]): Record<string, Tool[]> {
   return tools.reduce<Record<string, Tool[]>>((acc, tool) => {
@@ -18,7 +19,8 @@ function groupByCategory(tools: Tool[]): Record<string, Tool[]> {
   }, {});
 }
 
-export function ToolsIndexList({ tools }: ToolsIndexListProps) {
+export function ToolsIndexList() {
+  const tools = TOOLS;
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
