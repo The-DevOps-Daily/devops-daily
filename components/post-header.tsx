@@ -38,7 +38,7 @@ export function PostHeader({ post, hasAffiliateLinks = false }: PostHeaderProps)
           <div className="flex items-center text-sm text-muted-foreground">
             <User className="mr-1 h-4 w-4" strokeWidth={1.5} />
             <Link
-              href={`/authors/${post.author.slug}`}
+              href={`/experts/${post.author.slug}`}
               className="hover:text-primary transition-colors"
             >
               {post.author.name}
