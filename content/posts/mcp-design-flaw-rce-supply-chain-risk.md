@@ -9,8 +9,8 @@ publishedAt: '2026-04-20T15:00:00Z'
 updatedAt: '2026-04-20T15:00:00Z'
 readingTime: '9 min read'
 author:
-  name: 'Bobby Iliev'
-  slug: 'bobby-iliev'
+  name: 'DevOps Daily Team'
+  slug: 'devops-daily-team'
 featured: true
 tags:
   - security
