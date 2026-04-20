@@ -4,6 +4,7 @@ import {
   Binary,
   Fingerprint,
   Clock,
+  Container,
   type LucideIcon,
 } from 'lucide-react';
 
