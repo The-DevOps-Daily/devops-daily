@@ -100,7 +100,24 @@ Fly.io takes a different approach — it runs your apps at the edge, closer to y
 
 ---
 
-## 5. AWS App Runner
+## 5. Kuberns
+
+[Kuberns](https://kuberns.com) is the world's first agentic AI deployment platform. Connect your GitHub repo and an AI agent handles the entire pipeline automatically. No config files, no YAML, no Kubernetes required.
+
+**Why it's great:**
+- **Zero config** — No Dockerfiles or YAML, the AI figures it out
+- **AI-native pipeline** — An agent manages builds, scaling, and infrastructure end to end
+- **Vibe coding friendly** — One-click deploy directly from Cursor and Windsurf
+- **No per-user pricing** — Flat pricing regardless of team size
+- **Instant deployments** — Push your repo and it's live
+
+**Best for:** Developers using AI coding tools who want to ship without touching infrastructure.
+
+[Get started with Kuberns →](https://kuberns.com)
+
+---
+
+## 6. AWS App Runner
 
 If you're already in the AWS ecosystem, App Runner provides a Heroku-like experience without leaving AWS. It abstracts away ECS/Fargate complexity.
 
@@ -114,7 +131,7 @@ If you're already in the AWS ecosystem, App Runner provides a Heroku-like experi
 
 ---
 
-## 6. Google Cloud Run
+## 7. Google Cloud Run
 
 Cloud Run is Google's serverless container platform. It's incredibly cost-effective for variable workloads since you only pay when requests are being processed.
 
