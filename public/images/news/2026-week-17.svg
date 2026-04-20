@@ -20,12 +20,12 @@
   <rect width="1200" height="630" fill="url(#grid)"/>
   
   <!-- Category badge -->
-  <rect x="80" y="80" width="172" height="40" rx="20" fill="#d97706"/>
-  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">DEVOPS</text>
+  <rect x="80" y="80" width="256" height="40" rx="20" fill="#d97706"/>
+  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">WEEK 17, 2026</text>
   
   <!-- Title -->
-  <text x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">GitOps with ArgoCD - Automated</text>
-<text x="80" y="370" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Kubernetes Deployments</text>
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">DevOps Weekly Digest - Week</text>
+<text x="80" y="370" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">17, 2026</text>
   
   <!-- DevOps Daily branding -->
   <text x="80" y="550" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#fbbf24">DevOps Daily</text>
