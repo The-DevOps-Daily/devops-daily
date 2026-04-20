@@ -594,5 +594,8 @@
   "public/images/interview-questions/progressive-delivery-rollback-strategy-og.svg": "ac444b80f9f4c0b3",
   "public/images/interview-questions/progressive-delivery-flag-architecture-og.svg": "2738916da8136f71",
   "public/images/interview-questions/progressive-delivery-canary-releases-og.svg": "5d2493730c35abb6",
-  "public/images/interview-questions/progressive-delivery-feature-flag-types-og.svg": "83322e009c0acd6d"
+  "public/images/interview-questions/progressive-delivery-feature-flag-types-og.svg": "83322e009c0acd6d",
+  "public/images/checklists/argocd-multi-environment-repo-structure-og.svg": "e0ecab68db44dbcc",
+  "public/images/interview-questions/idp-what-and-why-og.svg": "bfe2716a67889220",
+  "public/images/posts/cloud-cost-allocation-tags-aws-gcp-azure.svg": "bb864f3f7011c23b"
 }
