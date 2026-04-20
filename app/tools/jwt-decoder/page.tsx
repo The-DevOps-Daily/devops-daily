@@ -1,24 +1,8 @@
-import type { Metadata } from 'next';
 import { JwtDecoder } from '@/components/tools/jwt-decoder';
 import { ToolShell } from '@/components/tools/tool-shell';
+import { buildToolMetadata } from '@/lib/tools';
 
-export const metadata: Metadata = {
-  title: 'JWT Decoder | DevOps Daily',
-  description:
-    'Decode and inspect JSON Web Tokens in your browser. See the header, payload, signature, and human-readable expiry. Nothing is sent to a server.',
-  alternates: { canonical: '/tools/jwt-decoder' },
-  openGraph: {
-    title: 'JWT Decoder',
-    description: 'Inspect JWTs in your browser. Header, payload, expiry, all client-side.',
-    url: '/tools/jwt-decoder',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'JWT Decoder',
-    description: 'Inspect JWTs in your browser. All client-side.',
-  },
-};
+export const metadata = buildToolMetadata('jwt-decoder');
 
 function Explainer() {
   return (

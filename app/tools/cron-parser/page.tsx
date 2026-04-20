@@ -1,24 +1,8 @@
-import type { Metadata } from 'next';
 import { CronParser } from '@/components/tools/cron-parser';
 import { ToolShell } from '@/components/tools/tool-shell';
+import { buildToolMetadata } from '@/lib/tools';
 
-export const metadata: Metadata = {
-  title: 'Cron Expression Parser | DevOps Daily',
-  description:
-    'Translate cron expressions to human-readable schedules and see the next 5 run times. Supports @yearly, @monthly, @daily, @hourly shortcuts.',
-  alternates: { canonical: '/tools/cron-parser' },
-  openGraph: {
-    title: 'Cron Expression Parser',
-    description: 'Decode cron expressions in your browser, preview the next 5 run times.',
-    url: '/tools/cron-parser',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Cron Expression Parser',
-    description: 'Decode cron expressions in your browser.',
-  },
-};
+export const metadata = buildToolMetadata('cron-parser');
 
 function Explainer() {
   return (

@@ -9,10 +9,11 @@ import type { Guide } from '@/lib/guides';
 
 interface LatestGuidesProps {
   className?: string;
+  limit?: number;
 }
 
-export default async function LatestGuides({ className }: LatestGuidesProps) {
-  const latestGuides: Guide[] = await getLatestGuides(6);
+export default async function LatestGuides({ className, limit = 6 }: LatestGuidesProps) {
+  const latestGuides: Guide[] = await getLatestGuides(limit);
 
   return (
     <section className={cn('', className)}>

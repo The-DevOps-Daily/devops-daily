@@ -1,24 +1,8 @@
-import type { Metadata } from 'next';
 import { UuidGenerator } from '@/components/tools/uuid-generator';
 import { ToolShell } from '@/components/tools/tool-shell';
+import { buildToolMetadata } from '@/lib/tools';
 
-export const metadata: Metadata = {
-  title: 'UUID and Secret Generator | DevOps Daily',
-  description:
-    'Generate UUIDs (v4, v7), hex tokens, base64 secrets, and Kubernetes Secret values in your browser. Uses the Web Crypto API.',
-  alternates: { canonical: '/tools/uuid-generator' },
-  openGraph: {
-    title: 'UUID and Secret Generator',
-    description: 'Cryptographically secure UUIDs and secrets, generated in your browser.',
-    url: '/tools/uuid-generator',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'UUID and Secret Generator',
-    description: 'Cryptographically secure UUIDs and secrets, in your browser.',
-  },
-};
+export const metadata = buildToolMetadata('uuid-generator');
 
 function Explainer() {
   return (

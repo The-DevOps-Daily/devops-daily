@@ -1,24 +1,8 @@
-import type { Metadata } from 'next';
 import { Base64Encoder } from '@/components/tools/base64-encoder';
 import { ToolShell } from '@/components/tools/tool-shell';
+import { buildToolMetadata } from '@/lib/tools';
 
-export const metadata: Metadata = {
-  title: 'Base64 and URL Encoder / Decoder | DevOps Daily',
-  description:
-    'Encode or decode base64 and URL-safe strings in your browser. Perfect for Kubernetes secrets, API debugging, and quick encoding tasks.',
-  alternates: { canonical: '/tools/base64' },
-  openGraph: {
-    title: 'Base64 and URL Encoder / Decoder',
-    description: 'Browser-based base64 and URL encoder/decoder for DevOps.',
-    url: '/tools/base64',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Base64 and URL Encoder / Decoder',
-    description: 'Browser-based base64 and URL encoder/decoder.',
-  },
-};
+export const metadata = buildToolMetadata('base64');
 
 function Explainer() {
   return (
