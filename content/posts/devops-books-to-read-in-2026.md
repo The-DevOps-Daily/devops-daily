@@ -9,8 +9,8 @@ publishedAt: '2026-03-26T09:00:00Z'
 updatedAt: '2026-03-26T09:00:00Z'
 readingTime: '7 min read'
 author:
-  name: 'Bobby Iliev'
-  slug: 'bobby-iliev'
+  name: 'DevOps Daily Team'
+  slug: 'devops-daily-team'
 featured: true
 tags:
   - devops
