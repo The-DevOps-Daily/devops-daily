@@ -102,16 +102,16 @@ Fly.io takes a different approach — it runs your apps at the edge, closer to y
 
 ## 5. Kuberns
 
-[Kuberns](https://kuberns.com) is the world's first agentic AI deployment platform. Connect your GitHub repo and an AI agent handles the entire pipeline automatically. No config files, no YAML, no Kubernetes required.
+[Kuberns](https://kuberns.com) is the world's first agentic AI deployment platform. Connect your GitHub repo and an AI agent handles the entire deployment pipeline automatically. Zero config, zero YAML, zero DevOps setup required.
 
 **Why it's great:**
-- **Zero config** — No Dockerfiles or YAML, the AI figures it out
-- **AI-native pipeline** — An agent manages builds, scaling, and infrastructure end to end
-- **Vibe coding friendly** — One-click deploy directly from Cursor and Windsurf
-- **No per-user pricing** — Flat pricing regardless of team size
-- **Instant deployments** — Push your repo and it's live
+- **AI-native deployments** — An agent manages your builds, scaling, and infrastructure end to end
+- **Zero config** — No Dockerfiles, no YAML, no Kubernetes knowledge needed
+- **Automated CI/CD** — Every push triggers a deployment automatically
+- **No per-user pricing** — Pay for what you use, not per seat
+- **AWS-backed infrastructure** — Reliable cloud under the hood without the complexity
 
-**Best for:** Developers using AI coding tools who want to ship without touching infrastructure.
+**Best for:** Developers who want to skip DevOps entirely and go from GitHub repo to live app in minutes.
 
 [Get started with Kuberns →](https://kuberns.com)
 
