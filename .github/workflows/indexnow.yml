@@ -1,0 +1,87 @@
+name: IndexNow Submission
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'content/**'
+      - 'app/**'
+      - 'lib/games.ts'
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: 'Newline-separated URLs to submit (leave empty to use sitemap)'
+        required: false
+        default: ''
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    name: Notify IndexNow
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Collect changed content paths
+        if: github.event_name == 'push'
+        id: diff
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          git diff --name-only --diff-filter=AM "$BEFORE_SHA" "$AFTER_SHA" \
+            | { grep -E '^content/' || true; } > changed.txt
+          echo "count=$(wc -l < changed.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          cat changed.txt
+
+      - name: Map changed paths to URLs
+        if: github.event_name == 'push' && steps.diff.outputs.count != '0'
+        run: |
+          # Path -> URL mapping mirrors Next.js route structure.
+          awk '
+            /^content\/posts\//           { sub(/^content\/posts\//, "/posts/"); sub(/\.md$/, ""); print; next }
+            /^content\/news\//            { sub(/^content\/news\//, "/news/"); sub(/\.md$/, ""); print; next }
+            /^content\/newsletters\//     { sub(/^content\/newsletters\//, "/newsletters/"); sub(/\.md$/, ""); print; next }
+            /^content\/guides\/[^/]+\//   { sub(/^content\/guides\//, "/guides/"); sub(/\/.*$/, ""); print; next }
+            /^content\/comparisons\//     { sub(/^content\/comparisons\//, "/comparisons/"); sub(/\.md$/, ""); print; next }
+            /^content\/exercises\//       { sub(/^content\/exercises\//, "/exercises/"); sub(/\.json$/, ""); print; next }
+            /^content\/quizzes\//         { sub(/^content\/quizzes\//, "/quizzes/"); sub(/\.json$/, ""); print; next }
+            /^content\/flashcards\//      { sub(/^content\/flashcards\//, "/flashcards/"); sub(/\.json$/, ""); print; next }
+            /^content\/checklists\//      { sub(/^content\/checklists\//, "/checklists/"); sub(/\.json$/, ""); print; next }
+            /^content\/interview-questions\// { sub(/^content\/interview-questions\//, "/interview-questions/"); sub(/\.json$/, ""); print; next }
+            /^content\/advent-of-devops\// { sub(/^content\/advent-of-devops\//, "/advent-of-devops/"); sub(/\.md$/, ""); print; next }
+          ' changed.txt | sort -u > urls.txt
+
+          echo "URLs to submit:"
+          cat urls.txt
+
+      - name: Submit changed URLs to IndexNow
+        if: github.event_name == 'push' && steps.diff.outputs.count != '0'
+        run: |
+          if [ -s urls.txt ]; then
+            cat urls.txt | bun scripts/submit-indexnow.ts --stdin
+          else
+            echo "No content URLs to submit after filtering."
+          fi
+
+      - name: Submit manual URLs
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.urls != ''
+        env:
+          MANUAL_URLS: ${{ github.event.inputs.urls }}
+        run: printf '%s\n' "$MANUAL_URLS" | bun scripts/submit-indexnow.ts --stdin
+
+      - name: Submit full sitemap
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.urls == ''
+        run: bun scripts/submit-indexnow.ts --sitemap
