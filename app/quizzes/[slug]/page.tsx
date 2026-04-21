@@ -48,7 +48,7 @@ export async function generateMetadata({
       type: 'website',
       images: [
         {
-          url: `/images/games/${slug}-og.png`,
+          url: `/images/quizzes/${slug}-og.png`,
           width: 1200,
           height: 630,
           alt: quizConfig.title,
@@ -59,7 +59,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: `${quizConfig.title} - DevOps Daily`,
       description: quizConfig.description,
-      images: [`/images/games/${slug}-og.png`],
+      images: [`/images/quizzes/${slug}-og.png`],
     },
   };
 }
