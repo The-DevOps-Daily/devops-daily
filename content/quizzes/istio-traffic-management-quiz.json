@@ -1,0 +1,240 @@
+{
+  "id": "istio-traffic-management-quiz",
+  "title": "Istio Traffic Management Quiz",
+  "description": "Test your knowledge of Istio traffic management with real scenarios covering VirtualServices, DestinationRules, weighted routing, retries, circuit breakers, and production debugging.",
+  "category": "Service Mesh",
+  "icon": "Network",
+  "totalPoints": 181,
+  "theme": {
+    "primaryColor": "indigo",
+    "gradientFrom": "from-indigo-500",
+    "gradientTo": "to-blue-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-24 minutes",
+    "difficultyLevels": {
+      "beginner": 2,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-04-21"
+  },
+  "questions": [
+    {
+      "id": "virtualservice-vs-destinationrule",
+      "title": "VirtualService vs DestinationRule",
+      "description": "Your team just installed Istio and a junior engineer asks what the difference is between a VirtualService and a DestinationRule.",
+      "situation": "You're onboarding two new backend engineers to your service mesh. They keep mixing up which resource handles what, and you need to give them a clear answer before they start writing configs.",
+      "codeExample": "apiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: reviews\nspec:\n  hosts:\n  - reviews\n  http:\n  - route:\n    - destination:\n        host: reviews\n        subset: v2\n---\napiVersion: networking.istio.io/v1beta1\nkind: DestinationRule\nmetadata:\n  name: reviews\nspec:\n  host: reviews\n  subsets:\n  - name: v2\n    labels:\n      version: v2",
+      "options": [
+        "VirtualService and DestinationRule are interchangeable; use whichever your team prefers",
+        "VirtualService decides how requests are routed to a service, while DestinationRule defines policies that apply after routing has picked a destination (subsets, load balancing, TLS, circuit breaking)",
+        "VirtualService handles ingress traffic only, DestinationRule handles east-west traffic only",
+        "DestinationRule creates the service, VirtualService exposes it to the cluster"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "VirtualService answers 'which destination should this request go to?' based on matches on hosts, headers, URIs, and weights. DestinationRule answers 'once I picked that destination, how do I talk to it?' It defines subsets (named groupings of pods by label), load balancing algorithm, TLS settings, connection pool limits, and outlier detection. You almost always need both: a VirtualService references a subset, and the DestinationRule is what actually defines that subset.",
+      "hint": "One decides the address. The other decides how you dial the phone once you have the address."
+    },
+    {
+      "id": "destinationrule-subsets",
+      "title": "Defining subsets for version routing",
+      "description": "You need to split traffic between two versions of the same service. What's the right way to tell Istio which pods belong to each version?",
+      "situation": "Your reviews service has deployments labeled version: v1 and version: v2 running in the same namespace. You want to address them separately in routing rules, but there's no clean way to reference them yet.",
+      "codeExample": "# Current Deployments\nkubectl get pods -l app=reviews --show-labels\nNAME            READY   LABELS\nreviews-v1-abc  2/2     app=reviews,version=v1\nreviews-v2-xyz  2/2     app=reviews,version=v2\n\n# You want to route like this:\nhttp:\n- route:\n  - destination:\n      host: reviews\n      subset: v1\n    weight: 90\n  - destination:\n      host: reviews\n      subset: v2\n    weight: 10",
+      "options": [
+        "Create two separate Kubernetes Services, one per version, and route to each",
+        "Add a VirtualService with match rules on pod names",
+        "Define subsets in a DestinationRule that map subset names to pod label selectors",
+        "Use Kubernetes NetworkPolicies to tag pods by version"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Subsets are defined in a DestinationRule and map a friendly name (like 'v1' or 'canary') to a set of pod labels. Once defined, VirtualServices can reference them by name. You do NOT need separate Kubernetes Services per version, that's the whole point of subsets. NetworkPolicies have nothing to do with routing, and matching on pod names defeats the purpose of labels.",
+      "hint": "Istio needs a way to group pods into logical buckets based on labels, and that lives in a specific resource."
+    },
+    {
+      "id": "weighted-canary-routing",
+      "title": "Canary deploy at 5% traffic",
+      "description": "You're rolling out v2 of the payments service. You want 5% of traffic to go to v2 and 95% to stay on v1. Which config is correct?",
+      "situation": "Payments is your highest-risk service. Your SRE lead wants a slow ramp: 5% first, bake for an hour, then 25%, then 50%, then 100%. You already have a DestinationRule with v1 and v2 subsets defined. Now write the VirtualService for the 5% step.",
+      "codeExample": "# DestinationRule already exists:\napiVersion: networking.istio.io/v1beta1\nkind: DestinationRule\nmetadata:\n  name: payments\nspec:\n  host: payments\n  subsets:\n  - name: v1\n    labels:\n      version: v1\n  - name: v2\n    labels:\n      version: v2",
+      "options": [
+        "Two VirtualServices, one routing to v1 and one routing to v2, and let Istio balance them",
+        "One VirtualService with two destinations under a single route, each with a weight field (95 and 5) that sums to 100",
+        "Scale v2 to 5% of the replica count of v1 and route 100% to 'payments'",
+        "Set a header match 'canary: true' and hope 5% of clients send it"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Weighted routing is done inside a single HTTPRoute with multiple destination entries, each carrying a weight. The weights must sum to 100. Two separate VirtualServices for the same host create undefined behavior, Istio does not merge them predictably. Relying on replica counts is a common misconception: traffic is routed by the mesh, not distributed by pod count. And header-based canaries target specific clients, not a random percentage.",
+      "hint": "You need one route with multiple destinations, and a field that tells Istio the split ratio."
+    },
+    {
+      "id": "header-based-routing",
+      "title": "Route internal testers to v2",
+      "description": "You want internal employees (requests carrying x-user-type: internal) to hit v2 while everyone else stays on v1. How do you express this in a VirtualService?",
+      "situation": "Your product team wants dogfooding: employees should see the new checkout flow (v2) but external customers should keep the stable version (v1). The request from the internal portal always carries x-user-type: internal set by the auth proxy.",
+      "codeExample": "apiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: checkout\nspec:\n  hosts:\n  - checkout\n  http:\n  # ??? which rules go here ???",
+      "options": [
+        "A single route with weight 50/50 and let Istio figure it out",
+        "Use a DestinationRule with an outlier that ejects non-internal users",
+        "Two HTTP rules: the first with a match on headers x-user-type: internal routing to subset v2, then a fallback rule with no match routing to subset v1",
+        "Put both rules inside a single match block, since Istio evaluates them in parallel"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Istio evaluates HTTP rules in order and takes the first match. Put the specific rule (header match on x-user-type: internal going to v2) first, then a default rule with no match going to v1. Ordering matters: if the default rule is first, everyone gets v1 because the generic match eats the request. Weights are for percentages, not for conditional routing. Outlier detection is a health check mechanism, not a routing filter.",
+      "hint": "Think of the HTTP rules as an ordered list, like a firewall ruleset. First match wins."
+    },
+    {
+      "id": "retry-policy-config",
+      "title": "Adding retries for a flaky dependency",
+      "description": "A downstream service occasionally returns 503s during pod restarts. You want Istio to retry these failures up to 3 times. Which config does this correctly?",
+      "situation": "Your recommendations service talks to a catalog service. When catalog rolls out a new version, pods briefly 503 while terminating. You see user-facing errors. You want the sidecar to transparently retry so restarts don't leak to users.",
+      "codeExample": "apiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: catalog\nspec:\n  hosts:\n  - catalog\n  http:\n  - route:\n    - destination:\n        host: catalog\n    retries:\n      # ??? which settings ???",
+      "options": [
+        "attempts: 3, perTryTimeout: 2s, retryOn: 5xx,reset,connect-failure,refused-stream",
+        "attempts: 3, retryOn: 4xx (because we want to retry bad requests)",
+        "maxRetries: 3 at the DestinationRule connection pool level",
+        "timeout: 10s on the route (timeouts automatically retry in Istio)"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The retries block on an HTTPRoute supports attempts, perTryTimeout, and retryOn. You almost always want perTryTimeout: otherwise a slow response eats your entire request timeout in a single try. retryOn should include 5xx plus connection-level failures (reset, connect-failure, refused-stream). Retrying 4xx is usually wrong, those are client errors and retrying won't fix them. maxRetries at the DestinationRule is for circuit breaking concurrency limits, not per-request retries. And timeouts do not automatically retry.",
+      "hint": "Retry logic lives on the route, and you need both a count AND a per-try deadline, plus a list of what to retry on."
+    },
+    {
+      "id": "outlier-detection-basics",
+      "title": "Ejecting a sick pod from the pool",
+      "description": "One pod in your service keeps returning 500s while the others are healthy. You want Istio to stop sending traffic to that pod automatically. Where do you configure this?",
+      "situation": "Your payments service has 10 replicas. One pod has a stuck database connection and returns 500s for every request. Without outlier detection, Istio's default round-robin keeps sending 10% of traffic to the broken pod. Users are seeing errors.",
+      "codeExample": "apiVersion: networking.istio.io/v1beta1\nkind: DestinationRule\nmetadata:\n  name: payments\nspec:\n  host: payments\n  trafficPolicy:\n    outlierDetection:\n      consecutive5xxErrors: 5\n      interval: 30s\n      baseEjectionTime: 30s\n      maxEjectionPercent: 50",
+      "options": [
+        "This won't work because outlier detection is configured on the VirtualService, not DestinationRule",
+        "This restarts any pod returning 5xx responses via Kubernetes liveness",
+        "This blocks users whose requests got 5 consecutive 5xx responses",
+        "This ejects the unhealthy pod from the load balancing pool after 5 consecutive 5xx responses within the 30s interval, keeps it out for 30s, and ensures no more than 50% of endpoints are ejected at once"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Outlier detection lives on DestinationRule under trafficPolicy and works at the endpoint (pod) level, not the pod lifecycle level. Istio does not restart pods, that's the kubelet's job via liveness probes. consecutive5xxErrors is the threshold that triggers ejection, interval is the scan window, baseEjectionTime is how long the pod stays ejected, and maxEjectionPercent caps how much of the pool can be removed at once (so you don't eject everything during a shared outage). The ejected pod is re-added automatically after baseEjectionTime and gets probed again.",
+      "hint": "This is about load balancing, not pod restarts. Which Istio resource owns load balancing and connection policy?"
+    },
+    {
+      "id": "connection-pool-limits",
+      "title": "Protecting a slow backend with connection pools",
+      "description": "A backend service can only handle 100 concurrent connections before it falls over. How do you protect it with Istio?",
+      "situation": "Your legacy inventory service has a hard connection limit at 100. During spikes, clients open 500+ connections and the service crashes. Scaling the legacy service isn't an option in the next 6 months. You need the mesh to shed load before it reaches the service.",
+      "codeExample": "apiVersion: networking.istio.io/v1beta1\nkind: DestinationRule\nmetadata:\n  name: inventory\nspec:\n  host: inventory\n  trafficPolicy:\n    connectionPool:\n      tcp:\n        maxConnections: 100\n      http:\n        http1MaxPendingRequests: 50\n        http2MaxRequests: 200\n        maxRequestsPerConnection: 10",
+      "options": [
+        "This is useless; Istio cannot limit connection counts, only retry attempts",
+        "These are soft suggestions that Envoy logs but does not enforce",
+        "These settings cap concurrent TCP connections, pending HTTP/1.1 requests, in-flight HTTP/2 streams, and requests reused per connection. Excess traffic is rejected with 503 so the backend stays up",
+        "These settings only apply to ingress traffic coming from the gateway"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Connection pool settings are part of the circuit breaker family in Istio. They're enforced by each client-side Envoy sidecar, meaning every caller respects the limit from their side. When the pool is full, Envoy rejects new requests with 503 instead of piling on to the backend. http1MaxPendingRequests matters for HTTP/1.1 (no multiplexing), http2MaxRequests for HTTP/2 (many streams per connection). maxRequestsPerConnection forces periodic reconnects, useful when you have sticky load balancers in front of you. This applies to any traffic the sidecar proxies, not just ingress.",
+      "hint": "This is load shedding at the client side. Envoy enforces limits per sidecar, and excess requests get rejected fast."
+    },
+    {
+      "id": "retry-storm-amplification",
+      "title": "Retries are making the incident worse",
+      "description": "During an outage, your dashboards show request rate to the failing service is 5x normal. Retries are amplifying load. What's the fix?",
+      "situation": "The auth service is having a bad day. It's already overloaded at 2x normal traffic because of a memory leak. Every service that depends on it has attempts: 5 configured. Now auth is seeing 10x the request rate and is completely down. You need to stop the bleeding.",
+      "codeExample": "# Current config on many services:\nretries:\n  attempts: 5\n  perTryTimeout: 3s\n  retryOn: 5xx,reset,connect-failure,refused-stream\n\n# Metrics during incident:\nauth_request_rate_normal:   2000 rps\nauth_request_rate_current: 10000 rps (5x amplification)\nauth_error_rate: 95%",
+      "options": [
+        "Drop attempts to 1-2, add a retryBudget (or use Envoy's retry budget via EnvoyFilter) so retries cannot exceed a small percent of active requests, and combine with circuit breaking on the client side so a failing dependency is dropped quickly",
+        "Increase attempts to 10 so retries eventually succeed",
+        "Remove all retries globally since they are always dangerous",
+        "Set perTryTimeout to 0 so retries stop when the original request times out"
+      ],
+      "correctAnswer": 0,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Retry storms are a classic incident amplifier. The fix is layered: lower attempts (1-2 is usually enough for transient failures), add a retry budget so total retry traffic can't grow without bound, and use circuit breaking (outlier detection + connection pool limits) so a sick dependency is cut off quickly instead of retried into the ground. More attempts makes it worse, not better. Removing all retries is overkill and hurts transient-failure recovery. perTryTimeout: 0 is invalid and wouldn't address amplification anyway. Think of retries as a dangerous tool that trades a bit of extra load for resilience, you must bound that trade.",
+      "hint": "The answer involves fewer retries, plus a mechanism that caps the total extra load retries can create, plus a way to stop hammering a dead dependency."
+    },
+    {
+      "id": "traffic-mirroring",
+      "title": "Shadowing production traffic to a new version",
+      "description": "You want to test v2 with real production requests without affecting users. How do you use Istio to shadow traffic?",
+      "situation": "v2 of the search service has a new ranking algorithm. You want to send it the same requests v1 gets so you can compare results offline, but you cannot risk v2 bugs reaching users. No response from v2 should ever make it back to the client.",
+      "codeExample": "apiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: search\nspec:\n  hosts:\n  - search\n  http:\n  - route:\n    - destination:\n        host: search\n        subset: v1\n      weight: 100\n    mirror:\n      host: search\n      subset: v2\n    mirrorPercentage:\n      value: 100.0",
+      "options": [
+        "This sends 100% of traffic to both v1 and v2, and returns whichever responds first",
+        "This is invalid; you cannot have route and mirror in the same HTTPRoute",
+        "This sends 100% to v1 only, and mirror is just a placeholder for future versions",
+        "This routes 100% of traffic to v1 and also forwards a fire-and-forget copy to v2; v2's response is discarded and its errors never reach the client"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Mirroring (also called shadowing) sends a copy of the request to the mirror destination fire-and-forget. The client only ever sees the response from the primary route. v2's response is discarded, and its errors, latency, and side effects do not affect the user. Be careful about side effects though: if v2 writes to a shared database, mirroring can cause duplicate writes. Production mirroring is usually paired with an isolated test environment for the mirror target. mirrorPercentage lets you dial mirror traffic down (useful when v2 is resource-constrained).",
+      "hint": "The keyword here is 'shadow'. One version serves the user, the other sees a copy and the user never knows it exists."
+    },
+    {
+      "id": "fault-injection-chaos",
+      "title": "Injecting failures to test resilience",
+      "description": "You want to inject a 5-second delay into 10% of requests to test your client's timeout handling. What does this config do?",
+      "situation": "Your resilience team is running a game day. They want to verify clients handle slow upstreams gracefully. Rather than breaking the actual service, they want Istio to inject controlled failures so behavior is deterministic and easy to turn off.",
+      "codeExample": "apiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: ratings\nspec:\n  hosts:\n  - ratings\n  http:\n  - fault:\n      delay:\n        percentage:\n          value: 10.0\n        fixedDelay: 5s\n      abort:\n        percentage:\n          value: 2.0\n        httpStatus: 503\n    route:\n    - destination:\n        host: ratings\n        subset: v1",
+      "options": [
+        "Adds a 5s delay to every request and returns 503 for all of them",
+        "Fails if both delay and abort are set together in the same fault block",
+        "Only takes effect on ingress gateway, not for service-to-service calls",
+        "Injects a 5-second delay into 10% of requests and returns a 503 to 2% of requests (independently), before forwarding the rest normally to ratings v1. Delay and abort percentages are evaluated separately"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Fault injection has two independent dials: delay (add latency) and abort (return an error). Percentages are applied independently, so you can stack them, 10% of requests get delayed, and 2% of requests get aborted with a 503. A single request could even hit both (unlucky). This runs on the client-side Envoy, so it works for both ingress and service-to-service traffic. Use it to validate that clients have proper timeouts, that retries fire correctly, and that your dashboards detect degraded dependencies. Turn it off when the game day ends, fault injection left in prod is a footgun.",
+      "hint": "delay and abort are two separate knobs in the fault block, and their percentages don't stack, they apply independently."
+    },
+    {
+      "id": "virtualservice-not-applying",
+      "title": "My VirtualService changes don't take effect",
+      "description": "You apply a VirtualService but traffic still behaves the old way. istioctl analyze reports no issues. What's the most likely cause?",
+      "situation": "You're debugging a canary rollout. You applied a new VirtualService that should send 10% of traffic to v2, but all requests are still hitting v1 based on metrics. kubectl get virtualservice shows your resource. Logs from the ingress gateway show it's not matching your rule.",
+      "codeExample": "# Your VirtualService:\napiVersion: networking.istio.io/v1beta1\nkind: VirtualService\nmetadata:\n  name: productpage\n  namespace: default\nspec:\n  hosts:\n  - productpage.default.svc.cluster.local\n  http:\n  - route:\n    - destination: { host: productpage, subset: v1 }\n      weight: 90\n    - destination: { host: productpage, subset: v2 }\n      weight: 10\n\n# Check:\nkubectl get gateway -A\nNAME         NAMESPACE        HOSTS\nmain-gw      istio-system     [\"*.example.com\"]\n\n# The VirtualService is missing: spec.gateways",
+      "options": [
+        "You need to restart istiod for VirtualService changes to take effect",
+        "The VirtualService is missing the gateways field, so for ingress traffic it only applies to mesh-internal traffic. Add gateways: [istio-system/main-gw] (or include 'mesh' explicitly) so it binds to the ingress gateway",
+        "The subsets weren't declared in a DestinationRule (but istioctl analyze would have caught this)",
+        "VirtualServices can only live in the istio-system namespace"
+      ],
+      "correctAnswer": 1,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "When you omit the gateways field, the VirtualService defaults to the reserved value 'mesh', meaning it only applies to sidecar-to-sidecar traffic inside the mesh. Ingress traffic from an Istio gateway will ignore it. To route external traffic you must explicitly list your gateway: gateways: [istio-system/main-gw, mesh] if you want both ingress and internal. Other common gotchas in this family: hosts must match what the gateway accepts, and the VirtualService namespace matters for cross-namespace gateway references. istiod does not need a restart, config is pushed dynamically. And istioctl analyze catches many issues but not semantic binding mismatches like this one.",
+      "hint": "VirtualServices bind to gateways or the mesh. If you forget to say which, they default to one of those two and ignore the other."
+    },
+    {
+      "id": "circuit-breaker-tuning",
+      "title": "Tuning outlier detection for bursty traffic",
+      "description": "Your outlier detection is ejecting healthy pods during brief traffic spikes, causing cascading failures. How do you tune it for bursty workloads?",
+      "situation": "Your checkout service occasionally gets burst traffic (flash sales). During bursts, some pods return a few 5xx responses as they warm up. Your current outlier detection ejects them aggressively, reducing pool size, which spreads more load on remaining pods and creates a feedback loop. On-call is paging at every sale.",
+      "codeExample": "# Current (too aggressive):\noutlierDetection:\n  consecutive5xxErrors: 3\n  interval: 10s\n  baseEjectionTime: 60s\n  maxEjectionPercent: 100\n\n# Observed: during a flash sale, 8 out of 10 pods briefly eject,\n# pool shrinks to 2 pods, load explodes on survivors, full outage.",
+      "options": [
+        "Raise consecutive5xxErrors to 10+, lower baseEjectionTime to 10-15s for faster recovery, cap maxEjectionPercent at 30-50 to always keep most pods in rotation, and consider splitUpstreamConfig or adding warmup so pods ramp in slowly",
+        "Disable outlier detection entirely; it always causes cascading failures under load",
+        "Lower consecutive5xxErrors to 1 so ejection is instant",
+        "Set maxEjectionPercent to 100 to ensure sick pods can always be ejected no matter what"
+      ],
+      "correctAnswer": 0,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Outlier detection is useful but has to be tuned for the workload's variance. Under bursty traffic, a too-low consecutive5xxErrors threshold turns transient blips into permanent ejections. The fix is higher tolerance (10+ errors before ejection), shorter ejection (10-15s so pods rejoin fast if they recover), and a hard cap on ejection percentage (never take more than ~30-50% of the pool out of rotation, so the survivors aren't crushed). Disabling entirely removes a useful safety net; setting threshold to 1 makes the feedback loop worse; 100% ejection guarantees outages during correlated failures (bad config push, shared dependency going down).",
+      "hint": "The root cause is that too many pods get ejected too quickly. Tune each knob in the opposite direction of the current (too aggressive) values, and add a safety cap."
+    }
+  ]
+}
