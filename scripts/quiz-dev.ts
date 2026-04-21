@@ -360,7 +360,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/games/${quizId}-og.svg',
+        url: '/images/quizzes/${quizId}-og.svg',
         width: 1200,
         height: 630,
         alt: '${config.title}',
@@ -371,7 +371,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: '${config.title} - DevOps Daily',
     description: '${config.description}',
-    images: ['/images/games/${quizId}-og.svg'],
+    images: ['/images/quizzes/${quizId}-og.svg'],
   },
 };
 

@@ -136,8 +136,8 @@ async function generateQuizOG(options: QuizOGOptions): Promise<void> {
 
   // Paths
   const templatePath = path.join(process.cwd(), 'templates', 'svg', themeConfig.template);
-  const outputSvgPath = path.join(process.cwd(), 'public', 'images', 'games', `${slug}-og.svg`);
-  const outputPngPath = path.join(process.cwd(), 'public', 'images', 'games', `${slug}-og.png`);
+  const outputSvgPath = path.join(process.cwd(), 'public', 'images', 'quizzes', `${slug}-og.svg`);
+  const outputPngPath = path.join(process.cwd(), 'public', 'images', 'quizzes', `${slug}-og.png`);
 
   // Read template
   let svgContent = await fs.readFile(templatePath, 'utf-8');
@@ -248,8 +248,8 @@ Examples:
     --theme devops
 
 Output:
-  - SVG: public/images/games/{slug}-og.svg
-  - PNG: public/images/games/{slug}-og.png
+  - SVG: public/images/quizzes/{slug}-og.svg
+  - PNG: public/images/quizzes/{slug}-og.png
 `);
 }
 
