@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Security Incident Response Quiz OG Image -->
+
+  <defs>
+    <!-- Background gradient - deep purple to dark blue -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7c2d12;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient - red to blue -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Alert pattern -->
+   <pattern id="alerts" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+      <circle cx="60" cy="60" r="12" fill="#ef4444" opacity="0.06"/>
+      <path d="M 60 48 L 66 60 L 54 60 Z" fill="#ef4444" opacity="0.06"/>
+   </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Alert pattern overlay -->
+  <rect width="1200" height="630" fill="url(#alerts)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="280" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Security Incident Response</text>
+
+  <!-- Alert icon -->
+ <g transform="translate(80, 160)">
+   <circle cx="30" cy="30" r="30" fill="#ef4444" opacity="0.9"/>
+    <!-- Alert triangle icon -->
+    <g transform="translate(18, 18)">
+      <path d="M 12 8 L 18 20 L 6 20 Z" fill="#ffffff" stroke="#ffffff" stroke-width="1.5"/>
+      <line x1="12" y1="13" x2="12" y2="16" stroke="#ef4444" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="12" cy="18" r="1" fill="#ef4444"/>
+    </g>
+ </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#fca5a5">INTERACTIVE QUIZ</text>
+
+  <!-- Title line 1 -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#ffffff">Security Incident</text>
+  
+  <!-- Title line 2 -->
+  <text x="80" y="345" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#ffffff">Response Quiz</text>
+
+  <!-- Description -->
+  <text x="80" y="410" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#cbd5e1">Handle breaches, attacks, and compliance</text>
+
+  <!-- Decorative security icons -->
+  <g opacity="0.15">
+    <!-- Shield with alert -->
+    <path d="M 950 120 L 1000 120 L 1000 180 Q 1000 200 980 210 Q 960 220 950 210 Q 930 200 930 180 L 930 120 Z M 950 120 L 975 100 L 1000 120" fill="none" stroke="#ef4444" stroke-width="3"/>
+    <path d="M 975 140 L 980 160 L 970 160 Z" fill="#ef4444"/>
+    <circle cx="975" cy="165" r="2" fill="#ef4444"/>
+    
+    <!-- Breach detection -->
+    <circle cx="1050" cy="150" r="18" fill="none" stroke="#3b82f6" stroke-width="3"/>
+    <circle cx="1050" cy="150" r="10" fill="none" stroke="#3b82f6" stroke-width="3"/>
+    <line x1="1060" y1="160" x2="1075" y2="175" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Lock breaking -->
+    <circle cx="1100" cy="120" r="8" fill="none" stroke="#3b82f6" stroke-width="3"/>
+    <rect x="1092" y="120" width="16" height="20" rx="2" fill="#3b82f6" opacity="0.3"/>
+    <line x1="1090" y1="115" x2="1085" y2="110" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+    <line x1="1110" y1="115" x2="1115" y2="110" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Data breach indicator -->
+    <rect x="980" y="450" width="80" height="60" rx="5" fill="none" stroke="#3b82f6" stroke-width="3"/>
+    <line x1="995" y1="470" x2="1045" y2="470" stroke="#3b82f6" stroke-width="2"/>
+    <line x1="995" y1="485" x2="1035" y2="485" stroke="#3b82f6" stroke-width="2"/>
+    <path d="M 1030 455 L 1050 435 L 1070 455" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="1050" y1="435" x2="1050" y2="445" stroke="#ef4444" stroke-width="3"/>
+    
+    <!-- Firewall icon -->
+    <circle cx="1100" cy="480" r="15" fill="none" stroke="#3b82f6" stroke-width="3"/>
+    <line x1="1100" y1="465" x2="1100" y2="495" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+    <line x1="1085" y1="480" x2="1115" y2="480" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="550" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#fca5a5">DevOps Daily</text>
+</svg>

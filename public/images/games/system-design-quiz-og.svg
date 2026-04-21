@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- System design gradient -->
+    <linearGradient id="systemGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- System architecture diagram -->
+  <g transform="translate(100, 200)">
+    <!-- Load Balancer -->
+    <rect x="30" y="30" width="80" height="50" rx="5" fill="#6366f1" opacity="0.8"/>
+    <text x="70" y="60" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">LB</text>
+
+    <!-- Servers -->
+    <rect x="180" y="10" width="50" height="40" rx="4" fill="#8b5cf6" opacity="0.8"/>
+    <rect x="180" y="60" width="50" height="40" rx="4" fill="#8b5cf6" opacity="0.8"/>
+    <rect x="180" y="110" width="50" height="40" rx="4" fill="#8b5cf6" opacity="0.8"/>
+
+    <!-- Database -->
+    <ellipse cx="320" cy="70" rx="35" ry="25" fill="#a855f7" opacity="0.8"/>
+    <ellipse cx="320" cy="75" rx="35" ry="25" fill="none" stroke="#a855f7" stroke-width="2" opacity="0.8"/>
+
+    <!-- Cache -->
+    <rect x="280" y="130" width="60" height="35" rx="4" fill="#c084fc" opacity="0.8"/>
+    <text x="310" y="152" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#ffffff" text-anchor="middle" font-weight="bold">Cache</text>
+
+    <!-- Connections -->
+    <line x1="110" y1="55" x2="180" y2="30" stroke="#6366f1" stroke-width="2"/>
+    <line x1="110" y1="55" x2="180" y2="80" stroke="#6366f1" stroke-width="2"/>
+    <line x1="110" y1="55" x2="180" y2="130" stroke="#6366f1" stroke-width="2"/>
+
+    <line x1="230" y1="30" x2="285" y2="60" stroke="#8b5cf6" stroke-width="2"/>
+    <line x1="230" y1="80" x2="285" y2="75" stroke="#8b5cf6" stroke-width="2"/>
+    <line x1="230" y1="130" x2="285" y2="145" stroke="#8b5cf6" stroke-width="2"/>
+  </g>
+
+  <!-- Main content -->
+  <g transform="translate(600, 280)">
+    <!-- Title -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc" text-anchor="middle">
+      System Design Quiz
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#94a3b8" text-anchor="middle">
+      Master Scalable Architecture Patterns
+    </text>
+
+    <!-- Features -->
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#8b5cf6" text-anchor="middle">
+      Distributed systems • Scalability • Real-world design
+    </text>
+  </g>
+
+  <!-- Decorative elements -->
+  <circle cx="950" cy="150" r="20" fill="#6366f1" opacity="0.2"/>
+  <circle cx="1050" cy="250" r="15" fill="#8b5cf6" opacity="0.2"/>
+  <circle cx="200" cy="480" r="25" fill="#a855f7" opacity="0.2"/>
+  <circle cx="1100" cy="500" r="18" fill="#c084fc" opacity="0.15"/>
+
+  <!-- Additional decorative nodes -->
+  <circle cx="900" cy="450" r="12" fill="#6366f1" opacity="0.3"/>
+  <circle cx="1000" cy="400" r="16" fill="#8b5cf6" opacity="0.25"/>
+</svg>

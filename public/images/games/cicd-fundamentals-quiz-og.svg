@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- CI/CD Fundamentals Quiz - Blue/Cyan Theme -->
+
+  <defs>
+    <!-- Background gradient - blue/cyan shades -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0e7490;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Quiz accent gradient -->
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Pipeline pattern -->
+    <pattern id="pipeline" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+      <circle cx="50" cy="50" r="2" fill="#3b82f6" opacity="0.15"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Pipeline pattern -->
+  <rect width="1200" height="630" fill="url(#pipeline)"/>
+
+  <!-- Category badge -->
+  <rect x="80" y="80" width="220" height="40" rx="20" fill="url(#accentGradient)"/>
+  <text x="100" y="107" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#ffffff">Beginner Level</text>
+
+  <!-- GitBranch icon with pipeline flow -->
+  <g transform="translate(80, 160)">
+    <circle cx="30" cy="30" r="30" fill="#3b82f6" opacity="0.8"/>
+    <!-- GitBranch icon -->
+    <circle cx="22" cy="22" r="4" fill="#ffffff" stroke="#ffffff" stroke-width="2"/>
+    <circle cx="38" cy="38" r="4" fill="#ffffff" stroke="#ffffff" stroke-width="2"/>
+    <circle cx="22" cy="38" r="4" fill="#ffffff" stroke="#ffffff" stroke-width="2"/>
+    <line x1="22" y1="26" x2="22" y2="34" stroke="#ffffff" stroke-width="2"/>
+    <path d="M 22 30 Q 26 30 30 34" fill="none" stroke="#ffffff" stroke-width="2"/>
+  </g>
+
+  <!-- Quiz label -->
+  <text x="150" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="600" fill="#93c5fd">INTERACTIVE QUIZ</text>
+
+  <!-- Title -->
+  <text x="80" y="280" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#ffffff">CI/CD</text>
+  <text x="80" y="345" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#ffffff">Fundamentals Quiz</text>
+
+  <!-- Subtitle -->
+  <text x="80" y="410" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="400" fill="#bfdbfe">Master CI/CD Basics • 18 Questions • 100 Points</text>
+
+  <!-- Feature bullets -->
+  <g transform="translate(80, 440)">
+    <circle cx="0" cy="0" r="4" fill="#06b6d4"/>
+    <text x="15" y="5" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#dbeafe">Pipelines &amp; Automation</text>
+    
+    <circle cx="0" cy="35" r="4" fill="#06b6d4"/>
+    <text x="15" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#dbeafe">Build &amp; Deploy</text>
+    
+    <circle cx="280" cy="0" r="4" fill="#06b6d4"/>
+    <text x="295" y="5" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#dbeafe">Testing Strategies</text>
+    
+    <circle cx="280" cy="35" r="4" fill="#06b6d4"/>
+    <text x="295" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="20" fill="#dbeafe">Version Control</text>
+  </g>
+
+  <!-- Decorative CI/CD elements -->
+  <g opacity="0.2">
+    <!-- Pipeline flow -->
+    <g transform="translate(880, 100)">
+      <rect x="0" y="0" width="80" height="60" rx="8" fill="none" stroke="#3b82f6" stroke-width="3"/>
+      <text x="40" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#3b82f6" text-anchor="middle">Build</text>
+      
+      <line x1="80" y1="30" x2="110" y2="30" stroke="#3b82f6" stroke-width="3"/>
+      <polygon points="110,30 105,25 105,35" fill="#3b82f6"/>
+      
+      <rect x="110" y="0" width="80" height="60" rx="8" fill="none" stroke="#3b82f6" stroke-width="3"/>
+      <text x="150" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#3b82f6" text-anchor="middle">Test</text>
+      
+      <line x1="190" y1="30" x2="220" y2="30" stroke="#3b82f6" stroke-width="3"/>
+      <polygon points="220,30 215,25 215,35" fill="#3b82f6"/>
+      
+      <rect x="220" y="0" width="80" height="60" rx="8" fill="none" stroke="#06b6d4" stroke-width="3"/>
+      <text x="260" y="38" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#06b6d4" text-anchor="middle">Deploy</text>
+    </g>
+
+    <!-- Status indicators -->
+    <g transform="translate(920, 420)">
+      <circle cx="0" cy="0" r="20" fill="none" stroke="#22c55e" stroke-width="4"/>
+      <polyline points="-8,0 -2,6 8,-6" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      <circle cx="60" cy="0" r="20" fill="none" stroke="#22c55e" stroke-width="4"/>
+      <polyline points="52,0 58,6 68,-6" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      
+      <circle cx="120" cy="0" r="20" fill="none" stroke="#22c55e" stroke-width="4"/>
+      <polyline points="112,0 118,6 128,-6" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Code commit representation -->
+    <g transform="translate(1050, 300)">
+      <circle cx="0" cy="0" r="12" fill="#3b82f6"/>
+      <line x1="0" y1="12" x2="0" y2="40" stroke="#3b82f6" stroke-width="3"/>
+      <circle cx="0" cy="50" r="12" fill="#3b82f6"/>
+      <line x1="0" y1="62" x2="0" y2="90" stroke="#3b82f6" stroke-width="3"/>
+      <circle cx="0" cy="100" r="12" fill="#06b6d4"/>
+    </g>
+  </g>
+
+  <!-- DevOps Daily branding -->
+  <text x="80" y="570" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#93c5fd">DevOps Daily</text>
+</svg>

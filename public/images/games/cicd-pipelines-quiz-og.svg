@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- CI/CD pipeline gradient -->
+    <linearGradient id="pipelineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14b8a6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- CI/CD Pipeline visualization -->
+  <g transform="translate(120, 220)">
+    <!-- Pipeline stages as connected circles -->
+    <circle cx="40" cy="50" r="10" fill="#10b981"/>
+    <line x1="50" y1="50" x2="90" y2="50" stroke="#10b981" stroke-width="3"/>
+    <circle cx="100" cy="50" r="10" fill="#10b981"/>
+    <line x1="110" y1="50" x2="150" y2="50" stroke="#10b981" stroke-width="3"/>
+    <circle cx="160" cy="50" r="10" fill="#14b8a6"/>
+    <line x1="170" y1="50" x2="210" y2="50" stroke="#14b8a6" stroke-width="3"/>
+    <circle cx="220" cy="50" r="10" fill="#14b8a6"/>
+    <line x1="230" y1="50" x2="270" y2="50" stroke="#14b8a6" stroke-width="3"/>
+    <circle cx="280" cy="50" r="10" fill="#22c55e"/>
+
+    <!-- Success checkmarks -->
+    <text x="36" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">✓</text>
+    <text x="96" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">✓</text>
+    <text x="156" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">✓</text>
+    <text x="216" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">✓</text>
+    <text x="276" y="56" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">✓</text>
+  </g>
+
+  <!-- Main content -->
+  <g transform="translate(600, 280)">
+    <!-- Title -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc" text-anchor="middle">
+      CI/CD Pipelines Quiz
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#94a3b8" text-anchor="middle">
+      Master Continuous Integration &amp; Deployment
+    </text>
+
+    <!-- Features -->
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#10b981" text-anchor="middle">
+      Real-world scenarios • Best practices • All skill levels
+    </text>
+  </g>
+
+  <!-- Decorative dots -->
+  <circle cx="950" cy="150" r="20" fill="#10b981" opacity="0.2"/>
+  <circle cx="1050" cy="250" r="15" fill="#14b8a6" opacity="0.2"/>
+  <circle cx="200" cy="480" r="25" fill="#22c55e" opacity="0.2"/>
+  <circle cx="1100" cy="500" r="18" fill="#10b981" opacity="0.15"/>
+</svg>

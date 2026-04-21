@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Monitoring gradient -->
+    <linearGradient id="monitorGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Dashboard visualization -->
+  <g transform="translate(80, 180)">
+    <!-- Dashboard panel 1 - Line chart -->
+    <rect x="20" y="20" width="140" height="90" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="2" opacity="0.8"/>
+    <!-- Line chart simulation -->
+    <polyline points="30,80 50,60 70,65 90,45 110,50 130,35 150,40" fill="none" stroke="#f59e0b" stroke-width="2"/>
+    <circle cx="150" cy="40" r="3" fill="#f59e0b"/>
+
+    <!-- Dashboard panel 2 - Bar chart -->
+    <rect x="180" y="20" width="140" height="90" rx="6" fill="#1e293b" stroke="#fb923c" stroke-width="2" opacity="0.8"/>
+    <!-- Bar chart simulation -->
+    <rect x="195" y="70" width="15" height="30" fill="#fb923c"/>
+    <rect x="220" y="55" width="15" height="45" fill="#fb923c"/>
+    <rect x="245" y="65" width="15" height="35" fill="#fb923c"/>
+    <rect x="270" y="50" width="15" height="50" fill="#fb923c"/>
+    <rect x="295" y="60" width="15" height="40" fill="#fb923c"/>
+
+    <!-- Dashboard panel 3 - Gauge/Status -->
+    <rect x="20" y="130" width="140" height="90" rx="6" fill="#1e293b" stroke="#ea580c" stroke-width="2" opacity="0.8"/>
+    <!-- Gauge simulation -->
+    <circle cx="90" cy="175" r="30" fill="none" stroke="#334155" stroke-width="6"/>
+    <circle cx="90" cy="175" r="30" fill="none" stroke="#22c55e" stroke-width="6" stroke-dasharray="100 60" transform="rotate(-90 90 175)"/>
+    <text x="90" y="182" font-family="system-ui" font-size="14" fill="#22c55e" text-anchor="middle" font-weight="bold">98%</text>
+
+    <!-- Dashboard panel 4 - Alert indicators -->
+    <rect x="180" y="130" width="140" height="90" rx="6" fill="#1e293b" stroke="#f97316" stroke-width="2" opacity="0.8"/>
+    <circle cx="210" cy="160" r="8" fill="#22c55e"/>
+    <circle cx="250" cy="160" r="8" fill="#22c55e"/>
+    <circle cx="290" cy="160" r="8" fill="#fbbf24"/>
+    <circle cx="230" cy="195" r="8" fill="#22c55e"/>
+    <circle cx="270" cy="195" r="8" fill="#22c55e"/>
+  </g>
+
+  <!-- Main content -->
+  <g transform="translate(600, 280)">
+    <!-- Title -->
+    <text x="0" y="0" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="bold" fill="#f8fafc" text-anchor="middle">
+      Monitoring &amp; Observability Quiz
+    </text>
+
+    <!-- Subtitle -->
+    <text x="0" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#94a3b8" text-anchor="middle">
+      Master Metrics, Logs, and Distributed Tracing
+    </text>
+
+    <!-- Features -->
+    <text x="0" y="90" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#fb923c" text-anchor="middle">
+      Real-world scenarios • SRE practices • Production ready
+    </text>
+  </g>
+
+  <!-- Decorative elements -->
+  <circle cx="950" cy="150" r="20" fill="#f59e0b" opacity="0.2"/>
+  <circle cx="1050" cy="250" r="15" fill="#fb923c" opacity="0.2"/>
+  <circle cx="200" cy="480" r="25" fill="#ea580c" opacity="0.2"/>
+  <circle cx="1100" cy="500" r="18" fill="#f97316" opacity="0.15"/>
+  <circle cx="900" cy="450" r="12" fill="#f59e0b" opacity="0.3"/>
+</svg>
