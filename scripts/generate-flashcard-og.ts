@@ -162,38 +162,63 @@ async function generateFlashcardOG(options: FlashcardOGOptions): Promise<void> {
 
 /**
  * Generate OG images for all flashcard sets
+ * Skips decks whose PNG already exists unless --force is passed. That keeps
+ * the incremental content-pipeline run fast - a single new deck doesn't
+ * have to wait for 18 re-renders under a 60s cron timeout.
  */
-async function generateAllFlashcardOGs(): Promise<void> {
+async function generateAllFlashcardOGs(options: { force?: boolean } = {}): Promise<void> {
   const flashcardsDir = path.join(process.cwd(), 'content/flashcards');
+  const outputDir = path.join(process.cwd(), 'public/images/flashcards');
   const files = await fs.readdir(flashcardsDir);
-  
+  let generated = 0;
+  let skipped = 0;
+
   for (const file of files) {
     if (!file.endsWith('.json')) continue;
-    
+
     const content = await fs.readFile(path.join(flashcardsDir, file), 'utf-8');
     const flashcard = JSON.parse(content);
-    
+
     const slug = flashcard.id;
     const title = flashcard.title;
     const category = flashcard.category;
     const cardCount = flashcard.cardCount;
-    
+
+    const pngPath = path.join(outputDir, `${slug}-og.png`);
+    if (!options.force && await pathExists(pngPath)) {
+      skipped += 1;
+      continue;
+    }
+
     console.log(`\n📝 Generating OG image for: ${title}`);
-    
+
     await generateFlashcardOG({
       title,
       category,
       slug,
       cardCount,
     });
+    generated += 1;
+  }
+
+  console.log(`\n✨ ${generated} generated, ${skipped} skipped (already existed)`);
+}
+
+async function pathExists(p: string): Promise<boolean> {
+  try {
+    await fs.access(p);
+    return true;
+  } catch {
+    return false;
   }
 }
 
 // Main execution
 if (import.meta.url === `file://${process.argv[1]}`) {
-  generateAllFlashcardOGs()
+  const force = process.argv.includes('--force');
+  generateAllFlashcardOGs({ force })
     .then(() => {
-      console.log('\n✨ All flashcard OG images generated successfully!\n');
+      console.log('\n✨ Done.\n');
       process.exit(0);
     })
     .catch((error) => {
