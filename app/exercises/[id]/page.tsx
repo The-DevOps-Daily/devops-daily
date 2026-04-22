@@ -38,7 +38,7 @@ export async function generateMetadata({
   const socialImage = getSocialImagePath(exercise.id, 'exercises');
 
   return {
-    title: `${exercise.title} - DevOps Exercise`,
+    title: { absolute: `${exercise.title} - DevOps Exercise` },
     description: exercise.description,
     alternates: {
       canonical: `/exercises/${exercise.id}`,

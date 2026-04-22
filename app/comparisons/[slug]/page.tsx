@@ -30,12 +30,12 @@ export async function generateMetadata({
     return {};
   }
 
-  const title = `${comparison.toolA.name} vs ${comparison.toolB.name}: Feature Comparison, Pros/Cons, and Verdict | DevOps Daily`;
+  const title = `${comparison.toolA.name} vs ${comparison.toolB.name}: Feature Comparison, Pros/Cons, and Verdict`;
   const description = comparison.description;
   const socialImage = `/images/comparisons/${comparison.slug}-og.png`;
 
   return {
-    title,
+    title: { absolute: title },
     description,
     alternates: {
       canonical: `/comparisons/${comparison.slug}`,

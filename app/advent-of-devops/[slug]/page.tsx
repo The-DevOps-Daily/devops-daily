@@ -44,7 +44,7 @@ export async function generateMetadata({
   const socialImage = getSocialImagePath(slug, 'advent');
 
   return {
-    title: day.title,
+    title: { absolute: day.title },
     description: day.excerpt || day.description,
     alternates: {
       canonical: `/advent-of-devops/${day.slug}`,

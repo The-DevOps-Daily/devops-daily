@@ -27,7 +27,7 @@ export async function generateMetadata({
   if (!day) return {};
 
   return {
-    title: `${day.title} | Hacktoberfest 2026`,
+    title: { absolute: `${day.title} - Hacktoberfest 2026` },
     description: day.excerpt,
     alternates: {
       canonical: `/hacktoberfest/${slug}`,

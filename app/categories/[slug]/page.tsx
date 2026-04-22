@@ -37,7 +37,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `Category: ${category.name} - DevOps Articles and Tutorials`,
+    title: { absolute: `Category: ${category.name} - DevOps Articles and Tutorials` },
     description: `Explore the ${category.name} category for articles, tutorials, and guides covering DevOps practices. ${category.longDescription || category.description}`,
     alternates: {
       canonical: `/categories/${slug}`,

@@ -44,7 +44,10 @@ export async function generateMetadata({
   const socialImage = getSocialImagePath(slug, 'posts');
 
   return {
-    title: post.title,
+    // Absolute: skip the '%s | DevOps Daily' layout template. Post titles
+    // are always topic-specific and rank better without the redundant
+    // brand suffix. OG + Twitter below keep the brand in social previews.
+    title: { absolute: post.title },
     description: post.excerpt,
     alternates: {
       canonical: `/posts/${post.slug}`,

@@ -28,7 +28,7 @@ export async function generateMetadata({
   const image = ogExists ? ogImage : '/og-image.png';
 
   return {
-    title: `${newsletter.title} | DevOps Daily`,
+    title: { absolute: newsletter.title },
     description: `DevOps Daily Newsletter - Week ${newsletter.week}, ${newsletter.year}. Weekly roundup of new content and learning resources.`,
     alternates: { canonical: `/newsletters/${slug}` },
     openGraph: {

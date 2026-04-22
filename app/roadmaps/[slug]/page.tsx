@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const metadata: Record<RoadmapSlug, Metadata> = {
     junior: {
-      title: 'Junior DevOps Roadmap - Start Your DevOps Journey',
+      title: { absolute: 'Junior DevOps Roadmap - Start Your DevOps Journey' },
       description:
         'A beginner-friendly roadmap specifically designed for aspiring DevOps engineers. Clear, focused learning path without the overwhelm.',
       alternates: {
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     },
     devsecops: {
-      title: 'DevSecOps Roadmap - Security-First DevOps',
+      title: { absolute: 'DevSecOps Roadmap - Security-First DevOps' },
       description:
         'Master the integration of security practices into the DevOps pipeline. Learn to build secure, compliant, and resilient systems.',
       alternates: {

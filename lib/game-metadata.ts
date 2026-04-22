@@ -20,7 +20,12 @@ export async function generateGameMetadata(gameId: string): Promise<Metadata> {
   const ogImage = `/images/games/${gameId}-og.png`;
 
   return {
-    title: game.title,
+    // Absolute title so Next.js doesn't append '| DevOps Daily'. Game page
+    // titles already identify the site through topic context; the brand is
+    // picked up by Google from the Organization/WebSite schema. OG + Twitter
+    // titles below keep the suffix because social previews benefit from
+    // brand presence.
+    title: { absolute: game.title },
     description,
     alternates: {
       canonical: game.href,

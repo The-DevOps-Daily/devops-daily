@@ -43,7 +43,7 @@ export async function generateMetadata({
   const socialImage = getSocialImagePath(slug, 'news');
 
   return {
-    title: digest.title,
+    title: { absolute: digest.title },
     description: digest.excerpt || digest.summary,
     alternates: {
       canonical: `/news/${digest.slug}`,
