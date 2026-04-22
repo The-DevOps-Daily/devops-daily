@@ -25,7 +25,7 @@ export async function generateMetadata(
   }
 
   return {
-   title: `${checklist.title} | The DevOps Daily`,
+   title: { absolute: checklist.title },
    description: checklist.description,
    alternates: {
      canonical: `/checklists/${resolvedParams.slug}`,

@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'DevOps Roadmap',
+  title: { absolute: 'DevOps Roadmap - Your Path to DevOps Mastery' },
   description:
     'Strategic learning path for aspiring DevOps engineers. Discover the skills, technologies, and career progression from beginner to expert level.',
   alternates: {

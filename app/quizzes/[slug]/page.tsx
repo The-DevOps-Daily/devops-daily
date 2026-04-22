@@ -37,7 +37,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${quizConfig.title} - Learn ${quizConfig.category}`,
+    title: { absolute: `${quizConfig.title} - Learn ${quizConfig.category}` },
     description: quizConfig.description,
     alternates: {
       canonical: `/quizzes/${slug}`,

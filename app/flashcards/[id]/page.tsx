@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: FlashcardPageProps): Promise<
   }
 
   return {
-    title: `${flashcardSet.title} - DevOps Flashcards`,
+    title: { absolute: `${flashcardSet.title} - DevOps Flashcards` },
     description: flashcardSet.description,
     alternates: {
       canonical: `/flashcards/${id}`,

@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
   }
 
   return {
-    title: `${tagName} - DevOps Articles and Tutorials`,
+    title: { absolute: `${tagName} - DevOps Articles and Tutorials` },
     description: `Browse all articles, tutorials, and guides about ${tagName}. Learn the latest DevOps practices and techniques.`,
     alternates: {
       canonical: `/tags/${tag}`,

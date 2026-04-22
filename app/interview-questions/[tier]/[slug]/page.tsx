@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = `${question.question} - ${question.category} interview question for ${tier} DevOps engineers`;
   
   return {
-    title: `${question.title} | Interview Question | The DevOps Daily`,
+    title: { absolute: `${question.title} - Interview Question` },
     description,
     alternates: {
       canonical: `/interview-questions/${tier}/${slug}`,

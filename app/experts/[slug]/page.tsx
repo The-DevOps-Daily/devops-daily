@@ -37,7 +37,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${expert.name} - ${expert.title || 'DevOps Expert'} | DevOps Daily`,
+    title: { absolute: `${expert.name} - ${expert.title || 'DevOps Expert'}` },
     description: expert.bio || `Hire ${expert.name} for DevOps consulting and services`,
     alternates: {
       canonical: `/experts/${slug}`,

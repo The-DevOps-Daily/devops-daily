@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const meta = tierMeta[tier as ExperienceTier];
   
   return {
-    title: `${meta.title} | The DevOps Daily`,
+    title: { absolute: meta.title },
     description: meta.description,
     alternates: {
       canonical: `/interview-questions/${tier}`,

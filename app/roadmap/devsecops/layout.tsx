@@ -2,7 +2,7 @@ import React from 'react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'DevSecOps Roadmap - Security-First DevOps Journey',
+  title: { absolute: 'DevSecOps Roadmap - Security-First DevOps Journey' },
   description:
     'A comprehensive roadmap for integrating security into your DevOps practices. Learn to build secure pipelines, implement security automation, and shift security left.',
   alternates: {
