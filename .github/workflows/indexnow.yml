@@ -27,7 +27,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          # A push event's github.event.before can be many commits behind
+          # (e.g. a merge commit that brings in several PR commits at once).
+          # fetch-depth: 2 was only enough for single-commit pushes and broke
+          # with 'bad object' on multi-commit merges. 0 fetches full history.
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -41,6 +45,19 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
           AFTER_SHA: ${{ github.sha }}
         run: |
+          # Initial-push case: BEFORE_SHA is all zeros, diff against the empty
+          # tree so every current content file is submitted once.
+          if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ] \
+             || [ -z "$BEFORE_SHA" ]; then
+            BEFORE_SHA=$(git hash-object -t tree /dev/null)
+          fi
+          # Defensive: if the before SHA still isn't reachable (e.g. someone
+          # force-pushed main between the push event and this checkout),
+          # fall back to HEAD~1 so we at least submit the latest commit.
+          if ! git cat-file -e "$BEFORE_SHA" 2>/dev/null; then
+            echo "Warning: BEFORE_SHA $BEFORE_SHA not found, falling back to HEAD~1"
+            BEFORE_SHA=$(git rev-parse HEAD~1)
+          fi
           git diff --name-only --diff-filter=AM "$BEFORE_SHA" "$AFTER_SHA" \
             | { grep -E '^content/' || true; } > changed.txt
           echo "count=$(wc -l < changed.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
