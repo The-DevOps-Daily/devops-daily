@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef, useDeferredValue, useMemo } from 'react';
+import { Fragment, useState, useEffect, useRef, useDeferredValue, useMemo, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar, Search } from 'lucide-react';
@@ -11,9 +11,19 @@ import type { Post } from '@/lib/posts';
 interface PostsListProps {
   posts: Post[];
   className?: string;
+  /**
+   * Optional block (e.g. inline sponsors) to render between items when the
+   * user is NOT searching. Hidden during search so results stay uninterrupted.
+   */
+  sponsorSlot?: ReactNode;
+  /**
+   * Index after which to render sponsorSlot. Defaults to 6. Ignored when
+   * sponsorSlot is not provided.
+   */
+  sponsorAfter?: number;
 }
 
-export function PostsList({ posts, className }: PostsListProps) {
+export function PostsList({ posts, className, sponsorSlot, sponsorAfter = 6 }: PostsListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,31 +87,42 @@ export function PostsList({ posts, className }: PostsListProps) {
           </button>
         </div>
       ) : (
-        filteredPosts.map((post) => (
-          <Link
-            key={post.slug}
-            href={`/posts/${post.slug}`}
-            className="group flex flex-col md:flex-row gap-6 p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all"
-          >
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">
-                  <span>{post.category?.name ?? 'Uncategorized'}</span>
-                </Badge>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Calendar className="mr-1 h-4 w-4" />
-                  <span>{post.date}</span>
-                  <span className="mx-2">|</span>
-                  <Clock className="mr-1 h-4 w-4" />
-                  <span>{post.readingTime}</span>
+        filteredPosts.map((post, idx) => (
+          // Fragment rather than a wrapping <div> so the outer
+          // space-y-8 keeps applying to the Link (and the sponsor block
+          // when present) as direct children.
+          <Fragment key={post.slug}>
+            <Link
+              href={`/posts/${post.slug}`}
+              className="group flex flex-col md:flex-row gap-6 p-6 bg-card rounded-lg border border-border hover:border-primary/50 hover:shadow-md transition-all"
+            >
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary">
+                    <span>{post.category?.name ?? 'Uncategorized'}</span>
+                  </Badge>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Calendar className="mr-1 h-4 w-4" />
+                    <span>{post.date}</span>
+                    <span className="mx-2">|</span>
+                    <Clock className="mr-1 h-4 w-4" />
+                    <span>{post.readingTime}</span>
+                  </div>
                 </div>
+                <h3 className="mt-2 text-xl font-semibold group-hover:text-primary transition-colors">
+                  {post.title}
+                </h3>
+                <p className="mt-2 text-muted-foreground">{post.excerpt}</p>
               </div>
-              <h3 className="mt-2 text-xl font-semibold group-hover:text-primary transition-colors">
-                {post.title}
-              </h3>
-              <p className="mt-2 text-muted-foreground">{post.excerpt}</p>
-            </div>
-          </Link>
+            </Link>
+            {/* Sponsor slot is hidden while searching so results stay clean.
+                Rendered inline after sponsorAfter posts otherwise. */}
+            {sponsorSlot &&
+              !searchQuery.trim() &&
+              idx === Math.min(sponsorAfter - 1, filteredPosts.length - 1) && (
+                <div>{sponsorSlot}</div>
+              )}
+          </Fragment>
         ))
       )}
 
