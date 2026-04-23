@@ -1,0 +1,238 @@
+{
+  "id": "sqlite-vs-postgresql",
+  "slug": "sqlite-vs-postgresql",
+  "title": "SQLite vs PostgreSQL",
+  "description": "An honest comparison of SQLite and PostgreSQL for production workloads. Covers architecture, type systems, extensibility, concurrency, and the modern SQLite ecosystem (Litestream, LiteFS, Turso) that has expanded where SQLite makes sense.",
+  "category": "Databases",
+  "tags": ["SQLite", "PostgreSQL", "Databases", "SQL", "RDBMS", "DevOps"],
+  "createdDate": "2026-04-23T10:00:00Z",
+  "updatedDate": "2026-04-23T10:00:00Z",
+  "estimatedReadTime": "14 min read",
+  "introduction": "SQLite and PostgreSQL sit at opposite ends of the relational database spectrum, and that is actually the point of this comparison. One is an embedded library that turns a single file into a full SQL database. The other is a client-server system that rivals Oracle in feature depth. Asking which one is better is a category error - they solve different problems, and understanding which problem you actually have is more valuable than comparing benchmarks.\n\nPostgreSQL in 2026 is in an unusually strong position. With versions 17 and 18, it has leaned hard into the features that distinguish it: an extension ecosystem that now includes pgvector for AI workloads, PostGIS for geospatial, TimescaleDB for time-series, and a growing list of vertical-specific extensions. Standards-compliant SQL, true MVCC concurrency, advanced query planning, JSONB that performs well enough to replace document databases, and a managed-service landscape (Neon, Supabase, Crunchy Bridge, RDS, Aurora) that makes serverless Postgres as easy as any NoSQL option. It is increasingly the default choice for new backend applications.\n\nSQLite has also had a serious decade, quietly. STRICT tables, window functions, UPSERT, generated columns, FTS5 full-text search, and the JSON1 extension narrowed most of the feature gap with server databases. The bigger shift has been the ecosystem: Litestream streams the WAL to S3 for continuous backup, LiteFS distributes SQLite across multiple nodes, Turso offers libSQL with multi-region edge replicas, Cloudflare D1 bakes SQLite into its edge platform, and sqlite-vec brings vector similarity search to the embedded world. SQLite is no longer just the database for mobile apps and test suites - it is a legitimate production choice for a surprising range of real applications.\n\nThe honest split is this: if your workload has many application servers writing concurrently to the same data, needs server-side user management, requires advanced data types, or will grow beyond what a single node can do, PostgreSQL is the right choice and the comparison basically ends there. If your workload is read-heavy on a single server, shipped as a bundle (CLI, desktop, mobile), edge-deployed, or you just want to eliminate an entire class of operational work, SQLite may be the better fit. Most of this comparison is about helping you figure out which category you are actually in.\n\nBelow we walk through 12 dimensions from architecture and concurrency to extensibility and the realities of running each at small and medium scale.",
+  "toolA": {
+    "name": "SQLite",
+    "icon": "Database",
+    "website": "https://www.sqlite.org",
+    "description": "A self-contained, serverless, zero-configuration SQL database engine embedded directly into your application. The most deployed database in the world - it ships in every major phone, every major browser, airplane avionics, and countless desktop apps.",
+    "color": "#003B57",
+    "pros": [
+      "No server, no port, no user accounts - the database is a single file you can copy, email, or ship inside your application",
+      "Microsecond query latency because there is no network round-trip; often faster than a remote Postgres for read-heavy single-host workloads",
+      "WAL mode gives many concurrent readers and non-blocking writes for typical web-app loads",
+      "Tiny footprint (~600 KB library with no dependencies) that runs on phones, edge workers, embedded devices, and full servers identically",
+      "Modern feature set: STRICT tables, window functions, UPSERT, generated columns, JSON1, FTS5 full-text search",
+      "Strong ecosystem for production use: Litestream for S3-backed replication, LiteFS for distributed SQLite, Turso and Cloudflare D1 for managed hosting",
+      "In-memory mode (:memory:) gives instant isolated databases for tests - no Docker, no shared schemas, no cleanup scripts",
+      "Stable file format guaranteed through 2050 by the SQLite project"
+    ],
+    "cons": [
+      "Single-writer model - only one transaction commits at a time, which caps write throughput compared to server databases",
+      "No built-in network protocol; remote access requires wrappers like libSQL/Turso, Cloudflare D1, rqlite, or a custom API layer",
+      "No user or role management - access control lives at the filesystem layer",
+      "Type affinity is loose by default; STRICT tables and CHECK constraints are needed for strong typing",
+      "Extension ecosystem is smaller than Postgres - there is no pgvector-scale vector search yet, and geospatial via SpatiaLite is less feature-complete than PostGIS",
+      "Limited ALTER TABLE compared to Postgres; some schema changes still require a table rebuild"
+    ]
+  },
+  "toolB": {
+    "name": "PostgreSQL",
+    "icon": "Database",
+    "website": "https://www.postgresql.org",
+    "description": "An advanced open-source client-server relational database known for standards compliance, extensibility, and deep support for complex queries. Often called 'the world's most advanced open-source relational database' with a strong focus on data integrity and correctness.",
+    "color": "#4169E1",
+    "pros": [
+      "True multi-writer concurrency via MVCC - many application servers can write simultaneously without blocking each other on reads",
+      "The richest extension ecosystem in open-source databases: PostGIS, pgvector, TimescaleDB, Citus, pg_trgm, and hundreds more",
+      "Standards-compliant SQL with CTEs, window functions, lateral joins, recursive queries, and advanced query planning",
+      "JSONB with indexing and path operators performs well enough to replace a document database for many workloads",
+      "Strong type system: custom types, enums, arrays, ranges, composite types, and user-defined operators",
+      "Mature replication (streaming, logical, Patroni-based HA) and a deep managed-service market (Neon, Supabase, Crunchy Bridge, RDS, Aurora)",
+      "Built-in user/role system with row-level security for fine-grained access control"
+    ],
+    "cons": [
+      "Operational overhead - you run and tune a server process, manage users, configure WAL, monitor connections, and schedule vacuum",
+      "Process-per-connection model consumes memory per connection; high-concurrency apps need PgBouncer or PgCat",
+      "Every query pays a network round-trip even when the app and database are on the same host",
+      "More moving parts than SQLite for the simplest use cases - overkill for a CLI tool, desktop app, or solo-founder SaaS on one box",
+      "Test setup is more ceremony: Docker containers, per-test schemas or transactions, slower cold-start than SQLite :memory:"
+    ]
+  },
+  "features": [
+    {
+      "name": "Architecture",
+      "category": "Design",
+      "toolA": { "value": "Embedded library linked into your application; no separate server process", "rating": "good" },
+      "toolB": { "value": "Client-server over TCP or Unix socket; runs as a dedicated database process", "rating": "good" }
+    },
+    {
+      "name": "Setup & Operations",
+      "category": "Deployment",
+      "toolA": { "value": "Zero configuration; the database is a file. No users, ports, or daemons", "rating": "good" },
+      "toolB": { "value": "Install server, tune postgresql.conf, manage roles, configure WAL and autovacuum", "rating": "neutral" }
+    },
+    {
+      "name": "Write Concurrency",
+      "category": "Performance",
+      "toolA": { "value": "Single writer at a time; WAL allows concurrent reads but serializes writes", "rating": "bad" },
+      "toolB": { "value": "True MVCC - many concurrent writers without blocking readers", "rating": "good" }
+    },
+    {
+      "name": "Read Performance",
+      "category": "Performance",
+      "toolA": { "value": "In-process calls - microsecond latency. Often faster than local Postgres for read-heavy workloads", "rating": "good" },
+      "toolB": { "value": "Excellent read performance, but every query pays a connection + round-trip cost", "rating": "neutral" }
+    },
+    {
+      "name": "Type System",
+      "category": "Data Types",
+      "toolA": { "value": "Loose type affinity by default; STRICT tables and CHECK constraints give strong typing", "rating": "neutral" },
+      "toolB": { "value": "Rich static type system with custom types, enums, arrays, ranges, and composite types", "rating": "good" }
+    },
+    {
+      "name": "JSON Support",
+      "category": "Data Types",
+      "toolA": { "value": "JSON1 extension enabled by default with json_extract, path queries, and aggregates", "rating": "good" },
+      "toolB": { "value": "Native JSONB with GIN indexing, operators, and path queries; gold standard for SQL+JSON", "rating": "good" }
+    },
+    {
+      "name": "Full-Text Search",
+      "category": "Query Language",
+      "toolA": { "value": "FTS5 module with ranking, prefix queries, and external content tables", "rating": "good" },
+      "toolB": { "value": "Built-in tsvector/tsquery with ranking, stemming, and configurable dictionaries", "rating": "good" }
+    },
+    {
+      "name": "Geospatial",
+      "category": "Data Types",
+      "toolA": { "value": "SpatiaLite extension - capable but less feature-complete than PostGIS", "rating": "neutral" },
+      "toolB": { "value": "PostGIS is the gold standard for geospatial data in any database, open source or commercial", "rating": "good" }
+    },
+    {
+      "name": "Vector Search",
+      "category": "Data Types",
+      "toolA": { "value": "sqlite-vec / sqlite-vss extensions; works for moderate-scale embeddings alongside app data", "rating": "neutral" },
+      "toolB": { "value": "pgvector with HNSW and IVFFlat; production-ready for RAG and larger vector workloads", "rating": "good" }
+    },
+    {
+      "name": "Replication / HA",
+      "category": "High Availability",
+      "toolA": { "value": "External: Litestream (S3 streaming), LiteFS (distributed), rqlite, Turso; not built in", "rating": "neutral" },
+      "toolB": { "value": "Built-in streaming and logical replication; Patroni or similar for automatic failover", "rating": "good" }
+    },
+    {
+      "name": "User / Role Management",
+      "category": "Security",
+      "toolA": { "value": "None - filesystem permissions only", "rating": "bad" },
+      "toolB": { "value": "Full role system with row-level security, column privileges, and custom policies", "rating": "good" }
+    },
+    {
+      "name": "Test Ergonomics",
+      "category": "Developer Experience",
+      "toolA": { "value": "In-memory mode (:memory:) gives a fresh database in milliseconds per test", "rating": "good" },
+      "toolB": { "value": "Transaction-based rollback per test works well but is more setup than SQLite", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "A CLI tool, desktop app, or mobile app that needs a local embedded database",
+      "recommendation": "toolA",
+      "explanation": "SQLite is essentially unbeatable here. Ship a single binary with an embedded database - no install scripts, no version mismatches, no daemon. Every major phone platform already bundles it. PostgreSQL is not designed for this shape at all."
+    },
+    {
+      "scenario": "A single-server web app where reads dominate and writes are moderate (blog, personal SaaS, docs site, small internal tools)",
+      "recommendation": "toolA",
+      "explanation": "With WAL mode and Litestream for S3 backups, SQLite handles this profile excellently. Microsecond query latency beats any remote Postgres, and you eliminate a whole database tier from your infrastructure. Many production SaaS apps run on this setup."
+    },
+    {
+      "scenario": "A multi-tenant SaaS with many concurrent writers across multiple application servers",
+      "recommendation": "toolB",
+      "explanation": "SQLite's single-writer model caps write throughput. PostgreSQL's MVCC lets many servers write concurrently without contention, and its replication story is mature. This is classic Postgres territory."
+    },
+    {
+      "scenario": "An application that needs advanced data types - geospatial, vectors, time-series, ranges, or custom enums",
+      "recommendation": "toolB",
+      "explanation": "Postgres's extension ecosystem has no equivalent anywhere. PostGIS for geospatial, pgvector for AI embeddings, TimescaleDB for time-series, and the native type system for ranges and custom types make Postgres the right call when data shape drives your requirements."
+    },
+    {
+      "scenario": "A test suite that needs fast, isolated databases per test",
+      "recommendation": "toolA",
+      "explanation": "SQLite :memory: gives a clean database in milliseconds per test. Postgres can approximate this with transaction rollback, but the startup cost and infrastructure overhead are still higher. The difference is dramatic on large test suites."
+    },
+    {
+      "scenario": "An edge-deployed app that needs low-latency data near every user (Cloudflare Workers, Fly.io, Deno Deploy)",
+      "recommendation": "toolA",
+      "explanation": "Turso (libSQL) and Cloudflare D1 are built for this shape - a SQLite database replicated to every edge region, queried locally. Managed Postgres options exist at the edge (Neon, Supabase) but require more thought about where your primary is and how reads are routed."
+    },
+    {
+      "scenario": "A startup that wants maximum flexibility for unknown future requirements",
+      "recommendation": "toolB",
+      "explanation": "Postgres's extensibility means you are less likely to outgrow it. Need full-text search? Built in. JSON document storage? JSONB. Vector embeddings? pgvector. Time-series? TimescaleDB. This flexibility reduces the odds of a future database migration."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is SQLite really a reasonable choice for production web apps in 2026?",
+      "answer": "For a specific shape of app, yes. Single-server deployments, read-heavy workloads, and apps where operational simplicity matters more than horizontal scale are all good fits. The Litestream/LiteFS/Turso ecosystem has closed the replication gap that used to disqualify SQLite from serious production use. It is not the right default for every app - a multi-tenant SaaS with thousands of concurrent writers still wants Postgres - but it is the right default for a larger set than most engineers assume."
+    },
+    {
+      "question": "How does the single-writer limit play out in practice?",
+      "answer": "SQLite in WAL mode on an SSD comfortably handles 1,000-10,000 small write transactions per second, and those writes do not block reads. Most apps (including most small-to-medium SaaS) never come close to that ceiling. The limit shows up in write-heavy workloads: analytics ingest, high-volume event logging, or apps with many long-running write transactions. If your app falls in those categories, you want Postgres. If you are not sure, measure first."
+    },
+    {
+      "question": "Does PostgreSQL's JSONB make it a replacement for MongoDB?",
+      "answer": "For many workloads, yes. JSONB with GIN indexes supports rich queries, path operators, partial updates, and aggregations. If your app wants both relational tables and document-style storage in one database, Postgres handles it well. If your entire data model is documents with no relational needs, a dedicated document database may offer a simpler developer experience - but you give up transactional joins between collections."
+    },
+    {
+      "question": "Can I migrate between SQLite and PostgreSQL without pain?",
+      "answer": "For most schemas, the migration is feasible but not free. Both speak standard SQL; tools like pgloader move data from SQLite to Postgres, and sqlite-utils handles the reverse. The gotchas are Postgres-specific types (arrays, ranges, custom types, JSONB-specific operators), stored procedures (Postgres has PL/pgSQL; SQLite has no procedures), and SQLite-specific quirks like loose typing. Plan for a few days of schema and query rework, not a 5-minute dump-and-restore."
+    },
+    {
+      "question": "What is the right pick for a solo-founder SaaS project?",
+      "answer": "Either is reasonable, but the trade-off is clear. SQLite + Litestream gives you the simplest possible infrastructure - one VM, one app, one file, backups to S3. You eliminate a whole database tier and its associated ops work. PostgreSQL gives you more headroom: if your product takes off and you need horizontal replicas or advanced features, you are already on the right engine. The decision often comes down to whether you optimize for operational simplicity right now or flexibility later."
+    },
+    {
+      "question": "How do hosted SQLite services (Turso, D1) compare to hosted Postgres (Neon, Supabase)?",
+      "answer": "They are aimed at different shapes of apps. Turso and D1 give you SQLite that lives close to your users - low-latency reads from edge regions, replicas everywhere, generous free tiers. Neon and Supabase give you a full Postgres with its entire feature set plus authentication, storage, and realtime features (Supabase) or serverless scale-to-zero (Neon). Pick Turso/D1 if your app is edge-first and the SQLite model fits. Pick Neon/Supabase if you want Postgres features and a managed platform around them."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "Your app runs on a single server and reads dominate writes",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need many application servers writing concurrently to the same data",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are building a CLI tool, desktop app, or mobile app",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need advanced data types - geospatial, vectors, ranges, arrays, custom types",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want the simplest possible operational story",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need built-in users, roles, and row-level security",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are deploying to edge runtimes (Cloudflare, Fly, Deno Deploy)",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the deepest extension ecosystem for future flexibility",
+      "recommendation": "toolB"
+    }
+  ],
+  "verdict": {
+    "summary": "PostgreSQL is the right default for classic server-side applications that expect concurrent writes, need advanced data types, or want the deepest extension ecosystem. SQLite is the right default for embedded, single-server, read-heavy, and edge-deployed workloads - a much larger set of cases than the traditional framing admits. Both have had a strong 2020s: Postgres through pgvector, Neon, Supabase, and ongoing performance work; SQLite through STRICT tables, FTS5, Litestream, LiteFS, and the edge-hosted libSQL/D1 platforms. Pick the one whose architectural shape matches the system you are actually building.",
+    "toolAScore": 4.2,
+    "toolBScore": 4.5,
+    "recommendation": "Pick SQLite when operational simplicity, single-host read performance, or embeddability drive your decision. Pick PostgreSQL when concurrent writes, advanced data types, or the extension ecosystem (pgvector, PostGIS, TimescaleDB) are central to your app."
+  },
+  "relatedTags": ["SQLite", "PostgreSQL", "Databases", "SQL", "RDBMS", "DevOps"]
+}

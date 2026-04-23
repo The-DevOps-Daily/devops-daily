@@ -1,0 +1,239 @@
+{
+  "id": "sqlite-vs-mysql",
+  "slug": "sqlite-vs-mysql",
+  "title": "SQLite vs MySQL",
+  "description": "A practical comparison of SQLite and MySQL for real-world application workloads. Covers architecture, concurrency, replication, tooling, and the modern SQLite ecosystem (Litestream, Turso, LiteFS) that has changed what SQLite can do in production.",
+  "category": "Databases",
+  "tags": ["SQLite", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"],
+  "createdDate": "2026-04-23T10:00:00Z",
+  "updatedDate": "2026-04-23T10:00:00Z",
+  "estimatedReadTime": "13 min read",
+  "introduction": "If you learned databases a decade ago, you probably put SQLite and MySQL in very different mental buckets. SQLite was the database you used for a local cache, a mobile app, or the test suite. MySQL was the database you used when you shipped a real product. That framing is starting to look out of date.\n\nSQLite has quietly had a huge decade. STRICT tables gave it strong typing. WAL mode made concurrent reads genuinely fast. UPSERT, window functions, generated columns, and a solid FTS5 full-text search engine closed most of the feature gaps with server databases. And then the ecosystem did something nobody expected: Litestream made it trivial to replicate a SQLite file to S3, LiteFS turned SQLite into a distributed database across multiple nodes, Turso and Cloudflare D1 started offering SQLite as a managed service, and Bun shipped first-class SQLite support. Suddenly \"just use SQLite\" is a serious answer for small-to-medium production workloads, not a punchline.\n\nMySQL, for its part, is still the most deployed relational database on the planet. With the 9.x release line under Oracle, it has matured into a rock-solid choice for classic multi-tenant web apps. Group Replication and InnoDB Cluster make high-availability setups less painful than they used to be. HeatWave adds in-database analytics. MariaDB and Percona Server give you drop-in alternatives if Oracle's stewardship worries you. The ecosystem of managed services, hosting providers, and ORMs is unmatched.\n\nThe honest comparison is not \"which one is better\" but \"what kind of system are you building.\" A client-server database like MySQL makes sense when you have many application servers hitting the same data, when write concurrency is high, or when you need fine-grained user and role management. An embedded database like SQLite makes sense when your data lives next to your application, when read performance and operational simplicity matter more than horizontal scale, and when a single-file database you can just copy is a feature rather than a limitation.\n\nThis comparison walks through the real trade-offs - architecture, concurrency, deployment story, tooling, and the modern SQLite ecosystem - so you can make that call deliberately.",
+  "toolA": {
+    "name": "SQLite",
+    "icon": "Database",
+    "website": "https://www.sqlite.org",
+    "description": "A self-contained, serverless, zero-configuration SQL database engine embedded directly into your application. The most deployed database in the world - it ships in every Android phone, every iPhone, every major browser, and countless desktop apps.",
+    "color": "#003B57",
+    "pros": [
+      "Zero configuration - no server process, no port, no user accounts; the database is a single file you can back up with cp",
+      "No network round-trip; query latency is measured in microseconds, which often makes it faster than a remote MySQL for read-heavy workloads",
+      "WAL mode gives you many concurrent readers and non-blocking writes for typical web-app loads",
+      "Extremely small footprint - the library is roughly 600 KB and has no dependencies",
+      "STRICT tables (3.37+), generated columns, window functions, UPSERT, and FTS5 full-text search close most feature gaps with server databases",
+      "Modern ecosystem: Litestream for S3 replication, LiteFS for distributed SQLite, Turso and Cloudflare D1 for managed hosting, sqlite-vec for vector search",
+      "In-memory mode makes unit and integration tests trivial - spin up a fresh database per test in milliseconds",
+      "The file format is guaranteed stable through 2050 by the SQLite project, which is better than most cloud databases can promise"
+    ],
+    "cons": [
+      "Single-writer at a time - WAL enables many concurrent readers, but only one transaction can commit at once",
+      "No built-in network protocol; remote access requires wrapping it (libSQL/Turso, Cloudflare D1, rqlite, or a custom API)",
+      "No user or role management - access control is whatever the filesystem permissions give you",
+      "Loose type affinity by default; you need STRICT tables or CHECK constraints to enforce types rigorously",
+      "Limited ALTER TABLE compared to MySQL - some schema changes require a table rebuild",
+      "Horizontal scaling is an ecosystem concern (LiteFS, rqlite), not a built-in feature"
+    ]
+  },
+  "toolB": {
+    "name": "MySQL",
+    "icon": "Cylinder",
+    "website": "https://www.mysql.com",
+    "description": "The world's most popular client-server open-source relational database. Known for its ease of use, mature replication, and a massive ecosystem of hosting providers, tools, and frameworks.",
+    "color": "#4479A1",
+    "pros": [
+      "Genuine multi-writer concurrency - many application servers can write to the same database simultaneously",
+      "Mature replication options: async, semi-sync, Group Replication, InnoDB Cluster, and InnoDB ReplicaSet",
+      "Built-in user accounts, roles, and fine-grained privilege management",
+      "Massive ecosystem - almost every ORM, framework, and hosting provider supports MySQL first-class",
+      "Thread-per-connection model handles thousands of concurrent connections without extra infrastructure",
+      "HeatWave engine adds in-database analytics and ML without moving data to a warehouse",
+      "Drop-in compatible alternatives (MariaDB, Percona Server) and managed offerings everywhere (RDS, PlanetScale, etc.)"
+    ],
+    "cons": [
+      "Operational overhead - you run a server, manage users, tune memory, and monitor uptime even for small apps",
+      "Network round-trip on every query adds latency compared to an embedded engine",
+      "Requires a deployment target for the server itself - not an option for mobile apps, CLIs, or single-binary distributions",
+      "Harder to replicate the full test story SQLite gives you (per-test in-memory databases are more awkward)",
+      "Oracle's stewardship adds a small but real amount of long-term licensing uncertainty for the community edition"
+    ]
+  },
+  "features": [
+    {
+      "name": "Architecture",
+      "category": "Design",
+      "toolA": { "value": "Embedded library linked into your application; no separate server process", "rating": "good" },
+      "toolB": { "value": "Client-server over TCP or socket; runs as a dedicated database process", "rating": "good" }
+    },
+    {
+      "name": "Setup & Operations",
+      "category": "Deployment",
+      "toolA": { "value": "Zero configuration; the database is a file. No users, ports, or daemons to manage", "rating": "good" },
+      "toolB": { "value": "Install server, configure my.cnf, create users, manage backups and replication", "rating": "neutral" }
+    },
+    {
+      "name": "Write Concurrency",
+      "category": "Performance",
+      "toolA": { "value": "Single writer at a time; WAL allows concurrent reads but serializes writes", "rating": "bad" },
+      "toolB": { "value": "Many concurrent writers via row-level locking in InnoDB", "rating": "good" }
+    },
+    {
+      "name": "Read Performance",
+      "category": "Performance",
+      "toolA": { "value": "In-process calls - microsecond latency. Often faster than MySQL for read-heavy single-host apps", "rating": "good" },
+      "toolB": { "value": "Fast reads with proper indexing, but every query pays a network round-trip", "rating": "neutral" }
+    },
+    {
+      "name": "Replication / HA",
+      "category": "High Availability",
+      "toolA": { "value": "External: Litestream (streaming backup to S3), LiteFS (distributed), rqlite, Turso; not built in", "rating": "neutral" },
+      "toolB": { "value": "Built-in async and semi-sync replication, Group Replication, InnoDB Cluster", "rating": "good" }
+    },
+    {
+      "name": "User / Role Management",
+      "category": "Security",
+      "toolA": { "value": "None - access control is filesystem permissions on the database file", "rating": "bad" },
+      "toolB": { "value": "Full GRANT/REVOKE privilege system with users, roles, and per-table grants", "rating": "good" }
+    },
+    {
+      "name": "JSON Support",
+      "category": "Data Types",
+      "toolA": { "value": "JSON1 extension enabled by default; json_extract, json_group_array, path queries", "rating": "good" },
+      "toolB": { "value": "Native JSON type with generated columns for indexing; more mature at scale", "rating": "good" }
+    },
+    {
+      "name": "Full-Text Search",
+      "category": "Query Language",
+      "toolA": { "value": "FTS5 module with ranking, prefix queries, and external content tables", "rating": "good" },
+      "toolB": { "value": "FULLTEXT indexes with natural language and boolean modes", "rating": "neutral" }
+    },
+    {
+      "name": "Vector Search",
+      "category": "Data Types",
+      "toolA": { "value": "sqlite-vec and sqlite-vss extensions; works well for moderate-scale semantic search", "rating": "neutral" },
+      "toolB": { "value": "HeatWave ML offers some vector capabilities; no mainstream community option", "rating": "bad" }
+    },
+    {
+      "name": "Max Database Size",
+      "category": "Limits",
+      "toolA": { "value": "281 TB per file; in practice limited by filesystem", "rating": "good" },
+      "toolB": { "value": "64 TB per InnoDB tablespace; effectively unbounded at the logical level", "rating": "good" }
+    },
+    {
+      "name": "Backup Story",
+      "category": "Operations",
+      "toolA": { "value": "Copy the file (or VACUUM INTO); Litestream streams WAL frames to S3 continuously", "rating": "good" },
+      "toolB": { "value": "mysqldump, Percona XtraBackup, or replica snapshotting; more moving parts", "rating": "neutral" }
+    },
+    {
+      "name": "Test Ergonomics",
+      "category": "Developer Experience",
+      "toolA": { "value": "In-memory mode (:memory:) gives a fresh DB in milliseconds per test", "rating": "good" },
+      "toolB": { "value": "Docker containers or shared test databases; slower and more moving parts", "rating": "neutral" }
+    },
+    {
+      "name": "License",
+      "category": "Licensing",
+      "toolA": { "value": "Public domain - no restrictions whatsoever", "rating": "good" },
+      "toolB": { "value": "GPL v2 for Community Edition; proprietary Enterprise Edition", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "A CLI tool, desktop app, or mobile app that needs a local embedded database",
+      "recommendation": "toolA",
+      "explanation": "This is SQLite's home ground. Ship a single binary with an embedded database and you are done. No install scripts, no version mismatches, no daemon to keep alive. Android, iOS, Firefox, and most desktop apps already bundle SQLite for a reason."
+    },
+    {
+      "scenario": "A read-heavy web application running on a single server (personal site, documentation site, small SaaS)",
+      "recommendation": "toolA",
+      "explanation": "In-process query latency and WAL mode's concurrent reads make SQLite extremely fast for this profile. Pair it with Litestream for S3-streamed backups and you have a production-ready setup that costs less to run than a single t3.micro MySQL instance."
+    },
+    {
+      "scenario": "A multi-tenant SaaS with many concurrent writers across multiple application servers",
+      "recommendation": "toolB",
+      "explanation": "SQLite's single-writer limitation becomes painful once you have significant write concurrency from multiple processes. MySQL's InnoDB row-level locking handles this profile natively, and horizontal replication lets you scale reads across replicas."
+    },
+    {
+      "scenario": "A test suite that needs to spin up and tear down databases per test",
+      "recommendation": "toolA",
+      "explanation": "SQLite's :memory: mode gives you a completely isolated database in milliseconds. Every test gets a clean slate without Docker containers, shared schemas, or per-test cleanup scripts. The speedup on large test suites is dramatic."
+    },
+    {
+      "scenario": "A classic LAMP-stack web app (WordPress, Drupal, or similar CMS)",
+      "recommendation": "toolB",
+      "explanation": "These platforms assume MySQL. Running them on SQLite is possible but fights the entire ecosystem - plugins, migrations, and tutorials all assume a MySQL-compatible server. Use the database the platform was designed around."
+    },
+    {
+      "scenario": "An edge-deployed application that needs low-latency data close to users",
+      "recommendation": "toolA",
+      "explanation": "Turso (libSQL) and Cloudflare D1 make SQLite the natural fit for edge compute. Replicate a SQLite database to every region and queries run locally at each edge node. A traditional MySQL setup requires more infrastructure to get similar latency."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is SQLite really production-ready for a real web application?",
+      "answer": "Yes, for the right workload profile. Many small-to-medium production apps run on SQLite - notably projects like Pieter Levels' Photo AI, several Basecamp internal tools, and all of Cloudflare D1's customer deployments. The rule of thumb: if your app runs on a single server (or a small cluster with LiteFS / Turso), has mostly reads with moderate writes, and you want to drastically simplify operations, SQLite is a serious option. If your app has very high write concurrency or needs horizontal write scaling, pick MySQL."
+    },
+    {
+      "question": "How does SQLite handle concurrent writes when the whole internet hits my site?",
+      "answer": "SQLite serializes writes at the database level - only one write transaction is committing at any instant. In WAL mode, readers are not blocked while writes happen, so a mostly-read workload can sustain many thousands of concurrent users. Pure-write workloads bottleneck on the single-writer model. The practical question is not 'can SQLite handle X users' but 'how many writes per second do you actually need' - most content sites and small SaaS apps are nowhere near the limit."
+    },
+    {
+      "question": "How do I replicate SQLite for backup or high availability?",
+      "answer": "The modern answer is Litestream or LiteFS. Litestream streams every WAL frame to S3 (or any S3-compatible store) so you always have a point-in-time backup. LiteFS goes further: it distributes a SQLite database across multiple nodes with a primary-replica topology similar to traditional replication. For managed solutions, Turso offers libSQL with multi-region replicas and Cloudflare D1 handles replication automatically."
+    },
+    {
+      "question": "Can I migrate from MySQL to SQLite (or vice versa) easily?",
+      "answer": "For most schemas, yes. Both speak standard SQL, and tools like sqlite-utils or custom scripts can copy data in either direction. The gotchas are MySQL-specific data types (ENUM, SET), stored procedures (which SQLite does not have), and user/privilege setup. For a basic app with plain tables and indexes, a migration is typically a day of work. For a system that relies on MySQL-specific features, it is a bigger lift."
+    },
+    {
+      "question": "What about MariaDB - does anything in this comparison change?",
+      "answer": "MariaDB and MySQL have diverged over the years but are still close enough that most of the architecture comparison (client-server vs embedded, multi-writer concurrency, user management, network protocol) applies equally. The specifics of replication and clustering differ - MariaDB has Galera Cluster as a strong HA option - but the SQLite-vs-server-database trade-offs are the same."
+    },
+    {
+      "question": "Is the 'one writer at a time' limit really a problem?",
+      "answer": "It depends on your write rate and transaction size. A well-indexed SQLite database on an SSD can comfortably sustain 1,000 to 10,000 small writes per second in WAL mode - far more than most apps ever see. The problem appears with many long-running write transactions or write bursts that exceed that rate. If you ever find yourself benchmarking SQLite writes and hitting the limit, that is usually a clear signal to look at MySQL, Postgres, or a distributed SQLite layer like LiteFS."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "Your app runs on a single server and reads outnumber writes",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You have many application servers writing to the same database at once",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are building a CLI tool, desktop app, or mobile app with bundled storage",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need fine-grained user accounts, roles, and SQL-level privileges",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want the simplest possible operational story (no server, no users, backups = cp)",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You run WordPress, Drupal, or another CMS that assumes MySQL",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are deploying to edge runtimes (Cloudflare Workers, Fly, Deno Deploy)",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your test suite needs fast per-test isolated databases",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "MySQL is the right default for classic multi-server, multi-writer web applications - it was designed for that shape and has a decade of optimization plus the deepest ecosystem in the space. SQLite is the right default for a much larger set of use cases than most engineers give it credit for: single-server apps, CLI tools, desktop apps, mobile apps, test suites, and edge-deployed services. The 2025-2026 ecosystem around SQLite (Litestream, LiteFS, Turso, Cloudflare D1, Bun's native bindings) has changed what counts as 'production SQLite,' and plenty of real SaaS products now ship on it.",
+    "toolAScore": 4.3,
+    "toolBScore": 4.2,
+    "recommendation": "Pick SQLite when operational simplicity and single-host read performance matter most, and when your write concurrency is moderate. Pick MySQL when you need true multi-writer concurrency across application servers, built-in user management, or the deepest possible ecosystem of tools and hosting providers."
+  },
+  "relatedTags": ["SQLite", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"]
+}
