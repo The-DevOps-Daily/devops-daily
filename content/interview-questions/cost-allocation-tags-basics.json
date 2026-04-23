@@ -1,0 +1,43 @@
+{
+  "id": "cost-allocation-tags-basics",
+  "slug": "cost-allocation-tags-basics",
+  "title": "Cost Allocation Tags Basics",
+  "question": "Can you explain what cost allocation tags are and why teams use them across AWS, GCP, and Azure?",
+  "answer": "Cost allocation tags are key-value labels you attach to cloud resources so the billing system can split the bill by team, environment, project, or customer. All three major clouds support the same idea but name it slightly differently. AWS and Azure call them tags, GCP calls them labels. Without them your bill is one giant number per service like $47,000 on RDS and nobody knows who spent it. With them you can answer 'how much did the payments team spend last month' in seconds. Common uses: chargeback (billing internal teams for their actual usage), showback (giving teams visibility so they self-correct), scoped budget alerts, forecasting per team or product, and finding orphaned resources (no owner tag usually means nobody will miss it when it gets deleted).",
+  "explanation": "This is a warm-up question to check if the candidate has actually worked with cloud billing, not just spun up a few VMs. Strong candidates mention the tags vs labels naming, explain why tags matter for FinOps, and tie it back to dollars. Weaker candidates say 'for organization' without connecting tags to money or to a business problem.",
+  "category": "FinOps",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "finops",
+    "cloud-costs",
+    "tagging",
+    "multi-cloud",
+    "aws",
+    "gcp",
+    "azure"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Tag the same logical resource in each cloud",
+      "code": "# AWS: tag an EC2 instance\naws ec2 create-tags \\\n  --resources i-0123456789abcdef0 \\\n  --tags Key=team,Value=payments Key=environment,Value=prod\n\n# GCP: add labels to a Compute Engine VM\ngcloud compute instances add-labels my-vm \\\n  --labels=team=payments,environment=prod \\\n  --zone=us-central1-a\n\n# Azure: tag a VM\naz resource tag \\\n  --tags team=payments environment=prod \\\n  --resource-group my-rg \\\n  --name my-vm \\\n  --resource-type Microsoft.Compute/virtualMachines"
+    }
+  ],
+  "followUpQuestions": [
+    "What is the difference between showback and chargeback?",
+    "Why do AWS tags and GCP labels have different character rules?",
+    "How would you find every untagged resource in an AWS account?"
+  ],
+  "commonMistakes": [
+    "Saying tags are just for organization without connecting them to the bill",
+    "Confusing AWS resource tags with IAM tags or session tags",
+    "Assuming every resource type supports tags (some AWS billing items like data transfer do not)"
+  ],
+  "relatedTopics": [
+    "finops",
+    "cloud-billing",
+    "showback-chargeback",
+    "resource-governance"
+  ]
+}
