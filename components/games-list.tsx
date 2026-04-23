@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useDeferredValue } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -225,6 +225,12 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
   const [selectedType, setSelectedType] = useState<'all' | 'game' | 'simulator'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'unpopular' | 'title' | 'title-desc' | 'featured'>('newest');
 
+  // useDeferredValue lets the text input update at 60fps while the
+  // expensive list re-render runs as a lower-priority update. Without
+  // this, every keystroke blocked paint for 150-250ms on mid-range
+  // mobile devices and tipped the page's INP over 200ms.
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   // Get unique categories and tags
   const { categories, allTags } = useMemo(() => {
     const cats = Array.from(new Set(games.map((g) => g.category).filter(Boolean))).sort();
@@ -234,7 +240,7 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
 
   const filteredGames = useMemo(() => {
     let filtered = games.filter((game) => {
-      if (searchQuery && !matchesSearchQuery(game, searchQuery)) return false;
+      if (deferredSearchQuery && !matchesSearchQuery(game, deferredSearchQuery)) return false;
       if (selectedCategory !== 'all' && game.category !== selectedCategory) return false;
       if (selectedType !== 'all' && getGameType(game) !== selectedType) return false;
       return true;
@@ -242,7 +248,7 @@ export function GamesList({ games, className, showSearch = true, showFilters = t
 
     filtered.sort((a, b) => compareGamesBySort(a, b, sortBy));
     return filtered;
-  }, [games, searchQuery, selectedCategory, selectedType, sortBy]);
+  }, [games, deferredSearchQuery, selectedCategory, selectedType, sortBy]);
 
   const clearFilters = () => {
     setSearchQuery('');

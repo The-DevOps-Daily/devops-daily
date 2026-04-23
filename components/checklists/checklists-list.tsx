@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useDeferredValue } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +53,10 @@ export function ChecklistsList({
     'title' | 'title-desc' | 'items-asc' | 'items-desc' | 'category'
   >('category');
 
+  // Deferred for the filter memo; input stays bound to the immediate value
+  // so typing is 60fps. See INP Core Web Vital fix.
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   // Extract unique categories and difficulties
   const categories = useMemo(
     () => Array.from(new Set(checklists.map((c) => c.category))),
@@ -73,9 +77,9 @@ export function ChecklistsList({
     let filtered = checklists;
 
     // Apply search filter
-    if (searchQuery.trim()) {
+    if (deferredSearchQuery.trim()) {
       filtered = filtered.filter((checklist) =>
-        matchesSearchQuery(checklist, searchQuery)
+        matchesSearchQuery(checklist, deferredSearchQuery)
       );
     }
 
@@ -95,7 +99,7 @@ export function ChecklistsList({
 
     // Apply sorting
     return filtered.sort((a, b) => compareChecklistsBySort(a, b, sortBy));
-  }, [checklists, searchQuery, selectedCategory, selectedDifficulty, sortBy]);
+  }, [checklists, deferredSearchQuery, selectedCategory, selectedDifficulty, sortBy]);
 
   // Group by category for display
   const checklistsByCategory = useMemo(() => {
