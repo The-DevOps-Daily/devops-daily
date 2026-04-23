@@ -1,5 +1,4 @@
 import { PostsList } from '@/components/posts-list';
-import { PostsListWithoutSearch } from '@/components/posts-list-without-search';
 import { PageHero } from '@/components/page-hero';
 import { FileText } from 'lucide-react';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
@@ -40,10 +39,6 @@ export const metadata = {
 export default async function PostsPage() {
   const posts = await getAllPosts();
 
-  // Split posts to insert sponsor block after first 6 posts
-  const postsBeforeSponsor = posts.slice(0, 6);
-  const postsAfterSponsor = posts.slice(6);
-
   return (
     <div>
       <PageHero
@@ -55,14 +50,15 @@ export default async function PostsPage() {
       />
 
       <div className="container mx-auto px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 my-8">
-        {/* Posts List */}
+        {/* Posts List — one searchable list over the full catalog. The
+            sponsor block is injected inline after 6 items when idle and
+            hidden during search so filtered results stay uninterrupted. */}
         <div className="lg:col-span-9">
-          <PostsList posts={postsBeforeSponsor} />
-
-          {/* Inline Sponsors */}
-          <InlineSponsors variant="banner" className="my-8" />
-
-          <PostsListWithoutSearch posts={postsAfterSponsor} />
+          <PostsList
+            posts={posts}
+            sponsorSlot={<InlineSponsors variant="banner" />}
+            sponsorAfter={6}
+          />
         </div>
 
         {/* Sponsor Sidebar */}
