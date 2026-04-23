@@ -11,6 +11,7 @@ import {
 } from '@/components/schema-markup';
 import { CookieBanner } from '@/components/cookie-banner';
 import { GoogleAnalytics } from '@next/third-parties/google';
+import Script from 'next/script';
 import { PWAInstaller } from '@/components/pwa-installer';
 import { KonamiCodeListener } from '@/components/konami-code-listener';
 import { BookPromotionPopup } from '@/components/book-promotion-popup';
@@ -143,11 +144,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <OrganizationSchema />
         <WebsiteSchema />
-        <script
-          src="https://analytics.ahrefs.com/analytics.js"
-          data-key="DDU3onGEafDWd/obeLf2Pw"
-          async
-        ></script>
       </head>
       <body
         className={`${inter.className} min-h-screen flex flex-col bg-background text-foreground antialiased`}
@@ -169,6 +165,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
          <KeyboardShortcuts />
          <BackToTop />
        </ThemeProvider>
+       {/* Ahrefs Analytics — lazyOnload so it doesn't compete with
+           first-paint or early user interactions (INP). */}
+       <Script
+         id="ahrefs-analytics"
+         src="https://analytics.ahrefs.com/analytics.js"
+         data-key="DDU3onGEafDWd/obeLf2Pw"
+         strategy="lazyOnload"
+       />
      </body>
     </html>
   );

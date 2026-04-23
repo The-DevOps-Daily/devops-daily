@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useDeferredValue, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar, Search } from 'lucide-react';
@@ -33,17 +33,21 @@ export function PostsList({ posts, className }: PostsListProps) {
     };
   }, []);
 
-  const filteredPosts = posts.filter((post) => {
-    if (!searchQuery.trim()) return true;
-
-    const searchLower = searchQuery.toLowerCase();
-    return (
-      post.title.toLowerCase().includes(searchLower) ||
-      (post.excerpt ?? '').toLowerCase().includes(searchLower) ||
-      (post.category?.name || '').toLowerCase().includes(searchLower) ||
-      (post.tags && post.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
+  // useDeferredValue keeps the search <input> at 60fps while the filter
+  // runs at a lower priority — meaningful on mobile where the previous
+  // synchronous filter on every keystroke contributed to INP > 200ms.
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+  const filteredPosts = useMemo(() => {
+    if (!deferredSearchQuery.trim()) return posts;
+    const searchLower = deferredSearchQuery.toLowerCase();
+    return posts.filter(
+      (post) =>
+        post.title.toLowerCase().includes(searchLower) ||
+        (post.excerpt ?? '').toLowerCase().includes(searchLower) ||
+        (post.category?.name || '').toLowerCase().includes(searchLower) ||
+        (post.tags && post.tags.some((tag) => tag.toLowerCase().includes(searchLower)))
     );
-  });
+  }, [posts, deferredSearchQuery]);
 
   return (
     <div className={cn('space-y-8', className)}>

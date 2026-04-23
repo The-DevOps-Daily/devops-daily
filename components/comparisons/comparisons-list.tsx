@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useDeferredValue } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,11 @@ export function ComparisonsList({ comparisons, className }: ComparisonsListProps
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+  // Defer the value used by the filter memo so the input stays 60fps
+  // while the (potentially large) filtered list re-renders at lower
+  // priority. INP fix.
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   const categories = useMemo(() => {
     return Array.from(new Set(comparisons.map((c) => c.category))).sort();
   }, [comparisons]);
@@ -25,8 +30,8 @@ export function ComparisonsList({ comparisons, className }: ComparisonsListProps
   const filteredComparisons = useMemo(() => {
     return comparisons.filter((comparison) => {
       // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      if (deferredSearchQuery) {
+        const query = deferredSearchQuery.toLowerCase();
         const matchesSearch =
           comparison.title.toLowerCase().includes(query) ||
           comparison.description.toLowerCase().includes(query) ||
@@ -44,7 +49,7 @@ export function ComparisonsList({ comparisons, className }: ComparisonsListProps
 
       return true;
     });
-  }, [comparisons, searchQuery, selectedCategory]);
+  }, [comparisons, deferredSearchQuery, selectedCategory]);
 
   const clearFilters = () => {
     setSearchQuery('');
