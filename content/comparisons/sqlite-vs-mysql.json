@@ -8,7 +8,7 @@
   "createdDate": "2026-04-23T10:00:00Z",
   "updatedDate": "2026-04-23T10:00:00Z",
   "estimatedReadTime": "13 min read",
-  "introduction": "If you learned databases a decade ago, you probably put SQLite and MySQL in very different mental buckets. SQLite was the database you used for a local cache, a mobile app, or the test suite. MySQL was the database you used when you shipped a real product. That framing is starting to look out of date.\n\nSQLite has quietly had a huge decade. STRICT tables gave it strong typing. WAL mode made concurrent reads genuinely fast. UPSERT, window functions, generated columns, and a solid FTS5 full-text search engine closed most of the feature gaps with server databases. And then the ecosystem did something nobody expected: Litestream made it trivial to replicate a SQLite file to S3, LiteFS turned SQLite into a distributed database across multiple nodes, Turso and Cloudflare D1 started offering SQLite as a managed service, and Bun shipped first-class SQLite support. Suddenly \"just use SQLite\" is a serious answer for small-to-medium production workloads, not a punchline.\n\nMySQL, for its part, is still the most deployed relational database on the planet. With the 9.x release line under Oracle, it has matured into a rock-solid choice for classic multi-tenant web apps. Group Replication and InnoDB Cluster make high-availability setups less painful than they used to be. HeatWave adds in-database analytics. MariaDB and Percona Server give you drop-in alternatives if Oracle's stewardship worries you. The ecosystem of managed services, hosting providers, and ORMs is unmatched.\n\nThe honest comparison is not \"which one is better\" but \"what kind of system are you building.\" A client-server database like MySQL makes sense when you have many application servers hitting the same data, when write concurrency is high, or when you need fine-grained user and role management. An embedded database like SQLite makes sense when your data lives next to your application, when read performance and operational simplicity matter more than horizontal scale, and when a single-file database you can just copy is a feature rather than a limitation.\n\nThis comparison walks through the real trade-offs - architecture, concurrency, deployment story, tooling, and the modern SQLite ecosystem - so you can make that call deliberately.",
+  "introduction": "If you learned databases a decade ago, you probably put SQLite and MySQL in very different mental buckets. SQLite was the database you used for a local cache, a mobile app, or the test suite. MySQL was the database you used when you shipped a real product. That framing is starting to look out of date.\n\nSQLite has had a quiet but substantial decade. STRICT tables gave it strong typing. WAL mode made concurrent reads genuinely fast. UPSERT, window functions, generated columns, and a solid FTS5 full-text search engine closed several of the feature gaps with server databases. The ecosystem has also moved forward: Litestream streams a SQLite database to S3 for continuous backup, LiteFS distributes SQLite across multiple nodes, Turso and Cloudflare D1 offer it as a managed edge service, and Bun shipped first-class SQLite support. For the right workload shape, \"just use SQLite\" is now a defensible answer in production.\n\nMySQL, for its part, is still the most deployed relational database on the planet. With the 9.x release line under Oracle, it has matured into a rock-solid choice for classic multi-tenant web apps. Group Replication and InnoDB Cluster make high-availability setups less painful than they used to be. HeatWave adds in-database analytics. MariaDB and Percona Server give you drop-in alternatives if Oracle's stewardship worries you. The ecosystem of managed services, hosting providers, and ORMs is unmatched.\n\nThe honest comparison is not \"which one is better\" but \"what kind of system are you building.\" A client-server database like MySQL makes sense when you have many application servers hitting the same data, when write concurrency is high, or when you need fine-grained user and role management. An embedded database like SQLite makes sense when your data lives next to your application, when read performance and operational simplicity matter more than horizontal scale, and when a single-file database you can just copy is a feature rather than a limitation.\n\nThis comparison walks through the real trade-offs - architecture, concurrency, deployment story, tooling, and the modern SQLite ecosystem - so you can make that call deliberately.",
   "toolA": {
     "name": "SQLite",
     "icon": "Database",
@@ -144,9 +144,9 @@
       "explanation": "This is SQLite's home ground. Ship a single binary with an embedded database and you are done. No install scripts, no version mismatches, no daemon to keep alive. Android, iOS, Firefox, and most desktop apps already bundle SQLite for a reason."
     },
     {
-      "scenario": "A read-heavy web application running on a single server (personal site, documentation site, small SaaS)",
-      "recommendation": "toolA",
-      "explanation": "In-process query latency and WAL mode's concurrent reads make SQLite extremely fast for this profile. Pair it with Litestream for S3-streamed backups and you have a production-ready setup that costs less to run than a single t3.micro MySQL instance."
+      "scenario": "A backend where multiple services, workers, or runtimes need to write to the same database concurrently",
+      "recommendation": "toolB",
+      "explanation": "MySQL's client-server model is built for this. Any number of app processes, background workers, cron jobs, or polyglot services can hold connections and write in parallel without coordinating through a single-writer queue. SQLite can be made to work here with LiteFS or a proxy layer, but you are fighting its design."
     },
     {
       "scenario": "A multi-tenant SaaS with many concurrent writers across multiple application servers",
@@ -197,27 +197,11 @@
   ],
   "decisionMatrix": [
     {
-      "criteria": "Your app runs on a single server and reads outnumber writes",
-      "recommendation": "toolA"
-    },
-    {
-      "criteria": "You have many application servers writing to the same database at once",
-      "recommendation": "toolB"
-    },
-    {
       "criteria": "You are building a CLI tool, desktop app, or mobile app with bundled storage",
       "recommendation": "toolA"
     },
     {
-      "criteria": "You need fine-grained user accounts, roles, and SQL-level privileges",
-      "recommendation": "toolB"
-    },
-    {
-      "criteria": "You want the simplest possible operational story (no server, no users, backups = cp)",
-      "recommendation": "toolA"
-    },
-    {
-      "criteria": "You run WordPress, Drupal, or another CMS that assumes MySQL",
+      "criteria": "You have many application servers, workers, or services writing to the same database at once",
       "recommendation": "toolB"
     },
     {
@@ -225,15 +209,31 @@
       "recommendation": "toolA"
     },
     {
+      "criteria": "You need fine-grained user accounts, roles, and SQL-level privileges",
+      "recommendation": "toolB"
+    },
+    {
       "criteria": "Your test suite needs fast per-test isolated databases",
       "recommendation": "toolA"
+    },
+    {
+      "criteria": "You run WordPress, Drupal, or another CMS that assumes MySQL",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want the simplest possible operational story (no server, no users, backups = cp)",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your database must be shared across multiple language runtimes or independent services",
+      "recommendation": "toolB"
     }
   ],
   "verdict": {
-    "summary": "MySQL is the right default for classic multi-server, multi-writer web applications - it was designed for that shape and has a decade of optimization plus the deepest ecosystem in the space. SQLite is the right default for a much larger set of use cases than most engineers give it credit for: single-server apps, CLI tools, desktop apps, mobile apps, test suites, and edge-deployed services. The 2025-2026 ecosystem around SQLite (Litestream, LiteFS, Turso, Cloudflare D1, Bun's native bindings) has changed what counts as 'production SQLite,' and plenty of real SaaS products now ship on it.",
-    "toolAScore": 4.3,
-    "toolBScore": 4.2,
-    "recommendation": "Pick SQLite when operational simplicity and single-host read performance matter most, and when your write concurrency is moderate. Pick MySQL when you need true multi-writer concurrency across application servers, built-in user management, or the deepest possible ecosystem of tools and hosting providers."
+    "summary": "MySQL remains the right default for most server-side web applications in 2026 - it is the most deployed relational database in the world, has mature replication and high-availability options, genuine multi-writer concurrency, and an ecosystem of hosting providers and tooling that is unmatched. SQLite has earned a legitimate seat at the production table for a specific and growing set of shapes: embedded apps, CLI tools, single-server read-heavy services, test suites, and edge-deployed applications. Tools like Litestream, LiteFS, Turso, and Cloudflare D1 have changed what 'production SQLite' means, but the architectural split still matters - pick the one whose shape matches the system you are actually building.",
+    "toolAScore": 4.2,
+    "toolBScore": 4.4,
+    "recommendation": "Pick MySQL when you need true multi-writer concurrency across application servers, built-in user management, or the deepest possible ecosystem of tools and hosting providers - which covers most classic web app shapes. Pick SQLite when operational simplicity, in-process read latency, embeddability, or edge deployment are the dominant requirements."
   },
   "relatedTags": ["SQLite", "MySQL", "Databases", "SQL", "RDBMS", "DevOps"]
 }
