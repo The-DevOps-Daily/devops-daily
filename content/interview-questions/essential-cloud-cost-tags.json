@@ -1,0 +1,46 @@
+{
+  "id": "essential-cloud-cost-tags",
+  "slug": "essential-cloud-cost-tags",
+  "title": "Essential Tags for Multi-Cloud Cost Allocation",
+  "question": "If you were designing a tagging standard for a company running on AWS, GCP, and Azure, which tags would you require on every resource and why?",
+  "answer": "Keep the required set small. Five tags is my baseline: environment (prod, staging, dev, sandbox), team or owner (who pays and who to call at 3am), cost-center (the accounting code finance actually uses), application or service (which product this resource belongs to), and managed-by (terraform, pulumi, manual, console). Those five answer the questions finance asks every month and give engineering enough to drive ownership. Optional but common additions: project or ticket for short-lived resources, customer for multi-tenant SaaS workloads, and data-classification for compliance. Two rules I insist on. First, pick one casing and stick to it. team=payments, Team=Payments, and TEAM=PAYMENTS are three different values to the billing system and will fragment your reports. Lowercase with hyphens is the safest across AWS, GCP, and Azure since GCP labels reject uppercase anyway. Second, fewer mandatory tags means higher compliance. If you require 15 tags, engineers will copy-paste junk values to get past the policy. Start with 3 to 5 that finance and engineering agreed on together, then add more only when you have a concrete reporting need.",
+  "explanation": "This question tests whether the candidate has actually shipped a tagging policy or just read about one. Strong candidates will explain the tradeoff between completeness and compliance, mention case sensitivity and the GCP label restrictions, and talk about getting finance involved early. Watch for candidates who list 12 required tags - they usually have not had to enforce them across a real org.",
+  "category": "FinOps",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "finops",
+    "cloud-costs",
+    "tagging",
+    "multi-cloud",
+    "governance"
+  ],
+  "codeExamples": [
+    {
+      "language": "hcl",
+      "label": "Terraform default tags for AWS and shared locals for Azure and GCP",
+      "code": "# AWS: default_tags apply to every resource in this provider block\nprovider \"aws\" {\n  region = \"us-east-1\"\n\n  default_tags {\n    tags = {\n      team        = \"payments\"\n      environment = \"prod\"\n      cost-center = \"eng-4200\"\n      application = \"checkout-api\"\n      managed-by  = \"terraform\"\n    }\n  }\n}\n\n# Shared tag map for Azure and GCP resources\nlocals {\n  common_tags = {\n    team        = \"payments\"\n    environment = \"prod\"\n    cost-center = \"eng-4200\"\n    application = \"checkout-api\"\n    managed-by  = \"terraform\"\n  }\n}\n\nresource \"azurerm_linux_virtual_machine\" \"api\" {\n  name                = \"prod-api-01\"\n  resource_group_name = azurerm_resource_group.rg.name\n  location            = \"eastus\"\n  tags                = local.common_tags\n  # ... size, image, nic omitted\n}\n\nresource \"google_compute_instance\" \"api\" {\n  name         = \"prod-api-01\"\n  machine_type = \"e2-standard-2\"\n  zone         = \"us-central1-a\"\n  labels       = local.common_tags\n  # ... boot_disk, network_interface omitted\n}"
+    },
+    {
+      "language": "yaml",
+      "label": "Tagging standard documented for humans",
+      "code": "# tagging-standard.yaml - single source of truth for the org\nrequired_tags:\n  - key: team\n    description: Engineering team that owns the resource\n    allowed_values: [payments, identity, growth, platform, data]\n\n  - key: environment\n    description: Deployment environment\n    allowed_values: [prod, staging, dev, sandbox]\n\n  - key: cost-center\n    description: Finance cost center code\n    pattern: \"^eng-[0-9]{4}$\"\n\n  - key: application\n    description: Logical application name this resource supports\n    pattern: \"^[a-z0-9-]+$\"\n\n  - key: managed-by\n    description: How this resource was provisioned\n    allowed_values: [terraform, pulumi, helm, manual]\n\ncasing: lowercase-hyphen\nenforcement:\n  aws: organizations-tag-policy + aws-config\n  azure: azure-policy-deny\n  gcp: terraform-default + opa-in-ci"
+    }
+  ],
+  "followUpQuestions": [
+    "Why lowercase and hyphens instead of camelCase?",
+    "How do you handle tag sprawl when every team wants to add their own?",
+    "What do you do when finance wants a tag that engineering cannot answer at resource creation time?"
+  ],
+  "commonMistakes": [
+    "Requiring 10+ mandatory tags and wondering why compliance is at 40 percent",
+    "Mixing casing conventions across clouds so team=Payments and team=payments show up as two teams in reports",
+    "Not agreeing the tag values with finance first, so cost-center codes in the cloud do not match the ones in the ERP"
+  ],
+  "relatedTopics": [
+    "tagging-standards",
+    "terraform-default-tags",
+    "cost-allocation",
+    "finops-governance"
+  ]
+}

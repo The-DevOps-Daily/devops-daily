@@ -1,0 +1,56 @@
+{
+  "id": "chargeback-shared-untaggable-costs",
+  "slug": "chargeback-shared-untaggable-costs",
+  "title": "Chargeback Design for Shared and Untaggable Costs",
+  "question": "You are designing a chargeback system for 200 teams running across AWS, GCP, and Azure. How do you handle the 15 to 25 percent of the bill that cannot be tagged to a single team, like inter-AZ data transfer, support plans, NAT gateways, and shared Kubernetes clusters?",
+  "answer": "Chargeback at scale is 70 percent politics and 30 percent engineering. The engineering problem: 15 to 25 percent of your multi-cloud bill is not directly attributable. Inter-AZ data transfer, NAT gateway hours, support plans, marketplace subscriptions, management fees, reserved instance upfront payments, and shared services like a platform Kubernetes cluster all resist simple tag-based allocation. My approach has five parts. First, split the bill into three buckets: directly attributed (tagged, owner is obvious), indirectly attributed (shared but allocatable by proxy), and unallocated (absorbed centrally). Be explicit about which costs fall where. Second, pick allocation keys for the shared bucket and write them down before the first report goes out. Shared NAT gateway gets split by data transfer bytes per source VPC or by tagged VPC usage. Support plans get split as a flat percentage on each team's direct spend. Shared Kubernetes clusters get split using Kubecost or OpenCost based on namespace and workload labels, which is a separate tagging discipline from cloud resource tags. Reserved instance and Savings Plan discounts get amortized based on which team's instance hours matched the commitment. Third, normalize everything into a single warehouse. CUR 2.0 from AWS, BigQuery billing export from GCP, EA or MCA export from Azure, all landing in Snowflake, BigQuery, or Redshift. Normalize tag keys across clouds so AWS tag team, GCP label team, and Azure tag team all become one dimension. Fourth, publish monthly with a 2-week dispute window, then freeze. Disputes after freeze go to next month. Without a freeze you will re-run the report every time finance asks a question. Fifth, untagged resources hit a 'tax' bucket owned by the platform org, not individual teams. This creates pressure to tag without punishing teams for platform gaps. Report untagged spend publicly every month and it usually drops fast.",
+  "explanation": "This is a senior-level question to see if the candidate has lived through a real chargeback rollout or just read the FinOps Foundation docs. Strong candidates will break down the three buckets, acknowledge that some costs simply cannot be allocated cleanly, and talk about the organizational side (freeze windows, dispute process, public reporting). They will also mention normalizing across clouds in a warehouse, and the distinction between cloud-resource tags and Kubernetes-workload labels. Red flag: candidates who claim they can tag 100 percent of the bill or who skip the politics entirely.",
+  "category": "FinOps",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "finops",
+    "cloud-costs",
+    "chargeback",
+    "tagging",
+    "multi-cloud",
+    "bigquery"
+  ],
+  "codeExamples": [
+    {
+      "language": "sql",
+      "label": "Split tagged vs untagged spend in GCP BigQuery billing export",
+      "code": "-- Bucket monthly spend into tagged teams vs an untagged tax bucket\nWITH normalized AS (\n  SELECT\n    COALESCE(\n      (SELECT value FROM UNNEST(labels) WHERE key = 'team'),\n      'UNTAGGED_TAX_BUCKET'\n    ) AS team,\n    service.description AS service,\n    cost,\n    IFNULL((SELECT SUM(amount) FROM UNNEST(credits)), 0) AS credits\n  FROM `billing.gcp_billing_export_resource_v1_XXXXXX`\n  WHERE _PARTITIONTIME >= TIMESTAMP('2026-04-01')\n    AND _PARTITIONTIME <  TIMESTAMP('2026-05-01')\n)\nSELECT\n  team,\n  ROUND(SUM(cost + credits), 2)                              AS net_cost_usd,\n  ROUND(SUM(cost + credits)\n        / SUM(SUM(cost + credits)) OVER () * 100, 2)         AS pct_of_total,\n  COUNT(DISTINCT service)                                    AS service_count\nFROM normalized\nGROUP BY team\nORDER BY net_cost_usd DESC;"
+    },
+    {
+      "language": "sql",
+      "label": "Allocate shared NAT gateway spend proportionally to VPC usage (AWS CUR 2.0)",
+      "code": "-- Split shared NAT gateway data processing charges across teams\n-- based on each team's share of total tagged data transfer bytes\nWITH team_bytes AS (\n  SELECT\n    resource_tags_user_team AS team,\n    SUM(line_item_usage_amount) AS team_bytes\n  FROM cur_v2\n  WHERE line_item_product_code = 'AmazonEC2'\n    AND line_item_usage_type LIKE '%DataTransfer%'\n    AND resource_tags_user_team IS NOT NULL\n    AND billing_period_start_date = DATE '2026-04-01'\n  GROUP BY resource_tags_user_team\n),\nshared_nat AS (\n  SELECT SUM(line_item_unblended_cost) AS total_nat_cost\n  FROM cur_v2\n  WHERE line_item_usage_type LIKE '%NatGateway%'\n    AND (resource_tags_user_team IS NULL OR resource_tags_user_team = '')\n    AND billing_period_start_date = DATE '2026-04-01'\n)\nSELECT\n  t.team,\n  ROUND(s.total_nat_cost * (t.team_bytes / SUM(t.team_bytes) OVER ()), 2)\n    AS allocated_nat_cost_usd\nFROM team_bytes t\nCROSS JOIN shared_nat s\nORDER BY allocated_nat_cost_usd DESC;"
+    },
+    {
+      "language": "yaml",
+      "label": "Kubecost allocation config for a shared cluster",
+      "code": "# Kubecost allocation rules for shared platform cluster\n# Splits cluster cost by namespace label, not by cloud resource tag\nglobal:\n  notifications:\n    alertmanager:\n      enabled: true\n\nkubecostModel:\n  allocation:\n    # Required labels on every namespace - enforced by admission controller\n    requiredLabels:\n      - team\n      - environment\n      - cost-center\n\n    # Idle and system costs go to the platform team, not user workloads\n    shareIdle: false\n    shareTenancyCosts: true\n    shareNamespaces:\n      - kube-system\n      - kubecost\n      - cert-manager\n    shareToTeam: platform\n\n    # Reallocate unassigned spend so user teams see a true-cost view\n    shareSplit: weighted\n"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you allocate Reserved Instance and Savings Plan discounts fairly when multiple teams benefit from the same commitment?",
+    "What would change in your design if you had to support GDPR-style data residency where some costs cannot cross regions even in reporting?",
+    "How do you stop teams from gaming the chargeback system once they see the numbers?",
+    "Would you build this on top of CUR and BigQuery yourself, or buy a tool like Vantage, CloudHealth, or Apptio? Why?"
+  ],
+  "commonMistakes": [
+    "Claiming every dollar can be tagged, then silently dropping untagged spend from reports",
+    "Running chargeback without a dispute and freeze window, so reports are never final",
+    "Allocating shared Kubernetes costs using cloud resource tags instead of namespace-level labels through Kubecost or OpenCost",
+    "Ignoring that reservations and Savings Plans break naive per-hour team attribution"
+  ],
+  "relatedTopics": [
+    "finops-maturity",
+    "cur-v2",
+    "kubecost",
+    "opencost",
+    "reserved-instance-amortization",
+    "bigquery-billing-export"
+  ]
+}

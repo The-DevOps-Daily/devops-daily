@@ -1,0 +1,53 @@
+{
+  "id": "activating-cost-allocation-tags",
+  "slug": "activating-cost-allocation-tags",
+  "title": "Activating Tags in Billing Reports",
+  "question": "Your team tagged every resource with team and environment, but the tags are not showing up in cost reports. What is going on, and how is this different on AWS, GCP, and Azure?",
+  "answer": "Tagging the resource is not the same as telling the billing system to treat that tag as a cost dimension. Each cloud handles this differently and this is the number one thing that trips people up. On AWS, user-defined tags have to be activated in Billing and Cost Management under Cost Allocation Tags. Until you activate them, they do not appear in Cost Explorer, the Cost and Usage Report (CUR), or budgets. Activation can take up to 24 hours to propagate and only applies to costs incurred after activation, not retroactively. On Azure, subscription and resource tags flow into Cost Management automatically, but inheritance is not the default. A VM does not inherit tags from its resource group unless you use an Azure Policy with the modify effect to push them down. Some costs like classic resources, reservations, and certain marketplace items do not carry tags at all. On GCP, labels flow into billing exports automatically once you enable detailed BigQuery billing export. There is no activation step, but labels on a parent resource (project, folder) do not propagate to child resources. You label the resource itself or you get nothing. So the answer to 'why are my tags missing from reports' is almost always one of: not activated (AWS), not inherited (Azure), not on the right resource (GCP), or tagged after the billing period started.",
+  "explanation": "This question separates candidates who have only read about tagging from those who have shipped a chargeback system. The activation gotcha on AWS and the inheritance gotcha on Azure are classic mid-career landmines. Strong candidates will also mention the 24-hour propagation delay and the fact that activation is not retroactive, which is the most common cause of 'why is last month's report still empty'.",
+  "category": "FinOps",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "finops",
+    "cloud-costs",
+    "tagging",
+    "multi-cloud",
+    "billing",
+    "cost-explorer"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Activate cost allocation tags on AWS",
+      "code": "# Activate user-defined tags (the step everyone forgets)\naws ce update-cost-allocation-tags-status \\\n  --cost-allocation-tags-status \\\n    TagKey=team,Status=Active \\\n    TagKey=environment,Status=Active \\\n    TagKey=cost-center,Status=Active\n\n# Verify which tags are active\naws ce list-cost-allocation-tags --status Active\n\n# Query costs grouped by the team tag (only works after activation)\naws ce get-cost-and-usage \\\n  --time-period Start=2026-04-01,End=2026-04-30 \\\n  --granularity MONTHLY \\\n  --metrics UnblendedCost \\\n  --group-by Type=TAG,Key=team"
+    },
+    {
+      "language": "bash",
+      "label": "Azure: propagate resource group tags to child resources",
+      "code": "# Assign the built-in policy that inherits a tag from the resource group\naz policy assignment create \\\n  --name inherit-team-tag \\\n  --display-name \"Inherit team tag from resource group\" \\\n  --policy \"cd3aa116-8754-49c9-a813-ad46512ece54\" \\\n  --scope \"/subscriptions/YOUR-SUB-ID\" \\\n  --params '{\"tagName\": {\"value\": \"team\"}}'\n\n# Remediate existing resources (applies the tag to what is already deployed)\naz policy remediation create \\\n  --name inherit-team-tag-remediation \\\n  --policy-assignment inherit-team-tag \\\n  --resource-discovery-mode ReEvaluateCompliance"
+    },
+    {
+      "language": "sql",
+      "label": "GCP: query billing export by label in BigQuery",
+      "code": "-- Cost per team for the current month from BigQuery billing export\nSELECT\n  (SELECT value FROM UNNEST(labels) WHERE key = 'team') AS team,\n  (SELECT value FROM UNNEST(labels) WHERE key = 'environment') AS environment,\n  ROUND(SUM(cost), 2) AS cost_usd,\n  ROUND(SUM(IFNULL((SELECT SUM(amount)\n                    FROM UNNEST(credits)), 0)), 2) AS credits_usd\nFROM `my-billing-project.billing_export.gcp_billing_export_resource_v1_XXXXXX`\nWHERE _PARTITIONTIME >= TIMESTAMP('2026-04-01')\n  AND _PARTITIONTIME <  TIMESTAMP('2026-05-01')\nGROUP BY team, environment\nORDER BY cost_usd DESC;"
+    }
+  ],
+  "followUpQuestions": [
+    "Your CFO wants a chargeback report for last quarter, but you only activated cost allocation tags two weeks ago. What can you actually deliver?",
+    "What AWS charges never show up against a tag no matter what you do?",
+    "How would you audit whether Azure tag inheritance is actually working end to end?"
+  ],
+  "commonMistakes": [
+    "Assuming AWS tags show up in Cost Explorer immediately after tagging resources",
+    "Expecting Azure resources to inherit resource group tags automatically",
+    "Labeling the GCP project and expecting every VM inside it to be attributed to that label in billing reports"
+  ],
+  "relatedTopics": [
+    "aws-cost-explorer",
+    "azure-cost-management",
+    "gcp-billing-export",
+    "bigquery-billing",
+    "chargeback"
+  ]
+}

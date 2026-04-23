@@ -1,0 +1,52 @@
+{
+  "id": "enforcing-tagging-policies-multi-cloud",
+  "slug": "enforcing-tagging-policies-multi-cloud",
+  "title": "Enforcing Tagging Policies Across Clouds",
+  "question": "How do you actually enforce that every resource in AWS, GCP, and Azure gets the required tags? Walk me through what you would put in place.",
+  "answer": "I think about enforcement in two layers: prevention (block creation without tags) and detection (find violations after the fact). You need both, because 100 percent prevention is impossible and detection alone is too slow. On AWS I use Organizations Tag Policies to standardize keys and values, plus Service Control Policies to deny resource creation without certain tags, plus AWS Config rule required-tags for drift detection. On Azure I use Azure Policy with the deny effect for missing tags, and the modify effect to auto-append tags inherited from the resource group. Azure inheritance is a trap, resources do not auto-inherit resource group tags so you have to add a policy for that. On GCP the native story is weaker. Organization Policy does not enforce labels as cleanly, so I lean on Terraform default labels plus policy-as-code (OPA or Sentinel) in the CI pipeline, and BigQuery billing export queries to catch anything that slipped through. The practical order I follow: first, get 90 percent coverage through Terraform default tags in the provider blocks. Second, add policy engines to block the console cowboys. Third, run nightly scans that flag untagged resources back to the owning team in Slack. If you start with policy engines before fixing Terraform, you will just break deploys.",
+  "explanation": "Enforcement is where tagging programs live or die. Junior candidates will describe what a tag is. Mid candidates mention one native tool per cloud. Strong candidates lay out the prevention plus detection model, mention the Azure inheritance gotcha, acknowledge GCP has weaker native enforcement, and say that IaC default tags should carry most of the weight. Watch for candidates who say 'just use Azure Policy' without acknowledging it does not solve GCP or block changes from the console unless configured carefully.",
+  "category": "FinOps",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "finops",
+    "cloud-costs",
+    "tagging",
+    "multi-cloud",
+    "policy-as-code",
+    "governance"
+  ],
+  "codeExamples": [
+    {
+      "language": "json",
+      "label": "AWS Organizations Tag Policy",
+      "code": "{\n  \"tags\": {\n    \"team\": {\n      \"tag_key\": { \"@@assign\": \"team\" },\n      \"tag_value\": {\n        \"@@assign\": [\"payments\", \"identity\", \"growth\", \"platform\", \"data\"]\n      },\n      \"enforced_for\": {\n        \"@@assign\": [\n          \"ec2:instance\",\n          \"rds:db\",\n          \"s3:bucket\",\n          \"lambda:function\"\n        ]\n      }\n    },\n    \"environment\": {\n      \"tag_key\": { \"@@assign\": \"environment\" },\n      \"tag_value\": {\n        \"@@assign\": [\"prod\", \"staging\", \"dev\", \"sandbox\"]\n      }\n    },\n    \"cost-center\": {\n      \"tag_key\": { \"@@assign\": \"cost-center\" }\n    }\n  }\n}"
+    },
+    {
+      "language": "json",
+      "label": "Azure Policy that denies resources missing the team tag",
+      "code": "{\n  \"mode\": \"Indexed\",\n  \"policyRule\": {\n    \"if\": {\n      \"allOf\": [\n        {\n          \"field\": \"tags['team']\",\n          \"exists\": \"false\"\n        },\n        {\n          \"field\": \"type\",\n          \"notIn\": [\n            \"Microsoft.Resources/deployments\",\n            \"Microsoft.Resources/deploymentScripts\"\n          ]\n        }\n      ]\n    },\n    \"then\": {\n      \"effect\": \"deny\"\n    }\n  },\n  \"parameters\": {}\n}"
+    },
+    {
+      "language": "rego",
+      "label": "OPA policy for GCP Terraform plans in CI",
+      "code": "# Reject plans that create GCP resources without required labels\npackage terraform.gcp.tagging\n\nrequired_labels := {\"team\", \"environment\", \"cost-center\"}\n\ndeny[msg] {\n  resource := input.resource_changes[_]\n  startswith(resource.type, \"google_\")\n  resource.change.actions[_] == \"create\"\n\n  labels := object.get(resource.change.after, \"labels\", {})\n  missing := required_labels - {k | labels[k]}\n  count(missing) > 0\n\n  msg := sprintf(\n    \"%s '%s' is missing required labels: %v\",\n    [resource.type, resource.address, missing]\n  )\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "What breaks if you enforce a deny policy in a brownfield environment with thousands of existing untagged resources?",
+    "How would you onboard a team that has never tagged anything without blocking all their deploys on day one?",
+    "Why does the Azure policy exclude Microsoft.Resources/deployments and similar types?"
+  ],
+  "commonMistakes": [
+    "Rolling out deny policies org-wide on day one and breaking every pipeline",
+    "Forgetting that Azure resources do not inherit resource group tags automatically",
+    "Relying only on IaC and ignoring the console and ClickOps resources that bypass CI"
+  ],
+  "relatedTopics": [
+    "aws-tag-policies",
+    "azure-policy",
+    "opa-terraform",
+    "policy-as-code"
+  ]
+}
