@@ -400,30 +400,6 @@ docker compose build dev
 # Run a one-off command in the dev container
 docker compose run --rm dev pnpm lint
 ```
-docker compose up prod --build
-
-# Run in background
-docker compose up -d prod
-```
-
-#### Useful Commands
-
-```bash
-# Stop all services
-docker compose down
-
-# Stop and remove volumes (clean slate)
-docker compose down -v
-
-# View logs for a specific service
-docker compose logs -f dev
-
-# Rebuild a specific service
-docker compose build dev
-
-# Run a one-off command in the dev container
-docker compose run --rm dev pnpm lint
-```
 
 ## 📄 License
 
