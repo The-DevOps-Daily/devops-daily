@@ -88,7 +88,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     notFound();
   }
 
-  const relatedPosts = await getRelatedPosts(post.slug, post.category?.slug || '', 6);
+  const relatedPosts = await getRelatedPosts(post.slug, post.category?.slug || '', 5);
 
   // Check if post content contains affiliate links
   const affiliatePatterns = [
@@ -101,9 +101,11 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     new RegExp(pattern).test(post.content)
   );
 
-  // Split related posts for main section and sidebar
+  // Split related posts: 3 in the main bottom-of-page section (needs
+  // enough variety to be worth the scroll), 2 in the sidebar (sidebar
+  // space is tight and more than 2 starts to feel cluttered).
   const mainRelatedPosts = relatedPosts.slice(0, 3);
-  const sidebarRelatedPosts = relatedPosts.slice(3, 6);
+  const sidebarRelatedPosts = relatedPosts.slice(3, 5);
 
   // Breadcrumb items for schema
   const breadcrumbItems = [
