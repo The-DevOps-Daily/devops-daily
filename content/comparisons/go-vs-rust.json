@@ -116,7 +116,7 @@
       "name": "Cross-Compilation",
       "category": "Distribution",
       "toolA": { "value": "Trivial - set GOOS and GOARCH, single command builds", "rating": "good" },
-      "toolB": { "value": "Requires cross-compilation toolchains or cross-rs; works but needs setup", "rating": "neutral" }
+      "toolB": { "value": "Pure-Rust crates: rustup target add + cargo build --target= is a one-liner. With C dependencies (OpenSSL, SQLite, libgit2) you need a cross-linker, typically via cross-rs.", "rating": "neutral" }
     },
     {
       "name": "Error Handling",
