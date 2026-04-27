@@ -7,6 +7,7 @@ import {
 } from '@/components/schema-markup';
 import { ExerciseSeriesNav } from '@/components/exercise-series-nav';
 import { getSocialImagePath } from '@/lib/image-utils';
+import { truncateMetaDescription } from '@/lib/meta-description';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -36,16 +37,17 @@ export async function generateMetadata({
   }
 
   const socialImage = getSocialImagePath(exercise.id, 'exercises');
+  const description = truncateMetaDescription(exercise.description);
 
   return {
     title: { absolute: `${exercise.title} - DevOps Exercise` },
-    description: exercise.description,
+    description,
     alternates: {
       canonical: `/exercises/${exercise.id}`,
     },
     openGraph: {
       title: `${exercise.title} - DevOps Exercise`,
-      description: exercise.description,
+      description,
       url: `/exercises/${exercise.id}`,
       type: 'article',
       images: [
@@ -60,7 +62,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: `${exercise.title} - DevOps Exercise`,
-      description: exercise.description,
+      description,
       images: [socialImage],
     },
   };

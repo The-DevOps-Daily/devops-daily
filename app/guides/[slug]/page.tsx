@@ -11,6 +11,7 @@ import { GuidePartNavigation } from '@/components/guide-part-navigation';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
+import { truncateMetaDescription } from '@/lib/meta-description';
 import { RelatedPosts } from '@/components/related-posts';
 import type { Metadata } from 'next';
 
@@ -44,16 +45,17 @@ export async function generateMetadata({
   // Prefer the longer SEO title for the <title> tag and social cards
   // when the frontmatter sets one. Display headings still use guide.title.
   const pageTitle = guide.seoTitle || guide.title;
+  const description = truncateMetaDescription(guide.description);
 
   return {
     title: { absolute: pageTitle },
-    description: guide.description,
+    description,
     alternates: {
       canonical: `/guides/${slug}`,
     },
     openGraph: {
       title: pageTitle,
-      description: guide.description,
+      description,
       url: `/guides/${slug}`,
       type: 'article',
       images: [
@@ -72,7 +74,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: pageTitle,
-      description: guide.description,
+      description,
       images: [socialImage || guide.image || '/og-image.png'],
     },
   };

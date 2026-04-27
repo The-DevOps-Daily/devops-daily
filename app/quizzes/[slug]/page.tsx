@@ -3,6 +3,7 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import GenericQuiz from '@/components/games/generic-quiz';
 import { getQuizById, getAllQuizzes, getRelatedQuizzes } from '@/lib/quiz-loader';
+import { truncateMetaDescription } from '@/lib/meta-description';
 import { ReportIssue } from '@/components/report-issue';
 import { ArrowLeft, Twitter, Facebook, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,15 +37,17 @@ export async function generateMetadata({
     return {};
   }
 
+  const description = truncateMetaDescription(quizConfig.description);
+
   return {
     title: { absolute: `${quizConfig.title} - Learn ${quizConfig.category}` },
-    description: quizConfig.description,
+    description,
     alternates: {
       canonical: `/quizzes/${slug}`,
     },
     openGraph: {
       title: `${quizConfig.title} - DevOps Daily`,
-      description: quizConfig.description,
+      description,
       type: 'website',
       url: `/quizzes/${slug}`,
       images: [
@@ -59,7 +62,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: `${quizConfig.title} - DevOps Daily`,
-      description: quizConfig.description,
+      description,
       images: [`/images/quizzes/${slug}-og.png`],
     },
   };

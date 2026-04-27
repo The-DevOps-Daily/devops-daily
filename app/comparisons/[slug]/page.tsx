@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getComparisonBySlug, getAllComparisons } from '@/lib/comparisons';
 import { ComparisonPageClient } from '@/components/comparisons/comparison-page-client';
 import { BreadcrumbSchema, ArticleSchema } from '@/components/schema-markup';
+import { truncateMetaDescription } from '@/lib/meta-description';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -31,7 +32,7 @@ export async function generateMetadata({
   }
 
   const title = `${comparison.toolA.name} vs ${comparison.toolB.name}: Feature Comparison, Pros/Cons, and Verdict`;
-  const description = comparison.description;
+  const description = truncateMetaDescription(comparison.description);
   const socialImage = `/images/comparisons/${comparison.slug}-og.png`;
 
   return {

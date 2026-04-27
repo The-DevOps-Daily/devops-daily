@@ -5,6 +5,7 @@ import { interviewQuestions, getQuestionBySlug } from '@/content/interview-quest
 import { InterviewQuestionPage } from '@/components/interview-questions/interview-question-page';
 import { PageHero } from '@/components/page-hero';
 import { getSocialImagePath } from '@/lib/image-utils';
+import { truncateMetaDescription } from '@/lib/meta-description';
 import type { ExperienceTier } from '@/lib/interview-utils';
 
 const validTiers: ExperienceTier[] = ['junior', 'mid', 'senior'];
@@ -36,7 +37,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const socialImage = getSocialImagePath(slug, 'interview-questions');
-  const description = `${question.question} - ${question.category} interview question for ${tier} DevOps engineers`;
+  // Some questions are long enough that the auto-built description blows
+  // past 160 chars; trim at sentence boundary so Google does not truncate.
+  const description = truncateMetaDescription(
+    `${question.question} - ${question.category} interview question for ${tier} DevOps engineers`,
+  );
   
   return {
     title: { absolute: `${question.title} - Interview Question` },

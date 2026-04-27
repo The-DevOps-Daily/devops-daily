@@ -8,6 +8,7 @@ import { ArrowLeft, BookOpen, Clock, Layers } from 'lucide-react'
 import Link from 'next/link'
 import * as Icons from 'lucide-react'
 import { PageHero } from '@/components/page-hero'
+import { truncateMetaDescription } from '@/lib/meta-description'
 
 interface FlashcardPageProps {
   params: Promise<{
@@ -32,15 +33,17 @@ export async function generateMetadata({ params }: FlashcardPageProps): Promise<
     }
   }
 
+  const description = truncateMetaDescription(flashcardSet.description)
+
   return {
     title: { absolute: `${flashcardSet.title} - DevOps Flashcards` },
-    description: flashcardSet.description,
+    description,
     alternates: {
       canonical: `/flashcards/${id}`,
     },
     openGraph: {
       title: `${flashcardSet.title} - DevOps Daily`,
-      description: flashcardSet.description,
+      description,
       type: 'website',
       url: `/flashcards/${id}`,
       images: [
@@ -55,7 +58,7 @@ export async function generateMetadata({ params }: FlashcardPageProps): Promise<
     twitter: {
       card: 'summary_large_image',
       title: `${flashcardSet.title} - DevOps Daily`,
-      description: flashcardSet.description,
+      description,
       images: [`/images/flashcards/${id}-og.png`],
     },
   }
