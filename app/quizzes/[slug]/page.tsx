@@ -46,6 +46,7 @@ export async function generateMetadata({
       title: `${quizConfig.title} - DevOps Daily`,
       description: quizConfig.description,
       type: 'website',
+      url: `/quizzes/${slug}`,
       images: [
         {
           url: `/images/quizzes/${slug}-og.png`,

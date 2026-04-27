@@ -12,11 +12,21 @@ export const metadata: Metadata = {
     title: 'Search | DevOps Daily',
     description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',
     type: 'website',
+    url: '/search',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'DevOps Daily Search',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Search | DevOps Daily',
     description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',
+    images: ['/og-image.jpg'],
   },
 };
 

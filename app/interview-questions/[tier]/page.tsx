@@ -47,11 +47,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: meta.description,
       type: 'website',
       url: `/interview-questions/${tier}`,
+      images: [
+        {
+          url: '/og-image.jpg',
+          width: 1200,
+          height: 630,
+          alt: meta.title,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: meta.title,
       description: meta.description,
+      images: ['/og-image.jpg'],
     },
   };
 }
