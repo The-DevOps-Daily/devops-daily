@@ -48,10 +48,10 @@ This guide teaches you how to implement security gates using policy-as-code, aut
 
 This guide covers essential security gate implementations:
 
-1. **[Policy as Code](./01-policy-as-code)** — OPA, Kyverno, and admission control
-2. **[Vulnerability Gates](./02-vulnerability-gates)** — Fail builds on critical CVEs
-3. **[Compliance Gates](./03-compliance-gates)** — CIS benchmarks, PCI-DSS, SOC 2
-4. **[CI/CD Integration](./04-cicd-integration)** — Automated enforcement in your pipeline
+1. **[Policy as Code](/guides/security-gates/01-policy-as-code)** — OPA, Kyverno, and admission control
+2. **[Vulnerability Gates](/guides/security-gates/02-vulnerability-gates)** — Fail builds on critical CVEs
+3. **[Compliance Gates](/guides/security-gates/03-compliance-gates)** — CIS benchmarks, PCI-DSS, SOC 2
+4. **[CI/CD Integration](/guides/security-gates/04-cicd-integration)** — Automated enforcement in your pipeline
 
 ## Types of Security Gates
 
@@ -270,10 +270,10 @@ Document and track accepted risks/false positives.
 
 Start implementing security gates:
 
-1. **[Policy as Code](./01-policy-as-code)** — Write and enforce security policies
-2. **[Vulnerability Gates](./02-vulnerability-gates)** — Block critical CVEs
-3. **[Compliance Gates](./03-compliance-gates)** — Automate compliance checks
-4. **[CI/CD Integration](./04-cicd-integration)** — Integrate gates into your pipeline
+1. **[Policy as Code](/guides/security-gates/01-policy-as-code)** — Write and enforce security policies
+2. **[Vulnerability Gates](/guides/security-gates/02-vulnerability-gates)** — Block critical CVEs
+3. **[Compliance Gates](/guides/security-gates/03-compliance-gates)** — Automate compliance checks
+4. **[CI/CD Integration](/guides/security-gates/04-cicd-integration)** — Integrate gates into your pipeline
 
 ---
 

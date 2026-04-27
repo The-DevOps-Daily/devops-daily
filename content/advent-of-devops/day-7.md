@@ -159,10 +159,10 @@ module "bucket_with_lifecycle" {
 
 ## Examples
 
-- [Basic](./examples/basic) - Simple bucket creation
-- [With Lifecycle](./examples/with-lifecycle) - Lifecycle rules
-- [Encrypted](./examples/encrypted) - KMS encryption
-- [Complete](./examples/complete) - All features
+- **Basic** - Simple bucket creation
+- **With Lifecycle** - Lifecycle rules
+- **Encrypted** - KMS encryption
+- **Complete** - All features
 
 ## Development
 
@@ -199,11 +199,11 @@ cd test && go test -v
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md)
+See `CONTRIBUTING.md` in the repo for the contribution guidelines.
 
 ## License
 
-MIT Licensed. See [LICENSE](./LICENSE)
+MIT Licensed. See the `LICENSE` file in the repo.
 ```
 
 ### CI/CD Pipeline
