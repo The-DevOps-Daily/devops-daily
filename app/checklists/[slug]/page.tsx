@@ -4,6 +4,7 @@ import { getAllChecklists, getChecklistBySlug } from '@/lib/checklists';
 import { ChecklistPageClient } from '@/components/checklists/checklist-page-client';
 import { PageHero } from '@/components/page-hero';
 import { ListChecks } from 'lucide-react';
+import { truncateMetaDescription } from '@/lib/meta-description';
 
 export async function generateStaticParams() {
   const checklists = await getAllChecklists();
@@ -24,15 +25,17 @@ export async function generateMetadata(
     };
   }
 
+  const description = truncateMetaDescription(checklist.description);
+
   return {
    title: { absolute: checklist.title },
-   description: checklist.description,
+   description,
    alternates: {
      canonical: `/checklists/${resolvedParams.slug}`,
    },
    openGraph: {
      title: `${checklist.title} - The DevOps Daily`,
-    description: checklist.description,
+    description,
     type: 'website',
     url: `/checklists/${resolvedParams.slug}`,
     siteName: 'The DevOps Daily',
@@ -51,7 +54,7 @@ export async function generateMetadata(
     site: '@TheDevOpsDaily',
     creator: '@TheDevOpsDaily',
     title: `${checklist.title} - The DevOps Daily`,
-    description: checklist.description,
+    description,
     images: [`/images/checklists/${resolvedParams.slug}-og.png`],
    },
   };

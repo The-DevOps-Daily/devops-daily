@@ -1,6 +1,7 @@
 // lib/game-metadata.ts
 import type { Metadata } from 'next';
 import { getGameById } from './games';
+import { truncateMetaDescription } from './meta-description';
 
 /**
  * Generate Next.js metadata for a game page
@@ -19,7 +20,7 @@ export async function generateGameMetadata(gameId: string): Promise<Metadata> {
   // Falls back to the display title for games that already read fine.
   const pageTitle = game.seoTitle || game.title;
   const title = `${pageTitle} - DevOps Daily`;
-  const description = game.description;
+  const description = truncateMetaDescription(game.description);
   const ogImage = `/images/games/${gameId}-og.png`;
 
   return {

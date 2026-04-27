@@ -8,6 +8,7 @@ import { notFound } from 'next/navigation';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { FolderOpen } from 'lucide-react';
 import Link from 'next/link';
+import { truncateMetaDescription } from '@/lib/meta-description';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -36,15 +37,26 @@ export async function generateMetadata({
     return {};
   }
 
+  // Old template prefixed every category description with a generic
+  // "Explore the X category for articles, tutorials, and guides covering
+  // DevOps practices." which alone is ~95 chars and pushed every page
+  // over Google's 160-char meta cap. Switch to the category's own short
+  // description (punchy and keyword-rich) and truncate as a safety net.
+  const baseDescription =
+    category.description ||
+    category.longDescription ||
+    `${category.name} articles, tutorials, and guides on DevOps Daily.`;
+  const description = truncateMetaDescription(baseDescription);
+
   return {
     title: { absolute: `Category: ${category.name} - DevOps Articles and Tutorials` },
-    description: `Explore the ${category.name} category for articles, tutorials, and guides covering DevOps practices. ${category.longDescription || category.description}`,
+    description,
     alternates: {
       canonical: `/categories/${slug}`,
     },
     openGraph: {
       title: `Category: ${category.name} - DevOps Articles and Tutorials`,
-      description: `Explore the ${category.name} category for articles, tutorials, and guides covering DevOps practices. ${category.longDescription || category.description}`,
+      description,
       url: `/categories/${slug}`,
       type: 'website',
       images: [
@@ -59,7 +71,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: `Category: ${category.name} - DevOps Articles and Tutorials`,
-      description: `Explore the ${category.name} category for articles, tutorials, and guides covering DevOps practices. ${category.longDescription || category.description}`,
+      description,
       images: ['/og-image.png'],
     },
   };

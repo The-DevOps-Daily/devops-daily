@@ -11,6 +11,7 @@ import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
+import { truncateMetaDescription } from '@/lib/meta-description';
 
 import type { Metadata } from 'next';
 
@@ -42,20 +43,24 @@ export async function generateMetadata({
   }
 
   const socialImage = getSocialImagePath(slug, 'posts');
+  // post.excerpt is shown in full on the page itself, but Google clips
+  // descriptions over ~160 chars. Trim at the last sentence boundary so
+  // the meta tag stays in range without dropping keywords.
+  const metaDescription = truncateMetaDescription(post.excerpt);
 
   return {
     // Absolute: skip the '%s | DevOps Daily' layout template. Post titles
     // are always topic-specific and rank better without the redundant
     // brand suffix. OG + Twitter below keep the brand in social previews.
     title: { absolute: post.title },
-    description: post.excerpt,
+    description: metaDescription,
     alternates: {
       canonical: `/posts/${post.slug}`,
     },
     openGraph: {
       type: 'article',
       title: post.title,
-      description: post.excerpt,
+      description: metaDescription,
       url: `/posts/${post.slug}`,
       images: [
         {
@@ -73,7 +78,7 @@ export async function generateMetadata({
     twitter: {
       card: 'summary_large_image',
       title: post.title,
-      description: post.excerpt,
+      description: metaDescription,
       images: [socialImage || post.image || '/og-image.png'],
     },
   };
