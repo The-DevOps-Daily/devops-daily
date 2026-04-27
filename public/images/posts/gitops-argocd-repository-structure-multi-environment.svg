@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0f172a"/>
+  <rect x="0" y="0" width="12" height="630" fill="#d97706"/>
+  <text x="80" y="120" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="700" fill="#fbbf24" letter-spacing="3">DEVOPS</text>
+  <text x="80" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="68" font-weight="800" fill="#f8fafc"><tspan x="80" dy="0">GitOps with Argo CD:</tspan><tspan x="80" dy="88">Structuring Your Repository</tspan><tspan x="80" dy="88">for Multi-Environment</tspan><tspan x="80" dy="88">Deployments</tspan></text>
+  <text x="80" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#94a3b8">devops-daily.com</text>
+</svg>
