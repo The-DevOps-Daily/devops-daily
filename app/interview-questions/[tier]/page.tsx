@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { interviewQuestions, getQuestionsByTier, getAllCategories } from '@/content/interview-questions';
 import { InterviewTierPage } from '@/components/interview-questions/interview-tier-page';
@@ -98,6 +99,31 @@ export default async function TierPage({ params }: PageProps) {
         questions={questions}
         categories={categories}
       />
+      {/* All-questions index. Server-rendered so the slug pages are
+          actually linked from somewhere - without these links every
+          /interview-questions/{tier}/{slug} page is an SEO orphan. */}
+      <section className="container mx-auto px-4 max-w-4xl py-12 border-t">
+        <h2 className="text-2xl font-bold mb-2">All {tierLabel} Questions</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Browse every {tierLabel.toLowerCase()} question with its own page.
+          Useful for sharing, bookmarking, or jumping straight to a topic.
+        </p>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+          {questions.map((q) => (
+            <li key={q.id}>
+              <Link
+                href={`/interview-questions/${tier}/${q.slug}`}
+                className="text-sm text-foreground hover:text-primary hover:underline"
+              >
+                {q.title}
+              </Link>
+              <span className="ml-2 text-xs text-muted-foreground">
+                {q.category}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
     </>
   );
 }

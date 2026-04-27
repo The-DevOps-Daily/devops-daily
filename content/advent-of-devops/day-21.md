@@ -91,8 +91,8 @@ project-template/
 # Project Name
 
 [![CI](https://github.com/username/repo/workflows/CI/badge.svg)](https://github.com/username/repo/actions)
-[![License](https://img.shields.io/github/license/username/repo)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+![License](https://img.shields.io/github/license/username/repo)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
 
 > Brief description of what this project does
 
@@ -208,11 +208,11 @@ npm run test:coverage
 
 ## Deployment
 
-See [DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment instructions.
+See `docs/DEPLOYMENT.md` in the repo for deployment instructions.
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](docs/CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Please read `docs/CONTRIBUTING.md` in the repo for details on our code of conduct and the process for submitting pull requests.
 
 ## License
 
