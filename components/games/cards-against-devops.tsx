@@ -614,9 +614,9 @@ return (
               <div className="w-12 h-12 rounded-md bg-primary/10 flex items-center justify-center">
                 <Heart className="w-6 h-6 text-primary" />
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-primary">
+              <h2 className="text-3xl sm:text-4xl font-bold text-primary">
                 Cards Against DevOps
-              </h1>
+              </h2>
             </div>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               The hilariously inappropriate DevOps party game. Fill in the blanks with the most

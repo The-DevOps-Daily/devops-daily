@@ -1359,7 +1359,7 @@ Swap:       2097152           0     2097152`;
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-3 mb-4">
           <Terminal className="h-10 w-10 text-green-500" />
-          <h1 className="text-3xl md:text-4xl font-bold">Learn Linux</h1>
+          <h2 className="text-3xl md:text-4xl font-bold">Learn Linux</h2>
         </div>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Master essential Linux commands through interactive lessons.

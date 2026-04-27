@@ -404,9 +404,9 @@ export default function DevOpsMemes() {
             </Badge>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold mb-4 bg-linear-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
+          <h2 className="text-4xl md:text-6xl font-bold mb-4 bg-linear-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
             🧪 You Might Be a DevOps Engineer If...
-          </h1>
+          </h2>
 
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Auto-generating hilarious (and painfully accurate) DevOps memes. Each click brings a new

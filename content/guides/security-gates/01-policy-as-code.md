@@ -3,8 +3,6 @@ title: 'Policy as Code'
 description: 'Write and enforce security policies using OPA, Kyverno, and Conftest. Automate policy validation in CI/CD and Kubernetes admission control.'
 ---
 
-# Policy as Code
-
 Policy as Code lets you define security requirements as code, version control them, and enforce them automatically. Instead of PDF documents that nobody reads, you write executable policies that block non-compliant changes.
 
 ## Why Policy as Code?

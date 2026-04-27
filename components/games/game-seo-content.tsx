@@ -27,7 +27,7 @@ export function GameSeoContent({
     <>
       {/* Visually hidden but indexable by crawlers */}
       <div className="sr-only">
-        <h1>{title}</h1>
+        <h2>{title}</h2>
         <p>{description}</p>
         {category && <p>Category: {category}</p>}
         {learningPoints && learningPoints.length > 0 && (
@@ -48,7 +48,7 @@ export function GameSeoContent({
       {/* Fallback for users with JavaScript disabled */}
       <noscript>
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-4">{title}</h1>
+          <h2 className="text-3xl font-bold mb-4">{title}</h2>
           <p className="text-lg mb-4">{description}</p>
           {learningPoints && learningPoints.length > 0 && (
             <>

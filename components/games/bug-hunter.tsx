@@ -365,9 +365,9 @@ return (
            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center">
              <Bug className="w-7 h-7 text-white" />
            </div>
-           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white">
+           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white">
              Bug Hunter
-           </h1>
+           </h2>
          </div>
          <p className="text-xl text-slate-600 dark:text-gray-400 max-w-2xl mx-auto">
          Control a glitch that infects healthy servers. Grow longer with each infection, but don't crash!

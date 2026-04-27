@@ -379,9 +379,9 @@ export default function CICDStackGenerator() {
 
   return (
     <div className="flex flex-col items-center w-full max-w-4xl mx-auto my-8">
-      <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center text-primary">
+      <h2 className="text-3xl md:text-4xl font-bold mb-4 text-center text-primary">
         CI/CD Stack Generator
-      </h1>
+      </h2>
 
       <p className="text-center text-muted-foreground mb-8 max-w-2xl">
         Spin the wheels to get your perfect (or perfectly cursed) DevOps stack!

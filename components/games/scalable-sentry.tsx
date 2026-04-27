@@ -1269,7 +1269,7 @@ export default function ScalableSentry() {
               "absolute inset-0 flex flex-col items-center justify-center backdrop-blur-sm rounded-lg z-20",
               isDark ? "bg-slate-950/95" : "bg-white/95"
             )}>
-                <h1 className="text-5xl font-black text-primary mb-2">SCALABLE SENTRY</h1>
+                <h2 className="text-5xl font-black text-primary mb-2">SCALABLE SENTRY</h2>
                 <p className={cn(
                   "mb-8 tracking-widest uppercase text-sm",
                   isDark ? "text-slate-400" : "text-gray-600"
@@ -1306,7 +1306,7 @@ export default function ScalableSentry() {
         {gameState === 'gameover' && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-950/90 backdrop-blur-md rounded-lg z-20">
                 <AlertTriangle size={64} className="text-red-500 mb-4" />
-                <h1 className="text-4xl font-bold text-white mb-2">SYSTEM CRITICAL</h1>
+                <h2 className="text-4xl font-bold text-white mb-2">SYSTEM CRITICAL</h2>
                 <p className="text-red-200 mb-2">503 Service Unavailable</p>
                 <p className="text-red-300 text-sm mb-6">
                   Processed: {stats.requestsProcessed} | Dropped: {stats.requestsDropped} | Wave: {stats.wave}

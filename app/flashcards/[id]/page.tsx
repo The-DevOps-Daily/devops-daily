@@ -113,7 +113,7 @@ export default async function FlashcardPage({ params }: FlashcardPageProps) {
                 </Badge>
                 <Badge variant="outline">{flashcardSet.category}</Badge>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">{flashcardSet.title}</h1>
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">{flashcardSet.title}</h2>
               <p className="text-lg text-muted-foreground mb-4">{flashcardSet.description}</p>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">

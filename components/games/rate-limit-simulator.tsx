@@ -413,9 +413,9 @@ export default function RateLimitSimulator() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center space-y-4"
       >
-        <h1 className="text-4xl md:text-5xl font-bold text-primary">
+        <h2 className="text-4xl md:text-5xl font-bold text-primary">
           Rate Limit Simulator
-        </h1>
+        </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Learn rate limiting, backoff strategies, and API throttling through interactive simulation
         </p>

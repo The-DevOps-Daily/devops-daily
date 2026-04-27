@@ -47,7 +47,7 @@ export function InterviewQuestionPage({ question, tier }: InterviewQuestionPageP
           </Badge>
           <Badge variant="outline">{question.category}</Badge>
         </div>
-        <h1 className="text-4xl font-bold mb-4">{question.title}</h1>
+        <h2 className="text-4xl font-bold mb-4">{question.title}</h2>
       </div>
 
       {/* Question */}

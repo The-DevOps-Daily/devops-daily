@@ -3,8 +3,6 @@ title: "Compliance Gates"
 description: "Enforce regulatory requirements and security standards in CI/CD pipelines"
 ---
 
-# Compliance Gates
-
 Compliance gates ensure infrastructure and applications meet regulatory requirements (PCI-DSS, SOC 2, HIPAA, CIS Benchmarks) before deployment.
 
 ## Overview
