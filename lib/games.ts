@@ -2,6 +2,15 @@
 export interface Game {
   id: string;
   title: string;
+  /**
+   * Optional longer title used only for the <title> tag and OG/Twitter
+   * cards. SEO tools flag titles under ~30 chars; some games (Bug Hunter,
+   * BCDR Simulator) have short display titles that read fine on cards
+   * but are too short on their own as page titles. Set this when the
+   * display title needs more context for search engines and social
+   * previews.
+   */
+  seoTitle?: string;
   description: string;
   iconName: string;
   badgeText?: string;
@@ -151,6 +160,7 @@ const games: Game[] = [
     id: 'bcdr-simulator',
     type: 'simulator',
     title: 'BCDR Simulator',
+    seoTitle: 'BCDR Simulator: Interactive Disaster Recovery Planning',
     description:
       'Learn Business Continuity & Disaster Recovery with interactive RTO/RPO planning, failover strategies, and disaster scenarios. Understand hot, warm, and cold DR sites.',
     iconName: 'Shield',
@@ -242,6 +252,7 @@ const games: Game[] = [
     id: 'bug-hunter',
     type: 'game',
     title: 'Bug Hunter',
+    seoTitle: 'Bug Hunter: Snake-Style DevOps Game in the Browser',
     description:
       'DevOps-themed Snake game where you control a bug that infects healthy servers. Grow longer with each infection, but avoid crashing into walls or yourself!',
     iconName: 'Bug',

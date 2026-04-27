@@ -41,15 +41,18 @@ export async function generateMetadata({
   }
 
   const socialImage = getSocialImagePath(slug, 'guides');
+  // Prefer the longer SEO title for the <title> tag and social cards
+  // when the frontmatter sets one. Display headings still use guide.title.
+  const pageTitle = guide.seoTitle || guide.title;
 
   return {
-    title: { absolute: guide.title },
+    title: { absolute: pageTitle },
     description: guide.description,
     alternates: {
       canonical: `/guides/${slug}`,
     },
     openGraph: {
-      title: guide.title,
+      title: pageTitle,
       description: guide.description,
       url: `/guides/${slug}`,
       type: 'article',
@@ -68,7 +71,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: guide.title,
+      title: pageTitle,
       description: guide.description,
       images: [socialImage || guide.image || '/og-image.jpg'],
     },

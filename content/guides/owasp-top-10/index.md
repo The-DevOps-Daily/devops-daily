@@ -1,5 +1,6 @@
 ---
 title: 'OWASP Top 10'
+seoTitle: 'OWASP Top 10: Web Application Security Risks Guide'
 description: 'Learn about the OWASP Top 10 web application security risks. Understand each vulnerability, see real-world examples, and learn how to prevent them in your applications.'
 category:
   name: 'Security'
