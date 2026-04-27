@@ -97,7 +97,7 @@
     "lucide-react": "^0.575.0",
     "marked": "^17.0.6",
     "marked-gfm-heading-id": "^4.1.4",
-    "marked-highlight": "^2.2.3",
+    "marked-highlight": "^2.2.4",
     "next": "16.2.4",
     "next-themes": "latest",
     "openai": "^6.34.0",
