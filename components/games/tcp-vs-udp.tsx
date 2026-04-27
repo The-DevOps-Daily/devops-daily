@@ -417,9 +417,9 @@ export default function TcpVsUdpSimulator() {
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-700 pb-4">
           <div>
-            <h1 className="text-3xl font-bold text-primary">
+            <h2 className="text-3xl font-bold text-primary">
               Protocol Simulator
-            </h1>
+            </h2>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
               Visualize the 3-Way Handshake and Reliability mechanisms.
             </p>

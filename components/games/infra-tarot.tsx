@@ -367,9 +367,9 @@ export default function InfraTarot() {
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, duration: 0.5 }}
               >
-                <h1 className="text-5xl md:text-7xl font-bold text-primary">
+                <h2 className="text-5xl md:text-7xl font-bold text-primary">
                   Infra Tarot
-                </h1>
+                </h2>
               </motion.div>
               <motion.div
                 animate={{

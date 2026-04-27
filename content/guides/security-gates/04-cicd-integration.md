@@ -3,8 +3,6 @@ title: "CI/CD Integration"
 description: "Complete security gate orchestration across GitHub Actions, GitLab CI, and Jenkins"
 ---
 
-# CI/CD Integration
-
 Orchestrating multiple security gates in CI/CD pipelines requires careful sequencing, parallel execution, and failure handling to balance security with developer velocity.
 
 ## Complete Pipeline Architecture

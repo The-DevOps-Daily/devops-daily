@@ -422,9 +422,9 @@ export default function UptimeDefender() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center"
         >
-          <h1 className="text-5xl font-bold mb-4 bg-linear-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
+          <h2 className="text-5xl font-bold mb-4 bg-linear-to-r from-green-500 to-emerald-600 bg-clip-text text-transparent">
             Uptime Defender
-          </h1>
+          </h2>
           <p className="text-xl text-muted-foreground mb-8">
             Defend your infrastructure's uptime against incoming incidents!
           </p>
@@ -517,9 +517,9 @@ export default function UptimeDefender() {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center"
         >
-          <h1 className="text-5xl font-bold mb-4">
+          <h2 className="text-5xl font-bold mb-4">
             {uptime > 0 ? '🎉 Mission Complete!' : '💥 System Down!'}
-          </h1>
+          </h2>
 
           {isNewHighScore && (
             <motion.div

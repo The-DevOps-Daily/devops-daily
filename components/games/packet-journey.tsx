@@ -522,10 +522,10 @@ export default function PacketJourney() {
        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-primary flex items-center gap-3">
+            <h2 className="text-4xl font-bold text-primary flex items-center gap-3">
               <Sparkles className="w-8 h-8 text-primary" />
               Network Packet Journey
-            </h1>
+            </h2>
             <p className={cn(
               "mt-2",
               isDark ? "text-slate-300" : "text-gray-600"

@@ -387,7 +387,7 @@ export default function GitOpsWorkflow() {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 mb-4">
               <GitBranch className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-4xl font-bold mb-4">GitOps Workflow Simulator</h1>
+            <h2 className="text-4xl font-bold mb-4">GitOps Workflow Simulator</h2>
             <p className="text-xl text-muted-foreground mb-8">
               Learn GitOps principles through interactive scenarios
             </p>
@@ -1060,7 +1060,7 @@ export default function GitOpsWorkflow() {
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 mb-6">
             <CheckCircle2 className="w-12 h-12 text-white" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">Great Work!</h1>
+          <h2 className="text-4xl font-bold mb-4">Great Work!</h2>
           <p className="text-xl text-muted-foreground">
             You\'ve completed the GitOps Workflow Simulator
           </p>

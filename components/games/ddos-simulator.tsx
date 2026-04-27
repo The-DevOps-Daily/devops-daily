@@ -587,9 +587,9 @@ export default function DDoSSimulator() {
             <div className="w-12 h-12 rounded-md bg-red-500 flex items-center justify-center">
               <Shield className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary">
               DDoS Attack Simulator
-            </h1>
+            </h2>
           </div>
           <p className={cn(
             "text-lg max-w-2xl mx-auto mb-4",

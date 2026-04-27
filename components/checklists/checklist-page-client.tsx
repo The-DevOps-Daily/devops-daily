@@ -97,9 +97,9 @@ export function ChecklistPageClient({ checklist }: ChecklistPageClientProps) {
           </span>
         </div>
 
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3">
+        <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3">
           {checklist.title}
-        </h1>
+        </h2>
         <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
           {checklist.description}
         </p>
