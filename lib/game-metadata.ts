@@ -15,7 +15,10 @@ export async function generateGameMetadata(gameId: string): Promise<Metadata> {
     };
   }
 
-  const title = `${game.title} - DevOps Daily`;
+  // Prefer the longer SEO title for the page <title> when one is set.
+  // Falls back to the display title for games that already read fine.
+  const pageTitle = game.seoTitle || game.title;
+  const title = `${pageTitle} - DevOps Daily`;
   const description = game.description;
   const ogImage = `/images/games/${gameId}-og.png`;
 
@@ -25,7 +28,7 @@ export async function generateGameMetadata(gameId: string): Promise<Metadata> {
     // picked up by Google from the Organization/WebSite schema. OG + Twitter
     // titles below keep the suffix because social previews benefit from
     // brand presence.
-    title: { absolute: game.title },
+    title: { absolute: pageTitle },
     description,
     alternates: {
       canonical: game.href,

@@ -1,5 +1,6 @@
 ---
 title: 'Security Gates'
+seoTitle: 'Security Gates: Block Risky Deployments in CI/CD'
 description: 'Implement automated security gates that block deployments on critical vulnerabilities, policy violations, and security failures. Shift security left in your CI/CD pipeline.'
 category:
   name: 'Security'

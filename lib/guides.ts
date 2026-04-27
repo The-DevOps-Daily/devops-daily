@@ -24,6 +24,13 @@ export type GuidePart = {
 
 export type Guide = {
   title: string;
+  /**
+   * Optional longer title used only for the <title> tag and OG/Twitter
+   * cards. Display headings stay short; the page title can carry more
+   * descriptive text for search engines when the natural title is too
+   * brief on its own.
+   */
+  seoTitle?: string;
   slug: string;
   description?: string;
   content: string;
