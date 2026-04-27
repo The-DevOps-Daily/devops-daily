@@ -10,6 +10,7 @@ import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
+import Link from 'next/link';
 
 import type { Metadata } from 'next';
 
@@ -85,6 +86,17 @@ export default async function NewsDigestPage({
   if (!digest) {
     notFound();
   }
+
+  // Sibling weeks. The list is sorted newest-first by getAllNews(), so the
+  // "next" week (chronologically) is at idx-1 and the "previous" week is at
+  // idx+1. Used for the prev/next nav at the bottom and the "Recent digests"
+  // sidebar list - both feed real internal links to weeks that previously
+  // had no inbound links beyond the /news index.
+  const all = await getAllNews();
+  const idx = all.findIndex((n) => n.slug === digest.slug);
+  const newer = idx > 0 ? all[idx - 1] : null;
+  const older = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
+  const recent = all.filter((n) => n.slug !== digest.slug).slice(0, 5);
 
   // Breadcrumb items for schema
   const breadcrumbItems = [
@@ -162,6 +174,37 @@ export default async function NewsDigestPage({
                 <ReportIssue type="news" slug={digest.slug} title={digest.title} />
               </div>
 
+              {/* Prev / next week nav. Gives every weekly digest an inbound
+                  internal link from at least its sibling weeks. */}
+              {(newer || older) && (
+                <nav className="mt-12 pt-8 border-t grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {older ? (
+                    <Link
+                      href={`/news/${older.slug}`}
+                      className="rounded-lg border p-4 hover:bg-muted/40 transition-colors"
+                    >
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Previous digest
+                      </p>
+                      <p className="font-medium">{older.title}</p>
+                    </Link>
+                  ) : (
+                    <span />
+                  )}
+                  {newer && (
+                    <Link
+                      href={`/news/${newer.slug}`}
+                      className="rounded-lg border p-4 hover:bg-muted/40 transition-colors text-right sm:col-start-2"
+                    >
+                      <p className="text-xs text-muted-foreground mb-1">
+                        Next digest
+                      </p>
+                      <p className="font-medium">{newer.title}</p>
+                    </Link>
+                  )}
+                </nav>
+              )}
+
               {/* Giscus Discussions */}
               <GiscusComments className="mt-12" title={digest.title} />
             </article>
@@ -171,6 +214,27 @@ export default async function NewsDigestPage({
           <aside className="lg:col-span-3">
             <div className="sticky top-8 space-y-6">
               <SponsorSidebar className="!relative !top-auto" />
+
+              {/* Recent digests - five most recent siblings, server-rendered
+                  so each week's links flow into the index even before the
+                  user scrolls. */}
+              {recent.length > 0 && (
+                <div className="bg-card border rounded-lg p-6">
+                  <h3 className="font-semibold mb-3">Recent digests</h3>
+                  <ul className="space-y-2">
+                    {recent.map((n) => (
+                      <li key={n.slug}>
+                        <Link
+                          href={`/news/${n.slug}`}
+                          className="text-sm text-foreground hover:text-primary hover:underline"
+                        >
+                          {n.title}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Share Section */}
               <div className="bg-card border rounded-lg p-6">

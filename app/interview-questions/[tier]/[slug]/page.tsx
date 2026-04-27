@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Briefcase } from 'lucide-react';
 import { interviewQuestions, getQuestionBySlug } from '@/content/interview-questions';
@@ -87,6 +88,21 @@ export default async function QuestionPage({ params }: PageProps) {
 
   const capitalizedTier = tier.charAt(0).toUpperCase() + tier.slice(1);
 
+  // Related questions - same category, any tier (not just this one), excluding
+  // the current question. Sorted: same-tier first, then other tiers. Capped
+  // to 5 so the section stays readable but still gives crawlers and readers
+  // a meaningful set of next-step links.
+  const related = interviewQuestions
+    .filter(
+      (q) => q.category === question.category && q.slug !== question.slug,
+    )
+    .sort((a, b) => {
+      if (a.tier === tier && b.tier !== tier) return -1;
+      if (a.tier !== tier && b.tier === tier) return 1;
+      return a.title.localeCompare(b.title);
+    })
+    .slice(0, 5);
+
   return (
     <>
       <PageHero
@@ -100,6 +116,31 @@ export default async function QuestionPage({ params }: PageProps) {
         ]}
       />
       <InterviewQuestionPage question={question} tier={tier as ExperienceTier} />
+
+      {related.length > 0 && (
+        <section className="container mx-auto px-4 max-w-4xl pb-12">
+          <h2 className="text-xl font-semibold mb-4">
+            More {question.category} interview questions
+          </h2>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+            {related.map((q) => (
+              <li key={q.id}>
+                <Link
+                  href={`/interview-questions/${q.tier}/${q.slug}`}
+                  className="text-sm text-foreground hover:text-primary hover:underline"
+                >
+                  {q.title}
+                </Link>
+                {q.tier !== tier && (
+                  <span className="ml-2 text-xs text-muted-foreground">
+                    {q.tier}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }
