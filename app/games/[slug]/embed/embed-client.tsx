@@ -1,6 +1,7 @@
 'use client';
 
 import { useSearchParams, usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
 import { EmbedBadge } from '@/components/embed';
 import { Suspense, useEffect } from 'react';
 
@@ -15,9 +16,24 @@ function EmbedContent({ slug, title, GameComponent }: EmbedClientProps) {
   const theme = searchParams.get('theme') || 'dark';
   const hideTitle = searchParams.get('hideTitle') === 'true';
   const pathname = usePathname();
+  const { setTheme } = useTheme();
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
   const gameUrl = `${siteUrl}/games/${slug}`;
+
+  // Apply the embed's theme via next-themes so the host site's iframe
+  // renders in light/dark regardless of the visitor's system preference.
+  // theme=auto falls back to whatever the user has - same as the regular
+  // site behaviour. The previous `data-theme={theme}` attribute had no
+  // effect because the app uses Tailwind's class-strategy theming, which
+  // requires `class="dark"` on <html>, not a data attribute.
+  useEffect(() => {
+    if (theme === 'light' || theme === 'dark') {
+      setTheme(theme);
+    } else {
+      setTheme('system');
+    }
+  }, [theme, setTheme]);
 
   // Hide header/footer when in embed mode
   useEffect(() => {
