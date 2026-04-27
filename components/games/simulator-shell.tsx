@@ -5,7 +5,7 @@ import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
 import { CarbonAds } from '@/components/carbon-ads';
-import { getGameById } from '@/lib/games';
+import { getGameById, getActiveGames } from '@/lib/games';
 import { cn } from '@/lib/utils';
 
 interface SimulatorShellProps {
@@ -56,6 +56,20 @@ export async function SimulatorShell({
   const href = game?.href ?? `/games/${slug}`;
   const category = game?.category ?? 'DevOps Simulator';
   const tags = game?.tags;
+
+  // Pick up to 3 related games. Same category first, then fall back to any
+  // active game so even niche categories have a "try next" list. Excludes
+  // the current game and anything coming-soon.
+  const allGames = await getActiveGames();
+  const sameCategory = game?.category
+    ? allGames.filter(
+        (g) => g.id !== slug && g.category === game.category,
+      )
+    : [];
+  const otherGames = allGames.filter(
+    (g) => g.id !== slug && !sameCategory.includes(g),
+  );
+  const relatedGames = [...sameCategory, ...otherGames].slice(0, 3);
 
   const shareUrl = `https://devops-daily.com${href}`;
   const defaultShareText = shareText ?? `Check out ${title} on DevOps Daily`;
@@ -111,6 +125,33 @@ export async function SimulatorShell({
           {educational && (
             <section className="w-full my-10 rounded-md border bg-muted/20 p-6">
               {educational}
+            </section>
+          )}
+
+          {/* Try next - related games. Server-rendered so each game has
+              real internal inlinks from at least 3 sibling games (was 1
+              link, from /games index, before this section existed). */}
+          {relatedGames.length > 0 && (
+            <section className="w-full my-10">
+              <h2 className="text-lg font-semibold mb-4">Try next</h2>
+              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {relatedGames.map((g) => (
+                  <li key={g.id}>
+                    <Link
+                      href={g.href}
+                      className="block rounded-lg border p-4 hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                    >
+                      <p className="text-xs text-muted-foreground font-mono mb-2">
+                        {g.type === 'simulator' ? '// simulator' : '// game'}
+                      </p>
+                      <p className="font-medium mb-1">{g.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2">
+                        {g.description}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
 
