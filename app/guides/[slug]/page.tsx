@@ -58,7 +58,7 @@ export async function generateMetadata({
       type: 'article',
       images: [
         {
-          url: socialImage || guide.image || '/og-image.jpg',
+          url: socialImage || guide.image || '/og-image.png',
           width: 1200,
           height: 630,
           alt: guide.title,
@@ -73,7 +73,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: pageTitle,
       description: guide.description,
-      images: [socialImage || guide.image || '/og-image.jpg'],
+      images: [socialImage || guide.image || '/og-image.png'],
     },
   };
 }

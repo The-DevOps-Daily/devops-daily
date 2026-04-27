@@ -59,7 +59,7 @@ export async function generateMetadata({
       url: `/posts/${post.slug}`,
       images: [
         {
-          url: socialImage || post.image || '/og-image.jpg',
+          url: socialImage || post.image || '/og-image.png',
           width: 1200,
           height: 630,
           alt: post.title,
@@ -74,7 +74,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
-      images: [socialImage || post.image || '/og-image.jpg'],
+      images: [socialImage || post.image || '/og-image.png'],
     },
   };
 }

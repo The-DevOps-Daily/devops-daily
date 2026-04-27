@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: `/interview-questions/${tier}`,
       images: [
         {
-          url: '/og-image.jpg',
+          url: '/og-image.png',
           width: 1200,
           height: 630,
           alt: meta.title,
@@ -60,7 +60,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: 'summary_large_image',
       title: meta.title,
       description: meta.description,
-      images: ['/og-image.jpg'],
+      images: ['/og-image.png'],
     },
   };
 }
