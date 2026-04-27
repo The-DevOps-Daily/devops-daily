@@ -35,6 +35,7 @@ export async function generateMetadata({
       title: newsletter.title,
       description: `Weekly roundup - Week ${newsletter.week}, ${newsletter.year}`,
       type: 'article',
+      url: `/newsletters/${slug}`,
       publishedTime: newsletter.date,
       images: [
         {

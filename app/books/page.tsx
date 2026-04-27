@@ -43,7 +43,15 @@ export const metadata: Metadata = {
     description:
       'Curated collection of the best DevOps, SRE, and Cloud Engineering books. From beginner guides to advanced practices.',
     type: 'website',
-    images: ['/images/pages/books-og.png'],
+    url: '/books',
+    images: [
+      {
+        url: '/images/pages/books-og.png',
+        width: 1200,
+        height: 630,
+        alt: 'DevOps Books',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
