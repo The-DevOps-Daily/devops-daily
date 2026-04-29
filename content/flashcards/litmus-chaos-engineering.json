@@ -1,0 +1,129 @@
+{
+  "id": "litmus-chaos-engineering",
+  "title": "Chaos Engineering with Litmus",
+  "description": "Run your first controlled failure experiments on Kubernetes with Litmus. Covers core concepts, CRDs, the pod-delete experiment, probes, and safe production practice.",
+  "category": "Chaos Engineering",
+  "icon": "Flame",
+  "difficulty": "intermediate",
+  "estimatedTime": "20 minutes",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "red",
+    "gradientFrom": "from-red-500",
+    "gradientTo": "to-orange-600"
+  },
+  "cards": [
+    {
+      "id": "chaos-engineering-purpose",
+      "front": "What problem does chaos engineering actually solve?",
+      "back": "Most production systems fail in ways nobody predicted: a slow disk, a flaky network link, a single zone going down. Chaos engineering is the practice of injecting controlled failures into running systems so you find these weaknesses before users do.\n\nInstead of waiting for an incident to discover that your retry logic doesn't work, you delete a pod on purpose and watch what happens. The goal is not to break things. The goal is to learn how the system behaves under stress and fix the gaps you find.",
+      "category": "Foundations",
+      "tags": ["chaos-engineering", "resilience", "concepts"]
+    },
+    {
+      "id": "litmus-overview",
+      "front": "What is Litmus Chaos and why pick it for Kubernetes?",
+      "back": "Litmus is an open source chaos engineering platform built specifically for Kubernetes. It runs as a set of CRDs and a controller, so you describe experiments declaratively in YAML the same way you describe Deployments.\n\nIt ships with a hub of pre-built experiments (pod-delete, container-kill, network-loss, disk-fill, node-drain, and more) so you don't have to write failure scripts from scratch. It is a CNCF incubating project and integrates cleanly with Argo Workflows and Prometheus.",
+      "category": "Foundations",
+      "tags": ["litmus", "kubernetes", "chaos-engineering"]
+    },
+    {
+      "id": "steady-state-hypothesis",
+      "front": "What is a steady state hypothesis and why does every experiment need one?",
+      "back": "A steady state hypothesis is a measurable definition of 'working normally' for your system.\n\nExample: p95 checkout latency stays under 300ms and error rate stays below 0.5%.\n\nBefore you inject chaos, you confirm the system is in steady state. After chaos, you check that it returned to steady state. Without a hypothesis, you have no way to tell whether the experiment passed or failed. You're just breaking things and hoping it looks fine.",
+      "category": "Foundations",
+      "tags": ["chaos-engineering", "hypothesis", "concepts"]
+    },
+    {
+      "id": "blast-radius",
+      "front": "What is blast radius and how do you keep it small?",
+      "back": "Blast radius is the scope of impact an experiment can have if something goes wrong. A small blast radius means one pod in dev. A large blast radius means an entire production cluster.\n\nAlways start with the smallest possible blast radius (one pod, one namespace, off-hours, in staging) and expand only after the experiment runs cleanly. In Litmus you control blast radius with namespace selectors, label selectors, PODS_AFFECTED_PERC, and ANNOTATION_CHECK.",
+      "category": "Foundations",
+      "tags": ["chaos-engineering", "blast-radius", "safety"]
+    },
+    {
+      "id": "install-litmus",
+      "front": "How do you install Litmus on a Kubernetes cluster?",
+      "back": "Use the Helm chart:\n\nhelm repo add litmuschaos https://litmuschaos.github.io/litmus-helm/\nhelm repo update\nhelm install chaos litmuschaos/litmus \\\n  --namespace litmus \\\n  --create-namespace\n\nThis installs the ChaosCenter UI, the chaos operator, and the CRDs (ChaosEngine, ChaosExperiment, ChaosResult). Verify with:\n\nkubectl get pods -n litmus\nkubectl get crds | grep litmus",
+      "category": "Installation",
+      "tags": ["litmus", "helm", "installation"]
+    },
+    {
+      "id": "litmus-architecture",
+      "front": "What are the main components of a Litmus installation?",
+      "back": "Four pieces you should know by name:\n\n1. Chaos Operator: a controller that watches ChaosEngine resources and runs experiments\n2. ChaosCenter: the web UI for designing, running, and observing experiments\n3. Chaos Runner: a per-experiment pod the operator spawns to execute the chaos action\n4. Chaos Exporter: exports experiment metrics to Prometheus\n\nChaosHub is a separate concept: the public catalog of experiment definitions you pull from.",
+      "category": "Installation",
+      "tags": ["litmus", "architecture", "components"]
+    },
+    {
+      "id": "chaosexperiment-cr",
+      "front": "What is a ChaosExperiment custom resource?",
+      "back": "A ChaosExperiment defines what failure to inject, how to inject it, and the default tunable parameters. Think of it as the recipe.\n\nExamples: pod-delete, container-kill, node-drain, network-latency, disk-fill.\n\nYou install experiments from ChaosHub:\n\nkubectl apply -f https://hub.litmuschaos.io/api/chaos/3.0.0?file=charts/generic/pod-delete/experiment.yaml -n litmus\n\nA ChaosExperiment by itself does nothing. You need a ChaosEngine to actually run it.",
+      "category": "Core Resources",
+      "tags": ["litmus", "chaosexperiment", "crd"]
+    },
+    {
+      "id": "chaosengine-cr",
+      "front": "What is a ChaosEngine and how is it different from a ChaosExperiment?",
+      "back": "A ChaosEngine is the binding between a target application and one or more ChaosExperiments. It is what triggers an experiment to run. The ChaosExperiment is the recipe, the ChaosEngine is the order to cook it.\n\napiVersion: litmuschaos.io/v1alpha1\nkind: ChaosEngine\nmetadata:\n  name: nginx-chaos\n  namespace: default\nspec:\n  appinfo:\n    appns: default\n    applabel: 'app=nginx'\n    appkind: deployment\n  chaosServiceAccount: litmus-admin\n  experiments:\n  - name: pod-delete\n    spec:\n      components:\n        env:\n        - name: TOTAL_CHAOS_DURATION\n          value: '60'",
+      "category": "Core Resources",
+      "tags": ["litmus", "chaosengine", "crd"]
+    },
+    {
+      "id": "chaosresult-cr",
+      "front": "What is a ChaosResult and where do you find the verdict?",
+      "back": "A ChaosResult is created automatically during every experiment run. It records the verdict (Pass, Fail, Awaited), the failure step if any, and probe results.\n\nRead it with:\n\nkubectl describe chaosresult <engine-name>-<experiment-name> -n <namespace>\n\nLook at status.experimentStatus.verdict and status.probeStatuses. ChaosResult is the source of truth for whether the experiment succeeded. The ChaosEngine just shows the run state.",
+      "category": "Core Resources",
+      "tags": ["litmus", "chaosresult", "crd"]
+    },
+    {
+      "id": "chaoshub",
+      "front": "What is ChaosHub and how do you pull experiments from it?",
+      "back": "ChaosHub (hub.litmuschaos.io) is the public catalog of pre-built chaos experiments. Each experiment ships with a YAML manifest, an RBAC bundle, and tunable env vars.\n\nPull and apply directly:\n\nkubectl apply -f https://hub.litmuschaos.io/api/chaos/3.0.0?file=charts/generic/pod-delete/experiment.yaml -n <namespace>\n\nYou can also host a private hub by pointing Litmus at your own Git repo. Useful when you want to vet experiments internally before they touch production.",
+      "category": "Core Resources",
+      "tags": ["litmus", "chaoshub", "experiments"]
+    },
+    {
+      "id": "pod-delete-experiment",
+      "front": "What are the steps to run a pod-delete experiment against an Nginx Deployment?",
+      "back": "Three steps:\n\n1. Install the experiment manifest from ChaosHub:\nkubectl apply -f https://hub.litmuschaos.io/api/chaos/3.0.0?file=charts/generic/pod-delete/experiment.yaml -n default\n\n2. Apply the experiment's RBAC bundle (rbac.yaml from the same chart) so the chaos service account can list and delete pods.\n\n3. Apply a ChaosEngine targeting your Nginx pods with appinfo.applabel=app=nginx and experiments[0].name=pod-delete.\n\nWatch progress:\nkubectl get chaosengine,chaosresult -n default -w\nkubectl logs -f -l name=pod-delete-runner -n default",
+      "category": "Running Experiments",
+      "tags": ["litmus", "pod-delete", "kubernetes"]
+    },
+    {
+      "id": "annotation-check",
+      "front": "What does ANNOTATION_CHECK do and why turn it on in production?",
+      "back": "ANNOTATION_CHECK is an env var on the ChaosEngine. When set to 'true', Litmus refuses to run the experiment unless the target Deployment carries the annotation:\n\nlitmuschaos.io/chaos: 'true'\n\nThis is your seatbelt. It prevents anyone from running a chaos experiment against a workload that hasn't been explicitly marked as safe to break. In shared production clusters, set ANNOTATION_CHECK to true by default and only annotate workloads whose owners have signed off.",
+      "category": "Running Experiments",
+      "tags": ["litmus", "annotation-check", "safety"]
+    },
+    {
+      "id": "probes",
+      "front": "What is a probe in Litmus and what types are available?",
+      "back": "A probe is a check Litmus runs before, during, or after the experiment to validate that your steady state holds. The verdict on the ChaosResult depends on probes passing.\n\nFour types:\n\n- httpProbe: sends an HTTP request and checks the response\n- cmdProbe: runs a shell command and checks the output\n- k8sProbe: queries the Kubernetes API (for example, pod is Ready)\n- promProbe: runs a PromQL query and compares the value\n\nProbes turn 'we deleted a pod' into 'we deleted a pod and confirmed the service kept serving 200s the whole time'.",
+      "category": "Running Experiments",
+      "tags": ["litmus", "probes", "validation"]
+    },
+    {
+      "id": "chaos-duration",
+      "front": "How do you control how long an experiment runs and how much of the workload it hits?",
+      "back": "Three env vars on the ChaosEngine experiment block:\n\nTOTAL_CHAOS_DURATION: how long the chaos lasts in seconds\nCHAOS_INTERVAL: gap between chaos actions in seconds\nPODS_AFFECTED_PERC: percent of matching pods affected per iteration (0 means a single pod)\n\nWith TOTAL_CHAOS_DURATION=60, CHAOS_INTERVAL=10, PODS_AFFECTED_PERC=20, Litmus will kill 20% of the matching pods every 10 seconds for 60 seconds total. Start at the floor (one pod, short duration) and only widen after the experiment passes cleanly.",
+      "category": "Running Experiments",
+      "tags": ["litmus", "tunables", "experiments"]
+    },
+    {
+      "id": "rbac-required",
+      "front": "What RBAC does a pod-delete experiment need, and why is cluster-admin a bad idea?",
+      "back": "The experiment needs verbs like get, list, watch, delete on pods, and create on events in the chaos namespace. Each experiment ships its own rbac.yaml from the hub. Apply that file as-is.\n\nDon't bind cluster-admin to chaosServiceAccount. The point of chaos engineering is controlled blast radius. If the chaos pod is compromised or misconfigured, you want it limited to deleting one Nginx pod, not capable of dropping the cluster. Give it only the verbs the specific experiment needs.",
+      "category": "Safety and RBAC",
+      "tags": ["litmus", "rbac", "security"]
+    },
+    {
+      "id": "production-readiness",
+      "front": "What needs to be in place before you run your first chaos experiment in production?",
+      "back": "Five things, non-negotiable:\n\n1. A clear steady state hypothesis with a metric you can read live (latency, error rate, success rate)\n2. Working monitoring and alerting so you see impact in real time\n3. An abort plan: a single command to stop the experiment immediately, like\n   kubectl delete chaosengine <name> -n <namespace>\n4. ANNOTATION_CHECK enabled and the target workload explicitly annotated\n5. A runbook signed off with the on-call engineer and the service owner\n\nIf any of these are missing, run it in staging instead. Chaos without observability is just an outage.",
+      "category": "Safety and RBAC",
+      "tags": ["litmus", "production", "safety"]
+    }
+  ]
+}
