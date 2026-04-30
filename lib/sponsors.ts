@@ -19,7 +19,7 @@ export const sponsors: Sponsor[] = [
   {
     name: 'DigitalOcean',
     logo: 'https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg',
-    url: 'https://www.jdoqocy.com/click-101674709-15836238',
+    url: 'https://m.do.co/c/2a9bba940f39',
     tagline: 'Cloud infrastructure for developers',
     description: 'Simple, reliable cloud computing designed for developers',
   },
@@ -35,7 +35,7 @@ export const sponsors: Sponsor[] = [
   {
     name: 'Acronis',
     logo: '/acronis.svg',
-    url: 'https://www.jdoqocy.com/click-101674709-10562048',
+    url: 'https://m.do.co/c/2a9bba940f39',
     tagline: 'The most secure backup',
     description: 'Acronis: the most secure backup solution for your data',
   },
