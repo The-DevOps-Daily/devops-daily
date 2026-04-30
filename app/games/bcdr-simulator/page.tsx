@@ -79,7 +79,7 @@ function BcdrEducational() {
       <div className="mt-6 rounded-md border bg-background p-6">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
           <a
-            href="https://www.jdoqocy.com/click-101674709-10562048"
+            href="https://m.do.co/c/2a9bba940f39"
             target="_blank"
             rel="noopener noreferrer sponsored"
             className="shrink-0"
@@ -100,7 +100,7 @@ function BcdrEducational() {
               Trusted by 500,000+ businesses worldwide.
             </p>
             <a
-              href="https://www.jdoqocy.com/click-101674709-10562048"
+              href="https://m.do.co/c/2a9bba940f39"
               target="_blank"
               rel="noopener noreferrer sponsored"
               className="inline-flex items-center gap-2 rounded-md border border-primary/30 px-3 py-1.5 text-sm font-mono text-primary transition-colors hover:bg-primary/10"
