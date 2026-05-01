@@ -1,0 +1,198 @@
+{
+  "id": "distributed-tracing-opentelemetry",
+  "slug": "distributed-tracing-opentelemetry",
+  "title": "Distributed Tracing with OpenTelemetry: From Instrumentation to Visualization",
+  "description": "A practical checklist for adding OpenTelemetry tracing to your services, shipping spans through the Collector, and turning that data into something you can actually debug with.",
+  "category": "Observability",
+  "difficulty": "intermediate",
+  "estimatedTime": "90-150 minutes",
+  "tags": ["opentelemetry", "distributed-tracing", "observability", "otel", "tracing"],
+  "items": [
+    {
+      "id": "map-services-and-pick-first-flows",
+      "title": "Map your services and pick the first flows to trace",
+      "description": "Don't try to instrument everything on day one. Pick two or three request flows that hurt the most when they break (checkout, login, async job pipeline) and trace those end to end. You learn the tools faster, and the data is useful immediately instead of being a wall of green spans nobody reads.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Tracing rollout plan",
+          "code": "# tracing-rollout.yaml\nphase_1_flows:\n  - name: checkout\n    services: [web-bff, orders, payments, inventory, notifications]\n    why: \"Highest revenue impact, hardest to debug today\"\n    target_date: 2026-05-15\n\n  - name: login\n    services: [web-bff, auth, sessions, user-profile]\n    why: \"Mystery 2s p99, no idea where the time goes\"\n    target_date: 2026-05-22\n\nphase_2_flows:\n  - name: search\n  - name: admin-reports\n\nout_of_scope:\n  - cron-jobs (low priority, batch)\n  - internal-tooling (no users)"
+        }
+      ]
+    },
+    {
+      "id": "deploy-otel-collector",
+      "title": "Deploy the OpenTelemetry Collector as your trace hub",
+      "description": "Don't ship spans straight from apps to your backend. Run the Collector in front. It buffers data, lets you swap backends without touching app code, and is where you do sampling, redaction, and batching. Run it as a DaemonSet (agent) on each node and a Deployment (gateway) for cluster-wide processing.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "OTel Collector config (gateway)",
+          "code": "# otel-collector-config.yaml\nreceivers:\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:4318\n\nprocessors:\n  batch:\n    timeout: 5s\n    send_batch_size: 512\n  memory_limiter:\n    check_interval: 1s\n    limit_mib: 1500\n    spike_limit_mib: 512\n  resource:\n    attributes:\n      - key: deployment.environment\n        value: production\n        action: insert\n\nexporters:\n  otlp/tempo:\n    endpoint: tempo:4317\n    tls:\n      insecure: false\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, resource, batch]\n      exporters: [otlp/tempo]"
+        },
+        {
+          "language": "yaml",
+          "label": "Helm install",
+          "code": "helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts\nhelm repo update\n\nhelm upgrade --install otel-gateway open-telemetry/opentelemetry-collector \\\n  --namespace observability --create-namespace \\\n  --set mode=deployment \\\n  --set replicaCount=3 \\\n  --values otel-collector-config.yaml"
+        }
+      ]
+    },
+    {
+      "id": "add-auto-instrumentation",
+      "title": "Add auto-instrumentation to your applications",
+      "description": "Auto-instrumentation gives you HTTP, gRPC, database, and message queue spans for free. Start there. You get 80% of the value with one import. Switch to manual spans only for the things auto-instrumentation can't see, like business logic.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Node.js auto-instrumentation",
+          "code": "// tracing.ts -- import this BEFORE any other module\nimport { NodeSDK } from '@opentelemetry/sdk-node';\nimport { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';\nimport { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';\nimport { resourceFromAttributes } from '@opentelemetry/resources';\nimport { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';\n\nconst sdk = new NodeSDK({\n  resource: resourceFromAttributes({\n    [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME || 'orders-api',\n    [ATTR_SERVICE_VERSION]: process.env.APP_VERSION || '0.0.0',\n  }),\n  traceExporter: new OTLPTraceExporter({\n    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://otel-gateway:4317',\n  }),\n  instrumentations: [\n    getNodeAutoInstrumentations({\n      '@opentelemetry/instrumentation-fs': { enabled: false },\n      '@opentelemetry/instrumentation-http': {\n        ignoreIncomingRequestHook: (req) => req.url === '/health' || req.url === '/metrics',\n      },\n    }),\n  ],\n});\n\nsdk.start();\nprocess.on('SIGTERM', () => sdk.shutdown());"
+        },
+        {
+          "language": "python",
+          "label": "Python zero-code instrumentation",
+          "code": "# Install\npip install opentelemetry-distro opentelemetry-exporter-otlp\nopentelemetry-bootstrap -a install\n\n# Run your app -- no code changes needed\nOTEL_SERVICE_NAME=orders-api \\\nOTEL_EXPORTER_OTLP_ENDPOINT=http://otel-gateway:4317 \\\nOTEL_TRACES_EXPORTER=otlp \\\nopentelemetry-instrument python app.py"
+        }
+      ]
+    },
+    {
+      "id": "propagate-trace-context",
+      "title": "Propagate trace context across every service boundary",
+      "description": "A trace that stops at the first hop is useless. Make sure W3C traceparent headers flow through every HTTP call, gRPC metadata, and message queue header. Auto-instrumentation handles this for HTTP and gRPC. For Kafka, RabbitMQ, or your own RPC, you wire it up by hand. Test it: pick a request, follow the traceparent header through every log line.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Manual context propagation for Kafka",
+          "code": "import { context, propagation, trace } from '@opentelemetry/api';\n\n// Producer: inject trace context into message headers\nasync function publishOrder(order: Order) {\n  const headers: Record<string, string> = {};\n  propagation.inject(context.active(), headers);\n\n  await producer.send({\n    topic: 'orders.created',\n    messages: [{\n      key: order.id,\n      value: JSON.stringify(order),\n      headers,\n    }],\n  });\n}\n\n// Consumer: extract context and continue the trace\nasync function handleMessage(message: KafkaMessage) {\n  const parentCtx = propagation.extract(context.active(), message.headers || {});\n  const tracer = trace.getTracer('orders-worker');\n\n  await context.with(parentCtx, async () => {\n    await tracer.startActiveSpan('process-order', async (span) => {\n      try {\n        await processOrder(JSON.parse(message.value!.toString()));\n      } finally {\n        span.end();\n      }\n    });\n  });\n}"
+        },
+        {
+          "language": "bash",
+          "label": "Verify traceparent header is forwarded",
+          "code": "# Send a request with a known trace ID and check it appears downstream\ncurl -v http://api.example.com/checkout \\\n  -H 'traceparent: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01'\n\n# Then grep your downstream service logs for that trace ID\nkubectl logs -n payments deploy/payments-api | grep 0af7651916cd43dd8448eb211c80319c"
+        }
+      ]
+    },
+    {
+      "id": "configure-sampling",
+      "title": "Pick a sampling strategy before your bill explodes",
+      "description": "Tracing every request in production will cost you a fortune and drown the signal. Use head-based sampling (e.g. 10%) for high-volume services, and turn on tail-based sampling at the Collector to keep 100% of errors and slow requests. Always-sample errors. Never-sample health checks.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Tail-based sampling at the Collector",
+          "code": "processors:\n  tail_sampling:\n    decision_wait: 10s\n    num_traces: 100000\n    expected_new_traces_per_sec: 1000\n    policies:\n      - name: errors-policy\n        type: status_code\n        status_code: { status_codes: [ERROR] }\n\n      - name: slow-requests-policy\n        type: latency\n        latency: { threshold_ms: 1000 }\n\n      - name: health-checks-drop\n        type: string_attribute\n        string_attribute:\n          key: http.target\n          values: [/health, /ready, /metrics]\n          invert_match: true\n\n      - name: probabilistic-policy\n        type: probabilistic\n        probabilistic: { sampling_percentage: 10 }\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, tail_sampling, batch]\n      exporters: [otlp/tempo]"
+        },
+        {
+          "language": "bash",
+          "label": "Head sampling via env var",
+          "code": "# 10% sampling at the SDK -- cheaper than tail sampling but loses errors\nOTEL_TRACES_SAMPLER=parentbased_traceidratio \\\nOTEL_TRACES_SAMPLER_ARG=0.1 \\\nnode --require ./tracing.js app.js"
+        }
+      ]
+    },
+    {
+      "id": "use-semantic-conventions",
+      "title": "Use semantic conventions for span attributes",
+      "description": "Pick standard attribute names from the OpenTelemetry semantic conventions. If everyone uses http.request.method and db.system.name, your backend can build dashboards and alerts that work across services without per-team mapping. Inventing your own names like httpMethod or dbType breaks every UI feature that depends on standard fields.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Custom span with semantic attributes",
+          "code": "import { trace, SpanStatusCode } from '@opentelemetry/api';\nimport {\n  ATTR_DB_SYSTEM_NAME,\n  ATTR_DB_OPERATION_NAME,\n  ATTR_DB_NAMESPACE,\n} from '@opentelemetry/semantic-conventions';\n\nconst tracer = trace.getTracer('orders-api');\n\nasync function chargeCard(orderId: string, amountCents: number) {\n  return tracer.startActiveSpan('payments.charge', async (span) => {\n    span.setAttributes({\n      'order.id': orderId,\n      'payment.amount_cents': amountCents,\n      'payment.currency': 'USD',\n      [ATTR_DB_SYSTEM_NAME]: 'postgresql',\n      [ATTR_DB_OPERATION_NAME]: 'INSERT',\n      [ATTR_DB_NAMESPACE]: 'payments',\n    });\n\n    try {\n      const result = await stripe.charges.create({ amount: amountCents });\n      span.setStatus({ code: SpanStatusCode.OK });\n      return result;\n    } catch (err) {\n      span.recordException(err as Error);\n      span.setStatus({ code: SpanStatusCode.ERROR, message: (err as Error).message });\n      throw err;\n    } finally {\n      span.end();\n    }\n  });\n}"
+        }
+      ]
+    },
+    {
+      "id": "redact-secrets-and-pii",
+      "title": "Never put secrets, tokens, or PII in span attributes",
+      "description": "Spans get shipped to a backend, often a third-party SaaS, and indexed for search. Anything you put in an attribute is now searchable by anyone with backend access. Drop Authorization headers, credit card numbers, full email addresses, and request bodies at the Collector. Audit your traces before you trust the pipeline.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Attribute redaction at the Collector",
+          "code": "processors:\n  attributes/redact:\n    actions:\n      - key: http.request.header.authorization\n        action: delete\n      - key: http.request.header.cookie\n        action: delete\n      - key: user.email\n        action: hash\n      - key: payment.card_number\n        action: delete\n      - key: db.statement\n        pattern: '(password|token|secret)\\s*=\\s*\\S+'\n        action: update\n        value: '[REDACTED]'\n\n  redaction:\n    allow_all_keys: true\n    blocked_values:\n      - '4[0-9]{12}(?:[0-9]{3})?'  # Visa\n      - '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}'  # email\n    summary: silent\n\nservice:\n  pipelines:\n    traces:\n      processors: [memory_limiter, attributes/redact, redaction, batch]"
+        }
+      ]
+    },
+    {
+      "id": "correlate-with-logs-and-metrics",
+      "title": "Correlate traces with logs and metrics",
+      "description": "A trace ID in your logs turns 'something is slow' into 'this exact span on this exact request'. Inject the active trace ID into every log line. Add exemplars to metrics so you can click a latency spike on a graph and land on the trace that caused it. This is the part that pays for the whole investment.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "typescript",
+          "label": "Inject trace context into logs",
+          "code": "import { trace, context } from '@opentelemetry/api';\nimport pino from 'pino';\n\nconst baseLogger = pino({ level: 'info' });\n\nfunction logger() {\n  const span = trace.getSpan(context.active());\n  if (!span) return baseLogger;\n\n  const { traceId, spanId } = span.spanContext();\n  return baseLogger.child({ trace_id: traceId, span_id: spanId });\n}\n\n// Usage anywhere in a request\nlogger().info({ orderId }, 'order created');\n// {\"level\":\"info\",\"trace_id\":\"0af76519...\",\"span_id\":\"b7ad6b71...\",\"orderId\":\"o_123\",\"msg\":\"order created\"}"
+        },
+        {
+          "language": "yaml",
+          "label": "Grafana data source links (Tempo to Loki)",
+          "code": "# tempo-datasource.yaml\napiVersion: 1\ndatasources:\n  - name: Tempo\n    type: tempo\n    url: http://tempo:3200\n    jsonData:\n      tracesToLogsV2:\n        datasourceUid: loki\n        spanStartTimeShift: -1h\n        spanEndTimeShift: 1h\n        tags: ['service.name', 'pod']\n        filterByTraceID: true\n      tracesToMetrics:\n        datasourceUid: prometheus\n        queries:\n          - name: 'Request rate'\n            query: 'sum(rate(http_server_request_duration_seconds_count{$$__tags}[5m]))'\n      serviceMap:\n        datasourceUid: prometheus"
+        }
+      ]
+    },
+    {
+      "id": "stand-up-tracing-backend",
+      "title": "Stand up a tracing backend and visualize your first traces",
+      "description": "Pick a backend before you turn the firehose on. Self-hosted: Jaeger or Grafana Tempo (S3/GCS-backed, cheap at scale). SaaS: Honeycomb, Datadog, Lightstep. Tempo plus Grafana is the default open-source stack today. Don't pick on features alone, factor in storage cost and how your team already runs Grafana.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Tempo with S3 backend",
+          "code": "# tempo-values.yaml\ntempo:\n  storage:\n    trace:\n      backend: s3\n      s3:\n        bucket: company-tempo-traces\n        endpoint: s3.amazonaws.com\n        region: us-east-1\n  retention: 720h  # 30 days\n  receivers:\n    otlp:\n      protocols:\n        grpc:\n          endpoint: 0.0.0.0:4317\n        http:\n          endpoint: 0.0.0.0:4318\n  metricsGenerator:\n    enabled: true\n    remoteWriteUrl: http://prometheus:9090/api/v1/write"
+        },
+        {
+          "language": "bash",
+          "label": "Query traces from the CLI",
+          "code": "# Find recent traces for orders service with errors\ncurl -G http://tempo:3200/api/search \\\n  --data-urlencode 'tags=service.name=orders-api' \\\n  --data-urlencode 'tags=status=error' \\\n  --data-urlencode 'limit=20' \\\n  --data-urlencode 'start=2026-05-01T00:00:00Z' | jq .\n\n# Fetch a specific trace by ID\ncurl http://tempo:3200/api/traces/0af7651916cd43dd8448eb211c80319c | jq ."
+        }
+      ]
+    },
+    {
+      "id": "use-traces-to-find-hotspots",
+      "title": "Use traces to find latency hot spots, not just admire them",
+      "description": "The point of tracing is to answer 'where did the time go'. Open a slow trace, find the longest span, ask why. Look for chatty database calls (N+1 queries are obvious in a flame graph), serial fan-out that should be parallel, and external API calls that don't have timeouts. If you can't articulate what you fixed last week using trace data, your team isn't actually using it.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "TraceQL for slow traces",
+          "code": "# Slow checkout traces (over 2s)\n{ resource.service.name=\"orders-api\" && name=\"POST /checkout\" } | duration > 2s\n\n# Traces where the DB took more than half the total time\n{ name=\"POST /checkout\" } | by(trace:duration) | select(\n  span.duration{db.system=\"postgresql\"} / trace:duration > 0.5\n)\n\n# Find N+1 queries: same SQL repeated > 10 times in one trace\n{ db.statement=~\"SELECT.*FROM users.*\" } | count_over_time() > 10"
+        }
+      ]
+    },
+    {
+      "id": "monitor-the-collector",
+      "title": "Monitor the Collector itself",
+      "description": "If the Collector is dropping spans, you have observability gaps and won't know it. Scrape its metrics endpoint and alert on refused spans, queue saturation, and exporter failures. The Collector ships with Prometheus metrics out of the box.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Alert on Collector dropping spans",
+          "code": "groups:\n  - name: otel-collector\n    rules:\n      - alert: OtelCollectorDroppingSpans\n        expr: |\n          rate(otelcol_exporter_send_failed_spans[5m]) > 0\n        for: 5m\n        labels:\n          severity: warning\n        annotations:\n          summary: \"OTel Collector failing to export spans\"\n          description: \"Exporter {{ $labels.exporter }} is failing. Check backend connectivity.\"\n\n      - alert: OtelCollectorQueueSaturated\n        expr: |\n          otelcol_exporter_queue_size / otelcol_exporter_queue_capacity > 0.8\n        for: 5m\n        labels:\n          severity: warning\n        annotations:\n          summary: \"OTel Collector export queue is filling up\"\n\n      - alert: OtelCollectorRefusingSpans\n        expr: |\n          rate(otelcol_receiver_refused_spans[5m]) > 0\n        for: 5m\n        labels:\n          severity: critical\n        annotations:\n          summary: \"Collector is refusing incoming spans -- memory limiter or rate limit hit\""
+        }
+      ]
+    },
+    {
+      "id": "document-and-onboard-team",
+      "title": "Write a one-page tracing runbook for your team",
+      "description": "If only one engineer knows how to read a flame graph, the investment dies the moment they go on vacation. Write a short page: how to find traces for an incident, how to read a span tree, what attributes you set, and where to add custom spans. Pin it in the on-call channel.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "markdown",
+          "label": "Tracing runbook template",
+          "code": "# Tracing Runbook\n\n## Finding traces during an incident\n1. Go to Grafana > Explore > Tempo\n2. Search by `service.name` and time range, or paste a trace ID from a log line\n3. Sort by duration to find the slowest requests\n\n## Reading a flame graph\n- Width = time spent in that span\n- Children stacked under parent = work the parent waited on\n- Gaps in the tree = unmeasured time (add a span)\n\n## Adding a custom span\n```ts\nimport { trace } from '@opentelemetry/api';\nconst tracer = trace.getTracer('my-service');\nawait tracer.startActiveSpan('my-operation', async (span) => {\n  span.setAttribute('thing.id', id);\n  try { await doWork(); } finally { span.end(); }\n});\n```\n\n## Standard attributes we set everywhere\n- `tenant.id`\n- `user.id` (hashed at the collector)\n- `feature.flag.<name>` for active flags\n\n## Who to ping\n- Pipeline issues: #observability\n- Service-specific: service owner in CODEOWNERS"
+        }
+      ]
+    }
+  ]
+}
