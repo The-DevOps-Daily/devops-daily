@@ -604,5 +604,6 @@
   "public/images/news/2026-week-17.svg": "6d52663a5d12c673",
   "public/images/news/2026-week-18.svg": "a9340073f275db63",
   "public/images/checklists/istio-traffic-management-og.svg": "1f230c5a67cbac82",
-  "public/images/checklists/distributed-tracing-opentelemetry-og.svg": "feba4f3ab0d84d0b"
+  "public/images/checklists/distributed-tracing-opentelemetry-og.svg": "feba4f3ab0d84d0b",
+  "public/images/posts/kubernetes-1-36-user-namespaces-pod-resize.svg": "dbb13a3c9485779a"
 }
