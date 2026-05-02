@@ -8,7 +8,7 @@
   "createdDate": "2026-05-02T10:00:00Z",
   "updatedDate": "2026-05-02T10:00:00Z",
   "estimatedReadTime": "13 min read",
-  "introduction": "If you want managed Postgres without standing up RDS yourself, Neon and Supabase are the two names that come up first. They look superficially similar — both run Postgres, both have generous free tiers, both ship branching, both index pgvector for AI workloads. Underneath, they are very different products solving very different problems.\n\nNeon is a serverless Postgres engine. The team rebuilt the bottom half of Postgres in Rust so that compute and storage can scale independently, then wrapped it in a control plane that exposes branching, autoscaling, and scale-to-zero as first-class primitives. It looks like Postgres to your application — same wire protocol, same extensions, same SQL — but every dial that used to require operations work (provisioning, vacuuming pages off hot disks, building read replicas, restoring from a snapshot) is now a metadata operation. Databricks acquired Neon in 2025 and used the headroom to drop storage prices from $1.75 to $0.35 per GB-month and double the free tier's compute allowance.\n\nSupabase is a backend-as-a-service built around a regular Postgres instance. Each project gets a dedicated Postgres VM plus a stack of services on top: PostgREST for an instant REST API, GoTrue for authentication, a Realtime server for websocket subscriptions, an S3-compatible Storage gateway, Supavisor for connection pooling, and Edge Functions on Deno for serverless logic. The marketing line is \"open-source Firebase alternative,\" and that framing is accurate — you trade some database-level control for a batteries-included backend that can ship a working product in a weekend.\n\nThe choice is rarely \"Postgres vs Postgres.\" It's \"do I need a serverless database I can plug into anything, or do I need a backend platform that bundles auth, storage, and realtime so I don't have to build them?\" This comparison walks through the dimensions that actually matter when picking between them: how branching works at the storage layer, what scale-to-zero means for your bill, where the connection pooling lives, and which platform handles the long tail of database operations (PITR, replicas, version coverage) without forcing you off the happy path.",
+  "introduction": "If you want managed Postgres without standing up RDS yourself, Neon and Supabase are the two names that come up first. They look superficially similar — both run Postgres, both have generous free tiers, both ship branching, both index pgvector for AI workloads, and as of 2026 both ship a managed authentication layer. Underneath, they are very different products solving very different problems.\n\nNeon is a serverless Postgres engine. The team rebuilt the bottom half of Postgres in Rust so that compute and storage can scale independently, then wrapped it in a control plane that exposes branching, autoscaling, and scale-to-zero as first-class primitives. It looks like Postgres to your application — same wire protocol, same extensions, same SQL — but every dial that used to require operations work (provisioning, vacuuming pages off hot disks, building read replicas, restoring from a snapshot) is now a metadata operation. Databricks acquired Neon in 2025 and used the headroom to drop storage prices from $1.75 to $0.35 per GB-month and double the free tier's compute allowance. Earlier in 2026, Neon Auth (built on Better Auth) shipped as a managed authentication service that stores users in the database itself — closing the one application-layer gap reviewers used to flag.\n\nSupabase is a backend-as-a-service built around a regular Postgres instance. Each project gets a dedicated Postgres VM plus a stack of services on top: PostgREST for an instant REST API, GoTrue for authentication, a Realtime server for websocket subscriptions, an S3-compatible Storage gateway, Supavisor for connection pooling, and Edge Functions on Deno for serverless logic. The marketing line is \"open-source Firebase alternative,\" and that framing is accurate — you trade some database-level control for a batteries-included backend that can ship a working product in a weekend.\n\nThe choice is rarely \"Postgres vs Postgres.\" It's about how much of the surrounding stack you want bundled with the database. This comparison walks through the dimensions that actually matter when picking between them: how branching works at the storage layer, what scale-to-zero means for your bill, where the connection pooling lives, and which platform handles the long tail of database operations (PITR, replicas, version coverage) without forcing you off the happy path.",
   "toolA": {
     "name": "Neon",
     "icon": "Database",
@@ -22,10 +22,11 @@
       "Postgres 14, 15, 16, 17 stable plus 18 in preview — the broadest version coverage among managed serverless Postgres providers",
       "Native serverless driver over WebSockets removes TCP setup cost on Vercel Functions, Cloudflare Workers, and other edge runtimes",
       "Read replicas are first-class compute endpoints that share storage with the primary, so adding one is an API call rather than a streaming-replication setup",
-      "Postgres-native: every wire-protocol client, ORM, migration tool, and extension that runs on vanilla Postgres works without special drivers"
+      "Postgres-native: every wire-protocol client, ORM, migration tool, and extension that runs on vanilla Postgres works without special drivers",
+      "Neon Auth (built on Better Auth) ships managed authentication with users in the neon_auth schema, isolated per branch, and queryable via SQL and RLS"
     ],
     "cons": [
-      "No bundled authentication, storage, realtime, or edge-functions stack — you bring your own or pair Neon with another vendor",
+      "No bundled object storage, realtime server, or edge-functions runtime — pair Neon with S3/R2 and your own serverless platform when you need them",
       "Cold-start latency on scale-to-zero compute is typically 300-500 ms, which matters for the very first request after an idle window",
       "Compute sizes above 16 CU are fixed-size (no autoscaling), so the largest workloads still need manual capacity planning",
       "Some Postgres extensions take longer to land than on a self-managed instance because they have to be vetted against the Pageserver",
@@ -106,8 +107,8 @@
     {
       "name": "Authentication & RLS",
       "category": "Application Layer",
-      "toolA": { "value": "Bring your own auth (NextAuth, Clerk, WorkOS, Auth0); RLS works because Neon is plain Postgres", "rating": "neutral" },
-      "toolB": { "value": "Built-in GoTrue auth with email, OAuth, magic links, SSO; RLS deeply integrated with the auth context", "rating": "good" }
+      "toolA": { "value": "Neon Auth (built on Better Auth) stores users/sessions/config in the neon_auth schema; queryable with SQL and RLS; per-branch auth environments mirror database branching", "rating": "good" },
+      "toolB": { "value": "GoTrue auth with email, OAuth, magic links, phone, SSO; the most mature managed-Postgres auth offering with deep RLS integration", "rating": "good" }
     },
     {
       "name": "Realtime Subscriptions",
@@ -232,6 +233,10 @@
     {
       "question": "Which one has better tooling for AI agents and Cursor/Claude Code workflows?",
       "answer": "Neon publishes an MCP server and a clean management API, and the branching model maps naturally to agent reset-state semantics: spawn a branch, run experiment, drop branch. Supabase's CLI is excellent for human workflows but the schema/migration model assumes a developer-driven loop rather than ephemeral agent-driven environments."
+    },
+    {
+      "question": "Doesn't Supabase have an auth advantage that Neon can't match?",
+      "answer": "Less true in 2026 than it used to be. Neon Auth (built on Better Auth) shipped earlier this year as a managed authentication service: users, sessions, and configuration land in the neon_auth schema and are queryable like any other Postgres data, RLS policies work out of the box, and every database branch gets its own isolated auth environment. Supabase's GoTrue is still the more mature product — broader provider list, more SSO integrations, longer-running ecosystem — but the binary 'Neon doesn't do auth' framing no longer holds."
     }
   ],
   "decisionMatrix": [
