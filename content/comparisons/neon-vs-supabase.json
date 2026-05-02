@@ -51,7 +51,7 @@
       "Free-tier projects auto-pause after 7 days of inactivity, which makes the free plan unsuitable for low-traffic production workloads",
       "Each project is a dedicated Postgres VM, so compute cannot scale to zero and idle projects keep accruing the base compute charge",
       "Pro plan adds metered MAU pricing on top of compute — at $0.00325 per MAU above the included 100K, an auth-heavy product can quickly outrun the headline $25/month figure",
-      "Larger Postgres surface area is exposed to the platform's own services (Realtime, Auth, Storage), which adds operational coupling and a wider blast radius for incidents"
+      "More moving parts in the stack (Realtime, Auth, Storage, PostgREST) means more services to reason about during incidents — the trade-off for getting them out of the box"
     ]
   },
   "features": [
@@ -126,6 +126,30 @@
       "category": "Pricing",
       "toolA": { "value": "Usage-based with $5/month minimum on Launch; compute $0.14-$0.26 per CU-hour, storage $0.35/GB-month with scale-to-zero", "rating": "good" },
       "toolB": { "value": "$25/month per project on Pro plus metered overage (MAU, egress, compute); idle projects still accrue the base charge", "rating": "neutral" }
+    },
+    {
+      "name": "Observability & Monitoring",
+      "category": "Operations",
+      "toolA": { "value": "Built-in Monitoring tab with CPU, memory, connections, and query history; metrics exported to Datadog and OpenTelemetry on paid plans", "rating": "good" },
+      "toolB": { "value": "Reports dashboard with database, auth, storage, and edge-function usage; query insights via the integrated Postgres advisor", "rating": "good" }
+    },
+    {
+      "name": "Migrations & Schema Workflow",
+      "category": "Developer Workflow",
+      "toolA": { "value": "Postgres-native: any tool that talks to vanilla Postgres works (Atlas, Drizzle Kit, Prisma migrate, Sqitch, Flyway, etc.)", "rating": "good" },
+      "toolB": { "value": "Tied to the Supabase CLI's migration workflow with diffs against local containers; works well with Git but is a learn-this-tool path", "rating": "neutral" }
+    },
+    {
+      "name": "Open Source & Self-Hosting",
+      "category": "Licensing",
+      "toolA": { "value": "Apache 2.0; full storage engine + control plane on GitHub, single-Docker NeonD path, Kubernetes operator for production self-hosting", "rating": "good" },
+      "toolB": { "value": "Apache 2.0 across every component; the most polished self-host story in this space with mature docker-compose templates", "rating": "good" }
+    },
+    {
+      "name": "Auto-Generated APIs",
+      "category": "Application Layer",
+      "toolA": { "value": "No bundled API layer; pair with PostgREST, Hasura, or pg_graphql yourself when you need an instant REST or GraphQL endpoint", "rating": "neutral" },
+      "toolB": { "value": "PostgREST and pg_graphql both ship enabled, with auto-generated REST and GraphQL APIs that mirror the schema and respect RLS", "rating": "good" }
     }
   ],
   "useCases": [
@@ -168,6 +192,16 @@
       "scenario": "Existing app with a complex schema and hundreds of migrations moving from RDS to a managed serverless option",
       "recommendation": "toolA",
       "explanation": "Postgres-native compatibility matters most here. Neon supports Postgres 14-18 and accepts the same migrations, extensions, and ORM configurations as RDS. Supabase imposes a coupled Auth/Realtime/Storage stack that may conflict with your existing application-layer choices."
+    },
+    {
+      "scenario": "Internal admin tool or back-office app that wants instant REST and GraphQL APIs over a schema",
+      "recommendation": "toolB",
+      "explanation": "PostgREST and pg_graphql come for free with Supabase, and the auto-generated TypeScript types make a typed admin UI nearly drop-in. On Neon you'd reach for Hasura, PostgREST, or write the API yourself, which is fine but adds a moving piece you don't strictly need."
+    },
+    {
+      "scenario": "Mobile-first product where the iOS, Android, and React Native SDK story matters as much as the database",
+      "recommendation": "toolB",
+      "explanation": "Supabase ships well-tested mobile SDKs that bundle auth, realtime, and storage in one client. Neon is a database — perfectly usable from a mobile app via your own backend, but you'll be doing the SDK integration work yourself."
     }
   ],
   "faqs": [
@@ -235,10 +269,10 @@
     }
   ],
   "verdict": {
-    "summary": "Neon and Supabase solve different problems. Neon is a serverless Postgres engine with branching, autoscaling, and scale-to-zero baked into the storage layer — a database product that slots in wherever vanilla Postgres would. Supabase is a backend-as-a-service that bundles a regular Postgres instance with auth, realtime, storage, and edge functions, optimized for shipping a product end-to-end with a small team. Both are excellent at what they aim to do, but the fit depends on whether you want a database or a backend.",
+    "summary": "Neon and Supabase solve different problems and both do their thing well. Neon is a serverless Postgres engine — branching, autoscaling, and scale-to-zero are baked into the storage layer, and the wire-protocol contract is plain Postgres. Supabase is a backend-as-a-service built around a regular Postgres instance, bundling auth, realtime, storage, and edge functions so a small team can ship an entire product without picking each layer separately. The choice is rarely about which is better in the abstract — it's about whether you want a database that fits anywhere or a backend that ships faster.",
     "toolAScore": 4.4,
-    "toolBScore": 3.8,
-    "recommendation": "Choose Neon when Postgres is the primary thing you need from the platform: serverless apps, ephemeral CI environments, agent-driven test loops, RAG workloads with bursty traffic, or migrations away from RDS that don't want to take on a coupled BaaS stack. Choose Supabase when the auth/storage/realtime bundle is the real value proposition and the database is one piece of a larger backend you don't want to integrate yourself."
+    "toolBScore": 3.9,
+    "recommendation": "Choose Neon when Postgres is the primary thing you need from the platform: serverless apps, ephemeral CI environments, agent-driven test loops, RAG workloads with bursty traffic, or migrations away from RDS where you don't want to inherit a coupled BaaS stack. Choose Supabase when the auth/storage/realtime/auto-API bundle is the real value proposition — internal tools, mobile-first products, and v1 launches where saving on integration time matters more than fine-grained control over each layer."
   },
   "relatedTags": ["Neon", "Supabase", "Postgres", "Serverless", "Databases", "DevOps"]
 }
