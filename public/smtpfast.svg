@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 48" width="220" height="48" role="img" aria-label="SMTPfast">
+  <defs>
+    <linearGradient id="smtpfastMark" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#10b981"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <rect x="0" y="0" width="48" height="48" rx="11" fill="url(#smtpfastMark)"/>
+    <path d="M14 25 L24 12 L21 22 H30 L20 36 L23 25 Z" fill="white"/>
+  </g>
+  <g fill="currentColor" font-family="'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-weight="700">
+    <text x="58" y="32" font-size="22" letter-spacing="-0.5">
+      <tspan>SMTP</tspan><tspan fill="#10b981">fast</tspan>
+    </text>
+  </g>
+</svg>

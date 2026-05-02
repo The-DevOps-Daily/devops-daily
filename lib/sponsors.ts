@@ -33,11 +33,13 @@ export const sponsors: Sponsor[] = [
     sidebarClassName: 'w-auto h-12 shrink-0 -mt-0.5 ml-1',
   },
   {
-    name: 'Acronis',
-    logo: '/acronis.svg',
-    url: 'https://m.do.co/c/2a9bba940f39',
-    tagline: 'The most secure backup',
-    description: 'Acronis: the most secure backup solution for your data',
+    name: 'SMTPfast',
+    logo: '/smtpfast.svg',
+    url: 'https://smtpfa.st',
+    tagline: 'Developer-first email API',
+    description: 'Send transactional and marketing email through a clean REST API. Detailed logs, webhooks, and embeddable signup forms in one dashboard.',
+    className: 'text-foreground',
+    sidebarClassName: 'w-auto h-10 shrink-0 -mt-0.5 ml-1',
   },
   {
     name: 'QuizAPI',
