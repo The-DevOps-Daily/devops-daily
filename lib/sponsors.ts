@@ -34,11 +34,12 @@ export const sponsors: Sponsor[] = [
   },
   {
     name: 'SMTPfast',
-    logo: '/smtpfast.png',
+    logo: '/smtpfast.svg',
     url: 'https://smtpfa.st',
     tagline: 'Resend-compatible email API on AWS SES',
     description: 'Drop-in /v1/emails compatibility, embeddable signup forms, and SES-grade deliverability — without the AWS console.',
-    sidebarClassName: 'w-auto h-12 shrink-0 -mt-0.5 ml-1',
+    className: 'text-foreground',
+    sidebarClassName: 'w-auto h-10 shrink-0 -mt-0.5 ml-1',
   },
   {
     name: 'QuizAPI',
