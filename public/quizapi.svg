@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="180" height="40" viewBox="0 0 180 40">
-  <rect x="2" y="4" width="32" height="32" rx="8" fill="#3b82f6"/>
-  <path d="M12 20l5 5 9-11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <g transform="translate(42, 8)">
-    <rect width="138" height="24" rx="5" fill="#3b82f6"/>
-    <g fill="#fff" font-family="Arial,Helvetica,sans-serif" font-size="15" font-weight="700">
-      <text x="69" y="17" text-anchor="middle">QuizAPI</text>
-    </g>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 48" width="230" height="48" role="img" aria-label="QuizAPI">
+  <defs>
+    <linearGradient id="quizapiMark" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="48" height="48" rx="11" fill="url(#quizapiMark)"/>
+  <text x="24" y="34" text-anchor="middle" font-family="'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="700" fill="white">Q</text>
+  <text x="58" y="32" font-family="'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="700" letter-spacing="-0.5" fill="#6366f1">
+    <tspan>Quiz</tspan><tspan fill="#8b5cf6">API</tspan>
+  </text>
 </svg>
