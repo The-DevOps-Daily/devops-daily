@@ -38,15 +38,15 @@ export const sponsors: Sponsor[] = [
     url: 'https://smtpfa.st',
     tagline: 'Developer-first email API',
     description: 'Send transactional and marketing email through a clean REST API. Detailed logs, webhooks, and embeddable signup forms in one dashboard.',
-    className: 'text-foreground',
     sidebarClassName: 'w-auto h-10 shrink-0 -mt-0.5 ml-1',
   },
   {
     name: 'QuizAPI',
-    logo: '/quizapi.png',
+    logo: '/quizapi.svg',
     url: 'https://quizapi.io?ref=devops-daily',
     tagline: 'Developer-first quiz platform',
     description: 'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',
+    sidebarClassName: 'w-auto h-10 shrink-0 -mt-0.5 ml-1',
   },
 ];
 
