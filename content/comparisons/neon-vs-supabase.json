@@ -1,0 +1,244 @@
+{
+  "id": "neon-vs-supabase",
+  "slug": "neon-vs-supabase",
+  "title": "Neon vs Supabase",
+  "description": "A technical comparison of Neon and Supabase for hosted Postgres workloads in 2026. Covers architecture, branching, autoscaling, connection pooling, replication, pricing, and the trade-offs between a serverless Postgres engine and a full backend-as-a-service platform.",
+  "category": "Databases",
+  "tags": ["Neon", "Supabase", "Postgres", "Serverless", "Databases", "DevOps"],
+  "createdDate": "2026-05-02T10:00:00Z",
+  "updatedDate": "2026-05-02T10:00:00Z",
+  "estimatedReadTime": "13 min read",
+  "introduction": "If you want managed Postgres without standing up RDS yourself, Neon and Supabase are the two names that come up first. They look superficially similar — both run Postgres, both have generous free tiers, both ship branching, both index pgvector for AI workloads. Underneath, they are very different products solving very different problems.\n\nNeon is a serverless Postgres engine. The team rebuilt the bottom half of Postgres in Rust so that compute and storage can scale independently, then wrapped it in a control plane that exposes branching, autoscaling, and scale-to-zero as first-class primitives. It looks like Postgres to your application — same wire protocol, same extensions, same SQL — but every dial that used to require operations work (provisioning, vacuuming pages off hot disks, building read replicas, restoring from a snapshot) is now a metadata operation. Databricks acquired Neon in 2025 and used the headroom to drop storage prices from $1.75 to $0.35 per GB-month and double the free tier's compute allowance.\n\nSupabase is a backend-as-a-service built around a regular Postgres instance. Each project gets a dedicated Postgres VM plus a stack of services on top: PostgREST for an instant REST API, GoTrue for authentication, a Realtime server for websocket subscriptions, an S3-compatible Storage gateway, Supavisor for connection pooling, and Edge Functions on Deno for serverless logic. The marketing line is \"open-source Firebase alternative,\" and that framing is accurate — you trade some database-level control for a batteries-included backend that can ship a working product in a weekend.\n\nThe choice is rarely \"Postgres vs Postgres.\" It's \"do I need a serverless database I can plug into anything, or do I need a backend platform that bundles auth, storage, and realtime so I don't have to build them?\" This comparison walks through the dimensions that actually matter when picking between them: how branching works at the storage layer, what scale-to-zero means for your bill, where the connection pooling lives, and which platform handles the long tail of database operations (PITR, replicas, version coverage) without forcing you off the happy path.",
+  "toolA": {
+    "name": "Neon",
+    "icon": "Database",
+    "website": "https://neon.com",
+    "description": "A serverless Postgres platform with separated compute and storage. Branching is copy-on-write at the storage layer, autoscaling is built in, and idle databases scale to zero. Postgres-native, so existing extensions, ORMs, and tooling work without modification.",
+    "color": "#00E699",
+    "pros": [
+      "Copy-on-write branching at the storage layer creates a full data branch in milliseconds regardless of database size",
+      "Scale-to-zero on idle and autoscaling between 0.25 and 16 CU mean you only pay for the compute you actually use",
+      "Custom Rust storage engine (Pageservers + Safekeepers) decouples compute restarts from data durability and enables sub-second PITR at any LSN",
+      "Postgres 14, 15, 16, 17 stable plus 18 in preview — the broadest version coverage among managed serverless Postgres providers",
+      "Native serverless driver over WebSockets removes TCP setup cost on Vercel Functions, Cloudflare Workers, and other edge runtimes",
+      "Read replicas are first-class compute endpoints that share storage with the primary, so adding one is an API call rather than a streaming-replication setup",
+      "Postgres-native: every wire-protocol client, ORM, migration tool, and extension that runs on vanilla Postgres works without special drivers"
+    ],
+    "cons": [
+      "No bundled authentication, storage, realtime, or edge-functions stack — you bring your own or pair Neon with another vendor",
+      "Cold-start latency on scale-to-zero compute is typically 300-500 ms, which matters for the very first request after an idle window",
+      "Compute sizes above 16 CU are fixed-size (no autoscaling), so the largest workloads still need manual capacity planning",
+      "Some Postgres extensions take longer to land than on a self-managed instance because they have to be vetted against the Pageserver",
+      "Smaller community than Supabase for application-layer recipes, since Neon is squarely a database product"
+    ]
+  },
+  "toolB": {
+    "name": "Supabase",
+    "icon": "Layers",
+    "website": "https://supabase.com",
+    "description": "An open-source backend-as-a-service built around a dedicated Postgres instance. Bundles PostgREST APIs, GoTrue authentication, a Realtime server, S3-compatible storage, Supavisor pooling, and Deno-based Edge Functions in one platform.",
+    "color": "#3ECF8E",
+    "pros": [
+      "Bundles authentication, REST/GraphQL, realtime subscriptions, storage, and edge functions so a small team can ship a backend without integrating multiple vendors",
+      "Row Level Security policies move authorization into the database, which is genuinely powerful when designed for from day one",
+      "Supavisor (Elixir-based pooler) handles tens of thousands of concurrent serverless connections per project",
+      "Generated TypeScript types from the live schema make end-to-end type safety nearly free",
+      "Local development environment runs the full stack in Docker so you can prototype offline",
+      "Vibrant community of templates and starter apps for common product shapes (B2B SaaS, marketplaces, mobile apps)"
+    ],
+    "cons": [
+      "Branching creates a brand-new Postgres instance and replays migrations — slower and storage-heavier than copy-on-write, and starts with empty data unless you supply a seed script",
+      "Free-tier projects auto-pause after 7 days of inactivity, which makes the free plan unsuitable for low-traffic production workloads",
+      "Each project is a dedicated Postgres VM, so compute cannot scale to zero and idle projects keep accruing the base compute charge",
+      "Pro plan adds metered MAU pricing on top of compute — at $0.00325 per MAU above the included 100K, an auth-heavy product can quickly outrun the headline $25/month figure",
+      "Larger Postgres surface area is exposed to the platform's own services (Realtime, Auth, Storage), which adds operational coupling and a wider blast radius for incidents"
+    ]
+  },
+  "features": [
+    {
+      "name": "Architecture",
+      "category": "Platform",
+      "toolA": { "value": "Disaggregated Postgres: stateless compute talks to a custom Rust storage engine (Pageservers + Safekeepers) over the network", "rating": "good" },
+      "toolB": { "value": "Dedicated single-VM Postgres per project with bundled service sidecars (Auth, Realtime, Storage, Edge Functions)", "rating": "neutral" }
+    },
+    {
+      "name": "Database Branching",
+      "category": "Developer Workflow",
+      "toolA": { "value": "Copy-on-write at the storage layer; branches are O(1) metadata operations and include the full parent dataset", "rating": "good" },
+      "toolB": { "value": "Migration-based; provisions a new Postgres instance, replays migrations from Git, and starts data-less unless seeded", "rating": "neutral" }
+    },
+    {
+      "name": "Autoscaling & Scale-to-Zero",
+      "category": "Performance",
+      "toolA": { "value": "Compute autoscales 0.25-16 CU on demand; databases scale to zero when idle and resume on first connection", "rating": "good" },
+      "toolB": { "value": "Fixed compute sizes per plan (Micro/Small/Medium/etc.); no scale-to-zero, paid plans charge for idle compute", "rating": "neutral" }
+    },
+    {
+      "name": "Postgres Version Coverage",
+      "category": "Compatibility",
+      "toolA": { "value": "Postgres 14, 15, 16, 17 stable plus 18 in preview; you choose the major version per project", "rating": "good" },
+      "toolB": { "value": "Tracks one current Postgres major (15+) for new projects; older versions on existing projects until forced upgrade", "rating": "neutral" }
+    },
+    {
+      "name": "Connection Pooling",
+      "category": "Performance",
+      "toolA": { "value": "PgBouncer endpoint on every branch plus a native serverless driver over WebSockets for edge runtimes", "rating": "good" },
+      "toolB": { "value": "Supavisor (Elixir) multi-tenant pooler handling tens of thousands of concurrent connections per project", "rating": "good" }
+    },
+    {
+      "name": "Read Replicas",
+      "category": "High Availability",
+      "toolA": { "value": "Read replicas share storage with the primary; adding one is a compute-only operation with no replication lag setup", "rating": "good" },
+      "toolB": { "value": "Read replicas available on Pro and above; provisioned as separate Postgres instances with streaming replication", "rating": "neutral" }
+    },
+    {
+      "name": "Point-in-Time Recovery",
+      "category": "Operations",
+      "toolA": { "value": "Sub-second LSN-level PITR on any branch; up to 30 days of restore window on Scale, 7 days on Launch", "rating": "good" },
+      "toolB": { "value": "Daily automated backups on Pro; PITR (1-day window) and longer retention on Team and above", "rating": "neutral" }
+    },
+    {
+      "name": "Vector / pgvector for AI",
+      "category": "Data Types",
+      "toolA": { "value": "pgvector with HNSW indexes; autoscaling makes RAG workloads cheap during sparse traffic and capable under bursts", "rating": "good" },
+      "toolB": { "value": "pgvector with HNSW; widely used and well-documented for embedding storage alongside application data", "rating": "good" }
+    },
+    {
+      "name": "Authentication & RLS",
+      "category": "Application Layer",
+      "toolA": { "value": "Bring your own auth (NextAuth, Clerk, WorkOS, Auth0); RLS works because Neon is plain Postgres", "rating": "neutral" },
+      "toolB": { "value": "Built-in GoTrue auth with email, OAuth, magic links, SSO; RLS deeply integrated with the auth context", "rating": "good" }
+    },
+    {
+      "name": "Realtime Subscriptions",
+      "category": "Application Layer",
+      "toolA": { "value": "Native Postgres LISTEN/NOTIFY plus logical replication; subscribers integrate via your own WebSocket layer", "rating": "neutral" },
+      "toolB": { "value": "Realtime server multiplexes Postgres changes onto WebSocket channels; 10K+ concurrent subscribers per project", "rating": "good" }
+    },
+    {
+      "name": "Storage & Edge Functions",
+      "category": "Application Layer",
+      "toolA": { "value": "No bundled object storage or function runtime; pairs with S3, R2, or any serverless platform of your choice", "rating": "neutral" },
+      "toolB": { "value": "S3-compatible Storage with image transformations and Edge Functions on Deno included in every plan", "rating": "good" }
+    },
+    {
+      "name": "Pricing Model",
+      "category": "Pricing",
+      "toolA": { "value": "Usage-based with $5/month minimum on Launch; compute $0.14-$0.26 per CU-hour, storage $0.35/GB-month with scale-to-zero", "rating": "good" },
+      "toolB": { "value": "$25/month per project on Pro plus metered overage (MAU, egress, compute); idle projects still accrue the base charge", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Vercel or Cloudflare Workers app that needs Postgres with low cold-start latency from the edge",
+      "recommendation": "toolA",
+      "explanation": "Neon's WebSocket-based serverless driver was designed for this workload. It keeps compute warm during traffic, scales to zero between bursts, and the native driver avoids the per-request TCP/TLS setup that dominates latency from edge runtimes. Pricing tracks actual usage rather than a fixed per-project charge, which compounds across preview deployments."
+    },
+    {
+      "scenario": "CI pipeline that wants a fresh, fully-populated database per pull request and ephemeral preview environment",
+      "recommendation": "toolA",
+      "explanation": "Branching is the load-bearing feature here. Neon's copy-on-write semantics create a writable branch with the parent's full dataset in under a second regardless of size, run the test or preview against it, then garbage-collect the diverged pages when the PR closes. Migration-based branching has to wait for migrations to replay and starts from an empty schema, which makes integration tests against production-like data harder."
+    },
+    {
+      "scenario": "B2C consumer product that needs auth, storage, file uploads, and realtime presence on day one",
+      "recommendation": "toolB",
+      "explanation": "Supabase's bundled stack genuinely shortens time-to-launch when you'd otherwise be wiring up Auth0, S3, Pusher, and PostgREST yourself. The trade-off is operational coupling — if Realtime has an incident, your database can be affected — but for a small team shipping a v1, the integration cost saved is usually worth it."
+    },
+    {
+      "scenario": "Background-worker product with bursty Sidekiq/BullMQ traffic and long idle stretches overnight",
+      "recommendation": "toolA",
+      "explanation": "Scale-to-zero is the only mechanism that makes these workloads cheap. A 2-CU Neon database that handles a daily burst and idles the rest of the time costs a fraction of a Supabase Pro project running a Small instance 24/7, even before counting storage savings."
+    },
+    {
+      "scenario": "Mobile app with thousands of simultaneous WebSocket connections subscribing to row changes",
+      "recommendation": "toolB",
+      "explanation": "Supabase Realtime is purpose-built for this and ships with the platform. You can build the same thing on Neon with logical replication and your own server, but the integration cost is real, especially for the auth-aware row-level filtering that Realtime gives you for free against RLS policies."
+    },
+    {
+      "scenario": "RAG pipeline storing tens of millions of embeddings with sparse, spiky retrieval traffic",
+      "recommendation": "toolA",
+      "explanation": "pgvector works well on both. Neon wins on cost because the compute scales down when retrieval is idle, then ramps to 16 CU when a batch indexing job kicks off. On a fixed-size Supabase instance you provision for the spike and pay for it all month."
+    },
+    {
+      "scenario": "AI agent or autonomous tool that needs to spin up disposable test databases with specific seed data",
+      "recommendation": "toolA",
+      "explanation": "Branching from a known-good parent database in milliseconds is exactly the primitive an agent needs to reset state between runs. The Neon API exposes branch create/delete as plain HTTP calls, which slots cleanly into agent tool-calling. Migration-based provisioning is too slow for the loop."
+    },
+    {
+      "scenario": "Existing app with a complex schema and hundreds of migrations moving from RDS to a managed serverless option",
+      "recommendation": "toolA",
+      "explanation": "Postgres-native compatibility matters most here. Neon supports Postgres 14-18 and accepts the same migrations, extensions, and ORM configurations as RDS. Supabase imposes a coupled Auth/Realtime/Storage stack that may conflict with your existing application-layer choices."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is Neon really just Postgres, or are there compatibility caveats?",
+      "answer": "It is real Postgres at the wire-protocol level — same SQL, same JDBC/psycopg/pgx drivers, same migration tools, same ORMs. The compatibility caveats are around extensions: a small number of extensions that depend on writing to local disk (file_fdw, certain background workers) are not available because Neon's storage is remote. The mainstream extensions (pgvector, PostGIS, pg_stat_statements, pgcrypto, etc.) all work."
+    },
+    {
+      "question": "Doesn't scale-to-zero mean unacceptable cold starts?",
+      "answer": "Cold starts on Neon are typically 300-500 ms because the compute layer is stateless and only needs to attach to the existing storage. For most B2B SaaS and developer-facing products, that's invisible behind a normal page load. For latency-critical user-facing endpoints, you can either disable scale-to-zero on the production branch (paid plans) or keep a synthetic ping warming the endpoint."
+    },
+    {
+      "question": "If I'm already on Supabase, is migrating to Neon hard?",
+      "answer": "The database side is straightforward: pg_dump from Supabase, pg_restore into Neon, repoint your connection string. The harder part is the auth/storage/realtime layers, which are Supabase-specific. You either keep Supabase for those and use Neon as the application database, or you replace each layer (Clerk/WorkOS for auth, R2/S3 for storage, your own WebSocket gateway for realtime) at your own pace."
+    },
+    {
+      "question": "Does Supabase support branching the same way Neon does?",
+      "answer": "Supabase introduced branching, but the implementation is fundamentally different. A Supabase branch is a brand-new Postgres instance with the schema replayed from your migrations directory, optionally seeded by a script you provide. Useful for staging and CI on schema changes, but it isn't a copy of production data and provisioning is closer to seconds-to-minutes than milliseconds. Neon's branches share storage pages with the parent and only diverge on writes."
+    },
+    {
+      "question": "What about Postgres extensions for AI workloads — pgvector, pgrag, pg_search?",
+      "answer": "Both platforms support pgvector with HNSW indexing. Neon additionally ships pgrag (Neon's own RAG-pipeline extension) and is typically faster to add new versions of pgvector because the storage engine isolation makes upgrades safer. Supabase's pgvector support is mature and well-documented for application-layer integrations through its SDKs."
+    },
+    {
+      "question": "How do the free tiers actually compare in practice?",
+      "answer": "Neon's free tier gives you 100 CU-hours per month, 0.5 GB storage per branch, up to 100 projects, and never auto-pauses idle databases. Supabase's free tier gives you 500 MB database, 1 GB storage, 50K MAUs, 500K edge function calls, but pauses any project after 7 days of inactivity. For a side project that gets traffic in fits and starts, Neon's behavior is more forgiving — you don't have to remember to ping it."
+    },
+    {
+      "question": "Which one has better tooling for AI agents and Cursor/Claude Code workflows?",
+      "answer": "Neon publishes an MCP server and a clean management API, and the branching model maps naturally to agent reset-state semantics: spawn a branch, run experiment, drop branch. Supabase's CLI is excellent for human workflows but the schema/migration model assumes a developer-driven loop rather than ephemeral agent-driven environments."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You want a Postgres database that scales to zero when idle and bills only for actual usage",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need authentication, storage, realtime, and edge functions bundled with the database",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You run preview environments per pull request with full production-like data",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You're building a product that lives or dies on row-level WebSocket subscriptions",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Your workload is bursty with long idle stretches (background workers, weekly batch jobs, RAG pipelines)",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the broadest Postgres major version coverage and to choose your version per project",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want to ship a working backend in a weekend without picking auth, storage, and realtime providers",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You're migrating from RDS or self-managed Postgres and want minimal application changes",
+      "recommendation": "toolA"
+    }
+  ],
+  "verdict": {
+    "summary": "Neon and Supabase solve different problems. Neon is a serverless Postgres engine with branching, autoscaling, and scale-to-zero baked into the storage layer — a database product that slots in wherever vanilla Postgres would. Supabase is a backend-as-a-service that bundles a regular Postgres instance with auth, realtime, storage, and edge functions, optimized for shipping a product end-to-end with a small team. Both are excellent at what they aim to do, but the fit depends on whether you want a database or a backend.",
+    "toolAScore": 4.4,
+    "toolBScore": 3.8,
+    "recommendation": "Choose Neon when Postgres is the primary thing you need from the platform: serverless apps, ephemeral CI environments, agent-driven test loops, RAG workloads with bursty traffic, or migrations away from RDS that don't want to take on a coupled BaaS stack. Choose Supabase when the auth/storage/realtime bundle is the real value proposition and the database is one piece of a larger backend you don't want to integrate yourself."
+  },
+  "relatedTags": ["Neon", "Supabase", "Postgres", "Serverless", "Databases", "DevOps"]
+}
