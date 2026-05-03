@@ -1,7 +1,7 @@
 {
   "id": "git-quiz",
   "title": "Git Command Quiz",
-  "description": "Learn Git through real-world scenarios and understand the commands that matter",
+  "description": "Test your Git command knowledge with real-world scenarios covering commits, branching, merging, rebasing, remotes, and recovering from common mistakes.",
   "category": "Git",
   "icon": "GitBranch",
   "totalPoints": 115,

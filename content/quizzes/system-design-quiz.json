@@ -1,7 +1,7 @@
 {
   "id": "system-design-quiz",
   "title": "System Design Fundamentals Quiz",
-  "description": "Master scalable architecture patterns and distributed systems design with real-world scenarios",
+  "description": "Test your system design skills with questions on load balancing, caching, sharding, replication, queues, consistency models, and distributed system tradeoffs.",
   "category": "System Design",
   "icon": "Code",
   "totalPoints": 118,

@@ -1,6 +1,6 @@
 ---
 title: 'Introduction to Git'
-description: 'A guide to understanding and learning Git version control'
+description: 'A 10-part guide to Git version control covering repos, branching, merging, remotes, collaboration workflows, history rewriting, and team best practices.'
 category:
   name: 'Git'
   slug: 'git'

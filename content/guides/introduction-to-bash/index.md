@@ -1,6 +1,6 @@
 ---
 title: 'Introduction to Bash'
-description: 'A guide to learning the basics of Bash scripting and command line usage.'
+description: 'Bash scripting and command line guide covering navigation, variables, control flow, functions, permissions, arguments, and best practices in 10 chapters.'
 category:
   name: 'Bash'
   slug: 'bash'

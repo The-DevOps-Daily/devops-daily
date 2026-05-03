@@ -1,6 +1,6 @@
 ---
 title: 'Copy Directory to Another Directory Using ADD Command'
-excerpt: 'Learn how to use the `ADD` command in Docker to copy directories during image builds.'
+excerpt: 'Copy directories into a Docker image with the ADD instruction. Covers ADD vs COPY, local paths, remote URLs, tar extraction, and practical Dockerfile examples.'
 category:
   name: 'Docker'
   slug: 'docker'

@@ -1,6 +1,6 @@
 ---
 title: Installing Docker
-description: Set up Docker on your system and verify it's working correctly
+description: 'Install Docker on Ubuntu, macOS, and Windows step by step. Covers repository setup, Docker Desktop, verifying the install, and required post-install tasks.'
 order: 2
 ---
 

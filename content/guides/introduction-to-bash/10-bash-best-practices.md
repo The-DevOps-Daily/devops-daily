@@ -1,6 +1,6 @@
 ---
 title: 'Bash Best Practices'
-description: 'Learn essential best practices for writing clean, maintainable, and robust Bash scripts'
+description: 'Bash scripting best practices for reliable scripts. Covers shebangs, set -euo pipefail, quoting, error handling, functions, and structuring larger scripts.'
 order: 10
 ---
 

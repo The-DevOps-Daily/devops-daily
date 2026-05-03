@@ -1,6 +1,6 @@
 ---
 title: Provisioners in Depth
-description: Master Packer provisioners to customize your machine images
+description: 'Customize Packer images with provisioners. Covers shell, file, and Ansible provisioners, execution order, and targeting specific builders during the build.'
 order: 5
 ---
 

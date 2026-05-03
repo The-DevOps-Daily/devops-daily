@@ -1,7 +1,7 @@
 {
   "id": "cicd-pipelines-quiz",
   "title": "CI/CD Pipelines Quiz",
-  "description": "Master continuous integration and deployment with practical pipeline scenarios and best practices",
+  "description": "Test your CI/CD pipeline knowledge with scenarios covering build stages, artifact promotion, environment strategy, deployment patterns, and rollbacks.",
   "category": "CI/CD",
   "icon": "Code",
   "totalPoints": 110,

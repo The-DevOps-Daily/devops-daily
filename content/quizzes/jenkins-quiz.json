@@ -1,7 +1,7 @@
 {
   "id": "jenkins-quiz",
   "title": "Jenkins CI/CD Pipeline Quiz",
-  "description": "Master Jenkins pipelines, Groovy scripting, plugin ecosystem, and CI/CD automation",
+  "description": "Test your Jenkins skills with questions on declarative and scripted pipelines, Groovy syntax, agents, plugins, shared libraries, and CI/CD automation patterns.",
   "category": "CI/CD",
   "icon": "Workflow",
   "totalPoints": 228,

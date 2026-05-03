@@ -1,6 +1,6 @@
 ---
 title: 'Introduction to AWS'
-description: 'Learn AWS fundamentals step by step, from basic concepts to building your first cloud application.'
+description: 'Learn AWS step by step by building a real cloud application. Covers IAM, EC2, S3, VPC, RDS, load balancing, Lambda, CloudWatch, and cost control.'
 category:
   name: 'AWS'
   slug: 'aws'
