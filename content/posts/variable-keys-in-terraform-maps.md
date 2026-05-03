@@ -1,6 +1,6 @@
 ---
 title: 'Variable Keys in Terraform Maps'
-excerpt: 'Learn how to use variable keys in Terraform maps to create dynamic and flexible configurations.'
+excerpt: 'Use variable keys in Terraform maps to build dynamic, reusable configurations. Covers map syntax, dynamic lookups, and merging values across environments.'
 category:
   name: 'Terraform'
   slug: 'terraform'

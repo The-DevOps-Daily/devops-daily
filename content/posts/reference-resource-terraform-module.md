@@ -1,6 +1,6 @@
 ---
 title: 'How to Reference a Resource Created by a Terraform Module'
-excerpt: 'Learn how to reference resources created by a Terraform module in your configurations.'
+excerpt: 'Reference resources created inside a Terraform module from the parent config. Covers defining outputs, accessing module outputs by name, and chaining modules.'
 category:
   name: 'Terraform'
   slug: 'terraform'

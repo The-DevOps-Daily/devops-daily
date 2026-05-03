@@ -1,6 +1,6 @@
 ---
 title: Kubernetes Architecture and Components
-description: Understand the foundational architecture and key components that make up a Kubernetes cluster
+description: 'Kubernetes architecture explained: control plane parts (API server, etcd, scheduler, controller manager) and worker node pieces (kubelet, kube-proxy, runtime).'
 order: 1
 ---
 

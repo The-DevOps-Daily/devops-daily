@@ -4,13 +4,13 @@ import { SearchPageClient } from '@/components/search-page-client';
 
 export const metadata: Metadata = {
   title: 'Search | DevOps Daily',
-  description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',
+  description: 'Search across DevOps Daily posts, guides, quizzes, games, flashcards, comparisons, and tools to find content on Docker, Kubernetes, AWS, CI/CD, and more.',
   alternates: {
     canonical: '/search',
   },
   openGraph: {
     title: 'Search | DevOps Daily',
-    description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',
+    description: 'Search across DevOps Daily posts, guides, quizzes, games, flashcards, comparisons, and tools to find content on Docker, Kubernetes, AWS, CI/CD, and more.',
     type: 'website',
     url: '/search',
     images: [
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Search | DevOps Daily',
-    description: 'Search across all DevOps Daily content - posts, guides, quizzes, games, and more.',
+    description: 'Search across DevOps Daily posts, guides, quizzes, games, flashcards, comparisons, and tools to find content on Docker, Kubernetes, AWS, CI/CD, and more.',
     images: ['/og-image.png'],
   },
 };

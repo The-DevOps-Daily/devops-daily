@@ -1,6 +1,6 @@
 ---
 title: 'Conditional Attributes in Terraform'
-excerpt: 'Learn how to use conditional expressions to dynamically set resource attributes in Terraform.'
+excerpt: 'Set Terraform resource attributes conditionally with the ternary operator. Covers syntax, dynamic blocks, and switching values per environment cleanly.'
 category:
   name: 'Terraform'
   slug: 'terraform'

@@ -2,7 +2,7 @@
   "id": "bitbucket-pipelines-vs-github-actions",
   "slug": "bitbucket-pipelines-vs-github-actions",
   "title": "Bitbucket Pipelines vs GitHub Actions",
-  "description": "A focused comparison of Bitbucket Pipelines and GitHub Actions as CI/CD platforms. Covers YAML syntax, runner types, marketplace, pricing, build minutes, and workflow capabilities to help you choose the right CI/CD tool.",
+  "description": "Bitbucket Pipelines vs GitHub Actions compared as CI/CD platforms: YAML syntax, runner types, marketplace size, pricing, build minutes, and workflow features.",
   "category": "CI/CD",
   "tags": [
     "Bitbucket Pipelines",

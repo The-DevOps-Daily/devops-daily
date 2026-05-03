@@ -1,8 +1,8 @@
 ---
 name: 'Docker'
 slug: 'docker'
-description: 'Containerization platform'
-longDescription: 'Learn containerization with Docker. From creating images to orchestrating containers, learn how to package and run applications consistently.'
+description: 'Docker articles, tutorials, and guides on DevOps Daily covering containers, images, Dockerfiles, Compose, volumes, networking, and production best practices.'
+longDescription: 'Docker articles, tutorials, and guides on DevOps Daily covering containers, images, Dockerfiles, Compose, volumes, networking, and production best practices.'
 icon: 'Container'
 color: 'bg-blue-500/10 text-blue-500'
 ---

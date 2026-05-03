@@ -1,6 +1,6 @@
 ---
 title: 'RDS - Managed Database Services'
-description: 'Set up reliable, scalable databases without the complexity of database administration.'
+description: 'Run MySQL, PostgreSQL, or SQL Server on AWS RDS without managing servers. Covers backups, patching, scaling, Multi-AZ failover, and choosing an instance class.'
 order: 6
 ---
 

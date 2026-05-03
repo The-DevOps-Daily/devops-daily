@@ -13,6 +13,7 @@ import { getAllAdventDays } from '@/lib/advent';
 import { getAllComparisons } from '@/lib/comparisons';
 import { getAllNewsletters } from '@/lib/newsletters';
 import { getAllHacktoberfestDays } from '@/lib/hacktoberfest';
+import { TOOLS } from '@/lib/tools';
 
 export const dynamic = 'force-static';
 
@@ -89,6 +90,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${baseUrl}/toolbox`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/tools`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
@@ -223,6 +230,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Tool routes (each tool has its own static page under /tools/<slug>)
+  const toolRoutes = TOOLS.map((tool) => ({
+    url: `${baseUrl}/tools/${tool.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
   // Static content pages
   const contentPages = [
     '/about',
@@ -267,6 +282,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...hacktoberfestRoutes,
     ...comparisonRoutes,
     ...newsletterRoutes,
+    ...toolRoutes,
     ...contentPages,
   ];
 }

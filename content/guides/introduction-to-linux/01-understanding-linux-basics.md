@@ -1,6 +1,6 @@
 ---
 title: 'Understanding Linux Basics'
-description: 'Learn what Linux is, its history, the philosophy behind it, and the ecosystem of distributions.'
+description: 'What Linux actually is: the kernel, distributions, the open-source philosophy, and a short history from Unix to today. Picks a distro that fits your goals.'
 order: 1
 ---
 

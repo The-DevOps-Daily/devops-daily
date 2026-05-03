@@ -1,6 +1,6 @@
 ---
 title: Introduction to Docker
-description: Learn how to use Docker to build, ship, and run applications efficiently through containerization
+description: 'Beginner-friendly Docker guide covering containers, images, Dockerfiles, volumes, networking, Compose, and production best practices in 10 chapters.'
 category:
   name: Docker
   slug: docker

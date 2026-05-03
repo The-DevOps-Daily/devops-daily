@@ -5,7 +5,8 @@ import { getAllCategories } from '@/lib/categories';
 
 export const metadata = {
   title: 'Categories',
-  description: 'Browse all DevOps categories',
+  description:
+    'Browse DevOps Daily content by category: Docker, Kubernetes, AWS, Git, Terraform, Linux, security, CI/CD, networking, and more, with posts and guides linked.',
   alternates: {
     canonical: '/categories',
   },

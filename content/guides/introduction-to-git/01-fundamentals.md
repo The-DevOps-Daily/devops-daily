@@ -1,7 +1,7 @@
 ---
 title: 'Understanding Git Fundamentals'
 order: 1
-description: 'Learn the core concepts of Git, how it works, and set up your environment'
+description: 'Git fundamentals explained: distributed version control, the working tree, staging area, and repository, plus the three file states and your first config.'
 ---
 
 Git is a distributed version control system that helps you track changes in your code, collaborate with others, and maintain a history of your project. Whether you're working alone or as part of a team, Git provides powerful tools to manage your codebase efficiently.

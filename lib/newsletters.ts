@@ -9,6 +9,10 @@ const NEWSLETTERS_DIR = path.join(process.cwd(), 'content', 'newsletters');
 export interface Newsletter {
   slug: string;
   title: string;
+  /** Optional per-newsletter description used as the page meta description.
+   *  Falls back to a generic templated string in app/newsletters/[slug] when
+   *  not set in the markdown frontmatter. */
+  description?: string;
   date: string;
   week: number;
   year: number;
@@ -18,6 +22,7 @@ export interface Newsletter {
 export interface NewsletterMeta {
   slug: string;
   title: string;
+  description?: string;
   date: string;
   week: number;
   year: number;
@@ -52,6 +57,7 @@ async function loadNewsletters(): Promise<Newsletter[]> {
         newsletters.push({
           slug,
           title: data.title || `Newsletter ${slug}`,
+          description: typeof data.description === 'string' ? data.description : undefined,
           date: data.date || '',
           week: data.week || 0,
           year: data.year || 0,

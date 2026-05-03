@@ -6,7 +6,8 @@ import { getAllGuides } from '@/lib/guides';
 
 export const metadata = {
   title: 'Guides',
-  description: 'In-depth guides for DevOps professionals',
+  description:
+    'In-depth DevOps guides covering Docker, Kubernetes, AWS, Git, Terraform, Linux, Bash, Postgres, networking, security, and CI/CD, each split into chapters.',
   alternates: {
     canonical: '/guides',
   },

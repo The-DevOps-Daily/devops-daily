@@ -27,9 +27,16 @@ export async function generateMetadata({
     .then((fs) => fs.access(`${process.cwd()}/public${ogImage}`).then(() => true).catch(() => false));
   const image = ogExists ? ogImage : '/og-image.png';
 
+  // Prefer a per-issue description from the newsletter's frontmatter so each
+  // page has its own, distinct meta description (Bing flagged the previous
+  // shared template as too short / duplicated across issues).
+  const description =
+    newsletter.description ||
+    `DevOps Daily Newsletter - Week ${newsletter.week}, ${newsletter.year}. Weekly roundup of new content and learning resources.`;
+
   return {
     title: { absolute: newsletter.title },
-    description: `DevOps Daily Newsletter - Week ${newsletter.week}, ${newsletter.year}. Weekly roundup of new content and learning resources.`,
+    description,
     alternates: { canonical: `/newsletters/${slug}` },
     openGraph: {
       title: newsletter.title,

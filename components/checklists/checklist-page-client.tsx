@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Clock, BarChart3, Tag } from 'lucide-react';
+import { ArrowLeft, Tag } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { Checklist } from '@/lib/checklist-utils';
 import { ChecklistItemComponent } from '@/components/checklists/checklist-item';
@@ -83,8 +83,12 @@ export function ChecklistPageClient({ checklist }: ChecklistPageClientProps) {
         Back to all checklists
       </Link>
 
+      {/* Title + description + estimated-time stats live in <PageHero>; we keep
+          only the richer category/difficulty/tag badges here so the page does
+          not render the same heading twice (Bing's SEO scanner flagged this
+          duplication as multiple H1s). */}
       <div className="mb-8">
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
           <span className={`text-sm px-3 py-1 rounded-full font-semibold print:bg-gray-100 print:text-gray-900 ${
             categoryColors[checklist.category as keyof typeof categoryColors] || 'bg-gray-100 text-gray-700'
           }`}>
@@ -95,24 +99,6 @@ export function ChecklistPageClient({ checklist }: ChecklistPageClientProps) {
           }`}>
             {checklist.difficulty.charAt(0).toUpperCase() + checklist.difficulty.slice(1)}
           </span>
-        </div>
-
-        <h2 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3">
-          {checklist.title}
-        </h2>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mb-4">
-          {checklist.description}
-        </p>
-
-        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-          <div className="flex items-center gap-1">
-            <Clock className="w-4 h-4" />
-            {checklist.estimatedTime}
-          </div>
-          <div className="flex items-center gap-1">
-            <BarChart3 className="w-4 h-4" />
-            {checklist.items.length} items
-          </div>
         </div>
 
         {checklist.tags.length > 0 && (
