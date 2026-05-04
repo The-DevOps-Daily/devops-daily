@@ -607,5 +607,6 @@
   "public/images/checklists/distributed-tracing-opentelemetry-og.svg": "feba4f3ab0d84d0b",
   "public/images/posts/kubernetes-1-36-user-namespaces-pod-resize.svg": "dbb13a3c9485779a",
   "public/images/posts/copy-fail-cve-2026-31431-linux-container-escape.svg": "2287bf47f6d3722b",
-  "public/images/posts/istio-traffic-management-routing-retries-circuit-breaking.svg": "32f1dc2c72514dfd"
+  "public/images/posts/istio-traffic-management-routing-retries-circuit-breaking.svg": "32f1dc2c72514dfd",
+  "public/images/posts/github-cve-2026-3854-git-push-rce.svg": "96bf8f7a2b81de21"
 }
