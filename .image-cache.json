@@ -44,5 +44,6 @@
   "public/images/posts/copy-fail-cve-2026-31431-linux-container-escape.svg": "05bb81d33b38bd75",
   "public/images/posts/istio-traffic-management-routing-retries-circuit-breaking.svg": "a11afa1139eadd43",
   "public/images/posts/github-cve-2026-3854-git-push-rce.svg": "02520cbb04a08f51",
-  "public/images/posts/mini-shai-hulud-pytorch-lightning-supply-chain-attack.svg": "bf59393688058796"
+  "public/images/posts/mini-shai-hulud-pytorch-lightning-supply-chain-attack.svg": "bf59393688058796",
+  "public/images/posts/top-github-devops-learning-repos-2026.svg": "c6284dac6ed72f1d"
 }
