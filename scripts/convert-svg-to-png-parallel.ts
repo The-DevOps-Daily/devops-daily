@@ -16,6 +16,8 @@ const DIRECTORIES = [
   { dir: path.join(PUBLIC_DIR, 'images', 'news'), type: 'news' },
   { dir: path.join(PUBLIC_DIR, 'images', 'checklists'), type: 'checklists' },
   { dir: path.join(PUBLIC_DIR, 'images', 'interview-questions'), type: 'interview-questions' },
+  { dir: path.join(PUBLIC_DIR, 'images', 'quizzes'), type: 'quizzes' },
+  { dir: path.join(PUBLIC_DIR, 'images', 'flashcards'), type: 'flashcards' },
 ];
 
 // Generate content hash for SVG file
