@@ -138,7 +138,7 @@
     "postcss": "^8.5.12",
     "prettier": "^3.8.1",
     "sharp": "^0.34.5",
-    "tailwindcss": "^4.2.1",
+    "tailwindcss": "^4.2.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
