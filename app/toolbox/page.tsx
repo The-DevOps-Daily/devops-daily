@@ -406,6 +406,20 @@ const tools: Tool[] = [
     ],
   },
   {
+    name: 'OpenChoreo',
+    description:
+      'Open-source Internal Developer Platform (IDP) for building cloud-native applications, with golden-path templates, environment promotion, and built-in observability. CNCF Sandbox project.',
+    href: 'https://github.com/openchoreo/openchoreo',
+    category: 'developer',
+    icon: Workflow,
+    isNew: true,
+    badges: [
+      { text: 'IDP', variant: 'outline' },
+      { text: 'CNCF Sandbox', variant: 'secondary' },
+      { text: 'Open Source', variant: 'default' },
+    ],
+  },
+  {
     name: 'Snyk',
     description:
       'Developer security platform to find and fix vulnerabilities in code, containers, and dependencies.',
