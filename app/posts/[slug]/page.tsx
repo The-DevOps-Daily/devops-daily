@@ -7,6 +7,8 @@ import { getPostBySlug, getAllPosts, getRelatedPosts } from '@/lib/posts';
 import { notFound, redirect } from 'next/navigation';
 import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
 import { RelatedPosts } from '@/components/related-posts';
+import { RelatedAcrossTypes } from '@/components/related-across-types';
+import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
@@ -109,6 +111,20 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   const mainRelatedPosts = relatedPosts.slice(0, 3);
   const sidebarRelatedPosts = relatedPosts.slice(3, 6);
 
+  // Cross-content-type matches: shows up to 3 items from quizzes, checklists,
+  // exercises, flashcards, or interview questions on the same topic. The
+  // within-type "Related Posts" section above stays; this is the "also worth
+  // your time" mix that nudges readers between content kinds.
+  const crossTypeRelated = await getRelatedAcrossTypes({
+    current: {
+      type: 'post',
+      id: post.slug,
+      category: post.category?.slug,
+      tags: post.tags || [],
+    },
+    limit: 3,
+  });
+
   // Breadcrumb items for schema
   const breadcrumbItems = [
     { name: 'Home', url: '/' },
@@ -206,6 +222,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   }))}
                   className="mt-12"
                 />
+              )}
+
+              {crossTypeRelated.length > 0 && (
+                <RelatedAcrossTypes items={crossTypeRelated} className="mt-12" />
               )}
             </article>
           </div>

@@ -7,6 +7,8 @@ import { ListChecks } from 'lucide-react';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { pickRelatedItems } from '@/lib/related-content';
 import { RelatedContent } from '@/components/related-content';
+import { RelatedAcrossTypes } from '@/components/related-across-types';
+import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
 import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateStaticParams() {
@@ -88,6 +90,20 @@ export default async function ChecklistPage(
     { currentSlug: checklist.slug, limit: 3 },
   );
 
+  // Cross-content-type matches across posts/quizzes/exercises/flashcards/
+  // interview-questions for the same topic. Pairs with the within-type
+  // "More checklists" block above.
+  const crossTypeRelated = await getRelatedAcrossTypes({
+    current: {
+      type: 'checklist',
+      id: checklist.slug,
+      category: checklist.category,
+      tags: checklist.tags,
+      difficulty: checklist.difficulty,
+    },
+    limit: 3,
+  });
+
   return (
     <>
       <PageHero
@@ -115,7 +131,7 @@ export default async function ChecklistPage(
         </div>
       </div>
       {related.length > 0 && (
-        <div className="container mx-auto px-4 pb-16">
+        <div className="container mx-auto px-4 pb-8">
           <RelatedContent
             title="More checklists"
             items={related.map((c) => ({
@@ -127,6 +143,11 @@ export default async function ChecklistPage(
               meta: c.estimatedTime,
             }))}
           />
+        </div>
+      )}
+      {crossTypeRelated.length > 0 && (
+        <div className="container mx-auto px-4 pb-16">
+          <RelatedAcrossTypes items={crossTypeRelated} />
         </div>
       )}
     </>

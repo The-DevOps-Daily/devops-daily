@@ -10,6 +10,8 @@ import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { pickRelatedItems } from '@/lib/related-content';
 import { RelatedContent } from '@/components/related-content';
+import { RelatedAcrossTypes } from '@/components/related-across-types';
+import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -115,6 +117,17 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
     { currentSlug: exercise.id, limit: 3 },
   );
 
+  const crossTypeRelated = await getRelatedAcrossTypes({
+    current: {
+      type: 'exercise',
+      id: exercise.id,
+      category: exercise.category.slug,
+      tags: exercise.tags ?? [],
+      difficulty: exercise.difficulty,
+    },
+    limit: 3,
+  });
+
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
@@ -135,7 +148,7 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
         />
       </div>
       {related.length > 0 && (
-        <div className="container mx-auto px-4 pb-16">
+        <div className="container mx-auto px-4 pb-8">
           <RelatedContent
             title="More exercises"
             items={related.map((r) => ({
@@ -147,6 +160,11 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
               meta: r.estimatedTime,
             }))}
           />
+        </div>
+      )}
+      {crossTypeRelated.length > 0 && (
+        <div className="container mx-auto px-4 pb-16">
+          <RelatedAcrossTypes items={crossTypeRelated} />
         </div>
       )}
     </>
