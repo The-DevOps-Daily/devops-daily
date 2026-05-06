@@ -5,6 +5,8 @@ import { ChecklistPageClient } from '@/components/checklists/checklist-page-clie
 import { PageHero } from '@/components/page-hero';
 import { ListChecks } from 'lucide-react';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { pickRelatedItems } from '@/lib/related-content';
+import { RelatedContent } from '@/components/related-content';
 
 export async function generateStaticParams() {
   const checklists = await getAllChecklists();
@@ -70,6 +72,21 @@ export default async function ChecklistPage(
     notFound();
   }
 
+  // Sibling checklists scored by tag overlap, category, and difficulty so the
+  // dedicated detail pages get inbound links from related siblings instead of
+  // only from the /checklists index. See lib/related-content.ts.
+  const all = await getAllChecklists();
+  const related = pickRelatedItems(
+    all,
+    {
+      slug: checklist.slug,
+      category: checklist.category,
+      tags: checklist.tags,
+      difficulty: checklist.difficulty,
+    },
+    { currentSlug: checklist.slug, limit: 3 },
+  );
+
   return (
     <>
       <PageHero
@@ -87,6 +104,21 @@ export default async function ChecklistPage(
         ].filter(s => s.value !== '')}
       />
       <ChecklistPageClient checklist={checklist} />
+      {related.length > 0 && (
+        <div className="container mx-auto px-4 pb-16">
+          <RelatedContent
+            title="More checklists"
+            items={related.map((c) => ({
+              slug: c.slug,
+              title: c.title,
+              description: c.description,
+              href: `/checklists/${c.slug}`,
+              label: c.category,
+              meta: c.estimatedTime,
+            }))}
+          />
+        </div>
+      )}
     </>
   );
 }

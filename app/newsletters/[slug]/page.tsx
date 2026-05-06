@@ -72,6 +72,17 @@ export default async function NewsletterDetailPage({
 
   if (!newsletter) notFound();
 
+  // Sibling newsletters. getAllNewsletters() returns newest-first, same as
+  // /news/[slug], so idx-1 is newer and idx+1 is older. Used for the prev/next
+  // nav at the bottom and the "Recent newsletters" block. Both feed real
+  // internal links to weeks that previously had only one inbound link from
+  // /newsletters (Ahrefs flagged 4 weekly issues with single-inlink status).
+  const all = await getAllNewsletters();
+  const idx = all.findIndex((n) => n.slug === newsletter.slug);
+  const newer = idx > 0 ? all[idx - 1] : null;
+  const older = idx >= 0 && idx < all.length - 1 ? all[idx + 1] : null;
+  const recent = all.filter((n) => n.slug !== newsletter.slug).slice(0, 5);
+
   const schemaItems = [
     { name: 'Home', url: '/' },
     { name: 'Newsletters', url: '/newsletters' },
@@ -121,6 +132,61 @@ export default async function NewsletterDetailPage({
               prose-img:rounded-lg prose-img:shadow-md"
             dangerouslySetInnerHTML={{ __html: newsletter.content }}
           />
+
+          {/* Prev / next newsletter nav. Mirrors the /news/[slug] pattern
+              from PR #1207 so each weekly issue has inbound links from at
+              least its sibling weeks. */}
+          {(newer || older) && (
+            <nav className="mt-12 pt-8 border-t grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {older ? (
+                <Link
+                  href={`/newsletters/${older.slug}`}
+                  className="rounded-lg border p-4 hover:bg-muted/40 transition-colors"
+                >
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Previous newsletter
+                  </p>
+                  <p className="font-medium">{older.title}</p>
+                </Link>
+              ) : (
+                <span />
+              )}
+              {newer && (
+                <Link
+                  href={`/newsletters/${newer.slug}`}
+                  className="rounded-lg border p-4 hover:bg-muted/40 transition-colors text-right sm:col-start-2"
+                >
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Next newsletter
+                  </p>
+                  <p className="font-medium">{newer.title}</p>
+                </Link>
+              )}
+            </nav>
+          )}
+
+          {/* Recent newsletters - 5 most recent siblings, server-rendered so
+              every issue's links flow through to the index without waiting on
+              client interaction. */}
+          {recent.length > 0 && (
+            <div className="mt-10 pt-8 border-t">
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                Recent newsletters
+              </h3>
+              <ul className="space-y-2">
+                {recent.map((n) => (
+                  <li key={n.slug}>
+                    <Link
+                      href={`/newsletters/${n.slug}`}
+                      className="text-foreground hover:text-primary hover:underline"
+                    >
+                      {n.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Subscribe CTA */}
           <div className="mt-12 p-6 rounded-xl border border-primary/20 bg-primary/5 text-center">
