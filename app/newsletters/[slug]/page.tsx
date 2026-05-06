@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAllNewsletters, getNewsletterBySlug } from '@/lib/newsletters';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { CarbonAds } from '@/components/carbon-ads';
 import { Mail, ArrowLeft, Calendar } from 'lucide-react';
 import type { Metadata } from 'next';
 
@@ -132,6 +133,12 @@ export default async function NewsletterDetailPage({
               prose-img:rounded-lg prose-img:shadow-md"
             dangerouslySetInnerHTML={{ __html: newsletter.content }}
           />
+
+          {/* Inline ad slot at the natural reading break between the issue
+              body and the sibling-week navigation. */}
+          <div className="mt-12">
+            <CarbonAds />
+          </div>
 
           {/* Prev / next newsletter nav. Mirrors the /news/[slug] pattern
               from PR #1207 so each weekly issue has inbound links from at

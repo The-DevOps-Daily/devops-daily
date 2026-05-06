@@ -7,6 +7,7 @@ import { ListChecks } from 'lucide-react';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { pickRelatedItems } from '@/lib/related-content';
 import { RelatedContent } from '@/components/related-content';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export async function generateStaticParams() {
   const checklists = await getAllChecklists();
@@ -104,6 +105,15 @@ export default async function ChecklistPage(
         ].filter(s => s.value !== '')}
       />
       <ChecklistPageClient checklist={checklist} />
+      {/* Inline ad slot. Sits between the checklist body and the "More
+          checklists" cross-links so it lands at a natural reading break
+          rather than mid-content. Same pattern across the four slug pages
+          we previously had no ad on. */}
+      <div className="container mx-auto px-4 pt-8 pb-2">
+        <div className="max-w-2xl mx-auto">
+          <CarbonAds />
+        </div>
+      </div>
       {related.length > 0 && (
         <div className="container mx-auto px-4 pb-16">
           <RelatedContent
