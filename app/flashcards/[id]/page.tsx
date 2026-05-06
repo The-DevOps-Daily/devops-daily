@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getFlashCardSet, getAllFlashCardSets } from '@/lib/flashcard-loader'
+import type { FlashCardSet } from '@/lib/flashcard-loader'
 import { FlashCardDeck } from '@/components/flashcard-deck'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,6 +10,8 @@ import Link from 'next/link'
 import * as Icons from 'lucide-react'
 import { PageHero } from '@/components/page-hero'
 import { truncateMetaDescription } from '@/lib/meta-description'
+import { pickRelatedItems } from '@/lib/related-content'
+import { RelatedContent } from '@/components/related-content'
 
 interface FlashcardPageProps {
   params: Promise<{
@@ -136,6 +139,53 @@ export default async function FlashcardPage({ params }: FlashcardPageProps) {
           />
         </div>
       </section>
+
+      <FlashcardRelated currentSet={flashcardSet} />
     </div>
   )
+}
+
+// Sets do not carry top-level tags today, so we score on category + difficulty
+// alone. Card-level tags are not aggregated up to the set; doing so would mean
+// a schema change. The simpler scoring still gives every set ~2-3 inbound
+// links from siblings instead of only one from the /flashcards index.
+async function FlashcardRelated({ currentSet }: { currentSet: FlashCardSet }) {
+  const all = await getAllFlashCardSets();
+  const scorable = all.map((s) => ({
+    slug: s.id,
+    title: s.title,
+    description: s.description,
+    category: s.category,
+    difficulty: s.difficulty,
+    estimatedTime: s.estimatedTime,
+  }));
+  const related = pickRelatedItems(
+    scorable,
+    {
+      slug: currentSet.id,
+      category: currentSet.category,
+      difficulty: currentSet.difficulty,
+    },
+    { currentSlug: currentSet.id, limit: 3 },
+  );
+
+  if (related.length === 0) return null;
+
+  return (
+    <section className="container mx-auto px-4 pb-16">
+      <div className="max-w-4xl mx-auto">
+        <RelatedContent
+          title="More flashcard decks"
+          items={related.map((r) => ({
+            slug: r.slug,
+            title: r.title,
+            description: r.description,
+            href: `/flashcards/${r.slug}`,
+            label: r.category,
+            meta: r.estimatedTime,
+          }))}
+        />
+      </div>
+    </section>
+  );
 }

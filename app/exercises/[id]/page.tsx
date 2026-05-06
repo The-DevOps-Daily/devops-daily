@@ -8,6 +8,8 @@ import {
 import { ExerciseSeriesNav } from '@/components/exercise-series-nav';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { pickRelatedItems } from '@/lib/related-content';
+import { RelatedContent } from '@/components/related-content';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -88,6 +90,31 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
     ? await getExercisesInSeries(exercise.series.id)
     : [];
 
+  // Score sibling exercises so each detail page links to 3 related ones
+  // (was 0 before this PR for the exercises Ahrefs flagged). Exercise
+  // category is an object here, so flatten the slug for scoring.
+  const allExercises = await getAllExercises();
+  const scorable = allExercises.map((ex) => ({
+    slug: ex.id,
+    title: ex.title,
+    description: ex.description,
+    category: ex.category.slug,
+    tags: ex.tags ?? [],
+    difficulty: ex.difficulty,
+    estimatedTime: ex.estimatedTime,
+    categoryName: ex.category.name,
+  }));
+  const related = pickRelatedItems(
+    scorable,
+    {
+      slug: exercise.id,
+      category: exercise.category.slug,
+      tags: exercise.tags ?? [],
+      difficulty: exercise.difficulty,
+    },
+    { currentSlug: exercise.id, limit: 3 },
+  );
+
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
@@ -107,6 +134,21 @@ export default async function ExerciseDetailPage({ params }: { params: Promise<{
           seriesExercises={seriesExercises}
         />
       </div>
+      {related.length > 0 && (
+        <div className="container mx-auto px-4 pb-16">
+          <RelatedContent
+            title="More exercises"
+            items={related.map((r) => ({
+              slug: r.slug,
+              title: r.title,
+              description: r.description,
+              href: `/exercises/${r.slug}`,
+              label: r.categoryName,
+              meta: r.estimatedTime,
+            }))}
+          />
+        </div>
+      )}
     </>
   );
 }
