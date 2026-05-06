@@ -12,6 +12,8 @@ import { PageHero } from '@/components/page-hero'
 import { truncateMetaDescription } from '@/lib/meta-description'
 import { pickRelatedItems } from '@/lib/related-content'
 import { RelatedContent } from '@/components/related-content'
+import { RelatedAcrossTypes } from '@/components/related-across-types'
+import { getRelatedAcrossTypes } from '@/lib/related-cross-type'
 import { CarbonAds } from '@/components/carbon-ads'
 
 interface FlashcardPageProps {
@@ -148,8 +150,29 @@ export default async function FlashcardPage({ params }: FlashcardPageProps) {
       </section>
 
       <FlashcardRelated currentSet={flashcardSet} />
+      <FlashcardCrossTypeRelated currentSet={flashcardSet} />
     </div>
   )
+}
+
+async function FlashcardCrossTypeRelated({ currentSet }: { currentSet: FlashCardSet }) {
+  const items = await getRelatedAcrossTypes({
+    current: {
+      type: 'flashcard',
+      id: currentSet.id,
+      category: currentSet.category,
+      difficulty: currentSet.difficulty,
+    },
+    limit: 3,
+  });
+  if (items.length === 0) return null;
+  return (
+    <section className="container mx-auto px-4 pb-16">
+      <div className="max-w-4xl mx-auto">
+        <RelatedAcrossTypes items={items} />
+      </div>
+    </section>
+  );
 }
 
 // Sets do not carry top-level tags today, so we score on category + difficulty

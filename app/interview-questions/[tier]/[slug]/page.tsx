@@ -8,6 +8,8 @@ import { PageHero } from '@/components/page-hero';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { CarbonAds } from '@/components/carbon-ads';
+import { RelatedAcrossTypes } from '@/components/related-across-types';
+import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
 import type { ExperienceTier } from '@/lib/interview-utils';
 
 const validTiers: ExperienceTier[] = ['junior', 'mid', 'senior'];
@@ -89,6 +91,16 @@ export default async function QuestionPage({ params }: PageProps) {
 
   const capitalizedTier = tier.charAt(0).toUpperCase() + tier.slice(1);
 
+  const crossTypeRelated = await getRelatedAcrossTypes({
+    current: {
+      type: 'interview-question',
+      id: `${question.tier}/${question.slug}`,
+      category: question.category,
+      tags: question.tags || [],
+    },
+    limit: 3,
+  });
+
   // Related questions - same category, any tier (not just this one), excluding
   // the current question. Sorted: same-tier first, then other tiers. Capped
   // to 5 so the section stays readable but still gives crawlers and readers
@@ -147,6 +159,11 @@ export default async function QuestionPage({ params }: PageProps) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+      {crossTypeRelated.length > 0 && (
+        <section className="container mx-auto px-4 max-w-4xl pb-12">
+          <RelatedAcrossTypes items={crossTypeRelated} />
         </section>
       )}
     </>

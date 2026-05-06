@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { RelatedPosts } from '@/components/related-posts';
+import { RelatedAcrossTypes } from '@/components/related-across-types';
+import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
 import { CarbonAds } from '@/components/carbon-ads';
 
 export const dynamicParams = false;
@@ -78,6 +80,16 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
   }
 
   const relatedQuizzes = await getRelatedQuizzes(slug, quizConfig.category, 3);
+
+  const crossTypeRelated = await getRelatedAcrossTypes({
+    current: {
+      type: 'quiz',
+      id: slug,
+      category: quizConfig.category,
+      tags: (quizConfig.metadata?.tags || []).map((t) => String(t)),
+    },
+    limit: 3,
+  });
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -199,6 +211,12 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
                 linkPrefix="/quizzes"
                 className=""
               />
+            </div>
+          )}
+
+          {crossTypeRelated.length > 0 && (
+            <div className="max-w-4xl mx-auto mt-12">
+              <RelatedAcrossTypes items={crossTypeRelated} />
             </div>
           )}
 
