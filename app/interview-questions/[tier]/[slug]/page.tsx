@@ -7,6 +7,7 @@ import { InterviewQuestionPage } from '@/components/interview-questions/intervie
 import { PageHero } from '@/components/page-hero';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { CarbonAds } from '@/components/carbon-ads';
 import type { ExperienceTier } from '@/lib/interview-utils';
 
 const validTiers: ExperienceTier[] = ['junior', 'mid', 'senior'];
@@ -116,6 +117,13 @@ export default async function QuestionPage({ params }: PageProps) {
         ]}
       />
       <InterviewQuestionPage question={question} tier={tier as ExperienceTier} />
+
+      {/* Inline ad slot between the question body and the sibling list, sat
+          where readers naturally pause before deciding whether to keep
+          drilling. */}
+      <div className="container mx-auto px-4 max-w-2xl py-8">
+        <CarbonAds />
+      </div>
 
       {related.length > 0 && (
         <section className="container mx-auto px-4 max-w-4xl pb-12">

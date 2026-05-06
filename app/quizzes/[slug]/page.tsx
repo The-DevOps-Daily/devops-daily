@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { RelatedPosts } from '@/components/related-posts';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export const dynamicParams = false;
 
@@ -176,6 +177,11 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
                 Back to Quizzes
               </Link>
             </Button>
+          </div>
+
+          {/* Inline ad slot at the natural break before the cross-link block. */}
+          <div className="max-w-2xl mx-auto mt-12">
+            <CarbonAds />
           </div>
 
           {/* Related Quizzes */}

@@ -12,6 +12,7 @@ import { PageHero } from '@/components/page-hero'
 import { truncateMetaDescription } from '@/lib/meta-description'
 import { pickRelatedItems } from '@/lib/related-content'
 import { RelatedContent } from '@/components/related-content'
+import { CarbonAds } from '@/components/carbon-ads'
 
 interface FlashcardPageProps {
   params: Promise<{
@@ -137,6 +138,12 @@ export default async function FlashcardPage({ params }: FlashcardPageProps) {
             title={flashcardSet.title}
             theme={flashcardSet.theme}
           />
+
+          {/* Inline ad slot, sits after the deck so it does not interrupt
+              the study flow. */}
+          <div className="mt-12 max-w-2xl mx-auto">
+            <CarbonAds />
+          </div>
         </div>
       </section>
 
