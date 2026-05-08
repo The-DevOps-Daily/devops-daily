@@ -663,5 +663,7 @@
   "public/images/flashcards/terraform-basics-og.svg": "f11cc8bf7c93e9ae",
   "public/images/flashcards/monitoring-observability-og.svg": "4ccfbd6fc015a5b4",
   "public/images/posts/mini-shai-hulud-pytorch-lightning-supply-chain-attack.svg": "3b9eaebe2819e7b0",
-  "public/images/posts/top-github-devops-learning-repos-2026.svg": "23663ff409e96cf7"
+  "public/images/posts/top-github-devops-learning-repos-2026.svg": "23663ff409e96cf7",
+  "public/images/flashcards/on-call-rotation-escalation-policy-og.svg": "8a293aafa1bf05db",
+  "public/images/checklists/litmus-chaos-engineering-experiment-og.svg": "7f1eea43c6fabf69"
 }
