@@ -35,8 +35,9 @@ Here is what shipped, who needs to act, and how to roll it out without breaking 
 | Advisories | 13 (7 High, 4 Moderate, 2 Low) |
 | Worst CVSS | 8.6 (WebSocket SSRF) |
 | Upstream React CVE | CVE-2026-23870 (Server Components DoS) |
-| Affected versions | 13.x through 16.2.4, 15.x through 15.5.15 |
-| Patched versions | 15.5.16 and later (15.5.18 ships extra fixes), 16.2.5 and later (16.2.6 ships extra fixes) |
+| Affected versions | Varies by advisory; many cover 15.x &lt; 15.5.16 and 16.x &lt; 16.2.5, with some also reaching 13.x and 14.x |
+| Patched versions | 15.5.18 (cumulative on the 15.x line) and 16.2.6 (cumulative on the 16.x line) |
+| Node engine | 15.5.18 needs `^18.18.0 \|\| ^19.8.0 \|\| >=20.0.0`; 16.2.6 needs `>=20.9.0` |
 | Vercel-hosted | Partially mitigated for some advisories |
 | Self-hosted | Fully exposed until upgraded |
 | What you do | `npm install next@latest` on the same major, redeploy, audit middleware-only authorization |
@@ -50,7 +51,12 @@ Both releases bundle the same 13 advisories. The difference is the major version
 
 If you stayed on a 15.x release because you have not migrated to 16, you are not stuck. The 15.5 line is still being patched and gets the same coverage. There is no mandatory major upgrade hidden inside this release. You install the highest patch on your current major and you are done with the framework side of the work.
 
-Both releases require Node 18.18.0 or newer, same as their predecessors. No new platform requirements.
+Note the Node version requirements differ between the two lines. Confirm your runtime before you bump:
+
+- **Next.js 15.5.18** declares `engines.node` as `^18.18.0 || ^19.8.0 || >=20.0.0`. Same baseline as the rest of the 15.5.x stream.
+- **Next.js 16.2.6** declares `engines.node` as `>=20.9.0`. If you are still on Node 18, you have to either pick up the 15.5.18 fix on the 15.x line or upgrade Node before you can move to 16.2.6.
+
+Verify with `node --version` and your CI image before pinning.
 
 ## The High-Severity Advisories
 
@@ -118,17 +124,21 @@ Decision matrix once you know your version:
 
 | Your version | Exposure | Action |
 |--------------|----------|--------|
-| 15.5.18 / 16.2.6 or later | Patched | None on framework, audit your code |
-| 15.5.16, 15.5.17, 16.2.5 | Mostly patched | Bump to the latest patch on your major |
-| 15.x below 15.5.16 | All 13 advisories | Upgrade |
-| 16.x below 16.2.5 | All 13 advisories | Upgrade |
-| 13.x or 14.x | Subset of advisories | Plan a major upgrade; partial backports unlikely |
+| 15.5.18 or 16.2.6 (or later on the same line) | Patched | None on framework, audit your code |
+| 15.5.16, 15.5.17, 16.2.5 | Most fixes landed; the cumulative patch is on 15.5.18 / 16.2.6 | Bump to the latest patch on your major |
+| 15.x below 15.5.16 | Multiple advisories apply (exact set varies; ranges in each GHSA) | Upgrade to 15.5.18 |
+| 16.x below 16.2.5 | Multiple advisories apply (exact set varies; ranges in each GHSA) | Upgrade to 16.2.6 |
+| 13.x or 14.x | Subset of the advisories reach back to 13.x; partial backports unlikely | Plan a major upgrade |
+
+Affected ranges vary per advisory. The simple call is "upgrade to 15.5.18 or 16.2.6 to cover the full batch." If you need the exact range for a single CVE, click into its GHSA from the release notes.
 
 Vercel-hosted apps get platform-level mitigation for some of the bypass advisories. The framework patch is still the only complete fix and is required to clear the upstream React CVE and the Cache Components DoS.
 
 ## Rolling Out the Patch
 
-The mechanics are short. Pin the new version, run the install, redeploy. Same major, same Node version, no schema changes, no breaking config.
+The mechanics are short. Pin the new version, run the install, redeploy. Same major, no schema changes, no breaking config (mind the Node bump for 16.2.6 noted above).
+
+<!--email_off-->
 
 ```bash
 # 15.x line
@@ -142,7 +152,11 @@ yarn add next@15.5.18
 npm install next@16.2.6
 ```
 
+<!--/email_off-->
+
 Production rollout pattern that works for most teams:
+
+<!--email_off-->
 
 ```bash
 # 1) Bump the dependency in a branch
@@ -164,6 +178,8 @@ npm run build
 
 # 5) Roll to production
 ```
+
+<!--/email_off-->
 
 If you cannot deploy immediately, a few of the advisories ship workarounds:
 
