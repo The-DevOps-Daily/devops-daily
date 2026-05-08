@@ -1,7 +1,7 @@
 {
   "id": "ci-cd-github-actions",
   "title": "Complete CI/CD Pipeline with GitHub Actions",
-  "description": "Build a production-ready CI/CD pipeline with testing, security scanning, and automated deployment.",
+  "description": "Hands-on lab: build a production CI/CD pipeline with GitHub Actions, including tests, security scanning, container builds, and automated deployment.",
   "category": {
     "name": "CI/CD",
     "slug": "ci-cd"

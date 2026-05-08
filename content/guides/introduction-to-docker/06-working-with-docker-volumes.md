@@ -1,6 +1,6 @@
 ---
 title: Working with Docker Volumes
-description: Manage persistent data storage for your Docker containers
+description: 'Persist data across container restarts with Docker volumes. Covers named vs anonymous volumes, bind mounts, tmpfs, backups, and common pitfalls.'
 order: 6
 ---
 
