@@ -1,6 +1,6 @@
 ---
 title: 'What Does Terraform Refresh Really Do?'
-excerpt: 'Understand the purpose and functionality of the `terraform refresh` command in Terraform workflows.'
+excerpt: 'What `terraform refresh` actually does, how it updates the state file without changing real resources, and where it still fits in modern Terraform workflows.'
 category:
   name: 'Terraform'
   slug: 'terraform'

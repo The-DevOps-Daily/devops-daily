@@ -2,7 +2,7 @@
   "id": "cicd-pipeline-setup",
   "slug": "cicd-pipeline-setup",
   "title": "CI/CD Pipeline Setup Checklist",
-  "description": "Complete guide to setting up a production-ready CI/CD pipeline.",
+  "description": "Step-by-step checklist for a production-ready CI/CD pipeline: source control, builds, tests, security scans, deploy gates, secrets, and rollback paths.",
   "category": "DevOps",
   "difficulty": "intermediate",
   "estimatedTime": "1-2 hours",

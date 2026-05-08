@@ -442,7 +442,7 @@ const games: Game[] = [
     id: 'git-quiz',
     type: 'game',
     title: 'Git Command Quiz',
-    description: 'Test your Git knowledge with interactive scenarios and real-world challenges.',
+    description: 'Test your Git knowledge with interactive scenarios covering branches, merges, rebases, conflicts, and the recovery commands you reach for under pressure.',
     iconName: 'Activity',
     badgeText: 'Popular',
     color: 'from-orange-500 to-amber-600',
