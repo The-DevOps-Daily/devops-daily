@@ -666,5 +666,6 @@
   "public/images/posts/top-github-devops-learning-repos-2026.svg": "23663ff409e96cf7",
   "public/images/flashcards/on-call-rotation-escalation-policy-og.svg": "8a293aafa1bf05db",
   "public/images/checklists/litmus-chaos-engineering-experiment-og.svg": "7f1eea43c6fabf69",
-  "public/images/posts/nextjs-16-2-6-15-5-18-security-release.svg": "1e6e4b9156f6b9cd"
+  "public/images/posts/nextjs-16-2-6-15-5-18-security-release.svg": "1e6e4b9156f6b9cd",
+  "public/images/posts/dirty-frag-cve-2026-43284-linux-root-escalation.svg": "cf415b585e2506d7"
 }
