@@ -35,11 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Sheet,
@@ -125,7 +121,8 @@ export function SearchPageClient() {
       const params = new URLSearchParams();
       if (newQuery) params.set('q', newQuery);
       if (newFilters.types.length > 0) params.set('types', newFilters.types.join(','));
-      if (newFilters.categories.length > 0) params.set('categories', newFilters.categories.join(','));
+      if (newFilters.categories.length > 0)
+        params.set('categories', newFilters.categories.join(','));
       if (newFilters.tags.length > 0) params.set('tags', newFilters.tags.join(','));
       if (newFilters.sortBy !== 'relevance') params.set('sort', newFilters.sortBy);
       if (newFilters.sortDirection !== 'desc') params.set('dir', newFilters.sortDirection);
@@ -142,16 +139,14 @@ export function SearchPageClient() {
       return [];
     }
     // Check if any filters are active
-    const hasFilters = 
-      filters.types.length > 0 || 
-      filters.categories.length > 0 || 
-      filters.tags.length > 0;
-    
+    const hasFilters =
+      filters.types.length > 0 || filters.categories.length > 0 || filters.tags.length > 0;
+
     // If no query and no filters, return empty
     if (!query.trim() && !hasFilters) {
       return [];
     }
-    
+
     // Pass searchIndex for filter-only browsing (when no query)
     return searchWithFuse(fuse, query, filters, searchIndex);
   }, [fuse, query, filters, searchIndex]);
@@ -227,9 +222,7 @@ export function SearchPageClient() {
       if (showSuggestions && suggestions.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
-          setSuggestionIndex((prev) =>
-            prev < suggestions.length - 1 ? prev + 1 : prev
-          );
+          setSuggestionIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
           setSuggestionIndex((prev) => (prev > 0 ? prev - 1 : -1));
@@ -248,9 +241,7 @@ export function SearchPageClient() {
       if (!showSuggestions && results.length > 0) {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
-          setSelectedIndex((prev) =>
-            prev < results.length - 1 ? prev + 1 : prev
-          );
+          setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev));
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
           setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
@@ -266,7 +257,15 @@ export function SearchPageClient() {
         }
       }
     },
-    [showSuggestions, suggestions, suggestionIndex, results, selectedIndex, router, selectSuggestion]
+    [
+      showSuggestions,
+      suggestions,
+      suggestionIndex,
+      results,
+      selectedIndex,
+      router,
+      selectSuggestion,
+    ]
   );
 
   // Reset selected index when results change
@@ -329,7 +328,7 @@ export function SearchPageClient() {
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
-                  onClick={() => selectSuggestion(suggestion)}
+                  onMouseDown={() => selectSuggestion(suggestion)}
                   className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 ${
                     index === suggestionIndex
                       ? 'bg-primary text-primary-foreground'
@@ -369,7 +368,7 @@ export function SearchPageClient() {
           )}
         </div>
 
-       <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Select
             value={filters.sortBy}
             onValueChange={(value) =>
@@ -610,9 +609,7 @@ export function SearchPageClient() {
             <div className="text-center py-12">
               <Search className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h2 className="text-xl font-semibold mb-2">No results found</h2>
-              <p className="text-muted-foreground mb-4">
-                No matches for &quot;{query}&quot;
-              </p>
+              <p className="text-muted-foreground mb-4">No matches for &quot;{query}&quot;</p>
 
               {/* Did you mean suggestions */}
               {(() => {
@@ -695,13 +692,7 @@ export function SearchPageClient() {
   );
 }
 
-function SearchResultCard({
-  result,
-  isSelected,
-}: {
-  result: SearchResult;
-  isSelected: boolean;
-}) {
+function SearchResultCard({ result, isSelected }: { result: SearchResult; isSelected: boolean }) {
   const Icon = TYPE_ICONS[result.type] || FileText;
 
   return (
@@ -745,9 +736,7 @@ function SearchResultCard({
               {result.title}
             </h3>
 
-            <p className="text-muted-foreground text-sm line-clamp-2 mt-1">
-              {result.description}
-            </p>
+            <p className="text-muted-foreground text-sm line-clamp-2 mt-1">{result.description}</p>
 
             {/* Tags */}
             {result.tags && result.tags.length > 0 && (
