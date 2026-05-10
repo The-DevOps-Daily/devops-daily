@@ -328,7 +328,15 @@ export function SearchPageClient() {
               {suggestions.map((suggestion, index) => (
                 <button
                   key={index}
-                  onMouseDown={() => selectSuggestion(suggestion)}
+                  onMouseDown={(e) => {
+                    if (e.button !== 0) return;
+                    selectSuggestion(suggestion);
+                  }}
+                  onClick={(e) => {
+                    if (e.detail === 0) {
+                      selectSuggestion(suggestion);
+                    }
+                  }}
                   className={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 ${
                     index === suggestionIndex
                       ? 'bg-primary text-primary-foreground'
