@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-05-12'
 publishedAt: '2026-05-12T09:00:00Z'
-updatedAt: '2026-05-12T09:00:00Z'
+updatedAt: '2026-05-12T11:00:00Z'
 readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
@@ -20,6 +20,8 @@ tags:
   - CICD
   - GitHub Actions
 ---
+
+**Update (May 12, 2026):** Socket is now tracking the same worm crossing into PyPI. Newly confirmed compromised: `@opensearch-project/opensearch` 3.5.3, 3.6.2, 3.7.0, 3.8.0 (1.3M weekly downloads), `mistralai` 2.4.6, and `guardrails-ai` 0.10.1. The cross-ecosystem jump is the same harvested credentials being reused on a different registry, not a new worm. If you ran any of the bad npm versions, treat PyPI tokens (`~/.pypirc`, `~/.config/pip/`) as compromised too.
 
 On May 11, 2026, at around 19:20 UTC, two new versions of `@tanstack/react-router` appeared on npm. They were signed with valid SLSA provenance, published through the project's existing GitHub Actions OIDC trusted-publisher binding, and showed up as `latest` within minutes. By the end of the day, 14+ official TanStack packages were on the list, the worm had already propagated to 200+ downstream packages, and one detail in the payload was making people delete their npm caches with shaky hands: if you revoke the stolen GitHub token, a background process polling api.github.com sees the 401 and runs `rm -rf ~/`.
 
@@ -272,10 +274,14 @@ SLSA provenance answers "did this artifact come from this build pipeline?" It do
                         from forks               not on `push`
 ```
 
-Concrete actions you can take this week:
+The two anti-patterns that matter most for maintainers, because they are the actual entry point in this incident and several recent npm compromises:
+
+- **Do not use `pull_request_target` for workflows that touch publish secrets.** Unlike plain `pull_request`, `pull_request_target` runs in the context of the base branch with full secret access, but checks out the attacker-controlled head SHA. An attacker can open a PR that modifies a workflow file or a build script, the workflow runs with secrets, and you have shipped your npm token to them. If you need fork CI, split into two workflows: a no-secret `pull_request` build for the fork content, and a separate secret-using workflow that only triggers on `release` or merged commits in the upstream repo.
+- **Do not share caches between PR builds and publish jobs.** A poisoned `~/.npm` or `node_modules` cache from a fork PR run will be restored by the next publish run if both jobs use the same `actions/cache` key (or the default `actions/setup-node` cache). That is the path from "attacker opens a draft PR" to "attacker's code runs at publish time," and it is exactly what the TanStack post-mortem identified as the entry point. Use different cache keys, or skip the cache on publish workflows entirely.
+
+Other concrete actions:
 
 - **Pin every third-party GitHub Action to a commit SHA**, not a tag. Tag references are mutable. The TanStack post-mortem confirms this was part of the hardening they shipped after the incident.
-- **Restrict `pull_request` runs from forks** for any workflow that has access to publish secrets. Use `pull_request_target` with `repository_owner` guards, or split into two workflows and only run the secret-using one on `release` events from the upstream repo.
 - **Use `npm ci` with `--ignore-scripts` in CI** for anything that does not actually need lifecycle scripts. Library builds usually do not.
 - **Adopt dependency cooldowns.** The malicious window was open for hours. Tools like Renovate, Dependabot grouping, or socket.dev's [package cooldown rules](https://socket.dev/) can hold new versions for 24-72 hours before letting them into your repo, which is enough time for a community-driven detection like this one to land.
 - **Audit `optionalDependencies`** specifically. The clever trick in this attack is that the malicious dependency is technically optional, so its failure does not break installs and does not show up in normal install logs. `npm install --dry-run` against a confirmed-bad version still shows the `tanstack/router#<sha>` reference, which is the cleanest signal.
