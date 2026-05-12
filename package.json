@@ -95,7 +95,7 @@
     "input-otp": "1.4.2",
     "js-yaml": "^4.1.1",
     "lucide-react": "^0.575.0",
-    "marked": "^17.0.6",
+    "marked": "^18.0.3",
     "marked-gfm-heading-id": "^4.1.4",
     "marked-highlight": "^2.2.4",
     "next": "16.2.4",
