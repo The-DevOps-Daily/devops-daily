@@ -128,7 +128,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
-    "@typescript-eslint/parser": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.3",
     "@vitest/ui": "^4.0.18",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.2.3",
