@@ -17,7 +17,7 @@ tags:
   - Security
   - Supply Chain
   - npm
-  - CI/CD
+  - CICD
   - GitHub Actions
 ---
 
