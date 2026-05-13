@@ -1,0 +1,136 @@
+{
+  "id": "postgresql-zero-downtime-migrations",
+  "title": "Zero-Downtime Database Migrations for PostgreSQL",
+  "description": "Practical techniques for changing schemas on busy PostgreSQL databases without taking the app down, including expand-and-contract, online DDL, and safe backfills.",
+  "category": "Database Operations",
+  "icon": "Database",
+  "difficulty": "advanced",
+  "estimatedTime": "22 minutes",
+  "cardCount": 17,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-indigo-600"
+  },
+  "cards": [
+    {
+      "id": "why-zero-downtime-matters",
+      "front": "Why do schema migrations on a busy PostgreSQL table often cause outages even when the change looks small?",
+      "back": "Most `ALTER TABLE` statements take an `ACCESS EXCLUSIVE` lock. That blocks every read and write until the migration finishes. On a hot table, even a 200ms lock can pile up thousands of waiting queries, exhaust the connection pool, and take the app down. The migration itself runs fine. The queue of blocked queries is what breaks production.",
+      "category": "Fundamentals",
+      "tags": ["postgresql", "database-migrations", "zero-downtime"]
+    },
+    {
+      "id": "postgres-lock-modes",
+      "front": "What lock does a plain `ALTER TABLE` acquire, and which operations are actually safe by default?",
+      "back": "Most `ALTER TABLE` variants take an `ACCESS EXCLUSIVE` lock, which conflicts with everything including `SELECT`. A few operations only need a weaker lock:\n\n- `ALTER TABLE ... ADD COLUMN` with no default (Postgres 11+): metadata only, fast\n- `ALTER TABLE ... ADD COLUMN ... DEFAULT <const>` (Postgres 11+): metadata only\n- `CREATE INDEX CONCURRENTLY`: only blocks other schema changes\n- `ALTER TABLE ... VALIDATE CONSTRAINT`: takes a weaker `SHARE UPDATE EXCLUSIVE`\n\nEverything else, assume it will lock the table.",
+      "category": "Fundamentals",
+      "tags": ["postgresql", "locks", "ddl"]
+    },
+    {
+      "id": "lock-timeout-pattern",
+      "front": "How do you stop a runaway migration from blocking your entire application?",
+      "back": "Always set a short `lock_timeout` before any DDL. If the migration cannot grab the lock in a few seconds, it aborts instead of holding a queue of waiters.\n\n```sql\nSET lock_timeout = '2s';\nSET statement_timeout = '5min';\nALTER TABLE orders ADD COLUMN status text;\n```\n\nWithout `lock_timeout`, your migration waits behind a slow query while every new query waits behind your migration. That is how a 10-second deploy turns into a 10-minute outage.",
+      "category": "Fundamentals",
+      "tags": ["postgresql", "lock-timeout", "safety"]
+    },
+    {
+      "id": "expand-contract-overview",
+      "front": "What is the expand-and-contract pattern for zero-downtime schema changes?",
+      "back": "Split a breaking change into three deploys so old and new code can run side by side:\n\n1. **Expand**: add the new column/table/index. App still writes to the old shape but also to the new one.\n2. **Migrate**: backfill data and switch reads to the new shape.\n3. **Contract**: remove the old column once no code references it.\n\nEach step is backwards compatible on its own. Rollback is safe at every stage. The cost is more deploys, but you trade speed for never having to schedule downtime.",
+      "category": "Patterns",
+      "tags": ["expand-contract", "patterns", "zero-downtime"]
+    },
+    {
+      "id": "add-nullable-column",
+      "front": "How do you safely add a nullable column to a 100M row table?",
+      "back": "Just add it. In Postgres 11+ this is a metadata-only operation and finishes in milliseconds:\n\n```sql\nALTER TABLE users ADD COLUMN last_seen_at timestamptz;\n```\n\nNo table rewrite, no row-level changes. The catch: in older Postgres versions or if you add a non-constant default like `now()`, Postgres rewrites every row and locks the table. Stick to nullable or constant-default columns.",
+      "category": "Schema Changes",
+      "tags": ["alter-table", "add-column", "postgresql"]
+    },
+    {
+      "id": "add-not-null-column",
+      "front": "How do you add a `NOT NULL` column to a large table without locking it for hours?",
+      "back": "Do it in three steps:\n\n```sql\n-- 1. Add as nullable (fast, metadata only)\nALTER TABLE orders ADD COLUMN region text;\n\n-- 2. Backfill in batches (no table lock)\nUPDATE orders SET region = 'us-east'\nWHERE id BETWEEN 1 AND 10000;\n-- repeat in batches...\n\n-- 3. Add the NOT NULL constraint without a full scan\nALTER TABLE orders\n  ADD CONSTRAINT region_not_null CHECK (region IS NOT NULL) NOT VALID;\nALTER TABLE orders VALIDATE CONSTRAINT region_not_null;\n```\n\n`NOT VALID` skips the full scan up front. `VALIDATE` later uses a weaker lock so the table stays online.",
+      "category": "Schema Changes",
+      "tags": ["not-null", "alter-table", "constraints"]
+    },
+    {
+      "id": "create-index-concurrently",
+      "front": "How do you add an index to a production table without blocking writes?",
+      "back": "Use `CREATE INDEX CONCURRENTLY`. It builds the index in two passes without taking a heavy lock on the table:\n\n```sql\nCREATE INDEX CONCURRENTLY idx_orders_customer_id\n  ON orders (customer_id);\n```\n\nThree things to know:\n\n- It cannot run inside a transaction, so most migration tools need a special flag\n- It takes longer than a normal `CREATE INDEX` because it does two scans\n- If it fails, you get an `INVALID` index. Drop it and retry:\n\n```sql\nDROP INDEX CONCURRENTLY idx_orders_customer_id;\n```",
+      "category": "Schema Changes",
+      "tags": ["index", "create-index-concurrently", "postgresql"]
+    },
+    {
+      "id": "drop-column-safely",
+      "front": "Why is `DROP COLUMN` risky during a deploy, and how do you do it without breaking the app?",
+      "back": "If you drop a column the old app code is still selecting, every query that mentions it errors out the moment the migration runs. Solution: ship a deploy that removes all references to the column first, then drop it in a later deploy.\n\n```sql\n-- After app no longer references legacy_status:\nALTER TABLE orders DROP COLUMN legacy_status;\n```\n\nNote: `DROP COLUMN` only marks the column as dropped in the catalog. The data stays on disk until the next table rewrite (`VACUUM FULL` or `pg_repack`).",
+      "category": "Schema Changes",
+      "tags": ["drop-column", "expand-contract", "safety"]
+    },
+    {
+      "id": "rename-column",
+      "front": "Why is renaming a column dangerous during a rolling deploy, and what is the safe alternative?",
+      "back": "Renaming is instant in Postgres but breaks every old app instance still running the old name during a rolling deploy. The fix is expand-and-contract: never rename in place.\n\n1. Add the new column `email_address`\n2. Dual-write from app to both `email` and `email_address`\n3. Backfill old rows\n4. Switch reads to `email_address`\n5. Stop writing to `email`\n6. Drop `email`\n\nIt feels slow, but a one-line `RENAME` will page someone at 3am when half the fleet is on the old version.",
+      "category": "Schema Changes",
+      "tags": ["rename-column", "expand-contract", "rolling-deploy"]
+    },
+    {
+      "id": "change-column-type",
+      "front": "How do you change a column type without rewriting the whole table?",
+      "back": "Most type changes trigger a full table rewrite under an `ACCESS EXCLUSIVE` lock. For big tables, use a shadow column instead:\n\n1. Add a new column with the target type\n2. Backfill in batches with the conversion\n3. Add a trigger so new writes update both columns\n4. Switch reads to the new column\n5. Drop the old column\n\nSome conversions are free in Postgres (for example, `varchar(100)` to `varchar(200)`, or `int` to `bigint` in PG 14+ for some cases), but assume a rewrite unless the docs say otherwise.",
+      "category": "Schema Changes",
+      "tags": ["alter-column-type", "shadow-column", "table-rewrite"]
+    },
+    {
+      "id": "add-foreign-key-online",
+      "front": "How do you add a foreign key to a busy table without locking it for the duration of the check?",
+      "back": "Add the constraint as `NOT VALID` first. That skips the table scan and only requires a brief `SHARE ROW EXCLUSIVE` lock. Then validate separately with a weaker lock:\n\n```sql\n-- Step 1: enforce on new writes only, no scan\nALTER TABLE orders\n  ADD CONSTRAINT orders_customer_fk\n  FOREIGN KEY (customer_id) REFERENCES customers(id)\n  NOT VALID;\n\n-- Step 2: validate existing rows, online\nALTER TABLE orders\n  VALIDATE CONSTRAINT orders_customer_fk;\n```\n\nValidation can take a long time on big tables but does not block reads or writes.",
+      "category": "Schema Changes",
+      "tags": ["foreign-key", "not-valid", "constraints"]
+    },
+    {
+      "id": "check-not-valid-validate",
+      "front": "What does the `NOT VALID` + `VALIDATE CONSTRAINT` pattern do, and when should you reach for it?",
+      "back": "It splits a constraint into two phases. `NOT VALID` adds the constraint so future inserts and updates are checked, but skips the scan of existing rows. `VALIDATE CONSTRAINT` runs that scan later under a weaker lock that does not block reads or writes.\n\nUse it for:\n\n- Adding `CHECK` constraints to large tables\n- Adding foreign keys without long lock waits\n- Enforcing `NOT NULL` via a check constraint\n\nWithout this pattern, the constraint scan runs under `ACCESS EXCLUSIVE` and the table is offline for the entire scan.",
+      "category": "Patterns",
+      "tags": ["constraints", "not-valid", "validate"]
+    },
+    {
+      "id": "batched-backfill",
+      "front": "How do you backfill millions of rows without holding a long transaction or locking the table?",
+      "back": "Update in small batches, commit each one, sleep briefly between batches. One big `UPDATE` runs in a single transaction that holds row locks and bloats the WAL:\n\n```sql\nDO $$\nDECLARE\n  batch_size int := 5000;\n  done int;\nBEGIN\n  LOOP\n    WITH cte AS (\n      SELECT id FROM orders\n      WHERE region IS NULL\n      LIMIT batch_size FOR UPDATE SKIP LOCKED\n    )\n    UPDATE orders SET region = 'us-east'\n    FROM cte WHERE orders.id = cte.id;\n    GET DIAGNOSTICS done = ROW_COUNT;\n    EXIT WHEN done = 0;\n    PERFORM pg_sleep(0.1);\n  END LOOP;\nEND $$;\n```\n\n`SKIP LOCKED` plus small batches keeps app traffic flowing.",
+      "category": "Backfills",
+      "tags": ["backfill", "batched-update", "postgresql"]
+    },
+    {
+      "id": "pg-repack",
+      "front": "When should you use `pg_repack` instead of `VACUUM FULL` or `CLUSTER`?",
+      "back": "Use `pg_repack` when you need to reclaim space from bloated tables or remove dropped column data without taking the table offline. `VACUUM FULL` and `CLUSTER` both take `ACCESS EXCLUSIVE` locks for the whole operation.\n\n```bash\npg_repack -h db.prod -d app -t orders --jobs 4\n```\n\nIt builds a shadow copy of the table using triggers to keep it in sync, then swaps with a brief exclusive lock at the end. Needs enough disk for two copies of the table. Skip it if free space is tight.",
+      "category": "Tooling",
+      "tags": ["pg-repack", "bloat", "table-rewrite"]
+    },
+    {
+      "id": "migration-tooling",
+      "front": "What tooling helps catch unsafe Postgres migrations before they hit production?",
+      "back": "Use a linter that flags risky DDL in code review:\n\n- **strong_migrations** (Ruby on Rails): blocks unsafe migrations, gives you the safe rewrite\n- **squawk**: standalone linter for raw SQL, integrates with CI\n- **pg_osc** (online schema change): runs migrations using triggers and a shadow table, similar to gh-ost for MySQL\n\nExample squawk check:\n\n```bash\nsquawk migrations/0042_add_status.sql\n```\n\nThe goal is to catch things like missing `lock_timeout` or `ADD COLUMN ... NOT NULL DEFAULT non_constant` before merge.",
+      "category": "Tooling",
+      "tags": ["squawk", "strong-migrations", "linting"]
+    },
+    {
+      "id": "monitor-during-migration",
+      "front": "What do you watch in the database while a long migration is running?",
+      "back": "Three queries you want open during any production migration:\n\n```sql\n-- 1. Active locks and blockers\nSELECT pid, mode, granted, query_start, query\nFROM pg_locks l JOIN pg_stat_activity a ON l.pid = a.pid\nWHERE NOT granted;\n\n-- 2. Long-running queries that might block your DDL\nSELECT pid, now() - query_start AS duration, query\nFROM pg_stat_activity\nWHERE state = 'active' AND now() - query_start > interval '30s';\n\n-- 3. Replication lag\nSELECT client_addr, state, replay_lag FROM pg_stat_replication;\n```\n\nKill long queries before starting a migration. Replication lag spikes mean your migration is generating more WAL than replicas can keep up with.",
+      "category": "Operations",
+      "tags": ["monitoring", "pg-stat-activity", "locks"]
+    },
+    {
+      "id": "logical-replication-for-major",
+      "front": "When do you reach for logical replication instead of in-place migrations?",
+      "back": "When the change is too invasive for online DDL: major version upgrades, swapping a table to a different partitioning scheme, or moving to a new instance.\n\nThe pattern:\n\n1. Set up the new database as a logical replica of the old one\n2. Apply the new schema on the target\n3. Let it catch up\n4. Cut traffic over during a short maintenance window (seconds, not hours)\n\n```sql\n-- On source\nCREATE PUBLICATION app_pub FOR ALL TABLES;\n\n-- On target\nCREATE SUBSCRIPTION app_sub\n  CONNECTION 'host=old-db dbname=app'\n  PUBLICATION app_pub;\n```\n\nIt is heavier than DDL, but it is the right tool when expand-and-contract is not enough.",
+      "category": "Advanced",
+      "tags": ["logical-replication", "major-upgrade", "cutover"]
+    }
+  ]
+}
