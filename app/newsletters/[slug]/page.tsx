@@ -5,6 +5,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import { CarbonAds } from '@/components/carbon-ads';
 import { Mail, ArrowLeft, Calendar } from 'lucide-react';
 import type { Metadata } from 'next';
+import { NewsletterForm } from '@/components/footer/newsletter-form';
 
 export const dynamicParams = false;
 
@@ -196,20 +197,12 @@ export default async function NewsletterDetailPage({
           )}
 
           {/* Subscribe CTA */}
-          <div className="mt-12 p-6 rounded-xl border border-primary/20 bg-primary/5 text-center">
-            <h3 className="font-semibold mb-2">Get this in your inbox</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Subscribe to receive the DevOps Daily newsletter every Monday.
-            </p>
-            <a
-              href="https://devops-daily.us2.list-manage.com/subscribe?u=d1128776b290ad8d08c02094f&id=fd76a4e93f"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors"
-            >
-              <Mail className="w-4 h-4" />
-              Subscribe
-            </a>
+          <div className="mt-12">
+            <NewsletterForm
+              source="newsletter_archive_detail"
+              headline="Get this in your inbox"
+              description="Subscribe to receive the DevOps Daily newsletter every Monday."
+            />
           </div>
         </article>
       </div>

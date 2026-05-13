@@ -33,6 +33,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useNewsletterSubscribe } from '@/components/newsletter/use-newsletter-subscribe';
 
 const chapters = [
   {
@@ -152,6 +153,15 @@ const chapters = [
 export function ClientContent() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isScrolled, setIsScrolled] = useState(false);
+  const { status: subscribeStatus, errorMsg: subscribeError, submit: subscribeSubmit } =
+    useNewsletterSubscribe();
+
+  const handleSubscribe = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    formData.append('source', 'book_landing');
+    subscribeSubmit(formData);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -523,42 +533,49 @@ export function ClientContent() {
             {/* Newsletter Signup Form */}
             <div className="max-w-md mx-auto">
               <div className="p-8 bg-linear-to-br from-primary/5 to-purple-500/5 border-2 border-primary/20 rounded-2xl shadow-2xl backdrop-blur-sm">
-                <form
-                  action="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&amp;id=fd76a4e93f&amp;f_id=0022c6e1f0"
-                  method="post"
-                  target="_blank"
-                  noValidate
-                  className="space-y-4"
-                >
-                  <input
-                    type="email"
-                    name="EMAIL"
-                    id="mce-EMAIL-final"
-                    required
-                    placeholder="your@email.com"
-                    className="w-full px-5 py-4 border-2 border-border/50 bg-background/50 backdrop-blur-sm rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
-                  />
+                {subscribeStatus === 'ok' ? (
+                  <div className="text-center space-y-2">
+                    <CheckCircle className="w-10 h-10 text-green-500 mx-auto" />
+                    <p className="font-bold text-lg">Thanks for subscribing!</p>
+                    <p className="text-sm text-muted-foreground">
+                      Check your inbox for a confirmation email — click the link inside to finish signing up.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubscribe} noValidate className="space-y-4">
+                    <input
+                      type="email"
+                      name="email"
+                      required
+                      placeholder="your@email.com"
+                      className="w-full px-5 py-4 border-2 border-border/50 bg-background/50 backdrop-blur-sm rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300"
+                    />
 
-                  {/* Honeypot bot field */}
-                  <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
+                    {/* Honeypot — bots fill it, smtpfast rejects the submission. */}
                     <input
                       type="text"
-                      name="b_d1128776b290ad8d08c02094f_fd76a4e93f"
+                      name="_hp"
                       tabIndex={-1}
-                      defaultValue=""
+                      autoComplete="off"
+                      aria-hidden="true"
+                      style={{ position: 'absolute', left: '-9999px' }}
                     />
-                  </div>
 
-                  <button
-                    type="submit"
-                    name="subscribe"
-                    className="group inline-flex items-center justify-center w-full px-6 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 hover:scale-105"
-                  >
-                    <Mail className="mr-2 h-5 w-5" />
-                    Subscribe for Early Access
-                    <Sparkles className="ml-2 h-5 w-5" />
-                  </button>
-                </form>
+                    <button
+                      type="submit"
+                      disabled={subscribeStatus === 'submitting'}
+                      className="group inline-flex items-center justify-center w-full px-6 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 shadow-2xl hover:shadow-blue-500/50 hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    >
+                      <Mail className="mr-2 h-5 w-5" />
+                      {subscribeStatus === 'submitting' ? 'Subscribing…' : 'Subscribe for Early Access'}
+                      <Sparkles className="ml-2 h-5 w-5" />
+                    </button>
+
+                    {subscribeStatus === 'error' && subscribeError && (
+                      <p className="text-sm text-rose-400 text-center">{subscribeError}</p>
+                    )}
+                  </form>
+                )}
 
                 <p className="text-center text-sm text-muted-foreground mt-4 flex items-center justify-center gap-2">
                   <Shield className="w-4 h-4" />

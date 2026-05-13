@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getAllNewsletters } from '@/lib/newsletters';
-import { Mail, Calendar, ArrowRight } from 'lucide-react';
+import { Calendar, ArrowRight, Mail } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
+import { NewsletterForm } from '@/components/footer/newsletter-form';
 
 export const metadata: Metadata = {
   title: 'Newsletter Archive | DevOps Daily',
@@ -36,17 +37,16 @@ export default async function NewslettersPage() {
         title="Newsletter Archive"
         description="Every week we send a roundup of new content, tools, and learning resources. Browse past issues or subscribe to get the next one in your inbox."
         breadcrumbs={[{ label: 'Newsletter Archive' }]}
-      >
-        <a
-          href="https://devops-daily.us2.list-manage.com/subscribe?u=d1128776b290ad8d08c02094f&id=fd76a4e93f"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Mail className="w-4 h-4" />
-          Subscribe to Newsletter
-        </a>
-      </PageHero>
+      />
+
+      {/* Subscribe section */}
+      <section className="container mx-auto px-4 -mt-4 mb-8 max-w-md">
+        <NewsletterForm
+          source="newsletters_archive"
+          headline="Subscribe to the Newsletter"
+          description="Get next Monday's issue in your inbox."
+        />
+      </section>
 
       {/* Newsletter List */}
       <section className="py-8 container mx-auto px-4 mb-16 max-w-3xl">

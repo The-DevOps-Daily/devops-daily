@@ -8,6 +8,7 @@ import { FeaturedTools } from '@/components/featured-tools';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
 import { ArrowRight, Globe, Anchor, Scale, GitBranch, Database, Shield } from 'lucide-react';
+import { TerminalNewsletterSignup } from '@/components/newsletter/terminal-newsletter-signup';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
@@ -236,37 +237,7 @@ export default async function Home() {
               <span className="text-green-500">$</span>{' '}
               <span className="text-muted-foreground">subscribe --email</span>
             </div>
-            <form
-              action="https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&amp;id=fd76a4e93f&amp;f_id=0022c6e1f0"
-              method="post"
-              target="_blank"
-              noValidate
-              className="flex flex-col sm:flex-row gap-2 pl-4"
-            >
-              <input
-                type="email"
-                name="EMAIL"
-                required
-                placeholder="you@example.com"
-                className="flex-1 bg-background border border-input px-3 py-2 rounded text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-              />
-              {/* Honeypot */}
-              <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
-                <input
-                  type="text"
-                  name="b_d1128776b290ad8d08c02094f_fd76a4e93f"
-                  tabIndex={-1}
-                  defaultValue=""
-                />
-              </div>
-              <button
-                type="submit"
-                name="subscribe"
-                className="px-4 py-2 bg-foreground text-background rounded text-sm font-semibold font-mono hover:bg-foreground/90 transition-colors whitespace-nowrap"
-              >
-                Subscribe
-              </button>
-            </form>
+            <TerminalNewsletterSignup />
             <div className="text-xs text-muted-foreground pl-4 pt-1">
               <span className="text-green-500/70">$</span>{' '}
               <span className="inline-block w-[0.6em] h-[1em] align-middle bg-foreground/60 animate-cursor-blink" />
