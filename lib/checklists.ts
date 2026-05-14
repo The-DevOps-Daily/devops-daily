@@ -27,8 +27,10 @@ async function loadChecklists(): Promise<Checklist[]> {
         const content = await fs.readFile(path.join(CHECKLISTS_DIR, file), 'utf-8');
         const checklist = JSON.parse(content) as Checklist;
         checklists.push(checklist);
-      } catch {
-        // skip invalid files
+      } catch (error) {
+        throw new Error(
+          `Failed to parse checklist file ${file}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -36,8 +38,10 @@ async function loadChecklists(): Promise<Checklist[]> {
     cache = checklists;
     lastCacheTime = now;
     return checklists;
-  } catch {
-    return [];
+  } catch (error) {
+    throw new Error(
+      `Failed to load checklists from ${CHECKLISTS_DIR}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 

@@ -69,6 +69,19 @@ async function copyMarkdownFiles() {
       }
     }
     console.log(`✅ Copied ${adventFiles.filter(f => f.endsWith('.md')).length} advent days to public/advent-of-devops/`);
+
+    // Copy comparison JSON files so comparison pages can link to raw source data.
+    const comparisonsDir = path.join(contentDir, 'comparisons');
+    const publicComparisonsDir = path.join(publicDir, 'comparisons');
+
+    await fs.mkdir(publicComparisonsDir, { recursive: true });
+
+    const comparisonFiles = await fs.readdir(comparisonsDir);
+    const comparisonJsonFiles = comparisonFiles.filter((file) => file.endsWith('.json'));
+    for (const file of comparisonJsonFiles) {
+      await fs.copyFile(path.join(comparisonsDir, file), path.join(publicComparisonsDir, file));
+    }
+    console.log(`✅ Copied ${comparisonJsonFiles.length} comparison JSON files to public/comparisons/`);
   } catch (error) {
     console.error('❌ Error copying markdown files:', error);
     process.exit(1);

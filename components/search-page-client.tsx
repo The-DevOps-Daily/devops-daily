@@ -24,6 +24,9 @@ import {
   ChevronDown,
   ListChecks,
   MessageSquare,
+  Scale,
+  Layers,
+  Wrench,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -70,6 +73,9 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   page: Home,
   checklist: ListChecks,
   'interview-question': MessageSquare,
+  comparison: Scale,
+  flashcard: Layers,
+  tool: Wrench,
 };
 
 export function SearchPageClient() {

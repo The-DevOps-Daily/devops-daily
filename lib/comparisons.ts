@@ -37,7 +37,9 @@ async function loadComparisonsFromFiles(): Promise<Comparison[]> {
         const comparison = JSON.parse(fileContent) as Comparison;
         comparisons.push(comparison);
       } catch (error) {
-        console.warn(`Failed to parse comparison file ${file}:`, error);
+        throw new Error(
+          `Failed to parse comparison file ${file}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -47,8 +49,9 @@ async function loadComparisonsFromFiles(): Promise<Comparison[]> {
 
     return comparisons;
   } catch (error) {
-    console.warn('Failed to load comparisons from files:', error);
-    return [];
+    throw new Error(
+      `Failed to load comparisons from ${COMPARISONS_DIR}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 

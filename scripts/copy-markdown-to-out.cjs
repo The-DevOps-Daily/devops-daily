@@ -94,6 +94,27 @@ async function copyMarkdownToOut() {
         `✅ Copied ${adventFiles.filter((f) => f.endsWith('.md')).length} advent day markdown files to out/advent-of-devops/`
       );
     }
+
+    // Copy comparison JSON files for static export deployments.
+    const publicComparisonsDir = path.join(publicDir, 'comparisons');
+    const outComparisonsDir = path.join(outDir, 'comparisons');
+
+    const comparisonsExists = await fs
+      .access(publicComparisonsDir)
+      .then(() => true)
+      .catch(() => false);
+    if (comparisonsExists) {
+      await fs.mkdir(outComparisonsDir, { recursive: true });
+
+      const comparisonFiles = await fs.readdir(publicComparisonsDir);
+      const comparisonJsonFiles = comparisonFiles.filter((file) => file.endsWith('.json'));
+      for (const file of comparisonJsonFiles) {
+        await fs.copyFile(path.join(publicComparisonsDir, file), path.join(outComparisonsDir, file));
+      }
+      console.log(
+        `✅ Copied ${comparisonJsonFiles.length} comparison JSON files to out/comparisons/`
+      );
+    }
   } catch (error) {
     console.error('❌ Error copying markdown files to out directory:', error);
     process.exit(1);

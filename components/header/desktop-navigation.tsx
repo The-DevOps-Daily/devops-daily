@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { CommandPalette } from '@/components/command-palette';
 import { DropdownTrigger } from './dropdown-trigger';
 import { mainNavigation, dropdownNavigation } from './nav-items';
 import { Wrench, MoreHorizontal } from 'lucide-react';
@@ -44,13 +44,7 @@ export function DesktopNavigation() {
 
       {/* Right side */}
       <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-3">
-        <Link
-          href="/search"
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 hover:bg-primary/8 hover:text-primary hover:shadow-sm"
-        >
-          <Search className="w-4 h-4" />
-          <span>Search</span>
-        </Link>
+        <CommandPalette />
         <ThemeToggle />
       </div>
     </>
