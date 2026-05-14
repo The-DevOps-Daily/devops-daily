@@ -11,30 +11,7 @@ import { getAllComparisons } from '../lib/comparisons.js';
 import { getAllFlashCardSets } from '../lib/flashcard-loader.js';
 import { TOOLS, CATEGORY_LABEL } from '../lib/tools.js';
 import { interviewQuestions } from '../content/interview-questions/index.js';
-
-interface SearchItem {
-  id: string;
-  type:
-    | 'post'
-    | 'guide'
-    | 'exercise'
-    | 'quiz'
-    | 'game'
-    | 'news'
-    | 'page'
-    | 'checklist'
-    | 'interview-question'
-    | 'comparison'
-    | 'flashcard'
-    | 'tool';
-  title: string;
-  description: string;
-  url: string;
-  category?: string;
-  tags?: string[];
-  icon?: string;
-  date?: string;
-}
+import type { SearchItem } from '../lib/search-types.js';
 
 // Static pages
 const PAGES: SearchItem[] = [

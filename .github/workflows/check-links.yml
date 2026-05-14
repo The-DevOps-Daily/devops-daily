@@ -30,7 +30,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Build static site
-        run: pnpm build
+        run: pnpm build:fast
         env:
           NODE_OPTIONS: --max-old-space-size=8192
 

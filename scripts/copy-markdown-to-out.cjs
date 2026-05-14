@@ -115,6 +115,18 @@ async function copyMarkdownToOut() {
         `✅ Copied ${comparisonJsonFiles.length} comparison JSON files to out/comparisons/`
       );
     }
+
+    // Ensure generated RSS feed is present in static export output.
+    const publicFeedPath = path.join(publicDir, 'feed.xml');
+    const outFeedPath = path.join(outDir, 'feed.xml');
+    const feedExists = await fs
+      .access(publicFeedPath)
+      .then(() => true)
+      .catch(() => false);
+    if (feedExists) {
+      await fs.copyFile(publicFeedPath, outFeedPath);
+      console.log('✅ Copied RSS feed to out/feed.xml');
+    }
   } catch (error) {
     console.error('❌ Error copying markdown files to out directory:', error);
     process.exit(1);

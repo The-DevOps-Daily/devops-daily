@@ -1,49 +1,13 @@
-import fs from 'fs/promises';
 import path from 'path';
 import type { Checklist } from './checklist-utils';
+import { createCachedLoader, readJsonFiles } from './content-loader';
 
 const CHECKLISTS_DIR = path.join(process.cwd(), 'content', 'checklists');
 
-let cache: Checklist[] | null = null;
-let lastCacheTime = 0;
-const CACHE_DURATION =
-  process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
-    ? Infinity
-    : 5 * 60 * 1000;
-
-async function loadChecklists(): Promise<Checklist[]> {
-  const now = Date.now();
-  if (cache && now - lastCacheTime < CACHE_DURATION) return cache;
-
-  try {
-    await fs.access(CHECKLISTS_DIR);
-    const files = await fs.readdir(CHECKLISTS_DIR);
-    const jsonFiles = files.filter((f) => f.endsWith('.json'));
-
-    const checklists: Checklist[] = [];
-
-    for (const file of jsonFiles) {
-      try {
-        const content = await fs.readFile(path.join(CHECKLISTS_DIR, file), 'utf-8');
-        const checklist = JSON.parse(content) as Checklist;
-        checklists.push(checklist);
-      } catch (error) {
-        throw new Error(
-          `Failed to parse checklist file ${file}: ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
-    }
-
-    checklists.sort((a, b) => a.title.localeCompare(b.title));
-    cache = checklists;
-    lastCacheTime = now;
-    return checklists;
-  } catch (error) {
-    throw new Error(
-      `Failed to load checklists from ${CHECKLISTS_DIR}: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
+const loadChecklists = createCachedLoader(async () => {
+  const checklists = await readJsonFiles<Checklist>(CHECKLISTS_DIR);
+  return checklists.sort((a, b) => a.title.localeCompare(b.title));
+});
 
 export async function getAllChecklists(): Promise<Checklist[]> {
   return loadChecklists();

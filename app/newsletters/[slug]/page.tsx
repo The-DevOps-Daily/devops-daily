@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getAllNewsletters, getNewsletterBySlug } from '@/lib/newsletters';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { CarbonAds } from '@/components/carbon-ads';
+import { MarkdownHtml } from '@/components/markdown-content';
 import { Mail, ArrowLeft, Calendar } from 'lucide-react';
 import type { Metadata } from 'next';
 
@@ -123,15 +124,14 @@ export default async function NewsletterDetailPage({
           </div>
 
           {/* Content */}
-          <div
-            className="prose prose-lg dark:prose-invert max-w-none
-              prose-headings:font-semibold
+          <MarkdownHtml
+            html={newsletter.content}
+            className="prose-headings:font-semibold
               prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4
               prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3
               prose-p:leading-relaxed
               prose-a:text-primary prose-a:no-underline hover:prose-a:underline
               prose-img:rounded-lg prose-img:shadow-md"
-            dangerouslySetInnerHTML={{ __html: newsletter.content }}
           />
 
           {/* Inline ad slot at the natural reading break between the issue

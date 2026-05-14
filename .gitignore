@@ -35,5 +35,9 @@ package-lock.json
 /public/advent-of-devops/
 /public/comparisons/
 
+# local/editor backup files
+*.orig
+.claude/scheduled_tasks.lock
+
 # skill eval workspace
 skill-eval-workspace/

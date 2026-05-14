@@ -34,10 +34,10 @@ jobs:
         run: pnpm devops-daily:generate-news:no-ai
 
       - name: Generate digest images
-        run: pnpm generate:images
+        run: pnpm generate:images:parallel
 
       - name: Convert SVG to PNG
-        run: pnpm convert:svg-to-png
+        run: pnpm convert:svg-to-png:parallel
 
       - name: Get current week and year
         id: week
