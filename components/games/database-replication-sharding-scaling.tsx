@@ -1,7 +1,6 @@
 'use client';
 
-import { useMemo, useState, type ComponentType, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { useMemo, useState, type ComponentType } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -30,8 +29,15 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  SimulatorAdvisorCard,
+  SimulatorControlSlider,
+  SimulatorFlowLine,
+  SimulatorMetricCard,
+  SimulatorModeButton,
+  SimulatorNodeCard,
+} from '@/components/games/simulator-primitives';
 import { cn } from '@/lib/utils';
 
 type ReplicationMode = 'async' | 'sync';
@@ -67,131 +73,6 @@ function ms(value: number) {
 
 function money(value: number) {
   return `$${Math.round(value)}/mo`;
-}
-
-interface MetricCardProps {
-  label: string;
-  value: string;
-  icon: ComponentType<{ className?: string }>;
-  tone?: 'default' | 'good' | 'warn' | 'bad';
-  detail?: string;
-}
-
-function MetricCard({ label, value, icon: Icon, tone = 'default', detail }: MetricCardProps) {
-  const tones = {
-    default: 'border-border bg-card',
-    good: 'border-emerald-500/30 bg-emerald-500/5',
-    warn: 'border-amber-500/30 bg-amber-500/5',
-    bad: 'border-red-500/30 bg-red-500/5',
-  };
-
-  return (
-    <div className={cn('rounded-lg border p-4', tones[tone])}>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className="h-4 w-4" />
-        {label}
-      </div>
-      <div className="mt-2 break-words text-xl font-semibold tracking-tight sm:text-2xl">{value}</div>
-      {detail && <p className="mt-1 text-xs text-muted-foreground">{detail}</p>}
-    </div>
-  );
-}
-
-interface NodeCardProps {
-  title: string;
-  subtitle: string;
-  status?: 'healthy' | 'lagging' | 'down' | 'routing' | 'hot';
-  load?: number;
-  icon?: ComponentType<{ className?: string }>;
-}
-
-function NodeCard({
-  title,
-  subtitle,
-  status = 'healthy',
-  load = 40,
-  icon: Icon = Database,
-}: NodeCardProps) {
-  const statusStyles = {
-    healthy: 'border-emerald-500/40 bg-emerald-500/10',
-    lagging: 'border-amber-500/40 bg-amber-500/10',
-    down: 'border-red-500/40 bg-red-500/10 opacity-70',
-    routing: 'border-primary/40 bg-primary/10',
-    hot: 'border-yellow-500/50 bg-yellow-500/10',
-  };
-
-  return (
-    <div className={cn('rounded-lg border p-3 shadow-sm backdrop-blur', statusStyles[status])}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <div className="rounded-md border bg-background/80 p-2">
-            <Icon className="h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{title}</div>
-            <div className="break-words text-xs text-muted-foreground">{subtitle}</div>
-          </div>
-        </div>
-        <span
-          className={cn(
-            'mt-1 h-2.5 w-2.5 rounded-full',
-            status === 'down'
-              ? 'bg-red-500'
-              : status === 'lagging' || status === 'hot'
-                ? 'bg-amber-500'
-                : 'bg-emerald-500'
-          )}
-        />
-      </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-background/80">
-        <div
-          className={cn(
-            'h-full rounded-full',
-            load > 85 ? 'bg-red-500' : load > 65 ? 'bg-amber-500' : 'bg-emerald-500'
-          )}
-          style={{ width: `${clamp(load, 2, 100)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function FlowLine({ tone = 'primary', delay = 0 }: { tone?: 'primary' | 'success' | 'warn'; delay?: number }) {
-  const color = tone === 'success' ? 'bg-emerald-400' : tone === 'warn' ? 'bg-yellow-400' : 'bg-primary';
-
-  return (
-    <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-border">
-      <motion.div
-        className={cn('absolute top-0 h-1 w-16 rounded-full', color)}
-        animate={{ x: ['-30%', '620%'] }}
-        transition={{ repeat: Infinity, duration: 1.4, delay, ease: 'linear' }}
-      />
-    </div>
-  );
-}
-
-function ModeButton<T extends string>({
-  value,
-  current,
-  onClick,
-  children,
-}: {
-  value: T;
-  current: T;
-  onClick: (value: T) => void;
-  children: ReactNode;
-}) {
-  return (
-    <Button
-      type="button"
-      size="sm"
-      variant={value === current ? 'default' : 'outline'}
-      onClick={() => onClick(value)}
-      className="h-8"
-    >
-      {children}
-    </Button>
-  );
 }
 
 function ReplicationModePanel() {
@@ -296,7 +177,7 @@ function ReplicationModePanel() {
           <div className="rounded-xl border bg-linear-to-br from-zinc-950 via-neutral-950 to-stone-950 p-4 text-slate-100">
             <div className="grid gap-4 lg:grid-cols-[1fr_140px_1fr]">
               <div className="space-y-3">
-                <NodeCard
+                <SimulatorNodeCard
                   title={leaderLabel}
                   subtitle={primaryDown ? 'offline, failover needed' : `${Math.round(metrics.writeQps)} writes/sec`}
                   status={primaryDown ? 'down' : metrics.pressure > 95 ? 'hot' : 'healthy'}
@@ -304,7 +185,7 @@ function ReplicationModePanel() {
                   icon={Database}
                 />
                 {topology === 'multi-leader' && (
-                  <NodeCard
+                  <SimulatorNodeCard
                     title="Leader B"
                     subtitle="accepts regional writes"
                     status={metrics.splitBrainRisk > 50 ? 'lagging' : 'healthy'}
@@ -315,12 +196,12 @@ function ReplicationModePanel() {
               </div>
 
               <div className="hidden items-center gap-2 lg:flex">
-                <FlowLine tone={mode === 'sync' ? 'success' : 'primary'} />
+                <SimulatorFlowLine tone={mode === 'sync' ? 'success' : 'primary'} />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {Array.from({ length: replicas }, (_, index) => (
-                  <NodeCard
+                  <SimulatorNodeCard
                     key={index}
                     title={`Replica ${index + 1}`}
                     subtitle={
@@ -384,27 +265,27 @@ function ReplicationModePanel() {
             <div>
               <div className="mb-2 text-sm font-medium">Topology</div>
               <div className="flex flex-wrap gap-2">
-                <ModeButton value="single-leader" current={topology} onClick={setTopology}>
+                <SimulatorModeButton value="single-leader" current={topology} onClick={setTopology}>
                   Single leader
-                </ModeButton>
-                <ModeButton value="multi-leader" current={topology} onClick={setTopology}>
+                </SimulatorModeButton>
+                <SimulatorModeButton value="multi-leader" current={topology} onClick={setTopology}>
                   Multi-leader
-                </ModeButton>
-                <ModeButton value="leaderless" current={topology} onClick={setTopology}>
+                </SimulatorModeButton>
+                <SimulatorModeButton value="leaderless" current={topology} onClick={setTopology}>
                   Leaderless
-                </ModeButton>
+                </SimulatorModeButton>
               </div>
             </div>
 
             <div>
               <div className="mb-2 text-sm font-medium">Commit mode</div>
               <div className="flex gap-2">
-                <ModeButton value="async" current={mode} onClick={setMode}>
+                <SimulatorModeButton value="async" current={mode} onClick={setMode}>
                   Async
-                </ModeButton>
-                <ModeButton value="sync" current={mode} onClick={setMode}>
+                </SimulatorModeButton>
+                <SimulatorModeButton value="sync" current={mode} onClick={setMode}>
                   Sync
-                </ModeButton>
+                </SimulatorModeButton>
               </div>
             </div>
 
@@ -423,35 +304,35 @@ function ReplicationModePanel() {
               </div>
             </div>
 
-            <ControlSlider label="Load" value={load} min={100} max={1600} step={50} suffix=" qps" onChange={setLoad} />
-            <ControlSlider label="Writes" value={writePercent} min={5} max={80} step={5} suffix="%" onChange={setWritePercent} />
-            <ControlSlider label="Consistency preference" value={consistency} min={0} max={100} step={5} suffix="%" onChange={setConsistency} />
+            <SimulatorControlSlider label="Load" value={load} min={100} max={1600} step={50} suffix=" qps" onChange={setLoad} />
+            <SimulatorControlSlider label="Writes" value={writePercent} min={5} max={80} step={5} suffix="%" onChange={setWritePercent} />
+            <SimulatorControlSlider label="Consistency preference" value={consistency} min={0} max={100} step={5} suffix="%" onChange={setConsistency} />
           </CardContent>
         </Card>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          <MetricCard
+          <SimulatorMetricCard
             label="Replication lag"
             value={ms(metrics.lag)}
             icon={Clock}
             tone={metrics.lag > 260 ? 'warn' : 'good'}
             detail={mode === 'sync' ? 'lower lag, higher write latency' : 'higher throughput, possible stale reads'}
           />
-          <MetricCard
+          <SimulatorMetricCard
             label="Write capacity"
             value={`${Math.round(metrics.writeCapacity)} qps`}
             icon={Zap}
             tone={metrics.writeCapacity < metrics.writeQps ? 'bad' : 'good'}
             detail={`${Math.round(metrics.writeQps)} qps requested`}
           />
-          <MetricCard
+          <SimulatorMetricCard
             label="Availability"
             value={pct(metrics.availability)}
             icon={ShieldCheck}
             tone={metrics.availability > 98 ? 'good' : metrics.availability > 85 ? 'warn' : 'bad'}
             detail="failover and quorum effects"
           />
-          <MetricCard
+          <SimulatorMetricCard
             label="Split-brain risk"
             value={pct(metrics.splitBrainRisk)}
             icon={AlertTriangle}
@@ -460,7 +341,7 @@ function ReplicationModePanel() {
           />
         </div>
 
-        <AdvisorCard
+        <SimulatorAdvisorCard
           title="Operator readout"
           icon={Activity}
           tone={primaryDown && topology === 'single-leader' ? 'bad' : metrics.lag > 260 ? 'warn' : 'primary'}
@@ -470,67 +351,8 @@ function ReplicationModePanel() {
             : metrics.lag > 260
               ? 'Lag is climbing. Move critical reads to the leader, lower write pressure, or increase consistency for safer reads.'
               : 'This setup is healthy for the current workload. Reads are spread out while writes remain coordinated.'}
-        </AdvisorCard>
+        </SimulatorAdvisorCard>
       </div>
-    </div>
-  );
-}
-
-function ControlSlider({
-  label,
-  value,
-  min,
-  max,
-  step,
-  suffix,
-  onChange,
-}: {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  suffix?: string;
-  onChange: (value: number) => void;
-}) {
-  return (
-    <div>
-      <div className="mb-2 flex items-center justify-between text-sm">
-        <span className="font-medium">{label}</span>
-        <Badge variant="secondary" className="shrink-0">
-          {value}
-          {suffix}
-        </Badge>
-      </div>
-      <Slider value={[value]} min={min} max={max} step={step} onValueChange={([next]) => onChange(next ?? value)} />
-    </div>
-  );
-}
-
-function AdvisorCard({
-  title,
-  icon: Icon,
-  children,
-  tone = 'primary',
-}: {
-  title: string;
-  icon: ComponentType<{ className?: string }>;
-  children: ReactNode;
-  tone?: 'primary' | 'warn' | 'bad';
-}) {
-  const tones = {
-    primary: 'border-primary/25 bg-primary/5',
-    warn: 'border-yellow-500/30 bg-yellow-500/5',
-    bad: 'border-red-500/30 bg-red-500/5',
-  };
-
-  return (
-    <div className={cn('rounded-lg border p-4', tones[tone])}>
-      <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-        <Icon className="h-4 w-4 text-primary" />
-        {title}
-      </div>
-      <p className="text-sm leading-relaxed text-muted-foreground">{children}</p>
     </div>
   );
 }
@@ -655,12 +477,12 @@ function ShardingModePanel() {
             <div>
               <div className="mb-2 text-sm font-medium">Partitioning</div>
               <div className="flex gap-2">
-                <ModeButton value="hash" current={partitioning} onClick={setPartitioning}>
+                <SimulatorModeButton value="hash" current={partitioning} onClick={setPartitioning}>
                   Hash
-                </ModeButton>
-                <ModeButton value="range" current={partitioning} onClick={setPartitioning}>
+                </SimulatorModeButton>
+                <SimulatorModeButton value="range" current={partitioning} onClick={setPartitioning}>
                   Range
-                </ModeButton>
+                </SimulatorModeButton>
               </div>
             </div>
 
@@ -681,7 +503,7 @@ function ShardingModePanel() {
               </div>
             </div>
 
-            <ControlSlider label="Rows" value={rows} min={40} max={320} step={20} suffix="k" onChange={setRows} />
+            <SimulatorControlSlider label="Rows" value={rows} min={40} max={320} step={20} suffix="k" onChange={setRows} />
 
             <div>
               <div className="mb-2 flex items-center justify-between text-sm">
@@ -719,21 +541,21 @@ function ShardingModePanel() {
         </Card>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          <MetricCard
+          <SimulatorMetricCard
             label="Hot spot ratio"
             value={`${shardLoads.hotspot.toFixed(2)}x`}
             icon={AlertTriangle}
             tone={hotSpotTone}
             detail="hottest shard compared with average"
           />
-          <MetricCard
+          <SimulatorMetricCard
             label="Rebalance movement"
             value={`${shardLoads.rebalanceCost}k rows`}
             icon={Shuffle}
             tone={partitioning === 'hash' ? 'good' : 'warn'}
             detail={partitioning === 'hash' ? 'smaller with consistent hashing' : 'range splits can move large chunks'}
           />
-          <MetricCard
+          <SimulatorMetricCard
             label="Query fanout"
             value={query.includes('created_at') && partitioning === 'hash' ? `${shards} shards` : '1 shard'}
             icon={Network}
@@ -742,13 +564,13 @@ function ShardingModePanel() {
           />
         </div>
 
-        <AdvisorCard title="Routing readout" icon={Route} tone={hotSpotTone === 'bad' ? 'bad' : hotSpotTone === 'warn' ? 'warn' : 'primary'}>
+        <SimulatorAdvisorCard title="Routing readout" icon={Route} tone={hotSpotTone === 'bad' ? 'bad' : hotSpotTone === 'warn' ? 'warn' : 'primary'}>
           {hotSpotTone === 'bad'
             ? 'The shard key is concentrating data. Pick a higher-cardinality key or add a routing layer that can split hot tenants.'
             : query.includes('created_at') && partitioning === 'hash'
               ? 'This query fans out under hash partitioning. A time-range index or secondary lookup table would keep it cheaper.'
               : 'The router can target a single shard, so this query shape stays predictable as the dataset grows.'}
-        </AdvisorCard>
+        </SimulatorAdvisorCard>
       </div>
     </div>
   );
@@ -831,17 +653,17 @@ function ScalingModePanel() {
                 </div>
               </div>
               <div className="hidden items-center md:flex">
-                <FlowLine tone="primary" />
+                <SimulatorFlowLine tone="primary" />
               </div>
               <div className="space-y-3">
-                <NodeCard
+                <SimulatorNodeCard
                   title="Primary database"
                   subtitle={`${Math.round(metrics.writeCapacity)} write qps capacity`}
                   status={metrics.writeBottleneck && metrics.pressure > 90 ? 'hot' : 'healthy'}
                   load={metrics.writeQps / Math.max(metrics.writeCapacity, 1) * 100}
                   icon={Database}
                 />
-                <NodeCard
+                <SimulatorNodeCard
                   title="Connection pool"
                   subtitle={pooling ? 'reuses client sessions' : 'disabled'}
                   status={pooling ? 'routing' : 'lagging'}
@@ -850,11 +672,11 @@ function ScalingModePanel() {
                 />
               </div>
               <div className="hidden items-center md:flex">
-                <FlowLine tone="success" delay={0.35} />
+                <SimulatorFlowLine tone="success" delay={0.35} />
               </div>
               <div className="space-y-3">
                 {Array.from({ length: Math.max(replicas, 1) }, (_, index) => (
-                  <NodeCard
+                  <SimulatorNodeCard
                     key={index}
                     title={index < replicas ? `Replica ${index + 1}` : 'No replicas'}
                     subtitle={index < replicas ? 'read traffic only' : 'reads hit primary'}
@@ -878,11 +700,11 @@ function ScalingModePanel() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
-            <ControlSlider label="Load" value={load} min={250} max={4200} step={50} suffix=" qps" onChange={setLoad} />
-            <ControlSlider label="Write traffic" value={writePercent} min={5} max={85} step={5} suffix="%" onChange={setWritePercent} />
-            <ControlSlider label="Vertical tier" value={verticalTier} min={1} max={6} step={1} suffix="x" onChange={setVerticalTier} />
-            <ControlSlider label="Read replicas" value={replicas} min={0} max={5} step={1} onChange={setReplicas} />
-            <ControlSlider label="Write shards" value={shards} min={1} max={6} step={1} onChange={setShards} />
+            <SimulatorControlSlider label="Load" value={load} min={250} max={4200} step={50} suffix=" qps" onChange={setLoad} />
+            <SimulatorControlSlider label="Write traffic" value={writePercent} min={5} max={85} step={5} suffix="%" onChange={setWritePercent} />
+            <SimulatorControlSlider label="Vertical tier" value={verticalTier} min={1} max={6} step={1} suffix="x" onChange={setVerticalTier} />
+            <SimulatorControlSlider label="Read replicas" value={replicas} min={0} max={5} step={1} onChange={setReplicas} />
+            <SimulatorControlSlider label="Write shards" value={shards} min={1} max={6} step={1} onChange={setShards} />
             <Button
               type="button"
               variant={pooling ? 'default' : 'outline'}
@@ -896,28 +718,28 @@ function ScalingModePanel() {
         </Card>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-          <MetricCard
+          <SimulatorMetricCard
             label="Latency"
             value={ms(metrics.latency)}
             icon={Clock}
             tone={metrics.latency < 140 ? 'good' : metrics.latency < 260 ? 'warn' : 'bad'}
             detail={metrics.writeBottleneck ? 'writes are the bottleneck' : 'reads are the bottleneck'}
           />
-          <MetricCard
+          <SimulatorMetricCard
             label="Throughput"
             value={`${Math.round(metrics.throughput)} qps`}
             icon={Activity}
             tone={metrics.throughput >= load ? 'good' : 'bad'}
             detail={`${Math.round(metrics.pressure)}% pressure`}
           />
-          <MetricCard
+          <SimulatorMetricCard
             label="Error rate"
             value={pct(metrics.errorRate)}
             icon={AlertTriangle}
             tone={metrics.errorRate < 2 ? 'good' : metrics.errorRate < 10 ? 'warn' : 'bad'}
             detail="timeouts and saturated connections"
           />
-          <MetricCard
+          <SimulatorMetricCard
             label="Cost"
             value={money(metrics.cost)}
             icon={WalletCards}
@@ -926,7 +748,7 @@ function ScalingModePanel() {
           />
         </div>
 
-        <AdvisorCard
+        <SimulatorAdvisorCard
           title="Scaling readout"
           icon={Gauge}
           tone={metrics.errorRate > 10 ? 'bad' : metrics.pressure > 90 ? 'warn' : 'primary'}
@@ -936,7 +758,7 @@ function ScalingModePanel() {
             : metrics.writeBottleneck
               ? 'Writes are limiting throughput. Read replicas will not fix this; use sharding or a larger primary tier.'
               : 'Read scaling and pooling are absorbing most of the pressure. Cost is the next tradeoff to watch.'}
-        </AdvisorCard>
+        </SimulatorAdvisorCard>
       </div>
     </div>
   );
@@ -996,16 +818,16 @@ export default function DatabaseReplicationShardingScaling() {
             <div className="relative min-h-[260px] overflow-hidden border-t bg-zinc-950 p-6 text-slate-100 lg:border-l lg:border-t-0">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,hsl(var(--primary)_/_0.26),transparent_34%),radial-gradient(circle_at_78%_72%,hsl(var(--primary)_/_0.14),transparent_38%)]" />
               <div className="relative grid h-full grid-cols-3 items-center gap-3">
-                <NodeCard title="Primary" subtitle="writes" load={66} icon={Database} />
+                <SimulatorNodeCard title="Primary" subtitle="writes" load={66} icon={Database} />
                 <div className="space-y-5">
-                  <FlowLine tone="primary" />
-                  <FlowLine tone="success" delay={0.35} />
-                  <FlowLine tone="warn" delay={0.7} />
+                  <SimulatorFlowLine tone="primary" />
+                  <SimulatorFlowLine tone="success" delay={0.35} />
+                  <SimulatorFlowLine tone="warn" delay={0.7} />
                 </div>
                 <div className="space-y-3">
-                  <NodeCard title="Shard 1" subtitle="replicated" load={48} icon={Layers3} />
-                  <NodeCard title="Shard 2" subtitle="hot tenant" load={86} status="hot" icon={Layers3} />
-                  <NodeCard title="Replica" subtitle="reads" load={36} icon={Server} />
+                  <SimulatorNodeCard title="Shard 1" subtitle="replicated" load={48} icon={Layers3} />
+                  <SimulatorNodeCard title="Shard 2" subtitle="hot tenant" load={86} status="hot" icon={Layers3} />
+                  <SimulatorNodeCard title="Replica" subtitle="reads" load={36} icon={Server} />
                 </div>
               </div>
             </div>
