@@ -1,0 +1,53 @@
+{
+  "id": "argocd-kustomize-overlays-environments",
+  "slug": "argocd-kustomize-overlays-environments",
+  "title": "Using Kustomize Overlays for Per-Environment Config",
+  "question": "Walk me through how you would use Kustomize overlays to handle config that differs between dev and prod in an Argo CD setup.",
+  "answer": "Put what is shared in a base. Put what differs in overlays, one per environment. Argo CD detects the kustomization.yaml in the overlay path and runs kustomize build to render the manifests.\n\nBase holds: Deployment, Service, baseline ConfigMap, common labels. Overlays patch: replicas, resource requests and limits, image tags, ingress hosts, environment-specific ConfigMap values, env vars, and HPA settings.\n\nKey rules I follow:\n\n1. Anything that differs between environments lives in overlays, never the base.\n2. Image tags belong in overlays so CI can bump dev without touching prod.\n3. Patch with strategic merge or JSON patches. Do not copy the whole Deployment YAML into each overlay; that is exactly the duplication Kustomize is supposed to remove.\n4. Use configMapGenerator with behavior: merge to add or override values, not replace the whole map.\n5. Secrets do not go in Kustomize. Use external-secrets, sealed-secrets, or a secrets manager.\n\nOn the Argo CD side, the Application points at the overlay path (apps/web/overlays/prod) and Argo CD figures out it is Kustomize from the kustomization.yaml file. No extra config needed.\n\nEdge case: if the same overlay applies to two clusters with one tiny difference (a region label, a DNS suffix), do not create a fourth overlay. Use ApplicationSet parameters to pass that one value in. Otherwise overlays multiply fast.",
+  "explanation": "This question tests whether the candidate has actually shipped Kustomize, not just read about it. Watch for people who treat overlays like full copies of the base. The point of Kustomize is the patch, not the duplication. Strong candidates know the difference between configMapGenerator behaviors (create vs merge vs replace), know where image tags should live, and have a clear take on secrets being out of scope.",
+  "category": "GitOps",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "gitops",
+    "argocd",
+    "kustomize",
+    "deployments",
+    "kubernetes"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Base kustomization.yaml",
+      "code": "# apps/web/base/kustomization.yaml\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n  - deployment.yaml\n  - service.yaml\n  - configmap.yaml\ncommonLabels:\n  app.kubernetes.io/name: web\nimages:\n  - name: web\n    newName: ghcr.io/org/web\n    newTag: placeholder"
+    },
+    {
+      "language": "yaml",
+      "label": "Prod overlay patching replicas, resources, image, and config",
+      "code": "# apps/web/overlays/prod/kustomization.yaml\napiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nnamespace: web\nresources:\n  - ../../base\n  - hpa.yaml\npatches:\n  - path: replicas-patch.yaml\n  - path: resources-patch.yaml\nimages:\n  - name: web\n    newTag: v1.42.0\nconfigMapGenerator:\n  - name: app-config\n    behavior: merge\n    literals:\n      - LOG_LEVEL=warn\n      - DB_HOST=prod-db.internal\n      - FEATURE_X=true"
+    },
+    {
+      "language": "yaml",
+      "label": "Replicas patch (strategic merge)",
+      "code": "# apps/web/overlays/prod/replicas-patch.yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web\nspec:\n  replicas: 12"
+    }
+  ],
+  "followUpQuestions": [
+    "How does Argo CD know to render this with Kustomize? Do you have to tell it?",
+    "Same overlay needs to apply to two clusters but with a different region label in each. How do you handle that without forking the overlay?",
+    "When would you reach for Helm instead of Kustomize? Or both together?",
+    "How do you preview the rendered output of the prod overlay before merging a change?"
+  ],
+  "commonMistakes": [
+    "Copying the whole Deployment YAML into each overlay instead of writing a small patch",
+    "Putting secrets into a ConfigMap because Kustomize does not support encrypted resources out of the box",
+    "Hardcoding prod image tags inside the base, so a dev image bump cannot happen without touching prod"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "kustomize",
+    "helm",
+    "gitops",
+    "kubernetes"
+  ]
+}
