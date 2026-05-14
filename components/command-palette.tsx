@@ -23,12 +23,29 @@ import {
   Clock,
   Hash,
   Sparkles,
+  ListChecks,
+  MessageSquare,
+  Scale,
+  Layers,
+  Wrench,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface SearchItem {
   id: string;
-  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page';
+  type:
+    | 'post'
+    | 'guide'
+    | 'exercise'
+    | 'quiz'
+    | 'game'
+    | 'news'
+    | 'page'
+    | 'checklist'
+    | 'interview-question'
+    | 'comparison'
+    | 'flashcard'
+    | 'tool';
   title: string;
   description: string;
   url: string;
@@ -45,6 +62,11 @@ const TYPE_ICONS = {
   game: Gamepad2,
   news: Newspaper,
   page: Home,
+  checklist: ListChecks,
+  'interview-question': MessageSquare,
+  comparison: Scale,
+  flashcard: Layers,
+  tool: Wrench,
 };
 
 const TYPE_LABELS = {
@@ -55,6 +77,11 @@ const TYPE_LABELS = {
   game: 'Game',
   news: 'News',
   page: 'Page',
+  checklist: 'Checklist',
+  'interview-question': 'Interview Question',
+  comparison: 'Comparison',
+  flashcard: 'Flashcards',
+  tool: 'Tool',
 };
 
 const TYPE_COLORS = {
@@ -65,6 +92,11 @@ const TYPE_COLORS = {
   game: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
   news: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
   page: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+  checklist: 'bg-teal-500/10 text-teal-500 border-teal-500/20',
+  'interview-question': 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
+  comparison: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+  flashcard: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+  tool: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
 };
 
 export function CommandPalette() {
@@ -241,7 +273,7 @@ export function CommandPalette() {
       {/* Command Palette Dialog */}
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput
-          placeholder="Search posts, guides, exercises, quizzes, games..."
+          placeholder="Search posts, guides, comparisons, flashcards, tools..."
           value={query}
           onValueChange={setQuery}
         />

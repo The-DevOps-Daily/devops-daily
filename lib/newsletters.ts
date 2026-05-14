@@ -63,8 +63,10 @@ async function loadNewsletters(): Promise<Newsletter[]> {
           year: data.year || 0,
           content: String(rendered),
         });
-      } catch {
-        // skip invalid files
+      } catch (error) {
+        throw new Error(
+          `Failed to parse newsletter file ${file}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -72,8 +74,10 @@ async function loadNewsletters(): Promise<Newsletter[]> {
     cache = newsletters;
     lastCacheTime = now;
     return newsletters;
-  } catch {
-    return [];
+  } catch (error) {
+    throw new Error(
+      `Failed to load newsletters from ${NEWSLETTERS_DIR}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
