@@ -4,6 +4,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import GenericQuiz from '@/components/games/generic-quiz';
 import { getQuizById, getAllQuizzes, getRelatedQuizzes } from '@/lib/quiz-loader';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { getSocialImagePath } from '@/lib/image-utils';
 import { ReportIssue } from '@/components/report-issue';
 import { ArrowLeft, Twitter, Facebook, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ export async function generateMetadata({
   }
 
   const description = truncateMetaDescription(quizConfig.description);
+  const socialImage = getSocialImagePath(slug, 'quizzes');
 
   return {
     title: { absolute: `${quizConfig.title} - Learn ${quizConfig.category}` },
@@ -50,7 +52,7 @@ export async function generateMetadata({
       url: `/quizzes/${slug}`,
       images: [
         {
-          url: `/images/quizzes/${slug}-og.png`,
+          url: socialImage,
           width: 1200,
           height: 630,
           alt: quizConfig.title,
@@ -61,7 +63,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: `${quizConfig.title} - DevOps Daily`,
       description,
-      images: [`/images/quizzes/${slug}-og.png`],
+      images: [socialImage],
     },
   };
 }
