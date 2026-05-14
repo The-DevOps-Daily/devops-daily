@@ -11,6 +11,7 @@ import ScalingSimulator from '@/components/games/scaling-simulator';
 import MicroservicesSimulator from '@/components/games/microservices-simulator';
 import CachingSimulator from '@/components/games/caching-simulator';
 import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
+import DatabaseReplicationShardingScaling from '@/components/games/database-replication-sharding-scaling';
 import DbmsSimulator from '@/components/games/dbms-simulator';
 import RateLimitSimulator from '@/components/games/rate-limit-simulator';
 import K8sScheduler from '@/components/games/k8s-scheduler';
@@ -45,6 +46,7 @@ const GAME_COMPONENTS: Record<string, React.ComponentType> = {
   'microservices-simulator': MicroservicesSimulator,
   'caching-simulator': CachingSimulator,
   'db-indexing-simulator': DbIndexingSimulator,
+  'database-replication-sharding-scaling': DatabaseReplicationShardingScaling,
   'dbms-simulator': DbmsSimulator,
   'rate-limit-simulator': RateLimitSimulator,
   'k8s-scheduler': K8sScheduler,
