@@ -32,6 +32,7 @@
     "svg2png": "tsx scripts/svg-to-png.ts",
     "images:all": "npm run generate:images && npm run convert:svg-to-png",
     "generate-search-index": "tsx scripts/generate-search-index.ts",
+    "validate:games": "tsx scripts/validate-game-registry.ts",
     "devops-daily:generate-news": "tsx scripts/devops-daily/index.ts",
     "devops-daily:generate-news:no-ai": "tsx scripts/devops-daily/index.ts --skip-ai",
     "og:newsletters": "tsx scripts/generate-newsletter-og.ts",

@@ -32,6 +32,9 @@ jobs:
       - name: Audit dependencies
         run: pnpm audit --audit-level=high || true
 
+      - name: Validate game registry
+        run: pnpm validate:games
+
       - name: Run build
         run: pnpm build:fast
         env:

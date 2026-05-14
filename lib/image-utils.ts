@@ -7,11 +7,19 @@ function publicAssetExists(publicPath: string): boolean {
   return fs.existsSync(path.join(process.cwd(), 'public', publicPath));
 }
 
-function getExistingImagePath(type: string, slug: string, extensions: string[]): string | null {
+function getExistingImagePath(
+  type: string,
+  slug: string,
+  extensions: string[],
+  includeOgSuffix = false
+): string | null {
   for (const extension of extensions) {
-    const imagePath = `/images/${type}/${slug}.${extension}`;
-    if (publicAssetExists(imagePath)) {
-      return imagePath;
+    const names = includeOgSuffix ? [slug, `${slug}-og`] : [slug];
+    for (const name of names) {
+      const imagePath = `/images/${type}/${name}.${extension}`;
+      if (publicAssetExists(imagePath)) {
+        return imagePath;
+      }
     }
   }
 
@@ -54,7 +62,7 @@ export function getSocialImagePath(
     | 'checklists'
     | 'tools'
 ): string {
-  return getExistingImagePath(type, slug, ['png']) || '/og-image.png';
+  return getExistingImagePath(type, slug, ['png'], true) || '/og-image.png';
 }
 
 export function getImagePath(
