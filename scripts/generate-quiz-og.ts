@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { execSync } from 'child_process';
+import { convertSvgToPng, escapeXml, splitTitle, titleFontSize } from './og-utils';
 
 interface QuizOGOptions {
   title: string;
@@ -52,46 +52,6 @@ const THEMES: Record<string, ThemeConfig> = {
 };
 
 /**
- * Escape XML special characters
- */
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-/**
- * Split long title into multiple lines
- */
-function splitTitle(title: string, maxCharsPerLine = 30): string[] {
-  const words = title.split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    
-    if (testLine.length <= maxCharsPerLine) {
-      currentLine = testLine;
-    } else {
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-      currentLine = word;
-    }
-  }
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
-  return lines.slice(0, 3); // Max 3 lines
-}
-
-/**
  * Generate title text elements for SVG
  */
 function generateTitleLines(title: string): string {
@@ -102,7 +62,7 @@ function generateTitleLines(title: string): string {
   return lines
     .map((line, index) => {
       const y = baseY + index * lineHeight;
-      const fontSize = lines.length === 1 ? 56 : lines.length === 2 ? 52 : 48;
+      const fontSize = titleFontSize(lines.length);
       return `  <!-- Title line ${index + 1} -->
   <text x="80" y="${y}" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`;
     })
@@ -161,7 +121,7 @@ async function generateQuizOG(options: QuizOGOptions): Promise<void> {
 
   // Generate PNG from SVG
   try {
-    execSync(`pnpm svg2png "${outputSvgPath}"`, { stdio: 'inherit' });
+    await convertSvgToPng(outputSvgPath, outputPngPath);
     console.log(`✅ Created: ${outputPngPath}`);
   } catch (error) {
     console.error(`❌ Failed to generate PNG: ${error}`);

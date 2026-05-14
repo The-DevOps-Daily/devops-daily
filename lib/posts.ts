@@ -1,18 +1,13 @@
-import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
 import { getPostImagePath } from './image-utils';
+import {
+  createCachedLoader,
+  isFileNotFound,
+  readMarkdownFile,
+  readMarkdownFiles,
+} from './content-loader';
 
 const POSTS_DIR = path.join(process.cwd(), 'content', 'posts');
-
-// Cache for posts to avoid re-reading files on every request
-let postsCache: Post[] | null = null;
-let lastCacheTime = 0;
-// During build, use infinite cache; during runtime, use 5-minute cache
-const CACHE_DURATION =
-  process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
-    ? Infinity
-    : 5 * 60 * 1000;
 
 // Define the expected Post type for type safety
 export type Post = {
@@ -31,44 +26,29 @@ export type Post = {
   featured?: boolean;
 };
 
-export async function getAllPosts(): Promise<Post[]> {
-  // Check if cache is still valid
-  const now = Date.now();
-  if (postsCache && now - lastCacheTime < CACHE_DURATION) {
-    return postsCache;
-  }
+function mapPost(data: Partial<Post>, content: string, filename: string): Post {
+  const slug = filename.replace(/\.md$/, '');
+  const image = data.image || getPostImagePath(slug);
 
-  const files = await fs.readdir(POSTS_DIR);
-  const posts = await Promise.all(
-    files
-      .filter((f) => f.endsWith('.md'))
-      .map(async (filename) => {
-        const filePath = path.join(POSTS_DIR, filename);
-        const file = await fs.readFile(filePath, 'utf-8');
-        const { data, content } = matter(file);
-        const slug = filename.replace(/\.md$/, '');
-        const image = data.image || getPostImagePath(slug);
+  return {
+    ...data,
+    slug,
+    content,
+    image,
+  } as Post;
+}
 
-        return {
-          ...data,
-          slug,
-          content,
-          image,
-        } as Post;
-      })
-  );
-
-  const sortedPosts = posts.sort((a, b) => {
+const loadPosts = createCachedLoader(async () => {
+  const posts = await readMarkdownFiles<Post, Partial<Post>>(POSTS_DIR, mapPost);
+  return posts.sort((a, b) => {
     const dateA = new Date(a.date ?? a.publishedAt ?? 0);
     const dateB = new Date(b.date ?? b.publishedAt ?? 0);
     return dateB.getTime() - dateA.getTime();
   });
+});
 
-  // Update cache
-  postsCache = sortedPosts;
-  lastCacheTime = now;
-
-  return sortedPosts;
+export async function getAllPosts(): Promise<Post[]> {
+  return loadPosts();
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
@@ -80,21 +60,16 @@ export async function getPostBySlug(slug: string): Promise<Post | null> {
     return cachedPost;
   }
 
-  // If not in cache, try to load directly (fallback)
-  const filePath = path.join(POSTS_DIR, `${slug}.md`);
   try {
-    const file = await fs.readFile(filePath, 'utf-8');
-    const { data, content } = matter(file);
-    const image = data.image || getPostImagePath(slug);
-
-    return {
-      ...data,
-      slug,
-      content,
-      image,
-    } as Post;
-  } catch {
-    return null;
+    return await readMarkdownFile<Post, Partial<Post>>(
+      path.join(POSTS_DIR, `${slug}.md`),
+      mapPost
+    );
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 
@@ -150,7 +125,7 @@ export async function getPostsByTag(tag: string) {
 
 export async function getLatestPosts(limit = 6) {
   const posts = await getAllPosts();
-  return posts
+  return [...posts]
     .sort(
       (a, b) =>
         new Date(b.publishedAt || b.date || '').getTime() -

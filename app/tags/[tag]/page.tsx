@@ -55,15 +55,10 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const tags = await getAllTags();
-    return tags.map((tag) => ({
-      tag: tag.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for tags:', error);
-    return [];
-  }
+  const tags = await getAllTags();
+  return tags.map((tag) => ({
+    tag: tag.slug,
+  }));
 }
 
 export default async function TagPage({ params }: TagPageProps) {

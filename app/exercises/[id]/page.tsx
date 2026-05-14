@@ -17,15 +17,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const exercises = await getAllExercises();
-    return exercises.map((exercise) => ({
-      id: exercise.id,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for exercises:', error);
-    return [];
-  }
+  const exercises = await getAllExercises();
+  return exercises.map((exercise) => ({
+    id: exercise.id,
+  }));
 }
 
 export async function generateMetadata({

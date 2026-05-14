@@ -11,15 +11,10 @@ import { ExpertContentToggle } from '@/components/experts/expert-content-toggle'
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const experts = await getAllExperts();
-    return experts.map((expert) => ({
-      slug: expert.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for experts:', error);
-    return [];
-  }
+  const experts = await getAllExperts();
+  return experts.map((expert) => ({
+    slug: expert.slug,
+  }));
 }
 
 export async function generateMetadata({

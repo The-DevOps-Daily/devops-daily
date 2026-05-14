@@ -4,6 +4,7 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
+import { GameSeoContent } from '@/components/games/game-seo-content';
 import { CarbonAds } from '@/components/carbon-ads';
 import { getGameById, getActiveGames } from '@/lib/games';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,8 @@ interface SimulatorShellProps {
   educational?: React.ReactNode;
   /** Custom share text for social links; defaults to a generic message */
   shareText?: string;
+  /** Optional indexable learning points for the hidden SEO/no-JS content block */
+  seoLearningPoints?: string[];
   /** Hide the CarbonAds block (use sparingly; e.g. for in-game pages that already embed ads) */
   hideAds?: boolean;
   /** Hide the social share footer */
@@ -46,6 +49,7 @@ export async function SimulatorShell({
   children,
   educational,
   shareText,
+  seoLearningPoints,
   hideAds = false,
   hideShare = false,
   className,
@@ -87,6 +91,13 @@ export async function SimulatorShell({
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <GameSeoContent
+        title={title}
+        description={description}
+        category={category}
+        tags={tags}
+        learningPoints={seoLearningPoints}
+      />
       {game && (
         <SoftwareApplicationSchema
           name={title}

@@ -1,18 +1,13 @@
-import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
 import { getAdventImagePath } from './image-utils';
+import {
+  createCachedLoader,
+  isFileNotFound,
+  readMarkdownFile,
+  readMarkdownFiles,
+} from './content-loader';
 
 const ADVENT_DIR = path.join(process.cwd(), 'content', 'advent-of-devops');
-
-// Cache for advent content
-let adventCache: AdventDay[] | null = null;
-let adventIndexCache: AdventIndex | null = null;
-let lastCacheTime = 0;
-const CACHE_DURATION =
-  process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
-    ? Infinity
-    : 5 * 60 * 1000;
 
 export type AdventDay = {
   title: string;
@@ -40,39 +35,42 @@ export type AdventIndex = {
   tags?: string[];
 };
 
-export async function getAllAdventDays(): Promise<AdventDay[]> {
-  const now = Date.now();
-  if (adventCache && now - lastCacheTime < CACHE_DURATION) {
-    return adventCache;
-  }
+function mapAdventDay(data: Partial<AdventDay>, content: string, filename: string): AdventDay {
+  const slug = filename.replace(/\.md$/, '');
+  const image = data.image || getAdventImagePath(slug);
 
-  const files = await fs.readdir(ADVENT_DIR);
-  const days = await Promise.all(
-    files
-      .filter((f) => f.endsWith('.md') && f.startsWith('day-'))
-      .map(async (filename) => {
-        const filePath = path.join(ADVENT_DIR, filename);
-        const file = await fs.readFile(filePath, 'utf-8');
-        const { data, content } = matter(file);
-        const slug = filename.replace(/\.md$/, '');
-        const image = data.image || getAdventImagePath(slug);
+  return {
+    ...data,
+    slug,
+    content,
+    image,
+    day: data.day || parseInt(slug.replace('day-', ''), 10),
+  } as AdventDay;
+}
 
-        return {
-          ...data,
-          slug,
-          content,
-          image,
-          day: data.day || parseInt(filename.replace('day-', '').replace('.md', '')),
-        } as AdventDay;
-      })
+const loadAdventDays = createCachedLoader(async () => {
+  const days = await readMarkdownFiles<AdventDay, Partial<AdventDay>>(
+    ADVENT_DIR,
+    mapAdventDay
   );
 
-  const sortedDays = days.sort((a, b) => a.day - b.day);
+  return days.filter((day) => day.slug.startsWith('day-')).sort((a, b) => a.day - b.day);
+});
 
-  adventCache = sortedDays;
-  lastCacheTime = now;
+const loadAdventIndex = createCachedLoader(() =>
+  readMarkdownFile<AdventIndex, Partial<AdventIndex>>(
+    path.join(ADVENT_DIR, 'index.md'),
+    (data, content) =>
+      ({
+        ...data,
+        slug: 'advent-of-devops',
+        content,
+      }) as AdventIndex
+  )
+);
 
-  return sortedDays;
+export async function getAllAdventDays(): Promise<AdventDay[]> {
+  return loadAdventDays();
 }
 
 export async function getAdventDayBySlug(slug: string): Promise<AdventDay | null> {
@@ -83,21 +81,16 @@ export async function getAdventDayBySlug(slug: string): Promise<AdventDay | null
     return cachedDay;
   }
 
-  const filePath = path.join(ADVENT_DIR, `${slug}.md`);
   try {
-    const file = await fs.readFile(filePath, 'utf-8');
-    const { data, content } = matter(file);
-    const image = data.image || getAdventImagePath(slug);
-
-    return {
-      ...data,
-      slug,
-      content,
-      image,
-      day: data.day || parseInt(slug.replace('day-', '')),
-    } as AdventDay;
-  } catch {
-    return null;
+    return await readMarkdownFile<AdventDay, Partial<AdventDay>>(
+      path.join(ADVENT_DIR, `${slug}.md`),
+      mapAdventDay
+    );
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 
@@ -106,26 +99,13 @@ export async function getAdventDayByNumber(dayNumber: number): Promise<AdventDay
 }
 
 export async function getAdventIndex(): Promise<AdventIndex | null> {
-  const now = Date.now();
-  if (adventIndexCache && now - lastCacheTime < CACHE_DURATION) {
-    return adventIndexCache;
-  }
-
-  const filePath = path.join(ADVENT_DIR, 'index.md');
   try {
-    const file = await fs.readFile(filePath, 'utf-8');
-    const { data, content } = matter(file);
-
-    const index = {
-      ...data,
-      slug: 'advent-of-devops',
-      content,
-    } as AdventIndex;
-
-    adventIndexCache = index;
-    return index;
-  } catch {
-    return null;
+    return await loadAdventIndex();
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 

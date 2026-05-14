@@ -11,18 +11,10 @@ import fs from 'fs';
 import path from 'path';
 import { Resvg } from '@resvg/resvg-js';
 import { TOOLS, CATEGORY_LABEL } from '../lib/tools.js';
+import { escapeXml } from './og-utils';
 
 const OUT_DIR = path.join(process.cwd(), 'public', 'images', 'tools');
 const FORCE = process.argv.includes('--force');
-
-function escapeXml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
 
 function wrapText(text: string, maxChars: number): string[] {
   const words = text.split(/\s+/);

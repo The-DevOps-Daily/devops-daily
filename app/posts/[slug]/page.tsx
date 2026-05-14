@@ -21,15 +21,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const posts = await getAllPosts();
-    return posts.map((post) => ({
-      slug: post.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for posts:', error);
-    return [];
-  }
+  const posts = await getAllPosts();
+  return posts.map((post) => ({
+    slug: post.slug,
+  }));
 }
 
 export async function generateMetadata({

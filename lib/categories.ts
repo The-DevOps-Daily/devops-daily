@@ -1,8 +1,7 @@
-import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
 import { getAllPosts } from './posts';
 import { getAllGuides } from './guides';
+import { isFileNotFound, readMarkdownFile, readMarkdownFiles } from './content-loader';
 
 const CATEGORIES_DIR = path.join(process.cwd(), 'content', 'categories');
 
@@ -65,25 +64,19 @@ export async function getAllCategories(): Promise<Category[]> {
     }
   });
 
-  // Read category files
-  const files = await fs.readdir(CATEGORIES_DIR);
-  const categories = await Promise.all(
-    files
-      .filter((f) => f.endsWith('.md'))
-      .map(async (filename) => {
-        const filePath = path.join(CATEGORIES_DIR, filename);
-        const file = await fs.readFile(filePath, 'utf-8');
-        const { data } = matter(file);
-        const slug = filename.replace(/\.md$/, '');
+  const categories = await readMarkdownFiles<Category, Partial<Category>>(
+    CATEGORIES_DIR,
+    (data, _content, filename) => {
+      const slug = filename.replace(/\.md$/, '');
 
-        return {
-          ...data,
-          slug,
-          icon: data.icon || iconMap[slug],
-          color: data.color || colorMap[slug],
-          count: categoryCount.get(slug) || 0,
-        } as Category;
-      })
+      return {
+        ...data,
+        slug,
+        icon: data.icon || iconMap[slug],
+        color: data.color || colorMap[slug],
+        count: categoryCount.get(slug) || 0,
+      } as Category;
+    }
   );
 
   // Sort by count (descending) then by name
@@ -96,11 +89,7 @@ export async function getAllCategories(): Promise<Category[]> {
 }
 
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  const filePath = path.join(CATEGORIES_DIR, `${slug}.md`);
   try {
-    const file = await fs.readFile(filePath, 'utf-8');
-    const { data } = matter(file);
-
     // Get count for this specific category
     const [posts, guides] = await Promise.all([getAllPosts(), getAllGuides()]);
 
@@ -112,15 +101,22 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
       if (guide.category?.slug === slug) count++;
     });
 
-    return {
-      ...data,
-      slug,
-      icon: data.icon || iconMap[slug],
-      color: data.color || colorMap[slug],
-      count,
-    } as Category;
-  } catch {
-    return null;
+    return await readMarkdownFile<Category, Partial<Category>>(
+      path.join(CATEGORIES_DIR, `${slug}.md`),
+      (data) =>
+        ({
+          ...data,
+          slug,
+          icon: data.icon || iconMap[slug],
+          color: data.color || colorMap[slug],
+          count,
+        }) as Category
+    );
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 

@@ -17,24 +17,19 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const guides = await getAllGuides();
-    const params = [];
+  const guides = await getAllGuides();
+  const params = [];
 
-    for (const guide of guides) {
-      for (const part of guide.parts) {
-        params.push({
-          slug: guide.slug,
-          part: part.slug,
-        });
-      }
+  for (const guide of guides) {
+    for (const part of guide.parts) {
+      params.push({
+        slug: guide.slug,
+        part: part.slug,
+      });
     }
-
-    return params;
-  } catch (error) {
-    console.warn('Error generating static params for guide parts:', error);
-    return [];
   }
+
+  return params;
 }
 
 export async function generateMetadata({

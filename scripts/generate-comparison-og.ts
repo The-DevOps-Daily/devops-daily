@@ -3,18 +3,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 import type { Comparison } from '../lib/comparison-types';
+import { escapeXml } from './og-utils';
 
 const COMPARISONS_DIR = path.join(process.cwd(), 'content', 'comparisons');
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'images', 'comparisons');
-
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);

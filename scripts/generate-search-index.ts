@@ -9,6 +9,7 @@ import { getActiveGames } from '../lib/games.js';
 import { getAllChecklists } from '../lib/checklists.js';
 import { getAllComparisons } from '../lib/comparisons.js';
 import { getAllFlashCardSets } from '../lib/flashcard-loader.js';
+import { getAllQuizzes } from '../lib/quiz-loader.js';
 import { TOOLS, CATEGORY_LABEL } from '../lib/tools.js';
 import { interviewQuestions } from '../content/interview-questions/index.js';
 import type { SearchItem } from '../lib/search-types.js';
@@ -179,35 +180,19 @@ const PAGES: SearchItem[] = [
 
 // Quizzes (load from filesystem)
 async function getQuizzes(): Promise<SearchItem[]> {
-  try {
-    const quizzesDir = path.join(process.cwd(), 'content', 'quizzes');
-    const files = await fs.readdir(quizzesDir);
-    const quizFiles = files.filter((file) => file.endsWith('.json'));
+  const quizzes = await getAllQuizzes();
 
-    const quizzes: SearchItem[] = [];
-
-    for (const file of quizFiles) {
-      const content = await fs.readFile(path.join(quizzesDir, file), 'utf-8');
-      const quiz = JSON.parse(content);
-
-      quizzes.push({
-        id: `quiz-${quiz.id}`,
-        type: 'quiz',
-        title: quiz.title,
-        description: quiz.description || `${quiz.questions.length} questions`,
-        url: `/quizzes/${quiz.id}`,
-        category: quiz.category || 'General',
-        tags: quiz.metadata?.tags || [],
-        icon: '❓',
-        date: quiz.metadata?.createdDate,
-      });
-    }
-
-    return quizzes;
-  } catch (error) {
-    console.error('Error loading quizzes:', error);
-    return [];
-  }
+  return quizzes.map((quiz) => ({
+    id: `quiz-${quiz.id}`,
+    type: 'quiz',
+    title: quiz.title,
+    description: quiz.description || `${quiz.questions.length} questions`,
+    url: `/quizzes/${quiz.id}`,
+    category: quiz.category || 'General',
+    tags: quiz.metadata?.tags || [],
+    icon: '❓',
+    date: quiz.metadata?.createdDate,
+  }));
 }
 
 async function generateSearchIndex() {

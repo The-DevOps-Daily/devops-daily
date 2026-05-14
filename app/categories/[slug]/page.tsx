@@ -14,15 +14,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const categories = await getAllCategories();
-    return categories.map((category) => ({
-      slug: category.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for categories:', error);
-    return [];
-  }
+  const categories = await getAllCategories();
+  return categories.map((category) => ({
+    slug: category.slug,
+  }));
 }
 
 export async function generateMetadata({

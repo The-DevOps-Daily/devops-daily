@@ -43,7 +43,7 @@ export function getQuizUrl(quizId: string): string {
 export async function getAllQuizRoutes(): Promise<
   Array<{
     url: string;
-    lastModified: Date;
+    lastModified?: Date;
     changeFrequency: 'monthly' | 'weekly' | 'daily';
     priority: number;
   }>
@@ -52,7 +52,7 @@ export async function getAllQuizRoutes(): Promise<
 
   return quizzes.map((quiz) => ({
     url: getQuizUrl(quiz.id),
-    lastModified: new Date(),
+    ...(quiz.metadata.createdDate ? { lastModified: new Date(quiz.metadata.createdDate) } : {}),
     changeFrequency: 'monthly' as const,
     priority: 0.8,
   }));

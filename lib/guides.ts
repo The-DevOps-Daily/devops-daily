@@ -1,18 +1,9 @@
 import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
 import { getGuideImagePath } from './image-utils';
+import { createCachedLoader, isFileNotFound, readMarkdownFile } from './content-loader';
 
 const GUIDES_DIR = path.join(process.cwd(), 'content', 'guides');
-
-// Cache for guides to avoid re-reading files on every request
-let guidesCache: Guide[] | null = null;
-let lastCacheTime = 0;
-// During build, use infinite cache; during runtime, use 5-minute cache
-const CACHE_DURATION =
-  process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
-    ? Infinity
-    : 5 * 60 * 1000;
 
 export type GuidePart = {
   title: string;
@@ -54,78 +45,84 @@ async function getGuideDirSlugs() {
   return dirs.filter((d) => d.isDirectory()).map((d) => d.name);
 }
 
-export async function getAllGuides(): Promise<Guide[]> {
-  // Check if cache is still valid
-  const now = Date.now();
-  if (guidesCache && now - lastCacheTime < CACHE_DURATION) {
-    return guidesCache;
-  }
-
+const loadGuides = createCachedLoader(async () => {
   const slugs = await getGuideDirSlugs();
   const guides = await Promise.all(slugs.map((slug) => getGuideBySlug(slug)));
 
-  const sortedGuides = guides
+  return guides
     .filter((guide): guide is Guide => guide !== null && !!guide.publishedAt)
     .sort((a, b) => new Date(b.publishedAt!).getTime() - new Date(a.publishedAt!).getTime());
+});
 
-  // Update cache
-  guidesCache = sortedGuides;
-  lastCacheTime = now;
-
-  return sortedGuides;
+export async function getAllGuides(): Promise<Guide[]> {
+  return loadGuides();
 }
 
 export async function getGuideBySlug(slug: string): Promise<Guide | null> {
   const guideDir = path.join(GUIDES_DIR, slug);
   try {
-    const indexFile = await fs.readFile(path.join(guideDir, 'index.md'), 'utf-8');
-    const { data, content } = matter(indexFile);
-    const image = data.image || getGuideImagePath(slug);
+    const guide = await readMarkdownFile<Guide, Partial<Guide>>(
+      path.join(guideDir, 'index.md'),
+      async (data, content) => {
+        const image = data.image || getGuideImagePath(slug);
 
-    // Read parts
-    const files = await fs.readdir(guideDir);
-    const partFiles = files.filter((f) => f !== 'index.md' && f.endsWith('.md'));
-    const parts: GuidePart[] = await Promise.all(
-      partFiles.map(async (filename) => {
-        const partFile = await fs.readFile(path.join(guideDir, filename), 'utf-8');
-        const { data: partData, content: partContent } = matter(partFile);
+        // Read parts
+        const files = await fs.readdir(guideDir);
+        const partFiles = files.filter((f) => f !== 'index.md' && f.endsWith('.md'));
+        const parts: GuidePart[] = await Promise.all(
+          partFiles.map((filename) =>
+            readMarkdownFile<GuidePart, Partial<GuidePart>>(
+              path.join(guideDir, filename),
+              (partData, partContent) =>
+                ({
+                  ...partData,
+                  slug: filename.replace(/\.md$/, ''),
+                  content: partContent,
+                }) as GuidePart
+            )
+          )
+        );
+        parts.sort((a, b) => (a.order || 0) - (b.order || 0));
+        const partsCount = parts.length;
+        const readingTime = parts.reduce((total, part) => {
+          const words = part.content.split(/\s+/).length;
+          // Assuming an average reading speed of 200 wpm
+          return total + Math.ceil(words / 200);
+        }, 0);
+
         return {
-          ...partData,
-          slug: filename.replace(/\.md$/, ''),
-          content: partContent,
-        } as GuidePart;
-      })
+          ...data,
+          slug,
+          content,
+          image,
+          parts,
+          partsCount,
+          readingTime: `${readingTime} min read`,
+        } as Guide;
+      }
     );
-    parts.sort((a, b) => (a.order || 0) - (b.order || 0));
-    const partsCount = parts.length;
-    const readingTime = parts.reduce((total, part) => {
-      const words = part.content.split(/\s+/).length;
-      // Assuming an average reading speed of 200 wpm
-      return total + Math.ceil(words / 200);
-    }, 0);
 
-    return {
-      ...data,
-      slug,
-      content,
-      image,
-      parts,
-      partsCount,
-      readingTime: `${readingTime} min read`,
-    } as Guide;
-  } catch {
-    return null;
+    return guide;
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 
 export async function getGuidePart(guideSlug: string, partSlug: string): Promise<string | null> {
   const guideDir = path.join(GUIDES_DIR, guideSlug);
   try {
-    const partFile = await fs.readFile(path.join(guideDir, `${partSlug}.md`), 'utf-8');
-    const { content } = matter(partFile);
-    return content;
-  } catch {
-    return null;
+    return await readMarkdownFile<string>(
+      path.join(guideDir, `${partSlug}.md`),
+      (_, content) => content
+    );
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 
@@ -141,7 +138,7 @@ export async function getGuidesByTag(tag: string) {
 
 export async function getLatestGuides(limit = 4) {
   const guides = await getAllGuides();
-  return guides
+  return [...guides]
     .sort(
       (a, b) => new Date(b?.publishedAt || '').getTime() - new Date(a?.publishedAt || '').getTime()
     )
@@ -152,25 +149,25 @@ export async function getRelatedGuides(currentSlug: string, categorySlug: string
   const guides = await getAllGuides();
   const currentGuide = guides.find((g) => g.slug === currentSlug);
   const currentTags = currentGuide?.tags || [];
-  
+
   // Filter out current guide
   const candidateGuides = guides.filter((guide) => guide.slug !== currentSlug);
-  
+
   // Score each candidate guide
   const scoredGuides = candidateGuides.map((guide) => {
     let score = 0;
-    
+
     // Tag matches (highest priority: 10 points per matching tag)
     if (guide.tags && currentTags.length > 0) {
       const matchingTags = guide.tags.filter((tag) => currentTags.includes(tag));
       score += matchingTags.length * 10;
     }
-    
+
     // Same category (5 points)
     if (guide.category?.slug === categorySlug) {
       score += 5;
     }
-    
+
     // Recency bonus (2 points for guides published within last 30 days)
     const guideDate = new Date(guide.publishedAt || 0).getTime();
     const daysSincePublished = (Date.now() - guideDate) / (1000 * 60 * 60 * 24);

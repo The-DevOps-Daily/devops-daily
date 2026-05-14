@@ -4,18 +4,10 @@ import fs from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
 import { Resvg } from '@resvg/resvg-js';
+import { escapeXml } from './og-utils';
 
 const NEWSLETTERS_DIR = path.join(process.cwd(), 'content', 'newsletters');
 const OUTPUT_DIR = path.join(process.cwd(), 'public', 'images', 'newsletters');
-
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
 
 function generateSVG(week: number, year: number, date: string): string {
   const formattedDate = new Date(date).toLocaleDateString('en-US', {
