@@ -4,7 +4,7 @@ import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { getGuideBySlug, getAllGuides, getGuidePart, getRelatedGuides } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, TechArticleSchema } from '@/components/schema-markup';
 import { tagToSlug } from '@/lib/tag-utils';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { GuidePartNavigation } from '@/components/guide-part-navigation';
@@ -136,6 +136,17 @@ export default async function GuidePartPage({
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <TechArticleSchema
+        title={`${currentPart?.title || 'Part'} - ${guide.title}`}
+        description={currentPart?.description || guide.description}
+        publishedDate={guide.publishedAt}
+        modifiedDate={guide.updatedAt || guide.publishedAt}
+        imageUrl={getSocialImagePath(guide.slug, 'guides') || guide.image}
+        authorName={guide.author?.name}
+        url={`/guides/${guide.slug}/${partSlug}`}
+        articleSection={guide.category?.name}
+        keywords={guide.tags}
+      />
       <ReadingProgressBar />
 
       <div className="container px-4 py-8 mx-auto">

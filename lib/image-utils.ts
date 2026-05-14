@@ -40,7 +40,19 @@ export function getAdventImagePath(slug: string): string {
 
 export function getSocialImagePath(
   slug: string,
-  type: 'posts' | 'guides' | 'exercises' | 'news' | 'advent' | 'interview-questions' | 'comparisons'
+  type:
+    | 'posts'
+    | 'guides'
+    | 'exercises'
+    | 'news'
+    | 'advent'
+    | 'interview-questions'
+    | 'comparisons'
+    | 'games'
+    | 'quizzes'
+    | 'flashcards'
+    | 'checklists'
+    | 'tools'
 ): string {
   return getExistingImagePath(type, slug, ['png']) || '/og-image.png';
 }

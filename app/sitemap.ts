@@ -245,6 +245,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/privacy',
     '/terms',
     '/sponsorship',
+    '/experts',
     '/roadmaps',
     '/roadmaps/junior',
     '/roadmaps/devsecops',

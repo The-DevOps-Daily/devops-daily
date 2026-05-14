@@ -1,3 +1,6 @@
 # Redirect authors to experts (merged sections)
 /authors /experts 301
 /authors/* /experts/:splat 301
+
+# Canonical location for the CI/CD Stack Generator
+/tools/cicd-stack-generator /games/cicd-stack-generator 301
