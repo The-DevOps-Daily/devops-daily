@@ -7,6 +7,7 @@ import { getAllGuides } from '../lib/guides.js';
 import { getAllExercises } from '../lib/exercises.js';
 import { getAllNews } from '../lib/news.js';
 import { getAllAdventDays } from '../lib/advent.js';
+import { escapeXml } from './og-utils';
 
 // Configuration
 const IMAGE_WIDTH = 1200;
@@ -24,16 +25,6 @@ const COLORS = {
 };
 
 function generateSVG(title: string, category: string): string {
-  // Escape special characters for SVG
-  const escapeXml = (str: string) =>
-    str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-
-  const safeTitle = escapeXml(title);
   const safeCategory = escapeXml(category.toUpperCase());
 
   // Word wrap for long titles
@@ -115,14 +106,6 @@ function generateSVG(title: string, category: string): string {
 }
 
 function generateAdventSVG(title: string, day: number, category: string): string {
-  const escapeXml = (str: string) =>
-    str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-
   const safeCategory = escapeXml(category.toUpperCase());
   const categoryWidth = 100 + safeCategory.length * 10;
   const cleanTitle = title.replace(/^Day \d+ - /, '');

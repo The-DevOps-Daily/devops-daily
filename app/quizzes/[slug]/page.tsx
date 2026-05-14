@@ -17,15 +17,10 @@ import { CarbonAds } from '@/components/carbon-ads';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const quizzes = await getAllQuizzes();
-    return quizzes.map((quiz) => ({
-      slug: quiz.id,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for quizzes:', error);
-    return [];
-  }
+  const quizzes = await getAllQuizzes();
+  return quizzes.map((quiz) => ({
+    slug: quiz.id,
+  }));
 }
 
 export async function generateMetadata({

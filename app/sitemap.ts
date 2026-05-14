@@ -17,6 +17,10 @@ import { TOOLS } from '@/lib/tools';
 
 export const dynamic = 'force-static';
 
+function withLastModified(date?: string | Date | null) {
+  return date ? { lastModified: new Date(date) } : {};
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
@@ -38,71 +42,73 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getAllHacktoberfestDays(),
     ]);
 
+  const latestPostDate = posts[0]?.updatedAt || posts[0]?.date || posts[0]?.publishedAt;
+  const latestGuideDate = guides[0]?.updatedAt || guides[0]?.publishedAt;
+  const latestExerciseDate = exercises[0]?.updatedAt || exercises[0]?.publishedAt;
+  const latestNewsDate = news[0]?.date || news[0]?.publishedAt;
+  const latestComparisonDate = comparisons[0]?.updatedDate || comparisons[0]?.createdDate;
+  const latestNewsletterDate = newsletters[0]?.date;
+
   // Static routes
   const routes = [
     {
       url: `${baseUrl}`,
-      lastModified: new Date(),
+      ...withLastModified(latestPostDate || latestNewsDate),
       changeFrequency: 'daily' as const,
       priority: 1.0,
     },
     {
       url: `${baseUrl}/posts`,
-      lastModified: new Date(),
+      ...withLastModified(latestPostDate),
       changeFrequency: 'daily' as const,
       priority: 0.9,
     },
     {
       url: `${baseUrl}/guides`,
-      lastModified: new Date(),
+      ...withLastModified(latestGuideDate),
       changeFrequency: 'weekly' as const,
       priority: 0.9,
     },
     {
       url: `${baseUrl}/exercises`,
-      lastModified: new Date(),
+      ...withLastModified(latestExerciseDate),
       changeFrequency: 'weekly' as const,
       priority: 0.9,
     },
     {
       url: `${baseUrl}/quizzes`,
-      lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.9,
     },
     {
       url: `${baseUrl}/news`,
-      lastModified: new Date(),
+      ...withLastModified(latestNewsDate),
       changeFrequency: 'weekly' as const,
       priority: 0.9,
     },
     {
       url: `${baseUrl}/categories`,
-      lastModified: new Date(),
+      ...withLastModified(latestPostDate || latestGuideDate),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
     },
     {
       url: `${baseUrl}/roadmap`,
-      lastModified: new Date(),
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     },
     {
       url: `${baseUrl}/toolbox`,
-      lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     },
     {
       url: `${baseUrl}/tools`,
-      lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     },
     {
       url: `${baseUrl}/games`,
-      lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     },
@@ -111,7 +117,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Post routes
   const postRoutes = posts.map((post) => ({
     url: `${baseUrl}/posts/${post.slug}`,
-    lastModified: new Date(post.updatedAt || post.date || new Date()),
+    ...withLastModified(post.updatedAt || post.date || post.publishedAt),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -119,7 +125,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Category routes
   const categoryRoutes = categories.map((category) => ({
     url: `${baseUrl}/categories/${category.slug}`,
-    lastModified: new Date(),
+    ...withLastModified(latestPostDate || latestGuideDate),
     changeFrequency: 'weekly' as const,
     priority: 0.6,
   }));
@@ -127,7 +133,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Guide routes
   const guideRoutes = guides.map((guide) => ({
     url: `${baseUrl}/guides/${guide.slug}`,
-    lastModified: new Date(),
+    ...withLastModified(guide.updatedAt || guide.publishedAt),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -136,7 +142,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const guidePartRoutes = guides.flatMap((guide) =>
     guide.parts.map((part) => ({
       url: `${baseUrl}/guides/${guide.slug}/${part.slug}`,
-      lastModified: new Date(),
+      ...withLastModified(guide.updatedAt || guide.publishedAt),
       changeFrequency: 'monthly' as const,
       priority: 0.6,
     }))
@@ -145,7 +151,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Exercise routes
   const exerciseRoutes = exercises.map((exercise) => ({
     url: `${baseUrl}/exercises/${exercise.id}`,
-    lastModified: new Date(exercise.updatedAt || exercise.publishedAt || new Date()),
+    ...withLastModified(exercise.updatedAt || exercise.publishedAt),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -153,7 +159,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Quiz routes
   const quizRoutes = quizzes.map((quiz) => ({
     url: `${baseUrl}/quizzes/${quiz.id}`,
-    lastModified: new Date(),
+    ...withLastModified(quiz.createdDate),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -161,7 +167,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // News routes
   const newsRoutes = news.map((digest) => ({
     url: `${baseUrl}/news/${digest.slug}`,
-    lastModified: new Date(digest.date || new Date()),
+    ...withLastModified(digest.date || digest.publishedAt),
     changeFrequency: 'monthly' as const,
     priority: 0.8,
   }));
@@ -169,7 +175,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Game routes (only active games, excludes coming soon)
   const gameRoutes = games.map((game) => ({
     url: `${baseUrl}${game.href}`,
-    lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -177,7 +182,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Flashcard routes
   const flashcardRoutes = flashcards.map((set) => ({
     url: `${baseUrl}/flashcards/${set.id}`,
-    lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
@@ -185,7 +189,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Checklist routes
   const checklistRoutes = checklists.map((checklist) => ({
     url: `${baseUrl}/checklists/${checklist.slug}`,
-    lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
@@ -193,7 +196,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Interview question routes
   const interviewRoutes = interviewQuestions.map((q) => ({
     url: `${baseUrl}/interview-questions/${q.tier}/${q.slug}`,
-    lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
@@ -201,7 +203,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Comparison routes
   const comparisonRoutes = comparisons.map((c) => ({
     url: `${baseUrl}/comparisons/${c.slug}`,
-    lastModified: new Date(c.updatedDate || c.createdDate),
+    ...withLastModified(c.updatedDate || c.createdDate),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -209,7 +211,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Newsletter routes
   const newsletterRoutes = newsletters.map((n) => ({
     url: `${baseUrl}/newsletters/${n.slug}`,
-    lastModified: new Date(n.date || new Date()),
+    ...withLastModified(n.date),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
@@ -217,7 +219,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Advent of DevOps routes
   const adventRoutes = adventDays.map((day) => ({
     url: `${baseUrl}/advent-of-devops/${day.slug}`,
-    lastModified: new Date(day.updatedAt || day.publishedAt || new Date()),
+    ...withLastModified(day.updatedAt || day.publishedAt),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
@@ -225,7 +227,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Hacktoberfest routes
   const hacktoberfestRoutes = hacktoberfestDays.map((day) => ({
     url: `${baseUrl}/hacktoberfest/${day.slug}`,
-    lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.6,
   }));
@@ -233,7 +234,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Tool routes (each tool has its own static page under /tools/<slug>)
   const toolRoutes = TOOLS.map((tool) => ({
     url: `${baseUrl}/tools/${tool.slug}`,
-    lastModified: new Date(),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -260,7 +260,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/search',
   ].map((path) => ({
     url: `${baseUrl}${path}`,
-    lastModified: new Date(),
+    ...withLastModified(
+      path === '/comparisons'
+        ? latestComparisonDate
+        : path === '/newsletters'
+          ? latestNewsletterDate
+          : undefined
+    ),
     changeFrequency: 'monthly' as const,
     priority: 0.5,
   }));

@@ -18,15 +18,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const guides = await getAllGuides();
-    return guides.map((guide) => ({
-      slug: guide.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for guides:', error);
-    return [];
-  }
+  const guides = await getAllGuides();
+  return guides.map((guide) => ({
+    slug: guide.slug,
+  }));
 }
 
 export async function generateMetadata({

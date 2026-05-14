@@ -28,10 +28,10 @@ jobs:
         run: pnpm install
 
       - name: Generate SVG images
-        run: pnpm generate:images:parallel
+        run: pnpm generate:images
 
       - name: Convert SVG to PNG
-        run: pnpm convert:svg-to-png:parallel
+        run: pnpm convert:svg-to-png
 
       - name: Get timestamp
         id: timestamp

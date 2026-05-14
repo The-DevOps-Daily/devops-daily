@@ -7,20 +7,26 @@ async function copyMarkdownFiles() {
   const contentDir = path.join(__dirname, '..', 'content');
   const publicDir = path.join(__dirname, '..', 'public');
 
-  try {
-    // Copy posts
-    const postsDir = path.join(contentDir, 'posts');
-    const publicPostsDir = path.join(publicDir, 'posts');
+  async function copyFiles(srcDir, destDir, extension) {
+    await fs.mkdir(destDir, { recursive: true });
 
-    await fs.mkdir(publicPostsDir, { recursive: true });
+    const files = await fs.readdir(srcDir);
+    const matchingFiles = files.filter((file) => file.endsWith(extension));
 
-    const posts = await fs.readdir(postsDir);
-    for (const post of posts) {
-      if (post.endsWith('.md')) {
-        await fs.copyFile(path.join(postsDir, post), path.join(publicPostsDir, post));
-      }
+    for (const file of matchingFiles) {
+      await fs.copyFile(path.join(srcDir, file), path.join(destDir, file));
     }
-    console.log(`✅ Copied ${posts.length} posts to public/posts/`);
+
+    return matchingFiles.length;
+  }
+
+  try {
+    const postCount = await copyFiles(
+      path.join(contentDir, 'posts'),
+      path.join(publicDir, 'posts'),
+      '.md'
+    );
+    console.log(`✅ Copied ${postCount} posts to public/posts/`);
 
     // Copy guides
     const guidesDir = path.join(contentDir, 'guides');
@@ -56,32 +62,19 @@ async function copyMarkdownFiles() {
     }
     console.log(`✅ Copied guides to public/guides/`);
 
-    // Copy advent-of-devops
-    const adventDir = path.join(contentDir, 'advent-of-devops');
-    const publicAdventDir = path.join(publicDir, 'advent-of-devops');
+    const adventCount = await copyFiles(
+      path.join(contentDir, 'advent-of-devops'),
+      path.join(publicDir, 'advent-of-devops'),
+      '.md'
+    );
+    console.log(`✅ Copied ${adventCount} advent days to public/advent-of-devops/`);
 
-    await fs.mkdir(publicAdventDir, { recursive: true });
-
-    const adventFiles = await fs.readdir(adventDir);
-    for (const file of adventFiles) {
-      if (file.endsWith('.md')) {
-        await fs.copyFile(path.join(adventDir, file), path.join(publicAdventDir, file));
-      }
-    }
-    console.log(`✅ Copied ${adventFiles.filter(f => f.endsWith('.md')).length} advent days to public/advent-of-devops/`);
-
-    // Copy comparison JSON files so comparison pages can link to raw source data.
-    const comparisonsDir = path.join(contentDir, 'comparisons');
-    const publicComparisonsDir = path.join(publicDir, 'comparisons');
-
-    await fs.mkdir(publicComparisonsDir, { recursive: true });
-
-    const comparisonFiles = await fs.readdir(comparisonsDir);
-    const comparisonJsonFiles = comparisonFiles.filter((file) => file.endsWith('.json'));
-    for (const file of comparisonJsonFiles) {
-      await fs.copyFile(path.join(comparisonsDir, file), path.join(publicComparisonsDir, file));
-    }
-    console.log(`✅ Copied ${comparisonJsonFiles.length} comparison JSON files to public/comparisons/`);
+    const comparisonCount = await copyFiles(
+      path.join(contentDir, 'comparisons'),
+      path.join(publicDir, 'comparisons'),
+      '.json'
+    );
+    console.log(`✅ Copied ${comparisonCount} comparison JSON files to public/comparisons/`);
   } catch (error) {
     console.error('❌ Error copying markdown files:', error);
     process.exit(1);

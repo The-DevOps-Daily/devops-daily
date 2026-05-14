@@ -1,9 +1,11 @@
-import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
 import { remark } from 'remark';
 import remarkHtml from 'remark-html';
-import { createCachedLoader, formatUnknownError, readDirectoryFiles } from './content-loader';
+import {
+  createCachedLoader,
+  formatUnknownError,
+  readMarkdownFiles,
+} from './content-loader';
 
 const NEWSLETTERS_DIR = path.join(process.cwd(), 'content', 'newsletters');
 
@@ -30,12 +32,10 @@ export interface NewsletterMeta {
 }
 
 const loadNewsletters = createCachedLoader(async () => {
-  const mdFiles = await readDirectoryFiles(NEWSLETTERS_DIR, '.md');
-  const newsletters = await Promise.all(
-    mdFiles.map(async (file) => {
+  const newsletters = await readMarkdownFiles<Newsletter, Partial<Newsletter>>(
+    NEWSLETTERS_DIR,
+    async (data, content, file) => {
       try {
-        const raw = await fs.readFile(path.join(NEWSLETTERS_DIR, file), 'utf-8');
-        const { data, content } = matter(raw);
         const slug = file.replace(/\.md$/, '');
 
         const rendered = await remark().use(remarkHtml).process(content);
@@ -52,7 +52,7 @@ const loadNewsletters = createCachedLoader(async () => {
       } catch (error) {
         throw new Error(`Failed to parse newsletter file ${file}: ${formatUnknownError(error)}`);
       }
-    })
+    }
   );
 
   return newsletters.sort((a, b) => b.date.localeCompare(a.date));

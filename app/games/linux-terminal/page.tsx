@@ -1,37 +1,11 @@
 import type { Metadata } from 'next';
 import LinuxTerminal from '@/components/games/linux-terminal';
 import { SimulatorShell } from '@/components/games/simulator-shell';
+import { generateGameMetadata } from '@/lib/game-metadata';
 
-export const metadata: Metadata = {
-  title: 'Learn Linux - Interactive Terminal Tutorial | DevOps Daily',
-  description:
-    'Master essential Linux commands through interactive lessons. Practice pwd, ls, cd, cat, grep, chmod, and more in a simulated terminal environment.',
-  alternates: {
-    canonical: '/games/linux-terminal',
-  },
-  openGraph: {
-    title: 'Learn Linux - Interactive Terminal Tutorial | DevOps Daily',
-    description:
-      'Master essential Linux commands through interactive lessons. Practice in a simulated terminal environment.',
-    type: 'website',
-    url: '/games/linux-terminal',
-    images: [
-      {
-        url: '/images/games/linux-terminal-og.png',
-        width: 1200,
-        height: 630,
-        alt: 'Learn Linux - Interactive Terminal Tutorial',
-      },
-    ],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Learn Linux - Interactive Terminal Tutorial | DevOps Daily',
-    description:
-      'Master essential Linux commands through interactive lessons. Practice in a simulated terminal environment.',
-    images: ['/images/games/linux-terminal-og.png'],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return generateGameMetadata('linux-terminal');
+}
 
 function LinuxTerminalEducational() {
   return (

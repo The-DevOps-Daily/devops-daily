@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { GameSeoContent } from '@/components/games/game-seo-content';
 import InfraTarot from '../../../components/games/infra-tarot';
 import { SimulatorShell } from '@/components/games/simulator-shell';
 import { generateGameMetadata } from '@/lib/game-metadata';
@@ -29,21 +28,16 @@ function InfraTarotEducational() {
 
 export default function InfraTarotPage() {
   return (
-    <>
-      <GameSeoContent
-        title="Infrastructure Tarot"
-        description="A lighthearted take on infrastructure predictions. Draw cards representing common infrastructure scenarios, outages, and DevOps wisdom. Fun way to learn about failure modes and best practices."
-        category="Fun"
-        tags={['infrastructure', 'devops', 'fun', 'learning']}
-        learningPoints={[
-          'Learn about common infrastructure failure modes',
-          'Understand DevOps best practices through metaphors',
-          'Explore incident response scenarios',
-        ]}
-      />
-      <SimulatorShell slug="infra-tarot" educational={<InfraTarotEducational />}>
-        <InfraTarot />
-      </SimulatorShell>
-    </>
+    <SimulatorShell
+      slug="infra-tarot"
+      educational={<InfraTarotEducational />}
+      seoLearningPoints={[
+        'Learn about common infrastructure failure modes',
+        'Understand DevOps best practices through metaphors',
+        'Explore incident response scenarios',
+      ]}
+    >
+      <InfraTarot />
+    </SimulatorShell>
   );
 }

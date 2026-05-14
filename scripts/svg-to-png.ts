@@ -5,8 +5,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import sharp from 'sharp';
-import { Resvg } from '@resvg/resvg-js';
+import { convertSvgToPng as renderSvgToPng } from './og-utils';
 
 // ANSI color codes for terminal output
 const colors = {
@@ -45,36 +44,11 @@ async function convertSvgToPng(svgPath: string): Promise<void> {
     console.log(colorize(`🔄 Converting: ${path.basename(svgPath)}`, 'blue'));
     console.log(colorize(`📁 Directory: ${dir}`, 'cyan'));
 
-    // Read SVG file
-    const svgBuffer = await fs.readFile(svgPath);
-
-    // Convert SVG to PNG using resvg
-    const resvg = new Resvg(svgBuffer, {
-      background: 'rgba(255, 255, 255, 1)', // White background
-      fitTo: {
-        mode: 'width',
-        value: 1200, // OG image standard width
-      },
-    });
-
-    const pngData = resvg.render();
-    const pngBuffer = pngData.asPng();
-
-    // Optimize with sharp and ensure exact dimensions
-    const optimizedBuffer = await sharp(pngBuffer)
-      .resize(1200, 630, {
-        fit: 'contain',
-        background: { r: 255, g: 255, b: 255, alpha: 1 },
-      })
-      .png({ quality: 90, compressionLevel: 9 })
-      .toBuffer();
-
-    // Write PNG file
-    await fs.writeFile(pngPath, optimizedBuffer);
+    await renderSvgToPng(svgPath, pngPath);
 
     // Get file sizes for comparison
     const svgSize = (await fs.stat(svgPath)).size;
-    const pngSize = optimizedBuffer.length;
+    const pngSize = (await fs.stat(pngPath)).size;
 
     console.log(colorize(`✅ Success!`, 'green'));
     console.log(

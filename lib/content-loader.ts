@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import matter from 'gray-matter';
 
 export const CONTENT_CACHE_DURATION =
   process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
@@ -68,5 +69,32 @@ export async function readJsonFiles<T>(
       const item = await readJsonFile<T>(path.join(directory, file));
       return mapItem ? mapItem(item, file) : item;
     })
+  );
+}
+
+export async function readMarkdownFile<
+  T,
+  D extends object = Record<string, unknown>,
+>(
+  filePath: string,
+  mapItem: (data: D, content: string, file: string) => T | Promise<T>
+): Promise<T> {
+  const raw = await readTextFile(filePath);
+  const { data, content } = matter(raw);
+
+  return mapItem(data as D, content, path.basename(filePath));
+}
+
+export async function readMarkdownFiles<
+  T,
+  D extends object = Record<string, unknown>,
+>(
+  directory: string,
+  mapItem: (data: D, content: string, file: string) => T | Promise<T>
+): Promise<T[]> {
+  const files = await readDirectoryFiles(directory, '.md');
+
+  return Promise.all(
+    files.map((file) => readMarkdownFile<T, D>(path.join(directory, file), mapItem))
   );
 }
