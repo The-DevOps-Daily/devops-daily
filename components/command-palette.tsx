@@ -30,29 +30,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
-interface SearchItem {
-  id: string;
-  type:
-    | 'post'
-    | 'guide'
-    | 'exercise'
-    | 'quiz'
-    | 'game'
-    | 'news'
-    | 'page'
-    | 'checklist'
-    | 'interview-question'
-    | 'comparison'
-    | 'flashcard'
-    | 'tool';
-  title: string;
-  description: string;
-  url: string;
-  category?: string;
-  tags?: string[];
-  icon?: string;
-}
+import { TYPE_COLORS, TYPE_LABELS, type SearchItem } from '@/lib/search-types';
 
 const TYPE_ICONS = {
   post: FileText,
@@ -67,36 +45,6 @@ const TYPE_ICONS = {
   comparison: Scale,
   flashcard: Layers,
   tool: Wrench,
-};
-
-const TYPE_LABELS = {
-  post: 'Post',
-  guide: 'Guide',
-  exercise: 'Exercise',
-  quiz: 'Quiz',
-  game: 'Game',
-  news: 'News',
-  page: 'Page',
-  checklist: 'Checklist',
-  'interview-question': 'Interview Question',
-  comparison: 'Comparison',
-  flashcard: 'Flashcards',
-  tool: 'Tool',
-};
-
-const TYPE_COLORS = {
-  post: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  guide: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  exercise: 'bg-green-500/10 text-green-500 border-green-500/20',
-  quiz: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  game: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
-  news: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
-  page: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
-  checklist: 'bg-teal-500/10 text-teal-500 border-teal-500/20',
-  'interview-question': 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
-  comparison: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-  flashcard: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
-  tool: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
 };
 
 export function CommandPalette() {
@@ -395,7 +343,7 @@ export function CommandPalette() {
                   return (
                     <div key={type}>
                       {groupIndex > 0 && <CommandSeparator />}
-                      <CommandGroup heading={`${label}s (${items.length})`}>
+                      <CommandGroup heading={`${label} (${items.length})`}>
                         {items.map((item) => (
                           <CommandItem
                             key={item.id}

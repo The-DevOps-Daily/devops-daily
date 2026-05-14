@@ -2,15 +2,6 @@ name: Generate Content Images
 
 on:
   workflow_dispatch:
-    inputs:
-      use_parallel:
-        description: 'Use parallel processing for faster generation'
-        required: false
-        default: 'true'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
 
 jobs:
   generate:
@@ -36,21 +27,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Generate SVG images (parallel)
-        if: inputs.use_parallel == 'true'
+      - name: Generate SVG images
         run: pnpm generate:images:parallel
 
-      - name: Generate SVG images (sequential)
-        if: inputs.use_parallel == 'false'
-        run: pnpm generate:images
-
-      - name: Convert SVG to PNG (parallel)
-        if: inputs.use_parallel == 'true'
+      - name: Convert SVG to PNG
         run: pnpm convert:svg-to-png:parallel
-
-      - name: Convert SVG to PNG (sequential)
-        if: inputs.use_parallel == 'false'
-        run: pnpm convert:svg-to-png
 
       - name: Get timestamp
         id: timestamp
@@ -87,7 +68,7 @@ jobs:
 
             ### 🔍 Processing Mode
 
-            - **Parallel Processing**: ${{ inputs.use_parallel }}
+            - **Processing Mode**: Parallel
 
             ### ℹ️ Note
 

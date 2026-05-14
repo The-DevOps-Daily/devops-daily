@@ -4,9 +4,7 @@ import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import type { Metadata } from 'next';
-import { parseMarkdown } from '@/lib/markdown';
-import { CodeBlockWrapper } from '@/components/code-block-wrapper';
-import { HeadingWrapper } from '@/components/heading-with-anchor';
+import { MarkdownContent } from '@/components/markdown-content';
 import { Mail, Globe, MapPin, DollarSign, Calendar } from 'lucide-react';
 import { ExpertContentToggle } from '@/components/experts/expert-content-toggle';
 
@@ -194,24 +192,7 @@ export default async function ExpertPage({ params }: { params: Promise<{ slug: s
 
         {/* Expert Content */}
         {expert.content && (
-          <HeadingWrapper>
-            <CodeBlockWrapper>
-              <div
-                className="max-w-4xl mx-auto prose prose-lg dark:prose-invert
-                  prose-headings:scroll-mt-24
-                  prose-pre:bg-muted prose-pre:text-muted-foreground
-                  prose-code:text-primary prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-mono prose-code:text-sm
-                  prose-blockquote:border-l-primary prose-blockquote:bg-muted/10
-                  prose-img:rounded-lg prose-img:shadow-lg
-                  prose-a:text-primary hover:prose-a:text-primary/80 prose-a:transition-colors
-                  prose-strong:text-foreground
-                  prose-ul:list-disc prose-ol:list-decimal
-                  prose-table:rounded-lg prose-table:shadow
-                  prose-th:bg-muted prose-td:border-border"
-                dangerouslySetInnerHTML={{ __html: parseMarkdown(expert.content) }}
-              />
-            </CodeBlockWrapper>
-          </HeadingWrapper>
+          <MarkdownContent content={expert.content} className="max-w-4xl mx-auto" />
         )}
 
         {/* Content Toggle Section - Client Component */}

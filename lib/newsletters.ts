@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { remark } from 'remark';
 import remarkHtml from 'remark-html';
+import { createCachedLoader, formatUnknownError, readDirectoryFiles } from './content-loader';
 
 const NEWSLETTERS_DIR = path.join(process.cwd(), 'content', 'newsletters');
 
@@ -28,25 +29,10 @@ export interface NewsletterMeta {
   year: number;
 }
 
-let cache: Newsletter[] | null = null;
-let lastCacheTime = 0;
-const CACHE_DURATION =
-  process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
-    ? Infinity
-    : 5 * 60 * 1000;
-
-async function loadNewsletters(): Promise<Newsletter[]> {
-  const now = Date.now();
-  if (cache && now - lastCacheTime < CACHE_DURATION) return cache;
-
-  try {
-    await fs.access(NEWSLETTERS_DIR);
-    const files = await fs.readdir(NEWSLETTERS_DIR);
-    const mdFiles = files.filter((f) => f.endsWith('.md'));
-
-    const newsletters: Newsletter[] = [];
-
-    for (const file of mdFiles) {
+const loadNewsletters = createCachedLoader(async () => {
+  const mdFiles = await readDirectoryFiles(NEWSLETTERS_DIR, '.md');
+  const newsletters = await Promise.all(
+    mdFiles.map(async (file) => {
       try {
         const raw = await fs.readFile(path.join(NEWSLETTERS_DIR, file), 'utf-8');
         const { data, content } = matter(raw);
@@ -54,7 +40,7 @@ async function loadNewsletters(): Promise<Newsletter[]> {
 
         const rendered = await remark().use(remarkHtml).process(content);
 
-        newsletters.push({
+        return {
           slug,
           title: data.title || `Newsletter ${slug}`,
           description: typeof data.description === 'string' ? data.description : undefined,
@@ -62,24 +48,15 @@ async function loadNewsletters(): Promise<Newsletter[]> {
           week: data.week || 0,
           year: data.year || 0,
           content: String(rendered),
-        });
+        };
       } catch (error) {
-        throw new Error(
-          `Failed to parse newsletter file ${file}: ${error instanceof Error ? error.message : String(error)}`
-        );
+        throw new Error(`Failed to parse newsletter file ${file}: ${formatUnknownError(error)}`);
       }
-    }
+    })
+  );
 
-    newsletters.sort((a, b) => b.date.localeCompare(a.date));
-    cache = newsletters;
-    lastCacheTime = now;
-    return newsletters;
-  } catch (error) {
-    throw new Error(
-      `Failed to load newsletters from ${NEWSLETTERS_DIR}: ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-}
+  return newsletters.sort((a, b) => b.date.localeCompare(a.date));
+});
 
 export async function getAllNewsletters(): Promise<NewsletterMeta[]> {
   const all = await loadNewsletters();

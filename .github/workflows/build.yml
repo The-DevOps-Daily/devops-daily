@@ -33,6 +33,6 @@ jobs:
         run: pnpm audit --audit-level=high || true
 
       - name: Run build
-        run: pnpm build
+        run: pnpm build:fast
         env:
           NODE_OPTIONS: --max-old-space-size=8192
