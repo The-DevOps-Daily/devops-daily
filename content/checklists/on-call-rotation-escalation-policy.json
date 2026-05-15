@@ -1,0 +1,234 @@
+{
+  "id": "on-call-rotation-escalation-policy",
+  "slug": "on-call-rotation-escalation-policy",
+  "title": "How to Build an Effective On-Call Rotation and Escalation Policy",
+  "description": "A practical checklist for designing on-call schedules, defining escalation paths, and cutting alert fatigue so your team can sleep at night and still respond fast when things break.",
+  "category": "Incident Management",
+  "difficulty": "intermediate",
+  "estimatedTime": "60-120 minutes",
+  "tags": ["incident-management", "on-call", "escalation", "alert-fatigue"],
+  "items": [
+    {
+      "id": "define-what-pages-vs-what-tickets",
+      "title": "Decide what is page-worthy and write it down",
+      "description": "If everything pages, nothing pages. An alert that wakes someone up at 3am must require action a human has to take right now. Anything else belongs in a ticket or a dashboard. Without a written rule, every team will lean toward over-alerting and your rotation will burn out in a quarter.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Alert severity policy",
+          "code": "# alert-severity-policy.yaml\nseverity_levels:\n  page:\n    criteria:\n      - \"User-visible impact happening right now\"\n      - \"Requires action within 15 minutes\"\n      - \"Cannot wait until business hours\"\n    examples:\n      - \"Checkout API error rate >1% for 5 minutes\"\n      - \"Database primary down\"\n      - \"Payment processor returning 5xx\"\n    routing: pagerduty -> oncall phone\n\n  ticket:\n    criteria:\n      - \"Needs attention within 24 hours\"\n      - \"No immediate user impact\"\n      - \"Action can wait for business hours\"\n    examples:\n      - \"Disk usage >70%\"\n      - \"Certificate expires in 14 days\"\n      - \"Background job retry rate elevated\"\n    routing: slack -> team channel\n\n  log_only:\n    criteria:\n      - \"Useful for context during incidents\"\n      - \"No action required\"\n    examples:\n      - \"Cache miss rate increased\"\n      - \"Deploy completed\"\n    routing: log aggregator only"
+        }
+      ]
+    },
+    {
+      "id": "build-fair-rotation-schedule",
+      "title": "Build a fair, predictable rotation schedule",
+      "description": "On-call should rotate weekly, not daily, so engineers have time to build context. Cover 24/7 with the smallest team that can sustain it without burning out. A team of fewer than 6 cannot run a healthy primary rotation without help from a partner team or follow-the-sun setup.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "PagerDuty weekly rotation in Terraform",
+          "code": "resource \"pagerduty_schedule\" \"platform_primary\" {\n  name      = \"Platform Primary On-Call\"\n  time_zone = \"Europe/Sofia\"\n\n  layer {\n    name                         = \"Weekly rotation\"\n    start                        = \"2026-01-06T09:00:00+02:00\"\n    rotation_virtual_start       = \"2026-01-06T09:00:00+02:00\"\n    rotation_turn_length_seconds = 604800 # 7 days\n\n    users = [\n      pagerduty_user.alice.id,\n      pagerduty_user.bob.id,\n      pagerduty_user.carol.id,\n      pagerduty_user.dan.id,\n      pagerduty_user.erin.id,\n      pagerduty_user.frank.id,\n    ]\n\n    # Handover at 9am local time so the outgoing engineer is awake\n    restriction {\n      type              = \"daily_restriction\"\n      start_time_of_day = \"09:00:00\"\n      duration_seconds  = 86400\n    }\n  }\n}"
+        },
+        {
+          "language": "yaml",
+          "label": "Follow-the-sun rotation when you only have a few engineers",
+          "code": "# Use this when you have engineers across timezones\n# Each region only covers their working hours\nrotation: follow-the-sun\nregions:\n  - name: emea\n    timezone: Europe/Sofia\n    hours: 08:00-17:00 local\n    engineers: [alice, bob]\n\n  - name: americas\n    timezone: America/New_York\n    hours: 09:00-18:00 local\n    engineers: [carol, dan]\n\n  - name: apac\n    timezone: Asia/Singapore\n    hours: 09:00-18:00 local\n    engineers: [erin, frank]\n\n# Handoff happens automatically at region boundary\n# Nobody gets paged outside their working hours"
+        }
+      ]
+    },
+    {
+      "id": "define-escalation-policy-with-timeouts",
+      "title": "Define escalation paths with strict timeouts",
+      "description": "The primary on-call has 5 minutes to acknowledge. If they don't, page the secondary. If the secondary doesn't ack in 10 minutes, page the team lead. Without auto-escalation, a sleeping engineer with a dead phone means a 4-hour outage. The escalation chain is your safety net.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "hcl",
+          "label": "PagerDuty escalation policy",
+          "code": "resource \"pagerduty_escalation_policy\" \"platform\" {\n  name      = \"Platform Escalation\"\n  num_loops = 2\n\n  rule {\n    escalation_delay_in_minutes = 5\n    target {\n      type = \"schedule_reference\"\n      id   = pagerduty_schedule.platform_primary.id\n    }\n  }\n\n  rule {\n    escalation_delay_in_minutes = 10\n    target {\n      type = \"schedule_reference\"\n      id   = pagerduty_schedule.platform_secondary.id\n    }\n  }\n\n  rule {\n    escalation_delay_in_minutes = 15\n    target {\n      type = \"user_reference\"\n      id   = pagerduty_user.team_lead.id\n    }\n  }\n\n  rule {\n    escalation_delay_in_minutes = 15\n    target {\n      type = \"user_reference\"\n      id   = pagerduty_user.engineering_manager.id\n    }\n  }\n}"
+        },
+        {
+          "language": "yaml",
+          "label": "Opsgenie equivalent escalation",
+          "code": "name: platform-escalation\nrules:\n  - condition: if-not-acked\n    delay:\n      timeAmount: 0\n      timeUnit: minutes\n    notify:\n      type: schedule\n      name: platform-primary\n\n  - condition: if-not-acked\n    delay:\n      timeAmount: 5\n      timeUnit: minutes\n    notify:\n      type: schedule\n      name: platform-secondary\n\n  - condition: if-not-acked\n    delay:\n      timeAmount: 15\n      timeUnit: minutes\n    notify:\n      type: user\n      username: team-lead@example.com\n\n  - condition: if-not-acked\n    delay:\n      timeAmount: 30\n      timeUnit: minutes\n    notify:\n      type: team\n      name: engineering-leadership"
+        }
+      ]
+    },
+    {
+      "id": "write-runbook-for-every-alert",
+      "title": "Write a runbook for every alert that can page",
+      "description": "If you cannot write a runbook for an alert, the alert should not exist. When a page fires at 2am, the on-call engineer needs a step-by-step guide, not a hunt through Confluence. Link the runbook directly from the alert annotation so it shows up in the notification.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Alert with runbook annotation",
+          "code": "# prometheus-rules.yaml\ngroups:\n  - name: payment-api\n    rules:\n      - alert: PaymentAPIHighErrorRate\n        expr: |\n          sum(rate(http_requests_total{job=\"payment-api\", status=~\"5..\"}[5m]))\n          / sum(rate(http_requests_total{job=\"payment-api\"}[5m])) > 0.01\n        for: 5m\n        labels:\n          severity: page\n          team: platform\n        annotations:\n          summary: \"Payment API error rate above 1% for 5 minutes\"\n          description: \"Current rate: {{ $value | humanizePercentage }}\"\n          runbook_url: \"https://runbooks.internal/payment-api/high-error-rate\"\n          dashboard_url: \"https://grafana.internal/d/payment-api\""
+        },
+        {
+          "language": "yaml",
+          "label": "Minimal runbook template",
+          "code": "# runbooks/payment-api/high-error-rate.yaml\nalert: PaymentAPIHighErrorRate\nseverity: page\n\nwhat_this_means: |\n  More than 1% of requests to the payment API are returning 5xx errors.\n  Users are seeing failed checkouts.\n\nfirst_5_minutes:\n  - \"Acknowledge the page\"\n  - \"Open the dashboard: https://grafana.internal/d/payment-api\"\n  - \"Check recent deploys: kubectl rollout history deploy/payment-api -n payment\"\n  - \"If a deploy went out in the last 30 minutes, roll it back first\"\n  - \"Command: kubectl rollout undo deploy/payment-api -n payment\"\n\ncommon_causes:\n  - cause: \"Bad deploy\"\n    action: \"Roll back. Investigate after.\"\n  - cause: \"Database connection pool exhausted\"\n    action: \"Check pgbouncer metrics, restart payment-api pods\"\n  - cause: \"Stripe webhook timeout\"\n    action: \"Check status.stripe.com, retry queued events\"\n\nescalate_to:\n  - \"Database team if pgbouncer issue\"\n  - \"Backend lead if root cause unclear after 15 minutes\""
+        }
+      ]
+    },
+    {
+      "id": "enforce-recovery-time-after-pages",
+      "title": "Enforce recovery time after late-night pages",
+      "description": "An engineer who gets paged at 3am cannot show up at 9am standup. Write the rule down: any page between 22:00 and 07:00 buys the on-call a half-day off the next day. Without this, people hide that they were paged because nobody wants to look weak, and burnout compounds.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "On-call recovery policy",
+          "code": "# oncall-recovery-policy.yaml\noncall_rest_rules:\n  late_night_page:\n    trigger: \"Any page between 22:00 and 07:00 local time\"\n    entitlement:\n      - \"Half day off the next working day, taken automatically\"\n      - \"Engineer marks calendar 'On-call recovery' before 9am\"\n      - \"No standup attendance required\"\n      - \"No code review obligations\"\n\n  multiple_pages_same_shift:\n    trigger: \"3+ pages in a single 24h period\"\n    entitlement:\n      - \"Full day off the next working day\"\n      - \"Mandatory: secondary takes over for remainder of shift\"\n\n  extended_incident:\n    trigger: \"Active incident response >2 hours\"\n    entitlement:\n      - \"Time spent counts as work hours\"\n      - \"Equivalent paid recovery time the next day\"\n\nenforcement:\n  - \"Manager reviews paging data weekly\"\n  - \"If recovery time not taken, manager schedules it\"\n  - \"No expectation of responding to non-urgent messages during recovery\""
+        },
+        {
+          "language": "bash",
+          "label": "Query weekly page count per engineer",
+          "code": "#!/bin/bash\n# Pull last week's incidents per engineer from PagerDuty\n# Helps managers spot who needs forced recovery time\n\nSINCE=$(date -d '7 days ago' --iso-8601)\nUNTIL=$(date --iso-8601)\n\ncurl -s \"https://api.pagerduty.com/incidents\" \\\n  -H \"Authorization: Token token=$PD_TOKEN\" \\\n  -H \"Accept: application/vnd.pagerduty+json;version=2\" \\\n  --data-urlencode \"since=$SINCE\" \\\n  --data-urlencode \"until=$UNTIL\" \\\n  --data-urlencode \"urgency=high\" \\\n  | jq -r '.incidents[] | [.created_at, .assignments[0].assignee.summary, .title] | @tsv' \\\n  | sort -k2"
+        }
+      ]
+    },
+    {
+      "id": "group-and-suppress-noisy-alerts",
+      "title": "Group related alerts and suppress duplicates",
+      "description": "When a database goes down, you do not need 47 separate pages from every service that depends on it. Group alerts by cause, route the root-cause page first, and suppress dependent alerts. One incident equals one page. This single change usually cuts page volume by half.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Alertmanager grouping and inhibition rules",
+          "code": "# alertmanager.yaml\nroute:\n  group_by: ['alertname', 'cluster', 'service']\n  group_wait: 30s        # wait this long before sending first notification\n  group_interval: 5m     # wait this long before adding new alerts to the group\n  repeat_interval: 4h    # don't re-page for the same group\n  receiver: 'platform-oncall'\n\n  routes:\n    - match:\n        severity: page\n      receiver: 'platform-oncall'\n      continue: false\n\n# Suppress dependent alerts when a root cause is firing\ninhibit_rules:\n  # If the database is down, suppress all API alerts that depend on it\n  - source_match:\n      alertname: PostgresPrimaryDown\n    target_match_re:\n      alertname: (PaymentAPI|OrderAPI|UserAPI)HighErrorRate\n    equal: ['cluster']\n\n  # If a whole region is down, suppress individual service alerts\n  - source_match:\n      alertname: RegionUnreachable\n    target_match_re:\n      severity: page\n    equal: ['region']"
+        }
+      ]
+    },
+    {
+      "id": "track-alert-volume-and-noise",
+      "title": "Track alert volume per rotation and act on it",
+      "description": "If your team gets paged more than twice per week per rotation, you have an alert quality problem, not a service quality problem. Track pages per shift, time-to-acknowledge, and the percentage of pages that led to actual fixes. Anything that pages but does not result in action is noise and must be removed or downgraded.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Weekly on-call health report",
+          "code": "#!/usr/bin/env python3\n\"\"\"Pulls on-call metrics from PagerDuty and posts to Slack.\"\"\"\nimport os\nimport requests\nfrom datetime import datetime, timedelta\n\nPD_TOKEN = os.environ['PD_TOKEN']\nSLACK_WEBHOOK = os.environ['SLACK_WEBHOOK']\n\nsince = (datetime.utcnow() - timedelta(days=7)).isoformat() + 'Z'\nuntil = datetime.utcnow().isoformat() + 'Z'\n\nheaders = {\n    'Authorization': f'Token token={PD_TOKEN}',\n    'Accept': 'application/vnd.pagerduty+json;version=2',\n}\n\nincidents = requests.get(\n    'https://api.pagerduty.com/incidents',\n    headers=headers,\n    params={'since': since, 'until': until, 'urgency': 'high', 'limit': 100},\n).json()['incidents']\n\ntotal = len(incidents)\nafter_hours = sum(\n    1 for i in incidents\n    if datetime.fromisoformat(i['created_at'].rstrip('Z')).hour in range(22, 24) | range(0, 7)\n)\nself_resolved = sum(1 for i in incidents if i.get('resolved_by_system'))\n\nack_times = []\nfor i in incidents:\n    if i.get('first_trigger_log_entry') and i.get('acknowledgements'):\n        created = datetime.fromisoformat(i['created_at'].rstrip('Z'))\n        acked = datetime.fromisoformat(i['acknowledgements'][0]['at'].rstrip('Z'))\n        ack_times.append((acked - created).total_seconds() / 60)\n\nmedian_ack = sorted(ack_times)[len(ack_times)//2] if ack_times else 0\n\nrequests.post(SLACK_WEBHOOK, json={\n    'text': (\n        f'*Weekly on-call report*\\n'\n        f'Total pages: {total}\\n'\n        f'After-hours pages (22-07): {after_hours}\\n'\n        f'Auto-resolved (likely noise): {self_resolved}\\n'\n        f'Median ack time: {median_ack:.1f} min\\n'\n        f'{\":fire: Page volume too high - audit alerts this week\" if total > 14 else \":white_check_mark: Volume within target\"}'\n    )\n})"
+        },
+        {
+          "language": "promql",
+          "label": "Top noisy alerts in Prometheus",
+          "code": "# Find alerts that fire often but rarely matter\n# (auto-resolved within 5 minutes most of the time)\ntopk(10,\n  sum by (alertname) (\n    changes(ALERTS_FOR_STATE[7d])\n  )\n)\n\n# Find alerts that page but the system recovers on its own\nsum by (alertname) (\n  ALERTS{alertstate=\"firing\", severity=\"page\"}\n  unless on(alertname) ALERTS{alertstate=\"firing\"} offset 5m\n)"
+        }
+      ]
+    },
+    {
+      "id": "configure-multi-channel-notifications",
+      "title": "Configure multi-channel notifications with fallbacks",
+      "description": "A push notification on a phone with no signal is the same as no alert. Configure push, SMS, and voice call in that order, with 1-2 minute gaps between each. Voice calls cut through Do Not Disturb on most phones. If the engineer is asleep, the third call will wake them up. The first push notification probably will not.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "PagerDuty user notification rules",
+          "code": "# Configure per-user via the PagerDuty UI or API\n# Each rule applies to high-urgency alerts only\nuser: alice@example.com\nnotification_rules:\n  - start_delay_minutes: 0\n    method: push_notification\n\n  - start_delay_minutes: 1\n    method: sms\n\n  - start_delay_minutes: 3\n    method: phone_call\n\n  - start_delay_minutes: 5\n    method: phone_call  # second call if first goes to voicemail\n\n# Test these monthly:\n# Real story: 6-hour outage because oncall's phone was on silent\n# and only had push notifications configured."
+        },
+        {
+          "language": "bash",
+          "label": "Test page yourself before each rotation",
+          "code": "#!/bin/bash\n# Send yourself a test page at handoff time\n# Confirms your notification setup actually works\n\ncurl -X POST https://events.pagerduty.com/v2/enqueue \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"routing_key\": \"'\"$PD_ROUTING_KEY\"'\",\n    \"event_action\": \"trigger\",\n    \"payload\": {\n      \"summary\": \"On-call handoff test page - please ack\",\n      \"severity\": \"info\",\n      \"source\": \"oncall-handoff-test\"\n    }\n  }'\n\n# If you do not get push + SMS + voice within 6 minutes,\n# your notification rules are broken. Fix before your shift starts."
+        }
+      ]
+    },
+    {
+      "id": "structured-handoff-document",
+      "title": "Run structured handoffs at the start of every shift",
+      "description": "The outgoing on-call has context that the incoming one does not: which alerts are noisy this week, which deploys are in flight, which customer is sensitive. Without a handoff doc, this context disappears. A 5-minute handoff at shift start prevents 30-minute investigations later.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "On-call handoff template",
+          "code": "# Drop this in a shared doc each Monday at handoff\ndate: 2026-05-12\noutgoing: alice\nincoming: bob\n\nopen_incidents:\n  - id: INC-4421\n    summary: \"Intermittent 504s from search API\"\n    status: \"Investigating - logs show upstream timeouts\"\n    next_step: \"Bob to check Elasticsearch cluster health at 10am\"\n\nrecent_changes:\n  - \"Payment API deployed v2.41.0 on Friday - watch for null pointer regressions\"\n  - \"Terraform changed RDS instance class on Sunday - extra latency expected for ~6h\"\n\nnoisy_alerts_this_week:\n  - alert: \"RedisHighMemory\"\n    note: \"Acked 5 times, no impact. Andre is fixing the leak Monday.\"\n    action: \"Ack and ignore unless it crosses 95%\"\n\nin_flight_work:\n  - \"DB migration scheduled Wed 02:00 UTC - dba team owns response\"\n  - \"Marketing launch Thursday - expect traffic spike on /landing/*\"\n\nsensitive_customers:\n  - \"Acme Corp - in active escalation, any payment issue pages CSM Linda\"\n\ncontacts:\n  database_lead: dave (slack @dave)\n  network_lead: nadia (slack @nadia)\n  on-call_backup_today: carol"
+        }
+      ]
+    },
+    {
+      "id": "maintain-service-ownership-map",
+      "title": "Maintain a service ownership map",
+      "description": "When an alert fires for a service you've never heard of at 3am, you need to know who to wake up. Keep a single source of truth that maps every service to its owning team and on-call rotation. Generate alert routing from this file so it cannot drift.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Service catalog with ownership",
+          "code": "# services.yaml - source of truth for routing\nservices:\n  - name: payment-api\n    team: platform\n    pagerduty_service: PXXX111\n    slack_channel: \"#platform-alerts\"\n    runbook_dir: \"runbooks/payment-api/\"\n    tier: 0  # customer-facing, critical\n\n  - name: search-api\n    team: discovery\n    pagerduty_service: PXXX222\n    slack_channel: \"#discovery-alerts\"\n    runbook_dir: \"runbooks/search-api/\"\n    tier: 1\n\n  - name: nightly-reports\n    team: analytics\n    pagerduty_service: PXXX333\n    slack_channel: \"#analytics-alerts\"\n    runbook_dir: \"runbooks/nightly-reports/\"\n    tier: 3  # internal, business hours only"
+        },
+        {
+          "language": "python",
+          "label": "Generate Alertmanager routes from the service catalog",
+          "code": "#!/usr/bin/env python3\n\"\"\"Generate alertmanager.yaml routes from services.yaml.\"\"\"\nimport yaml\n\nwith open('services.yaml') as f:\n    catalog = yaml.safe_load(f)\n\nroutes = []\nreceivers = []\n\nfor svc in catalog['services']:\n    routes.append({\n        'match': {'service': svc['name']},\n        'receiver': f\"{svc['team']}-oncall\",\n        'continue': False,\n    })\n\nfor team in {s['team'] for s in catalog['services']}:\n    receivers.append({\n        'name': f'{team}-oncall',\n        'pagerduty_configs': [{\n            'service_key': f'$PD_KEY_{team.upper()}',\n            'description': '{{ .GroupLabels.alertname }} - {{ .GroupLabels.service }}',\n        }],\n        'slack_configs': [{\n            'channel': f'#{team}-alerts',\n            'send_resolved': True,\n        }],\n    })\n\nconfig = {\n    'route': {\n        'group_by': ['alertname', 'service'],\n        'receiver': 'default',\n        'routes': routes,\n    },\n    'receivers': receivers + [{'name': 'default', 'slack_configs': [{'channel': '#alerts-unrouted'}]}],\n}\n\nwith open('alertmanager.generated.yaml', 'w') as f:\n    yaml.dump(config, f)"
+        }
+      ]
+    },
+    {
+      "id": "compensate-oncall-explicitly",
+      "title": "Compensate on-call work explicitly",
+      "description": "Asking engineers to be reachable 24/7 for a week is asking them to work overtime. Pay for it. Either a flat per-shift rate or hourly comp for time spent on incidents. Teams that refuse to compensate on-call end up with the same two unlucky engineers carrying every rotation, and one of them quits within a year.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "On-call compensation policy",
+          "code": "# oncall-compensation-policy.yaml\npolicy_owner: head_of_engineering\nreview_cadence: annually\n\nstandby_compensation:\n  description: \"Paid for being reachable, even if no pages fire\"\n  weekday_rate: 50 EUR per night\n  weekend_rate: 150 EUR per day\n  paid_via: monthly payroll\n\nincident_compensation:\n  description: \"Paid for active incident response time outside business hours\"\n  rate: 1.5x hourly rate\n  minimum_increment: 30 minutes\n  cap: 4 hours per incident (above that, escalate to manager)\n\ntime_off_alternative:\n  description: \"Engineers can choose time-in-lieu instead of cash\"\n  conversion: 1 hour incident response = 1.5 hours time off\n  must_be_taken_within: 90 days\n\neligibility:\n  - \"Full-time engineering staff on a formal rotation\"\n  - \"Excludes voluntary debugging or social-channel hand-holding\"\n\ntracking:\n  - \"Engineers log incident hours in shared sheet within 48h of incident\"\n  - \"Manager reviews monthly\"\n  - \"Payroll runs on the 15th of following month\""
+        }
+      ]
+    },
+    {
+      "id": "run-incident-drills",
+      "title": "Run incident drills every quarter",
+      "description": "The first time someone responds to a real database failover should not be at 3am during an actual outage. Run game days where you break something in staging and let the on-call rotation respond. Score them on time-to-mitigate, not blame. Drills find broken runbooks, missing access, and stale escalation contacts before they bite during a real incident.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Quarterly game day plan",
+          "code": "# game-day-2026-q2.yaml\ndate: 2026-06-10T14:00 UTC\nduration: 90 minutes\nfacilitator: alice (SRE)\nparticipants: full platform team\nenvironment: staging\n\nscenario: \"Primary database disk fills up to 95%\"\nhidden_from: on-call responder\n\ninjection_steps:\n  - time: \"T+0\"\n    action: \"Fill staging-db disk to 95% using dd\"\n    command: \"kubectl exec -n staging postgres-0 -- dd if=/dev/zero of=/var/lib/postgresql/filler bs=1M count=20000\"\n  - time: \"T+5\"\n    action: \"Wait for alert to fire\"\n  - time: \"T+15\"\n    action: \"If no response, hint: 'Have you checked disk usage?'\"\n\nsuccess_criteria:\n  - \"Alert fired within 5 minutes\"\n  - \"Responder acknowledged within 5 minutes\"\n  - \"Responder found runbook within 3 minutes of acking\"\n  - \"Disk pressure mitigated within 30 minutes\"\n\npost_drill_review:\n  - \"What was missing from the runbook?\"\n  - \"Did the responder have the access they needed?\"\n  - \"Were escalation contacts reachable?\"\n  - \"File tickets for every gap found\""
+        },
+        {
+          "language": "bash",
+          "label": "Cleanup script for the game day",
+          "code": "#!/bin/bash\n# Always have a cleanup script ready before injecting failure\n# A game day that breaks staging for 8 hours is worse than no drill\n\nset -e\n\nkubectl exec -n staging postgres-0 -- rm -f /var/lib/postgresql/filler\nkubectl exec -n staging postgres-0 -- df -h /var/lib/postgresql\n\nkubectl rollout restart deploy/payment-api -n staging\nkubectl rollout status deploy/payment-api -n staging --timeout=120s\n\necho \"Game day cleanup complete\""
+        }
+      ]
+    },
+    {
+      "id": "blameless-postmortems-feedback-loop",
+      "title": "Run blameless post-mortems and feed them back into alerts",
+      "description": "Every incident is a chance to improve the alert that fired (or did not). After each incident, ask: did the alert fire too late, too early, or not at all? Was the runbook accurate? Did escalation work? Track action items and verify they ship. A post-mortem with no follow-through teaches the team that nothing changes.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Post-mortem template",
+          "code": "# post-mortems/2026-05-10-payment-outage.yaml\nincident_id: INC-4501\nseverity: SEV-1\nduration: 47 minutes\ncustomer_impact: \"approximately 3,200 failed checkouts\"\nauthor: bob\nreviewers: [alice, dave]\n\ntimeline:\n  - \"14:02 - Deploy of payment-api v2.42.0 starts\"\n  - \"14:08 - Error rate climbs above 5%\"\n  - \"14:13 - PagerDuty fires (5 minute alert delay)\"\n  - \"14:15 - Bob acknowledges\"\n  - \"14:21 - Bob identifies bad deploy from runbook\"\n  - \"14:23 - kubectl rollout undo executed\"\n  - \"14:31 - Error rate back to baseline\"\n  - \"14:49 - All retries flushed, incident closed\"\n\nroot_cause: |\n  Null pointer in payment validation when shipping address country code\n  was 2-letter lowercase. Tests only covered uppercase.\n\nwhat_went_well:\n  - \"Rollback worked first try\"\n  - \"Runbook gave clear first step\"\n\nwhat_did_not:\n  - \"Alert fired 5 minutes late: threshold was too forgiving\"\n  - \"No canary deploy caught this\"\n  - \"Test fixtures only had uppercase country codes\"\n\naction_items:\n  - id: AI-101\n    description: \"Lower alert threshold from 1% to 0.5% error rate\"\n    owner: bob\n    due: 2026-05-17\n    status: open\n\n  - id: AI-102\n    description: \"Enable Argo Rollouts canary for payment-api\"\n    owner: alice\n    due: 2026-05-31\n    status: open\n\n  - id: AI-103\n    description: \"Property-based tests for country code parsing\"\n    owner: carol\n    due: 2026-05-24\n    status: open\n\nalert_changes:\n  - alert: PaymentAPIHighErrorRate\n    before: \"> 1% for 5m\"\n    after: \"> 0.5% for 2m\"\n    rationale: \"5m delay cost us ~2,000 failed checkouts in this incident\""
+        }
+      ]
+    },
+    {
+      "id": "shadow-rotation-for-new-engineers",
+      "title": "Onboard new on-call engineers with a shadow rotation",
+      "description": "Throwing a new hire onto primary on-call in week 3 is a great way to lose them in month 6. Run two rotations in parallel: a shadow (no pages, just observing) for one cycle, then secondary (gets paged but primary is the backup) for another. Only after that should they take primary. Yes, it slows onboarding. The alternative is much worse.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "On-call onboarding stages",
+          "code": "# oncall-onboarding.yaml\nengineer: new_hire\ntarget_primary_date: \"after 3 completed cycles\"\n\nstage_1_shadow:\n  duration: \"1 full week (matches one rotation cycle)\"\n  requirements:\n    - \"Receive copies of all pages but no obligation to respond\"\n    - \"Pair with the primary on-call for the entire week\"\n    - \"Read every runbook for owned services\"\n    - \"Run a practice incident in staging\"\n  signoff_by: team_lead\n\nstage_2_secondary:\n  duration: \"1 full week\"\n  requirements:\n    - \"Receive pages and respond first\"\n    - \"Primary is the senior engineer, available as backup\"\n    - \"Engineer can hand off any alert without judgment\"\n    - \"Daily debrief with primary at end of shift\"\n  signoff_by: team_lead\n\nstage_3_primary:\n  requirements:\n    - \"Standard rotation\"\n    - \"Secondary remains available\"\n    - \"Manager checks in mid-shift for first 2 cycles\"\n\nbefore_primary_shift:\n  checklist:\n    - \"PagerDuty notification rules tested with a manual page\"\n    - \"VPN access works from personal device\"\n    - \"kubectl context for production set up and tested\"\n    - \"Read-write access to all owned databases verified\"\n    - \"Phone number listed in escalation policy\"\n    - \"Knows how to reach DBA, network, and security on-call\""
+        }
+      ]
+    }
+  ]
+}
