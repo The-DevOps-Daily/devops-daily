@@ -41,7 +41,7 @@ export function RelatedPosts({
             </h3>
             <div className="mt-2 flex items-center text-sm text-muted-foreground">
               <Calendar className="mr-1 h-4 w-4" />
-              <span>{post.date}</span>
+              <time dateTime={post.date}>{post.date}</time>
               <span className="mx-2">|</span>
               <Clock className="mr-1 h-4 w-4" />
               <span>{post.readingTime}</span>

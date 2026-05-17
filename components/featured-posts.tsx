@@ -46,7 +46,7 @@ export default async function FeaturedPosts({ className }: FeaturedPostsProps) {
               <p className="mt-2 text-muted-foreground line-clamp-3">{post.excerpt}</p>
               <div className="flex items-center mt-4 text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4 mr-1" />
-                <span>{post.date}</span>
+                <time dateTime={post.date}>{post.date}</time>
                 <span className="mx-2">|</span>
                 <Clock className="w-4 h-4 mr-1" />
                 <span>{post.readingTime}</span>

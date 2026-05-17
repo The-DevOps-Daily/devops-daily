@@ -203,7 +203,12 @@ export default async function GuidePartPage({
 
                       {guide.updatedAt && (
                         <div>
-                          <span>Updated: {new Date(guide.updatedAt).toLocaleDateString()}</span>
+                          <span>
+                            Updated:{' '}
+                            <time dateTime={guide.updatedAt}>
+                              {new Date(guide.updatedAt).toLocaleDateString()}
+                            </time>
+                          </span>
                         </div>
                       )}
                     </div>

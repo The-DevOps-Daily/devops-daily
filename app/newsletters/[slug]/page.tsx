@@ -113,11 +113,13 @@ export default async function NewsletterDetailPage({
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4" />
-                {new Date(newsletter.date).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+                <time dateTime={newsletter.date}>
+                  {new Date(newsletter.date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
               </div>
             </div>
             <h1 className="text-3xl font-bold mb-2">{newsletter.title}</h1>

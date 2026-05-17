@@ -36,7 +36,7 @@ export default async function LatestPosts({ className }: LatestPostsProps) {
             <p className="mt-2 text-muted-foreground line-clamp-3">{post.excerpt}</p>
             <div className="mt-4 flex items-center text-sm text-muted-foreground">
               <Calendar className="mr-1 h-4 w-4" />
-              <span>{post.date}</span>
+              <time dateTime={post.date}>{post.date}</time>
               <span className="mx-2">|</span>
               <Clock className="mr-1 h-4 w-4" />
               <span>{post.readingTime}</span>

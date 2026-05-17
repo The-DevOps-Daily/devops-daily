@@ -736,13 +736,16 @@ function SearchResultCard({ result, isSelected }: { result: SearchResult; isSele
                 </Badge>
               )}
               {result.date && (
-                <span className="text-xs text-muted-foreground ml-auto">
+                <time
+                  dateTime={result.date}
+                  className="text-xs text-muted-foreground ml-auto"
+                >
                   {new Date(result.date).toLocaleDateString('en-US', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
                   })}
-                </span>
+                </time>
               )}
             </div>
 

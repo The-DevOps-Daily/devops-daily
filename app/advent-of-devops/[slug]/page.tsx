@@ -157,11 +157,13 @@ export default async function AdventDayPage({
                   {day.publishedAt && (
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      {new Date(day.publishedAt).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      <time dateTime={day.publishedAt}>
+                        {new Date(day.publishedAt).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </time>
                     </div>
                   )}
                   <div className="flex items-center gap-1">

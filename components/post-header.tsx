@@ -28,7 +28,7 @@ export function PostHeader({ post, hasAffiliateLinks = false }: PostHeaderProps)
         </Badge>
         <div className="flex items-center text-sm text-muted-foreground">
           <Calendar className="mr-1 h-4 w-4" />
-          <span>{post.date}</span>
+          <time dateTime={post.date}>{post.date}</time>
         </div>
         <div className="flex items-center text-sm text-muted-foreground">
           <Clock className="mr-1 h-4 w-4" />
