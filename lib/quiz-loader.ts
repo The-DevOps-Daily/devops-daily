@@ -1,17 +1,8 @@
-import fs from 'fs/promises';
 import path from 'path';
 import type { QuizConfig } from './quiz-types';
+import { createCachedLoader, isFileNotFound, readJsonFile, readJsonFiles } from './content-loader';
 
 const QUIZZES_DIR = path.join(process.cwd(), 'content', 'quizzes');
-
-// Cache for quizzes to avoid re-reading files on every request
-let quizzesCache: QuizConfig[] | null = null;
-let lastCacheTime = 0;
-// During build, use infinite cache; during runtime, use 5-minute cache
-const CACHE_DURATION =
-  process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
-    ? Infinity
-    : 5 * 60 * 1000;
 
 /**
  * Process a quiz to ensure all required fields are calculated
@@ -34,38 +25,15 @@ function processQuiz(quiz: QuizConfig): QuizConfig {
   return quiz;
 }
 
+const loadQuizzes = createCachedLoader(() =>
+  readJsonFiles<QuizConfig>(QUIZZES_DIR, (quiz) => processQuiz(quiz))
+);
+
 /**
  * Get all available quiz configurations
  */
 export async function getAllQuizzes(): Promise<QuizConfig[]> {
-  // Check if cache is still valid
-  const now = Date.now();
-  if (quizzesCache && now - lastCacheTime < CACHE_DURATION) {
-    return quizzesCache;
-  }
-
-  try {
-    const files = await fs.readdir(QUIZZES_DIR);
-    const quizFiles = files.filter((file) => file.endsWith('.json'));
-
-    const quizzes = await Promise.all(
-      quizFiles.map(async (file) => {
-        const filePath = path.join(QUIZZES_DIR, file);
-        const content = await fs.readFile(filePath, 'utf-8');
-        const quiz = JSON.parse(content) as QuizConfig;
-        return processQuiz(quiz);
-      })
-    );
-
-    // Update cache
-    quizzesCache = quizzes;
-    lastCacheTime = now;
-
-    return quizzes;
-  } catch (error) {
-    console.error('Error loading quizzes:', error);
-    return [];
-  }
+  return loadQuizzes();
 }
 
 /**
@@ -80,15 +48,14 @@ export async function getQuizById(id: string): Promise<QuizConfig | null> {
     return cachedQuiz;
   }
 
-  // If not in cache, try to load directly (fallback)
   try {
-    const filePath = path.join(QUIZZES_DIR, `${id}.json`);
-    const content = await fs.readFile(filePath, 'utf-8');
-    const quiz = JSON.parse(content) as QuizConfig;
+    const quiz = await readJsonFile<QuizConfig>(path.join(QUIZZES_DIR, `${id}.json`));
     return processQuiz(quiz);
   } catch (error) {
-    console.error(`Error loading quiz ${id}:`, error);
-    return null;
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 
@@ -110,25 +77,20 @@ export async function getQuizMetadata(): Promise<
     createdDate?: string;
   }>
 > {
-  try {
-    const quizzes = await getAllQuizzes();
-    return quizzes.map((quiz) => ({
-      id: quiz.id,
-      title: quiz.title,
-      description: quiz.description,
-      category: quiz.category,
-      icon: quiz.icon,
-      totalQuestions: quiz.questions.length,
-      totalPoints: quiz.totalPoints,
-      estimatedTime: quiz.metadata.estimatedTime,
-      theme: quiz.theme,
-      difficultyLevels: quiz.metadata.difficultyLevels,
-      createdDate: quiz.metadata.createdDate,
-    }));
-  } catch (error) {
-    console.error('Error loading quiz metadata:', error);
-    return [];
-  }
+  const quizzes = await getAllQuizzes();
+  return quizzes.map((quiz) => ({
+    id: quiz.id,
+    title: quiz.title,
+    description: quiz.description,
+    category: quiz.category,
+    icon: quiz.icon,
+    totalQuestions: quiz.questions.length,
+    totalPoints: quiz.totalPoints,
+    estimatedTime: quiz.metadata.estimatedTime,
+    theme: quiz.theme,
+    difficultyLevels: quiz.metadata.difficultyLevels,
+    createdDate: quiz.metadata.createdDate,
+  }));
 }
 
 /**

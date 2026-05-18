@@ -7,19 +7,12 @@ import { getAllExercises } from '../lib/exercises.js';
 import { getAllNews } from '../lib/news.js';
 import { getActiveGames } from '../lib/games.js';
 import { getAllChecklists } from '../lib/checklists.js';
+import { getAllComparisons } from '../lib/comparisons.js';
+import { getAllFlashCardSets } from '../lib/flashcard-loader.js';
+import { getAllQuizzes } from '../lib/quiz-loader.js';
+import { TOOLS, CATEGORY_LABEL } from '../lib/tools.js';
 import { interviewQuestions } from '../content/interview-questions/index.js';
-
-interface SearchItem {
-  id: string;
-  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page' | 'checklist' | 'interview-question';
-  title: string;
-  description: string;
-  url: string;
-  category?: string;
-  tags?: string[];
-  icon?: string;
-  date?: string;
-}
+import type { SearchItem } from '../lib/search-types.js';
 
 // Static pages
 const PAGES: SearchItem[] = [
@@ -120,13 +113,37 @@ const PAGES: SearchItem[] = [
     icon: '📑',
   },
   {
-   id: 'page-checklists',
-   type: 'page',
-   title: 'Checklists',
-   description: 'Interactive DevOps and security checklists',
-   url: '/checklists',
-   icon: '✅',
- },
+    id: 'page-checklists',
+    type: 'page',
+    title: 'Checklists',
+    description: 'Interactive DevOps and security checklists',
+    url: '/checklists',
+    icon: '✅',
+  },
+  {
+    id: 'page-comparisons',
+    type: 'page',
+    title: 'Comparisons',
+    description: 'Side-by-side DevOps tool and platform comparisons',
+    url: '/comparisons',
+    icon: '⚖️',
+  },
+  {
+    id: 'page-flashcards',
+    type: 'page',
+    title: 'Flashcards',
+    description: 'DevOps flashcard sets for focused practice',
+    url: '/flashcards',
+    icon: '🧠',
+  },
+  {
+    id: 'page-tools',
+    type: 'page',
+    title: 'Tools',
+    description: 'Browser-based DevOps calculators, decoders, and utilities',
+    url: '/tools',
+    icon: '🛠️',
+  },
   {
     id: 'page-interview-questions',
     type: 'page',
@@ -163,33 +180,19 @@ const PAGES: SearchItem[] = [
 
 // Quizzes (load from filesystem)
 async function getQuizzes(): Promise<SearchItem[]> {
-  try {
-    const quizzesDir = path.join(process.cwd(), 'content', 'quizzes');
-    const files = await fs.readdir(quizzesDir);
-    const quizFiles = files.filter((file) => file.endsWith('.json'));
+  const quizzes = await getAllQuizzes();
 
-    const quizzes: SearchItem[] = [];
-
-    for (const file of quizFiles) {
-      const content = await fs.readFile(path.join(quizzesDir, file), 'utf-8');
-      const quiz = JSON.parse(content);
-
-      quizzes.push({
-        id: `quiz-${quiz.id}`,
-        type: 'quiz',
-        title: quiz.title,
-        description: quiz.description || `${quiz.questions.length} questions`,
-        url: `/quizzes/${quiz.id}`,
-        category: quiz.difficulty || 'General',
-        icon: '❓',
-      });
-    }
-
-    return quizzes;
-  } catch (error) {
-    console.error('Error loading quizzes:', error);
-    return [];
-  }
+  return quizzes.map((quiz) => ({
+    id: `quiz-${quiz.id}`,
+    type: 'quiz',
+    title: quiz.title,
+    description: quiz.description || `${quiz.questions.length} questions`,
+    url: `/quizzes/${quiz.id}`,
+    category: quiz.category || 'General',
+    tags: quiz.metadata?.tags || [],
+    icon: '❓',
+    date: quiz.metadata?.createdDate,
+  }));
 }
 
 async function generateSearchIndex() {
@@ -246,6 +249,7 @@ async function generateSearchIndex() {
     description: guide.description || guide.excerpt || '',
     url: `/guides/${guide.slug}`,
     category: guide.category?.name,
+    tags: guide.tags,
     icon: '📚',
     date: guide.publishedAt,
   }));
@@ -261,8 +265,8 @@ async function generateSearchIndex() {
     title: exercise.title,
     description: exercise.description,
     url: `/exercises/${exercise.id}`,
-    category: exercise.difficulty,
-    tags: exercise.technologies,
+    category: exercise.category?.name || exercise.difficulty,
+    tags: [...(exercise.technologies || []), ...(exercise.tags || [])],
     icon: '🧪',
   }));
   searchIndex.push(...exerciseItems);
@@ -310,14 +314,62 @@ async function generateSearchIndex() {
   searchIndex.push(...checklistItems);
   console.log(`  ✓ Added ${checklistItems.length} checklists`);
 
+  // Add comparisons
+  console.log('⚖️ Adding comparisons...');
+  const comparisons = await getAllComparisons();
+  const comparisonItems: SearchItem[] = comparisons.map((comparison) => ({
+    id: `comparison-${comparison.slug}`,
+    type: 'comparison',
+    title: comparison.title || `${comparison.toolA.name} vs ${comparison.toolB.name}`,
+    description: comparison.description,
+    url: `/comparisons/${comparison.slug}`,
+    category: comparison.category,
+    tags: comparison.tags,
+    icon: '⚖️',
+    date: comparison.updatedDate || comparison.createdDate,
+  }));
+  searchIndex.push(...comparisonItems);
+  console.log(`  ✓ Added ${comparisonItems.length} comparisons`);
+
+  // Add flashcards
+  console.log('🧠 Adding flashcards...');
+  const flashcards = await getAllFlashCardSets();
+  const flashcardItems: SearchItem[] = flashcards.map((set) => ({
+    id: `flashcard-${set.id}`,
+    type: 'flashcard',
+    title: set.title,
+    description: set.description,
+    url: `/flashcards/${set.id}`,
+    category: set.category,
+    tags: [set.difficulty],
+    icon: '🧠',
+  }));
+  searchIndex.push(...flashcardItems);
+  console.log(`  ✓ Added ${flashcardItems.length} flashcard sets`);
+
+  // Add tools
+  console.log('🛠️ Adding tools...');
+  const toolItems: SearchItem[] = TOOLS.map((tool) => ({
+    id: `tool-${tool.slug}`,
+    type: 'tool',
+    title: tool.title,
+    description: tool.description,
+    url: `/tools/${tool.slug}`,
+    category: CATEGORY_LABEL[tool.category],
+    tags: tool.keywords,
+    icon: '🛠️',
+  }));
+  searchIndex.push(...toolItems);
+  console.log(`  ✓ Added ${toolItems.length} tools`);
+
   // Add interview questions
   console.log('💬 Adding interview questions...');
   const interviewItems: SearchItem[] = interviewQuestions.map((question) => ({
-    id: `interview-${question.slug}`,
+    id: `interview-${question.tier}-${question.slug}`,
     type: 'interview-question',
     title: question.title,
     description: question.question,
-    url: `/interview-questions/${question.tier}`,
+    url: `/interview-questions/${question.tier}/${question.slug}`,
     category: question.category,
     tags: question.tags,
     icon: '💬',

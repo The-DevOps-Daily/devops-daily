@@ -2,6 +2,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { interviewQuestions } from '../content/interview-questions/index.js';
+import { escapeXml } from './og-utils';
 
 // Configuration
 const IMAGE_WIDTH = 1200;
@@ -43,14 +44,6 @@ function generateQuestionSVG(
   category: string,
   difficulty: string
 ): string {
-  const escapeXml = (str: string) =>
-    str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-
   const safeCategory = escapeXml(category.toUpperCase());
   const safeDifficulty = escapeXml(difficulty.toUpperCase());
 

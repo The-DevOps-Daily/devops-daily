@@ -1,6 +1,6 @@
 ---
 title: 'Package Management'
-description: 'Learn how to install, update, and remove software on Linux using different package managers.'
+description: 'Install, update, and remove software on Linux with apt, dnf, pacman, and zypper. Covers repositories, dependencies, search, and keeping systems patched.'
 order: 5
 ---
 

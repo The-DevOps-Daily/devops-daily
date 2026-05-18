@@ -57,11 +57,14 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
               </div>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Calendar className="w-3.5 h-3.5" />
-                Updated {new Date(comparison.updatedDate).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+                Updated{' '}
+                <time dateTime={comparison.updatedDate}>
+                  {new Date(comparison.updatedDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
               </div>
             </div>
 

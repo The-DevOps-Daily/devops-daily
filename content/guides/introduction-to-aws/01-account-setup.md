@@ -1,6 +1,6 @@
 ---
 title: 'Getting Started with Your AWS Account'
-description: 'Set up your AWS account, understand the console, and learn to navigate AWS like a pro.'
+description: 'Create your first AWS account and learn to find your way around the console without getting lost. Covers signup, billing alerts, root account safety, and regions.'
 order: 1
 ---
 

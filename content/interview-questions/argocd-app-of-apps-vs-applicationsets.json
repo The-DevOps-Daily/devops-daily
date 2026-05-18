@@ -1,0 +1,53 @@
+{
+  "id": "argocd-app-of-apps-vs-applicationsets",
+  "slug": "argocd-app-of-apps-vs-applicationsets",
+  "title": "App-of-Apps Pattern vs ApplicationSets",
+  "question": "Explain the app-of-apps pattern in Argo CD. When would you pick it over ApplicationSets?",
+  "answer": "App-of-apps is a pattern, not a feature. One parent Argo CD Application points at a directory of YAML files. Those YAML files are themselves Argo CD Application CRs. Argo CD syncs the parent, which creates the children, which deploy actual workloads. It gives you one bootstrap entry point per cluster: install the parent, everything else shows up.\n\nApplicationSet is a controller that does something similar but template-driven. You write one Application template plus a generator (Git directory, list, cluster, matrix, pull request, SCM provider) and the controller produces N Applications from it. Add a new directory under overlays, an Application appears. Open a pull request, a preview Application appears. Close it, the preview gets cleaned up.\n\nUse ApplicationSets when:\n\n1. You ship the same app across many environments or clusters and the only difference is a parameter (path, cluster URL, namespace).\n2. You want pull-request preview environments.\n3. Environments come and go often enough that hand-editing Application YAML is annoying.\n\nUse app-of-apps when:\n\n1. Each Application is genuinely different. A monitoring stack, an ingress controller, and three apps do not fit one template.\n2. You want a clear, hand-reviewed list of cluster components in Git.\n\nReal setups use both. App-of-apps bootstraps the platform layer (cert-manager, ingress, monitoring, the ApplicationSet controller itself). ApplicationSets generate per-environment Applications for actual workloads. The platform is curated; the apps are templated.\n\nOne gotcha to mention. Deleting an ApplicationSet by default deletes every Application it generated, and Argo CD will then delete the workloads those Applications managed. Set preserveResourcesOnDeletion: true on the ApplicationSet spec if you do not want that cascade, or use a Finalizer carefully.",
+  "explanation": "This is a senior-leaning question because the answer hinges on operational experience: knowing when templating pays for itself, and what happens when you remove the template. Listen for candidates who can name a generator type other than Git directory (PullRequest, Cluster, Matrix are the interesting ones) and who flag the deletion behavior. Bonus points for mentioning that the ApplicationSet controller is itself usually deployed via app-of-apps so it can manage everything else.",
+  "category": "GitOps",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "gitops",
+    "argocd",
+    "applicationsets",
+    "deployments",
+    "kubernetes"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "App-of-apps parent Application",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: platform-bootstrap\n  namespace: argocd\nspec:\n  project: platform\n  source:\n    repoURL: https://github.com/org/manifests\n    targetRevision: main\n    path: argocd/applications\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: argocd\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true"
+    },
+    {
+      "language": "yaml",
+      "label": "ApplicationSet with Git directory generator",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: ApplicationSet\nmetadata:\n  name: web-envs\n  namespace: argocd\nspec:\n  generators:\n    - git:\n        repoURL: https://github.com/org/manifests\n        revision: main\n        directories:\n          - path: apps/web/overlays/*\n  template:\n    metadata:\n      name: 'web-{{path.basename}}'\n    spec:\n      project: default\n      source:\n        repoURL: https://github.com/org/manifests\n        targetRevision: main\n        path: '{{path}}'\n      destination:\n        server: https://kubernetes.default.svc\n        namespace: 'web-{{path.basename}}'\n      syncPolicy:\n        automated:\n          prune: true\n          selfHeal: true"
+    },
+    {
+      "language": "yaml",
+      "label": "ApplicationSet that fans out across registered clusters",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: ApplicationSet\nmetadata:\n  name: monitoring\n  namespace: argocd\nspec:\n  generators:\n    - clusters:\n        selector:\n          matchLabels:\n            env: prod\n  template:\n    metadata:\n      name: 'monitoring-{{name}}'\n    spec:\n      project: platform\n      source:\n        repoURL: https://github.com/org/manifests\n        targetRevision: main\n        path: platform/monitoring\n      destination:\n        server: '{{server}}'\n        namespace: monitoring"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens if you delete an ApplicationSet? How do you stop it from deleting prod by accident?",
+    "Walk me through how the PullRequest generator builds preview environments and what cleans them up.",
+    "How would you bootstrap a brand new cluster from zero with just one kubectl apply?",
+    "When would the Matrix generator make sense, and what is the trap with it?"
+  ],
+  "commonMistakes": [
+    "Hand-writing one Application YAML per environment across 30 environments instead of using an ApplicationSet",
+    "Not knowing that deleting the ApplicationSet by default cascades and deletes the generated Applications plus their workloads",
+    "Treating ApplicationSet generators as magic and not being able to predict what Applications the template will produce for a given input"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "applicationsets",
+    "gitops",
+    "kubernetes",
+    "multi-cluster"
+  ]
+}

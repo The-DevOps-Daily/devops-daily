@@ -23,19 +23,14 @@ import {
   Clock,
   Hash,
   Sparkles,
+  ListChecks,
+  MessageSquare,
+  Scale,
+  Layers,
+  Wrench,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-
-interface SearchItem {
-  id: string;
-  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page';
-  title: string;
-  description: string;
-  url: string;
-  category?: string;
-  tags?: string[];
-  icon?: string;
-}
+import { TYPE_COLORS, TYPE_LABELS, type SearchItem } from '@/lib/search-types';
 
 const TYPE_ICONS = {
   post: FileText,
@@ -45,26 +40,11 @@ const TYPE_ICONS = {
   game: Gamepad2,
   news: Newspaper,
   page: Home,
-};
-
-const TYPE_LABELS = {
-  post: 'Post',
-  guide: 'Guide',
-  exercise: 'Exercise',
-  quiz: 'Quiz',
-  game: 'Game',
-  news: 'News',
-  page: 'Page',
-};
-
-const TYPE_COLORS = {
-  post: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  guide: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  exercise: 'bg-green-500/10 text-green-500 border-green-500/20',
-  quiz: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  game: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
-  news: 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20',
-  page: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+  checklist: ListChecks,
+  'interview-question': MessageSquare,
+  comparison: Scale,
+  flashcard: Layers,
+  tool: Wrench,
 };
 
 export function CommandPalette() {
@@ -241,7 +221,7 @@ export function CommandPalette() {
       {/* Command Palette Dialog */}
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput
-          placeholder="Search posts, guides, exercises, quizzes, games..."
+          placeholder="Search posts, guides, comparisons, flashcards, tools..."
           value={query}
           onValueChange={setQuery}
         />
@@ -363,7 +343,7 @@ export function CommandPalette() {
                   return (
                     <div key={type}>
                       {groupIndex > 0 && <CommandSeparator />}
-                      <CommandGroup heading={`${label}s (${items.length})`}>
+                      <CommandGroup heading={`${label} (${items.length})`}>
                         {items.map((item) => (
                           <CommandItem
                             key={item.id}

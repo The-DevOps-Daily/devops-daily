@@ -1,7 +1,7 @@
 {
   "id": "docker-essentials",
   "title": "Docker Essentials",
-  "description": "Learn core Docker concepts including containers, images, volumes, networks, and best practices.",
+  "description": "Flashcards covering core Docker concepts: containers vs images, layers, volumes, networks, build cache, registries, and the day-to-day Docker CLI.",
   "category": "Docker",
   "icon": "Container",
   "difficulty": "beginner",

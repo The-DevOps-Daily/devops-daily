@@ -1,6 +1,7 @@
 // scripts/generate-checklist-images-svg.ts
 import fs from 'fs/promises';
 import path from 'path';
+import { escapeXml } from './og-utils';
 
 interface Checklist {
   slug: string;
@@ -58,15 +59,6 @@ function generateChecklistSVG(
   difficulty: string,
   itemCount: number
 ): string {
-  const escapeXml = (str: string) =>
-    str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-
-  const safeTitle = escapeXml(title);
   const safeCategory = escapeXml(category.toUpperCase());
   const safeDifficulty = escapeXml(difficulty.toUpperCase());
 

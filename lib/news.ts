@@ -1,7 +1,12 @@
 import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
 import { getPostImagePath } from './image-utils';
+import {
+  createCachedLoader,
+  isFileNotFound,
+  readDirectoryFiles,
+  readMarkdownFile,
+} from './content-loader';
 
 const NEWS_DIR = path.join(process.cwd(), 'content', 'news');
 
@@ -20,17 +25,30 @@ export type NewsDigest = {
   itemCount?: number;
 };
 
-export async function getAllNews(): Promise<NewsDigest[]> {
-  try {
-    // Ensure directory exists
-    try {
-      await fs.access(NEWS_DIR);
-    } catch {
-      // Directory doesn't exist, return empty array
-      return [];
-    }
+function mapNewsDigest(
+  data: Partial<NewsDigest>,
+  content: string,
+  filename: string,
+  year: string
+): NewsDigest {
+  const weekMatch = filename.match(/week-(\d+)\.md/);
+  const week = weekMatch ? parseInt(weekMatch[1], 10) : 0;
+  const slug = `${year}-week-${week}`;
+  const image = data.image || getPostImagePath(slug, 'news');
 
-    // Get all year directories
+  return {
+    ...data,
+    slug,
+    week,
+    year: parseInt(year, 10),
+    content,
+    image,
+    excerpt: data.summary || data.excerpt,
+  } as NewsDigest;
+}
+
+const loadNews = createCachedLoader(async () => {
+  try {
     const years = await fs.readdir(NEWS_DIR);
     const allNews: NewsDigest[] = [];
 
@@ -39,33 +57,14 @@ export async function getAllNews(): Promise<NewsDigest[]> {
       const stat = await fs.stat(yearPath);
 
       if (stat.isDirectory()) {
-        const files = await fs.readdir(yearPath);
+        const files = await readDirectoryFiles(yearPath, '.md');
         const newsItems = await Promise.all(
-          files
-            .filter((f) => f.endsWith('.md'))
-            .map(async (filename) => {
-              const filePath = path.join(yearPath, filename);
-              const file = await fs.readFile(filePath, 'utf-8');
-              const { data, content } = matter(file);
-
-              // Extract week number from filename (week-1.md -> 1)
-              const weekMatch = filename.match(/week-(\d+)\.md/);
-              const week = weekMatch ? parseInt(weekMatch[1], 10) : 0;
-
-              // Generate slug as year-week-N
-              const slug = `${year}-week-${week}`;
-              const image = data.image || getPostImagePath(slug, 'news');
-
-              return {
-                ...data,
-                slug,
-                week,
-                year: parseInt(year, 10),
-                content,
-                image,
-                excerpt: data.summary || data.excerpt,
-              } as NewsDigest;
-            })
+          files.map((filename) =>
+            readMarkdownFile<NewsDigest, Partial<NewsDigest>>(
+              path.join(yearPath, filename),
+              (data, content) => mapNewsDigest(data, content, filename, year)
+            )
+          )
         );
         allNews.push(...newsItems);
       }
@@ -79,9 +78,15 @@ export async function getAllNews(): Promise<NewsDigest[]> {
       return b.week - a.week;
     });
   } catch (error) {
-    console.error('Error loading news:', error);
-    return [];
+    if (isFileNotFound(error)) {
+      return [];
+    }
+    throw error;
   }
+});
+
+export async function getAllNews(): Promise<NewsDigest[]> {
+  return loadNews();
 }
 
 export async function getNewsBySlug(slug: string): Promise<NewsDigest | null> {
@@ -95,21 +100,15 @@ export async function getNewsBySlug(slug: string): Promise<NewsDigest | null> {
     const [, year, week] = match;
     const filePath = path.join(NEWS_DIR, year, `week-${week}.md`);
 
-    const file = await fs.readFile(filePath, 'utf-8');
-    const { data, content } = matter(file);
-    const image = data.image || getPostImagePath(slug, 'news');
-
-    return {
-      ...data,
-      slug,
-      week: parseInt(week, 10),
-      year: parseInt(year, 10),
-      content,
-      image,
-      excerpt: data.summary || data.excerpt,
-    } as NewsDigest;
-  } catch {
-    return null;
+    return await readMarkdownFile<NewsDigest, Partial<NewsDigest>>(
+      filePath,
+      (data, content, filename) => mapNewsDigest(data, content, filename, year)
+    );
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 
@@ -125,20 +124,16 @@ export async function getNewsByYear(year: number): Promise<NewsDigest[]> {
 
 export async function getNewsYears(): Promise<number[]> {
   try {
-    // Ensure directory exists
-    try {
-      await fs.access(NEWS_DIR);
-    } catch {
-      return [];
-    }
-
     const years = await fs.readdir(NEWS_DIR);
     const yearNumbers = years
       .filter((year) => /^\d{4}$/.test(year))
       .map((year) => parseInt(year, 10))
       .sort((a, b) => b - a);
     return yearNumbers;
-  } catch {
-    return [];
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return [];
+    }
+    throw error;
   }
 }

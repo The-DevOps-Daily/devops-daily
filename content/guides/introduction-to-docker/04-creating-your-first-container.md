@@ -1,6 +1,6 @@
 ---
 title: Creating Your First Container
-description: Learn how to run, manage, and interact with Docker containers
+description: 'Run your first Docker container and learn the commands that matter. Covers docker run, exec, logs, stop, ports, detached mode, and inspecting container state.'
 order: 4
 ---
 

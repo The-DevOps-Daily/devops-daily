@@ -1,8 +1,12 @@
-import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
 import { getAllPosts } from './posts';
 import { getAllGuides } from './guides';
+import {
+  createCachedLoader,
+  isFileNotFound,
+  readMarkdownFile,
+  readMarkdownFiles,
+} from './content-loader';
 
 const EXPERTS_DIR = path.join(process.cwd(), 'content', 'experts');
 
@@ -26,59 +30,61 @@ export type Expert = {
   guideCount?: number;
 };
 
-export async function getAllExperts(): Promise<Expert[]> {
+async function withExpertCounts(expert: Omit<Expert, 'postCount' | 'guideCount'>): Promise<Expert> {
+  const [posts, guides] = await Promise.all([getAllPosts(), getAllGuides()]);
+  const postCount = posts.filter((post) => post.author?.slug === expert.slug).length;
+  const guideCount = guides.filter((guide) => guide.author?.slug === expert.slug).length;
+
+  return {
+    ...expert,
+    postCount,
+    guideCount,
+  };
+}
+
+function mapExpert(data: Partial<Expert>, content: string, filename: string) {
+  const slug = filename.replace(/\.md$/, '');
+
+  return {
+    ...data,
+    slug,
+    content,
+  } as Omit<Expert, 'postCount' | 'guideCount'>;
+}
+
+const loadExperts = createCachedLoader(async () => {
   try {
-    const files = await fs.readdir(EXPERTS_DIR);
-    const [posts, guides] = await Promise.all([getAllPosts(), getAllGuides()]);
-
-    const experts = await Promise.all(
-      files
-        .filter((f) => f.endsWith('.md'))
-        .map(async (filename) => {
-          const filePath = path.join(EXPERTS_DIR, filename);
-          const file = await fs.readFile(filePath, 'utf-8');
-          const { data, content } = matter(file);
-          const slug = filename.replace(/\.md$/, '');
-
-          const postCount = posts.filter((post) => post.author?.slug === slug).length;
-          const guideCount = guides.filter((guide) => guide.author?.slug === slug).length;
-
-          return {
-            ...data,
-            slug,
-            content,
-            postCount,
-            guideCount,
-          } as Expert;
-        })
+    const experts = await readMarkdownFiles<Omit<Expert, 'postCount' | 'guideCount'>, Partial<Expert>>(
+      EXPERTS_DIR,
+      mapExpert
     );
+    const expertsWithCounts = await Promise.all(experts.map(withExpertCounts));
 
-    return experts.sort((a, b) => a.name.localeCompare(b.name));
+    return expertsWithCounts.sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
-    console.warn('Error reading experts directory:', error);
-    return [];
+    if (isFileNotFound(error)) {
+      return [];
+    }
+    throw error;
   }
+});
+
+export async function getAllExperts(): Promise<Expert[]> {
+  return loadExperts();
 }
 
 export async function getExpertBySlug(slug: string): Promise<Expert | null> {
-  const filePath = path.join(EXPERTS_DIR, `${slug}.md`);
   try {
-    const file = await fs.readFile(filePath, 'utf-8');
-    const { data, content } = matter(file);
-
-    const [posts, guides] = await Promise.all([getAllPosts(), getAllGuides()]);
-    const postCount = posts.filter((post) => post.author?.slug === slug).length;
-    const guideCount = guides.filter((guide) => guide.author?.slug === slug).length;
-
-    return {
-      ...data,
-      slug,
-      content,
-      postCount,
-      guideCount,
-    } as Expert;
-  } catch {
-    return null;
+    const expert = await readMarkdownFile<Omit<Expert, 'postCount' | 'guideCount'>, Partial<Expert>>(
+      path.join(EXPERTS_DIR, `${slug}.md`),
+      mapExpert
+    );
+    return withExpertCounts(expert);
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 

@@ -1,7 +1,7 @@
 {
   "id": "docker-quiz",
   "title": "Docker Fundamentals Quiz",
-  "description": "Test your knowledge of Docker containers, images, and orchestration concepts",
+  "description": "Test your Docker knowledge with questions on containers, images, Dockerfile instructions, volumes, networks, Compose, and basic orchestration concepts.",
   "category": "Docker",
   "icon": "Code",
   "totalPoints": 85,

@@ -1,6 +1,6 @@
 ---
 title: Installation and Setup
-description: Install Packer and configure your environment for building machine images
+description: 'Install Packer on macOS, Linux, and Windows, set up your PATH, and configure cloud or local builder credentials. Verify the install with packer version.'
 order: 2
 ---
 

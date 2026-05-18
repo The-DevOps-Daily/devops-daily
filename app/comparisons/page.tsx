@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://devops-daily.com/images/comparisons-og-image.png',
+        url: '/images/comparisons-og-image.png',
         width: 1200,
         height: 630,
         alt: 'DevOps Tool Comparisons',
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     title: 'DevOps Tool Comparisons | DevOps Daily',
     description:
       'Compare popular DevOps tools side by side with feature tables, pros/cons, and verdicts.',
-    images: ['https://devops-daily.com/images/comparisons-og-image.png'],
+    images: ['/images/comparisons-og-image.png'],
   },
 };
 

@@ -1,0 +1,53 @@
+{
+  "id": "argocd-promotion-dev-staging-prod",
+  "slug": "argocd-promotion-dev-staging-prod",
+  "title": "Promoting Changes from Dev to Staging to Prod with Argo CD",
+  "question": "Walk me through how a change moves from dev to staging to prod in an Argo CD setup. How do you stop something from slipping into prod that should not be there?",
+  "answer": "Promotion in GitOps is a Git operation, not a kubectl operation. A pull request into the manifests repo updates the prod overlay. The Argo CD controller picks up the new commit and reconciles. The three things to get right: what triggers each environment, how image tags move between environments, and how prod is gated.\n\nA flow that works:\n\n1. Developer merges code into the application repo. CI builds an image and pushes it with an immutable tag, the Git SHA or a semver.\n2. CI commits the new tag to apps/web/overlays/dev/kustomization.yaml on main of the manifests repo. Argo CD dev Application has auto-sync on and self-heal on. It picks up the change and ships to dev within a couple of minutes.\n3. Promotion to staging is a pull request bumping apps/web/overlays/staging/kustomization.yaml to the same tag. Merge after a smoke test or an automated check. Argo CD syncs staging.\n4. Promotion to prod is another pull request, this time bumping the prod overlay. Branch protection requires code owners, a passing CI check, and a manual reviewer. After merge, Argo CD syncs prod, or a human clicks sync if prod is set to manual.\n\nNon-negotiables I enforce:\n\n- Same image artifact through every environment. Do not rebuild between staging and prod. The binary that passed staging is the one that ships.\n- Immutable tags. No latest, no main. Use the Git SHA or a release version.\n- Prod sync policy is different from dev. Either manual sync, or auto-sync with sync windows so it can only run during business hours.\n- selfHeal is fine for dev but think hard about it on prod. It reverts any manual change, which can cause grief during an incident if the on-call engineer needs a quick patch. If you keep selfHeal off on prod, you also need a clear policy that the only way to change prod is through Git.\n\nGotcha that bites teams: auto-sync off does not mean self-heal off. They are separate. If self-heal is on, Argo CD will still revert manual edits, even though it will not pull new commits automatically. Configure both knobs deliberately.\n\nHotfixes: have a documented bypass that still goes through Git. Commit straight to the prod overlay path with senior approval. Never apply manifests with kubectl from a laptop just because the PR flow feels slow.",
+  "explanation": "This question covers the operational side of GitOps end to end. Strong candidates have a clear, opinionated answer with specific knobs they would set. They will mention immutable tags, sync windows, branch protection on the manifests repo, and the difference between auto-sync and self-heal. Weak candidates describe a flow but cannot answer 'what stops a developer from running kubectl apply against prod' or 'what happens when selfHeal is on during an incident.' This is where you find out if they have actually run Argo CD past the demo stage.",
+  "category": "GitOps",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "gitops",
+    "argocd",
+    "deployments",
+    "promotion",
+    "release-management"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Prod Application with manual sync and stricter policy",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: web-prod\n  namespace: argocd\n  finalizers:\n    - resources-finalizer.argocd.argoproj.io\nspec:\n  project: production\n  source:\n    repoURL: https://github.com/org/manifests\n    targetRevision: main\n    path: apps/web/overlays/prod\n  destination:\n    server: https://prod-cluster.example.com\n    namespace: web\n  syncPolicy:\n    # No automated block: prod sync requires a human click\n    syncOptions:\n      - PrunePropagationPolicy=foreground\n      - ApplyOutOfSyncOnly=true\n  revisionHistoryLimit: 20"
+    },
+    {
+      "language": "yaml",
+      "label": "AppProject with sync windows that limit prod to business hours",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: AppProject\nmetadata:\n  name: production\n  namespace: argocd\nspec:\n  description: Production workloads\n  sourceRepos:\n    - https://github.com/org/manifests\n  destinations:\n    - server: https://prod-cluster.example.com\n      namespace: '*'\n  syncWindows:\n    - kind: allow\n      schedule: '0 9 * * 1-5'\n      duration: 8h\n      applications:\n        - 'web-prod'\n        - 'api-prod'\n      manualSync: true\n    - kind: deny\n      schedule: '0 0 * * 6,0'\n      duration: 24h\n      applications:\n        - '*-prod'\n      manualSync: false"
+    },
+    {
+      "language": "bash",
+      "label": "Promotion script: bump staging to the tag currently in dev",
+      "code": "#!/usr/bin/env bash\nset -euo pipefail\n\nAPP=web\nMANIFESTS_DIR=$(pwd)\n\n# Read the image tag currently deployed to dev\nDEV_TAG=$(yq '.images[] | select(.name == \"web\") | .newTag' \\\n  apps/${APP}/overlays/dev/kustomization.yaml)\n\necho \"Promoting ${APP} to staging at tag ${DEV_TAG}\"\n\n# Create a branch and open a PR\nBRANCH=promote-${APP}-staging-${DEV_TAG}\ngit checkout -b ${BRANCH}\n(cd apps/${APP}/overlays/staging && \\\n  kustomize edit set image web=ghcr.io/org/web:${DEV_TAG})\ngit add apps/${APP}/overlays/staging/kustomization.yaml\ngit commit -m \"promote ${APP} to staging: ${DEV_TAG}\"\ngit push -u origin ${BRANCH}\n\ngh pr create \\\n  --title \"promote ${APP} to staging: ${DEV_TAG}\" \\\n  --body \"Promotes the dev image to staging. No code change.\""
+    }
+  ],
+  "followUpQuestions": [
+    "A change works in staging and breaks in prod because of a config that differed. How do you stop that next time?",
+    "How do database migrations fit into this flow? They are not idempotent the way manifests are.",
+    "What is your rollback story? A bad change went out, the Argo CD UI is open, what do you do?",
+    "How does this change if you are running progressive delivery with Argo Rollouts in front of the Deployment?"
+  ],
+  "commonMistakes": [
+    "Rebuilding the image between staging and prod so a different binary ships than was tested",
+    "Using a floating tag like latest or main on prod, so what gets deployed depends on when sync runs rather than what is in Git",
+    "Enabling auto-sync and self-heal on prod with the same settings as dev, then being surprised when self-heal reverts an on-call hotfix"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "gitops",
+    "release-management",
+    "progressive-delivery",
+    "argo-rollouts"
+  ]
+}

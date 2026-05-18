@@ -1,6 +1,6 @@
 ---
 title: 'How to Delete All Resources from Kubernetes at One Time'
-excerpt: 'Learn how to delete all resources in a Kubernetes namespace or cluster using kubectl commands.'
+excerpt: 'Delete every resource in a Kubernetes namespace or whole cluster with kubectl. Covers kubectl delete all, namespace deletion, and cleaning up CRDs safely.'
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'

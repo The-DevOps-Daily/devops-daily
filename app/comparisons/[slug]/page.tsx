@@ -8,15 +8,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const comparisons = await getAllComparisons();
-    return comparisons.map((comparison) => ({
-      slug: comparison.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for comparisons:', error);
-    return [];
-  }
+  const comparisons = await getAllComparisons();
+  return comparisons.map((comparison) => ({
+    slug: comparison.slug,
+  }));
 }
 
 export async function generateMetadata({

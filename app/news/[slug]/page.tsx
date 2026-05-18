@@ -18,15 +18,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const news = await getAllNews();
-    return news.map((digest) => ({
-      slug: digest.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for news:', error);
-    return [];
-  }
+  const news = await getAllNews();
+  return news.map((digest) => ({
+    slug: digest.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -111,8 +106,8 @@ export default async function NewsDigestPage({
       <ArticleSchema
         title={digest.title}
         description={digest.excerpt || digest.summary || ''}
-        publishedDate={digest.publishedAt || digest.date || new Date().toISOString()}
-        modifiedDate={digest.date || new Date().toISOString()}
+        publishedDate={digest.publishedAt || digest.date}
+        modifiedDate={digest.date || digest.publishedAt}
         imageUrl={digest.image || '/og-image.png'}
         authorName="DevOps Daily"
         url={`/news/${digest.slug}`}

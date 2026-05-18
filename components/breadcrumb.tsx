@@ -5,7 +5,7 @@ import { ChevronRight, Home } from 'lucide-react';
 interface BreadcrumbProps {
   items: {
     label: string;
-    href: string;
+    href?: string;
     isCurrent?: boolean;
   }[];
   className?: string;
@@ -28,7 +28,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
         {items.map((item, index) => (
           <li key={index} className="flex items-center">
             <ChevronRight className="h-4 w-4 mx-2 text-muted-foreground" />
-            {item.isCurrent ? (
+            {item.isCurrent || !item.href ? (
               <span aria-current="page" className="font-medium">
                 {item.label}
               </span>

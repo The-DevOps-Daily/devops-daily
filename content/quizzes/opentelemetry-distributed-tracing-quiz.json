@@ -1,0 +1,258 @@
+{
+  "id": "opentelemetry-distributed-tracing-quiz",
+  "title": "OpenTelemetry Distributed Tracing Quiz",
+  "description": "Test your knowledge of OpenTelemetry tracing with real scenarios covering instrumentation, context propagation, the Collector, sampling strategies, and reading trace waterfalls in production.",
+  "category": "Observability",
+  "icon": "Activity",
+  "totalPoints": 195,
+  "theme": {
+    "primaryColor": "violet",
+    "gradientFrom": "from-violet-500",
+    "gradientTo": "to-purple-600"
+  },
+  "metadata": {
+    "estimatedTime": "16-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-05-05"
+  },
+  "questions": [
+    {
+      "id": "trace-vs-span-anatomy",
+      "title": "Anatomy of a trace",
+      "description": "A junior engineer opens Jaeger for the first time and asks what the difference is between a trace and a span. What do you tell them?",
+      "situation": "You're onboarding a new SRE. They're staring at a Jaeger waterfall view with nested colored bars and ask what each bar represents.",
+      "codeExample": "# A trace, visualized as a waterfall:\ncheckout-request           [================] 800ms   <- root span (whole trace)\n  +- auth-check            [==]               40ms   <- child span\n  +- load-cart             [====]            120ms   <- child span\n  |    +- db-query         [===]              90ms   <- grandchild span\n  +- charge-card           [==========]      500ms   <- child span",
+      "options": [
+        "A trace is the entire request from start to finish across all services; a span is one unit of work within that trace (a function call, a DB query, an HTTP request) and spans nest into a parent-child tree",
+        "A trace is a single function call; a span is the entire request across services",
+        "A trace is just a log line; a span is a metric counter",
+        "They are synonyms; OpenTelemetry uses both terms for backwards compatibility"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "A trace is the full path of a request through your system. Spans are the building blocks: each one captures a single operation with a start time, duration, attributes, and a parent span ID. The first span in a trace has no parent and is called the root. The tree of spans reconstructs the request's call graph, which is exactly what the Jaeger waterfall is showing.",
+      "hint": "Think of a trace as the whole journey, and spans as the individual stops along the way."
+    },
+    {
+      "id": "broken-trace-context-propagation",
+      "title": "Why are my traces split in two?",
+      "description": "Service A calls Service B over HTTP. Both have OTel auto-instrumentation. Jaeger shows them as two separate single-span traces instead of one connected trace. What's missing?",
+      "situation": "You added OpenTelemetry to a 2-service flow. Each service produces spans, but in Jaeger you see Service A's span as one trace and Service B's span as a totally different trace with a different trace ID. They should be connected.",
+      "codeExample": "# Service A makes a call:\ncurl http://service-b/users/42\n\n# Headers seen at Service B:\n> GET /users/42\n> Host: service-b\n> User-Agent: curl/8.0\n# (no traceparent header)",
+      "options": [
+        "The Jaeger backend is dropping spans; lower the sampling rate to fix it",
+        "Service A is not propagating the W3C traceparent header on outbound calls; without it, Service B has nothing to attach to and starts a fresh trace ID",
+        "You need to install the Jaeger agent on every node",
+        "Span IDs must be passed in the URL query string"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Trace context is propagated via the W3C traceparent header (and tracestate). The format is `traceparent: 00-<trace-id>-<parent-span-id>-<flags>`. If Service A's HTTP client does not inject this header, Service B has nothing to attach to and creates a new root span with a fresh trace ID. Auto-instrumentation usually injects it for you, but if A is using a raw HTTP library that's not patched, you need to either use the wrapped client, configure the propagator, or add middleware that injects the header.",
+      "hint": "Both services have their own data, but the link between them travels in a specific HTTP header."
+    },
+    {
+      "id": "auto-instrumentation-python",
+      "title": "Adding tracing without rewriting every route",
+      "description": "You want OpenTelemetry tracing on an existing Python Flask service without manually wrapping every endpoint, DB call, and HTTP client. What's the fastest path to coverage?",
+      "situation": "Your team owns a 2-year-old Flask + SQLAlchemy + Requests service with about 40 endpoints. Management wants tracing live by next sprint. You don't have time to write `with tracer.start_as_current_span(...)` everywhere.",
+      "codeExample": "pip install opentelemetry-distro opentelemetry-exporter-otlp\nopentelemetry-bootstrap -a install\n\nopentelemetry-instrument \\\n  --traces_exporter otlp \\\n  --service_name flask-shop \\\n  flask run",
+      "options": [
+        "Auto-instrumentation: install the OTel distro plus instrumentation packages for Flask/SQLAlchemy/Requests, then run with `opentelemetry-instrument`. This patches popular libraries at startup so you get spans without code changes",
+        "You must write a custom span around every function; auto-instrumentation does not exist for Python",
+        "Add `print()` statements and ship them to Loki",
+        "Use OpenTracing instead, since OTel does not support Flask"
+      ],
+      "correctAnswer": 0,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Auto-instrumentation is the fastest way to get coverage on an existing app. The `opentelemetry-instrument` wrapper loads agents that monkey-patch known libraries (Flask, Django, SQLAlchemy, requests, redis, kafka, and many more) and emit spans automatically. You add manual spans later for business-specific operations like `process_order` or `apply_discount`. OpenTracing is the predecessor of OTel and is deprecated. Print statements are not tracing.",
+      "hint": "There's a CLI tool that monkey-patches popular libraries at startup so you don't have to write any tracing code yourself."
+    },
+    {
+      "id": "collector-pipeline-anatomy",
+      "title": "Receivers, processors, exporters",
+      "description": "A teammate sends you this OTel Collector config and asks what each section does. What's the correct breakdown?",
+      "situation": "You're reviewing a PR that adds an OpenTelemetry Collector deployment. Your teammate is new to OTel, pasted a starter config from the docs, and isn't sure why it has three plugin sections plus a pipeline.",
+      "codeExample": "receivers:\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:4318\nprocessors:\n  batch:\n    timeout: 5s\n  memory_limiter:\n    check_interval: 1s\n    limit_mib: 512\nexporters:\n  otlp/jaeger:\n    endpoint: jaeger:4317\n    tls:\n      insecure: true\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, batch]\n      exporters: [otlp/jaeger]",
+      "options": [
+        "Receivers ingest telemetry from clients (here OTLP over gRPC and HTTP), processors transform/batch/filter spans before export, exporters send the data to a backend (Jaeger via OTLP). The pipeline wires them together for the traces signal",
+        "Receivers, processors, and exporters are all aliases for the same plugin; only one is enforced",
+        "The pipeline runs each section in parallel rather than in order",
+        "This config is invalid because OTLP requires both HTTP and gRPC enabled simultaneously"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The Collector has a clear three-stage architecture: receivers accept telemetry (OTLP, Jaeger, Zipkin, Prometheus), processors transform it (batching, sampling, attribute editing, memory limits), and exporters push it to a backend. The `service.pipelines` block is what actually wires these together per signal (traces, metrics, logs). Order in the processors list matters: `memory_limiter` should be first to drop incoming data when the Collector is under pressure, `batch` should be last to maximize export efficiency.",
+      "hint": "The Collector is built around three plugin types that form a pipeline: in, transform, out."
+    },
+    {
+      "id": "marking-span-as-error",
+      "title": "Marking a span as failed",
+      "description": "Your service caught an exception inside a span and recovered after a retry. The trace still shows the span as green/successful in Jaeger. How do you make the failure visible?",
+      "situation": "A retry block catches a transient timeout from the catalog API, retries, and succeeds. The trace looks healthy, but you want the failed first attempt to be visible in the waterfall as a red span so you can spot retry pressure during incidents.",
+      "codeExample": "from opentelemetry import trace\nfrom opentelemetry.trace import Status, StatusCode\n\ntracer = trace.get_tracer(__name__)\n\nwith tracer.start_as_current_span(\"call-catalog\") as span:\n    try:\n        response = call_catalog_api(item_id)\n    except CatalogTimeout as e:\n        # span is shown as OK in Jaeger... how do you mark it ERROR?\n        raise",
+      "options": [
+        "Add a span attribute `error: true`; OTel reads any attribute called `error` and marks the span red",
+        "Throw a Python exception with the magic word \"OTEL_ERROR\" in the message",
+        "Span status cannot be set in Python; only the Go SDK supports it",
+        "Set the span status with `span.set_status(Status(StatusCode.ERROR))` and call `span.record_exception(e)` to attach the exception as a span event with stack trace"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Span status is set explicitly with `set_status(StatusCode.ERROR)`. This is what backends use to render the span as failed. `record_exception(e)` adds a span event that captures the exception type, message, and stack trace, giving you debugging info inline with the trace. The `error: true` attribute convention is from older tracing tools and is not standard in OTel; Jaeger respects the OTel status code instead. Always set status AND record the exception, they serve different purposes.",
+      "hint": "The OTel API has explicit methods both for marking the span's status and for attaching exception info as an event."
+    },
+    {
+      "id": "head-based-probabilistic-sampling",
+      "title": "Tracing every request is too expensive",
+      "description": "Your service handles 50,000 requests per second. Storing every trace in Tempo is blowing the budget. What sampling approach should you start with?",
+      "situation": "Traffic jumped from 1k rps to 50k rps after a launch. Your storage cost went up 30x. You still want statistical visibility for healthy traffic but don't need every single trace. What's the first knob you turn?",
+      "codeExample": "# Current SDK config: ALL traces are recorded\nfrom opentelemetry.sdk.trace import TracerProvider\nfrom opentelemetry.sdk.trace.sampling import ALWAYS_ON, TraceIdRatioBased\n\nprovider = TracerProvider(sampler=ALWAYS_ON)  # 100%\n# Goal: keep ~1% with consistent decisions across services",
+      "options": [
+        "Disable tracing in production; only run it in staging",
+        "Sample randomly at each service independently, so each service decides per span",
+        "Use head-based probabilistic sampling at the SDK with `TraceIdRatioBased(0.01)` to send 1% of traces; the trace ID hash makes the decision deterministic so all spans of a sampled trace are kept together",
+        "Set the OTel Collector to drop 99% of incoming spans randomly"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Head-based sampling decides at trace start whether to record or drop, then propagates the decision downstream via the traceparent sampled flag. `TraceIdRatioBased` uses the trace ID hash so the decision is deterministic: every service sees the same flag and either all keep or all drop the trace. Sampling per service independently produces broken traces (some spans missing, others kept). Random Collector-side dropping is even worse because it's not consistent per trace. For smarter filtering (keep all errors, sample healthy traffic), graduate to tail-based sampling at the Collector once head-based isn't enough.",
+      "hint": "You want a percentage of traces, but the decision must be consistent across all services in a single trace, otherwise traces fragment."
+    },
+    {
+      "id": "reading-trace-waterfall",
+      "title": "Finding the bottleneck in a 5-second checkout",
+      "description": "A user reports 5-second checkout latency. You open the trace in Jaeger. Which span tells you where the time actually went?",
+      "situation": "The trace below is for the slow checkout. There are 8 services involved. You need to identify which one to escalate before paging the wrong team.",
+      "codeExample": "checkout-api      [================================================] 5020ms\n  +- auth-service [=]                                                  30ms\n  +- cart-service [==]                                                110ms\n  +- pricing-svc  [==]                                                 95ms\n  +- payment-svc  [============================================]    4700ms\n  |    +- stripe  [==]                                                180ms\n  |    +- db-write[============================================]    4500ms\n  +- email-svc    [=]                                                  25ms",
+      "options": [
+        "auth-service is the bottleneck because authentication should be fastest",
+        "The total trace duration is just the sum of all child spans, so divide by 8 to get the average",
+        "payment-svc owns the trace; inside payment, db-write is the actual slow span at 4500ms. Investigate database locks, slow queries, or connection pool exhaustion",
+        "Without metrics there is no way to tell which span is slow from a trace"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Reading a waterfall is about following the long bars. payment-svc takes 4700ms of the parent's 5020ms, so the next question is 'what is payment doing?' Drilling in, db-write takes 4500ms of those 4700ms. That's where you focus. Common causes are lock contention, a missing index, a full table scan, or a blocked connection pool. Spans run in parallel when shown side-by-side and serially when stacked; a parent's duration is not the sum of its children, it's the wall clock time it spent. This is why traces beat logs for diagnosing distributed latency.",
+      "hint": "A waterfall is read top-down. Find the span that takes most of the parent's time, then drill into its children."
+    },
+    {
+      "id": "attributes-events-links",
+      "title": "Attribute, event, or link?",
+      "description": "You're capturing extra context on a span. When should something be a span attribute vs a span event vs a span link?",
+      "situation": "You have a span for processing an incoming order. You want to attach: the order ID (single value), the moment payment was authorized (a point in time within the span), and a reference to the upstream batch job that produced this message.",
+      "codeExample": "with tracer.start_as_current_span(\"process-order\") as span:\n    span.set_attribute(\"order.id\", order_id)               # ?\n    span.add_event(\"payment.authorized\",                    # ?\n                   attributes={\"amount\": amount})\n    # Linking to the batch trace that produced this message\n    span.add_link(extracted_batch_context)                  # ?",
+      "options": [
+        "They are all the same thing; pick whichever name you like",
+        "Attributes are key/value metadata on the whole span (order.id), events are timestamped points within the span's lifetime (payment authorized at time T), links connect a span to other related spans in a different trace (the batch job that produced this message)",
+        "Events replace attributes in OTLP 2.0",
+        "Links are only used for debugging and have no effect on visualization"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Each has a distinct semantic purpose. Attributes describe properties that hold for the entire span (order ID, HTTP status code, user role). Events are micro-logs within a span carrying their own timestamp and attributes (payment authorized, cache miss, retry triggered). Links connect a span to one or more spans in different traces, used for fan-in patterns like batch jobs, message queues, or async workflows where a single operation has multiple causal parents. Backends visualize them differently: attributes appear in the span detail panel, events as markers on the span timeline, links as cross-trace navigation.",
+      "hint": "One is 'what is true about this span?', another is 'what happened at moment X during the span?', and the third is 'this span is causally related to a span in another trace.'"
+    },
+    {
+      "id": "resource-attributes-vs-span-attributes",
+      "title": "service.name vs per-span attribute",
+      "description": "Where should you set fields like `service.name`, `service.version`, and `deployment.environment`? On every span, or somewhere else?",
+      "situation": "You're setting up the OTel SDK in a new Go service and you see two ways to attach service identity: as resource attributes on the TracerProvider, or by calling `span.SetAttributes` in every span. Which is right?",
+      "codeExample": "res, _ := resource.New(ctx,\n    resource.WithAttributes(\n        semconv.ServiceNameKey.String(\"checkout-api\"),\n        semconv.ServiceVersionKey.String(\"1.4.2\"),\n        semconv.DeploymentEnvironmentKey.String(\"production\"),\n    ),\n)\nprovider := sdktrace.NewTracerProvider(\n    sdktrace.WithResource(res),\n    sdktrace.WithBatcher(exporter),\n)",
+      "options": [
+        "Set them on each span individually so different spans can have different service names",
+        "Hardcode them as environment variables that the trace UI reads directly",
+        "They go in the OTel Collector exporter config, not in the SDK",
+        "Set them as resource attributes on the TracerProvider; resources describe the entity producing the telemetry (service, host, container) and are attached to every span automatically without per-span overhead"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Resource attributes describe the entity emitting telemetry: the service, the host, the container, the cloud region. They're set once on the SDK and attached to every span/metric/log automatically. This avoids repeating identity fields on every span, lets backends filter by service correctly, and is what tools like Jaeger and Tempo use to populate the service list. Use semantic conventions (`service.name`, `service.version`, `deployment.environment.name`) so your data integrates cleanly with dashboards. Per-span attributes are for things that vary per operation, not for service identity.",
+      "hint": "There's a separate concept for 'what is producing this telemetry' vs 'what happened in this span.' Service identity belongs to the producer."
+    },
+    {
+      "id": "otlp-vs-jaeger-zipkin",
+      "title": "OTLP vs Jaeger vs Zipkin format",
+      "description": "You're choosing the wire protocol from your SDK. OTLP, Jaeger Thrift, Zipkin JSON, or all three? What should the default be in 2026?",
+      "situation": "A new Java service needs to export traces. Your backend is Tempo today, but you may switch to Jaeger or Honeycomb later. The SDK supports multiple exporters. What's the right default?",
+      "codeExample": "# Possible exporter choices in the OTel SDK\nexporters:\n  - otlp        # OTLP over gRPC or HTTP (native to OTel)\n  - jaeger      # Jaeger Thrift over UDP/HTTP (deprecated in OTel SDKs)\n  - zipkin      # Zipkin JSON over HTTP",
+      "options": [
+        "Always use Jaeger Thrift; it's the original tracing format",
+        "OTLP is the native OpenTelemetry protocol and is supported by all major backends (Tempo, Jaeger, Honeycomb, Datadog). Export OTLP from your SDK and let the OTel Collector translate to other formats if needed",
+        "Export in all three at once for redundancy",
+        "Pick the format that matches your backend exactly; OTLP is just for testing"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "OTLP (OpenTelemetry Protocol) is the native format and the long-term direction. The Jaeger and Zipkin exporters in OTel SDKs are being deprecated in favor of OTLP. The right pattern is: SDK exports OTLP -> OTel Collector receives OTLP -> Collector exports to whatever backend you actually use (Jaeger, Tempo, Datadog, Honeycomb). This decouples your applications from the backend choice. Modern backends accept OTLP directly, including Jaeger 1.50+ and all Tempo versions. Exporting multiple formats wastes bandwidth and adds complexity for no benefit.",
+      "hint": "There's one protocol that the OTel project considers native. Use that and translate downstream if needed."
+    },
+    {
+      "id": "tail-based-sampling-errors",
+      "title": "Keep all error traces, sample everything else",
+      "description": "You want to keep 100% of traces that contain an error and only 1% of healthy traces. Where do you make that decision and why?",
+      "situation": "Your SLO budget is tight. You need every error trace for postmortems, but storing every successful trace is too expensive. Head-based sampling can't help because the trace start doesn't yet know whether it'll error. What's the right architecture?",
+      "codeExample": "# OTel Collector config\nprocessors:\n  tail_sampling:\n    decision_wait: 30s\n    num_traces: 100000\n    policies:\n      - name: errors-policy\n        type: status_code\n        status_code: { status_codes: [ERROR] }\n      - name: latency-policy\n        type: latency\n        latency: { threshold_ms: 1000 }\n      - name: probabilistic-policy\n        type: probabilistic\n        probabilistic: { sampling_percentage: 1 }",
+      "options": [
+        "This is impossible; you must pick one rate at the SDK and live with it",
+        "Use Jaeger's UI to filter on errors; it transparently re-samples in the backend",
+        "Set the SDK sampler to ALWAYS_ON and run a cron that deletes successful traces from storage",
+        "Use tail-based sampling in the OTel Collector: buffer all spans of a trace for `decision_wait`, then evaluate policies (keep errors, keep slow traces, keep 1% of normal traffic). The Collector decides after seeing the whole trace, which head-based sampling cannot do"
+      ],
+      "correctAnswer": 3,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Tail-based sampling is the right tool when the keep/drop decision depends on properties revealed only after the trace ends (status, total latency, presence of a specific span). The Collector buffers all spans for a trace ID for `decision_wait` seconds, then runs policies in order. Common gotchas: you must put a load-balancing exporter in front of multiple Collector instances so all spans of a given trace land on the same instance; the buffer eats memory proportional to traffic volume; and `decision_wait` must be longer than your slowest realistic trace or late spans get cut off. SDK-side head sampling cannot do this because at trace start no one knows whether it will error.",
+      "hint": "The decision needs to wait until the whole trace is collected. That requires buffering, which the SDK can't do but the Collector can."
+    },
+    {
+      "id": "high-cardinality-attribute-cost",
+      "title": "Why is my Tempo bill 10x higher than expected?",
+      "description": "After adding tracing to a high-traffic service, your Tempo storage cost exploded. You investigate and find this attribute pattern on every span. What's wrong?",
+      "situation": "You're triaging a runaway Tempo bill. The service emits 5,000 spans per second and storage is full. A teammate added several attributes 'to help with debugging.' Now the bill is 10x what was forecast.",
+      "codeExample": "with tracer.start_as_current_span(\"get-user\") as span:\n    span.set_attribute(\"user.id\", user_id)\n    span.set_attribute(\"session.id\", session_id)\n    span.set_attribute(\"request.body\", request.get_data().decode())\n    span.set_attribute(\"response.body\", json.dumps(response))\n    span.set_attribute(\"trace.timestamp\", time.time_ns())",
+      "options": [
+        "This is fine; tracing backends compress everything efficiently",
+        "The attribute keys are too short; backends penalize short keys",
+        "High-cardinality and high-volume attributes (full request/response bodies, free-form session IDs, per-call timestamps) blow up storage and index size. Bodies should be elided or hashed; capture them only on errors via span events; never store secrets",
+        "Tempo cannot store attributes at all; remove every set_attribute call"
+      ],
+      "correctAnswer": 2,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Span attributes are stored and often indexed. Putting full request/response bodies on every span makes each span 10-100x larger and indexes balloon. Per-call unique values like session IDs explode cardinality, which makes attribute-based search unusably slow. A `timestamp` attribute is also redundant because the span already carries start and end timestamps. Better patterns: redact bodies, hash them, or attach them as a span event only when something interesting happens (an error, a slow path), and respect semantic conventions (`http.request.body.size` instead of the body itself). And never put PII or secrets in spans, since they leak to your tracing vendor and into long-term storage.",
+      "hint": "Some attributes are unbounded in size or unique per request. Both are bad for storage cost and search performance."
+    },
+    {
+      "id": "metric-to-trace-exemplars",
+      "title": "Jumping from a latency spike to the actual trace",
+      "description": "A Grafana panel shows a p99 latency spike. You want to click a single point on the histogram and jump straight to the trace that caused it. What feature makes this work?",
+      "situation": "You're standing up a new observability stack with Mimir for metrics, Tempo for traces, and Loki for logs. Your engineers want to go from 'the chart shows a slow request' to 'here is the trace' in one click. What do you wire up?",
+      "codeExample": "from prometheus_client import Histogram\nfrom opentelemetry import trace\n\nhttp_duration = Histogram(\n    \"http_request_duration_seconds\",\n    \"HTTP request duration\",\n    [\"method\", \"route\"],\n)\n\nwith trace.get_current_span() as span:\n    start = time.time()\n    try:\n        process_request()\n    finally:\n        duration = time.time() - start\n        http_duration.labels(method, route).observe(\n            duration,\n            exemplar={\n                \"trace_id\": format(span.get_span_context().trace_id, \"032x\")\n            },\n        )",
+      "options": [
+        "Configure Grafana to fuzzy-search logs by approximate timestamp every time the user clicks a point",
+        "Manually paste trace IDs into a spreadsheet keyed by timestamp",
+        "Attach exemplars to histogram metrics: each observation carries the trace ID it came from. Grafana renders exemplars as dots on histogram panels and links them to Tempo via the configured trace data source. This is the standard Prometheus + OTel pattern for metric-to-trace correlation",
+        "Drop tracing and only use metrics; correlation across signals isn't possible"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Exemplars are the bridge between metrics and traces. When you record a histogram observation, you attach the current trace ID as an exemplar. Prometheus stores the exemplar alongside the bucket count, and Grafana plots them as small diamonds on the panel. Clicking jumps to the trace in your trace data source (Tempo, Jaeger). For logs, the equivalent is including the trace ID as a log field and using the Tempo data source's 'trace to logs' feature. This three-way correlation (metrics, trace, logs) is what makes modern observability fast: you go from 'the chart looks weird' to 'here is the actual request that did it' in seconds, instead of guessing with timestamps.",
+      "hint": "There's a dedicated mechanism in Prometheus and OTel for attaching a trace ID to a metric sample. Grafana visualizes them as clickable dots."
+    }
+  ]
+}

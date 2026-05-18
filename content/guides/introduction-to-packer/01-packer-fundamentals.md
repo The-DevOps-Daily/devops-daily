@@ -1,6 +1,6 @@
 ---
 title: Understanding Packer Fundamentals
-description: Learn the core concepts behind Packer and how it automates machine image creation
+description: 'How Packer builds machine images. Covers builders, provisioners, post-processors, the workflow Packer automates, and why templates produce repeatable images.'
 order: 1
 ---
 

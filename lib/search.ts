@@ -1,16 +1,7 @@
 import Fuse from 'fuse.js';
-
-export interface SearchItem {
-  id: string;
-  type: 'post' | 'guide' | 'exercise' | 'quiz' | 'game' | 'news' | 'page' | 'checklist' | 'interview-question';
-  title: string;
-  description: string;
-  url: string;
-  category?: string;
-  tags?: string[];
-  icon?: string;
-  date?: string;
-}
+import type { SearchItem } from './search-types';
+export type { SearchItem, SearchItemType } from './search-types';
+export { TYPE_LABELS, TYPE_COLORS } from './search-types';
 
 export interface SearchResult extends SearchItem {
   score?: number;
@@ -192,30 +183,6 @@ export function getSuggestions(query: string, items: SearchItem[]): string[] {
 
   return [...suggestions].slice(0, 5);
 }
-
-export const TYPE_LABELS: Record<string, string> = {
-  post: 'Posts',
-  guide: 'Guides',
-  exercise: 'Exercises',
-  quiz: 'Quizzes',
-  game: 'Games',
-  news: 'News',
-  page: 'Pages',
-  checklist: 'Checklists',
-  'interview-question': 'Interview Questions',
-};
-
-export const TYPE_COLORS: Record<string, string> = {
-  post: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
-  guide: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
-  exercise: 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20',
-  quiz: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20',
-  game: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20',
-  news: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/20',
-  page: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
-  checklist: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20',
-  'interview-question': 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
-};
 
 // Popular searches for "no results" state
 export const POPULAR_SEARCHES = [

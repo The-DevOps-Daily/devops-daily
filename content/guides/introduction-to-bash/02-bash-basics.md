@@ -1,6 +1,6 @@
 ---
 title: 'Bash Basics'
-description: 'Learn the fundamental commands and concepts that form the foundation of Bash scripting'
+description: 'Bash command-line basics: prompt anatomy, command structure, arguments and options, environment variables, filesystem moves, and common shortcuts.'
 order: 2
 ---
 

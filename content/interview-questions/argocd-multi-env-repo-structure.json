@@ -1,0 +1,48 @@
+{
+  "id": "argocd-multi-env-repo-structure",
+  "slug": "argocd-multi-env-repo-structure",
+  "title": "Structuring a Git Repo for Argo CD Multi-Environment Deployments",
+  "question": "How would you structure a Git repo for Argo CD when you have dev, staging, and prod environments?",
+  "answer": "Two common patterns exist: environment-per-directory and environment-per-branch. Pick directories. Branches per environment create merge pain, cherry-picking, and drift. Use one branch (usually main) with separate directories for each environment.\n\nA layout that works for most teams:\n\napps/\n  myapp/\n    base/            # shared manifests (Deployment, Service, ConfigMap)\n      kustomization.yaml\n    overlays/\n      dev/           # dev patches: replicas, image tag, hostname\n      staging/\n      prod/\n\nEach environment gets its own Argo CD Application pointing at its overlay path. Base holds what is the same everywhere. Overlays patch only what differs (replicas, resource requests, image tags, ingress hosts, ConfigMap values).\n\nIf you grow past 20 to 30 environments or clusters, switch from hand-written Application CRs to an ApplicationSet with a Git directory generator so you do not write the same boilerplate over and over.",
+  "explanation": "This is one of the first questions in any Argo CD interview. It separates candidates who have read a tutorial from those who have run this in production. Listen for: a clear preference for directories over branches with a real reason (merge complexity, drift, audit clarity), separation of base from environment-specific patches, and awareness that the layout has to scale past the first three environments. If they immediately reach for branches-per-env, dig in and see if they have actually tried it.",
+  "category": "GitOps",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "gitops",
+    "argocd",
+    "deployments",
+    "repository-structure",
+    "kubernetes"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Repo layout for a single app across three environments",
+      "code": "apps/\n  web/\n    base/\n      deployment.yaml\n      service.yaml\n      configmap.yaml\n      kustomization.yaml\n    overlays/\n      dev/\n        kustomization.yaml\n        replicas-patch.yaml\n      staging/\n        kustomization.yaml\n        replicas-patch.yaml\n      prod/\n        kustomization.yaml\n        replicas-patch.yaml\n        hpa.yaml\nargocd/\n  applications/\n    web-dev.yaml\n    web-staging.yaml\n    web-prod.yaml"
+    },
+    {
+      "language": "yaml",
+      "label": "Argo CD Application pointing at the prod overlay",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: web-prod\n  namespace: argocd\nspec:\n  project: production\n  source:\n    repoURL: https://github.com/org/manifests\n    targetRevision: main\n    path: apps/web/overlays/prod\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: web\n  syncPolicy:\n    syncOptions:\n      - CreateNamespace=true"
+    }
+  ],
+  "followUpQuestions": [
+    "Why not use a branch per environment? People still recommend that on blog posts.",
+    "How do you handle a config value that has to differ in every single environment?",
+    "What changes when dev and prod live in different clusters?",
+    "When would you switch from one Application per environment to an ApplicationSet?"
+  ],
+  "commonMistakes": [
+    "Using a branch per environment and then drowning in cherry-picks and merge conflicts",
+    "Putting environment-specific values in a single Helm values file with conditional blocks for prod, then forgetting which branch sets what",
+    "Pointing all three environments at the same Argo CD Application path so a dev change ships to prod"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "gitops",
+    "kustomize",
+    "helm",
+    "kubernetes"
+  ]
+}

@@ -38,7 +38,7 @@ export const TOOLS: Tool[] = [
     title: 'CIDR Subnet Calculator',
     shortTitle: 'CIDR Calculator',
     description:
-      'Calculate network range, usable IP count, subnet mask, and broadcast address from a CIDR block.',
+      'CIDR subnet calculator: parse a CIDR block to get network range, subnet mask, broadcast address, usable IPs, and check whether an IP belongs to the network.',
     tagline: 'Parse CIDR blocks, compute ranges, split into smaller subnets, and check whether an IP lives inside a network.',
     icon: Network,
     keywords: ['cidr', 'subnet', 'ip', 'vpc', 'networking', 'calculator'],
@@ -72,7 +72,7 @@ export const TOOLS: Tool[] = [
     title: 'JWT Decoder',
     shortTitle: 'JWT Decoder',
     description:
-      'Paste a JWT and see the header, payload, and signature, plus human-readable expiry and issued-at.',
+      'JWT decoder that parses the header, payload, and signature in your browser. Shows human-readable expiry and issued-at, with no token sent to any server.',
     tagline: 'Inspect any JWT in your browser. Nothing is sent to a server.',
     icon: KeyRound,
     keywords: ['jwt', 'json web token', 'decode', 'oauth', 'security'],
@@ -162,7 +162,7 @@ export const TOOLS: Tool[] = [
     title: 'Cron Expression Parser',
     shortTitle: 'Cron Parser',
     description:
-      'Translate cron expressions to human-readable schedules and preview the next run times.',
+      'Cron expression parser that translates schedules into plain English and previews the next 5 run times in your local timezone. Validates 5 and 6-field syntax.',
     tagline: 'Decode cron expressions with the next 5 run times, in your local timezone.',
     icon: Clock,
     keywords: ['cron', 'crontab', 'schedule', 'kubernetes cronjob'],

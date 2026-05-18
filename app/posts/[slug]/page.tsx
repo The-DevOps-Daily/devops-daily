@@ -7,6 +7,8 @@ import { getPostBySlug, getAllPosts, getRelatedPosts } from '@/lib/posts';
 import { notFound, redirect } from 'next/navigation';
 import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
 import { RelatedPosts } from '@/components/related-posts';
+import { RelatedAcrossTypes } from '@/components/related-across-types';
+import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
@@ -19,15 +21,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const posts = await getAllPosts();
-    return posts.map((post) => ({
-      slug: post.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for posts:', error);
-    return [];
-  }
+  const posts = await getAllPosts();
+  return posts.map((post) => ({
+    slug: post.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -108,6 +105,20 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   // Split related posts for main section and sidebar
   const mainRelatedPosts = relatedPosts.slice(0, 3);
   const sidebarRelatedPosts = relatedPosts.slice(3, 6);
+
+  // Cross-content-type matches: shows up to 3 items from quizzes, checklists,
+  // exercises, flashcards, or interview questions on the same topic. The
+  // within-type "Related Posts" section above stays; this is the "also worth
+  // your time" mix that nudges readers between content kinds.
+  const crossTypeRelated = await getRelatedAcrossTypes({
+    current: {
+      type: 'post',
+      id: post.slug,
+      category: post.category?.slug,
+      tags: post.tags || [],
+    },
+    limit: 3,
+  });
 
   // Breadcrumb items for schema
   const breadcrumbItems = [
@@ -206,6 +217,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                   }))}
                   className="mt-12"
                 />
+              )}
+
+              {crossTypeRelated.length > 0 && (
+                <RelatedAcrossTypes items={crossTypeRelated} className="mt-12" />
               )}
             </article>
           </div>

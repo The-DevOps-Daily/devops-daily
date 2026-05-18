@@ -1,6 +1,6 @@
 ---
 title: Variables and Best Practices
-description: Learn how to use variables effectively and structure Packer projects for production
+description: 'Use Packer variables and project structure for production. Covers variable types, defaults, var-files, runtime overrides, directory layout, and image testing.'
 order: 6
 ---
 

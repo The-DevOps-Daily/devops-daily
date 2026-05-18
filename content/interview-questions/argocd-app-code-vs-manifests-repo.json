@@ -1,0 +1,48 @@
+{
+  "id": "argocd-app-code-vs-manifests-repo",
+  "slug": "argocd-app-code-vs-manifests-repo",
+  "title": "Application Code vs Kubernetes Manifests in Separate Repos",
+  "question": "Should your application source code and Kubernetes manifests live in the same repo or in separate repos? What is your take?",
+  "answer": "Default to separate repos. The application code repo holds Go, Python, Node, whatever. A second manifests repo holds the Argo CD Applications, Kustomize overlays, and any cluster config. This is the pattern most production GitOps setups end up using, and there are four good reasons for it.\n\nFirst, blast radius and permissions. Devs commit code freely. Manifests changes for prod usually want code owners, branch protection, and a smaller set of reviewers. Splitting the repos lets you set those rules cleanly.\n\nSecond, noise. Argo CD watches the manifests repo. If manifests share a repo with app code, every README edit shows up as a change Argo CD has to decide what to do with.\n\nThird, image promotion loops. CI builds an image from the code repo and writes the new tag into the manifests repo. If both live in one repo, the bump commit triggers another CI run, which can build, push, and bump again. You end up adding skip-ci tags everywhere to stop the loop.\n\nFourth, manifests are usually shared. A monitoring stack, ingress controller, and three apps all live in one manifests repo. They do not belong with any single app's code.\n\nWhen the monorepo is fine: one team, one app, no compliance separation. Do not over-engineer that case.",
+  "explanation": "This question reveals whether a candidate has shipped GitOps in production or only read the docs. Strong answers cite specific operational problems (CI loops, noisy reconciliation, permission boundaries) rather than vague principles like separation of concerns. Watch out for candidates who insist on one model as universal truth. The right answer is conditional, and the conditions matter.",
+  "category": "GitOps",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "gitops",
+    "argocd",
+    "deployments",
+    "repository-structure",
+    "cicd"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "CI step that bumps the image tag in the manifests repo",
+      "code": "# .github/workflows/build.yml\nname: build-and-promote\non:\n  push:\n    branches: [main]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Build and push image\n        run: |\n          IMAGE_TAG=$(git rev-parse --short HEAD)\n          docker build -t ghcr.io/org/web:${IMAGE_TAG} .\n          docker push ghcr.io/org/web:${IMAGE_TAG}\n          echo \"IMAGE_TAG=${IMAGE_TAG}\" >> $GITHUB_ENV\n\n      - name: Bump image in manifests repo\n        env:\n          GH_TOKEN: ${{ secrets.MANIFESTS_REPO_TOKEN }}\n        run: |\n          git clone https://x-access-token:${GH_TOKEN}@github.com/org/manifests.git\n          cd manifests/apps/web/overlays/dev\n          kustomize edit set image web=ghcr.io/org/web:${IMAGE_TAG}\n          git config user.email bot@example.com\n          git config user.name ci-bot\n          git add kustomization.yaml\n          git commit -m \"web: bump dev to ${IMAGE_TAG}\"\n          git push"
+    },
+    {
+      "language": "bash",
+      "label": "Two-repo layout",
+      "code": "# Repo 1: org/web (application code)\nsrc/\nDockerfile\nMakefile\n.github/workflows/build.yml\n\n# Repo 2: org/manifests (Kubernetes manifests, watched by Argo CD)\nargocd/\n  applications/\n    web-dev.yaml\n    web-prod.yaml\napps/\n  web/\n    base/\n    overlays/\n      dev/\n      prod/\nplatform/\n  ingress-nginx/\n  cert-manager/\n  prometheus/"
+    }
+  ],
+  "followUpQuestions": [
+    "How does the CI pipeline write to the manifests repo without ending up in an infinite loop?",
+    "What does Argo CD Image Updater do, and would you use it for prod?",
+    "How do you keep manifest changes in sync with app changes that need both to deploy together?",
+    "What is the right scope for one manifests repo? One per team? One per cluster? One global?"
+  ],
+  "commonMistakes": [
+    "Giving a single deploy key write access to the whole manifests repo, so any compromised CI job can push to prod",
+    "Mixing platform infrastructure manifests and per-app manifests in one folder with no clear ownership",
+    "Insisting on monorepo or polyrepo as a religion instead of matching the choice to team size and compliance needs"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "gitops",
+    "cicd",
+    "repository-structure",
+    "kubernetes"
+  ]
+}

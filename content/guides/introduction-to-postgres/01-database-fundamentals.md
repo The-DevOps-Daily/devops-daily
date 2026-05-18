@@ -1,6 +1,6 @@
 ---
 title: Understanding Database Fundamentals
-description: Learn what databases are, why relational databases matter, and how they organize data
+description: 'Database fundamentals for developers: what relational databases solve, how tables, rows, and columns map to your data, and why integrity and ACID matter.'
 order: 1
 ---
 

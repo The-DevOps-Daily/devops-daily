@@ -1,6 +1,6 @@
 ---
 title: 'Networking in Linux'
-description: 'Learn how to configure, monitor, and troubleshoot networks on Linux systems.'
+description: 'Configure and troubleshoot Linux networking with ip, ss, ping, traceroute, and dig. Covers interfaces, routing tables, DNS, and diagnosing connectivity issues.'
 order: 8
 ---
 

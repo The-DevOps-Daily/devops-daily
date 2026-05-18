@@ -4,25 +4,24 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import GenericQuiz from '@/components/games/generic-quiz';
 import { getQuizById, getAllQuizzes, getRelatedQuizzes } from '@/lib/quiz-loader';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { getSocialImagePath } from '@/lib/image-utils';
 import { ReportIssue } from '@/components/report-issue';
 import { ArrowLeft, Twitter, Facebook, Linkedin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { RelatedPosts } from '@/components/related-posts';
+import { RelatedAcrossTypes } from '@/components/related-across-types';
+import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
+import { CarbonAds } from '@/components/carbon-ads';
 
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const quizzes = await getAllQuizzes();
-    return quizzes.map((quiz) => ({
-      slug: quiz.id,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for quizzes:', error);
-    return [];
-  }
+  const quizzes = await getAllQuizzes();
+  return quizzes.map((quiz) => ({
+    slug: quiz.id,
+  }));
 }
 
 export async function generateMetadata({
@@ -38,6 +37,7 @@ export async function generateMetadata({
   }
 
   const description = truncateMetaDescription(quizConfig.description);
+  const socialImage = getSocialImagePath(slug, 'quizzes');
 
   return {
     title: { absolute: `${quizConfig.title} - Learn ${quizConfig.category}` },
@@ -52,7 +52,7 @@ export async function generateMetadata({
       url: `/quizzes/${slug}`,
       images: [
         {
-          url: `/images/quizzes/${slug}-og.png`,
+          url: socialImage,
           width: 1200,
           height: 630,
           alt: quizConfig.title,
@@ -63,7 +63,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title: `${quizConfig.title} - DevOps Daily`,
       description,
-      images: [`/images/quizzes/${slug}-og.png`],
+      images: [socialImage],
     },
   };
 }
@@ -77,6 +77,16 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
   }
 
   const relatedQuizzes = await getRelatedQuizzes(slug, quizConfig.category, 3);
+
+  const crossTypeRelated = await getRelatedAcrossTypes({
+    current: {
+      type: 'quiz',
+      id: slug,
+      category: quizConfig.category,
+      tags: (quizConfig.metadata?.tags || []).map((t) => String(t)),
+    },
+    limit: 3,
+  });
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -178,6 +188,11 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
             </Button>
           </div>
 
+          {/* Inline ad slot at the natural break before the cross-link block. */}
+          <div className="max-w-2xl mx-auto mt-12">
+            <CarbonAds />
+          </div>
+
           {/* Related Quizzes */}
           {relatedQuizzes.length > 0 && (
             <div className="max-w-4xl mx-auto mt-12">
@@ -193,6 +208,12 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
                 linkPrefix="/quizzes"
                 className=""
               />
+            </div>
+          )}
+
+          {crossTypeRelated.length > 0 && (
+            <div className="max-w-4xl mx-auto mt-12">
+              <RelatedAcrossTypes items={crossTypeRelated} />
             </div>
           )}
 

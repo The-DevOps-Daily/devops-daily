@@ -1,6 +1,6 @@
 ---
 title: 'The Linux Command Line Interface'
-description: 'Learn essential terminal commands and gain confidence working with the Linux command line.'
+description: 'Essential Linux terminal commands for getting comfortable on the command line. Covers ls, cd, cp, mv, grep, pipes, redirection, and reading man pages.'
 order: 3
 ---
 

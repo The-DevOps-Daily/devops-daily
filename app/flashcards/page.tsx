@@ -21,7 +21,7 @@ import * as Icons from 'lucide-react'
 export const metadata: Metadata = {
   title: 'DevOps Flashcards',
   description:
-    'Interactive flashcards to learn and retain DevOps concepts, tools, and best practices.',
+    'Interactive DevOps flashcards covering Kubernetes, Docker, Terraform, Git, Linux, and CI/CD. Useful for interview prep, certification study, and daily practice.',
   alternates: {
     canonical: '/flashcards',
   },

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     url: 'https://devops-daily.com/exercises',
     images: [
       {
-        url: '/images/exercises/devops-exercises-labs.png',
+        url: '/images/exercises-og-image.png',
         width: 1200,
         height: 630,
         alt: 'DevOps Exercises & Labs - Hands-On Learning',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     images: [
       {
-        url: '/images/exercises/devops-exercises-labs.png',
+        url: '/images/exercises-og-image.png',
         width: 1200,
         height: 630,
         alt: 'DevOps Exercises & Labs - Hands-On Learning',

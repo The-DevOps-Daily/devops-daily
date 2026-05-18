@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { Resvg } from '@resvg/resvg-js';
+import { convertSvgToPng, escapeXml, splitTitle, titleFontSize } from './og-utils';
 
 interface FlashcardOGOptions {
   title: string;
@@ -10,46 +10,6 @@ interface FlashcardOGOptions {
   slug: string;
   cardCount: number;
   theme?: 'default' | 'security' | 'devops' | 'cloud' | 'sre';
-}
-
-/**
- * Escape XML special characters
- */
-function escapeXml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-/**
- * Split long title into multiple lines
- */
-function splitTitle(title: string, maxCharsPerLine = 30): string[] {
-  const words = title.split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    
-    if (testLine.length <= maxCharsPerLine) {
-      currentLine = testLine;
-    } else {
-      if (currentLine) {
-        lines.push(currentLine);
-      }
-      currentLine = word;
-    }
-  }
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
-  return lines.slice(0, 3); // Max 3 lines
 }
 
 /**
@@ -63,7 +23,7 @@ function generateTitleLines(title: string): string {
   return lines
     .map((line, index) => {
       const y = baseY + index * lineHeight;
-      const fontSize = lines.length === 1 ? 56 : lines.length === 2 ? 52 : 48;
+      const fontSize = titleFontSize(lines.length);
       return `<text x="80" y="${y}" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`;
     })
     .join('\n');
@@ -148,11 +108,7 @@ async function generateFlashcardOG(options: FlashcardOGOptions): Promise<void> {
 
   // Generate PNG from SVG via resvg (portable; no shell-out)
   try {
-    const svgBuffer = await fs.readFile(outputSvgPath);
-    const pngBuffer = new Resvg(svgBuffer, { fitTo: { mode: 'width', value: 1200 } })
-      .render()
-      .asPng();
-    await fs.writeFile(outputPngPath, pngBuffer);
+    await convertSvgToPng(outputSvgPath, outputPngPath);
     console.log(`✅ Created: ${outputPngPath}`);
   } catch (error) {
     console.error(`❌ Failed to generate PNG: ${error}`);

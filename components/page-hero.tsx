@@ -1,6 +1,5 @@
-import Link from 'next/link';
-import { ChevronRight, Home } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { Breadcrumb } from '@/components/breadcrumb';
 
 interface BreadcrumbItem {
   label: string;
@@ -93,27 +92,14 @@ export function PageHero({
       <div className="relative container mx-auto px-4 py-10 sm:py-14">
         {/* Breadcrumbs */}
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav aria-label="Breadcrumb" className="mb-6">
-            <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <li>
-                <Link href="/" className="hover:text-foreground transition-colors inline-flex items-center gap-1">
-                  <Home className="w-3.5 h-3.5" />
-                </Link>
-              </li>
-              {breadcrumbs.map((item, i) => (
-                <li key={i} className="flex items-center gap-1.5">
-                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />
-                  {item.href ? (
-                    <Link href={item.href} className="hover:text-foreground transition-colors">
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <span className="text-foreground font-medium truncate max-w-[200px] sm:max-w-none">{item.label}</span>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </nav>
+          <Breadcrumb
+            className="mb-6"
+            items={breadcrumbs.map((item) => ({
+              label: item.label,
+              href: item.href,
+              isCurrent: !item.href,
+            }))}
+          />
         )}
 
         <div className="max-w-3xl">

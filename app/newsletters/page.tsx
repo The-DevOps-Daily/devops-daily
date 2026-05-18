@@ -73,11 +73,13 @@ export default async function NewslettersPage() {
                       {newsletter.title}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {new Date(newsletter.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
+                      <time dateTime={newsletter.date}>
+                        {new Date(newsletter.date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </time>
                     </p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />

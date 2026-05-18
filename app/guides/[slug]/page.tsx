@@ -18,15 +18,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const guides = await getAllGuides();
-    return guides.map((guide) => ({
-      slug: guide.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for guides:', error);
-    return [];
-  }
+  const guides = await getAllGuides();
+  return guides.map((guide) => ({
+    slug: guide.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -150,7 +145,14 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
               {/* Add structured data for guide */}
               <div className="pt-8 mt-8 border-t border-border" id="article-end">
                 <div className="flex items-center text-sm text-muted-foreground">
-                  <span>Last updated: {guide.updatedAt || 'Recently'}</span>
+                  {guide.updatedAt ? (
+                    <span>
+                      Last updated:{' '}
+                      <time dateTime={guide.updatedAt}>{guide.updatedAt}</time>
+                    </span>
+                  ) : (
+                    <span>Last updated: Recently</span>
+                  )}
                 </div>
 
                 {guide.tags && guide.tags.length > 0 && (

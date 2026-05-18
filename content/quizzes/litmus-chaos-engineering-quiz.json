@@ -1,0 +1,258 @@
+{
+  "id": "litmus-chaos-engineering-quiz",
+  "title": "Running Your First Chaos Experiment with Litmus Quiz",
+  "description": "Test your knowledge of Litmus Chaos with real scenarios covering installation, ChaosEngines, probes, blast radius controls, workflows, and debugging stuck experiments.",
+  "category": "Chaos Engineering",
+  "icon": "Zap",
+  "totalPoints": 195,
+  "theme": {
+    "primaryColor": "red",
+    "gradientFrom": "from-red-500",
+    "gradientTo": "to-orange-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-25 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-05-12"
+  },
+  "questions": [
+    {
+      "id": "why-chaos-engineering",
+      "title": "Why deliberately break things?",
+      "description": "Your manager pushes back on a chaos engineering proposal: 'Why would we intentionally cause failures in a system we're trying to keep stable?' What's the right framing?",
+      "situation": "You pitched a Litmus rollout to your team. Leadership is nervous about the word 'chaos' and wants a one-sentence reason this is not just reckless.",
+      "codeExample": "# A typical first experiment:\n#   Hypothesis: 'If one checkout pod dies, the service still serves traffic'\n#   Method:     pod-delete on 1 replica out of 3\n#   Probe:      HTTP 200 on /healthz throughout the run\n#   Result:     pass = hypothesis holds, fail = we learned something",
+      "options": [
+        "It replaces integration tests so QA can be shut down",
+        "It generates synthetic load for SLO dashboards",
+        "You inject controlled, scoped faults to test specific hypotheses about how the system behaves, finding weaknesses before real outages do",
+        "It is a compliance requirement for SOC 2 and has no other purpose"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Chaos engineering is hypothesis-driven. You state 'I believe the system will behave like X under failure Y', then inject Y in a small, controlled blast radius and check whether X actually holds. If the hypothesis fails, you've found a bug or a gap in your resilience design before a real outage does. It is not a replacement for integration testing, and it is not load generation. Compliance frameworks may reward it, but that is a side effect, not the point.",
+      "hint": "The key word in the proposal is 'controlled'. What are you trying to learn that you cannot learn from passing unit tests?"
+    },
+    {
+      "id": "what-is-chaoscenter",
+      "title": "What ChaosCenter actually is",
+      "description": "You ran the Helm chart from the Litmus docs and now you have a litmus namespace with several Deployments. A teammate asks what ChaosCenter is and where the experiments actually run.",
+      "situation": "Fresh install of Litmus 3.x on a kind cluster. You see Deployments for litmusportal-frontend, litmusportal-server, mongo, and chaos-operator. The teammate wonders if ChaosCenter is the thing that breaks the pods.",
+      "codeExample": "helm repo add litmuschaos https://litmuschaos.github.io/litmus-helm/\nhelm install chaos litmuschaos/litmus \\\n  --namespace=litmus \\\n  --create-namespace\n\nkubectl -n litmus get pods\n# NAME                                  READY   STATUS\n# chaos-litmus-frontend-...             1/1     Running\n# chaos-litmus-server-...               1/1     Running\n# chaos-mongo-0                         1/1     Running",
+      "options": [
+        "ChaosCenter is the web UI and control plane (workflows, projects, RBAC, dashboards). Actual chaos is executed in target clusters by the chaos-operator and per-experiment runner/helper pods",
+        "ChaosCenter is the pod that runs every experiment directly; the frontend is just for browsing logs",
+        "ChaosCenter is a CRD; it has no Deployments or services",
+        "ChaosCenter is the kernel module that injects faults at the node level"
+      ],
+      "correctAnswer": 0,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "ChaosCenter is the management plane: a React frontend, a GraphQL server, and a MongoDB store for users, projects, and workflow history. It does not run faults itself. The chaos-operator (and on workload clusters, the subscriber agent) reconciles ChaosEngine resources and spawns short-lived runner and helper pods that perform the actual fault injection. Separating control plane from execution plane is what lets one ChaosCenter target many clusters.",
+      "hint": "Web UIs do not usually kill pods. Something else with cluster permissions does."
+    },
+    {
+      "id": "chaosengine-vs-chaosexperiment",
+      "title": "ChaosEngine vs ChaosExperiment",
+      "description": "Reviewing a PR, you see two new YAMLs: one ChaosExperiment named pod-delete and one ChaosEngine named cart-pod-delete. What is the relationship between them?",
+      "situation": "A new engineer copies snippets from the Litmus Hub. They wrote a ChaosExperiment and a ChaosEngine that both look like they describe pod-delete and they're not sure which one actually runs the fault.",
+      "codeExample": "# ChaosExperiment: defines the fault and its tunables (a template)\napiVersion: litmuschaos.io/v1alpha1\nkind: ChaosExperiment\nmetadata:\n  name: pod-delete\nspec:\n  definition:\n    image: litmuschaos/go-runner:latest\n    args: [\"-c\", \"./experiments -name pod-delete\"]\n    env:\n      - name: TOTAL_CHAOS_DURATION\n        value: \"30\"\n---\n# ChaosEngine: binds the experiment to a target app and triggers a run\napiVersion: litmuschaos.io/v1alpha1\nkind: ChaosEngine\nmetadata:\n  name: cart-pod-delete\nspec:\n  appinfo:\n    appns: shop\n    applabel: \"app=cart\"\n    appkind: deployment\n  chaosServiceAccount: litmus-admin\n  experiments:\n    - name: pod-delete",
+      "options": [
+        "They are duplicates; you only need one of them",
+        "ChaosExperiment is the reusable fault definition (image, args, default env); ChaosEngine references it and applies it to a specific target. You install experiments once and create a ChaosEngine per run",
+        "ChaosEngine runs in the control plane; ChaosExperiment runs in the data plane and they communicate over gRPC",
+        "ChaosExperiment is created automatically from ChaosEngine; you never write one yourself"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Think of ChaosExperiment as a template: it points at a runner image, declares supported env vars, and lives in a namespace alongside its ServiceAccount and Role. A ChaosEngine is the actual run: it picks a target via appinfo, overrides env, attaches probes, and tells the operator 'go execute this experiment now'. You typically install the experiment set once per namespace (often via the chaos-charts) and then create many ChaosEngines over time.",
+      "hint": "One of them is a recipe; the other is an order placed against that recipe."
+    },
+    {
+      "id": "rbac-stuck-experiment",
+      "title": "Stuck in Initialized: missing RBAC",
+      "description": "You applied a ChaosEngine for pod-delete. The status stays at 'Initialized' for 10 minutes and no chaos runs. kubectl describe shows events about forbidden access to pods. What's the fix?",
+      "situation": "You're testing pod-delete in the 'shop' namespace. You set chaosServiceAccount: default in the ChaosEngine because you wanted to get going quickly. The runner pod never spawns and events show 'pods is forbidden: User system:serviceaccount:shop:default cannot list pods'.",
+      "codeExample": "kubectl -n shop describe chaosengine cart-pod-delete\n# Events:\n#   Warning  ChaosResourcesOperationFailed  chaos-operator\n#   Unable to filter target pods:\n#   pods is forbidden: User \"system:serviceaccount:shop:default\"\n#   cannot list resource \"pods\" in API group \"\" in the namespace \"shop\"",
+      "options": [
+        "Restart the chaos-operator pod; the default SA gets pod permissions on restart",
+        "Set hostNetwork: true on the ChaosEngine so it bypasses RBAC",
+        "Run kubectl auth can-i and ignore the failure; pod-delete works without RBAC because it uses the API server's bootstrap account",
+        "Each experiment ships with a ServiceAccount, Role, and RoleBinding. Apply those manifests and point chaosServiceAccount at the experiment's SA (often litmus-admin) instead of default"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Litmus runs experiments with the privileges of the ServiceAccount you name in chaosServiceAccount. The default SA in a namespace has almost no permissions, so the chaos-runner cannot list, delete, or exec into pods. Each experiment in the Litmus Hub ships with the matching RBAC manifest (look for rbac.yaml beside experiment.yaml). Apply that and reference its SA. Granting cluster-admin is overkill; use the per-experiment scoped Role, which gives only the verbs that experiment actually needs.",
+      "hint": "The error message names the user. That user is a ServiceAccount and it does not have the verbs the chaos-runner needs."
+    },
+    {
+      "id": "annotation-check-blast-radius",
+      "title": "annotationCheck and silent no-ops",
+      "description": "You set annotationCheck: 'true' in your ChaosEngine to limit blast radius to opted-in workloads. The experiment finishes immediately with status 'Skipped' and no pods were touched. Why?",
+      "situation": "You enabled annotationCheck because you want only Deployments that explicitly mark themselves as chaos-ready to be targeted. The Deployment in question does not have the litmuschaos.io/chaos annotation. The run completes in seconds with the target untouched.",
+      "codeExample": "spec:\n  annotationCheck: \"true\"\n  appinfo:\n    appns: shop\n    applabel: \"app=cart\"\n    appkind: deployment\n  experiments:\n    - name: pod-delete\n\n# But the target Deployment looks like this:\nkind: Deployment\nmetadata:\n  name: cart\n  labels:\n    app: cart\n  # no litmuschaos.io/chaos annotation",
+      "options": [
+        "annotationCheck only works in the litmus namespace; move the target there",
+        "When annotationCheck is true, Litmus only targets workloads with the annotation litmuschaos.io/chaos: 'true'. Without it, the run is skipped on purpose. Either add the annotation to the Deployment or set annotationCheck: 'false'",
+        "annotationCheck is deprecated and should be removed",
+        "The experiment ran but Litmus suppresses logs when the target uses a label rather than an annotation"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "annotationCheck is an opt-in safety control. With it set to 'true', Litmus refuses to inject faults into any workload that has not annotated itself with litmuschaos.io/chaos: 'true'. This is exactly the behavior you want for shared clusters: it makes it impossible for someone in a neighbouring namespace to accidentally include your service in their experiment. The fix is to add the annotation to the target's pod template (or its parent workload), not to disable the check.",
+      "hint": "The setting did its job. The target never opted in."
+    },
+    {
+      "id": "probes-steady-state",
+      "title": "Probes: how Litmus knows you survived",
+      "description": "Your pod-delete experiment ran and ended with verdict 'Pass'. But Grafana shows the cart service returned 5xx for 40 seconds during the run. Why did Litmus call it a pass and how do you make it fail next time?",
+      "situation": "Pod-delete killed one of three replicas. Kubernetes recreated it, but the Service routed traffic to the dying pod for several seconds because readiness was misconfigured. The customer-facing impact is real, but the chaos run is green.",
+      "codeExample": "# Add a probe to the experiment so Litmus checks steady state itself:\nexperiments:\n  - name: pod-delete\n    spec:\n      probe:\n        - name: cart-healthz\n          type: httpProbe\n          mode: Continuous\n          runProperties:\n            probeTimeout: 2\n            interval: 1\n            retry: 1\n            probePollingInterval: 2\n          httpProbe/inputs:\n            url: http://cart.shop.svc:8080/healthz\n            insecureSkipVerify: false\n            method:\n              get:\n                criteria: ==\n                responseCode: \"200\"",
+      "options": [
+        "Litmus passes if the chaos action completed, regardless of app behavior. Add probes (httpProbe, cmdProbe, k8sProbe, promProbe) that assert your steady-state hypothesis. A failing probe flips the verdict to Fail",
+        "Probes are only for metrics export; they cannot change the verdict",
+        "The experiment verdict tracks pod recreation time only; service availability is out of scope",
+        "Set strictCheck: true on ChaosEngine; that is the only way to involve health checks"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Without probes, the verdict only confirms the fault was injected (a pod was deleted). Probes are how you tell Litmus what 'healthy' means. Continuous mode runs the probe throughout the chaos window; if any sample fails the criteria, the experiment fails. Use httpProbe for HTTP endpoints, cmdProbe to run a shell command inside a pod, k8sProbe to assert on Kubernetes resources, and promProbe to query a PromQL expression. The probe is the hypothesis; the chaos is the experiment.",
+      "hint": "The default verdict only proves the fault happened. You also need a check that says 'and the app stayed healthy'."
+    },
+    {
+      "id": "experiment-env-tuning",
+      "title": "Tuning pod-delete intensity",
+      "description": "You want pod-delete to kill half of the cart pods every 30 seconds for 5 minutes, with a 10-second grace period. Which env vars do you set on the experiment spec?",
+      "situation": "Your team is graduating from 'one pod, one shot' experiments to sustained pressure runs. You want to keep killing pods at a steady rate while the load test runs in parallel.",
+      "codeExample": "experiments:\n  - name: pod-delete\n    spec:\n      components:\n        env:\n          - name: TOTAL_CHAOS_DURATION\n            value: \"___\"\n          - name: CHAOS_INTERVAL\n            value: \"___\"\n          - name: PODS_AFFECTED_PERC\n            value: \"___\"\n          - name: FORCE\n            value: \"false\"\n          - name: GRACE_PERIOD\n            value: \"___\"",
+      "options": [
+        "TOTAL_CHAOS_DURATION=5, CHAOS_INTERVAL=30, PODS_AFFECTED_PERC=2, GRACE_PERIOD=10",
+        "TOTAL_CHAOS_DURATION=300, CHAOS_INTERVAL=30, PODS_AFFECTED_PERC=50, GRACE_PERIOD=10",
+        "TOTAL_CHAOS_DURATION=300m, CHAOS_INTERVAL=30s, PODS_AFFECTED_PERC=0.5, GRACE_PERIOD=10s",
+        "DURATION=5m, FREQUENCY=30s, RATIO=half"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "TOTAL_CHAOS_DURATION and CHAOS_INTERVAL are unitless seconds (so 5 minutes is 300, and 30s is 30). PODS_AFFECTED_PERC is a whole-number percentage from 1 to 100, not a fraction or count. GRACE_PERIOD is also seconds and controls how long Kubernetes waits before SIGKILL after SIGTERM, which directly affects whether your app gets to drain connections. FORCE=true uses SIGKILL immediately, which is useful for testing the absence of graceful shutdown but should not be your default.",
+      "hint": "Durations are seconds, percentages are 1 to 100, and FORCE controls how violently the pod is killed."
+    },
+    {
+      "id": "appinfo-selector",
+      "title": "appinfo and target discovery",
+      "description": "Your ChaosEngine has appinfo.applabel='app=cart' and appns='shop'. Multiple Deployments in the shop namespace share that label. The experiment kills pods from all of them. How do you scope to just one Deployment?",
+      "situation": "The team uses app=cart across cart-api, cart-worker, and cart-cron. You only want pod-delete to touch cart-api. Right now the chaos-runner discovers every pod with that label across the namespace.",
+      "codeExample": "spec:\n  appinfo:\n    appns: shop\n    applabel: \"app=cart\"\n    appkind: deployment\n\n# All three Deployments share the label:\nkubectl -n shop get deploy -l app=cart\n# NAME          READY\n# cart-api      3/3\n# cart-worker   2/2\n# cart-cron     1/1",
+      "options": [
+        "Use a more specific label combination (for example app=cart,component=api) so applabel matches exactly one parent workload. Litmus discovers the parent workload via the label and only touches its pods",
+        "appinfo accepts a name field; set name: cart-api",
+        "Move cart-api into its own namespace; appinfo cannot distinguish workloads in the same namespace",
+        "Set appkind: pod and list pod names individually under appinfo.pods"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "appinfo is intentionally simple: a namespace, a label selector, and a kind. Litmus uses that selector to find the parent workload (Deployment, StatefulSet, DaemonSet), then targets its pods. There is no name field. The right move is to make your labels precise enough that the selector picks the workload you mean. Best practice: standardize on app.kubernetes.io/name and app.kubernetes.io/component, then chaos selectors become unambiguous across the cluster.",
+      "hint": "appinfo has no name or pod-list field. It has labels. Make the labels do the work."
+    },
+    {
+      "id": "litmusctl-ci-pipeline",
+      "title": "Triggering chaos from CI",
+      "description": "Your team wants every pre-production deploy to run a 60-second pod-delete with probes against the new build, then promote or roll back based on the result. How do you drive that from a GitHub Actions job?",
+      "situation": "You have ChaosCenter running and a chaos workflow defined in the UI. The CI job needs to start a run, wait for the verdict, and exit non-zero if any probe failed.",
+      "codeExample": "- name: Run pod-delete in staging\n  run: |\n    litmusctl config set-account \\\n      --endpoint=https://chaos.example.com \\\n      --token=$LITMUS_TOKEN\n    litmusctl create workflow \\\n      --file=./chaos/pod-delete-cart.yaml \\\n      --project-id=$PROJECT_ID \\\n      --chaos-infra-id=$INFRA_ID\n    litmusctl get workflow-runs \\\n      --project-id=$PROJECT_ID --workflow-id=...",
+      "options": [
+        "ChaosCenter has no CLI; you must use the GraphQL endpoint directly",
+        "Use kubectl apply on the workflow YAML in the litmus namespace; ChaosCenter polls etcd for new ChaosEngines and reports back over webhooks",
+        "litmusctl is the official CLI for ChaosCenter. It authenticates with a token, creates/runs workflows, and exposes run state so CI can poll and fail the build on a failed verdict",
+        "Trigger workflows by sending a SIGUSR1 to the chaos-operator pod; it picks the next file in /etc/litmus/queue"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "litmusctl is the supported CLI for ChaosCenter. It wraps the GraphQL API so you can script account setup, infra registration, workflow creation, run triggers, and run inspection. In CI, you typically generate a service-account token in ChaosCenter, store it as a secret, and have the job create the workflow run and poll until it reaches Completed or Failed. Doing this with raw kubectl skips ChaosCenter entirely, which means no dashboards, no probe results, and no centralized RBAC.",
+      "hint": "There is a small Go binary in the docs that talks to ChaosCenter over HTTPS. Use it from your job."
+    },
+    {
+      "id": "probe-modes",
+      "title": "Probe modes: when does the check run?",
+      "description": "You add an httpProbe in 'EOT' mode expecting it to run continuously during chaos. Instead it runs once after chaos finishes. What does each probe mode actually do?",
+      "situation": "A teammate read mode names quickly and assumed EOT meant 'every operational tick'. They want a probe that fires every second while chaos is happening, plus one that verifies recovery after.",
+      "codeExample": "probe:\n  - name: live-traffic\n    type: httpProbe\n    mode: ___          # fires throughout the chaos window\n  - name: recovered\n    type: httpProbe\n    mode: ___          # fires once, at end of test\n  - name: warm-baseline\n    type: httpProbe\n    mode: ___          # fires once, before chaos starts",
+      "options": [
+        "live-traffic: Continuous, recovered: EOT, warm-baseline: SOT",
+        "live-traffic: OnChaos, recovered: SOT, warm-baseline: EOT",
+        "live-traffic: Edge, recovered: Once, warm-baseline: Bootstrap",
+        "All probes share one mode globally; set spec.probeMode: Continuous"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Litmus probe modes are SOT (Start of Test, fires once before chaos), EOT (End of Test, fires once after chaos), Edge (fires both before and after, useful for differential checks), Continuous (polls throughout the chaos window at probePollingInterval), and OnChaos (continuous but only during the chaos action, not the surrounding setup/teardown). Pick the mode based on the question you're answering: 'were we healthy before?' is SOT, 'did we recover?' is EOT, 'were we healthy the whole time?' is Continuous or OnChaos.",
+      "hint": "There are five modes. SOT and EOT bracket the run; Continuous and OnChaos run inside it; Edge runs at both ends."
+    },
+    {
+      "id": "production-safety-blast-radius",
+      "title": "First chaos run in production",
+      "description": "Leadership has cautiously approved one chaos experiment in production. Which set of guardrails should be in place before you click 'Run'?",
+      "situation": "You've been running chaos in staging for two months without surprises. Now you have a 30-minute window in production. The CTO is in the Slack channel and one regression here will set the program back a year.",
+      "codeExample": "# A production-safe ChaosEngine:\nspec:\n  annotationCheck: \"true\"\n  jobCleanUpPolicy: retain\n  experiments:\n    - name: pod-delete\n      spec:\n        components:\n          env:\n            - name: TOTAL_CHAOS_DURATION\n              value: \"60\"\n            - name: PODS_AFFECTED_PERC\n              value: \"10\"\n        probe:\n          - name: slo-error-budget\n            type: promProbe\n            mode: Continuous\n            runProperties: {probeTimeout: 5, interval: 5, retry: 1}\n            promProbe/inputs:\n              endpoint: http://prom:9090\n              query: |\n                sum(rate(http_requests_total{job=\"cart\",code=~\"5..\"}[1m]))\n                / sum(rate(http_requests_total{job=\"cart\"}[1m]))\n              comparator: {type: float, criteria: \"<\", value: \"0.01\"}",
+      "options": [
+        "Maximum blast radius (100% of pods), no probes, run during peak traffic so the signal is loud",
+        "Skip annotationCheck so you do not have to touch Deployment manifests; trust the namespace boundary instead",
+        "Small blast radius (single workload, low percentage), annotationCheck on, probes tied to a real SLO, abort criteria documented, kubectl delete chaosengine rollback rehearsed, off-peak window, on-call paged in advance",
+        "Run the experiment, then write down what happened in a postmortem the next week"
+      ],
+      "correctAnswer": 2,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "The point of production chaos is to learn safely, not to prove bravery. The well-known practices: shrink blast radius (small percentage, single workload, single zone if possible), use annotationCheck so only opted-in workloads can be hit, attach a probe that watches an actual SLI (error rate, latency, queue depth) so the system itself fails the run when users are affected, write the abort procedure on a sticky note (kubectl delete chaosengine NAME is usually enough), run off-peak with on-call aware, and have a clear rollback path. Increase blast radius across runs as confidence grows.",
+      "hint": "Every choice should answer the question 'if this surprises us, how fast can we stop and how few users are affected?'."
+    },
+    {
+      "id": "chaos-workflow-orchestration",
+      "title": "Composing multi-fault scenarios",
+      "description": "You want to simulate a partial AZ outage: induce network latency on one node, then drain it, then run pod-delete on remaining replicas elsewhere. How do you orchestrate this in Litmus?",
+      "situation": "Single-fault experiments are not enough anymore. Your team wants to chain faults in a specific order, with probes between steps and parallel branches, and to keep the whole scenario as one reviewable artifact in git.",
+      "codeExample": "# A workflow chains experiments with steps and probes:\nkind: Workflow\nmetadata:\n  name: az-failure-scenario\nspec:\n  templates:\n    - name: scenario\n      steps:\n        - - name: latency-on-node\n            template: pod-network-latency\n        - - name: drain-node\n            template: node-drain\n        - - name: kill-survivors\n            template: pod-delete\n            arguments:\n              parameters:\n                - name: appns\n                  value: shop",
+      "options": [
+        "Chain multiple ChaosEngines in a single namespace; the chaos-operator notices order and serializes them automatically",
+        "Use ChaosWorkflow (built on Argo Workflows) to declare steps, parameters, and parallel branches as one YAML artifact. ChaosCenter renders it visually and litmusctl runs it",
+        "Workflows are only for ChaosCenter and not available to GitOps users; use a Bash script that applies and waits between kubectl applies",
+        "You must write a custom Operator; Litmus does not support multi-experiment scenarios"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "ChaosWorkflow is a thin layer over Argo Workflows. Each step references an experiment template (pod-delete, node-drain, pod-network-latency), passes parameters, and can run sequentially or in parallel using the standard Argo steps/dag syntax. Probes still attach to each individual experiment. The workflow YAML is reviewable in git, runs identically from CI via litmusctl, and gives you a single status object for the whole scenario instead of correlating four separate ChaosEngine runs.",
+      "hint": "Litmus did not reinvent workflow orchestration. There is a well-known Kubernetes workflow engine it builds on top of."
+    },
+    {
+      "id": "debugging-stuck-experiment",
+      "title": "Debugging a run that just hangs",
+      "description": "A ChaosEngine has been in 'Running' for 40 minutes. Probes are not firing, no pods are being deleted, and the dashboard shows no progress. Where do you look, in order?",
+      "situation": "You inherited a chaos workflow from a previous teammate. It worked in staging; in prod it just sits. The on-call wants to know if they should kill it or wait.",
+      "codeExample": "kubectl -n shop get chaosengine cart-pod-delete -o jsonpath='{.status}'\nkubectl -n shop get pods -l name=cart-pod-delete\n# NAME                              READY   STATUS              RESTARTS\n# pod-delete-helper-...             0/1     ImagePullBackOff    0\n# cart-pod-delete-runner            1/1     Running             0\nkubectl -n shop logs cart-pod-delete-runner\nkubectl -n shop logs pod-delete-helper-... --previous\nkubectl -n litmus logs deploy/chaos-operator-ce",
+      "options": [
+        "Delete the ChaosEngine and rerun; if it hangs again, file a Litmus bug",
+        "Restart the kubelet on the node; stuck experiments are almost always a kubelet issue",
+        "Disable RBAC temporarily; chaos-operator can finish the run with elevated permissions",
+        "Check ChaosEngine status, then runner pod logs, then helper pod logs (often the actual fault injector), then chaos-operator logs in the litmus namespace, then ServiceAccount RBAC and probe configuration. ImagePullBackOff on a helper is a common cause"
+      ],
+      "correctAnswer": 3,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Litmus has a layered execution model: chaos-operator reconciles the ChaosEngine, spawns a runner pod, and the runner spawns helper pods that do the actual fault injection on target nodes. A hang almost always shows up at one of those layers. ChaosEngine status tells you the current phase; runner logs show high-level orchestration; helper logs show whether the fault actually injected (or got stuck on image pull, network policy, or capabilities). RBAC and probe misconfiguration are common silent failures. Restarting kubelet or disabling RBAC are not real fixes.",
+      "hint": "Trace the layers from the resource downward: ChaosEngine status, runner pod, helper pod, then operator. Most hangs reveal themselves in the second or third step."
+    }
+  ]
+}

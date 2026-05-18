@@ -1,6 +1,7 @@
 // lib/game-metadata.ts
 import type { Metadata } from 'next';
 import { getGameById } from './games';
+import { getSocialImagePath } from './image-utils';
 import { truncateMetaDescription } from './meta-description';
 
 /**
@@ -21,7 +22,7 @@ export async function generateGameMetadata(gameId: string): Promise<Metadata> {
   const pageTitle = game.seoTitle || game.title;
   const title = `${pageTitle} - DevOps Daily`;
   const description = truncateMetaDescription(game.description);
-  const ogImage = `/images/games/${gameId}-og.png`;
+  const ogImage = getSocialImagePath(gameId, 'games');
 
   return {
     // Absolute title so Next.js doesn't append '| DevOps Daily'. Game page

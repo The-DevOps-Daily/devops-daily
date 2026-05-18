@@ -1,0 +1,194 @@
+{
+  "id": "litmus-chaos-engineering-experiment",
+  "slug": "litmus-chaos-engineering-experiment",
+  "title": "Running Your First Chaos Engineering Experiment with Litmus",
+  "description": "How to install Litmus on Kubernetes and run a controlled failure experiment from a written hypothesis to a verdict you can act on, without breaking production by accident.",
+  "category": "Chaos Engineering",
+  "difficulty": "beginner",
+  "estimatedTime": "90-150 minutes",
+  "tags": ["chaos-engineering", "litmus", "kubernetes", "resilience"],
+  "items": [
+    {
+      "id": "write-hypothesis-and-steady-state",
+      "title": "Write down a hypothesis and a steady-state metric before touching anything",
+      "description": "Chaos without a hypothesis is just an outage with extra steps. Pick one specific failure and one measurable thing that should stay true while it happens. If you cannot describe the steady state in a single sentence with a number in it, you are not ready to run an experiment yet.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Experiment hypothesis template",
+          "code": "# experiment-001-hypothesis.yaml\nexperiment_id: exp-001\nname: \"Kill one payments pod during normal load\"\n\nhypothesis: |\n  If I delete one payments-api pod, request error rate stays\n  under 0.5% and p99 latency stays under 500ms, because we run\n  3 replicas behind a Service with readiness probes.\n\nsteady_state:\n  - metric: http_requests_errors_ratio\n    threshold: \"< 0.005\"\n    source: prometheus\n  - metric: http_request_duration_seconds{quantile=\"0.99\"}\n    threshold: \"< 0.5\"\n    source: prometheus\n  - metric: kube_deployment_status_replicas_ready{deployment=\"payments-api\"}\n    threshold: \">= 2\"\n\nblast_radius: \"1 pod, 1 namespace, staging cluster\"\nrollback: \"kubectl delete chaosengine -n payments payments-pod-delete\"\nowner: \"@platform-oncall\""
+        }
+      ]
+    },
+    {
+      "id": "start-in-staging-with-small-blast-radius",
+      "title": "Run the first experiment in staging on a single stateless workload",
+      "description": "Your first run will surprise you. Pick a stateless Deployment with at least three replicas, in a non-production cluster, with a real load generator behind it. Do not point pod-delete at your single-replica Postgres on day one. Once you have one clean run and a tested rollback, you can talk about production.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Sanity-check the target before you aim at it",
+          "code": "# 1. Confirm the cluster context is staging, not prod\nkubectl config current-context\n# expected: gke_acme_staging-eu-west-1\n\n# 2. Confirm replicas >= 3 and the app is healthy\nkubectl get deploy -n payments payments-api\n# NAME           READY   UP-TO-DATE   AVAILABLE\n# payments-api   3/3     3            3\n\n# 3. Confirm a readiness probe exists -- without one, pod-delete just causes errors\nkubectl get deploy -n payments payments-api -o yaml | grep -A 5 readinessProbe\n\n# 4. Make sure load is hitting the service so steady state is measurable\nkubectl run loadgen --rm -it --image=ghcr.io/six-ddc/plow \\\n  -- -c 20 -d 600s http://payments-api.payments.svc.cluster.local/health"
+        }
+      ]
+    },
+    {
+      "id": "install-litmus-via-helm",
+      "title": "Install Litmus in its own namespace with Helm",
+      "description": "Use the official chart. Drop it in a dedicated namespace so RBAC, network policies, and cleanup are simple. Do not install into kube-system or default. Pin the chart version so re-runs are reproducible.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Install Litmus with Helm",
+          "code": "kubectl create ns litmus\n\nhelm repo add litmuschaos https://litmuschaos.github.io/litmus-helm/\nhelm repo update\n\nhelm install chaos litmuschaos/litmus \\\n  --namespace litmus \\\n  --version 3.10.0 \\\n  --set portalScope=cluster\n\n# Wait for the control plane pods\nkubectl rollout status deploy -n litmus --timeout=180s -l app.kubernetes.io/instance=chaos"
+        }
+      ]
+    },
+    {
+      "id": "verify-crds-and-operator",
+      "title": "Confirm the chaos CRDs and operator are installed and healthy",
+      "description": "If the CRDs are missing, every ChaosEngine you apply later will fail with 'no matches for kind ChaosEngine'. Catch it now, not when you are five YAML files deep. Also check the chaos-operator pod is Running, not CrashLoopBackOff because of an admission webhook problem.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Verify CRDs and operator",
+          "code": "# CRDs you need\nkubectl get crd | grep litmuschaos.io\n# chaosengines.litmuschaos.io\n# chaosexperiments.litmuschaos.io\n# chaosresults.litmuschaos.io\n# chaosschedules.litmuschaos.io\n\n# Operator should be Running\nkubectl get pods -n litmus -l name=chaos-operator\n# NAME                              READY   STATUS    RESTARTS\n# chaos-operator-ce-7c9d8f6b5-x8q   1/1     Running   0\n\n# If the operator is crashing, the logs tell you why immediately\nkubectl logs -n litmus -l name=chaos-operator --tail=50"
+        }
+      ]
+    },
+    {
+      "id": "set-up-rbac-with-least-privilege",
+      "title": "Create a ServiceAccount with only the permissions the experiment needs",
+      "description": "Each Litmus experiment ships with a sample RBAC manifest. Use it as a starting point and apply it in the target namespace, not cluster-wide. Cluster-admin is never the right answer. The pod-delete runner needs to list and delete pods in one namespace, nothing else.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Namespaced RBAC for pod-delete",
+          "code": "# pod-delete-rbac.yaml\napiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: pod-delete-sa\n  namespace: payments\n  labels:\n    name: pod-delete-sa\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata:\n  name: pod-delete-sa\n  namespace: payments\nrules:\n  - apiGroups: [\"\"]\n    resources: [\"pods\", \"events\", \"pods/log\"]\n    verbs: [\"get\", \"list\", \"watch\", \"delete\"]\n  - apiGroups: [\"\"]\n    resources: [\"configmaps\"]\n    verbs: [\"get\", \"list\"]\n  - apiGroups: [\"apps\"]\n    resources: [\"deployments\", \"replicasets\"]\n    verbs: [\"get\", \"list\"]\n  - apiGroups: [\"litmuschaos.io\"]\n    resources: [\"chaosengines\", \"chaosexperiments\", \"chaosresults\"]\n    verbs: [\"create\", \"get\", \"list\", \"patch\", \"update\", \"delete\"]\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: pod-delete-sa\n  namespace: payments\nroleRef:\n  apiGroup: rbac.authorization.k8s.io\n  kind: Role\n  name: pod-delete-sa\nsubjects:\n  - kind: ServiceAccount\n    name: pod-delete-sa\n    namespace: payments"
+        }
+      ]
+    },
+    {
+      "id": "install-pod-delete-from-chaoshub",
+      "title": "Install the pod-delete ChaosExperiment from ChaosHub",
+      "description": "Start with pod-delete. It is the simplest experiment in the catalog and it teaches you the whole workflow. ChaosHub is the registry; the ChaosExperiment CR describes what the runner does. Install it in the target namespace so the ChaosEngine can find it.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Pull pod-delete from ChaosHub",
+          "code": "# Apply the experiment manifest into the namespace where your app lives\nkubectl apply -n payments \\\n  -f https://hub.litmuschaos.io/api/chaos/3.10.0?file=charts/generic/pod-delete/experiment.yaml\n\n# Confirm it is registered\nkubectl get chaosexperiments -n payments\n# NAME          AGE\n# pod-delete    10s"
+        }
+      ]
+    },
+    {
+      "id": "wire-up-probes",
+      "title": "Add probes so the experiment knows what 'healthy' means",
+      "description": "A ChaosEngine without probes is a fancy way to delete a pod. Probes run before, during, and after chaos and decide pass or fail. Add an HTTP probe to your health endpoint and a Prometheus probe against an SLO metric. This is the difference between an experiment and a tantrum.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "HTTP and Prometheus probes",
+          "code": "# probes.yaml -- inline this in the ChaosEngine experiments[].spec\nprobe:\n  - name: payments-health-200\n    type: httpProbe\n    mode: Continuous\n    runProperties:\n      probeTimeout: 2s\n      interval: 2s\n      retry: 1\n      probePollingInterval: 2s\n    httpProbe/inputs:\n      url: http://payments-api.payments.svc.cluster.local/health\n      insecureSkipVerify: false\n      method:\n        get:\n          criteria: ==\n          responseCode: \"200\"\n\n  - name: error-rate-under-half-percent\n    type: promProbe\n    mode: Edge\n    runProperties:\n      probeTimeout: 5s\n      interval: 10s\n      retry: 1\n    promProbe/inputs:\n      endpoint: http://prometheus-server.monitoring.svc:9090\n      query: |\n        sum(rate(http_requests_total{job=\"payments-api\",code=~\"5..\"}[1m]))\n          / sum(rate(http_requests_total{job=\"payments-api\"}[1m]))\n      comparator:\n        type: float\n        criteria: \"<\"\n        value: \"0.005\""
+        }
+      ]
+    },
+    {
+      "id": "create-chaosengine-with-tight-selectors",
+      "title": "Write the ChaosEngine with exact label selectors and a short duration",
+      "description": "The ChaosEngine ties the experiment to your workload. Use exact label selectors so you do not accidentally hit a sibling Deployment in the same namespace. Keep CHAOS_DURATION small for the first run, around 30 to 60 seconds, and start with PODS_AFFECTED_PERC at 33 so only one of three replicas dies.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "ChaosEngine for pod-delete",
+          "code": "apiVersion: litmuschaos.io/v1alpha1\nkind: ChaosEngine\nmetadata:\n  name: payments-pod-delete\n  namespace: payments\nspec:\n  appinfo:\n    appns: payments\n    applabel: \"app=payments-api\"\n    appkind: deployment\n  chaosServiceAccount: pod-delete-sa\n  engineState: active\n  jobCleanUpPolicy: retain\n  experiments:\n    - name: pod-delete\n      spec:\n        components:\n          env:\n            - name: TOTAL_CHAOS_DURATION\n              value: \"30\"\n            - name: CHAOS_INTERVAL\n              value: \"10\"\n            - name: PODS_AFFECTED_PERC\n              value: \"33\"\n            - name: FORCE\n              value: \"false\"\n        probe:\n          # paste the probes block from the previous step here"
+        }
+      ]
+    },
+    {
+      "id": "run-and-tail-the-runner",
+      "title": "Apply the ChaosEngine and tail the runner pod and ChaosResult",
+      "description": "Apply, then watch. The runner pod logs tell you which step is in progress. The ChaosResult holds the verdict, but it is only final after the experiment ends. Do not delete the ChaosEngine while it is still Running, or you will lose the result.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Run the experiment and watch it live",
+          "code": "kubectl apply -f payments-pod-delete-engine.yaml\n\n# Tail the runner pod -- name pattern: <engine-name>-runner\nkubectl logs -n payments -l name=payments-pod-delete-runner -f\n\n# In another shell, watch pods being killed and recreated\nkubectl get pods -n payments -l app=payments-api -w\n\n# And watch the verdict update\nkubectl get chaosresult -n payments \\\n  payments-pod-delete-pod-delete -w \\\n  -o jsonpath='{.status.experimentStatus.verdict}{\"\\n\"}'"
+        }
+      ]
+    },
+    {
+      "id": "watch-real-dashboards-during-chaos",
+      "title": "Keep your real dashboards and logs open while chaos is running",
+      "description": "The point of the experiment is to see what happens to your app, not to wait for Litmus to grade itself. Have your Grafana dashboard open. Tail your app logs. Watch error rate, latency, and pod restarts in real time. Probes can pass while users see hiccups, and you only catch that with your own eyes.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Things to have open in split panes",
+          "code": "# Pane 1: pods, to see kill and recovery timing\nkubectl get pods -n payments -l app=payments-api -w\n\n# Pane 2: app logs, looking for unhandled errors during the kill\nkubectl logs -n payments -l app=payments-api -f --tail=20 --prefix\n\n# Pane 3: a one-liner Prometheus error-rate check, refreshed each second\nwatch -n 1 \"curl -sG http://prometheus.monitoring:9090/api/v1/query \\\n  --data-urlencode 'query=sum(rate(http_requests_total{job=\\\"payments-api\\\",code=~\\\"5..\\\"}[1m])) / sum(rate(http_requests_total{job=\\\"payments-api\\\"}[1m]))' \\\n  | jq -r '.data.result[0].value[1]'\"\n\n# Pane 4: the Grafana dashboard for payments-api in your browser"
+        }
+      ]
+    },
+    {
+      "id": "read-verdict-and-clean-up",
+      "title": "Read the ChaosResult, then delete the ChaosEngine",
+      "description": "The verdict lives on the ChaosResult, not the ChaosEngine. Look at it with the probe details so you know which probe passed or failed. Then delete the ChaosEngine. Otherwise the operator may re-trigger the experiment when the next reconcile loop runs, and you will be debugging a 'random' outage tomorrow.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Read the result and clean up",
+          "code": "# Full result, including which probes passed or failed\nkubectl get chaosresult -n payments \\\n  payments-pod-delete-pod-delete -o yaml\n\n# Just the verdict and probe summary\nkubectl get chaosresult -n payments payments-pod-delete-pod-delete \\\n  -o jsonpath='{.status.experimentStatus.verdict} | probes: {.status.probeStatuses}{\"\\n\"}'\n# Pass | probes: [{Name:payments-health-200 Mode:Continuous Status:Passed} ...]\n\n# Delete the engine so it does not re-run\nkubectl delete chaosengine -n payments payments-pod-delete\n\n# Keep the result -- you will need it for the writeup\nkubectl get chaosresult -n payments payments-pod-delete-pod-delete -o yaml \\\n  > runs/exp-001-result.yaml"
+        }
+      ]
+    },
+    {
+      "id": "increase-blast-radius-gradually",
+      "title": "Increase blast radius only after a clean run",
+      "description": "Once one-pod-out passes cleanly, raise PODS_AFFECTED_PERC to 66, then 100, then run during peak-ish load. After that, graduate to a different experiment like pod-network-loss or pod-cpu-hog. Do not jump from 'kill one pod in staging' to 'kill 50% of nodes during checkout'. Each step should be small enough that you can pinpoint what changed.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Patch the engine for the next run instead of editing files",
+          "code": "# Bump pods affected percentage and duration in one command\nkubectl patch chaosengine -n payments payments-pod-delete --type=merge -p '{\n  \"spec\": {\n    \"experiments\": [{\n      \"name\": \"pod-delete\",\n      \"spec\": {\n        \"components\": {\n          \"env\": [\n            {\"name\": \"TOTAL_CHAOS_DURATION\", \"value\": \"120\"},\n            {\"name\": \"PODS_AFFECTED_PERC\",  \"value\": \"66\"}\n          ]\n        }\n      }\n    }]\n  }\n}'\n\n# Next experiment to install when pod-delete is boring\nkubectl apply -n payments \\\n  -f https://hub.litmuschaos.io/api/chaos/3.10.0?file=charts/generic/pod-network-loss/experiment.yaml"
+        }
+      ]
+    },
+    {
+      "id": "write-it-up-and-file-tickets",
+      "title": "Write up the run and file tickets for whatever broke",
+      "description": "A failed chaos experiment with no follow-up is theater. Capture the hypothesis, the verdict, the dashboard screenshots, and three to five concrete tickets: missing alerts, fragile retries, slow rollouts, missing readiness probes. The point of chaos engineering is to drive fixes, not to collect Pass badges.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Postmortem-style writeup template",
+          "code": "# runs/exp-001-writeup.md is the actual file; this shows the shape\nexperiment_id: exp-001\nrun_at: 2026-05-08T10:14:00Z\nhypothesis: \"Killing one payments pod keeps error rate < 0.5% and p99 < 500ms\"\nverdict: Fail\n\nwhat_happened:\n  - \"One pod was deleted at t=0s as expected.\"\n  - \"Service routed to 2 surviving pods within 1s (kube-proxy).\"\n  - \"p99 latency spiked to 1.4s for ~12s while connection pools warmed up.\"\n  - \"4 requests returned 502 from the ingress during the gap.\"\n\nfindings:\n  - id: PAY-431\n    title: \"payments-api missing connection-pool warmup on startup\"\n    severity: high\n  - id: PAY-432\n    title: \"Ingress retries do not cover 502 from upstream connect failures\"\n    severity: medium\n  - id: PAY-433\n    title: \"No alert fires for p99 > 1s when error rate stays low\"\n    severity: medium\n\nnext_experiment: \"Re-run after PAY-431 ships, then increase PODS_AFFECTED_PERC to 66\""
+        }
+      ]
+    },
+    {
+      "id": "schedule-recurring-gameday",
+      "title": "Schedule a recurring gameday so the system stays tested",
+      "description": "One-shot chaos does not keep a system resilient as the codebase changes. Schedule a recurring run, even monthly, and rotate who drives it. Litmus has a ChaosSchedule CR that runs experiments on a cron, so you do not rely on someone remembering. New regressions show up before users find them.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Monthly ChaosSchedule for pod-delete",
+          "code": "apiVersion: litmuschaos.io/v1alpha1\nkind: ChaosSchedule\nmetadata:\n  name: payments-pod-delete-monthly\n  namespace: payments\nspec:\n  schedule:\n    repeat:\n      timeRange:\n        startTime: \"2026-06-01T10:00:00Z\"\n        endTime:   \"2027-06-01T10:00:00Z\"\n      properties:\n        minChaosInterval: \"720h\"   # every 30 days\n      workHours:\n        includedHours: 10-12       # only run during oncall waking hours\n      workDays:\n        includedDays: \"Mon,Tue,Wed,Thu\"\n  engineTemplateSpec:\n    appinfo:\n      appns: payments\n      applabel: \"app=payments-api\"\n      appkind: deployment\n    chaosServiceAccount: pod-delete-sa\n    engineState: active\n    experiments:\n      - name: pod-delete\n        spec:\n          components:\n            env:\n              - name: TOTAL_CHAOS_DURATION\n                value: \"60\"\n              - name: PODS_AFFECTED_PERC\n                value: \"33\""
+        }
+      ]
+    }
+  ]
+}

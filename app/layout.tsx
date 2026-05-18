@@ -100,7 +100,7 @@ export const metadata: Metadata = {
     'Guides',
     'Infrastructure as Code',
   ],
-  authors: [{ name: 'DevOps Daily Team', url: 'https://devops-daily.com/authors' }],
+  authors: [{ name: 'DevOps Daily Team', url: 'https://devops-daily.com/experts' }],
   category: 'Technology',
   icons: {
     icon: [
@@ -109,13 +109,6 @@ export const metadata: Metadata = {
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
     ],
     apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
-    other: [
-      {
-        rel: 'mask-icon',
-        url: '/safari-pinned-tab.svg',
-        color: '#d97706',
-      },
-    ],
   },
   manifest: '/site.webmanifest',
   verification: {

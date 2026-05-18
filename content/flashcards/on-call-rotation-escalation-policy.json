@@ -1,0 +1,129 @@
+{
+  "id": "on-call-rotation-escalation-policy",
+  "title": "On-Call Rotations and Escalation Policies",
+  "description": "Practical advice for designing on-call schedules, defining escalation paths, and reducing alert fatigue for engineering teams.",
+  "category": "Incident Management",
+  "icon": "Siren",
+  "difficulty": "intermediate",
+  "estimatedTime": "18 minutes",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "red",
+    "gradientFrom": "from-red-500",
+    "gradientTo": "to-rose-600"
+  },
+  "cards": [
+    {
+      "id": "on-call-rotation-purpose",
+      "front": "What is the purpose of an on-call rotation?",
+      "back": "An on-call rotation makes sure someone is always available to respond when production breaks outside business hours. Instead of one engineer being paged every night, the duty cycles across the team. The goal is fast response to real incidents without burning out any single person. A rotation only works if pages are rare enough to make off-hours coverage a reasonable ask.",
+      "category": "Fundamentals",
+      "tags": ["on-call", "incident-management", "basics"]
+    },
+    {
+      "id": "primary-vs-secondary",
+      "front": "What is the difference between primary and secondary on-call?",
+      "back": "Primary on-call is the first person paged for an incident. They acknowledge, investigate, and respond. Secondary is the backup: paged only if primary does not acknowledge within the timeout, or if primary explicitly escalates because they need help. Always run both. A primary-only rotation means one missed page leads to silence and no response.",
+      "category": "Fundamentals",
+      "tags": ["on-call", "escalation", "rotation"]
+    },
+    {
+      "id": "follow-the-sun-rotation",
+      "front": "What is a follow-the-sun rotation and when does it make sense?",
+      "back": "Follow-the-sun spreads on-call across multiple geographic regions so each engineer is paged only during their working hours. Example: a US team covers 9am to 5pm Pacific, an EU team covers their local day, an APAC team covers theirs. It works when you have enough engineers per region (4-6 minimum) and shared service ownership. Without that, you end up with understaffed rotations in three places.",
+      "category": "Fundamentals",
+      "tags": ["on-call", "rotation", "scheduling"]
+    },
+    {
+      "id": "service-ownership",
+      "front": "Who should be on-call for a service?",
+      "back": "The team that builds and ships the service. 'You build it, you run it.' This keeps the feedback loop tight: bad code wakes up the people who wrote it, which is the strongest incentive to fix flaky systems. A central ops team taking pages for everyone else leads to tickets thrown over the wall and no one fixing root causes.",
+      "category": "Fundamentals",
+      "tags": ["on-call", "ownership", "devops"]
+    },
+    {
+      "id": "shift-length",
+      "front": "How long should an on-call shift be?",
+      "back": "Most teams run 1-week shifts with handoff on a fixed weekday morning (Tuesday or Wednesday is common, never Friday). Shorter shifts (1-3 days) reduce burnout but add handoff overhead. Longer shifts (2 weeks) let one bad incident ruin a fortnight. If a week consistently feels brutal, the answer is fixing the alerts, not shortening the shift.",
+      "category": "Schedule Design",
+      "tags": ["on-call", "scheduling", "rotation"]
+    },
+    {
+      "id": "on-call-handoff",
+      "front": "What should happen at an on-call handoff?",
+      "back": "A short sync between outgoing and incoming primary covering: open incidents and their state, recent flaky alerts, ongoing maintenance windows, and any changes in service ownership or escalation paths. Even a 15-minute meeting prevents the incoming engineer from being paged at 3am about an issue the previous shift already triaged.",
+      "category": "Schedule Design",
+      "tags": ["on-call", "handoff", "process"]
+    },
+    {
+      "id": "on-call-compensation",
+      "front": "How should on-call work be compensated?",
+      "back": "Pick one and document it: extra pay per shift, time off in lieu (one comp day per week of on-call), or a flat allowance. The exact model matters less than having one. Unpaid on-call is a recipe for resentment and silent quitting from rotations. If you cannot pay extra, at minimum give comp time for any night pages so the next day is recovery.",
+      "category": "Schedule Design",
+      "tags": ["on-call", "compensation", "policy"]
+    },
+    {
+      "id": "escalation-policy-definition",
+      "front": "What is an escalation policy and why do you need one?",
+      "back": "An escalation policy is a documented chain of who gets paged and when. Example: page primary, wait 5 minutes for ack, page secondary, wait 5 more minutes, then page the engineering manager. Without it, missed pages hang silently or every alert pages everyone at once. The policy lives in PagerDuty, Opsgenie, or similar, and applies per service or severity.",
+      "category": "Escalation",
+      "tags": ["escalation", "incident-management", "policy"]
+    },
+    {
+      "id": "acknowledgment-timeout",
+      "front": "What is an acknowledgment timeout and what is a sane default?",
+      "back": "The acknowledgment timeout is how long the system waits for the on-call engineer to respond before escalating. Common values: 5 minutes for high-severity pages, 10-15 minutes for lower severity. Too short and engineers in the shower get falsely escalated. Too long and a sleeping primary delays response by 30 minutes. 5 minutes is the right default for SEV1.",
+      "category": "Escalation",
+      "tags": ["escalation", "on-call", "configuration"]
+    },
+    {
+      "id": "severity-based-escalation",
+      "front": "How should escalation differ by alert severity?",
+      "back": "SEV1 (customer-impacting outage) pages immediately, escalates fast (5 minutes), and may go straight to a manager and an incident channel. SEV2/3 pages primary only, escalates slower, and respects business hours when possible. Low severity creates a ticket, no page. Mapping severity to escalation prevents a disk-space warning from waking the same person as a full outage.",
+      "category": "Escalation",
+      "tags": ["escalation", "severity", "incident-management"]
+    },
+    {
+      "id": "page-vs-ticket",
+      "front": "When should an alert page someone vs create a ticket?",
+      "back": "Page only when a human needs to act in the next 15 minutes to prevent or stop user impact. Everything else (capacity warnings, slow disks, deprecation reminders, flaky tests) goes to a ticket queue or email. The test is simple: if the on-call can deal with it tomorrow morning, it should not page tonight.",
+      "category": "Escalation",
+      "tags": ["alerting", "on-call", "best-practices"]
+    },
+    {
+      "id": "alert-fatigue",
+      "front": "What is alert fatigue and why is it dangerous?",
+      "back": "Alert fatigue is when on-call engineers get so many pages, especially false or low-value ones, that they start ignoring or dismissing them on autopilot. The danger is that real incidents get missed in the noise. A common symptom: 'oh, that alert always fires, just ack it.' Once you hear that sentence, the alert is broken and needs deletion, tuning, or routing to a non-paging channel.",
+      "category": "Alert Quality",
+      "tags": ["alert-fatigue", "alerting", "burnout"]
+    },
+    {
+      "id": "symptom-based-alerts",
+      "front": "Should alerts be based on symptoms or causes?",
+      "back": "Alert on symptoms, not causes. A symptom alert says 'checkout latency is over 2s for users.' A cause alert says 'database CPU is at 80%.' Symptoms tell you the user is suffering, which is what justifies waking someone up. High CPU might be normal under load or have no user impact. Page on what users see, then dig into causes during the response.",
+      "category": "Alert Quality",
+      "tags": ["alerting", "best-practices", "monitoring"]
+    },
+    {
+      "id": "reducing-alert-noise",
+      "front": "How do you reduce noisy alerts in a paging system?",
+      "back": "Run a weekly alert review: list every page from the last 7 days and ask 'was action required?' for each. If no, the alert needs tuning or deletion. Specific tactics:\n\n- Raise thresholds based on real data\n- Require sustained breaches (5 minutes, not 30 seconds)\n- De-duplicate alerts that fire together\n- Route warnings to chat instead of phone\n- Delete alerts no one has acted on in 90 days",
+      "category": "Alert Quality",
+      "tags": ["alert-fatigue", "alerting", "process"]
+    },
+    {
+      "id": "runbook-for-every-alert",
+      "front": "What should every paging alert have attached?",
+      "back": "A runbook link. The runbook should cover: what this alert means, the user impact, first 3 things to check, common causes and fixes, and who to escalate to. A page with no runbook means the engineer wakes up, opens 5 dashboards, and tries to remember what this was about. Treat 'alert without runbook' as a code review failure when adding new alerts.",
+      "category": "Alert Quality",
+      "tags": ["alerting", "runbooks", "documentation"]
+    },
+    {
+      "id": "on-call-health-metrics",
+      "front": "How do you measure if your on-call rotation is sustainable?",
+      "back": "Track these per shift:\n\n- Total pages\n- Pages outside business hours\n- Pages that interrupted sleep (10pm-7am local)\n- Percentage of pages that required action\n\nA healthy rotation has fewer than 2 actionable pages per week and zero sleep-interrupted false alarms. Surface these numbers in retros. If they trend bad, prioritize alert cleanup and reliability work over new features.",
+      "category": "Health Metrics",
+      "tags": ["on-call", "metrics", "burnout"]
+    }
+  ]
+}

@@ -49,7 +49,13 @@ export default async function LatestGuides({ className, limit = 6 }: LatestGuide
               <p className="mt-2 text-muted-foreground line-clamp-3">{guide.description}</p>
               <div className="mt-4 flex items-center text-sm text-muted-foreground">
                 <Calendar className="mr-1 h-4 w-4" />
-                <span>{guide.publishedAt?.split('T')[0] ?? 'Unknown date'}</span>
+                {guide.publishedAt ? (
+                  <time dateTime={guide.publishedAt}>
+                    {guide.publishedAt.split('T')[0]}
+                  </time>
+                ) : (
+                  <span>Unknown date</span>
+                )}
                 <span className="mx-2">|</span>
                 <Clock className="mr-1 h-4 w-4" />
                 <span>{guide.readingTime ?? 'Quick read'}</span>

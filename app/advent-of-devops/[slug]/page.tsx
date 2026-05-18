@@ -18,15 +18,10 @@ import type { Metadata } from 'next';
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  try {
-    const days = await getAllAdventDays();
-    return days.map((day) => ({
-      slug: day.slug,
-    }));
-  } catch (error) {
-    console.warn('Error generating static params for advent:', error);
-    return [];
-  }
+  const days = await getAllAdventDays();
+  return days.map((day) => ({
+    slug: day.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -105,8 +100,8 @@ export default async function AdventDayPage({
       <ArticleSchema
         title={day.title}
         description={day.excerpt || day.description || ''}
-        publishedDate={day.publishedAt || new Date().toISOString()}
-        modifiedDate={day.updatedAt || new Date().toISOString()}
+        publishedDate={day.publishedAt}
+        modifiedDate={day.updatedAt || day.publishedAt}
         imageUrl={day.image || '/og-image.png'}
         authorName="DevOps Daily"
         url={`/advent-of-devops/${day.slug}`}
@@ -162,11 +157,13 @@ export default async function AdventDayPage({
                   {day.publishedAt && (
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      {new Date(day.publishedAt).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric',
-                      })}
+                      <time dateTime={day.publishedAt}>
+                        {new Date(day.publishedAt).toLocaleDateString('en-US', {
+                          month: 'long',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </time>
                     </div>
                   )}
                   <div className="flex items-center gap-1">

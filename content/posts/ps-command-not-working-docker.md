@@ -1,6 +1,6 @@
 ---
 title: "ps Command Doesn't Work in Docker Container"
-excerpt: 'Learn why the `ps` command might not work in Docker containers and how to resolve it.'
+excerpt: 'Why the ps command fails inside Docker containers and how to fix it. Covers minimal images missing procps, alternatives like /proc, and installing the package.'
 category:
   name: 'Docker'
   slug: 'docker'

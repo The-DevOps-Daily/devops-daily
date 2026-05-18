@@ -1,8 +1,10 @@
-import fs from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
-import { remark } from 'remark';
-import html from 'remark-html';
+import {
+  createCachedLoader,
+  isFileNotFound,
+  readMarkdownFile,
+  readMarkdownFiles,
+} from './content-loader';
 
 const CONTENT_DIR = path.join(process.cwd(), 'content/hacktoberfest');
 
@@ -18,29 +20,12 @@ export interface HacktoberfestDay {
   content: string;
 }
 
-export async function getAllHacktoberfestDays(): Promise<HacktoberfestDay[]> {
-  if (!fs.existsSync(CONTENT_DIR)) return [];
-
-  const files = fs.readdirSync(CONTENT_DIR).filter((f) => f.startsWith('day-') && f.endsWith('.md'));
-
-  const days = await Promise.all(
-    files.map(async (file) => {
-      const slug = file.replace(/\.md$/, '');
-      return getHacktoberfestDay(slug);
-    })
-  );
-
-  return days.filter(Boolean).sort((a, b) => a!.day - b!.day) as HacktoberfestDay[];
-}
-
-export async function getHacktoberfestDay(slug: string): Promise<HacktoberfestDay | null> {
-  const filePath = path.join(CONTENT_DIR, `${slug}.md`);
-  if (!fs.existsSync(filePath)) return null;
-
-  const fileContents = fs.readFileSync(filePath, 'utf8');
-  const { data, content } = matter(fileContents);
-
-  const processed = await remark().use(html).process(content);
+function mapHacktoberfestDay(
+  data: Partial<HacktoberfestDay>,
+  content: string,
+  filename: string
+): HacktoberfestDay {
+  const slug = filename.replace(/\.md$/, '');
 
   return {
     title: data.title || '',
@@ -51,6 +36,42 @@ export async function getHacktoberfestDay(slug: string): Promise<HacktoberfestDa
     time: data.time || '5 min',
     category: data.category || '',
     tags: data.tags || [],
-    content: processed.toString(),
+    content,
   };
+}
+
+const loadHacktoberfestDays = createCachedLoader(async () => {
+  try {
+    const days = await readMarkdownFiles<HacktoberfestDay, Partial<HacktoberfestDay>>(
+      CONTENT_DIR,
+      mapHacktoberfestDay
+    );
+
+    return days
+      .filter((day) => day.slug.startsWith('day-'))
+      .sort((a, b) => a.day - b.day);
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return [];
+    }
+    throw error;
+  }
+});
+
+export async function getAllHacktoberfestDays(): Promise<HacktoberfestDay[]> {
+  return loadHacktoberfestDays();
+}
+
+export async function getHacktoberfestDay(slug: string): Promise<HacktoberfestDay | null> {
+  try {
+    return await readMarkdownFile<HacktoberfestDay, Partial<HacktoberfestDay>>(
+      path.join(CONTENT_DIR, `${slug}.md`),
+      mapHacktoberfestDay
+    );
+  } catch (error) {
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
+  }
 }

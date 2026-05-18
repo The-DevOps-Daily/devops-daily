@@ -1,7 +1,7 @@
 ---
 title: 'Branching Basics'
 order: 4
-description: 'Learn how to create and manage branches for parallel development'
+description: 'Create and manage Git branches for parallel development. Covers git branch, checkout, switch, isolating features, and the mental model behind branch pointers.'
 ---
 
 One of Git's most powerful features is its branching system. Branches allow you to diverge from the main line of development and work on different features or fixes in isolation, without affecting the main codebase.

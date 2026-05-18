@@ -1,5 +1,5 @@
-import fs from 'fs';
 import path from 'path';
+import { createCachedLoader, isFileNotFound, readJsonFile, readJsonFiles } from './content-loader';
 
 export interface FlashCard {
   id: string;
@@ -44,61 +44,40 @@ export interface FlashCardSetMetadata {
 
 const FLASHCARDS_DIR = path.join(process.cwd(), 'content', 'flashcards');
 
+const loadFlashCardSets = createCachedLoader(() => readJsonFiles<FlashCardSet>(FLASHCARDS_DIR));
+
 /**
  * Load a single flashcard set by ID
  */
 export async function getFlashCardSet(id: string): Promise<FlashCardSet | null> {
   try {
-    const filePath = path.join(FLASHCARDS_DIR, `${id}.json`);
-    const fileContents = fs.readFileSync(filePath, 'utf8');
-    const flashCardSet: FlashCardSet = JSON.parse(fileContents);
-    return flashCardSet;
+    return await readJsonFile<FlashCardSet>(path.join(FLASHCARDS_DIR, `${id}.json`));
   } catch (error) {
-    console.error(`Failed to load flashcard set: ${id}`, error);
-    return null;
+    if (isFileNotFound(error)) {
+      return null;
+    }
+    throw error;
   }
 }
 
 /**
-* Get metadata for all flashcard sets (without full card data)
-*/
+ * Get metadata for all flashcard sets (without full card data)
+ */
 export async function getAllFlashCardSets(): Promise<FlashCardSetMetadata[]> {
- try {
-   if (!fs.existsSync(FLASHCARDS_DIR)) {
-     return [];
-    }
-
-    const files = fs.readdirSync(FLASHCARDS_DIR).filter((file) => file.endsWith('.json'));
-
-    const metadata: FlashCardSetMetadata[] = [];
-
-    for (const file of files) {
-      const filePath = path.join(FLASHCARDS_DIR, file);
-      const fileContents = fs.readFileSync(filePath, 'utf8');
-      const flashCardSet: FlashCardSet = JSON.parse(fileContents);
-
-      // Extract metadata (exclude cards)
-      metadata.push({
-        id: flashCardSet.id,
-        title: flashCardSet.title,
-        description: flashCardSet.description,
-        category: flashCardSet.category,
-        icon: flashCardSet.icon,
-        difficulty: flashCardSet.difficulty,
-        estimatedTime: flashCardSet.estimatedTime,
-        cardCount: flashCardSet.cardCount,
-        theme: flashCardSet.theme,
-      });
-    }
-
-    // Sort by title
-    metadata.sort((a, b) => a.title.localeCompare(b.title));
-
-    return metadata;
-  } catch (error) {
-    console.error('Failed to load flashcard sets metadata', error);
-    return [];
-  }
+  const sets = await loadFlashCardSets();
+  return sets
+    .map((flashCardSet) => ({
+      id: flashCardSet.id,
+      title: flashCardSet.title,
+      description: flashCardSet.description,
+      category: flashCardSet.category,
+      icon: flashCardSet.icon,
+      difficulty: flashCardSet.difficulty,
+      estimatedTime: flashCardSet.estimatedTime,
+      cardCount: flashCardSet.cardCount,
+      theme: flashCardSet.theme,
+    }))
+    .sort((a, b) => a.title.localeCompare(b.title));
 }
 
 /**

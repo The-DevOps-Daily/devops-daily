@@ -1,7 +1,7 @@
 ---
 title: 'Collaboration Workflows'
 order: 7
-description: 'Learn effective team strategies for Git collaboration'
+description: 'Common Git collaboration workflows: centralized, feature branch, GitFlow, and trunk-based. How to pick one for your team and avoid merge-conflict pain.'
 ---
 
 Working effectively in a team requires more than just knowing Git commands. You need established workflows that help your team collaborate smoothly. In this section, we'll explore popular Git workflows and best practices for team collaboration.

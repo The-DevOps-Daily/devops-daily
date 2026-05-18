@@ -1,6 +1,6 @@
 ---
 title: 'Docker Compose: Wait for Container X Before Starting Y'
-excerpt: 'Learn how to configure Docker Compose to ensure one container starts only after another is ready.'
+excerpt: 'Configure Docker Compose so a service waits for another container to be ready, using healthchecks and depends_on conditions with a working example.'
 category:
   name: 'Docker'
   slug: 'docker'

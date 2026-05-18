@@ -1,6 +1,6 @@
 ---
 title: Docker Compose
-description: Orchestrate multi-container applications with Docker Compose
+description: 'Run multi-container applications from a single YAML file with Docker Compose. Covers services, networks, volumes, profiles, and the common command set.'
 order: 8
 ---
 

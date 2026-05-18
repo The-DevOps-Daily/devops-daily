@@ -1,7 +1,7 @@
 ---
 title: 'Git Best Practices'
 order: 9
-description: 'Adopt workflow standards and conventions for efficient Git usage'
+description: 'Git best practices for daily work: meaningful commit messages, branching strategy, .gitignore hygiene, code review flow, and keeping history clean over time.'
 ---
 
 While Git is flexible enough to accommodate many workflows, following established best practices will help you avoid common pitfalls and work more efficiently. This section outlines recommended practices for commits, branching, collaboration, and repository management.

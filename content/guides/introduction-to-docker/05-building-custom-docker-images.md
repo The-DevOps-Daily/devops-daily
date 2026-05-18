@@ -1,6 +1,6 @@
 ---
 title: Building Custom Docker Images
-description: Create your own Docker images with Dockerfiles to package your applications
+description: 'Build custom Docker images with Dockerfiles. Covers FROM, COPY, RUN, CMD, ENTRYPOINT, layer caching, multi-stage builds, and shrinking final image size.'
 order: 5
 ---
 

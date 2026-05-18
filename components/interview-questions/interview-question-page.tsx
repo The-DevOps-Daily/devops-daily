@@ -38,16 +38,15 @@ export function InterviewQuestionPage({ question, tier }: InterviewQuestionPageP
         </Button>
       </div>
 
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Badge className={tierColors[tier]}>{tier}</Badge>
-          <Badge className={difficultyColors[question.difficulty as keyof typeof difficultyColors]}>
-            {question.difficulty}
-          </Badge>
-          <Badge variant="outline">{question.category}</Badge>
-        </div>
-        <h2 className="text-4xl font-bold mb-4">{question.title}</h2>
+      {/* Title lives in <PageHero>; we keep only the badge row here so the
+          title does not render twice (Bing's SEO scanner counted the
+          large-text duplicate as a second H1). */}
+      <div className="mb-8 flex flex-wrap gap-2">
+        <Badge className={tierColors[tier]}>{tier}</Badge>
+        <Badge className={difficultyColors[question.difficulty as keyof typeof difficultyColors]}>
+          {question.difficulty}
+        </Badge>
+        <Badge variant="outline">{question.category}</Badge>
       </div>
 
       {/* Question */}

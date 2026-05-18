@@ -1,6 +1,6 @@
 ---
 title: 'Network Fundamentals and Protocols'
-description: 'Understanding how applications communicate over networks and the protocols that make it possible.'
+description: 'How applications talk over networks: the OSI model, TCP vs UDP, IP addressing, ports, and DNS resolution explained with traceable curl and tcpdump examples.'
 order: 1
 ---
 
