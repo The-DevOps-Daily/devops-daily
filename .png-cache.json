@@ -702,5 +702,7 @@
   "public/images/interview-questions/system-design-instant-validation-og.svg": "5a24fb8cd80ac30d",
   "public/images/interview-questions/sre-slo-alerting-og.svg": "4deac00b05f537ec",
   "public/images/quizzes/litmus-chaos-engineering-quiz-og.svg": "50c5032982e3f3bc",
-  "public/images/flashcards/postgresql-zero-downtime-migrations-og.svg": "4ac9e3059090ffa0"
+  "public/images/flashcards/postgresql-zero-downtime-migrations-og.svg": "4ac9e3059090ffa0",
+  "public/images/posts/karpenter-spot-storm-fallback-gap.svg": "0a31adbdd7078889",
+  "public/images/posts/cilium-1-19-clustermesh-policy-flip.svg": "0025747ecb43fb23"
 }

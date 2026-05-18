@@ -74,5 +74,7 @@
   "public/images/advent/day-23.svg": "11fc33bf5b360f8a",
   "public/images/advent/day-22.svg": "9a2a55dfdae6e26c",
   "public/images/advent/day-24.svg": "fd824eaaa6899562",
-  "public/images/advent/day-25.svg": "0cbcba8b628f3538"
+  "public/images/advent/day-25.svg": "0cbcba8b628f3538",
+  "public/images/posts/cilium-1-19-clustermesh-policy-flip.svg": "f998bb9025beec11",
+  "public/images/posts/karpenter-spot-storm-fallback-gap.svg": "a2f97761414ef371"
 }
