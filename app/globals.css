@@ -322,6 +322,14 @@
   overflow-wrap: anywhere;
 }
 
+/* Inline links — same story as inline code. A raw URL used as link text
+ * (citations, footnotes, "see also" links) has no spaces, so without an
+ * explicit break opportunity the anchor pushes the row wider than the
+ * column on narrow viewports and the page scrolls horizontally. */
+.prose a {
+  overflow-wrap: anywhere;
+}
+
 /* Code block line numbers (optional) */
 .prose pre code .hljs-ln-numbers {
   @apply text-muted-foreground pr-4 select-none;
