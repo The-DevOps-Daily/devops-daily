@@ -17,8 +17,7 @@ tags:
   - npm
   - Security
   - DevOps
-  - Node.js
-  - CI/CD
+  - CICD
 ---
 
 A new wave of the Shai-Hulud worm hit npm at 01:56 UTC on May 19, 2026. This time the carrier was the `atool` maintainer account, which has publish rights across the AntV data-visualization ecosystem and a handful of downstream packages. Inside an hour the attacker pushed malicious versions of `@antv/g2`, `@antv/g6`, `@antv/x6`, `@antv/l7`, `@antv/s2`, `@antv/f2`, `@antv/g`, `@antv/g2plot`, `@antv/graphin`, `@antv/data-set`, plus the chart-glue libraries `echarts-for-react` (1.1M weekly downloads), `timeago.js`, `size-sensor`, and `canvas-nest.js`. Socket counted 639 compromised package versions across 323 unique packages in the burst, and 1,055 versions across 502 packages when you stack it on the broader campaign.
