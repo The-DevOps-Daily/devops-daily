@@ -138,7 +138,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
       <div className="container px-4 py-8 mx-auto">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <div className="lg:col-span-9">
+          <div className="min-w-0 lg:col-span-9">
             <article className="prose dark:prose-invert max-w-none">
               <PostHeader
                 post={{
