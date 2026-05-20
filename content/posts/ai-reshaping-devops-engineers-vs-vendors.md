@@ -1,6 +1,6 @@
 ---
-title: 'AI Is Reshaping DevOps. The Practitioners Are Faster Than the Vendors.'
-excerpt: 'GitHub, Datadog, HashiCorp and friends are moving carefully. The engineers running their stacks are wiring AI into kubectl and pull-request review on a Tuesday afternoon. Here is what is actually changing in 2026, what is not, and where the gap between vendors and practitioners is widest.'
+title: 'AI Is Reshaping DevOps. The Engineers Are Faster Than the Vendors.'
+excerpt: 'GitHub, Datadog, HashiCorp and friends are moving carefully. The engineers running their stacks are wiring AI into kubectl and pull-request review on a Tuesday afternoon. Here is what is actually changing in 2026, what is not, and where the gap between vendors and the engineers using their tools is widest.'
 category:
   name: 'DevOps'
   slug: 'devops'
@@ -20,16 +20,16 @@ tags:
   - Developer Tools
 ---
 
-A question gets asked in every DevOps Slack channel right now: how will AI change our work? The honest answer is that no one knows the final shape yet. What we can say with confidence is who is moving faster. It is not the dominant vendors. GitHub, HashiCorp, Datadog, and Red Hat are being careful, because they have customers to keep and revenue to defend, and a wrong AI bet would cost them years. Meanwhile, individual engineers are wiring Claude Code into their kubectl wrappers, training small models on their own incident postmortems, and shipping internal pull-request review agents to teams of five. The Reddit thread that prompted this post is a fair sample of the energy: practitioners trying things, sharing what works, and being honest about what does not.
+A question gets asked in every DevOps Slack channel right now: how will AI change our work? The honest answer is that no one knows the final shape yet. What we can say with confidence is who is moving faster. It is not the dominant vendors. GitHub, HashiCorp, Datadog, and Red Hat are being careful, because they have customers to keep and revenue to defend, and a wrong AI bet would cost them years. Meanwhile, individual engineers are wiring Claude Code into their kubectl wrappers, training small models on their own incident postmortems, and shipping internal pull-request review agents to teams of five. The Reddit thread that prompted this post is a fair sample of the energy: working engineers trying things, sharing what works, and being honest about what does not.
 
-This post is a working snapshot of where AI is actually changing DevOps in May 2026. What you can use today, what the incumbents are doing, what the practitioners are doing that the incumbents are not, and which corners are still pure hype.
+This post is a working snapshot of where AI is actually changing DevOps in May 2026. What you can use today, what the incumbents are doing, what the engineers running real stacks are doing that the incumbents are not, and which corners are still pure hype.
 
 ## TLDR
 
 - Code authoring is the area where AI is most useful and least controversial. Pull-request review, test generation, and dependency upgrade chores are the next layer in.
 - Observability and incident response are getting natural-language query interfaces faster than the vendors expected. Honeycomb's MCP server, Datadog's Bits AI, New Relic's Grok all work. The deeper bet (autonomous root-cause analysis) is still flaky.
 - Infrastructure-as-code is the slowest moving area. Terraform's plan/apply loop punishes hallucinations harder than any other surface in the stack.
-- Big incumbents move slowly because they own the workflow. A bad AI feature ships to thousands of paying teams and the support tickets compound. Practitioners move fast because they only have to please themselves.
+- Big incumbents move slowly because they own the workflow. A bad AI feature ships to thousands of paying teams and the support tickets compound. Individual engineers move fast because they only have to please themselves.
 - The single highest-leverage thing for a DevOps engineer to try this week: an MCP server that exposes your own infrastructure (kubectl, terraform state, observability) to your AI assistant of choice. The local connection beats every SaaS AIOps tool we have tried.
 
 ## What has actually changed for DevOps engineers
@@ -62,7 +62,7 @@ The harder bet from the same vendors is "AI-driven root cause analysis." The mar
 
 Dependabot was the start. The current wave is more ambitious: an agent that runs the upgrade, reads the changelog, updates the calling code, runs the tests, and opens the PR with a summary of what changed. RenovateBot has supported this shape for a while; what is new is that the LLM step in the middle is now reliable enough to ship.
 
-The practitioners are running this on Tuesday afternoons against their own monorepos. The vendors are catching up. GitHub Copilot now has a "fix the failing PR" mode that does roughly this; Mend, Snyk, and JFrog have variants.
+Individual engineers are running this on Tuesday afternoons against their own monorepos. The vendors are catching up. GitHub Copilot now has a "fix the failing PR" mode that does roughly this; Mend, Snyk, and JFrog have variants.
 
 What still does not work well: major-version upgrades that change semantics. The LLM does not know whether `removed deprecated foo()` means "delete the call" or "migrate to bar()." Senior judgement still wins here.
 
@@ -70,7 +70,7 @@ What still does not work well: major-version upgrades that change semantics. The
 
 The pitches: an AI agent that auto-pages, summarises the incident, drafts the postmortem, suggests the fix, runs the rollback. Several vendors sell this story. Cortex, PagerDuty, Rootly, FireHydrant, Incident.io all have an AI feature.
 
-What actually ships well today is the boring part: the summary. Take 30 minutes of Slack messages and produce a five-bullet recap that the incident commander can paste into the postmortem template. Good models do this reliably. Vendors do it. Practitioners with a Claude API key do it for free.
+What actually ships well today is the boring part: the summary. Take 30 minutes of Slack messages and produce a five-bullet recap that the incident commander can paste into the postmortem template. Good models do this reliably. Vendors do it. Any engineer with a Claude API key does it for free.
 
 What does not ship well is the action. An AI suggesting "roll back deployment X" is fine. An AI executing the rollback against production needs a level of confidence we do not have yet, and the engineering teams we trust are not letting AI write to prod systems without a human in the loop. That layer of the pitch is still aspirational.
 
@@ -92,11 +92,11 @@ This is the question the snippet that inspired this post got right. GitHub does 
 
 The economics are asymmetric. A vendor that ships a great AI feature gets a press cycle. A vendor that ships a bad one loses three of its biggest customers. So they ship slowly, in betas, with opt-in flags, behind feature toggles.
 
-This is rational for them. It also leaves a gap that practitioners are filling.
+This is rational for them. It also leaves a gap that the engineers running real stacks are filling.
 
-## What practitioners are doing that vendors are not
+## What engineers are doing that vendors are not
 
-The shape that matters: practitioners build narrow, opinionated tools for their specific stack. A vendor ships something general for everyone. The narrow one is more useful to the team that built it. Examples we have seen in the last six months:
+The shape that matters: engineers build narrow, opinionated tools for their specific stack. A vendor ships something general for everyone. The narrow one is more useful to the team that built it. Examples we have seen in the last six months:
 
 - **A kubectl wrapper that pipes commands and output to Claude with a prompt about the cluster's deployment conventions.** Replaces the "ask the senior engineer what to do" Slack message for routine debugging.
 - **A pre-commit hook that runs the diff through a local model and refuses to commit if it spots a likely secret leak.** The local model is small; the false-positive rate is high but acceptable when the alternative is committing an AWS key.
