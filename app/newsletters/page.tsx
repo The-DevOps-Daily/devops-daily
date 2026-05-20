@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { getAllNewsletters } from '@/lib/newsletters';
 import { Calendar, ArrowRight, Mail } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
 import { NewsletterForm } from '@/components/footer/newsletter-form';
+import { NewsletterConfirmationBanner } from '@/components/newsletter/newsletter-confirmation-banner';
 
 export const metadata: Metadata = {
   title: 'Newsletter Archive | DevOps Daily',
@@ -38,6 +40,13 @@ export default async function NewslettersPage() {
         description="Every week we send a roundup of new content, tools, and learning resources. Browse past issues or subscribe to get the next one in your inbox."
         breadcrumbs={[{ label: 'Newsletter Archive' }]}
       />
+
+      {/* Subscription-confirmation banner. Rendered only when the smtpfast
+       * double-opt-in redirect lands the user back here with ?confirmed=1.
+       * Suspense boundary is required because the banner reads useSearchParams. */}
+      <Suspense fallback={null}>
+        <NewsletterConfirmationBanner />
+      </Suspense>
 
       {/* Subscribe section */}
       <section className="container mx-auto px-4 -mt-4 mb-8 max-w-md">
