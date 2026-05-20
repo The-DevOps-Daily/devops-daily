@@ -1,0 +1,136 @@
+{
+  "id": "api-rate-limiting",
+  "title": "Designing Rate Limiting for APIs",
+  "description": "Token bucket, leaky bucket, fixed and sliding window algorithms, plus the patterns for building rate limiters that work in distributed systems without falling over.",
+  "category": "API Design",
+  "icon": "Gauge",
+  "difficulty": "intermediate",
+  "estimatedTime": "20 minutes",
+  "cardCount": 17,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "cards": [
+    {
+      "id": "why-rate-limiting-matters",
+      "front": "Why do you need rate limiting on an API even if your servers can handle the traffic?",
+      "back": "Capacity is only one reason. The others bite harder in production:\n\n- A single buggy client in a retry loop can saturate a downstream database or a paid third-party API\n- Abusive scrapers and credential-stuffing bots cost real money on egress, CPU, and tokens\n- Without limits, one customer can degrade service for everyone (noisy neighbor)\n- Auth endpoints without limits turn into brute-force playgrounds\n\nRate limiting is a fairness and safety control. You add it before you need it, not after the incident.",
+      "category": "Fundamentals",
+      "tags": ["api-design", "rate-limiting", "fundamentals"]
+    },
+    {
+      "id": "fixed-window-counter",
+      "front": "How does the fixed window counter algorithm work, and what is its main flaw?",
+      "back": "You bucket time into fixed intervals (say, one minute) and count requests in the current bucket. Reject when the count goes over the limit.\n\n```\nkey = \"user:123:2026-05-20T14:32\"\ncount = INCR key\nif count == 1: EXPIRE key 60\nif count > 100: reject\n```\n\nThe flaw: a client can send 100 requests at 14:32:59 and another 100 at 14:33:00. That is 200 requests in two seconds while technically respecting a 100/minute limit. Cheap to implement, but lets bursts at the boundary slip through.",
+      "category": "Algorithms",
+      "tags": ["fixed-window", "rate-limiting", "algorithms"]
+    },
+    {
+      "id": "sliding-window-log",
+      "front": "What is the sliding window log algorithm, and why is it expensive?",
+      "back": "You store the timestamp of every request in a sorted set. To check the limit, drop entries older than the window and count what is left.\n\n```\nZREMRANGEBYSCORE user:123 0 (now-60s)\nZADD user:123 now now\ncount = ZCARD user:123\nif count > 100: reject\n```\n\nIt is the most accurate algorithm because there are no boundary effects. The cost is memory: storing every request timestamp scales with traffic. For high-throughput APIs you usually want sliding window counters instead.",
+      "category": "Algorithms",
+      "tags": ["sliding-window", "rate-limiting", "algorithms"]
+    },
+    {
+      "id": "sliding-window-counter",
+      "front": "How does the sliding window counter approximate a true sliding window without storing every request?",
+      "back": "Keep counters for the current and previous fixed window. Weight the previous window by how much of it still overlaps the sliding window.\n\n```\nweight = (60 - seconds_into_current_window) / 60\nestimated = previous_count * weight + current_count\nif estimated > 100: reject\n```\n\nYou get most of the accuracy of a sliding log with the memory cost of two integers per key. This is what Cloudflare uses, and it is a good default for almost any production rate limiter.",
+      "category": "Algorithms",
+      "tags": ["sliding-window-counter", "rate-limiting", "cloudflare"]
+    },
+    {
+      "id": "token-bucket-algorithm",
+      "front": "How does the token bucket algorithm work, and what makes it good for bursty traffic?",
+      "back": "A bucket holds up to N tokens. It refills at a steady rate (say, 10 per second). Each request takes one token. If the bucket is empty, reject or queue.\n\n```\ntokens = min(capacity, tokens + (now - last_refill) * rate)\nif tokens >= 1:\n  tokens -= 1\n  allow\nelse:\n  reject\nlast_refill = now\n```\n\nIt allows short bursts up to the bucket capacity while still enforcing the average rate over time. This matches how real clients use APIs: idle, then a flurry of requests. It is what AWS API Gateway and most cloud services use.",
+      "category": "Algorithms",
+      "tags": ["token-bucket", "rate-limiting", "algorithms"]
+    },
+    {
+      "id": "leaky-bucket-algorithm",
+      "front": "What is the leaky bucket algorithm and how is it different from token bucket?",
+      "back": "Requests go into a FIFO queue (the bucket) and are processed at a constant rate (the leak). If the queue is full, new requests are dropped.\n\nThe key difference from token bucket: leaky bucket smooths traffic to a constant output rate. No bursts ever reach the backend. Token bucket lets short bursts through.\n\nUse leaky bucket when the downstream cannot handle spikes (legacy services, payment processors). Use token bucket when you want to be friendly to bursty clients and the backend can absorb short spikes.",
+      "category": "Algorithms",
+      "tags": ["leaky-bucket", "rate-limiting", "algorithms"]
+    },
+    {
+      "id": "which-algorithm",
+      "front": "Which rate limiting algorithm should you pick for a typical public API?",
+      "back": "Default to **token bucket** for most public APIs. It is the right balance for these reasons:\n\n- Allows short bursts that match real client behavior\n- Predictable enforcement of the long-term average\n- Cheap state: two numbers per key (tokens, last refill time)\n- Easy to reason about for users when documented\n\nReach for sliding window counter if you need stricter enforcement without burst tolerance. Use leaky bucket when downstream services need smooth, constant input. Skip fixed window for anything user-facing.",
+      "category": "Algorithms",
+      "tags": ["algorithm-choice", "token-bucket", "design"]
+    },
+    {
+      "id": "rate-limit-response-codes",
+      "front": "What HTTP status code and headers should you return when a client hits the limit?",
+      "back": "Return `429 Too Many Requests` with headers that tell the client when to retry and what their budget is:\n\n```\nHTTP/1.1 429 Too Many Requests\nRetry-After: 30\nX-RateLimit-Limit: 100\nX-RateLimit-Remaining: 0\nX-RateLimit-Reset: 1716222780\n```\n\n`Retry-After` can be seconds or an HTTP date. The `X-RateLimit-*` headers are not standard, but every major API uses them. The IETF draft `RateLimit-Limit` and `RateLimit-Remaining` headers (no `X-` prefix) are the emerging standard.",
+      "category": "API Contract",
+      "tags": ["http-429", "headers", "api-design"]
+    },
+    {
+      "id": "client-identity",
+      "front": "What should you use as the key when rate limiting an API?",
+      "back": "Pick the smallest stable identifier you trust:\n\n- **Authenticated requests**: API key or user ID. Most accurate, lets paying customers get higher limits.\n- **Unauthenticated requests**: IP address. Imperfect (NAT, mobile carriers, corporate proxies all share IPs) but the only thing you have.\n- **Login and signup endpoints**: combine IP + email or IP + username so one attacker cannot brute-force one account from many IPs.\n\nNever trust client-supplied headers like `X-Forwarded-For` unless you know your edge is rewriting them. Use the right hop from the proxy chain.",
+      "category": "Implementation",
+      "tags": ["client-identity", "api-key", "ip-address"]
+    },
+    {
+      "id": "redis-incr-pattern",
+      "front": "What is the simplest distributed rate limiter you can build with Redis?",
+      "back": "Use `INCR` plus `EXPIRE` for a fixed window counter shared across all app servers:\n\n```\nkey = f\"rl:{user_id}:{minute}\"\ncount = redis.incr(key)\nif count == 1:\n    redis.expire(key, 60)\nif count > limit:\n    return 429\n```\n\nThere is a race between `INCR` and `EXPIRE`: if the process crashes between them, the key never expires. Fix it with a Lua script or `SET key 0 EX 60 NX` followed by `INCR`. For most use cases this is good enough and survives single-node Redis at high throughput.",
+      "category": "Implementation",
+      "tags": ["redis", "incr", "distributed"]
+    },
+    {
+      "id": "redis-lua-atomic",
+      "front": "Why use a Lua script for rate limiting in Redis instead of multiple commands?",
+      "back": "Multiple Redis commands from the app are not atomic. Two processes can both read `tokens = 0` and both refill, allowing double the intended rate. A Lua script runs as a single atomic operation on the Redis server.\n\n```lua\nlocal tokens = tonumber(redis.call('GET', KEYS[1]) or ARGV[1])\nlocal last = tonumber(redis.call('GET', KEYS[2]) or 0)\nlocal now = tonumber(ARGV[2])\nlocal refill = (now - last) * tonumber(ARGV[3])\ntokens = math.min(tonumber(ARGV[1]), tokens + refill)\nif tokens >= 1 then\n  tokens = tokens - 1\n  redis.call('SET', KEYS[1], tokens, 'EX', 3600)\n  redis.call('SET', KEYS[2], now, 'EX', 3600)\n  return 1\nend\nreturn 0\n```\n\nOne network round trip, no race conditions, works at scale.",
+      "category": "Implementation",
+      "tags": ["redis", "lua", "atomic"]
+    },
+    {
+      "id": "tiered-limits",
+      "front": "How do you structure rate limits for free, paid, and enterprise tiers?",
+      "back": "Store limits as data, not as code. Key by tier in your config or a small lookup table:\n\n```\nfree:       60 req/min,   1000 req/day\npro:      1000 req/min,  50000 req/day\nenterprise: custom per contract\n```\n\nApply two limits at once: a per-minute limit prevents abuse, and a per-day limit caps cost. Different endpoints often need different weights (a search call costs more than a healthcheck), so let one request consume more than one token from the bucket.",
+      "category": "Patterns",
+      "tags": ["tiered-limits", "pricing", "patterns"]
+    },
+    {
+      "id": "per-endpoint-limits",
+      "front": "Why do you usually want different rate limits for different endpoints?",
+      "back": "One global limit per user is a blunt tool. Cheap and expensive endpoints have very different cost profiles:\n\n- `GET /healthz`: 1000/min is fine\n- `POST /search`: 60/min, hits Elasticsearch\n- `POST /generate-pdf`: 10/min, burns CPU\n- `POST /login`: 5/min per IP, stops brute force\n\nGroup endpoints into cost classes (cheap, normal, expensive) instead of setting a limit per route. Use a request weight so one expensive call consumes more tokens. This also matches how AWS and Stripe price their APIs.",
+      "category": "Patterns",
+      "tags": ["per-endpoint", "request-weight", "patterns"]
+    },
+    {
+      "id": "edge-vs-app-rate-limiting",
+      "front": "Should you rate limit at the CDN, the API gateway, or in the application?",
+      "back": "All three, at different layers:\n\n- **CDN (Cloudflare, Fastly)**: blunt limits on raw request volume per IP. Stops volumetric abuse before it costs you anything.\n- **API gateway (Kong, Envoy, AWS API Gateway)**: per-key or per-tier limits, response headers, 429s. The main enforcement point.\n- **Application**: business-rule limits that need request context. Example: 5 password resets per email per hour.\n\nPushing limits as close to the edge as possible saves backend cycles. Some limits can only be enforced after auth and parsing, so the app still needs its own layer.",
+      "category": "Patterns",
+      "tags": ["edge", "gateway", "layered"]
+    },
+    {
+      "id": "concurrency-vs-rate",
+      "front": "What is the difference between a rate limiter and a concurrency limiter, and when do you need both?",
+      "back": "A rate limiter caps requests per unit time. A concurrency limiter caps requests in flight at any moment.\n\nA client can stay under 100 req/min while keeping 50 long-running requests open and exhausting your worker pool. Rate limiting alone does not stop that.\n\nUse both for any endpoint that can be slow:\n\n- Rate limit: 60 req/min per user\n- Concurrency limit: 5 in-flight per user\n\nConcurrency limits are usually implemented with a semaphore in the app or a connection limit at the gateway, not in Redis.",
+      "category": "Patterns",
+      "tags": ["concurrency", "semaphore", "patterns"]
+    },
+    {
+      "id": "client-backoff",
+      "front": "How should a client respond when it gets a 429, and what is the wrong way to do it?",
+      "back": "Honor `Retry-After` if it is present. Otherwise use exponential backoff with jitter:\n\n```python\nfor attempt in range(5):\n    resp = call_api()\n    if resp.status_code != 429:\n        break\n    wait = int(resp.headers.get(\"Retry-After\",\n                                min(60, 2**attempt)))\n    wait += random.uniform(0, wait * 0.3)  # jitter\n    time.sleep(wait)\n```\n\nThe wrong way: a tight retry loop with no delay. Every blocked client retrying immediately is a thundering herd that keeps the server pinned. Jitter is the difference between recovery in seconds and a self-inflicted outage.",
+      "category": "Client Behavior",
+      "tags": ["backoff", "retry", "jitter"]
+    },
+    {
+      "id": "monitoring-rate-limits",
+      "front": "What do you monitor to know your rate limiter is set correctly?",
+      "back": "Track these metrics and alert on the patterns, not the raw numbers:\n\n- **429 rate per endpoint and per client**: a sudden spike usually means abuse or a buggy integration\n- **Top clients by request volume**: catches noisy neighbors before they show up in 429s\n- **Limit headroom**: percentage of users hitting more than 80% of their limit. If most paying users brush the ceiling, your limits are too tight.\n- **Allow vs deny ratio at the gateway**: shifts in this ratio show shifts in traffic shape\n\nIf nothing is ever rate limited, your limits are too loose. If everyone is rate limited, they are too tight.",
+      "category": "Operations",
+      "tags": ["monitoring", "metrics", "operations"]
+    }
+  ]
+}
