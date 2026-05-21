@@ -1,0 +1,53 @@
+{
+  "id": "argocd-scaling-repo-many-services-clusters",
+  "slug": "argocd-scaling-repo-many-services-clusters",
+  "title": "Scaling a Manifests Repo Across Many Services, Environments, and Clusters",
+  "question": "You have 15 microservices, 4 environments (dev, staging, preprod, prod), and prod runs in 3 regional clusters. That's potentially 90 Application CRs. How do you structure the manifests repo so it doesn't fall apart?",
+  "answer": "At this size, hand-written Application CRs are dead weight. Switch to ApplicationSets generated from the directory layout, push environment differences into structured parameter files, and split the repo into a workloads side and a platform side. Three changes get you there.\n\nFirst, layout. Two axes: app and environment-or-cluster. I keep the app axis as the primary directory split because most changes happen inside one app.\n\nworkloads/\n  checkout/\n    base/\n    overlays/\n      dev/\n      staging/\n      preprod/\n      prod-us-east/\n      prod-eu-west/\n      prod-ap-south/\n  ledger/\n    base/\n    overlays/\n      ... same shape\n  ...\nclusters/\n  dev/\n    config.yaml          # cluster metadata: name, server, region, labels\n  staging/\n  preprod/\n  prod-us-east/\n  prod-eu-west/\n  prod-ap-south/\nargocd/\n  applicationsets/\n    workloads.yaml       # one ApplicationSet that fans out across apps x envs\n  projects/\n\nSecond, one ApplicationSet does the fan-out. A matrix generator combines a list of apps with the cluster list. The template produces one Application per (app, cluster) pair. Add a new app: drop a directory under workloads/. Add a new region: register the cluster and add an overlay. Both flows are pure Git, no YAML duplication.\n\nThird, push the actual environment differences into well-named files, not into a wall of overlay patches. Each overlay holds a values.yaml or a config.yaml with the parameters that differ: replica count, resource requests, DNS suffix, feature flags. The overlay's kustomization.yaml is a thin shim that pulls in the base, applies a couple of patches, and merges the values file into a ConfigMap. When someone wants to know 'what is different about eu-west prod', they read one file, not five.\n\nThings that go wrong at this scale if you do not plan for them:\n\n1. Argo CD performance. 90 Applications all polling the same Git repo means your repo server becomes a bottleneck. Enable Git webhook integration so commits trigger immediate refresh instead of every Application polling on its own interval. Tune timeout.reconciliation in argocd-cm.\n\n2. Repo server memory. Rendering Kustomize or Helm for 90 Applications eats RAM. Scale up the argocd-repo-server replicas, give them more memory, and consider running a separate Argo CD instance for production clusters so a dev repo storm cannot starve prod reconcile.\n\n3. Blast radius of a base change. A change to workloads/checkout/base/deployment.yaml hits 6 environments at once. Use sync waves and sync windows so prod-eu-west does not sync at the same moment as prod-us-east. Or, for the riskiest changes, use a release branch that overlays target instead of main, so you can promote regions one at a time.\n\n4. Discoverability. With 90 Applications, the Argo CD UI gets hard to navigate. Use labels on the ApplicationSet template (app, env, region, team) and rely on the UI's label filters instead of scrolling.\n\nOne pattern I avoid at this size: per-cluster manifests repos. It feels clean and it kills you the first time you need to roll out a security patch to 6 clusters at once. One repo, many Applications, generated from one template. Drift between regions is the enemy.",
+  "explanation": "This is the senior question where you find out whether the candidate has actually operated Argo CD at scale or just configured it for one team. Strong candidates will name specific scaling pain points (repo server memory, polling vs webhook, sync windows) and reach for ApplicationSets and matrix generators without prompting. They will also call out drift between regions as a first-class concern, which most people learn the hard way. Weak candidates will describe the small-scale layout they used in a previous job and pretend it works at 10x scale.",
+  "category": "GitOps",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "gitops",
+    "argocd",
+    "deployments",
+    "repository-structure",
+    "scaling"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Matrix ApplicationSet generating Applications across apps and clusters",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: ApplicationSet\nmetadata:\n  name: workloads\n  namespace: argocd\nspec:\n  generators:\n    - matrix:\n        generators:\n          # Axis 1: each app under workloads/\n          - git:\n              repoURL: https://github.com/org/manifests\n              revision: main\n              directories:\n                - path: workloads/*\n          # Axis 2: each registered cluster, filtered to envs we care about\n          - clusters:\n              selector:\n                matchExpressions:\n                  - key: env\n                    operator: In\n                    values: [dev, staging, preprod, prod]\n  template:\n    metadata:\n      name: '{{path.basename}}-{{name}}'\n      labels:\n        app: '{{path.basename}}'\n        env: '{{metadata.labels.env}}'\n        region: '{{metadata.labels.region}}'\n    spec:\n      project: '{{metadata.labels.env}}'\n      source:\n        repoURL: https://github.com/org/manifests\n        targetRevision: main\n        path: 'workloads/{{path.basename}}/overlays/{{name}}'\n      destination:\n        server: '{{server}}'\n        namespace: '{{path.basename}}'\n      syncPolicy:\n        automated:\n          prune: true\n          selfHeal: true"
+    },
+    {
+      "language": "yaml",
+      "label": "Cluster Secret with labels the ApplicationSet selector uses",
+      "code": "# Each cluster registered with Argo CD as a Secret with labels.\n# These labels drive which Applications get generated for which cluster.\napiVersion: v1\nkind: Secret\nmetadata:\n  name: prod-eu-west\n  namespace: argocd\n  labels:\n    argocd.argoproj.io/secret-type: cluster\n    env: prod\n    region: eu-west\n    tier: production\ntype: Opaque\nstringData:\n  name: prod-eu-west\n  server: https://prod-eu-west.example.com\n  config: |\n    {\n      \"bearerToken\": \"...\",\n      \"tlsClientConfig\": { \"caData\": \"...\" }\n    }"
+    },
+    {
+      "language": "yaml",
+      "label": "Sync windows that stagger prod region rollouts",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: AppProject\nmetadata:\n  name: prod\n  namespace: argocd\nspec:\n  description: Production workloads, region-staggered rollout\n  sourceRepos:\n    - https://github.com/org/manifests\n  destinations:\n    - server: '*'\n      namespace: '*'\n  syncWindows:\n    # us-east first, business hours\n    - kind: allow\n      schedule: '0 9 * * 1-4'\n      duration: 1h\n      clusters: ['prod-us-east']\n      manualSync: true\n    # eu-west 2 hours later, gives us time to catch issues\n    - kind: allow\n      schedule: '0 11 * * 1-4'\n      duration: 1h\n      clusters: ['prod-eu-west']\n      manualSync: true\n    # ap-south last\n    - kind: allow\n      schedule: '0 13 * * 1-4'\n      duration: 1h\n      clusters: ['prod-ap-south']\n      manualSync: true\n    # No prod syncs Friday afternoon or weekends\n    - kind: deny\n      schedule: '0 14 * * 5'\n      duration: 66h\n      clusters: ['prod-*']\n      manualSync: false"
+    }
+  ],
+  "followUpQuestions": [
+    "At what point would you split into multiple Argo CD instances instead of one? What is the line?",
+    "Your repo server is OOMing. Walk me through how you would diagnose and fix that before throwing more memory at it.",
+    "A base manifest change needs to roll to 6 prod clusters but you want to halt after 2 if anything looks wrong. How do you wire that?",
+    "How would you keep regions from drifting when one region needs a temporary patch the others do not?"
+  ],
+  "commonMistakes": [
+    "Hand-writing 90 Application YAMLs instead of generating them, then never daring to refactor because every change touches every file",
+    "One manifests repo per cluster, which feels organized until you need to roll a CVE fix to all of them at once",
+    "Letting Argo CD poll Git on its default interval across 90 Applications instead of wiring up webhooks, then wondering why changes take 3 minutes to show up"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "applicationsets",
+    "gitops",
+    "multi-cluster",
+    "scaling"
+  ]
+}

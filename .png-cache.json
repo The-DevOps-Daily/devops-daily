@@ -709,5 +709,11 @@
   "public/images/posts/antv-npm-shai-hulud-wave-may-2026.svg": "af60705b303998a1",
   "public/images/quizzes/on-call-rotation-quiz-og.svg": "f52a9e44d2953c75",
   "public/images/posts/ai-reshaping-devops-practitioners-vs-vendors.svg": "10ab61b91832c192",
-  "public/images/posts/ai-reshaping-devops-engineers-vs-vendors.svg": "aef8efe6f7491284"
+  "public/images/posts/ai-reshaping-devops-engineers-vs-vendors.svg": "aef8efe6f7491284",
+  "public/images/flashcards/api-rate-limiting-og.svg": "5f4a51d0a0e4ebca",
+  "public/images/interview-questions/argocd-bootstrapping-self-management-og.svg": "d89d63f06e1bb935",
+  "public/images/interview-questions/argocd-multi-team-manifests-repo-og.svg": "12bc23cc501b9cf7",
+  "public/images/interview-questions/argocd-secrets-in-gitops-repo-og.svg": "e5a3efdab5a7714e",
+  "public/images/interview-questions/argocd-helm-vs-kustomize-multi-env-og.svg": "8f6959ebc146700c",
+  "public/images/interview-questions/argocd-scaling-repo-many-services-clusters-og.svg": "b756aa40b6f554a8"
 }
