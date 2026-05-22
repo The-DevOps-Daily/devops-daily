@@ -1,61 +1,113 @@
-<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="630" fill="#06131F"/>
-  <rect width="1200" height="630" fill="url(#bg)"/>
-  <g opacity="0.22">
-    <path d="M0 92H1200M0 180H1200M0 268H1200M0 356H1200M0 444H1200M0 532H1200" stroke="#9BE7C7" stroke-width="1"/>
-    <path d="M120 0V630M240 0V630M360 0V630M480 0V630M600 0V630M720 0V630M840 0V630M960 0V630M1080 0V630" stroke="#65B7FF" stroke-width="1"/>
-  </g>
-
-  <rect x="72" y="70" width="1056" height="490" rx="28" fill="#071A2A" stroke="#2A6E8F" stroke-width="2"/>
-  <rect x="96" y="96" width="1008" height="438" rx="22" fill="#07111C" stroke="#1D3346"/>
-
-  <g filter="url(#glow)">
-    <circle cx="234" cy="318" r="70" fill="#0EA5E9" fill-opacity="0.2"/>
-    <circle cx="966" cy="318" r="70" fill="#22C55E" fill-opacity="0.2"/>
-  </g>
-
-  <rect x="152" y="238" width="164" height="160" rx="18" fill="#08263B" stroke="#38BDF8" stroke-width="2"/>
-  <rect x="884" y="238" width="164" height="160" rx="18" fill="#082D24" stroke="#4ADE80" stroke-width="2"/>
-  <text x="234" y="292" text-anchor="middle" fill="#E0F2FE" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">CLIENT</text>
-  <text x="234" y="330" text-anchor="middle" fill="#7DD3FC" font-family="JetBrains Mono, Consolas, monospace" font-size="18">psql / app</text>
-  <text x="966" y="292" text-anchor="middle" fill="#DCFCE7" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">SERVER</text>
-  <text x="966" y="330" text-anchor="middle" fill="#86EFAC" font-family="JetBrains Mono, Consolas, monospace" font-size="18">postgres</text>
-
-  <g font-family="JetBrains Mono, Consolas, monospace" font-size="20" font-weight="700">
-    <rect x="392" y="194" width="126" height="48" rx="12" fill="#0F2F46" stroke="#38BDF8"/>
-    <text x="455" y="225" text-anchor="middle" fill="#BAE6FD">Startup</text>
-    <path d="M324 218H384" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
-    <path d="M374 210L386 218L374 226" stroke="#38BDF8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-
-    <rect x="544" y="252" width="112" height="48" rx="12" fill="#442B08" stroke="#FBBF24"/>
-    <text x="600" y="283" text-anchor="middle" fill="#FDE68A">SCRAM</text>
-    <path d="M676 276H876" stroke="#FBBF24" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 9"/>
-    <path d="M866 268L878 276L866 284" stroke="#FBBF24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-
-    <rect x="424" y="326" width="102" height="48" rx="12" fill="#123827" stroke="#4ADE80"/>
-    <text x="475" y="357" text-anchor="middle" fill="#BBF7D0">DataRow</text>
-    <path d="M876 350H536" stroke="#4ADE80" stroke-width="3" stroke-linecap="round"/>
-    <path d="M546 342L534 350L546 358" stroke="#4ADE80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-
-    <rect x="636" y="394" width="84" height="48" rx="12" fill="#2E1A47" stroke="#C084FC"/>
-    <text x="678" y="425" text-anchor="middle" fill="#E9D5FF">Ready</text>
-    <path d="M876 418H728" stroke="#C084FC" stroke-width="3" stroke-linecap="round"/>
-    <path d="M738 410L726 418L738 426" stroke="#C084FC" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-
-  <text x="112" y="157" fill="#9BE7C7" font-family="JetBrains Mono, Consolas, monospace" font-size="24" font-weight="700">NEW SIMULATOR</text>
-  <text x="112" y="462" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="58" font-weight="800">PostgreSQL Wire</text>
-  <text x="112" y="520" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="58" font-weight="800">Protocol Simulator</text>
-  <text x="112" y="572" fill="#B6C7D6" font-family="Inter, Arial, sans-serif" font-size="24">StartupMessage - SCRAM - Query - DataRow - ReadyForQuery</text>
-
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#082F49"/>
-      <stop offset="0.52" stop-color="#0F172A"/>
-      <stop offset="1" stop-color="#064E3B"/>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="52%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
     </linearGradient>
-    <filter id="glow" x="100" y="184" width="1000" height="268" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="32"/>
+    <linearGradient id="titleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#38bdf8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#22c55e;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
   </defs>
+
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <g opacity="0.08">
+    <line x1="0" y1="157.5" x2="1200" y2="157.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="315" x2="1200" y2="315" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="0" y1="472.5" x2="1200" y2="472.5" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="300" y1="0" x2="300" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#94a3b8" stroke-width="1"/>
+    <line x1="900" y1="0" x2="900" y2="630" stroke="#94a3b8" stroke-width="1"/>
+  </g>
+
+  <g opacity="0.18">
+    <path d="M-80 610 L520 270 L760 270 L160 630 Z" fill="#0f2338"/>
+    <path d="M360 630 L1200 150 L1200 360 L700 630 Z" fill="#0b2337"/>
+  </g>
+
+  <circle cx="100" cy="150" r="20" fill="#38bdf8" opacity="0.12"/>
+  <circle cx="100" cy="150" r="16" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.16" stroke-dasharray="1 2"/>
+  <circle cx="150" cy="500" r="15" fill="none" stroke="#94a3b8" stroke-width="1" opacity="0.16" stroke-dasharray="1 2"/>
+  <circle cx="1098" cy="100" r="26" fill="#22c55e" opacity="0.08"/>
+  <circle cx="1050" cy="500" r="18" fill="#22c55e" opacity="0.08"/>
+
+  <g transform="translate(95, 178)">
+    <rect x="0" y="28" width="150" height="176" rx="10" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+    <rect x="16" y="48" width="118" height="76" rx="5" fill="#0f172a" stroke="#38bdf8" stroke-width="1.5"/>
+    <circle cx="30" cy="62" r="3" fill="#ef4444"/>
+    <circle cx="42" cy="62" r="3" fill="#eab308"/>
+    <circle cx="54" cy="62" r="3" fill="#22c55e"/>
+    <text x="75" y="157" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">CLIENT</text>
+    <text x="75" y="178" font-family="monospace" font-size="11" fill="#38bdf8" text-anchor="middle">driver</text>
+  </g>
+
+  <g transform="translate(480, 190)">
+    <path d="M70 0 C108 0 140 13 140 30 L140 170 C140 187 108 200 70 200 C32 200 0 187 0 170 L0 30 C0 13 32 0 70 0 Z" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+    <ellipse cx="70" cy="30" rx="70" ry="30" fill="#0f172a" stroke="#22c55e" stroke-width="2"/>
+    <path d="M0 82 C0 99 32 112 70 112 C108 112 140 99 140 82" fill="none" stroke="#334155" stroke-width="1.5"/>
+    <path d="M0 126 C0 143 32 156 70 156 C108 156 140 143 140 126" fill="none" stroke="#334155" stroke-width="1.5"/>
+    <circle cx="46" cy="72" r="4" fill="#22c55e" filter="url(#glow)"/>
+    <circle cx="46" cy="116" r="4" fill="#38bdf8" filter="url(#glow)"/>
+    <circle cx="46" cy="160" r="4" fill="#94a3b8"/>
+    <text x="70" y="226" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">POSTGRES</text>
+    <text x="70" y="246" font-family="monospace" font-size="11" fill="#22c55e" text-anchor="middle">backend</text>
+  </g>
+
+  <g transform="translate(260, 220)" font-family="monospace">
+    <line x1="0" y1="26" x2="188" y2="26" stroke="#38bdf8" stroke-width="2"/>
+    <polygon points="188,20 208,26 188,32" fill="#38bdf8"/>
+    <rect x="56" y="0" width="88" height="28" rx="14" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+    <text x="100" y="19" font-size="11" fill="#7dd3fc" text-anchor="middle">STARTUP</text>
+
+    <line x1="208" y1="74" x2="20" y2="74" stroke="#f59e0b" stroke-width="2" stroke-dasharray="7 7"/>
+    <polygon points="20,68 0,74 20,80" fill="#f59e0b"/>
+    <rect x="65" y="48" width="70" height="28" rx="14" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="100" y="67" font-size="11" fill="#fbbf24" text-anchor="middle">SCRAM</text>
+
+    <line x1="0" y1="122" x2="188" y2="122" stroke="#a855f7" stroke-width="2"/>
+    <polygon points="188,116 208,122 188,128" fill="#a855f7"/>
+    <rect x="66" y="96" width="68" height="28" rx="14" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+    <text x="100" y="115" font-size="11" fill="#c084fc" text-anchor="middle">QUERY</text>
+
+    <line x1="208" y1="170" x2="20" y2="170" stroke="#22c55e" stroke-width="2"/>
+    <polygon points="20,164 0,170 20,176" fill="#22c55e"/>
+    <rect x="61" y="144" width="78" height="28" rx="14" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="100" y="163" font-size="11" fill="#4ade80" text-anchor="middle">DATAROW</text>
+
+    <line x1="208" y1="218" x2="20" y2="218" stroke="#6366f1" stroke-width="2"/>
+    <polygon points="20,212 0,218 20,224" fill="#6366f1"/>
+    <rect x="67" y="192" width="66" height="28" rx="14" fill="#1e293b" stroke="#6366f1" stroke-width="1.5"/>
+    <text x="100" y="211" font-size="11" fill="#a5b4fc" text-anchor="middle">READY</text>
+  </g>
+
+  <g transform="translate(870, 160)">
+    <rect x="-92" y="0" width="184" height="32" rx="16" fill="#0f2f46" opacity="0.8"/>
+    <rect x="-92" y="0" width="184" height="32" rx="16" fill="none" stroke="#38bdf8" stroke-width="1.8"/>
+    <text x="0" y="21" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#7dd3fc" text-anchor="middle">Interactive Simulator</text>
+
+    <text x="0" y="84" font-family="system-ui, -apple-system, sans-serif" font-size="46" font-weight="800" fill="url(#titleGradient)" text-anchor="middle">PostgreSQL Wire</text>
+    <text x="0" y="138" font-family="system-ui, -apple-system, sans-serif" font-size="46" font-weight="800" fill="url(#titleGradient)" text-anchor="middle">Protocol</text>
+    <text x="0" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#94a3b8" text-anchor="middle">Visualize how drivers talk to Postgres</text>
+
+    <g transform="translate(-190, 220)" font-family="system-ui, -apple-system, sans-serif" font-size="12">
+      <rect x="0" y="0" width="98" height="30" rx="15" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/>
+      <text x="49" y="20" fill="#7dd3fc" text-anchor="middle">Startup</text>
+      <rect x="110" y="0" width="76" height="30" rx="15" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="148" y="20" fill="#fbbf24" text-anchor="middle">SCRAM</text>
+      <rect x="198" y="0" width="112" height="30" rx="15" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="254" y="20" fill="#c084fc" text-anchor="middle">Prepared SQL</text>
+      <rect x="322" y="0" width="64" height="30" rx="15" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="354" y="20" fill="#4ade80" text-anchor="middle">COPY</text>
+    </g>
+  </g>
 </svg>
