@@ -1,0 +1,61 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#06131F"/>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g opacity="0.22">
+    <path d="M0 92H1200M0 180H1200M0 268H1200M0 356H1200M0 444H1200M0 532H1200" stroke="#9BE7C7" stroke-width="1"/>
+    <path d="M120 0V630M240 0V630M360 0V630M480 0V630M600 0V630M720 0V630M840 0V630M960 0V630M1080 0V630" stroke="#65B7FF" stroke-width="1"/>
+  </g>
+
+  <rect x="72" y="70" width="1056" height="490" rx="28" fill="#071A2A" stroke="#2A6E8F" stroke-width="2"/>
+  <rect x="96" y="96" width="1008" height="438" rx="22" fill="#07111C" stroke="#1D3346"/>
+
+  <g filter="url(#glow)">
+    <circle cx="234" cy="318" r="70" fill="#0EA5E9" fill-opacity="0.2"/>
+    <circle cx="966" cy="318" r="70" fill="#22C55E" fill-opacity="0.2"/>
+  </g>
+
+  <rect x="152" y="238" width="164" height="160" rx="18" fill="#08263B" stroke="#38BDF8" stroke-width="2"/>
+  <rect x="884" y="238" width="164" height="160" rx="18" fill="#082D24" stroke="#4ADE80" stroke-width="2"/>
+  <text x="234" y="292" text-anchor="middle" fill="#E0F2FE" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">CLIENT</text>
+  <text x="234" y="330" text-anchor="middle" fill="#7DD3FC" font-family="JetBrains Mono, Consolas, monospace" font-size="18">psql / app</text>
+  <text x="966" y="292" text-anchor="middle" fill="#DCFCE7" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700">SERVER</text>
+  <text x="966" y="330" text-anchor="middle" fill="#86EFAC" font-family="JetBrains Mono, Consolas, monospace" font-size="18">postgres</text>
+
+  <g font-family="JetBrains Mono, Consolas, monospace" font-size="20" font-weight="700">
+    <rect x="392" y="194" width="126" height="48" rx="12" fill="#0F2F46" stroke="#38BDF8"/>
+    <text x="455" y="225" text-anchor="middle" fill="#BAE6FD">Startup</text>
+    <path d="M324 218H384" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M374 210L386 218L374 226" stroke="#38BDF8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="544" y="252" width="112" height="48" rx="12" fill="#442B08" stroke="#FBBF24"/>
+    <text x="600" y="283" text-anchor="middle" fill="#FDE68A">SCRAM</text>
+    <path d="M676 276H876" stroke="#FBBF24" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 9"/>
+    <path d="M866 268L878 276L866 284" stroke="#FBBF24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="424" y="326" width="102" height="48" rx="12" fill="#123827" stroke="#4ADE80"/>
+    <text x="475" y="357" text-anchor="middle" fill="#BBF7D0">DataRow</text>
+    <path d="M876 350H536" stroke="#4ADE80" stroke-width="3" stroke-linecap="round"/>
+    <path d="M546 342L534 350L546 358" stroke="#4ADE80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect x="636" y="394" width="84" height="48" rx="12" fill="#2E1A47" stroke="#C084FC"/>
+    <text x="678" y="425" text-anchor="middle" fill="#E9D5FF">Ready</text>
+    <path d="M876 418H728" stroke="#C084FC" stroke-width="3" stroke-linecap="round"/>
+    <path d="M738 410L726 418L738 426" stroke="#C084FC" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="112" y="157" fill="#9BE7C7" font-family="JetBrains Mono, Consolas, monospace" font-size="24" font-weight="700">NEW SIMULATOR</text>
+  <text x="112" y="462" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="58" font-weight="800">PostgreSQL Wire</text>
+  <text x="112" y="520" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="58" font-weight="800">Protocol Simulator</text>
+  <text x="112" y="572" fill="#B6C7D6" font-family="Inter, Arial, sans-serif" font-size="24">StartupMessage - SCRAM - Query - DataRow - ReadyForQuery</text>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#082F49"/>
+      <stop offset="0.52" stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#064E3B"/>
+    </linearGradient>
+    <filter id="glow" x="100" y="184" width="1000" height="268" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="32"/>
+    </filter>
+  </defs>
+</svg>
