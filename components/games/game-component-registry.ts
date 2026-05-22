@@ -22,6 +22,7 @@ import LinuxTerminal from '@/components/games/linux-terminal';
 import LoadBalancerSimulator from '@/components/games/load-balancer-simulator';
 import MicroservicesSimulator from '@/components/games/microservices-simulator';
 import PacketJourney from '@/components/games/packet-journey';
+import PostgresWireProtocolSimulator from '@/components/games/postgres-wire-protocol-simulator';
 import PromqlPlayground from '@/components/games/promql-playground';
 import RateLimitSimulator from '@/components/games/rate-limit-simulator';
 import RestVsGraphql from '@/components/games/rest-vs-graphql-simulator';
@@ -46,6 +47,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'k8s-scheduler': K8sScheduler,
   'linux-terminal': LinuxTerminal,
   'packet-journey': PacketJourney,
+  'postgres-wire-protocol': PostgresWireProtocolSimulator,
   'deployment-strategies': DeploymentStrategies,
   'gitops-workflow': GitOpsWorkflow,
   'cicd-stack-generator': CicdStackGenerator,
