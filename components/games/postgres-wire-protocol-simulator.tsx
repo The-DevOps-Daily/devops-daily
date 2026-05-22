@@ -478,7 +478,7 @@ const toneStyles: Record<MessageTone, string> = {
 const providers = [
   {
     name: 'DigitalOcean Managed PostgreSQL',
-    label: '$200 credit',
+    label: 'Managed',
     href: 'https://m.do.co/c/2a9bba940f39',
     description: 'Managed Postgres with backups, standby nodes, VPC networking, and simple pricing.',
     sponsored: true,
@@ -512,6 +512,15 @@ function flowDirection(step: ProtocolStep) {
   if (step.from === 'client') return 'Client to server';
   if (step.from === 'server') return 'Server to client';
   return 'Both directions';
+}
+
+function compactCode(code: string) {
+  const compact: Record<string, string> = {
+    SSLRequest: 'SSL',
+    StartupMessage: 'START',
+  };
+
+  return compact[code] ?? code;
 }
 
 function getScenarioSteps(scenario: Scenario, tlsEnabled: boolean, rowCount: number, injectError: boolean) {
@@ -588,7 +597,7 @@ function MessageRail({
     <div className="relative overflow-hidden rounded-lg border bg-zinc-950 p-4 text-slate-100">
       <div
         className={cn(
-          'mb-4 grid grid-cols-[1fr_70px_1fr] items-center gap-3 text-xs',
+          'mb-4 grid grid-cols-[minmax(0,1fr)_84px_minmax(0,1fr)] items-center gap-4 text-xs',
           'font-medium uppercase tracking-wide text-slate-400'
         )}
       >
@@ -616,7 +625,8 @@ function MessageRail({
                 type="button"
                 onClick={() => onSelect(index)}
                 className={cn(
-                  'grid w-full grid-cols-[1fr_70px_1fr] items-center gap-3 rounded-md p-1 text-left',
+                  'grid w-full grid-cols-[minmax(0,1fr)_84px_minmax(0,1fr)] items-center gap-4',
+                  'rounded-md p-1 text-left',
                   'transition-colors hover:bg-white/5',
                   isActive && 'bg-white/10'
                 )}
@@ -668,8 +678,12 @@ function Packet({ step, active }: { step: ProtocolStep; active: boolean }) {
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-black/35 font-mono text-xs">
-            {step.code}
+          <span
+            title={step.code}
+            className="flex h-6 min-w-8 max-w-16 shrink-0 items-center justify-center truncate
+              rounded bg-black/35 px-2 font-mono text-[11px]"
+          >
+            {compactCode(step.code)}
           </span>
           <span className="truncate text-sm font-semibold">{step.label}</span>
         </div>
@@ -692,8 +706,8 @@ function MessageInspector({ step }: { step: ProtocolStep }) {
             </CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">{flowDirection(step)}</p>
           </div>
-          <Badge variant="secondary" className="font-mono">
-            {step.code}
+          <Badge variant="secondary" className="font-mono" title={step.code}>
+            {compactCode(step.code)}
           </Badge>
         </div>
       </CardHeader>
@@ -735,7 +749,9 @@ function MessageInspector({ step }: { step: ProtocolStep }) {
             <div className="border-r border-slate-700 bg-slate-800 px-2 py-2">type</div>
             <div className="border-r border-slate-700 bg-slate-800 px-2 py-2">length</div>
             <div className="bg-slate-800 px-2 py-2">payload</div>
-            <div className="border-r border-t border-slate-700 px-2 py-3 text-primary">{step.code}</div>
+            <div className="border-r border-t border-slate-700 px-2 py-3 text-primary">
+              {compactCode(step.code)}
+            </div>
             <div className="border-r border-t border-slate-700 px-2 py-3">{step.bytes}</div>
             <div className="truncate border-t border-slate-700 px-2 py-3 text-left">{step.payload}</div>
           </div>
@@ -1005,6 +1021,36 @@ export default function PostgresWireProtocolSimulator() {
                     <div className="truncate font-medium">{step.label}</div>
                   </button>
                 ))}
+              </div>
+              <div className="grid gap-2 rounded-lg border bg-muted/20 p-3 text-xs sm:grid-cols-3">
+                <div className="flex items-center gap-2">
+                  <span className="rounded bg-cyan-500/15 px-2 py-1 font-mono text-cyan-600 dark:text-cyan-300">
+                    START
+                  </span>
+                  Startup packets have no type byte.
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      'rounded bg-emerald-500/15 px-2 py-1 font-mono',
+                      'text-emerald-600 dark:text-emerald-300'
+                    )}
+                  >
+                    D
+                  </span>
+                  DataRow messages carry one row each.
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      'rounded bg-violet-500/15 px-2 py-1 font-mono',
+                      'text-violet-600 dark:text-violet-300'
+                    )}
+                  >
+                    Z
+                  </span>
+                  ReadyForQuery ends the exchange.
+                </div>
               </div>
             </div>
 
