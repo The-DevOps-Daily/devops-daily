@@ -716,5 +716,6 @@
   "public/images/interview-questions/argocd-secrets-in-gitops-repo-og.svg": "e5a3efdab5a7714e",
   "public/images/interview-questions/argocd-helm-vs-kustomize-multi-env-og.svg": "8f6959ebc146700c",
   "public/images/interview-questions/argocd-scaling-repo-many-services-clusters-og.svg": "b756aa40b6f554a8",
-  "public/images/posts/node-ipc-dns-exfil-supply-chain-may-2026.svg": "46395b084e1a1add"
+  "public/images/posts/node-ipc-dns-exfil-supply-chain-may-2026.svg": "46395b084e1a1add",
+  "public/images/posts/postinstall-hidden-in-package-json-php-supply-chain-may-2026.svg": "65edc1a53f930f7e"
 }
