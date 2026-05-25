@@ -718,5 +718,6 @@
   "public/images/interview-questions/argocd-scaling-repo-many-services-clusters-og.svg": "b756aa40b6f554a8",
   "public/images/posts/node-ipc-dns-exfil-supply-chain-may-2026.svg": "46395b084e1a1add",
   "public/images/posts/postinstall-hidden-in-package-json-php-supply-chain-may-2026.svg": "65edc1a53f930f7e",
-  "public/images/posts/on-call-rotation-escalation-policy-guide.svg": "c69b4a85e05be4ab"
+  "public/images/posts/on-call-rotation-escalation-policy-guide.svg": "c69b4a85e05be4ab",
+  "public/images/news/2026-week-22.svg": "eb3d26700d810586"
 }
