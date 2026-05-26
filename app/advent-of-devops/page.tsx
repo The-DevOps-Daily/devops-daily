@@ -4,7 +4,8 @@ import { InlineSponsors } from '@/components/inline-sponsors';
 import { AdventLandingClient } from '@/components/advent-landing-client';
 import { AdventHeroProgress } from '@/components/advent-hero-progress';
 import { SectionSeparator } from '@/components/section-separator';
-import { Calendar, Trophy, Target, ChevronRight, Github } from 'lucide-react';
+import { Github } from '@/components/icons/social-icons';
+import { Calendar, Trophy, Target, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 

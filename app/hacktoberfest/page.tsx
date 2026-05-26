@@ -3,7 +3,6 @@ import {
   GitPullRequest,
   Users,
   Star,
-  Github,
   ArrowRight,
   CheckCircle2,
   Trophy,
@@ -16,6 +15,7 @@ import {
   Megaphone,
   type LucideIcon,
 } from 'lucide-react';
+import { Github } from '@/components/icons/social-icons';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BreadcrumbSchema, FAQSchema } from '@/components/schema-markup';

@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { ReportIssue } from '@/components/report-issue';
 import { RoadmapHero } from '@/components/roadmap-hero';
+import { Github } from '@/components/icons/social-icons';
 import {
   Dialog,
   DialogContent,
@@ -55,7 +56,6 @@ import {
   DollarSign,
   Calendar,
   Clock,
-  Github,
   ExternalLinkIcon,
   TrendingUpIcon,
   Building,

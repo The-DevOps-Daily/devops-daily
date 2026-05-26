@@ -6,7 +6,8 @@ import { getQuizById, getAllQuizzes, getRelatedQuizzes } from '@/lib/quiz-loader
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { ReportIssue } from '@/components/report-issue';
-import { ArrowLeft, Twitter, Facebook, Linkedin } from 'lucide-react';
+import { Facebook, Linkedin, Twitter } from '@/components/icons/social-icons';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

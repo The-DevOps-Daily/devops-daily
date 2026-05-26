@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Github } from '@/components/icons/social-icons';
 import {
   CheckCircle2,
   Clock,
@@ -15,7 +16,6 @@ import {
   ListChecks,
   BookOpen,
   Rss,
-  Github,
   Heart,
 } from 'lucide-react';
 

@@ -4,15 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { AboutHero } from '@/components/about/about-hero';
+import { Github, Linkedin } from '@/components/icons/social-icons';
 import {
   ArrowRight,
   BookOpen,
   Code2,
   Gamepad2,
-  Github,
   GraduationCap,
   Heart,
-  Linkedin,
   Mail,
   Map,
   Rss,

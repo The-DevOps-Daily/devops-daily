@@ -5,7 +5,8 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, ChevronLeft, ChevronRight, Github, ArrowRight, ExternalLink } from 'lucide-react';
+import { Github } from '@/components/icons/social-icons';
+import { Calendar, Clock, ChevronLeft, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
