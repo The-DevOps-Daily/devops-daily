@@ -719,5 +719,8 @@
   "public/images/posts/node-ipc-dns-exfil-supply-chain-may-2026.svg": "46395b084e1a1add",
   "public/images/posts/postinstall-hidden-in-package-json-php-supply-chain-may-2026.svg": "65edc1a53f930f7e",
   "public/images/posts/on-call-rotation-escalation-policy-guide.svg": "c69b4a85e05be4ab",
-  "public/images/news/2026-week-22.svg": "eb3d26700d810586"
+  "public/images/news/2026-week-22.svg": "eb3d26700d810586",
+  "public/images/quizzes/zero-downtime-postgres-migrations-quiz-og.svg": "2d23675bee734741",
+  "public/images/posts/netease-fluid-30-second-llm-cold-starts-kubernetes.svg": "1394bdcbb1257446",
+  "public/images/posts/opentelemetry-graduated-what-to-retire-this-quarter.svg": "f0c930483e64fcdd"
 }
