@@ -1,0 +1,136 @@
+{
+  "id": "aws-multi-region-active-active",
+  "title": "Multi-Region Active-Active Architecture on AWS",
+  "description": "Patterns and trade-offs for running active-active workloads across AWS regions: routing, data replication, conflict resolution, and what it actually costs you in complexity.",
+  "category": "Cloud Architecture",
+  "icon": "Globe",
+  "difficulty": "advanced",
+  "estimatedTime": "25 minutes",
+  "cardCount": 17,
+  "theme": {
+    "primaryColor": "orange",
+    "gradientFrom": "from-orange-500",
+    "gradientTo": "to-amber-600"
+  },
+  "cards": [
+    {
+      "id": "active-active-vs-passive",
+      "front": "What is the real difference between active-active and active-passive multi-region?",
+      "back": "Active-passive: only one region serves traffic. The other is a warm standby waiting for failover. Simpler, cheaper, but you pay for capacity that does nothing 99% of the time and the first failover is the first time you find out if the standby actually works.\n\nActive-active: both regions serve live traffic at the same time. Failover is mostly removing a region from rotation. The trade-off is you now have to solve writes in two places, conflict resolution, and consistent state across regions. The complexity jump is huge.",
+      "category": "Foundations",
+      "tags": ["aws", "multi-region", "architecture"]
+    },
+    {
+      "id": "why-multi-region",
+      "front": "When do you actually need multi-region, not just multi-AZ?",
+      "back": "Multi-AZ already gives you 99.99% availability and survives a data center fire. Go multi-region only if you have at least one of these:\n\n- Hard regulatory requirement (data residency, government tenants)\n- A real RTO under 60 seconds for a full region outage\n- Global users where cross-ocean latency hurts the product\n- A contractual SLA your business cannot afford to miss\n\nIf you do not have one of these, you are paying double for infrastructure to solve a problem you do not have. Multi-AZ is the right answer for most apps.",
+      "category": "Foundations",
+      "tags": ["multi-region", "high-availability", "architecture"]
+    },
+    {
+      "id": "cap-trade-offs",
+      "front": "What does CAP theorem mean in practice for active-active on AWS?",
+      "back": "You cannot have strong consistency, full availability, and partition tolerance at the same time. Cross-region links partition. So you pick one:\n\n- **CP** (strong consistency, sacrifice availability): writes block when a region cannot reach the quorum. Aurora Global Database with synchronous replication tends here.\n- **AP** (available, eventually consistent): writes succeed locally and replicate async. DynamoDB Global Tables sit here.\n\nMost active-active designs pick AP because the whole point is to keep serving traffic during a partition. Be honest with the product team about what eventual consistency means for the user.",
+      "category": "Foundations",
+      "tags": ["cap-theorem", "consistency", "architecture"]
+    },
+    {
+      "id": "route53-latency-routing",
+      "front": "How does Route 53 latency-based routing pick a region?",
+      "back": "Route 53 measures latency between AWS regions and DNS resolvers, then returns the record for the region with the lowest observed latency for that resolver. It is not based on geography directly, it is based on network performance.\n\n```bash\naws route53 change-resource-record-sets \\\n  --hosted-zone-id Z123456 \\\n  --change-batch file://latency-record.json\n```\n\nThe gotcha: DNS is cached by resolvers and clients for the TTL. Use a short TTL (60s) if you care about quick failover, and remember some clients ignore TTL entirely.",
+      "category": "Traffic Routing",
+      "tags": ["route53", "dns", "latency-routing"]
+    },
+    {
+      "id": "global-accelerator-vs-cloudfront",
+      "front": "When pick Global Accelerator over CloudFront for multi-region routing?",
+      "back": "CloudFront is a CDN. It caches at the edge and is great for static content or cacheable API responses. Routes via DNS.\n\nGlobal Accelerator gives you two static anycast IPs and routes TCP/UDP traffic over the AWS backbone to the nearest healthy region. Failover is sub-30 seconds because it does not depend on DNS TTL. Use it when:\n\n- You have non-HTTP traffic (gaming, IoT, voice)\n- You need fast deterministic failover for stateful connections\n- Clients pin IPs and ignore DNS TTL\n\nFor cacheable HTTPS APIs, CloudFront is usually the right pick and is cheaper.",
+      "category": "Traffic Routing",
+      "tags": ["global-accelerator", "cloudfront", "routing"]
+    },
+    {
+      "id": "route53-health-checks",
+      "front": "How do Route 53 health checks fail traffic out of a sick region?",
+      "back": "You attach a health check to each region's DNS record. Route 53 polls an endpoint (HTTP, HTTPS, TCP) from multiple global checkers and marks it unhealthy if a configurable number agree it is down.\n\n```json\n{\n  \"Type\": \"HTTPS\",\n  \"ResourcePath\": \"/healthz\",\n  \"FullyQualifiedDomainName\": \"api-eu.example.com\",\n  \"RequestInterval\": 10,\n  \"FailureThreshold\": 3\n}\n```\n\nWhen a record is unhealthy, Route 53 stops returning it. Failover time = check interval x failure threshold + DNS TTL. The healthz endpoint must reflect real app health, not just \"the process is running\", or you will fail to fail over.",
+      "category": "Traffic Routing",
+      "tags": ["route53", "health-checks", "failover"]
+    },
+    {
+      "id": "dynamodb-global-tables",
+      "front": "How does DynamoDB Global Tables handle writes from multiple regions?",
+      "back": "Global Tables replicates writes asynchronously between regions, usually within one second. Every region accepts writes locally. Replication uses DynamoDB Streams under the hood.\n\nConflict resolution is last-writer-wins based on the wall clock of the region that did the write. There is no transactional cross-region write. If two regions update the same item in the same second, one update silently disappears.\n\n```bash\naws dynamodb create-table \\\n  --table-name orders \\\n  --replica-updates Create='{RegionName=eu-west-1}'\n```\n\nGreat for write-heavy active-active with naturally partitioned data (per-user state). Bad for shared counters or hot keys.",
+      "category": "Data Layer",
+      "tags": ["dynamodb", "global-tables", "replication"]
+    },
+    {
+      "id": "aurora-global-database",
+      "front": "What does Aurora Global Database give you, and what does it not give you?",
+      "back": "Aurora Global Database replicates a primary region to up to five secondary regions with typical latency under one second. Replication runs at the storage layer, so it does not load the database engine.\n\nWhat you get: fast read scaling in remote regions and managed promotion of a secondary to primary if the primary region dies (typically under one minute RTO).\n\nWhat you do NOT get: multi-region writes. Only one region accepts writes. Secondaries are read-only. So Aurora Global is active-passive for writes, even if you call it active-active for reads. For multi-region writes on a relational database, you need to shard by region or use a different engine.",
+      "category": "Data Layer",
+      "tags": ["aurora", "rds", "global-database"]
+    },
+    {
+      "id": "s3-mrap",
+      "front": "When use S3 Multi-Region Access Points vs plain Cross-Region Replication?",
+      "back": "S3 Cross-Region Replication (CRR) copies objects from one bucket to another asynchronously. Each bucket keeps its own endpoint, so your app has to know which region to call.\n\nMulti-Region Access Points (MRAP) give you one global S3 endpoint that routes requests to the nearest bucket over AWS backbone. With failover controls, you can swap which bucket is active in seconds. Use MRAP when:\n\n- Clients should not know about regions\n- You want fast manual or automatic failover for object storage\n- You need active-active writes (with the understanding that conflicts on the same key are resolved by replication rules, usually last-writer-wins)\n\nMRAP costs extra per request. For backup-only scenarios, plain CRR is enough.",
+      "category": "Data Layer",
+      "tags": ["s3", "replication", "multi-region"]
+    },
+    {
+      "id": "no-sequential-ids",
+      "front": "Why you cannot use auto-increment IDs in a multi-region write design?",
+      "back": "Two regions accepting inserts will hand out the same integer ID to different rows. When replication catches up, you get duplicate primary keys and the merge fails.\n\nFix: every node generates globally unique IDs locally. Options:\n\n- UUIDv4 (random, 128-bit, no coordination needed)\n- UUIDv7 (time-ordered, better for B-tree indexes)\n- ULID (sortable, base32, URL-safe)\n- Snowflake-style IDs that embed a region/node prefix\n\nAvoid UUIDv4 if you care about index locality on large tables. UUIDv7 or ULID is the practical pick for new active-active systems.",
+      "category": "Data Layer",
+      "tags": ["uuid", "identifiers", "database"]
+    },
+    {
+      "id": "conflict-resolution-lww",
+      "front": "What is last-writer-wins and why is it dangerous?",
+      "back": "Last-writer-wins (LWW) resolves conflicting writes by keeping the one with the newer timestamp. DynamoDB Global Tables, S3 replication, and most async multi-region systems default to this.\n\nThe danger: clocks drift. Two writes at the \"same moment\" in different regions can pick either winner depending on whose NTP is faster. And LWW silently discards the loser. The user who hit save sees success, but their data disappears a second later.\n\nMitigations: use CRDTs for mergeable data (counters, sets, maps), keep audit logs of all writes so you can recover lost ones, or partition writes by key so the same record is only ever written from one region.",
+      "category": "Data Layer",
+      "tags": ["conflict-resolution", "consistency", "replication"]
+    },
+    {
+      "id": "idempotency-required",
+      "front": "Why is idempotency non-negotiable in active-active?",
+      "back": "In multi-region you will have retries, dual-writes during replication lag, and clients that hit a different region after a failover. Without idempotency keys, a charge gets processed twice and the customer calls support.\n\nEvery write API needs a client-supplied idempotency key, stored server-side until safe to expire (24 hours or more across regions):\n\n```http\nPOST /v1/charges\nIdempotency-Key: 5f8c1d4a-9e3b-4f2c-a1b8-7d6e5f4c3b2a\n```\n\nStripe, Square, and AWS itself all do this. If your API does not accept an idempotency key today, that is the first thing to fix before going multi-region.",
+      "category": "Application Design",
+      "tags": ["idempotency", "api-design", "reliability"]
+    },
+    {
+      "id": "session-state",
+      "front": "Where do you store session state in an active-active design?",
+      "back": "Not in the app server. The user's next request might hit a different region.\n\nOptions:\n\n- **Stateless JWT**: sign tokens, validate everywhere, no shared store. Hard to invalidate.\n- **DynamoDB Global Tables**: replicated session store, accepts writes from any region.\n- **Sticky routing**: pin a user to a region (cookie or geo-routing) so their session lives in that region's local Redis. Survives single-region read traffic but breaks on full failover unless replicated.\n\nThe stateless JWT option is the simplest if you can live with token-revocation complexity. For shopping carts and longer sessions, a replicated store wins.",
+      "category": "Application Design",
+      "tags": ["sessions", "state", "stateless"]
+    },
+    {
+      "id": "data-residency",
+      "front": "How do you handle data residency in a multi-region design?",
+      "back": "Some data legally cannot leave a region (GDPR, India DPDP, China PIPL). Active-active replication of that data is illegal. So you do not.\n\nApproach: partition users by home region at signup. Their data is written and read only from their home region. Replicate only the parts that are safe to copy (catalog, metadata) globally.\n\nRouting: identify the user (cookie or JWT claim) and route to their home region at the edge, not just by latency. Lambda@Edge or CloudFront Functions can read the user's region claim and forward accordingly. The user gets best-effort latency, the legal team sleeps at night.",
+      "category": "Application Design",
+      "tags": ["data-residency", "compliance", "gdpr"]
+    },
+    {
+      "id": "rpo-rto-realistic",
+      "front": "What RPO and RTO can you realistically hit with active-active on AWS?",
+      "back": "Honest numbers for a well-built active-active stack:\n\n- **RTO**: 30 seconds to 2 minutes. Driven by health-check intervals and DNS TTL (or Global Accelerator for faster).\n- **RPO**: zero to ~1 second for async-replicated stores (DynamoDB Global, Aurora Global secondaries). Truly zero RPO needs synchronous cross-region writes, which adds 50ms+ to every write and is rarely worth it.\n\nActive-passive can match these only if you actively keep the standby warm. The reason most teams pick active-active is not the numbers, it is that the standby is verified working every second of every day.",
+      "category": "Operations",
+      "tags": ["rpo", "rto", "disaster-recovery"]
+    },
+    {
+      "id": "real-cost",
+      "front": "What does multi-region actually cost beyond duplicated compute?",
+      "back": "The infrastructure double is the obvious part. The hidden costs:\n\n- **Inter-region data transfer**: ~$0.02 per GB for replication traffic. On a write-heavy app this is real money.\n- **Global Accelerator**: ~$18/month per accelerator + per-GB transfer\n- **Aurora Global Database**: replicated storage charged in every region\n- **DynamoDB Global Tables**: writes charged in every replica region as replicated write capacity units (rWCU)\n- **Engineering time**: testing failover, debugging consistency bugs, on-call complexity\n\nBudget at least 2.2x of single-region cost, and the engineering tax is bigger than the infra tax in year one.",
+      "category": "Operations",
+      "tags": ["cost", "pricing", "data-transfer"]
+    },
+    {
+      "id": "testing-failover",
+      "front": "How do you actually test multi-region failover without breaking production?",
+      "back": "Schedule regular game days where you intentionally drain one region. If you never test, your first real failover will be the one that fails.\n\nTactics:\n\n- Use AWS Fault Injection Simulator to drop network to a region\n- Manually set a Route 53 health check to unhealthy and watch traffic shift\n- Run synthetic transactions from outside AWS to measure real user impact\n- Test the failback path too, not just the failover\n\n```bash\naws route53 update-health-check \\\n  --health-check-id abc-123 \\\n  --disabled\n```\n\nDo this at least quarterly. If the team is nervous about running the test, that is exactly why you need to run it.",
+      "category": "Operations",
+      "tags": ["chaos-engineering", "testing", "failover"]
+    }
+  ]
+}
