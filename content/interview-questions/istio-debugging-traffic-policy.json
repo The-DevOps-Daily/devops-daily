@@ -1,0 +1,51 @@
+{
+  "id": "istio-debugging-traffic-policy",
+  "slug": "istio-debugging-traffic-policy",
+  "title": "Debugging an Istio Traffic Policy That Isn't Working",
+  "question": "You applied a VirtualService that splits traffic 80/20 between v1 and v2 of a service, but in production all traffic still goes to v1. Walk me through how you'd debug it.",
+  "answer": "I'd work backwards from the sidecar because that's where the routing actually happens. First, `istioctl proxy-config route` on the calling pod, filtered to the destination port. That dumps the effective Envoy route config and shows whether the 80/20 split is actually programmed into the proxy. If the route isn't there, the VirtualService isn't being picked up at all — usually a namespace, gateway, or host mismatch. Next, if the route is there but pointing to one subset, I check the DestinationRule subsets and the pod labels. `kubectl get pods --show-labels` and confirm `version: v2` is actually on the v2 pods. A subset that matches zero pods doesn't throw an error, it just gets no endpoints and Envoy routes elsewhere. After that, `istioctl proxy-config endpoints` to confirm the v2 subset has real endpoints. If endpoints are empty, that confirms the label mismatch. If everything looks right, I check for a competing VirtualService — two VirtualServices for the same host with conflicting rules can produce surprising results, and the order matters. I'd also look at the sidecar access logs to see which cluster requests are actually hitting. And `istioctl analyze` is good for catching obvious config errors before going deeper.",
+  "explanation": "This is the troubleshooting question that separates engineers who've actually run Istio in production from those who've only configured it from tutorials. The interviewer is listening for a structured approach that starts with the data plane (what Envoy actually thinks) instead of guessing from the control plane YAML. Bonus signal if the candidate mentions checking for conflicting CRDs or namespace scope issues.",
+  "category": "Service Mesh",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "istio",
+    "service-mesh",
+    "traffic-management",
+    "debugging",
+    "troubleshooting"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Check the route config the sidecar actually has",
+      "code": "istioctl proxy-config route deploy/productpage \\\n  --name 9080 -o json \\\n  | jq '.[].virtualHosts[].routes[].route'\n\n# Look for weightedClusters with the right cluster names and weights:\n#   \"weightedClusters\": {\n#     \"clusters\": [\n#       { \"name\": \"outbound|9080|v1|reviews...\", \"weight\": 80 },\n#       { \"name\": \"outbound|9080|v2|reviews...\", \"weight\": 20 }\n#     ]\n#   }"
+    },
+    {
+      "language": "bash",
+      "label": "Confirm subsets resolve to real endpoints",
+      "code": "istioctl proxy-config endpoints deploy/productpage \\\n  --cluster 'outbound|9080|v2|reviews.default.svc.cluster.local'\n\n# If the output is empty, no pods match the v2 subset labels.\n# Check pod labels:\nkubectl get pods -l app=reviews --show-labels"
+    },
+    {
+      "language": "bash",
+      "label": "Static analysis for common config problems",
+      "code": "istioctl analyze -n default\n\n# Sample output catching a missing subset:\n# Error [IST0101] (VirtualService default/reviews) \n#   Referenced host+subset in destinationrule not found:\n#   \"reviews+v2\""
+    }
+  ],
+  "followUpQuestions": [
+    "If `istioctl proxy-config route` shows the right config but traffic still misbehaves, what would you check next?",
+    "How would two VirtualServices for the same host interact, and which one wins?",
+    "What's the difference between a missing DestinationRule subset and a subset with zero matching pods, and how would you tell them apart?"
+  ],
+  "commonMistakes": [
+    "Reading only the YAML you applied instead of checking what the sidecar actually programmed",
+    "Assuming a subset with zero pods will throw an error — it silently routes elsewhere",
+    "Ignoring conflicting VirtualServices in other namespaces or with overlapping hosts"
+  ],
+  "relatedTopics": [
+    "istioctl",
+    "envoy",
+    "kubernetes-debugging",
+    "observability"
+  ]
+}

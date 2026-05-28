@@ -1,0 +1,46 @@
+{
+  "id": "istio-virtualservice-vs-destinationrule",
+  "slug": "istio-virtualservice-vs-destinationrule",
+  "title": "VirtualService vs DestinationRule",
+  "question": "In Istio, what's the difference between a VirtualService and a DestinationRule? When would you use each?",
+  "answer": "A VirtualService defines how requests are routed to a service: which hosts to match, path or header matching, weighted splits between versions, timeouts, and retries. A DestinationRule defines what happens after the route is chosen: which pod subsets exist (like v1 and v2), load balancing policy, connection pool limits, and outlier detection for circuit breaking. The mental model is: VirtualService picks the destination, DestinationRule configures the destination. They almost always come in pairs. If you split traffic 90/10 between v1 and v2 in a VirtualService, you also need a DestinationRule that declares the v1 and v2 subsets and labels them. Circuit breaker settings always live in DestinationRule because they're a property of the destination, not the route.",
+  "explanation": "This is the foundational Istio question. Candidates who can't separate these two CRDs usually struggle with everything else: they put retries in DestinationRule, circuit breakers in VirtualService, or forget to declare subsets and wonder why 90/10 routing returns 503s. A clean answer shows the candidate has actually written Istio config, not just read a blog post.",
+  "category": "Service Mesh",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "istio",
+    "service-mesh",
+    "traffic-management",
+    "kubernetes",
+    "networking"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "DestinationRule declaring subsets",
+      "code": "apiVersion: networking.istio.io/v1\nkind: DestinationRule\nmetadata:\n  name: reviews\nspec:\n  host: reviews\n  subsets:\n    - name: v1\n      labels:\n        version: v1\n    - name: v2\n      labels:\n        version: v2"
+    },
+    {
+      "language": "yaml",
+      "label": "VirtualService routing to those subsets",
+      "code": "apiVersion: networking.istio.io/v1\nkind: VirtualService\nmetadata:\n  name: reviews\nspec:\n  hosts:\n    - reviews\n  http:\n    - route:\n        - destination:\n            host: reviews\n            subset: v1\n          weight: 90\n        - destination:\n            host: reviews\n            subset: v2\n          weight: 10"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens if your VirtualService references a subset that the DestinationRule doesn't declare?",
+    "Can you have a VirtualService without a DestinationRule? When?",
+    "Where would you put a connection pool limit, and why there?"
+  ],
+  "commonMistakes": [
+    "Saying VirtualService handles circuit breaking — it doesn't, that's DestinationRule",
+    "Forgetting that subsets need matching pod labels or all routes return 503",
+    "Treating the two CRDs as interchangeable instead of complementary"
+  ],
+  "relatedTopics": [
+    "istio-traffic-management",
+    "envoy",
+    "kubernetes-networking",
+    "service-mesh"
+  ]
+}
