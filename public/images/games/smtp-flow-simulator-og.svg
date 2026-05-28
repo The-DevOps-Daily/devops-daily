@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">SMTP Flow Simulator</title>
+  <desc id="desc">Visualize SMTP delivery with TLS, auth, DNS checks, MX relay, retries, and inbox placement.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.56" stop-color="#11162a"/>
+      <stop offset="1" stop-color="#0f2138"/>
+    </linearGradient>
+    <linearGradient id="titleGradient" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="mailGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+    <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
+      <path d="M80 0H0V80" fill="none" stroke="#93c5fd" stroke-opacity="0.055" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#background)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <path d="M0 570H1200V630H0Z" fill="#0b1220" opacity="0.72"/>
+  <circle cx="126" cy="96" r="144" fill="#0f766e" opacity="0.12"/>
+  <circle cx="1086" cy="510" r="180" fill="#2563eb" opacity="0.12"/>
+  <circle cx="910" cy="128" r="106" fill="#334155" opacity="0.24"/>
+
+  <g transform="translate(90 155)">
+    <rect x="0" y="0" width="566" height="384" rx="14" fill="#111827" stroke="#334155" stroke-width="2"/>
+    <text x="28" y="44" fill="#9ca3af" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="17">// smtp trace</text>
+
+    <g font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace" font-size="18">
+      <text x="28" y="92" fill="#22c55e">C: EHLO app.devops-daily.com</text>
+      <text x="28" y="122" fill="#d4d4d4">S: 250-STARTTLS 250-AUTH PLAIN</text>
+
+      <text x="28" y="170" fill="#22c55e">C: STARTTLS</text>
+      <text x="28" y="200" fill="#d4d4d4">S: 220 Ready to start TLS</text>
+
+      <text x="28" y="248" fill="#22c55e">C: MAIL FROM / RCPT TO / DATA</text>
+      <text x="28" y="278" fill="#d4d4d4">S: 250 queued as smtpfast-82a9</text>
+    </g>
+
+    <g transform="translate(30 326)">
+      <rect x="0" y="0" width="108" height="34" rx="17" fill="none" stroke="#22c55e" stroke-width="2"/>
+      <text x="25" y="23" fill="#86efac" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="700">STARTTLS</text>
+
+      <rect x="124" y="0" width="90" height="34" rx="17" fill="none" stroke="#38bdf8" stroke-width="2"/>
+      <text x="153" y="23" fill="#93c5fd" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="700">AUTH</text>
+
+      <rect x="230" y="0" width="142" height="34" rx="17" fill="none" stroke="#a855f7" stroke-width="2"/>
+      <text x="254" y="23" fill="#d8b4fe" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="700">SPF / DKIM</text>
+    </g>
+  </g>
+
+  <g transform="translate(704 96)">
+    <rect x="146" y="0" width="80" height="80" rx="18" fill="#113d2b" stroke="#22c55e" stroke-opacity="0.4"/>
+    <g transform="translate(166 23)" fill="none" stroke="url(#mailGradient)" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+      <rect x="0" y="0" width="40" height="30" rx="4"/>
+      <path d="M4 5 20 18 36 5"/>
+      <path d="M5 26 15 16"/>
+      <path d="M35 26 25 16"/>
+    </g>
+
+    <text x="0" y="150" fill="url(#titleGradient)" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="56" font-weight="800">SMTP Flow</text>
+    <text x="0" y="210" fill="#f8fafc" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="56" font-weight="800">Simulator</text>
+    <text x="2" y="252" fill="#9ca3af" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="22">Visualize email delivery end to end</text>
+
+    <g transform="translate(0 296)" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="20">
+      <circle cx="10" cy="8" r="8" fill="#22c55e"/>
+      <text x="30" y="15" fill="#d1d5db">EHLO, STARTTLS, AUTH, DATA</text>
+
+      <circle cx="10" cy="48" r="8" fill="#38bdf8"/>
+      <text x="30" y="55" fill="#d1d5db">SPF, DKIM, DMARC, MX relay</text>
+
+      <circle cx="10" cy="88" r="8" fill="#a855f7"/>
+      <text x="30" y="95" fill="#d1d5db">Retries, bounces, inbox placement</text>
+    </g>
+
+  </g>
+
+  <g transform="translate(102 86)" fill="none" stroke="#38bdf8" stroke-width="2">
+    <path d="M0 0H110"/>
+    <path d="M95 -9 110 0 95 9"/>
+  </g>
+  <g transform="translate(230 86)" fill="none" stroke="#22c55e" stroke-width="2">
+    <path d="M0 0H110"/>
+    <path d="M95 -9 110 0 95 9"/>
+  </g>
+  <g transform="translate(358 86)" fill="none" stroke="#a855f7" stroke-width="2">
+    <path d="M0 0H110"/>
+    <path d="M95 -9 110 0 95 9"/>
+  </g>
+  <text x="96" y="64" fill="#9ca3af" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">App</text>
+  <text x="210" y="64" fill="#9ca3af" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">SMTP</text>
+  <text x="342" y="64" fill="#9ca3af" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">DNS</text>
+  <text x="466" y="64" fill="#9ca3af" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="14">MX</text>
+
+  <text x="434" y="608" fill="#6b7280" font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-size="20">devops-daily.com/games/smtp-flow-simulator</text>
+</svg>

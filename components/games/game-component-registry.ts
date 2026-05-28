@@ -30,6 +30,7 @@ import RestVsGraphql from '@/components/games/rest-vs-graphql-simulator';
 import ScalableSentry from '@/components/games/scalable-sentry';
 import ScalingSimulator from '@/components/games/scaling-simulator';
 import ServiceMeshSimulator from '@/components/games/service-mesh-simulator';
+import SmtpFlowSimulator from '@/components/games/smtp-flow-simulator';
 import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
 import TcpVsUdpSimulator from '@/components/games/tcp-vs-udp';
 import UptimeDefender from '@/components/games/uptime-defender';
@@ -68,6 +69,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'ssl-tls-handshake': SslTlsHandshakeSimulator,
   'promql-playground': PromqlPlayground,
   'service-mesh-simulator': ServiceMeshSimulator,
+  'smtp-flow-simulator': SmtpFlowSimulator,
   'fork-bomb-simulator': ForkBombSimulator,
 };
 
