@@ -183,8 +183,6 @@ For smaller teams, it helps to keep one boring fallback provider ready. DigitalO
 
 DigitalOcean's [Droplet pricing](https://www.digitalocean.com/pricing/droplets) currently starts at $4/month for basic VMs, and the pricing page says Droplets use per-second billing with a monthly cap. That kind of predictable pricing is useful when your goal is optionality, not chasing the absolute lowest benchmark score.
 
-If you want to test a fallback path, you can [try DigitalOcean here](https://m.do.co/c/2a9bba940f39). Disclosure: that is our referral link.
-
 Use any fallback provider as a test target first:
 
 ```yaml
