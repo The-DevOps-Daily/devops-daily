@@ -13,6 +13,7 @@ import DeploymentStrategies from '@/components/games/deployment-strategies-simul
 import DevOpsMemes from '@/components/games/devops-memes';
 import DevOpsScorecard from '@/components/games/devops-scorecard';
 import DnsSimulator from '@/components/games/dns-simulator';
+import DockerTerminalSimulator from '@/components/games/docker-terminal-simulator';
 import ForkBombSimulator from '@/components/games/fork-bomb-simulator';
 import GitQuiz from '@/components/games/git-command-quiz';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
@@ -36,6 +37,7 @@ import UptimeDefender from '@/components/games/uptime-defender';
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'tcp-vs-udp': TcpVsUdpSimulator,
   'dns-simulator': DnsSimulator,
+  'docker-terminal-simulator': DockerTerminalSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
   'scaling-simulator': ScalingSimulator,
   'microservices-simulator': MicroservicesSimulator,
