@@ -26,7 +26,8 @@ export default function CICDStackGeneratorWrapper() {
           setError('Failed to load CICD Stack Generator: invalid module');
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Failed to load CICD Stack Generator', err);
         setError('Failed to load CICD Stack Generator');
       });
   }, []);
