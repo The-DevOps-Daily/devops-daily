@@ -728,5 +728,6 @@
   "public/images/interview-questions/istio-weighted-canary-rollout-og.svg": "4bc66ba9cff4bbf6",
   "public/images/interview-questions/istio-retry-policy-pitfalls-og.svg": "1ec6686658e7e4ce",
   "public/images/interview-questions/istio-circuit-breaker-outlier-detection-og.svg": "292d6043581181df",
-  "public/images/interview-questions/istio-virtualservice-vs-destinationrule-og.svg": "1b675f14cc3dd8ab"
+  "public/images/interview-questions/istio-virtualservice-vs-destinationrule-og.svg": "1b675f14cc3dd8ab",
+  "public/images/posts/hetzner-price-increases-2026.svg": "d64d6fc5c0bab85c"
 }
