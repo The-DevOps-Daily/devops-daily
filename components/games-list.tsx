@@ -27,6 +27,7 @@ import {
   Cloud,
   Bug,
   Boxes,
+  Mail,
   LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -48,6 +49,7 @@ const iconMap: Record<string, LucideIcon> = {
   Zap,
   Database,
   Cloud,
+  Mail,
 };
 
 // Serializable game type with icon component
