@@ -79,9 +79,9 @@ docker start my-nginx # Start it again
 
 ## Related Resources
 
-- [How to Run a Docker Image as a Container](/posts/docker-run-image-as-container) — running containers in depth
-- [Docker Image vs Container](/posts/docker-image-vs-container) — understand the fundamentals
-- [Docker List Containers](/posts/docker-list-containers) — find your containers
-- [Why Docker Container Exits Immediately](/posts/why-docker-container-exits-immediately) — troubleshoot exits
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — comprehensive learning
-- [Docker Flashcards](/flashcards/docker-essentials) — review concepts
+- [How to Run a Docker Image as a Container](/posts/docker-run-image-as-container): running containers in depth
+- [Docker Image vs Container](/posts/docker-image-vs-container): understand the fundamentals
+- [Docker List Containers](/posts/docker-list-containers): find your containers
+- [Why Docker Container Exits Immediately](/posts/why-docker-container-exits-immediately): troubleshoot exits
+- [Introduction to Docker Guide](/guides/introduction-to-docker): full Docker course
+- [Docker Flashcards](/flashcards/docker-essentials): review concepts

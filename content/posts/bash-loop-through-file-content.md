@@ -19,7 +19,7 @@ tags:
   - Text Processing
 ---
 
-Reading file content line by line is a fundamental operation in Bash scripting. Whether you're processing log files, configuration files, or data sets, understanding the different approaches and their nuances will help you write more robust scripts.
+Reading file content line by line is a fundamental operation in Bash scripting. Whether you're processing log files, configuration files, or data sets, understanding the different approaches and their nuances will help you write more reliable scripts.
 
 ## The Standard while read Loop
 

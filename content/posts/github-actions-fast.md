@@ -82,7 +82,7 @@ While this worked initially, as our codebase grew, each step became slower:
 - Test suites took longer to run (45+ minutes)
 - Builds became more complex (30+ minutes)
 - Deployments had more steps (45+ minutes)
-- Integration tests became more comprehensive (30+ minutes)
+- Integration tests became more thorough (30+ minutes)
 
 The worst part? If anything failed late in the process, developers would have to start over after fixing the issue, wasting hours of time.
 
@@ -91,7 +91,7 @@ The worst part? If anything failed late in the process, developers would have to
 We redesigned our workflow with three key principles:
 
 1. Run independent tasks in parallel
-2. Use GitHub Actions' dependency management to orchestrate steps
+2. Use GitHub Actions' dependency management to coordinate steps
 3. Cache everything that can be cached
 
 Here's the optimized workflow:
@@ -423,7 +423,7 @@ deploy-frontend:
 
 In the GitHub repository settings, we configured the "production" environment to require approvals from specific team members before the deployment can proceed.
 
-This added a crucial safety check without significantly impacting automation for non-production environments, which we configured separately with different workflows.
+This added an important safety check without significantly impacting automation for non-production environments, which we configured separately with different workflows.
 
 ## Key Optimization #4: Strategic Caching
 
@@ -507,7 +507,7 @@ deploy-prod:
 ### 4. Optimize for Developer Experience
 
 - Make failure messages clear and actionable
-- Add comprehensive notifications (we use Slack)
+- Add detailed notifications (we use Slack)
 - Ensure logs are detailed enough to debug issues without re-running
 
 ```yaml

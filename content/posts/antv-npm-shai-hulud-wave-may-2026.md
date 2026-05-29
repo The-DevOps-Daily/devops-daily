@@ -85,7 +85,7 @@ The worm runs as the CI user, so the credentials it reaches are everything the C
 
 1. **npm publish tokens** first. If any package you maintain was on the CI runner's auth, the worm has already tried to use it. Rotate via `npm token revoke` and re-issue, then audit `npm token list` for unknown tokens.
 2. **GitHub Actions `GITHUB_TOKEN` and personal access tokens.** Revoke at `github.com/settings/tokens`. If the worker created a public repo under your account, find and delete it (search your repos for names matching `<dune>-<dune>-<digits>` or the marker string `niagA oG eW ereH :duluH-iahS`).
-3. **Cloud IAM keys** — AWS, GCP, Azure. The worm reads `~/.aws/credentials`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Rotate via the cloud console; do not just edit the env var.
+3. **Cloud IAM keys**: AWS, GCP, Azure. The worm reads `~/.aws/credentials`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`. Rotate via the cloud console; do not just edit the env var.
 4. **Kubernetes service-account tokens.** If the runner had a `KUBECONFIG`, that token can pull secrets from the cluster. Rotate the service account.
 5. **Vault tokens.** `VAULT_TOKEN` is in the targeted list. Revoke the token and audit the audit log for its recent use.
 6. **SSH keys.** The worm copies `~/.ssh/id_*` private keys. Rotate any key the CI runner had access to (deploy keys, signing keys).

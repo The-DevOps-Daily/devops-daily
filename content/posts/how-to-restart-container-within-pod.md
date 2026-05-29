@@ -74,6 +74,6 @@ This can lead to downtime and configuration drift, especially as your workloads 
 
 ## Next Steps
 
-For more robust operations, automate restarts using health checks such as liveness and readiness probes. These probes let Kubernetes detect and recover from unhealthy containers automatically, reducing the need for manual intervention. You can also integrate restart logic into your CI/CD pipeline to handle updates and rollbacks efficiently.
+For more reliable operations, automate restarts using health checks such as liveness and readiness probes. These probes let Kubernetes detect and recover from unhealthy containers automatically, reducing the need for manual intervention. You can also integrate restart logic into your CI/CD pipeline to handle updates and rollbacks efficiently.
 
 As your infrastructure grows, explore Kubernetes controllers and operators to manage pod lifecycles, scaling, and recovery in a more automated and reliable way. Learning these patterns will help you build resilient, production-ready systems.

@@ -24,7 +24,7 @@ tags:
 
 ## TLDR
 
-Most cloud cost optimization focuses on technical fixes: rightsizing instances, buying reserved capacity, cleaning up unused resources. These deliver 10-20% savings initially, then plateau. The real cost driver is organizational: unclear service ownership, no accountability for spend, and infrastructure treated as a shared resource pool instead of tied to product teams. Companies that tie cloud costs directly to service owners see 30-50% sustained cost reduction—not through better instance selection, but through different decision-making incentives.
+Most cloud cost optimization focuses on technical fixes: rightsizing instances, buying reserved capacity, cleaning up unused resources. These deliver 10-20% savings initially, then plateau. The real cost driver is organizational: unclear service ownership, no accountability for spend, and infrastructure treated as a shared resource pool instead of tied to product teams. Companies that tie cloud costs directly to service owners see 30-50% sustained cost reduction, not through better instance selection, but through different decision-making incentives.
 
 ---
 
@@ -61,7 +61,7 @@ Technical optimization is a one-time gain. Organizational structure is the ongoi
 
 ### Common Technical Cost Optimization Tactics
 
-These all work—initially:
+These all work, initially:
 
 **1. Rightsizing instances** (5-15% savings)
 - Identify over-provisioned EC2/RDS instances
@@ -356,7 +356,7 @@ When cost is visible during planning:
 
 ### "Engineers shouldn't have to think about cost"
 
-**Response**: Engineers already make cost decisions—instance size, architecture, scaling policies. Making cost **visible** helps them make **better** decisions. It's not about penny-pinching; it's about informed trade-offs.
+**Response**: Engineers already make cost decisions: instance size, architecture, scaling policies. Making cost **visible** helps them make **better** decisions. It's not about penny-pinching; it's about informed trade-offs.
 
 **Analogy**: You wouldn't design a product feature without knowing how it affects user experience. Why design infrastructure without knowing how it affects cost?
 
@@ -419,6 +419,6 @@ Technical fixes (rightsizing, reserved instances, cleanup) are necessary but ins
 3. Tie infrastructure cost to team budgets (Months 5-6)
 4. Let teams optimize their own services (Ongoing)
 
-The companies that treat cloud cost as an **organizational challenge** outperform those who treat it as a **technical problem**. Not because they have better FinOps tools—because they've aligned incentives with outcomes.
+The companies that treat cloud cost as an **organizational challenge** outperform those who treat it as a **technical problem**. Not because they have better FinOps tools, but because they've aligned incentives with outcomes.
 
 Your cloud bill isn't an AWS problem. It's a team structure problem.

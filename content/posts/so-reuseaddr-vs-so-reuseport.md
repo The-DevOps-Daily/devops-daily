@@ -25,7 +25,7 @@ You're writing a server application and you keep seeing `SO_REUSEADDR` and `SO_R
 
 `SO_REUSEADDR` allows binding to a port that's in TIME_WAIT state after a previous connection closed, and lets multiple sockets bind to the same port if they're on different IP addresses. `SO_REUSEPORT` allows multiple processes to bind to the exact same IP:port combination, with the kernel load-balancing connections between them. Use `SO_REUSEADDR` for quick server restarts and binding to multiple interfaces. Use `SO_REUSEPORT` for multi-process servers that want to share a port.
 
-These socket options solve different problems in network programming, and understanding them helps you build more robust and efficient servers.
+These socket options solve different problems in network programming, and understanding them helps you build more reliable and efficient servers.
 
 When you bind a socket to a port, the operating system tracks which ports are in use. These socket options modify the rules about port reuse.
 

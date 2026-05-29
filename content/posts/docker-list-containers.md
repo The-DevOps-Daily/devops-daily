@@ -72,8 +72,8 @@ Good luck with your project!
 
 ## Related Resources
 
-- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start) — container lifecycle commands
-- [Remove Old Docker Containers](/posts/remove-old-docker-containers) — clean up stopped containers
-- [Docker Name Already in Use](/posts/docker-name-already-in-use) — resolve naming conflicts
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
-- [Docker Quiz](/quizzes/docker-quiz) — test your knowledge
+- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start): container lifecycle commands
+- [Remove Old Docker Containers](/posts/remove-old-docker-containers): clean up stopped containers
+- [Docker Name Already in Use](/posts/docker-name-already-in-use): resolve naming conflicts
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals
+- [Docker Quiz](/quizzes/docker-quiz): test your knowledge

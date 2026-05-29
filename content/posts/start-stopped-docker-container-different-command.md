@@ -24,7 +24,7 @@ You can't directly change the command of a stopped Docker container when restart
 
 ## Why Can't You Change the Command with docker start?
 
-When you create a container with `docker run`, the command and entrypoint are set at creation. `docker start` always uses the original command—you can't override it for an existing container.
+When you create a container with `docker run`, the command and entrypoint are set at creation. `docker start` always uses the original command, so you can't override it for an existing container.
 
 ## Option 1: Create a New Container with a Different Command
 
@@ -80,7 +80,7 @@ You can't change the command of a stopped Docker container when restarting it, b
 
 ## Related Resources
 
-- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start) — understand the difference
-- [How to Run a Command on an Existing Container](/posts/how-do-i-run-a-command-on-an-already-existing-docker-container) — exec into containers
-- [Why Docker Container Exits Immediately](/posts/why-docker-container-exits-immediately) — debug exit issues
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start): understand the difference
+- [How to Run a Command on an Existing Container](/posts/how-do-i-run-a-command-on-an-already-existing-docker-container): exec into containers
+- [Why Docker Container Exits Immediately](/posts/why-docker-container-exits-immediately): debug exit issues
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

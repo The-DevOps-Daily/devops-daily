@@ -126,7 +126,7 @@ echo "${bold_green}This is bold green text${reset}"
 
 ## Creating a Color Library
 
-Here's a comprehensive color library for your scripts:
+Here's a color library for your scripts:
 
 ```bash
 #!/bin/bash
@@ -402,4 +402,4 @@ echo -e "${RED}This will be red if supported${RESET}"
 6. **Consider accessibility** - don't rely solely on color to convey information
 7. **Store colors in variables** for easy maintenance and consistency
 
-Adding colors to your terminal output enhances the user experience and makes your scripts more professional. Whether you use ANSI escape codes, tput commands, or create comprehensive color libraries, these techniques will help you create more engaging and informative command-line applications.
+Adding colors to your terminal output enhances the user experience and makes your scripts more professional. Whether you use ANSI escape codes, tput commands, or create color libraries, these techniques will help you create more engaging and informative command-line applications.

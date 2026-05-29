@@ -131,7 +131,7 @@ By following these steps, you can efficiently rebuild Docker containers in a `do
 
 ## Related Resources
 
-- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers) — force fresh containers
-- [Force Docker Clean Build](/posts/force-docker-clean-build) — no-cache builds
-- [Restart Single Container in Docker Compose](/posts/restart-single-container-docker-compose) — restart without rebuilding
-- [Introduction to Docker: Compose](/guides/introduction-to-docker) — Compose guide
+- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers): force fresh containers
+- [Force Docker Clean Build](/posts/force-docker-clean-build): no-cache builds
+- [Restart Single Container in Docker Compose](/posts/restart-single-container-docker-compose): restart without rebuilding
+- [Introduction to Docker: Compose](/guides/introduction-to-docker): Compose guide

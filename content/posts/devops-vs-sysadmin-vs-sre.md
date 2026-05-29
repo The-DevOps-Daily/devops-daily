@@ -32,10 +32,10 @@ If you're exploring a career in IT, you've probably seen job postings for "DevOp
 
 Understanding these roles helps you:
 
-- **Choose your career path** — Know which skills to develop
-- **Understand job postings** — Decode what companies actually want
-- **Communicate with teams** — Speak the same language as your colleagues
-- **Plan your learning** — Focus on the right tools and concepts
+- **Choose your career path**: Know which skills to develop
+- **Understand job postings**: Decode what companies actually want
+- **Communicate with teams**: Speak the same language as your colleagues
+- **Plan your learning**: Focus on the right tools and concepts
 
 Let's break down each role in plain English.
 
@@ -140,7 +140,7 @@ SRE was pioneered by Google and applies **software engineering principles to ope
 - Capacity planning and performance optimization
 - On-call rotations with a focus on sustainable practices
 
-**How SRE relates to DevOps:** There's significant overlap between the two disciplines. Some organizations use the terms interchangeably, while others see SRE as a specific implementation of DevOps principles with its own unique practices. Both aim for reliable, automated systems — they just approach it from slightly different angles.
+**How SRE relates to DevOps:** There's significant overlap between the two disciplines. Some organizations use the terms interchangeably, while others see SRE as a specific implementation of DevOps principles with its own unique practices. Both aim for reliable, automated systems, they just approach it from slightly different angles.
 
 ### A Day in the Life
 
@@ -154,7 +154,7 @@ A typical SRE might:
 - Work with a product team on their reliability requirements
 
 ### Key Skills
-SREs need strong **software engineering skills** (not just scripting—real coding), deep understanding of **distributed systems** (how large-scale applications work across many servers), expertise in **reliability measurement** (defining what "good enough" means with data), and skills in **incident management** (responding to and learning from outages).
+SREs need strong **software engineering skills** (not just scripting, real coding), deep understanding of **distributed systems** (how large-scale applications work across many servers), expertise in **reliability measurement** (defining what "good enough" means with data), and skills in **incident management** (responding to and learning from outages).
 
 ### The SRE Mindset
 
@@ -296,11 +296,11 @@ No matter which path interests you, here's how to begin:
 
 ### Foundation Skills (All Roles)
 
-1. **Learn Linux basics** — Command line, file system, processes
-2. **Understand networking** — IP addresses, DNS, ports, HTTP
-3. **Practice scripting** — Start with Bash, then Python
-4. **Use version control** — Git is essential
-5. **Set up a home lab** — Practice on virtual machines
+1. **Learn Linux basics**: Command line, file system, processes
+2. **Understand networking**: IP addresses, DNS, ports, HTTP
+3. **Practice scripting**: Start with Bash, then Python
+4. **Use version control**: Git is essential
+5. **Set up a home lab**: Practice on virtual machines
 
 ### Next Steps by Role
 

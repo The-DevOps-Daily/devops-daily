@@ -147,7 +147,7 @@ $ terraform init  # Uses locked versions
 $ terraform apply # Deploys with consistent provider behavior
 ```
 
-This reproducibility is crucial for:
+This reproducibility matters for:
 
 - Disaster recovery scenarios
 - Debugging production issues in development
@@ -290,6 +290,6 @@ A fintech company we worked with learned this lesson the hard way. They initiall
 
 After implementing proper lock file management, they eliminated environment drift and could confidently deploy knowing their infrastructure would behave consistently across all environments.
 
-The `.terraform.lock.hcl` file isn't just another file to manage, it's a crucial component of reproducible infrastructure. By committing it to version control, you ensure that your team can collaborate effectively and your infrastructure behaves predictably across all environments.
+The `.terraform.lock.hcl` file isn't just another file to manage, it's a key component of reproducible infrastructure. By committing it to version control, you ensure that your team can collaborate effectively and your infrastructure behaves predictably across all environments.
 
 Remember: infrastructure as code means your infrastructure should be as predictable and reproducible as your application code. The lock file is essential for achieving this goal.

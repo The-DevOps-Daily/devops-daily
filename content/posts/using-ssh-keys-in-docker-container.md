@@ -119,7 +119,7 @@ Using SSH keys in Docker containers is safe and flexible when you mount them at 
 
 ## Related Resources
 
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — keep secrets out of images
-- [Advanced Docker Features](/posts/advanced-docker-features) — BuildKit secrets
-- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — pass config securely
-- [Docker Security Checklist](/checklists/docker-security) — verify your setup
+- [Docker Security Best Practices](/posts/docker-security-best-practices): keep secrets out of images
+- [Advanced Docker Features](/posts/advanced-docker-features): BuildKit secrets
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): pass config securely
+- [Docker Security Checklist](/checklists/docker-security): verify your setup

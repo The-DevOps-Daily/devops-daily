@@ -125,4 +125,4 @@ This helps identify issues with the input data.
 - **Use Default Values**: Provide sensible defaults to avoid null or empty values.
 - **Test Iterations**: Use `terraform console` to test your `for_each` logic before applying changes.
 
-By understanding and addressing the root cause of the "Invalid for_each argument" error, you can create more robust and error-free Terraform configurations.
+By understanding and addressing the root cause of the "Invalid for_each argument" error, you can create more reliable and error-free Terraform configurations.

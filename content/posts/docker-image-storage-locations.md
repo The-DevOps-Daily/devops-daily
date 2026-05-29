@@ -278,7 +278,7 @@ Now you have a thorough understanding of where Docker stores its data and how to
 
 ## Related Resources
 
-- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup) — reclaim disk space
-- [Delete All Local Docker Images](/posts/delete-all-local-docker-images) — bulk cleanup
-- [Docker Image vs Container](/posts/docker-image-vs-container) — understand the fundamentals
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from scratch
+- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup): reclaim disk space
+- [Delete All Local Docker Images](/posts/delete-all-local-docker-images): bulk cleanup
+- [Docker Image vs Container](/posts/docker-image-vs-container): understand the fundamentals
+- [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch

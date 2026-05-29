@@ -24,7 +24,7 @@ Yes, Terraform can provision on-premises servers by integrating with providers l
 
 ---
 
-Terraform is widely known for managing cloud infrastructure, but it can also be used to provision on-premises servers. By leveraging Terraform providers and integrations, you can manage on-premises resources with the same declarative approach as cloud infrastructure.
+Terraform is widely known for managing cloud infrastructure, but it can also be used to provision on-premises servers. By using Terraform providers and integrations, you can manage on-premises resources with the same declarative approach as cloud infrastructure.
 
 ### Why Use Terraform for On-Premises Servers?
 

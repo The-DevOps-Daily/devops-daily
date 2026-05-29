@@ -21,7 +21,7 @@ tags:
 
 ## TLDR
 
-To upgrade a Docker container after its image has changed, pull the updated image, stop the running container, and recreate it using the new image. Use `docker-compose` or orchestration tools like Kubernetes for seamless upgrades.
+To upgrade a Docker container after its image has changed, pull the updated image, stop the running container, and recreate it using the new image. Use `docker-compose` or orchestration tools like Kubernetes for smooth upgrades.
 
 ---
 
@@ -149,7 +149,7 @@ By following these steps, you can efficiently upgrade Docker containers to use n
 
 ## Related Resources
 
-- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers) — force updates
-- [Rebuild Docker Container in Compose](/posts/rebuild-docker-container-compose) — Compose rebuild
-- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits) — preserve data during upgrades
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers): force updates
+- [Rebuild Docker Container in Compose](/posts/rebuild-docker-container-compose): Compose rebuild
+- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits): preserve data during upgrades
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

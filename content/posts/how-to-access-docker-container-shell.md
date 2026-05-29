@@ -272,8 +272,8 @@ Happy containerizing!
 
 ## Related Resources
 
-- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty) — attach to running containers
-- [Interactive Shell in Docker Compose](/posts/interactive-shell-docker-compose) — Compose shell access
-- [Docker TTY Error Fix](/posts/docker-tty-error-fix) — troubleshoot TTY issues
-- [Docker Edit File in Container](/posts/docker-edit-file-in-container) — modify files
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty): attach to running containers
+- [Interactive Shell in Docker Compose](/posts/interactive-shell-docker-compose): Compose shell access
+- [Docker TTY Error Fix](/posts/docker-tty-error-fix): troubleshoot TTY issues
+- [Docker Edit File in Container](/posts/docker-edit-file-in-container): modify files
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

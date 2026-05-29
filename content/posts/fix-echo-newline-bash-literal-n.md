@@ -314,7 +314,7 @@ debug_echo
 
 Run this debugging function to understand how your system handles different echo variations.
 
-## Building a Robust Output Function
+## Building a Reliable Output Function
 
 Create a utility function that handles newlines reliably across different scenarios:
 

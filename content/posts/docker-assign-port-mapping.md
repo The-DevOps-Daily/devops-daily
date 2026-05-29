@@ -94,7 +94,7 @@ By understanding Docker's limitations and using these workarounds, you can manag
 
 ## Related Resources
 
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — port publishing fundamentals
-- [Docker Access Host Port](/posts/docker-access-host-port) — host-container networking
-- [Introduction to Docker: Networking](/guides/introduction-to-docker) — Docker networking guide
-- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): port publishing fundamentals
+- [Docker Access Host Port](/posts/docker-access-host-port): host-container networking
+- [Introduction to Docker: Networking](/guides/introduction-to-docker): Docker networking guide
+- [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge

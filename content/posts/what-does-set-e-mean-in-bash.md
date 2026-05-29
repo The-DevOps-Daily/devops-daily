@@ -110,4 +110,4 @@ set -e
 
 ## Conclusion
 
-Using `set -e` in your Bash scripts is a simple way to make them more robust and catch errors early. Just be aware of its limitations and test your scripts to avoid surprises. For even safer scripts, combine it with `set -o pipefail` and handle expected errors explicitly.
+Using `set -e` in your Bash scripts is a simple way to make them more reliable and catch errors early. Just be aware of its limitations and test your scripts to avoid surprises. For even safer scripts, combine it with `set -o pipefail` and handle expected errors explicitly.

@@ -203,8 +203,8 @@ Recreating a container is the safe, repeatable way to add volumes. Once the patt
 
 ## Related Resources
 
-- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits) — why volumes matter
-- [Docker Persistent Storage for Databases](/posts/docker-persistent-storage-databases) — database patterns
-- [Mount a Host Directory in Docker](/posts/docker-mount-host-directory) — bind mounts
-- [How to List Docker Volumes](/posts/how-to-list-docker-volumes-in-containers) — manage volumes
-- [Introduction to Docker: Volumes](/guides/introduction-to-docker) — volume fundamentals
+- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits): why volumes matter
+- [Docker Persistent Storage for Databases](/posts/docker-persistent-storage-databases): database patterns
+- [Mount a Host Directory in Docker](/posts/docker-mount-host-directory): bind mounts
+- [How to List Docker Volumes](/posts/how-to-list-docker-volumes-in-containers): manage volumes
+- [Introduction to Docker: Volumes](/guides/introduction-to-docker): volume fundamentals

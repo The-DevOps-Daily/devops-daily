@@ -393,4 +393,4 @@ git log --graph --oneline main feature-branch
 git log --left-right --graph --cherry-pick --oneline main...feature-branch
 ```
 
-Now you have comprehensive knowledge of viewing and analyzing Git commit history. These techniques will help you understand your project's evolution, track down issues, and collaborate more effectively with your team by providing insights into how your codebase has changed over time.
+Now you know how to view and analyze Git commit history. These techniques will help you understand your project's evolution, track down issues, and collaborate more effectively with your team by providing insights into how your codebase has changed over time.

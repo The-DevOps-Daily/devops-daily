@@ -109,7 +109,7 @@ By following these steps, you can securely push Docker images to a private repos
 
 ## Related Resources
 
-- [Docker Push: Denied Access](/posts/docker-push-denied-access) — fix push errors
-- [Docker Rename Image Repository](/posts/docker-rename-image-repository) — tag images correctly
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — optimize before pushing
-- [Introduction to Docker: Working with Images](/guides/introduction-to-docker) — image management
+- [Docker Push: Denied Access](/posts/docker-push-denied-access): fix push errors
+- [Docker Rename Image Repository](/posts/docker-rename-image-repository): tag images correctly
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): optimize before pushing
+- [Introduction to Docker: Working with Images](/guides/introduction-to-docker): image management

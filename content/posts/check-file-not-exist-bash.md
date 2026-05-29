@@ -104,7 +104,7 @@ for path in "${test_paths[@]}"; do
 done
 ```
 
-This comprehensive check helps you understand exactly what you're dealing with when a file test fails.
+This check helps you understand exactly what you're dealing with when a file test fails.
 
 ## Using Double Bracket Syntax
 
@@ -147,7 +147,7 @@ Double brackets `[[ ]]` handle variables with spaces better and provide addition
 
 ## Creating Safety Checks for File Operations
 
-File non-existence checks are crucial for preventing accidental overwrites and ensuring safe operations:
+File non-existence checks help prevent accidental overwrites and ensuring safe operations:
 
 ```bash
 #!/bin/bash

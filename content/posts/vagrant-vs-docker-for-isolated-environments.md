@@ -120,7 +120,7 @@ Pick the tool that matches the problem you're solving, or use both when it makes
 
 ## Related Resources
 
-- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine) — deeper VM comparison
-- [Docker Runtime Performance Cost](/posts/docker-runtime-performance-cost) — performance analysis
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker
-- [DevOps Roadmap](/roadmap) — the full learning path
+- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine): deeper VM comparison
+- [Docker Runtime Performance Cost](/posts/docker-runtime-performance-cost): performance analysis
+- [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker
+- [DevOps Roadmap](/roadmap): the full learning path

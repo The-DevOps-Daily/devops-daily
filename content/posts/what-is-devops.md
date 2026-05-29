@@ -245,7 +245,7 @@ While "DevOps Engineer" is a real job, DevOps itself is a culture and way of wor
 
 ### "DevOps means no operations team"
 
-Wrong! Operations expertise is still crucial. DevOps just means operations and development work together rather than separately.
+Wrong! Operations expertise still matters. DevOps just means operations and development work together rather than separately.
 
 ### "DevOps is only about tools"
 

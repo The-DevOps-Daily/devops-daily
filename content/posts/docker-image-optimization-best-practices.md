@@ -21,7 +21,7 @@ tags:
 
 ## TLDR
 
-Optimize Docker images by using multi-stage builds, choosing minimal base images (Alpine, Distroless), leveraging layer caching, minimizing layers, removing build dependencies, and using `.dockerignore`. These practices can reduce image size by 70-90% and significantly improve build and deployment times.
+Optimize Docker images by using multi-stage builds, choosing minimal base images (Alpine, Distroless), using layer caching, minimizing layers, removing build dependencies, and using `.dockerignore`. These practices can reduce image size by 70-90% and significantly improve build and deployment times.
 
 ## Why Docker Image Optimization Matters
 
@@ -494,16 +494,16 @@ docker-slim build --http-probe myapp:latest
 
 ## Conclusion
 
-Docker image optimization is not optional—it's essential for production deployments. By following these best practices, you can reduce image sizes by 70-96%, improve build times, reduce costs, and enhance security. Start with multi-stage builds and minimal base images, then progressively apply other optimizations.
+Docker image optimization is not optional; it's essential for production deployments. By following these best practices, you can reduce image sizes by 70-96%, improve build times, reduce costs, and enhance security. Start with multi-stage builds and minimal base images, then progressively apply other optimizations.
 
-Remember: every megabyte saved is multiplied across your entire infrastructure—CI/CD pipelines, registries, and production deployments.
+Remember: every megabyte saved is multiplied across your entire infrastructure: CI/CD pipelines, registries, and production deployments.
 
 ## Related Resources
 
-- [Advanced Docker Features](/posts/advanced-docker-features) — BuildKit, health checks, and more
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — secure your optimized images
-- [COPY vs ADD in Dockerfiles](/posts/dockerfile-copy-vs-add-commands) — choose the right instruction
-- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build) — hands-on optimization
-- [Docker Security Checklist](/checklists/docker-security) — verify your setup
-- [Introduction to Docker: Best Practices](/guides/introduction-to-docker) — comprehensive guide
-- [DevOps Survival Guide](/books/devops-survival-guide) — broader DevOps learning
+- [Advanced Docker Features](/posts/advanced-docker-features): BuildKit, health checks, and more
+- [Docker Security Best Practices](/posts/docker-security-best-practices): secure your optimized images
+- [COPY vs ADD in Dockerfiles](/posts/dockerfile-copy-vs-add-commands): choose the right instruction
+- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build): hands-on optimization
+- [Docker Security Checklist](/checklists/docker-security): verify your setup
+- [Introduction to Docker: Best Practices](/guides/introduction-to-docker): complete guide
+- [DevOps Survival Guide](/books/devops-survival-guide): broader DevOps learning

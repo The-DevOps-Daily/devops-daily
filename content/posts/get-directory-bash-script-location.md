@@ -45,7 +45,7 @@ The `dirname` command extracts the directory portion from a file path, while `$0
 
 ## Handling Symbolic Links Properly
 
-If your script might be called through a symbolic link, you need a more robust approach that resolves the actual location:
+If your script might be called through a symbolic link, you need a more reliable approach that resolves the actual location:
 
 ```bash
 #!/bin/bash
@@ -250,7 +250,7 @@ else
 fi
 ```
 
-This approach includes comprehensive error checking and fallback strategies.
+This approach includes thorough error checking and fallback strategies.
 
 ## Creating a Reusable Library
 

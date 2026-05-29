@@ -311,13 +311,13 @@ doctl apps update $APP_ID --set-env="DATABASE_URL=postgresql://..." --encrypt
 
 ### Alternative: Coolify Self-Hosted Setup
 
-If you're willing to manage your own server in exchange for dramatically lower costs, Coolify offers a compelling path. This open-source platform runs entirely on a single DigitalOcean Droplet and can host multiple applications for as little as $24/month — a fraction of what you'd pay on Heroku or even App Platform.
+If you're willing to manage your own server in exchange for dramatically lower costs, Coolify offers a compelling path. This open-source platform runs entirely on a single DigitalOcean Droplet and can host multiple applications for as little as $24/month, a fraction of what you'd pay on Heroku or even App Platform.
 
 #### What is Coolify?
 
 Think of Coolify as a self-hosted Heroku. It gives you the same git-push deployment experience you're used to, but everything runs on infrastructure you control. Behind the scenes, it uses Docker for containerization, Traefik for routing and SSL termination, and provides a clean web UI for managing everything.
 
-The platform supports GitHub, GitLab, and Bitbucket repositories with automatic deployments on push. SSL certificates are handled automatically through Let's Encrypt, and you get built-in support for PostgreSQL, MySQL, MongoDB, and Redis databases. Whether you're deploying static sites, APIs, or full-stack applications, Coolify handles the orchestration while you maintain full control over the underlying infrastructure.
+The platform supports GitHub, GitLab, and Bitbucket repositories with automatic deployments on push. SSL certificates are handled automatically through Let's Encrypt, and you get built-in support for PostgreSQL, MySQL, MongoDB, and Redis databases. Whether you're deploying static sites, APIs, or full-stack applications, Coolify handles the deployment coordination while you maintain full control over the underlying infrastructure.
 
 #### Setting Up Coolify
 
@@ -345,7 +345,7 @@ doctl compute droplet create coolify-server \\
 
 **Installing Coolify**
 
-Once your Droplet is running, SSH in and run Coolify's installer. The script handles all dependencies — Docker, Docker Compose, and the Coolify control plane. Installation takes 5-10 minutes depending on your connection speed.
+Once your Droplet is running, SSH in and run Coolify's installer. The script handles all dependencies: Docker, Docker Compose, and the Coolify control plane. Installation takes 5-10 minutes depending on your connection speed.
 
 ```bash
 # SSH into Droplet
@@ -372,13 +372,13 @@ coolify.yourdomain.com  →  your-droplet-ip
 *.coolify.yourdomain.com  →  your-droplet-ip
 ```
 
-The wildcard record is optional but recommended — it lets you deploy multiple apps on different subdomains without manually creating DNS records each time.
+The wildcard record is optional but recommended; it lets you deploy multiple apps on different subdomains without manually creating DNS records each time.
 
 **Deploying Your First Application**
 
 The deployment flow in Coolify feels familiar if you've used Heroku. Start by creating a project (think of it as a workspace), then add a new application. Connect your GitHub, GitLab, or Bitbucket repository, and Coolify will analyze your code to detect the framework.
 
-For most frameworks, Coolify uses Nixpacks (similar to Heroku's buildpacks) to automatically detect and build your app. If you have a Dockerfile, it'll use that instead. Set your environment variables, specify your custom domain, and hit deploy. Coolify pulls your code, builds it, starts the container, and provisions an SSL certificate — all automatically.
+For most frameworks, Coolify uses Nixpacks (similar to Heroku's buildpacks) to automatically detect and build your app. If you have a Dockerfile, it'll use that instead. Set your environment variables, specify your custom domain, and hit deploy. Coolify pulls your code, builds it, starts the container, and provisions an SSL certificate, all automatically.
 
 **Example deployment (Node.js)**:
 
@@ -495,15 +495,15 @@ Add this to cron with `0 2 * * * /root/backup-to-spaces.sh` to run at 2 AM daily
 
 **Lock down your server** with UFW firewall. Only expose SSH (port 22), HTTP (80), and HTTPS (443). Keep Coolify updated with `coolify update` every month or when security patches are released. Use strong, randomly generated passwords for all database credentials.
 
-**Plan your exit strategy**. When you outgrow a single Droplet — typically around 10K-50K requests/minute or when you need multi-region deployment — you can migrate to App Platform or Kubernetes. The containerized nature of Coolify makes this transition straightforward.
+**Plan your exit strategy**. When you outgrow a single Droplet (typically around 10K-50K requests/minute or when you need multi-region deployment), you can migrate to App Platform or Kubernetes. The containerized nature of Coolify makes this transition straightforward.
 
 #### When Coolify is the Right Choice
 
-Coolify shines in specific scenarios. It's ideal when you're running multiple applications and want to consolidate them on shared infrastructure — the cost savings compound quickly. You'll need basic Linux comfort (SSH, Docker concepts, reading logs), but you don't need to be a sysadmin. If you're currently spending $500+/month on Heroku across several apps, Coolify can cut that to $24-$96/month.
+Coolify shines in specific scenarios. It's ideal when you're running multiple applications and want to consolidate them on shared infrastructure, since the cost savings compound quickly. You'll need basic Linux comfort (SSH, Docker concepts, reading logs), but you don't need to be a sysadmin. If you're currently spending $500+/month on Heroku across several apps, Coolify can cut that to $24-$96/month.
 
 The traffic sweet spot is 1K-10K requests/minute on an 8GB Droplet. Beyond that, you'll want to either scale vertically to 16GB+ or consider moving to App Platform for horizontal scaling.
 
-**Avoid Coolify if** you need enterprise SLAs, 24/7 vendor support, or multi-region redundancy out of the box. It's also not the right choice if you've never SSH'd into a server before — there's a learning curve. And while you can vertically scale Droplets quickly, instant horizontal auto-scaling isn't available like it is with App Platform.
+**Avoid Coolify if** you need enterprise SLAs, 24/7 vendor support, or multi-region redundancy out of the box. It's also not the right choice if you've never SSH'd into a server before; there's a learning curve. And while you can vertically scale Droplets quickly, instant horizontal auto-scaling isn't available like it is with App Platform.
 
 #### Coolify + App Platform Hybrid
 
@@ -1386,7 +1386,7 @@ config.active_storage.service = :digitalocean
 
 ## The Bottom Line
 
-Migrating from Heroku to DigitalOcean isn't about abandoning managed services — it's about **choosing better-priced managed services**. With App Platform, you keep the developer experience (git push deployments, managed databases, zero-config SSL) while cutting costs by 60-80%. With Coolify self-hosted, you can achieve 90%+ savings for multi-app setups on a single $24/month Droplet.
+Migrating from Heroku to DigitalOcean isn't about abandoning managed services; it's about **choosing better-priced managed services**. With App Platform, you keep the developer experience (git push deployments, managed databases, zero-config SSL) while cutting costs by 60-80%. With Coolify self-hosted, you can achieve 90%+ savings for multi-app setups on a single $24/month Droplet.
 
 The migration itself takes 3-4 weeks with minimal downtime when done incrementally. For most teams spending >$200/month on Heroku, the savings justify the effort within 2-3 months.
 

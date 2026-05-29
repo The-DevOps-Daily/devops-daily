@@ -24,7 +24,7 @@ tags:
 
 ## TLDR
 
-Heroku's convenience comes at a premium: typical production workloads cost $500-2,000/month. Self-hosting equivalent infrastructure on [DigitalOcean](https://m.do.co/c/2a9bba940f39) runs $24-100/month. But the real cost difference isn't just dollars—it's engineer time, operational complexity, and risk. This guide breaks down actual costs, hidden expenses, and provides a framework to determine if self-hosting makes sense for your specific situation. Includes transparent Total Cost of Ownership (TCO) calculations and honest tradeoff analysis.
+Heroku's convenience comes at a premium: typical production workloads cost $500-2,000/month. Self-hosting equivalent infrastructure on [DigitalOcean](https://m.do.co/c/2a9bba940f39) runs $24-100/month. But the real cost difference isn't just dollars; it's engineer time, operational complexity, and risk. This guide breaks down actual costs, hidden expenses, and provides a framework to determine if self-hosting makes sense for your specific situation. Includes transparent Total Cost of Ownership (TCO) calculations and honest tradeoff analysis.
 
 ---
 
@@ -491,7 +491,7 @@ Don't migrate everything at once. Use this staged approach:
 ### Phase 4: Optimization (ongoing)
 
 - Tune database performance
-- Set up comprehensive monitoring
+- Set up full monitoring
 - Automate backups and test restores
 - Document runbooks
 - Implement disaster recovery procedures
@@ -506,7 +506,7 @@ Don't migrate everything at once. Use this staged approach:
 
 **Self-hosting is cheaper.** But not 90% cheaper when you factor in engineer time.
 
-**The real question isn't cost**—it's whether you want to own your infrastructure. 
+**The real question isn't cost.** It's whether you want to own your infrastructure. 
 
 **Choose Heroku if**:
 - You want to focus on product, not infrastructure

@@ -750,8 +750,8 @@ The tools themselves matter less than understanding the problems they solve. Onc
 
 ## Related Resources
 
-- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine) — deeper comparison
-- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences) — choosing the right tool
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — hands-on Docker learning
-- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes) — hands-on K8s learning
-- [DevOps Roadmap](/roadmap) — the full learning path
+- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine): deeper comparison
+- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences): choosing the right tool
+- [Introduction to Docker Guide](/guides/introduction-to-docker): hands-on Docker learning
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes): hands-on K8s learning
+- [DevOps Roadmap](/roadmap): the full learning path

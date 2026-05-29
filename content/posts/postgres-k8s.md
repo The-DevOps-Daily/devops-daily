@@ -95,7 +95,7 @@ These workarounds essentially recreate dedicated VMs, negating much of Kubernete
 
 ### Complex Backup and Recovery Procedures
 
-Databases require robust backup solutions. Here's the reality with Kubernetes:
+Databases require reliable backup solutions. Here's the reality with Kubernetes:
 
 1. Volume snapshots are provider-specific and may not be consistent
 2. Logical backups require careful coordination with Postgres
@@ -132,7 +132,7 @@ But wait:
 3. What happens to existing connections during failover?
 4. How do you verify database integrity after version upgrades?
 
-These questions are easily answered in traditional setups but become complex orchestration challenges in Kubernetes.
+These questions are easily answered in traditional setups but become complex coordination challenges in Kubernetes.
 
 ## Where Things Go Wrong: Real-World Scenarios
 

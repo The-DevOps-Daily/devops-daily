@@ -56,7 +56,7 @@ Here's how these patterns work:
 
 ## Creating Reusable Functions
 
-Here's a comprehensive function that extracts all components:
+Here's a function that extracts all components:
 
 ```bash
 parse_filepath() {
@@ -336,4 +336,4 @@ extract_version_info "app_v2.1-beta.zip"
 5. **Use quotes** around variables to handle paths with spaces
 6. **Consider special files** like hidden files starting with dots
 
-Extracting filename and extension information is fundamental to file processing in Bash. These techniques provide robust methods for parsing file paths, whether you're building file processors, backup systems, or general automation scripts.
+Extracting filename and extension information is fundamental to file processing in Bash. These techniques provide reliable methods for parsing file paths, whether you're building file processors, backup systems, or general automation scripts.

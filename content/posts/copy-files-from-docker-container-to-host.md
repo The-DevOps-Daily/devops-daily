@@ -224,7 +224,7 @@ Happy containerizing!
 
 ## Related Resources
 
-- [Introduction to Docker: Volumes](/guides/introduction-to-docker) — persistent data management
-- [COPY with Docker Exclusion](/posts/copy-with-docker-exclusion) — control what goes into images
-- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — configure data paths
-- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
+- [Introduction to Docker: Volumes](/guides/introduction-to-docker): persistent data management
+- [COPY with Docker Exclusion](/posts/copy-with-docker-exclusion): control what goes into images
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): configure data paths
+- [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge

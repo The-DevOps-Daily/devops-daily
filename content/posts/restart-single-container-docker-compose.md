@@ -92,7 +92,7 @@ By following these steps, you can efficiently restart individual containers in a
 
 ## Related Resources
 
-- [Docker Compose: Up Only Certain Containers](/posts/docker-compose-up-only-certain-containers) — selective startup
-- [Rebuild Docker Container in Compose](/posts/rebuild-docker-container-compose) — rebuild patterns
-- [Upgrade Docker Container After Image Changed](/posts/upgrade-docker-container-image-changed) — update images
-- [Introduction to Docker: Compose](/guides/introduction-to-docker) — Compose fundamentals
+- [Docker Compose: Up Only Certain Containers](/posts/docker-compose-up-only-certain-containers): selective startup
+- [Rebuild Docker Container in Compose](/posts/rebuild-docker-container-compose): rebuild patterns
+- [Upgrade Docker Container After Image Changed](/posts/upgrade-docker-container-image-changed): update images
+- [Introduction to Docker: Compose](/guides/introduction-to-docker): Compose fundamentals

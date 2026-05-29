@@ -23,7 +23,7 @@ featured: true
 
 That was the message I received from our finance team last January that kicked off our cloud cost optimization journey. For privacy reasons, I won't disclose the name of our company, but we're a mid-sized SaaS provider with about 500,000 monthly active users.
 
-Six months later, we've reduced our AWS costs by 73% while simultaneously improving application performance. This wasn't through downsizing or reducing capabilities, but by making smarter architectural choices and leveraging AWS services in ways we hadn't considered before.
+Six months later, we've reduced our AWS costs by 73% while simultaneously improving application performance. This wasn't through downsizing or reducing capabilities, but by making smarter architectural choices and using AWS services in ways we hadn't considered before.
 
 Here's exactly how we did it, and how you can apply the same principles to your infrastructure.
 
@@ -289,7 +289,7 @@ Our six-month optimization journey resulted in:
 
 Based on our experience, here's a starting framework you can use:
 
-1. **Implement comprehensive tagging and monitoring**:
+1. **Implement thorough tagging and monitoring**:
 
    - Environment, Team, Project, Purpose at minimum
    - Set up detailed CloudWatch dashboards for utilization
@@ -321,6 +321,6 @@ Based on our experience, here's a starting framework you can use:
 
 Our cost optimization journey didn't end after six months. We've built ongoing optimization into our regular workflows. Each quarter, we review our infrastructure and look for new opportunities to optimize.
 
-The biggest lesson? Cost optimization done right doesn't compromise performance or reliability, it often improves them by forcing you to understand your workloads better and leverage AWS services more effectively.
+The biggest lesson? Cost optimization done right doesn't compromise performance or reliability, it often improves them by forcing you to understand your workloads better and use AWS services more effectively.
 
 By being methodical, data-driven, and willing to challenge our assumptions, we transformed our AWS bill from a growing concern to a competitive advantage, freeing up resources to invest in new features and growth opportunities instead of unnecessary cloud spend.

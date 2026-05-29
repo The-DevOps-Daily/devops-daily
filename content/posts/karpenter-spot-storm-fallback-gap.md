@@ -211,10 +211,10 @@ This is not a substitute for workarounds 1 and 2. It is what you build when narr
 
 Karpenter exposes a useful set of cloudprovider metrics. The ones that matter during a storm:
 
-- `karpenter_cloudprovider_errors_total` — label `error` carries `InsufficientInstanceCapacity`, `UnfulfillableCapacity`, `MaxSpotInstanceCountExceeded`. A spike is the storm starting.
-- `karpenter_cloudprovider_instance_type_offering_available` — gauge per `instance_type` / `capacity_type` / `zone`. Watch the sum drop.
-- `karpenter_nodeclaims_created_total`, `karpenter_nodeclaims_terminated_total`, `karpenter_nodeclaims_disrupted_total{reason="interruption"}` — when `disrupted{reason=interruption}` rate approaches `created` rate, you are churning.
-- `karpenter_interruption_received_messages_total{message_type="SpotInterruptionKind"}` — spot 2-minute warnings from the SQS queue.
+- `karpenter_cloudprovider_errors_total`: label `error` carries `InsufficientInstanceCapacity`, `UnfulfillableCapacity`, `MaxSpotInstanceCountExceeded`. A spike is the storm starting.
+- `karpenter_cloudprovider_instance_type_offering_available`: gauge per `instance_type` / `capacity_type` / `zone`. Watch the sum drop.
+- `karpenter_nodeclaims_created_total`, `karpenter_nodeclaims_terminated_total`, `karpenter_nodeclaims_disrupted_total{reason="interruption"}`: when `disrupted{reason=interruption}` rate approaches `created` rate, you are churning.
+- `karpenter_interruption_received_messages_total{message_type="SpotInterruptionKind"}`: spot 2-minute warnings from the SQS queue.
 - `karpenter_voluntary_disruption_decisions_total`, `karpenter_voluntary_disruption_queue_failures_total`.
 
 A working Prometheus alert that has caught real storms in production:
@@ -253,7 +253,7 @@ A few sharp edges worth knowing about before you build a dashboard on these:
 
 As of writing, none of the obvious "automatic fallback" feature requests are scheduled. Issue `#8298` was closed without implementation. Issue `#2275` was closed as working-as-intended in January 2026. The configurable cache TTL and NodePool-aware metrics in `#8224` are still open with no design doc attached.
 
-This is not because the maintainers don't care. It is because the architectural answer they are committed to (wide requirements plus `minValues` plus weighted NodePools) genuinely covers most cases. The cases it does not cover (narrow-constraint workloads, regional storms) are real, but rare enough that the project has not prioritized building the fallback machinery.
+This is not because the maintainers don't care. It is because the architectural answer they are committed to (wide requirements plus `minValues` plus weighted NodePools) covers most cases. The cases it does not cover (narrow-constraint workloads, regional storms) are real, but rare enough that the project has not prioritized building the fallback machinery.
 
 Practically, this means the production posture is yours to design. Plan for the storm.
 

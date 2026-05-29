@@ -24,7 +24,7 @@ The error `docker: "build" requires 1 argument. See 'docker build --help'` means
 
 ## Why Does This Error Happen?
 
-When you run `docker build`, Docker expects a build context—a directory containing your `Dockerfile` and any files needed for the build. If you don't provide this argument, Docker doesn't know what to build.
+When you run `docker build`, Docker expects a build context, a directory containing your `Dockerfile` and any files needed for the build. If you don't provide this argument, Docker doesn't know what to build.
 
 **Example of the error:**
 
@@ -68,12 +68,12 @@ docker build -t my-image .
 
 ## Conclusion
 
-The `docker: "build" requires 1 argument` error is a simple fix—just add the build context (like `.`) to your command. This ensures Docker knows where to find your `Dockerfile` and build resources.
+The `docker: "build" requires 1 argument` error is a simple fix: just add the build context (like `.`) to your command. This ensures Docker knows where to find your `Dockerfile` and build resources.
 
 ## Related Resources
 
-- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile) — Dockerfile instructions
-- [How Do I Make a Comment in a Dockerfile?](/posts/comment-in-dockerfile) — write clearer Dockerfiles
-- [COPY with Docker Exclusion](/posts/copy-with-docker-exclusion) — optimize build context
-- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker) — Dockerfile guide
-- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
+- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile): Dockerfile instructions
+- [How Do I Make a Comment in a Dockerfile?](/posts/comment-in-dockerfile): write clearer Dockerfiles
+- [COPY with Docker Exclusion](/posts/copy-with-docker-exclusion): optimize build context
+- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker): Dockerfile guide
+- [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge

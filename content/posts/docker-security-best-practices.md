@@ -635,11 +635,11 @@ Container security is an ongoing process that requires attention at every stage 
 
 ## Related Resources
 
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller, more secure images
-- [Advanced Docker Features](/posts/advanced-docker-features) — BuildKit secrets and health checks
-- [Using SSH Keys in Docker](/posts/using-ssh-keys-in-docker-container) — secure key handling
-- [Docker Security Checklist](/checklists/docker-security) — verify your security setup
-- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build) — hands-on practice
-- [Introduction to Docker: Best Practices](/guides/introduction-to-docker) — comprehensive guide
-- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
-- [DevOps Roadmap](/roadmap) — the full DevOps learning path
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build smaller, more secure images
+- [Advanced Docker Features](/posts/advanced-docker-features): BuildKit secrets and health checks
+- [Using SSH Keys in Docker](/posts/using-ssh-keys-in-docker-container): secure key handling
+- [Docker Security Checklist](/checklists/docker-security): verify your security setup
+- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build): hands-on practice
+- [Introduction to Docker: Best Practices](/guides/introduction-to-docker): full guide
+- [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge
+- [DevOps Roadmap](/roadmap): the full DevOps learning path

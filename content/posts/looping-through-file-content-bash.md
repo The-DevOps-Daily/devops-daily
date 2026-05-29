@@ -39,7 +39,7 @@ The `IFS=` prevents the shell from trimming whitespace, and `-r` prevents backsl
 
 ## Processing Files with Error Handling
 
-Adding error handling makes your scripts more robust. This example checks if the file exists before processing:
+Adding error handling makes your scripts more reliable. This example checks if the file exists before processing:
 
 ```bash
 filename="data.txt"
@@ -203,7 +203,7 @@ This approach splits large files into smaller chunks and processes them simultan
 
 ## Error Recovery and Logging
 
-For production scripts, implement comprehensive error handling and logging:
+For production scripts, implement thorough error handling and logging:
 
 ```bash
 log_file="processing.log"
