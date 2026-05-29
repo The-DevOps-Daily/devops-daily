@@ -54,7 +54,7 @@ The solution is to remove the file from Git's tracking index while keeping it in
 git rm --cached config/database.yml
 ```
 
-This command removes the file from Git's index (staging area) but leaves the actual file untouched in your working directory. The `--cached` flag is crucial - without it, `git rm` would delete the file entirely.
+This command removes the file from Git's index (staging area) but leaves the actual file untouched in your working directory. The `--cached` flag matters - without it, `git rm` would delete the file entirely.
 
 After running this command, commit the change:
 
@@ -253,7 +253,7 @@ git rm --cached config/database.yml
 
 ## Best Practices
 
-Add comprehensive `.gitignore` rules before committing files to avoid this situation:
+Add thorough `.gitignore` rules before committing files to avoid this situation:
 
 ```bash
 # Start with a good .gitignore template

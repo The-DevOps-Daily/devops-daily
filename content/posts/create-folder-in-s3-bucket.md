@@ -1,6 +1,6 @@
 ---
 title: 'How to Create a Folder in an AWS S3 Bucket Using Terraform'
-excerpt: 'Learn how to create a folder in an AWS S3 bucket using Terraform by leveraging the `aws_s3_object` resource.'
+excerpt: 'Learn how to create a folder in an AWS S3 bucket using Terraform with the `aws_s3_object` resource.'
 category:
   name: 'Terraform'
   slug: 'terraform'

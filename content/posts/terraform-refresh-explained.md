@@ -128,4 +128,4 @@ terraform plan -refresh-only
 - **Automate State Management**: Integrate state refresh into CI/CD pipelines.
 - **Backup State Files**: Always back up state files before making changes.
 
-By understanding and using the `terraform refresh` command effectively, you can maintain accurate state files and streamline your Terraform workflows.
+By understanding and using the `terraform refresh` command effectively, you can maintain accurate state files and simplify your Terraform workflows.

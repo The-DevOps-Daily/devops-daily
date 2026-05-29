@@ -461,7 +461,7 @@ resource "aws_instance" "app" {
 
 ## Real-World Example: Multi-Environment Application Stack
 
-Here's a comprehensive example showing how to build a flexible application stack:
+Here's a full example showing how to build a flexible application stack:
 
 ```terraform
 # variables.tf

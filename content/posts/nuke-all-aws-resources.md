@@ -54,7 +54,7 @@ This command terminates all EC2 instances in the account.
 
 ### Using `aws-nuke`
 
-`aws-nuke` is a third-party tool designed to delete all resources in an AWS account. It is more comprehensive and easier to use than scripting with AWS CLI.
+`aws-nuke` is a third-party tool designed to delete all resources in an AWS account. It covers more resource types and is easier to use than scripting with AWS CLI.
 
 #### Step 1: Install `aws-nuke`
 

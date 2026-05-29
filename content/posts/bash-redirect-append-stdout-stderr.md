@@ -249,4 +249,4 @@ tail -f output.log    # Terminal 1
 tail -f errors.log    # Terminal 2
 ```
 
-These redirection techniques give you fine-grained control over how your scripts handle output and errors, making debugging easier and creating comprehensive audit trails for your automated processes.
+These redirection techniques give you fine-grained control over how your scripts handle output and errors, making debugging easier and creating complete audit trails for your automated processes.

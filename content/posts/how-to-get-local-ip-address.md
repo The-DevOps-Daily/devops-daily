@@ -144,7 +144,7 @@ print(f"Your local IP address is: {ip_address}")
 
 This method works by creating a socket connection to an external address and checking what local address the system would use for that connection. It's reliable because it doesn't depend on parsing command output.
 
-For a more comprehensive approach that lists all network interfaces:
+For an approach that lists all network interfaces:
 
 ```python
 import socket
@@ -302,7 +302,7 @@ The Python one-liner is particularly useful because it's cross-platform and does
 
 ## Scripting for Automation
 
-When you need to get the local IP in scripts, create reusable functions. Here's a robust shell script that works across different Unix-like systems:
+When you need to get the local IP in scripts, create reusable functions. Here's a shell script that works across different Unix-like systems:
 
 ```bash
 #!/bin/bash

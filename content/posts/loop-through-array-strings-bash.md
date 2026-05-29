@@ -238,7 +238,7 @@ echo "Other files (${#other_files[@]}): ${other_files[*]}"
 
 ## Error Handling in Array Loops
 
-Implement robust error handling:
+Implement reliable error handling:
 
 ```bash
 #!/bin/bash
@@ -430,7 +430,7 @@ done
 2. **Use meaningful variable names** for better code readability
 3. **Handle empty arrays gracefully** - Check array length before processing
 4. **Consider performance** for large arrays - use batch processing when needed
-5. **Implement error handling** for robust scripts
+5. **Implement error handling** for reliable scripts
 6. **Use associative arrays** for key-value data structures
 7. **Prefer readarray/mapfile** for creating arrays from command output
 8. **Test with various data types** including strings with spaces and special characters

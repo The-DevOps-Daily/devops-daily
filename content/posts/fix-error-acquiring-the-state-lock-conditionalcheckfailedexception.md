@@ -81,7 +81,7 @@ When you run `terraform plan` or `terraform apply`:
 
 ### Step 1: Check Who Has the Lock
 
-The error message provides crucial information:
+The error message provides useful information:
 
 ```
 Lock Info:

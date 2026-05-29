@@ -20,7 +20,7 @@ tags:
   - LoadBalancer
 ---
 
-Kubernetes provides different service types to expose applications running in pods. Understanding the differences between ClusterIP, NodePort, and LoadBalancer services is crucial for designing proper network architecture and choosing the right exposure method for your applications.
+Kubernetes provides different service types to expose applications running in pods. Understanding the differences between ClusterIP, NodePort, and LoadBalancer services matters for designing proper network architecture and choosing the right exposure method for your applications.
 
 ## Prerequisites
 

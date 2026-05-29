@@ -52,8 +52,8 @@ kubectl label namespace default istio-injection=enabled
 
 Istio's traffic policies live in two CRDs:
 
-- **VirtualService** — defines *how* requests are routed. Match on host, path, header, weight.
-- **DestinationRule** — defines *what happens after* the route is picked. Subsets, load balancing, connection pools, outlier detection.
+- **VirtualService**: defines *how* requests are routed. Match on host, path, header, weight.
+- **DestinationRule**: defines *what happens after* the route is picked. Subsets, load balancing, connection pools, outlier detection.
 
 A common mistake is putting circuit breaker settings in a VirtualService. They don't belong there. Circuit breakers are a property of the destination, not the route.
 
@@ -193,9 +193,9 @@ Some details that matter:
 
 The values you almost always want in `retryOn`:
 
-- `gateway-error` — 502, 503, 504
-- `connect-failure` — TCP connect failed
-- `refused-stream` — HTTP/2 stream was refused (usually from overload)
+- `gateway-error`: 502, 503, 504
+- `connect-failure`: TCP connect failed
+- `refused-stream`: HTTP/2 stream was refused (usually from overload)
 
 Things you almost never want to retry:
 
@@ -261,11 +261,11 @@ spec:
 
 What this does:
 
-- **maxConnections / http2MaxRequests** — caps the in-flight request count. Once exceeded, new requests fail fast with a 503. This is the actual "circuit" being broken.
-- **consecutive5xxErrors: 5** — a host that returns five 5xx responses in a row gets ejected.
-- **interval: 30s** — how often Istio scans for unhealthy hosts.
-- **baseEjectionTime: 30s** — how long the host stays ejected. Doubles on repeat offenses.
-- **maxEjectionPercent: 50** — never eject more than half the hosts. Otherwise you can take the whole pool offline and have nothing left to serve traffic.
+- **maxConnections / http2MaxRequests**: caps the in-flight request count. Once exceeded, new requests fail fast with a 503. This is the actual "circuit" being broken.
+- **consecutive5xxErrors: 5**: a host that returns five 5xx responses in a row gets ejected.
+- **interval: 30s**: how often Istio scans for unhealthy hosts.
+- **baseEjectionTime: 30s**: how long the host stays ejected. Doubles on repeat offenses.
+- **maxEjectionPercent: 50**: never eject more than half the hosts. Otherwise you can take the whole pool offline and have nothing left to serve traffic.
 
 That last one is the safety valve. Without it, a regional outage of a downstream dependency can cause Istio to eject every backend pod, leaving you with zero capacity even when the dependency recovers.
 

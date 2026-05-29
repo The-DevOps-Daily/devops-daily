@@ -349,7 +349,7 @@ The "Cannot connect to the Docker daemon" error is usually either a stopped serv
 
 ## Related Resources
 
-- [How to Fix Docker: Permission Denied](/posts/fix-docker-permission-denied-error) — related permissions troubleshooting
-- [Introduction to Docker: Installation](/guides/introduction-to-docker) — set up Docker properly from the start
-- [Docker Flashcards](/flashcards/docker-essentials) — review core Docker concepts
-- [DevOps Roadmap](/roadmap) — where Docker fits in your learning path
+- [How to Fix Docker: Permission Denied](/posts/fix-docker-permission-denied-error): related permissions troubleshooting
+- [Introduction to Docker: Installation](/guides/introduction-to-docker): set up Docker properly from the start
+- [Docker Flashcards](/flashcards/docker-essentials): review core Docker concepts
+- [DevOps Roadmap](/roadmap): where Docker fits in your learning path

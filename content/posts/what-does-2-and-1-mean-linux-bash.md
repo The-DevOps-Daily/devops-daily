@@ -48,7 +48,7 @@ The `2>&1` syntax is a redirection operator that means "redirect file descriptor
 - `>` is the redirection operator
 - `&1` refers to stdout (standard output)
 
-The `&` before the `1` is crucial - it tells the shell that `1` refers to a file descriptor, not a file named "1".
+The `&` before the `1` is important - it tells the shell that `1` refers to a file descriptor, not a file named "1".
 
 ## Basic Examples
 

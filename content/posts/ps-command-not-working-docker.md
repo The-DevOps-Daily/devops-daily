@@ -118,7 +118,7 @@ By following these steps, you can resolve issues with the `ps` command in Docker
 
 ## Related Resources
 
-- [Docker Ubuntu: Ping Not Found](/posts/docker-ubuntu-ping-not-found) — install missing tools
-- [Docker Alpine: How to Use Bash](/posts/docker-alpine-use-bash) — shell tools in Alpine
-- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — shell access
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Docker Ubuntu: Ping Not Found](/posts/docker-ubuntu-ping-not-found): install missing tools
+- [Docker Alpine: How to Use Bash](/posts/docker-alpine-use-bash): shell tools in Alpine
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell): shell access
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

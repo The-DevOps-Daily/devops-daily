@@ -86,7 +86,7 @@ Now, all `kubectl` commands will use `example-namespace` as the default namespac
 
 ## Example Scenario
 
-Imagine you are managing a Kubernetes cluster with multiple namespaces for different teams. By setting a default namespace, you can streamline your workflow and avoid repetitive commands.
+Imagine you are managing a Kubernetes cluster with multiple namespaces for different teams. By setting a default namespace, you can simplify your workflow and avoid repetitive commands.
 
 ## Conclusion
 

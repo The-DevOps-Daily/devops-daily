@@ -304,7 +304,7 @@ git show --name-status abc123 | grep '^D'
 
 ## Getting Detailed File Info
 
-For comprehensive file information:
+For detailed file information:
 
 ```bash
 # Detailed changes with context

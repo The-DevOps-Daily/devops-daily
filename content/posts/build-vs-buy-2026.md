@@ -29,7 +29,7 @@ tags: [Engineering Leadership, Infrastructure, Cost Analysis, Platform Engineeri
 
 This statement, or variations of it, has burned millions of dollars and delayed countless product launches. I've watched teams of talented engineers spend 6 months building internal platforms that end up being **worse** than off-the-shelf solutions while costing 3-5× more to maintain.
 
-The decision to build vs buy infrastructure tooling is rarely about technical capability—you **can** build almost anything given enough time. The real questions are:
+The decision to build vs buy infrastructure tooling is rarely about technical capability; you **can** build almost anything given enough time. The real questions are:
 
 1. **What is this decision actually costing in engineer-months?**
 2. **What product features are we not building while we build infrastructure?**
@@ -552,10 +552,10 @@ At 15 engineers, every engineer-month counts. The "savings" from self-hosting wo
 
 At 60 engineers, you're in the gray zone. If:
 - You have 2-3 engineers excited to build/own this long-term
-- Your deployment process is genuinely complex and slowing teams down
+- Your deployment process is complex and slowing teams down
 - Leadership is committed for 3+ years
 
-Then it **might** make sense. But be honest about the productivity gains—most teams overestimate by 2-3×.
+Then it **might** make sense. But be honest about the productivity gains; most teams overestimate by 2-3×.
 
 ---
 
@@ -681,6 +681,6 @@ In 2026, the SaaS ecosystem is mature enough that **95% of engineering teams sho
 2. **Massive scale** (500+ engineers, $1M+/year spend on a single tool)
 3. **Unique compliance** (data sovereignty, extreme security requirements)
 
-For everyone else: Buy the infrastructure, build the product. Your customers don't care if you built your own CI/CD platform—they care about the product you're selling them.
+For everyone else: Buy the infrastructure, build the product. Your customers don't care if you built your own CI/CD platform; they care about the product you're selling them.
 
 **The best infrastructure is the infrastructure you don't have to think about.**

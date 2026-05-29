@@ -158,7 +158,7 @@ Clean up networks that containers no longer use:
 docker network prune
 ```
 
-For a comprehensive cleanup of everything unused:
+For a full cleanup of everything unused:
 
 ```bash
 # Nuclear option: remove everything unused
@@ -246,8 +246,8 @@ Cleaning up Docker images regularly keeps your development environment fast and 
 
 ## Related Resources
 
-- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers) — force fresh containers
-- [Copy Docker Images Between Hosts](/posts/copy-docker-images-between-hosts-withouta-repository) — transfer images without a registry
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — keep images lean
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
-- [Docker Flashcards](/flashcards/docker-essentials) — quick Docker review
+- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers): force fresh containers
+- [Copy Docker Images Between Hosts](/posts/copy-docker-images-between-hosts-withouta-repository): transfer images without a registry
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): keep images lean
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals
+- [Docker Flashcards](/flashcards/docker-essentials): quick Docker review

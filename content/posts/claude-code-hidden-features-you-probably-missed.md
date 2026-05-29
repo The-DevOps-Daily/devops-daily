@@ -23,7 +23,7 @@ tags:
 
 Most people use Claude Code to write code, fix bugs, and maybe generate a commit message. That's fine, but you're leaving a lot on the table.
 
-Boris Cherny, the creator of Claude Code, recently shared a [thread on X](https://x.com/bcherny/status/2038454336355999749) about features that even daily users tend to overlook. Some of these genuinely changed how I work. Here's a rundown of the ones worth knowing about.
+Boris Cherny, the creator of Claude Code, recently shared a [thread on X](https://x.com/bcherny/status/2038454336355999749) about features that even daily users tend to overlook. Some of these changed how I work. Here's a rundown of the ones worth knowing about.
 
 ## TLDR
 

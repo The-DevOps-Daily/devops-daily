@@ -311,7 +311,7 @@ backup_location="/backups/documents"
 create_backup "$source_directory" "$backup_location"
 ```
 
-This backup script demonstrates comprehensive directory validation before performing file operations.
+This backup script demonstrates directory validation before performing file operations.
 
 ## Directory Checking in Loops and Conditionals
 

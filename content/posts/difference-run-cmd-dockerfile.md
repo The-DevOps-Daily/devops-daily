@@ -25,7 +25,7 @@ In a Dockerfile, `RUN` is used to execute commands during the image build proces
 
 ---
 
-When writing a Dockerfile, understanding the difference between `RUN` and `CMD` is crucial for building efficient and functional Docker images. While both are used to execute commands, they serve different purposes. This guide will explain the differences and provide examples to help you use them effectively.
+When writing a Dockerfile, understanding the difference between `RUN` and `CMD` matters for building efficient and functional Docker images. While both are used to execute commands, they serve different purposes. This guide will explain the differences and provide examples to help you use them effectively.
 
 ## What is `RUN`?
 
@@ -120,9 +120,9 @@ By understanding the differences between `RUN` and `CMD`, you can write more eff
 
 ## Related Resources
 
-- [How Do I Make a Comment in a Dockerfile?](/posts/comment-in-dockerfile) — write clearer Dockerfiles
-- [Advanced Docker Features](/posts/advanced-docker-features) — multi-stage builds, BuildKit, and more
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — harden your containers
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller, faster images
-- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker) — full guide to Dockerfiles
-- [Docker Flashcards](/flashcards/docker-essentials) — review Docker concepts
+- [How Do I Make a Comment in a Dockerfile?](/posts/comment-in-dockerfile): write clearer Dockerfiles
+- [Advanced Docker Features](/posts/advanced-docker-features): multi-stage builds, BuildKit, and more
+- [Docker Security Best Practices](/posts/docker-security-best-practices): harden your containers
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build smaller, faster images
+- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker): full guide to Dockerfiles
+- [Docker Flashcards](/flashcards/docker-essentials): review Docker concepts

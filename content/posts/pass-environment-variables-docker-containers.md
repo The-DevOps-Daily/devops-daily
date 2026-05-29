@@ -127,7 +127,7 @@ Happy shipping!
 
 ## Related Resources
 
-- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — Compose env vars
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — keep secrets safe
-- [Dockerfile: Update PATH](/posts/dockerfile-update-path) — set env vars in builds
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): Compose env vars
+- [Docker Security Best Practices](/posts/docker-security-best-practices): keep secrets safe
+- [Dockerfile: Update PATH](/posts/dockerfile-update-path): set env vars in builds
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

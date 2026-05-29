@@ -173,7 +173,7 @@ git remote
 git remote show origin
 ```
 
-The `git remote show` command provides comprehensive information:
+The `git remote show` command provides detailed information:
 
 ```
 * remote origin

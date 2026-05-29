@@ -318,8 +318,8 @@ Exploring Docker container file systems is a fundamental debugging skill. Whethe
 
 ## Related Resources
 
-- [Copy Files from Docker Container to Host](/posts/copy-files-from-docker-container-to-host) — extract files
-- [Docker Edit File in Container](/posts/docker-edit-file-in-container) — modify files in-place
-- [How to See Docker Image Contents](/posts/docker-see-image-contents) — inspect images before running
-- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty) — interactive debugging
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Copy Files from Docker Container to Host](/posts/copy-files-from-docker-container-to-host): extract files
+- [Docker Edit File in Container](/posts/docker-edit-file-in-container): modify files in-place
+- [How to See Docker Image Contents](/posts/docker-see-image-contents): inspect images before running
+- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty): interactive debugging
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

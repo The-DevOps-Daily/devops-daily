@@ -430,4 +430,4 @@ Then source the file:
 source ~/.bashrc
 ```
 
-The `date` command is flexible enough for any date/time formatting you need, and creating custom aliases or functions makes your common formats just a short command away. Whether you're creating timestamped backups, logging events, or just checking the time in different formats, these techniques streamline your workflow.
+The `date` command is flexible enough for any date/time formatting you need, and creating custom aliases or functions makes your common formats just a short command away. Whether you're creating timestamped backups, logging events, or just checking the time in different formats, these techniques speed up your workflow.

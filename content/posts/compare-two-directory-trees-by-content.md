@@ -345,7 +345,7 @@ The `cmp` command compares files byte-by-byte and works well with binaries.
 
 ## Creating a Detailed Comparison Report
 
-Generate a comprehensive report:
+Generate a detailed report:
 
 ```bash
 #!/bin/bash

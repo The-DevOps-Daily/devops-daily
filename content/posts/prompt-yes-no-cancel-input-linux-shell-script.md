@@ -418,6 +418,6 @@ Visual cues help users understand the importance and potential impact of their c
 
 ## Next Steps
 
-You can now create interactive shell scripts with robust user input handling. Consider exploring more advanced techniques like creating full-screen terminal interfaces with tools like `dialog` or `whiptail`, implementing configuration file-based defaults, or building command-line argument parsing that can override interactive prompts.
+You can now create interactive shell scripts with reliable user input handling. Consider exploring more advanced techniques like creating full-screen terminal interfaces with tools like `dialog` or `whiptail`, implementing configuration file-based defaults, or building command-line argument parsing that can override interactive prompts.
 
 Good luck building user-friendly scripts!

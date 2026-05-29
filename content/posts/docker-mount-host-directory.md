@@ -61,7 +61,7 @@ Good luck with your project!
 
 ## Related Resources
 
-- [How to Add a Volume to an Existing Container](/posts/how-to-add-a-volume-to-an-existing-docker-container) — add volumes after creation
-- [Docker Persistent Storage for Databases](/posts/docker-persistent-storage-databases) — database volume patterns
-- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits) — prevent data loss
-- [Introduction to Docker: Volumes](/guides/introduction-to-docker) — volume fundamentals
+- [How to Add a Volume to an Existing Container](/posts/how-to-add-a-volume-to-an-existing-docker-container): add volumes after creation
+- [Docker Persistent Storage for Databases](/posts/docker-persistent-storage-databases): database volume patterns
+- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits): prevent data loss
+- [Introduction to Docker: Volumes](/guides/introduction-to-docker): volume fundamentals

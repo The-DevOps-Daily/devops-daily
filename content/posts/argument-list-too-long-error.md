@@ -401,4 +401,4 @@ if [ $COUNT -gt $THRESHOLD ]; then
 fi
 ```
 
-The "argument list too long" error happens when wildcards expand to too many files. Use `find` with `-delete`, `-exec`, or pipe to `xargs` as robust alternatives that handle any number of files efficiently.
+The "argument list too long" error happens when wildcards expand to too many files. Use `find` with `-delete`, `-exec`, or pipe to `xargs` as reliable alternatives that handle any number of files efficiently.

@@ -114,7 +114,7 @@ By following these steps, you can effectively use Docker Compose to start an int
 
 ## Related Resources
 
-- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — more shell methods
-- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands) — Compose commands
-- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty) — TTY sessions
-- [Introduction to Docker: Compose](/guides/introduction-to-docker) — Compose guide
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell): more shell methods
+- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands): Compose commands
+- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty): TTY sessions
+- [Introduction to Docker: Compose](/guides/introduction-to-docker): Compose guide

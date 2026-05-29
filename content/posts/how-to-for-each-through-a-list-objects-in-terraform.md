@@ -89,6 +89,6 @@ Terraform will create an S3 bucket for each object in the list.
 
 - Use descriptive keys in your `for_each` maps to make your configuration easier to understand.
 - Validate your input data to ensure it meets your requirements.
-- Keep your Terraform code DRY (Don't Repeat Yourself) by leveraging constructs like `for_each`.
+- Keep your Terraform code DRY (Don't Repeat Yourself) by using constructs like `for_each`.
 
 By using `for_each`, you can efficiently manage multiple resources in Terraform, making your infrastructure code more maintainable and scalable.

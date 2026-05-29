@@ -72,7 +72,7 @@ This works just like on a regular Linux system.
 ## Best Practices
 
 - Avoid running production containers as root unless required.
-- Only install `sudo` if you need it—otherwise, keep images minimal.
+- Only install `sudo` if you need it; otherwise, keep images minimal.
 - Use the `USER` directive in your Dockerfile to specify a non-root user.
 - For one-off commands, you can override the user at runtime:
 
@@ -93,7 +93,7 @@ You rarely need `sudo` in Docker containers, since most run as root by default. 
 
 ## Related Resources
 
-- [Fix Docker Permission Denied](/posts/fix-docker-permission-denied-error) — host-level permissions
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — run as non-root
-- [Docker Alpine: How to Use Bash](/posts/docker-alpine-use-bash) — install tools in containers
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Fix Docker Permission Denied](/posts/fix-docker-permission-denied-error): host-level permissions
+- [Docker Security Best Practices](/posts/docker-security-best-practices): run as non-root
+- [Docker Alpine: How to Use Bash](/posts/docker-alpine-use-bash): install tools in containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

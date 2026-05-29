@@ -379,7 +379,7 @@ Once you're comfortable with `docker exec`, you'll find debugging containers muc
 
 ## Related Resources
 
-- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — more shell methods
-- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty) — TTY sessions
-- [Docker Edit File in Container](/posts/docker-edit-file-in-container) — modify files in-place
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell): more shell methods
+- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty): TTY sessions
+- [Docker Edit File in Container](/posts/docker-edit-file-in-container): modify files in-place
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

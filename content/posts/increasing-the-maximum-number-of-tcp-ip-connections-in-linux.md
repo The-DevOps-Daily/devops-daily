@@ -350,7 +350,7 @@ net.ipv4.tcp_max_orphans = 65536
 
 ## Complete sysctl Configuration
 
-Here's a comprehensive `/etc/sysctl.conf` for high-connection servers:
+Here's a complete `/etc/sysctl.conf` for high-connection servers:
 
 ```bash
 # File system limits

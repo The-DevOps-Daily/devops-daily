@@ -111,7 +111,7 @@ Valgrind's Cachegrind tool analyzes memory access patterns and cache performance
 valgrind --tool=cachegrind ./myprogram
 ```
 
-This shows cache miss rates and memory access patterns, which is crucial for optimizing data structures and memory layout in performance-critical applications.
+This shows cache miss rates and memory access patterns, which matters for optimizing data structures and memory layout in performance-critical applications.
 
 ## Heap Profiling for Memory Usage
 

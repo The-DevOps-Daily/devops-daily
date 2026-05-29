@@ -114,8 +114,8 @@ By following these steps, you can easily interact with running Docker containers
 
 ## Related Resources
 
-- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — more shell access methods
-- [Docker TTY Error Fix](/posts/docker-tty-error-fix) — troubleshoot TTY issues
-- [How to Attach and Detach Docker Process](/posts/how-to-attach-detach-docker-process) — manage attached sessions
-- [Exploring Docker Container File System](/posts/exploring-docker-container-file-system) — browse container files
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell): more shell access methods
+- [Docker TTY Error Fix](/posts/docker-tty-error-fix): troubleshoot TTY issues
+- [How to Attach and Detach Docker Process](/posts/how-to-attach-detach-docker-process): manage attached sessions
+- [Exploring Docker Container File System](/posts/exploring-docker-container-file-system): browse container files
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

@@ -235,7 +235,7 @@ The design is intentional:
 
 - Read mode (`'r'`) implies you expect the file to exist and want to read its content
 - If Python silently created an empty file, reading from it would always succeed but give you empty content
-- This would hide bugs where you mistyped a filename or the file genuinely doesn't exist
+- This would hide bugs where you mistyped a filename or the file doesn't exist
 - Failing fast with `FileNotFoundError` alerts you to the problem immediately
 
 Compare these scenarios:

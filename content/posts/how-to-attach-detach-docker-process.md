@@ -84,7 +84,7 @@ Attaching and detaching from Docker containers is a handy way to interact with r
 
 ## Related Resources
 
-- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty) — interactive sessions
-- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — shell methods
-- [Docker TTY Error Fix](/posts/docker-tty-error-fix) — troubleshoot TTY issues
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Enter Docker Container with New TTY](/posts/enter-docker-container-new-tty): interactive sessions
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell): shell methods
+- [Docker TTY Error Fix](/posts/docker-tty-error-fix): troubleshoot TTY issues
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

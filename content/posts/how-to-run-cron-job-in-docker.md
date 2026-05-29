@@ -24,7 +24,7 @@ To run a cron job inside a Docker container, install cron, add your job to the c
 
 ## Why Run Cron in a Container?
 
-Running cron jobs in containers is handy for scheduled tasks like backups, data syncs, or periodic scripts—especially when you want to package everything as a single deployable unit. But containers don't run background daemons by default, so you need to set things up carefully.
+Running cron jobs in containers is handy for scheduled tasks like backups, data syncs, or periodic scripts, especially when you want to package everything as a single deployable unit. But containers don't run background daemons by default, so you need to set things up carefully.
 
 ## Basic Example: Cron in a Dockerfile
 
@@ -107,7 +107,7 @@ Running cron jobs in Docker is straightforward with the right setup. Keep cron i
 
 ## Related Resources
 
-- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands) — multi-command patterns
-- [How to Clear Docker Container Logs](/posts/how-to-clear-docker-container-logs-properly) — log management
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — secure containers
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands): multi-command patterns
+- [How to Clear Docker Container Logs](/posts/how-to-clear-docker-container-logs-properly): log management
+- [Docker Security Best Practices](/posts/docker-security-best-practices): secure containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

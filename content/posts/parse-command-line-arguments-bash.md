@@ -188,7 +188,7 @@ echo "  Remaining arguments: ${remaining_args[*]}"
 
 ## Advanced Argument Parser Function
 
-Here's a comprehensive argument parser that handles both short and long options:
+Here's a full argument parser that handles both short and long options:
 
 ```bash
 #!/bin/bash
@@ -537,4 +537,4 @@ echo "  Debug: $debug"
 9. **Implement the `--` separator** to handle filenames starting with dashes
 10. **Test edge cases** like empty arguments and special characters
 
-Proper argument parsing makes your Bash scripts more professional and user-friendly. Choose the method that best fits your script's complexity, from simple positional parameters for basic scripts to comprehensive parsers for complex command-line tools.
+Proper argument parsing makes your Bash scripts more professional and user-friendly. Choose the method that best fits your script's complexity, from simple positional parameters for basic scripts to full parsers for complex command-line tools.

@@ -1,6 +1,6 @@
 ---
 title: 'What is the Difference Between "Expose" and "Publish" in Docker?'
-excerpt: "Understanding the difference between 'expose' and 'publish' in Docker is crucial for managing container networking effectively. Learn how these concepts work and when to use them."
+excerpt: "Understanding the difference between 'expose' and 'publish' in Docker is important for managing container networking effectively. Learn how these concepts work and when to use them."
 category:
   name: 'Docker'
   slug: 'docker'
@@ -114,7 +114,7 @@ By understanding these concepts, you can better manage your containerized applic
 
 ## Related Resources
 
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — the Compose perspective
-- [Expose Multiple Ports in Docker](/posts/expose-multiple-ports-docker) — multi-port setups
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — minimize attack surface
-- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking deep dive
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): the Compose perspective
+- [Expose Multiple Ports in Docker](/posts/expose-multiple-ports-docker): multi-port setups
+- [Docker Security Best Practices](/posts/docker-security-best-practices): minimize attack surface
+- [Introduction to Docker: Networking](/guides/introduction-to-docker): networking deep dive

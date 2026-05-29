@@ -74,4 +74,4 @@ In this example, if `var.optional_var` is not defined, the output will use `defa
 - **Validate Inputs**: Use `validation` blocks to enforce constraints on variable values.
 - **Document Variables**: Clearly document which variables are optional and their default values.
 
-By using these techniques, you can handle non-existent variables in Terraform gracefully, making your configurations more robust and flexible.
+By using these techniques, you can handle non-existent variables in Terraform gracefully, making your configurations more resilient and flexible.

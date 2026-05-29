@@ -21,7 +21,7 @@ tags:
 
 ## TLDR
 
-To enable communication between multiple Docker-Compose projects, use shared networks by defining external networks in the `docker-compose.yml` files. This allows containers from different projects to interact seamlessly.
+To enable communication between multiple Docker-Compose projects, use shared networks by defining external networks in the `docker-compose.yml` files. This allows containers from different projects to interact directly.
 
 ---
 
@@ -137,12 +137,12 @@ Docker's internal DNS resolves container names to IP addresses, making it easy t
 - **Secure Communication**: Use firewalls or Docker's network settings to restrict access.
 - **Monitor Traffic**: Use tools like `docker network inspect` to monitor network configurations.
 
-By following these steps, you can enable seamless communication between multiple Docker-Compose projects, making it easier to manage complex containerized applications.
+By following these steps, you can enable communication between multiple Docker-Compose projects, making it easier to manage complex containerized applications.
 
 ## Related Resources
 
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — understand port publishing vs internal communication
-- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — manage config across services
-- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker) — host-container networking
-- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking deep dive
-- [Docker Security Checklist](/checklists/docker-security) — secure your multi-service setup
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): understand port publishing vs internal communication
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): manage config across services
+- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker): host-container networking
+- [Introduction to Docker: Networking](/guides/introduction-to-docker): networking deep dive
+- [Docker Security Checklist](/checklists/docker-security): secure your multi-service setup

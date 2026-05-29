@@ -233,7 +233,7 @@ check_git_version() {
 }
 ```
 
-## Creating a Comprehensive Dependency Checker
+## Creating a Dependency Checker
 
 Here's a complete function that combines all the best practices:
 
@@ -321,4 +321,4 @@ fi
 5. **Consider version requirements** - Some scripts need specific versions
 6. **Group dependency checks** - Check all requirements before starting work
 
-Checking for program availability is a crucial part of writing robust Bash scripts. Using the right method for your specific needs ensures your scripts work reliably across different systems and provide helpful feedback when requirements aren't met.
+Checking for program availability is an important part of writing reliable Bash scripts. Using the right method for your specific needs ensures your scripts work reliably across different systems and provide helpful feedback when requirements aren't met.

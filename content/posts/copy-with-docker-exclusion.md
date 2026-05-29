@@ -21,7 +21,7 @@ tags:
 
 ## TLDR
 
-To exclude files or directories when using the `COPY` instruction in Docker, leverage `.dockerignore` files. This ensures that unwanted files are not copied into your Docker image, optimizing build times and reducing image size.
+To exclude files or directories when using the `COPY` instruction in Docker, use `.dockerignore` files. This ensures that unwanted files are not copied into your Docker image, optimizing build times and reducing image size.
 
 ---
 
@@ -119,8 +119,8 @@ By following these steps, you can effectively use the `COPY` instruction in Dock
 
 ## Related Resources
 
-- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile) — Dockerfile instruction fundamentals
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller images
-- [Advanced Docker Features](/posts/advanced-docker-features) — multi-stage builds and BuildKit
-- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build) — hands-on practice
-- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker) — full Dockerfile guide
+- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile): Dockerfile instruction fundamentals
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build smaller images
+- [Advanced Docker Features](/posts/advanced-docker-features): multi-stage builds and BuildKit
+- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build): hands-on practice
+- [Introduction to Docker: Building Custom Images](/guides/introduction-to-docker): full Dockerfile guide

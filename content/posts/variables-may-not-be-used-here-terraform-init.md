@@ -131,4 +131,4 @@ provider "aws" {
 - **Document Workarounds**: Clearly document any workarounds for unsupported contexts.
 - **Test Configurations**: Test your configurations in a staging environment before applying them in production.
 
-By understanding the limitations of variables in Terraform and using the solutions provided, you can resolve the "Variables may not be used here" error and streamline your Terraform workflows.
+By understanding the limitations of variables in Terraform and using the solutions provided, you can resolve the "Variables may not be used here" error and simplify your Terraform workflows.

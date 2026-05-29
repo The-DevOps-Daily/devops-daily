@@ -189,7 +189,7 @@ This approach separates complex logic from your Docker Compose file and makes it
 
 ## Running Background Processes with supervisord
 
-When you need to run multiple long-running processes within a single container, supervisord provides a robust solution for process management. This is useful for services that need multiple daemons or background tasks.
+When you need to run multiple long-running processes within a single container, supervisord provides a reliable solution for process management. This is useful for services that need multiple daemons or background tasks.
 
 Create a supervisord configuration (`config/supervisord.conf`):
 
@@ -265,7 +265,7 @@ This setup runs nginx, PHP-FPM, and queue workers simultaneously, with superviso
 
 ## Using Health Checks and Dependency Management
 
-For services that depend on other services being ready, combine multiple commands with health checks to create robust startup sequences. This approach is particularly useful for database-dependent applications.
+For services that depend on other services being ready, combine multiple commands with health checks to create reliable startup sequences. This approach is particularly useful for database-dependent applications.
 
 ```yaml
 version: '3.8'
@@ -441,8 +441,8 @@ You now have multiple approaches for executing multiple commands in Docker Compo
 
 ## Related Resources
 
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — understand container networking
-- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — configure services without hardcoding
-- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile) — choose the right Dockerfile instruction
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from the ground up
-- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): understand container networking
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): configure services without hardcoding
+- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile): choose the right Dockerfile instruction
+- [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from the ground up
+- [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge

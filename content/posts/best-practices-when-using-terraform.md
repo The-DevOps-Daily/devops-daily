@@ -46,7 +46,7 @@ terraform workspace select dev
 
 ## Manage State Securely
 
-Terraform uses state files to keep track of your infrastructure. Managing these files securely is crucial to avoid conflicts and ensure consistency.
+Terraform uses state files to keep track of your infrastructure. Managing these files securely is important to avoid conflicts and ensure consistency.
 
 ### Use Remote Backends
 

@@ -268,7 +268,7 @@ ChartMuseum supports multiple storage backends including S3, GCS, Azure Blob, an
 
 ### Document Your Chart
 
-Include a comprehensive `README.md` in your chart directory:
+Include a thorough `README.md` in your chart directory:
 
 ```markdown
 # MyChart

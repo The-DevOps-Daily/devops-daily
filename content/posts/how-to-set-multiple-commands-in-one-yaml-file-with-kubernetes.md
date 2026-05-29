@@ -136,7 +136,7 @@ This can be visualized as follows:
 
 ## Next Steps
 
-You can expand on this by using Kubernetes Init Containers for pre-start tasks, or by orchestrating more advanced workflows with Jobs and CronJobs. Try experimenting with different shell scripting techniques to make your container startup logic robust and maintainable.
+You can expand on this by using Kubernetes Init Containers for pre-start tasks, or by building more advanced workflows with Jobs and CronJobs. Try experimenting with different shell scripting techniques to make your container startup logic reliable and maintainable.
 
 
 ## Related Resources

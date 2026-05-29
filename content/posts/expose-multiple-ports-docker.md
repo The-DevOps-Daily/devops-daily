@@ -137,7 +137,7 @@ By following these steps, you can effectively expose and manage multiple ports i
 
 ## Related Resources
 
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — port publishing in Compose
-- [Expose vs Publish in Docker](/posts/expose-vs-publish-docker) — understand the difference
-- [Forward Host Port to Docker Container](/posts/forward-host-port-to-docker-container) — port forwarding patterns
-- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking guide
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): port publishing in Compose
+- [Expose vs Publish in Docker](/posts/expose-vs-publish-docker): understand the difference
+- [Forward Host Port to Docker Container](/posts/forward-host-port-to-docker-container): port forwarding patterns
+- [Introduction to Docker: Networking](/guides/introduction-to-docker): networking guide

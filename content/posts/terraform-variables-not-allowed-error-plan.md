@@ -21,7 +21,7 @@ tags:
 
 When you run `terraform plan`, you might encounter an error saying "Variables not allowed" in certain contexts like backend configuration, provider configuration, or terraform blocks. This happens because Terraform evaluates some parts of your configuration before it processes variables, making them unavailable in these early-evaluation contexts.
 
-Understanding where variables can and cannot be used is crucial for structuring your Terraform configurations correctly.
+Understanding where variables can and cannot be used is important for structuring your Terraform configurations correctly.
 
 **TLDR:** Variables cannot be used in backend configuration blocks, terraform blocks, or provider aliases because these are evaluated before Terraform loads variables. Use hard-coded values, environment variables, `-backend-config` flags, or partial configuration files instead. For dynamic provider configuration, use locals or separate configuration files per environment. The error occurs because Terraform needs to know backend and provider details before it can process variables.
 

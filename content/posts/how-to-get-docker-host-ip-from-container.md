@@ -24,7 +24,7 @@ To access the Docker host from inside a container, you can use special DNS names
 
 ## Why Would You Need the Host IP?
 
-Sometimes, a container needs to connect to a service running on the Docker host—maybe a database, a local API, or a debugging tool. Since containers run in their own network namespace, they can't just use `localhost` to reach the host. Instead, you need to know the host's IP address or use a special DNS name.
+Sometimes, a container needs to connect to a service running on the Docker host, maybe a database, a local API, or a debugging tool. Since containers run in their own network namespace, they can't just use `localhost` to reach the host. Instead, you need to know the host's IP address or use a special DNS name.
 
 ## The Easy Way: `host.docker.internal` (Docker Desktop)
 
@@ -114,7 +114,7 @@ curl http://$HOST_IP:5000
 ## Caveats and Security Notes
 
 - Exposing host services to containers can be risky. Only do this for trusted containers or during development.
-- The `--network host` mode removes network isolation—avoid in production unless you know the risks.
+- The `--network host` mode removes network isolation; avoid in production unless you know the risks.
 - The gateway IP trick may not work with custom Docker networks or in Kubernetes pods.
 
 ## Conclusion
@@ -124,7 +124,7 @@ Accessing the Docker host from inside a container is easy with the right approac
 
 ## Related Resources
 
-- [Get Docker Container IP from Host](/posts/how-to-get-docker-container-ip-from-host) — reverse direction
-- [Docker Access Host Port](/posts/docker-access-host-port) — host access patterns
-- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker) — host networking
-- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking guide
+- [Get Docker Container IP from Host](/posts/how-to-get-docker-container-ip-from-host): reverse direction
+- [Docker Access Host Port](/posts/docker-access-host-port): host access patterns
+- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker): host networking
+- [Introduction to Docker: Networking](/guides/introduction-to-docker): networking guide
