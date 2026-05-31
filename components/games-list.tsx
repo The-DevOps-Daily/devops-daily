@@ -28,6 +28,7 @@ import {
   Bug,
   Boxes,
   Mail,
+  MessageSquare,
   LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -50,6 +51,7 @@ const iconMap: Record<string, LucideIcon> = {
   Database,
   Cloud,
   Mail,
+  MessageSquare,
 };
 
 // Serializable game type with icon component

@@ -21,6 +21,7 @@ import InfraTarot from '@/components/games/infra-tarot';
 import K8sScheduler from '@/components/games/k8s-scheduler';
 import LinuxTerminal from '@/components/games/linux-terminal';
 import LoadBalancerSimulator from '@/components/games/load-balancer-simulator';
+import MessageQueueSimulator from '@/components/games/message-queue-simulator';
 import MicroservicesSimulator from '@/components/games/microservices-simulator';
 import PacketJourney from '@/components/games/packet-journey';
 import PostgresWireProtocolSimulator from '@/components/games/postgres-wire-protocol-simulator';
@@ -40,6 +41,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'dns-simulator': DnsSimulator,
   'docker-terminal-simulator': DockerTerminalSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
+  'message-queue-simulator': MessageQueueSimulator,
   'scaling-simulator': ScalingSimulator,
   'microservices-simulator': MicroservicesSimulator,
   'caching-simulator': CachingSimulator,
