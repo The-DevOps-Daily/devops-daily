@@ -16,6 +16,7 @@ import DnsSimulator from '@/components/games/dns-simulator';
 import DockerTerminalSimulator from '@/components/games/docker-terminal-simulator';
 import ForkBombSimulator from '@/components/games/fork-bomb-simulator';
 import GitQuiz from '@/components/games/git-command-quiz';
+import GitConceptsSimulator from '@/components/games/git-concepts-simulator';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import InfraTarot from '@/components/games/infra-tarot';
 import K8sScheduler from '@/components/games/k8s-scheduler';
@@ -42,6 +43,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'dns-simulator': DnsSimulator,
   'docker-terminal-simulator': DockerTerminalSimulator,
   'kubernetes-terminal-simulator': KubernetesTerminalSimulator,
+  'git-concepts-simulator': GitConceptsSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
   'message-queue-simulator': MessageQueueSimulator,
   'scaling-simulator': ScalingSimulator,
