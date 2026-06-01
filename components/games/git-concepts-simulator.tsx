@@ -993,7 +993,7 @@ export default function GitConceptsSimulator() {
                   <span className="ml-2 text-sm text-muted-foreground">git-concepts ~/repo</span>
                 </div>
                 <Badge variant="secondary" className="font-mono text-[11px]">
-                  HEAD -> {repo.currentBranch}
+                  HEAD {'->'} {repo.currentBranch}
                 </Badge>
               </div>
             </CardHeader>
