@@ -1,6 +1,6 @@
 'use client';
 
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Boxes,
@@ -21,7 +21,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
@@ -194,7 +193,10 @@ const LESSONS: Lesson[] = [
       {
         instruction: 'Create a web Deployment from the command line.',
         hint: 'Use "kubectl create deployment web --image=nginx:1.27".',
-        expectedCommand: 'kubectl create deployment web --image=nginx:1.27',
+        expectedCommand: [
+          'kubectl create deployment web --image=nginx:1.27',
+          'kubectl create deployment web --image nginx:1.27',
+        ],
         explanation:
           'The Deployment controller creates a ReplicaSet, and the ReplicaSet creates Pods until desired state is met.',
       },
@@ -230,7 +232,10 @@ const LESSONS: Lesson[] = [
       {
         instruction: 'Expose the web Deployment on port 80.',
         hint: 'Use "kubectl expose deployment web --port=80 --target-port=80".',
-        expectedCommand: 'kubectl expose deployment web --port=80 --target-port=80',
+        expectedCommand: [
+          'kubectl expose deployment web --port=80 --target-port=80',
+          'kubectl expose deployment web --port 80 --target-port 80',
+        ],
         explanation:
           'A ClusterIP Service gives the Deployment a stable internal DNS name and virtual IP.',
       },
@@ -262,6 +267,8 @@ const LESSONS: Lesson[] = [
         expectedCommand: [
           'kubectl scale deployment web --replicas=4',
           'kubectl scale deployment/web --replicas=4',
+          'kubectl scale deployment web --replicas 4',
+          'kubectl scale deployment/web --replicas 4',
         ],
         explanation:
           'Scaling changes desired state. The Deployment controller creates or removes Pods until reality matches.',
@@ -334,7 +341,10 @@ const LESSONS: Lesson[] = [
       {
         instruction: 'Create a ConfigMap for application settings.',
         hint: 'Use "kubectl create configmap app-config --from-literal=LOG_LEVEL=debug".',
-        expectedCommand: 'kubectl create configmap app-config --from-literal=LOG_LEVEL=debug',
+        expectedCommand: [
+          'kubectl create configmap app-config --from-literal=LOG_LEVEL=debug',
+          'kubectl create configmap app-config --from-literal LOG_LEVEL=debug',
+        ],
         explanation:
           'ConfigMaps keep non-secret configuration outside container images so you can change behavior without rebuilding.',
       },
@@ -429,7 +439,7 @@ function splitCommand(input: string): string[] {
 }
 
 function commandMatches(cmd: string, expected: string | string[]) {
-  const normalize = (value: string) => value.trim().replace(/\s+/g, ' ');
+  const normalize = (value: string) => value.trim().replace(/\s+/g, ' ').replace(/^k\s+/, 'kubectl ');
   const normalized = normalize(cmd);
 
   if (Array.isArray(expected)) {
@@ -484,6 +494,16 @@ function normalizeKind(kind: string) {
 
 function nameFromResource(resource: string) {
   return resource.includes('/') ? resource.split('/')[1] : resource;
+}
+
+function getFlagValue(args: string[], flag: string) {
+  const inlineValue = args.find((arg) => arg.startsWith(`${flag}=`));
+  if (inlineValue) return inlineValue.slice(flag.length + 1);
+
+  const flagIndex = args.indexOf(flag);
+  if (flagIndex >= 0) return args[flagIndex + 1];
+
+  return undefined;
 }
 
 function formatNodes(nodes: KubeNode[]) {
@@ -616,8 +636,7 @@ export default function KubernetesTerminalSimulator() {
   const createDeployment = useCallback(
     (args: string[]) => {
       const name = args[1];
-      const imageArg = args.find((arg) => arg.startsWith('--image='));
-      const image = imageArg?.split('=')[1];
+      const image = getFlagValue(args, '--image');
 
       if (!name || !image) {
         return 'error: required flag(s) "image" not set';
@@ -660,8 +679,7 @@ export default function KubernetesTerminalSimulator() {
   const createConfigMap = useCallback(
     (args: string[]) => {
       const name = args[1];
-      const literal = args.find((arg) => arg.startsWith('--from-literal='));
-      const pair = literal?.replace('--from-literal=', '');
+      const pair = getFlagValue(args, '--from-literal');
       const [key, ...valueParts] = pair?.split('=') ?? [];
 
       if (!name || !key) {
@@ -693,15 +711,12 @@ export default function KubernetesTerminalSimulator() {
 
   const exposeDeployment = useCallback(
     (args: string[]) => {
-      const target = args[1];
+      const target = args[0]?.includes('/') ? args[0] : args[1];
       const name = nameFromResource(target || '');
       const deployment = findDeployment(name);
-      const portArg = args.find((arg) => arg.startsWith('--port='));
-      const targetPortArg = args.find((arg) => arg.startsWith('--target-port='));
-      const typeArg = args.find((arg) => arg.startsWith('--type='));
-      const port = Number(portArg?.split('=')[1] ?? 80);
-      const targetPort = Number(targetPortArg?.split('=')[1] ?? port);
-      const type = (typeArg?.split('=')[1] ?? 'ClusterIP') as KubeService['type'];
+      const port = Number(getFlagValue(args, '--port') ?? 80);
+      const targetPort = Number(getFlagValue(args, '--target-port') ?? port);
+      const type = (getFlagValue(args, '--type') ?? 'ClusterIP') as KubeService['type'];
 
       if (!deployment) {
         return `Error from server (NotFound): deployments.apps "${name}" not found`;
@@ -742,9 +757,8 @@ export default function KubernetesTerminalSimulator() {
   const scaleDeployment = useCallback(
     (args: string[]) => {
       const resource = args[0];
-      const name = resource?.includes('/') ? nameFromResource(resource) : args[1];
-      const replicasArg = args.find((arg) => arg.startsWith('--replicas='));
-      const replicas = Number(replicasArg?.split('=')[1]);
+      const name = resource?.includes('/') ? nameFromResource(resource) : args[1] || '';
+      const replicas = Number(getFlagValue(args, '--replicas'));
       const deployment = findDeployment(name);
 
       if (!deployment) return `Error from server (NotFound): deployments.apps "${name}" not found`;
@@ -781,8 +795,9 @@ export default function KubernetesTerminalSimulator() {
   const setImage = useCallback(
     (args: string[]) => {
       const resource = args[0];
-      const name = nameFromResource(resource || '');
-      const imagePair = args[1] || '';
+      const resourceUsesSlash = resource?.includes('/');
+      const name = resourceUsesSlash ? nameFromResource(resource || '') : args[1] || '';
+      const imagePair = resourceUsesSlash ? args[1] || '' : args[2] || '';
       const [, image] = imagePair.split('=');
       const deployment = findDeployment(name);
 
@@ -820,8 +835,10 @@ export default function KubernetesTerminalSimulator() {
 
   const deleteResource = useCallback(
     (args: string[]) => {
-      const kind = normalizeKind(args[0] || '');
-      const name = args[1];
+      const rawResource = args[0] || '';
+      const [rawKind, rawName] = rawResource.includes('/') ? rawResource.split('/') : [rawResource, args[1]];
+      const kind = normalizeKind(rawKind || '');
+      const name = rawName;
 
       if (!kind || !name) return 'error: resource type and name are required';
 
@@ -970,7 +987,7 @@ CoreDNS is running at https://devops-lab.example:6443/api/v1/namespaces/kube-sys
           return 'Usage: kubectl create [deployment|configmap]';
 
         case 'expose':
-          if (rest[0] === 'deployment') return exposeDeployment(rest);
+          if (rest[0] === 'deployment' || rest[0]?.startsWith('deployment/')) return exposeDeployment(rest);
           return 'Usage: kubectl expose deployment NAME --port=PORT';
 
         case 'scale':
@@ -1061,12 +1078,15 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
 
       const inputLine: TerminalLine = {
         type: 'input',
-        content: `$ ${input}`,
+        content: input,
         timestamp: new Date(),
       };
 
       let output = '';
       let outputType: TerminalLine['type'] = 'output';
+
+      const args = splitCommand(input);
+      const command = args[0];
 
       if (input === 'clear') {
         setTerminalHistory([]);
@@ -1074,12 +1094,32 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
         return;
       }
 
-      if (input === 'cat deployment.yaml') {
+      if (command === 'help') {
+        output = `Available commands:
+  kubectl version --short
+  kubectl config current-context
+  kubectl cluster-info
+  kubectl get nodes|pods|deployments|svc|events|all
+  kubectl create deployment web --image=nginx:1.27
+  kubectl expose deployment web --port=80 --target-port=80
+  kubectl scale deployment/web --replicas=4
+  kubectl rollout status deployment/web
+  kubectl logs deployment/web
+  kubectl describe pod web
+  kubectl exec deployment/web -- printenv
+  ls, ls -l, pwd, cat deployment.yaml, cat service.yaml, clear`;
+      } else if (command === 'pwd') {
+        output = '/home/devops/kubernetes-lab';
+      } else if (command === 'ls') {
+        output = args.includes('-l')
+          ? `-rw-r--r--  1 devops  devops  334 deployment.yaml
+-rw-r--r--  1 devops  devops  156 service.yaml`
+          : 'deployment.yaml  service.yaml';
+      } else if (input === 'cat deployment.yaml' || input === 'cat ./deployment.yaml') {
         output = SAMPLE_DEPLOYMENT;
-      } else if (input === 'cat service.yaml') {
+      } else if (input === 'cat service.yaml' || input === 'cat ./service.yaml') {
         output = SAMPLE_SERVICE;
       } else {
-        const args = splitCommand(input);
         if (args[0] === 'kubectl') {
           output = executeKubectlCommand(args.slice(1));
         } else if (args[0] === 'k') {
@@ -1152,6 +1192,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
     setCurrentCommandIndex(0);
     setCompletedCommands(new Set());
     setShowHint(false);
+    setCommandHistory([]);
     setHistoryIndex(-1);
     inputRef.current?.focus();
   }, []);
@@ -1164,9 +1205,27 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
     executeCommand(command);
   }, [currentCommand, executeCommand]);
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
+  const handleSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
       executeCommand(inputValue);
+    },
+    [executeCommand, inputValue]
+  );
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.ctrlKey && event.key === 'c') {
+      event.preventDefault();
+      setTerminalHistory((prev) => [
+        ...prev,
+        {
+          type: inputValue.trim() ? 'input' : 'output',
+          content: inputValue.trim() ? `${inputValue}^C` : '^C',
+          timestamp: new Date(),
+        },
+      ]);
+      setInputValue('');
+      setHistoryIndex(-1);
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       const nextIndex = Math.min(historyIndex + 1, commandHistory.length - 1);
@@ -1183,7 +1242,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl">
+    <div className="mx-auto w-full max-w-[1500px]">
       <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="rounded-md border bg-muted/20 p-4">
           <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -1219,7 +1278,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
         </Card>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)_340px]">
+      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_310px]">
         <div className="space-y-4">
           <Card>
             <CardHeader className="p-4 pb-2">
@@ -1243,16 +1302,17 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                       setCurrentLessonIndex(lessonIndex);
                       setCurrentCommandIndex(0);
                       setShowHint(false);
+                      inputRef.current?.focus();
                     }}
                     className={cn(
-                      'w-full rounded-md border p-3 text-left transition-colors',
+                      'w-full rounded-md border p-2.5 text-left transition-colors',
                       active
                         ? 'border-primary/60 bg-primary/10'
                         : 'border-border hover:border-primary/40 hover:bg-muted/30'
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={cn('rounded-md border p-2', active ? 'text-primary' : 'text-muted-foreground')}>
+                      <div className={cn('rounded-md border p-1.5', active ? 'text-primary' : 'text-muted-foreground')}>
                         {lesson.icon}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -1269,45 +1329,46 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Lightbulb className="h-5 w-5" />
-                Current Task
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0">
-              <div className="rounded-md border bg-muted/30 p-3">
-                <p className="text-sm font-medium">{currentCommand?.instruction}</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Lesson {currentLessonIndex + 1}, command {currentCommandIndex + 1} of{' '}
-                  {currentLesson.commands.length}
-                </p>
-              </div>
-              {showHint && currentCommand && (
-                <div className="rounded-md border border-primary/30 bg-primary/10 p-3 text-sm">
-                  {currentCommand.hint}
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-2">
-                <Button size="sm" variant="outline" onClick={() => setShowHint((value) => !value)}>
-                  <Lightbulb className="mr-1 h-4 w-4" />
-                  Hint
-                </Button>
-                <Button size="sm" variant="outline" onClick={runCurrentCommand}>
-                  <Play className="mr-1 h-4 w-4" />
-                  Run
-                </Button>
-              </div>
-              <Button size="sm" variant="ghost" onClick={resetLab} className="w-full">
-                <RotateCcw className="mr-1 h-4 w-4" />
-                Reset lab
-              </Button>
-            </CardContent>
-          </Card>
+          <Button size="sm" variant="outline" onClick={resetLab} className="w-full">
+            <RotateCcw className="mr-1 h-4 w-4" />
+            Reset lab
+          </Button>
         </div>
 
         <div className="space-y-4">
+          <Card className="border-primary/40">
+            <CardContent className="space-y-3 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">
+                      Lesson {currentLessonIndex + 1} / {LESSONS.length}
+                    </Badge>
+                    <Badge>
+                      Step {currentCommandIndex + 1} / {currentLesson.commands.length}
+                    </Badge>
+                  </div>
+                  <p className="text-base font-medium">{currentCommand?.instruction}</p>
+                  {showHint && currentCommand && (
+                    <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2.5 text-sm text-muted-foreground">
+                      {currentCommand.hint}
+                    </p>
+                  )}
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setShowHint((value) => !value)}>
+                    <Lightbulb className="mr-1 h-4 w-4" />
+                    Hint
+                  </Button>
+                  <Button size="sm" onClick={runCurrentCommand}>
+                    <Play className="mr-1 h-4 w-4" />
+                    Run
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="overflow-hidden border-border bg-[#171717]">
             <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
               <div className="flex items-center justify-between gap-3">
@@ -1319,7 +1380,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                   </div>
                   <span className="ml-2 text-sm text-muted-foreground">kubectl</span>
                 </div>
-                <Badge variant="secondary" className="font-mono text-[10px]">
+                <Badge variant="secondary" className="font-mono text-[11px]">
                   {clusterState.context}/{clusterState.namespace}
                 </Badge>
               </div>
@@ -1327,42 +1388,48 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
             <CardContent className="p-0">
               <div
                 ref={terminalRef}
-                className="h-[520px] overflow-y-auto p-4 font-mono text-sm leading-relaxed"
+                className="h-[640px] cursor-text overflow-y-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
                 onClick={() => inputRef.current?.focus()}
               >
                 {terminalHistory.length === 0 && (
-                  <div className="text-muted-foreground">
+                  <div className="mb-4 text-emerald-400">
                     <p>Welcome to the Kubernetes terminal lab.</p>
-                    <p>Type the current task command or press Run.</p>
+                    <p className="mt-2 text-muted-foreground">
+                      Type "help", run "ls", or follow the current task above.
+                    </p>
                   </div>
                 )}
                 {terminalHistory.map((line, index) => (
-                  <pre
+                  <div
                     key={`${line.timestamp.getTime()}-${index}`}
                     className={cn(
                       'mb-2 whitespace-pre-wrap break-words',
-                      line.type === 'input' && 'text-primary',
+                      line.type === 'input' && 'text-slate-100',
                       line.type === 'output' && 'text-slate-300',
                       line.type === 'error' && 'text-red-400',
-                      line.type === 'success' && 'text-emerald-400'
+                      line.type === 'success' &&
+                        'rounded-md border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-300'
                     )}
                   >
+                    {line.type === 'input' && <span className="text-emerald-400">$ </span>}
                     {line.content}
-                  </pre>
+                  </div>
                 ))}
-                <div className="flex items-center gap-2">
-                  <span className="text-primary">$</span>
-                  <Input
+                <form onSubmit={handleSubmit} className="flex items-center">
+                  <span className="text-emerald-400">$</span>
+                  <input
                     ref={inputRef}
+                    type="text"
                     value={inputValue}
                     onChange={(event) => setInputValue(event.target.value)}
                     onKeyDown={handleKeyDown}
-                    className="h-8 border-0 bg-transparent px-0 font-mono text-sm text-slate-100 shadow-none focus-visible:ring-0"
+                    className="ml-2 min-w-0 flex-1 bg-transparent text-slate-100 caret-emerald-400 outline-none"
                     spellCheck={false}
                     autoComplete="off"
+                    autoCapitalize="off"
                     placeholder="kubectl get pods"
                   />
-                </div>
+                </form>
               </div>
             </CardContent>
           </Card>
