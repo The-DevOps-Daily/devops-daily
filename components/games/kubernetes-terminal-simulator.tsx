@@ -1449,7 +1449,8 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                 <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3">
                   <p className="font-medium">service/{webService.name}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {webService.clusterIP}:{webService.port} -> app={webService.selector.replace('app=', '')}
+                    {webService.clusterIP}:{webService.port} {'->'} app=
+                    {webService.selector.replace('app=', '')}
                   </p>
                 </div>
               ) : (
