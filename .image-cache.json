@@ -87,5 +87,6 @@
   "public/images/news/2026-week-22.svg": "96f643cd9714a03e",
   "public/images/posts/netease-fluid-30-second-llm-cold-starts-kubernetes.svg": "5c9e9c64468f2860",
   "public/images/posts/opentelemetry-graduated-what-to-retire-this-quarter.svg": "c654ffdd8bb2d203",
-  "public/images/posts/hetzner-price-increases-2026.svg": "93bebdb0c95103db"
+  "public/images/posts/hetzner-price-increases-2026.svg": "93bebdb0c95103db",
+  "public/images/posts/zero-downtime-postgresql-migrations-production.svg": "6af1eaa3946a7fcc"
 }

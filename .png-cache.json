@@ -729,5 +729,6 @@
   "public/images/interview-questions/istio-retry-policy-pitfalls-og.svg": "1ec6686658e7e4ce",
   "public/images/interview-questions/istio-circuit-breaker-outlier-detection-og.svg": "292d6043581181df",
   "public/images/interview-questions/istio-virtualservice-vs-destinationrule-og.svg": "1b675f14cc3dd8ab",
-  "public/images/posts/hetzner-price-increases-2026.svg": "d64d6fc5c0bab85c"
+  "public/images/posts/hetzner-price-increases-2026.svg": "d64d6fc5c0bab85c",
+  "public/images/posts/zero-downtime-postgresql-migrations-production.svg": "5f5f874eaded297f"
 }
