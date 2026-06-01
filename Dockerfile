@@ -2,7 +2,7 @@
 # Multi-stage build for optimized development and production images
 
 ARG NODE_VERSION=22.13.1
-ARG PNPM_VERSION=10.28.1
+ARG PNPM_VERSION=9.12.3
 
 # ===========================================================================
 # Stage 1: Base image with common dependencies
@@ -17,8 +17,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && \
-    corepack prepare pnpm@${PNPM_VERSION} --activate
+RUN npm install -g pnpm@${PNPM_VERSION}
 
 WORKDIR /app
 
