@@ -25,6 +25,7 @@ import LinuxTerminal from '@/components/games/linux-terminal';
 import LoadBalancerSimulator from '@/components/games/load-balancer-simulator';
 import MessageQueueSimulator from '@/components/games/message-queue-simulator';
 import MicroservicesSimulator from '@/components/games/microservices-simulator';
+import OAuthOidcFlowSimulator from '@/components/games/oauth-oidc-flow-simulator';
 import PacketJourney from '@/components/games/packet-journey';
 import PostgresWireProtocolSimulator from '@/components/games/postgres-wire-protocol-simulator';
 import PromqlPlayground from '@/components/games/promql-playground';
@@ -46,6 +47,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'git-concepts-simulator': GitConceptsSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
   'message-queue-simulator': MessageQueueSimulator,
+  'oauth-oidc-flow-simulator': OAuthOidcFlowSimulator,
   'scaling-simulator': ScalingSimulator,
   'microservices-simulator': MicroservicesSimulator,
   'caching-simulator': CachingSimulator,
