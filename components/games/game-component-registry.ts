@@ -19,6 +19,7 @@ import GitQuiz from '@/components/games/git-command-quiz';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import InfraTarot from '@/components/games/infra-tarot';
 import K8sScheduler from '@/components/games/k8s-scheduler';
+import KubernetesTerminalSimulator from '@/components/games/kubernetes-terminal-simulator';
 import LinuxTerminal from '@/components/games/linux-terminal';
 import LoadBalancerSimulator from '@/components/games/load-balancer-simulator';
 import MessageQueueSimulator from '@/components/games/message-queue-simulator';
@@ -40,6 +41,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'tcp-vs-udp': TcpVsUdpSimulator,
   'dns-simulator': DnsSimulator,
   'docker-terminal-simulator': DockerTerminalSimulator,
+  'kubernetes-terminal-simulator': KubernetesTerminalSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
   'message-queue-simulator': MessageQueueSimulator,
   'scaling-simulator': ScalingSimulator,
