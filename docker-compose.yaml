@@ -15,7 +15,7 @@ services:
       target: development
       args:
         NODE_VERSION: 22.13.1
-        PNPM_VERSION: 10.28.1
+        PNPM_VERSION: 9.12.3
     container_name: devops-daily-dev
     image: devops-daily:dev
     ports:
@@ -72,7 +72,7 @@ services:
       target: production
       args:
         NODE_VERSION: 22.13.1
-        PNPM_VERSION: 10.28.1
+        PNPM_VERSION: 9.12.3
     container_name: devops-daily-prod
     image: devops-daily:prod
     ports:
