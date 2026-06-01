@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   ArrowRight,
   CheckCircle,
-  CircleDot,
   Code2,
   Globe,
   KeyRound,
@@ -18,7 +17,6 @@ import {
   Shield,
   ShieldCheck,
   Sparkles,
-  Terminal,
   Trophy,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -352,6 +350,13 @@ function actorLabel(id: ActorId) {
   return ACTORS[id].label;
 }
 
+function logPrompt(type: LogType) {
+  if (type === 'request') return '$ trace';
+  if (type === 'error') return '$ error';
+  if (type === 'warning') return '$ warn';
+  return '$ note';
+}
+
 export default function OAuthOidcFlowSimulator() {
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
   const [currentActionIndex, setCurrentActionIndex] = useState(0);
@@ -383,7 +388,7 @@ export default function OAuthOidcFlowSimulator() {
   }, [failures, tokens.refresh]);
 
   const appendLog = (entry: FlowLog) => {
-    setLogs((prev) => [entry, ...prev].slice(0, 8));
+    setLogs((prev) => [entry, ...prev].slice(0, 14));
   };
 
   const canRunAction = (action: FlowAction) => {
@@ -574,14 +579,13 @@ export default function OAuthOidcFlowSimulator() {
             </CardContent>
           </Card>
 
+          <MessageInspector action={activeMessage} logs={logs} />
           <FlowCanvas activeMessage={activeMessage} failures={failures} tokens={tokens} />
-          <MessageInspector action={activeMessage} />
         </div>
 
         <div className="space-y-4">
           <TokenPanel tokens={tokens} failures={failures} />
           <RiskPanel failures={failures} riskScore={riskScore} />
-          <EventLog logs={logs} />
         </div>
       </div>
 
@@ -630,25 +634,25 @@ function FlowCanvas({
 
   return (
     <Card>
-      <CardHeader className="p-4 pb-2">
+      <CardHeader className="p-3 pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <ArrowRight className="h-5 w-5" />
-          Protocol Flow
+          Flow Map
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4 pt-0">
-        <div className="grid gap-3 lg:grid-cols-5">
+      <CardContent className="p-3 pt-0">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
           {actorEntries.map(([id, actor]) => {
             const active = activeMessage?.from === id || activeMessage?.to === id;
             return (
               <div
                 key={id}
                 className={cn(
-                  'min-h-32 rounded-md border p-3 transition-colors',
+                  'min-h-24 rounded-md border p-2.5 transition-colors',
                   active ? 'border-primary/60 bg-primary/10' : 'bg-muted/20'
                 )}
               >
-                <div className={cn('mb-3 inline-flex rounded-md border p-2', active && 'text-primary')}>
+                <div className={cn('mb-2 inline-flex rounded-md border p-1.5', active && 'text-primary')}>
                   {actor.icon}
                 </div>
                 <p className="text-sm font-semibold">{actor.label}</p>
@@ -678,7 +682,7 @@ function FlowCanvas({
           })}
         </div>
 
-        <div className="mt-4 rounded-md border bg-muted/20 p-3">
+        <div className="mt-3 rounded-md border bg-muted/20 p-2.5">
           {activeMessage ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -702,7 +706,9 @@ function FlowCanvas({
   );
 }
 
-function MessageInspector({ action }: { action: FlowAction | null }) {
+function MessageInspector({ action, logs }: { action: FlowAction | null; logs: FlowLog[] }) {
+  const orderedLogs = [...logs].reverse();
+
   return (
     <Card className="overflow-hidden border-border bg-[#171717]">
       <CardHeader className="border-b border-border/60 bg-[#262626] p-3">
@@ -713,17 +719,57 @@ function MessageInspector({ action }: { action: FlowAction | null }) {
               <div className="h-3 w-3 rounded-full bg-yellow-500" />
               <div className="h-3 w-3 rounded-full bg-emerald-500" />
             </div>
-            <span className="ml-2 text-sm text-muted-foreground">oauth-message.log</span>
+            <span className="ml-2 text-sm text-muted-foreground">oauth-flow ~/auth-lab</span>
           </div>
-          <Terminal className="h-4 w-4 text-muted-foreground" />
+          <Badge variant="secondary" className="font-mono text-[11px]">
+            auth code + PKCE
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <pre className="min-h-72 overflow-auto p-4 font-mono text-sm leading-relaxed text-slate-300">
-          {action
-            ? `${actorLabel(action.from)} -> ${actorLabel(action.to)}\n\n${action.log}\n\n# ${action.insight}`
-            : 'No message selected yet.\nRun the current flow action to inspect request and response details.'}
-        </pre>
+        <div className="h-[580px] overflow-y-auto p-5 font-mono text-sm leading-relaxed text-slate-300 sm:text-[15px]">
+          {!action && (
+            <div className="mb-4 text-emerald-400">
+              <p>Welcome to the OAuth/OIDC flow lab.</p>
+              <p className="mt-2 text-muted-foreground">
+                Press the current task action to trace each browser redirect, back-channel token
+                exchange, token validation, and failure mode.
+              </p>
+            </div>
+          )}
+
+          {orderedLogs.map((log, index) => (
+            <div
+              key={`${log.content}-${index}`}
+              className={cn(
+                'mb-3 whitespace-pre-wrap break-words',
+                log.type === 'request' && 'text-slate-200',
+                log.type === 'response' && 'text-sky-300',
+                log.type === 'success' && 'text-emerald-300',
+                log.type === 'warning' && 'text-amber-300',
+                log.type === 'error' && 'text-red-400'
+              )}
+            >
+              <span className="text-emerald-400">{logPrompt(log.type)}</span>{' '}
+              <span>{log.content}</span>
+            </div>
+          ))}
+
+          {action && (
+            <div className="mt-4 rounded-md border border-primary/30 bg-primary/10 p-3 text-slate-200">
+              <p className="mb-2 text-emerald-300">
+                $ inspect {action.id}
+              </p>
+              <p className="mb-3 text-slate-100">
+                {actorLabel(action.from)} {'->'} {actorLabel(action.to)}
+              </p>
+              <pre className="whitespace-pre-wrap break-words text-slate-300">{action.log}</pre>
+              <p className="mt-3 border-t border-primary/20 pt-3 text-emerald-300">
+                # {action.insight}
+              </p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -806,33 +852,5 @@ function CheckRow({ ok, label }: { ok: boolean; label: string }) {
       <span className="text-sm">{label}</span>
       {ok ? <CheckCircle className="h-4 w-4 text-emerald-500" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />}
     </div>
-  );
-}
-
-function EventLog({ logs }: { logs: FlowLog[] }) {
-  return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <CircleDot className="h-5 w-5" />
-          Event Log
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 p-4 pt-0">
-        {logs.map((log, index) => (
-          <div
-            key={`${log.content}-${index}`}
-            className={cn(
-              'rounded-md border p-2.5',
-              log.type === 'success' && 'border-emerald-500/30 bg-emerald-500/10',
-              log.type === 'warning' && 'border-amber-500/30 bg-amber-500/10',
-              log.type === 'error' && 'border-red-500/30 bg-red-500/10'
-            )}
-          >
-            <p className="whitespace-pre-wrap text-xs text-muted-foreground">{log.content}</p>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
   );
 }
