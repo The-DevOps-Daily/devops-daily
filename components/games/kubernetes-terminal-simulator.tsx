@@ -1337,7 +1337,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
 
         <div className="space-y-4">
           <Card className="border-primary/40">
-            <CardContent className="space-y-3 p-4">
+            <CardContent className="space-y-2.5 p-3.5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -1348,9 +1348,9 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                       Step {currentCommandIndex + 1} / {currentLesson.commands.length}
                     </Badge>
                   </div>
-                  <p className="text-base font-medium">{currentCommand?.instruction}</p>
+                  <p className="text-sm font-medium sm:text-base">{currentCommand?.instruction}</p>
                   {showHint && currentCommand && (
-                    <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2.5 text-sm text-muted-foreground">
+                    <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-muted-foreground">
                       {currentCommand.hint}
                     </p>
                   )}
@@ -1388,7 +1388,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
             <CardContent className="p-0">
               <div
                 ref={terminalRef}
-                className="h-[640px] cursor-text overflow-y-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
+                className="h-[580px] cursor-text overflow-y-auto p-5 font-mono text-sm leading-relaxed sm:text-[15px]"
                 onClick={() => inputRef.current?.focus()}
               >
                 {terminalHistory.length === 0 && (
