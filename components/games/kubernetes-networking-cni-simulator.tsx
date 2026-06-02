@@ -760,7 +760,7 @@ function NodeBox({
         </div>
         <Badge variant={active ? 'default' : 'secondary'}>Ready</Badge>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">{children}</div>
+      <div className="grid gap-2">{children}</div>
       <div
         className={cn(
           'mt-3 rounded-md border p-2 text-xs text-muted-foreground',
@@ -793,17 +793,17 @@ function PodCard({
   return (
     <div
       className={cn(
-        'rounded-md border bg-background/80 p-2.5 transition-colors',
+        'min-w-0 rounded-md border bg-background/80 p-2.5 transition-colors',
         active && 'border-primary/60 bg-primary/10',
         blocked && 'border-red-500/50 bg-red-500/10'
       )}
     >
-      <div className="mb-2 flex items-center gap-2">
-        <Boxes className={cn('h-4 w-4', active && 'text-primary', blocked && 'text-red-500')} />
-        <p className="text-sm font-semibold">{title}</p>
+      <div className="mb-2 flex min-w-0 items-center gap-2">
+        <Boxes className={cn('h-4 w-4 shrink-0', active && 'text-primary', blocked && 'text-red-500')} />
+        <p className="min-w-0 truncate text-sm font-semibold">{title}</p>
       </div>
-      <p className="font-mono text-xs">{ip}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{labels}</p>
+      <p className="break-all font-mono text-xs leading-snug">{ip}</p>
+      <p className="mt-1 break-all text-xs leading-snug text-muted-foreground">{labels}</p>
     </div>
   );
 }
@@ -825,16 +825,16 @@ function AuxiliaryCard({
   return (
     <div
       className={cn(
-        'rounded-md border bg-card/90 p-3 transition-colors',
+        'min-w-0 rounded-md border bg-card/90 p-3 transition-colors',
         active && 'border-primary/60 bg-primary/10',
         blocked && 'border-red-500/50 bg-red-500/10'
       )}
     >
-      <div className="mb-1 flex items-center gap-2">
-        <div className={cn('text-muted-foreground', active && 'text-primary', blocked && 'text-red-500')}>{icon}</div>
-        <p className="text-sm font-semibold">{title}</p>
+      <div className="mb-1 flex min-w-0 items-center gap-2">
+        <div className={cn('shrink-0 text-muted-foreground', active && 'text-primary', blocked && 'text-red-500')}>{icon}</div>
+        <p className="min-w-0 truncate text-sm font-semibold">{title}</p>
       </div>
-      <p className="text-xs text-muted-foreground">{detail}</p>
+      <p className="break-words text-xs leading-snug text-muted-foreground">{detail}</p>
     </div>
   );
 }
