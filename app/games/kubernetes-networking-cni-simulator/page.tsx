@@ -18,8 +18,10 @@ function KubernetesNetworkingEducational() {
             <li>How Pods communicate by Pod IP on the same node and across nodes</li>
             <li>What a CNI plugin does when a Pod network namespace is created</li>
             <li>Why ClusterIP Services are virtual IPs that map to real endpoint Pods</li>
+            <li>How EndpointSlices connect Service selectors to concrete backend addresses</li>
             <li>Where kube-proxy, IPVS, iptables, and eBPF-style service routing fit</li>
-            <li>How Ingress reaches a Service and then a backend Pod</li>
+            <li>How Ingress, LoadBalancer, and NodePort traffic reaches a backend Pod</li>
+            <li>How externalTrafficPolicy changes source IP preservation and routing tradeoffs</li>
             <li>Why NetworkPolicy requires enforcement by a capable networking plugin</li>
           </ul>
         </div>
@@ -32,11 +34,11 @@ function KubernetesNetworkingEducational() {
             </li>
             <li>
               <strong className="text-foreground">Service networking:</strong> DNS, ClusterIP,
-              endpoint selection, and reply tracking
+              EndpointSlices, endpoint selection, headless Services, and reply tracking
             </li>
             <li>
-              <strong className="text-foreground">Edge traffic:</strong> external client to Ingress
-              to Service to Pod
+              <strong className="text-foreground">Edge traffic:</strong> external client to
+              LoadBalancer, NodePort, Ingress, Service, and Pod
             </li>
             <li>
               <strong className="text-foreground">Security:</strong> default-deny, allow rules,

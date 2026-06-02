@@ -9,6 +9,7 @@ import {
   CheckCircle,
   ChevronLeft,
   ChevronRight,
+  Cloud,
   Globe,
   Layers,
   LockKeyhole,
@@ -28,8 +29,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
-type ScenarioId = 'same-node' | 'cross-node' | 'cluster-ip' | 'ingress' | 'network-policy' | 'egress';
+type ScenarioId =
+  | 'same-node'
+  | 'cross-node'
+  | 'cluster-ip'
+  | 'service-discovery'
+  | 'ingress'
+  | 'load-balancer'
+  | 'network-policy'
+  | 'egress';
 type Dataplane = 'overlay' | 'direct' | 'ebpf';
+type ExternalTrafficPolicy = 'Cluster' | 'Local';
 type PacketTone = 'translated' | 'blocked' | 'external';
 
 interface PacketStep {
@@ -217,6 +227,52 @@ const SCENARIOS: Scenario[] = [
     ],
   },
   {
+    id: 'service-discovery',
+    title: 'EndpointSlice & Headless DNS',
+    subtitle: 'How Services find Pods',
+    lesson:
+      'Services do not send traffic to Pods by magic. Selectors create EndpointSlices, and dataplanes watch those slices to program real backends.',
+    icon: Layers,
+    steps: [
+      {
+        title: 'Service selector matches Pods',
+        packet: 'selector app=payments -> Pods 10.244.2.21, 10.244.2.45',
+        explanation:
+          'A Service selector finds matching Pods. Kubernetes publishes those backends through EndpointSlice objects instead of making clients track Pods directly.',
+        mutation: 'Workload labels become a backend set.',
+        highlights: ['service', 'endpoint-slice', 'pod-payments', 'pod-worker'],
+        tone: 'translated',
+      },
+      {
+        title: 'EndpointSlice stores ready endpoints',
+        packet: 'EndpointSlice: [10.244.2.21:8443, 10.244.2.45:8443]',
+        explanation:
+          'EndpointSlices scale better than the older Endpoints object and include readiness, topology, address type, ports, and endpoint metadata.',
+        mutation: 'The Service now has concrete endpoint IPs and ports.',
+        highlights: ['endpoint-slice', 'pod-payments', 'pod-worker'],
+        tone: 'translated',
+      },
+      {
+        title: 'Dataplane watches EndpointSlices',
+        packet: 'watch EndpointSlice -> program Service load balancing',
+        explanation:
+          'kube-proxy or an eBPF CNI watches EndpointSlices and programs the local datapath so ClusterIP traffic can be translated to a real Pod.',
+        mutation: 'Endpoint data becomes kernel routing, NAT, IPVS, or eBPF state.',
+        highlights: ['endpoint-slice', 'kube-proxy', 'service'],
+        tone: 'translated',
+      },
+      {
+        title: 'Headless Service skips the VIP',
+        packet: 'clusterIP=None -> DNS A records: 10.244.2.21, 10.244.2.45',
+        explanation:
+          'A headless Service does not allocate a ClusterIP. DNS can return endpoint Pod IPs directly, which is common for StatefulSets and clients that need direct peer discovery.',
+        mutation: 'DNS returns Pod IPs instead of a virtual Service IP.',
+        highlights: ['dns', 'endpoint-slice', 'pod-payments', 'pod-worker'],
+        tone: 'translated',
+      },
+    ],
+  },
+  {
     id: 'ingress',
     title: 'Ingress to Pod',
     subtitle: 'North-south traffic path',
@@ -258,6 +314,52 @@ const SCENARIOS: Scenario[] = [
           'Source IP preservation depends on the load balancer, proxy mode, and externalTrafficPolicy settings.',
         mutation: 'The user receives the response from the public edge, not from a Pod IP.',
         highlights: ['pod-payments', 'ingress', 'internet'],
+        tone: 'external',
+      },
+    ],
+  },
+  {
+    id: 'load-balancer',
+    title: 'LoadBalancer & NodePort',
+    subtitle: 'External IP to Service backend',
+    lesson:
+      'A LoadBalancer Service normally exposes a cloud load balancer that targets node ports, then Kubernetes forwards to a Service endpoint.',
+    icon: Cloud,
+    steps: [
+      {
+        title: 'Client reaches the cloud load balancer',
+        packet: 'client 203.0.113.8 -> 198.51.100.40:443',
+        explanation:
+          'The public LoadBalancer IP is outside the cluster. The provider load balancer forwards traffic to one or more Kubernetes nodes.',
+        mutation: 'Traffic enters through provider infrastructure before hitting a node.',
+        highlights: ['internet', 'load-balancer', 'ingress-link'],
+        tone: 'external',
+      },
+      {
+        title: 'Load balancer targets a NodePort',
+        packet: '198.51.100.40:443 -> node-a:30443',
+        explanation:
+          'Under the hood, a LoadBalancer Service commonly allocates a NodePort. The external load balancer sends traffic to that port on eligible nodes.',
+        mutation: 'Destination becomes a node IP plus allocated NodePort.',
+        highlights: ['load-balancer', 'node-a', 'nodeport'],
+        tone: 'external',
+      },
+      {
+        title: 'NodePort maps into the Service',
+        packet: 'node-a:30443 -> Service 10.96.12.40:443',
+        explanation:
+          'The node datapath treats the NodePort as an entry point for the Service, then applies the normal Service endpoint selection path.',
+        mutation: 'NodePort traffic is translated into Service backend traffic.',
+        highlights: ['node-a', 'nodeport', 'service', 'kube-proxy'],
+        tone: 'translated',
+      },
+      {
+        title: 'externalTrafficPolicy changes the tradeoff',
+        packet: 'Cluster: wider backend spread, Local: source IP preservation',
+        explanation:
+          'externalTrafficPolicy=Cluster can forward to endpoints on any node but may hide the original client IP. Local preserves source IP by only using node-local endpoints, but nodes without local endpoints should not receive traffic.',
+        mutation: 'The same public Service has different routing and observability behavior.',
+        highlights: ['load-balancer', 'node-a', 'service', 'pod-payments'],
         tone: 'external',
       },
     ],
@@ -367,6 +469,7 @@ function toneLabel(tone: PacketTone | undefined) {
 export default function KubernetesNetworkingCniSimulator() {
   const [scenarioId, setScenarioId] = useState<ScenarioId>('same-node');
   const [dataplane, setDataplane] = useState<Dataplane>('overlay');
+  const [externalTrafficPolicy, setExternalTrafficPolicy] = useState<ExternalTrafficPolicy>('Cluster');
   const [stepIndex, setStepIndex] = useState(0);
 
   const scenario = getScenario(scenarioId);
@@ -394,6 +497,7 @@ export default function KubernetesNetworkingCniSimulator() {
   const reset = () => {
     setScenarioId('same-node');
     setDataplane('overlay');
+    setExternalTrafficPolicy('Cluster');
     setStepIndex(0);
   };
 
@@ -503,6 +607,35 @@ export default function KubernetesNetworkingCniSimulator() {
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Globe className="h-5 w-5" />
+                External Traffic
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 p-4 pt-0">
+              <div className="grid grid-cols-2 gap-2">
+                {(['Cluster', 'Local'] as ExternalTrafficPolicy[]).map((policy) => (
+                  <Button
+                    key={policy}
+                    type="button"
+                    variant={externalTrafficPolicy === policy ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setExternalTrafficPolicy(policy)}
+                  >
+                    {policy}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {externalTrafficPolicy === 'Cluster'
+                  ? 'Cluster mode can spread traffic to endpoints on any node, often through an extra hop.'
+                  : 'Local mode preserves client source IP, but only nodes with local endpoints should receive traffic.'}
+              </p>
+            </CardContent>
+          </Card>
+
           <Button size="sm" variant="outline" onClick={reset} className="w-full">
             <RotateCcw className="mr-1 h-4 w-4" />
             Reset lab
@@ -538,7 +671,12 @@ export default function KubernetesNetworkingCniSimulator() {
             </CardContent>
           </Card>
 
-          <NetworkCanvas step={step} dataplane={dataplane} scenarioId={scenarioId} />
+          <NetworkCanvas
+            step={step}
+            dataplane={dataplane}
+            scenarioId={scenarioId}
+            externalTrafficPolicy={externalTrafficPolicy}
+          />
 
           <Card>
             <CardHeader className="p-4 pb-2">
@@ -564,8 +702,17 @@ export default function KubernetesNetworkingCniSimulator() {
         </div>
 
         <div className="space-y-4">
-          <PacketInspector step={step} dataplane={dataplane} scenarioCompletedCount={scenarioCompletedCount} />
-          <DataplaneNotes dataplane={dataplane} scenarioId={scenarioId} />
+          <PacketInspector
+            step={step}
+            dataplane={dataplane}
+            externalTrafficPolicy={externalTrafficPolicy}
+            scenarioCompletedCount={scenarioCompletedCount}
+          />
+          <DataplaneNotes
+            dataplane={dataplane}
+            scenarioId={scenarioId}
+            externalTrafficPolicy={externalTrafficPolicy}
+          />
           <MentalModel />
         </div>
       </div>
@@ -586,10 +733,12 @@ function NetworkCanvas({
   step,
   dataplane,
   scenarioId,
+  externalTrafficPolicy,
 }: {
   step: PacketStep;
   dataplane: Dataplane;
   scenarioId: ScenarioId;
+  externalTrafficPolicy: ExternalTrafficPolicy;
 }) {
   const active = (id: string) => step.highlights.includes(id);
   const blocked = step.tone === 'blocked';
@@ -700,13 +849,27 @@ function NetworkCanvas({
             </div>
           </div>
 
-          <div className="relative z-10 mt-4 grid gap-3 lg:grid-cols-4">
+          <div className="relative z-10 mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <AuxiliaryCard
               id="internet"
-              title={scenarioId === 'ingress' ? 'External client' : 'Internet'}
-              detail={scenarioId === 'ingress' ? '203.0.113.8' : 'public API'}
+              title={scenarioId === 'ingress' || scenarioId === 'load-balancer' ? 'External client' : 'Internet'}
+              detail={scenarioId === 'ingress' || scenarioId === 'load-balancer' ? '203.0.113.8' : 'public API'}
               icon={<Globe className="h-4 w-4" />}
               active={active('internet')}
+            />
+            <AuxiliaryCard
+              id="load-balancer"
+              title="LoadBalancer"
+              detail="198.51.100.40:443"
+              icon={<Cloud className="h-4 w-4" />}
+              active={active('load-balancer')}
+            />
+            <AuxiliaryCard
+              id="nodeport"
+              title="NodePort"
+              detail="node IP:30443"
+              icon={<Server className="h-4 w-4" />}
+              active={active('nodeport')}
             />
             <AuxiliaryCard
               id="ingress"
@@ -723,12 +886,28 @@ function NetworkCanvas({
               active={active('service')}
             />
             <AuxiliaryCard
+              id="endpoint-slice"
+              title="EndpointSlice"
+              detail="10.244.2.21, 10.244.2.45"
+              icon={<Layers className="h-4 w-4" />}
+              active={active('endpoint-slice')}
+            />
+            <AuxiliaryCard
               id="policy"
               title="NetworkPolicy"
               detail={blocked ? 'verdict: drop' : 'verdict: forward'}
               icon={blocked ? <AlertTriangle className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
               active={active('policy')}
               blocked={blocked && active('policy')}
+            />
+            <AuxiliaryCard
+              id="external-policy"
+              title="externalTrafficPolicy"
+              detail={`${externalTrafficPolicy}: ${
+                externalTrafficPolicy === 'Local' ? 'preserve source IP' : 'spread across nodes'
+              }`}
+              icon={<Route className="h-4 w-4" />}
+              active={active('load-balancer') || active('nodeport')}
             />
           </div>
         </div>
@@ -842,10 +1021,12 @@ function AuxiliaryCard({
 function PacketInspector({
   step,
   dataplane,
+  externalTrafficPolicy,
   scenarioCompletedCount,
 }: {
   step: PacketStep;
   dataplane: Dataplane;
+  externalTrafficPolicy: ExternalTrafficPolicy;
   scenarioCompletedCount: number;
 }) {
   return (
@@ -872,6 +1053,14 @@ function PacketInspector({
         <InspectorRow label="Dataplane" value={DATAPLANES[dataplane].label} />
         <InspectorRow label="Service handling" value={DATAPLANES[dataplane].servicePath} />
         <InspectorRow label="Cross-node handling" value={DATAPLANES[dataplane].crossNodePath} />
+        <InspectorRow
+          label="External traffic policy"
+          value={
+            externalTrafficPolicy === 'Local'
+              ? 'Local preserves client source IP and only uses node-local endpoints.'
+              : 'Cluster can route to any endpoint, often at the cost of source IP preservation.'
+          }
+        />
         <InspectorRow label="Scenario complete" value={scenarioCompletedCount ? 'yes' : 'not yet'} />
       </CardContent>
     </Card>
@@ -887,15 +1076,29 @@ function InspectorRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DataplaneNotes({ dataplane, scenarioId }: { dataplane: Dataplane; scenarioId: ScenarioId }) {
+function DataplaneNotes({
+  dataplane,
+  scenarioId,
+  externalTrafficPolicy,
+}: {
+  dataplane: Dataplane;
+  scenarioId: ScenarioId;
+  externalTrafficPolicy: ExternalTrafficPolicy;
+}) {
   const scenarioNote =
     scenarioId === 'network-policy'
       ? 'NetworkPolicy requires a capable CNI plugin. A policy object can exist while traffic still flows if the plugin does not enforce it.'
       : scenarioId === 'cluster-ip'
         ? 'A ClusterIP is a virtual destination. The real endpoint is chosen by kube-proxy or a CNI datapath that replaces kube-proxy.'
-        : scenarioId === 'egress'
-          ? 'Internet egress commonly uses SNAT because Pod CIDRs are normally not routable outside the cluster.'
-          : 'The Kubernetes network model expects Pods and nodes to reach Pod IPs without application-level awareness.';
+        : scenarioId === 'service-discovery'
+          ? 'EndpointSlices are the practical bridge between a Service selector and the concrete Pod IPs that receive traffic.'
+          : scenarioId === 'load-balancer'
+            ? externalTrafficPolicy === 'Local'
+              ? 'Local external traffic policy preserves client source IP, but nodes without local endpoints are not valid targets.'
+              : 'Cluster external traffic policy maximizes endpoint availability, but the extra hop can obscure the original client source IP.'
+            : scenarioId === 'egress'
+              ? 'Internet egress commonly uses SNAT because Pod CIDRs are normally not routable outside the cluster.'
+              : 'The Kubernetes network model expects Pods and nodes to reach Pod IPs without application-level awareness.';
 
   return (
     <Card>
@@ -920,7 +1123,9 @@ function MentalModel() {
   const facts = [
     'CNI is called when a Pod sandbox is created or deleted.',
     'CNI assigns Pod networking; Services are Kubernetes abstractions over endpoint Pods.',
+    'EndpointSlices publish the concrete backend addresses behind Services.',
     'Pod-to-Pod traffic inside the cluster should not need NAT.',
+    'LoadBalancer Services commonly enter through NodePort before endpoint selection.',
     'NetworkPolicy is enforced by the networking plugin, not by kube-apiserver.',
   ];
 
