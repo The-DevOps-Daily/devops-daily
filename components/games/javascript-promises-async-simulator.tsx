@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,7 +10,6 @@ import {
   Clock3,
   Code2,
   FastForward,
-  ListChecks,
   Pause,
   Play,
   RotateCcw,
@@ -23,7 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { SimulatorControlSlider, SimulatorMetricCard } from '@/components/games/simulator-primitives';
 import { cn } from '@/lib/utils';
 
 type ScenarioId = 'microtasks' | 'async-await' | 'rejection' | 'promise-all';
@@ -476,8 +474,6 @@ export default function JavascriptPromisesAsyncSimulator() {
     return () => window.clearInterval(timer);
   }, [isPlaying, scenario.steps.length, speed]);
 
-  const consolePreview = useMemo(() => step.console.join(' -> ') || 'waiting...', [step.console]);
-
   const selectScenario = (nextScenarioId: ScenarioId) => {
     setScenarioId(nextScenarioId);
     setStepIndex(0);
@@ -498,290 +494,168 @@ export default function JavascriptPromisesAsyncSimulator() {
 
   return (
     <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="rounded-md border bg-muted/20 p-3 sm:p-4">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
-              <Braces className="h-6 w-6" />
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b bg-muted/20 p-3 sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
+                <Braces className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="font-mono text-xs text-muted-foreground">// event loop lab</p>
+                <CardTitle className="text-xl md:text-2xl">
+                  JavaScript Promises & Async/Await Simulator
+                </CardTitle>
+              </div>
             </div>
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">// event loop lab</p>
-              <h2 className="text-2xl font-bold md:text-3xl">
-                JavaScript Promises & Async/Await Simulator
-              </h2>
+            <Badge variant="secondary" className="shrink-0">
+              step {activeStepIndex + 1}/{scenario.steps.length}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-3 p-3 sm:p-4">
+          <WorkbenchToolbar
+            scenario={scenario}
+            activeStepIndex={activeStepIndex}
+            stepCount={scenario.steps.length}
+            isPlaying={isPlaying}
+            progress={progress}
+            speed={speed}
+            onScenarioSelect={selectScenario}
+            onPrevious={() => goToStep(activeStepIndex - 1)}
+            onNext={() => goToStep(activeStepIndex + 1)}
+            onTogglePlay={() => setIsPlaying((playing) => !playing)}
+            onReset={reset}
+            onSpeedChange={setSpeed}
+          />
+
+          <div className="rounded-md border border-primary/25 bg-primary/5 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Workflow className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold">{step.title}</p>
+              <Badge variant="secondary" className="ml-auto">
+                {step.focus}
+              </Badge>
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
+          </div>
+
+          <div className="grid gap-3 xl:grid-cols-[300px_minmax(0,1fr)_300px]">
+            <div className="order-2 space-y-3 xl:order-1">
+              <CodePanel code={scenario.code} activeLine={step.activeLine} compact />
+              <MentalModelPanel scenarioId={scenario.id} focus={step.focus} />
+            </div>
+
+            <div className="order-1 xl:order-2">
+              <EventLoopBoard step={step} />
+            </div>
+
+            <div className="order-3 grid gap-3 lg:grid-cols-2 xl:grid-cols-1">
+              <ConsolePanel items={step.console} active={step.focus === 'console'} />
+              <PredictionCard
+                prediction={scenario.prediction}
+                selected={prediction}
+                isCorrect={isCorrect}
+                onSelect={setPrediction}
+              />
             </div>
           </div>
-          <p className="max-w-4xl text-sm text-muted-foreground">
-            Step through promises, microtasks, timers, rejections, and await continuations. Watch
-            callbacks move between the call stack, runtime APIs, queues, promise state, and console.
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <SimulatorMetricCard
-            label="Current step"
-            value={`${activeStepIndex + 1}/${scenario.steps.length}`}
-            icon={ListChecks}
-            detail={step.title}
-            tone="default"
-          />
-          <SimulatorMetricCard
-            label="Console order"
-            value={step.console.length ? `${step.console.length} logs` : 'No logs'}
-            icon={Code2}
-            detail={consolePreview}
-            tone={step.console.length ? 'good' : 'default'}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
-        <div className="order-2 space-y-4 xl:order-1 xl:sticky xl:top-4 xl:self-start">
-          <Card className="hidden xl:block">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Sparkles className="h-5 w-5" />
-                Scenarios
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 p-4 pt-0">
-              {SCENARIOS.map((candidate) => {
-                const active = candidate.id === scenario.id;
-
-                return (
-                  <button
-                    key={candidate.id}
-                    type="button"
-                    onClick={() => selectScenario(candidate.id)}
-                    className={cn(
-                      'w-full rounded-md border p-3 text-left transition-colors',
-                      active ? 'border-primary/60 bg-primary/10' : 'border-border hover:bg-muted/30'
-                    )}
-                  >
-                    <p className="text-sm font-semibold">{candidate.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      {candidate.subtitle}
-                    </p>
-                  </button>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          <Card className="hidden xl:block">
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <FastForward className="h-5 w-5" />
-                Playback
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-4 pt-0">
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" size="icon" onClick={() => goToStep(activeStepIndex - 1)}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  className="flex-1"
-                  onClick={() => setIsPlaying((playing) => !playing)}
-                  disabled={activeStepIndex === scenario.steps.length - 1 && !isPlaying}
-                >
-                  {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                  {isPlaying ? 'Pause' : 'Play'}
-                </Button>
-                <Button type="button" variant="outline" size="icon" onClick={() => goToStep(activeStepIndex + 1)}>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={reset} className="w-full">
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Reset
-              </Button>
-              <SimulatorControlSlider
-                label="Step speed"
-                value={speed}
-                min={500}
-                max={1800}
-                step={100}
-                suffix="ms"
-                onChange={setSpeed}
-              />
-              <Progress value={progress} />
-            </CardContent>
-          </Card>
-
-          <PredictionCard
-            prediction={scenario.prediction}
-            selected={prediction}
-            isCorrect={isCorrect}
-            onSelect={setPrediction}
-          />
-        </div>
-
-        <div className="order-1 space-y-4 xl:order-2">
-          <Card className="overflow-hidden">
-            <CardHeader className="border-b bg-muted/20 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Workflow className="h-5 w-5" />
-                    {scenario.title}
-                  </CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">{scenario.concept}</p>
-                </div>
-                <Badge variant="secondary">step {activeStepIndex + 1}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4 p-4">
-              <CompactScenarioTabs scenarioId={scenario.id} onSelect={selectScenario} />
-
-              <div className="rounded-md border border-primary/25 bg-primary/5 p-4">
-                <p className="text-sm font-semibold">{step.title}</p>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
-              </div>
-
-              <CompactPlaybackControls
-                activeStepIndex={activeStepIndex}
-                stepCount={scenario.steps.length}
-                isPlaying={isPlaying}
-                progress={progress}
-                onPrevious={() => goToStep(activeStepIndex - 1)}
-                onNext={() => goToStep(activeStepIndex + 1)}
-                onTogglePlay={() => setIsPlaying((playing) => !playing)}
-                onReset={reset}
-              />
-
-              <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.68fr)_minmax(0,1.32fr)]">
-                <div className="order-2 xl:order-1">
-                  <CodePanel code={scenario.code} activeLine={step.activeLine} />
-                </div>
-                <div className="order-1 xl:order-2">
-                  <EventLoopBoard step={step} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Timer className="h-5 w-5" />
-                Mental Model
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 p-4 pt-0 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
-              <ModelRule
-                number="1"
-                text="Run synchronous code on the call stack first."
-                active={step.focus === 'stack'}
-              />
-              <ModelRule
-                number="2"
-                text="Queue promise handlers as microtasks."
-                active={step.focus === 'microtask'}
-              />
-              <ModelRule
-                number="3"
-                text="Run timers and I/O callbacks as tasks."
-                active={step.focus === 'task'}
-              />
-              <ModelRule
-                number="4"
-                text="await resumes the async function in a microtask."
-                active={scenario.id === 'async-await'}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function CompactScenarioTabs({
-  scenarioId,
-  onSelect,
-}: {
-  scenarioId: ScenarioId;
-  onSelect: (scenarioId: ScenarioId) => void;
-}) {
-  return (
-    <div className="xl:hidden">
-      <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-        <Sparkles className="h-4 w-4" />
-        Scenario
-      </div>
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {SCENARIOS.map((candidate) => {
-          const active = candidate.id === scenarioId;
-
-          return (
-            <button
-              key={candidate.id}
-              type="button"
-              onClick={() => onSelect(candidate.id)}
-              className={cn(
-                'min-w-[170px] rounded-md border px-3 py-2 text-left transition-colors',
-                active ? 'border-primary/60 bg-primary/10' : 'border-border bg-background/80 hover:bg-muted/30'
-              )}
-            >
-              <span className="block text-sm font-semibold">{candidate.title}</span>
-              <span className="mt-1 block text-xs leading-snug text-muted-foreground">{candidate.concept}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function CompactPlaybackControls({
+function WorkbenchToolbar({
+  scenario,
   activeStepIndex,
   stepCount,
   isPlaying,
   progress,
+  speed,
+  onScenarioSelect,
   onPrevious,
   onNext,
   onTogglePlay,
   onReset,
+  onSpeedChange,
 }: {
+  scenario: Scenario;
   activeStepIndex: number;
   stepCount: number;
   isPlaying: boolean;
   progress: number;
+  speed: number;
+  onScenarioSelect: (scenarioId: ScenarioId) => void;
   onPrevious: () => void;
   onNext: () => void;
   onTogglePlay: () => void;
   onReset: () => void;
+  onSpeedChange: (value: number) => void;
 }) {
   return (
-    <div className="rounded-md border bg-background/80 p-3 xl:hidden">
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="outline" size="icon" onClick={onPrevious} disabled={activeStepIndex === 0}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          className="min-w-[112px] flex-1 sm:flex-none"
-          onClick={onTogglePlay}
-          disabled={activeStepIndex === stepCount - 1 && !isPlaying}
-        >
-          {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-          {isPlaying ? 'Pause' : 'Play'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          onClick={onNext}
-          disabled={activeStepIndex === stepCount - 1}
-        >
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-        <Button type="button" variant="outline" size="sm" onClick={onReset} className="ml-auto">
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Reset
-        </Button>
+    <div className="rounded-md border bg-background/80 p-3">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {SCENARIOS.map((candidate) => {
+            const active = candidate.id === scenario.id;
+
+            return (
+              <button
+                key={candidate.id}
+                type="button"
+                onClick={() => onScenarioSelect(candidate.id)}
+                className={cn(
+                  'min-w-[170px] rounded-md border px-3 py-2 text-left transition-colors xl:min-w-[190px]',
+                  active ? 'border-primary/60 bg-primary/10' : 'border-border hover:bg-muted/30'
+                )}
+              >
+                <span className="block text-sm font-semibold">{candidate.title}</span>
+                <span className="mt-1 block text-xs leading-snug text-muted-foreground">{candidate.subtitle}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+          <Button type="button" variant="outline" size="icon" onClick={onPrevious} disabled={activeStepIndex === 0}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            className="min-w-[108px]"
+            onClick={onTogglePlay}
+            disabled={activeStepIndex === stepCount - 1 && !isPlaying}
+          >
+            {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+            {isPlaying ? 'Pause' : 'Play'}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={onNext}
+            disabled={activeStepIndex === stepCount - 1}
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          <Button type="button" variant="outline" size="icon" onClick={onReset}>
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <FastForward className="h-4 w-4" />
+            <select
+              value={speed}
+              onChange={(event) => onSpeedChange(Number(event.target.value))}
+              className="h-9 rounded-md border bg-background px-2 text-sm text-foreground"
+            >
+              <option value={1500}>Slow</option>
+              <option value={1100}>Normal</option>
+              <option value={650}>Fast</option>
+            </select>
+          </label>
+        </div>
       </div>
       <div className="mt-3 flex items-center gap-3">
         <Progress value={progress} className="flex-1" />
@@ -793,10 +667,10 @@ function CompactPlaybackControls({
   );
 }
 
-function CodePanel({ code, activeLine }: { code: string[]; activeLine: number }) {
+function CodePanel({ code, activeLine, compact = false }: { code: string[]; activeLine: number; compact?: boolean }) {
   return (
     <div className="overflow-hidden rounded-md border bg-[#09090b]">
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-2">
+      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
         <div className="flex gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
           <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
@@ -804,7 +678,12 @@ function CodePanel({ code, activeLine }: { code: string[]; activeLine: number })
         </div>
         <span className="font-mono text-xs text-slate-400">async-lab.js</span>
       </div>
-      <div className="overflow-x-auto p-4 font-mono text-sm leading-7 text-slate-200">
+      <div
+        className={cn(
+          'overflow-x-auto font-mono text-slate-200',
+          compact ? 'max-h-[320px] p-3 text-xs leading-6' : 'p-4 text-sm leading-7'
+        )}
+      >
         {code.map((line, index) => {
           const lineNumber = index + 1;
           const active = lineNumber === activeLine;
@@ -829,7 +708,7 @@ function CodePanel({ code, activeLine }: { code: string[]; activeLine: number })
 
 function EventLoopBoard({ step }: { step: StepState }) {
   return (
-    <div className="space-y-4 rounded-md border bg-muted/10 p-4">
+    <div className="space-y-3 rounded-md border bg-muted/10 p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold">Event loop trace</p>
@@ -840,28 +719,50 @@ function EventLoopBoard({ step }: { step: StepState }) {
         <Badge variant="secondary">{step.focus}</Badge>
       </div>
 
-      <div className="grid gap-2 rounded-md border bg-background/70 p-3 text-xs text-muted-foreground md:grid-cols-3">
+      <div className="grid gap-2 rounded-md border bg-background/70 p-2 text-xs text-muted-foreground md:grid-cols-3">
         <FlowRule active={step.focus === 'stack'} label="1. Run the stack" />
         <FlowRule active={step.focus === 'microtask' || step.focus === 'promise'} label="2. Drain microtasks" />
         <FlowRule active={step.focus === 'task' || step.focus === 'webapi'} label="3. Run one task" />
       </div>
 
-      <RuntimePanel
-        title="Call Stack"
-        icon={<Braces className="h-4 w-4" />}
-        items={step.callStack}
-        empty="empty stack"
-        tone={step.focus === 'stack' ? 'active' : 'default'}
-        size="large"
-      />
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+        <RuntimePanel
+          title="Call Stack"
+          icon={<Braces className="h-4 w-4" />}
+          items={step.callStack}
+          empty="empty stack"
+          tone={step.focus === 'stack' ? 'active' : 'default'}
+          size="large"
+        />
 
-      <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3">
+          <RuntimePanel
+            title="Runtime APIs"
+            icon={<Clock3 className="h-4 w-4" />}
+            items={step.webApis}
+            empty="no external work"
+            tone={step.focus === 'webapi' ? 'wait' : 'default'}
+            size="compact"
+          />
+          <RuntimePanel
+            title="Promise Inspector"
+            icon={<Workflow className="h-4 w-4" />}
+            items={[`${step.promise.label}: ${statusLabel(step.promise.status)}`, `value: ${step.promise.value}`]}
+            empty="not created"
+            tone={statusTone(step.promise.status)}
+            size="compact"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
         <RuntimePanel
           title="Microtask Queue"
           icon={<Sparkles className="h-4 w-4" />}
           items={step.microtasks}
           empty="no promise work queued"
           tone={step.focus === 'microtask' ? 'active' : 'default'}
+          size="compact"
         />
         <RuntimePanel
           title="Task Queue"
@@ -869,34 +770,9 @@ function EventLoopBoard({ step }: { step: StepState }) {
           items={step.taskQueue}
           empty="no timer or event tasks"
           tone={step.focus === 'task' ? 'wait' : 'default'}
+          size="compact"
         />
       </div>
-
-      <div className="grid gap-3 lg:grid-cols-2">
-        <RuntimePanel
-          title="Runtime APIs"
-          icon={<Clock3 className="h-4 w-4" />}
-          items={step.webApis}
-          empty="no external work"
-          tone={step.focus === 'webapi' ? 'wait' : 'default'}
-        />
-        <RuntimePanel
-          title="Promise Inspector"
-          icon={<Workflow className="h-4 w-4" />}
-          items={[`${step.promise.label}: ${statusLabel(step.promise.status)}`, `value: ${step.promise.value}`]}
-          empty="not created"
-          tone={statusTone(step.promise.status)}
-        />
-      </div>
-
-      <RuntimePanel
-        title="Console Output"
-        icon={<Code2 className="h-4 w-4" />}
-        items={step.console}
-        empty="nothing logged"
-        tone={step.focus === 'console' ? 'success' : 'default'}
-        size="large"
-      />
     </div>
   );
 }
@@ -927,17 +803,17 @@ function RuntimePanel({
   items: string[];
   empty: string;
   tone: PanelTone;
-  size?: 'normal' | 'large';
+  size?: 'compact' | 'normal' | 'large';
 }) {
   return (
     <div
       className={cn(
         'rounded-md border p-3 transition-colors',
-        size === 'large' ? 'min-h-[132px]' : 'min-h-[124px]',
+        size === 'large' ? 'min-h-[112px]' : size === 'compact' ? 'min-h-[88px]' : 'min-h-[104px]',
         PANEL_TONES[tone]
       )}
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-semibold">
           {icon}
           {title}
@@ -949,7 +825,7 @@ function RuntimePanel({
           items.map((item, index) => (
             <div
               key={`${item}-${index}`}
-              className="overflow-hidden rounded-md border bg-background/80 px-3 py-2 font-mono text-xs leading-relaxed shadow-sm"
+              className="overflow-hidden rounded-md border bg-background/80 px-2.5 py-1.5 font-mono text-xs leading-relaxed shadow-sm"
             >
               <span className="break-words">{item}</span>
             </div>
@@ -959,6 +835,50 @@ function RuntimePanel({
             {empty}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ConsolePanel({ items, active }: { items: string[]; active: boolean }) {
+  return (
+    <div className={cn('rounded-md border p-3', active ? PANEL_TONES.success : PANEL_TONES.default)}>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          <Code2 className="h-4 w-4" />
+          Console
+        </div>
+        <Badge variant="secondary">{items.length}</Badge>
+      </div>
+      <div className="space-y-2">
+        {items.length ? (
+          items.map((item, index) => (
+            <div key={`${item}-${index}`} className="rounded-md border bg-background/80 px-3 py-2 font-mono text-xs">
+              {index + 1}. {item}
+            </div>
+          ))
+        ) : (
+          <div className="rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+            nothing logged yet
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MentalModelPanel({ scenarioId, focus }: { scenarioId: ScenarioId; focus: StepState['focus'] }) {
+  return (
+    <div className="rounded-md border bg-muted/10 p-3">
+      <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+        <Timer className="h-4 w-4" />
+        Mental model
+      </div>
+      <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 xl:grid-cols-1">
+        <ModelRule number="1" text="Run stack first." active={focus === 'stack'} />
+        <ModelRule number="2" text="Drain microtasks before tasks." active={focus === 'microtask' || focus === 'promise'} />
+        <ModelRule number="3" text="Timers and I/O wait as tasks." active={focus === 'task' || focus === 'webapi'} />
+        <ModelRule number="4" text="await resumes as a microtask." active={scenarioId === 'async-await'} />
       </div>
     </div>
   );
@@ -976,14 +896,14 @@ function PredictionCard({
   onSelect: (value: string) => void;
 }) {
   return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
+    <div className="rounded-md border bg-card p-3">
+      <div className="mb-3">
+        <div className="flex items-center gap-2 text-sm font-semibold">
           <CheckCircle2 className="h-5 w-5" />
           Predict It
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 p-4 pt-0">
+        </div>
+      </div>
+      <div className="space-y-3">
         <p className="text-sm text-muted-foreground">{prediction.question}</p>
         <div className="space-y-2">
           {prediction.options.map((option) => {
@@ -1023,18 +943,18 @@ function PredictionCard({
             <p className="mt-1 text-muted-foreground">{prediction.explanation}</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 function ModelRule({ number, text, active }: { number: string; text: string; active: boolean }) {
   return (
-    <div className={cn('flex gap-3 rounded-md border p-3', active ? 'border-primary/50 bg-primary/10' : 'bg-muted/20')}>
+    <div className={cn('flex gap-2 rounded-md border p-2', active ? 'border-primary/50 bg-primary/10' : 'bg-muted/20')}>
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
         {number}
       </span>
-      <span className="leading-relaxed">{text}</span>
+      <span className="leading-snug">{text}</span>
     </div>
   );
 }
