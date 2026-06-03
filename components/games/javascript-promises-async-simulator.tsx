@@ -448,8 +448,9 @@ export default function JavascriptPromisesAsyncSimulator() {
   const [prediction, setPrediction] = useState<string | null>(null);
 
   const scenario = getScenario(scenarioId);
-  const step = scenario.steps[stepIndex]!;
-  const progress = ((stepIndex + 1) / scenario.steps.length) * 100;
+  const activeStepIndex = Math.min(stepIndex, scenario.steps.length - 1);
+  const step = scenario.steps[activeStepIndex] ?? scenario.steps[0]!;
+  const progress = ((activeStepIndex + 1) / scenario.steps.length) * 100;
   const isCorrect = prediction === scenario.prediction.answer;
 
   useEffect(() => {
@@ -477,6 +478,13 @@ export default function JavascriptPromisesAsyncSimulator() {
 
   const consolePreview = useMemo(() => step.console.join(' -> ') || 'waiting...', [step.console]);
 
+  const selectScenario = (nextScenarioId: ScenarioId) => {
+    setScenarioId(nextScenarioId);
+    setStepIndex(0);
+    setIsPlaying(false);
+    setPrediction(null);
+  };
+
   const goToStep = (nextStep: number) => {
     setIsPlaying(false);
     setStepIndex(Math.min(Math.max(nextStep, 0), scenario.steps.length - 1));
@@ -490,8 +498,8 @@ export default function JavascriptPromisesAsyncSimulator() {
 
   return (
     <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-5 grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-md border bg-muted/20 p-4">
+      <div className="mb-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="rounded-md border bg-muted/20 p-3 sm:p-4">
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
               <Braces className="h-6 w-6" />
@@ -512,7 +520,7 @@ export default function JavascriptPromisesAsyncSimulator() {
         <div className="grid gap-3 sm:grid-cols-2">
           <SimulatorMetricCard
             label="Current step"
-            value={`${stepIndex + 1}/${scenario.steps.length}`}
+            value={`${activeStepIndex + 1}/${scenario.steps.length}`}
             icon={ListChecks}
             detail={step.title}
             tone="default"
@@ -527,9 +535,9 @@ export default function JavascriptPromisesAsyncSimulator() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
-          <Card>
+      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="order-2 space-y-4 xl:order-1 xl:sticky xl:top-4 xl:self-start">
+          <Card className="hidden xl:block">
             <CardHeader className="p-4 pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Sparkles className="h-5 w-5" />
@@ -544,7 +552,7 @@ export default function JavascriptPromisesAsyncSimulator() {
                   <button
                     key={candidate.id}
                     type="button"
-                    onClick={() => setScenarioId(candidate.id)}
+                    onClick={() => selectScenario(candidate.id)}
                     className={cn(
                       'w-full rounded-md border p-3 text-left transition-colors',
                       active ? 'border-primary/60 bg-primary/10' : 'border-border hover:bg-muted/30'
@@ -560,7 +568,7 @@ export default function JavascriptPromisesAsyncSimulator() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="hidden xl:block">
             <CardHeader className="p-4 pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <FastForward className="h-5 w-5" />
@@ -569,19 +577,19 @@ export default function JavascriptPromisesAsyncSimulator() {
             </CardHeader>
             <CardContent className="space-y-4 p-4 pt-0">
               <div className="flex gap-2">
-                <Button type="button" variant="outline" size="icon" onClick={() => goToStep(stepIndex - 1)}>
+                <Button type="button" variant="outline" size="icon" onClick={() => goToStep(activeStepIndex - 1)}>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   type="button"
                   className="flex-1"
                   onClick={() => setIsPlaying((playing) => !playing)}
-                  disabled={stepIndex === scenario.steps.length - 1 && !isPlaying}
+                  disabled={activeStepIndex === scenario.steps.length - 1 && !isPlaying}
                 >
                   {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
                   {isPlaying ? 'Pause' : 'Play'}
                 </Button>
-                <Button type="button" variant="outline" size="icon" onClick={() => goToStep(stepIndex + 1)}>
+                <Button type="button" variant="outline" size="icon" onClick={() => goToStep(activeStepIndex + 1)}>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -610,7 +618,7 @@ export default function JavascriptPromisesAsyncSimulator() {
           />
         </div>
 
-        <div className="space-y-4">
+        <div className="order-1 space-y-4 xl:order-2">
           <Card className="overflow-hidden">
             <CardHeader className="border-b bg-muted/20 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -621,18 +629,35 @@ export default function JavascriptPromisesAsyncSimulator() {
                   </CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">{scenario.concept}</p>
                 </div>
-                <Badge variant="secondary">step {stepIndex + 1}</Badge>
+                <Badge variant="secondary">step {activeStepIndex + 1}</Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4 p-4">
+              <CompactScenarioTabs scenarioId={scenario.id} onSelect={selectScenario} />
+
               <div className="rounded-md border border-primary/25 bg-primary/5 p-4">
                 <p className="text-sm font-semibold">{step.title}</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
               </div>
 
-              <div className="grid gap-4 2xl:grid-cols-[minmax(360px,0.78fr)_minmax(0,1.22fr)]">
-                <CodePanel code={scenario.code} activeLine={step.activeLine} />
-                <EventLoopBoard step={step} />
+              <CompactPlaybackControls
+                activeStepIndex={activeStepIndex}
+                stepCount={scenario.steps.length}
+                isPlaying={isPlaying}
+                progress={progress}
+                onPrevious={() => goToStep(activeStepIndex - 1)}
+                onNext={() => goToStep(activeStepIndex + 1)}
+                onTogglePlay={() => setIsPlaying((playing) => !playing)}
+                onReset={reset}
+              />
+
+              <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.68fr)_minmax(0,1.32fr)]">
+                <div className="order-2 xl:order-1">
+                  <CodePanel code={scenario.code} activeLine={step.activeLine} />
+                </div>
+                <div className="order-1 xl:order-2">
+                  <EventLoopBoard step={step} />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -668,6 +693,101 @@ export default function JavascriptPromisesAsyncSimulator() {
             </CardContent>
           </Card>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CompactScenarioTabs({
+  scenarioId,
+  onSelect,
+}: {
+  scenarioId: ScenarioId;
+  onSelect: (scenarioId: ScenarioId) => void;
+}) {
+  return (
+    <div className="xl:hidden">
+      <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
+        <Sparkles className="h-4 w-4" />
+        Scenario
+      </div>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {SCENARIOS.map((candidate) => {
+          const active = candidate.id === scenarioId;
+
+          return (
+            <button
+              key={candidate.id}
+              type="button"
+              onClick={() => onSelect(candidate.id)}
+              className={cn(
+                'min-w-[170px] rounded-md border px-3 py-2 text-left transition-colors',
+                active ? 'border-primary/60 bg-primary/10' : 'border-border bg-background/80 hover:bg-muted/30'
+              )}
+            >
+              <span className="block text-sm font-semibold">{candidate.title}</span>
+              <span className="mt-1 block text-xs leading-snug text-muted-foreground">{candidate.concept}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function CompactPlaybackControls({
+  activeStepIndex,
+  stepCount,
+  isPlaying,
+  progress,
+  onPrevious,
+  onNext,
+  onTogglePlay,
+  onReset,
+}: {
+  activeStepIndex: number;
+  stepCount: number;
+  isPlaying: boolean;
+  progress: number;
+  onPrevious: () => void;
+  onNext: () => void;
+  onTogglePlay: () => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="rounded-md border bg-background/80 p-3 xl:hidden">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" variant="outline" size="icon" onClick={onPrevious} disabled={activeStepIndex === 0}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          className="min-w-[112px] flex-1 sm:flex-none"
+          onClick={onTogglePlay}
+          disabled={activeStepIndex === stepCount - 1 && !isPlaying}
+        >
+          {isPlaying ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+          {isPlaying ? 'Pause' : 'Play'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={onNext}
+          disabled={activeStepIndex === stepCount - 1}
+        >
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={onReset} className="ml-auto">
+          <RotateCcw className="mr-2 h-4 w-4" />
+          Reset
+        </Button>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <Progress value={progress} className="flex-1" />
+        <Badge variant="secondary" className="shrink-0">
+          {activeStepIndex + 1}/{stepCount}
+        </Badge>
       </div>
     </div>
   );
