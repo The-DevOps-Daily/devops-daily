@@ -5,6 +5,7 @@ import BugHunter from '@/components/games/bug-hunter';
 import CachingSimulator from '@/components/games/caching-simulator';
 import CardsAgainstDevOps from '@/components/games/cards-against-devops';
 import CicdStackGenerator from '@/components/games/cicd-stack-generator';
+import CloudRegionFailureSimulator from '@/components/games/cloud-region-failure-simulator';
 import DatabaseReplicationShardingScaling from '@/components/games/database-replication-sharding-scaling';
 import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
 import DbmsSimulator from '@/components/games/dbms-simulator';
@@ -46,6 +47,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'docker-terminal-simulator': DockerTerminalSimulator,
   'kubernetes-terminal-simulator': KubernetesTerminalSimulator,
   'kubernetes-networking-cni-simulator': KubernetesNetworkingCniSimulator,
+  'cloud-region-failure-simulator': CloudRegionFailureSimulator,
   'git-concepts-simulator': GitConceptsSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
   'message-queue-simulator': MessageQueueSimulator,
