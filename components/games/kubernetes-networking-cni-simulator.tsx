@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -466,6 +466,31 @@ function toneLabel(tone: PacketTone | undefined) {
   return 'forwarded';
 }
 
+function hopLabel(id: string) {
+  const labels: Record<string, string> = {
+    'pod-frontend': 'frontend Pod',
+    'pod-api': 'api Pod',
+    'pod-payments': 'payments Pod',
+    'pod-worker': 'worker Pod',
+    'node-a': 'node-a',
+    'node-b': 'node-b',
+    'cni-a': 'CNI on node-a',
+    'cni-b': 'CNI on node-b',
+    'node-fabric': 'node fabric',
+    dns: 'CoreDNS',
+    service: 'Service',
+    'endpoint-slice': 'EndpointSlice',
+    'kube-proxy': 'service datapath',
+    internet: 'external client',
+    ingress: 'Ingress',
+    'load-balancer': 'LoadBalancer',
+    nodeport: 'NodePort',
+    policy: 'NetworkPolicy',
+  };
+
+  return labels[id] ?? id;
+}
+
 export default function KubernetesNetworkingCniSimulator() {
   const [scenarioId, setScenarioId] = useState<ScenarioId>('same-node');
   const [dataplane, setDataplane] = useState<Dataplane>('overlay');
@@ -493,6 +518,25 @@ export default function KubernetesNetworkingCniSimulator() {
   const previousStep = () => {
     setStepIndex((current) => (current > 0 ? current - 1 : scenario.steps.length - 1));
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName;
+      if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') return;
+
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        setStepIndex((current) => (current < scenario.steps.length - 1 ? current + 1 : 0));
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        setStepIndex((current) => (current > 0 ? current - 1 : scenario.steps.length - 1));
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [scenario.steps.length]);
 
   const reset = () => {
     setScenarioId('same-node');
@@ -668,6 +712,7 @@ export default function KubernetesNetworkingCniSimulator() {
                 </div>
               </div>
               <Progress value={progress} />
+              <HopTimeline steps={scenario.steps} currentIndex={stepIndex} onSelect={setStepIndex} />
             </CardContent>
           </Card>
 
@@ -729,6 +774,88 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
+function HopTimeline({
+  steps,
+  currentIndex,
+  onSelect,
+}: {
+  steps: PacketStep[];
+  currentIndex: number;
+  onSelect: (index: number) => void;
+}) {
+  return (
+    <div className="rounded-md border bg-muted/20 p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hop timeline</p>
+        <Badge variant="secondary" className="font-mono text-[11px]">
+          {steps.length} hops
+        </Badge>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {steps.map((candidate, index) => {
+          const active = index === currentIndex;
+          const complete = index < currentIndex;
+
+          return (
+            <button
+              key={candidate.title}
+              type="button"
+              onClick={() => onSelect(index)}
+              className={cn(
+                'min-w-0 rounded-md border p-2 text-left transition-colors',
+                active
+                  ? 'border-primary/60 bg-primary/10'
+                  : complete
+                    ? 'border-emerald-500/30 bg-emerald-500/10'
+                    : 'border-border hover:border-primary/40 hover:bg-muted/40'
+              )}
+            >
+              <div className="mb-1 flex items-center gap-2">
+                <span
+                  className={cn(
+                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold',
+                    active && 'border-primary bg-primary text-primary-foreground',
+                    complete && 'border-emerald-500 bg-emerald-500 text-white'
+                  )}
+                >
+                  {complete ? <CheckCircle className="h-3 w-3" /> : index + 1}
+                </span>
+                <span className="min-w-0 truncate text-xs font-medium">{candidate.title}</span>
+              </div>
+              <p className="truncate text-[11px] text-muted-foreground">{toneLabel(candidate.tone)}</p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ActiveRouteRibbon({ step }: { step: PacketStep }) {
+  const route = step.highlights.map(hopLabel).filter((label, index, labels) => labels.indexOf(label) === index);
+
+  return (
+    <div className="relative z-10 mb-4 rounded-md border bg-card/90 p-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Active route</p>
+        <Badge variant="outline" className="text-[11px]">
+          {toneLabel(step.tone)}
+        </Badge>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {route.map((label, index) => (
+          <div key={`${label}-${index}`} className="flex min-w-0 items-center gap-2">
+            <span className="max-w-[160px] truncate rounded-md border bg-muted/30 px-2 py-1 text-xs font-medium">
+              {label}
+            </span>
+            {index < route.length - 1 && <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NetworkCanvas({
   step,
   dataplane,
@@ -759,6 +886,8 @@ function NetworkCanvas({
               {DATAPLANES[dataplane].label}
             </Badge>
           </div>
+
+          <ActiveRouteRibbon step={step} />
 
           <div className="relative z-10 grid gap-4 lg:grid-cols-[1fr_120px_1fr]">
             <div className="space-y-3">
