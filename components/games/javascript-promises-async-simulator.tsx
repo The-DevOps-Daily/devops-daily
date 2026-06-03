@@ -509,7 +509,7 @@ export default function JavascriptPromisesAsyncSimulator() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid gap-3 sm:grid-cols-2">
           <SimulatorMetricCard
             label="Current step"
             value={`${stepIndex + 1}/${scenario.steps.length}`}
@@ -527,8 +527,8 @@ export default function JavascriptPromisesAsyncSimulator() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)_330px]">
-        <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="space-y-4 xl:sticky xl:top-4 xl:self-start">
           <Card>
             <CardHeader className="p-4 pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
@@ -601,6 +601,13 @@ export default function JavascriptPromisesAsyncSimulator() {
               <Progress value={progress} />
             </CardContent>
           </Card>
+
+          <PredictionCard
+            prediction={scenario.prediction}
+            selected={prediction}
+            isCorrect={isCorrect}
+            onSelect={setPrediction}
+          />
         </div>
 
         <div className="space-y-4">
@@ -617,26 +624,18 @@ export default function JavascriptPromisesAsyncSimulator() {
                 <Badge variant="secondary">step {stepIndex + 1}</Badge>
               </div>
             </CardHeader>
-            <CardContent className="grid gap-4 p-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-              <CodePanel code={scenario.code} activeLine={step.activeLine} />
-              <div className="space-y-4">
-                <div className="rounded-md border border-primary/25 bg-primary/5 p-4">
-                  <p className="text-sm font-semibold">{step.title}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
-                </div>
-                <RuntimeBoard step={step} />
+            <CardContent className="space-y-4 p-4">
+              <div className="rounded-md border border-primary/25 bg-primary/5 p-4">
+                <p className="text-sm font-semibold">{step.title}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
+              </div>
+
+              <div className="grid gap-4 2xl:grid-cols-[minmax(360px,0.78fr)_minmax(0,1.22fr)]">
+                <CodePanel code={scenario.code} activeLine={step.activeLine} />
+                <EventLoopBoard step={step} />
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        <div className="space-y-4">
-          <PredictionCard
-            prediction={scenario.prediction}
-            selected={prediction}
-            isCorrect={isCorrect}
-            onSelect={setPrediction}
-          />
 
           <Card>
             <CardHeader className="p-4 pb-2">
@@ -645,11 +644,27 @@ export default function JavascriptPromisesAsyncSimulator() {
                 Mental Model
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 p-4 pt-0 text-sm text-muted-foreground">
-              <ModelRule number="1" text="Run synchronous code on the call stack first." active={step.focus === 'stack'} />
-              <ModelRule number="2" text="Queue promise handlers as microtasks." active={step.focus === 'microtask'} />
-              <ModelRule number="3" text="Run timers and I/O callbacks as tasks." active={step.focus === 'task'} />
-              <ModelRule number="4" text="await resumes the async function in a microtask." active={scenario.id === 'async-await'} />
+            <CardContent className="grid gap-3 p-4 pt-0 text-sm text-muted-foreground md:grid-cols-2 xl:grid-cols-4">
+              <ModelRule
+                number="1"
+                text="Run synchronous code on the call stack first."
+                active={step.focus === 'stack'}
+              />
+              <ModelRule
+                number="2"
+                text="Queue promise handlers as microtasks."
+                active={step.focus === 'microtask'}
+              />
+              <ModelRule
+                number="3"
+                text="Run timers and I/O callbacks as tasks."
+                active={step.focus === 'task'}
+              />
+              <ModelRule
+                number="4"
+                text="await resumes the async function in a microtask."
+                active={scenario.id === 'async-await'}
+              />
             </CardContent>
           </Card>
         </div>
@@ -692,51 +707,89 @@ function CodePanel({ code, activeLine }: { code: string[]; activeLine: number })
   );
 }
 
-function RuntimeBoard({ step }: { step: StepState }) {
+function EventLoopBoard({ step }: { step: StepState }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="space-y-4 rounded-md border bg-muted/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold">Event loop trace</p>
+          <p className="text-xs text-muted-foreground">
+            Follow the current callback from execution to queues and back to output.
+          </p>
+        </div>
+        <Badge variant="secondary">{step.focus}</Badge>
+      </div>
+
+      <div className="grid gap-2 rounded-md border bg-background/70 p-3 text-xs text-muted-foreground md:grid-cols-3">
+        <FlowRule active={step.focus === 'stack'} label="1. Run the stack" />
+        <FlowRule active={step.focus === 'microtask' || step.focus === 'promise'} label="2. Drain microtasks" />
+        <FlowRule active={step.focus === 'task' || step.focus === 'webapi'} label="3. Run one task" />
+      </div>
+
       <RuntimePanel
         title="Call Stack"
         icon={<Braces className="h-4 w-4" />}
         items={step.callStack}
         empty="empty stack"
         tone={step.focus === 'stack' ? 'active' : 'default'}
+        size="large"
       />
-      <RuntimePanel
-        title="Runtime APIs"
-        icon={<Clock3 className="h-4 w-4" />}
-        items={step.webApis}
-        empty="no external work"
-        tone={step.focus === 'webapi' ? 'wait' : 'default'}
-      />
-      <RuntimePanel
-        title="Microtask Queue"
-        icon={<Sparkles className="h-4 w-4" />}
-        items={step.microtasks}
-        empty="no microtasks"
-        tone={step.focus === 'microtask' ? 'active' : 'default'}
-      />
-      <RuntimePanel
-        title="Task Queue"
-        icon={<Timer className="h-4 w-4" />}
-        items={step.taskQueue}
-        empty="no tasks"
-        tone={step.focus === 'task' ? 'wait' : 'default'}
-      />
-      <RuntimePanel
-        title="Promise Inspector"
-        icon={<Workflow className="h-4 w-4" />}
-        items={[`${step.promise.label}: ${statusLabel(step.promise.status)}`, `value: ${step.promise.value}`]}
-        empty="not created"
-        tone={step.focus === 'promise' ? statusTone(step.promise.status) : statusTone(step.promise.status)}
-      />
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <RuntimePanel
+          title="Microtask Queue"
+          icon={<Sparkles className="h-4 w-4" />}
+          items={step.microtasks}
+          empty="no promise work queued"
+          tone={step.focus === 'microtask' ? 'active' : 'default'}
+        />
+        <RuntimePanel
+          title="Task Queue"
+          icon={<Timer className="h-4 w-4" />}
+          items={step.taskQueue}
+          empty="no timer or event tasks"
+          tone={step.focus === 'task' ? 'wait' : 'default'}
+        />
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        <RuntimePanel
+          title="Runtime APIs"
+          icon={<Clock3 className="h-4 w-4" />}
+          items={step.webApis}
+          empty="no external work"
+          tone={step.focus === 'webapi' ? 'wait' : 'default'}
+        />
+        <RuntimePanel
+          title="Promise Inspector"
+          icon={<Workflow className="h-4 w-4" />}
+          items={[`${step.promise.label}: ${statusLabel(step.promise.status)}`, `value: ${step.promise.value}`]}
+          empty="not created"
+          tone={statusTone(step.promise.status)}
+        />
+      </div>
+
       <RuntimePanel
         title="Console Output"
         icon={<Code2 className="h-4 w-4" />}
         items={step.console}
         empty="nothing logged"
         tone={step.focus === 'console' ? 'success' : 'default'}
+        size="large"
       />
+    </div>
+  );
+}
+
+function FlowRule({ label, active }: { label: string; active: boolean }) {
+  return (
+    <div
+      className={cn(
+        'rounded-md border px-3 py-2 font-medium',
+        active ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-muted/20'
+      )}
+    >
+      {label}
     </div>
   );
 }
@@ -747,15 +800,23 @@ function RuntimePanel({
   items,
   empty,
   tone,
+  size = 'normal',
 }: {
   title: string;
   icon: ReactNode;
   items: string[];
   empty: string;
   tone: PanelTone;
+  size?: 'normal' | 'large';
 }) {
   return (
-    <div className={cn('min-h-[142px] rounded-md border p-3 transition-colors', PANEL_TONES[tone])}>
+    <div
+      className={cn(
+        'rounded-md border p-3 transition-colors',
+        size === 'large' ? 'min-h-[132px]' : 'min-h-[124px]',
+        PANEL_TONES[tone]
+      )}
+    >
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-semibold">
           {icon}
@@ -768,9 +829,9 @@ function RuntimePanel({
           items.map((item, index) => (
             <div
               key={`${item}-${index}`}
-              className="rounded-md border bg-background/80 px-3 py-2 font-mono text-xs shadow-sm"
+              className="overflow-hidden rounded-md border bg-background/80 px-3 py-2 font-mono text-xs leading-relaxed shadow-sm"
             >
-              {item}
+              <span className="break-words">{item}</span>
             </div>
           ))
         ) : (
@@ -815,17 +876,17 @@ function PredictionCard({
                 type="button"
                 onClick={() => onSelect(option)}
                 className={cn(
-                  'flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                  'flex w-full items-center justify-between gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors',
                   chosen ? 'border-primary/60 bg-primary/10' : 'hover:bg-muted/30',
                   correct && 'border-emerald-500/50 bg-emerald-500/10'
                 )}
               >
-                <span>{option}</span>
+                <span className="min-w-0 flex-1 break-words">{option}</span>
                 {chosen &&
                   (isCorrect ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                   ) : (
-                    <XCircle className="h-4 w-4 text-red-500" />
+                    <XCircle className="h-4 w-4 shrink-0 text-red-500" />
                   ))}
               </button>
             );
