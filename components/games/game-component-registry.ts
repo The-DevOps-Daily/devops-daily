@@ -19,6 +19,7 @@ import GitQuiz from '@/components/games/git-command-quiz';
 import GitConceptsSimulator from '@/components/games/git-concepts-simulator';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import InfraTarot from '@/components/games/infra-tarot';
+import JavascriptPromisesAsyncSimulator from '@/components/games/javascript-promises-async-simulator';
 import K8sScheduler from '@/components/games/k8s-scheduler';
 import KubernetesNetworkingCniSimulator from '@/components/games/kubernetes-networking-cni-simulator';
 import KubernetesTerminalSimulator from '@/components/games/kubernetes-terminal-simulator';
@@ -46,6 +47,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'docker-terminal-simulator': DockerTerminalSimulator,
   'kubernetes-terminal-simulator': KubernetesTerminalSimulator,
   'kubernetes-networking-cni-simulator': KubernetesNetworkingCniSimulator,
+  'javascript-promises-async-await-simulator': JavascriptPromisesAsyncSimulator,
   'git-concepts-simulator': GitConceptsSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
   'message-queue-simulator': MessageQueueSimulator,
