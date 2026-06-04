@@ -801,7 +801,7 @@ function phaseLabel(focus: StepFocus) {
 function PhaseRail({ focus }: { focus: StepFocus }) {
   return (
     <div className="rounded-md border bg-background/70 p-2">
-      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-2 md:grid-cols-3 2xl:grid-cols-6">
         {PHASES.map((phase, index) => {
           const active = phase.id === focus || (focus === 'code' && phase.id === 'stack');
 
@@ -813,7 +813,7 @@ function PhaseRail({ focus }: { focus: StepFocus }) {
                 active ? 'border-primary/60 bg-primary/10' : 'border-border bg-muted/20'
               )}
             >
-              <div className="mb-1 flex items-center gap-2">
+              <div className="mb-1 flex min-w-0 items-center gap-2">
                 <span
                   className={cn(
                     'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold',
@@ -822,7 +822,9 @@ function PhaseRail({ focus }: { focus: StepFocus }) {
                 >
                   {index + 1}
                 </span>
-                <span className={cn('text-xs font-semibold', active && 'text-primary')}>{phase.label}</span>
+                <span className={cn('min-w-0 break-words text-[11px] font-semibold leading-tight', active && 'text-primary')}>
+                  {phase.label}
+                </span>
               </div>
               <p className="text-[11px] leading-snug text-muted-foreground">{phase.description}</p>
             </div>
