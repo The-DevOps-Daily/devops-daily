@@ -707,18 +707,13 @@ export default function KubernetesNetworkingCniSimulator() {
               scenarioId={scenarioId}
               externalTrafficPolicy={externalTrafficPolicy}
             />
-            <PacketInspector
+            <LearningNotes
               step={step}
-              dataplane={dataplane}
-              externalTrafficPolicy={externalTrafficPolicy}
-              scenarioCompletedCount={scenarioCompletedCount}
-            />
-            <DataplaneNotes
               dataplane={dataplane}
               scenarioId={scenarioId}
               externalTrafficPolicy={externalTrafficPolicy}
+              scenarioCompletedCount={scenarioCompletedCount}
             />
-            <MentalModel />
           </div>
         </div>
       </div>
@@ -777,13 +772,6 @@ function PacketFlowDiagram({
                       : 'border-border hover:border-primary/40 hover:bg-muted/40'
                 )}
               >
-                {active && (
-                  <motion.span
-                    className="absolute -top-1 right-3 h-2 w-10 rounded-full bg-primary"
-                    animate={{ opacity: [0.35, 1, 0.35] }}
-                    transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
-                  />
-                )}
                 <div className="mb-2 flex items-center gap-2">
                   <span
                     className={cn(
@@ -795,6 +783,11 @@ function PacketFlowDiagram({
                     {complete ? <CheckCircle className="h-3 w-3" /> : index + 1}
                   </span>
                   <span className="min-w-0 text-xs font-semibold leading-snug">{candidate.title}</span>
+                  {active && (
+                    <Badge variant="default" className="ml-auto shrink-0 text-[10px]">
+                      Now
+                    </Badge>
+                  )}
                 </div>
                 <p className="break-words font-mono text-[11px] leading-snug text-muted-foreground">
                   {candidate.packet}
@@ -1164,50 +1157,95 @@ function AuxiliaryCard({
   );
 }
 
-function PacketInspector({
+function LearningNotes({
   step,
   dataplane,
+  scenarioId,
   externalTrafficPolicy,
   scenarioCompletedCount,
 }: {
   step: PacketStep;
   dataplane: Dataplane;
+  scenarioId: ScenarioId;
   externalTrafficPolicy: ExternalTrafficPolicy;
   scenarioCompletedCount: number;
 }) {
+  const scenarioNote =
+    scenarioId === 'network-policy'
+      ? 'NetworkPolicy requires a capable CNI plugin. A policy object can exist while traffic still flows if the plugin does not enforce it.'
+      : scenarioId === 'cluster-ip'
+        ? 'A ClusterIP is a virtual destination. The real endpoint is chosen by kube-proxy or a CNI datapath that replaces kube-proxy.'
+        : scenarioId === 'service-discovery'
+          ? 'EndpointSlices bridge a Service selector to the concrete Pod IPs that receive traffic.'
+          : scenarioId === 'load-balancer'
+            ? externalTrafficPolicy === 'Local'
+              ? 'Local preserves client source IP, but nodes without local endpoints are not valid targets.'
+              : 'Cluster maximizes endpoint availability, but the extra hop can obscure the original client source IP.'
+            : scenarioId === 'egress'
+              ? 'Internet egress commonly uses SNAT because Pod CIDRs are normally not routable outside the cluster.'
+              : 'Kubernetes expects Pods and nodes to reach Pod IPs without application-level awareness.';
+
+  const facts = [
+    'CNI configures Pod networking when a Pod sandbox is created.',
+    'Services are stable virtual front doors for changing endpoint Pods.',
+    'EndpointSlices publish the concrete backend addresses behind Services.',
+    'NetworkPolicy is enforced by the networking plugin, not kube-apiserver.',
+  ];
+
   return (
     <Card>
       <CardHeader className="p-4 pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <LockKeyhole className="h-5 w-5" />
-          Packet Inspector
+          Learning notes
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 p-4 pt-0">
-        <div className="rounded-md border bg-muted/20 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Current verdict</p>
-          <div className="mt-2 flex items-center gap-2">
+      <CardContent className="space-y-2 p-4 pt-0">
+        <div className="grid gap-2">
+          <div className="rounded-md border bg-muted/20 p-2.5">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Verdict</p>
+            <div className="mt-1.5 flex items-center gap-2">
             {step.tone === 'blocked' ? (
               <AlertTriangle className="h-5 w-5 text-red-500" />
             ) : (
               <CheckCircle className="h-5 w-5 text-emerald-500" />
             )}
             <span className="font-medium">{toneLabel(step.tone)}</span>
+            </div>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-1">
+            <InspectorRow label="Dataplane" value={DATAPLANES[dataplane].label} />
+            <InspectorRow label="Complete" value={scenarioCompletedCount ? 'yes' : 'not yet'} />
           </div>
         </div>
 
-        <InspectorRow label="Dataplane" value={DATAPLANES[dataplane].label} />
-        <InspectorRow label="Service handling" value={DATAPLANES[dataplane].servicePath} />
-        <InspectorRow label="Cross-node handling" value={DATAPLANES[dataplane].crossNodePath} />
-        <InspectorRow
-          label="External traffic policy"
-          value={
-            externalTrafficPolicy === 'Local'
-              ? 'Local preserves client source IP and only uses node-local endpoints.'
-              : 'Cluster can route to any endpoint, often at the cost of source IP preservation.'
-          }
-        />
-        <InspectorRow label="Scenario complete" value={scenarioCompletedCount ? 'yes' : 'not yet'} />
+        <InsightDisclosure title="Why it matters" defaultOpen>
+          <p>{scenarioNote}</p>
+        </InsightDisclosure>
+
+        <InsightDisclosure title="Dataplane details">
+          <div className="space-y-2">
+            <p>{DATAPLANES[dataplane].description}</p>
+            <p>{DATAPLANES[dataplane].servicePath}</p>
+            <p>{DATAPLANES[dataplane].crossNodePath}</p>
+            <p>
+              {externalTrafficPolicy === 'Local'
+                ? 'externalTrafficPolicy=Local preserves client source IP and only uses node-local endpoints.'
+                : 'externalTrafficPolicy=Cluster can route to any endpoint, often at the cost of source IP preservation.'}
+            </p>
+          </div>
+        </InsightDisclosure>
+
+        <InsightDisclosure title="Mental model">
+          <div className="space-y-2">
+            {facts.map((fact) => (
+              <div key={fact} className="flex items-start gap-2">
+                <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                <p>{fact}</p>
+              </div>
+            ))}
+          </div>
+        </InsightDisclosure>
       </CardContent>
     </Card>
   );
@@ -1222,75 +1260,24 @@ function InspectorRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function DataplaneNotes({
-  dataplane,
-  scenarioId,
-  externalTrafficPolicy,
+function InsightDisclosure({
+  title,
+  children,
+  defaultOpen = false,
 }: {
-  dataplane: Dataplane;
-  scenarioId: ScenarioId;
-  externalTrafficPolicy: ExternalTrafficPolicy;
+  title: string;
+  children: ReactNode;
+  defaultOpen?: boolean;
 }) {
-  const scenarioNote =
-    scenarioId === 'network-policy'
-      ? 'NetworkPolicy requires a capable CNI plugin. A policy object can exist while traffic still flows if the plugin does not enforce it.'
-      : scenarioId === 'cluster-ip'
-        ? 'A ClusterIP is a virtual destination. The real endpoint is chosen by kube-proxy or a CNI datapath that replaces kube-proxy.'
-        : scenarioId === 'service-discovery'
-          ? 'EndpointSlices are the practical bridge between a Service selector and the concrete Pod IPs that receive traffic.'
-          : scenarioId === 'load-balancer'
-            ? externalTrafficPolicy === 'Local'
-              ? 'Local external traffic policy preserves client source IP, but nodes without local endpoints are not valid targets.'
-              : 'Cluster external traffic policy maximizes endpoint availability, but the extra hop can obscure the original client source IP.'
-            : scenarioId === 'egress'
-              ? 'Internet egress commonly uses SNAT because Pod CIDRs are normally not routable outside the cluster.'
-              : 'The Kubernetes network model expects Pods and nodes to reach Pod IPs without application-level awareness.';
-
   return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Network className="h-5 w-5" />
-          Why it matters
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 p-4 pt-0">
-        <p className="text-sm text-muted-foreground">{scenarioNote}</p>
-        <div className="rounded-md border border-primary/25 bg-primary/5 p-3">
-          <p className="text-sm font-medium">{DATAPLANES[dataplane].label}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{DATAPLANES[dataplane].description}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MentalModel() {
-  const facts = [
-    'CNI is called when a Pod sandbox is created or deleted.',
-    'CNI assigns Pod networking; Services are Kubernetes abstractions over endpoint Pods.',
-    'EndpointSlices publish the concrete backend addresses behind Services.',
-    'Pod-to-Pod traffic inside the cluster should not need NAT.',
-    'LoadBalancer Services commonly enter through NodePort before endpoint selection.',
-    'NetworkPolicy is enforced by the networking plugin, not by kube-apiserver.',
-  ];
-
-  return (
-    <Card>
-      <CardHeader className="p-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Shield className="h-5 w-5" />
-          Mental Model
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-2 p-4 pt-0">
-        {facts.map((fact) => (
-          <div key={fact} className="flex items-start gap-2 rounded-md border p-2.5">
-            <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-            <p className="text-sm text-muted-foreground">{fact}</p>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+    <details className="group rounded-md border bg-muted/20 p-2.5" open={defaultOpen}>
+      <summary className="cursor-pointer list-none text-sm font-medium">
+        <span className="inline-flex items-center gap-2">
+          <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" />
+          {title}
+        </span>
+      </summary>
+      <div className="mt-2 text-sm leading-relaxed text-muted-foreground">{children}</div>
+    </details>
   );
 }
