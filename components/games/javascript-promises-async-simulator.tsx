@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 type ScenarioId = 'microtasks' | 'async-await' | 'rejection' | 'promise-all';
 type PromiseStatus = 'none' | 'pending' | 'fulfilled' | 'rejected';
 type PanelTone = 'default' | 'active' | 'wait' | 'success' | 'danger';
+type StepFocus = 'code' | 'stack' | 'webapi' | 'microtask' | 'task' | 'console' | 'promise';
 
 interface PromiseState {
   label: string;
@@ -44,7 +45,7 @@ interface StepState {
   taskQueue: string[];
   console: string[];
   promise: PromiseState;
-  focus: 'code' | 'stack' | 'webapi' | 'microtask' | 'task' | 'console' | 'promise';
+  focus: StepFocus;
 }
 
 interface Prediction {
@@ -416,11 +417,24 @@ const SCENARIOS: Scenario[] = [
 
 const PANEL_TONES: Record<PanelTone, string> = {
   default: 'border-border bg-card',
-  active: 'border-primary/60 bg-primary/10',
-  wait: 'border-sky-500/40 bg-sky-500/10',
-  success: 'border-emerald-500/40 bg-emerald-500/10',
-  danger: 'border-red-500/40 bg-red-500/10',
+  active: 'border-border bg-card',
+  wait: 'border-border bg-card',
+  success: 'border-border bg-card',
+  danger: 'border-border bg-card',
 };
+
+const PHASES: Array<{
+  id: StepFocus;
+  label: string;
+  description: string;
+}> = [
+  { id: 'stack', label: 'Stack', description: 'Run synchronous JavaScript first.' },
+  { id: 'webapi', label: 'Runtime', description: 'Timers and I/O wait outside the stack.' },
+  { id: 'promise', label: 'Promise', description: 'Promise state changes, handlers wait.' },
+  { id: 'microtask', label: 'Microtask', description: 'Promise work runs before tasks.' },
+  { id: 'task', label: 'Task', description: 'Timers/events get a later turn.' },
+  { id: 'console', label: 'Output', description: 'Visible logs appear in order.' },
+];
 
 function getScenario(id: ScenarioId) {
   return SCENARIOS.find((scenario) => scenario.id === id) ?? SCENARIOS[0]!;
@@ -442,7 +456,7 @@ export default function JavascriptPromisesAsyncSimulator() {
   const [scenarioId, setScenarioId] = useState<ScenarioId>('microtasks');
   const [stepIndex, setStepIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [speed, setSpeed] = useState(1100);
+  const [speed, setSpeed] = useState(1500);
   const [prediction, setPrediction] = useState<string | null>(null);
 
   const scenario = getScenario(scenarioId);
@@ -534,8 +548,8 @@ export default function JavascriptPromisesAsyncSimulator() {
             <div className="flex flex-wrap items-center gap-2">
               <Workflow className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold">{step.title}</p>
-              <Badge variant="secondary" className="ml-auto">
-                {step.focus}
+              <Badge variant="secondary" className="ml-auto capitalize">
+                {phaseLabel(step.focus)}
               </Badge>
             </div>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
@@ -544,7 +558,7 @@ export default function JavascriptPromisesAsyncSimulator() {
           <div className="grid gap-3 xl:grid-cols-[300px_minmax(0,1fr)_300px]">
             <div className="order-2 space-y-3 xl:order-1">
               <CodePanel code={scenario.code} activeLine={step.activeLine} compact />
-              <MentalModelPanel scenarioId={scenario.id} focus={step.focus} />
+              <MentalModelPanel scenarioId={scenario.id} />
             </div>
 
             <div className="order-1 xl:order-2">
@@ -552,7 +566,7 @@ export default function JavascriptPromisesAsyncSimulator() {
             </div>
 
             <div className="order-3 grid gap-3 lg:grid-cols-2 xl:grid-cols-1">
-              <ConsolePanel items={step.console} active={step.focus === 'console'} />
+              <ConsolePanel items={step.console} />
               <PredictionCard
                 prediction={scenario.prediction}
                 selected={prediction}
@@ -711,19 +725,17 @@ function EventLoopBoard({ step }: { step: StepState }) {
     <div className="space-y-3 rounded-md border bg-muted/10 p-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold">Event loop trace</p>
+          <p className="text-sm font-semibold">Runtime state</p>
           <p className="text-xs text-muted-foreground">
-            Follow the current callback from execution to queues and back to output.
+            Read the phase rail first, then inspect the boxes below for what changed.
           </p>
         </div>
-        <Badge variant="secondary">{step.focus}</Badge>
+        <Badge variant="default" className="capitalize">
+          {phaseLabel(step.focus)}
+        </Badge>
       </div>
 
-      <div className="grid gap-2 rounded-md border bg-background/70 p-2 text-xs text-muted-foreground md:grid-cols-3">
-        <FlowRule active={step.focus === 'stack'} label="1. Run the stack" />
-        <FlowRule active={step.focus === 'microtask' || step.focus === 'promise'} label="2. Drain microtasks" />
-        <FlowRule active={step.focus === 'task' || step.focus === 'webapi'} label="3. Run one task" />
-      </div>
+      <PhaseRail focus={step.focus} />
 
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
         <RuntimePanel
@@ -731,7 +743,7 @@ function EventLoopBoard({ step }: { step: StepState }) {
           icon={<Braces className="h-4 w-4" />}
           items={step.callStack}
           empty="empty stack"
-          tone={step.focus === 'stack' ? 'active' : 'default'}
+          tone="default"
           size="large"
         />
 
@@ -741,7 +753,7 @@ function EventLoopBoard({ step }: { step: StepState }) {
             icon={<Clock3 className="h-4 w-4" />}
             items={step.webApis}
             empty="no external work"
-            tone={step.focus === 'webapi' ? 'wait' : 'default'}
+            tone="default"
             size="compact"
           />
           <RuntimePanel
@@ -761,7 +773,7 @@ function EventLoopBoard({ step }: { step: StepState }) {
           icon={<Sparkles className="h-4 w-4" />}
           items={step.microtasks}
           empty="no promise work queued"
-          tone={step.focus === 'microtask' ? 'active' : 'default'}
+          tone="default"
           size="compact"
         />
         <RuntimePanel
@@ -769,7 +781,7 @@ function EventLoopBoard({ step }: { step: StepState }) {
           icon={<Timer className="h-4 w-4" />}
           items={step.taskQueue}
           empty="no timer or event tasks"
-          tone={step.focus === 'task' ? 'wait' : 'default'}
+          tone="default"
           size="compact"
         />
       </div>
@@ -777,15 +789,46 @@ function EventLoopBoard({ step }: { step: StepState }) {
   );
 }
 
-function FlowRule({ label, active }: { label: string; active: boolean }) {
+function phaseLabel(focus: StepFocus) {
+  if (focus === 'webapi') return 'runtime';
+  if (focus === 'microtask') return 'microtask';
+  if (focus === 'task') return 'task';
+  if (focus === 'promise') return 'promise';
+  if (focus === 'console') return 'output';
+  return 'stack';
+}
+
+function PhaseRail({ focus }: { focus: StepFocus }) {
   return (
-    <div
-      className={cn(
-        'rounded-md border px-3 py-2 font-medium',
-        active ? 'border-primary/50 bg-primary/10 text-primary' : 'border-border bg-muted/20'
-      )}
-    >
-      {label}
+    <div className="rounded-md border bg-background/70 p-2">
+      <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
+        {PHASES.map((phase, index) => {
+          const active = phase.id === focus || (focus === 'code' && phase.id === 'stack');
+
+          return (
+            <div
+              key={phase.id}
+              className={cn(
+                'rounded-md border p-2 transition-colors',
+                active ? 'border-primary/60 bg-primary/10' : 'border-border bg-muted/20'
+              )}
+            >
+              <div className="mb-1 flex items-center gap-2">
+                <span
+                  className={cn(
+                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold',
+                    active ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+                  )}
+                >
+                  {index + 1}
+                </span>
+                <span className={cn('text-xs font-semibold', active && 'text-primary')}>{phase.label}</span>
+              </div>
+              <p className="text-[11px] leading-snug text-muted-foreground">{phase.description}</p>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -840,9 +883,9 @@ function RuntimePanel({
   );
 }
 
-function ConsolePanel({ items, active }: { items: string[]; active: boolean }) {
+function ConsolePanel({ items }: { items: string[] }) {
   return (
-    <div className={cn('rounded-md border p-3', active ? PANEL_TONES.success : PANEL_TONES.default)}>
+    <div className="rounded-md border bg-card p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-semibold">
           <Code2 className="h-4 w-4" />
@@ -867,7 +910,7 @@ function ConsolePanel({ items, active }: { items: string[]; active: boolean }) {
   );
 }
 
-function MentalModelPanel({ scenarioId, focus }: { scenarioId: ScenarioId; focus: StepState['focus'] }) {
+function MentalModelPanel({ scenarioId }: { scenarioId: ScenarioId }) {
   return (
     <div className="rounded-md border bg-muted/10 p-3">
       <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
@@ -875,9 +918,9 @@ function MentalModelPanel({ scenarioId, focus }: { scenarioId: ScenarioId; focus
         Mental model
       </div>
       <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 xl:grid-cols-1">
-        <ModelRule number="1" text="Run stack first." active={focus === 'stack'} />
-        <ModelRule number="2" text="Drain microtasks before tasks." active={focus === 'microtask' || focus === 'promise'} />
-        <ModelRule number="3" text="Timers and I/O wait as tasks." active={focus === 'task' || focus === 'webapi'} />
+        <ModelRule number="1" text="Run stack first." />
+        <ModelRule number="2" text="Drain microtasks before tasks." />
+        <ModelRule number="3" text="Timers and I/O wait as tasks." />
         <ModelRule number="4" text="await resumes as a microtask." active={scenarioId === 'async-await'} />
       </div>
     </div>
@@ -948,7 +991,7 @@ function PredictionCard({
   );
 }
 
-function ModelRule({ number, text, active }: { number: string; text: string; active: boolean }) {
+function ModelRule({ number, text, active = false }: { number: string; text: string; active?: boolean }) {
   return (
     <div className={cn('flex gap-2 rounded-md border p-2', active ? 'border-primary/50 bg-primary/10' : 'bg-muted/20')}>
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
