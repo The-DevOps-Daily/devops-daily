@@ -783,11 +783,6 @@ function PacketFlowDiagram({
                     {complete ? <CheckCircle className="h-3 w-3" /> : index + 1}
                   </span>
                   <span className="min-w-0 text-xs font-semibold leading-snug">{candidate.title}</span>
-                  {active && (
-                    <Badge variant="default" className="ml-auto shrink-0 text-[10px]">
-                      Now
-                    </Badge>
-                  )}
                 </div>
                 <p className="break-words font-mono text-[11px] leading-snug text-muted-foreground">
                   {candidate.packet}
