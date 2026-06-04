@@ -466,31 +466,6 @@ function toneLabel(tone: PacketTone | undefined) {
   return 'forwarded';
 }
 
-function hopLabel(id: string) {
-  const labels: Record<string, string> = {
-    'pod-frontend': 'frontend Pod',
-    'pod-api': 'api Pod',
-    'pod-payments': 'payments Pod',
-    'pod-worker': 'worker Pod',
-    'node-a': 'node-a',
-    'node-b': 'node-b',
-    'cni-a': 'CNI on node-a',
-    'cni-b': 'CNI on node-b',
-    'node-fabric': 'node fabric',
-    dns: 'CoreDNS',
-    service: 'Service',
-    'endpoint-slice': 'EndpointSlice',
-    'kube-proxy': 'service datapath',
-    internet: 'external client',
-    ingress: 'Ingress',
-    'load-balancer': 'LoadBalancer',
-    nodeport: 'NodePort',
-    policy: 'NetworkPolicy',
-  };
-
-  return labels[id] ?? id;
-}
-
 export default function KubernetesNetworkingCniSimulator() {
   const [scenarioId, setScenarioId] = useState<ScenarioId>('same-node');
   const [dataplane, setDataplane] = useState<Dataplane>('overlay');
@@ -547,8 +522,8 @@ export default function KubernetesNetworkingCniSimulator() {
 
   return (
     <div className="mx-auto w-full max-w-[1500px]">
-      <div className="mb-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-md border bg-muted/20 p-4">
+      <div className="mb-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="rounded-md border bg-muted/20 p-3 sm:p-4">
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <div className="rounded-md border border-primary/30 bg-primary/10 p-2 text-primary">
               <Network className="h-6 w-6" />
@@ -584,7 +559,7 @@ export default function KubernetesNetworkingCniSimulator() {
         </Card>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[310px_minmax(0,1fr)_340px]">
+      <div className="grid gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
         <div className="space-y-4">
           <Card>
             <CardHeader className="p-4 pb-2">
@@ -686,79 +661,65 @@ export default function KubernetesNetworkingCniSimulator() {
           </Button>
         </div>
 
-        <div className="space-y-4">
-          <Card className="border-primary/40">
-            <CardContent className="space-y-3 p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">{scenario.title}</Badge>
-                    <Badge>{toneLabel(step.tone)}</Badge>
+        <div className="grid gap-4 2xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-4">
+            <Card className="border-primary/40">
+              <CardContent className="space-y-3 p-3 sm:p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{scenario.title}</Badge>
+                      <Badge>{toneLabel(step.tone)}</Badge>
+                    </div>
+                    <p className="text-sm font-medium sm:text-base">{step.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{scenario.lesson}</p>
                   </div>
-                  <p className="text-sm font-medium sm:text-base">{step.title}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{scenario.lesson}</p>
+                  <div className="flex shrink-0 gap-2">
+                    <Button size="sm" variant="outline" onClick={previousStep}>
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" onClick={nextStep}>
+                      <Play className="mr-1 h-4 w-4" />
+                      Next hop
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={nextStep}>
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={previousStep}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" onClick={nextStep}>
-                    <Play className="mr-1 h-4 w-4" />
-                    Next hop
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={nextStep}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <Progress value={progress} />
-              <HopTimeline steps={scenario.steps} currentIndex={stepIndex} onSelect={setStepIndex} />
-            </CardContent>
-          </Card>
+                <Progress value={progress} />
+              </CardContent>
+            </Card>
 
-          <NetworkCanvas
-            step={step}
-            dataplane={dataplane}
-            scenarioId={scenarioId}
-            externalTrafficPolicy={externalTrafficPolicy}
-          />
+            <PacketFlowDiagram
+              steps={scenario.steps}
+              currentIndex={stepIndex}
+              onSelect={setStepIndex}
+            />
 
-          <Card>
-            <CardHeader className="p-4 pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <ArrowRight className="h-5 w-5" />
-                What happens at this hop
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-3 p-4 pt-0 md:grid-cols-2">
-              <div className="rounded-md border bg-muted/20 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Packet</p>
-                <p className="mt-2 break-words font-mono text-sm">{step.packet}</p>
-              </div>
-              <div className="rounded-md border bg-muted/20 p-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Mutation</p>
-                <p className="mt-2 text-sm text-muted-foreground">{step.mutation}</p>
-              </div>
-              <div className="rounded-md border border-primary/25 bg-primary/5 p-3 md:col-span-2">
-                <p className="text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <CurrentHopDetails step={step} />
+          </div>
 
-        <div className="space-y-4">
-          <PacketInspector
-            step={step}
-            dataplane={dataplane}
-            externalTrafficPolicy={externalTrafficPolicy}
-            scenarioCompletedCount={scenarioCompletedCount}
-          />
-          <DataplaneNotes
-            dataplane={dataplane}
-            scenarioId={scenarioId}
-            externalTrafficPolicy={externalTrafficPolicy}
-          />
-          <MentalModel />
+          <div className="space-y-4">
+            <ClusterContextMap
+              step={step}
+              dataplane={dataplane}
+              scenarioId={scenarioId}
+              externalTrafficPolicy={externalTrafficPolicy}
+            />
+            <PacketInspector
+              step={step}
+              dataplane={dataplane}
+              externalTrafficPolicy={externalTrafficPolicy}
+              scenarioCompletedCount={scenarioCompletedCount}
+            />
+            <DataplaneNotes
+              dataplane={dataplane}
+              scenarioId={scenarioId}
+              externalTrafficPolicy={externalTrafficPolicy}
+            />
+            <MentalModel />
+          </div>
         </div>
       </div>
     </div>
@@ -774,7 +735,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function HopTimeline({
+function PacketFlowDiagram({
   steps,
   currentIndex,
   onSelect,
@@ -784,79 +745,101 @@ function HopTimeline({
   onSelect: (index: number) => void;
 }) {
   return (
-    <div className="rounded-md border bg-muted/20 p-3">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Hop timeline</p>
-        <Badge variant="secondary" className="font-mono text-[11px]">
-          {steps.length} hops
-        </Badge>
-      </div>
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {steps.map((candidate, index) => {
-          const active = index === currentIndex;
-          const complete = index < currentIndex;
+    <Card className="border-primary/30">
+      <CardHeader className="p-4 pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ArrowRight className="h-5 w-5" />
+            Packet flow
+          </CardTitle>
+          <Badge variant="secondary" className="font-mono text-[11px]">
+            {steps.length} hops
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        <div className="grid gap-2 lg:grid-cols-4">
+          {steps.map((candidate, index) => {
+            const active = index === currentIndex;
+            const complete = index < currentIndex;
 
-          return (
-            <button
-              key={candidate.title}
-              type="button"
-              onClick={() => onSelect(index)}
-              className={cn(
-                'min-w-0 rounded-md border p-2 text-left transition-colors',
-                active
-                  ? 'border-primary/60 bg-primary/10'
-                  : complete
-                    ? 'border-emerald-500/30 bg-emerald-500/10'
-                    : 'border-border hover:border-primary/40 hover:bg-muted/40'
-              )}
-            >
-              <div className="mb-1 flex items-center gap-2">
-                <span
-                  className={cn(
-                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold',
-                    active && 'border-primary bg-primary text-primary-foreground',
-                    complete && 'border-emerald-500 bg-emerald-500 text-white'
-                  )}
-                >
-                  {complete ? <CheckCircle className="h-3 w-3" /> : index + 1}
-                </span>
-                <span className="min-w-0 truncate text-xs font-medium">{candidate.title}</span>
-              </div>
-              <p className="truncate text-[11px] text-muted-foreground">{toneLabel(candidate.tone)}</p>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+            return (
+              <button
+                key={candidate.title}
+                type="button"
+                onClick={() => onSelect(index)}
+                className={cn(
+                  'relative min-w-0 rounded-md border p-3 text-left transition-colors',
+                  active
+                    ? 'border-primary/60 bg-primary/10'
+                    : complete
+                      ? 'border-emerald-500/30 bg-emerald-500/10'
+                      : 'border-border hover:border-primary/40 hover:bg-muted/40'
+                )}
+              >
+                {active && (
+                  <motion.span
+                    className="absolute -top-1 right-3 h-2 w-10 rounded-full bg-primary"
+                    animate={{ opacity: [0.35, 1, 0.35] }}
+                    transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+                  />
+                )}
+                <div className="mb-2 flex items-center gap-2">
+                  <span
+                    className={cn(
+                      'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold',
+                      active && 'border-primary bg-primary text-primary-foreground',
+                      complete && 'border-emerald-500 bg-emerald-500 text-white'
+                    )}
+                  >
+                    {complete ? <CheckCircle className="h-3 w-3" /> : index + 1}
+                  </span>
+                  <span className="min-w-0 text-xs font-semibold leading-snug">{candidate.title}</span>
+                </div>
+                <p className="break-words font-mono text-[11px] leading-snug text-muted-foreground">
+                  {candidate.packet}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  <Badge variant={active ? 'default' : 'secondary'} className="text-[10px]">
+                    {toneLabel(candidate.tone)}
+                  </Badge>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function ActiveRouteRibbon({ step }: { step: PacketStep }) {
-  const route = step.highlights.map(hopLabel).filter((label, index, labels) => labels.indexOf(label) === index);
-
+function CurrentHopDetails({ step }: { step: PacketStep }) {
   return (
-    <div className="relative z-10 mb-4 rounded-md border bg-card/90 p-3">
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Active route</p>
-        <Badge variant="outline" className="text-[11px]">
-          {toneLabel(step.tone)}
-        </Badge>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {route.map((label, index) => (
-          <div key={`${label}-${index}`} className="flex min-w-0 items-center gap-2">
-            <span className="max-w-[160px] truncate rounded-md border bg-muted/30 px-2 py-1 text-xs font-medium">
-              {label}
-            </span>
-            {index < route.length - 1 && <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-          </div>
-        ))}
-      </div>
-    </div>
+    <Card>
+      <CardHeader className="p-4 pb-2">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <ArrowRight className="h-5 w-5" />
+          Current hop
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 p-4 pt-0 md:grid-cols-2">
+        <div className="rounded-md border bg-muted/20 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Packet</p>
+          <p className="mt-2 break-words font-mono text-sm">{step.packet}</p>
+        </div>
+        <div className="rounded-md border bg-muted/20 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Mutation</p>
+          <p className="mt-2 text-sm text-muted-foreground">{step.mutation}</p>
+        </div>
+        <div className="rounded-md border border-primary/25 bg-primary/5 p-3 md:col-span-2">
+          <p className="text-sm leading-relaxed text-muted-foreground">{step.explanation}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
-function NetworkCanvas({
+function ClusterContextMap({
   step,
   dataplane,
   scenarioId,
@@ -870,26 +853,106 @@ function NetworkCanvas({
   const active = (id: string) => step.highlights.includes(id);
   const blocked = step.tone === 'blocked';
   const translated = step.tone === 'translated';
+  const resources: Array<{
+    id: string;
+    title: string;
+    detail: string;
+    icon: ReactNode;
+    show: boolean;
+    active: boolean;
+    blocked?: boolean;
+  }> = [
+    {
+      id: 'internet',
+      title: scenarioId === 'ingress' || scenarioId === 'load-balancer' ? 'External client' : 'Internet',
+      detail: scenarioId === 'ingress' || scenarioId === 'load-balancer' ? '203.0.113.8' : 'public API',
+      icon: <Globe className="h-4 w-4" />,
+      show: active('internet') || scenarioId === 'ingress' || scenarioId === 'load-balancer' || scenarioId === 'egress',
+      active: active('internet'),
+    },
+    {
+      id: 'load-balancer',
+      title: 'LoadBalancer',
+      detail: '198.51.100.40:443',
+      icon: <Cloud className="h-4 w-4" />,
+      show: active('load-balancer') || scenarioId === 'load-balancer',
+      active: active('load-balancer'),
+    },
+    {
+      id: 'nodeport',
+      title: 'NodePort',
+      detail: 'node IP:30443',
+      icon: <Server className="h-4 w-4" />,
+      show: active('nodeport') || scenarioId === 'load-balancer',
+      active: active('nodeport'),
+    },
+    {
+      id: 'ingress',
+      title: 'Ingress',
+      detail: 'host/path routing',
+      icon: <Server className="h-4 w-4" />,
+      show: active('ingress') || scenarioId === 'ingress',
+      active: active('ingress'),
+    },
+    {
+      id: 'service',
+      title: 'Service',
+      detail: '10.96.12.40:443',
+      icon: <Layers className="h-4 w-4" />,
+      show: active('service') || ['cluster-ip', 'service-discovery', 'ingress', 'load-balancer'].includes(scenarioId),
+      active: active('service'),
+    },
+    {
+      id: 'endpoint-slice',
+      title: 'EndpointSlice',
+      detail: '10.244.2.21, 10.244.2.45',
+      icon: <Layers className="h-4 w-4" />,
+      show: active('endpoint-slice') || scenarioId === 'service-discovery',
+      active: active('endpoint-slice'),
+    },
+    {
+      id: 'policy',
+      title: 'NetworkPolicy',
+      detail: blocked ? 'verdict: drop' : 'verdict: forward',
+      icon: blocked ? <AlertTriangle className="h-4 w-4" /> : <Shield className="h-4 w-4" />,
+      show: active('policy') || scenarioId === 'network-policy' || scenarioId === 'egress',
+      active: active('policy'),
+      blocked: blocked && active('policy'),
+    },
+    {
+      id: 'external-policy',
+      title: 'externalTrafficPolicy',
+      detail: `${externalTrafficPolicy}: ${
+        externalTrafficPolicy === 'Local' ? 'preserve source IP' : 'spread across nodes'
+      }`,
+      icon: <Route className="h-4 w-4" />,
+      show: scenarioId === 'load-balancer',
+      active: active('load-balancer') || active('nodeport'),
+    },
+  ];
 
   return (
     <Card className="overflow-hidden">
+      <CardHeader className="border-b bg-muted/20 p-4 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Network className="h-5 w-5" />
+            Cluster map
+          </CardTitle>
+          <Badge variant={blocked ? 'destructive' : translated ? 'default' : 'secondary'}>
+            context only
+          </Badge>
+        </div>
+      </CardHeader>
       <CardContent className="p-0">
-        <div className="relative min-h-[560px] overflow-hidden bg-gradient-to-br from-background via-muted/20 to-primary/5 p-4">
+        <div className="relative overflow-hidden bg-gradient-to-br from-background via-muted/20 to-primary/5 p-3">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:42px_42px] opacity-20" />
 
-          <div className="relative z-10 mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-mono text-xs text-muted-foreground">cluster.local / pod network 10.244.0.0/16</p>
-              <p className="text-lg font-semibold">Packet path: {step.title}</p>
-            </div>
-            <Badge variant={blocked ? 'destructive' : translated ? 'default' : 'secondary'}>
-              {DATAPLANES[dataplane].label}
-            </Badge>
-          </div>
+          <p className="relative z-10 mb-3 font-mono text-xs text-muted-foreground">
+            cluster.local / pod network 10.244.0.0/16
+          </p>
 
-          <ActiveRouteRibbon step={step} />
-
-          <div className="relative z-10 grid gap-4 lg:grid-cols-[1fr_120px_1fr]">
+          <div className="relative z-10 grid gap-3">
             <div className="space-y-3">
               <NodeBox
                 id="node-a"
@@ -923,24 +986,24 @@ function NetworkCanvas({
               />
             </div>
 
-            <div className="flex flex-col items-center justify-center gap-3 py-2">
+            <div className="flex items-center justify-center gap-3 py-1">
+              <Badge variant="outline" className="text-center text-[11px]">
+                {DATAPLANES[dataplane].shortLabel}
+              </Badge>
               <div
                 className={cn(
-                  'relative h-36 w-1 overflow-hidden rounded-full bg-border lg:h-72',
+                  'relative h-1 min-w-20 flex-1 overflow-hidden rounded-full bg-border',
                   active('node-fabric') && 'bg-primary/25'
                 )}
               >
                 {active('node-fabric') && (
                   <motion.div
-                    className="absolute left-1/2 top-0 h-12 w-1 -translate-x-1/2 rounded-full bg-primary"
-                    animate={{ y: ['0%', '600%'] }}
+                    className="absolute left-0 top-0 h-1 w-12 rounded-full bg-primary"
+                    animate={{ x: ['0%', '650%'] }}
                     transition={{ repeat: Infinity, duration: 1.4, ease: 'linear' }}
                   />
                 )}
               </div>
-              <Badge variant="outline" className="text-center text-[11px]">
-                {dataplane === 'overlay' ? 'tunnel' : dataplane === 'direct' ? 'route' : 'eBPF map'}
-              </Badge>
             </div>
 
             <div className="space-y-3">
@@ -978,66 +1041,20 @@ function NetworkCanvas({
             </div>
           </div>
 
-          <div className="relative z-10 mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <AuxiliaryCard
-              id="internet"
-              title={scenarioId === 'ingress' || scenarioId === 'load-balancer' ? 'External client' : 'Internet'}
-              detail={scenarioId === 'ingress' || scenarioId === 'load-balancer' ? '203.0.113.8' : 'public API'}
-              icon={<Globe className="h-4 w-4" />}
-              active={active('internet')}
-            />
-            <AuxiliaryCard
-              id="load-balancer"
-              title="LoadBalancer"
-              detail="198.51.100.40:443"
-              icon={<Cloud className="h-4 w-4" />}
-              active={active('load-balancer')}
-            />
-            <AuxiliaryCard
-              id="nodeport"
-              title="NodePort"
-              detail="node IP:30443"
-              icon={<Server className="h-4 w-4" />}
-              active={active('nodeport')}
-            />
-            <AuxiliaryCard
-              id="ingress"
-              title="Ingress"
-              detail="host/path routing"
-              icon={<Server className="h-4 w-4" />}
-              active={active('ingress')}
-            />
-            <AuxiliaryCard
-              id="service"
-              title="Service"
-              detail="10.96.12.40:443"
-              icon={<Layers className="h-4 w-4" />}
-              active={active('service')}
-            />
-            <AuxiliaryCard
-              id="endpoint-slice"
-              title="EndpointSlice"
-              detail="10.244.2.21, 10.244.2.45"
-              icon={<Layers className="h-4 w-4" />}
-              active={active('endpoint-slice')}
-            />
-            <AuxiliaryCard
-              id="policy"
-              title="NetworkPolicy"
-              detail={blocked ? 'verdict: drop' : 'verdict: forward'}
-              icon={blocked ? <AlertTriangle className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
-              active={active('policy')}
-              blocked={blocked && active('policy')}
-            />
-            <AuxiliaryCard
-              id="external-policy"
-              title="externalTrafficPolicy"
-              detail={`${externalTrafficPolicy}: ${
-                externalTrafficPolicy === 'Local' ? 'preserve source IP' : 'spread across nodes'
-              }`}
-              icon={<Route className="h-4 w-4" />}
-              active={active('load-balancer') || active('nodeport')}
-            />
+          <div className="relative z-10 mt-3 grid gap-2 sm:grid-cols-2">
+            {resources
+              .filter((resource) => resource.show)
+              .map((resource) => (
+                <AuxiliaryCard
+                  key={resource.id}
+                  id={resource.id}
+                  title={resource.title}
+                  detail={resource.detail}
+                  icon={resource.icon}
+                  active={resource.active}
+                  blocked={resource.blocked}
+                />
+              ))}
           </div>
         </div>
       </CardContent>
