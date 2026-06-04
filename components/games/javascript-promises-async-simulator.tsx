@@ -428,12 +428,12 @@ const PHASES: Array<{
   label: string;
   description: string;
 }> = [
-  { id: 'stack', label: 'Stack', description: 'Run synchronous JavaScript first.' },
-  { id: 'webapi', label: 'Runtime', description: 'Timers and I/O wait outside the stack.' },
-  { id: 'promise', label: 'Promise', description: 'Promise state changes, handlers wait.' },
-  { id: 'microtask', label: 'Microtask', description: 'Promise work runs before tasks.' },
-  { id: 'task', label: 'Task', description: 'Timers/events get a later turn.' },
-  { id: 'console', label: 'Output', description: 'Visible logs appear in order.' },
+  { id: 'stack', label: 'Stack', description: 'Normal code runs first.' },
+  { id: 'webapi', label: 'Runtime', description: 'Timers wait outside JS.' },
+  { id: 'promise', label: 'Promise', description: 'Promise state changes.' },
+  { id: 'microtask', label: 'Microtask', description: 'Promise callbacks run next.' },
+  { id: 'task', label: 'Task', description: 'Timers run after microtasks.' },
+  { id: 'console', label: 'Console', description: 'Logs appear in order.' },
 ];
 
 function getScenario(id: ScenarioId) {
@@ -799,9 +799,16 @@ function phaseLabel(focus: StepFocus) {
 }
 
 function PhaseRail({ focus }: { focus: StepFocus }) {
+  const currentPhase = PHASES.find((phase) => phase.id === focus) ?? PHASES[0]!;
+
   return (
     <div className="rounded-md border bg-background/70 p-2">
-      <div className="grid gap-2 md:grid-cols-3 2xl:grid-cols-6">
+      <div className="mb-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+        <span className="font-semibold text-primary">You are here:</span>{' '}
+        <span className="font-medium">{currentPhase.label}</span>
+        <span className="text-muted-foreground"> - {currentPhase.description}</span>
+      </div>
+      <div className="grid gap-2 md:grid-cols-3">
         {PHASES.map((phase, index) => {
           const active = phase.id === focus || (focus === 'code' && phase.id === 'stack');
 
@@ -813,16 +820,16 @@ function PhaseRail({ focus }: { focus: StepFocus }) {
                 active ? 'border-primary/60 bg-primary/10' : 'border-border bg-muted/20'
               )}
             >
-              <div className="mb-1 flex min-w-0 items-center gap-2">
+              <div className="mb-1 flex min-w-0 items-center gap-1.5">
                 <span
                   className={cn(
-                    'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] font-semibold',
+                    'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[9px] font-semibold',
                     active ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
                   )}
                 >
                   {index + 1}
                 </span>
-                <span className={cn('min-w-0 break-words text-[11px] font-semibold leading-tight', active && 'text-primary')}>
+                <span className={cn('min-w-0 whitespace-nowrap text-xs font-semibold leading-tight', active && 'text-primary')}>
                   {phase.label}
                 </span>
               </div>
