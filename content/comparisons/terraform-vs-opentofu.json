@@ -1,0 +1,229 @@
+{
+  "id": "terraform-vs-opentofu",
+  "slug": "terraform-vs-opentofu",
+  "title": "Terraform vs OpenTofu",
+  "description": "A practical 2026 comparison of Terraform and OpenTofu: licensing, governance, state encryption, the migration path, and which IaC tool fits your team.",
+  "category": "Infrastructure as Code",
+  "tags": ["Terraform", "OpenTofu", "IaC", "Infrastructure", "State Management", "DevOps"],
+  "createdDate": "2026-06-05T09:00:00Z",
+  "updatedDate": "2026-06-05T09:00:00Z",
+  "estimatedReadTime": "11 min read",
+  "introduction": "For two years the question of Terraform versus OpenTofu had the same honest answer: wait and see. The fork was young, the feature gap was small, and nobody wanted to bet production state files on a project that might fade. In 2026 the picture is clearer, and the decision is worth making on purpose.\n\nTerraform, first released in 2014, introduced HCL as a declarative language for infrastructure. In August 2023 HashiCorp moved it from the Mozilla Public License (MPL) 2.0 to the Business Source License (BSL) 1.1, which is source-available rather than open source. The community forked the last MPL release as OpenTofu, and in early 2025 IBM completed its acquisition of HashiCorp, so Terraform is now an IBM product. OpenTofu joined the CNCF in April 2025 and is governed by a steering committee under the Linux Foundation, so no single company controls its license or direction.\n\nThe two tools still share the same HCL syntax and the same .tfstate format, which is why moving between them is easier than most teams expect. Where they differ is governance, licensing, and a set of features OpenTofu has shipped that Terraform's open-source CLI does not have: native state encryption, provider for_each, the -exclude flag, and early variable evaluation. Terraform, in turn, keeps the larger ecosystem, the HCP Terraform managed platform, and the deeper hiring pool.\n\nThis comparison breaks the decision down across licensing, state handling, features, ecosystem, and operations, then gives you a use-case guide and a clear verdict. If you want the full step-by-step migration walkthrough and a deeper look at where the lock-in actually hides, we cover that in our dedicated OpenTofu migration guide.",
+  "toolA": {
+    "name": "Terraform",
+    "icon": "FileCode",
+    "website": "https://www.terraform.io",
+    "description": "The original IaC tool by HashiCorp, now part of IBM. Uses HCL to provision infrastructure across cloud providers and has the largest provider ecosystem and managed platform in the space.",
+    "color": "#7B42BC",
+    "pros": [
+      "Largest provider and module ecosystem via the Terraform Registry (4,000+ providers)",
+      "HCP Terraform (formerly Terraform Cloud) offers managed state, Sentinel policy as code, Stacks, and run tasks",
+      "Biggest hiring pool and the deepest library of tutorials, modules, and Stack Overflow answers",
+      "Commercial support with SLAs backed by IBM and HashiCorp",
+      "Mature third-party tooling: Atlantis, Spacelift, env0, Terragrunt, tflint, Checkov",
+      "Predictable plan output that is easy to review in pull requests"
+    ],
+    "cons": [
+      "BSL 1.1 license is source-available and restricts building competing products",
+      "Single-vendor governance under IBM, with no community veto over license or roadmap",
+      "No native state encryption: secrets sit in plaintext in state, protected only at the backend level",
+      "The open-source CLI lacks provider for_each, the -exclude flag, and early variable evaluation",
+      "More of the newer workflow features land first inside the paid HCP Terraform platform"
+    ]
+  },
+  "toolB": {
+    "name": "OpenTofu",
+    "icon": "GitFork",
+    "website": "https://opentofu.org",
+    "description": "An open-source fork of Terraform created after the 2023 license change, now a CNCF project under the Linux Foundation. Drop-in compatible with Terraform's HCL and state format, with extra features the Terraform CLI does not have.",
+    "color": "#FFDA18",
+    "pros": [
+      "MPL 2.0 open-source license with no competitive-use restrictions",
+      "Vendor-neutral governance under the Linux Foundation and CNCF with a multi-company steering committee",
+      "Native client-side state and plan encryption (AWS KMS, GCP KMS, Vault, or passphrase) since 1.7",
+      "Provider for_each (1.9), the -exclude flag (1.9), and early variable evaluation (1.8)",
+      "Reads and writes the same .tfstate, so existing state and most providers and modules work unchanged",
+      "Free, with no features held back behind a paid tier, and a steady release cadence (v1.12 in May 2026)"
+    ],
+    "cons": [
+      "Registry coverage trails Terraform for some niche or private providers",
+      "No first-party managed SaaS; you rely on Spacelift, env0, Scalr, or self-managed backends",
+      "Smaller community and hiring pool, although Terraform skills transfer one to one",
+      "No equivalent to HCP Terraform-specific features such as Stacks, Sentinel, and no-code modules",
+      "Some enterprises still want a single vendor with a formal support contract"
+    ]
+  },
+  "features": [
+    {
+      "name": "Configuration Language",
+      "category": "Language & Compatibility",
+      "toolA": { "value": "HCL (declarative, purpose-built for infrastructure)", "rating": "good" },
+      "toolB": { "value": "HCL, syntax-compatible with Terraform", "rating": "good" }
+    },
+    {
+      "name": "State File Format",
+      "category": "State & Backend",
+      "toolA": { "value": ".tfstate JSON", "rating": "good" },
+      "toolB": { "value": ".tfstate JSON, identical and interchangeable", "rating": "good" }
+    },
+    {
+      "name": "Native State Encryption",
+      "category": "State & Backend",
+      "toolA": { "value": "Backend-level only; secrets are plaintext in state", "rating": "bad" },
+      "toolB": { "value": "Built-in client-side state and plan encryption (KMS, Vault, passphrase) since 1.7", "rating": "good" }
+    },
+    {
+      "name": "Provider for_each",
+      "category": "Language & Features",
+      "toolA": { "value": "Not supported in the open-source CLI", "rating": "bad" },
+      "toolB": { "value": "Supported since 1.9 for multi-region and multi-account setups", "rating": "good" }
+    },
+    {
+      "name": "Exclude Flag",
+      "category": "Operations",
+      "toolA": { "value": "Only -target is available", "rating": "neutral" },
+      "toolB": { "value": "Adds -exclude, the inverse of -target, since 1.9", "rating": "good" }
+    },
+    {
+      "name": "Early Variable Evaluation",
+      "category": "Language & Features",
+      "toolA": { "value": "Variables not allowed in backend or module source blocks", "rating": "neutral" },
+      "toolB": { "value": "Early evaluation allows variables in backend and module source (1.8)", "rating": "good" }
+    },
+    {
+      "name": "Provider & Module Registry",
+      "category": "Ecosystem",
+      "toolA": { "value": "Terraform Registry, the largest with 4,000+ providers", "rating": "good" },
+      "toolB": { "value": "registry.opentofu.org mirrors providers and modules; near-complete coverage", "rating": "neutral" }
+    },
+    {
+      "name": "License",
+      "category": "Licensing & Governance",
+      "toolA": { "value": "BSL 1.1 (source-available, competitive-use restrictions)", "rating": "bad" },
+      "toolB": { "value": "MPL 2.0 (open source)", "rating": "good" }
+    },
+    {
+      "name": "Governance",
+      "category": "Licensing & Governance",
+      "toolA": { "value": "Single vendor (IBM / HashiCorp)", "rating": "neutral" },
+      "toolB": { "value": "Linux Foundation and CNCF, multi-company steering committee", "rating": "good" }
+    },
+    {
+      "name": "Managed SaaS & Collaboration",
+      "category": "Operations",
+      "toolA": { "value": "HCP Terraform: managed state, Sentinel, Stacks, run tasks", "rating": "good" },
+      "toolB": { "value": "No first-party SaaS; use Spacelift, env0, Scalr, or self-managed backends", "rating": "neutral" }
+    },
+    {
+      "name": "Commercial Support",
+      "category": "Support & Ecosystem",
+      "toolA": { "value": "Paid support and SLAs via IBM and HashiCorp", "rating": "good" },
+      "toolB": { "value": "Community support plus third-party vendors (Spacelift, Scalr, Gruntwork)", "rating": "neutral" }
+    },
+    {
+      "name": "Community & Hiring Pool",
+      "category": "Support & Ecosystem",
+      "toolA": { "value": "Largest community, most tutorials, biggest hiring pool", "rating": "good" },
+      "toolB": { "value": "Growing; Terraform skills transfer directly but fewer dedicated resources", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "Security or compliance team that needs secrets in state encrypted at rest, not just at the backend",
+      "recommendation": "toolB",
+      "explanation": "OpenTofu encrypts state and plan files client-side with a key provider you control (KMS, Vault, or a passphrase). Even if the backend is exposed, the files are unreadable without the key. Terraform's open-source CLI has no equivalent, so sensitive values stay in plaintext in state."
+    },
+    {
+      "scenario": "A company building a commercial product or internal platform on top of the IaC engine",
+      "recommendation": "toolB",
+      "explanation": "The BSL restricts using Terraform to build a competing product and adds legal review overhead. OpenTofu's MPL license and foundation governance remove that risk, which matters most for vendors and platform teams shipping tooling around the engine."
+    },
+    {
+      "scenario": "Enterprise standardized on HCP Terraform with Sentinel policies, Stacks, and a support contract",
+      "recommendation": "toolA",
+      "explanation": "Sentinel, Stacks, and run tasks are first-party HashiCorp features that OpenTofu does not replicate. If your workflows and compliance gates already run on HCP Terraform, staying avoids a re-tooling project for little gain."
+    },
+    {
+      "scenario": "Small team running internal infrastructure, happy on Terraform, with no licensing concern",
+      "recommendation": "either",
+      "explanation": "Both tools work well here. The migration is easy and reversible while you stay on shared features, so there is no penalty for waiting. Switch when you want a specific OpenTofu feature or care about the license, not before."
+    },
+    {
+      "scenario": "Team managing many near-identical regions or accounts that wants provider for_each and -exclude in daily runs",
+      "recommendation": "toolB",
+      "explanation": "Provider for_each removes the copy-paste of one provider block per region or account, and -exclude lets you apply everything except a resource you are handling separately. Both features exist only in OpenTofu's CLI today."
+    },
+    {
+      "scenario": "Organization that prioritizes the largest hiring pool and the deepest library of tutorials and modules",
+      "recommendation": "toolA",
+      "explanation": "Terraform's ecosystem and community are still bigger, so onboarding and finding answers is easier. OpenTofu skills transfer one to one, but there are fewer OpenTofu-specific guides and registry modules to lean on."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is migrating from Terraform to OpenTofu difficult?",
+      "answer": "No. The two share the same HCL and the same .tfstate format. You back up your state, install the tofu binary, run tofu init, then run tofu plan. A clean migration reports no changes. For most projects it is a binary swap and a CI pipeline change, and it is reversible until you adopt OpenTofu-only features."
+    },
+    {
+      "question": "Is OpenTofu a drop-in replacement for Terraform?",
+      "answer": "For the shared feature set, yes. OpenTofu is CLI and HCL compatible up to the point it forked, plus its own additions. Configuration that uses only common features runs on either tool. Code that uses OpenTofu-only features like encrypted state or provider for_each will not run on Terraform."
+    },
+    {
+      "question": "Can I switch back to Terraform after moving to OpenTofu?",
+      "answer": "Yes, as long as you stay on shared features. Swap the binary back and run plan. The moment you adopt an OpenTofu-only feature the door starts to close. Encrypted state is the clearest example: once OpenTofu writes an encrypted state file, Terraform cannot read it."
+    },
+    {
+      "question": "Does OpenTofu work with the Terraform Registry and my existing providers?",
+      "answer": "OpenTofu uses its own registry at registry.opentofu.org, which mirrors the vast majority of providers and modules. The official AWS, Azure, Google, and Kubernetes providers all work. A few niche or private providers may need extra configuration."
+    },
+    {
+      "question": "Is OpenTofu production-ready in 2026?",
+      "answer": "Yes. It is a CNCF project under the Linux Foundation, on a steady release cadence with v1.12 shipped in May 2026, and is in production at organizations of all sizes. It has its own roadmap and ships features Terraform's open-source CLI does not have."
+    },
+    {
+      "question": "What about HCP Terraform features like Stacks and Sentinel?",
+      "answer": "Those are first-party HashiCorp features and are not part of OpenTofu. If you depend on HCP Terraform's managed workflows, Sentinel policy as code, or Stacks, you either stay on Terraform or replace them with OpenTofu-compatible tools such as Spacelift, env0, Scalr, or Open Policy Agent."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You build a product or internal platform on top of the IaC engine",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need secrets in state encrypted at rest without an external wrapper",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You depend on HCP Terraform features (Stacks, Sentinel, run tasks)",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want a vendor-neutral, foundation-governed project",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You need a commercial support contract with an SLA",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the largest hiring pool and the most third-party examples",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want provider for_each, -exclude, or early variable evaluation today",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are happy on Terraform and the BSL license does not affect you",
+      "recommendation": "either"
+    }
+  ],
+  "verdict": {
+    "summary": "The migration between the two is easy and reversible, which takes most of the risk out of the decision. OpenTofu leads on open governance, an MPL license, and features Terraform's open-source CLI does not have, most notably native state encryption, provider for_each, and the -exclude flag. Terraform leads on ecosystem size, the HCP Terraform managed platform, commercial support, and the hiring pool. Neither is objectively better; the right call depends on whether you value open governance and those features or the depth of the HashiCorp ecosystem.",
+    "toolAScore": 4.3,
+    "toolBScore": 4.4,
+    "recommendation": "Choose OpenTofu if you want open governance, an MPL license, or built-in state encryption and the newer CLI features. Choose Terraform if you rely on HCP Terraform, need commercial support, or want the largest ecosystem and hiring pool. Either way, test on a staging workspace and run plan before you apply."
+  },
+  "relatedTags": ["Terraform", "OpenTofu", "IaC", "Infrastructure", "Cloud", "DevOps"]
+}
