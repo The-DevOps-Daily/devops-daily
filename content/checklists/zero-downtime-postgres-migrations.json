@@ -1,0 +1,217 @@
+{
+  "id": "zero-downtime-postgres-migrations",
+  "slug": "zero-downtime-postgres-migrations",
+  "title": "Zero-Downtime PostgreSQL Migrations in Production",
+  "description": "How to change a live PostgreSQL schema without taking the app down: the expand-and-contract pattern, online DDL with CONCURRENTLY and NOT VALID, batched backfills, and the lock monitoring that lets you do it with confidence.",
+  "category": "Database Operations",
+  "difficulty": "advanced",
+  "estimatedTime": "2-4 hours",
+  "tags": ["postgresql", "database-migrations", "zero-downtime", "ddl", "schema"],
+  "items": [
+    {
+      "id": "expand-and-contract-pattern",
+      "title": "Plan every change as expand, migrate, then contract",
+      "description": "The whole game is never changing schema and code in one lockstep step. Expand: add the new thing without touching the old one. Migrate: backfill data and move reads and writes over while both shapes exist. Contract: drop the old thing once nothing reads it. A single migration that renames a column and ships matching code will break every old pod still running during the rollout. Split it into steps that each work with the code on both sides of the deploy.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "The three phases for adding email_verified",
+          "code": "-- EXPAND: add the column, deploy code that writes it\nALTER TABLE users ADD COLUMN email_verified boolean;\n\n-- MIGRATE: backfill in batches, deploy code that reads it\n--   (see the batched backfill step below)\n\n-- CONTRACT: once old code is gone, enforce and clean up\nALTER TABLE users ALTER COLUMN email_verified SET DEFAULT false;"
+        }
+      ]
+    },
+    {
+      "id": "set-lock-and-statement-timeout",
+      "title": "Set lock_timeout on every migration so a stuck DDL fails fast",
+      "description": "This is the setting that saves you at 2am. Most DDL needs an ACCESS EXCLUSIVE lock. If a long-running query or an idle-in-transaction session holds the table, your ALTER waits for the lock, and every new query waits behind your ALTER. The whole table stalls. A short lock_timeout makes the migration give up and retry instead of taking the site down while it queues.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Bound the lock wait and the statement runtime",
+          "code": "-- Give up if the lock can't be had within 5s\nSET lock_timeout = '5s';\n-- Cap how long any single statement runs\nSET statement_timeout = '30s';\n\nALTER TABLE orders ADD COLUMN discount_cents integer;"
+        },
+        {
+          "language": "bash",
+          "label": "Retry the migration instead of waiting forever",
+          "code": "# Retry a few times so a brief lock contention isn't fatal\nfor attempt in 1 2 3 4 5; do\n  psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f migration.sql && break\n  echo \"attempt $attempt hit a lock, backing off...\"\n  sleep $((attempt * 5))\ndone"
+        }
+      ]
+    },
+    {
+      "id": "add-columns-without-rewrite",
+      "title": "Add columns without rewriting the whole table",
+      "description": "On Postgres 11 and newer, adding a column with a constant default is a metadata-only change and returns instantly, even on a huge table. The trap is a volatile default like now() or a function call, which still rewrites every row under an ACCESS EXCLUSIVE lock. If you need a computed or per-row value, add the column nullable first and backfill it as a separate step.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Constant default fast, volatile default slow",
+          "code": "-- Fast on PG 11+: constant default, metadata only\nALTER TABLE events ADD COLUMN source text DEFAULT 'web' NOT NULL;\n\n-- Slow: a volatile default rewrites every row and holds the lock the whole time\n-- ALTER TABLE events ADD COLUMN created_at timestamptz DEFAULT now() NOT NULL;\n\n-- Safe version: add nullable, backfill in batches, then set default/not null later\nALTER TABLE events ADD COLUMN created_at timestamptz;"
+        }
+      ]
+    },
+    {
+      "id": "create-indexes-concurrently",
+      "title": "Build indexes with CREATE INDEX CONCURRENTLY",
+      "description": "A plain CREATE INDEX holds a lock that blocks writes for as long as the build runs, which on a big table is minutes. CONCURRENTLY builds without blocking reads or writes. The cost: it can't run inside a transaction, it takes longer, and if it fails it leaves an INVALID index you have to drop and rebuild. Always check the index ended up valid before you rely on it.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Concurrent build plus a validity check",
+          "code": "-- Build without blocking writes (cannot run inside a transaction)\nCREATE INDEX CONCURRENTLY idx_orders_customer_id ON orders (customer_id);\n\n-- If it failed partway, you get an INVALID index. Find it:\nSELECT indexrelid::regclass AS index, indrelid::regclass AS table\nFROM pg_index WHERE NOT indisvalid;\n\n-- Drop the broken one (also concurrently) and retry the build\nDROP INDEX CONCURRENTLY idx_orders_customer_id;"
+        }
+      ]
+    },
+    {
+      "id": "add-not-null-in-two-steps",
+      "title": "Add NOT NULL with a CHECK constraint, not in one shot",
+      "description": "ALTER TABLE ... SET NOT NULL scans the entire table while holding ACCESS EXCLUSIVE, so on a large table it blocks everything for the length of the scan. Instead add a CHECK (col IS NOT NULL) as NOT VALID, which is instant, then VALIDATE it under a lighter SHARE UPDATE EXCLUSIVE lock that lets reads and writes continue. On PG 12+, a validated matching CHECK lets SET NOT NULL skip its own scan.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "NOT VALID then VALIDATE then SET NOT NULL",
+          "code": "-- 1. Add the constraint without scanning (brief lock, no table scan)\nALTER TABLE users\n  ADD CONSTRAINT users_email_not_null CHECK (email IS NOT NULL) NOT VALID;\n\n-- 2. Validate it without blocking reads or writes\nALTER TABLE users VALIDATE CONSTRAINT users_email_not_null;\n\n-- 3. PG 12+: now SET NOT NULL is cheap, it reuses the validated check\nALTER TABLE users ALTER COLUMN email SET NOT NULL;\nALTER TABLE users DROP CONSTRAINT users_email_not_null;"
+        }
+      ]
+    },
+    {
+      "id": "add-foreign-keys-not-valid",
+      "title": "Add foreign keys in two steps with NOT VALID",
+      "description": "Adding a foreign key normally locks both tables and scans the child table to check every existing row. Split it: ADD CONSTRAINT ... NOT VALID enforces the key for new and changed rows right away with only a short lock, then VALIDATE CONSTRAINT checks the existing rows under a SHARE UPDATE EXCLUSIVE lock that doesn't block writes.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Enforce now, validate existing rows later",
+          "code": "-- 1. Enforce for new and changed rows immediately, skip the scan of existing rows\nALTER TABLE orders\n  ADD CONSTRAINT orders_customer_fk\n  FOREIGN KEY (customer_id) REFERENCES customers (id) NOT VALID;\n\n-- 2. Check existing rows without blocking writes\nALTER TABLE orders VALIDATE CONSTRAINT orders_customer_fk;"
+        }
+      ]
+    },
+    {
+      "id": "change-column-type-safely",
+      "title": "Change a column type by adding a new column, not ALTER TYPE",
+      "description": "ALTER COLUMN ... TYPE rewrites the entire table and rebuilds every index on it, all under ACCESS EXCLUSIVE. For anything but a tiny table that is an outage. The zero-downtime path is expand-and-contract: add a new column of the target type, write both, backfill the old rows, switch reads, then drop the old column and rename the new one into its place.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Widen integer id to bigint without a rewrite",
+          "code": "-- EXPAND: add the new column\nALTER TABLE events ADD COLUMN id_bigint bigint;\n\n-- MIGRATE: app writes both columns; backfill old rows in batches\nUPDATE events SET id_bigint = id\nWHERE id_bigint IS NULL AND id BETWEEN $1 AND $2;\n\n-- CONTRACT: after reads move over, swap the columns (metadata-only, fast)\nALTER TABLE events DROP COLUMN id;\nALTER TABLE events RENAME COLUMN id_bigint TO id;"
+        }
+      ]
+    },
+    {
+      "id": "backfill-in-batches",
+      "title": "Backfill data in small batches, never one big UPDATE",
+      "description": "A single UPDATE over millions of rows holds a transaction open for minutes, bloats the table with dead tuples, writes a wall of WAL that backs up replicas, and can deadlock with live traffic. Loop over the table in chunks, commit each batch, and sleep a little between them so autovacuum and replicas keep up. Make the batch idempotent so you can stop and resume any time.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Procedure that commits each batch on its own",
+          "code": "-- A procedure can COMMIT mid-loop (PG 11+), so each batch releases its locks\nCREATE PROCEDURE backfill_created_at() LANGUAGE plpgsql AS $$\nDECLARE\n  rows integer;\nBEGIN\n  LOOP\n    UPDATE events SET created_at = inserted_at\n    WHERE id IN (\n      SELECT id FROM events WHERE created_at IS NULL\n      ORDER BY id LIMIT 10000\n    );\n    GET DIAGNOSTICS rows = ROW_COUNT;\n    EXIT WHEN rows = 0;\n    COMMIT;                 -- release locks, let replicas and autovacuum catch up\n    PERFORM pg_sleep(0.5);\n  END LOOP;\nEND;\n$$;\n\nCALL backfill_created_at();"
+        }
+      ]
+    },
+    {
+      "id": "dual-write-during-transition",
+      "title": "Make the app write both old and new shapes during the switch",
+      "description": "During a rename or type change there is a window where old pods and new pods both run against the same database. If only new code writes the new column, every row the old pods insert is missing it. Deploy a step that writes both first, let it roll out fully, then backfill, then move reads. Decouple the column from the feature with a flag so you can turn reads on without another deploy.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Write both columns, flip reads with a flag",
+          "code": "# Transition step: write the old and the new column on every save\ndef save_email(conn, user_id, email):\n    conn.execute(\n        \"UPDATE users SET email = %s, email_norm = %s WHERE id = %s\",\n        (email, email.strip().lower(), user_id),\n    )\n\n# Keep reads on the old column until the backfill is done,\n# then flip with a flag instead of another deploy:\ncol = \"email_norm\" if flags.enabled(\"use_email_norm\") else \"email\""
+        }
+      ]
+    },
+    {
+      "id": "rename-without-renaming",
+      "title": "Never rename a live column or table in place",
+      "description": "ALTER TABLE ... RENAME COLUMN is instant on the database, but it breaks every running query that still uses the old name the moment it commits. Old application pods start throwing 'column does not exist' until the rollout finishes. Treat a rename as expand-and-contract: add the new name, write both, backfill, switch reads, then drop the old one. For a table, leave a view behind so old code keeps working.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Add-and-retire instead of renaming",
+          "code": "-- Don't: this breaks every old pod mid-deploy\n-- ALTER TABLE users RENAME COLUMN signup_date TO created_at;\n\n-- Do: add the new column, keep both in sync, retire the old one later\nALTER TABLE users ADD COLUMN created_at timestamptz;\n-- backfill + dual-write, then much later:\nALTER TABLE users DROP COLUMN signup_date;\n\n-- For a table rename, a view bridges old code to the new name\nALTER TABLE accounts RENAME TO orgs;\nCREATE VIEW accounts AS SELECT * FROM orgs;"
+        }
+      ]
+    },
+    {
+      "id": "drop-only-after-deprecation",
+      "title": "Drop columns and tables only after nothing reads them",
+      "description": "Dropping a column takes a brief ACCESS EXCLUSIVE lock and is otherwise cheap, but if any running code still selects it, that code fails the instant you commit. Ship the code that stops using the column, confirm in query stats and logs that nothing references it, wait out a deprecation window past your rollback horizon, then drop. Once it is gone, getting it back means a restore, so there is no reason to rush.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Confirm the column is unused before dropping",
+          "code": "-- Find queries still referencing the column (needs pg_stat_statements)\nSELECT query, calls\nFROM pg_stat_statements\nWHERE query ILIKE '%legacy_status%'\nORDER BY calls DESC;\n\n-- Check for dependent views, constraints, or defaults\nSELECT * FROM information_schema.view_column_usage\nWHERE column_name = 'legacy_status';\n\n-- Safe to drop only after the deprecation window\nALTER TABLE users DROP COLUMN legacy_status;"
+        }
+      ]
+    },
+    {
+      "id": "choose-migration-tool-nontransactional",
+      "title": "Use a migration tool that can run statements outside a transaction",
+      "description": "Most tools wrap each migration in a transaction so a failure rolls back cleanly. But CREATE INDEX CONCURRENTLY, ALTER TYPE ... ADD VALUE, and a few others cannot run inside a transaction block and will error out. Pick a tool that lets you mark a migration non-transactional per file, and keep those statements in their own migration so one failure doesn't strand a half-applied batch.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "golang-migrate: one concurrent statement, no transaction",
+          "code": "-- 0042_add_orders_customer_idx.up.sql\n-- No BEGIN/COMMIT here; golang-migrate skips the wrapping txn for this file\nCREATE INDEX CONCURRENTLY idx_orders_customer_id ON orders (customer_id);"
+        },
+        {
+          "language": "properties",
+          "label": "Flyway: disable the per-migration transaction",
+          "code": "# V42__add_orders_index.sql.conf, next to the migration\nexecuteInTransaction=false"
+        }
+      ]
+    },
+    {
+      "id": "rehearse-on-prod-sized-clone",
+      "title": "Rehearse the migration on a production-sized copy and time the locks",
+      "description": "A migration that finishes in 50ms on your laptop's 1,000-row table can hold ACCESS EXCLUSIVE for 20 minutes on the real 200-million-row table. The only way to know is to run it against a restore of production-sized data and measure. Run it, watch which locks it takes and for how long, and only then schedule it against prod.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Inspect the lock a migration takes",
+          "code": "-- Session 1: start the change but don't commit yet\nBEGIN;\nALTER TABLE orders ADD COLUMN discount_cents integer;\n\n-- Session 2: see exactly which lock it holds and on what\nSELECT relation::regclass, mode, granted\nFROM pg_locks\nWHERE pid = <migration_pid> AND relation IS NOT NULL;\n\n-- Session 1: roll back the rehearsal (or commit once you're happy)\nROLLBACK;"
+        }
+      ]
+    },
+    {
+      "id": "monitor-locks-live",
+      "title": "Watch locks and blocking queries while the migration runs",
+      "description": "When a migration stalls you need to know in seconds whether it is waiting on a lock and who holds it, so you can cancel the blocker or abort the migration before the queue of waiting queries takes the app down. Have these queries open in a second window before you start, not after the pager goes off.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Find the blocker and cancel it",
+          "code": "-- Who is blocking whom right now\nSELECT blocked.pid   AS blocked_pid,\n       blocking.pid  AS blocking_pid,\n       blocked.query AS blocked_query,\n       blocking.query AS blocking_query\nFROM pg_stat_activity blocked\nJOIN pg_stat_activity blocking\n  ON blocking.pid = ANY (pg_blocking_pids(blocked.pid));\n\n-- Cancel a blocker gently, or terminate it if it won't let go\nSELECT pg_cancel_backend(12345);\nSELECT pg_terminate_backend(12345);"
+        }
+      ]
+    },
+    {
+      "id": "watch-replication-lag-and-vacuum",
+      "title": "Watch replication lag and dead tuples during big backfills",
+      "description": "A large backfill writes a lot of WAL and creates a lot of dead tuples. The WAL can push read replicas seconds or minutes behind, so anything reading from them serves stale data. The dead tuples bloat the table until autovacuum catches up. Watch both during the backfill and slow the batch rate down if a replica starts falling behind.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "sql",
+          "label": "Replica lag and table bloat at a glance",
+          "code": "-- Replica lag in bytes and time, run on the primary\nSELECT client_addr, state,\n       pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS lag_bytes,\n       replay_lag\nFROM pg_stat_replication;\n\n-- Dead vs live tuples and last autovacuum for the table being backfilled\nSELECT relname, n_dead_tup, n_live_tup, last_autovacuum\nFROM pg_stat_user_tables WHERE relname = 'events';"
+        }
+      ]
+    }
+  ]
+}
