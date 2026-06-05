@@ -23,6 +23,7 @@ import JavascriptPromisesAsyncSimulator from '@/components/games/javascript-prom
 import K8sScheduler from '@/components/games/k8s-scheduler';
 import KubernetesNetworkingCniSimulator from '@/components/games/kubernetes-networking-cni-simulator';
 import KubernetesTerminalSimulator from '@/components/games/kubernetes-terminal-simulator';
+import LatencyPercentilesSimulator from '@/components/games/latency-percentiles-simulator';
 import LinuxTerminal from '@/components/games/linux-terminal';
 import LoadBalancerSimulator from '@/components/games/load-balancer-simulator';
 import MessageQueueSimulator from '@/components/games/message-queue-simulator';
@@ -46,6 +47,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'dns-simulator': DnsSimulator,
   'docker-terminal-simulator': DockerTerminalSimulator,
   'kubernetes-terminal-simulator': KubernetesTerminalSimulator,
+  'latency-percentiles-simulator': LatencyPercentilesSimulator,
   'kubernetes-networking-cni-simulator': KubernetesNetworkingCniSimulator,
   'javascript-promises-async-await-simulator': JavascriptPromisesAsyncSimulator,
   'git-concepts-simulator': GitConceptsSimulator,
