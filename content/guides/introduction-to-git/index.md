@@ -59,3 +59,7 @@ This guide is organized into logical, step-by-step sections that build upon each
 Each section includes practical examples that you can follow along with on your own machine. By the end of this guide, you'll have both the knowledge and confidence to use Git effectively in your daily development work.
 
 Let's get started with the fundamentals of Git!
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [Git Concepts simulator](/games/git-concepts-simulator), right in your browser with no setup required.

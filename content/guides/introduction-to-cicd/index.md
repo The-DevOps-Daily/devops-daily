@@ -75,3 +75,7 @@ Modern software development relies on automation to maintain quality while movin
 We'll start with simple workflows and add complexity gradually. Each section builds on previous concepts, so you develop deep understanding rather than just copying configurations. The automation you build will be production-ready and designed to scale with your projects and teams.
 
 The skills you learn here apply beyond GitHub Actions. The principles of pipeline design, testing strategies, and deployment patterns work across all CI/CD platforms. You're learning to think systematically about software delivery, not just memorizing syntax.
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [CI/CD Stack Generator](/games/cicd-stack-generator), right in your browser with no setup required.

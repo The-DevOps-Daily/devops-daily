@@ -92,3 +92,7 @@ Cloud computing might seem complex, but remember that every expert started exact
 Don't worry about understanding everything immediately. Focus on the big picture first, then dive deeper into the areas that interest you most.
 
 Ready to start your cloud journey? Let's begin with setting up your AWS account and getting familiar with the basics.
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [AWS VPC simulator](/games/aws-vpc-simulator), right in your browser with no setup required.

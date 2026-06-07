@@ -64,3 +64,7 @@ Each section builds on previous concepts while remaining practical and actionabl
 You can work through the guide sequentially or jump to specific sections based on your immediate needs. Each section includes practical examples and real-world scenarios.
 
 By the end of this guide, you'll have the networking knowledge to debug connectivity issues, design secure network architectures, and implement reliable communication patterns in your applications.
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [DNS Resolution simulator](/games/dns-simulator), right in your browser with no setup required.
