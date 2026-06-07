@@ -172,6 +172,12 @@ const skillResourcesDatabase: Record<string, SkillResource[]> = {
       type: 'practice',
       description: 'Test your Git knowledge with interactive scenarios',
     },
+    {
+      title: 'Git Concepts Simulator',
+      url: '/games/git-concepts-simulator',
+      type: 'practice',
+      description: 'Visualize commits, branches, and merges in an interactive simulator',
+    },
   ],
   'Docker Fundamentals': [
     {
@@ -207,6 +213,12 @@ const skillResourcesDatabase: Record<string, SkillResource[]> = {
       external: true,
       description: 'Free Docker playground',
     },
+    {
+      title: 'Docker Terminal Simulator',
+      url: '/games/docker-terminal-simulator',
+      type: 'practice',
+      description: 'Practice Docker commands in a simulated terminal',
+    },
   ],
   'Kubernetes Basics': [
     {
@@ -228,6 +240,12 @@ const skillResourcesDatabase: Record<string, SkillResource[]> = {
       type: 'practice',
       external: true,
       description: 'Free Kubernetes cluster for learning',
+    },
+    {
+      title: 'Kubernetes Terminal Simulator',
+      url: '/games/kubernetes-terminal-simulator',
+      type: 'practice',
+      description: 'Practice kubectl commands in a simulated cluster',
     },
   ],
   Terraform: [
@@ -307,6 +325,12 @@ const skillResourcesDatabase: Record<string, SkillResource[]> = {
       external: true,
       description: 'Practice with AWS free tier',
     },
+    {
+      title: 'AWS VPC Simulator',
+      url: '/games/aws-vpc-simulator',
+      type: 'practice',
+      description: 'Build and explore a VPC network layout interactively',
+    },
   ],
   'Prometheus & Grafana': [
     {
@@ -322,6 +346,28 @@ const skillResourcesDatabase: Record<string, SkillResource[]> = {
       type: 'documentation',
       external: true,
       description: 'Grafana visualization platform docs',
+    },
+  ],
+  'Networking Fundamentals': [
+    {
+      title: 'DNS Resolution Simulator',
+      url: '/games/dns-simulator',
+      type: 'practice',
+      description: 'Walk through how a DNS query resolves, step by step',
+    },
+  ],
+  'Container Networking': [
+    {
+      title: 'Kubernetes Network Policies Simulator',
+      url: '/games/kubernetes-networking-cni-simulator',
+      type: 'practice',
+      description: 'See how CNI network policies allow and block pod traffic',
+    },
+    {
+      title: 'Load Balancer Simulator',
+      url: '/games/load-balancer-simulator',
+      type: 'practice',
+      description: 'Explore load balancing algorithms and traffic distribution',
     },
   ],
 };
