@@ -49,3 +49,7 @@ This guide is designed for:
 Whether you're completely new to Linux or have some experience but want to fill in gaps in your knowledge, you'll find value in this guide.
 
 Let's get started with our Linux journey!
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [Linux Terminal simulator](/games/linux-terminal), right in your browser with no setup required.
