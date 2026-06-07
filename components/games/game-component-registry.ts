@@ -40,6 +40,7 @@ import ServiceMeshSimulator from '@/components/games/service-mesh-simulator';
 import SmtpFlowSimulator from '@/components/games/smtp-flow-simulator';
 import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
 import TcpVsUdpSimulator from '@/components/games/tcp-vs-udp';
+import TerraformTerminalSimulator from '@/components/games/terraform-terminal-simulator';
 import UptimeDefender from '@/components/games/uptime-defender';
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
@@ -47,6 +48,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'dns-simulator': DnsSimulator,
   'docker-terminal-simulator': DockerTerminalSimulator,
   'kubernetes-terminal-simulator': KubernetesTerminalSimulator,
+  'terraform-terminal-simulator': TerraformTerminalSimulator,
   'latency-percentiles-simulator': LatencyPercentilesSimulator,
   'kubernetes-networking-cni-simulator': KubernetesNetworkingCniSimulator,
   'javascript-promises-async-await-simulator': JavascriptPromisesAsyncSimulator,
