@@ -53,6 +53,7 @@ interface DevSecOpsSkill {
   name: string;
   description: string;
   link?: string;
+  simulators?: { name: string; link: string }[];
   external?: boolean;
   icon: LucideIcon;
   priority: 'essential' | 'important' | 'nice-to-have';
@@ -117,6 +118,7 @@ const milestones: DevSecOpsMilestone[] = [
         name: 'Linux Security Basics',
         description: 'File permissions, user management, SSH hardening, and firewall basics',
         link: '/checklists/ssh-hardening',
+        simulators: [{ name: 'Linux Terminal', link: '/games/linux-terminal' }],
         icon: Terminal,
         priority: 'essential',
         estimatedHours: 20,
@@ -312,6 +314,10 @@ const milestones: DevSecOpsMilestone[] = [
         name: 'Kubernetes Security',
         description: 'RBAC, Network Policies, Pod Security Standards, and admission controllers',
         link: '/checklists/kubernetes-security',
+        simulators: [
+          { name: 'Kubernetes Terminal', link: '/games/kubernetes-terminal-simulator' },
+          { name: 'K8s Network Policies', link: '/games/kubernetes-networking-cni-simulator' },
+        ],
         icon: Server,
         priority: 'essential',
         estimatedHours: 30,
@@ -326,6 +332,7 @@ const milestones: DevSecOpsMilestone[] = [
       {
         name: 'Service Mesh Security',
         description: 'mTLS, authorization policies, and traffic encryption with Istio or Linkerd',
+        simulators: [{ name: 'Service Mesh', link: '/games/service-mesh-simulator' }],
         icon: Network,
         priority: 'nice-to-have',
         estimatedHours: 20,
@@ -362,6 +369,7 @@ const milestones: DevSecOpsMilestone[] = [
         name: 'IAM Best Practices',
         description: 'Least privilege, role-based access, and identity federation',
         link: '/checklists/aws-security',
+        simulators: [{ name: 'OAuth / OIDC Flow', link: '/games/oauth-oidc-flow-simulator' }],
         icon: Fingerprint,
         priority: 'essential',
         estimatedHours: 25,
@@ -390,6 +398,10 @@ const milestones: DevSecOpsMilestone[] = [
       {
         name: 'Network Security',
         description: 'VPCs, security groups, WAF, and DDoS protection',
+        simulators: [
+          { name: 'DDoS Defense', link: '/games/ddos-simulator' },
+          { name: 'Rate Limiting', link: '/games/rate-limit-simulator' },
+        ],
         icon: Globe,
         priority: 'important',
         estimatedHours: 20,
@@ -774,6 +786,17 @@ export default function DevSecOpsRoadmapPage() {
                                         )}
                                       </Link>
                                     )}
+                                    {skill.simulators?.map((sim) => (
+                                      <Link
+                                        key={sim.link}
+                                        href={sim.link}
+                                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2 ml-3"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Terminal className="h-3 w-3" />
+                                        Try: {sim.name}
+                                      </Link>
+                                    ))}
                                   </div>
                                 </div>
                               </div>

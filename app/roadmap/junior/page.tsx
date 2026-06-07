@@ -41,6 +41,7 @@ interface JuniorSkill {
   name: string;
   description: string;
   link?: string;
+  simulators?: { name: string; link: string }[];
   external?: boolean;
   icon: LucideIcon;
   priority: 'essential' | 'important' | 'nice-to-have';
@@ -81,6 +82,7 @@ const milestones: JuniorMilestone[] = [
         name: 'Linux Basics',
         description: 'Learn essential Linux commands, file system navigation, and permissions',
         link: '/guides/introduction-to-linux',
+        simulators: [{ name: 'Linux Terminal', link: '/games/linux-terminal' }],
         icon: Terminal,
         priority: 'essential',
         estimatedHours: 20,
@@ -97,6 +99,7 @@ const milestones: JuniorMilestone[] = [
         name: 'Git Basics',
         description: 'Learn version control fundamentals - commit, push, pull, and branches',
         link: '/guides/introduction-to-git',
+        simulators: [{ name: 'Git Concepts', link: '/games/git-concepts-simulator' }],
         icon: GitBranch,
         priority: 'essential',
         estimatedHours: 10,
@@ -105,6 +108,7 @@ const milestones: JuniorMilestone[] = [
         name: 'Networking Fundamentals',
         description: 'Understand IP addresses, DNS, HTTP, and basic networking concepts',
         link: '/guides/networking-fundamentals',
+        simulators: [{ name: 'DNS Resolution', link: '/games/dns-simulator' }],
         icon: Globe,
         priority: 'important',
         estimatedHours: 12,
@@ -191,6 +195,7 @@ const milestones: JuniorMilestone[] = [
         name: 'Docker Fundamentals',
         description: 'Build, run, and manage containers with Docker',
         link: '/guides/introduction-to-docker',
+        simulators: [{ name: 'Docker Terminal', link: '/games/docker-terminal-simulator' }],
         icon: Container,
         priority: 'essential',
         estimatedHours: 20,
@@ -301,6 +306,7 @@ const milestones: JuniorMilestone[] = [
         name: 'AWS/Azure/GCP Core Services',
         description: 'Learn compute, storage, and networking basics on your chosen platform',
         link: '/guides/aws-for-beginners',
+        simulators: [{ name: 'AWS VPC', link: '/games/aws-vpc-simulator' }],
         icon: Server,
         priority: 'essential',
         estimatedHours: 25,
@@ -626,6 +632,17 @@ export default function JuniorDevOpsRoadmap() {
                                       {skill.external && <ExternalLink className="w-3 h-3" />}
                                     </Link>
                                   )}
+                                  {skill.simulators?.map((sim) => (
+                                    <Link
+                                      key={sim.link}
+                                      href={sim.link}
+                                      className="inline-flex items-center gap-1 mt-2 ml-3 text-xs text-primary hover:underline"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <Terminal className="w-3 h-3" />
+                                      Try: {sim.name}
+                                    </Link>
+                                  ))}
                                 </div>
                               </div>
                             </div>
