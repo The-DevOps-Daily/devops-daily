@@ -9,6 +9,7 @@ import {
   FileCode,
   Lightbulb,
   Boxes,
+  Pencil,
   RotateCcw,
   Server,
   Trophy,
@@ -34,6 +35,12 @@ interface TerminalLine {
   timestamp: Date;
 }
 
+interface PlanResult {
+  creates: ManagedResource[];
+  updates: { resource: ManagedResource; changes: string[] }[];
+  deletes: ManagedResource[];
+}
+
 interface LessonCommand {
   instruction: string;
   hint: string;
@@ -49,7 +56,9 @@ interface Lesson {
   commands: LessonCommand[];
 }
 
-const FILES: Record<FileName, string> = {
+const FILE_ORDER: FileName[] = ['main.tf', 'variables.tf', 'outputs.tf'];
+
+const DEFAULT_FILES: Record<FileName, string> = {
   'main.tf': `terraform {
   required_providers {
     aws = {
@@ -74,13 +83,6 @@ resource "aws_security_group" "web" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -101,10 +103,6 @@ resource "aws_instance" "web" {
 
 resource "aws_s3_bucket" "assets" {
   bucket = "\${var.project}-assets"
-
-  tags = {
-    Name = "\${var.project}-assets"
-  }
 }`,
   'variables.tf': `variable "region" {
   description = "AWS region to deploy into"
@@ -124,61 +122,182 @@ variable "project" {
   default     = "devops-daily"
 }`,
   'outputs.tf': `output "instance_id" {
-  description = "ID of the web EC2 instance"
-  value       = aws_instance.web.id
+  value = aws_instance.web.id
 }
 
 output "instance_public_ip" {
-  description = "Public IP of the web instance"
-  value       = aws_instance.web.public_ip
+  value = aws_instance.web.public_ip
 }
 
 output "bucket_name" {
-  description = "Name of the S3 assets bucket"
-  value       = aws_s3_bucket.assets.bucket
+  value = aws_s3_bucket.assets.bucket
 }`,
 };
 
-const FILE_ORDER: FileName[] = ['main.tf', 'variables.tf', 'outputs.tf'];
+function fnv(input: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
 
-// Resources the configuration creates, in dependency order.
-const PLANNED_RESOURCES: ManagedResource[] = [
-  {
-    address: 'aws_security_group.web',
-    type: 'aws_security_group',
-    name: 'web',
-    attributes: { id: 'sg-0a1b2c3d4e5f6a7b8', name: 'web-sg', vpc_id: 'vpc-04e9f2a1' },
-  },
-  {
-    address: 'aws_instance.web',
-    type: 'aws_instance',
-    name: 'web',
-    attributes: {
-      id: 'i-0abc123def4567890',
-      instance_type: 't3.micro',
-      ami: 'ami-0c55b159cbfafe1f0',
-      public_ip: '54.210.18.42',
-    },
-  },
-  {
-    address: 'aws_s3_bucket.assets',
-    type: 'aws_s3_bucket',
-    name: 'assets',
-    attributes: { id: 'devops-daily-assets', bucket: 'devops-daily-assets', region: 'us-east-1' },
-  },
-];
+function idFor(prefix: string, name: string): string {
+  return `${prefix}${fnv(prefix + name)}${fnv(name)}`.slice(0, prefix.length + 17);
+}
 
-const OUTPUTS: Record<string, string> = {
-  bucket_name: 'devops-daily-assets',
-  instance_id: 'i-0abc123def4567890',
-  instance_public_ip: '54.210.18.42',
-};
+function ipFor(name: string): string {
+  const h = fnv('ip' + name);
+  const a = parseInt(h.slice(0, 2), 16);
+  const b = parseInt(h.slice(2, 4), 16);
+  const c = parseInt(h.slice(4, 6), 16);
+  return `54.${a}.${b}.${c}`;
+}
+
+function bracesBalanced(src: string): boolean {
+  let depth = 0;
+  for (const char of src) {
+    if (char === '{') depth += 1;
+    if (char === '}') {
+      depth -= 1;
+      if (depth < 0) return false;
+    }
+  }
+  return depth === 0;
+}
+
+function parseVariableDefaults(variablesSrc: string): Record<string, string> {
+  const vars: Record<string, string> = {};
+  const blockRegex = /variable\s+"([\w-]+)"\s*\{([^}]*)\}/g;
+  let match: RegExpExecArray | null;
+  while ((match = blockRegex.exec(variablesSrc)) !== null) {
+    const name = match[1];
+    const body = match[2];
+    const defaultMatch = body.match(/default\s*=\s*"([^"]*)"/);
+    vars[name] = defaultMatch ? defaultMatch[1] : '';
+  }
+  return vars;
+}
+
+function resolveScalar(raw: string, vars: Record<string, string>): string {
+  const value = raw.trim().replace(/,$/, '');
+  if (value.startsWith('var.')) {
+    return vars[value.slice(4)] ?? '';
+  }
+  if (value.startsWith('"') && value.endsWith('"')) {
+    return value.slice(1, -1).replace(/\$\{var\.([\w-]+)\}/g, (_, name) => vars[name] ?? '');
+  }
+  return value;
+}
+
+function readAssign(body: string, key: string, vars: Record<string, string>): string | undefined {
+  const match = body.match(new RegExp(`(?:^|\\n)\\s*${key}\\s*=\\s*([^\\n]+)`));
+  if (!match) return undefined;
+  return resolveScalar(match[1], vars);
+}
+
+interface ParsedConfig {
+  resources: ManagedResource[];
+  errors: string[];
+}
+
+function parseConfig(files: Record<FileName, string>): ParsedConfig {
+  const errors: string[] = [];
+  const main = files['main.tf'];
+
+  if (!bracesBalanced(main)) {
+    errors.push('main.tf has unbalanced braces. Check that every { has a matching }.');
+    return { resources: [], errors };
+  }
+
+  const vars = parseVariableDefaults(files['variables.tf']);
+  const resources: ManagedResource[] = [];
+
+  const header = /resource\s+"([\w-]+)"\s+"([\w-]+)"\s*\{/g;
+  let match: RegExpExecArray | null;
+  while ((match = header.exec(main)) !== null) {
+    const type = match[1];
+    const name = match[2];
+    // Extract the block body by matching braces from the opening brace.
+    let depth = 1;
+    let i = header.lastIndex;
+    const start = i;
+    while (i < main.length && depth > 0) {
+      if (main[i] === '{') depth += 1;
+      if (main[i] === '}') depth -= 1;
+      i += 1;
+    }
+    const body = main.slice(start, i - 1);
+    const address = `${type}.${name}`;
+
+    let attributes: Record<string, string>;
+    if (type === 'aws_instance') {
+      attributes = {
+        id: idFor('i-0', name),
+        instance_type: readAssign(body, 'instance_type', vars) ?? 't3.micro',
+        ami: readAssign(body, 'ami', vars) ?? 'ami-unknown',
+        public_ip: ipFor(name),
+      };
+    } else if (type === 'aws_s3_bucket') {
+      const bucket = readAssign(body, 'bucket', vars) ?? `${name}-bucket`;
+      attributes = { id: bucket, bucket, region: vars.region ?? 'us-east-1' };
+    } else if (type === 'aws_security_group') {
+      attributes = {
+        id: idFor('sg-0', name),
+        name: readAssign(body, 'name', vars) ?? name,
+        vpc_id: 'vpc-04e9f2a1',
+      };
+    } else {
+      attributes = { id: `${type.replace(/^aws_/, '')}-${fnv(name).slice(0, 8)}` };
+    }
+
+    resources.push({ address, type, name, attributes });
+  }
+
+  return { resources, errors };
+}
+
+function diffPlan(desired: ManagedResource[], current: ManagedResource[]): PlanResult {
+  const currentByAddress = new Map(current.map((resource) => [resource.address, resource]));
+  const desiredByAddress = new Map(desired.map((resource) => [resource.address, resource]));
+
+  const creates: ManagedResource[] = [];
+  const updates: { resource: ManagedResource; changes: string[] }[] = [];
+  const deletes: ManagedResource[] = [];
+
+  for (const resource of desired) {
+    const existing = currentByAddress.get(resource.address);
+    if (!existing) {
+      creates.push(resource);
+      continue;
+    }
+    const changes: string[] = [];
+    for (const [key, value] of Object.entries(resource.attributes)) {
+      if (key === 'id' || key === 'public_ip') continue;
+      if (existing.attributes[key] !== value) {
+        changes.push(`${key}: "${existing.attributes[key] ?? ''}" => "${value}"`);
+      }
+    }
+    if (changes.length > 0) {
+      updates.push({ resource, changes });
+    }
+  }
+
+  for (const resource of current) {
+    if (!desiredByAddress.has(resource.address)) {
+      deletes.push(resource);
+    }
+  }
+
+  return { creates, updates, deletes };
+}
 
 const LESSONS: Lesson[] = [
   {
     id: 'init',
     title: 'Initialize',
-    description: 'Download the AWS provider and prepare the working directory.',
+    description: 'Download the AWS provider and prepare the directory.',
     icon: <Boxes className="h-5 w-5" />,
     commands: [
       {
@@ -193,7 +312,7 @@ const LESSONS: Lesson[] = [
         hint: 'Use terraform validate.',
         expectedCommand: ['terraform validate'],
         explanation:
-          'terraform validate checks syntax and references without touching any real infrastructure. It is fast and safe to run in CI before plan.',
+          'terraform validate checks syntax and references without touching real infrastructure. It is fast and safe to run in CI before plan.',
       },
     ],
   },
@@ -224,6 +343,29 @@ const LESSONS: Lesson[] = [
         expectedCommand: ['terraform apply -auto-approve', 'terraform apply'],
         explanation:
           'terraform apply creates the resources and records them in state. In real projects you review the plan before approving. -auto-approve skips the interactive prompt, which is common in CI.',
+      },
+    ],
+  },
+  {
+    id: 'change',
+    title: 'Make a change',
+    description: 'Edit the config and watch plan detect the difference.',
+    icon: <Pencil className="h-5 w-5" />,
+    commands: [
+      {
+        instruction:
+          'Edit variables.tf and change instance_type (try t3.small), then run terraform plan to preview the in-place update.',
+        hint: 'Click the variables.tf tab, change the default, then run terraform plan.',
+        expectedCommand: ['terraform plan'],
+        explanation:
+          'Because the value in your config no longer matches state, Terraform shows a ~ update in place. This is how you preview drift between what you want and what exists.',
+      },
+      {
+        instruction: 'Apply the change you just previewed.',
+        hint: 'Run terraform apply -auto-approve.',
+        expectedCommand: ['terraform apply -auto-approve', 'terraform apply'],
+        explanation:
+          'Apply reconciles state with your configuration. Many resources update in place; some force a replacement, which a real plan would mark with -/+.',
       },
     ],
   },
@@ -260,7 +402,7 @@ const LESSONS: Lesson[] = [
         hint: 'Run terraform destroy -auto-approve.',
         expectedCommand: ['terraform destroy -auto-approve', 'terraform destroy'],
         explanation:
-          'terraform destroy removes the resources it created and empties the state. Always tear down throwaway environments so you do not pay for idle infrastructure.',
+          'terraform destroy removes the resources it created and empties state. Always tear down throwaway environments so you do not pay for idle infrastructure.',
       },
     ],
   },
@@ -272,16 +414,34 @@ function normalize(command: string): string {
   return command.trim().replace(/\s+/g, ' ');
 }
 
+function computeOutputs(state: ManagedResource[]): Record<string, string> {
+  const outputs: Record<string, string> = {};
+  const instance = state.find((resource) => resource.type === 'aws_instance');
+  const bucket = state.find((resource) => resource.type === 'aws_s3_bucket');
+  if (instance) {
+    outputs.instance_id = instance.attributes.id;
+    outputs.instance_public_ip = instance.attributes.public_ip;
+  }
+  if (bucket) {
+    outputs.bucket_name = bucket.attributes.bucket;
+  }
+  return outputs;
+}
+
 export default function TerraformTerminalSimulator() {
+  const [files, setFiles] = useState<Record<FileName, string>>(DEFAULT_FILES);
   const [activeFile, setActiveFile] = useState<FileName>('main.tf');
+  const [editing, setEditing] = useState(false);
+
   const [terminalHistory, setTerminalHistory] = useState<TerminalLine[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
   const [initialized, setInitialized] = useState(false);
-  const [applied, setApplied] = useState(false);
-  const [hasPlan, setHasPlan] = useState(false);
+  const [state, setState] = useState<ManagedResource[]>([]);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [lastPlan, setLastPlan] = useState<PlanResult | null>(null);
 
   const [completedCommands, setCompletedCommands] = useState<Set<string>>(new Set());
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
@@ -293,11 +453,8 @@ export default function TerraformTerminalSimulator() {
 
   const currentLesson = LESSONS[currentLessonIndex];
   const currentCommand = currentLesson?.commands[currentCommandIndex];
-
   const completedCount = completedCommands.size;
   const progressPercentage = Math.round((completedCount / TOTAL_COMMANDS) * 100);
-
-  const resources = applied ? PLANNED_RESOURCES : [];
 
   useEffect(() => {
     if (terminalRef.current) {
@@ -330,7 +487,6 @@ export default function TerraformTerminalSimulator() {
         return next;
       });
 
-      // Move to the next command or lesson.
       if (currentCommandIndex < currentLesson.commands.length - 1) {
         setCurrentCommandIndex((value) => value + 1);
       } else if (currentLessonIndex < LESSONS.length - 1) {
@@ -341,6 +497,41 @@ export default function TerraformTerminalSimulator() {
     },
     [currentCommand, currentCommandIndex, currentLesson, currentLessonIndex]
   );
+
+  const planToLines = (plan: PlanResult): TerminalLine[] => {
+    const lines: TerminalLine[] = [];
+    if (plan.creates.length === 0 && plan.updates.length === 0 && plan.deletes.length === 0) {
+      lines.push(out('No changes. Your infrastructure matches the configuration.'));
+      return lines;
+    }
+    lines.push(out('Terraform will perform the following actions:'));
+    lines.push(out(''));
+    plan.creates.forEach((resource) => {
+      lines.push(out(`  # ${resource.address} will be created`));
+      lines.push(out(`  + resource "${resource.type}" "${resource.name}" {`));
+      Object.entries(resource.attributes).forEach(([key, value]) => {
+        lines.push(out(`      + ${key} = "${value}"`));
+      });
+      lines.push(out('    }'));
+    });
+    plan.updates.forEach(({ resource, changes }) => {
+      lines.push(out(`  # ${resource.address} will be updated in place`));
+      lines.push(out(`  ~ resource "${resource.type}" "${resource.name}" {`));
+      changes.forEach((change) => lines.push(out(`      ~ ${change}`)));
+      lines.push(out('    }'));
+    });
+    plan.deletes.forEach((resource) => {
+      lines.push(out(`  # ${resource.address} will be destroyed`));
+      lines.push(out(`  - resource "${resource.type}" "${resource.name}"`));
+    });
+    lines.push(out(''));
+    lines.push(
+      ok(
+        `Plan: ${plan.creates.length} to add, ${plan.updates.length} to change, ${plan.deletes.length} to destroy.`
+      )
+    );
+    return lines;
+  };
 
   const runCommand = useCallback(
     (raw: string) => {
@@ -360,13 +551,15 @@ export default function TerraformTerminalSimulator() {
           out('  terraform init                 Install providers, prepare the directory'),
           out('  terraform validate             Check the configuration is valid'),
           out('  terraform fmt                  Format the configuration files'),
+          out('  terraform providers            Show the providers the config requires'),
           out('  terraform plan                 Preview changes without applying'),
           out('  terraform apply -auto-approve  Create or update resources'),
           out('  terraform state list           List resources in state'),
-          out('  terraform show                 Show the current state'),
-          out('  terraform output               Print output values'),
+          out('  terraform state show <addr>    Show one resource in detail'),
+          out('  terraform output [name]        Print output values'),
           out('  terraform destroy -auto-approve  Destroy all resources'),
           out('  clear                          Clear the terminal'),
+          out('Tip: edit the .tf files, then run plan to see the diff.'),
         ]);
         return;
       }
@@ -382,6 +575,7 @@ export default function TerraformTerminalSimulator() {
       }
 
       const sub = args[1];
+      const parsed = parseConfig(files);
 
       if (sub === 'version') {
         pushLines([out('Terraform v1.13.0'), out('on linux_amd64')]);
@@ -395,21 +589,23 @@ export default function TerraformTerminalSimulator() {
           out('Initializing provider plugins...'),
           out('- Finding hashicorp/aws versions matching "~> 5.0"...'),
           out('- Installing hashicorp/aws v5.62.0...'),
-          out('- Installed hashicorp/aws v5.62.0 (signed by HashiCorp)'),
           ok('Terraform has been successfully initialized!'),
         ]);
         advanceLesson(command);
         return;
       }
 
+      if (sub === 'providers') {
+        pushLines([
+          out('Providers required by configuration:'),
+          out('.'),
+          out('└── provider[registry.terraform.io/hashicorp/aws] ~> 5.0'),
+        ]);
+        return;
+      }
+
       if (sub === 'fmt') {
-        if (!initialized) {
-          pushLines([out('main.tf'), out('Formatted 1 file.')]);
-          advanceLesson(command);
-          return;
-        }
         pushLines([out('All configuration files are already formatted.')]);
-        advanceLesson(command);
         return;
       }
 
@@ -422,52 +618,34 @@ export default function TerraformTerminalSimulator() {
       }
 
       if (sub === 'validate') {
+        if (parsed.errors.length > 0) {
+          pushLines(parsed.errors.map((message) => err(`Error: ${message}`)));
+          return;
+        }
         pushLines([ok('Success! The configuration is valid.')]);
         advanceLesson(command);
         return;
       }
 
       if (sub === 'plan') {
-        if (applied) {
-          pushLines([
-            out('No changes. Your infrastructure matches the configuration.'),
-            out('Terraform has compared your real resources against your configuration'),
-            out('and found no differences, so no changes are needed.'),
-          ]);
-          advanceLesson(command);
+        if (parsed.errors.length > 0) {
+          pushLines(parsed.errors.map((message) => err(`Error: ${message}`)));
           return;
         }
-        setHasPlan(true);
-        pushLines([
-          out('Terraform will perform the following actions:'),
-          out(''),
-          out('  # aws_security_group.web will be created'),
-          out('  + resource "aws_security_group" "web" {'),
-          out('      + name        = "web-sg"'),
-          out('      + description = "Allow HTTP and SSH"'),
-          out('    }'),
-          out('  # aws_instance.web will be created'),
-          out('  + resource "aws_instance" "web" {'),
-          out('      + ami           = "ami-0c55b159cbfafe1f0"'),
-          out('      + instance_type = "t3.micro"'),
-          out('    }'),
-          out('  # aws_s3_bucket.assets will be created'),
-          out('  + resource "aws_s3_bucket" "assets" {'),
-          out('      + bucket = "devops-daily-assets"'),
-          out('    }'),
-          out(''),
-          ok('Plan: 3 to add, 0 to change, 0 to destroy.'),
-        ]);
+        const plan = diffPlan(parsed.resources, state);
+        setLastPlan(plan);
+        pushLines(planToLines(plan));
         advanceLesson(command);
         return;
       }
 
       if (sub === 'apply') {
-        if (!initialized) {
-          pushLines([err('Error: run "terraform init" first.')]);
+        if (parsed.errors.length > 0) {
+          pushLines(parsed.errors.map((message) => err(`Error: ${message}`)));
           return;
         }
-        if (applied) {
+        const plan = diffPlan(parsed.resources, state);
+        if (plan.creates.length === 0 && plan.updates.length === 0 && plan.deletes.length === 0) {
           pushLines([
             out('No changes. Your infrastructure matches the configuration.'),
             ok('Apply complete! Resources: 0 added, 0 changed, 0 destroyed.'),
@@ -475,96 +653,112 @@ export default function TerraformTerminalSimulator() {
           advanceLesson(command);
           return;
         }
-        setApplied(true);
-        setHasPlan(false);
-        pushLines([
-          out('aws_security_group.web: Creating...'),
-          out('aws_security_group.web: Creation complete after 2s [id=sg-0a1b2c3d4e5f6a7b8]'),
-          out('aws_instance.web: Creating...'),
-          out('aws_instance.web: Still creating... [10s elapsed]'),
-          out('aws_instance.web: Creation complete after 12s [id=i-0abc123def4567890]'),
-          out('aws_s3_bucket.assets: Creating...'),
-          out('aws_s3_bucket.assets: Creation complete after 3s [id=devops-daily-assets]'),
-          out(''),
-          ok('Apply complete! Resources: 3 added, 0 changed, 0 destroyed.'),
-          out(''),
-          out('Outputs:'),
-          out('bucket_name = "devops-daily-assets"'),
-          out('instance_id = "i-0abc123def4567890"'),
-          out('instance_public_ip = "54.210.18.42"'),
-        ]);
+        const lines: TerminalLine[] = [];
+        plan.creates.forEach((resource) => {
+          lines.push(out(`${resource.address}: Creating...`));
+          lines.push(out(`${resource.address}: Creation complete [id=${resource.attributes.id}]`));
+        });
+        plan.updates.forEach(({ resource }) => {
+          lines.push(out(`${resource.address}: Modifying... [id=${resource.attributes.id}]`));
+          lines.push(out(`${resource.address}: Modifications complete`));
+        });
+        plan.deletes.forEach((resource) => {
+          lines.push(out(`${resource.address}: Destroying... [id=${resource.attributes.id}]`));
+          lines.push(out(`${resource.address}: Destruction complete`));
+        });
+        lines.push(out(''));
+        lines.push(
+          ok(
+            `Apply complete! Resources: ${plan.creates.length} added, ${plan.updates.length} changed, ${plan.deletes.length} destroyed.`
+          )
+        );
+        const newState = parsed.resources;
+        const outputs = computeOutputs(newState);
+        if (Object.keys(outputs).length > 0) {
+          lines.push(out(''));
+          lines.push(out('Outputs:'));
+          Object.entries(outputs).forEach(([key, value]) => lines.push(out(`${key} = "${value}"`)));
+        }
+        setState(newState);
+        setHasApplied(true);
+        setLastPlan(null);
+        pushLines(lines);
         advanceLesson(command);
         return;
       }
 
       if (sub === 'destroy') {
-        if (!applied) {
+        if (state.length === 0) {
           pushLines([
             out('No resources to destroy. State is empty.'),
             ok('Destroy complete! Resources: 0 destroyed.'),
           ]);
           return;
         }
-        setApplied(false);
-        setHasPlan(false);
-        pushLines([
-          out('aws_s3_bucket.assets: Destroying... [id=devops-daily-assets]'),
-          out('aws_s3_bucket.assets: Destruction complete after 1s'),
-          out('aws_instance.web: Destroying... [id=i-0abc123def4567890]'),
-          out('aws_instance.web: Destruction complete after 30s'),
-          out('aws_security_group.web: Destroying... [id=sg-0a1b2c3d4e5f6a7b8]'),
-          out('aws_security_group.web: Destruction complete after 1s'),
-          out(''),
-          ok('Destroy complete! Resources: 3 destroyed.'),
-        ]);
-        advanceLesson(command);
-        return;
-      }
-
-      if (sub === 'state' && args[2] === 'list') {
-        if (!applied) {
-          pushLines([out('No resources in state. Run "terraform apply" first.')]);
-          return;
-        }
-        pushLines(PLANNED_RESOURCES.map((resource) => out(resource.address)));
-        advanceLesson(command);
-        return;
-      }
-
-      if (sub === 'show') {
-        if (!applied) {
-          pushLines([out('No state. Run "terraform apply" first.')]);
-          return;
-        }
-        const lines: TerminalLine[] = [];
-        PLANNED_RESOURCES.forEach((resource) => {
-          lines.push(out(`# ${resource.address}:`));
-          lines.push(out(`resource "${resource.type}" "${resource.name}" {`));
-          Object.entries(resource.attributes).forEach(([key, value]) => {
-            lines.push(out(`    ${key} = "${value}"`));
-          });
-          lines.push(out('}'));
-        });
+        const count = state.length;
+        const lines = state
+          .slice()
+          .reverse()
+          .map((resource) => out(`${resource.address}: Destroying... [id=${resource.attributes.id}]`));
+        lines.push(out(''));
+        lines.push(ok(`Destroy complete! Resources: ${count} destroyed.`));
+        setState([]);
+        setLastPlan(null);
         pushLines(lines);
         advanceLesson(command);
         return;
       }
 
+      if (sub === 'state' && args[2] === 'list') {
+        if (state.length === 0) {
+          pushLines([out('No resources in state. Run "terraform apply" first.')]);
+          return;
+        }
+        pushLines(state.map((resource) => out(resource.address)));
+        advanceLesson(command);
+        return;
+      }
+
+      if (sub === 'state' && args[2] === 'show') {
+        const address = args[3];
+        const resource = state.find((item) => item.address === address);
+        if (!resource) {
+          pushLines([err(`No resource "${address ?? ''}" in state. Try "terraform state list".`)]);
+          return;
+        }
+        const lines: TerminalLine[] = [out(`# ${resource.address}:`)];
+        lines.push(out(`resource "${resource.type}" "${resource.name}" {`));
+        Object.entries(resource.attributes).forEach(([key, value]) =>
+          lines.push(out(`    ${key} = "${value}"`))
+        );
+        lines.push(out('}'));
+        pushLines(lines);
+        return;
+      }
+
       if (sub === 'output') {
-        if (!applied) {
+        if (!hasApplied || state.length === 0) {
           pushLines([err('No outputs found. Run "terraform apply" first.')]);
           return;
         }
-        pushLines(
-          Object.entries(OUTPUTS).map(([key, value]) => out(`${key} = "${value}"`))
-        );
+        const outputs = computeOutputs(state);
+        const requested = args[2];
+        if (requested) {
+          if (outputs[requested] === undefined) {
+            pushLines([err(`Output "${requested}" not found.`)]);
+            return;
+          }
+          pushLines([out(`"${outputs[requested]}"`)]);
+          return;
+        }
+        pushLines(Object.entries(outputs).map(([key, value]) => out(`${key} = "${value}"`)));
         advanceLesson(command);
         return;
       }
 
       pushLines([err(`Terraform has no command named "${sub ?? ''}". Run "help" for the list.`)]);
     },
-    [advanceLesson, applied, initialized, pushLines]
+    [advanceLesson, files, hasApplied, initialized, pushLines, state]
   );
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -602,40 +796,49 @@ export default function TerraformTerminalSimulator() {
   };
 
   const resetLab = () => {
+    setFiles(DEFAULT_FILES);
+    setActiveFile('main.tf');
+    setEditing(false);
     setTerminalHistory([]);
     setInputValue('');
     setCommandHistory([]);
     setHistoryIndex(-1);
     setInitialized(false);
-    setApplied(false);
-    setHasPlan(false);
+    setState([]);
+    setHasApplied(false);
+    setLastPlan(null);
     setCompletedCommands(new Set());
     setCurrentLessonIndex(0);
     setCurrentCommandIndex(0);
     setShowHint(false);
   };
 
-  const planState = useMemo(() => {
-    if (applied) return { label: 'No changes', adds: 0, changes: 0, destroys: 0 };
-    if (hasPlan) return { label: '3 to add', adds: 3, changes: 0, destroys: 0 };
-    return { label: 'Not planned', adds: 0, changes: 0, destroys: 0 };
-  }, [applied, hasPlan]);
+  const planSummary = useMemo(() => {
+    if (lastPlan) {
+      return {
+        adds: lastPlan.creates.length,
+        changes: lastPlan.updates.length,
+        destroys: lastPlan.deletes.length,
+        label: 'last plan',
+      };
+    }
+    return { adds: 0, changes: 0, destroys: 0, label: hasApplied ? 'applied' : 'no plan yet' };
+  }, [lastPlan, hasApplied]);
 
   return (
     <div className="w-full max-w-7xl mx-auto">
       <div className="mb-5 text-center">
         <div className="mb-3 flex items-center justify-center gap-2.5">
           <FileCode className="h-8 w-8 text-primary" strokeWidth={1.5} />
-          <h2 className="text-2xl font-bold md:text-3xl">Terraform Lab</h2>
+          <h2 className="text-2xl font-bold md:text-3xl">Terraform Basics Lab</h2>
         </div>
         <p className="mx-auto max-w-2xl text-base text-muted-foreground">
-          Run a real Terraform workflow in a safe browser simulator. Read the HCL config on the left,
-          run init, plan, apply, and destroy in the terminal, and watch state fill in on the right.
-          Nothing is provisioned for real.
+          Learn Terraform by doing. Read and edit the HCL on the left, run init, plan, apply, and
+          destroy in the terminal, and watch state change on the right. Edit the config and plan
+          again to see Terraform detect the difference. Nothing is provisioned for real.
         </p>
       </div>
 
-      {/* Objective + progress bar (kept compact so the three panes fit on one screen) */}
       <Card className="mb-4">
         <CardContent className="px-4 py-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
@@ -706,15 +909,14 @@ export default function TerraformTerminalSimulator() {
             </div>
           ) : (
             <p className="mt-3 text-sm font-medium text-emerald-600">
-              Lab complete. Experiment freely, or reset to run through it again.
+              Lab complete. Edit the config and experiment freely, or reset to run through it again.
             </p>
           )}
         </CardContent>
       </Card>
 
-      {/* Three panes: config | terminal | state. Each scrolls internally. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
-        {/* Config files */}
+        {/* Config files (editable) */}
         <Card className="overflow-hidden border-border bg-[#171717]">
           <CardHeader className="flex flex-row items-center gap-1 border-b border-border/60 bg-[#262626] p-0">
             {FILE_ORDER.map((file) => (
@@ -731,11 +933,31 @@ export default function TerraformTerminalSimulator() {
                 {file}
               </button>
             ))}
+            <button
+              onClick={() => setEditing((value) => !value)}
+              className="ml-auto flex items-center gap-1 px-3 py-2 font-mono text-xs text-muted-foreground hover:text-slate-200"
+              title="Toggle editing"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              {editing ? 'done' : 'edit'}
+            </button>
           </CardHeader>
           <CardContent className="p-0">
-            <pre className="h-[28rem] overflow-auto p-3 font-mono text-[12px] leading-relaxed text-slate-300 sm:text-[13px]">
-              {FILES[activeFile]}
-            </pre>
+            {editing ? (
+              <textarea
+                value={files[activeFile]}
+                onChange={(event) =>
+                  setFiles((prev) => ({ ...prev, [activeFile]: event.target.value }))
+                }
+                spellCheck={false}
+                className="h-[28rem] w-full resize-none bg-[#171717] p-3 font-mono text-[12px] leading-relaxed text-slate-200 outline-none sm:text-[13px]"
+                aria-label={`Edit ${activeFile}`}
+              />
+            ) : (
+              <pre className="h-[28rem] overflow-auto p-3 font-mono text-[12px] leading-relaxed text-slate-300 sm:text-[13px]">
+                {files[activeFile]}
+              </pre>
+            )}
           </CardContent>
         </Card>
 
@@ -753,7 +975,7 @@ export default function TerraformTerminalSimulator() {
               </div>
               <div className="hidden items-center gap-2 text-xs text-muted-foreground sm:flex">
                 <span>{initialized ? 'initialized' : 'not initialized'}</span>
-                <span>{resources.length} resources</span>
+                <span>{state.length} resources</span>
               </div>
             </div>
           </CardHeader>
@@ -765,7 +987,7 @@ export default function TerraformTerminalSimulator() {
             >
               {terminalHistory.length === 0 && (
                 <div className="mb-4 text-green-400">
-                  <p>Welcome to the Terraform Lab.</p>
+                  <p>Welcome to the Terraform Basics Lab.</p>
                   <p className="mt-2 text-muted-foreground">
                     Type &quot;help&quot; for commands, or follow the current task. Start with{' '}
                     <span className="text-primary">terraform init</span>.
@@ -810,7 +1032,7 @@ export default function TerraformTerminalSimulator() {
           </CardContent>
         </Card>
 
-        {/* State + plan */}
+        {/* Plan + state */}
         <div className="space-y-4">
           <Card>
             <CardHeader className="p-4 pb-2">
@@ -821,11 +1043,11 @@ export default function TerraformTerminalSimulator() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <div className="flex items-center gap-3 text-sm">
-                <span className="text-emerald-500">+{planState.adds}</span>
-                <span className="text-amber-500">~{planState.changes}</span>
-                <span className="text-red-500">-{planState.destroys}</span>
+                <span className="text-emerald-500">+{planSummary.adds}</span>
+                <span className="text-amber-500">~{planSummary.changes}</span>
+                <span className="text-red-500">-{planSummary.destroys}</span>
                 <Badge variant="secondary" className="ml-auto">
-                  {planState.label}
+                  {planSummary.label}
                 </Badge>
               </div>
             </CardContent>
@@ -839,14 +1061,14 @@ export default function TerraformTerminalSimulator() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 p-4 pt-0">
-              {resources.length === 0 ? (
+              {state.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No resources yet. Run <code className="text-primary">terraform apply</code> to
                   create them.
                 </p>
               ) : (
                 <div className="max-h-[20rem] space-y-2 overflow-y-auto">
-                  {resources.map((resource) => (
+                  {state.map((resource) => (
                     <div key={resource.address} className="rounded-md border bg-muted/30 p-2.5">
                       <p className="font-mono text-xs text-primary">{resource.address}</p>
                       <div className="mt-1.5 space-y-0.5">
