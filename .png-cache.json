@@ -735,5 +735,8 @@
   "public/images/posts/opentofu-2026-switch-from-terraform.svg": "cccac2a9aa05d3c1",
   "public/images/quizzes/rate-limiting-apis-quiz-og.svg": "541db7557b46a5bf",
   "public/images/flashcards/vault-secrets-management-og.svg": "60fb5fda4e0831cb",
-  "public/images/checklists/zero-downtime-postgres-migrations-og.svg": "91ce9668e29e0ce0"
+  "public/images/checklists/zero-downtime-postgres-migrations-og.svg": "91ce9668e29e0ce0",
+  "public/images/posts/shai-hulud-hades-pypi-wave-june-2026.svg": "56a9c67f2fef4858",
+  "public/images/posts/is-valkey-ready-to-replace-redis-2026.svg": "12fb201ebf9f9225",
+  "public/images/posts/designing-rate-limiting-for-apis.svg": "2b28cd4e12125412"
 }
