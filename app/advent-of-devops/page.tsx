@@ -10,7 +10,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Advent of DevOps 2026 - 25 Day Challenge | DevOps Daily',
+  title: 'Advent of DevOps 2026 - 25 Day Challenge',
   description:
     'Join the Advent of DevOps 2026 challenge! 25 days of hands-on DevOps tasks covering Docker, Kubernetes, CI/CD, security, monitoring, and more. Level up your DevOps skills this December.',
   alternates: {

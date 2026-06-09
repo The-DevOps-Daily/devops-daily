@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { WelcomeContent } from './_components/welcome-content';
 
 export const metadata: Metadata = {
-  title: "You're subscribed | DevOps Daily Newsletter",
+  title: "You're subscribed",
   description:
     "Welcome to the DevOps Daily newsletter. Here's what to expect, what every Monday issue looks like, and where to start while you wait for your first one.",
   alternates: { canonical: '/newsletters/welcome' },

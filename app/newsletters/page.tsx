@@ -6,7 +6,7 @@ import { PageHero } from '@/components/page-hero';
 import { NewsletterForm } from '@/components/footer/newsletter-form';
 
 export const metadata: Metadata = {
-  title: 'Newsletter Archive | DevOps Daily',
+  title: 'Newsletter Archive',
   description:
     'Browse past issues of the DevOps Daily newsletter. Weekly roundups of new content, tools, and learning resources for DevOps engineers.',
   alternates: { canonical: '/newsletters' },

@@ -6,7 +6,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import { ToolsIndexList } from '@/components/tools/tools-index-list';
 
 export const metadata: Metadata = {
-  title: 'DevOps Tools and Calculators | DevOps Daily',
+  title: 'DevOps Tools and Calculators',
   description:
     'Free DevOps utilities that run entirely in your browser: CIDR calculator, JWT decoder, base64 and URL encoder, UUID generator, cron expression parser, and more. No sign-up, no server.',
   alternates: { canonical: '/tools' },
