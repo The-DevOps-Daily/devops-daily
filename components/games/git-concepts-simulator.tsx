@@ -144,7 +144,7 @@ const LESSONS: Lesson[] = [
         hint: 'Use "git diff --staged".',
         expectedCommand: ['git diff --staged', 'git diff --cached'],
         explanation:
-          'git diff shows unstaged changes by default. --staged compares the index to HEAD.',
+          'git diff shows unstaged changes by default (working tree vs index). --staged (or --cached) compares the index to your last commit, known as HEAD.',
       },
       {
         instruction: 'Commit the staged snapshot into the local repository.',
