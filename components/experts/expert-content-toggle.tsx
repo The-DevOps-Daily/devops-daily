@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { PostsList } from '@/components/posts-list';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
 import { BookOpen, FileText } from 'lucide-react';
 
@@ -41,21 +41,14 @@ export function ExpertContentToggle({
   guideCount,
   defaultShowPosts = true,
 }: ExpertContentToggleProps) {
-  const [showContent, setShowContent] = useState(defaultShowPosts);
+  // Persisted preference; JSON true/false matches the previously stored format
+  const [showContent, setShowContent] = useLocalStorage(
+    `expert-${expertSlug}-show-content`,
+    defaultShowPosts
+  );
 
-  // Load preference from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(`expert-${expertSlug}-show-content`);
-    if (stored !== null) {
-      setShowContent(stored === 'true');
-    }
-  }, [expertSlug]);
-
-  // Save preference to localStorage when changed
   const toggleContent = () => {
-    const newValue = !showContent;
-    setShowContent(newValue);
-    localStorage.setItem(`expert-${expertSlug}-show-content`, String(newValue));
+    setShowContent(!showContent);
   };
 
   const totalContent = postCount + guideCount;

@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, BookOpen, ChevronRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 interface GuidePart {
   title: string;
@@ -25,25 +26,11 @@ interface GuideSidebarProps {
 }
 
 export function GuideSidebar({ guide, activePart }: GuideSidebarProps) {
-  // Track completed parts in localStorage
-  const [completedParts, setCompletedParts] = useState<string[]>([]);
-
-  // Load completed parts from localStorage on mount
-  useEffect(() => {
-    const key = `guide-${guide.slug}-completed`;
-    const saved = localStorage.getItem(key);
-    if (saved) {
-      setCompletedParts(JSON.parse(saved));
-    }
-  }, [guide.slug]);
-
-  // Save completed parts to localStorage
-  useEffect(() => {
-    if (completedParts.length > 0) {
-      const key = `guide-${guide.slug}-completed`;
-      localStorage.setItem(key, JSON.stringify(completedParts));
-    }
-  }, [completedParts, guide.slug]);
+  // Track completed parts, persisted per guide
+  const [completedParts, setCompletedParts] = useLocalStorage<string[]>(
+    `guide-${guide.slug}-completed`,
+    []
+  );
 
   // Mark current part as completed when navigating away
   useEffect(() => {
