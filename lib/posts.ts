@@ -1,5 +1,6 @@
 import path from 'path';
 import { getPostImagePath } from './image-utils';
+import { rankRelatedByScore } from './related-content';
 import {
   createCachedLoader,
   isFileNotFound,
@@ -82,40 +83,17 @@ export async function getRelatedPosts(currentSlug: string, categorySlug: string,
   const posts = await getAllPosts();
   const currentPost = posts.find((p) => p.slug === currentSlug);
   const currentTags = currentPost?.tags || [];
-  
-  // Filter out current post
-  const candidatePosts = posts.filter((post) => post.slug !== currentSlug);
-  
-  // Score each candidate post
-  const scoredPosts = candidatePosts.map((post) => {
-    let score = 0;
-    
-    // Tag matches (highest priority: 10 points per matching tag)
-    if (post.tags && currentTags.length > 0) {
-      const matchingTags = post.tags.filter((tag) => currentTags.includes(tag));
-      score += matchingTags.length * 10;
-    }
-    
-    // Same category (5 points)
-    if (post.category?.slug === categorySlug) {
-      score += 5;
-    }
-    
-    // Recency bonus (2 points for posts published within last 30 days)
-    const postDate = new Date(post.publishedAt || post.date || 0).getTime();
-    const daysSincePublished = (Date.now() - postDate) / (1000 * 60 * 60 * 24);
-    if (daysSincePublished < 30) {
-      score += 2;
-    }
-    
-    return { post, score };
-  });
-  
-  // Sort by score (descending) and return top results
-  return scoredPosts
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(({ post }) => post);
+
+  const candidates = posts
+    .filter((post) => post.slug !== currentSlug)
+    .map((post) => ({
+      item: post,
+      tags: post.tags,
+      sameCategory: post.category?.slug === categorySlug,
+      date: post.publishedAt || post.date || null,
+    }));
+
+  return rankRelatedByScore(currentTags, candidates, { limit });
 }
 
 export async function getPostsByTag(tag: string) {
