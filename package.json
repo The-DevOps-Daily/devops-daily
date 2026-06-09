@@ -94,7 +94,7 @@
     "marked": "^18.0.4",
     "marked-gfm-heading-id": "^4.1.4",
     "marked-highlight": "^2.2.4",
-    "next": "16.2.6",
+    "next": "16.2.7",
     "next-themes": "latest",
     "openai": "^6.36.0",
     "react": "^19.2.5",
