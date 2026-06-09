@@ -3,8 +3,30 @@ import path from 'path';
 
 const WEB_IMAGE_EXTENSIONS = ['svg', 'png', 'jpg'];
 
+// In production builds the public/ tree is immutable, so one readdir per
+// image directory replaces thousands of per-page existsSync calls during
+// static generation. Dev keeps the uncached check so newly generated images
+// show up without a restart.
+const dirListingCache = new Map<string, Set<string>>();
+
+function listPublicDir(dir: string): Set<string> {
+  let entries = dirListingCache.get(dir);
+  if (!entries) {
+    try {
+      entries = new Set(fs.readdirSync(path.join(process.cwd(), 'public', dir)));
+    } catch {
+      entries = new Set();
+    }
+    dirListingCache.set(dir, entries);
+  }
+  return entries;
+}
+
 function publicAssetExists(publicPath: string): boolean {
-  return fs.existsSync(path.join(process.cwd(), 'public', publicPath));
+  if (process.env.NODE_ENV !== 'production') {
+    return fs.existsSync(path.join(process.cwd(), 'public', publicPath));
+  }
+  return listPublicDir(path.dirname(publicPath)).has(path.basename(publicPath));
 }
 
 function getExistingImagePath(

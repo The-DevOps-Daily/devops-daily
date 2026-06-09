@@ -1,6 +1,7 @@
 import path from 'path';
 import type { QuizConfig } from './quiz-types';
 import { createCachedLoader, isFileNotFound, readJsonFile, readJsonFiles } from './content-loader';
+import { rankRelatedByScore } from './related-content';
 
 const QUIZZES_DIR = path.join(process.cwd(), 'content', 'quizzes');
 
@@ -113,57 +114,33 @@ export async function getRelatedQuizzes(
   const quizzes = await getAllQuizzes();
   const currentQuiz = quizzes.find((q) => q.id === currentId);
   const currentTags = currentQuiz?.metadata?.tags || [];
-  
-  // Filter out current quiz
-  const candidateQuizzes = quizzes.filter((quiz) => quiz.id !== currentId);
-  
-  // Score each candidate quiz
-  const scoredQuizzes = candidateQuizzes.map((quiz) => {
-    let score = 0;
-    
-    // Tag matches (highest priority: 10 points per matching tag)
-    if (quiz.metadata?.tags && currentTags.length > 0) {
-      const matchingTags = quiz.metadata.tags.filter((tag) => currentTags.includes(tag));
-      score += matchingTags.length * 10;
+
+  // Similar difficulty distribution (closer is better, max 3 points)
+  const difficultySimilarity = (quiz: QuizConfig): number => {
+    if (!currentQuiz?.metadata.difficultyLevels || !quiz.metadata.difficultyLevels) {
+      return 0;
     }
-    
-    // Same category (5 points)
-    if (quiz.category === category) {
-      score += 5;
-    }
-    
-    // Similar difficulty distribution (1 point per matching level)
-    if (currentQuiz?.metadata.difficultyLevels && quiz.metadata.difficultyLevels) {
-      const currentDiff = currentQuiz.metadata.difficultyLevels;
-      const quizDiff = quiz.metadata.difficultyLevels;
-      
-      // Compare difficulty distributions (closer is better)
-      const beginnerDiff = Math.abs(currentDiff.beginner - quizDiff.beginner);
-      const intermediateDiff = Math.abs(currentDiff.intermediate - quizDiff.intermediate);
-      const advancedDiff = Math.abs(currentDiff.advanced - quizDiff.advanced);
-      
-      // Award points for similar difficulty (max 3 points)
-      const totalDiff = beginnerDiff + intermediateDiff + advancedDiff;
-      if (totalDiff <= 3) score += 3;
-      else if (totalDiff <= 6) score += 2;
-      else if (totalDiff <= 9) score += 1;
-    }
-    
-    // Recency bonus (2 points for quizzes created within last 90 days)
-    if (quiz.metadata.createdDate) {
-      const quizDate = new Date(quiz.metadata.createdDate).getTime();
-      const daysSinceCreated = (Date.now() - quizDate) / (1000 * 60 * 60 * 24);
-      if (daysSinceCreated < 90) {
-        score += 2;
-      }
-    }
-    
-    return { quiz, score };
-  });
-  
-  // Sort by score (descending) and return top results
-  return scoredQuizzes
-    .sort((a, b) => b.score - a.score)
-    .slice(0, limit)
-    .map(({ quiz }) => quiz);
+    const currentDiff = currentQuiz.metadata.difficultyLevels;
+    const quizDiff = quiz.metadata.difficultyLevels;
+    const totalDiff =
+      Math.abs(currentDiff.beginner - quizDiff.beginner) +
+      Math.abs(currentDiff.intermediate - quizDiff.intermediate) +
+      Math.abs(currentDiff.advanced - quizDiff.advanced);
+    if (totalDiff <= 3) return 3;
+    if (totalDiff <= 6) return 2;
+    if (totalDiff <= 9) return 1;
+    return 0;
+  };
+
+  const candidates = quizzes
+    .filter((quiz) => quiz.id !== currentId)
+    .map((quiz) => ({
+      item: quiz,
+      tags: quiz.metadata?.tags,
+      sameCategory: quiz.category === category,
+      date: quiz.metadata.createdDate || null,
+      extraScore: difficultySimilarity(quiz),
+    }));
+
+  return rankRelatedByScore(currentTags, candidates, { limit, recencyWindowDays: 90 });
 }

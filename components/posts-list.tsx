@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Fragment, useState, useEffect, useRef, useDeferredValue, useMemo, type ReactNode } from 'react';
+import { Fragment, useMemo, type ReactNode } from 'react';
+import { useDeferredSearch } from '@/hooks/use-deferred-search';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar, Search } from 'lucide-react';
@@ -24,29 +25,10 @@ interface PostsListProps {
 }
 
 export function PostsList({ posts, className, sponsorSlot, sponsorAfter = 6 }: PostsListProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const { searchQuery, setSearchQuery, deferredSearchQuery, searchInputRef } = useDeferredSearch({
+    focusShortcut: true,
+  });
 
-  // Handle keyboard shortcut (Cmd+K / Ctrl+K)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
-  // useDeferredValue keeps the search <input> at 60fps while the filter
-  // runs at a lower priority — meaningful on mobile where the previous
-  // synchronous filter on every keystroke contributed to INP > 200ms.
-  const deferredSearchQuery = useDeferredValue(searchQuery);
   const filteredPosts = useMemo(() => {
     if (!deferredSearchQuery.trim()) return posts;
     const searchLower = deferredSearchQuery.toLowerCase();

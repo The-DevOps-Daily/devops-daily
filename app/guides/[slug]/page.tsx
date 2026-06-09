@@ -12,6 +12,7 @@ import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { detailPageMetadata } from '@/lib/metadata-utils';
 import { RelatedPosts } from '@/components/related-posts';
 import type { Metadata } from 'next';
 
@@ -37,42 +38,22 @@ export async function generateMetadata({
   }
 
   const socialImage = getSocialImagePath(slug, 'guides');
+
   // Prefer the longer SEO title for the <title> tag and social cards
   // when the frontmatter sets one. Display headings still use guide.title.
-  const pageTitle = guide.seoTitle || guide.title;
-  const description = truncateMetaDescription(guide.description);
-
-  return {
-    title: { absolute: pageTitle },
-    description,
-    alternates: {
-      canonical: `/guides/${slug}`,
-    },
-    openGraph: {
-      title: pageTitle,
-      description,
-      url: `/guides/${slug}`,
-      type: 'article',
-      images: [
-        {
-          url: socialImage || guide.image || '/og-image.png',
-          width: 1200,
-          height: 630,
-          alt: guide.title,
-        },
-      ],
+  return detailPageMetadata({
+    path: `/guides/${slug}`,
+    title: guide.seoTitle || guide.title,
+    description: truncateMetaDescription(guide.description),
+    image: socialImage || guide.image || '/og-image.png',
+    imageAlt: guide.title,
+    article: {
       publishedTime: guide.publishedAt,
       modifiedTime: guide.updatedAt || guide.publishedAt,
       section: guide.category?.name,
       tags: guide.tags,
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: pageTitle,
-      description,
-      images: [socialImage || guide.image || '/og-image.png'],
-    },
-  };
+  });
 }
 
 export default async function GuidePage({ params }: { params: Promise<{ slug: string }> }) {

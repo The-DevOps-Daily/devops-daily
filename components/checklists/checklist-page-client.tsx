@@ -15,22 +15,14 @@ import {
   calculateProgress,
   resetChecklistProgress,
 } from '@/lib/checklist-utils';
+import {
+  checklistDifficultyColors as difficultyColors,
+  checklistCategoryColors as categoryColors,
+} from '@/lib/badge-colors';
 
 interface ChecklistPageClientProps {
   checklist: Checklist;
 }
-
-const difficultyColors = {
-  beginner: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  intermediate: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  advanced: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-};
-
-const categoryColors = {
-  Security: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  Cloud: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-  DevOps: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-};
 
 export function ChecklistPageClient({ checklist }: ChecklistPageClientProps) {
   const [progress, setProgress] = useState<ChecklistProgress>({});

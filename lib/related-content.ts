@@ -14,6 +14,67 @@
  * already closes most of the dofollow-inlink gap Ahrefs flagged.
  */
 
+export interface RelatedRankCandidate<T> {
+  item: T;
+  /** Candidate's tags, matched (case-sensitively) against currentTags. */
+  tags?: string[];
+  /** Whether the candidate is in the same category as the current item. */
+  sameCategory: boolean;
+  /** Publish/create date used for the recency bonus; omit to skip it. */
+  date?: string | null;
+  /** Content-type-specific score additions (e.g. quiz difficulty similarity). */
+  extraScore?: number;
+}
+
+export interface RankRelatedOptions {
+  /** How many items to return. Defaults to 3. */
+  limit?: number;
+  /** Days within which the recency bonus applies. Defaults to 30. */
+  recencyWindowDays?: number;
+}
+
+/**
+ * Shared ranking used by getRelatedPosts/getRelatedGuides/getRelatedQuizzes:
+ * 10 points per matching tag, 5 for same category, 2 if newer than the
+ * recency window, plus any extraScore. Unlike pickRelatedItems below, this
+ * keeps zero-score items (pads the list) and relies on stable sort order for
+ * ties, matching the loaders' historical behavior.
+ */
+export function rankRelatedByScore<T>(
+  currentTags: string[],
+  candidates: RelatedRankCandidate<T>[],
+  options: RankRelatedOptions = {},
+): T[] {
+  const { limit = 3, recencyWindowDays = 30 } = options;
+
+  const scored = candidates.map((candidate) => {
+    let score = candidate.extraScore ?? 0;
+
+    if (candidate.tags && currentTags.length > 0) {
+      const matchingTags = candidate.tags.filter((tag) => currentTags.includes(tag));
+      score += matchingTags.length * 10;
+    }
+
+    if (candidate.sameCategory) {
+      score += 5;
+    }
+
+    if (candidate.date) {
+      const daysSince = (Date.now() - new Date(candidate.date).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSince < recencyWindowDays) {
+        score += 2;
+      }
+    }
+
+    return { item: candidate.item, score };
+  });
+
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ item }) => item);
+}
+
 export interface RelatedScorable {
   slug: string;
   category?: string;

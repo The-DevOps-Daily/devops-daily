@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, LearningResourceSchema } from '@/components/schema-markup';
 import GenericQuiz from '@/components/games/generic-quiz';
 import { getQuizById, getAllQuizzes, getRelatedQuizzes } from '@/lib/quiz-loader';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { detailPageMetadata } from '@/lib/metadata-utils';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { ReportIssue } from '@/components/report-issue';
 import { Facebook, Linkedin, Twitter } from '@/components/icons/social-icons';
@@ -37,36 +38,15 @@ export async function generateMetadata({
     return {};
   }
 
-  const description = truncateMetaDescription(quizConfig.description);
-  const socialImage = getSocialImagePath(slug, 'quizzes');
-
-  return {
-    title: { absolute: `${quizConfig.title} - Learn ${quizConfig.category}` },
-    description,
-    alternates: {
-      canonical: `/quizzes/${slug}`,
-    },
-    openGraph: {
-      title: `${quizConfig.title} - DevOps Daily`,
-      description,
-      type: 'website',
-      url: `/quizzes/${slug}`,
-      images: [
-        {
-          url: socialImage,
-          width: 1200,
-          height: 630,
-          alt: quizConfig.title,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${quizConfig.title} - DevOps Daily`,
-      description,
-      images: [socialImage],
-    },
-  };
+  return detailPageMetadata({
+    path: `/quizzes/${slug}`,
+    title: `${quizConfig.title} - Learn ${quizConfig.category}`,
+    socialTitle: `${quizConfig.title} - DevOps Daily`,
+    description: truncateMetaDescription(quizConfig.description),
+    image: getSocialImagePath(slug, 'quizzes'),
+    imageAlt: quizConfig.title,
+    ogType: 'website',
+  });
 }
 
 export default async function QuizPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -104,6 +84,14 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
+      <LearningResourceSchema
+        title={quizConfig.title}
+        description={quizConfig.description}
+        estimatedTime={quizConfig.metadata.estimatedTime}
+        technologies={(quizConfig.metadata?.tags || []).map((t) => String(t))}
+        url={`/quizzes/${slug}`}
+        learningResourceType="quiz"
+      />
       <div className="container px-4 py-8 mx-auto">
         <Breadcrumb items={breadcrumbItems} />
 
