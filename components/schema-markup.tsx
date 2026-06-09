@@ -367,6 +367,44 @@ export function FAQSchema({ questions }: { questions: { question: string; answer
   );
 }
 
+/**
+ * Single question-and-answer page (interview questions). QAPage fits a page
+ * whose main entity is one question with an accepted answer; FAQPage above is
+ * for pages listing several Q&As.
+ */
+export function QAPageSchema({
+  question,
+  answer,
+  url,
+}: {
+  question: string;
+  answer: string;
+  url: string;
+}) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'QAPage',
+    mainEntity: {
+      '@type': 'Question',
+      name: question,
+      text: question,
+      answerCount: 1,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: answer,
+        url: `${SITE_URL}${url}`,
+      },
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
 export function BreadcrumbSchema({ items }: { items: { name: string; url: string }[] }) {
   const itemListElement = items.map((item, index) => ({
     '@type': 'ListItem',
