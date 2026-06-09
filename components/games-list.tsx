@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useDeferredValue } from 'react';
+import { useState, useMemo } from 'react';
+import { useDeferredSearch } from '@/hooks/use-deferred-search';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -228,16 +229,10 @@ function getGameType(game: SerializableGame): 'game' | 'simulator' {
 }
 
 export function GamesList({ games, className, showSearch = true, showFilters = true }: GamesListProps) {
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const { searchQuery, setSearchQuery, deferredSearchQuery } = useDeferredSearch();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<'all' | 'game' | 'simulator'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'popular' | 'unpopular' | 'title' | 'title-desc' | 'featured'>('newest');
-
-  // useDeferredValue lets the text input update at 60fps while the
-  // expensive list re-render runs as a lower-priority update. Without
-  // this, every keystroke blocked paint for 150-250ms on mid-range
-  // mobile devices and tipped the page's INP over 200ms.
-  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   // Get unique categories and tags
   const { categories, allTags } = useMemo(() => {
