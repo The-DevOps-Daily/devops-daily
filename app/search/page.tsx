@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { SearchPageClient } from '@/components/search-page-client';
 
 export const metadata: Metadata = {
-  title: 'Search | DevOps Daily',
+  title: 'Search',
   description: 'Search across DevOps Daily posts, guides, quizzes, games, flashcards, comparisons, and tools to find content on Docker, Kubernetes, AWS, CI/CD, and more.',
   alternates: {
     canonical: '/search',

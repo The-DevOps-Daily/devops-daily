@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Briefcase } from 'lucide-react';
 import { interviewQuestions, getQuestionBySlug } from '@/content/interview-questions';
 import { InterviewQuestionPage } from '@/components/interview-questions/interview-question-page';
+import { BreadcrumbSchema, QAPageSchema } from '@/components/schema-markup';
 import { PageHero } from '@/components/page-hero';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
@@ -118,6 +119,19 @@ export default async function QuestionPage({ params }: PageProps) {
 
   return (
     <>
+      <QAPageSchema
+        question={question.question}
+        answer={question.answer}
+        url={`/interview-questions/${tier}/${slug}`}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Interview Questions', url: '/interview-questions' },
+          { name: capitalizedTier, url: `/interview-questions/${tier}` },
+          { name: question.title, url: `/interview-questions/${tier}/${slug}` },
+        ]}
+      />
       <PageHero
         title={question.title}
         description={question.question}

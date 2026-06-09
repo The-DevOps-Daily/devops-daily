@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'DevOps Books | DevOps Daily',
+  title: 'DevOps Books',
   description:
     'Curated collection of the best DevOps, SRE, and Cloud Engineering books. From beginner guides to advanced practices.',
   alternates: {

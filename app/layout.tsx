@@ -133,8 +133,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           title="DevOps Daily RSS Feed"
           href="/feed.xml"
         />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <OrganizationSchema />
         <WebsiteSchema />
       </head>
