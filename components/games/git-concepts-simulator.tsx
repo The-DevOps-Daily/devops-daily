@@ -1,7 +1,7 @@
 'use client';
 
-import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   CheckCircle,
   CircleDot,
@@ -23,9 +23,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import {
+  useTerminalSimulator,
+  type ExecuteResult,
+  type TerminalLine,
+} from '@/hooks/use-terminal-simulator';
 
 type ChangeKind = 'untracked' | 'modified';
-type TerminalType = 'input' | 'output' | 'error' | 'success';
 
 interface Commit {
   id: string;
@@ -67,12 +71,6 @@ interface Lesson {
   description: string;
   icon: ReactNode;
   commands: LessonCommand[];
-}
-
-interface TerminalLine {
-  type: TerminalType;
-  content: string;
-  timestamp: Date;
 }
 
 const LESSONS: Lesson[] = [
@@ -489,30 +487,7 @@ function parseEcho(input: string) {
 
 export default function GitConceptsSimulator() {
   const [repo, setRepo] = useState<RepoState>(createInitialState);
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [currentCommandIndex, setCurrentCommandIndex] = useState(0);
-  const [completedCommands, setCompletedCommands] = useState<Set<string>>(new Set());
-  const [terminalHistory, setTerminalHistory] = useState<TerminalLine[]>([]);
-  const [inputValue, setInputValue] = useState('');
-  const [showHint, setShowHint] = useState(false);
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const terminalRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const currentLesson = LESSONS[currentLessonIndex];
-  const currentCommand = currentLesson.commands[currentCommandIndex];
-  const totalCommands = LESSONS.reduce((sum, lesson) => sum + lesson.commands.length, 0);
-  const completedCount = completedCommands.size;
-  const progress = (completedCount / totalCommands) * 100;
-
-  useEffect(() => {
-    terminalRef.current?.scrollTo({ top: terminalRef.current.scrollHeight });
-  }, [terminalHistory]);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  const lastRunHadError = useRef(false);
 
   const addWorkingChange = useCallback((file: string, content: string) => {
     setRepo((prev) => {
@@ -529,7 +504,7 @@ export default function GitConceptsSimulator() {
   }, []);
 
   const runGit = useCallback(
-    (args: string[]): { output: string; type: TerminalType } => {
+    (args: string[]): { output: string; type: TerminalLine['type'] } => {
       const command = args[0];
       const rest = args.slice(1);
 
@@ -691,7 +666,7 @@ export default function GitConceptsSimulator() {
   );
 
   const executeOne = useCallback(
-    (rawInput: string): { output: string; type: TerminalType } => {
+    (rawInput: string): { output: string; type: TerminalLine['type'] } => {
       const input = rawInput.trim();
       if (!input) return { output: '', type: 'output' };
 
@@ -740,121 +715,73 @@ export default function GitConceptsSimulator() {
   );
 
   const executeCommand = useCallback(
-    (rawInput: string) => {
+    (rawInput: string): ExecuteResult => {
       const input = rawInput.trim();
-      if (!input) return;
       if (input === 'clear') {
-        setTerminalHistory([]);
-        setInputValue('');
-        return;
+        return { output: '', clear: true };
       }
 
       const commands = input.split(/\s*(?:&&|;)\s*/).filter(Boolean);
       const results = commands.map(executeOne);
       const output = results.map((result) => result.output).filter(Boolean).join('\n');
       const type = results.some((result) => result.type === 'error') ? 'error' : 'output';
-      const commandKey = `${currentLessonIndex}-${currentCommandIndex}`;
-      const isExpected = currentCommand ? commandMatches(input, currentCommand.expectedCommand) : false;
-      const outputType = isExpected && type !== 'error' ? 'success' : type;
-
-      if (isExpected && !completedCommands.has(commandKey) && type !== 'error') {
-        setCompletedCommands((prev) => new Set(prev).add(commandKey));
-        setTimeout(() => {
-          if (currentCommandIndex < currentLesson.commands.length - 1) {
-            setCurrentCommandIndex((index) => index + 1);
-          } else if (currentLessonIndex < LESSONS.length - 1) {
-            setCurrentLessonIndex((index) => index + 1);
-            setCurrentCommandIndex(0);
-          }
-          setShowHint(false);
-        }, 500);
-      }
-
-      setTerminalHistory((prev) => [
-        ...prev,
-        { type: 'input', content: input, timestamp: new Date() },
-        ...(output
-          ? [{ type: outputType, content: output, timestamp: new Date() }]
-          : []),
-        ...(isExpected && currentCommand && type !== 'error'
-          ? [
-              {
-                type: 'success' as const,
-                content: `OK: ${currentCommand.explanation}`,
-                timestamp: new Date(),
-              },
-            ]
-          : []),
-      ]);
-      setCommandHistory((prev) => [input, ...prev.filter((item) => item !== input)].slice(0, 25));
-      setHistoryIndex(-1);
-      setInputValue('');
+      lastRunHadError.current = type === 'error';
+      return { output, type };
     },
-    [
-      completedCommands,
-      currentCommand,
-      currentCommandIndex,
-      currentLesson,
-      currentLessonIndex,
-      executeOne,
-    ]
+    [executeOne]
   );
 
-  const resetLab = useCallback(() => {
+  const onReset = useCallback(() => {
     setRepo(createInitialState());
-    setCurrentLessonIndex(0);
-    setCurrentCommandIndex(0);
-    setCompletedCommands(new Set());
-    setTerminalHistory([]);
-    setInputValue('');
-    setCommandHistory([]);
-    setHistoryIndex(-1);
-    setShowHint(false);
-    inputRef.current?.focus();
   }, []);
 
+  const {
+    currentLessonIndex,
+    currentCommandIndex,
+    currentLesson,
+    currentCommand,
+    completedCommands,
+    completedCount,
+    totalCommands,
+    progressPercentage: progress,
+    terminalHistory,
+    inputValue,
+    setInputValue,
+    showHint,
+    setShowHint,
+    inputRef,
+    terminalRef,
+    submitCommand,
+    handleSubmit,
+    handleKeyDown,
+    resetProgress,
+    jumpToLesson,
+  } = useTerminalSimulator({
+    lessons: LESSONS,
+    execute: executeCommand,
+    matches: (cmd, command) =>
+      !lastRunHadError.current && commandMatches(cmd, command.expectedCommand),
+    successMessage: (command) => `OK: ${command.explanation}`,
+    completionKeyStyle: 'index',
+    advanceDelayMs: 500,
+    historyStyle: 'recent-first',
+    promoteOutputType: true,
+    guardRepeatCompletion: true,
+    onReset,
+  });
+
+  const resetLab = useCallback(() => {
+    resetProgress();
+    inputRef.current?.focus();
+  }, [inputRef, resetProgress]);
+
   const runCurrentCommand = useCallback(() => {
+    if (!currentCommand) return;
     const command = Array.isArray(currentCommand.expectedCommand)
       ? currentCommand.expectedCommand[0]
       : currentCommand.expectedCommand;
-    executeCommand(command);
-  }, [currentCommand, executeCommand]);
-
-  const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      executeCommand(inputValue);
-    },
-    [executeCommand, inputValue]
-  );
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.ctrlKey && event.key === 'c') {
-      event.preventDefault();
-      setTerminalHistory((prev) => [
-        ...prev,
-        {
-          type: inputValue.trim() ? 'input' : 'output',
-          content: inputValue.trim() ? `${inputValue}^C` : '^C',
-          timestamp: new Date(),
-        },
-      ]);
-      setInputValue('');
-      setHistoryIndex(-1);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      const nextIndex = Math.min(historyIndex + 1, commandHistory.length - 1);
-      if (nextIndex >= 0) {
-        setHistoryIndex(nextIndex);
-        setInputValue(commandHistory[nextIndex]);
-      }
-    } else if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      const nextIndex = Math.max(historyIndex - 1, -1);
-      setHistoryIndex(nextIndex);
-      setInputValue(nextIndex >= 0 ? commandHistory[nextIndex] : '');
-    }
-  };
+    submitCommand(command);
+  }, [currentCommand, submitCommand]);
 
   return (
     <div className="mx-auto w-full max-w-[1500px]">
@@ -914,9 +841,7 @@ export default function GitConceptsSimulator() {
                     key={lesson.id}
                     type="button"
                     onClick={() => {
-                      setCurrentLessonIndex(lessonIndex);
-                      setCurrentCommandIndex(0);
-                      setShowHint(false);
+                      jumpToLesson(lessonIndex);
                       inputRef.current?.focus();
                     }}
                     className={cn(
@@ -960,8 +885,8 @@ export default function GitConceptsSimulator() {
                       Step {currentCommandIndex + 1} / {currentLesson.commands.length}
                     </Badge>
                   </div>
-                  <p className="text-sm font-medium sm:text-base">{currentCommand.instruction}</p>
-                  {showHint && (
+                  <p className="text-sm font-medium sm:text-base">{currentCommand?.instruction}</p>
+                  {showHint && currentCommand && (
                     <p className="mt-2 rounded-md border border-primary/30 bg-primary/10 p-2 text-sm text-muted-foreground">
                       {currentCommand.hint}
                     </p>
