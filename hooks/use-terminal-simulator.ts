@@ -62,10 +62,8 @@ export interface UseTerminalSimulatorOptions<C extends SimulatorLessonCommand> {
   promoteOutputType?: boolean;
   /** Skip the success path when the step was already completed. */
   guardRepeatCompletion?: boolean;
-  /** Enables Tab completion against this list. */
+  /** Enables Tab completion against this list. Components with richer completion (Linux's filesystem-aware paths) leave this unset and intercept Tab before delegating other keys to handleKeyDown. */
   availableCommands?: string[];
-  /** Custom Tab handler (Linux uses filesystem-aware path completion); overrides availableCommands. */
-  onTab?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   /** Prefix shown before the echoed input on Ctrl+C (Linux shows '$ '). */
   ctrlCInputPrefix?: string;
   /** Reset domain state (containers, filesystem, cluster...) alongside progress. */
@@ -83,7 +81,6 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
   promoteOutputType = false,
   guardRepeatCompletion = false,
   availableCommands,
-  onTab,
   ctrlCInputPrefix = '',
   onReset,
 }: UseTerminalSimulatorOptions<C>) {
@@ -232,12 +229,6 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
         return;
       }
 
-      if (event.key === 'Tab' && onTab) {
-        event.preventDefault();
-        onTab(event);
-        return;
-      }
-
       if (availableCommands && event.key === 'Tab') {
         event.preventDefault();
         const matchesList = availableCommands.filter((command) => command.startsWith(inputValue));
@@ -282,7 +273,7 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
         }
       }
     },
-    [availableCommands, commandHistory, ctrlCInputPrefix, historyIndex, historyStyle, inputValue, onTab]
+    [availableCommands, commandHistory, ctrlCInputPrefix, historyIndex, historyStyle, inputValue]
   );
 
   const resetProgress = useCallback(() => {
