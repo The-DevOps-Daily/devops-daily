@@ -1,7 +1,7 @@
 'use client';
 
-import type { FormEvent, KeyboardEvent, ReactNode } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Boxes,
   CheckCircle,
@@ -23,6 +23,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import {
+  useTerminalSimulator,
+  type ExecuteResult,
+  type TerminalLine,
+} from '@/hooks/use-terminal-simulator';
 
 type PodPhase = 'Running' | 'Pending' | 'CrashLoopBackOff';
 
@@ -102,11 +107,6 @@ interface LessonCommand {
   explanation: string;
 }
 
-interface TerminalLine {
-  type: 'input' | 'output' | 'error' | 'success';
-  content: string;
-  timestamp: Date;
-}
 
 const SAMPLE_DEPLOYMENT = `apiVersion: apps/v1
 kind: Deployment
@@ -588,35 +588,10 @@ function statusColor(status: PodPhase) {
 }
 
 export default function KubernetesTerminalSimulator() {
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [currentCommandIndex, setCurrentCommandIndex] = useState(0);
-  const [terminalHistory, setTerminalHistory] = useState<TerminalLine[]>([]);
-  const [inputValue, setInputValue] = useState('');
   const [clusterState, setClusterState] = useState<KubeClusterState>(createInitialState);
-  const [completedCommands, setCompletedCommands] = useState<Set<string>>(new Set());
-  const [showHint, setShowHint] = useState(false);
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const terminalRef = useRef<HTMLDivElement>(null);
 
-  const currentLesson = LESSONS[currentLessonIndex];
-  const currentCommand = currentLesson?.commands[currentCommandIndex];
-  const totalCommands = LESSONS.reduce((sum, lesson) => sum + lesson.commands.length, 0);
-  const completedCount = completedCommands.size;
-  const progressPercentage = (completedCount / totalCommands) * 100;
   const webDeployment = clusterState.deployments.find((deployment) => deployment.name === 'web');
   const webService = clusterState.services.find((service) => service.name === 'web');
-
-  useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-    }
-  }, [terminalHistory]);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const findPod = useCallback(
     (name: string) => clusterState.pods.find((pod) => pod.name === name || pod.name.startsWith(name)),
@@ -1072,15 +1047,8 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
   );
 
   const executeCommand = useCallback(
-    (rawInput: string) => {
+    (rawInput: string): ExecuteResult => {
       const input = rawInput.trim();
-      if (!input) return;
-
-      const inputLine: TerminalLine = {
-        type: 'input',
-        content: input,
-        timestamp: new Date(),
-      };
 
       let output = '';
       let outputType: TerminalLine['type'] = 'output';
@@ -1089,9 +1057,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
       const command = args[0];
 
       if (input === 'clear') {
-        setTerminalHistory([]);
-        setInputValue('');
-        return;
+        return { output: '', clear: true };
       }
 
       if (command === 'help') {
@@ -1134,112 +1100,61 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
         outputType = 'error';
       }
 
-      const commandKey = `${currentLessonIndex}-${currentCommandIndex}`;
-      const isExpected = currentCommand ? commandMatches(input, currentCommand.expectedCommand) : false;
-
-      if (isExpected && !completedCommands.has(commandKey)) {
-        setCompletedCommands((prev) => new Set(prev).add(commandKey));
-        outputType = outputType === 'error' ? 'error' : 'success';
-
-        setTimeout(() => {
-          if (currentCommandIndex < currentLesson.commands.length - 1) {
-            setCurrentCommandIndex((index) => index + 1);
-          } else if (currentLessonIndex < LESSONS.length - 1) {
-            setCurrentLessonIndex((index) => index + 1);
-            setCurrentCommandIndex(0);
-          }
-          setShowHint(false);
-        }, 700);
-      }
-
-      setTerminalHistory((prev) => [
-        ...prev,
-        inputLine,
-        {
-          type: outputType,
-          content: output,
-          timestamp: new Date(),
-        },
-        ...(isExpected && currentCommand
-          ? [
-              {
-                type: 'success' as const,
-                content: `✓ ${currentCommand.explanation}`,
-                timestamp: new Date(),
-              },
-            ]
-          : []),
-      ]);
-      setCommandHistory((prev) => [input, ...prev.filter((item) => item !== input)].slice(0, 20));
-      setHistoryIndex(-1);
-      setInputValue('');
+      return { output, type: outputType };
     },
-    [
-      completedCommands,
-      currentCommand,
-      currentCommandIndex,
-      currentLesson,
-      currentLessonIndex,
-      executeKubectlCommand,
-    ]
+    [executeKubectlCommand]
   );
 
-  const resetLab = useCallback(() => {
+  const onReset = useCallback(() => {
     setClusterState(createInitialState());
-    setTerminalHistory([]);
-    setInputValue('');
-    setCurrentLessonIndex(0);
-    setCurrentCommandIndex(0);
-    setCompletedCommands(new Set());
-    setShowHint(false);
-    setCommandHistory([]);
-    setHistoryIndex(-1);
-    inputRef.current?.focus();
   }, []);
+
+  const {
+    currentLessonIndex,
+    currentCommandIndex,
+    currentLesson,
+    currentCommand,
+    completedCommands,
+    completedCount,
+    totalCommands,
+    progressPercentage,
+    terminalHistory,
+    inputValue,
+    setInputValue,
+    showHint,
+    setShowHint,
+    inputRef,
+    terminalRef,
+    submitCommand,
+    handleSubmit,
+    handleKeyDown,
+    resetProgress,
+    jumpToLesson,
+  } = useTerminalSimulator({
+    lessons: LESSONS,
+    execute: executeCommand,
+    matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
+    successMessage: (command) => `✓ ${command.explanation}`,
+    completionKeyStyle: 'index',
+    advanceDelayMs: 700,
+    historyStyle: 'recent-first',
+    promoteOutputType: true,
+    guardRepeatCompletion: true,
+    onReset,
+  });
+
+  const resetLab = useCallback(() => {
+    resetProgress();
+    inputRef.current?.focus();
+  }, [inputRef, resetProgress]);
 
   const runCurrentCommand = useCallback(() => {
     if (!currentCommand) return;
     const command = Array.isArray(currentCommand.expectedCommand)
       ? currentCommand.expectedCommand[0]
       : currentCommand.expectedCommand;
-    executeCommand(command);
-  }, [currentCommand, executeCommand]);
-
-  const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      executeCommand(inputValue);
-    },
-    [executeCommand, inputValue]
-  );
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.ctrlKey && event.key === 'c') {
-      event.preventDefault();
-      setTerminalHistory((prev) => [
-        ...prev,
-        {
-          type: inputValue.trim() ? 'input' : 'output',
-          content: inputValue.trim() ? `${inputValue}^C` : '^C',
-          timestamp: new Date(),
-        },
-      ]);
-      setInputValue('');
-      setHistoryIndex(-1);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      const nextIndex = Math.min(historyIndex + 1, commandHistory.length - 1);
-      if (nextIndex >= 0) {
-        setHistoryIndex(nextIndex);
-        setInputValue(commandHistory[nextIndex]);
-      }
-    } else if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      const nextIndex = Math.max(historyIndex - 1, -1);
-      setHistoryIndex(nextIndex);
-      setInputValue(nextIndex >= 0 ? commandHistory[nextIndex] : '');
-    }
-  };
+    submitCommand(command);
+  }, [currentCommand, submitCommand]);
 
   return (
     <div className="mx-auto w-full max-w-[1500px]">
@@ -1299,9 +1214,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
                     key={lesson.id}
                     type="button"
                     onClick={() => {
-                      setCurrentLessonIndex(lessonIndex);
-                      setCurrentCommandIndex(0);
-                      setShowHint(false);
+                      jumpToLesson(lessonIndex);
                       inputRef.current?.focus();
                     }}
                     className={cn(
