@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   BookOpen,
   CheckCircle,
@@ -24,6 +24,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import {
+  useTerminalSimulator,
+  type ExecuteResult,
+  type TerminalLine,
+} from '@/hooks/use-terminal-simulator';
 
 type ContainerStatus = 'running' | 'exited' | 'created';
 
@@ -87,11 +92,6 @@ interface LessonCommand {
   explanation: string;
 }
 
-interface TerminalLine {
-  type: 'input' | 'output' | 'error' | 'success';
-  content: string;
-  timestamp: Date;
-}
 
 const REGISTRY_IMAGES: Record<string, DockerImage> = {
   'hello-world:latest': {
@@ -514,36 +514,35 @@ function statusColor(status: ContainerStatus) {
   return 'text-muted-foreground';
 }
 
+const AVAILABLE_COMMANDS = [
+  'docker',
+  'docker version',
+  'docker info',
+  'docker pull',
+  'docker images',
+  'docker ps',
+  'docker run',
+  'docker logs',
+  'docker stop',
+  'docker start',
+  'docker exec',
+  'docker inspect',
+  'docker build',
+  'docker history',
+  'docker network',
+  'docker volume',
+  'docker compose',
+  'cat Dockerfile',
+  'cat compose.yaml',
+  'clear',
+  'help',
+];
+
 export default function DockerTerminalSimulator() {
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [currentCommandIndex, setCurrentCommandIndex] = useState(0);
-  const [terminalHistory, setTerminalHistory] = useState<TerminalLine[]>([]);
-  const [inputValue, setInputValue] = useState('');
   const [dockerState, setDockerState] = useState<DockerDaemonState>(createInitialState);
-  const [completedCommands, setCompletedCommands] = useState<Set<string>>(new Set());
-  const [showHint, setShowHint] = useState(false);
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
   const idCounter = useRef(1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const terminalRef = useRef<HTMLDivElement>(null);
 
-  const currentLesson = LESSONS[currentLessonIndex];
-  const currentCommand = currentLesson?.commands[currentCommandIndex];
-  const totalCommands = LESSONS.reduce((sum, lesson) => sum + lesson.commands.length, 0);
-  const completedCount = completedCommands.size;
-  const progressPercentage = (completedCount / totalCommands) * 100;
   const runningContainers = dockerState.containers.filter((container) => container.status === 'running');
-
-  useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-    }
-  }, [terminalHistory]);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const findContainer = useCallback(
     (nameOrId: string) =>
@@ -1217,7 +1216,7 @@ Network docker-sim_default  Removed`;
   }
 
   const executeCommand = useCallback(
-    (cmd: string): { output: string; type: TerminalLine['type'] } => {
+    (cmd: string): ExecuteResult => {
       const trimmed = cmd.trim();
       const parts = splitCommand(trimmed);
       const command = parts[0];
@@ -1225,8 +1224,7 @@ Network docker-sim_default  Removed`;
       if (!command) return { output: '', type: 'output' };
 
       if (command === 'clear') {
-        setTerminalHistory([]);
-        return { output: '', type: 'output' };
+        return { output: '', type: 'output', clear: true };
       }
 
       if (command === 'help') {
@@ -1288,168 +1286,39 @@ Network docker-sim_default  Removed`;
     [executeComposeCommand, executeDockerCommand]
   );
 
-  const checkCommand = useCallback(
-    (cmd: string) => {
-      if (!currentCommand) return false;
-      return commandMatches(cmd, currentCommand.expectedCommand);
-    },
-    [currentCommand]
-  );
-
-  const handleSubmit = useCallback(
-    (event: React.FormEvent) => {
-      event.preventDefault();
-      if (!inputValue.trim()) return;
-
-      const cmd = inputValue.trim();
-      setCommandHistory((prev) => [...prev, cmd]);
-      setHistoryIndex(-1);
-      setTerminalHistory((prev) => [
-        ...prev,
-        { type: 'input', content: cmd, timestamp: new Date() },
-      ]);
-
-      const result = executeCommand(cmd);
-      if (result.output) {
-        setTerminalHistory((prev) => [
-          ...prev,
-          { type: result.type, content: result.output, timestamp: new Date() },
-        ]);
-      }
-
-      if (currentCommand && checkCommand(cmd)) {
-        const commandId = `${currentLesson.id}-${currentCommandIndex}`;
-        setCompletedCommands((prev) => new Set([...prev, commandId]));
-        setTerminalHistory((prev) => [
-          ...prev,
-          {
-            type: 'success',
-            content: `OK: ${currentCommand.explanation}`,
-            timestamp: new Date(),
-          },
-        ]);
-        setShowHint(false);
-
-        if (currentCommandIndex < currentLesson.commands.length - 1) {
-          setCurrentCommandIndex((prev) => prev + 1);
-        } else if (currentLessonIndex < LESSONS.length - 1) {
-          setCurrentLessonIndex((prev) => prev + 1);
-          setCurrentCommandIndex(0);
-        }
-      }
-
-      setInputValue('');
-    },
-    [
-      checkCommand,
-      currentCommand,
-      currentCommandIndex,
-      currentLesson,
-      currentLessonIndex,
-      executeCommand,
-      inputValue,
-    ]
-  );
-
-  const availableCommands = useMemo(
-    () => [
-      'docker',
-      'docker version',
-      'docker info',
-      'docker pull',
-      'docker images',
-      'docker ps',
-      'docker run',
-      'docker logs',
-      'docker stop',
-      'docker start',
-      'docker exec',
-      'docker inspect',
-      'docker build',
-      'docker history',
-      'docker network',
-      'docker volume',
-      'docker compose',
-      'cat Dockerfile',
-      'cat compose.yaml',
-      'clear',
-      'help',
-    ],
-    []
-  );
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.ctrlKey && event.key === 'c') {
-        event.preventDefault();
-        setTerminalHistory((prev) => [
-          ...prev,
-          {
-            type: inputValue.trim() ? 'input' : 'output',
-            content: inputValue.trim() ? `${inputValue}^C` : '^C',
-            timestamp: new Date(),
-          },
-        ]);
-        setInputValue('');
-        setHistoryIndex(-1);
-        return;
-      }
-
-      if (event.key === 'Tab') {
-        event.preventDefault();
-        const matches = availableCommands.filter((command) => command.startsWith(inputValue));
-        if (matches.length === 1) {
-          setInputValue(`${matches[0]} `);
-        } else if (matches.length > 1) {
-          setTerminalHistory((prev) => [
-            ...prev,
-            { type: 'input', content: inputValue, timestamp: new Date() },
-            { type: 'output', content: matches.join('  '), timestamp: new Date() },
-          ]);
-        }
-        return;
-      }
-
-      if (event.key === 'ArrowUp') {
-        event.preventDefault();
-        if (historyIndex < commandHistory.length - 1) {
-          const nextIndex = historyIndex + 1;
-          setHistoryIndex(nextIndex);
-          setInputValue(commandHistory[commandHistory.length - 1 - nextIndex]);
-        }
-      } else if (event.key === 'ArrowDown') {
-        event.preventDefault();
-        if (historyIndex > 0) {
-          const nextIndex = historyIndex - 1;
-          setHistoryIndex(nextIndex);
-          setInputValue(commandHistory[commandHistory.length - 1 - nextIndex]);
-        } else if (historyIndex === 0) {
-          setHistoryIndex(-1);
-          setInputValue('');
-        }
-      }
-    },
-    [availableCommands, commandHistory, historyIndex, inputValue]
-  );
-
-  const resetProgress = useCallback(() => {
-    setCurrentLessonIndex(0);
-    setCurrentCommandIndex(0);
-    setTerminalHistory([]);
-    setCompletedCommands(new Set());
+  const onReset = useCallback(() => {
     setDockerState(createInitialState());
-    setShowHint(false);
-    setInputValue('');
-    setCommandHistory([]);
-    setHistoryIndex(-1);
     idCounter.current = 1;
   }, []);
 
-  const jumpToLesson = useCallback((index: number) => {
-    setCurrentLessonIndex(index);
-    setCurrentCommandIndex(0);
-    setShowHint(false);
-  }, []);
+  const {
+    currentLessonIndex,
+    currentCommandIndex,
+    currentLesson,
+    currentCommand,
+    completedCommands,
+    completedCount,
+    totalCommands,
+    progressPercentage,
+    terminalHistory,
+    inputValue,
+    setInputValue,
+    showHint,
+    setShowHint,
+    inputRef,
+    terminalRef,
+    handleSubmit,
+    handleKeyDown,
+    resetProgress,
+    jumpToLesson,
+  } = useTerminalSimulator({
+    lessons: LESSONS,
+    execute: executeCommand,
+    matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
+    successMessage: (command) => `OK: ${command.explanation}`,
+    availableCommands: AVAILABLE_COMMANDS,
+    onReset,
+  });
 
   return (
     <div className="w-full max-w-7xl mx-auto">
