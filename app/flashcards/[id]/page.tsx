@@ -10,6 +10,7 @@ import Link from 'next/link'
 import * as Icons from 'lucide-react'
 import { PageHero } from '@/components/page-hero'
 import { truncateMetaDescription } from '@/lib/meta-description'
+import { detailPageMetadata } from '@/lib/metadata-utils'
 import { pickRelatedItems } from '@/lib/related-content'
 import { RelatedContent } from '@/components/related-content'
 import { RelatedAcrossTypes } from '@/components/related-across-types'
@@ -39,35 +40,15 @@ export async function generateMetadata({ params }: FlashcardPageProps): Promise<
     }
   }
 
-  const description = truncateMetaDescription(flashcardSet.description)
-
-  return {
-    title: { absolute: `${flashcardSet.title} - DevOps Flashcards` },
-    description,
-    alternates: {
-      canonical: `/flashcards/${id}`,
-    },
-    openGraph: {
-      title: `${flashcardSet.title} - DevOps Daily`,
-      description,
-      type: 'website',
-      url: `/flashcards/${id}`,
-      images: [
-        {
-          url: `/images/flashcards/${id}-og.png`,
-          width: 1200,
-          height: 630,
-          alt: flashcardSet.title,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${flashcardSet.title} - DevOps Daily`,
-      description,
-      images: [`/images/flashcards/${id}-og.png`],
-    },
-  }
+  return detailPageMetadata({
+    path: `/flashcards/${id}`,
+    title: `${flashcardSet.title} - DevOps Flashcards`,
+    socialTitle: `${flashcardSet.title} - DevOps Daily`,
+    description: truncateMetaDescription(flashcardSet.description),
+    image: `/images/flashcards/${id}-og.png`,
+    imageAlt: flashcardSet.title,
+    ogType: 'website',
+  })
 }
 
 export default async function FlashcardPage({ params }: FlashcardPageProps) {

@@ -3,6 +3,7 @@ import { getComparisonBySlug, getAllComparisons } from '@/lib/comparisons';
 import { ComparisonPageClient } from '@/components/comparisons/comparison-page-client';
 import { BreadcrumbSchema, ArticleSchema } from '@/components/schema-markup';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { detailPageMetadata } from '@/lib/metadata-utils';
 import type { Metadata } from 'next';
 
 export const dynamicParams = false;
@@ -26,37 +27,13 @@ export async function generateMetadata({
     return {};
   }
 
-  const title = `${comparison.toolA.name} vs ${comparison.toolB.name}: Feature Comparison, Pros/Cons, and Verdict`;
-  const description = truncateMetaDescription(comparison.description);
-  const socialImage = `/images/comparisons/${comparison.slug}-og.png`;
-
-  return {
-    title: { absolute: title },
-    description,
-    alternates: {
-      canonical: `/comparisons/${comparison.slug}`,
-    },
-    openGraph: {
-      title,
-      description,
-      url: `/comparisons/${comparison.slug}`,
-      type: 'article',
-      images: [
-        {
-          url: socialImage,
-          width: 1200,
-          height: 630,
-          alt: `${comparison.toolA.name} vs ${comparison.toolB.name}`,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [socialImage],
-    },
-  };
+  return detailPageMetadata({
+    path: `/comparisons/${comparison.slug}`,
+    title: `${comparison.toolA.name} vs ${comparison.toolB.name}: Feature Comparison, Pros/Cons, and Verdict`,
+    description: truncateMetaDescription(comparison.description),
+    image: `/images/comparisons/${comparison.slug}-og.png`,
+    imageAlt: `${comparison.toolA.name} vs ${comparison.toolB.name}`,
+  });
 }
 
 export default async function ComparisonDetailPage({

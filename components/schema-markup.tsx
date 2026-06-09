@@ -238,14 +238,16 @@ export function LearningResourceSchema({
   learningObjectives,
   technologies,
   url,
+  learningResourceType = 'hands-on exercise',
 }: {
   title: string;
   description: string;
-  difficulty: string;
+  difficulty?: string;
   estimatedTime: string;
-  learningObjectives: string[];
-  technologies: string[];
+  learningObjectives?: string[];
+  technologies?: string[];
   url: string;
+  learningResourceType?: string;
 }) {
   // Convert "75 minutes" -> "PT75M", "2 hours" -> "PT2H"
   const timeMatch = estimatedTime.match(/(\d+)\s*(min|hour|hr)/i);
@@ -261,14 +263,22 @@ export function LearningResourceSchema({
     name: title,
     description,
     url: `${SITE_URL}${url}`,
-    learningResourceType: 'hands-on exercise',
-    educationalLevel: difficulty.charAt(0).toUpperCase() + difficulty.slice(1),
+    learningResourceType,
+    ...(difficulty
+      ? { educationalLevel: difficulty.charAt(0).toUpperCase() + difficulty.slice(1) }
+      : {}),
     timeRequired: isoDuration,
-    teaches: learningObjectives,
-    about: technologies.map((tech) => ({
-      '@type': 'Thing',
-      name: tech,
-    })),
+    ...(learningObjectives && learningObjectives.length > 0
+      ? { teaches: learningObjectives }
+      : {}),
+    ...(technologies && technologies.length > 0
+      ? {
+          about: technologies.map((tech) => ({
+            '@type': 'Thing',
+            name: tech,
+          })),
+        }
+      : {}),
     interactivityType: 'active',
     isAccessibleForFree: true,
     inLanguage: 'en',
