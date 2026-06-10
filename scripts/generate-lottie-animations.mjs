@@ -466,11 +466,9 @@ function packetLost() {
 }
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
-const outputs = [
-  ['quiz-celebration.json', quizCelebration()],
-  ['games-hero.json', gamesHero()],
-  ['packet-lost-404.json', packetLost()],
-];
+// quizCelebration() and packetLost() are kept above for future use, but only
+// the games hero is currently placed on the site.
+const outputs = [['games-hero.json', gamesHero()]];
 for (const [file, data] of outputs) {
   const json = JSON.stringify(data);
   fs.writeFileSync(path.join(OUT_DIR, file), json);

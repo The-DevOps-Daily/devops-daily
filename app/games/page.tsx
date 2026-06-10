@@ -57,13 +57,14 @@ export default async function GamesPage() {
           { label: 'available', value: availableGames.length },
           { label: 'coming soon', value: comingSoonGames.length },
         ]}
-      >
-        <LottiePlayer
-          path="/lottie/games-hero.json"
-          className="mx-auto h-40 w-56 sm:h-48 sm:w-64"
-          ariaLabel="Animated terminal window surrounded by floating game shapes"
-        />
-      </PageHero>
+        sideContent={
+          <LottiePlayer
+            path="/lottie/games-hero.json"
+            className="h-48 w-64 xl:h-56 xl:w-72"
+            ariaLabel="Animated terminal window surrounded by floating game shapes"
+          />
+        }
+      />
 
       {/* Games List with Filters */}
       <section className="py-8 container mx-auto px-4 mb-16">

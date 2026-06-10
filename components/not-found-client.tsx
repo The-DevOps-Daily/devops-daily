@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { LottiePlayer } from '@/components/lottie-player';
 
 export function NotFoundClient() {
   const [path, setPath] = useState('/');
@@ -36,11 +35,6 @@ export function NotFoundClient() {
             <p className="pl-4 text-red-400">
               bash: cd: {path}: No such file or directory
             </p>
-            <LottiePlayer
-              path="/lottie/packet-lost-404.json"
-              className="mx-auto h-24 w-44"
-              ariaLabel="A packet falling through a broken pipe"
-            />
             {isMdRequest && (
               <>
                 <div>
