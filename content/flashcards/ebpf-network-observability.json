@@ -1,0 +1,129 @@
+{
+  "id": "ebpf-network-observability",
+  "title": "Understanding eBPF for Network Observability and Security",
+  "description": "Learn how eBPF runs verified programs inside the Linux kernel to give you network visibility, low overhead monitoring, and security enforcement without kernel modules or app changes.",
+  "category": "Networking",
+  "icon": "Zap",
+  "difficulty": "intermediate",
+  "estimatedTime": "22 minutes",
+  "cardCount": 16,
+  "theme": {
+    "primaryColor": "cyan",
+    "gradientFrom": "from-cyan-500",
+    "gradientTo": "to-blue-600"
+  },
+  "cards": [
+    {
+      "id": "why-ebpf",
+      "front": "What problem does eBPF solve that kernel modules and tcpdump could not?",
+      "back": "Kernel modules can crash the whole machine and need rebuilding for every kernel version. tcpdump copies every packet to user space, which gets expensive fast on busy hosts. eBPF lets you run small, verified programs inside the kernel, attached to events like syscalls or packet arrival. You get kernel-level visibility with the data aggregated in place, so almost nothing crosses to user space.",
+      "category": "Fundamentals",
+      "tags": ["ebpf", "linux", "kernel"]
+    },
+    {
+      "id": "ebpf-verifier",
+      "front": "How does the eBPF verifier stop a program from crashing the kernel?",
+      "back": "Before a program loads, the verifier walks every possible execution path. It checks that all memory access is bounds-checked, helper return values are validated before use, loops are bounded, and total complexity stays under a limit (about 1 million instructions analyzed). If any path is unsafe, the load fails with a log explaining why. This is why an eBPF program cannot dereference a random pointer or spin forever, no matter who wrote it.",
+      "category": "Fundamentals",
+      "tags": ["verifier", "kernel-safety", "ebpf"]
+    },
+    {
+      "id": "ebpf-maps",
+      "front": "What are eBPF maps and what do you use them for?",
+      "back": "Maps are key-value stores that live in the kernel and are shared between eBPF programs and user space. Common types: hash, array, per-CPU variants, LRU hash, and ring buffer. The kernel program counts events or stores per-flow state in a map, and your user-space tool reads it out. Example: tcpconnect pushes each new connection into a ring buffer, and the CLI reads from it and prints lines.",
+      "category": "Fundamentals",
+      "tags": ["maps", "ring-buffer", "ebpf"]
+    },
+    {
+      "id": "hook-points",
+      "front": "Where can you attach eBPF programs in the kernel?",
+      "back": "The main hook points:\n- kprobes/kretprobes: almost any kernel function\n- tracepoints: stable, curated kernel events\n- uprobes: functions in user-space binaries (like SSL_write in OpenSSL)\n- XDP: the NIC driver, earliest point for packets\n- tc: traffic control layer, ingress and egress\n- cgroup and socket hooks: per-container network control\n- LSM hooks: security decisions\n\nThe hook decides what data you see and whether you can act (drop, redirect, deny) or only observe.",
+      "category": "Fundamentals",
+      "tags": ["hooks", "kprobes", "xdp", "tracepoints"]
+    },
+    {
+      "id": "kprobe-vs-tracepoint",
+      "front": "When do you pick a tracepoint over a kprobe?",
+      "back": "Always prefer a tracepoint when one exists. Tracepoints are a stable interface maintained by kernel developers, so they survive kernel upgrades. Kprobes attach to raw kernel functions, which can be renamed, inlined, or change arguments between versions, and then your tool silently breaks. List what is available:\n\nsudo bpftrace -l 'tracepoint:tcp:*'\nsudo bpftrace -l 'kprobe:tcp_*'\n\nUse a kprobe only when no tracepoint covers what you need.",
+      "category": "Fundamentals",
+      "tags": ["tracepoints", "kprobes", "bpftrace"]
+    },
+    {
+      "id": "bpftool-inspect",
+      "front": "What command shows which eBPF programs are currently loaded on a host?",
+      "back": "sudo bpftool prog list\n\nIt prints every loaded program with its ID, type, name, and attach point:\n\n42: kprobe  name tcp_connect  tag 8f57c9a0...\n    loaded_at 2026-06-10T09:14:02+0000  uid 0\n\nUse 'sudo bpftool map list' for maps and 'sudo bpftool prog show id 42 --pretty' for details. This is the first thing to run when you wonder what your Cilium or monitoring agent actually installed.",
+      "category": "Tooling",
+      "tags": ["bpftool", "debugging", "commands"]
+    },
+    {
+      "id": "bpftrace-tcp-connect",
+      "front": "How do you trace every new outbound TCP connection with a bpftrace one-liner?",
+      "back": "sudo bpftrace -e 'kprobe:tcp_connect { printf(\"%s pid=%d\\n\", comm, pid); }'\n\nOutput:\n\ncurl pid=41250\npython3 pid=38122\n\nFor source, destination, and port resolution, use the BCC tool instead:\n\nsudo tcpconnect\nPID    COMM    SADDR         DADDR        DPORT\n41250  curl    10.0.1.5      93.184.216.34  443\n\nGreat for answering \"what is this box talking to?\" without packet capture.",
+      "category": "Tooling",
+      "tags": ["bpftrace", "tcp", "tracing", "commands"]
+    },
+    {
+      "id": "bcc-tcp-tools",
+      "front": "Which BCC tools do you reach for to debug TCP latency and retransmits?",
+      "back": "- tcpconnect: new outbound connections as they happen\n- tcplife: connection lifespans with duration and bytes transferred\n- tcpretrans: every retransmit with the connection state\n- tcprtt: round-trip time histograms\n\nExample:\n\nsudo tcpretrans\nTIME     PID   IP LADDR:LPORT      RADDR:RPORT     STATE\n01:55:05 0     4  10.0.1.5:443     10.0.2.8:33420  ESTABLISHED\n\nRetransmits showing up under load usually mean packet loss or an overloaded peer, and this shows them per connection with zero packet capture.",
+      "category": "Tooling",
+      "tags": ["bcc", "tcp", "retransmits", "latency"]
+    },
+    {
+      "id": "co-re-btf",
+      "front": "What is CO-RE and why does it matter for shipping eBPF tools?",
+      "back": "CO-RE means Compile Once, Run Everywhere. Older BCC tools compiled eBPF programs at runtime, so every host needed clang and matching kernel headers. CO-RE uses BTF type information that the kernel exposes at /sys/kernel/btf/vmlinux, and libbpf adjusts struct field offsets at load time. The result: one small precompiled binary that runs across kernel versions, no compiler in production. It needs a kernel built with CONFIG_DEBUG_INFO_BTF=y, which most distros have shipped since around kernel 5.4.",
+      "category": "Tooling",
+      "tags": ["co-re", "btf", "libbpf", "portability"]
+    },
+    {
+      "id": "what-is-xdp",
+      "front": "What is XDP and why is it so fast at dropping packets?",
+      "back": "XDP (eXpress Data Path) runs your eBPF program in the NIC driver, before the kernel allocates an sk_buff for the packet. The program returns a verdict: XDP_DROP, XDP_PASS, XDP_TX (bounce back out), or XDP_REDIRECT. Dropping a packet there costs almost nothing because the kernel never spent any work on it. That is why XDP is the standard for DDoS mitigation and L4 load balancers like Katran. A single core can drop tens of millions of packets per second.",
+      "category": "Networking",
+      "tags": ["xdp", "performance", "ddos"]
+    },
+    {
+      "id": "xdp-vs-tc",
+      "front": "When do you use tc eBPF instead of XDP?",
+      "back": "XDP only sees ingress and runs before the sk_buff exists, so there is no socket info and no egress hook. tc programs run after sk_buff allocation, on both ingress and egress, with full packet metadata available. The rule: use XDP when you need raw speed on inbound traffic (early drop, redirect, load balancing). Use tc for egress policy, traffic shaping, or anything that needs skb fields like the cgroup or socket that owns the packet.",
+      "category": "Networking",
+      "tags": ["tc", "xdp", "egress", "ingress"]
+    },
+    {
+      "id": "cilium-kube-proxy",
+      "front": "How does Cilium replace kube-proxy with eBPF?",
+      "back": "kube-proxy programs iptables rules that grow with every Service, and each packet walks those chains linearly. Cilium stores service-to-backend mappings in eBPF hash maps and does the translation at the socket or XDP/tc layer. Lookups are O(1) no matter how many Services exist, and there are no iptables chains to traverse. On clusters with thousands of Services this is a real latency and CPU win, and you get per-flow visibility through Hubble as a bonus.",
+      "category": "Networking",
+      "tags": ["cilium", "kubernetes", "kube-proxy"]
+    },
+    {
+      "id": "observability-overhead",
+      "front": "Why is eBPF observability cheaper than packet capture or sidecar proxies?",
+      "back": "The aggregation happens inside the kernel. Histograms and counters live in eBPF maps, and only the summaries cross to user space. Compare that to tcpdump copying every packet out, or a sidecar proxy adding an extra process and network hop per pod. One caveat: a badly placed hook still hurts. A kprobe on a function called for every packet adds overhead every time, so measure with 'bpftool prog profile' before trusting a tool on a hot path.",
+      "category": "Observability",
+      "tags": ["observability", "performance", "overhead"]
+    },
+    {
+      "id": "http-visibility-uprobes",
+      "front": "How can eBPF see HTTP latency without instrumenting the application?",
+      "back": "Two tricks. For plain text traffic, kprobes on socket syscalls let tools parse HTTP from the read/write buffers. For TLS, uprobes attach to functions like SSL_read and SSL_write inside the app's TLS library, catching the data before encryption. Tools like Pixie and Coroot use this to build HTTP and gRPC golden signals with zero code changes and no redeploys. The limits: it works per supported protocol and TLS library, so exotic stacks may show up as opaque bytes.",
+      "category": "Observability",
+      "tags": ["uprobes", "http", "tls", "zero-instrumentation"]
+    },
+    {
+      "id": "bpf-lsm-enforcement",
+      "front": "How does eBPF enforce security policy instead of just observing?",
+      "back": "BPF LSM (kernel 5.7+) attaches eBPF programs to Linux Security Module hooks, the same decision points SELinux uses. The program can return a deny for actions like opening a file, making a connection, or executing a binary. Tetragon uses this plus syscall hooks to kill a process at the moment it violates policy, not seconds later. XDP covers the network side by dropping packets that violate policy before they reach a socket. Detection-only tools like Falco use the same events but alert instead of block.",
+      "category": "Security",
+      "tags": ["bpf-lsm", "enforcement", "tetragon", "falco"]
+    },
+    {
+      "id": "ebpf-load-permissions",
+      "front": "Who can load eBPF programs, and why should you audit them?",
+      "back": "Loading requires CAP_BPF plus CAP_PERFMON for tracing or CAP_NET_ADMIN for networking. In practice that means root, since most distros set kernel.unprivileged_bpf_disabled=1. Treat CAP_BPF like root: a process that can load eBPF can read traffic and hide activity. Real malware does this (BPFDoor used a socket filter to hide its command traffic from normal inspection). Audit what is running:\n\nsudo bpftool prog list\n\nIf you see a program nothing on the team installed, investigate it.",
+      "category": "Security",
+      "tags": ["capabilities", "security", "auditing", "bpfdoor"]
+    }
+  ]
+}
