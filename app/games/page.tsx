@@ -5,6 +5,7 @@ import { Dice6, Gamepad2, Sparkles } from 'lucide-react';
 import { getAllGames } from '@/lib/games';
 import { PageHero } from '@/components/page-hero';
 import { GamesList, SerializableGame } from '@/components/games-list';
+import { LottiePlayer } from '@/components/lottie-player';
 
 export const metadata: Metadata = {
   title: 'DevOps Games & Interactive Tools',
@@ -56,6 +57,13 @@ export default async function GamesPage() {
           { label: 'available', value: availableGames.length },
           { label: 'coming soon', value: comingSoonGames.length },
         ]}
+        sideContent={
+          <LottiePlayer
+            path="/lottie/games-hero.json"
+            className="h-48 w-64 xl:h-56 xl:w-72"
+            ariaLabel="Animated terminal window surrounded by floating game shapes"
+          />
+        }
       />
 
       {/* Games List with Filters */}

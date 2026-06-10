@@ -17,6 +17,8 @@ interface PageHeroProps {
   stats?: Array<{ label: string; value: string | number }>;
   badge?: string;
   children?: React.ReactNode;
+  /** Rendered in the decorative right region on lg+ screens (hidden below). */
+  sideContent?: React.ReactNode;
 }
 
 export function PageHero({
@@ -29,6 +31,7 @@ export function PageHero({
   stats,
   badge,
   children,
+  sideContent,
 }: PageHeroProps) {
   // Build title with optional accent word
   const renderTitle = () => {
@@ -88,6 +91,13 @@ export function PageHero({
           <line x1="0" y1="64" x2="64" y2="0" stroke="currentColor" strokeWidth="1" className="text-primary" />
         </svg>
       </div>
+
+      {/* Optional content in the decorative right region */}
+      {sideContent && (
+        <div className="absolute right-8 xl:right-20 top-1/2 -translate-y-1/2 hidden lg:block pointer-events-none">
+          {sideContent}
+        </div>
+      )}
 
       <div className="relative container mx-auto px-4 py-10 sm:py-14">
         {/* Breadcrumbs */}
