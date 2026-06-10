@@ -51,13 +51,47 @@ Free plans on both sides, as of June 2026.
 
 Five different connection paths, 50 cold-connection cycles each:
 
-| Path | Median | p95 |
-| --- | --- | --- |
-| Neon, pooled (PgBouncer) | 25.1 ms | 36.0 ms |
-| Neon, direct | 29.4 ms | 63.3 ms |
-| Supabase, direct (IPv6) | 27.9 ms | 33.6 ms |
-| Supabase, session pooler | 29.0 ms | 37.2 ms |
-| Supabase, transaction pooler | 29.9 ms | 40.6 ms |
+```chart
+{
+  "type": "bar",
+  "title": "Query latency: cold connection, select 1 (median, 50 runs each)",
+  "unit": "ms",
+  "tickLabel": "p95",
+  "caption": "Full connect + TLS + auth + query cycle from a same-metro client.",
+  "rows": [
+    {
+      "label": "Neon, pooled",
+      "value": 25.1,
+      "tick": 36,
+      "series": "Neon"
+    },
+    {
+      "label": "Neon, direct",
+      "value": 29.4,
+      "tick": 63.3,
+      "series": "Neon"
+    },
+    {
+      "label": "Supabase, direct (IPv6)",
+      "value": 27.9,
+      "tick": 33.6,
+      "series": "Supabase"
+    },
+    {
+      "label": "Supabase, session pooler",
+      "value": 29,
+      "tick": 37.2,
+      "series": "Supabase"
+    },
+    {
+      "label": "Supabase, transaction pooler",
+      "value": 29.9,
+      "tick": 40.6,
+      "series": "Supabase"
+    }
+  ]
+}
+```
 
 That is a 5 ms spread across ten thousand-ish kilometers of marketing. At equal network distance, the free tiers are latency-equivalent for a single query. The spread between the fastest and slowest path on the *same* platform is bigger than the spread between platforms.
 
@@ -74,6 +108,67 @@ Time from the management API call to the first successful `select 1`, 20 runs ea
 
 Two things stood out. First, both are genuinely fast: a complete, queryable Postgres in single-digit seconds. Supabase used to take minutes to provision a project; that reputation is outdated. Second, neither is consistent: Neon's fastest run was 3.5 s and its slowest 13.6 s, nearly a 4x spread, so do not build automation that assumes the median.
 
+```chart
+{
+  "type": "dots",
+  "title": "Project creation: API call to first successful query",
+  "unit": "ms",
+  "caption": "20 runs each, aws eu-central-1, free plans, June 2026. Amber line is the median.",
+  "series": [
+    {
+      "name": "Neon",
+      "samples": [
+        6088.4,
+        5801.6,
+        5593.9,
+        5573.1,
+        13558,
+        6011.9,
+        5474.2,
+        5775.9,
+        5683.7,
+        5528.4,
+        5705.2,
+        8568.3,
+        3571.7,
+        5765,
+        5718.4,
+        3462,
+        5491.3,
+        3927.3,
+        8751.6,
+        8803.3
+      ]
+    },
+    {
+      "name": "Supabase",
+      "samples": [
+        7621.3,
+        11884.2,
+        7052.1,
+        6492.8,
+        8521.4,
+        7380.4,
+        6873.7,
+        8101.3,
+        9189,
+        9933.4,
+        6777.1,
+        6947.2,
+        7473.7,
+        7936.5,
+        6802.8,
+        6921.1,
+        7105.7,
+        7337.1,
+        11765,
+        8402.1
+      ]
+    }
+  ]
+}
+```
+
 If your workflow creates databases programmatically (per-tenant databases, ephemeral test environments, agent-driven tooling), both free tiers can technically do it, but the caps differ wildly: Neon allows up to 100 projects on the free plan, Supabase allows 2 active projects per organization. For anything that creates databases in a loop, that single line of the spec sheet decides for you before any benchmark does.
 
 ## Idle behavior: a nap versus a coma
@@ -83,6 +178,42 @@ This is the section that should actually drive your decision for side projects, 
 **Neon** free compute always scales to zero after 5 minutes of inactivity. You cannot turn that off on the free plan. The flip side: it wakes automatically on the next connection. We suspended and woke a database 20 times:
 
 - Wake query (first query against suspended compute): **568 ms median, 1.06 s p95**, worst case 1.55 s.
+
+```chart
+{
+  "type": "dots",
+  "title": "Neon cold start: first query against suspended compute",
+  "unit": "ms",
+  "caption": "20 suspend/wake cycles. Neon documents 300-500 ms as typical.",
+  "series": [
+    {
+      "name": "wake query",
+      "samples": [
+        576.9,
+        580.3,
+        1553.8,
+        567.7,
+        563.1,
+        572.8,
+        557.8,
+        571,
+        567.1,
+        557.3,
+        562.6,
+        573.4,
+        558.3,
+        554.5,
+        566.3,
+        565.1,
+        586.9,
+        571.7,
+        583.1,
+        1061.9
+      ]
+    }
+  ]
+}
+```
 
 Neon's docs say cold starts are "typically a few hundred milliseconds" with 500 ms as the usual ceiling. Measured from a same-region client, reality is a bit slower: our median sat just above their typical ceiling, and the p95 crossed a full second. Not bad, just not quite the brochure. For a hobby app behind a page load, an occasional extra half second on the first request after a quiet stretch is invisible. For a latency-sensitive API that gets sparse traffic, it is a real consideration.
 
