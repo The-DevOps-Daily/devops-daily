@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { LottiePlayer } from '@/components/lottie-player';
 import {
   CheckCircle,
   XCircle,
@@ -350,7 +351,12 @@ export default function GenericQuiz({ quizConfig }: GenericQuizProps) {
           <Card
             className={`text-center border-2 border-primary/20 bg-linear-to-br ${quizConfig.theme.primaryColor}/5`}
           >
-            <CardHeader>
+            <CardHeader className="relative">
+              <LottiePlayer
+                path="/lottie/quiz-celebration.json"
+                loop={false}
+                className="pointer-events-none absolute left-1/2 top-1/2 h-56 w-80 -translate-x-1/2 -translate-y-1/2"
+              />
               <motion.div
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
