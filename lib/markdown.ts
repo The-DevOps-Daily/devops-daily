@@ -122,6 +122,9 @@ marked.use(
   markedHighlight({
     langPrefix: 'hljs language-',
     highlight(code, lang) {
+      // Chart fences carry JSON for the chart renderer; leave the text
+      // untouched so the code renderer below can parse it.
+      if (lang === 'chart') return code;
       const language = hljs.getLanguage(lang) ? lang : 'plaintext';
       return hljs.highlight(code, { language }).value;
     },
@@ -138,9 +141,33 @@ marked.setOptions({
 // We'll handle heading IDs ourselves in the custom renderer
 // marked.use(gfmHeadingId({}));
 
-// Custom renderer to enhance headings with anchor links
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// Custom renderer: headings get anchor links, and ```chart fences become
+// placeholders that ChartBlockWrapper hydrates client-side.
 marked.use({
   renderer: {
+    code({ text, lang }: Tokens.Code) {
+      if (lang === 'chart') {
+        try {
+          const spec = JSON.parse(text);
+          if (spec && typeof spec === 'object' && spec.type) {
+            return `<div class="post-chart not-prose" data-chart="${escapeHtml(JSON.stringify(spec))}"></div>`;
+          }
+        } catch {
+          // malformed spec: fall through to a visible code block so the
+          // mistake is obvious in the rendered post instead of a blank hole
+        }
+        return `<pre><code class="hljs language-chart">${escapeHtml(text)}</code></pre>`;
+      }
+      return false;
+    },
     heading({ tokens, depth }: Tokens.Heading) {
       // Extract text from tokens
       const text = tokens
