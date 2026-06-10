@@ -7,9 +7,11 @@ import {
   type BarRow,
   type LineSeries,
   type DotSeries,
+  type CdfSeries,
   parseChartSpec,
   formatValue,
   median,
+  percentile,
   seriesColor,
 } from '@/lib/post-charts';
 
@@ -113,9 +115,9 @@ function LineChart({ spec }: { spec: ChartSpec }) {
         const d = s.data.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
         return (
           <g key={s.name}>
-            <path d={d} fill="none" stroke={seriesColor(si)} strokeWidth={2.5} strokeLinejoin="round" />
+            <path d={d} fill="none" stroke={s.color ?? seriesColor(si)} strokeWidth={2.5} strokeLinejoin="round" />
             {s.data.map((v, i) => (
-              <circle key={i} cx={x(i)} cy={y(v)} r={3} fill={seriesColor(si)} />
+              <circle key={i} cx={x(i)} cy={y(v)} r={3} fill={s.color ?? seriesColor(si)} />
             ))}
           </g>
         );
@@ -163,12 +165,82 @@ function DotPlot({ spec }: { spec: ChartSpec }) {
               <text x={padX} y={si * rowH + 15} fontSize={13} className="fill-muted-foreground">{s.name}</text>
             )}
             {s.samples.map((v, j) => (
-              <circle key={j} cx={scale(v)} cy={cy + 8} r={4.5} fill={seriesColor(si)} fillOpacity={0.55} />
+              <circle key={j} cx={scale(v)} cy={cy + 8} r={4.5} fill={s.color ?? seriesColor(si)} fillOpacity={0.55} />
             ))}
             <line x1={mx} y1={cy - 7} x2={mx} y2={cy + 23} stroke="#f59e0b" strokeWidth={2.5} />
             <text x={mx + 8} y={cy} fontSize={12} fill="#f59e0b" fontWeight={600}>
               {formatValue(med, spec.unit)}
             </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function CdfChart({ spec }: { spec: ChartSpec }) {
+  const series = spec.series as CdfSeries[];
+  const width = 720;
+  const height = 300;
+  const padL = 46;
+  const padR = 14;
+  const padT = 12;
+  const padB = 32;
+  const all = series.flatMap((s) => s.samples);
+  const minV = Math.min(...all) * 0.96;
+  const maxV = Math.max(...all) * 1.02;
+  const x = (v: number) => padL + ((v - minV) / (maxV - minV)) * (width - padL - padR);
+  const y = (pct: number) => padT + (1 - pct / 100) * (height - padT - padB);
+  const xTicks = [...Array(5).keys()].map((t) => minV + ((maxV - minV) * (t + 1)) / 5);
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={spec.title ?? 'Percentile chart'}>
+      {[50, 95].map((pct) => (
+        <g key={pct}>
+          <line
+            x1={padL} y1={y(pct)} x2={width - padR} y2={y(pct)}
+            stroke={pct === 95 ? '#f59e0b' : 'currentColor'}
+            strokeOpacity={pct === 95 ? 0.4 : 0.12}
+            strokeDasharray="4 5"
+          />
+          <text
+            x={padL - 6} y={y(pct) + 4} fontSize={11} textAnchor="end"
+            fill={pct === 95 ? '#f59e0b' : undefined}
+            className={pct === 95 ? undefined : 'fill-muted-foreground'}
+          >
+            p{pct}
+          </text>
+        </g>
+      ))}
+      {[0, 100].map((pct) => (
+        <text key={pct} x={padL - 6} y={y(pct) + 4} fontSize={11} textAnchor="end" className="fill-muted-foreground">
+          {pct === 0 ? 'min' : 'max'}
+        </text>
+      ))}
+      {xTicks.map((v) => (
+        <g key={v}>
+          <line x1={x(v)} y1={padT} x2={x(v)} y2={height - padB} className="stroke-border" strokeOpacity={0.3} />
+          <text x={x(v)} y={height - 8} fontSize={11} textAnchor="middle" className="fill-muted-foreground">
+            {formatValue(v, spec.unit)}
+          </text>
+        </g>
+      ))}
+      {series.map((s, si) => {
+        const sorted = [...s.samples].sort((a, b) => a - b);
+        const d = sorted
+          .map((v, i) => {
+            const pct = (i / (sorted.length - 1)) * 100;
+            return `${i === 0 ? 'M' : 'L'}${x(v).toFixed(1)},${y(pct).toFixed(1)}`;
+          })
+          .join(' ');
+        const p95 = percentile(sorted, 95);
+        return (
+          <g key={s.name}>
+            <path
+              d={d} fill="none" stroke={s.color ?? seriesColor(si)} strokeWidth={2.2}
+              strokeDasharray={s.dash} strokeLinejoin="round"
+            />
+            <circle cx={x(p95)} cy={y(95)} r={3.5} fill={s.color ?? seriesColor(si)} />
           </g>
         );
       })}
@@ -183,9 +255,11 @@ function Legend({ spec }: { spec: ChartSpec }) {
   } else if (spec.series) {
     names = (spec.series as Array<{ name: string }>).map((s) => s.name).filter(Boolean);
   }
-  const items = names.map((name, i) => ({ name, color: seriesColor(i) }));
+  const overrides = (spec.series as Array<{ name: string; color?: string }> | undefined) ?? [];
+  const items = names.map((name, i) => ({ name, color: overrides[i]?.color ?? seriesColor(i) }));
   if (spec.type !== 'line' && spec.tickLabel) items.push({ name: spec.tickLabel, color: '#f59e0b' });
   if (spec.type === 'dots') items.push({ name: 'median', color: '#f59e0b' });
+  if (spec.type === 'cdf') items.push({ name: 'p95', color: '#f59e0b' });
   if (items.length < 2) return null;
 
   return (
@@ -209,6 +283,7 @@ export function PostChart({ spec }: { spec: ChartSpec }) {
       {spec.type === 'bar' && <BarChart spec={spec} />}
       {spec.type === 'line' && <LineChart spec={spec} />}
       {spec.type === 'dots' && <DotPlot spec={spec} />}
+      {spec.type === 'cdf' && <CdfChart spec={spec} />}
       <Legend spec={spec} />
       {spec.caption && <p className="mt-3 text-xs text-muted-foreground">{spec.caption}</p>}
     </figure>

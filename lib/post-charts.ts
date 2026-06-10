@@ -4,7 +4,7 @@
  * so a typo never breaks a post build.
  */
 
-export type ChartType = 'bar' | 'line' | 'dots';
+export type ChartType = 'bar' | 'line' | 'dots' | 'cdf';
 
 export interface BarRow {
   label: string;
@@ -18,6 +18,8 @@ export interface BarRow {
 export interface LineSeries {
   name: string;
   data: number[];
+  /** Optional color override; palette order applies when omitted */
+  color?: string;
 }
 
 export interface DotSeries {
@@ -25,6 +27,17 @@ export interface DotSeries {
   samples: number[];
   /** Optional median override; computed from samples when omitted */
   median?: number;
+  /** Optional color override; palette order applies when omitted */
+  color?: string;
+}
+
+export interface CdfSeries {
+  name: string;
+  samples: number[];
+  /** Dash pattern to distinguish same-colored paths, e.g. "6 5" */
+  dash?: string;
+  /** Optional color override; palette order applies when omitted */
+  color?: string;
 }
 
 export interface ChartSpec {
@@ -39,7 +52,7 @@ export interface ChartSpec {
   rows?: BarRow[];
   /** line */
   x?: Array<string | number>;
-  series?: LineSeries[] | DotSeries[];
+  series?: LineSeries[] | DotSeries[] | CdfSeries[];
 }
 
 export function parseChartSpec(raw: string): ChartSpec | null {
@@ -49,6 +62,7 @@ export function parseChartSpec(raw: string): ChartSpec | null {
     if (spec.type === 'bar' && Array.isArray(spec.rows) && spec.rows.length > 0) return spec;
     if (spec.type === 'line' && Array.isArray(spec.series) && spec.series.length > 0) return spec;
     if (spec.type === 'dots' && Array.isArray(spec.series) && spec.series.length > 0) return spec;
+    if (spec.type === 'cdf' && Array.isArray(spec.series) && spec.series.length > 0) return spec;
     return null;
   } catch {
     return null;
@@ -66,6 +80,12 @@ export function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+export function percentile(values: number[], p: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
+  return sorted[Math.max(0, idx)];
 }
 
 /** Fixed palette that reads well on both themes, assigned by series order. */
