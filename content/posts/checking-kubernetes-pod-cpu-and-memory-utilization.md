@@ -87,7 +87,7 @@ This command provides detailed information, including resource requests and limi
 
 ## Conclusion
 
-Monitoring CPU and memory utilization of Kubernetes Pods is crucial for maintaining cluster performance. By using `kubectl top` and metrics-server, you can efficiently track resource usage and optimize your applications.
+Monitoring CPU and memory utilization of Kubernetes Pods is important for maintaining cluster performance. By using `kubectl top` and metrics-server, you can efficiently track resource usage and optimize your applications.
 
 
 ## Related Resources

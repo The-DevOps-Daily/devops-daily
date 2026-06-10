@@ -19,7 +19,7 @@ tags:
   - bash
 ---
 
-When managing files across multiple directories, you often need to locate files based on name patterns rather than exact names. Linux provides robust wildcard matching capabilities through the `find` command, allowing you to search recursively through directory structures using flexible pattern matching.
+When managing files across multiple directories, you often need to locate files based on name patterns rather than exact names. Linux provides flexible wildcard matching through the `find` command, allowing you to search recursively through directory structures using flexible pattern matching.
 
 ## Prerequisites
 

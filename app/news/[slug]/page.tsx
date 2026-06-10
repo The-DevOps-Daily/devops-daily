@@ -10,6 +10,7 @@ import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
+import { detailPageMetadata } from '@/lib/metadata-utils';
 import Link from 'next/link';
 
 import type { Metadata } from 'next';
@@ -38,35 +39,16 @@ export async function generateMetadata({
 
   const socialImage = getSocialImagePath(slug, 'news');
 
-  return {
-    title: { absolute: digest.title },
+  return detailPageMetadata({
+    path: `/news/${digest.slug}`,
+    title: digest.title,
     description: digest.excerpt || digest.summary,
-    alternates: {
-      canonical: `/news/${digest.slug}`,
-    },
-    openGraph: {
-      type: 'article',
-      title: digest.title,
-      description: digest.excerpt || digest.summary,
-      url: `/news/${digest.slug}`,
-      images: [
-        {
-          url: socialImage || digest.image || '/og-image.png',
-          width: 1200,
-          height: 630,
-          alt: digest.title,
-        },
-      ],
+    image: socialImage || digest.image || '/og-image.png',
+    article: {
       publishedTime: digest.publishedAt || digest.date,
       section: 'DevOps News',
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: digest.title,
-      description: digest.excerpt || digest.summary,
-      images: [socialImage || digest.image || '/og-image.png'],
-    },
-  };
+  });
 }
 
 export default async function NewsDigestPage({

@@ -137,7 +137,7 @@ chmod +x tf-wrapper.sh
 ./tf-wrapper.sh apply
 ```
 
-For a more robust version that handles comments and validation:
+For a more thorough version that handles comments and validation:
 
 ```bash
 #!/bin/bash
@@ -236,7 +236,7 @@ This approach has limitations:
 - Can't handle multi-line values
 - Doesn't expand variable references
 
-For more robust parsing:
+For more thorough parsing:
 
 ```hcl
 locals {

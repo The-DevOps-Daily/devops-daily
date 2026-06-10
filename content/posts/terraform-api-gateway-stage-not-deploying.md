@@ -156,7 +156,7 @@ However, this doesn't automatically trigger redeployment when you change integra
 
 ## Creating Triggers From Multiple Resources
 
-For complex APIs, create a comprehensive trigger hash:
+For complex APIs, create a trigger hash that covers every resource:
 
 ```hcl
 locals {

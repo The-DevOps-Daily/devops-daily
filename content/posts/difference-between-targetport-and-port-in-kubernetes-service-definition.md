@@ -20,7 +20,7 @@ tags:
 
 ## Introduction
 
-When defining a Service in Kubernetes, you often encounter two key properties: `port` and `targetPort`. These properties play a crucial role in how traffic is routed to your application, but their differences can sometimes be confusing. In this guide, you'll learn what each property does, how they interact, and when to use them.
+When defining a Service in Kubernetes, you often encounter two key properties: `port` and `targetPort`. These properties play a key role in how traffic is routed to your application, but their differences can sometimes be confusing. In this guide, you'll learn what each property does, how they interact, and when to use them.
 
 ## Prerequisites
 

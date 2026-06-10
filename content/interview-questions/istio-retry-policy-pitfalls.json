@@ -1,0 +1,51 @@
+{
+  "id": "istio-retry-policy-pitfalls",
+  "slug": "istio-retry-policy-pitfalls",
+  "title": "Istio Retries and Retry Amplification",
+  "question": "How do you configure retries in Istio, and what's the danger of being too aggressive with them?",
+  "answer": "Retries are set on the VirtualService route with `retries.attempts`, `retries.perTryTimeout`, and `retries.retryOn`. The `retryOn` field is the important one: it controls which failures get retried. Common values are `5xx`, `reset`, `connect-failure`, and `gateway-error`. Never put `retriable-4xx` on POST endpoints unless you know they're idempotent. The big danger is retry amplification in a deep call graph. If the gateway retries 3 times, and the next hop retries 3 times, and the hop after that retries 3 times, a single user request can produce 27 backend calls. When the downstream is already struggling, those retries are exactly what tips it from slow to dead. The fix is to retry only at the edge or only once at internal hops, and to set tight `perTryTimeout` so the total time is bounded. Pair retries with circuit breakers in the DestinationRule so once a host is failing, you stop hitting it instead of retrying into the fire. And make sure `attempts` plus `perTryTimeout` doesn't exceed the route's overall `timeout` — if it does, the timeout fires before retries finish and you waste budget.",
+  "explanation": "Mid-level candidates often know how to write a retry block but don't think about second-order effects. The interviewer is listening for retry amplification, idempotency awareness, and the link between retries and circuit breakers. A weak answer is just citing the YAML fields. A strong answer ties retries to the bigger reliability story.",
+  "category": "Service Mesh",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "istio",
+    "service-mesh",
+    "traffic-management",
+    "retries",
+    "reliability"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Safe retry policy for an idempotent GET",
+      "code": "apiVersion: networking.istio.io/v1\nkind: VirtualService\nmetadata:\n  name: ratings\nspec:\n  hosts: [ratings]\n  http:\n    - timeout: 2s\n      retries:\n        attempts: 3\n        perTryTimeout: 500ms\n        retryOn: gateway-error,connect-failure,refused-stream\n      route:\n        - destination: { host: ratings }"
+    },
+    {
+      "language": "yaml",
+      "label": "No retries on a non-idempotent POST",
+      "code": "apiVersion: networking.istio.io/v1\nkind: VirtualService\nmetadata:\n  name: payments\nspec:\n  hosts: [payments]\n  http:\n    - match:\n        - method: { exact: POST }\n          uri: { prefix: /charge }\n      timeout: 5s\n      retries:\n        attempts: 0\n      route:\n        - destination: { host: payments }"
+    },
+    {
+      "language": "bash",
+      "label": "Check the effective retry policy on a sidecar",
+      "code": "istioctl proxy-config route deploy/productpage \\\n  --name 9080 -o json \\\n  | jq '.[].virtualHosts[].routes[].route.retryPolicy'"
+    }
+  ],
+  "followUpQuestions": [
+    "What's retry amplification and how would you cap it in a five-hop call graph?",
+    "Why is `retryOn: 5xx` risky on a POST that creates a resource?",
+    "How do retries interact with circuit breakers in the DestinationRule?"
+  ],
+  "commonMistakes": [
+    "Setting `attempts: 5` on every route without considering call depth",
+    "Retrying non-idempotent verbs and creating duplicate writes",
+    "Setting `perTryTimeout` so high that retries never actually fire before the outer timeout"
+  ],
+  "relatedTopics": [
+    "circuit-breaker",
+    "idempotency",
+    "reliability-patterns",
+    "envoy"
+  ]
+}

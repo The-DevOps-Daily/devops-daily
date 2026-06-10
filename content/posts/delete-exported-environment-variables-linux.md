@@ -162,7 +162,7 @@ You can list all environment variables to confirm removal using the `env` comman
 env | grep API_KEY
 ```
 
-If the variable was successfully removed, this command returns no output. For a more comprehensive check, you can compare the environment before and after:
+If the variable was successfully removed, this command returns no output. For a more thorough check, you can compare the environment before and after:
 
 ```bash
 env > before.txt

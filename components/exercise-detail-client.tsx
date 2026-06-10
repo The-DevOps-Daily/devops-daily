@@ -9,6 +9,10 @@ import { Breadcrumb } from '@/components/breadcrumb';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { ReportIssue } from '@/components/report-issue';
 import { cn } from '@/lib/utils';
+import {
+  exerciseDifficultyColors as difficultyColors,
+  exerciseEnvironmentColors as environmentColors,
+} from '@/lib/badge-colors';
 import Confetti from 'react-confetti';
 import {
   Clock,
@@ -168,19 +172,6 @@ export function ExerciseDetailClient({ exercise }: ExerciseDetailClientProps) {
   const IconComponent = iconComponents[exercise.icon] || Code;
   const progressPercentage = (completedSteps.length / exercise.steps.length) * 100;
   const currentStepData = exercise.steps[currentStep];
-
-  const difficultyColors = {
-    beginner: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
-    intermediate: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
-    advanced: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
-  };
-
-  const environmentColors = {
-    local: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-    cloud: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
-    browser: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
-    container: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400',
-  };
 
   // Breadcrumb items
   const breadcrumbItems = [

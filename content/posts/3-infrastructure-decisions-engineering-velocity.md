@@ -36,7 +36,7 @@ tags:
 
 Engineering teams obsess over monitoring tools, service meshes, and database choices. They spend weeks evaluating container runtimes. They debate GitOps vs traditional CI/CD.
 
-These decisions matter, but they're **optimizations**. They affect developer experience and operational efficiency, but they don't fundamentally change your team's ability to ship quickly.
+These decisions matter, but they're **optimizations**. They affect developer experience and operational efficiency, but they don't change your team's ability to ship quickly.
 
 Three infrastructure decisions have outsized impact on velocity:
 
@@ -115,7 +115,7 @@ IaC:       7.5 hours = 0.047 FTE = $780/month
 Platform:  1.2 hours = 0.007 FTE = $120/month
 ```
 
-The difference between manual and IaC is **$24,220/month** in engineer time—nearly a senior engineer's salary.
+The difference between manual and IaC is **$24,220/month** in engineer time, nearly a senior engineer's salary.
 
 ### Choosing Your Provisioning Model
 
@@ -153,7 +153,7 @@ The difference between manual and IaC is **$24,220/month** in engineer time—ne
 
 Developers push directly to production. No staging environment. Works for:
 - Very early startups (<5 engineers)
-- Teams with comprehensive automated testing
+- Teams with thorough automated testing
 - Low-risk applications (internal tools, content sites)
 
 **Velocity impact**: Maximum speed. Feature branches merge to main, CI runs, production deploys. **Total time from merge to production: 5-15 minutes.**

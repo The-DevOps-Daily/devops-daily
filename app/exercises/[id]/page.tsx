@@ -8,6 +8,7 @@ import {
 import { ExerciseSeriesNav } from '@/components/exercise-series-nav';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { detailPageMetadata } from '@/lib/metadata-utils';
 import { pickRelatedItems } from '@/lib/related-content';
 import { RelatedContent } from '@/components/related-content';
 import { RelatedAcrossTypes } from '@/components/related-across-types';
@@ -35,36 +36,13 @@ export async function generateMetadata({
     return {};
   }
 
-  const socialImage = getSocialImagePath(exercise.id, 'exercises');
-  const description = truncateMetaDescription(exercise.description);
-
-  return {
-    title: { absolute: `${exercise.title} - DevOps Exercise` },
-    description,
-    alternates: {
-      canonical: `/exercises/${exercise.id}`,
-    },
-    openGraph: {
-      title: `${exercise.title} - DevOps Exercise`,
-      description,
-      url: `/exercises/${exercise.id}`,
-      type: 'article',
-      images: [
-        {
-          url: socialImage,
-          width: 1200,
-          height: 630,
-          alt: exercise.title,
-        },
-      ],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${exercise.title} - DevOps Exercise`,
-      description,
-      images: [socialImage],
-    },
-  };
+  return detailPageMetadata({
+    path: `/exercises/${exercise.id}`,
+    title: `${exercise.title} - DevOps Exercise`,
+    description: truncateMetaDescription(exercise.description),
+    image: getSocialImagePath(exercise.id, 'exercises'),
+    imageAlt: exercise.title,
+  });
 }
 
 export default async function ExerciseDetailPage({ params }: { params: Promise<{ id: string }> }) {

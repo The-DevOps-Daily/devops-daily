@@ -95,7 +95,7 @@ This method uses:
 
 ## Creating a Reusable Split Function
 
-Here's a robust function that handles various edge cases:
+Here's a reusable function that handles various edge cases:
 
 ```bash
 split_string() {
@@ -355,4 +355,4 @@ process_large_file() {
 5. **Choose the right method** based on your data complexity
 6. **Test with edge cases** like empty fields, special characters, and whitespace
 
-String splitting is essential for data processing in Bash. Whether you're parsing simple comma-separated values or complex structured data, these techniques provide the foundation for robust string manipulation in your scripts. Choose the method that best fits your specific use case and data format.
+String splitting is essential for data processing in Bash. Whether you're parsing simple comma-separated values or complex structured data, these techniques provide the foundation for reliable string manipulation in your scripts. Choose the method that best fits your specific use case and data format.

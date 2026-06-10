@@ -144,7 +144,7 @@ Now you have four containers (including the production one) all running from the
 
 ## Practical Differences in Daily Development
 
-Understanding the image-container distinction becomes crucial in several scenarios:
+Understanding the image-container distinction matters in several scenarios:
 
 ### Debugging Application Issues
 
@@ -297,9 +297,9 @@ Understanding the image-container relationship is fundamental to working effecti
 
 ## Related Resources
 
-- [How to Run a Docker Image as a Container](/posts/docker-run-image-as-container) — put this knowledge into practice
-- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start) — container lifecycle commands
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build better images
-- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine) — deeper comparison
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — comprehensive learning path
-- [Docker Flashcards](/flashcards/docker-essentials) — review core concepts
+- [How to Run a Docker Image as a Container](/posts/docker-run-image-as-container): put this knowledge into practice
+- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start): container lifecycle commands
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build better images
+- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine): deeper comparison
+- [Introduction to Docker Guide](/guides/introduction-to-docker): complete learning path
+- [Docker Flashcards](/flashcards/docker-essentials): review core concepts

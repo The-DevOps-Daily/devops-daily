@@ -24,7 +24,7 @@ Setting CPU and memory requests too high in Kubernetes wastes money and reduces 
 
 When you set resource requests too conservatively in Kubernetes, your cluster reserves more capacity than workloads actually need. This leads to underutilized nodes and higher cloud bills. The problem gets worse at scale - imagine 200 pods each requesting 2 CPU cores but only using 200m. That's 400 reserved cores when actual demand is closer to 40 cores.
 
-The solution involves right-sizing both your pods and nodes. You'll use monitoring data to understand actual usage, apply VPA to adjust pod requests automatically, and leverage Karpenter to provision nodes that match your workload requirements.
+The solution involves right-sizing both your pods and nodes. You'll use monitoring data to understand actual usage, apply VPA to adjust pod requests automatically, and use Karpenter to provision nodes that match your workload requirements.
 
 ## Prerequisites
 

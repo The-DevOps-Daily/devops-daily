@@ -269,7 +269,7 @@ Clumsy is great for testing but can be unstable with some applications.
 
 ### NetLimiter (Paid)
 
-NetLimiter is more robust but costs money:
+NetLimiter is more capable but costs money:
 
 1. Download from [netlimiter.com](https://www.netlimiter.com/)
 2. Install and launch

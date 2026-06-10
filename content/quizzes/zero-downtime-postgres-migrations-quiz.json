@@ -1,0 +1,258 @@
+{
+  "id": "zero-downtime-postgres-migrations-quiz",
+  "title": "Zero-Downtime PostgreSQL Migrations Quiz",
+  "description": "Test your skills shipping schema changes against a live PostgreSQL database without dropping traffic, breaking deploys, or locking out writers.",
+  "category": "Database Operations",
+  "icon": "Database",
+  "totalPoints": 195,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-600",
+    "gradientTo": "to-indigo-700"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-05-26"
+  },
+  "questions": [
+    {
+      "id": "expand-contract-pattern-basics",
+      "title": "What Expand-and-Contract Actually Means",
+      "description": "Your team is renaming a column in a high-traffic table. The lead engineer mentions doing it with the expand-and-contract pattern.",
+      "situation": "You manage a payments service on PostgreSQL 15. The orders table has a column called user_id that you want to rename to customer_id. The service runs 12 replicas behind a load balancer, deploys roll out one pod at a time, and you cannot pause writes.",
+      "codeExample": "Old code path:\n  INSERT INTO orders (user_id, amount) VALUES ($1, $2)\n\nDesired final state:\n  INSERT INTO orders (customer_id, amount) VALUES ($1, $2)\n\nProblem:\nDuring rollout, some pods write to user_id and some to customer_id at the same time.",
+      "options": [
+        "Run ALTER TABLE orders RENAME COLUMN user_id TO customer_id in a single migration deployed with the new code",
+        "Add the new column, dual-write to both, backfill, switch reads, then drop the old column across separate deploys",
+        "Drop user_id and recreate it as customer_id inside a transaction so it is atomic",
+        "Take a 5 minute maintenance window during off-hours and rename the column with a brief outage"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Expand-and-contract means you never have a moment where old code and new schema disagree. You first expand the schema (add customer_id), make the app write to both, backfill historical rows, then switch readers, and finally contract (drop user_id). A single RENAME deploys instantly schema-wise but breaks every pod still running the old code. Dropping and recreating inside a transaction does not help, the old pods still reference the missing column. Maintenance windows defeat the purpose of zero-downtime work.",
+      "hint": "Old pods and new pods will be running side by side for several minutes. What does each version need to see in the schema to keep working?"
+    },
+    {
+      "id": "lock-modes-basics",
+      "title": "Reading the Lock Mode Table",
+      "description": "Before running a migration on a production table, your teammate asks you which PostgreSQL lock modes are safe alongside normal traffic.",
+      "situation": "You are reviewing the PostgreSQL lock modes documentation before signing off on a migration plan. Your traffic is mostly SELECTs with a steady stream of INSERTs and UPDATEs. You need to identify which lock mode a migration must avoid acquiring on a busy table if it wants to stay invisible to writers.",
+      "codeExample": "Common PostgreSQL table-level lock modes (from weak to strong):\n\n  ACCESS SHARE              (SELECT)\n  ROW SHARE                 (SELECT FOR UPDATE)\n  ROW EXCLUSIVE             (INSERT, UPDATE, DELETE)\n  SHARE UPDATE EXCLUSIVE    (VACUUM, CREATE INDEX CONCURRENTLY, ANALYZE)\n  SHARE                     (CREATE INDEX without CONCURRENTLY)\n  SHARE ROW EXCLUSIVE       (CREATE TRIGGER, some ALTER TABLE)\n  EXCLUSIVE                 (REFRESH MATERIALIZED VIEW CONCURRENTLY)\n  ACCESS EXCLUSIVE          (ALTER TABLE, DROP TABLE, TRUNCATE, REINDEX)",
+      "options": [
+        "ROW EXCLUSIVE, because it conflicts with every other write",
+        "SHARE UPDATE EXCLUSIVE, because the name has the word EXCLUSIVE in it",
+        "ACCESS EXCLUSIVE, because it conflicts with every other lock mode including plain SELECTs",
+        "ACCESS SHARE, because anything with SHARE blocks writes"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "ACCESS EXCLUSIVE is the only lock mode that conflicts with every other mode, including ACCESS SHARE which a normal SELECT acquires. When a migration takes ACCESS EXCLUSIVE, every subsequent query against that table queues behind it. ROW EXCLUSIVE is what normal writes take and they coexist fine. SHARE UPDATE EXCLUSIVE sounds scary but is friendly to readers and writers, it is the lock used by CREATE INDEX CONCURRENTLY and ANALYZE. ACCESS SHARE is the weakest lock and blocks nothing except ACCESS EXCLUSIVE. The takeaway: any DDL that grabs ACCESS EXCLUSIVE has to be quick or done online via a different strategy.",
+      "hint": "Lock mode names in PostgreSQL are not intuitive. Look at the right column of the conflict matrix in the docs, the one that conflicts with everything."
+    },
+    {
+      "id": "create-index-locking",
+      "title": "Why Your Index Build Killed Writes",
+      "description": "A regular CREATE INDEX brought your API to its knees during business hours.",
+      "situation": "You added an index on a 90 million row table to speed up a slow query. You ran CREATE INDEX during a slow traffic period. Within seconds, every INSERT and UPDATE on that table started timing out. Connections piled up in pg_stat_activity with a wait event of relation. You had to cancel the migration.",
+      "codeExample": "-- What you ran:\nCREATE INDEX idx_orders_customer_id ON orders (customer_id);\n\n-- What you saw in pg_stat_activity:\nSELECT pid, wait_event_type, wait_event, query\nFROM pg_stat_activity\nWHERE state = 'active';\n\n pid | wait_event_type | wait_event | query\n-----+-----------------+------------+----------------------------------\n 142 | Lock            | relation   | INSERT INTO orders (...) VALUES\n 143 | Lock            | relation   | UPDATE orders SET status=...\n 144 | Lock            | relation   | INSERT INTO orders (...) VALUES",
+      "options": [
+        "CREATE INDEX takes an ACCESS EXCLUSIVE lock, you should have run VACUUM first to release locks",
+        "The table was missing statistics, run ANALYZE before creating the index",
+        "Plain CREATE INDEX takes a SHARE lock that blocks writes, use CREATE INDEX CONCURRENTLY instead",
+        "PostgreSQL cannot build indexes on tables larger than 50 million rows in one shot, partition the table first"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A plain CREATE INDEX takes a SHARE lock on the table. SHARE blocks all writes (INSERT, UPDATE, DELETE) until the index is built, which on a 90M row table can mean many minutes of write outage. CREATE INDEX CONCURRENTLY does two passes over the table and only takes a SHARE UPDATE EXCLUSIVE lock, which allows writes to continue. The trade-off is it cannot run inside a transaction and is slower overall. VACUUM and ANALYZE do not change locking behavior here. PostgreSQL has no row count cutoff for index creation.",
+      "hint": "What lock level does a regular CREATE INDEX take, and which lock level is friendly to concurrent writes?"
+    },
+    {
+      "id": "create-index-concurrently-fails",
+      "title": "CREATE INDEX CONCURRENTLY Left an Invalid Index",
+      "description": "Your concurrent index build failed and now the index is marked INVALID.",
+      "situation": "You ran CREATE INDEX CONCURRENTLY overnight. It failed near the end because another session held a transaction open. You check pg_indexes in the morning and find the index exists but queries are not using it. Looking at pg_index, you see indisvalid = false.",
+      "codeExample": "SELECT indexname, indexdef\nFROM pg_indexes\nWHERE tablename = 'orders';\n\n indexname              | indexdef\n------------------------+----------------------------\n idx_orders_customer_id | CREATE INDEX idx_orders_...\n\nSELECT i.indisvalid, i.indisready\nFROM pg_index i\nJOIN pg_class c ON c.oid = i.indexrelid\nWHERE c.relname = 'idx_orders_customer_id';\n\n indisvalid | indisready\n------------+-----------\n f          | t",
+      "options": [
+        "Run REINDEX INDEX CONCURRENTLY idx_orders_customer_id to rebuild it without locks",
+        "Run VACUUM FULL on the orders table to repair the invalid index",
+        "Mark it valid by hand with UPDATE pg_index SET indisvalid = true",
+        "Leave it alone, PostgreSQL will auto-repair invalid indexes during the next autovacuum cycle"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "When CREATE INDEX CONCURRENTLY fails, it leaves a leftover index marked INVALID. The planner ignores invalid indexes but they still consume disk and slow down writes. REINDEX INDEX CONCURRENTLY rebuilds it in place without blocking writes, the modern fix added in PostgreSQL 12. Alternatively you DROP INDEX CONCURRENTLY and recreate. VACUUM FULL does not repair invalid indexes and takes an ACCESS EXCLUSIVE lock that would defeat the whole point. Editing pg_index by hand is unsafe, the index data may genuinely be incomplete. Autovacuum does not touch invalid indexes.",
+      "hint": "There is a CONCURRENTLY variant for fixing indexes too. What was added in PostgreSQL 12 to handle this exact case?"
+    },
+    {
+      "id": "add-not-null-column-default",
+      "title": "Adding a NOT NULL Column With a Default",
+      "description": "You need to add a new NOT NULL column to a huge table without locking writers.",
+      "situation": "You are running PostgreSQL 14. You need to add a tenant_id INTEGER NOT NULL DEFAULT 1 column to a 200 million row events table. You read somewhere this used to be slow but is now fast. Your colleague is convinced you still need to do it in three steps.",
+      "codeExample": "-- Option A (single statement):\nALTER TABLE events ADD COLUMN tenant_id INTEGER NOT NULL DEFAULT 1;\n\n-- Option B (multi-step):\nALTER TABLE events ADD COLUMN tenant_id INTEGER;\nUPDATE events SET tenant_id = 1 WHERE tenant_id IS NULL;\nALTER TABLE events ALTER COLUMN tenant_id SET NOT NULL;\nALTER TABLE events ALTER COLUMN tenant_id SET DEFAULT 1;",
+      "options": [
+        "Option B is mandatory, ALTER TABLE ADD COLUMN with a DEFAULT always rewrites the whole table",
+        "Option A is fine on PostgreSQL 11+, a constant default no longer rewrites the table",
+        "Option A only works if you set the column as nullable first, NOT NULL still forces a rewrite",
+        "Both options take the same time, PostgreSQL writes the default into every row regardless"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Since PostgreSQL 11, ADD COLUMN with a constant default no longer rewrites the table. PostgreSQL stores the default in pg_attribute (attmissingval) and synthesizes it for old rows on read. New rows get it written normally. This makes Option A safe on PostgreSQL 11 and up, even with NOT NULL. The catch is the default must be a constant. A volatile default like now() or nextval() will still rewrite the table. Pre-11 advice required the multi-step dance, which is why your colleague learned it that way.",
+      "hint": "What changed in PostgreSQL 11 about how ADD COLUMN with a DEFAULT stores values for existing rows?"
+    },
+    {
+      "id": "lock-timeout-migration",
+      "title": "Migration Hangs Forever Waiting for a Lock",
+      "description": "Your ALTER TABLE has been waiting on a lock for 45 minutes and your deploy is stuck.",
+      "situation": "You started a migration during the deploy pipeline. It runs ALTER TABLE orders ADD CONSTRAINT, which needs an ACCESS EXCLUSIVE lock. There is a long-running analytics query holding a row lock on orders. Your migration is queued behind it. Worse, every new query against orders is now also queued behind your migration, because it requested an exclusive lock.",
+      "codeExample": "SELECT pid, mode, granted, query\nFROM pg_locks l\nJOIN pg_stat_activity a USING (pid)\nWHERE relation = 'orders'::regclass\nORDER BY granted DESC;\n\n pid  | mode                | granted | query\n------+---------------------+---------+----------------------------\n 9201 | AccessShareLock     | t       | SELECT ... FROM orders ... (long analytics)\n 9304 | AccessExclusiveLock | f       | ALTER TABLE orders ADD ...\n 9410 | AccessShareLock     | f       | SELECT id FROM orders WHERE id = $1\n 9411 | AccessShareLock     | f       | SELECT id FROM orders WHERE id = $1",
+      "options": [
+        "Run VACUUM ANALYZE orders in another session, it preempts the lock queue",
+        "Always wrap migrations with SET lock_timeout = '2s' so they fail fast instead of blocking the world",
+        "Increase max_connections so queued queries do not back up",
+        "Restart PostgreSQL, the lock queue clears on startup"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "When a migration asks for ACCESS EXCLUSIVE and cannot get it, every later query that needs even a SHARE lock queues behind the migration. This is a classic production outage pattern, the migration looks idle but is taking down reads. Setting lock_timeout (and statement_timeout) at the migration session level makes the ALTER fail fast if it cannot get the lock quickly. You then retry. VACUUM ANALYZE does not jump the queue and may itself be blocked. More connections just gives more queue space. Restarting Postgres mid-migration loses connections and is a terrible recovery path.",
+      "hint": "The real bug is not the lock itself, it is that the migration sits there blocking new queries. What setting makes the migration give up instead of waiting?"
+    },
+    {
+      "id": "foreign-key-not-valid",
+      "title": "Adding a Foreign Key to a 50M Row Table",
+      "description": "You need to enforce a foreign key on a table that already has 50 million rows, ideally without locking the world.",
+      "situation": "Your orders table has a customer_id column. There is no foreign key to customers. Compliance asks you to add one. A single ALTER TABLE ADD CONSTRAINT FOREIGN KEY would scan all 50 million rows under an ACCESS EXCLUSIVE lock, taking the table offline for many minutes.",
+      "codeExample": "-- Naive approach (locks the table):\nALTER TABLE orders\n  ADD CONSTRAINT orders_customer_fk\n  FOREIGN KEY (customer_id) REFERENCES customers(id);\n\n-- Goal: same constraint, no lock-out window.",
+      "options": [
+        "Add the constraint with NOT VALID, then run VALIDATE CONSTRAINT in a second step",
+        "Add a CHECK constraint instead, foreign keys cannot be added online in Postgres",
+        "Create a trigger on orders that fails the insert if customer_id is missing",
+        "Drop and recreate the orders table with the foreign key already in place"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "ALTER TABLE ... ADD CONSTRAINT ... NOT VALID adds the constraint for new and updated rows only and takes only a brief lock. Existing rows are not checked. Then ALTER TABLE ... VALIDATE CONSTRAINT scans the existing rows but uses only a SHARE UPDATE EXCLUSIVE lock, which does not block reads or writes. Two short locks beat one long one. Triggers are a real solution in some setups but are slower per row and harder to maintain than a real FK. Recreating a 50M row table is downtime, not zero-downtime.",
+      "hint": "PostgreSQL has a way to add a constraint without validating existing data, then validate it in a separate, cheaper step."
+    },
+    {
+      "id": "backfill-batching",
+      "title": "Backfilling a Column on a Huge Table",
+      "description": "You added a nullable column and now need to fill it for 80 million existing rows.",
+      "situation": "You added a status_normalized column to a 80M row events table. New writes populate it. You need to backfill old rows. A junior engineer suggests UPDATE events SET status_normalized = lower(status). You veto this. Why?",
+      "codeExample": "-- What the junior wants to run:\nUPDATE events\nSET status_normalized = lower(status)\nWHERE status_normalized IS NULL;\n\n-- Table size: 80M rows, ~120GB",
+      "options": [
+        "A single UPDATE on 80M rows creates one massive transaction that bloats WAL, blocks vacuum, and risks replication lag",
+        "UPDATE is fundamentally unsafe on PostgreSQL, you must use COPY for backfills",
+        "It will work but waste an index, you need to drop the index on status first",
+        "lower() is not deterministic, the values may differ between calls"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A single UPDATE rewriting 80M rows is one giant transaction. It generates enormous WAL, blocks autovacuum from cleaning up the old row versions until it commits, and ships the entire change to replicas in one burst, causing replication lag spikes. If it fails mid-way, it rolls back the whole thing and you start over. Safe backfills batch the work in chunks of a few thousand rows, sleep briefly between batches, and let autovacuum keep up. Tools like pg_repack or custom scripts that loop over primary key ranges are the standard approach.",
+      "hint": "What does one giant UPDATE do to WAL, replicas, and autovacuum, compared to thousands of small UPDATEs?"
+    },
+    {
+      "id": "changing-column-type",
+      "title": "Changing a Column Type Without Downtime",
+      "description": "You need to change an INTEGER column to BIGINT on a hot table because you are running out of ID space.",
+      "situation": "Your events table uses INTEGER for its id column. You are projecting to hit 2^31 in four months. A direct ALTER TABLE events ALTER COLUMN id TYPE BIGINT would rewrite the entire table under ACCESS EXCLUSIVE for hours.",
+      "codeExample": "-- Naive (blocks for hours):\nALTER TABLE events ALTER COLUMN id TYPE BIGINT;\n\n-- Current state:\n      column_name | data_type\n      ------------+----------\n       id         | integer\n      \n-- Target: id is BIGINT, no downtime.",
+      "options": [
+        "Add a new BIGINT column id_new, dual-write via trigger, backfill in batches, swap the columns in one short transaction",
+        "Run ALTER TABLE inside BEGIN; SET LOCAL lock_timeout = '100ms'; ALTER TABLE ...; COMMIT;",
+        "Use ALTER TABLE ... ALTER COLUMN id TYPE BIGINT USING id::bigint, the USING clause makes it online",
+        "Use logical replication to copy the table to a new one with the correct type, then swap names"
+      ],
+      "correctAnswer": 0,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Type changes that require a rewrite cannot be done in place online. The standard pattern is expand-and-contract at the column level: add id_new BIGINT, add a trigger or app-level dual-write to keep both in sync, backfill old rows in batches, then in one short transaction rename the columns and drop the old one. Option D (logical replication to a new table) is also viable but heavier. Option B fails fast but does not change the fact that the rewrite needs hours of ACCESS EXCLUSIVE. The USING clause in Option C still rewrites the table under the same lock. There is no online ALTER COLUMN TYPE for types of different storage size.",
+      "hint": "If the column itself cannot change online, what can you do at the table level to avoid touching the original column until the very end?"
+    },
+    {
+      "id": "transactional-ddl-trap",
+      "title": "The Transactional DDL Trap",
+      "description": "You wrapped a multi-step migration in a transaction. It bites you in production.",
+      "situation": "Your migration tool wraps each migration file in BEGIN ... COMMIT for atomicity. The file below ran for 40 minutes in production, with the table locked the entire time. Every API call on this table timed out for those 40 minutes. The same file ran in 90 seconds in staging.",
+      "codeExample": "-- migration_042.sql (wrapped in BEGIN/COMMIT by the tool):\n\nALTER TABLE orders ADD COLUMN tenant_id INTEGER;\n\nUPDATE orders SET tenant_id = 1 WHERE tenant_id IS NULL;\n\nALTER TABLE orders ALTER COLUMN tenant_id SET NOT NULL;\n\nCREATE INDEX idx_orders_tenant_id ON orders (tenant_id);",
+      "options": [
+        "ALTER TABLE acquired ACCESS EXCLUSIVE, then the UPDATE held it for 40 minutes inside the transaction, blocking every query on the table",
+        "PostgreSQL cannot run ALTER TABLE and UPDATE in the same transaction, the lock escalates",
+        "CREATE INDEX inside a transaction takes a stronger lock than outside, that was the cause",
+        "Autovacuum ran during the migration and competed for locks"
+      ],
+      "correctAnswer": 0,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "PostgreSQL has transactional DDL, which sounds great until you understand what it costs. Once ALTER TABLE acquires ACCESS EXCLUSIVE inside a transaction, it holds that lock until COMMIT. The 40 minute UPDATE in the same transaction kept the entire table locked the whole time. In staging the table had 10K rows so the UPDATE was fast. In production it had 50M rows and the lock stayed. The fix is to split this into multiple migration files: one ALTER, then a chunked backfill (outside a transaction or in many small transactions), then NOT NULL, then a CONCURRENT index. Never put a long UPDATE in the same transaction as a DDL that took an exclusive lock.",
+      "hint": "Once ACCESS EXCLUSIVE is acquired in a transaction, when is it released? What was the longest statement inside that transaction?"
+    },
+    {
+      "id": "renaming-table-rollout",
+      "title": "Renaming a Table Across a Rolling Deploy",
+      "description": "You want to rename a table. You have 30 application pods that deploy one at a time.",
+      "situation": "You need to rename the user_events table to events. The deploy will take about 8 minutes to roll all 30 pods. During that window, some pods will reference the old name and some the new name.",
+      "codeExample": "-- The naive plan:\nALTER TABLE user_events RENAME TO events;\n\n-- Old pods (still running) execute:\nSELECT * FROM user_events WHERE ...;\n-- ERROR: relation \"user_events\" does not exist\n\n-- New pods execute:\nSELECT * FROM events WHERE ...;",
+      "options": [
+        "Run the RENAME exactly at the midpoint of the rollout to minimize errors on each side",
+        "Create a view named user_events that points to the new events table, run RENAME, deploy code, then drop the view",
+        "Hold the deploy, run RENAME, then resume the deploy, the gap is brief enough to ignore",
+        "PostgreSQL supports both names automatically after a rename for 24 hours, no extra work needed"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "The cleanest pattern is to create a compatibility view first. You create events as a view over user_events (or rename and then create user_events as a view over events), so both names resolve correctly during the rollout. Once all pods are on the new code, you drop the view. The midpoint trick still leaves half the pods broken. Pausing the deploy still has a moment where the old name vanishes and any in-flight query fails. PostgreSQL does not keep old names around. Views with the same column shape act as transparent aliases and survive a rolling deploy.",
+      "hint": "How do you make both names resolve at the same time, even briefly?"
+    },
+    {
+      "id": "drop-column-safely",
+      "title": "Dropping a Column Without Breaking Old Code",
+      "description": "You are removing a deprecated column. What is the safe order of operations?",
+      "situation": "The legacy_score column on user_profiles has not been read by any service for months. You want to drop it. You also know that ORM-style INSERT statements sometimes name all columns, so some old code paths still INSERT into legacy_score.",
+      "codeExample": "-- Some pods still run:\nINSERT INTO user_profiles (id, name, email, legacy_score)\nVALUES ($1, $2, $3, $4);\n\n-- Other pods run:\nINSERT INTO user_profiles (id, name, email)\nVALUES ($1, $2, $3);\n\n-- Goal: drop legacy_score safely.",
+      "options": [
+        "Drop the column immediately, all SELECTs ignore it so writes will be fine",
+        "Deploy code that stops writing to legacy_score, wait for the rollout to finish, then ALTER TABLE DROP COLUMN",
+        "Mark the column as deprecated in a comment and leave it forever, dropping columns is not safe in Postgres",
+        "Rename the column to legacy_score_deprecated first to catch any stragglers"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Drop is also an expand-and-contract problem in reverse. If you DROP COLUMN while old pods are still INSERTing into it, those inserts fail with column does not exist. The safe order is: ship code that no longer writes to the column, wait for the full rollout, then drop. ALTER TABLE DROP COLUMN itself is quick in PostgreSQL because it only marks the column as dropped in the catalog. The actual storage is reclaimed lazily on rewrite. Renaming first just postpones the same problem.",
+      "hint": "What breaks the moment the column disappears, reads or writes? Which one needs to stop first?"
+    },
+    {
+      "id": "online-ddl-tools",
+      "title": "When to Reach for pg_repack or pg_squeeze",
+      "description": "You want to reclaim disk after a massive DELETE. VACUUM FULL would lock the table for hours.",
+      "situation": "You deleted 60% of a 400GB table to comply with a retention policy. Disk usage did not drop because PostgreSQL only marks rows as dead. autovacuum reclaims space within the table but does not shrink it. VACUUM FULL would rewrite the table under ACCESS EXCLUSIVE for hours.",
+      "codeExample": "-- Before:\n table_size  | dead_tuples | live_tuples\n 400 GB      | 600M        | 400M\n\n-- After VACUUM:\n table_size  | dead_tuples | live_tuples\n 400 GB      | 0           | 400M     <- size unchanged\n\n-- Want: 400 GB --> ~160 GB, no downtime.",
+      "options": [
+        "Run VACUUM FULL with a low priority nice value to avoid impacting traffic",
+        "Use pg_repack, it rebuilds the table online via triggers and a temporary copy, then swaps with a brief lock",
+        "Set autovacuum_naptime to 1 and the space will be reclaimed within a few minutes",
+        "Drop the table and restore it from a backup with only the surviving rows"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Standard VACUUM reclaims space inside the file but does not return it to the filesystem. VACUUM FULL does, but holds ACCESS EXCLUSIVE the whole time. pg_repack builds a copy of the table in the background, uses triggers to capture writes during the copy, then swaps the tables atomically with only a brief exclusive lock. pg_squeeze does similar work using logical decoding. nice on the OS does nothing for PostgreSQL lock behavior. Setting autovacuum_naptime to 1 just makes autovacuum poll more often, it does not change what it can do. Restoring from a backup is downtime by definition.",
+      "hint": "VACUUM and VACUUM FULL are not the only options. What does the wider ecosystem offer for online table rewrites?"
+    }
+  ]
+}

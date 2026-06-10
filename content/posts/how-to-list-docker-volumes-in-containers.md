@@ -21,7 +21,7 @@ tags:
 
 **TLDR:** List all Docker volumes with `docker volume ls`. To see which volumes a specific container uses, run `docker inspect <container>` and look at the "Mounts" section, or use `docker inspect -f '{{ .Mounts }}' <container>` for direct output. For running containers, `docker ps` with custom format shows volume information. Use `docker volume inspect` to see detailed volume information including the host filesystem path.
 
-Understanding what volumes are attached to your containers is crucial for managing persistent data, debugging storage issues, and cleaning up unused resources.
+Understanding what volumes are attached to your containers helps you manage persistent data, debug storage issues, and clean up unused resources.
 
 ## List All Volumes
 
@@ -455,7 +455,7 @@ Understanding how to list and inspect volumes helps you manage persistent data, 
 
 ## Related Resources
 
-- [Docker Persistent Storage for Databases](/posts/docker-persistent-storage-databases) — database volumes
-- [How to Add a Volume to an Existing Container](/posts/how-to-add-a-volume-to-an-existing-docker-container) — add volumes
-- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits) — why volumes matter
-- [Introduction to Docker: Volumes](/guides/introduction-to-docker) — volume fundamentals
+- [Docker Persistent Storage for Databases](/posts/docker-persistent-storage-databases): database volumes
+- [How to Add a Volume to an Existing Container](/posts/how-to-add-a-volume-to-an-existing-docker-container): add volumes
+- [Docker Data Loss When Container Exits](/posts/docker-data-loss-when-container-exits): why volumes matter
+- [Introduction to Docker: Volumes](/guides/introduction-to-docker): volume fundamentals

@@ -87,14 +87,14 @@ In this mode, the container shares the host's network namespace, so it can acces
 - Avoid `--network host` in production unless absolutely necessary.
 - Document host-port dependencies in your project.
 
-By following these steps, you can enable seamless communication between Docker containers and host services.
+By following these steps, you can enable reliable communication between Docker containers and host services.
 
 Good luck with your project!
 
 ## Related Resources
 
-- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker) — more on host networking
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — port publishing fundamentals
-- [Introduction to Docker: Networking](/guides/introduction-to-docker) — Docker networking guide
-- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
-- [DevOps Roadmap](/roadmap) — where Docker fits in your learning path
+- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker): more on host networking
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): port publishing fundamentals
+- [Introduction to Docker: Networking](/guides/introduction-to-docker): Docker networking guide
+- [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge
+- [DevOps Roadmap](/roadmap): where Docker fits in your learning path

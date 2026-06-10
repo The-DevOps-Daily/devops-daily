@@ -48,7 +48,7 @@ You use it like this:
 docker compose up
 ```
 
-No need to install anything extra—just update Docker.
+No need to install anything extra; just update Docker.
 
 ## Key Differences
 
@@ -82,8 +82,8 @@ If you see a warning about Compose V1 being deprecated, it's time to switch.
 
 ## Related Resources
 
-- [Docker Compose vs Dockerfile](/posts/docker-compose-vs-dockerfile) — understand when to use each
-- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences) — choosing the right orchestration tool
-- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — configure Compose services
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from scratch
-- [DevOps Roadmap](/roadmap) — where Docker fits in your learning path
+- [Docker Compose vs Dockerfile](/posts/docker-compose-vs-dockerfile): understand when to use each
+- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences): choosing the right orchestration tool
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): configure Compose services
+- [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch
+- [DevOps Roadmap](/roadmap): where Docker fits in your learning path

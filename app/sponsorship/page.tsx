@@ -19,7 +19,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Sponsorship - Reach 25,000+ DevOps Engineers | DevOps Daily',
+  title: 'Sponsorship - Reach 25,000+ DevOps Engineers',
   description:
     'Partner with DevOps Daily to reach 25,000+ monthly readers, 5,000+ newsletter subscribers, and a highly engaged audience of DevOps engineers, SREs, and technical decision-makers.',
   alternates: {

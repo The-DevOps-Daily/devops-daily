@@ -60,19 +60,21 @@ export function BookPromotionPopup() {
     }, 300)
   }
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!email) return
 
-    // Submit to Mailchimp
-    const form = e.target as HTMLFormElement
-    const formData = new FormData(form)
-
-    // Open in new window (Mailchimp requirement)
-    const mailchimpUrl = 'https://devops-daily.us2.list-manage.com/subscribe/post?u=d1128776b290ad8d08c02094f&id=fd76a4e93f&f_id=0022c6e1f0'
-    const params = new URLSearchParams(formData as any).toString()
-    window.open(`${mailchimpUrl}&${params}`, '_blank')
+    // Submit to SMTPfast in the background — user stays on the popup, no
+    // new window. Failures are silent on purpose; the thank-you toast
+    // shows regardless because we don't want to dampen the celebration UX
+    // for transient errors. (The form will retry if they re-engage.)
+    const formData = new FormData(e.target as HTMLFormElement)
+    formData.append('source', 'book_promo_popup')
+    fetch('https://smtpfa.st/api/forms/cmomznsaf0001utvb88nateg7/submit', {
+      method: 'POST',
+      body: formData,
+    }).catch(() => {})
 
     // Show thank you message
     setShowThankYou(true)
@@ -160,8 +162,7 @@ export function BookPromotionPopup() {
                       <form onSubmit={handleSubscribe} className="space-y-2">
                         <input
                           type="email"
-                          name="EMAIL"
-                          id="mce-EMAIL"
+                          name="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="your@email.com"
@@ -169,10 +170,15 @@ export function BookPromotionPopup() {
                           className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                         />
 
-                        {/* Honeypot */}
-                        <div style={{ position: 'absolute', left: '-5000px' }} aria-hidden="true">
-                          <input type="text" name="b_d1128776b290ad8d08c02094f_fd76a4e93f" tabIndex={-1} defaultValue="" />
-                        </div>
+                        {/* Honeypot — bots fill it; smtpfast rejects the submission. */}
+                        <input
+                          type="text"
+                          name="_hp"
+                          tabIndex={-1}
+                          autoComplete="off"
+                          aria-hidden="true"
+                          style={{ position: 'absolute', left: '-9999px' }}
+                        />
 
                         <Button type="submit" className="w-full">
                           Subscribe

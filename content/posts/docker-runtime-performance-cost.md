@@ -79,8 +79,8 @@ Good luck with your project!
 
 ## Related Resources
 
-- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine) — architecture comparison
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build efficient images
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — secure containers
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
-- [DevOps Survival Guide](/books/devops-survival-guide) — broader DevOps context
+- [How Docker Differs from a Virtual Machine](/posts/how-docker-differs-from-a-virtual-machine): architecture comparison
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build efficient images
+- [Docker Security Best Practices](/posts/docker-security-best-practices): secure containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals
+- [DevOps Survival Guide](/books/devops-survival-guide): broader DevOps context

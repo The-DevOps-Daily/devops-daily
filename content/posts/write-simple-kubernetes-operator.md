@@ -1,6 +1,6 @@
 ---
 title: 'Understanding Kubernetes Operators: A Deep Dive with a Practical Example'
-excerpt: 'Learn the concepts behind Kubernetes operators, why they exist, and how the control loop pattern works—then build one yourself to solidify your understanding.'
+excerpt: 'Learn the concepts behind Kubernetes operators, why they exist, and how the control loop pattern works, then build one yourself to solidify your understanding.'
 category:
   name: 'Kubernetes'
   slug: 'kubernetes'
@@ -18,7 +18,7 @@ tags:
   - DevOps
 ---
 
-If you've worked with Kubernetes for any length of time, you've probably heard the term "operator" thrown around. Maybe you've installed one—like the Prometheus Operator or cert-manager—without fully understanding what makes it different from a regular Deployment. This post aims to change that.
+If you've worked with Kubernetes for any length of time, you've probably heard the term "operator" thrown around. Maybe you've installed one (like the Prometheus Operator or cert-manager) without fully understanding what makes it different from a regular Deployment. This post aims to change that.
 
 We'll start by understanding *why* operators exist and the fundamental patterns they implement. Then we'll build one from scratch, explaining each concept as we go. By the end, you'll not only have a working operator but a mental model for how all Kubernetes controllers work under the hood.
 
@@ -28,12 +28,12 @@ Before diving into operators, let's step back and understand how Kubernetes itse
 
 ### The Declarative Model: Kubernetes' Core Philosophy
 
-Kubernetes is built on a **declarative model**. You don't tell Kubernetes "start 3 pods"—you tell it "I want 3 pods running." The difference is subtle but profound:
+Kubernetes is built on a **declarative model**. You don't tell Kubernetes "start 3 pods"; you tell it "I want 3 pods running." The difference is subtle but profound:
 
 - **Imperative**: "Do this action" (create, delete, scale)
 - **Declarative**: "Make it look like this" (desired state)
 
-When you apply a Deployment manifest, you're declaring your desired state. Kubernetes then figures out what actions are needed to make reality match that declaration. If a pod crashes, Kubernetes doesn't need you to tell it to restart—it sees the discrepancy and acts.
+When you apply a Deployment manifest, you're declaring your desired state. Kubernetes then figures out what actions are needed to make reality match that declaration. If a pod crashes, Kubernetes doesn't need you to tell it to restart; it sees the discrepancy and acts.
 
 This is powerful because it makes your infrastructure **self-healing**. You describe what you want, and Kubernetes continuously works to maintain that state.
 
@@ -65,13 +65,13 @@ This "observe and act" behavior is implemented through **control loops** (also c
 
 The Deployment controller, for example, watches Deployment resources. When you create one asking for 3 replicas, it observes there are 0 pods, calculates a diff of -3, and creates 3 ReplicaSets (which in turn create pods).
 
-**Why is this pattern so important?** Because it's **convergent**. No matter how the system gets into a bad state—whether from a crash, network partition, or manual tampering—the controller will keep trying to fix it. This is fundamentally different from scripts that run once and hope nothing changes.
+**Why is this pattern so important?** Because it's **convergent**. No matter how the system gets into a bad state (whether from a crash, network partition, or manual tampering), the controller will keep trying to fix it. This is different from scripts that run once and hope nothing changes.
 
 ### So What Makes an Operator Special?
 
 An **operator** is simply a custom controller that manages **custom resources**. That's it.
 
-The built-in controllers (Deployment, Service, etc.) manage built-in resources. When you need to manage something Kubernetes doesn't understand natively—like a PostgreSQL cluster, a machine learning pipeline, or a complex application—you create:
+The built-in controllers (Deployment, Service, etc.) manage built-in resources. When you need to manage something Kubernetes doesn't understand natively (like a PostgreSQL cluster, a machine learning pipeline, or a complex application), you create:
 
 1. A **Custom Resource Definition (CRD)**: Teaches Kubernetes about your new resource type
 2. A **Controller**: Watches for those resources and takes action
@@ -86,8 +86,8 @@ The key difference is **continuous reconciliation**:
 
 | Approach | When It Runs | What Happens If State Drifts |
 |----------|--------------|------------------------------|
-| Shell script | Once, when you run it | Nothing—drift accumulates |
-| Helm install | Once, at install time | Nothing—you must re-run |
+| Shell script | Once, when you run it | Nothing, drift accumulates |
+| Helm install | Once, at install time | Nothing, you must re-run |
 | Operator | Continuously | Automatically corrects drift |
 
 An operator is always watching and always correcting. If someone manually deletes a resource your application needs, the operator recreates it. If a config drifts, the operator fixes it. This is called **level-triggered** behavior (reacting to state) vs **edge-triggered** (reacting to events).
@@ -98,11 +98,11 @@ An operator is always watching and always correcting. If someone manually delete
 
 To make this concrete, here's what some popular operators do:
 
-- **Prometheus Operator**: You create a `Prometheus` CR specifying retention, replicas, and alerting rules. The operator creates the StatefulSet, ConfigMaps, Services, and wires up service discovery—tasks that would otherwise require deep Prometheus expertise.
+- **Prometheus Operator**: You create a `Prometheus` CR specifying retention, replicas, and alerting rules. The operator creates the StatefulSet, ConfigMaps, Services, and wires up service discovery, tasks that would otherwise require deep Prometheus expertise.
 
-- **cert-manager**: You create a `Certificate` CR specifying the domain. The operator handles ACME challenges, creates secrets with the cert, and renews before expiration—no cron jobs needed.
+- **cert-manager**: You create a `Certificate` CR specifying the domain. The operator handles ACME challenges, creates secrets with the cert, and renews before expiration, with no cron jobs needed.
 
-- **PostgreSQL Operator (Zalando)**: You create a `postgresql` CR. The operator provisions the primary, replicas, handles failover, backups, and connection pooling—encoding years of DBA knowledge.
+- **PostgreSQL Operator (Zalando)**: You create a `postgresql` CR. The operator provisions the primary, replicas, handles failover, backups, and connection pooling, encoding years of DBA knowledge.
 
 In each case, you declare *what* you want, and the operator handles *how* to achieve and maintain it.
 
@@ -142,7 +142,7 @@ kubebuilder version
 
 ## Project Overview: Building a Website Operator
 
-We'll build a "Website" operator—simple enough to understand fully, but complex enough to demonstrate real patterns.
+We'll build a "Website" operator: simple enough to understand fully, but complex enough to demonstrate real patterns.
 
 ### The User Experience We're Creating
 
@@ -200,7 +200,7 @@ website-operator/
 
 ### The Manager: Your Operator's Brain
 
-The `cmd/main.go` file sets up what Kubebuilder calls a "Manager." This is crucial to understand:
+The `cmd/main.go` file sets up what Kubebuilder calls a "Manager." This is important to understand:
 
 ```go
 // Simplified version of what's in cmd/main.go
@@ -219,7 +219,7 @@ The Manager:
 - **Exposes Prometheus metrics** at `/metrics`
 - **Manages graceful shutdown** when receiving SIGTERM
 
-You rarely need to modify this file—Kubebuilder sets it up correctly.
+You rarely need to modify this file; Kubebuilder sets it up correctly.
 
 ## Step 2: Create the API and Controller
 
@@ -236,7 +236,7 @@ Answer `y` to both prompts (create resource and controller).
 Kubernetes API resources follow a strict naming convention:
 
 - **Group**: Like a package name, groups related resources (e.g., `apps`, `networking.k8s.io`). Ours is `webapp`.
-- **Version**: API version (`v1`, `v1beta1`, `v1alpha1`)—allows your API to evolve over time
+- **Version**: API version (`v1`, `v1beta1`, `v1alpha1`), allows your API to evolve over time
 - **Kind**: The resource type name (capitalized, singular)
 
 The full API group becomes `webapp.example.com` (group + domain from init).
@@ -348,7 +348,7 @@ func init() {
 
 ### Understanding the Marker Comments
 
-Those `// +kubebuilder:` comments aren't just documentation—they're **markers** that Kubebuilder's code generator reads:
+Those `// +kubebuilder:` comments aren't just documentation; they're **markers** that Kubebuilder's code generator reads:
 
 | Marker | What It Does |
 |--------|-------------|
@@ -389,7 +389,7 @@ This function gets called whenever:
 - A periodic resync happens (configurable, default 10 hours)
 - You explicitly request a requeue
 
-**Important**: The function receives a `Request` containing just the namespace/name of the resource. You must fetch the actual resource yourself. This is intentional—it prevents stale data issues.
+**Important**: The function receives a `Request` containing just the namespace/name of the resource. You must fetch the actual resource yourself. This is intentional, and it prevents stale data issues.
 
 ### The Reconciliation Pattern
 
@@ -727,7 +727,7 @@ This sets an **OwnerReference** on the child resource pointing to the Website. W
 2. Changes to owned resources trigger reconciliation of the owner
 3. `kubectl get configmap my-site -o yaml` shows the owner
 
-**This is why we don't need cleanup code**—Kubernetes handles it automatically.
+**This is why we don't need cleanup code**: Kubernetes handles it automatically.
 
 ### Setting Up the Controller Watches
 
@@ -949,7 +949,7 @@ make test
 
 Owner references handle Kubernetes resources, but what about external resources (cloud infrastructure, DNS records, external databases)?
 
-Use **finalizers**—they block deletion until you've cleaned up:
+Use **finalizers**: they block deletion until you've cleaned up:
 
 ```go
 import "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"

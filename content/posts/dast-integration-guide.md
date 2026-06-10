@@ -337,7 +337,7 @@ docker run -m 4g ghcr.io/zaproxy/zaproxy:stable \
 
 DAST is one layer of defense, not a silver bullet. It misses code-level flaws like buffer overflows and race conditions (use SAST for those). It struggles with complex multi-step business logic attacks. It cannot test endpoints behind authentication without proper setup. And it will not find client-side vulnerabilities in mobile or desktop apps.
 
-The best security testing strategy combines SAST for early detection during development, DAST for runtime validation in staging, and IAST for comprehensive coverage during testing. Add dependency scanning and infrastructure security on top and you have real defense in depth.
+The best security testing strategy combines SAST for early detection during development, DAST for runtime validation in staging, and IAST for broad coverage during testing. Add dependency scanning and infrastructure security on top and you have real defense in depth.
 
 ## Getting Started
 

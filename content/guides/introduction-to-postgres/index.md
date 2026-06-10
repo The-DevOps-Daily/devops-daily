@@ -90,3 +90,7 @@ Each section builds on previous ones with hands-on examples. We use realistic sc
 By the end of this guide, you'll understand how PostgreSQL works, when to use it, and how to avoid common pitfalls. You'll be ready to use PostgreSQL for real projects and have the foundation to dive deeper into advanced topics.
 
 Let's start by understanding what databases actually do and why relational databases like PostgreSQL solve problems that simpler storage options can't handle.
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [Database Indexing simulator](/games/db-indexing-simulator), right in your browser with no setup required.

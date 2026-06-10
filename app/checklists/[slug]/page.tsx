@@ -5,7 +5,9 @@ import { ChecklistPageClient } from '@/components/checklists/checklist-page-clie
 import { PageHero } from '@/components/page-hero';
 import { ListChecks } from 'lucide-react';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { detailPageMetadata } from '@/lib/metadata-utils';
 import { pickRelatedItems } from '@/lib/related-content';
+import { BreadcrumbSchema, LearningResourceSchema } from '@/components/schema-markup';
 import { RelatedContent } from '@/components/related-content';
 import { RelatedAcrossTypes } from '@/components/related-across-types';
 import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
@@ -30,39 +32,17 @@ export async function generateMetadata(
     };
   }
 
-  const description = truncateMetaDescription(checklist.description);
-
-  return {
-   title: { absolute: checklist.title },
-   description,
-   alternates: {
-     canonical: `/checklists/${resolvedParams.slug}`,
-   },
-   openGraph: {
-     title: `${checklist.title} - The DevOps Daily`,
-    description,
-    type: 'website',
-    url: `/checklists/${resolvedParams.slug}`,
+  return detailPageMetadata({
+    path: `/checklists/${resolvedParams.slug}`,
+    title: checklist.title,
+    socialTitle: `${checklist.title} - The DevOps Daily`,
+    description: truncateMetaDescription(checklist.description),
+    image: `/images/checklists/${resolvedParams.slug}-og.png`,
+    ogType: 'website',
     siteName: 'The DevOps Daily',
     locale: 'en_US',
-    images: [
-      {
-        url: `/images/checklists/${resolvedParams.slug}-og.png`,
-         width: 1200,
-         height: 630,
-         alt: checklist.title,
-       },
-     ],
-   },
-   twitter: {
-    card: 'summary_large_image',
-    site: '@TheDevOpsDaily',
-    creator: '@TheDevOpsDaily',
-    title: `${checklist.title} - The DevOps Daily`,
-    description,
-    images: [`/images/checklists/${resolvedParams.slug}-og.png`],
-   },
-  };
+    twitterHandle: '@TheDevOpsDaily',
+  });
 }
 
 export default async function ChecklistPage(
@@ -106,6 +86,22 @@ export default async function ChecklistPage(
 
   return (
     <>
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Checklists', url: '/checklists' },
+          { name: checklist.title, url: `/checklists/${checklist.slug}` },
+        ]}
+      />
+      <LearningResourceSchema
+        title={checklist.title}
+        description={checklist.description}
+        difficulty={checklist.difficulty}
+        estimatedTime={checklist.estimatedTime}
+        technologies={checklist.tags}
+        url={`/checklists/${checklist.slug}`}
+        learningResourceType="checklist"
+      />
       <PageHero
         title={checklist.title}
         description={checklist.description}

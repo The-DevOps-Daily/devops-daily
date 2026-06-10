@@ -64,3 +64,7 @@ This guide is designed for:
 - Anyone preparing for security-focused interviews
 
 Let's build your cryptographic foundation!
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [SSL/TLS Handshake simulator](/games/ssl-tls-handshake), right in your browser with no setup required.

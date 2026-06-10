@@ -128,9 +128,9 @@ Environment variables in docker-compose make your setups more secure, portable, 
 
 ## Related Resources
 
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — understand container networking and port publishing
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — keep secrets out of images and more
-- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands) — chain commands in Compose services
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from the ground up
-- [Docker Quiz](/quizzes/docker-quiz) — test your Docker knowledge
-- [DevOps Roadmap](/roadmap) — see where Docker fits in the bigger picture
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): understand container networking and port publishing
+- [Docker Security Best Practices](/posts/docker-security-best-practices): keep secrets out of images and more
+- [Docker Compose: Running Multiple Commands](/posts/docker-compose-multiple-commands): chain commands in Compose services
+- [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from the ground up
+- [Docker Quiz](/quizzes/docker-quiz): test your Docker knowledge
+- [DevOps Roadmap](/roadmap): see where Docker fits in the bigger picture

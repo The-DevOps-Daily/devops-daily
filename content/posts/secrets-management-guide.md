@@ -36,7 +36,7 @@ Consider these common anti-patterns that show up in almost every organization:
 
 Each one of these creates real risk. The Uber breach in 2016 started with AWS credentials in a GitHub repo and led to 57 million user records exposed. CircleCI's 2023 compromise affected thousands of customers through leaked secrets.
 
-A dedicated secrets manager solves all of these problems with centralized encrypted storage, per-environment credentials, dynamic secrets with short TTLs, comprehensive audit logging, and just-in-time retrieval.
+A dedicated secrets manager solves all of these problems with centralized encrypted storage, per-environment credentials, dynamic secrets with short TTLs, full audit logging, and just-in-time retrieval.
 
 ## Core Principles
 

@@ -20,7 +20,7 @@ tags:
   - Debugging
 ---
 
-Testing how your application handles connection timeouts is crucial for building resilient software. Whether you're implementing retry logic, circuit breakers, or simply want to verify your error handling works correctly, you'll need to simulate timeout scenarios in a controlled way.
+Testing how your application handles connection timeouts matters for building resilient software. Whether you're implementing retry logic, circuit breakers, or simply want to verify your error handling works correctly, you'll need to simulate timeout scenarios in a controlled way.
 
 Connection timeouts occur when a client can't establish a connection to a server within a specified time limit. Unlike read timeouts (which happen during data transfer), connection timeouts happen at the initial handshake phase. Let's explore several practical methods to create these scenarios for testing.
 

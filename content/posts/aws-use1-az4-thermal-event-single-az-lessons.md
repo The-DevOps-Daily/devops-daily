@@ -61,7 +61,7 @@ Two technical observations worth pinning to a sticky note:
 2. The affected zone hosted parts of the matching engine and the Kafka messaging infrastructure.
 3. Backup systems "did not work as expected during the incident, extending the outage and forcing engineers to manually execute disaster recovery procedures."
 
-None of those choices are dumb on their own. A matching engine at exchange scale is genuinely latency-sensitive and there are real reasons to pin it to one AZ. The problem is that single-AZ-for-latency only survives an `use1-az4` event if the failover into another AZ is a battle-tested one-button operation that an SRE can trigger in the first five minutes of an alert. Coinbase had a backup. The backup did not work. That gap is what cost them five hours.
+None of those choices are dumb on their own. A matching engine at exchange scale is latency-sensitive and there are real reasons to pin it to one AZ. The problem is that single-AZ-for-latency only survives an `use1-az4` event if the failover into another AZ is a battle-tested one-button operation that an SRE can trigger in the first five minutes of an alert. Coinbase had a backup. The backup did not work. That gap is what cost them five hours.
 
 The pattern is general enough to be worth a name. Call it the *"we have a backup"* fallacy: the backup exists, but it has never been promoted to primary under real failure conditions, so nobody knows what breaks when it is. The fix is not to write a longer DR doc. The fix is to actually break things on purpose, on a schedule.
 

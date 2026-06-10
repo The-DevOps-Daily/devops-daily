@@ -113,13 +113,13 @@ This will prompt you for confirmation before deleting stopped containers.
 
 - **Use Descriptive Names**: When naming containers, use descriptive names to avoid confusion.
 - **Monitor Container Usage**: Regularly check your containers with `docker ps -a` to identify unused ones.
-- **Leverage Docker Compose**: If you're managing multiple containers, use Docker Compose to handle naming and orchestration automatically.
+- **Use Docker Compose**: If you're managing multiple containers, use Docker Compose to handle naming and orchestration automatically.
 
 By following these steps, you can resolve the "name is already in use by container" error and manage your Docker containers more effectively.
 
 ## Related Resources
 
-- [Remove Old Docker Containers](/posts/remove-old-docker-containers) — clean up stopped containers
-- [Docker List Containers](/posts/docker-list-containers) — find running and stopped containers
-- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers) — force fresh containers
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Remove Old Docker Containers](/posts/remove-old-docker-containers): clean up stopped containers
+- [Docker List Containers](/posts/docker-list-containers): find running and stopped containers
+- [Docker Compose: Always Recreate Containers](/posts/docker-compose-always-recreate-containers): force fresh containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

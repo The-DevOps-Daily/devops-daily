@@ -1,0 +1,258 @@
+{
+  "id": "on-call-rotation-quiz",
+  "title": "On-Call Rotation and Escalation Policy Quiz",
+  "description": "Test your skills designing on-call schedules, escalation paths, and alerting strategies that keep engineers sane and incidents short.",
+  "category": "Incident Management",
+  "icon": "BellRing",
+  "totalPoints": 199,
+  "theme": {
+    "primaryColor": "amber",
+    "gradientFrom": "from-amber-500",
+    "gradientTo": "to-orange-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-05-19"
+  },
+  "questions": [
+    {
+      "id": "rotation-pattern-distributed-team",
+      "title": "Picking a Rotation Pattern",
+      "description": "A small distributed team is setting up its first on-call rotation.",
+      "situation": "You have six engineers across three time zones (US East, UK, India). Today, every alert goes to a shared Slack channel and whoever is awake responds. Pages are missed overnight. Leadership asks you to design the first formal rotation.",
+      "codeExample": "Team layout:\n- 2 engineers in New York (UTC-5)\n- 2 engineers in London (UTC+0)\n- 2 engineers in Bengaluru (UTC+5:30)\n\nCurrent state:\n- Single Slack channel for alerts\n- 4 missed pages last month between 02:00-06:00 local for whoever was on-duty\n- Average ack time at night: 38 minutes\n- Average ack time during business hours: 4 minutes",
+      "options": [
+        "One weekly rotation covering all 24 hours, primary picks one engineer regardless of location",
+        "A follow-the-sun rotation with three regional shifts so each engineer is only paged during their working hours",
+        "Keep the shared channel but require everyone to install the PagerDuty app on their phones",
+        "Rotate daily so nobody gets stuck with a bad week"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Follow-the-sun shifts let each region cover its waking hours. That fixes the root cause: people were being paged while asleep. Single 24-hour rotations create burnout fast for a six-person team. Pushing alerts to a shared channel without ownership is what got them into this mess. Daily rotation adds churn and breaks context between handoffs.",
+      "hint": "What problem are you actually solving? Read the ack time numbers again."
+    },
+    {
+      "id": "escalation-timeout-basics",
+      "title": "When the Primary Doesn't Ack",
+      "description": "An alert fires at 03:17 and nobody acknowledges it. What should the escalation policy do next?",
+      "situation": "Your team just configured its first escalation policy in PagerDuty. The primary engineer's phone was on Do Not Disturb. The alert page below shows what happened. You're deciding what step 2 of the escalation should look like.",
+      "codeExample": "Incident timeline:\n03:17:02  PagerDuty triggers incident #4821 (severity: high)\n03:17:03  Primary engineer (Alice) paged - SMS + push + phone call\n03:17:04  No response\n03:22:00  ??? what happens here ???\n\nCurrent policy:\nlevel_1:\n  notify: alice@team.com\n  timeout: 5m\nlevel_2:\n  notify: ???\n  timeout: 5m",
+      "options": [
+        "Re-page Alice every 5 minutes until she acknowledges, since she is the on-call",
+        "Send the alert to the team Slack channel and hope someone sees it",
+        "Page the secondary on-call engineer, then escalate to the engineering manager if still unacked after another 5 minutes",
+        "Auto-resolve the incident after 15 minutes since nobody is responding"
+      ],
+      "correctAnswer": 2,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Escalation exists exactly for the case where the primary cannot respond, phone died, sleeping through it, sick, whatever. Hammering the same person rarely works. Slack channels are not a paging mechanism, nobody has Slack notifications on at 3am. Auto-resolving an unacked incident hides real outages. A proper policy moves to a secondary on a short timeout, then to a manager or wider team if the secondary also doesn't ack.",
+      "hint": "The point of escalation is to find someone who can actually respond, not to nag the same person harder."
+    },
+    {
+      "id": "alert-fatigue-symptoms",
+      "title": "Reading the Signs of Alert Fatigue",
+      "description": "Your on-call engineers are starting to behave in concerning ways. Which signal points most clearly to alert fatigue?",
+      "situation": "You took over as the team's tech lead two months ago. You've noticed some patterns in how people interact with pages. The on-call retro this week included these comments.",
+      "codeExample": "Retro notes:\n- \"I just ack and silence everything now, I'll check in the morning\"\n- \"Half the alerts auto-resolve before I even open my laptop\"\n- 312 pages last month across 4 engineers (78 per person)\n- 71% of pages auto-resolved without action\n- 4 engineers asked to drop off the rotation this quarter\n- One engineer admitted to muting PagerDuty during a shift",
+      "options": [
+        "The team needs more training on how to use PagerDuty effectively",
+        "The number of pages and self-resolution rate prove the alerts are not actionable, and people are coping by ignoring them",
+        "Engineers are not committed enough to operational excellence",
+        "The on-call shifts are probably too short, longer shifts would build muscle memory"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "When 71% of pages auto-resolve, the alert is not telling you anything useful, it is just noise. People who ignore or mute pages are not lazy, they are responding rationally to a broken signal. Training cannot fix bad alerts. Longer shifts make burnout worse, not better. The fix is to ruthlessly delete alerts that do not require human action and tune the rest.",
+      "hint": "Look at the auto-resolution rate. What does it tell you about the alerts themselves?"
+    },
+    {
+      "id": "escalation-policy-yaml-bug",
+      "title": "Spot the Bug in This Escalation Policy",
+      "description": "Review this PagerDuty-style escalation policy. What's the most serious problem with it?",
+      "situation": "A teammate wrote this policy for a new service and asked for your review before they apply it. The service is customer-facing with a 99.9% availability SLO.",
+      "codeExample": "name: payments-api-escalation\nrules:\n  - level: 1\n    notify:\n      - alice@team.com\n    timeout_minutes: 30\n  - level: 2\n    notify:\n      - bob@team.com\n    timeout_minutes: 30\n  - level: 3\n    notify:\n      - cto@company.com\n    timeout_minutes: 60\nrepeat: false",
+      "options": [
+        "The CTO should not be on an escalation policy, only engineers should",
+        "The 30 minute timeout is far too long for a customer-facing service; the SLO allows about 43 minutes of total downtime per month",
+        "The policy should use phone calls instead of email notifications",
+        "Three escalation levels is too many, two is the standard"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A 99.9% SLO leaves roughly 43 minutes of error budget per month. Waiting 30 minutes before even paging a secondary burns most of your monthly budget on a single incident. For a customer-facing service, level 1 timeouts of 5 to 10 minutes are typical. Notification channel (the policy already includes the engineer's contact, channels are configured per-user), having a leader as a final fallback, and the number of levels are all reasonable choices.",
+      "hint": "Convert 99.9% availability into minutes of allowed downtime per month, then look at the timeout values."
+    },
+    {
+      "id": "symptom-vs-cause-alerts",
+      "title": "Symptom-Based vs Cause-Based Alerts",
+      "description": "You have two Prometheus alert rules covering the same service. Which one should you keep?",
+      "situation": "The on-call team is auditing alerts on the checkout-service. They want to keep one of these two rules and delete the other. The service has an SLO of 99.5% successful requests.",
+      "codeExample": "# Rule A\n- alert: CheckoutHighCPU\n  expr: rate(node_cpu_seconds_total{job=\"checkout\",mode!=\"idle\"}[5m]) > 0.85\n  for: 10m\n  labels:\n    severity: page\n  annotations:\n    summary: \"Checkout service CPU above 85%\"\n\n# Rule B\n- alert: CheckoutErrorRateHigh\n  expr: |\n    sum(rate(http_requests_total{job=\"checkout\",status=~\"5..\"}[5m]))\n    / sum(rate(http_requests_total{job=\"checkout\"}[5m])) > 0.005\n  for: 5m\n  labels:\n    severity: page\n  annotations:\n    summary: \"Checkout 5xx rate exceeds SLO budget\"",
+      "options": [
+        "Rule A, because high CPU is a leading indicator and you want to catch problems before users see them",
+        "Rule B, because it pages on actual user-facing symptoms tied directly to the SLO",
+        "Keep both, since CPU and error rate are independent signals",
+        "Delete both and use synthetic monitoring instead"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Page on what users feel, not on causes. High CPU is often fine, a service can run hot and still serve requests perfectly. Paging on CPU produces noise and trains the team to ignore alerts. Rule B fires when actual users are getting errors, which is what your SLO measures. Keep cause-based metrics for dashboards and post-incident analysis, not for waking people up.",
+      "hint": "Which of these alerts can fire while everything users care about is working fine?"
+    },
+    {
+      "id": "severity-classification",
+      "title": "Choosing the Right Severity",
+      "description": "Pick the correct severity for the scenario below using the team's severity matrix.",
+      "situation": "Your team uses a four-level severity matrix. A new alert just fired and you need to triage. The internal admin dashboard is returning 500 errors. Only 5 engineering staff use this dashboard, never customers. It's used to view sales reports.",
+      "codeExample": "Severity matrix:\nSEV-1: Customer-facing outage or data loss. Page primary + manager. All hands.\nSEV-2: Major feature degraded for customers, or full outage of an internal critical tool. Page primary.\nSEV-3: Minor customer impact, or internal tool degraded. Ticket only, fix during business hours.\nSEV-4: No impact, informational. No page, log only.\n\nIncident details:\n- Service: internal-admin-dashboard\n- Symptom: HTTP 500 on /reports endpoint\n- Users affected: 5 internal staff\n- Workaround: query the warehouse directly\n- Time: 02:14 local",
+      "options": [
+        "SEV-1, any 500 error indicates a serious problem that needs all-hands attention",
+        "SEV-2, the dashboard is broken and internal tools need to stay up",
+        "SEV-3, internal tool with a workaround and no customer impact, fix it in the morning",
+        "SEV-4, since no customer is affected this is just informational"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Severity should reflect impact, not the size of the error message. No customer is affected, a workaround exists, and only five internal users use the tool. Waking someone up for this trains them to ignore SEV-1s. SEV-1 is reserved for customer-facing pain or data loss. SEV-2 is for major internal tools that block work, a reports page does not qualify. SEV-4 understates it, the dashboard genuinely is broken and needs a ticket and a fix.",
+      "hint": "Look at impact and whether a workaround exists. Severity is not about how scary the error looks."
+    },
+    {
+      "id": "shift-handoff-checklist",
+      "title": "What to Include in a Handoff",
+      "description": "You're ending your week-long shift. What belongs in the handoff to the next on-call?",
+      "situation": "You spent the week on-call. A few incidents are still unresolved, you noticed a noisy alert, and there's a planned database migration tomorrow morning. You have 15 minutes to write the handoff before logging off.",
+      "codeExample": "This week's state:\n- Open incident #5102: intermittent 502s on cart-service, root cause not found, mitigation: retries enabled\n- Alert \"DiskUsage85\" fired 14 times, every time it cleared itself within 10 minutes\n- Planned: db schema migration scheduled for Tuesday 09:00 by data team\n- New runbook added for Redis evictions\n- Two engineers in EU region taking PTO Mon-Wed",
+      "options": [
+        "A summary of what you fixed this week, since the next on-call needs to know your accomplishments",
+        "Open incidents, ongoing investigations, known noisy alerts, planned changes, and any unusual coverage gaps",
+        "Just the open incidents, everything else can be found in PagerDuty history",
+        "A full retrospective with timelines for every incident you handled"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A good handoff transfers the operational context the next person needs to act fast. Open incidents tell them what is still broken. Noisy alerts let them filter signal from noise. Planned changes prevent them from being surprised by a database migration at 9am. Coverage gaps matter when they need to escalate. What you fixed this week and full retrospectives belong in different documents, the handoff is about what the next person needs in the next 7 days.",
+      "hint": "Think about what the next on-call needs to do their job, not what you want them to know about yours."
+    },
+    {
+      "id": "burn-rate-alert-design",
+      "title": "Multi-Window Burn Rate Alert",
+      "description": "Why does this SLO alert use two windows instead of one?",
+      "situation": "Your team is moving away from threshold-based alerts and toward SLO burn rate alerts. A senior SRE proposes this rule for the payments service with a 99.9% availability SLO over 30 days.",
+      "codeExample": "- alert: PaymentsErrorBudgetBurn\n  expr: |\n    (\n      sum(rate(http_requests_total{job=\"payments\",status=~\"5..\"}[1h]))\n      / sum(rate(http_requests_total{job=\"payments\"}[1h])) > (14.4 * 0.001)\n    )\n    and\n    (\n      sum(rate(http_requests_total{job=\"payments\",status=~\"5..\"}[5m]))\n      / sum(rate(http_requests_total{job=\"payments\"}[5m])) > (14.4 * 0.001)\n    )\n  for: 2m\n  labels:\n    severity: page",
+      "options": [
+        "Two windows just doubles the alert evaluations, it's a mistake",
+        "The long window detects sustained burn and the short window makes the alert fire quickly without waiting an hour",
+        "The 5 minute window is for tests, it should be removed in production",
+        "Two windows let you alert on both the average and the median error rate"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Multi-window multi-burn-rate alerts solve the trade-off between alert latency and false positives. A short window alone fires on every small blip. A long window alone takes too long to detect a real outage. Requiring both to exceed the burn rate threshold gives you fast detection (5m window) while filtering out brief spikes (1h window must also be burning). This is the pattern described in the Google SRE Workbook for SLO-based alerting.",
+      "hint": "What would happen if you only used the 5-minute window? What about only the 1-hour window?"
+    },
+    {
+      "id": "noisy-disk-alert",
+      "title": "Fixing a Noisy Disk Alert",
+      "description": "This alert paged seven times last week. How do you fix it?",
+      "situation": "Every time a nightly batch job runs, this alert fires for about 20 minutes while temporary files are written. Then the job cleans up and the alert resolves. The on-call has paged seven times in the last week from this single rule.",
+      "codeExample": "- alert: HostDiskUsageHigh\n  expr: (1 - node_filesystem_avail_bytes / node_filesystem_size_bytes) > 0.80\n  for: 1m\n  labels:\n    severity: page\n  annotations:\n    summary: \"Disk usage above 80% on {{ $labels.instance }}\"\n\nContext:\n- Disk reaches 82-86% during nightly batch job 02:00-02:25\n- Recovers to 60% after job finishes\n- Job runs every night, has run reliably for 18 months\n- True disk-full incident in past 18 months: 0",
+      "options": [
+        "Raise the threshold to 90% so the batch job no longer triggers it",
+        "Change the alert to predictive: page only if disk is filling at a rate that would hit 100% within 4 hours, and ticket (not page) at static high thresholds",
+        "Disable the alert during the 02:00-02:25 window using a silence",
+        "Add more disk space to the host so it never crosses 80%"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Static thresholds on disk usage are almost always wrong. Raising the threshold to 90% just delays the problem and hides actual leaks. Silences need to be maintained and break when the batch job moves. Adding disk treats the symptom not the design flaw. A predictive alert based on fill rate catches actual problems (slow leaks, runaway logs) without firing on planned, self-correcting spikes. Pair it with a ticket-level static alert for the unusual case of a sudden jump.",
+      "hint": "The alert fires every night on a known, healthy pattern. What does that tell you about the threshold model?"
+    },
+    {
+      "id": "on-call-compensation-sustainability",
+      "title": "Making On-Call Sustainable",
+      "description": "Your best engineer just asked to leave the rotation. What's the most effective long-term fix?",
+      "situation": "Three engineers have left the rotation in the past six months. The remaining engineers are picking up more shifts. One of them, your strongest IC, just sent this Slack message.",
+      "codeExample": "Slack message from senior engineer:\n\n\"Hey, I need to talk about on-call. Last month I got paged 23 times,\n11 of those were between midnight and 5am. I haven't had a full\nweekend off in 7 weeks because the rotation is short-staffed.\nI know we need coverage but I can't keep doing this. I'm thinking\nabout looking for another job if this doesn't change.\"\n\nCurrent state:\n- 4 engineers in rotation, was 7 six months ago\n- Average pages per week per engineer: 6\n- Page volume trend: increasing\n- Compensation: none, on-call is unpaid",
+      "options": [
+        "Add on-call pay so people are compensated for the pain",
+        "Hire more engineers to spread the rotation across more people",
+        "Treat the page volume as a bug: dedicate one sprint per quarter to alert quality and operational debt, reduce noise at the source",
+        "Move to a 24-hour shift model so engineers only do one bad day at a time"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Compensation, more headcount, and shift restructuring all treat symptoms. The actual problem is 23 pages a month, most of them at night. If those pages were actionable and valuable, the engineer would feel useful. The real fix is to reduce page volume at the source: delete useless alerts, fix the bugs causing repeat incidents, raise thresholds, automate runbook actions. Comp helps morale, but if every comped on-call shift is still a sleepless night, retention will not improve. The engineer in this story is asking for fewer 3am wake-ups, not a bigger paycheck for them.",
+      "hint": "Look at the page volume numbers. What if those numbers were cut by 80%?"
+    },
+    {
+      "id": "cross-team-routing",
+      "title": "Routing Alerts to the Right Team",
+      "description": "An alert for a database is paging the application team. How should routing be set up?",
+      "situation": "Your app team has been paged five times this month for issues that turned out to be database problems. Each time, the app on-call had to wake up, investigate, then page the database team. The database team has its own on-call rotation but no alerts are routed to them directly.",
+      "codeExample": "Current routing (Alertmanager):\nroute:\n  receiver: app-team-pager\n  group_by: ['alertname']\n\nreceivers:\n  - name: app-team-pager\n    pagerduty_configs:\n      - service_key: <app-team-key>\n\nRecent incidents app-team handled:\n- DB connection pool exhausted (real cause: long-running query)\n- Replication lag spike (real cause: backup job)\n- Disk full on db primary (real cause: log rotation broken)\nAll routed to app-team, then manually escalated to db-team.",
+      "options": [
+        "Page both teams every time so nobody has to escalate manually",
+        "Route alerts to the team that owns the underlying service, using labels like service or team to pick the receiver",
+        "Have the app team learn database administration so they can fix these issues themselves",
+        "Move all database alerts to email so they don't wake anyone at night"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Alerts should reach the team that owns the failing component. Routing by labels (service, team, component) sends each alert to the right rotation directly. Paging both teams creates duplicate work and dilutes ownership, the database team will assume the app team is on it and vice versa. Cross-training is good but does not fix the routing bug. Moving database alerts to email loses urgency for genuinely critical issues. The fix is at the routing layer: tag metrics with owning team, route by label.",
+      "hint": "Who can actually fix a database issue at 3am? Make sure the alert reaches them directly."
+    },
+    {
+      "id": "override-and-coverage-gaps",
+      "title": "Handling Mid-Shift Coverage Gaps",
+      "description": "Your on-call gets sick mid-shift and a public holiday is approaching. How do you handle coverage?",
+      "situation": "It's Tuesday afternoon. Alice is on-call for the week (Mon-Sun). She just messaged that she's running a fever and going to sleep, she'll be out for 24 to 48 hours. Friday is a US national holiday and three of your six engineers are US-based. Schedule below.",
+      "codeExample": "This week's schedule:\nMon  Tue  Wed  Thu  Fri  Sat  Sun\nAlice Alice Alice Alice Alice Alice Alice\n\nSecondary: Bob (US, off Friday for holiday)\n\nTeam availability:\n- Alice (UK): Out sick 24-48h\n- Bob (US): Available now, off Friday\n- Carol (US): Off Friday\n- Dave (US): Off Friday\n- Eve (India): Available\n- Frank (India): Available\n\nIt is currently 14:00 UTC Tuesday.",
+      "options": [
+        "Move Alice's whole week to Bob and tell Bob to find someone for Friday himself",
+        "Use PagerDuty overrides: assign Bob primary until Alice returns, then split Friday between Eve and Frank by time zone; document the change so everyone knows who to escalate to",
+        "Leave the schedule as-is and hope Alice recovers before any alerts fire",
+        "Send the alerts to a shared Slack channel for the next few days until things stabilize"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Coverage gaps are normal and need an explicit process. Time-bounded overrides in your paging tool make the new assignments visible to everyone, including monitoring and escalations. Splitting Friday between two India-based engineers gives the US team a real day off without leaving the rotation uncovered. Pushing the problem onto Bob without a plan creates ambiguity and risks missed pages, particularly on Friday. Doing nothing or falling back to a shared Slack channel are exactly the patterns a proper escalation policy is supposed to replace.",
+      "hint": "You have engineers awake in India when the US holiday hits. Use the time zones you have."
+    },
+    {
+      "id": "post-incident-rotation-review",
+      "title": "Using Postmortems to Improve On-Call",
+      "description": "How should postmortem findings feed back into the on-call program?",
+      "situation": "After a SEV-2 incident last week, the postmortem produced a list of action items. Your manager asks you which of these actually improves the on-call program long-term rather than just patching this one incident.",
+      "codeExample": "Postmortem action items:\n1. Add a runbook entry for \"queue consumer stalled\"\n2. Delete the alert \"QueueDepthAbove1000\" (fired all the time, ignored)\n3. Replace it with \"QueueConsumerLagAbove5m\" (symptom-based)\n4. Add automated restart for stalled consumers via systemd\n5. Schedule a quarterly review of alerts that paged but had no action taken\n6. Buy the team t-shirts that say \"I survived incident #6042\"\n7. Train two more engineers on the queue subsystem so the rotation is not bottlenecked",
+      "options": [
+        "Items 1 and 6, since runbooks and morale matter most",
+        "Just item 4, automation is the only real fix",
+        "Items 1, 2, 3, 4, 5, and 7 all reduce future page load or speed up response; item 6 is fine but irrelevant to the on-call program",
+        "Items 2 and 3 only, since deleting noisy alerts is the single highest-impact action"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "A good postmortem produces operational improvements across multiple layers: documentation (runbooks), signal quality (delete noisy alerts, add symptom-based ones), automation (self-heal where possible), process (regular review of useless pages), and people (spread knowledge). Item 6 is fine for morale but does not change on-call load. Picking only one category misses the compound effect, the rotation gets better when you reduce noise AND automate fixes AND share knowledge. Treat the action item list as a portfolio of improvements, not a single silver bullet.",
+      "hint": "Which items will reduce the number of pages, the time to fix, or the people-bottleneck? Probably more than you think."
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { ArrowLeft, Twitter, Facebook, Linkedin } from 'lucide-react';
+import { Facebook, Linkedin, Twitter } from '@/components/icons/social-icons';
+import { ArrowLeft } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameActions } from '@/components/games/game-actions';

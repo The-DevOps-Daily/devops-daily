@@ -94,8 +94,8 @@ With these steps, you can quickly edit files inside containers and understand ho
 
 ## Related Resources
 
-- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell) — shell access methods
-- [Copy Files from Docker Container to Host](/posts/copy-files-from-docker-container-to-host) — extract files
-- [Exploring Docker Container File System](/posts/exploring-docker-container-file-system) — navigate containers
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
-- [Docker Flashcards](/flashcards/docker-essentials) — review Docker concepts
+- [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell): shell access methods
+- [Copy Files from Docker Container to Host](/posts/copy-files-from-docker-container-to-host): extract files
+- [Exploring Docker Container File System](/posts/exploring-docker-container-file-system): navigate containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals
+- [Docker Flashcards](/flashcards/docker-essentials): review Docker concepts

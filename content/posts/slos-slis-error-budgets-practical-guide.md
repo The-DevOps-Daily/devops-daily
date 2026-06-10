@@ -267,7 +267,7 @@ groups:
           description: "Budget will be exhausted before the window resets if this continues."
 ```
 
-The two-window approach (short and long) prevents alert fatigue. A brief spike triggers the short window but not the long one, so you do not get paged for a 30-second blip. A sustained problem triggers both, which means something is genuinely wrong.
+The two-window approach (short and long) prevents alert fatigue. A brief spike triggers the short window but not the long one, so you do not get paged for a 30-second blip. A sustained problem triggers both, which means something is actually wrong.
 
 ## What to Do When the Budget Runs Out
 

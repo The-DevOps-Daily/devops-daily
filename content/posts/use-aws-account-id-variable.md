@@ -20,7 +20,7 @@ tags:
 
 ## TLDR
 
-To use the AWS `account_id` variable in Terraform, leverage the `aws_caller_identity` data source. This allows you to dynamically retrieve the account ID for use in your configurations.
+To use the AWS `account_id` variable in Terraform, use the `aws_caller_identity` data source. This allows you to dynamically retrieve the account ID for use in your configurations.
 
 ---
 

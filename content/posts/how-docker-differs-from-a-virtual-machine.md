@@ -161,8 +161,8 @@ Happy coding!
 
 ## Related Resources
 
-- [Docker Image vs Container](/posts/docker-image-vs-container) — understand Docker internals
-- [Docker Runtime Performance Cost](/posts/docker-runtime-performance-cost) — performance comparison
-- [Vagrant vs Docker](/posts/vagrant-vs-docker-for-isolated-environments) — another comparison
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from scratch
-- [DevOps Survival Guide](/books/devops-survival-guide) — broader DevOps context
+- [Docker Image vs Container](/posts/docker-image-vs-container): understand Docker internals
+- [Docker Runtime Performance Cost](/posts/docker-runtime-performance-cost): performance comparison
+- [Vagrant vs Docker](/posts/vagrant-vs-docker-for-isolated-environments): another comparison
+- [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch
+- [DevOps Survival Guide](/books/devops-survival-guide): broader DevOps context

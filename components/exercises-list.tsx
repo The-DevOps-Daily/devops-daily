@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useDeferredValue } from 'react';
+import { useState, useMemo } from 'react';
+import { useDeferredSearch } from '@/hooks/use-deferred-search';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,7 @@ export function ExercisesList({
   showSearch = true,
   showFilters = true,
 }: ExercisesListProps) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const { searchQuery, setSearchQuery, deferredSearchQuery } = useDeferredSearch();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Exercise['difficulty'] | 'all'>(
     'all'
   );
@@ -31,10 +32,6 @@ export function ExercisesList({
     'all'
   );
   const [sortBy, setSortBy] = useState<'newest' | 'difficulty' | 'time'>('newest');
-
-  // Deferred value keeps the <input> responsive while the expensive
-  // filter+sort pass runs at a lower React priority. See INP fix notes.
-  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   // Get unique categories and environments for filters
   const { categories, environments } = useMemo(() => {

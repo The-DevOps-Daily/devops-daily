@@ -131,8 +131,8 @@
     {
       "id": "context-managers",
       "title": "Resource Management",
-      "description": "How do you ensure proper cleanup of resources in Python?",
-      "situation": "You need to connect to a database, perform operations, and guarantee the connection is closed even if errors occur.",
+      "description": "How do you ensure a database connection is closed even if an error occurs?",
+      "situation": "You need to connect to a database, perform operations, and guarantee the connection is closed. The database library's connection object does not document that its context manager closes the connection.",
       "codeExample": "# Need to:\n# 1. Connect to database\n# 2. Execute queries\n# 3. Ensure connection closes properly",
       "options": [
         "conn = database.connect()\ntry:\n    result = conn.execute(query)\n    return result\nfinally:\n    conn.close()",
@@ -140,9 +140,9 @@
         "conn = database.connect()\nresult = conn.execute(query)\nconn.close()\nreturn result",
         "try:\n    conn = database.connect()\n    result = conn.execute(query)\n    conn.close()\n    return result\nexcept Exception:\n    conn.close()\n    raise"
       ],
-      "correctAnswer": 1,
-      "explanation": "Context managers (with statements) automatically handle resource cleanup through __enter__ and __exit__ methods. They guarantee cleanup even if exceptions occur.",
-      "hint": "What Python feature automatically handles resource cleanup and follows the principle 'with great power comes great responsibility'?",
+      "correctAnswer": 0,
+      "explanation": "A try/finally block guarantees conn.close() runs after the operation, even when an exception is raised. A with statement is ideal only when the object's context manager is documented to close the resource. Some database connections, such as sqlite3.Connection, use the context manager for transaction handling but do not close the connection automatically.",
+      "hint": "Do not assume every database connection context manager closes the underlying connection. Which option explicitly closes it no matter how the query exits?",
       "difficulty": "intermediate",
       "points": 13
     },

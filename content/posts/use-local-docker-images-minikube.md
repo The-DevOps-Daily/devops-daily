@@ -112,7 +112,7 @@ The `imagePullPolicy: Never` setting ensures Kubernetes uses the local image and
 
 ## Alternative Pull Policies
 
-Understanding image pull policies is crucial for working with local images:
+Understanding image pull policies is important for working with local images:
 
 ```yaml
 # Never pull, use local image only
@@ -129,7 +129,7 @@ For development with local images, use `Never` or `IfNotPresent` to avoid unnece
 
 ## Automating the Workflow
 
-Create a script to streamline the build and deployment process:
+Create a script to simplify the build and deployment process:
 
 ```bash
 #!/bin/bash
@@ -316,7 +316,7 @@ Now that you can use local Docker images with Minikube, consider learning about:
 
 ## Related Resources
 
-- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences) — choosing orchestration
-- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes) — learn K8s from scratch
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
-- [DevOps Roadmap](/roadmap) — the full DevOps learning path
+- [Docker Compose vs Kubernetes](/posts/docker-compose-vs-kubernetes-differences): choosing orchestration
+- [Introduction to Kubernetes Guide](/guides/introduction-to-kubernetes): learn K8s from scratch
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals
+- [DevOps Roadmap](/roadmap): the full DevOps learning path

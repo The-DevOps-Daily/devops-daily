@@ -3,7 +3,6 @@ import {
   GitPullRequest,
   Users,
   Star,
-  Github,
   ArrowRight,
   CheckCircle2,
   Trophy,
@@ -16,6 +15,7 @@ import {
   Megaphone,
   type LucideIcon,
 } from 'lucide-react';
+import { Github } from '@/components/icons/social-icons';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { BreadcrumbSchema, FAQSchema } from '@/components/schema-markup';
@@ -26,7 +26,7 @@ import { SectionSeparator } from '@/components/section-separator';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Hacktoberfest 2026 - 7-Day DevOps Contribution Challenge | DevOps Daily',
+  title: 'Hacktoberfest 2026 - 7-Day DevOps Contribution Challenge',
   description:
     'Join the DevOps Daily Hacktoberfest 2026 challenge! 7 days of beginner-friendly open source contributions. Add your profile, fix bugs, contribute quizzes, flashcards, and more. No coding required.',
   alternates: {

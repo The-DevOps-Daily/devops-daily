@@ -1,0 +1,53 @@
+{
+  "id": "argocd-bootstrapping-self-management",
+  "slug": "argocd-bootstrapping-self-management",
+  "title": "Bootstrapping Argo CD and Letting It Manage Itself",
+  "question": "Argo CD manages your apps. Who manages Argo CD? Walk me through how you would bootstrap it from a fresh cluster and where its own config lives in your repo.",
+  "answer": "Argo CD has a chicken-and-egg problem on day one. The cluster has nothing in it, so kubectl is the only tool that can install the first thing. After that, you want Argo CD to manage itself the same way it manages everything else.\n\nThe flow I use:\n\n1. One bootstrap kubectl apply puts Argo CD into the cluster. I use the upstream install manifest pinned to a version, not latest. That gets you the namespace, the CRDs, the controller, the repo server, the API server.\n2. Once Argo CD is up, I apply one Application CR by hand. This Application points at a directory in the manifests repo, something like argocd/bootstrap. That directory contains another Application that points at Argo CD's own Helm chart or Kustomize overlay. So Argo CD starts syncing itself.\n3. The same bootstrap directory contains AppProjects, repository credentials (as sealed secrets or external secrets), and a parent Application that points at argocd/applications, which holds every other Application CR for the cluster.\n\nAfter that initial kubectl apply, you never touch Argo CD with kubectl again. Bumping the Argo CD version is a Git commit changing the chart version or image tag in argocd/bootstrap. Adding a new app to the cluster is a Git commit dropping a new Application YAML into argocd/applications.\n\nRepo layout I keep for this:\n\nargocd/\n  bootstrap/         # Argo CD itself, plus the root app-of-apps\n    kustomization.yaml\n    values.yaml      # Helm values for the argo-cd chart\n    root-app.yaml    # the parent Application that points at applications/\n  projects/          # AppProjects: per-team or per-environment\n  applications/      # one Application YAML per workload or per env\n\nOne gotcha. Argo CD syncing itself can lock you out if a bad change rolls in. If the controller fails to start because of a config change you just merged, no controller means no reconcile, which means no rollback through Git. Keep the bootstrap Application on manual sync, or at minimum keep a tested rollback commit ready. Some teams keep a separate management cluster running its own Argo CD that watches the workload clusters' Argo CDs, so a broken self-managed instance can still be repaired through GitOps.",
+  "explanation": "Most junior candidates can install Argo CD. Fewer can explain how it ends up managing itself, and even fewer have thought about what happens when self-management goes wrong. This question separates someone who has watched a tutorial from someone who has set up Argo CD in a real environment. Listen for the bootstrap kubectl apply being acknowledged as a one-time thing, a clear repo location for Argo CD's own config, and any awareness of the self-lockout risk.",
+  "category": "GitOps",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "gitops",
+    "argocd",
+    "deployments",
+    "repository-structure",
+    "bootstrapping"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "One-time bootstrap commands",
+      "code": "# 1. Install Argo CD itself with kubectl (one time only)\nkubectl create namespace argocd\nkubectl apply -n argocd \\\n  -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.11.0/manifests/install.yaml\n\n# Wait for the controller to be ready\nkubectl wait --for=condition=available --timeout=300s \\\n  deployment/argocd-server -n argocd\n\n# 2. Apply the root Application that makes Argo CD self-manage\nkubectl apply -f argocd/bootstrap/root-app.yaml\n\n# After this point, no more kubectl. Everything is Git."
+    },
+    {
+      "language": "yaml",
+      "label": "Root Application that bootstraps the rest",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: root\n  namespace: argocd\n  finalizers:\n    - resources-finalizer.argocd.argoproj.io\nspec:\n  project: default\n  source:\n    repoURL: https://github.com/org/manifests\n    targetRevision: main\n    path: argocd/applications\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: argocd\n  syncPolicy:\n    automated:\n      prune: true\n      selfHeal: true"
+    },
+    {
+      "language": "yaml",
+      "label": "Argo CD managing its own install via Helm",
+      "code": "# argocd/applications/argocd-self.yaml\napiVersion: argoproj.io/v1alpha1\nkind: Application\nmetadata:\n  name: argocd\n  namespace: argocd\nspec:\n  project: platform\n  source:\n    repoURL: https://argoproj.github.io/argo-helm\n    chart: argo-cd\n    targetRevision: 7.3.0\n    helm:\n      valueFiles:\n        - $values/argocd/bootstrap/values.yaml\n  sources:\n    - repoURL: https://github.com/org/manifests\n      targetRevision: main\n      ref: values\n  destination:\n    server: https://kubernetes.default.svc\n    namespace: argocd\n  syncPolicy:\n    # No automated sync: a bad change to Argo CD itself should not auto-deploy\n    syncOptions:\n      - ServerSideApply=true"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens if you merge a bad change to the Argo CD chart values and the controller crashloops? How do you recover?",
+    "Would you put Argo CD on auto-sync for itself? Why or why not?",
+    "How do you handle Argo CD version upgrades across many clusters?",
+    "Where do the credentials that Argo CD uses to read your private manifests repo come from? They cannot be in the same repo in plaintext."
+  ],
+  "commonMistakes": [
+    "Installing Argo CD with kubectl, then continuing to use kubectl for every config change instead of having it manage itself",
+    "Putting Argo CD's own Application on the same auto-sync settings as workloads, then getting locked out when a bad chart bump crashes the controller",
+    "Forgetting about the repository credentials problem and hard-coding tokens into Git on day one"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "gitops",
+    "kubernetes",
+    "helm",
+    "bootstrapping"
+  ]
+}

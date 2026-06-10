@@ -99,4 +99,4 @@ resource "aws_security_group_rule" "allow_ssh" {
 - **Document Outputs**: Provide clear documentation for module outputs.
 - **Validate Outputs**: Ensure outputs are correctly defined and used.
 
-By following these steps, you can effectively reference resources created by Terraform modules, enabling seamless integration and modular configurations.
+By following these steps, you can effectively reference resources created by Terraform modules, enabling clean integration and modular configurations.

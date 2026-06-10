@@ -68,7 +68,7 @@ spec:
       command: ["sleep", "infinity"]
 ```
 
-Inside the container, `id` will report `uid=0(root)`. From a debug shell on the node, `ps -ef` for that PID will show a non-zero, non-host UID — typically something in the 65536+ range mapped per-pod. A `cat /proc/<pid>/uid_map` on the host shows the mapping range.
+Inside the container, `id` will report `uid=0(root)`. From a debug shell on the node, `ps -ef` for that PID will show a non-zero, non-host UID, typically something in the 65536+ range mapped per-pod. A `cat /proc/<pid>/uid_map` on the host shows the mapping range.
 
 ### What you can't do with `hostUsers: false`
 
@@ -84,18 +84,18 @@ For a typical web service this list is uncontroversial. For privileged DaemonSet
 
 ### Rollout pattern
 
-The kubelet doesn't automatically opt every workload in — you set `hostUsers: false` per pod template. A reasonable rollout sequence:
+The kubelet doesn't automatically opt every workload in; you set `hostUsers: false` per pod template. A reasonable rollout sequence:
 
 1. Pick one stateless deployment in staging. Add `hostUsers: false`. Confirm the pod schedules, the volumes mount, and the app reads its ConfigMap.
 2. Spot-check `crictl inspect <containerID>` on the node and verify the runtime reports the user namespace mapping.
 3. Roll the same change to a low-blast-radius prod workload (a doc site, a webhook receiver) before going broader.
-4. PSAA or Kyverno policy enforcement comes last — once you have evidence multiple workloads work without surprises, you can codify "no `hostUsers: true` for new pods unless explicitly waived".
+4. PSAA or Kyverno policy enforcement comes last. Once you have evidence multiple workloads work without surprises, you can codify "no `hostUsers: true` for new pods unless explicitly waived".
 
 ## Pod-level in-place resize: what's actually new
 
-Per-container resize landed in 1.33 alpha and graduated through 1.35. In 1.36 the resize subresource also accepts changes to **`spec.resources`** — the pod-level aggregate that 1.32 introduced as an upper bound on the sum of container limits.
+Per-container resize landed in 1.33 alpha and graduated through 1.35. In 1.36 the resize subresource also accepts changes to **`spec.resources`**, the pod-level aggregate that 1.32 introduced as an upper bound on the sum of container limits.
 
-The semantics matter: pod-level resources are enforced at the pod's cgroup, not by the application runtime inside containers. That's why this resize never restarts the pod — bumping the pod-level cgroup memory limit is just a `cgroup.memory.max` write to a file that already exists. There's nothing to coordinate with the application.
+The semantics matter: pod-level resources are enforced at the pod's cgroup, not by the application runtime inside containers. That's why this resize never restarts the pod: bumping the pod-level cgroup memory limit is just a `cgroup.memory.max` write to a file that already exists. There's nothing to coordinate with the application.
 
 ### Pod with both per-container and pod-level resources
 
@@ -147,7 +147,7 @@ kubectl get pod pod-resize-demo -o yaml | yq '.status.resize'
 
 The kubelet refuses the resize and surfaces an event when:
 
-- The new request can't fit on the node — same admission rules as initial scheduling.
+- The new request can't fit on the node (same admission rules as initial scheduling).
 - The container runtime doesn't implement `UpdateContainerResources` for the requested change. `containerd ≤ 1.7` and older CRI-O versions hit this.
 - You try to lower memory below currently-used memory. The kubelet errs on the side of safety here: a memory shrink that would force OOM-kill the container is rejected.
 
@@ -185,11 +185,11 @@ None of these change your day in the way that user namespaces and pod resize do,
 
 ## Summary
 
-The headline of 1.36 isn't a new abstraction — it's two long-running features that finally feel safe to put under load:
+The headline of 1.36 isn't a new abstraction; it's two long-running features that finally feel safe to put under load:
 
 - **User namespaces (GA)** flips the security baseline for stateless workloads. Add `hostUsers: false` to pods that don't need host network/PID/IPC, and a chunk of the container-escape attack surface goes away.
 - **Pod-level in-place resize (beta on by default)** turns vertical autoscaling into a non-disruptive operation. The kubelet patches the cgroup, the application doesn't restart, and PDBs stay green.
 
-Both depend on infrastructure you should already have — cgroup v2, kernel 6.3+, containerd 2.0+ — but it's worth running through the prerequisites checklist before you flip the field on a production deployment. The feature gates are gone, but the kernel and runtime requirements aren't.
+Both depend on infrastructure you should already have (cgroup v2, kernel 6.3+, containerd 2.0+), but it's worth running through the prerequisites checklist before you flip the field on a production deployment. The feature gates are gone, but the kernel and runtime requirements aren't.
 
 Worth bookmarking the official posts: the [user namespaces GA announcement](https://kubernetes.io/blog/2026/04/23/kubernetes-v1-36-userns-ga/), the [pod-level resize beta](https://kubernetes.io/blog/2026/04/30/kubernetes-v1-36-inplace-pod-level-resources-beta/), and the [v1.36 release notes](https://kubernetes.io/blog/2026/04/22/kubernetes-v1-36-release/).

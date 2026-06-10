@@ -137,10 +137,12 @@ export function ArticleSchema({
     image: articleImage,
     datePublished: articlePublished,
     dateModified: articleModified,
-    author: {
-      '@type': 'Person',
-      name: articleAuthor,
-    },
+    // Team-authored content credits the Organization entity (referencing the
+    // full node already on every page); only named individuals are a Person.
+    author:
+      articleAuthor === 'DevOps Daily Team'
+        ? { '@id': ORGANIZATION_ID }
+        : { '@type': 'Person', name: articleAuthor },
     publisher: {
       '@id': ORGANIZATION_ID,
     },
@@ -192,19 +194,26 @@ export function TechArticleSchema({
       : `${SITE_URL}${imageUrl}`
     : `${SITE_URL}/og-image.png`;
 
+  const articleAuthor = authorName || 'DevOps Daily Team';
+
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'TechArticle',
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${SITE_URL}${url}`,
+    },
     headline: title,
     description,
     url: `${SITE_URL}${url}`,
     image: articleImage,
     datePublished: publishedDate,
     dateModified: modifiedDate,
-    author: {
-      '@type': 'Person',
-      name: authorName || 'DevOps Daily Team',
-    },
+    // Same Organization-vs-Person split as ArticleSchema above.
+    author:
+      articleAuthor === 'DevOps Daily Team'
+        ? { '@id': ORGANIZATION_ID }
+        : { '@type': 'Person', name: articleAuthor },
     publisher: {
       '@id': ORGANIZATION_ID,
     },
@@ -238,14 +247,16 @@ export function LearningResourceSchema({
   learningObjectives,
   technologies,
   url,
+  learningResourceType = 'hands-on exercise',
 }: {
   title: string;
   description: string;
-  difficulty: string;
+  difficulty?: string;
   estimatedTime: string;
-  learningObjectives: string[];
-  technologies: string[];
+  learningObjectives?: string[];
+  technologies?: string[];
   url: string;
+  learningResourceType?: string;
 }) {
   // Convert "75 minutes" -> "PT75M", "2 hours" -> "PT2H"
   const timeMatch = estimatedTime.match(/(\d+)\s*(min|hour|hr)/i);
@@ -261,14 +272,22 @@ export function LearningResourceSchema({
     name: title,
     description,
     url: `${SITE_URL}${url}`,
-    learningResourceType: 'hands-on exercise',
-    educationalLevel: difficulty.charAt(0).toUpperCase() + difficulty.slice(1),
+    learningResourceType,
+    ...(difficulty
+      ? { educationalLevel: difficulty.charAt(0).toUpperCase() + difficulty.slice(1) }
+      : {}),
     timeRequired: isoDuration,
-    teaches: learningObjectives,
-    about: technologies.map((tech) => ({
-      '@type': 'Thing',
-      name: tech,
-    })),
+    ...(learningObjectives && learningObjectives.length > 0
+      ? { teaches: learningObjectives }
+      : {}),
+    ...(technologies && technologies.length > 0
+      ? {
+          about: technologies.map((tech) => ({
+            '@type': 'Thing',
+            name: tech,
+          })),
+        }
+      : {}),
     interactivityType: 'active',
     isAccessibleForFree: true,
     inLanguage: 'en',
@@ -347,6 +366,44 @@ export function FAQSchema({ questions }: { questions: { question: string; answer
         text: q.answer,
       },
     })),
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+/**
+ * Single question-and-answer page (interview questions). QAPage fits a page
+ * whose main entity is one question with an accepted answer; FAQPage above is
+ * for pages listing several Q&As.
+ */
+export function QAPageSchema({
+  question,
+  answer,
+  url,
+}: {
+  question: string;
+  answer: string;
+  url: string;
+}) {
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'QAPage',
+    mainEntity: {
+      '@type': 'Question',
+      name: question,
+      text: question,
+      answerCount: 1,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: answer,
+        url: `${SITE_URL}${url}`,
+      },
+    },
   };
 
   return (

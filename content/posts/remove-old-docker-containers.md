@@ -127,7 +127,7 @@ Make cleanup part of your local workflow, or script it as part of your CI/CD mai
 
 ## Related Resources
 
-- [Remove Old Unused Docker Images](/posts/remove-old-unused-docker-images) — image cleanup
-- [Delete All Local Docker Images](/posts/delete-all-local-docker-images) — bulk cleanup
-- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup) — reclaim disk space
-- [Docker List Containers](/posts/docker-list-containers) — find containers to remove
+- [Remove Old Unused Docker Images](/posts/remove-old-unused-docker-images): image cleanup
+- [Delete All Local Docker Images](/posts/delete-all-local-docker-images): bulk cleanup
+- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup): reclaim disk space
+- [Docker List Containers](/posts/docker-list-containers): find containers to remove

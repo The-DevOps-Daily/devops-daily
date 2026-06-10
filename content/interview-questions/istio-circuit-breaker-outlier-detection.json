@@ -1,0 +1,51 @@
+{
+  "id": "istio-circuit-breaker-outlier-detection",
+  "slug": "istio-circuit-breaker-outlier-detection",
+  "title": "Istio Circuit Breakers and Outlier Detection",
+  "question": "How do you implement a circuit breaker in Istio? Explain the difference between the connection pool limits and outlier detection.",
+  "answer": "Circuit breakers in Istio are configured on the DestinationRule under `trafficPolicy`. There are two parts and they do different jobs. `connectionPool` is the load-shedding part: it caps concurrent connections, pending requests, and requests per connection. When a caller exceeds those caps, Envoy rejects the request immediately with a 503 instead of queueing forever. That's how you protect a slow downstream from getting buried in pending work. `outlierDetection` is the eject-the-bad-pod part: Envoy tracks consecutive 5xx errors per endpoint, and when a pod crosses the threshold (say 5 consecutive failures), it's ejected from the load balancing pool for `baseEjectionTime`. Other healthy pods get the traffic instead. After the ejection time, the pod is allowed back. The two work together. Connection pool limits stop one slow service from holding too many in-flight requests across the whole client. Outlier detection isolates a single bad pod so you stop sending it traffic until it recovers. A common mistake is setting `consecutive5xxErrors: 1` — that's too aggressive and any transient blip ejects pods, causing flapping. Start at 5 and tune from there. Also, `maxEjectionPercent` matters: if it's too high, you can eject most of your pods during a real outage and make things worse.",
+  "explanation": "This is the senior-level Istio question. The interviewer wants the candidate to distinguish two distinct mechanisms that both get lumped under 'circuit breaker' in casual conversation. A strong answer separates the load shedding role from the endpoint ejection role, knows the key fields, and can articulate sensible defaults. Watch for candidates who confuse Istio circuit breakers with Hystrix-style application circuit breakers — they're related concepts but Istio's is endpoint-level.",
+  "category": "Service Mesh",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "istio",
+    "service-mesh",
+    "traffic-management",
+    "circuit-breaker",
+    "reliability"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Full DestinationRule with connection pool and outlier detection",
+      "code": "apiVersion: networking.istio.io/v1\nkind: DestinationRule\nmetadata:\n  name: payments\nspec:\n  host: payments\n  trafficPolicy:\n    connectionPool:\n      tcp:\n        maxConnections: 100\n      http:\n        http1MaxPendingRequests: 50\n        http2MaxRequests: 200\n        maxRequestsPerConnection: 10\n    outlierDetection:\n      consecutive5xxErrors: 5\n      interval: 10s\n      baseEjectionTime: 30s\n      maxEjectionPercent: 50\n      minHealthPercent: 50"
+    },
+    {
+      "language": "bash",
+      "label": "Verify ejections in the sidecar stats",
+      "code": "kubectl exec deploy/checkout -c istio-proxy -- \\\n  pilot-agent request GET stats \\\n  | grep outlier_detection.ejections_active\n\n# Sample output:\n# cluster.outbound|9080||payments.default.svc.cluster.local.outlier_detection.ejections_active: 1"
+    },
+    {
+      "language": "bash",
+      "label": "Watch a pod get ejected in real time",
+      "code": "# Force a pod to return 5xx, then check ejection events\nkubectl logs -l app=istio-proxy -c istio-proxy --tail=50 \\\n  | grep ejected\n\n# Expected log line:\n# upstream cluster outbound|9080||payments ejected host 10.244.0.42:9080"
+    }
+  ],
+  "followUpQuestions": [
+    "What happens if you set `maxEjectionPercent: 100` and all your pods start failing?",
+    "How would you tune these settings differently for a database-backed service vs a stateless API?",
+    "What signals would you use to decide that your `consecutive5xxErrors` threshold is wrong?"
+  ],
+  "commonMistakes": [
+    "Setting `consecutive5xxErrors: 1` and causing pod flapping on transient errors",
+    "Confusing Istio's endpoint-level circuit breaker with Hystrix-style per-call circuit breakers in code",
+    "Forgetting `minHealthPercent` and ejecting the entire upstream during a real outage"
+  ],
+  "relatedTopics": [
+    "envoy",
+    "load-balancing",
+    "reliability-patterns",
+    "outlier-detection"
+  ]
+}

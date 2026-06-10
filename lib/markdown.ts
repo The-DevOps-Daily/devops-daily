@@ -1,7 +1,7 @@
-import { marked } from 'marked';
+import { marked, type Tokens } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
-import hljs from 'highlight.js';
+import hljs, { type HLJSApi, type Language } from 'highlight.js';
 
 // Import specific languages for better support
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -34,7 +34,7 @@ hljs.registerLanguage('sql', sql);
 hljs.registerLanguage('shell', shell);
 
 // Custom Terraform/HCL language definition
-function defineTerraform(hljs: any) {
+function defineTerraform(hljs: HLJSApi) {
   const NUMBERS = {
     className: 'number',
     begin: '\\b\\d+(\\.\\d+)?',
@@ -102,12 +102,14 @@ function defineTerraform(hljs: any) {
     ],
   };
 
+  // `literal` predates the typed config and isn't a Language property
+  // highlight.js reads; kept (behind the assertion) to leave output unchanged.
   return {
     aliases: ['tf', 'hcl'],
     keywords: 'resource variable provider output locals module data terraform|10',
     literal: 'false true null',
     contains: [hljs.COMMENT('\\#', '$'), NUMBERS, STRINGS],
-  };
+  } as Language;
 }
 
 // Register Terraform with comprehensive language definition
@@ -139,9 +141,11 @@ marked.setOptions({
 // Custom renderer to enhance headings with anchor links
 marked.use({
   renderer: {
-    heading({ tokens, depth }: { tokens: any[]; depth: number }) {
+    heading({ tokens, depth }: Tokens.Heading) {
       // Extract text from tokens
-      const text = tokens.map((token: any) => token.text || token.raw || '').join('');
+      const text = tokens
+        .map((token) => ('text' in token && token.text) || token.raw || '')
+        .join('');
       const headingTag = `h${depth}`;
 
       // Create a simple slug from the text with heading level prefix to avoid duplicates

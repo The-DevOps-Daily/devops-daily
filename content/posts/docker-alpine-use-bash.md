@@ -61,7 +61,7 @@ If your script uses bash features (like arrays or advanced syntax), make sure to
 
 ## Best Practices
 
-- Only install bash if you need it—stick with sh for simple scripts to keep images small
+- Only install bash if you need it; stick with sh for simple scripts to keep images small
 - For multi-stage builds, install bash only in build stages if possible
 - Document the shell requirements for your scripts
 
@@ -76,8 +76,8 @@ To use bash in Alpine-based Docker images, just install it with apk and use it a
 
 ## Related Resources
 
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — keep Alpine images small
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — minimal base images for security
-- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile) — Dockerfile instructions
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from scratch
-- [Docker Flashcards](/flashcards/docker-essentials) — review core Docker concepts
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): keep Alpine images small
+- [Docker Security Best Practices](/posts/docker-security-best-practices): minimal base images for security
+- [Difference Between RUN and CMD in a Dockerfile](/posts/difference-run-cmd-dockerfile): Dockerfile instructions
+- [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch
+- [Docker Flashcards](/flashcards/docker-essentials): review core Docker concepts

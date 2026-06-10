@@ -361,4 +361,4 @@ check_connectivity
 7. **Validate command existence** before using external tools
 8. **Use timeouts** for potentially long-running commands
 
-Command substitution is a powerful feature that enables sophisticated data processing in Bash scripts. By following these patterns and best practices, you can create robust scripts that effectively capture and process command output while handling errors gracefully.
+Command substitution is a powerful feature that enables sophisticated data processing in Bash scripts. By following these patterns and best practices, you can create reliable scripts that effectively capture and process command output while handling errors gracefully.

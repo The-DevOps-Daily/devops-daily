@@ -18,7 +18,7 @@ tags:
   - Best Practices
 ---
 
-Understanding the difference between `CMD` and `ENTRYPOINT` instructions in a Dockerfile is crucial for creating flexible, usable Docker images. These instructions determine what process runs inside your container and how users can interact with it. This guide explains their differences, how they work together, and when to use each one.
+Understanding the difference between `CMD` and `ENTRYPOINT` instructions in a Dockerfile matters for creating flexible, usable Docker images. These instructions determine what process runs inside your container and how users can interact with it. This guide explains their differences, how they work together, and when to use each one.
 
 ## Prerequisites
 

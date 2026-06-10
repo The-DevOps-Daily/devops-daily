@@ -140,7 +140,7 @@ cat /nonexistent-file | grep "pattern"
 
 ## Combining set -e with set -u and set -o pipefail
 
-Many scripts use a combination of these options for robust error handling:
+Many scripts use a combination of these options for reliable error handling:
 
 ```bash
 #!/bin/bash

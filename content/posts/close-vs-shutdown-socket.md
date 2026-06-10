@@ -1,6 +1,6 @@
 ---
 title: 'Close vs Shutdown Socket'
-excerpt: 'Understanding the difference between close() and shutdown() for sockets is crucial for proper connection handling. Learn when to use each, how shutdown enables half-closed connections, and how close releases file descriptors.'
+excerpt: 'Understanding the difference between close() and shutdown() for sockets matters for proper connection handling. Learn when to use each, how shutdown enables half-closed connections, and how close releases file descriptors.'
 category:
   name: 'Networking'
   slug: 'networking'

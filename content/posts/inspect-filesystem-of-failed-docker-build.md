@@ -20,7 +20,7 @@ tags:
 
 ## TLDR
 
-To inspect the file system of a failed Docker build, use multi-stage builds to save intermediate images, add debug steps (like `sleep` or `tail`), or leverage BuildKit's `--target` and `--output` features. This lets you start a shell in the failed state and debug interactively.
+To inspect the file system of a failed Docker build, use multi-stage builds to save intermediate images, add debug steps (like `sleep` or `tail`), or use BuildKit's `--target` and `--output` features. This lets you start a shell in the failed state and debug interactively.
 
 ## Why Is This Useful?
 
@@ -113,7 +113,7 @@ Inspecting the file system of a failed Docker build is easy with debug steps, mu
 
 ## Related Resources
 
-- [Exploring Docker Container File System](/posts/exploring-docker-container-file-system) — browse container files
-- [Advanced Docker Features](/posts/advanced-docker-features) — BuildKit debugging
-- [Force Docker Clean Build](/posts/force-docker-clean-build) — rebuild from scratch
-- [Introduction to Docker: Building Images](/guides/introduction-to-docker) — Dockerfile guide
+- [Exploring Docker Container File System](/posts/exploring-docker-container-file-system): browse container files
+- [Advanced Docker Features](/posts/advanced-docker-features): BuildKit debugging
+- [Force Docker Clean Build](/posts/force-docker-clean-build): rebuild from scratch
+- [Introduction to Docker: Building Images](/guides/introduction-to-docker): Dockerfile guide

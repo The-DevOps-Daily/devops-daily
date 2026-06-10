@@ -76,7 +76,7 @@ Configure the report to show relevant data:
 
 ### Use Tags for Better Cost Allocation
 
-Tags are crucial for tracking costs by team, project, or environment. Set up a tagging strategy:
+Tags are essential for tracking costs by team, project, or environment. Set up a tagging strategy:
 
 1. Define required tags (e.g., `Team`, `Project`, `Environment`)
 2. Apply tags to all AWS resources

@@ -156,7 +156,7 @@ By following these steps, you can effectively manage Docker's disk usage and pre
 
 ## Related Resources
 
-- [Delete All Local Docker Images](/posts/delete-all-local-docker-images) — bulk image cleanup
-- [Remove Old Docker Containers](/posts/remove-old-docker-containers) — container cleanup
-- [Where Docker Images Are Stored](/posts/docker-image-storage-locations) — understand storage locations
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller images
+- [Delete All Local Docker Images](/posts/delete-all-local-docker-images): bulk image cleanup
+- [Remove Old Docker Containers](/posts/remove-old-docker-containers): container cleanup
+- [Where Docker Images Are Stored](/posts/docker-image-storage-locations): understand storage locations
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build smaller images

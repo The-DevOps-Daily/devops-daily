@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,11 @@ import {
   Cpu,
   ChevronRight,
 } from 'lucide-react';
+import {
+  useTerminalSimulator,
+  type ExecuteResult,
+  type TerminalLine,
+} from '@/hooks/use-terminal-simulator';
 
 // Types
 interface FileSystemNode {
@@ -48,12 +53,6 @@ interface LessonCommand {
   expectedCommand: string | string[];
   explanation: string;
   setup?: () => void;
-}
-
-interface TerminalLine {
-  type: 'input' | 'output' | 'error' | 'success';
-  content: string;
-  timestamp: Date;
 }
 
 // Initial file system
@@ -467,37 +466,20 @@ const LESSONS: Lesson[] = [
   },
 ];
 
+// Check if command matches expected
+function commandMatches(cmd: string, expected: string | string[]): boolean {
+  const trimmed = cmd.trim();
+
+  if (Array.isArray(expected)) {
+    return expected.some(e => trimmed === e || trimmed.replace(/\s+/g, ' ') === e.replace(/\s+/g, ' '));
+  }
+
+  return trimmed === expected || trimmed.replace(/\s+/g, ' ') === expected.replace(/\s+/g, ' ');
+}
+
 export default function LinuxTerminal() {
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [currentCommandIndex, setCurrentCommandIndex] = useState(0);
-  const [terminalHistory, setTerminalHistory] = useState<TerminalLine[]>([]);
-  const [inputValue, setInputValue] = useState('');
   const [currentPath, setCurrentPath] = useState('/home/user');
   const [fileSystem, setFileSystem] = useState<FileSystemNode>(createInitialFileSystem);
-  const [completedCommands, setCompletedCommands] = useState<Set<string>>(new Set());
-  const [showHint, setShowHint] = useState(false);
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const terminalRef = useRef<HTMLDivElement>(null);
-
-  const currentLesson = LESSONS[currentLessonIndex];
-  const currentCommand = currentLesson?.commands[currentCommandIndex];
-  const totalCommands = LESSONS.reduce((sum, lesson) => sum + lesson.commands.length, 0);
-  const completedCount = completedCommands.size;
-  const progressPercentage = (completedCount / totalCommands) * 100;
-
-  // Scroll to bottom of terminal
-  useEffect(() => {
-    if (terminalRef.current) {
-      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
-    }
-  }, [terminalHistory]);
-
-  // Focus input on mount and click
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   // Get node at path
   const getNode = useCallback((path: string): FileSystemNode | null => {
@@ -1023,10 +1005,6 @@ Swap:       2097152           0     2097152`;
         return expanded;
       }
 
-      case 'clear':
-        setTerminalHistory([]);
-        return '';
-
       case 'help':
         return `Available commands:
   pwd     - Print working directory
@@ -1117,93 +1095,60 @@ Swap:       2097152           0     2097152`;
     return output;
   }, [executeCommand]);
 
-  // Check if command matches expected
-  const checkCommand = useCallback((cmd: string): boolean => {
-    if (!currentCommand) return false;
-
+  // Run a command through the shared simulator hook; `clear` is signalled
+  // via the clear flag, piped input goes through executePipedCommand.
+  const execute = useCallback((cmd: string): ExecuteResult => {
     const trimmed = cmd.trim();
-    const expected = currentCommand.expectedCommand;
+    const command = trimmed.split(/\s+/)[0];
 
-    if (Array.isArray(expected)) {
-      return expected.some(e => trimmed === e || trimmed.replace(/\s+/g, ' ') === e.replace(/\s+/g, ' '));
+    if (command === 'clear') {
+      return { output: '', clear: true };
     }
 
-    return trimmed === expected || trimmed.replace(/\s+/g, ' ') === expected.replace(/\s+/g, ' ');
-  }, [currentCommand]);
+    return {
+      output: trimmed.includes('|') ? executePipedCommand(trimmed) : executeCommand(trimmed),
+      type: 'output',
+    };
+  }, [executeCommand, executePipedCommand]);
 
-  // Handle command submission
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim()) return;
+  // Reset domain state (lesson progress is reset by the hook)
+  const onReset = useCallback(() => {
+    setCurrentPath('/home/user');
+    setFileSystem(createInitialFileSystem());
+  }, []);
 
-    const cmd = inputValue.trim();
+  const {
+    currentLessonIndex,
+    currentCommandIndex,
+    currentLesson,
+    currentCommand,
+    completedCommands,
+    completedCount,
+    totalCommands,
+    progressPercentage,
+    terminalHistory,
+    setTerminalHistory,
+    inputValue,
+    setInputValue,
+    showHint,
+    setShowHint,
+    inputRef,
+    terminalRef,
+    handleSubmit,
+    handleKeyDown: baseHandleKeyDown,
+    resetProgress,
+    jumpToLesson,
+  } = useTerminalSimulator({
+    lessons: LESSONS,
+    execute,
+    matches: (cmd, command) => commandMatches(cmd, command.expectedCommand),
+    successMessage: (command) => `✓ ${command.explanation}`,
+    ctrlCInputPrefix: '$ ',
+    onReset,
+  });
 
-    // Add to command history
-    setCommandHistory(prev => [...prev, cmd]);
-    setHistoryIndex(-1);
-
-    // Add input line to terminal
-    setTerminalHistory(prev => [
-      ...prev,
-      { type: 'input', content: cmd, timestamp: new Date() },
-    ]);
-
-    // Execute command and get output
-    const output = cmd.includes('|') ? executePipedCommand(cmd) : executeCommand(cmd);
-
-    if (output) {
-      setTerminalHistory(prev => [
-        ...prev,
-        { type: 'output', content: output, timestamp: new Date() },
-      ]);
-    }
-
-    // Check if command is correct for the lesson
-    if (currentCommand && checkCommand(cmd)) {
-      const commandId = `${currentLesson.id}-${currentCommandIndex}`;
-      setCompletedCommands(prev => new Set([...prev, commandId]));
-
-      setTerminalHistory(prev => [
-        ...prev,
-        { type: 'success', content: `✓ ${currentCommand.explanation}`, timestamp: new Date() },
-      ]);
-
-      setShowHint(false);
-
-      // Move to next command
-      if (currentCommandIndex < currentLesson.commands.length - 1) {
-        setCurrentCommandIndex(currentCommandIndex + 1);
-      } else if (currentLessonIndex < LESSONS.length - 1) {
-        // Move to next lesson
-        setCurrentLessonIndex(currentLessonIndex + 1);
-        setCurrentCommandIndex(0);
-      }
-    }
-
-    setInputValue('');
-  }, [inputValue, executeCommand, executePipedCommand, checkCommand, currentCommand, currentLesson, currentCommandIndex, currentLessonIndex]);
-
-  // Handle keyboard navigation
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    // Ctrl+C - cancel current input
-    if (e.ctrlKey && e.key === 'c') {
-      e.preventDefault();
-      if (inputValue.trim()) {
-        setTerminalHistory(prev => [
-          ...prev,
-          { type: 'input', content: `$ ${inputValue}^C`, timestamp: new Date() }
-        ]);
-      } else {
-        setTerminalHistory(prev => [
-          ...prev,
-          { type: 'output', content: '^C', timestamp: new Date() }
-        ]);
-      }
-      setInputValue('');
-      setHistoryIndex(-1);
-      return;
-    }
-
+  // Filesystem-aware Tab completion; every other key delegates to the hook
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     // Tab - autocomplete
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -1315,43 +1260,8 @@ Swap:       2097152           0     2097152`;
       return;
     }
 
-    if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (historyIndex < commandHistory.length - 1) {
-        const newIndex = historyIndex + 1;
-        setHistoryIndex(newIndex);
-        setInputValue(commandHistory[commandHistory.length - 1 - newIndex]);
-      }
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (historyIndex > 0) {
-        const newIndex = historyIndex - 1;
-        setHistoryIndex(newIndex);
-        setInputValue(commandHistory[commandHistory.length - 1 - newIndex]);
-      } else if (historyIndex === 0) {
-        setHistoryIndex(-1);
-        setInputValue('');
-      }
-    }
-  }, [commandHistory, historyIndex, inputValue, currentPath, getNode]);
-
-  // Reset all progress
-  const resetProgress = useCallback(() => {
-    setCurrentLessonIndex(0);
-    setCurrentCommandIndex(0);
-    setTerminalHistory([]);
-    setCompletedCommands(new Set());
-    setCurrentPath('/home/user');
-    setFileSystem(createInitialFileSystem());
-    setShowHint(false);
-  }, []);
-
-  // Jump to specific lesson
-  const jumpToLesson = useCallback((index: number) => {
-    setCurrentLessonIndex(index);
-    setCurrentCommandIndex(0);
-    setShowHint(false);
-  }, []);
+    baseHandleKeyDown(e);
+  }, [baseHandleKeyDown, currentPath, getNode, inputValue, setInputValue, setTerminalHistory]);
 
   return (
     <div className="w-full max-w-6xl mx-auto">

@@ -37,3 +37,7 @@ This guide walks you through Docker from the ground up. We'll start with fundame
 Whether you're a developer looking to standardize your development environment, a DevOps engineer implementing containerization strategies, or just curious about container technology, this guide will provide you with the knowledge and practical skills to use Docker effectively.
 
 Each section includes hands-on examples and real-world scenarios to help you apply what you learn immediately. Let's start your Docker journey!
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [Docker Terminal simulator](/games/docker-terminal-simulator), right in your browser with no setup required.

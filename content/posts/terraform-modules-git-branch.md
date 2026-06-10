@@ -77,4 +77,4 @@ Ensure your SSH key is configured for authentication.
 - **Document Module Inputs**: Clearly document the inputs and outputs of your module.
 - **Test Changes**: Validate module changes in a non-production environment before merging them into the main branch.
 
-By using a Git branch as a source for Terraform modules, you can streamline development workflows and manage module versions effectively.
+By using a Git branch as a source for Terraform modules, you can speed up development workflows and manage module versions effectively.

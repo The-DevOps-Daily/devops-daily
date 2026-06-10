@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="52%" stop-color="#102033"/>
+      <stop offset="100%" stop-color="#07111f"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22d3ee"/>
+      <stop offset="55%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <linearGradient id="bars" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#0891b2"/>
+      <stop offset="55%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#f59e0b"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <g opacity="0.08" stroke="#94a3b8" stroke-width="1">
+    <line x1="70" y1="110" x2="1130" y2="110"/>
+    <line x1="70" y1="220" x2="1130" y2="220"/>
+    <line x1="70" y1="330" x2="1130" y2="330"/>
+    <line x1="70" y1="440" x2="1130" y2="440"/>
+    <line x1="70" y1="550" x2="1130" y2="550"/>
+    <line x1="220" y1="70" x2="220" y2="570"/>
+    <line x1="420" y1="70" x2="420" y2="570"/>
+    <line x1="620" y1="70" x2="620" y2="570"/>
+    <line x1="820" y1="70" x2="820" y2="570"/>
+    <line x1="1020" y1="70" x2="1020" y2="570"/>
+  </g>
+
+  <g transform="translate(70, 128)">
+    <rect x="0" y="0" width="536" height="366" rx="18" fill="#0f172a" stroke="#26364d" stroke-width="2"/>
+    <text x="32" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#e2e8f0">Latency distribution</text>
+    <text x="32" y="78" font-family="system-ui, -apple-system, sans-serif" font-size="13" fill="#94a3b8">Most requests are fast. The tail decides P95 and P99.</text>
+
+    <g transform="translate(38, 112)">
+      <line x1="0" y1="202" x2="462" y2="202" stroke="#334155" stroke-width="2"/>
+      <line x1="0" y1="0" x2="0" y2="202" stroke="#334155" stroke-width="2"/>
+      <g opacity="0.4" stroke="#334155" stroke-dasharray="6 8">
+        <line x1="0" y1="52" x2="462" y2="52"/>
+        <line x1="0" y1="102" x2="462" y2="102"/>
+        <line x1="0" y1="152" x2="462" y2="152"/>
+      </g>
+
+      <rect x="20" y="84" width="22" height="118" rx="5" fill="url(#bars)"/>
+      <rect x="50" y="42" width="22" height="160" rx="5" fill="url(#bars)"/>
+      <rect x="80" y="18" width="22" height="184" rx="5" fill="url(#bars)"/>
+      <rect x="110" y="32" width="22" height="170" rx="5" fill="url(#bars)"/>
+      <rect x="140" y="66" width="22" height="136" rx="5" fill="url(#bars)"/>
+      <rect x="170" y="104" width="22" height="98" rx="5" fill="url(#bars)"/>
+      <rect x="200" y="132" width="22" height="70" rx="5" fill="#22c55e"/>
+      <rect x="230" y="152" width="22" height="50" rx="5" fill="#0ea5e9"/>
+      <rect x="260" y="166" width="22" height="36" rx="5" fill="#0ea5e9"/>
+      <rect x="290" y="176" width="22" height="26" rx="5" fill="#f59e0b"/>
+      <rect x="320" y="184" width="22" height="18" rx="5" fill="#f59e0b"/>
+      <rect x="350" y="190" width="22" height="12" rx="5" fill="#ef4444"/>
+      <rect x="380" y="194" width="22" height="8" rx="4" fill="#ef4444"/>
+      <rect x="410" y="196" width="22" height="6" rx="3" fill="#ef4444"/>
+
+      <g font-family="monospace" font-size="12" font-weight="700">
+        <line x1="300" y1="-8" x2="300" y2="202" stroke="#0ea5e9" stroke-width="3" filter="url(#glow)"/>
+        <rect x="272" y="-36" width="56" height="24" rx="12" fill="#0f2f46" stroke="#0ea5e9"/>
+        <text x="300" y="-19" text-anchor="middle" fill="#7dd3fc">P90</text>
+
+        <line x1="350" y1="-8" x2="350" y2="202" stroke="#f59e0b" stroke-width="3" filter="url(#glow)"/>
+        <rect x="322" y="-66" width="56" height="24" rx="12" fill="#3a2607" stroke="#f59e0b"/>
+        <text x="350" y="-49" text-anchor="middle" fill="#fbbf24">P95</text>
+
+        <line x1="420" y1="-8" x2="420" y2="202" stroke="#ef4444" stroke-width="3" filter="url(#glow)"/>
+        <rect x="392" y="-36" width="56" height="24" rx="12" fill="#3b1115" stroke="#ef4444"/>
+        <text x="420" y="-19" text-anchor="middle" fill="#fca5a5">P99</text>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(662, 126)">
+    <rect x="0" y="0" width="456" height="368" rx="18" fill="#0f172a" stroke="#26364d" stroke-width="2"/>
+    <rect x="32" y="32" width="174" height="34" rx="17" fill="#082f49" stroke="#22d3ee" stroke-width="1.5"/>
+    <text x="119" y="54" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#67e8f9" text-anchor="middle">Interactive Simulator</text>
+
+    <text x="32" y="128" font-family="system-ui, -apple-system, sans-serif" font-size="54" font-weight="850" fill="url(#title)">P90 P95</text>
+    <text x="32" y="188" font-family="system-ui, -apple-system, sans-serif" font-size="54" font-weight="850" fill="url(#title)">and P99</text>
+    <text x="34" y="230" font-family="system-ui, -apple-system, sans-serif" font-size="19" fill="#cbd5e1">Understand tail latency with charts,</text>
+    <text x="34" y="258" font-family="system-ui, -apple-system, sans-serif" font-size="19" fill="#cbd5e1">request samples, and ranked cutoffs.</text>
+
+    <g transform="translate(34, 304)" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="700">
+      <rect x="0" y="0" width="82" height="32" rx="16" fill="#064e3b" stroke="#34d399"/>
+      <text x="41" y="21" fill="#86efac" text-anchor="middle">Median</text>
+      <rect x="96" y="0" width="94" height="32" rx="16" fill="#082f49" stroke="#38bdf8"/>
+      <text x="143" y="21" fill="#7dd3fc" text-anchor="middle">Tail</text>
+      <rect x="204" y="0" width="122" height="32" rx="16" fill="#3a2607" stroke="#f59e0b"/>
+      <text x="265" y="21" fill="#fcd34d" text-anchor="middle">SLOs</text>
+      <rect x="340" y="0" width="80" height="32" rx="16" fill="#3b1115" stroke="#ef4444"/>
+      <text x="380" y="21" fill="#fca5a5" text-anchor="middle">P99</text>
+    </g>
+  </g>
+
+  <g transform="translate(126, 530)" font-family="monospace" font-size="13">
+    <text x="0" y="0" fill="#64748b">sorted requests:</text>
+    <rect x="142" y="-13" width="510" height="16" rx="8" fill="#102033" stroke="#26364d"/>
+    <rect x="142" y="-13" width="356" height="16" rx="8" fill="#10b981"/>
+    <rect x="498" y="-13" width="42" height="16" fill="#0ea5e9"/>
+    <rect x="540" y="-13" width="60" height="16" fill="#f59e0b"/>
+    <rect x="600" y="-13" width="52" height="16" rx="8" fill="#ef4444"/>
+    <text x="686" y="0" fill="#94a3b8">90% fast | 5% slow | 1% painful</text>
+  </g>
+</svg>

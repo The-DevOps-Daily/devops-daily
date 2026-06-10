@@ -108,9 +108,9 @@ Good luck with your project!
 
 ## Related Resources
 
-- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start) — understand the difference
-- [Docker Image vs Container](/posts/docker-image-vs-container) — key concepts
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — port mapping
-- [Pass Environment Variables to Docker Containers](/posts/pass-environment-variables-docker-containers) — configure at runtime
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — learn Docker from scratch
-- [Docker Quiz](/quizzes/docker-quiz) — test your knowledge
+- [Docker Run vs Docker Start](/posts/docker-run-vs-docker-start): understand the difference
+- [Docker Image vs Container](/posts/docker-image-vs-container): key concepts
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): port mapping
+- [Pass Environment Variables to Docker Containers](/posts/pass-environment-variables-docker-containers): configure at runtime
+- [Introduction to Docker Guide](/guides/introduction-to-docker): learn Docker from scratch
+- [Docker Quiz](/quizzes/docker-quiz): test your knowledge

@@ -1,0 +1,51 @@
+{
+  "id": "istio-weighted-canary-rollout",
+  "slug": "istio-weighted-canary-rollout",
+  "title": "Weighted Canary Rollout with Istio",
+  "question": "Walk me through how you'd canary a new version of a service with Istio. Say you want to start at 5% traffic to v2 and ramp up.",
+  "answer": "First, both versions need to be running with distinct labels — `version: v1` on the stable pods and `version: v2` on the new ones. Then I write a DestinationRule that declares both subsets so Istio knows what v1 and v2 mean. Next, a VirtualService with a weighted route: 95 to v1, 5 to v2. To ramp, I bump the weight values and re-apply. Most teams script this or wire it into Flagger or Argo Rollouts so the ramp is automated based on success rate and latency metrics from Prometheus. The key thing to verify after each step is that the subset labels actually match real pods. A common failure mode is shifting weight to v2 when v2 has zero healthy pods because the pod label is `app=reviews-v2` instead of `version: v2`. You'll see 503s spike on the percentage of traffic you shifted. Also remember weights are percentages of matched traffic, not absolute. If your VirtualService has a header match before the weighted route, the weights only apply to requests that fell through to that rule.",
+  "explanation": "This is the most common real-world Istio use case. The interviewer wants to hear that the candidate understands the two-CRD pattern, the label-matching gotcha, and ideally that they know weights are not an SLO-aware progressive delivery system on their own — that's what Flagger or Argo Rollouts add on top. Bonus points for mentioning sticky sessions or session affinity considerations.",
+  "category": "Service Mesh",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "istio",
+    "service-mesh",
+    "traffic-management",
+    "canary",
+    "progressive-delivery"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Initial 95/5 split with DestinationRule subsets",
+      "code": "apiVersion: networking.istio.io/v1\nkind: DestinationRule\nmetadata:\n  name: reviews\nspec:\n  host: reviews\n  subsets:\n    - name: v1\n      labels: { version: v1 }\n    - name: v2\n      labels: { version: v2 }\n---\napiVersion: networking.istio.io/v1\nkind: VirtualService\nmetadata:\n  name: reviews\nspec:\n  hosts: [reviews]\n  http:\n    - route:\n        - destination: { host: reviews, subset: v1 }\n          weight: 95\n        - destination: { host: reviews, subset: v2 }\n          weight: 5"
+    },
+    {
+      "language": "bash",
+      "label": "Verify the split is hitting both subsets",
+      "code": "# Send 100 requests and count which version answered\nfor i in $(seq 1 100); do\n  kubectl exec deploy/curl -- curl -s http://reviews/version\ndone | sort | uniq -c\n\n# Expected output (roughly):\n#   94 v1\n#    6 v2"
+    },
+    {
+      "language": "yaml",
+      "label": "Flagger Canary for automated ramp",
+      "code": "apiVersion: flagger.app/v1beta1\nkind: Canary\nmetadata:\n  name: reviews\nspec:\n  targetRef:\n    apiVersion: apps/v1\n    kind: Deployment\n    name: reviews\n  service:\n    port: 9080\n  analysis:\n    interval: 1m\n    threshold: 5\n    stepWeight: 10\n    maxWeight: 50\n    metrics:\n      - name: request-success-rate\n        thresholdRange: { min: 99 }"
+    }
+  ],
+  "followUpQuestions": [
+    "How would you stick a specific user or header to v2 while everyone else stays on v1?",
+    "What metrics would you watch during the ramp, and where would you get them?",
+    "How does this change if your service holds in-memory session state?"
+  ],
+  "commonMistakes": [
+    "Forgetting to label the v2 pods with `version: v2`, so traffic shifts to an empty subset",
+    "Manually editing weights in production instead of using Flagger or Argo Rollouts",
+    "Assuming weights apply globally when an earlier match rule already routed the request"
+  ],
+  "relatedTopics": [
+    "canary-deployment",
+    "progressive-delivery",
+    "flagger",
+    "argo-rollouts"
+  ]
+}

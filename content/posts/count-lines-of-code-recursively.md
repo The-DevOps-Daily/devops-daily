@@ -89,7 +89,7 @@ find . -type f \( -name "*.js" -o -name "*.ts" -o -name "*.jsx" -o -name "*.tsx"
 
 ## Advanced Filtering with Detailed Output
 
-Create a script that provides comprehensive statistics:
+Create a script that provides detailed statistics:
 
 ```bash
 #!/bin/bash

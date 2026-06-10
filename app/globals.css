@@ -314,6 +314,20 @@
 /* Inline code */
 .prose :not(pre) > code {
   @apply bg-muted px-1.5 py-0.5 rounded-md text-sm font-mono text-primary;
+  /* Long inline tokens like t.m-kosche.com:443/api/public/otel/v1/traces or
+   * karpenter.sh/capacity-type=on-demand:NoSchedule have no spaces to break on
+   * and push the line wider than the column on narrow viewports, causing
+   * the whole post to scroll horizontally. anywhere lets the browser break
+   * at any character when nothing else fits. */
+  overflow-wrap: anywhere;
+}
+
+/* Inline links — same story as inline code. A raw URL used as link text
+ * (citations, footnotes, "see also" links) has no spaces, so without an
+ * explicit break opportunity the anchor pushes the row wider than the
+ * column on narrow viewports and the page scrolls horizontally. */
+.prose a {
+  overflow-wrap: anywhere;
 }
 
 /* Code block line numbers (optional) */

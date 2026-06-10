@@ -385,7 +385,7 @@ If metrics improve, expand gradually. If not, abandon without sunk cost fallacy.
 
 ## The Cost of Getting This Wrong
 
-Over-engineering does not just waste money—it compounds into organizational debt:
+Over-engineering does not just waste money; it compounds into organizational debt:
 
 1. **Talent drain**: Your best engineers leave because they joined to build products, not manage infrastructure
 2. **Slowed hiring**: Complex tech stack means longer onboarding, harder to hire, narrower candidate pool
@@ -411,7 +411,7 @@ Boring technology:
 Examples: PostgreSQL, Redis, nginx, monolithic applications, Docker, managed Kubernetes.
 
 Exciting technology:
-- Cutting-edge features and capabilities
+- New features and capabilities
 - Smaller community, evolving best practices
 - Requires specialist knowledge
 - Solves emerging problems
@@ -434,6 +434,6 @@ Use boring technology for 90% of your infrastructure. Reserve exciting technolog
 
 5. **The cost of waiting is usually low**. If you are not sure whether you need a new system, you probably do not. Adopt it when the pain of not having it is obvious.
 
-Engineering leadership is about making tradeoffs. The best CTOs are not the ones who build the most sophisticated infrastructure—they are the ones who build just enough infrastructure to enable their teams to ship great products.
+Engineering leadership is about making tradeoffs. The best CTOs are not the ones who build the most sophisticated infrastructure; they are the ones who build just enough infrastructure to enable their teams to ship great products.
 
 At 50 engineers, your competitive advantage is not your service mesh. It is your ability to ship features faster than competitors. Keep infrastructure boring, keep teams focused, and save the sophisticated architecture for when you have earned the scale to justify it.

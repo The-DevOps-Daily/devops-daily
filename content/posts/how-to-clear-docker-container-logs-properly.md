@@ -186,7 +186,7 @@ With these patterns you can reset container logs when needed and keep them under
 
 ## Related Resources
 
-- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup) — reclaim disk space
-- [Remove Old Docker Containers](/posts/remove-old-docker-containers) — container cleanup
-- [Docker List Containers](/posts/docker-list-containers) — find containers
-- [Introduction to Docker Guide](/guides/introduction-to-docker) — Docker fundamentals
+- [Docker No Space Left: How to Clean Up](/posts/docker-no-space-left-cleanup): reclaim disk space
+- [Remove Old Docker Containers](/posts/remove-old-docker-containers): container cleanup
+- [Docker List Containers](/posts/docker-list-containers): find containers
+- [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

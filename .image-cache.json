@@ -74,5 +74,22 @@
   "public/images/advent/day-23.svg": "11fc33bf5b360f8a",
   "public/images/advent/day-22.svg": "9a2a55dfdae6e26c",
   "public/images/advent/day-24.svg": "fd824eaaa6899562",
-  "public/images/advent/day-25.svg": "0cbcba8b628f3538"
+  "public/images/advent/day-25.svg": "0cbcba8b628f3538",
+  "public/images/posts/cilium-1-19-clustermesh-policy-flip.svg": "f998bb9025beec11",
+  "public/images/posts/karpenter-spot-storm-fallback-gap.svg": "a2f97761414ef371",
+  "public/images/news/2026-week-21.svg": "e27e525584bf262f",
+  "public/images/posts/antv-npm-shai-hulud-wave-may-2026.svg": "35b307d27e38fe24",
+  "public/images/posts/ai-reshaping-devops-practitioners-vs-vendors.svg": "4f23f9719233e12a",
+  "public/images/posts/ai-reshaping-devops-engineers-vs-vendors.svg": "13da6a379fe1331c",
+  "public/images/posts/node-ipc-dns-exfil-supply-chain-may-2026.svg": "a474b3bc8c5e8a36",
+  "public/images/posts/postinstall-hidden-in-package-json-php-supply-chain-may-2026.svg": "a1804c25cda86e96",
+  "public/images/posts/on-call-rotation-escalation-policy-guide.svg": "9a0c6d0414980bab",
+  "public/images/news/2026-week-22.svg": "96f643cd9714a03e",
+  "public/images/posts/netease-fluid-30-second-llm-cold-starts-kubernetes.svg": "5c9e9c64468f2860",
+  "public/images/posts/opentelemetry-graduated-what-to-retire-this-quarter.svg": "c654ffdd8bb2d203",
+  "public/images/posts/hetzner-price-increases-2026.svg": "93bebdb0c95103db",
+  "public/images/posts/zero-downtime-postgresql-migrations-production.svg": "6af1eaa3946a7fcc",
+  "public/images/news/2026-week-23.svg": "d98a2afa97a867e1",
+  "public/images/posts/designing-rate-limiting-for-apis.svg": "b1cfa5a095478c7c",
+  "public/images/news/2026-week-24.svg": "6b1da83e245987dd"
 }

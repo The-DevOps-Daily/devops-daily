@@ -18,7 +18,7 @@ tags:
   - DevOps
 ---
 
-Setting up a Terraform backend is a crucial step for managing your state files securely and collaboratively. A backend allows you to store state files remotely, enabling features like state locking and versioning.
+Setting up a Terraform backend is an important step for managing your state files securely and collaboratively. A backend allows you to store state files remotely, enabling features like state locking and versioning.
 
 ## Why Use a Backend?
 

@@ -21,7 +21,7 @@ tags:
 
 Git opens a text editor when you run `git commit` without the `-m` flag or when you need to edit messages during rebase or merge. By default, Git uses whatever editor is configured in your shell, which might not be the one you prefer.
 
-**TLDR:** To set your Git editor, use `git config --global core.editor "editor-command"`. For VS Code: `git config --global core.editor "code --wait"`. For Nano: `git config --global core.editor "nano"`. For Vim: `git config --global core.editor "vim"`. The `--wait` flag is crucial for GUI editors to make Git wait for you to close the file.
+**TLDR:** To set your Git editor, use `git config --global core.editor "editor-command"`. For VS Code: `git config --global core.editor "code --wait"`. For Nano: `git config --global core.editor "nano"`. For Vim: `git config --global core.editor "vim"`. The `--wait` flag is required for GUI editors to make Git wait for you to close the file.
 
 In this guide, you'll learn how to configure Git to use any editor for commit messages.
 

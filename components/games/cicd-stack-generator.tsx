@@ -14,13 +14,32 @@ const LoadingSpinner = () => (
 export default function CICDStackGeneratorWrapper() {
   // We'll use a state to defer import until the component is mounted (client-side)
   const [Component, setComponent] = useState<React.ComponentType | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     // Only import the component on the client side
-    import('./cicd-stack-generator-impl').then((mod) => {
-      setComponent(() => mod.default);
-    });
+    import('./cicd-stack-generator-impl')
+      .then((mod) => {
+        if (mod.default) {
+          setComponent(() => mod.default);
+        } else {
+          setError('Failed to load CICD Stack Generator: invalid module');
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load CICD Stack Generator', err);
+        setError('Failed to load CICD Stack Generator');
+      });
   }, []);
+
+  // Show error state if import failed
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 w-full">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
 
   // Show loading state until the component is loaded
   if (!Component) {

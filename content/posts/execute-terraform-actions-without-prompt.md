@@ -100,4 +100,4 @@ This approach is useful for environments where you want to enforce non-interacti
 - **Combine with `terraform plan`**: Run `terraform plan` to preview changes before applying them.
 - **Secure Variable Files**: If using `.tfvars` files, ensure they are not exposed in version control.
 
-By automating Terraform actions and bypassing interactive prompts, you can streamline your workflows and integrate Terraform into your CI/CD pipelines effectively.
+By automating Terraform actions and bypassing interactive prompts, you can simplify your workflows and integrate Terraform into your CI/CD pipelines effectively.

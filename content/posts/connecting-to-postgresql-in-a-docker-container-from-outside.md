@@ -214,8 +214,8 @@ With these patterns you can safely expose Postgres for local development, connec
 
 ## Related Resources
 
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — when to publish ports vs keep them internal
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — secure your containers
-- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables) — manage database credentials safely
-- [Introduction to Docker: Volumes](/guides/introduction-to-docker) — persist database data
-- [DevOps Survival Guide](/books/devops-survival-guide) — broader DevOps learning
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): when to publish ports vs keep them internal
+- [Docker Security Best Practices](/posts/docker-security-best-practices): secure your containers
+- [Docker Compose Environment Variables](/posts/docker-compose-environment-variables): manage database credentials safely
+- [Introduction to Docker: Volumes](/guides/introduction-to-docker): persist database data
+- [DevOps Survival Guide](/books/devops-survival-guide): broader DevOps learning

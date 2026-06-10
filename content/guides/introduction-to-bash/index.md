@@ -45,3 +45,7 @@ By the end of this guide, you'll be comfortable working within a Bash environmen
 ## Free eBook
 
 For a more in-depth exploration of Bash, download the free eBook ["Introduction to Bash"](https://github.com/bobbyiliev/introduction-to-bash-scripting). This eBook covers everything from the basics to advanced scripting techniques, complete with examples and exercises to reinforce your learning.
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [Linux Terminal simulator](/games/linux-terminal), right in your browser with no setup required.

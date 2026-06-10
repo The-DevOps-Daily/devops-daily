@@ -1,0 +1,228 @@
+{
+  "id": "valkey-vs-redis",
+  "slug": "valkey-vs-redis",
+  "title": "Valkey vs Redis",
+  "description": "A 2026 comparison of Valkey and Redis: the BSD vs AGPL license split, performance, built-in modules, managed-service cost, and which in-memory store to pick.",
+  "category": "Caching",
+  "tags": ["Valkey", "Redis", "Caching", "In-Memory Database", "Open Source", "DevOps"],
+  "createdDate": "2026-06-05T09:00:00Z",
+  "updatedDate": "2026-06-05T09:00:00Z",
+  "estimatedReadTime": "11 min read",
+  "introduction": "Until 2024, picking an in-memory data store was simple: you used Redis. Then the licensing ground shifted. In March 2024 Redis Inc. moved Redis off the permissive BSD license to a source-available pair of licenses (SSPLv1 and RSALv2), and the Linux Foundation forked the last BSD release, Redis 7.2.4, as Valkey. Backed by AWS, Google Cloud, Oracle, Ericsson, and Snap, Valkey turned into a serious project fast.\n\nThe story did not stand still. In May 2025, Redis 8 added the OSI-approved AGPLv3 as a third license option, so Redis Open Source is open source again, though under a copyleft license rather than the old permissive BSD. Redis 8 also folded the former Redis Stack modules (JSON, Query Engine, time series, probabilistic types, and vector sets) into the core engine. Valkey, meanwhile, kept its permissive BSD license and pushed hard on performance, with Valkey 9.1 (May 2026) reporting around 2.1 million requests per second.\n\nSo in 2026 this is no longer a simple fork-versus-original story. Both projects are open source, both speak the same RESP protocol, and both are fast. The real differences are the license model (permissive BSD versus copyleft AGPL), governance (a foundation versus a single vendor), the built-in feature set, and what you pay on managed services.\n\nThis comparison breaks the decision down across licensing, performance, features, ecosystem, and cost, then gives you a use-case guide and a verdict. If you want the full migration walkthrough and a closer look at the AGPL question, see our companion post on whether Valkey is ready to replace Redis.",
+  "toolA": {
+    "name": "Valkey",
+    "icon": "KeyRound",
+    "website": "https://valkey.io",
+    "description": "A permissive BSD-licensed fork of Redis 7.2.4, created in 2024 and governed by the Linux Foundation. Wire-compatible with Redis, with a strong focus on multi-core performance.",
+    "color": "#7C4DFF",
+    "pros": [
+      "Permissive BSD 3-Clause license with no copyleft or source-available restrictions",
+      "Vendor-neutral governance under the Linux Foundation (AWS, Google Cloud, Oracle, Ericsson, Snap)",
+      "Lower managed-service cost: AWS prices Valkey roughly 20% below Redis OSS on ElastiCache and about 30% below on MemoryDB",
+      "Heavy investment in multi-core performance: Valkey 9 added memory prefetching, zero-copy responses, and SIMD, and 9.1 reaches around 2.1 million requests per second",
+      "Drop-in compatible with the RESP protocol and existing Redis clients up to the 7.2.4 fork point",
+      "Reads the same RDB and AOF files, which makes migration from older Redis close to a snapshot restore"
+    ],
+    "cons": [
+      "JSON and vector search ship as separate modules (valkey-search, valkey-json) rather than bundled in core",
+      "Younger project with smaller mindshare and fewer dedicated tutorials, though Redis knowledge transfers directly",
+      "Module and extension ecosystem is still maturing next to Redis Stack's history",
+      "No single commercial vendor selling an all-in enterprise and support bundle; you go through cloud providers or third parties"
+    ]
+  },
+  "toolB": {
+    "name": "Redis",
+    "icon": "Zap",
+    "website": "https://redis.io",
+    "description": "The original in-memory data store, open source again under AGPLv3 since Redis 8. Redis 8 folds the former Redis Stack modules into the core engine and has the largest ecosystem in the space.",
+    "color": "#DC382D",
+    "pros": [
+      "Open source again under AGPLv3 since Redis 8 (May 2025), alongside RSALv2 and SSPLv1",
+      "Redis 8 builds the former Redis Stack into core: JSON, Query Engine, time series, probabilistic types, and vector sets",
+      "Largest community, the most client libraries, and the deepest library of tutorials and answers",
+      "Redis 8 added more than 30 performance improvements, with up to roughly 2x throughput over Redis 7",
+      "Native vector sets (built by the original Redis creator) make it strong for AI and semantic-search workloads",
+      "Redis Enterprise and Redis Cloud add active-active replication, tiering, and vendor support with SLAs"
+    ],
+    "cons": [
+      "AGPLv3 is copyleft with network obligations: modifying Redis and offering it as a service can require disclosing your changes",
+      "Still single-vendor governance under Redis Inc., and the 2024 relicensing showed the license can change",
+      "The tri-license (RSALv2, SSPLv1, AGPLv3) is more work to reason about than a plain BSD license",
+      "Managed Redis OSS generally costs more than managed Valkey for the same workload",
+      "The 2024 source-available move left a trust gap that still factors into some teams' decisions"
+    ]
+  },
+  "features": [
+    {
+      "name": "License",
+      "category": "Licensing & Governance",
+      "toolA": { "value": "BSD 3-Clause (permissive)", "rating": "good" },
+      "toolB": { "value": "AGPLv3 plus RSALv2/SSPLv1 (open source, but copyleft)", "rating": "neutral" }
+    },
+    {
+      "name": "Governance",
+      "category": "Licensing & Governance",
+      "toolA": { "value": "Linux Foundation, multi-vendor steering", "rating": "good" },
+      "toolB": { "value": "Single vendor (Redis Inc.)", "rating": "neutral" }
+    },
+    {
+      "name": "Network Copyleft Risk",
+      "category": "Licensing & Governance",
+      "toolA": { "value": "None; BSD imposes no source-disclosure obligation", "rating": "good" },
+      "toolB": { "value": "AGPL may require disclosing changes if you modify and serve it", "rating": "neutral" }
+    },
+    {
+      "name": "Protocol & Client Compatibility",
+      "category": "Architecture",
+      "toolA": { "value": "RESP-compatible; existing Redis clients work unchanged", "rating": "good" },
+      "toolB": { "value": "Reference implementation of the RESP protocol", "rating": "good" }
+    },
+    {
+      "name": "Built-in Modules (JSON, Search)",
+      "category": "Features",
+      "toolA": { "value": "Available as separate modules (valkey-search, valkey-json)", "rating": "neutral" },
+      "toolB": { "value": "Bundled into core in Redis 8 (JSON, Query Engine, time series)", "rating": "good" }
+    },
+    {
+      "name": "Vector / AI Search",
+      "category": "Features",
+      "toolA": { "value": "Vector similarity via the valkey-search module", "rating": "neutral" },
+      "toolB": { "value": "Native vector sets and Query Engine in core", "rating": "good" }
+    },
+    {
+      "name": "Multi-core Performance",
+      "category": "Performance",
+      "toolA": { "value": "Multithreaded I/O; 9.1 reaches ~2.1M req/s with prefetch and SIMD gains", "rating": "good" },
+      "toolB": { "value": "Redis 8 added 30+ improvements and ~2x throughput; core stays mostly single-threaded", "rating": "neutral" }
+    },
+    {
+      "name": "Latest Version",
+      "category": "Architecture",
+      "toolA": { "value": "Valkey 9.1 (May 2026)", "rating": "good" },
+      "toolB": { "value": "Redis 8.2 (February 2026)", "rating": "good" }
+    },
+    {
+      "name": "Managed Service Availability",
+      "category": "Operations",
+      "toolA": { "value": "AWS ElastiCache and MemoryDB, Google Memorystore, Oracle OCI Cache", "rating": "good" },
+      "toolB": { "value": "AWS, Azure, GCP, and Redis Cloud", "rating": "good" }
+    },
+    {
+      "name": "Managed Service Cost",
+      "category": "Cost",
+      "toolA": { "value": "~20% lower on ElastiCache and ~30% lower on MemoryDB than Redis OSS", "rating": "good" },
+      "toolB": { "value": "Higher list price on managed Redis OSS for the same workload", "rating": "bad" }
+    },
+    {
+      "name": "Ecosystem & Mindshare",
+      "category": "Ecosystem",
+      "toolA": { "value": "Growing fast; Redis knowledge transfers directly", "rating": "neutral" },
+      "toolB": { "value": "Largest community, most clients, deepest tutorial base", "rating": "good" }
+    },
+    {
+      "name": "Commercial Support",
+      "category": "Operations",
+      "toolA": { "value": "Via cloud providers and third parties; no single Valkey vendor", "rating": "neutral" },
+      "toolB": { "value": "Redis Enterprise and Redis Cloud with SLAs and active-active", "rating": "good" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "You self-host the cache and want zero licensing friction or relicensing risk",
+      "recommendation": "toolA",
+      "explanation": "Valkey's BSD license is permissive and cannot be pulled out from under you the way Redis was relicensed in 2024. For teams that self-manage and want a license that will not change terms, Valkey is the safer bet."
+    },
+    {
+      "scenario": "You run on AWS or Google Cloud and want to lower managed cache costs",
+      "recommendation": "toolA",
+      "explanation": "Cloud providers price managed Valkey below managed Redis OSS, roughly 20% lower on ElastiCache and about 30% lower on MemoryDB. Since the two are wire-compatible, the savings come with little change to your application."
+    },
+    {
+      "scenario": "You need vector search, JSON, or a query engine built into the data store for an AI feature",
+      "recommendation": "toolB",
+      "explanation": "Redis 8 bundles JSON, the Query Engine, time series, and vector sets into the core engine, so you get them without adding modules. With Valkey you assemble the same capabilities from separate modules, which is more setup."
+    },
+    {
+      "scenario": "You build a SaaS that modifies the engine and exposes it as a network service",
+      "recommendation": "toolA",
+      "explanation": "AGPLv3's network copyleft can require you to publish your modifications when you serve a modified Redis over a network. Valkey's BSD license has no such obligation, which is why several vendors standardized on it."
+    },
+    {
+      "scenario": "You want the broadest ecosystem, client libraries, and hiring familiarity",
+      "recommendation": "toolB",
+      "explanation": "Redis still has the biggest community, the most mature client libraries across languages, and the deepest base of tutorials and Stack Overflow answers. Onboarding and troubleshooting are easier when most engineers already know it."
+    },
+    {
+      "scenario": "You use a managed cache and never modify the engine source",
+      "recommendation": "either",
+      "explanation": "If you do not modify and redistribute the engine, the AGPL obligations do not bite, and both stores are fast and RESP-compatible. The choice comes down to cost and feature needs, and migrating later is straightforward because they share a protocol."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is Valkey a drop-in replacement for Redis?",
+      "answer": "For the core, yes. Valkey forked from Redis 7.2.4 and keeps the RESP protocol and command set, so existing Redis clients and most tooling work unchanged. Differences show up only in features each project added after the fork, such as Redis 8's bundled modules and Valkey's separate module set."
+    },
+    {
+      "question": "Did Redis stop being open source?",
+      "answer": "Briefly. In March 2024 Redis moved from BSD to the source-available SSPL and RSAL licenses. Redis 8 (May 2025) added the OSI-approved AGPLv3, so Redis Open Source is open source again, but under a copyleft license rather than the old permissive BSD. Valkey stayed BSD the entire time."
+    },
+    {
+      "question": "What does the AGPLv3 license mean for me?",
+      "answer": "If you only use Redis as a cache or database without modifying its source, AGPL changes very little. If you modify Redis and offer it to others over a network, AGPL is generally read to require publishing those modifications. That network-copyleft clause is the main reason some vendors prefer Valkey's permissive BSD license."
+    },
+    {
+      "question": "Is Valkey faster than Redis?",
+      "answer": "In multi-core benchmarks, usually yes. Valkey invested heavily in I/O threading, and Valkey 9.1 reports around 2.1 million requests per second. Redis 8 also added large performance gains. For most workloads both are fast enough that operational fit and cost matter more than the raw numbers."
+    },
+    {
+      "question": "How hard is migrating from Redis to Valkey?",
+      "answer": "For Redis 7.2.x and earlier it is close to a drop-in. Valkey reads the same RDB and AOF files and speaks the same protocol, so you can often point clients at a Valkey instance or restore a snapshot. AWS ElastiCache even offers an in-place upgrade path. The catch is features added after the fork: Redis 8's core modules and data types are not in core Valkey."
+    },
+    {
+      "question": "Which do the big cloud providers prefer?",
+      "answer": "AWS made Valkey the default for new ElastiCache and MemoryDB clusters and prices it below Redis OSS. Google Cloud offers Memorystore for Valkey, and Oracle supports Valkey on OCI Cache. Redis Inc. focuses on Redis Cloud and Redis Enterprise."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "You self-host and want a permissive BSD license",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want to minimize managed cache cost on AWS or GCP",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You need vector search, JSON, or a query engine built into core",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You modify the engine and expose it as a network service",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the largest ecosystem and hiring familiarity",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You rely on Redis Enterprise features (active-active, tiering, vendor SLA)",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want vendor-neutral, foundation governance",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You use a managed cache and never touch the engine source",
+      "recommendation": "either"
+    }
+  ],
+  "verdict": {
+    "summary": "Valkey and Redis are wire-compatible and both fast, so for most teams the decision comes down to licensing, cost, and built-in features rather than raw performance. Valkey wins on a permissive BSD license, vendor-neutral governance, and lower managed-service prices. Redis 8 wins on a richer core, folding JSON, search, time series, and vector sets into the engine, plus the largest ecosystem and a commercial vendor. Redis returning to open source under AGPLv3 narrowed the license gap, but AGPL is copyleft while Valkey stays permissive.",
+    "toolAScore": 4.3,
+    "toolBScore": 4.4,
+    "recommendation": "Choose Valkey if you self-host, want a permissive license, or want to lower managed cache costs. Choose Redis if you need its built-in modules (vector, search, JSON) or rely on Redis Enterprise features and ecosystem. Both speak the same protocol, so migrating later is straightforward if your priorities change."
+  },
+  "relatedTags": ["Valkey", "Redis", "Caching", "Database", "Open Source", "DevOps"]
+}

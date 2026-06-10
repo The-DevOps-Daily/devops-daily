@@ -1,0 +1,53 @@
+{
+  "id": "argocd-multi-team-manifests-repo",
+  "slug": "argocd-multi-team-manifests-repo",
+  "title": "Organizing a Shared Manifests Repo for Multiple Teams",
+  "question": "Three teams share one Argo CD instance and one manifests repo. How do you lay it out so each team can ship without waiting on each other and can't accidentally deploy each other's stuff?",
+  "answer": "Two things have to work: ownership at the directory level so reviews go to the right people, and AppProjects in Argo CD so the cluster enforces the boundary even if a PR slips through.\n\nRepo layout, top level split by team:\n\nteams/\n  payments/\n    apps/\n      checkout/\n      ledger/\n    projects/\n      payments.yaml          # AppProject for payments team\n  search/\n    apps/\n      indexer/\n      query-api/\n    projects/\n      search.yaml\n  platform/\n    apps/\n      ingress-nginx/\n      cert-manager/\n    projects/\n      platform.yaml\nargocd/\n  applicationsets/\n    payments.yaml            # one ApplicationSet per team\n    search.yaml\n    platform.yaml\n\nThen four things wired together:\n\n1. CODEOWNERS at the repo root maps directory paths to team groups. teams/payments/** routes reviews to @org/payments-platform. Branch protection on main requires a review from the right code owners, so a search team PR cannot land changes under teams/payments without a payments reviewer.\n\n2. One AppProject per team. The AppProject restricts which source repo paths the team's Applications can read from, which destinations (cluster plus namespace) they can deploy to, and which Kubernetes resource kinds they are allowed to create. The payments team's AppProject cannot deploy into the search-prod namespace even if someone tries.\n\n3. One ApplicationSet per team with a Git directory generator pointed at that team's apps folder. New app appears under teams/payments/apps, a new Application appears automatically, owned by the payments project.\n\n4. RBAC on the Argo CD UI mirrors the projects. Payments engineers can sync payments Applications, see them, restart pods. They cannot touch search Applications. The platform team can see everything.\n\nThe AppProject is the load-bearing piece. CODEOWNERS protects the Git side. The AppProject protects the cluster side. You need both. CODEOWNERS alone is fine until a platform engineer with write-everywhere access merges a typo. The AppProject stops the deploy at the controller before it ever reaches the API server.\n\nOne thing I avoid. Do not put every team's apps in a single flat apps/ directory with team prefixes in the names like apps/payments-checkout. It works for five apps and falls apart at fifty. Directory boundaries cost nothing and CODEOWNERS matches them naturally.",
+  "explanation": "This is a strong mid-level question because multi-tenant Argo CD is where most teams hit their first real organizational pain. Strong candidates know that GitOps repo structure has to combine with both Git review controls (CODEOWNERS, branch protection) and Argo CD's own RBAC (AppProjects). Weak candidates lean entirely on one side, usually CODEOWNERS, and miss that the cluster has no idea what GitHub thinks. The AppProject is what stops a bad deploy at the controller. Watch for that.",
+  "category": "GitOps",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "gitops",
+    "argocd",
+    "deployments",
+    "repository-structure",
+    "multi-tenancy"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "CODEOWNERS file routing reviews per team directory",
+      "code": "# .github/CODEOWNERS\n# Each team owns its own directory under teams/\nteams/payments/**     @org/payments-platform\nteams/search/**       @org/search-platform\nteams/platform/**     @org/platform-engineering\n\n# Argo CD config requires platform review\nargocd/**             @org/platform-engineering\n\n# Anything else falls back to platform\n*                     @org/platform-engineering"
+    },
+    {
+      "language": "yaml",
+      "label": "AppProject restricting where the payments team can deploy",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: AppProject\nmetadata:\n  name: payments\n  namespace: argocd\nspec:\n  description: Payments team workloads\n  sourceRepos:\n    - https://github.com/org/manifests\n  # Only allow Applications whose path starts with teams/payments\n  sourceNamespaces:\n    - argocd\n  destinations:\n    - server: https://kubernetes.default.svc\n      namespace: payments-*\n  clusterResourceWhitelist: []\n  namespaceResourceWhitelist:\n    - group: ''\n      kind: ConfigMap\n    - group: ''\n      kind: Service\n    - group: apps\n      kind: Deployment\n    - group: autoscaling\n      kind: HorizontalPodAutoscaler\n  roles:\n    - name: payments-engineer\n      policies:\n        - p, proj:payments:payments-engineer, applications, sync, payments/*, allow\n        - p, proj:payments:payments-engineer, applications, action/*, payments/*, allow\n      groups:\n        - org:payments-platform"
+    },
+    {
+      "language": "yaml",
+      "label": "ApplicationSet that auto-generates Applications for the team",
+      "code": "apiVersion: argoproj.io/v1alpha1\nkind: ApplicationSet\nmetadata:\n  name: payments\n  namespace: argocd\nspec:\n  generators:\n    - git:\n        repoURL: https://github.com/org/manifests\n        revision: main\n        directories:\n          - path: teams/payments/apps/*/overlays/*\n  template:\n    metadata:\n      name: 'payments-{{path[3]}}-{{path.basename}}'\n    spec:\n      project: payments\n      source:\n        repoURL: https://github.com/org/manifests\n        targetRevision: main\n        path: '{{path}}'\n      destination:\n        server: https://kubernetes.default.svc\n        namespace: 'payments-{{path.basename}}'\n      syncPolicy:\n        automated:\n          prune: true\n          selfHeal: true"
+    }
+  ],
+  "followUpQuestions": [
+    "A team wants to deploy a CRD their app needs. The AppProject namespaceResourceWhitelist does not include CustomResourceDefinition. What is the right way to handle that request?",
+    "How do you stop the platform team from becoming the bottleneck for every new AppProject change?",
+    "What goes wrong if two teams both want to manage their own ApplicationSets without platform review?",
+    "How would you give a team read-only access to prod Applications but full access to their dev ones?"
+  ],
+  "commonMistakes": [
+    "Relying only on CODEOWNERS without an AppProject, so once a PR merges any team can technically deploy anywhere",
+    "Giving every team a single shared AppProject called default with no destination restrictions, which is the same as having no project at all",
+    "Flat-namespacing apps like apps/payments-checkout instead of using directories, then losing CODEOWNERS routing as the repo grows"
+  ],
+  "relatedTopics": [
+    "argocd",
+    "gitops",
+    "multi-tenancy",
+    "rbac",
+    "kubernetes"
+  ]
+}

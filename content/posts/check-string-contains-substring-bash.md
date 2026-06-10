@@ -374,7 +374,7 @@ Pattern matching with double brackets is typically the fastest for simple substr
 
 ## Advanced String Matching Functions
 
-Create a comprehensive string matching utility:
+Create a string matching utility:
 
 ```bash
 #!/bin/bash
@@ -456,7 +456,7 @@ echo "Ends with 'string.' (case-sensitive): $(ends_with "$test_string" "string."
 echo "Matches email pattern: $(matches_regex "$test_string" '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}' && echo "YES" || echo "NO")"
 ```
 
-This utility library provides a comprehensive set of string matching functions for various use cases.
+This utility library provides a set of string matching functions for various use cases.
 
 ## Configuration File Processing
 

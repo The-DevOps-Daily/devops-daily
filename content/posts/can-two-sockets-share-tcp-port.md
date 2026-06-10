@@ -364,4 +364,4 @@ else:
 - Internal vs external access on same port
 - Segregating traffic by network
 
-Two sockets can share a port in multiple ways - through accepting multiple connections on a listening socket, using `SO_REUSEPORT` for multi-process load balancing, or binding to different IP addresses. Understanding these mechanisms helps you build robust, high-performance network applications.
+Two sockets can share a port in multiple ways - through accepting multiple connections on a listening socket, using `SO_REUSEPORT` for multi-process load balancing, or binding to different IP addresses. Understanding these mechanisms helps you build reliable, high-performance network applications.

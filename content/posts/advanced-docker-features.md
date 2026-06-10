@@ -44,7 +44,7 @@ These aren't theoretical improvements. Teams report build time reductions from 1
 
 ## 1. BuildKit: Next-Generation Image Builds
 
-BuildKit is Docker's modern build engine that replaces the legacy builder. It provides parallel builds, efficient caching, and advanced features like cache mounts and secret mounts. While it's now the default in recent Docker versions, many developers don't leverage its full capabilities.
+BuildKit is Docker's modern build engine that replaces the legacy builder. It provides parallel builds, efficient caching, and advanced features like cache mounts and secret mounts. While it's now the default in recent Docker versions, many developers don't use its full capabilities.
 
 ### Why BuildKit Matters
 
@@ -714,9 +714,9 @@ The Docker documentation has detailed guides for each feature. The BuildKit docu
 
 ## Related Resources
 
-- [Docker Security Best Practices](/posts/docker-security-best-practices) — harden containers for production
-- [Docker Image Optimization](/posts/docker-image-optimization-best-practices) — build smaller, faster images
-- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build) — hands-on practice
-- [Docker Security Checklist](/checklists/docker-security) — verify your setup
-- [Introduction to Docker: Best Practices](/guides/introduction-to-docker) — comprehensive guide
-- [DevOps Survival Guide](/books/devops-survival-guide) — broader DevOps learning path
+- [Docker Security Best Practices](/posts/docker-security-best-practices): harden containers for production
+- [Docker Image Optimization](/posts/docker-image-optimization-best-practices): build smaller, faster images
+- [Docker Multi-Stage Build Exercise](/exercises/docker-multi-stage-build): hands-on practice
+- [Docker Security Checklist](/checklists/docker-security): verify your setup
+- [Introduction to Docker: Best Practices](/guides/introduction-to-docker): full guide
+- [DevOps Survival Guide](/books/devops-survival-guide): broader DevOps learning path

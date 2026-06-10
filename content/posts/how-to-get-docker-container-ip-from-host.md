@@ -129,7 +129,7 @@ If you find yourself needing container IPs regularly, it might be time to rethin
 
 ## Related Resources
 
-- [How to Get Docker Host IP from Container](/posts/how-to-get-docker-host-ip-from-container) — reverse direction
-- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker) — host networking
-- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose) — networking concepts
-- [Introduction to Docker: Networking](/guides/introduction-to-docker) — networking guide
+- [How to Get Docker Host IP from Container](/posts/how-to-get-docker-host-ip-from-container): reverse direction
+- [Connect to Host Localhost from Docker](/posts/connect-to-host-localhost-from-docker): host networking
+- [Docker Compose: Ports vs Expose](/posts/docker-compose-ports-vs-expose): networking concepts
+- [Introduction to Docker: Networking](/guides/introduction-to-docker): networking guide

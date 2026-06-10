@@ -447,7 +447,7 @@ Moving to production Kubernetes is an ongoing process, not a destination. Even m
 
 Start with these production-focused practices:
 
-1. Implement comprehensive resource management
+1. Implement resource management
 2. Configure proper health probes
 3. Secure your cluster with network policies
 4. Plan your storage strategy carefully

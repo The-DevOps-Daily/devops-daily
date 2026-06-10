@@ -14,6 +14,7 @@ import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
+import { detailPageMetadata } from '@/lib/metadata-utils';
 
 import type { Metadata } from 'next';
 
@@ -40,45 +41,22 @@ export async function generateMetadata({
   }
 
   const socialImage = getSocialImagePath(slug, 'posts');
+
   // post.excerpt is shown in full on the page itself, but Google clips
   // descriptions over ~160 chars. Trim at the last sentence boundary so
   // the meta tag stays in range without dropping keywords.
-  const metaDescription = truncateMetaDescription(post.excerpt);
-
-  return {
-    // Absolute: skip the '%s | DevOps Daily' layout template. Post titles
-    // are always topic-specific and rank better without the redundant
-    // brand suffix. OG + Twitter below keep the brand in social previews.
-    title: { absolute: post.title },
-    description: metaDescription,
-    alternates: {
-      canonical: `/posts/${post.slug}`,
-    },
-    openGraph: {
-      type: 'article',
-      title: post.title,
-      description: metaDescription,
-      url: `/posts/${post.slug}`,
-      images: [
-        {
-          url: socialImage || post.image || '/og-image.png',
-          width: 1200,
-          height: 630,
-          alt: post.title,
-        },
-      ],
+  return detailPageMetadata({
+    path: `/posts/${post.slug}`,
+    title: post.title,
+    description: truncateMetaDescription(post.excerpt),
+    image: socialImage || post.image || '/og-image.png',
+    article: {
       publishedTime: post.publishedAt || post.date,
       modifiedTime: post.updatedAt || post.date,
       section: post.category?.name,
       tags: post.tags,
     },
-    twitter: {
-      card: 'summary_large_image',
-      title: post.title,
-      description: metaDescription,
-      images: [socialImage || post.image || '/og-image.png'],
-    },
-  };
+  });
 }
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -138,7 +116,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
       <div className="container px-4 py-8 mx-auto">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-          <div className="lg:col-span-9">
+          <div className="min-w-0 lg:col-span-9">
             <article className="prose dark:prose-invert max-w-none">
               <PostHeader
                 post={{

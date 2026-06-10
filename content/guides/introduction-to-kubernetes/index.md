@@ -37,3 +37,7 @@ This guide will walk you through Kubernetes from the ground up. We'll start with
 Kubernetes can seem complex at first, but it's designed around a set of consistent principles that become clearer as you work with it. This guide aims to demystify these concepts through practical examples and clear explanations.
 
 Each section builds on the previous one, providing a structured learning path that will take you from Kubernetes beginner to confident practitioner. Let's begin your Kubernetes journey!
+
+## Practice hands-on
+
+Reinforce what you learn here with the interactive [Kubernetes Terminal simulator](/games/kubernetes-terminal-simulator), right in your browser with no setup required.

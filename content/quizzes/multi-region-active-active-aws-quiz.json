@@ -1,0 +1,259 @@
+{
+  "id": "multi-region-active-active-aws-quiz",
+  "title": "Multi-Region Active-Active Architecture on AWS Quiz",
+  "description": "Test how you would design an active-active application across AWS regions: routing with Route 53 and Global Accelerator, multi-region data with DynamoDB global tables and Aurora, conflict resolution, idempotency, and the failover patterns that hold up during a real regional event.",
+  "category": "Cloud Architecture",
+  "icon": "Cloud",
+  "totalPoints": 196,
+  "theme": {
+    "primaryColor": "orange",
+    "gradientFrom": "from-orange-500",
+    "gradientTo": "to-amber-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-06-09",
+    "tags": ["aws", "multi-region", "high-availability", "architecture"]
+  },
+  "questions": [
+    {
+      "id": "active-active-vs-active-passive",
+      "title": "Active-Active or Just Warm Standby?",
+      "description": "Your team calls the setup active-active, but one region only takes traffic during a failover. What actually defines active-active?",
+      "situation": "Leadership asked for an active-active deployment across us-east-1 and eu-west-1. The current setup keeps both regions fully deployed and healthy, but Route 53 sends all live traffic to us-east-1. eu-west-1 only starts receiving requests when a health check fails and traffic shifts over. A new engineer asks whether this is really active-active.",
+      "codeExample": "Route 53 record set:\n  app.example.com  FAILOVER  PRIMARY    -> us-east-1 ALB\n  app.example.com  FAILOVER  SECONDARY  -> eu-west-1 ALB\n\nNormal state: 100% of traffic -> us-east-1\neu-west-1: deployed, healthy, 0 live requests",
+      "options": [
+        "Nothing, this is active-passive: only one region serves live traffic, and the second takes over only on failover",
+        "It is active-active because both regions are deployed and healthy at the same time",
+        "It is active-active because the standby keeps instances running instead of scaling up from zero",
+        "It is active-active because both regions can reach the same primary database"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Active-active means every region serves live production traffic at the same time and shares the real load. What is described here is active-passive (warm standby): both regions are deployed and ready, but only us-east-1 takes traffic until a failover shifts it to eu-west-1. Having a healthy, warm, or even fully scaled second region does not make it active-active if that region sits idle during normal operation. The give-away is the FAILOVER routing policy with a single primary. To make it active-active you serve traffic to both regions at once, for example with latency-based or weighted records, and run the data layer so each region can handle its own share of writes.",
+      "hint": "Look at how much live traffic the second region handles during normal operation, not just whether it is deployed."
+    },
+    {
+      "id": "route53-latency-routing",
+      "title": "Sending Users to Their Nearest Region",
+      "description": "European users keep hitting the US region and seeing slow responses. Which Route 53 policy fixes the latency?",
+      "situation": "You run identical stacks in us-east-1 and eu-west-1, both live. Users in Europe report sluggish page loads. You check and they are resolving to the US endpoint. You want every user to land on whichever region answers fastest for them, and you want it to adjust as network conditions change.",
+      "codeExample": "$ dig +short app.example.com   # from a host in Frankfurt\n52.0.0.10      # us-east-1 ALB  (~95 ms RTT)\n\n# desired:\n#   Frankfurt user -> eu-west-1   (~12 ms RTT)\n#   Virginia user  -> us-east-1   (~8 ms RTT)",
+      "options": [
+        "Weighted routing with a fixed 50/50 split between the two regions",
+        "Latency-based routing, which sends each user to the region with the lowest measured network latency",
+        "Geolocation routing keyed only to the user's country code",
+        "Simple routing that returns both region IPs and lets the client choose"
+      ],
+      "correctAnswer": 1,
+      "points": 11,
+      "difficulty": "beginner",
+      "explanation": "Latency-based routing is the right tool. Route 53 keeps latency measurements between AWS regions and user networks and answers each query with the region that is fastest for that user, adjusting as conditions change. Weighted 50/50 ignores where the user is and would still send half of Europe to the US. Geolocation routing maps users by country or continent, which sounds similar but routes by political geography rather than measured latency, so it can miss the actually-fastest region and needs careful default rules. Simple routing returns records in no useful order and gives the client no latency signal at all.",
+      "hint": "You want routing that reacts to real network speed, not a fixed ratio or a map of country borders."
+    },
+    {
+      "id": "route53-health-checks-failover",
+      "title": "Traffic Still Flowing to a Dead Region",
+      "description": "Your unhealthy region keeps getting traffic even though it is returning errors. What is missing from the Route 53 setup?",
+      "situation": "us-east-1 is having a bad day: its ALB is returning 503s for most requests. You use latency-based records for us-east-1 and eu-west-1. Despite the failures, Route 53 keeps handing out the us-east-1 address to a chunk of users, and they get errors instead of being sent to the healthy region.",
+      "codeExample": "app.example.com  LATENCY  us-east-1  -> 52.0.0.10   (ALB returning 503)\napp.example.com  LATENCY  eu-west-1  -> 34.0.0.20   (healthy)\n\nObserved: us-east-1 still served to ~40% of users despite the 503s",
+      "options": [
+        "Drop the DNS TTL to zero so every client re-resolves on each request",
+        "Switch to weighted routing and set the failed region's weight to 0 by hand",
+        "Attach a Route 53 health check to each regional record so unhealthy endpoints are dropped from answers automatically",
+        "Enable DynamoDB global tables so the data layer fails over"
+      ],
+      "correctAnswer": 2,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "Route 53 only knows an endpoint is unhealthy if you attach a health check to the record. With health checks in place, Route 53 stops returning the failing region and serves only healthy answers, automatically and within the check interval. A zero TTL is impossible to honor in practice and just hammers your resolvers while still handing out the bad address. Manually setting a weight to 0 works only if a human is awake and watching, which defeats the point of fast failover. DynamoDB global tables handle the data layer, not DNS routing, so they would not stop traffic going to a broken front end.",
+      "hint": "How does Route 53 actually learn that a region is down without a human telling it?"
+    },
+    {
+      "id": "dynamodb-global-tables-multi-active",
+      "title": "A Database That Takes Writes in Both Regions",
+      "description": "You need both regions to accept writes locally with low latency. Which AWS database does that without forwarding writes to one region?",
+      "situation": "Your active-active app serves users from us-east-1 and ap-southeast-2. You want each region to write to a local database with single-digit millisecond latency, and you want those writes replicated to the other region automatically. You do not want app code reaching across the ocean for every write.",
+      "codeExample": "Requirements:\n  - region-local writes (low latency) in BOTH regions\n  - automatic async replication between regions\n  - no single 'writer region' funneling normal writes",
+      "options": [
+        "Aurora Global Database with one primary writer cluster",
+        "RDS Multi-AZ, with the standby promoted in the second region",
+        "DynamoDB global tables, which give each region a read/write replica with async cross-region replication",
+        "ElastiCache for Redis global datastore"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "DynamoDB global tables are built for multi-active writes. Each region holds a full read/write replica, writes are accepted locally, and DynamoDB replicates them to the other regions asynchronously, usually within a second. Aurora Global Database has a single writer region; the others are read-only, and even write forwarding sends the write back to that one primary, so it is not truly multi-active for writes. RDS Multi-AZ is a single-region high-availability feature, not cross-region active-active. ElastiCache global datastore has one primary region for writes and read-only secondaries, so it does not give you local writes everywhere either.",
+      "hint": "Only one of these accepts local writes in every region without forwarding them to a single primary."
+    },
+    {
+      "id": "aurora-global-database-single-writer",
+      "title": "Writes Failing in the Second Region",
+      "description": "You chose Aurora Global Database expecting writes in both regions, but the secondary rejects every write. Why?",
+      "situation": "You set up Aurora Global Database with a primary cluster in us-east-1 and a secondary in eu-west-1, then pointed the EU app at the EU cluster endpoint. Reads work fine in Europe, but every INSERT and UPDATE from the EU app fails. The team expected active-active writes out of the box.",
+      "codeExample": "ERROR:  cannot execute INSERT in a read-only transaction\n\n-- EU app connected to: aurora-euw1.cluster-xyz.eu-west-1.rds.amazonaws.com\n-- primary writer cluster lives in: us-east-1",
+      "options": [
+        "The secondary replica is lagging too far behind to accept writes right now",
+        "Aurora Global Database has a single writer region; secondary regions are read-only unless you enable write forwarding or promote the secondary",
+        "The secondary cluster is missing a read replica node, so writes have nowhere to land",
+        "Global Database replicates only schema, so the EU writes need a separate replication path"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Aurora Global Database uses one writer region. Secondary regions expose read-only endpoints, so writing directly to them fails with a read-only transaction error. You have two options: enable write forwarding (the secondary forwards writes to the primary, which adds cross-region latency and still funnels through one writer), or promote the secondary during a failover so it becomes the new primary. Replication lag does not flip a replica into accepting writes. The secondary is not missing nodes, and Global Database replicates real data, not just schema. The point to remember: Aurora Global Database is great for low-latency cross-region reads and fast disaster recovery, but it is not multi-active for writes the way DynamoDB global tables are.",
+      "hint": "How many regions in an Aurora Global Database can accept writes at the same time by default?"
+    },
+    {
+      "id": "dynamodb-conflict-last-writer-wins",
+      "title": "Two Regions Update the Same Item",
+      "description": "The same DynamoDB item is written in both regions at nearly the same instant. How is the conflict resolved?",
+      "situation": "You run DynamoDB global tables across us-east-1 and eu-west-1. A user's profile gets updated in both regions within a few hundred milliseconds, before replication catches up. Both writes succeed locally. You need to know which value survives once the regions sync.",
+      "codeExample": "us-east-1  10:00:00.100  PutItem profile#42  { theme: 'dark' }\neu-west-1  10:00:00.250  PutItem profile#42  { theme: 'light' }\n\n# replication reconciles a moment later... which value wins?",
+      "options": [
+        "DynamoDB rejects both writes and returns a conflict error to the application",
+        "DynamoDB merges the two items field by field and keeps both attributes",
+        "DynamoDB keeps both versions and returns them as a list on the next read",
+        "Last writer wins: the write with the later timestamp ('light') is kept and the other is overwritten"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "DynamoDB global tables resolve concurrent cross-region writes with last-writer-wins, using an internal timestamp. The later write (theme: light at 10:00:00.250) is kept and the earlier one is dropped once replication reconciles. There is no application-visible conflict error and no automatic field-level merge, so a write you thought succeeded can be silently overwritten by one from another region. This shapes your design: if losing a write is unacceptable, do not let two regions own the same item. Common patterns are routing each item or user to a 'home' region, using conditional writes, or modeling updates as append-only events you reconcile yourself instead of overwriting a row.",
+      "hint": "DynamoDB does not ask you to merge anything; it picks one write using a clock."
+    },
+    {
+      "id": "rpo-replication-lag-failover",
+      "title": "Missing the Last Few Seconds of Writes",
+      "description": "After failing over to the secondary region, the most recent writes are gone. Which metric does that data loss map to?",
+      "situation": "us-east-1 fails hard. You promote the eu-west-1 Aurora secondary to primary and bring the app back up there. Most things work, but a handful of orders placed in the last couple of seconds before the failure never made it to Europe and are now lost. Leadership asks how to describe and bound that loss.",
+      "codeExample": "12:00:03.9  order #8841 committed in us-east-1\n12:00:04.0  us-east-1 becomes unreachable\n12:00:04.0  replication to eu-west-1 had reached: 12:00:03.6\n\nLost writes: everything committed between 12:00:03.6 and 12:00:04.0",
+      "options": [
+        "RPO (recovery point objective): the data-loss window, set by cross-region replication lag at the moment of failure",
+        "RTO (recovery time objective): how long recovery takes, set mainly by DNS propagation",
+        "MTTR (mean time to repair): set by how fast the on-call engineer responds",
+        "SLA: the regional uptime percentage AWS commits to"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "RPO is the amount of data you can afford to lose, measured as a time window, and it is set by how far behind your replication was when the source region died. Async cross-region replication always carries some lag, so writes committed inside that lag window are lost on an unplanned failover. RTO is different: it is how long it takes to be running again, not how much data you lose. MTTR is about repair time, and an SLA is a vendor uptime commitment, neither of which describes the lost-writes window. To shrink RPO you reduce replication lag or move to synchronous replication, but synchronous cross-region writes add latency to every transaction, which is the trade-off you are buying.",
+      "hint": "One metric is about how much data you lose, the other is about how long you are down. Which one is the lost-writes window?"
+    },
+    {
+      "id": "idempotency-keys-failover-retries",
+      "title": "Duplicate Charges During Failover",
+      "description": "Clients retry against the new region during failover and you get duplicate orders. What stops the double side effects?",
+      "situation": "When us-east-1 got slow, clients timed out and retried, and Route 53 sent the retries to eu-west-1. Some of those original requests had actually succeeded in us-east-1 before the timeout. Now you have duplicate orders and a few double charges, because the same logical request ran in both regions.",
+      "codeExample": "client -> POST /orders (timeout, no response)   # us-east-1 already committed it\nclient -> POST /orders (retry -> eu-west-1)      # commits a SECOND order\n\nResult: 2 orders, 2 charges for 1 user action",
+      "options": [
+        "Raise the Route 53 TTL so clients stop retrying so quickly",
+        "Use idempotency keys so a repeated request with the same key is processed once, even across regions",
+        "Switch all reads to DynamoDB strongly consistent reads",
+        "Hold a global lock in the primary region for every write"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Idempotency keys are the standard fix. The client generates a unique key per logical action and sends it with the request; the server records the key with its result, so a retry carrying the same key returns the original outcome instead of doing the work twice. That is what protects you when retries land in a different region. Raising the TTL does not stop a client from retrying after a timeout. Strongly consistent reads only affect read freshness within DynamoDB, not duplicate writes across regions. A global lock in one region would force every write through a single point, destroying the low-latency region-local writes that make active-active worth doing, and it would not even be reachable when that region is the one failing.",
+      "hint": "You need the server to recognize that a retried request is the same action it already handled."
+    },
+    {
+      "id": "s3-cross-region-replication-active-active",
+      "title": "User Uploads Missing in the Other Region",
+      "description": "Objects uploaded in one region are missing when served from the other. What gives each region a local copy?",
+      "situation": "Your app lets users upload images. Uploads in us-east-1 land in an S3 bucket there, and the EU app reads from a separate EU bucket. EU users see broken images for anything uploaded on the US side, and the US side has the same problem in reverse. You want each region to keep its own local copy of every object so reads stay fast and available even if one region is down.",
+      "codeExample": "us-east-1: s3://app-assets-use1   (US uploads land here)\neu-west-1: s3://app-assets-euw1   (EU app reads here)\n\nEU user requests an image uploaded in us-east-1 -> 404",
+      "options": [
+        "Turn on S3 Transfer Acceleration on both buckets",
+        "Put a single CloudFront distribution in front of the us-east-1 bucket",
+        "Set up S3 Cross-Region Replication in both directions so each bucket replicates its objects to the other",
+        "Enable S3 versioning on both buckets"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "S3 Cross-Region Replication (CRR) copies objects from one bucket to a bucket in another region automatically. For active-active you configure it in both directions so an upload in either region replicates to the other, giving each region a local, independently-available copy. Transfer Acceleration only speeds uploads to a single bucket over the AWS edge network; it does not create a second copy. A single CloudFront distribution in front of the US bucket still has a hard dependency on that one bucket and region, so if us-east-1 is down, EU reads fail. Versioning is a prerequisite you must enable for CRR, but on its own it just keeps object history inside the same bucket and does nothing cross-region. Note that CRR is async, so expect a small replication delay and design for the case where an object has not arrived yet.",
+      "hint": "You need actual copies of the objects in each region, replicated both ways, not just faster transfers or a cache."
+    },
+    {
+      "id": "global-accelerator-fast-failover",
+      "title": "DNS Caching Slows Down Your Failover",
+      "description": "Clients keep hitting the dead region because they cached the DNS answer. What fails over faster than DNS?",
+      "situation": "You measured your failover and it is too slow. Even with low TTLs, some clients and intermediate resolvers cache the old DNS answer and keep connecting to the failed region for minutes. You want failover that does not depend on clients re-resolving DNS, ideally with fixed IP addresses your customers can allowlist.",
+      "codeExample": "TTL set to 60s, but observed:\n  - mobile clients pinning DNS for 5+ minutes\n  - a corporate resolver ignoring the TTL entirely\n=> traffic still hitting the failed region long after failover",
+      "options": [
+        "AWS Global Accelerator: static anycast IPs that route over the AWS backbone and shift away from an unhealthy region without any DNS change",
+        "Drop the Route 53 TTL to 1 second and rely on clients honoring it",
+        "Put CloudFront in front and let edge caching handle the failover",
+        "Switch the records to Route 53 latency-based routing"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "AWS Global Accelerator gives you two static anycast IP addresses that stay constant while it steers traffic over the AWS backbone to the nearest healthy endpoint. When a region goes unhealthy, Global Accelerator reroutes within seconds at the network layer, so clients keep using the same IPs and never need to re-resolve DNS. That sidesteps the whole DNS-caching problem and hands you fixed IPs to allowlist. Lowering the TTL to 1 second does not help when clients and resolvers ignore TTLs, which many do. CloudFront is built for caching content at the edge, not for failing over a dynamic active-active backend. Latency-based routing is still DNS, so it inherits the same caching delays you are trying to escape.",
+      "hint": "The problem is DNS caching itself, so the fix is something that fails over without relying on DNS at all."
+    },
+    {
+      "id": "route53-arc-routing-controls",
+      "title": "A Failover Switch That Works During an Outage",
+      "description": "Automated health-check failover flapped and made the incident worse. You want a reliable manual traffic switch. What does AWS offer?",
+      "situation": "During a regional event, your health-check-driven failover flapped: traffic bounced between regions as checks went green and red, amplifying the damage. You want an operator-controlled on/off switch to shift traffic away from a region and keep it there, and it has to keep working even when the affected region's control plane is impaired.",
+      "codeExample": "Incident timeline:\n 12:01 health check fails  -> traffic shifts to eu-west-1\n 12:02 check flaps green   -> traffic shifts BACK to us-east-1 (still broken)\n 12:03 check fails again   -> shifts again ...\nResult: route flapping made the outage worse",
+      "options": [
+        "Lower the health check failure threshold so it reacts faster",
+        "A Lambda triggered by a CloudWatch alarm that rewrites the Route 53 records",
+        "Set Global Accelerator endpoint weights to 0 for the bad region",
+        "Route 53 Application Recovery Controller routing controls: a highly available, operator-driven on/off switch for traffic, built to work during a regional impairment"
+      ],
+      "correctAnswer": 3,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "Route 53 Application Recovery Controller (ARC) routing controls give you exactly this: a deliberate, human-operated switch to shift traffic between cells or regions, backed by a cluster of five Regional endpoints so you can still flip it even when one region is in trouble. It also supports safety rules so you do not accidentally turn everything off at once. Lowering the health check threshold makes flapping worse, not better. A Lambda-plus-alarm setup depends on the very region and control plane that may be failing, and it is one more thing to break mid-incident. Global Accelerator weights help shape traffic but are not the durable, dependency-light manual control that ARC routing controls are built to be. The broader lesson: for the worst incidents you want a dependable manual override, not just reactive automation.",
+      "hint": "You want a dependable manual override that does not rely on the failing region's control plane to operate."
+    },
+    {
+      "id": "cap-tradeoff-active-active-partition",
+      "title": "Both Regions Keep Writing During a Partition",
+      "description": "The link between regions breaks but both keep accepting writes. What consistency stance is that, and is it the right one?",
+      "situation": "A network partition cuts replication between us-east-1 and eu-west-1 for several minutes. Your DynamoDB global tables keep accepting writes in both regions the whole time. When the link heals, the regions reconcile and some conflicting writes get resolved by last-writer-wins. An architect asks you to name the trade-off being made and whether it fits a high-availability app.",
+      "codeExample": "Partition window (regions cannot replicate):\n  us-east-1: accepts writes locally   (stays available)\n  eu-west-1: accepts writes locally   (stays available)\nHeal: reconcile via last-writer-wins, some writes overwritten\n\nQuestion: availability or strong consistency?",
+      "options": [
+        "It blocks writes in both regions until the link heals, choosing consistency over availability (a CP system)",
+        "It chooses availability over strong consistency (an AP system): both regions stay writable and conflicts reconcile later by last-writer-wins, which fits a high-availability app that tolerates eventual consistency",
+        "It elects a single region through a consensus protocol so writes stay strongly consistent during the partition",
+        "It guarantees no conflicts can happen because every write is globally serialized first"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "This is the CAP trade-off in practice. During a partition you cannot have both perfect consistency and full availability, so you pick one. DynamoDB global tables choose availability and partition tolerance (AP): every region keeps serving writes, and the system accepts that data temporarily diverges and reconciles afterward with last-writer-wins. For most high-availability active-active apps that is the right call, because staying up matters more than being perfectly consistent for a few minutes, as long as your data model can tolerate eventual consistency and the occasional overwritten write. A CP system would block writes during the partition to stay consistent, trading away the availability you built active-active to get. There is no magic global serialization that removes the trade-off; if you need strong consistency you accept reduced availability instead, and you make that choice per workload.",
+      "hint": "During a partition you only get to keep two of consistency, availability, and partition tolerance. Which two does staying writable everywhere imply?"
+    },
+    {
+      "id": "static-stability-failover-capacity",
+      "title": "Failover Stalls Because the API Is Throttled",
+      "description": "Your failover tries to scale up the healthy region by calling AWS APIs mid-incident, and it stalls. Which principle did you break?",
+      "situation": "Your failover runbook scales eu-west-1 from half capacity up to full only after us-east-1 fails, and it does that by calling the EC2 and Auto Scaling APIs during the incident. In a real regional event those control-plane calls get throttled and slow, so eu-west-1 never reaches full capacity in time and the failover effectively stalls while users get errors.",
+      "codeExample": "Failover step (runs DURING the incident):\n  call autoscaling:SetDesiredCapacity  eu-west-1: 10 -> 20\n  call ec2:RunInstances                (throttled, slow, partial)\n=> healthy region cannot absorb the shifted load fast enough",
+      "options": [
+        "Least privilege: the automation holds too many IAM permissions",
+        "Eventual consistency: the Auto Scaling group has not converged yet",
+        "Immutable infrastructure: you should be baking AMIs instead of scaling",
+        "Static stability: the healthy region should already hold enough pre-provisioned capacity so failover needs no control-plane actions during the event"
+      ],
+      "correctAnswer": 3,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "This is a static stability problem. A statically stable design keeps the standby or peer region already provisioned with enough capacity to take the full load, so failing over needs no new control-plane actions (no scaling up, no new instances, no extra API calls) at the worst possible moment. Control planes are exactly what gets stressed and throttled during a large regional event, so depending on them to grow capacity mid-incident is fragile. Pre-scale eu-west-1 to handle 100% before you ever need it, even though that idle headroom costs more in steady state, because that headroom is what buys you a reliable failover. Least privilege, eventual consistency, and immutable infrastructure are all real concerns, but none of them is why this failover stalled: the failure is the runtime dependency on the control plane to add capacity during the event.",
+      "hint": "What should already be running before the incident, so that failing over requires no new API calls to add capacity?"
+    }
+  ]
+}

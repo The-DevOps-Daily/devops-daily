@@ -1,9 +1,13 @@
-import { Rss, X, Linkedin, Github, Instagram, LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Github, Instagram, Linkedin } from '@/components/icons/social-icons';
+import { Rss, X } from 'lucide-react';
+
+type FooterIcon = (props: { className?: string }) => ReactNode;
 
 export interface SocialLink {
   name: string;
   href: string;
-  icon: LucideIcon;
+  icon: FooterIcon;
   colorFrom: string;
   colorTo: string;
   colorFromHover: string;
