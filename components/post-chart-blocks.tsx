@@ -139,10 +139,16 @@ function DotPlot({ spec }: { spec: ChartSpec }) {
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={spec.title ?? 'Distribution plot'}>
-      {ticks.map((v) => (
+      {ticks.map((v, ti) => (
         <g key={v}>
           <line x1={scale(v)} y1={0} x2={scale(v)} y2={height - labelH} className="stroke-border" strokeOpacity={0.35} />
-          <text x={scale(v)} y={height - 8} fontSize={11.5} textAnchor="middle" className="fill-muted-foreground">
+          <text
+            x={scale(v)}
+            y={height - 8}
+            fontSize={11.5}
+            textAnchor={ti === 0 ? 'start' : ti === ticks.length - 1 ? 'end' : 'middle'}
+            className="fill-muted-foreground"
+          >
             {formatValue(v, spec.unit)}
           </text>
         </g>
