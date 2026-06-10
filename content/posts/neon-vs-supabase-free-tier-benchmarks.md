@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-06-10'
 publishedAt: '2026-06-10T18:30:00Z'
-updatedAt: '2026-06-10T18:30:00Z'
+updatedAt: '2026-06-10T21:45:00Z'
 readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,7 +23,7 @@ tags:
 
 Pick any "Neon vs Supabase" thread on the internet and you will find the same spec-sheet ping pong: one side quotes storage limits, the other quotes monthly active users, and nobody has actually timed anything. Both platforms hand out free Postgres, both claim to be fast, and both free tiers have sharp edges that only show up when you run real operations against them.
 
-So we ran real operations against them. 320 timed samples across nine operation types, both platforms in the same AWS region (eu-central-1, Frankfurt), measured from a client VM in the same metro so network distance could not put a thumb on the scale. Every raw sample, the harness that produced it, and a live dashboard are in a public repo, so you can check the math or rerun the whole thing yourself: [The-DevOps-Daily/serverless-postgres-benchmarks](https://github.com/The-DevOps-Daily/serverless-postgres-benchmarks).
+So we ran real operations against them. 320 timed samples across nine operation types, both platforms in the same AWS region (eu-central-1, Frankfurt), measured from a client VM in the same metro so network distance could not put a thumb on the scale. Every raw sample, the harness that produced it, and a live dashboard are public, so you can check the math or rerun the whole thing yourself: explore the [live results dashboard](https://postgres-benchmarks.devops-daily.com/) or read the harness at [The-DevOps-Daily/serverless-postgres-benchmarks](https://github.com/The-DevOps-Daily/serverless-postgres-benchmarks).
 
 This is the free tier piece. Paid-tier operations (read replicas, compute resizing, Supabase branching) get their own article once those runs land.
 
@@ -94,6 +94,245 @@ Five different connection paths, 50 cold-connection cycles each:
 ```
 
 That is a 5 ms spread across ten thousand-ish kilometers of marketing. At equal network distance, the free tiers are latency-equivalent for a single query. The spread between the fastest and slowest path on the *same* platform is bigger than the spread between platforms.
+
+The percentile view makes the tails visible too. Every one of the 250 samples, ranked:
+
+```chart
+{
+  "type": "cdf",
+  "title": "Query latency percentiles (50 cold connections per path)",
+  "unit": "ms",
+  "caption": "Read p50 and p95 off the dashed lines. The long green tail is Neon direct.",
+  "series": [
+    {
+      "name": "Neon pooler",
+      "samples": [
+        40.5,
+        39,
+        34.1,
+        36,
+        31,
+        25,
+        21.5,
+        26.6,
+        31.9,
+        29.2,
+        27.5,
+        23.3,
+        31.4,
+        27.5,
+        23.1,
+        22,
+        20.8,
+        24.6,
+        29.1,
+        20.8,
+        24.1,
+        30.6,
+        28.9,
+        21.6,
+        25.1,
+        23,
+        31.8,
+        23.2,
+        21.3,
+        19.8,
+        26.5,
+        22.4,
+        22.3,
+        28.2,
+        29.1,
+        26.1,
+        24.5,
+        25.9,
+        24.5,
+        20.1,
+        33,
+        20.4,
+        23,
+        19.7,
+        22.5,
+        27.5,
+        23.8,
+        26.1,
+        28.8,
+        25.8
+      ],
+      "color": "#10b981"
+    },
+    {
+      "name": "Neon direct",
+      "dash": "6 5",
+      "samples": [
+        37,
+        24.7,
+        31.1,
+        29.9,
+        73.8,
+        63.3,
+        42.3,
+        66.2,
+        45.6,
+        49.9,
+        43.9,
+        28.4,
+        27.9,
+        37.4,
+        29,
+        29,
+        24.5,
+        25,
+        27,
+        32.7,
+        34.6,
+        39.2,
+        26.2,
+        32.8,
+        29.4,
+        27.9,
+        34.7,
+        29.8,
+        33.2,
+        26.3,
+        27.5,
+        33,
+        36.6,
+        32.4,
+        30,
+        33.9,
+        26.7,
+        30.7,
+        26.3,
+        25.9,
+        29,
+        26.7,
+        26.8,
+        26,
+        24.7,
+        26.8,
+        27.8,
+        29.5,
+        27.2,
+        24.1
+      ],
+      "color": "#10b981"
+    },
+    {
+      "name": "Supabase direct (IPv6)",
+      "samples": [
+        27,
+        28.5,
+        31.6,
+        29.5,
+        31.1,
+        33.6,
+        27.5,
+        27.3,
+        30.2,
+        26.6,
+        29.4,
+        27.8,
+        26.4,
+        27.9,
+        30,
+        34.2,
+        30.7,
+        29.1,
+        29.1,
+        31.6,
+        24.9,
+        29.6,
+        30.4,
+        31.9,
+        25,
+        25.7,
+        28,
+        32.3,
+        27.3,
+        27.1,
+        25.4,
+        27.3,
+        27.2,
+        26.6,
+        29.7,
+        26.3,
+        28.9,
+        26.1,
+        29.4,
+        24.9,
+        29.3,
+        24.9,
+        26.3,
+        30.8,
+        27.1,
+        25.6,
+        34.4,
+        25.1,
+        27.9,
+        26.6
+      ],
+      "color": "#38bdf8"
+    },
+    {
+      "name": "Supabase session",
+      "dash": "6 5",
+      "samples": [
+        37.2,
+        34.7,
+        28.5,
+        34.3,
+        31.4,
+        32.7,
+        37.3,
+        29,
+        36,
+        35.7,
+        32.3,
+        31.2,
+        27.6,
+        34.2,
+        28.8,
+        27.5,
+        30.6,
+        28.4,
+        28.3,
+        26.5,
+        27.3,
+        28.9,
+        29.5,
+        34.2,
+        24.3,
+        29.7,
+        29.9,
+        24.6,
+        27.2,
+        26.7,
+        27.9,
+        29.4,
+        33,
+        29.3,
+        33.7,
+        25.3,
+        27.4,
+        29.8,
+        26.1,
+        28.4,
+        31.2,
+        25.8,
+        25.1,
+        27,
+        27,
+        34.1,
+        23.3,
+        24.8,
+        37.8,
+        30.9
+      ],
+      "color": "#38bdf8"
+    }
+  ]
+}
+```
 
 What this means in practice: latency should not be on your decision sheet at all. Region placement matters about 10x more than vendor choice, because every millisecond of client-to-region distance gets added to each of these numbers.
 
@@ -270,4 +509,4 @@ And if you are still torn, the structural differences run deeper than the free t
 
 ## Run it yourself
 
-Every number in this post is the median of committed raw samples, and the harness is about 600 lines of TypeScript: [The-DevOps-Daily/serverless-postgres-benchmarks](https://github.com/The-DevOps-Daily/serverless-postgres-benchmarks). Bring your own API keys, `npm run bench`, and argue with our data instead of someone's vibes. If your numbers from another region or another month disagree, open an issue; the whole point of publishing the harness is that this comparison can stay measured instead of remembered.
+Every number in this post is the median of committed raw samples. The [live dashboard](https://postgres-benchmarks.devops-daily.com/) tracks every benchmark session (the charts there update as new runs land, including a latency-over-time view), and the harness behind it is about 600 lines of TypeScript: [The-DevOps-Daily/serverless-postgres-benchmarks](https://github.com/The-DevOps-Daily/serverless-postgres-benchmarks). Bring your own API keys, `npm run bench`, and argue with our data instead of someone's vibes. If your numbers from another region or another month disagree, open an issue; the whole point of publishing the harness is that this comparison can stay measured instead of remembered.
