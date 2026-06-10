@@ -10,7 +10,7 @@ import type { ChartSpec } from '../lib/post-charts';
 
 const specs = JSON.parse(readFileSync('/tmp/chart-specs.json', 'utf8')) as Record<string, ChartSpec>;
 
-const sections = (['latencySpec', 'createSpec', 'coldSpec'] as const)
+const sections = (['latencySpec', 'cdfSpec', 'createSpec', 'coldSpec'] as const)
   .map((key) => renderToStaticMarkup(<PostChart spec={specs[key]} />))
   .join('\n');
 

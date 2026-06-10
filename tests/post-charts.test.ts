@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseMarkdown } from '@/lib/markdown';
-import { parseChartSpec, formatValue, median } from '@/lib/post-charts';
+import { parseChartSpec, formatValue, median, percentile } from '@/lib/post-charts';
 
 const BAR_SPEC = {
   type: 'bar',
@@ -63,6 +63,29 @@ describe('post chart embeds', () => {
     expect(formatValue(2176, 'ms')).toBe('2.18s');
     expect(formatValue(13558, 'ms')).toBe('13.6s');
     expect(formatValue(42, '%')).toBe('42%');
+  });
+
+
+  it('accepts cdf specs and renders the fence placeholder', () => {
+    const spec = {
+      type: 'cdf',
+      title: 'Latency percentiles',
+      unit: 'ms',
+      series: [
+        { name: 'Neon pooler', samples: [21, 24, 25, 26, 36] },
+        { name: 'Supabase session', dash: '6 5', samples: [24, 28, 29, 30, 37] },
+      ],
+    };
+    expect(parseChartSpec(JSON.stringify(spec))?.type).toBe('cdf');
+    const html = parseMarkdown('```chart\n' + JSON.stringify(spec) + '\n```');
+    expect(html).toContain('post-chart');
+  });
+
+  it('computes percentiles', () => {
+    const xs = [...Array(100).keys()].map((i) => i + 1);
+    expect(percentile(xs, 50)).toBe(50);
+    expect(percentile(xs, 95)).toBe(95);
+    expect(percentile([5], 95)).toBe(5);
   });
 
   it('computes medians', () => {
