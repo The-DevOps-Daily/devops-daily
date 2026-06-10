@@ -1,0 +1,262 @@
+{
+  "id": "databricks-vs-snowflake",
+  "slug": "databricks-vs-snowflake",
+  "title": "Databricks vs Snowflake",
+  "description": "A technical comparison of Databricks and Snowflake in 2026. Covers lakehouse vs warehouse architecture, DBU and credit pricing models, the new Postgres offerings (Lakebase vs Snowflake Postgres), Iceberg support, AI stacks, DevOps tooling, and where each platform actually wins.",
+  "category": "Databases",
+  "tags": ["Databricks", "Snowflake", "Data Engineering", "Lakehouse", "Data Warehouse", "DevOps"],
+  "createdDate": "2026-06-11T08:00:00Z",
+  "updatedDate": "2026-06-11T08:00:00Z",
+  "estimatedReadTime": "14 min read",
+  "introduction": "Databricks vs Snowflake is the defining platform rivalry in data, and in 2026 it is less of a category clash than it has ever been. The old framing (Spark lakehouse for data engineers vs SQL warehouse for analysts) still carries truth, but both companies have spent two years copying each other's homework: Databricks built a serious SQL warehouse and bought its way into OLTP, Snowflake built Python and container runtimes and bought its way into OLTP three weeks later. Each now sells a Postgres service, an AI agent stack, an Iceberg lakehouse, and a story about being the one platform you need.\n\nDatabricks is the lakehouse: open table formats on object storage, a control plane over compute that historically ran in your own cloud account (with a Databricks-managed serverless plane now alongside it), Unity Catalog for governance, Photon for SQL speed, and the strongest ML and data engineering tooling in the market. It closed a Series L in February 2026 at a $134 billion valuation, reports a $5.4 billion revenue run rate growing more than 65% a year, and turned the Neon acquisition into Lakebase, a serverless Postgres that went GA on AWS in February 2026.\n\nSnowflake is the managed data cloud: storage, compute, and services fully operated by the vendor, virtual warehouses that scale per second, the cleanest multi-cloud story in the industry via Snowgrid, and an AI stack (Cortex) that runs Anthropic, OpenAI, and other frontier models next to your data. It is public, reported product revenue growing 34% year over year in May 2026, and answered Lakebase by acquiring Crunchy Data and shipping Snowflake Postgres, GA in February 2026 in the same month as its rival.\n\nThe honest comparison in 2026 is not about which one is faster on a benchmark (the last audited TPC-DS fight was in 2021 and neutral reruns put their SQL engines within single-digit percent of each other). It is about pricing models with very different failure modes, operational effort, which ecosystem your team already lives in, and a handful of genuinely different architectural bets that still matter.",
+  "toolA": {
+    "name": "Databricks",
+    "icon": "Flame",
+    "website": "https://www.databricks.com",
+    "description": "The lakehouse platform: open table formats (Delta, Iceberg) on object storage, notebooks-to-production data engineering, the strongest ML/AI tooling in the market, SQL warehouses with Photon, and now Lakebase serverless Postgres. Compute classically runs in your cloud account, with a growing serverless plane.",
+    "color": "#FF3621",
+    "pros": [
+      "Best-in-class data engineering and ML platform: Spark, Lakeflow pipelines, MLflow, Mosaic AI model serving and vector search are all first-party and mature",
+      "Open by default: Delta and full Apache Iceberg v3 support went GA in May 2026, with external engines able to read and write Unity Catalog tables through standard Iceberg REST APIs",
+      "Lakebase brings real serverless Postgres (built on Neon's engine) with branching and scale-to-zero into the same governance layer as the lakehouse, GA on AWS since February 2026",
+      "Classic compute runs in your own cloud account, which some security teams prefer and which lets committed-use cloud discounts apply to the VM half of the bill",
+      "Unity Catalog has grown into a serious cross-engine governance layer: ABAC, semantic metric views, federation to Glue, Hive, and even Snowflake's catalog",
+      "Free Edition (launched mid-2025) gives a perpetually free, serverless playground with most of the platform, far more generous than a 30-day trial",
+      "AI products at a reported $1.4B annualized revenue: Genie for natural-language analytics is GA, and the agent tooling ships fast"
+    ],
+    "cons": [
+      "The two-bill problem: on classic compute, DBU charges and your cloud provider's VM/storage/network charges arrive separately, and the infrastructure half is often 50-70% of true cost and invisible on Databricks' own pricing page",
+      "Pricing complexity is unmatched: five workload types, multiple tiers, serverless premiums, regional differences, and a Photon rate multiplier make forecasting genuinely hard",
+      "Operating it well still demands platform engineering and Spark literacy; the hybrid of classic plus serverless compute doubles the network and governance decisions",
+      "Serverless SQL in EU regions carries a meaningful premium over US pricing, which surprises European teams",
+      "The Terraform provider works but carries a steady tail of config-drift issues; Asset Bundles are the blessed CI/CD path and still maturing"
+    ]
+  },
+  "toolB": {
+    "name": "Snowflake",
+    "icon": "Snowflake",
+    "website": "https://www.snowflake.com",
+    "description": "The managed data cloud: fully vendor-operated storage and compute, per-second virtual warehouses, the cleanest cross-cloud replication story (Snowgrid), Cortex AI with hosted frontier models, native apps and Streamlit, and now Snowflake Postgres from the Crunchy Data acquisition.",
+    "color": "#29B5E8",
+    "pros": [
+      "Lowest operational effort in the category: no clusters to size beyond T-shirt warehouses, near-zero tuning, and multi-cluster warehouses that absorb BI concurrency automatically",
+      "Pricing is complex but more legible than Databricks': one credit meter for warehouses (per second, on published rates) plus storage at flat per-TB rates",
+      "True multi-cloud parity: the same SQL surface on AWS, Azure, and GCP, with Snowgrid replication and failover across regions and clouds",
+      "Cortex puts Anthropic, OpenAI, Meta, Mistral, and DeepSeek models behind SQL functions, with Cortex Analyst, Search, and Agents all GA; the Anthropic partnership runs deep (Claude powers its CoWork and CoCo agents)",
+      "Snowflake Postgres (GA February 2026): genuine managed PostgreSQL from the Crunchy Data team, with fast mirroring into the analytics engine",
+      "Iceberg support is real and bidirectional: external engines can write to Snowflake-managed Iceberg tables via Polaris (now an Apache top-level project), with governance enforced cross-engine",
+      "Mature commercial ecosystem: data sharing, Marketplace, Native Apps, and Streamlit make it the strongest platform for distributing data products"
+    ],
+    "cons": [
+      "Cost surprises are the canonical complaint: the 60-second resume minimum taxes bursty workloads, oversized warehouses burn silently, serverless features meter in the background, and Cortex token billing is a new surprise vector. An entire vendor ecosystem exists just to optimize Snowflake bills",
+      "Default proprietary table format and SQL dialect create real switching costs; Iceberg mitigates this but historically lagged native tables on some features",
+      "Heavy ML training is years behind Databricks: container runtime and model serving arrived recently and parts remain in preview",
+      "Spark workloads need rewriting to Snowpark (a Spark-compatible connector is narrowing the gap, but migrations are not free)",
+      "The 2025-2026 AI product churn (Intelligence renamed CoWork, Cortex Code renamed CoCo within months, much of Summit 26 still in preview) makes the roadmap hard to plan against"
+    ]
+  },
+  "features": [
+    {
+      "name": "Architecture",
+      "category": "Platform",
+      "toolA": { "value": "Lakehouse: open formats on object storage; classic compute in your cloud account plus a Databricks-managed serverless plane; Unity Catalog over everything", "rating": "good" },
+      "toolB": { "value": "Managed data cloud: vendor-operated storage and compute, per-second virtual warehouses, services layer; data in Snowflake's format by default, Iceberg optional", "rating": "good" }
+    },
+    {
+      "name": "Pricing Model",
+      "category": "Pricing",
+      "toolA": { "value": "DBUs at rates that vary by workload type, tier, cloud, and region; cloud VM/storage billed separately on classic compute (often 50-70% of true cost)", "rating": "neutral" },
+      "toolB": { "value": "Credits per second ($2-$4 per credit on AWS US East depending on edition); ~$23-40/TB-month storage; serverless features and Cortex tokens meter separately", "rating": "neutral" }
+    },
+    {
+      "name": "SQL Analytics Performance",
+      "category": "Performance",
+      "toolA": { "value": "Photon engine, Intelligent Workload Management for concurrency; neutral benchmarks put it within single digits of Snowflake on BI SQL", "rating": "good" },
+      "toolB": { "value": "Gen2 warehouses GA (claimed 2.1x its own Gen1), Adaptive Compute in preview; multi-cluster scaling remains the cleanest concurrency story", "rating": "good" }
+    },
+    {
+      "name": "Data Engineering / ETL",
+      "category": "Workloads",
+      "toolA": { "value": "The home turf: Spark, serverless Lakeflow pipelines, Asset Bundles for CI/CD, best price economics for heavy transformation", "rating": "good" },
+      "toolB": { "value": "Snowpark, dynamic tables, Openflow ingestion, and first-class dbt; capable, but heavy ELT compute generally costs more per unit of work", "rating": "neutral" }
+    },
+    {
+      "name": "Machine Learning & AI Training",
+      "category": "Workloads",
+      "toolA": { "value": "MLflow, Mosaic AI training and serving, serverless GPUs, vector search: the most complete first-party ML stack", "rating": "good" },
+      "toolB": { "value": "Snowflake ML with container runtime and GPU training; improving fast but newer, with model serving parts still in preview", "rating": "neutral" }
+    },
+    {
+      "name": "GenAI / Agents",
+      "category": "AI",
+      "toolA": { "value": "Genie (GA) for natural-language analytics, Genie Code agent, Agent Bricks (component previews), Mosaic AI gateway and serving", "rating": "good" },
+      "toolB": { "value": "Cortex functions, Analyst, Search, and Agents all GA; CoWork personal agent and CoCo coding agent powered by Claude; token-billed", "rating": "good" }
+    },
+    {
+      "name": "OLTP / Postgres",
+      "category": "Platform",
+      "toolA": { "value": "Lakebase: serverless Postgres on Neon's engine with branching and scale-to-zero, GA on AWS Feb 2026, Azure in preview", "rating": "good" },
+      "toolB": { "value": "Snowflake Postgres (Crunchy Data): managed PostgreSQL GA Feb 2026 with ~30s mirroring to analytics; Hybrid Tables for transactional features near analytics", "rating": "good" }
+    },
+    {
+      "name": "Open Table Formats",
+      "category": "Interoperability",
+      "toolA": { "value": "Delta native plus managed Iceberg GA with v3 features; external engines read and write Unity Catalog tables via Iceberg REST", "rating": "good" },
+      "toolB": { "value": "Managed and external Iceberg GA, bidirectional writes via Polaris (Apache TLP), Delta read-only via Delta Direct; native format remains the default", "rating": "good" }
+    },
+    {
+      "name": "Governance & Catalog",
+      "category": "Operations",
+      "toolA": { "value": "Unity Catalog: ABAC, semantic metric views, lineage, federation to Glue/Hive/Snowflake; the most ambitious cross-engine catalog play", "rating": "good" },
+      "toolB": { "value": "Horizon Catalog: discovery, lineage, masking and row policies, data quality; Horizon Context semantic layer and AI security suite in preview", "rating": "good" }
+    },
+    {
+      "name": "Multi-cloud & DR",
+      "category": "Operations",
+      "toolA": { "value": "AWS most complete, Azure close with different rates, GCP lags (no Lakebase, limited fine-tuning); no cross-cloud replication primitive", "rating": "neutral" },
+      "toolB": { "value": "Near-equal features on all three clouds; Snowgrid replication and failover across regions and clouds (Business Critical edition)", "rating": "good" }
+    },
+    {
+      "name": "DevOps & IaC",
+      "category": "Operations",
+      "toolA": { "value": "Official Terraform provider (with a tail of drift issues); Asset Bundles as the blessed CI/CD path; classic compute means real infra to manage", "rating": "neutral" },
+      "toolB": { "value": "Terraform provider GA since 2025 (after a rocky pre-1.0 history); schemachange, native dbt projects, Git integration, CREATE OR ALTER; little infra to manage at all", "rating": "good" }
+    },
+    {
+      "name": "Data Sharing & Marketplace",
+      "category": "Ecosystem",
+      "toolA": { "value": "Delta Sharing (open protocol) including shares consumable by Iceberg clients; marketplace exists but is younger", "rating": "neutral" },
+      "toolB": { "value": "The category leader: secure shares, listings, Native Apps with monetization, and Streamlit apps on the platform", "rating": "good" }
+    },
+    {
+      "name": "Free Access",
+      "category": "Pricing",
+      "toolA": { "value": "Free Edition: perpetually free, serverless, quota-limited but covers most of the platform (replaced Community Edition in January 2026)", "rating": "good" },
+      "toolB": { "value": "30-day trial with $400 of credits, no credit card; no perpetual free tier", "rating": "neutral" }
+    },
+    {
+      "name": "Company Trajectory",
+      "category": "Ecosystem",
+      "toolA": { "value": "Private: $134B valuation (Feb 2026 Series L), $5.4B run rate growing 65%+; acquisitions: Neon, Tecton, Mooncake, BladeBridge, Quotient", "rating": "good" },
+      "toolB": { "value": "Public: product revenue up 34% YoY (May 2026), NRR 126%, $6B AWS commitment; acquisitions: Crunchy Data, Observe, Natoma (intent)", "rating": "good" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "ML and AI platform: feature pipelines, model training, serving, and experiment tracking for a real data science team",
+      "recommendation": "toolA",
+      "explanation": "This is still the clearest call in the comparison. MLflow, Mosaic AI training and serving, serverless GPUs, and vector search are first-party, GA, and battle-tested on Databricks. Snowflake's ML stack improves every quarter but its container runtime and serving story is years younger, and per-credit AI pricing makes heavy experimentation costlier than bring-your-own-compute."
+    },
+    {
+      "scenario": "BI and analytics serving hundreds of concurrent dashboard users with a small platform team",
+      "recommendation": "toolB",
+      "explanation": "Snowflake's multi-cluster warehouses absorb concurrency spikes without tuning, the per-second billing model matches spiky BI traffic, and the platform needs almost no operational attention. Databricks SQL has closed most of the raw speed gap, but matching Snowflake's hands-off concurrency behavior still takes more platform work."
+    },
+    {
+      "scenario": "Heavy ELT: terabytes of daily transformation jobs where compute economics dominate the bill",
+      "recommendation": "toolA",
+      "explanation": "Jobs Compute on classic infrastructure is the cheapest serious transformation compute in either ecosystem, especially with spot instances and committed-use discounts applying to the VM half of the bill. The same workload expressed as Snowflake warehouse hours generally costs more, and the gap widens with scale."
+    },
+    {
+      "scenario": "SQL-first analytics organization migrating off a legacy warehouse (Teradata, Redshift, on-prem)",
+      "recommendation": "toolB",
+      "explanation": "The migration path is shorter: ANSI-ish SQL, mature migration tooling, dbt as a first-class citizen, and no new concepts beyond warehouses and credits. Databricks' BladeBridge-based Lakebridge tooling is improving its own story here, but a SQL-only team adopts Snowflake with less retraining."
+    },
+    {
+      "scenario": "Agentic applications that need OLTP plus analytics plus AI on one governed platform",
+      "recommendation": "toolA",
+      "explanation": "Both vendors now sell this exact story, three weeks apart in GA dates. Databricks gets the nod today because Lakebase inherits Neon's branching and scale-to-zero (genuinely serverless Postgres, good for agent-driven ephemeral databases) and Mosaic AI serving is more mature. If your agents are mostly SQL-and-retrieval over governed data, Snowflake's Cortex Agents are GA and excellent; rerun this comparison yearly."
+    },
+    {
+      "scenario": "Open lakehouse strategy: Iceberg tables that Spark, Trino, DuckDB, and multiple vendors can read and write",
+      "recommendation": "toolA",
+      "explanation": "Both platforms now support managed Iceberg with external writes, which would have been unthinkable in 2023. Databricks' default posture is open (data in your buckets, two formats, REST catalog APIs), while Snowflake's default remains its proprietary format with Iceberg as the opt-in. If openness is the strategy rather than a feature, the defaults matter."
+    },
+    {
+      "scenario": "Regulated enterprise needing cross-cloud disaster recovery and strict residency",
+      "recommendation": "toolB",
+      "explanation": "Snowgrid replication and failover across regions and clouds is a mature, single-vendor primitive (on Business Critical), and feature parity across AWS, Azure, and GCP means the DR region is not a second-class citizen. Databricks has no equivalent cross-cloud replication primitive and its GCP feature set lags."
+    },
+    {
+      "scenario": "Monetizing data: selling datasets or data applications to customers and partners",
+      "recommendation": "toolB",
+      "explanation": "Marketplace listings, secure shares with reader accounts, Native Apps with built-in monetization, and Streamlit distribution make Snowflake the strongest commercial data-product platform. Delta Sharing is a cleaner open protocol, but the commercial machinery around it is younger."
+    },
+    {
+      "scenario": "Large existing Spark codebase moving to a managed platform",
+      "recommendation": "toolA",
+      "explanation": "Spark jobs run on Databricks unchanged; on Snowflake they get rewritten to Snowpark or bridged through the Spark-compatible connector, which narrows but does not eliminate the porting work. The risk calculus rarely favors a rewrite when a lift-and-shift is available."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Which one is actually faster?",
+      "answer": "For warm-cache BI SQL, treat them as equivalent: the last neutral benchmark of note (Fivetran/Brooklyn Data) measured them within about 6% of each other, and the famous 2021 TPC-DS fight ended with both vendors discrediting each other's methodology and an industry consensus to ignore vendor benchmarks. Where performance genuinely differs is workload shape: Databricks tends to win heavy transformation and ML compute on economics, Snowflake tends to win high-concurrency dashboard serving on simplicity. Both vendors publish self-referential speedup claims (Databricks' 2025 'up to 40% faster' workload numbers, Snowflake's Gen2 '2.1x faster than Gen1'); read those as marketing about their own past, not measurements of each other."
+    },
+    {
+      "question": "Which one ends up cheaper?",
+      "answer": "The unsatisfying truth is that both are famous for cost surprises, just through different mechanisms. Databricks bills DBUs while your cloud bills the VMs separately, and that second bill is often 50-70% of true cost; forecasting requires modeling five workload types, tiers, and a Photon multiplier. Snowflake's bill is more legible (credits per second plus storage) but leaks through the 60-second resume minimum, oversized warehouses, background serverless meters, and now Cortex token billing. Rule of thumb from teams running both: transformation-heavy shops usually find Databricks cheaper per unit of work; BI-heavy shops with spiky usage usually find Snowflake easier to keep efficient. Either way, budget for FinOps attention; an entire vendor ecosystem exists for both."
+    },
+    {
+      "question": "What is the difference between Lakebase and Snowflake Postgres?",
+      "answer": "Both are managed PostgreSQL offerings acquired into the platforms in 2025 and GA within weeks of each other in February 2026, which tells you how seriously both take the agentic-application market. Lakebase is built on Neon's serverless engine, so it inherits compute/storage separation, copy-on-write branching, and scale-to-zero, and writes land in lakehouse-queryable storage. Snowflake Postgres comes from Crunchy Data, the team behind some of the most respected Postgres tooling, and emphasizes production-grade Postgres with fast mirroring (around 30 seconds) into the analytics engine. Lakebase is the more architecturally novel offering; Snowflake Postgres is the more conventionally solid one."
+    },
+    {
+      "question": "Do I still have to choose between Delta Lake and Iceberg?",
+      "answer": "Mostly no, and that is the biggest change since 2024. Databricks shipped full managed Iceberg with v3 features in May 2026, with external engines able to read and write through standard REST APIs, and Delta and Iceberg metadata are converging at the spec level. Snowflake supports managed and externally cataloged Iceberg with bidirectional writes through Polaris, now an Apache top-level project. The format war is effectively over; the catalog war (Unity Catalog vs Horizon plus Polaris) is where lock-in now lives, because whoever holds the catalog holds governance, lineage, and access control."
+    },
+    {
+      "question": "Which is better for a DevOps or platform engineering team?",
+      "answer": "Snowflake demands less of you: no clusters, near-equal behavior across clouds, a GA Terraform provider, native Git integration, dbt as a first-class citizen, and migration primitives like CREATE OR ALTER. Databricks gives you more control and more surface: classic compute in your own account, Asset Bundles for CI/CD (solid, still maturing), a Terraform provider with a steady tail of drift issues, and a hybrid serverless model that doubles network and governance decisions. Teams that want infrastructure as cattle pick Snowflake; teams that want infrastructure as their own pick Databricks."
+    },
+    {
+      "question": "How do their AI stacks compare?",
+      "answer": "Philosophically similar, organizationally different. Snowflake's Cortex is SQL-first: GA functions for LLM calls, text-to-SQL (Analyst), retrieval (Search), and agents, with Claude as the marquee model and token-based billing; its CoWork and CoCo agents target business users and developers respectively. Databricks' stack is builder-first: Genie for natural-language BI is GA, Mosaic AI covers serving, vector search, gateways, and fine-tuning on serverless GPUs, and Agent Bricks aims at production agent engineering. If your AI ambitions are embedded analytics and assistants over governed data, Cortex gets you there with less engineering. If you are training, fine-tuning, or running custom agents at scale, Databricks has more of the machinery."
+    },
+    {
+      "question": "Is the 'Databricks is for engineers, Snowflake is for analysts' framing still true?",
+      "answer": "As a default posture, yes; as a hard boundary, no. Databricks SQL is a real warehouse now and Genie serves business users directly. Snowpark, container runtime, and Snowflake's developer tooling serve engineers properly. But the centers of gravity have not moved: Databricks assumes you have data engineers and rewards them with control and economics; Snowflake assumes you want the platform to disappear and charges a premium for that disappearance. Pick based on which assumption matches your team."
+    }
+  ],
+  "decisionMatrix": [
+    {
+      "criteria": "Your workloads are dominated by ML, AI training, or heavy Spark transformation",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Your workloads are dominated by SQL analytics and concurrent BI dashboards",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You want compute in your own cloud account with your own committed-use discounts",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You want the smallest possible platform team and near-zero tuning",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "Open table formats and multi-engine access are strategy, not a checkbox",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Cross-cloud replication, failover, and strict multi-cloud parity are requirements",
+      "recommendation": "toolB"
+    },
+    {
+      "criteria": "You are building agent-driven apps that create and destroy databases programmatically",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "You sell or share data products with customers and partners",
+      "recommendation": "toolB"
+    }
+  ],
+  "verdict": {
+    "summary": "The platforms are converging on the same vision (one governed platform for analytics, AI, and now OLTP) from opposite directions, and in 2026 both execute well enough that the wrong choice is rarely fatal. The durable differences are posture, not features: Databricks is open by default, engineer-centric, cheaper for heavy compute, and demands platform skill; Snowflake is managed by default, analyst-centric, the lowest-effort serious platform in data, and charges for that comfort through credits that reward discipline. Benchmarks will not make this decision for you; your team's shape will.",
+    "toolAScore": 4.3,
+    "toolBScore": 4.2,
+    "recommendation": "Choose Databricks when data engineering and ML are the core of the work: Spark estates, large-scale transformation, model training and serving, open Iceberg strategies, or agentic apps that want Lakebase's serverless Postgres branching. Choose Snowflake when SQL analytics is the center of gravity: concurrent BI at scale, SQL-first teams without platform engineers, cross-cloud DR requirements, data sharing and monetization, or embedded AI over governed data via Cortex. If you genuinely sit in the middle, the tiebreakers are who operates it (platform team = Databricks, lean team = Snowflake) and where the bill's failure mode hurts less."
+  },
+  "relatedTags": ["Databricks", "Snowflake", "Data Engineering", "Lakehouse", "Postgres", "Iceberg"]
+}
