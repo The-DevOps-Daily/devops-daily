@@ -598,7 +598,7 @@ export default function RoadmapPage() {
               </div>
 
               {roadmapStages.map((stage, index) => (
-                <div key={stage.id} id={`stage-${stage.id}`} className="relative mb-24 scroll-mt-28">
+                <div key={stage.id} id={`stage-${stage.id}`} className="relative mb-16 scroll-mt-28">
                   {/* Timeline Icon */}
                   <div className="absolute z-10 transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-8">
                     <div

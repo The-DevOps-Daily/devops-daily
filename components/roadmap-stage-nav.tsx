@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { Map, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 
@@ -11,17 +12,19 @@ interface StageNavItem {
 }
 
 /**
- * Sticky stage navigator for the roadmap: a vertical rail on large screens,
- * a horizontal scroller pinned under the header on smaller ones. Highlights
- * the stage currently in view and scrolls smoothly on click.
+ * Sticky stage navigator for the roadmap. On large screens it is a slim
+ * icon rail (labels slide out on hover so content is never covered) with a
+ * hide toggle and a floating reopen button. On smaller screens it is a
+ * horizontal scroller pinned under the header, in normal flow so it never
+ * overlaps content. Highlights the stage in view; click scrolls.
  */
 export function RoadmapStageNav({ stages }: { stages: StageNavItem[] }) {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        // Pick the visible stage closest to the top of the viewport
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
@@ -42,48 +45,66 @@ export function RoadmapStageNav({ stages }: { stages: StageNavItem[] }) {
 
   return (
     <>
-      {/* Vertical rail, large screens */}
-      <nav
-        aria-label="Roadmap stages"
-        className="hidden xl:flex fixed right-6 top-1/2 -translate-y-1/2 z-30 flex-col gap-1"
-      >
-        {stages.map((stage) => {
-          const active = activeId === stage.id;
-          return (
-            <button
-              key={stage.id}
-              onClick={() => scrollTo(stage.id)}
-              aria-label={`Jump to ${stage.title}`}
-              aria-current={active ? 'true' : undefined}
-              className={cn(
-                'group flex items-center gap-2 rounded-full py-1.5 pl-1.5 pr-3 text-left transition-colors',
-                active ? 'bg-primary/10' : 'hover:bg-muted/60'
-              )}
-            >
-              <span
-                className={cn(
-                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors',
-                  active
-                    ? 'border-primary/50 bg-primary text-primary-foreground'
-                    : 'border-border bg-background text-muted-foreground group-hover:text-foreground'
-                )}
+      {/* Slim icon rail, large screens */}
+      {!hidden && (
+        <nav
+          aria-label="Roadmap stages"
+          className="hidden xl:flex fixed right-4 top-1/2 -translate-y-1/2 z-30 flex-col items-end gap-1"
+        >
+          <button
+            onClick={() => setHidden(true)}
+            aria-label="Hide stage navigation"
+            className="mb-1 flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-background/90 text-muted-foreground transition-colors hover:text-foreground hover:bg-muted"
+          >
+            <X className="h-3 w-3" />
+          </button>
+          {stages.map((stage) => {
+            const active = activeId === stage.id;
+            return (
+              <button
+                key={stage.id}
+                onClick={() => scrollTo(stage.id)}
+                aria-label={`Jump to ${stage.title}`}
+                aria-current={active ? 'true' : undefined}
+                className="group flex items-center justify-end gap-0"
               >
-                <stage.icon className="h-3.5 w-3.5" />
-              </span>
-              <span
-                className={cn(
-                  'max-w-[9rem] truncate text-xs font-medium transition-colors',
-                  active ? 'text-foreground' : 'text-muted-foreground group-hover:text-foreground'
-                )}
-              >
-                {stage.title}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
+                <span
+                  className={cn(
+                    'pointer-events-none max-w-0 overflow-hidden whitespace-nowrap rounded-l-full border border-r-0 text-xs font-medium opacity-0 transition-all duration-200',
+                    'group-hover:max-w-[11rem] group-hover:px-3 group-hover:py-1.5 group-hover:opacity-100',
+                    'border-border/60 bg-background/95 text-foreground shadow-sm'
+                  )}
+                >
+                  {stage.title}
+                </span>
+                <span
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border shadow-sm transition-colors',
+                    active
+                      ? 'border-primary/50 bg-primary text-primary-foreground'
+                      : 'border-border/60 bg-background/90 text-muted-foreground group-hover:text-foreground group-hover:bg-muted'
+                  )}
+                >
+                  <stage.icon className="h-3.5 w-3.5" />
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
-      {/* Horizontal scroller, small and medium screens */}
+      {/* Floating reopen button when hidden */}
+      {hidden && (
+        <button
+          onClick={() => setHidden(false)}
+          aria-label="Show stage navigation"
+          className="hidden xl:flex fixed right-4 bottom-6 z-30 h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/95 text-muted-foreground shadow-md transition-colors hover:text-foreground hover:bg-muted"
+        >
+          <Map className="h-4 w-4" />
+        </button>
+      )}
+
+      {/* Horizontal scroller, small and medium screens (in flow, never overlaps) */}
       <nav
         aria-label="Roadmap stages"
         className="xl:hidden sticky top-14 z-30 -mx-4 border-y border-border/50 bg-background/90 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/70"

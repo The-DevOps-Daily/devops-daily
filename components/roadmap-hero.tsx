@@ -40,18 +40,6 @@ export function RoadmapHero() {
     },
   };
 
-  const pulseVariants = {
-   animate: {
-     scale: [1, 1.05, 1],
-     opacity: [0.5, 0.8, 0.5],
-     transition: {
-       duration: 2,
-       repeat: Infinity,
-       ease: easeInOut,
-     },
-   },
- };
-
   const orbVariants = {
     animate: (custom: number) => ({
       x: [0, custom * 30, 0],
@@ -220,38 +208,8 @@ export function RoadmapHero() {
             className="flex justify-center mb-8"
          >
            <div className="relative">
-             {/* Multiple pulse rings */}
-             <motion.div
-               animate={{
-                 scale: [1, 1.5, 2],
-                 opacity: [0.5, 0.2, 0],
-               }}
-               transition={{
-                 duration: 2,
-                 repeat: Infinity,
-                 ease: 'easeOut',
-               }}
-               className="absolute inset-0 bg-primary/40 rounded-full"
-             />
-             <motion.div
-               animate={{
-                 scale: [1, 1.5, 2],
-                 opacity: [0.5, 0.2, 0],
-               }}
-               transition={{
-                 duration: 2,
-                 repeat: Infinity,
-                 ease: 'easeOut',
-                 delay: 0.5,
-               }}
-               className="absolute inset-0 bg-primary/30 rounded-full"
-             />
-             {/* Pulse background effect */}
-             <motion.div
-               variants={pulseVariants}
-               animate="animate"
-               className="absolute inset-0 bg-primary/40 rounded-full blur-xl"
-             />
+             {/* Soft static glow */}
+             <div className="absolute inset-0 bg-primary/25 rounded-full blur-xl" />
              <motion.div
                animate={{
                  rotate: [0, 5, -5, 0],
