@@ -59,6 +59,38 @@ export const metadata: Metadata = {
   ],
 };
 
+const stagesJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'DevOps Learning Roadmap',
+  description:
+    'Staged learning path for DevOps engineers, from fundamentals to advanced platform skills.',
+  itemListElement: [
+    'Fundamentals',
+    'Infrastructure as Code',
+    'Containerization & Orchestration',
+    'CI/CD Pipelines',
+    'Cloud Platforms',
+    'Monitoring & Observability',
+    'Security & Compliance',
+    'Database Management',
+    'Continuous Learning',
+  ].map((name, i) => ({
+    '@type': 'ListItem',
+    position: i + 1,
+    name,
+    url: 'https://devops-daily.com/roadmap',
+  })),
+};
+
 export default function RoadmapLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(stagesJsonLd) }}
+      />
+      {children}
+    </>
+  );
 }
