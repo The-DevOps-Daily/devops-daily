@@ -509,6 +509,13 @@ One forward-looking note: in June 2026 Neon announced S3-compatible object stora
 
 And if you are still torn, the structural differences run deeper than the free tiers: we maintain a full [Neon vs Supabase comparison](https://devops-daily.com/comparisons/neon-vs-supabase) covering architecture, pricing models, PITR, and the paid features side by side.
 
+## Where the series goes next
+
+This post is part one. The free tiers are where you start, but the interesting differences show up when money and production traffic enter the picture, so we kept going:
+
+- [Part two: operational benchmarks](https://devops-daily.com/posts/neon-vs-supabase-operational-benchmarks) times the operations that page you: compute resize (and its downtime), branching at scale, read replicas, point-in-time restore, and 200-connection stampedes, on the paid tiers.
+- [Part three: scaling costs](https://devops-daily.com/posts/neon-vs-supabase-scaling-costs) prices the same application through five growth stages on both platforms, with an open source cost model you can rerun on your own workload.
+
 ## Run it yourself
 
 Every number in this post is the median of committed raw samples. The [live dashboard](https://postgres-benchmarks.devops-daily.com/) tracks every benchmark session (the charts there update as new runs land, including a latency-over-time view), and the harness behind it is about 600 lines of TypeScript: [The-DevOps-Daily/serverless-postgres-benchmarks](https://github.com/The-DevOps-Daily/serverless-postgres-benchmarks). Bring your own API keys, `npm run bench`, and argue with our data instead of someone's vibes.
