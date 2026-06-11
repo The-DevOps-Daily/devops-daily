@@ -181,6 +181,34 @@ Supabase: 181 seconds median, remarkably consistent (our session-one runs landed
 
 Neither approach is wrong. Clones isolate replicas from primary storage performance; shared storage makes replicas instant and cheap. But if your scaling playbook says "add a replica when read latency climbs", one platform executes that play in seconds and the other in minutes, and the minutes version also costs a compute-size bump if you started small.
 
+### Does any of this scale with database size?
+
+The attach-vs-clone story makes a testable prediction: copy-on-write operations should stay flat as the database grows, physical clones should not. So we reran branches and replicas at 100k, 1M, and 5M seeded rows, a 50x span.
+
+```chart
+{
+  "type": "line",
+  "title": "Read replica creation as the database grows",
+  "unit": "s",
+  "caption": "Median time to a replica answering queries at 100k, 1M, and 5M seeded rows.",
+  "x": ["100k rows", "1M rows", "5M rows"],
+  "series": [
+    {
+      "name": "Neon",
+      "color": "#10b981",
+      "data": [7.9, 8.0, 8.2]
+    },
+    {
+      "name": "Supabase",
+      "color": "#38bdf8",
+      "data": [181.0, 181.8, 202.7]
+    }
+  ]
+}
+```
+
+The prediction holds, with one nuance. Neon branches are flat to the decimal (1.73s, 1.67s, 1.67s) and so are its replicas (7.9s, 8.0s, 8.2s): there is nothing that copies data, so data size cannot matter. Supabase branches are also flat at 6.4s, but for the less flattering reason that they only copy schema. Supabase replicas are the one operation where size shows: the median grew 12% by 5M rows and p95 stretched from 182s to 234s. At a few hundred megabytes, provisioning still dominates the clone; at real production sizes, the copy takes over and that line keeps climbing. Our benchmark budget stops at 5M rows, but the direction is unambiguous, and it compounds the playbook problem above: the moment you most need a replica is the moment your database is biggest.
+
 ## The connection stampede: a tie worth publishing
 
 Serverless platforms fail in bursts: two hundred function invocations wake at once and all of them want a connection. We simulated exactly that through each platform's transaction pooler: N simultaneous cold connections, each performing connect, TLS, auth, one query, disconnect.
