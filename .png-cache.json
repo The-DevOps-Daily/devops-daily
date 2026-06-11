@@ -739,5 +739,12 @@
   "public/images/posts/shai-hulud-hades-pypi-wave-june-2026.svg": "56a9c67f2fef4858",
   "public/images/posts/is-valkey-ready-to-replace-redis-2026.svg": "12fb201ebf9f9225",
   "public/images/posts/designing-rate-limiting-for-apis.svg": "2b28cd4e12125412",
-  "public/images/news/2026-week-24.svg": "8cbf7519a750833b"
+  "public/images/news/2026-week-24.svg": "8cbf7519a750833b",
+  "public/images/flashcards/ebpf-network-observability-og.svg": "699a2dd966b2bc86",
+  "public/images/interview-questions/otel-traces-spans-basics-og.svg": "e3c6ddbf353d4d3b",
+  "public/images/interview-questions/otel-context-propagation-og.svg": "f13e4fa6f7abd423",
+  "public/images/interview-questions/otel-sampling-strategies-og.svg": "217f98ad1931556f",
+  "public/images/interview-questions/otel-collector-deployment-og.svg": "b1c0362cc2781cd6",
+  "public/images/quizzes/multi-region-active-active-aws-quiz-og.svg": "cc3d584e0db6de56",
+  "public/images/interview-questions/otel-auto-vs-manual-instrumentation-og.svg": "59cb6ebdfb8ea8ec"
 }

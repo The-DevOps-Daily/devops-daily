@@ -1,0 +1,45 @@
+{
+  "id": "otel-traces-spans-basics",
+  "slug": "otel-traces-spans-basics",
+  "title": "Traces and Spans Explained",
+  "question": "A request hits your API gateway, which calls two backend services, and one of those queries a database. Walk me through what that looks like as a distributed trace. What is a span, and how do spans connect to each other?",
+  "answer": "The whole request is one trace, identified by a single trace ID that follows the request everywhere it goes. Each unit of work along the way is a span: one span for the gateway handling the request, one for each backend call, and one for the database query. Every span records a name, start and end timestamps, a status, and key-value attributes like http.method or db.statement. Spans link together through parent-child relationships: the gateway span is the root, the two backend spans are its children, and the database span is a child of the backend that made the query. The child knows its parent because the parent's span ID travels with the request. When a backend visualizes this, you get a waterfall view showing exactly where the 800ms went: maybe 50ms in the gateway, 100ms in service A, and 650ms stuck in that database query. That is the core value: instead of grepping logs across four services and guessing, you see the full request path and its timing in one place.",
+  "explanation": "This is the entry-level question for any observability conversation. You are checking whether the candidate has the mental model right: trace as the whole journey, span as one hop, parent-child links forming a tree. Strong candidates explain it through a concrete scenario and mention what spans actually contain (attributes, status, timestamps). Weak candidates recite 'tracing tracks requests' without being able to describe how two spans end up connected. If they bring up the waterfall view and what it tells you about latency, that is a good sign they have used tracing, not just read about it.",
+  "category": "Observability",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "opentelemetry",
+    "distributed-tracing",
+    "observability",
+    "spans"
+  ],
+  "codeExamples": [
+    {
+      "language": "python",
+      "label": "Creating a parent and child span manually",
+      "code": "from opentelemetry import trace\n\ntracer = trace.get_tracer(\"checkout-service\")\n\nwith tracer.start_as_current_span(\"process_order\") as parent:\n    parent.set_attribute(\"order.id\", order_id)\n    parent.set_attribute(\"order.items\", len(items))\n\n    # Child span is linked automatically via the active context\n    with tracer.start_as_current_span(\"charge_card\") as child:\n        child.set_attribute(\"payment.provider\", \"stripe\")\n        result = charge(order_id)\n        if not result.ok:\n            child.set_status(trace.StatusCode.ERROR, result.error)"
+    },
+    {
+      "language": "json",
+      "label": "Simplified span as exported via OTLP",
+      "code": "{\n  \"traceId\": \"4bf92f3577b34da6a3ce929d0e0e4736\",\n  \"spanId\": \"00f067aa0ba902b7\",\n  \"parentSpanId\": \"b7ad6b7169203331\",\n  \"name\": \"SELECT orders\",\n  \"kind\": \"SPAN_KIND_CLIENT\",\n  \"startTimeUnixNano\": \"1717500000000000000\",\n  \"endTimeUnixNano\": \"1717500000650000000\",\n  \"attributes\": {\n    \"db.system\": \"postgresql\",\n    \"db.statement\": \"SELECT * FROM orders WHERE id = $1\"\n  },\n  \"status\": { \"code\": \"STATUS_CODE_OK\" }\n}"
+    }
+  ],
+  "followUpQuestions": [
+    "How does the trace ID get from service A to service B in the first place?",
+    "What is the difference between a span attribute and a span event, and when would you use each?",
+    "If a service publishes to a queue and a consumer picks it up an hour later, should that be one trace or two?"
+  ],
+  "commonMistakes": [
+    "Confusing traces with logs, describing tracing as 'centralized logging with request IDs' and missing the timing and hierarchy aspects",
+    "Saying spans connect through the trace ID alone, when the parent-child link comes from the parent span ID",
+    "Not being able to name a single thing a span contains beyond 'the request'"
+  ],
+  "relatedTopics": [
+    "observability",
+    "log-aggregation",
+    "context-propagation",
+    "service-mesh"
+  ]
+}

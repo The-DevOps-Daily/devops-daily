@@ -1,0 +1,45 @@
+{
+  "id": "otel-collector-deployment",
+  "slug": "otel-collector-deployment",
+  "title": "Why Run an OpenTelemetry Collector",
+  "question": "Why run an OpenTelemetry Collector at all instead of having every application export directly to your tracing backend? And how would you deploy it in Kubernetes?",
+  "answer": "Direct export couples every application to your backend. Change vendors, rotate an API key, or add span redaction, and you are redeploying 40 services. With a Collector in the middle, apps export plain OTLP to a local endpoint and everything else becomes pipeline config: receivers take data in, processors transform it, exporters fan it out. The processors are where the real value is. The batch processor cuts export overhead, memory_limiter stops the Collector from OOMing under a span flood, attributes and redaction processors strip PII before it leaves your cluster, and tail sampling can only happen here because no single app sees the whole trace. The Collector also buffers and retries when the backend is down, so a backend outage does not mean dropped telemetry or back-pressure into your apps. In Kubernetes the standard layout is two tiers. A DaemonSet agent on every node gives apps a node-local endpoint, adds k8s metadata like pod and namespace, and does cheap work like batching. A central gateway Deployment behind a Service handles the expensive, stateful work: tail sampling, filtering, authentication to external backends, and being the single egress point your firewall rules allow. Small clusters can skip the gateway and run just the DaemonSet pointed straight at the backend. You add the gateway when you need tail sampling or want one place to control egress and credentials.",
+  "explanation": "This separates people who have operated telemetry pipelines from people who have only instrumented an app. The core insight you want to hear is decoupling: telemetry policy lives in pipeline config, not application code. Then probe the deployment topology. Strong candidates know the agent-versus-gateway split and, more importantly, why the split exists: tail sampling and credential management belong in a central tier, host metadata enrichment belongs on the node. If they mention memory_limiter or what happens when the backend goes down, they have run this in production.",
+  "category": "Observability",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "opentelemetry",
+    "otel-collector",
+    "distributed-tracing",
+    "kubernetes"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Collector pipeline: receive OTLP, protect memory, batch, fan out",
+      "code": "receivers:\n  otlp:\n    protocols:\n      grpc:\n        endpoint: 0.0.0.0:4317\n      http:\n        endpoint: 0.0.0.0:4318\n\nprocessors:\n  memory_limiter:\n    check_interval: 1s\n    limit_percentage: 80\n    spike_limit_percentage: 25\n  k8sattributes: {}\n  attributes:\n    actions:\n      - key: http.request.header.authorization\n        action: delete\n  batch:\n    send_batch_size: 8192\n    timeout: 5s\n\nexporters:\n  otlp/tempo:\n    endpoint: tempo.observability:4317\n    tls:\n      insecure: true\n  otlp/vendor:\n    endpoint: ingest.vendor.com:443\n    headers:\n      api-key: ${env:VENDOR_API_KEY}\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, k8sattributes, attributes, batch]\n      exporters: [otlp/tempo, otlp/vendor]"
+    },
+    {
+      "language": "yaml",
+      "label": "Two-tier deployment with the OpenTelemetry Operator",
+      "code": "# Node agent: one per node, apps export to their local node\napiVersion: opentelemetry.io/v1beta1\nkind: OpenTelemetryCollector\nmetadata:\n  name: node-agent\nspec:\n  mode: daemonset\n  config:\n    exporters:\n      otlp:\n        endpoint: otel-gateway.observability:4317\n---\n# Gateway: central tier for tail sampling and backend egress\napiVersion: opentelemetry.io/v1beta1\nkind: OpenTelemetryCollector\nmetadata:\n  name: otel-gateway\nspec:\n  mode: deployment\n  replicas: 3"
+    }
+  ],
+  "followUpQuestions": [
+    "The Collector itself becomes a single point of failure for your telemetry. How do you make the pipeline survive a Collector crash or a bad config rollout?",
+    "How would you monitor the Collector itself, and which signals tell you it is dropping spans?",
+    "When would you choose a sidecar Collector per pod over a node DaemonSet?"
+  ],
+  "commonMistakes": [
+    "Describing the Collector as just a proxy and missing the processing layer, which is the actual reason to run one",
+    "Running a single replica gateway with no memory_limiter, so one chatty service OOMs the whole telemetry pipeline",
+    "Putting tail sampling on the DaemonSet agents, where no node ever sees all spans of a trace, so sampling decisions are made on partial data"
+  ],
+  "relatedTopics": [
+    "kubernetes",
+    "observability",
+    "tail-sampling",
+    "telemetry-pipelines"
+  ]
+}

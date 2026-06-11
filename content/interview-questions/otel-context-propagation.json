@@ -1,0 +1,50 @@
+{
+  "id": "otel-context-propagation",
+  "slug": "otel-context-propagation",
+  "title": "Context Propagation Across Services",
+  "question": "Service A calls service B over HTTP. How does B know the request belongs to an existing trace? What actually travels on the wire?",
+  "answer": "A single HTTP header called traceparent, defined by the W3C Trace Context spec. It looks like 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01: version, the 128-bit trace ID, the parent span ID, and flags such as the sampled bit. On the sending side, the OpenTelemetry SDK's propagator injects this header into the outgoing request. On the receiving side, B's instrumentation extracts it, so the server span B creates uses the same trace ID and points at A's span as its parent. There is also an optional baggage header for passing your own key-value pairs across services, like a tenant ID. The places this breaks are the interesting part: async work that spawns a thread or goroutine without carrying the context along, message queues where you have to inject the context into message headers yourself, and proxies or legacy services that strip or drop unknown headers. Mixed environments are another trap: older systems use Zipkin's B3 headers, so during a migration you run a composite propagator that reads and writes both formats. The symptom of broken propagation is always the same: traces that cut off at a service boundary, with the downstream work showing up as orphaned root spans.",
+  "explanation": "Propagation is where tracing theory meets reality. Anyone can say 'the trace ID flows between services', but candidates who have actually run tracing in production know the traceparent header by name and have debugged broken traces caused by a proxy stripping headers or a queue consumer starting fresh traces. Listen for the failure modes: async boundaries, message queues, B3 versus W3C. A candidate who only describes the happy path has probably never had to fix a trace that went dark halfway through.",
+  "category": "Observability",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "opentelemetry",
+    "distributed-tracing",
+    "context-propagation",
+    "w3c-trace-context"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "What the traceparent header looks like on the wire",
+      "code": "GET /api/orders/42 HTTP/1.1\nHost: service-b.internal\ntraceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\nbaggage: tenant.id=acme,deployment.canary=true\n\n# Format: version-traceId-parentSpanId-flags\n# The last byte (01) means this trace was sampled upstream"
+    },
+    {
+      "language": "python",
+      "label": "Manually injecting context into a queue message",
+      "code": "from opentelemetry.propagate import inject, extract\nfrom opentelemetry import trace\n\n# Producer: HTTP auto-instrumentation will not help here,\n# you have to carry the context inside the message yourself\nheaders = {}\ninject(headers)\nqueue.publish(body=payload, headers=headers)\n\n# Consumer: restore the context so the span joins the trace\nctx = extract(message.headers)\ntracer = trace.get_tracer(\"order-consumer\")\nwith tracer.start_as_current_span(\"process_message\", context=ctx):\n    handle(message)"
+    },
+    {
+      "language": "python",
+      "label": "Composite propagator for a B3 to W3C migration",
+      "code": "from opentelemetry import propagate\nfrom opentelemetry.propagators.composite import CompositePropagator\nfrom opentelemetry.propagators.b3 import B3MultiFormat\nfrom opentelemetry.trace.propagation.tracecontext import (\n    TraceContextTextMapPropagator,\n)\n\n# Accept and emit both header formats while old Zipkin-era\n# services are still in the call path\npropagate.set_global_textmap(\n    CompositePropagator([TraceContextTextMapPropagator(), B3MultiFormat()])\n)"
+    }
+  ],
+  "followUpQuestions": [
+    "A trace consistently ends at one specific service and the downstream spans show up as separate root traces. How do you debug that?",
+    "How would you propagate context through Kafka, where there is no HTTP request between producer and consumer?",
+    "What is baggage useful for, and what is the risk of putting too much in it?"
+  ],
+  "commonMistakes": [
+    "Believing the backend stitches traces together by timestamps or IP addresses instead of an explicit header carried with the request",
+    "Forgetting that queues, cron handoffs, and background jobs need manual context injection because there is no HTTP request to carry the header",
+    "Putting sensitive or bulky data in baggage without realizing it is forwarded to every downstream service on every call"
+  ],
+  "relatedTopics": [
+    "distributed-tracing",
+    "message-queues",
+    "service-mesh",
+    "api-gateways"
+  ]
+}
