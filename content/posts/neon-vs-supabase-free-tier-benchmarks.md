@@ -505,6 +505,8 @@ The latency tie makes this refreshingly simple: pick on shape, not speed.
 
 **Pick Supabase's free tier when you are shipping an app, not a database.** The bundled auth, storage, realtime, and auto-generated APIs replace three or four other free tiers you would otherwise stitch together, and 50K monthly active users of free auth is genuinely hard to beat. Just put a calendar reminder somewhere if the project might go quiet for a week.
 
+One forward-looking note: in June 2026 Neon announced S3-compatible object storage that branches with the database, serverless functions, and an AI gateway, all marked coming soon. If those ship, the bundled-stack gap narrows; we will rerun this comparison when they do.
+
 And if you are still torn, the structural differences run deeper than the free tiers: we maintain a full [Neon vs Supabase comparison](https://devops-daily.com/comparisons/neon-vs-supabase) covering architecture, pricing models, PITR, and the paid features side by side.
 
 ## Run it yourself
