@@ -155,7 +155,7 @@ export function RoadmapHero() {
               variant="secondary"
               className="px-4 py-2 text-sm font-medium bg-primary/10 border-primary/20 text-primary"
             >
-              <Sparkles className="inline-block w-4 h-4 mr-2 text-yellow-500 animate-pulse" />
+              <Sparkles className="inline-block w-4 h-4 mr-2 text-amber-500" />
               Your Complete DevOps Learning Path
             </Badge>
           </motion.div>

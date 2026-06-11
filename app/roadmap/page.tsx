@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { ReportIssue } from '@/components/report-issue';
 import { RoadmapHero } from '@/components/roadmap-hero';
+import { RoadmapStageNav } from '@/components/roadmap-stage-nav';
 import { Github } from '@/components/icons/social-icons';
 import {
   Dialog,
@@ -43,7 +44,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import Link from 'next/link';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 
 import {
@@ -530,11 +531,6 @@ export default function RoadmapPage() {
   const [selectedSkill, setSelectedSkill] = useState<RoadmapSkill | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Set document title for client component
-  useEffect(() => {
-    document.title = 'DevOps Roadmap | DevOps Daily';
-  }, []);
-
   const learningStages = roadmapStages.filter((stage) => stage.id !== 'lifetime');
   const totalTime = learningStages.reduce((acc, stage) => {
     const weeks = parseInt(stage.timeEstimate.split('-')[1] || stage.timeEstimate);
@@ -555,6 +551,10 @@ export default function RoadmapPage() {
     <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
       {/* Enhanced Hero Section with Animations */}
       <RoadmapHero />
+
+      <RoadmapStageNav
+        stages={roadmapStages.map((s) => ({ id: s.id, title: s.title, icon: s.icon }))}
+      />
 
       {/* Roadmap Timeline */}
       <section id="roadmap" className="py-20">
@@ -594,18 +594,18 @@ export default function RoadmapPage() {
             <div className="relative hidden lg:block">
               <div className="absolute w-2 h-full transform -translate-x-1/2 left-1/2">
                 <div className="w-full h-full rounded-full bg-primary opacity-20" />
-                <div className="absolute inset-0 w-1 mx-auto rounded-full bg-primary animate-pulse" />
+                <div className="absolute inset-0 w-1 mx-auto rounded-full bg-primary/60" />
               </div>
 
               {roadmapStages.map((stage, index) => (
-                <div key={stage.id} className="relative mb-24">
+                <div key={stage.id} id={`stage-${stage.id}`} className="relative mb-24 scroll-mt-28">
                   {/* Timeline Icon */}
                   <div className="absolute z-10 transform -translate-x-1/2 -translate-y-1/2 left-1/2 top-8">
                     <div
                       className={cn(
-                        'w-12 h-12 rounded-full border-4 border-background flex items-center justify-center transition-all duration-300 hover:scale-125',
+                        'w-12 h-12 rounded-full border-4 border-background flex items-center justify-center transition-transform duration-300 hover:scale-105',
                         stage.id === 'lifetime'
-                          ? 'bg-linear-to-r from-yellow-500 via-pink-500 to-purple-500 animate-pulse'
+                          ? 'bg-linear-to-r from-amber-500 to-primary'
                           : 'bg-primary shadow-lg shadow-primary/25'
                       )}
                     >
@@ -658,7 +658,7 @@ export default function RoadmapPage() {
                             className={cn(
                               'flex items-center gap-1 transition-all duration-300 px-3 py-1 w-fit',
                               stage.id === 'lifetime' &&
-                                'bg-linear-to-r from-yellow-500 via-pink-500 to-purple-500 text-white border-none'
+                                'bg-amber-500/15 border-amber-500/40 text-amber-600 dark:text-amber-400'
                             )}
                           >
                             {stage.id === 'lifetime' ? (
@@ -819,7 +819,7 @@ export default function RoadmapPage() {
                     className={cn(
                       'group hover:border-primary/40 hover:bg-muted/30 transition-colors border',
                       stage.id === 'lifetime' &&
-                        'border-gradient-to-r from-yellow-500 via-pink-500 to-purple-500'
+                        'border-amber-500/40'
                     )}
                   >
                     <div
@@ -1024,7 +1024,7 @@ export default function RoadmapPage() {
           <div>
             <Card className="border-0 shadow-2xl bg-primary/10 backdrop-blur-sm">
               <CardContent className="p-12 text-center">
-                <Sparkles className="w-12 h-12 mx-auto mb-6 text-yellow-500 animate-pulse" />
+                <Sparkles className="w-12 h-12 mx-auto mb-6 text-amber-500" />
 
                 <h2 className="mb-6 text-3xl font-bold text-primary md:text-4xl">
                   Ready to Begin Your DevOps Journey?
