@@ -26,7 +26,7 @@
       "Neon Auth (rebuilt on Better Auth, currently beta) ships managed authentication with users in the neon_auth schema, isolated per branch, and queryable via SQL and RLS"
     ],
     "cons": [
-      "No bundled object storage, realtime server, or edge-functions runtime. Pair Neon with S3/R2 and your own serverless platform when you need them",
+      "No bundled object storage, realtime server, or edge-functions runtime yet. Pair Neon with S3/R2 and your own serverless platform today; Neon announced S3-compatible branching object storage, serverless functions, and an AI gateway as coming soon in June 2026",
       "Cold-start latency on scale-to-zero compute is typically 300-500 ms, which matters for the very first request after an idle window",
       "Compute sizes above 16 CU are fixed-size (no autoscaling), so the largest workloads still need manual capacity planning",
       "Some Postgres extensions take longer to land than on a self-managed instance because they have to be vetted against the Pageserver",
