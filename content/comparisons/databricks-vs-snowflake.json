@@ -18,7 +18,7 @@
     "pros": [
       "Best-in-class data engineering and ML platform: Spark, Lakeflow pipelines, MLflow, Mosaic AI model serving and vector search are all first-party and mature",
       "Open by default: Delta and full Apache Iceberg v3 support went GA in May 2026, with external engines able to read and write Unity Catalog tables through standard Iceberg REST APIs",
-      "Lakebase brings real serverless Postgres (built on Neon's engine) with branching and scale-to-zero into the same governance layer as the lakehouse, GA on AWS since February 2026",
+      "Lakebase brings real serverless Postgres (built on Neon's engine) with branching and scale-to-zero into the same governance layer as the lakehouse, GA on AWS since February 2026 and Azure since March 2026",
       "Classic compute runs in your own cloud account, which some security teams prefer and which lets committed-use cloud discounts apply to the VM half of the bill",
       "Unity Catalog has grown into a serious cross-engine governance layer: ABAC, semantic metric views, federation to Glue, Hive, and even Snowflake's catalog",
       "Free Edition (launched mid-2025) gives a perpetually free, serverless playground with most of the platform, far more generous than a 30-day trial",
@@ -89,14 +89,14 @@
     {
       "name": "GenAI / Agents",
       "category": "AI",
-      "toolA": { "value": "Genie (GA) for natural-language analytics, Genie Code agent, Agent Bricks (component previews), Mosaic AI gateway and serving", "rating": "good" },
+      "toolA": { "value": "Genie (GA) for natural-language analytics, Genie Code agent, Agent Bricks (core agents GA April 2026, gateway and MCP pieces in preview), Mosaic AI gateway and serving", "rating": "good" },
       "toolB": { "value": "Cortex functions, Analyst, Search, and Agents all GA; CoWork personal agent and CoCo coding agent powered by Claude; token-billed", "rating": "good" }
     },
     {
       "name": "OLTP / Postgres",
       "category": "Platform",
-      "toolA": { "value": "Lakebase: serverless Postgres on Neon's engine with branching and scale-to-zero, GA on AWS Feb 2026, Azure in preview", "rating": "good" },
-      "toolB": { "value": "Snowflake Postgres (Crunchy Data): managed PostgreSQL GA Feb 2026 with ~30s mirroring to analytics; Hybrid Tables for transactional features near analytics", "rating": "good" }
+      "toolA": { "value": "Lakebase: serverless Postgres on Neon's engine with branching and scale-to-zero, GA on AWS Feb 2026 and Azure Mar 2026; GCP later in 2026", "rating": "good" },
+      "toolB": { "value": "Snowflake Postgres (Crunchy Data): managed PostgreSQL GA Feb 2026 with mirroring to analytics (syncs in seconds, vendor claim); Hybrid Tables for transactional features near analytics", "rating": "good" }
     },
     {
       "name": "Open Table Formats",
@@ -199,11 +199,11 @@
     },
     {
       "question": "What is the difference between Lakebase and Snowflake Postgres?",
-      "answer": "Both are managed PostgreSQL offerings acquired into the platforms in 2025 and GA within weeks of each other in February 2026, which tells you how seriously both take the agentic-application market. Lakebase is built on Neon's serverless engine, so it inherits compute/storage separation, copy-on-write branching, and scale-to-zero, and writes land in lakehouse-queryable storage. Snowflake Postgres comes from Crunchy Data, the team behind some of the most respected Postgres tooling, and emphasizes production-grade Postgres with fast mirroring (around 30 seconds) into the analytics engine. Lakebase is the more architecturally novel offering; Snowflake Postgres is the more conventionally solid one."
+      "answer": "Both are managed PostgreSQL offerings acquired into the platforms in 2025 and GA within weeks of each other in February 2026, which tells you how seriously both take the agentic-application market. Lakebase is built on Neon's serverless engine, so it inherits compute/storage separation, copy-on-write branching, and scale-to-zero, and writes land in lakehouse-queryable storage. Snowflake Postgres comes from Crunchy Data, the team behind some of the most respected Postgres tooling, and emphasizes production-grade Postgres with mirroring into the analytics engine that the vendor says syncs in seconds. Lakebase is the more architecturally novel offering; Snowflake Postgres is the more conventionally solid one."
     },
     {
       "question": "Do I still have to choose between Delta Lake and Iceberg?",
-      "answer": "Mostly no, and that is the biggest change since 2024. Databricks shipped full managed Iceberg with v3 features in May 2026, with external engines able to read and write through standard REST APIs, and Delta and Iceberg metadata are converging at the spec level. Snowflake supports managed and externally cataloged Iceberg with bidirectional writes through Polaris, now an Apache top-level project. The format war is effectively over; the catalog war (Unity Catalog vs Horizon plus Polaris) is where lock-in now lives, because whoever holds the catalog holds governance, lineage, and access control."
+      "answer": "Mostly no, and that is the biggest change since 2024. Databricks shipped full managed Iceberg with v3 features in May 2026, with external engines able to read and write through standard REST APIs, and Delta and Iceberg metadata are converging at the spec level. Snowflake matched with its own Iceberg v3 GA in May 2026 and supports managed and externally cataloged Iceberg with bidirectional writes through Polaris, now an Apache top-level project. The format war is effectively over; the catalog war (Unity Catalog vs Horizon plus Polaris) is where lock-in now lives, because whoever holds the catalog holds governance, lineage, and access control."
     },
     {
       "question": "Which is better for a DevOps or platform engineering team?",
