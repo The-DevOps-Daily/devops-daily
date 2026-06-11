@@ -1,0 +1,50 @@
+{
+  "id": "otel-sampling-strategies",
+  "slug": "otel-sampling-strategies",
+  "title": "Sampling Strategies at Scale",
+  "question": "Your platform handles 50,000 requests per second and tracing every one of them is blowing up the observability bill. How do you approach sampling, and what is the tradeoff between head and tail sampling?",
+  "answer": "First decide what questions the traces need to answer, because that drives the strategy. Head sampling decides at the root of the trace, before anything happens: a parent-based ratio sampler keeps, say, 1% of traces, and the decision rides along in the traceparent sampled flag so every downstream service agrees. It is cheap and simple, but it is blind: the slow request and the 500 error are dropped with the same probability as the boring 200. Tail sampling flips that. Every span is exported, buffered in the Collector gateway, and the keep-or-drop decision happens after the trace completes, with full knowledge: keep 100% of traces with errors, 100% of traces slower than two seconds, and 1% of everything else as a healthy baseline. That is exactly what you want for debugging, but you pay for it: the gateway buffers every in-flight trace in memory, and all spans of a given trace must land on the same Collector instance, which means a load-balancing tier that routes by trace ID in front of your sampling tier. At 50k rps that buffer is real memory and the loadbalancing exporter is not optional. In practice I combine them: light head sampling or rate limiting at the SDK to take the edge off volume, tail sampling at the gateway for the keep-the-interesting-ones logic. Two things people forget: any metrics derived from spans, like RED dashboards from the spanmetrics connector, must be generated before sampling or your latency percentiles are fiction, and you should write down that trace-based alerting now sees sampled data, so absence of a trace no longer proves absence of a problem.",
+  "explanation": "This is a senior-level cost and architecture question disguised as a feature comparison. Anyone can define head versus tail. What you are listening for: the operational consequences of tail sampling (memory buffering, trace-ID-aware load balancing across Collector instances), the policy thinking (keep all errors and slow traces, sample the healthy baseline), and the second-order effects, especially that span-derived metrics computed after sampling are statistically wrong. Candidates who jump straight to 'just use tail sampling' without mentioning the buffering and routing cost have read the docs but never run it at volume.",
+  "category": "Observability",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "opentelemetry",
+    "distributed-tracing",
+    "sampling",
+    "cost-optimization"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Tail sampling policy: keep errors and slow traces, sample the rest",
+      "code": "processors:\n  tail_sampling:\n    decision_wait: 10s\n    num_traces: 100000\n    policies:\n      - name: keep-errors\n        type: status_code\n        status_code:\n          status_codes: [ERROR]\n      - name: keep-slow\n        type: latency\n        latency:\n          threshold_ms: 2000\n      - name: baseline\n        type: probabilistic\n        probabilistic:\n          sampling_percentage: 1"
+    },
+    {
+      "language": "yaml",
+      "label": "Routing tier so all spans of a trace hit the same sampler",
+      "code": "# First Collector tier: no sampling, just route by trace ID\nexporters:\n  loadbalancing:\n    routing_key: traceID\n    protocol:\n      otlp:\n        tls:\n          insecure: true\n    resolver:\n      k8s:\n        service: otel-sampling-tier.observability\n\nservice:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, batch]\n      exporters: [loadbalancing]"
+    },
+    {
+      "language": "bash",
+      "label": "Head sampling at the SDK, propagated to all children",
+      "code": "# Keep 5% of traces, decided once at the root span.\n# parentbased_* makes children honor the parent's decision\n# instead of re-rolling the dice at every hop.\nexport OTEL_TRACES_SAMPLER=parentbased_traceidratio\nexport OTEL_TRACES_SAMPLER_ARG=0.05"
+    }
+  ],
+  "followUpQuestions": [
+    "Your error rate spikes to 10x during an incident, which means tail sampling suddenly keeps 10x the volume. How do you protect the pipeline?",
+    "A product team complains a specific customer's traces are never there when they need them. How do you support per-tenant sampling?",
+    "How does sampling interact with billing-by-span vendors versus self-hosted backends like Tempo, and does that change your strategy?"
+  ],
+  "commonMistakes": [
+    "Recommending tail sampling without mentioning trace-ID-aware load balancing, which silently produces broken sampling decisions on partial traces across multiple Collector replicas",
+    "Computing latency percentiles from spans after sampling, so dashboards are skewed toward whatever the policies kept",
+    "Using plain traceidratio instead of a parent-based sampler, so each service makes its own decision and you end up storing fragments of traces"
+  ],
+  "relatedTopics": [
+    "otel-collector",
+    "cost-optimization",
+    "observability",
+    "incident-response"
+  ]
+}
