@@ -1,0 +1,214 @@
+{
+  "id": "api-rate-limiting",
+  "slug": "api-rate-limiting",
+  "title": "Designing Rate Limiting for APIs: Algorithms, Patterns, and Implementation",
+  "description": "Pick the right rate limiting algorithm for your traffic shape, build it on shared atomic state, and ship it with the response headers, failure modes, and monitoring that keep both your API and your clients working.",
+  "category": "API Design",
+  "difficulty": "intermediate",
+  "estimatedTime": "2-3 hours",
+  "tags": ["api-design", "rate-limiting", "backend", "redis", "nginx"],
+  "items": [
+    {
+      "id": "choose-algorithm-for-traffic-shape",
+      "title": "Pick the algorithm based on your traffic shape, not by default",
+      "description": "Token bucket allows short bursts while capping the sustained rate, which matches how real clients behave: quiet, then a burst of calls. Leaky bucket smooths everything to a fixed output rate, which is what you want in front of a fragile backend that hates spikes. Sliding window sits in between and is easy to reason about for billing-style quotas. Start with token bucket unless you have a specific reason not to.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Token bucket in ~15 lines",
+          "code": "import time\n\nclass TokenBucket:\n    def __init__(self, capacity, refill_rate):\n        self.capacity = capacity        # max burst size\n        self.refill_rate = refill_rate  # tokens added per second\n        self.tokens = capacity\n        self.updated = time.monotonic()\n\n    def allow(self, cost=1):\n        now = time.monotonic()\n        elapsed = now - self.updated\n        self.tokens = min(self.capacity, self.tokens + elapsed * self.refill_rate)\n        self.updated = now\n        if self.tokens >= cost:\n            self.tokens -= cost\n            return True\n        return False\n\n# 100 requests/min sustained, bursts of up to 20 allowed\nlimiter = TokenBucket(capacity=20, refill_rate=100 / 60)"
+        }
+      ]
+    },
+    {
+      "id": "avoid-fixed-window-boundary-burst",
+      "title": "Avoid plain fixed window counters, they leak 2x at the boundary",
+      "description": "A fixed window resets the counter at the top of each minute. A client can send 100 requests at 11:59:59 and 100 more at 12:00:00, and both batches pass a 100/min limit. That is 200 requests in two seconds against the backend you were trying to protect. The sliding window counter fixes this for one extra Redis field: weight the previous window's count by how much of it still overlaps.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Sliding window counter math",
+          "code": "# Fixed window problem: limit 100/min, client sends 100 at 11:59:59\n# and 100 more at 12:00:00. Both pass. 200 requests in 2 seconds.\n\ndef sliding_window_count(prev_count, curr_count, elapsed_in_window, window=60):\n    # Weight the previous window by how much of it still overlaps\n    weight = (window - elapsed_in_window) / window\n    return prev_count * weight + curr_count\n\n# 15s into the current minute, prev=80, curr=30:\n# 80 * 0.75 + 30 = 90 -> still under a 100/min limit, allow it\nestimate = sliding_window_count(prev_count=80, curr_count=30, elapsed_in_window=15)"
+        }
+      ]
+    },
+    {
+      "id": "centralize-state-in-redis",
+      "title": "Store counters in Redis, not in process memory",
+      "description": "An in-memory limiter gives every replica its own budget. Run 5 pods and your 100/min limit is really 500/min, and it drifts every time the autoscaler moves. Counters also reset to zero on every deploy, so an abusive client gets a fresh allowance each rollout. Put the state in Redis (or your existing shared cache) so the limit means the same thing no matter which pod serves the request.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Shared counter with a TTL",
+          "code": "import time\nimport redis\n\nr = redis.Redis(host=\"redis\", port=6379)\n\ndef over_limit(api_key, limit=100, window=60):\n    key = f\"rl:{api_key}:{int(time.time()) // window}\"\n    count = r.incr(key)\n    if count == 1:\n        # Set TTL a bit past the window so the key cleans itself up\n        r.expire(key, window + 30)\n    return count > limit\n\n# INCR is atomic, so concurrent requests from different pods\n# can never double-count or skip a count"
+        }
+      ]
+    },
+    {
+      "id": "make-check-and-spend-atomic",
+      "title": "Make the read-check-write atomic with a Lua script",
+      "description": "A token bucket needs to read the bucket, compute the refill, and write it back. Do that as three Redis calls and two concurrent requests will both read the same token count and both pass, even when only one token was left. Under load this is not a corner case, it happens constantly. A Lua script runs the whole operation atomically inside Redis, so there is no window for the race.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Atomic token bucket as a Redis Lua script",
+          "code": "TOKEN_BUCKET = \"\"\"\nlocal key = KEYS[1]\nlocal capacity = tonumber(ARGV[1])\nlocal refill_rate = tonumber(ARGV[2])\nlocal now = tonumber(ARGV[3])\nlocal cost = tonumber(ARGV[4])\n\nlocal bucket = redis.call('HMGET', key, 'tokens', 'updated')\nlocal tokens = tonumber(bucket[1]) or capacity\nlocal updated = tonumber(bucket[2]) or now\n\ntokens = math.min(capacity, tokens + (now - updated) * refill_rate)\nlocal allowed = 0\nif tokens >= cost then\n  tokens = tokens - cost\n  allowed = 1\nend\n\nredis.call('HSET', key, 'tokens', tokens, 'updated', now)\nredis.call('EXPIRE', key, 120)\nreturn allowed\n\"\"\"\n\nallow = r.register_script(TOKEN_BUCKET)\n\ndef check(api_key, capacity=20, rate_per_sec=100 / 60, cost=1):\n    import time\n    return allow(keys=[f\"rl:{api_key}\"],\n                 args=[capacity, rate_per_sec, time.time(), cost]) == 1"
+        }
+      ]
+    },
+    {
+      "id": "key-by-identity-not-ip",
+      "title": "Key limits by API key or account, not by IP alone",
+      "description": "IP-based limits punish the wrong people. A whole office behind one NAT gateway shares a single budget, while one abuser rotates through a proxy pool and never hits the limit. Key authenticated traffic by API key or account ID. Keep IP limits only as a fallback for anonymous endpoints, and read the client IP from the rightmost trusted X-Forwarded-For hop, because the leftmost value is whatever the client felt like sending.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Identity first, IP as fallback",
+          "code": "def rate_limit_key(request):\n    # Authenticated traffic: key by the account, not the connection\n    if request.api_key:\n        return f\"rl:key:{request.api_key}\"\n    # Anonymous traffic: fall back to the client IP.\n    # Trust only the X-Forwarded-For hop set by YOUR proxy,\n    # the leftmost entries are client-controlled.\n    return f\"rl:ip:{request.client_ip}\""
+        }
+      ]
+    },
+    {
+      "id": "return-429-with-headers",
+      "title": "Return 429 with Retry-After and RateLimit headers",
+      "description": "A bare 429 forces every client team to guess when to retry, and they will guess wrong: instant retries that make your overload worse. Retry-After tells well-behaved clients exactly how long to wait, and the RateLimit-* headers (IETF draft, already used by GitHub and Stripe in similar forms) let SDKs slow down before they ever hit the wall. This is the difference between a limiter that sheds load and one that generates support tickets.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "A 429 the client can actually act on",
+          "code": "from flask import jsonify\n\ndef too_many_requests(limit, reset_seconds):\n    resp = jsonify(\n        error=\"rate_limited\",\n        message=f\"Limit is {limit} requests per minute. Retry after {reset_seconds}s.\",\n    )\n    resp.status_code = 429\n    resp.headers[\"Retry-After\"] = str(reset_seconds)\n    resp.headers[\"RateLimit-Limit\"] = str(limit)\n    resp.headers[\"RateLimit-Remaining\"] = \"0\"\n    resp.headers[\"RateLimit-Reset\"] = str(reset_seconds)\n    return resp"
+        },
+        {
+          "language": "bash",
+          "label": "What the client sees",
+          "code": "$ curl -i https://api.example.com/v1/users -H \"Authorization: Bearer $KEY\"\nHTTP/1.1 429 Too Many Requests\nRetry-After: 23\nRateLimit-Limit: 100\nRateLimit-Remaining: 0\nRateLimit-Reset: 23\nContent-Type: application/json\n\n{\"error\":\"rate_limited\",\"message\":\"Limit is 100 requests per minute. Retry after 23s.\"}"
+        }
+      ]
+    },
+    {
+      "id": "decide-fail-open-or-closed",
+      "title": "Decide what happens when the limiter backend is down",
+      "description": "Redis will go down eventually, and at that moment your limiter makes a choice for you whether you designed it or not. Failing closed turns a cache blip into a full API outage. Failing open means abuse traffic flows freely during the blip. Pick per route: fail open for general API traffic where availability wins, fail closed for login, signup, password reset, and anything that sends email or SMS. Make the decision explicit in code and count how often it triggers.",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Explicit failure mode per route class",
+          "code": "import logging\nimport redis\n\nlog = logging.getLogger(\"ratelimit\")\n\nFAIL_CLOSED_ROUTES = {\"/v1/login\", \"/v1/signup\", \"/v1/password-reset\"}\n\ndef check_limit(route, key):\n    try:\n        return allow(keys=[key], args=bucket_args(route)) == 1\n    except redis.RedisError:\n        limiter_errors.inc()\n        if route in FAIL_CLOSED_ROUTES:\n            log.error(\"limiter down, failing CLOSED for %s\", route)\n            return False  # abuse here is worse than downtime\n        log.warning(\"limiter down, failing OPEN for %s\", route)\n        return True  # availability wins for normal API traffic"
+        }
+      ]
+    },
+    {
+      "id": "add-edge-layer-nginx",
+      "title": "Add a coarse limit at the edge with nginx limit_req",
+      "description": "Your application limiter costs a Redis round trip per request, so a flood still burns app CPU and connections before it gets rejected. Put a cheap, coarse per-IP limit at the edge to absorb the worst of it, and keep the precise per-account limits in the app. nginx limit_req is a leaky bucket: it smooths arrivals to a fixed rate and queues short spikes up to the burst size.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "ini",
+          "label": "nginx leaky bucket in front of the app",
+          "code": "# 10 MB zone holds ~160k IP states; rate is the steady drain\nlimit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;\n\nserver {\n    location /api/ {\n        # burst queues spikes; nodelay serves queued requests\n        # immediately instead of trickling them out\n        limit_req zone=api burst=20 nodelay;\n        limit_req_status 429;\n        proxy_pass http://app;\n    }\n}"
+        },
+        {
+          "language": "bash",
+          "label": "Verify the edge limit works",
+          "code": "$ for i in $(seq 1 40); do curl -s -o /dev/null -w \"%{http_code}\\n\" https://api.example.com/api/ping; done | sort | uniq -c\n     30 200\n     10 429"
+        }
+      ]
+    },
+    {
+      "id": "weight-expensive-endpoints",
+      "title": "Charge expensive endpoints more than cheap ones",
+      "description": "One request to a search or report endpoint can cost 50x the resources of a point read. If every request costs one token, a client can stay under the limit while saturating your database with the expensive calls. Token bucket handles this for free: give each endpoint a cost and spend that many tokens. Set costs from real measurements (p95 latency or CPU time), not gut feel.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Per-endpoint costs against one shared bucket",
+          "code": "endpoint_costs:\n  \"GET /v1/users/{id}\": 1\n  \"GET /v1/search\": 5      # fan-out query, ~40x the CPU of a point read\n  \"POST /v1/exports\": 25   # kicks off a background job\n  default: 1"
+        },
+        {
+          "language": "python",
+          "label": "Spend the endpoint's cost, not a flat 1",
+          "code": "cost = COSTS.get(route, COSTS[\"default\"])\nallowed = allow(keys=[f\"rl:{api_key}\"],\n                args=[capacity, refill_rate, time.time(), cost]) == 1"
+        }
+      ]
+    },
+    {
+      "id": "define-tiers-with-burst-headroom",
+      "title": "Define plan tiers with explicit burst headroom",
+      "description": "Sustained rate and burst size are different knobs, and conflating them creates either a limit nobody can hit or one that breaks normal usage. A dashboard loading 15 widgets fires 15 calls in one second; that should pass on any plan even if the sustained rate is 1 req/s. Set burst to cover a realistic worst-case page load or batch job, and sustained rate to protect capacity.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "yaml",
+          "label": "Tiers as config, not constants in code",
+          "code": "plans:\n  free:\n    sustained_per_min: 60\n    burst: 15        # one dashboard load must always work\n  pro:\n    sustained_per_min: 600\n    burst: 100\n  enterprise:\n    sustained_per_min: 6000\n    burst: 1000\n    # Beyond this, talk to them about webhooks or bulk endpoints\n    # instead of selling a bigger polling allowance"
+        }
+      ]
+    },
+    {
+      "id": "exempt-health-checks",
+      "title": "Never rate limit health checks or orchestrator probes",
+      "description": "A throttled /healthz looks exactly like a dead pod. During a traffic spike, the moment you most need capacity, the limiter starts failing probes and Kubernetes restarts healthy pods, turning a spike into an outage. Exempt liveness and readiness paths at the edge, and exempt internal service-to-service traffic from public limits (give it its own, more generous budget instead).",
+      "critical": true,
+      "codeBlocks": [
+        {
+          "language": "ini",
+          "label": "Carve probes out of the nginx zone",
+          "code": "# Exact-match location wins over /api/ and has no limit_req\nlocation = /healthz {\n    access_log off;\n    proxy_pass http://app;\n}\n\n# Internal CIDRs get an empty key, which disables limiting\ngeo $limited_ip {\n    default        $binary_remote_addr;\n    10.0.0.0/8     \"\";   # cluster-internal traffic\n}\nlimit_req_zone $limited_ip zone=api:10m rate=10r/s;"
+        }
+      ]
+    },
+    {
+      "id": "export-throttle-metrics",
+      "title": "Export limiter metrics and alert on throttle rate",
+      "description": "Without metrics you find out about a bad limit from an angry customer email. Count allowed and rejected decisions per route and plan, and alert when the reject ratio jumps. A sudden spike means either an attack (good, the limiter is working) or a deploy that made a client chatty (bad, and you want to know before they do).",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "Prometheus counters at the decision point",
+          "code": "from prometheus_client import Counter\n\nRL_DECISIONS = Counter(\n    \"rate_limit_decisions_total\",\n    \"Rate limiter decisions\",\n    [\"route\", \"plan\", \"decision\"],  # decision: allowed | rejected\n)\n\nRL_DECISIONS.labels(route=route, plan=plan, decision=\"rejected\").inc()"
+        },
+        {
+          "language": "promql",
+          "label": "Alert when more than 5% of a route is throttled",
+          "code": "sum by (route) (rate(rate_limit_decisions_total{decision=\"rejected\"}[5m]))\n/\nsum by (route) (rate(rate_limit_decisions_total[5m]))\n> 0.05"
+        }
+      ]
+    },
+    {
+      "id": "load-test-the-limiter",
+      "title": "Load test the limiter before clients do",
+      "description": "Push traffic well past the limit and check three things: the allowed count matches the configured rate, rejections are fast (a 429 should cost almost nothing), and Redis CPU stays sane. This is also where boundary bugs show up, like a fixed window letting 2x through or a TTL that never expires and slowly fills Redis with dead keys.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "bash",
+          "label": "Drive 200 req/s into a 100/min limit with vegeta",
+          "code": "$ echo \"GET https://staging-api.example.com/v1/users\" \\\n  | vegeta attack -rate=200 -duration=30s \\\n      -header \"Authorization: Bearer $TEST_KEY\" \\\n  | vegeta report\n\nRequests      [total, rate]            6000, 200.03\nLatencies     [p50, p95, p99]          3.1ms, 8.4ms, 14.2ms\nStatus Codes  [code:count]             200:120  429:5880\n\n# 120 allowed = 20 burst + 100/min refill over 30s. Matches config.\n# If you see 200:240 here, you have a window boundary bug."
+        }
+      ]
+    },
+    {
+      "id": "document-limits-and-backoff",
+      "title": "Document the limits and ship retry guidance with jitter",
+      "description": "Clients will retry on 429 no matter what you do, so make sure they retry well. Publish the limits per plan in your docs, and put a reference retry implementation in your SDK and examples: honor Retry-After, back off exponentially when it is missing, and always add jitter so a thousand clients do not synchronize into waves that hit you at the same instant.",
+      "critical": false,
+      "codeBlocks": [
+        {
+          "language": "python",
+          "label": "The retry loop to put in your SDK docs",
+          "code": "import random\nimport time\n\ndef request_with_backoff(do_request, max_attempts=5):\n    for attempt in range(max_attempts):\n        resp = do_request()\n        if resp.status_code != 429:\n            return resp\n        # Honor the server's hint, fall back to exponential backoff\n        wait = int(resp.headers.get(\"Retry-After\", 2 ** attempt))\n        # Jitter keeps a fleet of clients from retrying in lockstep\n        time.sleep(wait + random.uniform(0, 1))\n    return resp"
+        }
+      ]
+    }
+  ]
+}

@@ -746,5 +746,6 @@
   "public/images/interview-questions/otel-sampling-strategies-og.svg": "217f98ad1931556f",
   "public/images/interview-questions/otel-collector-deployment-og.svg": "b1c0362cc2781cd6",
   "public/images/quizzes/multi-region-active-active-aws-quiz-og.svg": "cc3d584e0db6de56",
-  "public/images/interview-questions/otel-auto-vs-manual-instrumentation-og.svg": "59cb6ebdfb8ea8ec"
+  "public/images/interview-questions/otel-auto-vs-manual-instrumentation-og.svg": "59cb6ebdfb8ea8ec",
+  "public/images/checklists/api-rate-limiting-og.svg": "e4d6299590e6f94e"
 }
