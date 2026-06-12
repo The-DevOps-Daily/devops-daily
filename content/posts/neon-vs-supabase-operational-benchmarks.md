@@ -262,6 +262,40 @@ We restored Neon branches to a point 60 seconds in the past, with 100k rows of d
 
 On Supabase, point-in-time recovery is a $100/month add-on (per 7-day retention window, Small compute minimum), so we documented it rather than benchmarked it; daily backups are included on Pro but a daily backup is a very different promise from PITR when the bad migration ran at 14:47. If sub-minute-granularity recovery matters to your operation, price the add-on into the comparison.
 
+## The finding we didn't go looking for
+
+While rechecking our own dashboard we noticed something odd: project creation on the Supabase Pro org was wildly slower than the free-org numbers from part one. So we measured it properly, twice, a day apart.
+
+```chart
+{
+  "type": "dots",
+  "title": "Supabase project creation to first query, free org vs Pro org",
+  "unit": "s",
+  "caption": "Same region, same API, same harness. The only variable is the organization's plan.",
+  "series": [
+    {
+      "name": "Free org",
+      "color": "#34d399",
+      "samples": [7.6, 11.9, 7.1, 6.5, 8.5, 7.4, 6.9, 8.1, 9.2, 9.9, 6.8, 6.9, 7.5, 7.9, 6.8, 6.9, 7.1, 7.3, 11.8, 8.4]
+    },
+    {
+      "name": "Pro org, day one",
+      "color": "#38bdf8",
+      "samples": [148.4, 140.9, 152.1, 137.9, 112.9, 112.0, 113.4, 114.8, 153.5, 169.9, 158.0, 110.5, 145.8, 110.3, 109.8, 125.2, 163.5, 107.3, 152.1, 107.6]
+    },
+    {
+      "name": "Pro org, day two",
+      "color": "#818cf8",
+      "samples": [137.7, 110.3, 110.9, 108.5, 134.2, 142.4, 111.9, 113.8]
+    }
+  ]
+}
+```
+
+Free org: **7.4 seconds median** to a queryable project. Pro org: **125.2 seconds** on day one (20 runs) and **111.9 seconds** on day two (10 runs), so this is not a one-day capacity blip. Day two also produced two provisioning failures we did not cause: one project came up with no pooler configuration, and another returned 404 on its own ref immediately after creation. Neon, measured the same morning as a control, created projects in 5.5 seconds with no failures.
+
+We do not know why paid-org provisioning is 15x slower than free; nothing in the documentation suggests it should be. If your platform automation creates Supabase projects programmatically (per-tenant databases, ephemeral environments), budget two minutes and a retry loop, not eight seconds. We have raw samples committed for all three sessions and would genuinely welcome an explanation.
+
 ## What failed, and what it taught us
 
 A benchmark that reports only clean numbers is hiding something. Ours hit three walls worth knowing about:
