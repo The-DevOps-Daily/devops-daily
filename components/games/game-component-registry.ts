@@ -42,8 +42,10 @@ import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simul
 import TcpVsUdpSimulator from '@/components/games/tcp-vs-udp';
 import TerraformTerminalSimulator from '@/components/games/terraform-terminal-simulator';
 import UptimeDefender from '@/components/games/uptime-defender';
+import OnCall from '@/components/games/on-call';
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
+  'on-call': OnCall,
   'tcp-vs-udp': TcpVsUdpSimulator,
   'dns-simulator': DnsSimulator,
   'docker-terminal-simulator': DockerTerminalSimulator,

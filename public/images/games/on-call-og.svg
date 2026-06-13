@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0b0f17;stop-opacity:1" />
+      <stop offset="55%" style="stop-color:#141a26;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0b0f17;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="sev" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- faint grid -->
+  <g stroke="#1e2636" stroke-width="1" opacity="0.5">
+    <line x1="0" y1="158" x2="1200" y2="158"/>
+    <line x1="0" y1="472" x2="1200" y2="472"/>
+  </g>
+
+  <!-- top bar: product label -->
+  <text x="80" y="96" font-family="monospace" font-size="26" fill="#5b6678" letter-spacing="3">DEVOPS DAILY  ·  GAMES</text>
+
+  <!-- SEV pager badge -->
+  <g transform="translate(80,140)">
+    <rect x="0" y="0" rx="10" ry="10" width="150" height="50" fill="#1a1208" stroke="#f59e0b" stroke-opacity="0.5"/>
+    <circle cx="30" cy="25" r="9" fill="url(#sev)" filter="url(#glow)"/>
+    <text x="52" y="34" font-family="monospace" font-size="26" font-weight="bold" fill="#f59e0b">SEV2</text>
+  </g>
+  <text x="252" y="174" font-family="monospace" font-size="24" fill="#94a3b8">▸ PAGE  checkout-api 503 rate 18%, p99 6.0s</text>
+
+  <!-- Title -->
+  <text x="80" y="300" font-family="Arial, sans-serif" font-size="92" font-weight="800" fill="#f1f5f9">On-Call</text>
+  <text x="80" y="386" font-family="Arial, sans-serif" font-size="58" font-weight="700" fill="#cbd5e1">The Daily Incident</text>
+
+  <!-- subtitle -->
+  <text x="80" y="442" font-family="Arial, sans-serif" font-size="30" fill="#7c8aa0">One production incident a day. Six moves. Find the root cause.</text>
+
+  <!-- move grid teaser: drawn squares (emoji fonts are unavailable at render time) -->
+  <g transform="translate(80,512)">
+    <rect x="0"   y="0" width="38" height="38" rx="7" fill="#1e2636" stroke="#38bdf8" stroke-opacity="0.6"/>
+    <circle cx="19" cy="19" r="8" fill="none" stroke="#38bdf8" stroke-width="3"/>
+    <line x1="25" y1="25" x2="31" y2="31" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+    <rect x="50"  y="0" width="38" height="38" rx="7" fill="#1e2636" stroke="#38bdf8" stroke-opacity="0.6"/>
+    <circle cx="69" cy="19" r="8" fill="none" stroke="#38bdf8" stroke-width="3"/>
+    <line x1="75" y1="25" x2="81" y2="31" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+    <rect x="100" y="0" width="38" height="38" rx="7" fill="#f59e0b"/>
+    <rect x="150" y="0" width="38" height="38" rx="7" fill="#22c55e"/>
+    <text x="208" y="28" font-family="monospace" font-size="28" fill="#64748b">resolved in 4/6</text>
+  </g>
+
+  <!-- url -->
+  <text x="1120" y="556" text-anchor="end" font-family="monospace" font-size="26" fill="#475569">devops-daily.com/games/on-call</text>
+</svg>

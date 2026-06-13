@@ -33,6 +33,24 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'on-call',
+    type: 'game',
+    title: 'On-Call: The Daily Incident',
+    seoTitle: 'On-Call: The Daily DevOps Incident Game',
+    description:
+      'A new production incident every day. You are paged, you get a budget of six moves, and you have to find the root cause before they run out. Inspect signals, diagnose the cause, and share your spoiler-free result. Same incident for everyone, like a daily puzzle for SREs.',
+    iconName: 'Siren',
+    badgeText: 'New',
+    color: 'from-red-500 to-amber-600',
+    href: '/games/on-call',
+    tags: ['game', 'sre', 'incident-response', 'daily', 'debugging', 'on-call', 'interactive'],
+    isNew: true,
+    isHot: true,
+    featured: true,
+    category: 'SRE',
+    createdAt: '2026-06-13',
+  },
+  {
     id: 'fork-bomb-simulator',
     type: 'simulator',
     title: 'Fork Bomb Simulator',
