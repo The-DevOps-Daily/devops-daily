@@ -10,9 +10,15 @@ const loadComparisonsFromFiles = createCachedLoader(() =>
 
 export async function getAllComparisons(): Promise<Comparison[]> {
   const comparisons = await loadComparisonsFromFiles();
+  // Sort by createdDate (when the comparison was first published) so the
+  // index page reads as "newest first". updatedDate isn't used because
+  // some legacy entries carry future-dated updatedDate values that would
+  // push them ahead of genuinely new content.
+  // Spread first — loadComparisonsFromFiles is cached and returns a shared
+  // reference; sorting in place would mutate the cache.
   return [...comparisons].sort(
     (a: Comparison, b: Comparison) =>
-      new Date(b.updatedDate).getTime() - new Date(a.updatedDate).getTime()
+      new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
   );
 }
 
