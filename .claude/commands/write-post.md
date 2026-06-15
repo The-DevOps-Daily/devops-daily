@@ -88,6 +88,57 @@ Posts follow this general structure:
 - Bold key terms on first use
 - No emojis in post content
 
+## Charts
+
+Posts can embed interactive charts with a ` ```chart ` fenced code block whose body is JSON. Use them for comparisons, before/after numbers, distributions, or anything quantitative. A malformed spec falls back to a plain code block, so it never breaks the build, but always validate the JSON.
+
+Four `type` values are supported:
+
+- **`bar`** — categorical comparison. `rows: [{ label, value, series?, tick? }]`. `series` groups bars by color and legend; optional `tick` draws a secondary marker (e.g. p95).
+- **`line`** — trend over an ordered axis. `x: [...]` labels plus `series: [{ name, data: [...], color? }]`. `data` aligns to `x` by index.
+- **`dots`** — every raw sample as a strip/beeswarm. `series: [{ name, samples: [...], median?, color? }]`.
+- **`cdf`** — cumulative percentile curves from raw samples. `series: [{ name, samples: [...], dash?, color? }]`.
+
+Common optional fields: `title`, `caption` (use it to cite sources and state assumptions), `unit` (`'$'`, `'%'`, `'ms'`, `'s'`, or a free-form suffix). Colors auto-assign from a theme-safe palette; set `color` per series only when you need specific brand colors (e.g. amber `#f59e0b` for the site accent).
+
+Example, a grouped bar comparison:
+
+```chart
+{
+  "type": "bar",
+  "title": "Monthly price for a ~2 vCPU / 8 GB instance",
+  "unit": "$",
+  "caption": "List on-demand prices, USD, June 2026. State sources and assumptions here.",
+  "rows": [
+    { "label": "Provider A", "value": 46, "series": "A" },
+    { "label": "Provider B", "value": 63, "series": "B" },
+    { "label": "Provider C", "value": 74, "series": "C" }
+  ],
+  "series": [
+    { "name": "A", "color": "#f59e0b" },
+    { "name": "B", "color": "#0080ff" },
+    { "name": "C", "color": "#ff9900" }
+  ]
+}
+```
+
+Example, a trend line:
+
+```chart
+{
+  "type": "line",
+  "title": "Cost as the app grows",
+  "unit": "$",
+  "x": ["launch", "growth", "scale"],
+  "series": [
+    { "name": "Option 1", "data": [5, 48, 278], "color": "#10b981" },
+    { "name": "Option 2", "data": [26, 33, 1213], "color": "#38bdf8" }
+  ]
+}
+```
+
+Guidance: prefer real, cited numbers over invented ones; keep charts to a handful of bars/series so they stay readable; always validate the fence is parseable JSON before finishing (a quick `node -e` JSON.parse over each ` ```chart ` block).
+
 ## OG Image
 
 After creating the post, remind the user to generate the OG image:
