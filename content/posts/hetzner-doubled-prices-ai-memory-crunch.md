@@ -79,7 +79,30 @@ Hetzner sells close to cost. It buys hardware, racks it, and rents it with littl
 
 ## Is Hetzner still worth it?
 
-Mostly, yes. Even after this increase, Hetzner remains dramatically cheaper than the hyperscalers for raw compute and bandwidth. A doubling of a number that started at a fraction of the AWS equivalent is still a fraction of the AWS equivalent. The moat narrowed, it did not close, and the egress story (where Hetzner is generous and the hyperscalers are punishing) did not change at all.
+Mostly, yes. Even after this increase, Hetzner remains dramatically cheaper than the hyperscalers for raw compute and bandwidth. A doubling of a number that started at a fraction of the AWS equivalent is still a fraction of the AWS equivalent. To put numbers on it, here is a comparably shaped box (around 2 vCPU and 8 GB) across three providers:
+
+```chart
+{
+  "type": "bar",
+  "title": "Monthly price for a ~2 vCPU / 8 GB instance",
+  "unit": "$",
+  "caption": "List on-demand prices in USD, June 2026. Hetzner CCX13 (dedicated vCPU) converted from EUR at ~1.08; DigitalOcean General Purpose; AWS m7i.large on-demand, us-east-1. Specs are comparable, not identical, and committed-use plans lower the AWS figure.",
+  "rows": [
+    { "label": "Hetzner CCX13 (before)", "value": 17, "series": "Hetzner before" },
+    { "label": "Hetzner CCX13 (now)", "value": 46, "series": "Hetzner now" },
+    { "label": "DigitalOcean General Purpose", "value": 63, "series": "DigitalOcean" },
+    { "label": "AWS m7i.large (on-demand)", "value": 74, "series": "AWS" }
+  ],
+  "series": [
+    { "name": "Hetzner before", "color": "#9ca3af" },
+    { "name": "Hetzner now", "color": "#f59e0b" },
+    { "name": "DigitalOcean", "color": "#0080ff" },
+    { "name": "AWS", "color": "#ff9900" }
+  ]
+}
+```
+
+Even after more than doubling, the Hetzner box is still cheaper than the same shape on DigitalOcean and well under AWS on demand. What changed is the size of the gap: before June 15 that machine was roughly a quarter of the AWS price, and now it is closer to two thirds. The discount is real, it is just no longer the runaway it used to be, and a committed-use plan on AWS would narrow it further. The moat shrank, it did not close, and the egress story (where Hetzner includes generous traffic and the hyperscalers bill roughly $0.09 per GB after a small allowance) did not change at all. For a bandwidth-heavy service, that egress line can still dwarf the compute difference.
 
 So the answer is not to rage-quit to a more expensive provider out of spite. It is to re-run the numbers you have probably not looked at since you set them, because the assumptions underneath them just moved.
 
