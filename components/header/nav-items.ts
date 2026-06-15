@@ -92,6 +92,7 @@ export const mainNavigation = [
   { label: 'Posts', href: '/posts', icon: FileText },
   { label: 'Guides', href: '/guides', icon: BookOpen },
   { label: 'News', href: '/news', icon: Newspaper, badge: 'New' },
+  { label: 'Community', href: '/community', icon: Users, badge: 'New' },
 ];
 
 // Dropdown navigation data
