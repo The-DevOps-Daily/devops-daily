@@ -92,7 +92,7 @@
     "js-yaml": "^4.2.0",
     "lottie-web": "^5.13.0",
     "lucide-react": "^1.17.0",
-    "marked": "^18.0.4",
+    "marked": "^18.0.5",
     "marked-gfm-heading-id": "^4.1.4",
     "marked-highlight": "^2.2.4",
     "next": "16.2.7",
