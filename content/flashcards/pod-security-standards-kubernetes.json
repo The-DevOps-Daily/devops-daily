@@ -1,0 +1,136 @@
+{
+  "id": "pod-security-standards-kubernetes",
+  "title": "Implementing Pod Security Standards in Kubernetes",
+  "description": "Enforce the Baseline, Restricted, and Privileged profiles with the built-in Pod Security Admission controller. Covers namespace labels, modes, version pinning, and where you still need a policy engine.",
+  "category": "Kubernetes",
+  "icon": "ShieldCheck",
+  "difficulty": "intermediate",
+  "estimatedTime": "20 minutes",
+  "cardCount": 17,
+  "theme": {
+    "primaryColor": "purple",
+    "gradientFrom": "from-purple-500",
+    "gradientTo": "to-indigo-600"
+  },
+  "cards": [
+    {
+      "id": "why-pod-security-standards",
+      "front": "Why do you need Pod Security Standards at all?",
+      "back": "Out of the box, Kubernetes lets a Pod run as root, mount a host path, use the host network, or run privileged. Nothing stops it. Pod Security Standards give you three ready-made profiles so you can tell a namespace 'pods here must follow these rules' without writing policy from scratch.",
+      "category": "Fundamentals",
+      "tags": ["kubernetes", "pod-security", "security"]
+    },
+    {
+      "id": "three-levels",
+      "front": "What are the three Pod Security Standards?",
+      "back": "Privileged: no restrictions, allows everything including known escalations. Baseline: blocks known privilege escalations but keeps a normal pod spec working. Restricted: heavily hardened, follows current best practices. They stack, so Restricted includes every Baseline rule plus more.",
+      "category": "Fundamentals",
+      "tags": ["kubernetes", "pod-security", "baseline", "restricted"]
+    },
+    {
+      "id": "replaced-psp",
+      "front": "What replaced PodSecurityPolicy, and why?",
+      "back": "PodSecurityPolicy (PSP) was deprecated in 1.21 and removed in 1.25. It was hard to use: which policy applied depended on RBAC bindings, the ordering was non-obvious, and a missing binding could silently let anything through. Pod Security Standards plus Pod Security Admission replace it. You label a namespace and a built-in controller enforces a fixed profile.",
+      "category": "Fundamentals",
+      "tags": ["kubernetes", "psp", "migration"]
+    },
+    {
+      "id": "baseline-blocks",
+      "front": "What does the Baseline level block?",
+      "back": "Known privilege escalations, while still allowing a normal pod. It blocks privileged containers, hostNetwork, hostPID, hostIPC, hostPath volumes, adding dangerous capabilities, host ports outside the allowed set, and seccomp set to Unconfined. It does not require running as non-root. Good first target for existing workloads.",
+      "category": "The Three Levels",
+      "tags": ["kubernetes", "baseline", "pod-security"]
+    },
+    {
+      "id": "restricted-adds",
+      "front": "What does Restricted add on top of Baseline?",
+      "back": "The hardening rules: runAsNonRoot true, allowPrivilegeEscalation false, drop ALL capabilities (you may re-add NET_BIND_SERVICE), a seccompProfile of RuntimeDefault or Localhost, and only the safe volume types like configMap, secret, emptyDir, and PVCs. Aim for this on new workloads.",
+      "category": "The Three Levels",
+      "tags": ["kubernetes", "restricted", "hardening"]
+    },
+    {
+      "id": "when-privileged",
+      "front": "When is it fine to leave a namespace at Privileged?",
+      "back": "For workloads that genuinely need host access: CNI plugins, CSI drivers, node monitoring agents, and other DaemonSets that touch the node. Put them in their own namespace at Privileged instead of loosening the policy on a shared namespace where normal apps live.",
+      "category": "The Three Levels",
+      "tags": ["kubernetes", "privileged", "daemonset"]
+    },
+    {
+      "id": "what-is-psa",
+      "front": "What is Pod Security Admission (PSA)?",
+      "back": "The built-in admission controller that enforces Pod Security Standards. It ships enabled by default and has been GA since Kubernetes 1.25. You configure it with namespace labels. No webhook to install, no extra controller to run, no RBAC wiring like PSP needed.",
+      "category": "Pod Security Admission",
+      "tags": ["kubernetes", "admission-control", "pod-security"]
+    },
+    {
+      "id": "three-modes",
+      "front": "What are the three modes Pod Security Admission can run in?",
+      "back": "enforce rejects pods that violate the level. audit allows them but records a violation in the audit log. warn allows them but returns a warning to whoever applied the pod. You can set all three at once, for example enforce=baseline with warn and audit set to restricted to preview a tighter policy.",
+      "category": "Pod Security Admission",
+      "tags": ["kubernetes", "admission-control", "enforce", "audit"]
+    },
+    {
+      "id": "apply-restricted",
+      "front": "How do you apply the Restricted standard to a namespace?",
+      "back": "Label the namespace. The key is pod-security.kubernetes.io/<mode>, the value is the level.\n```\nkubectl label namespace prod \\\n  pod-security.kubernetes.io/enforce=restricted\n```\nValues can be privileged, baseline, or restricted.",
+      "category": "Configuration",
+      "tags": ["kubernetes", "kubectl", "namespace", "commands"]
+    },
+    {
+      "id": "preview-before-enforce",
+      "front": "How do you see what a stricter policy would break before turning on enforce?",
+      "back": "Set warn and audit without enforce first.\n```\nkubectl label namespace prod \\\n  pod-security.kubernetes.io/warn=restricted \\\n  pod-security.kubernetes.io/audit=restricted\n```\nThe next apply that violates the rule gets a warning, and the audit log records it. Running pods keep running, since the checks only fire on create and update.",
+      "category": "Configuration",
+      "tags": ["kubernetes", "warn", "audit", "commands"]
+    },
+    {
+      "id": "version-pinning",
+      "front": "Why pin a version on a Pod Security Admission label?",
+      "back": "New Kubernetes releases can add checks to a level. Pinning freezes the rule set so an upgrade does not start rejecting pods that used to pass.\n```\npod-security.kubernetes.io/enforce: restricted\npod-security.kubernetes.io/enforce-version: v1.30\n```\nUse 'latest' only when you want new checks applied automatically.",
+      "category": "Configuration",
+      "tags": ["kubernetes", "versioning", "pod-security"]
+    },
+    {
+      "id": "restricted-securitycontext",
+      "front": "What securityContext makes a pod pass the Restricted level?",
+      "back": "```yaml\nsecurityContext:\n  runAsNonRoot: true\n  seccompProfile:\n    type: RuntimeDefault\ncontainers:\n- name: app\n  securityContext:\n    allowPrivilegeEscalation: false\n    capabilities:\n      drop: [\"ALL\"]\n```\nrunAsNonRoot and seccompProfile sit at pod level, allowPrivilegeEscalation and capabilities go per container. Miss any one and the pod is rejected.",
+      "category": "Restricted in Practice",
+      "tags": ["kubernetes", "securitycontext", "restricted", "yaml"]
+    },
+    {
+      "id": "rejection-error",
+      "front": "What does the rejection look like when a pod fails an enforced policy?",
+      "back": "The API server refuses the create and names every failed check:\n```\nError from server (Forbidden): pods \"web\" is forbidden:\nviolates PodSecurity \"restricted:latest\":\nallowPrivilegeEscalation != false,\nunrestricted capabilities,\nrunAsNonRoot != true,\nseccompProfile not set\n```\nEach line is one field to fix on the pod spec.",
+      "category": "Restricted in Practice",
+      "tags": ["kubernetes", "errors", "troubleshooting"]
+    },
+    {
+      "id": "cluster-wide-defaults",
+      "front": "How do you set a default Pod Security level for the whole cluster?",
+      "back": "Pass an AdmissionConfiguration file to the API server with the PodSecurity plugin config:\n```yaml\ndefaults:\n  enforce: \"baseline\"\n  warn: \"restricted\"\nexemptions:\n  namespaces: [\"kube-system\"]\n```\nPer-namespace labels override these defaults. On managed clusters like EKS or GKE you often cannot touch the API server flags, so labels are the practical lever.",
+      "category": "Advanced",
+      "tags": ["kubernetes", "admission-control", "cluster-config"]
+    },
+    {
+      "id": "why-exempt-kube-system",
+      "front": "Why is kube-system usually exempt from Pod Security Admission?",
+      "back": "System components like the CNI, kube-proxy, and CSI drivers need host access that Baseline or Restricted would reject. PSA supports exemptions by namespace, username, or runtimeClass. Exempt only what truly needs it, since a broad exemption is a hole in the policy.",
+      "category": "Advanced",
+      "tags": ["kubernetes", "exemptions", "kube-system"]
+    },
+    {
+      "id": "psa-limits",
+      "front": "What can Pod Security Admission not do that a policy engine can?",
+      "back": "It only applies the three fixed levels, and only at the namespace boundary. It cannot write custom rules (require a label, a signed image, or resource limits), it cannot mutate a pod to add safe defaults, and it cannot vary policy by anything beyond namespace, user, or runtimeClass. For that, add Kyverno or OPA Gatekeeper, often running alongside PSA.",
+      "category": "Advanced",
+      "tags": ["kubernetes", "kyverno", "opa-gatekeeper", "policy"]
+    },
+    {
+      "id": "find-noncompliant-pods",
+      "front": "How do you find which running pods would fail a stricter level?",
+      "back": "Dry-run the enforce label against the API server. It evaluates the existing pods and warns about the ones that would break, without changing anything.\n```\nkubectl label --dry-run=server --overwrite ns prod \\\n  pod-security.kubernetes.io/enforce=restricted\n```\nRead the warnings, fix or move those workloads, then apply the label for real.",
+      "category": "Advanced",
+      "tags": ["kubernetes", "kubectl", "dry-run", "commands"]
+    }
+  ]
+}
