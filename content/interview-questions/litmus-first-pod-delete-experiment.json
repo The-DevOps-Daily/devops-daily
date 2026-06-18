@@ -1,0 +1,51 @@
+{
+  "id": "litmus-first-pod-delete-experiment",
+  "slug": "litmus-first-pod-delete-experiment",
+  "title": "Running Your First Pod-Delete Experiment Safely",
+  "question": "I hand you a fresh cluster with a demo nginx deployment. Take me from nothing to a controlled pod-delete experiment. What are the steps, and how do you keep it from turning into an outage?",
+  "answer": "Six steps. First, install Litmus, which gives you the chaos-operator and the CRDs (helm chart or the operator manifest is fine). Second, install the pod-delete ChaosExperiment from the ChaosHub into the target namespace. Third, set up RBAC: a dedicated ServiceAccount with a Role and RoleBinding scoped to that namespace, granting only what pod-delete needs. Do not reach for the bundled litmus-admin here. Fourth, create a ChaosEngine pointing at the target with appns=default, applabel=app=nginx, appkind=deployment, and the service account from step three. Fifth, keep the blast radius small in that ChaosEngine: PODS_AFFECTED_PERC set to 50 or even target a single pod, a short TOTAL_CHAOS_DURATION like 30 seconds, and FORCE=false so you mimic a graceful eviction instead of a hard kill. Sixth, watch it: tail the runner and experiment pod logs, watch the ChaosResult verdict, and keep an eye on the app's availability the whole time. The safety rules that matter: start in staging, target a Deployment so the ReplicaSet actually reschedules the pod (pod-delete against a bare pod just leaves you down), kill one replica at a time, have a probe or at least a live dashboard so you observe steady state rather than assume it, and know the abort before you start: kubectl delete chaosengine, or set engineState to stop.",
+  "explanation": "This is the practical 'have you done this with your own hands' question. Listen for ordered steps and especially the RBAC step, which beginners skip and then spend an hour confused about why the runner gets 'forbidden' listing pods. Good candidates mention blast-radius tunables, the FORCE semantics, targeting a controller-backed pod, and the abort path. Someone who says 'apply the ChaosEngine and watch it' without the service account or blast radius has not run this on anything they cared about.",
+  "category": "Chaos Engineering",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "chaos-engineering",
+    "litmus",
+    "kubernetes",
+    "resilience"
+  ],
+  "codeExamples": [
+    {
+      "language": "bash",
+      "label": "Install Litmus and the pod-delete experiment, then watch the run",
+      "code": "# 1) Operator + CRDs\nhelm repo add litmuschaos https://litmuschaos.github.io/litmus-helm/\nhelm install litmus litmuschaos/litmus --namespace litmus --create-namespace\n\n# 2) Experiment definition into the target namespace\nkubectl apply -n default -f \\\n  https://hub.litmuschaos.io/api/chaos/3.0.0?file=charts/generic/pod-delete/experiment.yaml\n\n# 4-6) After applying RBAC + ChaosEngine, watch it run\nkubectl get pods -n default -w        # runner + experiment job appear\nkubectl describe chaosresult nginx-chaos-pod-delete -n default"
+    },
+    {
+      "language": "yaml",
+      "label": "ChaosEngine with a small, graceful blast radius",
+      "code": "apiVersion: litmuschaos.io/v1alpha1\nkind: ChaosEngine\nmetadata:\n  name: nginx-chaos\n  namespace: default\nspec:\n  appinfo:\n    appns: default\n    applabel: 'app=nginx'\n    appkind: deployment\n  chaosServiceAccount: pod-delete-sa\n  engineState: active\n  experiments:\n    - name: pod-delete\n      spec:\n        components:\n          env:\n            - name: TOTAL_CHAOS_DURATION\n              value: '30'\n            - name: CHAOS_INTERVAL\n              value: '10'\n            - name: PODS_AFFECTED_PERC\n              value: '50'\n            - name: FORCE\n              value: 'false'   # graceful eviction, like a real node drain"
+    },
+    {
+      "language": "bash",
+      "label": "The abort switch, before you start",
+      "code": "# Stop chaos and let Litmus revert it (best effort)\nkubectl patch chaosengine nginx-chaos -n default \\\n  --type merge -p '{\"spec\":{\"engineState\":\"stop\"}}'\n\n# Or just delete the engine\nkubectl delete chaosengine nginx-chaos -n default"
+    }
+  ],
+  "followUpQuestions": [
+    "What does FORCE=true actually change, and when does that make your experiment unrealistic or dangerous?",
+    "What happens if you run pod-delete against a standalone pod with no Deployment or ReplicaSet behind it?",
+    "How would you target one specific pod by name instead of a percentage of the deployment?",
+    "Where exactly do you read whether the run passed, and what does Awaited mean?"
+  ],
+  "commonMistakes": [
+    "Skipping the RBAC service account, hitting 'forbidden' errors from the runner, then papering over it with cluster-admin",
+    "Leaving FORCE at a value that hard-kills pods, so the test never exercises graceful shutdown the way a real eviction would",
+    "Running against a bare pod with no controller, so nothing reschedules and the 'experiment' is just an outage"
+  ],
+  "relatedTopics": [
+    "kubernetes-rbac",
+    "kubernetes-deployments",
+    "chaos-engineering",
+    "blast-radius"
+  ]
+}
