@@ -752,5 +752,16 @@
   "public/images/posts/opentofu-1-12-destroy-false-state-surgery.svg": "f756e470fc43ba28",
   "public/images/posts/government-pulled-fable-mythos-what-builders-should-learn.svg": "8f40086c27e4de0e",
   "public/images/posts/multi-region-active-active-aws.svg": "24584f04a684e1a5",
-  "public/images/news/2026-week-25.svg": "59564ccb592d9013"
+  "public/images/news/2026-week-25.svg": "59564ccb592d9013",
+  "public/images/posts/node-postgres-sslmode-silently-ignores-ssl-options.svg": "2ea9d3ac4d35d77c",
+  "public/images/posts/neon-vs-supabase-scaling-costs.svg": "355bb55ffacc4ca3",
+  "public/images/posts/hetzner-doubled-prices-ai-memory-crunch.svg": "bfe35f3b5356bd38",
+  "public/images/posts/neon-vs-supabase-operational-benchmarks.svg": "2ac123cbadfbf8f1",
+  "public/images/quizzes/vault-secrets-management-quiz-og.svg": "2260e69e93829815",
+  "public/images/interview-questions/litmus-core-resources-explained-og.svg": "8553c7d9229ccfd5",
+  "public/images/posts/neon-vs-supabase-free-tier-benchmarks.svg": "8606eb89805ae2ad",
+  "public/images/interview-questions/litmus-rbac-blast-radius-safety-og.svg": "f41277566a33ab3a",
+  "public/images/interview-questions/litmus-first-pod-delete-experiment-og.svg": "ee9c69c4804f4f76",
+  "public/images/interview-questions/litmus-chaos-at-scale-workflows-gitops-og.svg": "9b7fd32556aab583",
+  "public/images/interview-questions/litmus-probes-steady-state-validation-og.svg": "7e05a6f2a8aa7767"
 }

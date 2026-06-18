@@ -1,0 +1,46 @@
+{
+  "id": "litmus-rbac-blast-radius-safety",
+  "slug": "litmus-rbac-blast-radius-safety",
+  "title": "Scoping Litmus Safely: RBAC and Blast Radius",
+  "question": "Your security team sees that Litmus can delete pods and inject network faults cluster-wide, and they want it gone. How do you scope Litmus so you can still run chaos in production without handing it the keys to the cluster?",
+  "answer": "There are two levers, RBAC and blast radius, and you pull both. On RBAC: Litmus ships litmus-admin, a cluster-wide service account that is fine for a sandbox and wrong for production. Each ChaosExperiment already declares exactly the verbs and resources its fault needs, so build a least-privilege ServiceAccount per experiment or per team namespace using a Role and RoleBinding instead of a ClusterRole wherever the fault allows it. Run Litmus in namespaced scope so a blast cannot cross tenant boundaries. On blast radius: the ChaosEngine appns and applabel narrow the target set, PODS_AFFECTED_PERC and KILL_COUNT cap how many pods go at once, and for node or infra faults NODE_LABEL fences which nodes can be touched. Sequence multiple faults serially rather than in parallel so you do not compound failures you cannot reason about. Then layer operational safety on top: run chaos in its own namespace, set resource quotas, attach probes in Continuous mode that fail fast and abort the run when an SLO breaks, and rehearse the whole thing in staging first. And know the kill switch cold: set engineState to stop or delete the ChaosEngine, which reverts the chaos best-effort and tears down the runner. The pitch back to security is simple. A least-privilege service account, namespaced scope, a bounded blast radius, and an auto-halt probe is a smaller and known standing risk than the unknown failure modes you are already shipping to production blind.",
+  "explanation": "This is a senior security and operations conversation, not a feature recall. Listen for least-privilege per experiment, namespaced versus cluster scope, the specific blast-radius env vars, serial sequencing, an auto-halt probe, and the kill switch. The framing for security matters too: a good candidate sells bounded risk, not 'trust me'. The red flag is anyone who shrugs and says give it cluster-admin or just use litmus-admin.",
+  "category": "Chaos Engineering",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "chaos-engineering",
+    "litmus",
+    "kubernetes",
+    "rbac"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "A least-privilege service account scoped to one namespace for pod-delete",
+      "code": "apiVersion: v1\nkind: ServiceAccount\nmetadata:\n  name: pod-delete-sa\n  namespace: default\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: Role          # Role, not ClusterRole: stays inside this namespace\nmetadata:\n  name: pod-delete-role\n  namespace: default\nrules:\n  - apiGroups: ['']\n    resources: ['pods', 'pods/log', 'events']\n    verbs: ['get', 'list', 'create', 'delete', 'deletecollection']\n  - apiGroups: ['apps']\n    resources: ['deployments', 'replicasets']\n    verbs: ['get', 'list']\n  - apiGroups: ['batch']\n    resources: ['jobs']\n    verbs: ['get', 'list', 'create', 'delete']\n  - apiGroups: ['litmuschaos.io']\n    resources: ['chaosengines', 'chaosexperiments', 'chaosresults']\n    verbs: ['get', 'list', 'patch', 'update']\n---\napiVersion: rbac.authorization.k8s.io/v1\nkind: RoleBinding\nmetadata:\n  name: pod-delete-rb\n  namespace: default\nsubjects:\n  - kind: ServiceAccount\n    name: pod-delete-sa\n    namespace: default\nroleRef:\n  kind: Role\n  name: pod-delete-role\n  apiGroup: rbac.authorization.k8s.io"
+    },
+    {
+      "language": "yaml",
+      "label": "Bounding the blast radius in the ChaosEngine",
+      "code": "experiments:\n  - name: pod-delete\n    spec:\n      components:\n        env:\n          - name: PODS_AFFECTED_PERC\n            value: '25'        # at most a quarter of matched pods\n          - name: KILL_COUNT\n            value: '1'         # one at a time\n          - name: TOTAL_CHAOS_DURATION\n            value: '60'\n          - name: SEQUENCE\n            value: 'serial'    # do not compound faults in parallel"
+    }
+  ],
+  "followUpQuestions": [
+    "How would you actually enforce that nobody runs chaos with litmus-admin, for example with an admission policy or OPA Gatekeeper?",
+    "How do you isolate two teams running chaos in the same shared cluster so one cannot affect the other?",
+    "If the chaos-runner pod dies mid-experiment, how do you make sure the injected fault still reverts?",
+    "How do you stop a blast from cascading into dependencies you did not explicitly target?"
+  ],
+  "commonMistakes": [
+    "Reaching for litmus-admin or cluster-admin in production because it is the path of least resistance",
+    "Leaving blast-radius env vars at defaults, so PODS_AFFECTED_PERC takes out far more than intended",
+    "Assuming chaos always reverts cleanly and never testing the abort path or the runner-dies-mid-run case"
+  ],
+  "relatedTopics": [
+    "kubernetes-rbac",
+    "least-privilege",
+    "multi-tenancy",
+    "blast-radius"
+  ]
+}

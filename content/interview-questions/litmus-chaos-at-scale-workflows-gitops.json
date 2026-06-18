@@ -1,0 +1,46 @@
+{
+  "id": "litmus-chaos-at-scale-workflows-gitops",
+  "slug": "litmus-chaos-at-scale-workflows-gitops",
+  "title": "From One Experiment to Continuous Chaos at Scale",
+  "question": "You have proven a single pod-delete works. Leadership now wants chaos as an ongoing practice across dozens of services and several clusters, not a one-off demo. What changes, and what would you do differently at scale?",
+  "answer": "A single hand-applied ChaosEngine does not become a program by running it more often. Four things change. First, you chain faults into scenarios. Litmus drives Argo-workflow-based chaos experiments that sequence multiple faults plus probes into one run, for example kill a pod, then add network latency, while a probe asserts the SLO holds the whole time. ChaosCenter becomes the control plane, and in Litmus 3.x you install chaos infrastructure (the delegate agents) into each target cluster and drive runs centrally. Second, you put the definitions under GitOps. Store the ChaosEngine, workflow, and probe YAML in a repo and deploy it with Argo CD, so chaos is reviewed, versioned, and reproducible instead of kubectl-applied from someone's laptop. Third, you schedule and gate. Run experiments on a cron with a ChaosSchedule for steady drift detection, and wire them into your delivery pipeline as a resilience gate where a dropped probeSuccessPercentage blocks promotion. Reserve structured GameDays for the big multi-team scenarios. Fourth, you observe. Export chaos metrics to Prometheus, overlay chaos events on your golden-signal Grafana dashboards, and make a promProbe the auto-halt so a burning SLO ends the run and reverts. What I would do differently at scale is mostly organizational: enforce blast-radius and RBAC policy through admission control so nobody can run with litmus-admin, give each team a namespaced scope, track a resilience score per service over time so you can show leadership the curve, and treat every chaos finding like an incident with an owner and a fix rather than a dashboard nobody reads. The goal is regressions caught automatically, not heroics.",
+  "explanation": "This is a senior systems-thinking question. The jump you are listening for is from a custom resource to a practice: workflows that chain faults, GitOps for versioning and review, scheduling, CD gating, observability with auto-halt, and the org mechanics that keep it alive. The 'what would you do differently at scale' part should surface policy enforcement and treating findings as owned work. A weak answer just says 'run it more and put it on a schedule' with no governance, no observability, and no story for who acts on the results.",
+  "category": "Chaos Engineering",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "chaos-engineering",
+    "litmus",
+    "kubernetes",
+    "gitops"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Recurring chaos with a ChaosSchedule, fenced to work hours and weekdays",
+      "code": "apiVersion: litmuschaos.io/v1alpha1\nkind: ChaosSchedule\nmetadata:\n  name: nginx-weekday-chaos\n  namespace: default\nspec:\n  schedule:\n    repeat:\n      properties:\n        minChaosInterval:\n          hour:\n            everyNthHour: 6\n      workHours:\n        includedHours: 9-17\n      workDays:\n        includedDays: 'Mon,Tue,Wed,Thu'   # never Friday, never overnight\n  engineTemplateSpec:\n    appinfo:\n      appns: default\n      applabel: 'app=nginx'\n      appkind: deployment\n    chaosServiceAccount: pod-delete-sa\n    experiments:\n      - name: pod-delete\n        spec:\n          components:\n            env:\n              - name: PODS_AFFECTED_PERC\n                value: '25'"
+    },
+    {
+      "language": "yaml",
+      "label": "A Prometheus probe used as an auto-halt SLO gate",
+      "code": "probe:\n  - name: availability-slo-gate\n    type: promProbe\n    mode: Continuous\n    promProbe/inputs:\n      endpoint: http://prometheus.monitoring:9090\n      query: |\n        sum(rate(http_requests_total{job=\"nginx\",code!~\"5..\"}[1m]))\n        / sum(rate(http_requests_total{job=\"nginx\"}[1m]))\n      comparator:\n        criteria: '>='\n        value: '0.99'        # availability dips below 99% -> probe fails -> run halts\n    runProperties:\n      probeTimeout: 5s\n      interval: 10s\n      attempt: 1\n      probePollingInterval: 10s\n      stopOnFailure: true"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you keep scheduled chaos from firing during a real incident or a change freeze?",
+    "In a shared cluster, how do you prevent one team's chaos from spilling into another team's services?",
+    "How do you actually measure whether the chaos program is improving reliability, rather than just generating activity?",
+    "Build versus adopt: how would you choose between Litmus, Chaos Mesh, and a managed offering for a program this size?"
+  ],
+  "commonMistakes": [
+    "Treating chaos as a one-off demo instead of a versioned, scheduled, and owned practice",
+    "Scheduling chaos with no freeze or incident awareness, so it can fire in the middle of a real outage",
+    "Collecting chaos results that nobody acts on, with no resilience score and no owner for findings"
+  ],
+  "relatedTopics": [
+    "gitops",
+    "argo-cd",
+    "game-days",
+    "observability"
+  ]
+}
