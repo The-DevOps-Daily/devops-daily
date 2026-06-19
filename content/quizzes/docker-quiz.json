@@ -4,16 +4,16 @@
   "description": "Test your Docker knowledge with questions on containers, images, Dockerfile instructions, volumes, networks, Compose, and basic orchestration concepts.",
   "category": "Docker",
   "icon": "Code",
-  "totalPoints": 85,
+  "totalPoints": 165,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-500",
     "gradientTo": "to-cyan-600"
   },
   "metadata": {
-    "estimatedTime": "12-15 minutes",
+    "estimatedTime": "20-25 minutes",
     "difficultyLevels": {
-      "beginner": 3,
+      "beginner": 11,
       "intermediate": 2,
       "advanced": 1
     },
@@ -25,7 +25,7 @@
       "title": "Dockerfile Best Practices",
       "description": "Choose the most efficient Dockerfile for a Node.js application.",
       "situation": "You need to create a Dockerfile for a Node.js web application that has dependencies in package.json.",
-      "codeExample": "// Your app structure:\n├── package.json\n├── package-lock.json\n├── src/\n│   └── app.js\n└── public/\n    └── index.html",
+      "codeExample": "// Your app structure:\n\u251c\u2500\u2500 package.json\n\u251c\u2500\u2500 package-lock.json\n\u251c\u2500\u2500 src/\n\u2502   \u2514\u2500\u2500 app.js\n\u2514\u2500\u2500 public/\n    \u2514\u2500\u2500 index.html",
       "options": [
         "FROM node:16-alpine\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci --only=production\nCOPY . .\nEXPOSE 3000\nCMD [\"npm\", \"start\"]",
         "FROM node:16\nCOPY . /app\nWORKDIR /app\nRUN npm install\nEXPOSE 3000\nCMD [\"npm\", \"start\"]",
@@ -123,6 +123,143 @@
       "hint": "Think about the principle of least privilege and minimizing the attack surface. What practices reduce security risks?",
       "difficulty": "advanced",
       "points": 25
+    },
+    {
+      "id": "image-vs-container",
+      "title": "Images vs Containers",
+      "description": "Use the core Docker vocabulary correctly.",
+      "situation": "One teammate says 'just run the image' and another says 'restart the container'. You want to use the terms precisely.",
+      "options": [
+        "They are two names for the same thing",
+        "A container is a read-only template and an image is a running instance of it",
+        "An image is a read-only template, and a container is a runnable instance created from that image",
+        "An image can only ever produce a single container"
+      ],
+      "correctAnswer": 2,
+      "explanation": "An image is an immutable, layered template. You create one or many containers from a single image; each container is an isolated instance with its own writable layer. Think class versus instance.",
+      "hint": "Think class versus instance in programming.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "docker-run-detached",
+      "title": "Running Your First Container",
+      "description": "Start a container in the background with a published port.",
+      "situation": "You want to run the official nginx image in the background and reach it on host port 8080.",
+      "options": [
+        "docker run -d -p 8080:80 nginx",
+        "docker start -d -p 8080:80 nginx",
+        "docker run -p 80:8080 nginx",
+        "docker exec -d -p 8080:80 nginx"
+      ],
+      "correctAnswer": 0,
+      "explanation": "docker run creates and starts a new container. -d runs it detached (in the background), and -p 8080:80 publishes host port 8080 to container port 80. docker start only restarts an existing container; docker exec runs a command in a running one.",
+      "hint": "-d for detached, -p host:container.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "listing-containers",
+      "title": "Listing Containers",
+      "description": "Find a container that exited immediately.",
+      "situation": "You started a container but `docker ps` shows nothing. It seems to have exited right away.",
+      "options": [
+        "docker images, which lists your containers",
+        "docker logs, which lists all containers",
+        "Nothing, an exited container is gone for good",
+        "docker ps -a, which includes stopped and exited containers"
+      ],
+      "correctAnswer": 3,
+      "explanation": "docker ps shows only running containers. Add -a (all) to include stopped and exited ones, then docker logs <id> tells you why it exited. docker images lists images, not containers.",
+      "hint": "ps shows running only; one flag shows everything.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "building-an-image",
+      "title": "Building an Image",
+      "description": "Build and tag an image from a Dockerfile.",
+      "situation": "You have a Dockerfile in the current directory and want an image named myapp with tag v1.",
+      "options": [
+        "docker run -t myapp:v1 .",
+        "docker build -t myapp:v1 .",
+        "docker build myapp:v1",
+        "docker create myapp:v1 ."
+      ],
+      "correctAnswer": 1,
+      "explanation": "docker build builds an image from a Dockerfile. -t sets the name:tag and the trailing . is the build context (the current directory). Leaving off the context path is one of the most common first-time errors.",
+      "hint": "-t name:tag, and do not forget the build context path at the end.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "dockerfile-first-instruction",
+      "title": "Dockerfile Instructions",
+      "description": "Know what the core Dockerfile instructions do.",
+      "situation": "You are reading a Dockerfile for the first time and want to understand the foundational instruction.",
+      "options": [
+        "FROM, which sets the base image the build starts from",
+        "RUN, which starts the container",
+        "CMD, which copies your application files in",
+        "EXPOSE, which downloads the base image"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A Dockerfile starts FROM a base image (aside from an optional leading ARG). RUN executes build-time commands, COPY brings files into the image, and CMD sets the default command the container runs at startup.",
+      "hint": "Every image is built on top of another image.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "compose-up-basics",
+      "title": "Docker Compose Basics",
+      "description": "Understand what `docker compose up` does for a multi-service app.",
+      "situation": "Your compose.yaml defines a web service and a db service.",
+      "codeExample": "services:\n  web:\n    build: .\n    ports:\n      - \"8000:8000\"\n  db:\n    image: postgres:16",
+      "options": [
+        "It builds a single image containing both web and db",
+        "It starts only the first service listed",
+        "It creates and starts both services on a shared network so they reach each other by service name",
+        "It runs both services but keeps them on isolated networks by default"
+      ],
+      "correctAnswer": 2,
+      "explanation": "docker compose up brings every defined service up together and puts them on a shared default network, so web can reach the database at the hostname 'db'. It is the standard way to run a multi-container app locally.",
+      "hint": "One command, all services, one network, reachable by service name.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "port-publishing-direction",
+      "title": "Publishing Ports",
+      "description": "Get the host-to-container port mapping the right way round.",
+      "situation": "Your app listens on port 3000 inside the container. You run `docker run -p 3000:8080 myapp` and cannot reach it at localhost:3000.",
+      "options": [
+        "Containers cannot publish ports below 8080",
+        "The mapping is backwards: -p is host:container, so you sent host 3000 to container 8080 where nothing listens. Use -p 3000:3000",
+        "You must add -d or published ports are ignored",
+        "localhost is never reachable from a container"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The -p flag uses host:container order. -p 3000:8080 forwards host port 3000 to container port 8080, but the app listens on 3000 inside, so nothing answers. Use -p 3000:3000 (or -p 8080:3000 to reach it on host port 8080).",
+      "hint": "host:container. Which side is the app actually listening on?",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "exec-into-container",
+      "title": "Getting a Shell in a Container",
+      "description": "Open an interactive shell inside a running container.",
+      "situation": "A container is running and you want a shell inside it to look around and debug.",
+      "options": [
+        "docker run -it <container> sh, to reuse the running container",
+        "docker attach <container> sh",
+        "docker shell <container>",
+        "docker exec -it <container> sh"
+      ],
+      "correctAnswer": 3,
+      "explanation": "docker exec runs a new command in an already-running container, and -it gives you an interactive terminal. docker run would start a brand new container instead, and docker attach connects to the main process rather than opening a new shell.",
+      "hint": "exec runs in an existing container; run makes a new one.",
+      "difficulty": "beginner",
+      "points": 10
     }
   ]
 }
