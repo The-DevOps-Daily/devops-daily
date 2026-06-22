@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0b0f17;stop-opacity:1" />
+      <stop offset="55%" style="stop-color:#171205;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0b0f17;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="amber" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g stroke="#241a06" stroke-width="1" opacity="0.6">
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="486" x2="1200" y2="486"/>
+  </g>
+
+  <text x="80" y="96" font-family="monospace" font-size="26" fill="#7c6a3f" letter-spacing="3">DEVOPS DAILY  ·  COMMUNITY</text>
+
+  <!-- PR chip -->
+  <g transform="translate(80,134)">
+    <rect x="0" y="0" rx="9" ry="9" width="232" height="46" fill="#171205" stroke="#f59e0b" stroke-opacity="0.45"/>
+    <text x="20" y="30" font-family="monospace" font-size="22" fill="#fbbf24">git push · open PR</text>
+  </g>
+
+  <text x="80" y="288" font-family="Arial, sans-serif" font-size="78" font-weight="800" fill="#f1f5f9">Write. Get merged.</text>
+  <text x="80" y="372" font-family="Arial, sans-serif" font-size="78" font-weight="800" fill="url(#amber)">Get paid.</text>
+
+  <text x="80" y="436" font-family="Arial, sans-serif" font-size="30" fill="#94a3b8">The weekly DevOps Daily community writing challenge.</text>
+
+  <!-- prize chip -->
+  <g transform="translate(80,520)">
+    <circle cx="22" cy="20" r="20" fill="#171205" stroke="#f59e0b" stroke-opacity="0.5"/>
+    <text x="22" y="29" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#fbbf24" text-anchor="middle">$</text>
+    <text x="58" y="28" font-family="Arial, sans-serif" font-size="26" fill="#cbd5e1">Most popular post each week wins $50</text>
+  </g>
+
+  <text x="1120" y="556" text-anchor="end" font-family="monospace" font-size="24" fill="#475569">devops-daily.com/community</text>
+</svg>
