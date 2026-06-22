@@ -767,5 +767,7 @@
   "public/images/flashcards/pod-security-standards-kubernetes-og.svg": "8fed811f476ca628",
   "public/images/checklists/multi-region-active-active-aws-og.svg": "d4634cd880d3c0a6",
   "public/images/posts/hashicorp-vault-secrets-management-best-practices.svg": "1efb2ec948430a29",
-  "public/images/posts/ai-sre-agents-what-they-fix-and-break.svg": "24e14ac88ae0fdc6"
+  "public/images/posts/ai-sre-agents-what-they-fix-and-break.svg": "24e14ac88ae0fdc6",
+  "public/images/posts/digitalocean-serverless-inference-first-call.svg": "50922d86ae48658d",
+  "public/images/news/2026-week-26.svg": "1816e2fea0004e65"
 }
