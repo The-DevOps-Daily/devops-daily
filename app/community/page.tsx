@@ -12,6 +12,7 @@ import {
   Scale,
   Sparkles,
   Trophy,
+  UserPlus,
   Wrench,
 } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
@@ -26,18 +27,22 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Github } from '@/components/icons/social-icons';
+import { Github, Twitter, Linkedin } from '@/components/icons/social-icons';
 
-// Single source of truth for the launch prize so it is one edit to change.
-const WEEKLY_PRIZE = '$50';
+// Single source of truth for the prize, so the whole page updates from one edit.
+const PRIZE_EACH = '$10';
+const WEEKLY_WINNERS = 5;
+const PRIZE_SUMMARY = `${PRIZE_EACH} each for ${WEEKLY_WINNERS} winners`;
 const REPO_URL = 'https://github.com/The-DevOps-Daily/devops-daily';
 const SUBMIT_URL = `${REPO_URL}/tree/main/content/community`;
 const DISCORD_URL = 'https://discord.gg/devopsdaily';
+const X_URL = 'https://x.com/thedevopsdaily';
+const LINKEDIN_URL = 'https://www.linkedin.com/company/thedevopsdaily';
 
 export const metadata: Metadata = {
   title: 'Community Writing Challenge',
   description:
-    'Write for DevOps Daily. Publish a technical article to thousands of engineers by opening a pull request, and the most popular community post each week wins a cash prize.',
+    'Write for DevOps Daily. Publish a technical article to thousands of engineers by opening a pull request, and the most popular community posts each week win a cash prize.',
   alternates: { canonical: '/community' },
   openGraph: {
     title: 'Community Writing Challenge - DevOps Daily',
@@ -74,7 +79,7 @@ const steps = [
     icon: GitPullRequest,
     title: '2. Open a pull request',
     description:
-      'Add your article as a Markdown file to our open GitHub repo and open a PR. The same workflow you already use every day.',
+      'Add your article as a Markdown file to our open GitHub repo and open a PR. The same workflow you already use every day. Writing with Claude Code? The repo ships a /write-post skill that scaffolds a draft in our format for you.',
   },
   {
     icon: CheckCircle2,
@@ -85,7 +90,7 @@ const steps = [
   {
     icon: Trophy,
     title: '4. Win the week',
-    description: `The published community post with the most reader applause from Monday to Sunday wins ${WEEKLY_PRIZE}.`,
+    description: `Each week the ${WEEKLY_WINNERS} most popular community posts each win ${PRIZE_EACH}. Five winners, every week.`,
   },
 ];
 
@@ -114,9 +119,9 @@ const topics = [
 
 const rules = [
   'Your work must be original and your own. No reposts, no AI-generated filler. If you used an AI assistant, disclose it.',
-  'You keep the credit. Every community post carries your byline and links back to you.',
+  'You keep ownership of what you write. Publishing here grants us the right to host it; your byline stays on it and links back to you.',
   'A maintainer reviews every submission. Merge decisions are based on accuracy, clarity, and fit.',
-  'One prize per week, to the single most-applauded community post published that week.',
+  `${WEEKLY_WINNERS} prizes per week, ${PRIZE_EACH} each, to the week's most popular community posts.`,
   'Be accurate and be kind. Cite sources, do not punch down, and do not post anything you do not have the right to share.',
 ];
 
@@ -130,16 +135,24 @@ const faqs = [
     a: 'You will get review feedback explaining why, usually with concrete edits. Most posts that get declined are factually off or too thin, and both are fixable. Revise and push again.',
   },
   {
-    q: 'How is the most popular post decided?',
-    a: 'Every community post has a reader applause button with a public count. The post with the most applause from Monday 00:00 to Sunday 23:59 UTC wins that week. Counts are visible on each post, so the leaderboard is transparent.',
+    q: 'How are the popular posts decided?',
+    a: `Popularity is measured by reader engagement (views and reader response) over the week, Monday 00:00 to Sunday 23:59 UTC. The ${WEEKLY_WINNERS} community posts that resonate most that week each win. Sharing your post and bringing your own readers genuinely helps.`,
   },
   {
     q: 'Can I submit more than one post?',
-    a: 'Yes. There is no limit on submissions, though a given week only awards one prize.',
+    a: 'Yes, there is no limit on submissions. A single author can also place more than once in a week if multiple posts land.',
+  },
+  {
+    q: 'Can I use AI to help write it?',
+    a: 'Yes, as a tool, not a ghostwriter. The experience and judgement must be yours, and you must disclose AI assistance. If you use Claude Code, the repo ships a /write-post skill that scaffolds a draft in our house format and style, which is the fastest way to start.',
+  },
+  {
+    q: 'Do I get an author profile?',
+    a: 'Yes. Once your first post is merged, you can add yourself to our Experts directory with a bio, links, and your specialties, so readers (and potential clients) can find you.',
   },
   {
     q: 'How do I get paid?',
-    a: `Winners are contacted after the week closes and paid ${WEEKLY_PRIZE} by a standard method such as PayPal or Wise. Where a cash prize is not allowed, we will arrange an equivalent.`,
+    a: `Winners are contacted after the week closes and paid ${PRIZE_EACH} by a standard method such as PayPal or Wise. Where a cash prize is not allowed, we will arrange an equivalent.`,
   },
 ];
 
@@ -151,11 +164,11 @@ export default function CommunityPage() {
         accentWord="Get paid"
         badge="New"
         icon={PenLine}
-        description={`A weekly writing challenge for the community. Publish a technical article to thousands of engineers by opening a pull request, and the most popular community post each week wins ${WEEKLY_PRIZE}.`}
+        description={`A weekly writing challenge for the community. Publish a technical article to thousands of engineers by opening a pull request. Every week, the ${WEEKLY_WINNERS} most popular community posts each win ${PRIZE_EACH}.`}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Community' }]}
         stats={[
-          { label: 'weekly prize', value: WEEKLY_PRIZE },
-          { label: 'new winner', value: 'Every week' },
+          { label: 'weekly prizes', value: `${WEEKLY_WINNERS} × ${PRIZE_EACH}` },
+          { label: 'new winners', value: 'Every week' },
           { label: 'open to', value: 'Everyone' },
         ]}
       >
@@ -243,20 +256,21 @@ export default function CommunityPage() {
                   <Badge variant="secondary" className="mb-1.5 gap-1">
                     <Sparkles className="h-3 w-3" /> How winners are picked
                   </Badge>
-                  <CardTitle className="text-xl">The most applauded post wins</CardTitle>
+                  <CardTitle className="text-xl">Five winners every week</CardTitle>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
               <p>
-                Every published community post carries a reader applause button with a count anyone can
-                see. From Monday to Sunday, the post that collects the most applause takes the{' '}
-                <span className="font-semibold text-foreground">{WEEKLY_PRIZE}</span> prize for that week.
+                Each week, from Monday to Sunday, the{' '}
+                <span className="font-semibold text-foreground">{WEEKLY_WINNERS} most popular community
+                posts</span> each win <span className="font-semibold text-foreground">{PRIZE_EACH}</span>.
+                Popularity comes down to reader engagement over the week, so the writing that genuinely
+                helps people is what gets rewarded.
               </p>
               <p>
-                The count is public, so the running leaderboard is never a mystery. It rewards posts that
-                genuinely resonate, not just the ones that landed on the busiest day. Share your post,
-                bring your readers, and let the applause speak.
+                Five winners instead of one means more people get paid and more writers have a real shot,
+                especially early on. Share your post and bring your own readers, it counts.
               </p>
             </CardContent>
           </Card>
@@ -290,6 +304,61 @@ export default function CommunityPage() {
               </AccordionItem>
             ))}
           </Accordion>
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 py-16">
+        <div className="mx-auto max-w-3xl">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start gap-4">
+                <div className="rounded-lg bg-primary/10 p-2.5">
+                  <UserPlus className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-lg">Get merged, then claim your author profile</CardTitle>
+                  <CardDescription className="mt-1.5">
+                    Once your first post is published, add yourself to our{' '}
+                    <Link href="/experts" className="text-primary underline-offset-4 hover:underline">
+                      Experts directory
+                    </Link>
+                    : a profile page with your bio, links, and specialties, so readers and potential
+                    clients can find you. It is another pull request, and we will help you set it up.
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+          </Card>
+        </div>
+      </section>
+
+      <section className="container mx-auto px-4 pb-4">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-muted/30 p-8 text-center">
+          <h2 className="text-xl font-bold sm:text-2xl">Do not miss a challenge</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
+            We announce each week&apos;s winners and call for the next round on X and LinkedIn. Follow
+            along so you know when the clock resets.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <Button asChild variant="outline">
+              <a href={X_URL} target="_blank" rel="noopener noreferrer">
+                <Twitter className="mr-2 h-4 w-4" />
+                Follow on X
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">
+                <Linkedin className="mr-2 h-4 w-4" />
+                Follow on LinkedIn
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Join Discord
+              </a>
+            </Button>
+          </div>
         </div>
       </section>
 
