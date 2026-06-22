@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           # A push event's github.event.before can be many commits behind
           # (e.g. a merge commit that brings in several PR commits at once).
