@@ -449,19 +449,17 @@ Create a comprehensive README with build and run instructions:
 ## Build
 
     docker build -t myapp .
-```
 
 ## Run
 
-```bash
-docker run -d -p 8000:8000 -e DB_HOST=localhost myapp
-```
+    docker run -d -p 8000:8000 -e DB_HOST=localhost myapp
 
 ## Environment Variables
 
 - `DB_HOST`: Database hostname (required)
 - `PORT`: Application port (default: 8000)
 - `LOG_LEVEL`: Logging level (default: info)
+```
 
 ### Document Image Versions
 
