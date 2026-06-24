@@ -1,0 +1,143 @@
+{
+  "id": "aws-lambda-cold-start-optimization",
+  "title": "AWS Lambda Cold Start Optimization",
+  "description": "How cold starts actually work in AWS Lambda and the techniques that cut them down: runtime and memory choices, code and package tuning, provisioned concurrency, and SnapStart.",
+  "category": "Serverless",
+  "icon": "Snowflake",
+  "difficulty": "intermediate",
+  "estimatedTime": "18 minutes",
+  "cardCount": 18,
+  "theme": {
+    "primaryColor": "orange",
+    "gradientFrom": "from-orange-500",
+    "gradientTo": "to-amber-600"
+  },
+  "cards": [
+    {
+      "id": "cold-start-lifecycle",
+      "front": "What actually happens during a Lambda cold start?",
+      "back": "A cold start is the work Lambda does before your handler can run, when no warm environment exists:\n\n1. Download your code (zip or container image) to a fresh micro-VM\n2. Start the execution environment (a Firecracker micro-VM)\n3. Bootstrap the language runtime (JVM, Node, Python, and so on)\n4. Run your init code, meaning everything outside the handler\n\nOnly after all that does your handler run. Steps 1 to 4 are the cold start. Lambda gives the init phase up to 10 seconds and a burst of extra CPU, so heavy init is cheaper than you might expect, but it still adds to first-request latency.",
+      "category": "Fundamentals",
+      "tags": ["aws-lambda", "cold-start", "serverless"]
+    },
+    {
+      "id": "cold-vs-warm",
+      "front": "What is the difference between a cold start and a warm invocation?",
+      "back": "Cold start: Lambda has no ready environment, so it builds one from scratch (download, boot, init) before running your code. The first request after a deploy or a scale-up pays this.\n\nWarm invocation: Lambda reuses an environment that already ran a request. The runtime and your init code are already in memory, so it jumps straight to the handler. This is the normal, fast path.\n\nThe cold start tax is paid per environment, not per request. One environment handles one request at a time, then stays warm for a while and serves many more for free.",
+      "category": "Fundamentals",
+      "tags": ["cold-start", "aws-lambda", "fundamentals"]
+    },
+    {
+      "id": "when-new-environment",
+      "front": "When does Lambda spin up a new execution environment instead of reusing one?",
+      "back": "Lambda reuses a warm environment whenever it can. You get a new one, and a cold start, when:\n\n- The first request arrives after a deploy or config change\n- Concurrent requests exceed the number of warm environments (each env serves one request at a time, so 100 simultaneous requests need 100 environments)\n- An environment has been idle long enough that Lambda reclaimed it (no fixed TTL, usually several minutes to a few hours)\n- You changed the function code, layers, or environment variables\n\nTraffic spikes are the big one. Smooth traffic stays warm; bursty traffic cold-starts on every new concurrent slot.",
+      "category": "Fundamentals",
+      "tags": ["cold-start", "concurrency", "aws-lambda"]
+    },
+    {
+      "id": "measure-cold-starts",
+      "front": "How do you measure cold start latency for a Lambda function?",
+      "back": "Every cold invocation logs an `Init Duration` field in the REPORT line. Warm invocations have no Init Duration. Query it with CloudWatch Logs Insights:\n\n```\nfilter ispresent(@initDuration)\n| stats count() as coldStarts,\n        avg(@initDuration) as avgInit,\n        max(@initDuration) as maxInit\n  by bin(1h)\n```\n\nFor a per-request breakdown, turn on AWS X-Ray. The trace shows an `Initialization` subsegment separate from the handler. Lambda has no built-in cold-start count metric, so Logs Insights or X-Ray is how you actually see it.",
+      "category": "Fundamentals",
+      "tags": ["cloudwatch", "x-ray", "monitoring"]
+    },
+    {
+      "id": "runtime-choice",
+      "front": "Which Lambda runtimes have the fastest cold starts, and which are the slowest?",
+      "back": "Fastest: Go, Rust, and lightweight interpreted runtimes (Python, Node.js, Ruby). Go and Rust compile to a single small binary with almost no runtime to boot.\n\nSlowest: Java (JVM) and .NET. The VM has to start, load classes, and JIT-compile, which can push cold starts to 1 to 6 seconds on a cold JVM.\n\nThis is why SnapStart exists and why it launched on Java first. If you are starting fresh and cold starts matter, Python, Node, or Go are the easy wins. If you are stuck on Java or .NET, reach for SnapStart instead of rewriting.",
+      "category": "Runtime and Memory",
+      "tags": ["runtime", "java", "cold-start"]
+    },
+    {
+      "id": "memory-cpu",
+      "front": "How does the memory setting affect cold start time?",
+      "back": "Memory and CPU are tied together. Lambda gives you CPU proportional to memory, and you hit one full vCPU at 1,769 MB. So a 128 MB function gets a sliver of a CPU, and CPU-bound init (loading classes, building connection pools, parsing config) runs slower.\n\nBumping memory often cuts both init time and handler time, sometimes enough to lower total cost even though the per-ms price is higher.\n\n```bash\naws lambda update-function-configuration \\\n  --function-name my-fn --memory-size 1024\n```\n\nDo not guess. Use AWS Lambda Power Tuning to find the memory size with the best latency-to-cost ratio.",
+      "category": "Runtime and Memory",
+      "tags": ["memory", "cpu", "performance"]
+    },
+    {
+      "id": "arm-graviton",
+      "front": "Does moving a function to arm64 (Graviton) help cold starts?",
+      "back": "It helps your bill more than your cold starts. arm64 (Graviton2) is about 20% cheaper per ms and often a bit faster on compute than x86.\n\nCold start times are usually similar or slightly better on arm64 for interpreted runtimes. It is not a cold-start fix on its own, but there is rarely a reason not to switch if your dependencies have arm64 builds.\n\n```bash\naws lambda update-function-configuration \\\n  --function-name my-fn --architectures arm64\n```\n\nWatch for native dependencies (compiled binaries, some npm or pip packages) that need an arm64 build. Pure Python, Node, and Go port cleanly.",
+      "category": "Runtime and Memory",
+      "tags": ["arm64", "graviton", "cost"]
+    },
+    {
+      "id": "package-size",
+      "front": "How does deployment package size affect cold start?",
+      "back": "Lambda has to download and unpack your code before it can run. A 250 MB zip full of unused dependencies costs more download and extraction time than a 5 MB one. Smaller is faster.\n\nPractical wins:\n\n- Strip dev dependencies and unused libraries from the bundle\n- Tree-shake or bundle (esbuild, webpack) to ship only the code you call\n- Do not pull in the whole AWS SDK when you use one client\n\nLambda layers do not help here. A layer is still downloaded and counts toward the unzipped size limit. Splitting code into layers can even hurt if it adds bytes.",
+      "category": "Code and Package",
+      "tags": ["package-size", "bundling", "deployment"]
+    },
+    {
+      "id": "init-vs-handler",
+      "front": "What code belongs outside the handler vs inside it?",
+      "back": "Code outside the handler runs once per cold start and is reused on every warm invocation. Code inside the handler runs on every request. So put expensive, reusable setup outside:\n\n```python\n# runs once per environment\ndb = create_connection_pool()\ns3 = boto3.client('s3')\n\ndef handler(event, context):\n    # runs every request\n    return db.query(event['id'])\n```\n\nConnection pools, SDK clients, config parsing, and loaded models all belong outside. Putting them inside the handler re-pays that cost on every single request, which is far worse than a one-time cold start.",
+      "category": "Code and Package",
+      "tags": ["init-phase", "handler", "best-practices"]
+    },
+    {
+      "id": "lazy-loading",
+      "front": "Your init phase is slow because of heavy dependencies. How do you cut it down?",
+      "back": "Only load what the request actually needs, when it needs it.\n\n- Import heavy modules lazily inside the code path that uses them, not at the top of the file, so an invocation that skips that path never pays for it\n- Initialize specific SDK clients, not entire SDKs (`@aws-sdk/client-s3`, not `aws-sdk`)\n- Move large static data (ML models, lookup tables) to EFS or S3 and load on demand\n- Drop transitive dependencies you pulled in for one helper function\n\nProfile first. Log timestamps around each import to find the real offender instead of guessing.",
+      "category": "Code and Package",
+      "tags": ["lazy-loading", "dependencies", "optimization"]
+    },
+    {
+      "id": "provisioned-concurrency",
+      "front": "What does provisioned concurrency actually do?",
+      "back": "It keeps a set number of execution environments fully initialized and warm, ready to respond with no cold start. Lambda runs your init code ahead of time and parks the environments.\n\n```bash\naws lambda put-provisioned-concurrency-config \\\n  --function-name my-fn \\\n  --qualifier prod \\\n  --provisioned-concurrent-executions 20\n```\n\nThe catch: you pay for those environments around the clock, used or not. And it only covers the count you provisioned. Traffic beyond 20 concurrent requests spills over to on-demand, and those still cold start.",
+      "category": "Provisioned Concurrency",
+      "tags": ["provisioned-concurrency", "cold-start", "aws-lambda"]
+    },
+    {
+      "id": "pc-when",
+      "front": "When is provisioned concurrency worth paying for?",
+      "back": "When predictable low latency matters more than the cost of idle capacity:\n\n- User-facing APIs with tight p99 latency targets\n- Synchronous request paths where a 3-second cold start is a failed request\n- Known traffic peaks (market open, a scheduled launch) you can pre-provision for\n\nSkip it for background jobs, queue consumers, and cron tasks where an occasional slow start is fine. And do not set it to cover your peak 24/7. Use scheduled auto scaling so you pay for warm capacity only when traffic needs it.",
+      "category": "Provisioned Concurrency",
+      "tags": ["provisioned-concurrency", "latency", "cost"]
+    },
+    {
+      "id": "pc-autoscaling",
+      "front": "How do you scale provisioned concurrency to match a daily traffic pattern?",
+      "back": "Use Application Auto Scaling. You can scale on a schedule (predictable peaks) or on a utilization target (reactive).\n\n```bash\naws application-autoscaling put-scheduled-action \\\n  --service-namespace lambda \\\n  --resource-id function:my-fn:prod \\\n  --scalable-dimension lambda:function:ProvisionedConcurrency \\\n  --scheduled-action-name morning-ramp \\\n  --schedule \"cron(0 8 * * ? *)\" \\\n  --scalable-target-action MinCapacity=20,MaxCapacity=50\n```\n\nScheduled scaling is cheapest if traffic is predictable: ramp up before the morning peak, ramp down overnight. Target tracking reacts to real load but lags spikes, so requests during the ramp still cold start.",
+      "category": "Provisioned Concurrency",
+      "tags": ["auto-scaling", "provisioned-concurrency", "operations"]
+    },
+    {
+      "id": "snapstart",
+      "front": "What is Lambda SnapStart and which runtimes support it?",
+      "back": "SnapStart runs your init code once at publish time, takes a snapshot (Firecracker micro-VM memory and disk) of the initialized environment, and restores from that snapshot on cold start instead of booting from scratch. For slow-to-start runtimes this cuts cold starts from seconds to a few hundred milliseconds.\n\nIt started as Java-only and now also supports Python and .NET. Java SnapStart is free; Python and .NET add small caching and restore charges.\n\nIt is the right tool when you are stuck on Java or .NET and cannot rewrite. For the basic case there is no code change, just enable it and publish a version.",
+      "category": "SnapStart",
+      "tags": ["snapstart", "java", "cold-start"]
+    },
+    {
+      "id": "snapstart-gotchas",
+      "front": "What can break when you turn on SnapStart?",
+      "back": "The snapshot is taken once and reused by many restored environments, so anything that must be unique or fresh per environment is a trap:\n\n- Random seeds and unique IDs generated in init are now shared across environments. Regenerate them after restore.\n- Network connections opened in init may be stale by the time a snapshot is restored hours later. Reopen them.\n- Anything time-sensitive captured at snapshot time (tokens, timestamps) is frozen.\n\nUse the runtime hooks (`beforeCheckpoint` and `afterRestore`, or the CRaC `Resource` interface in Java) to close connections before the snapshot and refresh state after restore.",
+      "category": "SnapStart",
+      "tags": ["snapstart", "gotchas", "runtime-hooks"]
+    },
+    {
+      "id": "vpc-cold-starts",
+      "front": "Why did Lambda functions in a VPC used to have terrible cold starts, and is it still true?",
+      "back": "Before late 2019, Lambda attached an elastic network interface (ENI) to each environment at cold start. Creating an ENI took 10 or more seconds, so VPC functions were painfully slow to start.\n\nAWS fixed this with Hyperplane ENIs: shared, pre-created network interfaces set up when you create or update the function, not per invocation. The per-cold-start VPC penalty is now small, on the order of tens of milliseconds.\n\nSo putting a function in a VPC is no longer a cold-start problem. Do it when you need private resource access. Just remember a NAT gateway or VPC endpoints are still required for the function to reach the internet or AWS APIs.",
+      "category": "Networking",
+      "tags": ["vpc", "networking", "hyperplane-eni"]
+    },
+    {
+      "id": "warmer-pings",
+      "front": "Should you ping your function on a schedule to keep it warm?",
+      "back": "It is an old hack with real limits. A scheduled EventBridge rule every few minutes keeps one environment warm, which helps a low-traffic function avoid the occasional cold start.\n\nBut it does not scale. A warmer keeps maybe one or a few environments alive. The moment 50 concurrent requests arrive, 49 still cold start. You also pay for invocations that do no real work.\n\nFor anything with concurrency that matters, use provisioned concurrency or SnapStart instead. Warmer pings are a band-aid for a single low-traffic function, not a production strategy.",
+      "category": "Strategy",
+      "tags": ["warming", "anti-pattern", "operations"]
+    },
+    {
+      "id": "pc-vs-snapstart",
+      "front": "Provisioned concurrency or SnapStart: how do you choose?",
+      "back": "Different tools, and you cannot use both on the same function. Pick one.\n\nSnapStart: free (Java) or cheap, no idle cost, cuts cold starts to a few hundred ms. Limited to Java, Python, and .NET, and it does not give a true zero cold start. Best default for those runtimes.\n\nProvisioned concurrency: works for any runtime and gives genuine zero cold start for the provisioned count, but you pay for warm capacity around the clock (or on a schedule). Best when you need near-zero latency, are on a runtime SnapStart does not cover, or when even SnapStart's few hundred ms is too slow.\n\nRule of thumb: on Java, Python, or .NET, start with SnapStart because it costs almost nothing. Move to provisioned concurrency only if you need true zero cold start and can justify paying for idle environments.",
+      "category": "Strategy",
+      "tags": ["snapstart", "provisioned-concurrency", "strategy"]
+    }
+  ]
+}
