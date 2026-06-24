@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><g>
+    <line x1="460" y1="619.56" x2="574" y2="619.56" stroke="#0f172a" stroke-width="5"/>
+    <rect x="589" y="608.56" width="22" height="22" rx="3" transform="rotate(45 600 619.56)" fill="#f59e0b"/>
+    <line x1="626" y1="619.56" x2="740" y2="619.56" stroke="#0f172a" stroke-width="5"/>
+  </g><text x="600" y="736.0799999999999" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="86" letter-spacing="1" fill="#0f172a">CHAOS ENGINEERING:</text><text x="600" y="825.52" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="86" letter-spacing="1" fill="#0f172a"><tspan fill="#f59e0b">ON PURPOSE</tspan> THIS TIME</text><rect x="530" y="870.4399999999999" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
+    <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#94a3b8">devops-daily.com</text>
+  </g></svg>

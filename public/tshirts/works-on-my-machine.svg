@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><text x="600" y="777.9" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="90" fill="#0f172a">WORKS ON MY <tspan fill="#f59e0b">MACHINE</tspan></text><g opacity="0.65">
-    <rect x="484" y="1412" width="22" height="22" rx="5" fill="#f59e0b"/>
-    <text x="516" y="1430" font-family="monospace" font-size="26" fill="#94a3b8">devops-daily.com</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><g>
+    <line x1="460" y1="662.2" x2="574" y2="662.2" stroke="#0f172a" stroke-width="5"/>
+    <rect x="589" y="651.2" width="22" height="22" rx="3" transform="rotate(45 600 662.2)" fill="#f59e0b"/>
+    <line x1="626" y1="662.2" x2="740" y2="662.2" stroke="#0f172a" stroke-width="5"/>
+  </g><text x="600" y="782" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="90" letter-spacing="1" fill="#0f172a">WORKS ON MY <tspan fill="#f59e0b">MACHINE</tspan></text><rect x="530" y="827.8000000000001" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
+    <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#94a3b8">devops-daily.com</text>
   </g></svg>

@@ -1,4 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><text x="600" y="727.2" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="114" fill="#0f172a">TABS VS SPACES:</text><text x="600" y="843.48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="114" fill="#0f172a">CHOOSE <tspan fill="#f59e0b">VIOLENCE</tspan></text><g opacity="0.65">
-    <rect x="484" y="1412" width="22" height="22" rx="5" fill="#f59e0b"/>
-    <text x="516" y="1430" font-family="monospace" font-size="26" fill="#94a3b8">devops-daily.com</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><g>
+    <line x1="460" y1="590.44" x2="574" y2="590.44" stroke="#0f172a" stroke-width="5"/>
+    <rect x="589" y="579.44" width="22" height="22" rx="3" transform="rotate(45 600 590.44)" fill="#f59e0b"/>
+    <line x1="626" y1="590.44" x2="740" y2="590.44" stroke="#0f172a" stroke-width="5"/>
+  </g><text x="600" y="729.9200000000001" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="114" letter-spacing="1" fill="#0f172a">TABS VS SPACES:</text><text x="600" y="848.48" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="114" letter-spacing="1" fill="#0f172a">CHOOSE <tspan fill="#f59e0b">VIOLENCE</tspan></text><rect x="530" y="899.5600000000001" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
+    <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#94a3b8">devops-daily.com</text>
   </g></svg>

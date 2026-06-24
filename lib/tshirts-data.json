@@ -38,5 +38,15 @@
   { "slug": "latency-silent-killer", "quote": "Latency:\nthe silent killer", "style": "statement", "accent": "Latency" },
   { "slug": "blameless-mostly", "quote": "Blameless\n(mostly) postmortem", "style": "stacked", "accent": "Blameless" },
   { "slug": "two-hard-problems", "quote": "2 hard problems:\ncache invalidation\nand naming things", "style": "badge" },
-  { "slug": "ship-happens", "quote": "Ship happens", "style": "statement", "accent": "Ship", "motif": "rocket" }
+  { "slug": "ship-happens", "quote": "Ship happens", "style": "statement", "accent": "Ship", "motif": "rocket" },
+  { "slug": "404-motivation-not-found", "quote": "404: motivation\nnot found", "style": "terminal", "accent": "404" },
+  { "slug": "git-blame-always-me", "quote": "git blame\nit's always me", "style": "terminal" },
+  { "slug": "sudo-make-me-a-sandwich", "quote": "sudo make me\na sandwich", "style": "terminal" },
+  { "slug": "it-works-in-staging", "quote": "It works\nin staging", "style": "statement", "accent": "staging" },
+  { "slug": "deploy-on-friday-i-dare-you", "quote": "Deploy on Friday.\nI dare you.", "style": "stacked", "accent": "Friday" },
+  { "slug": "rollback-is-a-strategy", "quote": "Rollback is a\ndeployment strategy", "style": "statement", "accent": "strategy" },
+  { "slug": "tls-or-it-didnt-happen", "quote": "TLS or it\ndidn't happen", "style": "statement", "accent": "TLS", "motif": "lock" },
+  { "slug": "chaos-on-purpose", "quote": "Chaos engineering:\non purpose this time", "style": "stacked", "accent": "on purpose" },
+  { "slug": "i-survived-the-migration", "quote": "I survived\nthe migration", "style": "badge", "accent": "survived" },
+  { "slug": "keep-calm-clear-the-cache", "quote": "Keep calm and\nclear the cache", "style": "badge", "accent": "cache" }
 ]
