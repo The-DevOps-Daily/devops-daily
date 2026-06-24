@@ -97,7 +97,7 @@
     "marked-highlight": "^2.2.4",
     "next": "16.2.7",
     "next-themes": "latest",
-    "openai": "^6.36.0",
+    "openai": "^6.44.0",
     "react": "^19.2.5",
     "react-confetti": "^6.4.0",
     "react-day-picker": "9.14.0",
