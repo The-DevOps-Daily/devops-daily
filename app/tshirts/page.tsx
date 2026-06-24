@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import { Download, Shirt, Sparkles } from 'lucide-react';
+import { Shirt, Sparkles } from 'lucide-react';
 import { PageHero } from '@/components/page-hero';
 import { Badge } from '@/components/ui/badge';
+import { TshirtGallery } from '@/components/tshirt-gallery';
 import { tshirtDesigns } from '@/lib/tshirts';
 
 export const metadata: Metadata = {
@@ -59,51 +60,13 @@ export default function TshirtsPage() {
 
       <section className="container mx-auto px-4 py-12">
         <div className="mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {tshirtDesigns.map((d) => (
-              <div
-                key={d.slug}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-primary/40"
-              >
-                {/* Designs are dark ink on transparent, so preview on a fixed light panel */}
-                <div className="flex aspect-[4/5] items-center justify-center bg-[#f8fafc] p-6">
-                  <img
-                    src={d.png}
-                    alt={d.title}
-                    loading="lazy"
-                    className="max-h-full max-w-full object-contain"
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-2 border-t border-border p-3">
-                  <span className="truncate text-sm font-medium" title={d.title}>
-                    {d.title}
-                  </span>
-                  <div className="flex shrink-0 gap-1.5">
-                    <a
-                      href={d.svg}
-                      download
-                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                    >
-                      <Download className="h-3 w-3" /> SVG
-                    </a>
-                    <a
-                      href={d.png}
-                      download
-                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-                    >
-                      <Download className="h-3 w-3" /> PNG
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <TshirtGallery designs={tshirtDesigns} />
 
           <p className="mx-auto mt-10 max-w-2xl text-center text-sm text-muted-foreground">
             These designs are free to use and print for personal and commercial purposes, no
-            attribution required. SVG scales to any size for print; PNG drops straight into a
-            print-on-demand tool. Designed for light-coloured shirts (dark ink on a transparent
-            background). Made by DevOps Daily.
+            attribution required. Click any design to see it larger and switch between light-shirt and
+            dark-shirt versions. SVG scales to any size for print; PNG drops straight into a
+            print-on-demand tool. Made by DevOps Daily.
           </p>
         </div>
       </section>

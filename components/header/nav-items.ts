@@ -136,13 +136,6 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           description: 'Interactive security & DevOps checklists',
           icon: ListChecks,
         },
-        {
-          label: 'Free T-Shirts',
-          href: '/tshirts',
-          description: 'Printable DevOps t-shirt designs',
-          icon: Shirt,
-          badge: 'New',
-        },
       ],
     },
     {
@@ -222,6 +215,13 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           href: '/experts',
           description: 'Find DevOps experts for hire',
           icon: UserCircle,
+        },
+        {
+          label: 'Free T-Shirts',
+          href: '/tshirts',
+          description: 'Printable DevOps t-shirt designs',
+          icon: Shirt,
+          badge: 'New',
         },
       ],
     },

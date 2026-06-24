@@ -7,8 +7,12 @@ export interface TshirtDesign {
   /** Single-line display title derived from the quote. */
   title: string;
   style: 'terminal' | 'badge' | 'stacked' | 'statement';
+  /** Dark-ink design for light shirts. */
   svg: string;
   png: string;
+  /** Light-ink design for dark shirts. */
+  svgDark: string;
+  pngDark: string;
 }
 
 export const tshirtDesigns: TshirtDesign[] = (data as Array<{ slug: string; quote: string; style: string }>).map(
@@ -19,5 +23,7 @@ export const tshirtDesigns: TshirtDesign[] = (data as Array<{ slug: string; quot
     style: d.style as TshirtDesign['style'],
     svg: `/tshirts/${d.slug}.svg`,
     png: `/tshirts/${d.slug}.png`,
+    svgDark: `/tshirts/${d.slug}-dark.svg`,
+    pngDark: `/tshirts/${d.slug}-dark.png`,
   }),
 );

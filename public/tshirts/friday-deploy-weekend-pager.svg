@@ -4,5 +4,5 @@
     <line x1="626" y1="582.12" x2="740" y2="582.12" stroke="#0f172a" stroke-width="5"/>
   </g><text x="600" y="728.16" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="122" letter-spacing="1" fill="#0f172a">FRIDAY DEPLOY,</text><text x="600" y="855.04" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="122" letter-spacing="1" fill="#0f172a">WEEKEND <tspan fill="#f59e0b">PAGER</tspan></text><rect x="530" y="907.88" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
     <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
-    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#94a3b8">devops-daily.com</text>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#64748b">devops-daily.com</text>
   </g></svg>

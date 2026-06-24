@@ -4,5 +4,5 @@
     <line x1="626" y1="707.04" x2="740" y2="707.04" stroke="#0f172a" stroke-width="5"/>
   </g><text x="600" y="813.7199999999999" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="74" letter-spacing="1" fill="#0f172a">THE <tspan fill="#f59e0b">CLOUD</tspan> IS JUST</text><text x="600" y="890.68" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="74" letter-spacing="1" fill="#0f172a">SOMEONE ELSE'S COMPUTER</text><rect x="530" y="932.96" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
     <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
-    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#94a3b8">devops-daily.com</text>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#64748b">devops-daily.com</text>
   </g></svg>

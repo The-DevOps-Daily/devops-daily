@@ -4,5 +4,5 @@
     <line x1="626" y1="572.36" x2="740" y2="572.36" stroke="#0f172a" stroke-width="5"/>
   </g><text x="600" y="718.4" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="122" letter-spacing="0" fill="#0f172a">Scale to <tspan fill="#f59e0b">zero</tspan>,</text><text x="600" y="855.04" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="122" letter-spacing="0" fill="#0f172a">bill to <tspan fill="#f59e0b">zero</tspan></text><rect x="530" y="917.6400000000001" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
     <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
-    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#94a3b8">devops-daily.com</text>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#64748b">devops-daily.com</text>
   </g></svg>
