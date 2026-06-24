@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><g transform="translate(600, 470)"><g fill="none" stroke="#0f172a" stroke-width="9" stroke-linejoin="round"><path d="M -56 6 L 0 -52 L 56 6"/><path d="M -42 -2 L -42 56 L 42 56 L 42 -2"/></g></g><text x="600" y="733.6" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="82" fill="#0f172a">THERE'S NO PLACE LIKE</text><text x="600" y="817.24" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="82" fill="#0f172a"><tspan fill="#f59e0b">127.0.0.1</tspan></text><g opacity="0.65">
+    <rect x="484" y="1412" width="22" height="22" rx="5" fill="#f59e0b"/>
+    <text x="516" y="1430" font-family="monospace" font-size="26" fill="#94a3b8">devops-daily.com</text>
+  </g></svg>

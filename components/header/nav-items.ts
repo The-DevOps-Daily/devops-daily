@@ -20,6 +20,7 @@ import {
   Gift,
   Scale,
   GitPullRequest,
+  Shirt,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -134,6 +135,13 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           href: '/checklists',
           description: 'Interactive security & DevOps checklists',
           icon: ListChecks,
+        },
+        {
+          label: 'Free T-Shirts',
+          href: '/tshirts',
+          description: 'Printable DevOps t-shirt designs',
+          icon: Shirt,
+          badge: 'New',
         },
       ],
     },

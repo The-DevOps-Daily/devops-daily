@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0b0f17;stop-opacity:1" />
+      <stop offset="55%" style="stop-color:#171205;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0b0f17;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="amber" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g stroke="#241a06" stroke-width="1" opacity="0.6">
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="486" x2="1200" y2="486"/>
+  </g>
+
+  <text x="80" y="96" font-family="monospace" font-size="26" fill="#7c6a3f" letter-spacing="3">DEVOPS DAILY  ·  FREE DOWNLOADS</text>
+
+  <!-- shirt glyph -->
+  <g transform="translate(980,300)" fill="none" stroke="url(#amber)" stroke-width="10" stroke-linejoin="round">
+    <path d="M -70 -60 L -30 -90 a 30 30 0 0 0 60 0 L 70 -60 L 100 -30 L 70 0 L 60 0 L 60 120 L -60 120 L -60 0 L -70 0 L -100 -30 Z"/>
+  </g>
+
+  <text x="80" y="290" font-family="Arial, sans-serif" font-size="84" font-weight="800" fill="#f1f5f9">Free DevOps</text>
+  <text x="80" y="384" font-family="Arial, sans-serif" font-size="84" font-weight="800" fill="url(#amber)">T-Shirt Designs</text>
+
+  <text x="80" y="448" font-family="Arial, sans-serif" font-size="30" fill="#94a3b8">Funny dev quotes, print-ready. Download SVG or PNG, free.</text>
+
+  <g transform="translate(80,520)">
+    <text x="0" y="28" font-family="monospace" font-size="26" fill="#cbd5e1">"It was DNS"   "I test in PROD"   "Works on my machine"</text>
+  </g>
+  <text x="1120" y="556" text-anchor="end" font-family="monospace" font-size="24" fill="#475569">devops-daily.com/tshirts</text>
+</svg>

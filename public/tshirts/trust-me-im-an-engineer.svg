@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><line x1="300" y1="593.44" x2="900" y2="593.44" stroke="#0f172a" stroke-width="6"/><text x="600" y="733.44" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="92" letter-spacing="3" fill="#0f172a">TRUST ME,</text><text x="600" y="842" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="92" letter-spacing="3" fill="#0f172a">I'M AN <tspan fill="#f59e0b">ENGINEER</tspan></text><line x1="300" y1="878.5600000000001" x2="900" y2="878.5600000000001" stroke="#0f172a" stroke-width="6"/><g opacity="0.65">
+    <rect x="484" y="1412" width="22" height="22" rx="5" fill="#f59e0b"/>
+    <text x="516" y="1430" font-family="monospace" font-size="26" fill="#94a3b8">devops-daily.com</text>
+  </g></svg>
