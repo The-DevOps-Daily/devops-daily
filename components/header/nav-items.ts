@@ -20,6 +20,7 @@ import {
   Gift,
   Scale,
   GitPullRequest,
+  Shirt,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -214,6 +215,13 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           href: '/experts',
           description: 'Find DevOps experts for hire',
           icon: UserCircle,
+        },
+        {
+          label: 'Free T-Shirts',
+          href: '/tshirts',
+          description: 'Printable DevOps t-shirt designs',
+          icon: Shirt,
+          badge: 'New',
         },
       ],
     },

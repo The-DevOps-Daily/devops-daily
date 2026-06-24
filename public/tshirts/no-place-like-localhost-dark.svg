@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><g transform="translate(600, 590.72)"><g fill="none" stroke="#0f172a" stroke-width="9" stroke-linejoin="round"><path d="M -54 6 L 0 -50 L 54 6"/><path d="M -40 -2 L -40 54 L 40 54 L 40 -2"/></g></g><g>
+    <line x1="460" y1="698.72" x2="574" y2="698.72" stroke="#f8fafc" stroke-width="5"/>
+    <rect x="589" y="687.72" width="22" height="22" rx="3" transform="rotate(45 600 698.72)" fill="#f59e0b"/>
+    <line x1="626" y1="698.72" x2="740" y2="698.72" stroke="#f8fafc" stroke-width="5"/>
+  </g><text x="600" y="811.96" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="82" letter-spacing="1" fill="#f8fafc">THERE'S NO PLACE LIKE</text><text x="600" y="897.24" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="82" letter-spacing="1" fill="#f8fafc"><tspan fill="#f59e0b">127.0.0.1</tspan></text><rect x="530" y="941.28" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
+    <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#94a3b8">devops-daily.com</text>
+  </g></svg>

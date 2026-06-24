@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><g transform="translate(600, 516.96)"><g fill="none" stroke="#0f172a" stroke-width="9" stroke-linejoin="round"><path d="M 0 -62 C 29 -37 29 6 14 33 L -14 33 C -29 6 -29 -37 0 -62 Z"/><circle cx="0" cy="-18" r="10" fill="#f59e0b" stroke="none"/><path d="M -14 33 L -33 52 L -17 29 M 14 33 L 33 52 L 17 29"/></g></g><g>
+    <line x1="460" y1="624.96" x2="574" y2="624.96" stroke="#0f172a" stroke-width="5"/>
+    <rect x="589" y="613.96" width="22" height="22" rx="3" transform="rotate(45 600 624.96)" fill="#f59e0b"/>
+    <line x1="626" y1="624.96" x2="740" y2="624.96" stroke="#0f172a" stroke-width="5"/>
+  </g><text x="600" y="787.4000000000001" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="142" letter-spacing="0" fill="#0f172a">It compiles.</text><text x="600" y="946.44" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="142" letter-spacing="0" fill="#0f172a"><tspan fill="#f59e0b">Ship it.</tspan></text><rect x="530" y="1015.0400000000001" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
+    <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#64748b">devops-daily.com</text>
+  </g></svg>

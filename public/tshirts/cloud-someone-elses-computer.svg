@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><g transform="translate(600, 599.04)"><path d="M -62 23 a 33 33 0 0 1 6 -65 a 43 43 0 0 1 82 8 a 29 29 0 0 1 -6 57 Z" fill="none" stroke="#0f172a" stroke-width="9" stroke-linejoin="round"/></g><g>
+    <line x1="460" y1="707.04" x2="574" y2="707.04" stroke="#0f172a" stroke-width="5"/>
+    <rect x="589" y="696.04" width="22" height="22" rx="3" transform="rotate(45 600 707.04)" fill="#f59e0b"/>
+    <line x1="626" y1="707.04" x2="740" y2="707.04" stroke="#0f172a" stroke-width="5"/>
+  </g><text x="600" y="813.7199999999999" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="74" letter-spacing="1" fill="#0f172a">THE <tspan fill="#f59e0b">CLOUD</tspan> IS JUST</text><text x="600" y="890.68" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="74" letter-spacing="1" fill="#0f172a">SOMEONE ELSE'S COMPUTER</text><rect x="530" y="932.96" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
+    <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#64748b">devops-daily.com</text>
+  </g></svg>

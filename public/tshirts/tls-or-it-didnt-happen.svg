@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1500" viewBox="0 0 1200 1500"><g transform="translate(600, 528.16)"><g fill="none" stroke="#0f172a" stroke-width="9" stroke-linejoin="round"><rect x="-42" y="-6" width="84" height="64" rx="10"/><path d="M -27 -6 L -27 -27 A 27 27 0 0 1 27 -27 L 27 -6"/><circle cx="0" cy="22" r="7" fill="#0f172a"/></g></g><g>
+    <line x1="460" y1="636.16" x2="574" y2="636.16" stroke="#0f172a" stroke-width="5"/>
+    <rect x="589" y="625.16" width="22" height="22" rx="3" transform="rotate(45 600 636.16)" fill="#f59e0b"/>
+    <line x1="626" y1="636.16" x2="740" y2="636.16" stroke="#0f172a" stroke-width="5"/>
+  </g><text x="600" y="790.4" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="132" letter-spacing="0" fill="#0f172a"><tspan fill="#f59e0b">TLS</tspan> or it</text><text x="600" y="938.24" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="132" letter-spacing="0" fill="#0f172a">didn't happen</text><rect x="530" y="1003.8399999999999" width="140" height="10" rx="5" fill="#f59e0b"/><g opacity="0.6">
+    <rect x="488" y="1391" width="20" height="20" rx="5" fill="#f59e0b"/>
+    <text x="518" y="1408" font-family="monospace" font-size="25" fill="#64748b">devops-daily.com</text>
+  </g></svg>
