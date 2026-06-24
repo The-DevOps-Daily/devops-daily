@@ -1,0 +1,259 @@
+{
+  "id": "ebpf-network-observability-quiz",
+  "title": "eBPF for Network Observability and Security Quiz",
+  "description": "Test your understanding of eBPF with real scenarios covering the verifier, maps, XDP and tc hooks, CO-RE portability, kube-proxy replacement, runtime security, and debugging programs that won't load.",
+  "category": "Networking",
+  "icon": "Network",
+  "totalPoints": 197,
+  "theme": {
+    "primaryColor": "cyan",
+    "gradientFrom": "from-cyan-500",
+    "gradientTo": "to-blue-600"
+  },
+  "metadata": {
+    "estimatedTime": "16-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-06-23",
+    "tags": ["ebpf", "networking", "observability", "linux"]
+  },
+  "questions": [
+    {
+      "id": "why-ebpf-not-kernel-module",
+      "title": "Why not just write a kernel module?",
+      "description": "You need per-connection network stats from every production host. Ops refuses to load custom kernel modules because one bad module can panic the box. What makes eBPF a safer fit?",
+      "situation": "You're standing up fleet-wide network visibility on a few thousand hosts. A custom .ko kernel module would give you the data, but the platform team has a hard rule: nothing that can take down the kernel at runtime. You reach for eBPF instead and have to justify why it's different.",
+      "codeExample": "# Loading a custom kernel module: one bug = kernel panic\n$ sudo insmod mynetstats.ko\n# a null deref in here can crash the whole host\n\n# Loading an eBPF program: rejected at load time if unsafe\n$ sudo bpftool prog load netstats.o /sys/fs/bpf/netstats\nlibbpf: prog 'count_bytes': BPF program load failed: Permission denied\n# the kernel verifier refused it; the host stays up",
+      "options": [
+        "eBPF programs run entirely in userspace, so they physically cannot touch kernel data structures",
+        "Every eBPF program is checked by an in-kernel verifier and runs in a restricted sandbox, so an unsafe program is rejected at load time instead of crashing the kernel",
+        "eBPF programs are compiled into the kernel image at boot, so they are reviewed before the system starts",
+        "eBPF disables the part of the kernel that can panic, trading safety for a small performance hit"
+      ],
+      "correctAnswer": 1,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "eBPF programs run inside the kernel, but before the kernel accepts one, the verifier walks every possible path and proves the program terminates, never reads out-of-bounds memory, and only touches data it's allowed to. If it can't prove safety, the load fails (often with a cryptic -EPERM or -EINVAL) and nothing runs. That's the key difference from a kernel module: a module trusts you completely and a single bug panics the host, while an eBPF program is checked first. It does not run in userspace, it is not baked into the boot image, and it does not switch off kernel safety features.",
+      "hint": "Something inspects the program before the kernel agrees to run it. What happens when that check fails?"
+    },
+    {
+      "id": "ebpf-maps-userspace-channel",
+      "title": "Getting counts out to a dashboard",
+      "description": "Your XDP program increments a counter every time it drops a packet. That code runs in the kernel. How does your userspace agent read those counts to ship them to a dashboard?",
+      "situation": "The drop counter lives inside the kernel-side program. Your Go agent runs in userspace and needs to scrape the current value every few seconds. There's no return value to catch, the program just runs per packet and exits.",
+      "codeExample": "// kernel side\nstruct {\n    __uint(type, BPF_MAP_TYPE_ARRAY);\n    __uint(max_entries, 1);\n    __type(key, __u32);\n    __type(value, __u64);\n} drop_count SEC(\".maps\");\n\n// inside the XDP program, on each dropped packet:\n__u32 key = 0;\n__u64 *val = bpf_map_lookup_elem(&drop_count, &key);\nif (val) __sync_fetch_and_add(val, 1);",
+      "options": [
+        "A map: a shared key/value structure that both the kernel program and userspace can read and write, looked up by name or file descriptor",
+        "The program returns the counter as its exit code, and userspace reads it from the return value",
+        "The kernel writes the value to a log file with bpf_printk, and userspace tails the file",
+        "A shared environment variable that the kernel updates and userspace reads with getenv"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Maps are how eBPF programs and userspace exchange data. They're kernel-resident key/value stores (arrays, hashes, per-CPU variants, ring buffers, and more) that the program updates from inside the kernel and that userspace reads through a file descriptor, often pinned under /sys/fs/bpf so multiple processes can share it. The program's actual return value is a verdict for the hook (like XDP_PASS or XDP_DROP), not a place to stash data. bpf_printk exists but it's a debugging aid that writes to the trace pipe, not a metrics channel, and there's no shared environment variable between kernel and userspace.",
+      "hint": "The program's return value is reserved for telling the hook what to do with the packet. You need a separate place to keep state."
+    },
+    {
+      "id": "xdp-earliest-hook",
+      "title": "Where XDP sits in the stack",
+      "description": "Your team is choosing a hook point for a high-volume packet filter. Someone proposes XDP because it's 'the fastest.' Where does an XDP program actually run, and why is that fast?",
+      "situation": "You're filtering unwanted traffic at the edge of each node and want to spend as few CPU cycles as possible per dropped packet. A colleague suggests XDP but isn't sure why it's cheaper than filtering higher up the stack.",
+      "codeExample": "# Rough path of an incoming packet:\nNIC -> [XDP hook] -> sk_buff allocation -> tc ingress -> netfilter -> socket\n\n# An XDP program returns a verdict before most of that happens:\nSEC(\"xdp\")\nint drop_bad(struct xdp_md *ctx) {\n    // ... inspect raw packet bytes ...\n    return XDP_DROP;   // or XDP_PASS, XDP_TX, XDP_REDIRECT\n}",
+      "options": [
+        "Inside each application socket, so it sees fully reassembled application-layer data",
+        "In netfilter, replacing iptables rules with a faster equivalent",
+        "At the earliest point in the receive path, in the NIC driver before the kernel builds an sk_buff, working on raw packet bytes",
+        "In userspace next to your agent, which is why it avoids kernel overhead"
+      ],
+      "correctAnswer": 2,
+      "points": 12,
+      "difficulty": "beginner",
+      "explanation": "XDP (eXpress Data Path) attaches at the very start of the receive path, in the NIC driver, before the kernel allocates an sk_buff (the heavyweight per-packet metadata structure). Because that allocation is one of the more expensive steps, dropping or redirecting a packet at XDP avoids almost all per-packet cost, which is what makes it ideal for line-rate filtering and DDoS mitigation. It works on raw bytes, so it sees Ethernet and IP headers, not reassembled application data. It's not inside sockets, not part of netfilter, and not in userspace, it runs in the kernel driver context.",
+      "hint": "The expensive part of receiving a packet is building the kernel's per-packet metadata. XDP runs before that happens."
+    },
+    {
+      "id": "xdp-vs-tc-egress",
+      "title": "Filtering happens, but only inbound",
+      "description": "You wrote an XDP program to enforce a policy on both inbound and outbound traffic. Inbound works. Outbound traffic sails right through. Why?",
+      "situation": "Your policy needs to block certain outbound connections from a node, not just inbound ones. You attached your filter as XDP and tested it: connections from outside are blocked correctly, but the node still happily sends traffic out to blocked destinations.",
+      "codeExample": "$ sudo bpftool net attach xdp name policy dev eth0\n$ # inbound: blocked correctly\n$ # outbound from this host: still goes through\n\n$ sudo bpftool net\nxdp:\neth0(2) driver id 41\n# nothing on the egress path...",
+      "options": [
+        "XDP needs XDP_TX to handle egress; add it as a second return code in the same program",
+        "XDP only runs on the receive path (ingress); to act on egress traffic you need a tc BPF program attached to the egress hook, which operates on the sk_buff",
+        "Outbound traffic skips XDP because it's encrypted; disable TLS offload on the NIC",
+        "The program is fine, but bpftool can't display egress XDP; the policy is actually being enforced"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "XDP is an ingress-only hook. It lives in the driver's receive path, so by design it never sees packets the host is sending out. For egress (and for ingress when you want sk_buff context), you use tc BPF programs attached via the clsact qdisc, which has both an ingress and an egress hook. tc runs slightly later than XDP because the sk_buff already exists, but that's the trade for being able to act in both directions. XDP_TX bounces a received packet back out the same interface, it does not give you a hook on locally generated egress traffic, and this has nothing to do with TLS.",
+      "hint": "Think about which direction the driver's receive path can possibly see. Egress needs a different attach point entirely."
+    },
+    {
+      "id": "xdp-drop-ddos",
+      "title": "Dropping a SYN flood cheaply",
+      "description": "A SYN flood is hammering a node at millions of packets per second. iptables is dropping them, but the box is pinned at 100% softirq CPU. Where should you drop these packets to spend the least CPU?",
+      "situation": "During the flood, perf top shows the kernel burning most of its time allocating and freeing sk_buffs for packets that iptables drops a moment later. You want those packets gone before the kernel does any of that work.",
+      "codeExample": "$ perf top\n  18.4%  [kernel]  __alloc_skb\n  12.1%  [kernel]  kfree_skb\n   9.7%  [kernel]  nf_hook_slow\n   ...\n\n# iptables rule currently doing the drop:\n-A INPUT -p tcp --syn -m limit --limit 1/s -j DROP",
+      "options": [
+        "Move the rule earlier in the iptables INPUT chain so it matches before other rules",
+        "Switch to nftables, which drops packets before the sk_buff is allocated",
+        "Add more conntrack buckets so the firewall can track and drop the flood faster",
+        "Drop the packets at XDP with XDP_DROP, before the sk_buff is ever allocated, so each dropped packet costs almost nothing"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The CPU is being spent on __alloc_skb and kfree_skb, the sk_buff lifecycle. iptables and nftables both run after the sk_buff exists, so they can't avoid that cost, no matter where you put the rule. An XDP program returning XDP_DROP runs in the driver before the sk_buff is allocated, so a dropped packet costs little more than the inspection itself. This is exactly why XDP is the standard tool for volumetric DDoS mitigation (Cloudflare and Facebook both built XDP-based packet filters for this). Adding conntrack capacity makes it worse, since you'd track attack packets you intend to discard.",
+      "hint": "perf is telling you exactly which work is expensive. The fix is to drop the packet before that work ever starts."
+    },
+    {
+      "id": "cilium-replace-kube-proxy",
+      "title": "kube-proxy and the iptables wall",
+      "description": "A cluster with thousands of Services has slow service updates and high latency on the first packet of new connections. kube-proxy in iptables mode is generating enormous rule chains. What does an eBPF-based dataplane change?",
+      "situation": "Your platform team runs a large cluster. kube-proxy in iptables mode writes a rule chain per Service and endpoint, and `iptables-save` now dumps hundreds of thousands of lines. Adding or removing a Service causes a noticeable stall while the chains are rewritten.",
+      "codeExample": "$ iptables-save | wc -l\n284119\n\n$ # every Service adds KUBE-SVC-* and KUBE-SEP-* chains\n-A KUBE-SERVICES -d 10.96.0.10/32 -p tcp --dport 53 -j KUBE-SVC-TCOU7...\n-A KUBE-SVC-TCOU7... -j KUBE-SEP-AAAA...\n-A KUBE-SVC-TCOU7... -j KUBE-SEP-BBBB...\n# ... matched roughly linearly per packet",
+      "options": [
+        "It rewrites the same iptables rules faster by batching them, cutting the update stall",
+        "It moves the iptables rules into a kernel module so they're compiled instead of interpreted",
+        "It replaces the linear iptables chains with eBPF programs that do service lookups and load balancing through hash-map lookups, so cost stays roughly constant as Services grow",
+        "It caches DNS responses in eBPF so Service resolution no longer hits iptables"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "kube-proxy's iptables mode encodes every Service and endpoint as rules, and packet matching plus rule rewrites scale poorly as the cluster grows. An eBPF dataplane like Cilium's kube-proxy replacement does service ClusterIP-to-backend translation and load balancing using eBPF maps: a hash lookup keyed by service and a backend table. Lookups are roughly O(1) instead of walking chains, and updating a Service is a map write rather than regenerating a giant ruleset. It does not just batch iptables faster, it doesn't 'compile' iptables into a module, and it isn't a DNS cache. IPVS mode helps somewhat but still isn't map-based the way eBPF is.",
+      "hint": "The problem is that work grows with the number of Services. What data structure makes a lookup independent of how many entries it holds?"
+    },
+    {
+      "id": "co-re-btf-portability",
+      "title": "Compiled here, won't load there",
+      "description": "Your eBPF object loads fine on your 5.15 dev kernel but fails to load on a 5.4 production node, reading a struct field at the wrong offset. You don't want to ship kernel headers and a compiler to every host. What fixes this?",
+      "situation": "Your tracing program reads a field out of a kernel struct. It works on your laptop. On older production kernels the same compiled .o either fails verification or reads garbage, because that struct's layout shifted between kernel versions. Recompiling on each target with BCC is the old way and you'd rather not.",
+      "codeExample": "// reading a kernel struct field directly bakes in an offset:\nstruct task_struct *task = (void *)bpf_get_current_task();\npid_t ppid = task->real_parent->tgid;   // offset differs per kernel\n\n// CO-RE way: let the loader fix the offset at load time\npid_t ppid = BPF_CORE_READ(task, real_parent, tgid);",
+      "options": [
+        "Pin the program to a single kernel version and maintain a separate build per kernel you run",
+        "Use CO-RE (Compile Once, Run Everywhere): build against BTF type info and emit relocations so the loader patches struct offsets to match the running kernel",
+        "Statically link the kernel headers into the eBPF object so offsets travel with it",
+        "Disable the verifier's type checks on the older kernel so the mismatched offset is accepted"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "The root problem is that kernel struct layouts change between versions, so a hard-coded field offset compiled on one kernel is wrong on another. CO-RE solves this with BTF (BPF Type Format): the compiler records which field you wanted, the object carries relocations, and at load time libbpf reads the running kernel's BTF (from /sys/kernel/btf/vmlinux) and patches each access to the correct offset. One object file then runs across many kernels without shipping headers or a compiler. Maintaining a build per kernel is the pain CO-RE removes, you can't statically embed offsets that match every kernel, and you never want to disable the verifier's safety checks.",
+      "hint": "The offset is wrong because it was frozen at compile time. What if the loader could fix offsets using the target kernel's own type information?"
+    },
+    {
+      "id": "trace-tcp-retransmits",
+      "title": "Finding which connections retransmit",
+      "description": "An app sees intermittent tail latency. You suspect TCP retransmissions but don't want to run tcpdump continuously on a busy host. How do you attribute retransmits to specific connections with low overhead?",
+      "situation": "p99 latency spikes a few times an hour with no obvious cause. You think packets are being lost and retransmitted, but a full packet capture on a 10 Gbps host is too heavy to leave running, and it won't cleanly tell you which flows retransmit.",
+      "codeExample": "# attach to the kernel's retransmit path and emit one event per retransmit\n$ sudo /usr/share/bcc/tools/tcpretrans\nTIME     PID    IP LADDR:LPORT          T> RADDR:RPORT          STATE\n01:55:05 0      4  10.0.0.7:443         R> 10.0.2.31:51234     ESTABLISHED\n01:55:05 0      4  10.0.0.7:443         R> 10.0.2.44:48820     ESTABLISHED\n# near-zero overhead: fires only when a retransmit actually happens",
+      "options": [
+        "Attach an eBPF program to the kernel's retransmit function or tracepoint, so an event fires only when a retransmit occurs, carrying the connection's addresses and ports",
+        "Lower the host's TCP retransmission timeout so retransmits show up sooner in tcpdump",
+        "Poll /proc/net/snmp every second and diff the global TCP retransmit counter",
+        "Mirror all traffic to a second NIC and run tcpdump there to avoid load on the primary"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "eBPF lets you attach to a specific kernel event, here the retransmit path (a kprobe on tcp_retransmit_skb or the matching tracepoint), so your program runs only when a retransmit actually happens and can read the socket's source/destination addresses and ports right there. That's near-zero overhead because there's no per-packet work and no copying full packets to userspace, which is why bcc's tcpretrans and bpftrace one-liners are the go-to here. Polling /proc/net/snmp gives you a single global counter with no per-connection attribution, lowering the RTO changes behavior rather than observing it, and port-mirroring just moves the capture cost around.",
+      "hint": "You don't need every packet. You need a signal exactly when one specific kernel event happens, with the connection details attached."
+    },
+    {
+      "id": "percpu-map-counter-contention",
+      "title": "Counters that don't add up under load",
+      "description": "A shared hash map counter is updated on every packet across all CPUs. Under heavy load the numbers look low and the update path shows up hot in profiles. What map change fixes the contention?",
+      "situation": "Your eBPF program bumps a per-key byte counter in a BPF_MAP_TYPE_HASH on every packet. At a few hundred thousand packets per second across 16 cores, the counter update becomes a hotspot and totals come in lower than reality because of contention on the shared entry.",
+      "codeExample": "// current: one shared value, every CPU races on it\nstruct {\n    __uint(type, BPF_MAP_TYPE_HASH);\n    __type(key, __u32);\n    __type(value, __u64);\n} bytes SEC(\".maps\");\n\n// hot path, all CPUs hitting the same entry:\n__sync_fetch_and_add(val, pkt_len);",
+      "options": [
+        "Wrap each update in a bpf_spin_lock so concurrent writes are serialized correctly",
+        "Switch to a per-CPU map (BPF_MAP_TYPE_PERCPU_HASH): each CPU updates its own copy with no cross-CPU contention, and userspace sums the per-CPU values when it reads",
+        "Increase max_entries so there are more buckets and less hashing collision",
+        "Move the counter into a BPF_MAP_TYPE_ARRAY, which is lock-free for writes"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "When every CPU hammers the same map entry, you get cache-line bouncing and contention, and atomics on a single shared value become the bottleneck. A per-CPU map gives each CPU its own private copy of the value, so updates on the hot path never coordinate across cores. When userspace reads the map it gets one value per CPU and sums them, trading a slightly more complex read for a contention-free write path. That's the standard pattern for high-frequency counters and stats. A spin lock makes serialization explicit but keeps the contention you're trying to remove, more buckets doesn't help when the collisions are on the same key, and a plain ARRAY is still a single shared value per index.",
+      "hint": "The contention comes from many cores touching one value. What if each core had its own copy and you only combined them at read time?"
+    },
+    {
+      "id": "ebpf-lsm-runtime-enforcement",
+      "title": "Blocking an action in the kernel, not just logging it",
+      "description": "Security wants to actually prevent certain processes from opening a sensitive file, and to do it in the kernel so it can't be raced. You're choosing between classic seccomp and an eBPF LSM program. Which fits?",
+      "situation": "You already log suspicious file opens with a tracing program, but logging is after the fact. The ask now is enforcement: when a process that shouldn't touch /etc/shadow tries to open it, the open must fail, decided in-kernel rather than by a userspace watcher that could be too slow.",
+      "codeExample": "// eBPF LSM program attached to the file_open hook\nSEC(\"lsm/file_open\")\nint BPF_PROG(block_shadow, struct file *file) {\n    // ... match the path and the calling process ...\n    if (is_blocked_path(file))\n        return -EPERM;   // non-zero return DENIES the operation\n    return 0;            // allow\n}",
+      "options": [
+        "Use seccomp-bpf: attach a filter to the open syscall that denies it for the whole process tree",
+        "Use a tracing kprobe on the open path and have userspace kill the process when it sees a match",
+        "Attach an eBPF LSM program to the file_open hook and return a non-zero value to deny the operation in-kernel at the security decision point",
+        "Add a Linux capability rule so the process loses permission to read the file"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "eBPF LSM programs (BPF_PROG_TYPE_LSM, available since kernel 5.7) attach to the same Linux Security Module hooks that SELinux and AppArmor use. Returning a non-zero value from the hook makes the kernel deny the operation right at the security decision point, with full context like the file and the calling task, so there's no race with a userspace watcher. seccomp-bpf filters syscalls by number and argument values but works on raw syscall arguments (it can't safely dereference a path pointer to match the file), so it's the wrong tool for path-based file policy. A tracing kprobe plus userspace kill is reactive and racy, and a capability rule is too coarse for a single path. Tetragon builds on these eBPF enforcement hooks.",
+      "hint": "You want the kernel itself to say no at the moment it decides whether to allow the action, with the file in hand. Which hook family is that?"
+    },
+    {
+      "id": "verifier-packet-bounds",
+      "title": "Decoding a verifier rejection",
+      "description": "Your XDP program reads the Ethernet header and the verifier rejects it with 'invalid access to packet'. The C looks correct. What is the verifier insisting on?",
+      "situation": "You're parsing packet headers in XDP. The code compiles cleanly, but bpftool refuses to load it with a packet-access error pointing at the line where you dereference the Ethernet header. You stare at it and the logic seems fine.",
+      "codeExample": "SEC(\"xdp\")\nint parse(struct xdp_md *ctx) {\n    void *data     = (void *)(long)ctx->data;\n    void *data_end = (void *)(long)ctx->data_end;\n    struct ethhdr *eth = data;\n\n    // verifier: invalid access to packet, off=0 size=14 ...\n    if (eth->h_proto == bpf_htons(ETH_P_IP))\n        return XDP_PASS;\n    return XDP_DROP;\n}",
+      "options": [
+        "The program must be compiled with a newer Clang; older Clang emits packet accesses the verifier can't follow",
+        "You have to copy the packet into a stack buffer with bpf_xdp_load_bytes before reading any field",
+        "ctx->data and ctx->data_end must be read with bpf_probe_read because they are kernel pointers",
+        "You must bounds-check the access against data_end before dereferencing: prove `data + sizeof(*eth) <= data_end`, or the verifier assumes the read could run past the packet"
+      ],
+      "correctAnswer": 3,
+      "points": 18,
+      "difficulty": "advanced",
+      "explanation": "The verifier cannot assume the packet is long enough to hold the header you're about to read. It tracks data and data_end as a range and requires you to prove, with an explicit comparison, that the bytes you dereference fall inside that range. Adding `if ((void *)(eth + 1) > data_end) return XDP_DROP;` before touching eth->h_proto satisfies it: now every path that dereferences eth has first established the bytes exist. This is the single most common XDP verifier error. It isn't about Clang version, you don't need to copy the packet to the stack for a simple header read, and ctx->data/data_end are special direct-packet-access pointers, not kernel pointers you'd read with bpf_probe_read.",
+      "hint": "The verifier can't know the packet is big enough. What must you do right before the dereference to convince it the bytes are really there?"
+    },
+    {
+      "id": "xdp-native-vs-generic-mode",
+      "title": "Line-rate program, fraction of the throughput",
+      "description": "You attached an XDP drop program expecting near line-rate, but throughput is a fraction of that and CPU is high. bpftool shows the program attached. What likely happened at attach time?",
+      "situation": "You benchmarked the same XDP program on a NIC with native support and got line-rate drops. On this host it's slow and softirq CPU is high, even though the attach succeeded with no error. The driver on this box is older.",
+      "codeExample": "$ sudo bpftool net\nxdp:\neth0(2) generic id 57\n        ^^^^^^^\n# compare to the fast host:\nxdp:\neth0(2) driver id 57\n        ^^^^^^",
+      "options": [
+        "It loaded in generic (SKB) mode because the driver lacks native XDP, so the program runs after the sk_buff is built, losing most of XDP's advantage",
+        "The program JIT-compilation was disabled, so it's running interpreted; enable the JIT to fix it",
+        "Generic mode means the program is offloaded to the NIC and the CPU number is misreported",
+        "The map got too large and spilled to swap, slowing every packet"
+      ],
+      "correctAnswer": 0,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "XDP has three attach modes. Native (driver) mode runs in the driver before the sk_buff exists, which is where the big win comes from. Offload mode runs on a capable SmartNIC. Generic (SKB) mode is the kernel's fallback when the driver has no native XDP support: it runs the program after the stack has already allocated the sk_buff, so you pay almost all the per-packet cost XDP is meant to skip. The attach succeeds, which is why it's easy to miss, but `bpftool net` showing 'generic' instead of 'driver' is the tell. The fix is a NIC/driver with native XDP support (or to force native mode and confirm the driver supports it). It's not a JIT toggle, generic is not offload, and maps don't swap.",
+      "hint": "The attach didn't fail, but bpftool labels the hook with a mode. Compare that label to the fast host and ask where the program is really running."
+    },
+    {
+      "id": "ringbuf-vs-perfbuf-events",
+      "title": "Streaming events without losing them",
+      "description": "Your security program emits an event per process exec to userspace through a perf buffer. Under bursts you see lost events and your userspace consumer struggles to order them across CPUs. What's the better primitive on modern kernels?",
+      "situation": "You ship per-event records (exec, connect, file open) from the kernel to a userspace agent. You're using a perf event array (one ring per CPU). During spikes some CPUs overflow and drop records, and stitching a global ordering from per-CPU streams is awkward and memory-hungry.",
+      "codeExample": "// current: per-CPU perf buffer, can drop per CPU and reorder globally\nstruct {\n    __uint(type, BPF_MAP_TYPE_PERF_EVENT_ARRAY);\n} events SEC(\".maps\");\nbpf_perf_event_output(ctx, &events, BPF_F_CURRENT_CPU, &e, sizeof(e));\n\n// candidate: single shared ring buffer\nstruct {\n    __uint(type, BPF_MAP_TYPE_RINGBUF);\n    __uint(max_entries, 256 * 1024);\n} rb SEC(\".maps\");\nbpf_ringbuf_output(&rb, &e, sizeof(e), 0);",
+      "options": [
+        "Keep the perf buffer but raise each CPU's buffer to the largest size allowed, which removes drops entirely",
+        "Switch event delivery to a map the userspace agent polls on a timer instead of a streaming buffer",
+        "Use the BPF ring buffer (BPF_MAP_TYPE_RINGBUF): one shared MPSC buffer that preserves submission order across CPUs and uses memory more efficiently than per-CPU perf buffers",
+        "Write events into a per-CPU hash map and reconstruct ordering from timestamps in userspace"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "The perf event array is per-CPU: you size a ring for every CPU, a busy CPU can overflow and drop while others sit idle, and because records leave on separate per-CPU streams there's no global ordering. The BPF ring buffer (kernel 5.8+) is a single buffer shared across CPUs with multi-producer support. It preserves the order in which events were submitted, wastes far less memory than over-provisioning N per-CPU rings, and supports a reserve/commit API that avoids an extra copy. That's why it's the recommended primitive for streaming variable-size events to userspace today. Just growing per-CPU buffers delays drops without fixing the per-CPU imbalance or the ordering problem, polling adds latency, and rebuilding order from timestamps is fragile.",
+      "hint": "The pain comes from having one buffer per CPU. What newer primitive gives you a single shared buffer with ordering and better memory use?"
+    }
+  ]
+}
