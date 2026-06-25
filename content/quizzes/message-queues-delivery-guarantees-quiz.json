@@ -1,0 +1,252 @@
+{
+  "id": "message-queues-delivery-guarantees-quiz",
+  "title": "Message Queues and Delivery Guarantees Quiz",
+  "description": "At-least-once, at-most-once, and the exactly-once myth: idempotent consumers, visibility timeouts, dead-letter queues, ordering, offset commits, and the outbox pattern that the queue-backed systems you design actually depend on.",
+  "category": "System Design",
+  "icon": "Workflow",
+  "totalPoints": 172,
+  "theme": {
+    "primaryColor": "orange",
+    "gradientFrom": "from-orange-500",
+    "gradientTo": "to-amber-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-24 minutes",
+    "difficultyLevels": {
+      "beginner": 2,
+      "intermediate": 7,
+      "advanced": 4
+    },
+    "createdDate": "2026-06-25",
+    "tags": [
+      "message-queues",
+      "kafka",
+      "delivery-guarantees",
+      "distributed-systems",
+      "system-design"
+    ]
+  },
+  "questions": [
+    {
+      "id": "three-delivery-semantics",
+      "title": "The Three Delivery Semantics",
+      "description": "The vocabulary every queue conversation starts with.",
+      "situation": "You are choosing the delivery guarantee for an order-processing pipeline.",
+      "options": [
+        "At-most-once may lose messages but never duplicates; at-least-once never loses but may duplicate; exactly-once means each message takes effect once",
+        "They all mean the same thing in practice",
+        "At-least-once means messages are never delivered more than the queue size",
+        "Exactly-once is the easiest to implement and the default everywhere"
+      ],
+      "correctAnswer": 0,
+      "explanation": "At-most-once: deliver and forget, so a failure can drop a message but you never see duplicates. At-least-once: keep retrying until acknowledged, so you never lose a message but can deliver it more than once. Exactly-once: each message affects the system exactly one time, which is the hardest to achieve and almost always built as at-least-once delivery plus idempotency. Knowing which you have determines everything downstream.",
+      "hint": "One can lose but not duplicate, one can duplicate but not lose, one promises neither.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "idempotent-consumer",
+      "title": "Surviving At-Least-Once",
+      "description": "The consumer-side defence against duplicates.",
+      "situation": "Your queue guarantees at-least-once delivery, so a payment message can be delivered twice.",
+      "options": [
+        "Trust the queue and charge the card on every message",
+        "Make the consumer idempotent: deduplicate on a message/business id so processing the same message twice has the same effect as once",
+        "Switch to at-most-once so you never see duplicates",
+        "Add a sleep before processing to avoid duplicates"
+      ],
+      "correctAnswer": 1,
+      "explanation": "At-least-once means duplicates are a when, not an if. The consumer must be idempotent: track a unique id (payment id, message id) and skip or no-op if already processed, often via a unique constraint or an idempotency key. Then a redelivery is harmless. Idempotency at the consumer is how real systems get 'effectively-once' behaviour on top of at-least-once delivery.",
+      "hint": "If the same message arrives twice, how do you make the second one a no-op?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "visibility-timeout",
+      "title": "Acks and Visibility Timeouts",
+      "description": "Why an unacked message comes back.",
+      "situation": "A consumer pulls a message from an SQS-style queue, starts working, but crashes before acknowledging. The visibility timeout is 30 seconds.",
+      "options": [
+        "The message is lost forever",
+        "The message is deleted immediately on receipt",
+        "After the visibility timeout expires without an ack, the message becomes visible again and is redelivered to another consumer",
+        "The queue blocks all other messages until that consumer recovers"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Pulling a message hides it for the visibility timeout rather than deleting it. The consumer must acknowledge (delete) it after successful processing. If it crashes and the timeout passes with no ack, the broker assumes failure and redelivers, which is exactly what produces at-least-once semantics. Set the timeout longer than worst-case processing time, or you get duplicate work while the first consumer is still busy.",
+      "hint": "Receipt hides the message temporarily; processing must ack it. What happens when the timer runs out with no ack?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "dead-letter-queue",
+      "title": "Dead-Letter Queues",
+      "description": "Where bad messages go to be examined.",
+      "situation": "One malformed message keeps failing, getting redelivered, failing again, blocking the queue.",
+      "options": [
+        "Delete the entire queue and start over",
+        "Acknowledge every message immediately so nothing fails",
+        "Increase the visibility timeout to infinity",
+        "Route messages that exceed a max-retries threshold to a dead-letter queue, so the main queue keeps flowing and failures can be inspected later"
+      ],
+      "correctAnswer": 3,
+      "explanation": "A dead-letter queue (DLQ) captures messages that fail more than a configured number of times. This stops a single poison message from being retried forever and blocking healthy traffic, and it preserves the failures for debugging, alerting, or manual replay. A DLQ with a max-receive-count is the standard pattern for isolating bad messages without losing them.",
+      "hint": "Where should a message go after it has failed N times so it stops blocking the rest?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "ordering-guarantees",
+      "title": "Ordering Is Not Global",
+      "description": "A common, costly misconception.",
+      "situation": "You assume a partitioned log like Kafka delivers all messages in the exact global order they were produced.",
+      "options": [
+        "No: ordering is guaranteed only within a partition (or key), not across partitions; to keep related events ordered you must route them to the same partition via a partition key",
+        "Correct, Kafka guarantees total global ordering across all partitions",
+        "Ordering is never guaranteed anywhere in Kafka",
+        "Ordering depends only on the number of consumers"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Partitioned logs scale by spreading messages across partitions, and ordering is preserved only within a single partition. Across partitions there is no global order. To keep a customer's events in order, you pick a partition key (e.g. customer id) so all their events land on one partition. Expecting global ordering, or using a random key for events that must stay ordered, is a classic source of subtle bugs.",
+      "hint": "What is the unit within which a partitioned log actually preserves order?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "exactly-once-myth",
+      "title": "The Exactly-Once Myth",
+      "description": "What 'exactly-once' really means.",
+      "situation": "A vendor claims their queue offers true end-to-end exactly-once delivery with no effort on your part.",
+      "options": [
+        "Believe it: exactly-once delivery over an unreliable network is trivially solved",
+        "Be skeptical: exactly-once delivery is impossible in general over unreliable networks; what systems actually provide is at-least-once delivery plus idempotency/transactions to get exactly-once processing (effectively-once)",
+        "Exactly-once is the same as at-most-once",
+        "Exactly-once requires turning off all retries"
+      ],
+      "correctAnswer": 1,
+      "explanation": "You cannot guarantee a message is delivered exactly once across an unreliable network, because the sender can never be sure an ack was lost vs the message was lost. Real 'exactly-once' is engineered: at-least-once delivery combined with idempotent consumers or transactional/atomic commits (e.g. Kafka transactions tying offset commit to output). The honest framing is exactly-once processing, not magic exactly-once delivery.",
+      "hint": "If an ack can be lost, can the sender ever be certain it delivered exactly once? How do systems fake it?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "consumer-lag-backpressure",
+      "title": "Consumer Lag and Backpressure",
+      "description": "When producers outrun consumers.",
+      "situation": "Producers write 50,000 messages/second; consumers process 30,000/second. This runs for hours.",
+      "options": [
+        "Nothing happens, queues have infinite capacity",
+        "The queue automatically slows producers with no consequences",
+        "Lag grows without bound: the backlog (and storage/memory) keeps increasing, latency climbs, and you must scale consumers, shed load, or apply backpressure to producers",
+        "Consumers will magically speed up to match"
+      ],
+      "correctAnswer": 2,
+      "explanation": "A sustained producer rate above consumer throughput means lag grows forever: the backlog, end-to-end latency, and broker storage all climb until something breaks. You monitor consumer lag and respond by scaling out consumers, increasing parallelism (partitions), shedding or sampling load, or applying backpressure so producers slow down. A queue absorbs bursts, it does not fix a permanent throughput deficit.",
+      "hint": "If inflow permanently exceeds outflow, what happens to the backlog over hours?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "competing-vs-pubsub",
+      "title": "Work Queue vs Pub/Sub",
+      "description": "Two fundamentally different delivery shapes.",
+      "situation": "You need a job processed by exactly one worker. Separately, you need an event seen by every interested service.",
+      "options": [
+        "Both need the same delivery model",
+        "Competing consumers means every consumer gets every message",
+        "Pub/sub guarantees only one subscriber ever receives a message",
+        "A work queue (competing consumers) delivers each message to one worker among many; pub/sub (fan-out) delivers each message to every subscriber. The first load-balances work, the second broadcasts events"
+      ],
+      "correctAnswer": 3,
+      "explanation": "A work queue with competing consumers spreads messages so each job runs once on one of several workers, that is how you parallelise processing. Pub/sub (or Kafka consumer groups, each group a separate subscriber) fans a message out to every interested party. Mixing these up, e.g. expecting all workers to see every job, or expecting one subscriber to absorb a broadcast, breaks the design. Pick the topology that matches the intent.",
+      "hint": "One pattern load-balances a job to a single worker; the other broadcasts to all subscribers.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "poison-message",
+      "title": "The Poison Message",
+      "description": "One message that keeps killing the consumer.",
+      "situation": "A consumer repeatedly crashes on the same message, recovers, gets redelivered the same message, and crashes again.",
+      "options": [
+        "It is a poison message: it must be capped with a retry/redelivery limit and routed to a DLQ, otherwise it blocks the partition/queue and starves all other messages",
+        "This is normal and self-resolves",
+        "Adding more consumers fixes a poison message",
+        "Poison messages only occur with at-most-once delivery"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A poison message is one that can never be processed successfully (bad schema, unhandled edge case). Without a redelivery cap it loops forever, and in an ordered partition it blocks everything behind it. The fix is a max-delivery count that diverts it to a dead-letter queue so the rest of the stream proceeds, plus alerting so a human investigates. Unbounded retries on a poison message turn one bad record into an outage.",
+      "hint": "A single un-processable message on an ordered stream blocks everything behind it. What caps the damage?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "offset-commit-timing",
+      "title": "When You Commit the Offset",
+      "description": "The decision that sets your delivery semantics.",
+      "situation": "In a Kafka consumer, you choose whether to commit the offset before or after processing the message.",
+      "options": [
+        "It makes no difference to delivery guarantees",
+        "Commit before processing risks losing a message on a crash (at-most-once); commit after processing risks reprocessing on a crash (at-least-once). The order of commit vs work decides which guarantee you get",
+        "Committing after processing guarantees exactly-once with no other work",
+        "You should never commit offsets at all"
+      ],
+      "correctAnswer": 1,
+      "explanation": "If you commit the offset first and then crash mid-processing, that message is skipped on restart: at-most-once (possible loss). If you process first and crash before committing, the message is redelivered: at-least-once (possible duplicate). There is no commit order that gives exactly-once by itself, you add idempotency or Kafka transactions for that. This single choice is where consumers accidentally lose or duplicate data.",
+      "hint": "Crash right after the commit but before the work, vs after the work but before the commit. Which loses, which duplicates?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "producer-acks-durability",
+      "title": "Producer Acks and Durability",
+      "description": "How hard the broker promises to keep your message.",
+      "situation": "A producer can wait for acks=1 (leader only) or acks=all (leader plus in-sync replicas) before considering a write successful.",
+      "options": [
+        "Both give identical durability",
+        "acks=1 is more durable than acks=all",
+        "acks=all is more durable: the write is acknowledged only after replicas have it, so a leader failure won't lose the message, at the cost of higher latency; acks=1 is faster but can lose a just-written message if the leader dies before replication",
+        "Acks only affect consumers, not durability"
+      ],
+      "correctAnswer": 2,
+      "explanation": "With acks=1 the leader acknowledges as soon as it has the message locally; if it crashes before replicas copy it, that message is gone. With acks=all the broker waits until the in-sync replicas have it, so a single broker loss won't lose data, trading latency for durability. Durability is a producer-side choice too, not just a consumer concern, and 'fast but lossy' vs 'slower but safe' is a deliberate tradeoff.",
+      "hint": "One waits only for the leader; one waits for replicas. Which survives the leader dying right after the write?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "queue-vs-log-replay",
+      "title": "Queue vs Log (Replay)",
+      "description": "A key difference between RabbitMQ-style and Kafka-style systems.",
+      "situation": "After a bug, you want to reprocess the last 24 hours of events through a fixed consumer.",
+      "options": [
+        "Always possible: every message system retains everything forever",
+        "Only at-most-once systems support replay",
+        "Replay requires deleting the topic first",
+        "A retained log (like Kafka) lets you reset the consumer offset and replay within the retention window; a classic queue typically removes a message once acknowledged, so it is gone and cannot be replayed"
+      ],
+      "correctAnswer": 3,
+      "explanation": "A log-structured broker keeps messages for a retention period independent of consumption, so consumers track an offset and can rewind to reprocess history, great for bug fixes and new consumers backfilling. A traditional message queue deletes a message once it is acknowledged, so there is nothing to replay. Whether you can 'reprocess last 24h' depends on choosing a retained log vs a consume-and-delete queue up front.",
+      "hint": "Does the broker delete on ack, or keep messages for a retention window you can rewind into?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "outbox-pattern",
+      "title": "The Dual-Write Problem and the Outbox",
+      "description": "Keeping the database and the queue consistent.",
+      "situation": "Your service must update its database and publish an event. It writes the DB, then crashes before publishing to the queue.",
+      "options": [
+        "This is the dual-write problem: the DB and queue can diverge. The transactional outbox pattern writes the event into an outbox table in the same DB transaction, then a relay reliably publishes it, so the state change and the event are atomic",
+        "No problem, the two are always atomic",
+        "Just publish to the queue first, that removes all risk",
+        "Use two separate transactions and hope they both succeed"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Writing to a database and a message broker are two separate systems with no shared transaction, so a crash between them leaves state and events inconsistent (the dual-write problem). The transactional outbox writes the event row in the same local DB transaction as the state change, then a separate relay (polling or change-data-capture) publishes outbox rows to the broker at-least-once. The DB commit is the single source of truth, so the event is never lost or phantom-published.",
+      "hint": "You can't share one transaction across a DB and a broker. Where can you atomically record 'an event must be sent'?",
+      "difficulty": "advanced",
+      "points": 18
+    }
+  ]
+}

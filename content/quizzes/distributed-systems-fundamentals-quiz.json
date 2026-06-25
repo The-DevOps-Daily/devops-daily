@@ -1,0 +1,270 @@
+{
+  "id": "distributed-systems-fundamentals-quiz",
+  "title": "Distributed Systems Fundamentals Quiz",
+  "description": "Test your grasp of the theory that decides whether a distributed system stays correct under stress: CAP and PACELC, consistency models, quorums, consensus, clocks, and the failure modes that only appear at scale.",
+  "category": "System Design",
+  "icon": "Network",
+  "totalPoints": 180,
+  "theme": {
+    "primaryColor": "amber",
+    "gradientFrom": "from-amber-500",
+    "gradientTo": "to-orange-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-24 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 4
+    },
+    "createdDate": "2026-06-25",
+    "tags": [
+      "distributed-systems",
+      "consistency",
+      "consensus",
+      "cap-theorem",
+      "system-design"
+    ]
+  },
+  "questions": [
+    {
+      "id": "cap-during-partition",
+      "title": "CAP When the Network Splits",
+      "description": "What the CAP theorem actually forces you to choose.",
+      "situation": "A network partition cuts your cluster into two halves that cannot talk to each other. A write arrives on one side.",
+      "options": [
+        "You must choose: reject the write to stay consistent, or accept it and risk divergence to stay available",
+        "You can keep full consistency and full availability if your replication is fast enough",
+        "Partition tolerance is optional, so you can simply turn it off",
+        "The CAP theorem only applies to databases, not application services"
+      ],
+      "correctAnswer": 0,
+      "explanation": "During a partition (the P you cannot avoid on a real network), CAP says you pick C or A for that operation. Stay consistent by refusing writes that cannot be safely replicated, or stay available by accepting them and reconciling later. You cannot have both while partitioned, no matter how fast your hardware is.",
+      "hint": "P is not a choice on a real network. Given a partition, what are the only two options left?",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "eventual-vs-strong",
+      "title": "Eventual vs Strong Consistency",
+      "description": "Pick the model that matches the requirement.",
+      "situation": "You are designing the balance check for a bank's ATM withdrawals. A stale read could let someone overdraw.",
+      "options": [
+        "Eventual consistency, because it is faster and the values converge quickly",
+        "Strong (linearizable) consistency, so every read reflects the most recent committed write",
+        "Read-your-writes consistency on a single replica is enough for money",
+        "Causal consistency, because withdrawals are causally related"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Money that must never be double-spent needs linearizable reads: a read always sees the latest committed write, as if there were a single copy. Eventual or causal consistency allow a window where a replica returns a stale balance, which is exactly the gap an attacker (or an honest race) exploits to overdraw.",
+      "hint": "Which model guarantees a read never returns a value older than the last committed write?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "quorum-math",
+      "title": "Quorum Reads and Writes",
+      "description": "Make a Dynamo-style system return fresh reads.",
+      "situation": "You run a quorum-based store with N = 5 replicas per key. You want a read to always observe the latest acknowledged write.",
+      "codeExample": "N = 5 replicas\nW = write quorum\nR = read quorum",
+      "options": [
+        "W = 1, R = 1, because any replica has the data",
+        "W = 5, R = 5, the only safe option",
+        "W = 3, R = 3, so that W + R > N and the read and write sets overlap",
+        "W = 2, R = 2, since 2 + 2 = 4 is close enough to 5"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Strong consistency in a quorum system needs W + R > N so that any read quorum overlaps any write quorum by at least one replica that has the newest value. With N = 5, W = 3 and R = 3 gives W + R = 6 > 5. W = R = 2 gives 4, which is not greater than 5, so a read can miss the latest write. W = R = 5 works but needlessly sacrifices availability.",
+      "hint": "The overlap rule is W + R > N. Find the smallest quorums that satisfy it.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "raft-leader-election",
+      "title": "Why Raft Needs a Majority",
+      "description": "Consensus and the majority requirement.",
+      "situation": "A 5-node Raft cluster loses 2 nodes. Then the network briefly partitions the remaining 3 into a group of 2 and a group of 1.",
+      "options": [
+        "Both partitions elect a leader, giving you two leaders",
+        "Only the group of 2 can elect a leader, because 2 is more than half of the 3 survivors",
+        "The single node elects itself, since it has the most recent log",
+        "No partition can elect a leader, because neither has a majority of the original 5 nodes, so the cluster stops accepting writes"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Raft requires a majority of the full cluster (3 of 5) to elect a leader and commit entries. After losing 2 nodes and splitting the remaining 3 into 2 and 1, neither side has 3 votes, so no leader is elected and writes halt. This is by design: it is the mechanism that prevents split-brain (two leaders) at the cost of availability when you lose quorum.",
+      "hint": "Majority means a majority of the configured cluster size, not of the survivors.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "split-brain",
+      "title": "Split-Brain",
+      "description": "Recognise the worst failure mode.",
+      "situation": "After a partition heals, you discover two nodes both believed they were the primary and each accepted conflicting writes.",
+      "options": [
+        "This is split-brain: two leaders accepted divergent writes, and you now have conflicting state to reconcile or data loss",
+        "This is normal and the writes will automatically merge correctly",
+        "This cannot happen if you use TCP instead of UDP",
+        "This only affects reads, not writes"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Split-brain is when a partition leaves two nodes each acting as the authoritative primary, accepting writes that conflict. When the partition heals you have divergent histories, and resolving them means conflict resolution or, often, losing one side's writes. Quorum/fencing mechanisms exist precisely to make this impossible by ensuring only one side can hold leadership.",
+      "hint": "What goes wrong when both sides of a partition think they are in charge?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "idempotency-retries",
+      "title": "Idempotency and Retries",
+      "description": "Make retries safe.",
+      "situation": "A client sends a 'charge $10' request, the server processes it, but the response is lost. The client retries.",
+      "options": [
+        "Retries are always safe, so no special handling is needed",
+        "An idempotency key lets the server recognise the retry and not charge twice",
+        "The server should reject all retries to be safe",
+        "Use UDP so lost responses do not trigger retries"
+      ],
+      "correctAnswer": 1,
+      "explanation": "On an unreliable network a lost response is indistinguishable from a lost request, so clients must retry, and a naive retry double-charges. An idempotency key (a unique token per logical operation) lets the server detect 'I already did this one' and return the original result instead of repeating the side effect. It is the standard pattern for safe retries on non-idempotent operations.",
+      "hint": "The client cannot tell a lost request from a lost response. How does the server make a repeat harmless?",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "clock-skew-ordering",
+      "title": "Ordering Events Across Servers",
+      "description": "Why wall-clock timestamps lie.",
+      "situation": "Two events happen on two servers. You want to know which happened first, so you compare their system clock timestamps.",
+      "options": [
+        "Wall-clock timestamps are reliable because NTP keeps clocks perfectly in sync",
+        "The server with the higher IP address is always first",
+        "Clock skew between servers means timestamps can disagree with real causal order; use logical clocks (Lamport or vector clocks) to order events",
+        "You should use the database's auto-increment ID, which is globally ordered across servers"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Physical clocks drift and NTP only bounds the error, it does not eliminate it, so two servers can disagree by milliseconds or more. An event with a later real cause can carry an earlier timestamp. Logical clocks (Lamport timestamps, or vector clocks for detecting concurrency) capture happens-before relationships without trusting wall time. Per-server auto-increment IDs are not globally ordered.",
+      "hint": "Can you trust that two machines' clocks agree to the millisecond?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "pacelc",
+      "title": "PACELC Extends CAP",
+      "description": "The trade-off that exists even without partitions.",
+      "situation": "Your system has no partition right now. A teammate says 'so CAP does not apply, we get consistency and low latency for free.'",
+      "options": [
+        "Correct, with no partition there is no trade-off",
+        "Without a partition, all systems become linearizable automatically",
+        "PACELC only matters for NoSQL databases",
+        "PACELC says: if Partitioned, choose A or C; Else (normal operation) choose between Latency and Consistency, so the trade-off persists even with a healthy network"
+      ],
+      "correctAnswer": 3,
+      "explanation": "PACELC extends CAP with the part CAP ignores: even with no partition (the 'Else' branch), you still trade Latency against Consistency. Synchronously replicating to a quorum before acknowledging gives stronger consistency but higher latency; acknowledging early and replicating async gives lower latency but weaker consistency. The trade-off does not disappear when the network is healthy.",
+      "hint": "What does the 'ELC' (Else, Latency, Consistency) half of PACELC describe?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "two-phase-commit-blocking",
+      "title": "The Problem With Two-Phase Commit",
+      "description": "Why 2PC is called a blocking protocol.",
+      "situation": "In a two-phase commit, all participants vote 'yes' in the prepare phase. Then the coordinator crashes before sending the commit decision.",
+      "options": [
+        "Participants are stuck holding locks and cannot unilaterally decide commit or abort; they block until the coordinator recovers",
+        "Participants can safely abort on their own after a short timeout",
+        "Each participant commits independently to avoid waiting",
+        "The transaction silently rolls back with no consequences"
+      ],
+      "correctAnswer": 0,
+      "explanation": "After voting yes, a participant has promised it can commit and must hold its locks. If the coordinator dies before announcing the decision, participants cannot safely decide alone: committing risks inconsistency if others aborted, and aborting risks the opposite. They block until the coordinator (or a recovery process) resolves it. This blocking weakness is why consensus protocols like Raft/Paxos and three-phase variants are preferred for fault tolerance.",
+      "hint": "After voting yes, can a participant decide the outcome by itself if the coordinator vanishes?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "fallacies-distributed-computing",
+      "title": "Fallacies of Distributed Computing",
+      "description": "Spot the false assumption.",
+      "situation": "A new service assumes the network is reliable, latency is zero, bandwidth is infinite, and topology never changes.",
+      "options": [
+        "These are reasonable assumptions inside a single datacenter",
+        "These are the classic fallacies of distributed computing; each is false and ignoring them produces fragile systems",
+        "They are only false on the public internet, not internal networks",
+        "Modern cloud networking has made all of these true"
+      ],
+      "correctAnswer": 1,
+      "explanation": "These are straight out of the eight fallacies of distributed computing (the network is reliable, latency is zero, bandwidth is infinite, the network is secure, topology does not change, there is one administrator, transport cost is zero, the network is homogeneous). Every one is false, even inside a datacenter, and systems built as if they were true fail in production the first time the network misbehaves.",
+      "hint": "These four statements have a famous name. They are all wrong.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "read-repair-hinted-handoff",
+      "title": "Read Repair and Hinted Handoff",
+      "description": "How eventually-consistent stores heal.",
+      "situation": "In a Dynamo-style store, a replica was down during a write and missed it. Later a read touches that replica and finds a stale value.",
+      "options": [
+        "The stale replica is permanently corrupt and must be rebuilt from scratch",
+        "The read fails because the replicas disagree",
+        "Read repair updates the stale replica with the newest value seen during the read; hinted handoff would have stored the missed write for delivery when the replica returned",
+        "Nothing can be done until an admin manually copies the data"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Eventually-consistent stores self-heal. Read repair: when a read sees replicas disagree, it pushes the newest version back to the stale ones. Hinted handoff: when a replica is down during a write, another node stores a 'hint' and replays the write once the replica recovers. Together with anti-entropy (Merkle-tree) repair, these keep replicas converging without manual intervention.",
+      "hint": "Two named mechanisms let these stores converge: one fixes staleness during reads, one stores writes for absent replicas.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "exactly-once-delivery",
+      "title": "The Exactly-Once Myth",
+      "description": "What 'exactly-once' really means.",
+      "situation": "A vendor claims their message system guarantees exactly-once delivery over an unreliable network.",
+      "options": [
+        "Believable: exactly-once delivery is a solved problem",
+        "It just requires a fast enough network",
+        "Exactly-once is only possible with UDP",
+        "Exactly-once delivery is impossible in general; what is achievable is at-least-once delivery plus idempotent processing, giving exactly-once effects"
+      ],
+      "correctAnswer": 3,
+      "explanation": "True exactly-once delivery is impossible when nodes and networks can fail, because a sender cannot distinguish a lost message from a lost acknowledgement. The practical guarantee is at-least-once delivery combined with idempotent consumers (or deduplication), which yields exactly-once processing semantics, the effect happens once even though the message may arrive more than once. 'Exactly-once' as marketed is almost always this.",
+      "hint": "If you cannot tell a lost message from a lost ack, what is the honest guarantee, and how do you make duplicates harmless?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "vector-vs-lamport",
+      "title": "Vector Clocks vs Lamport Clocks",
+      "description": "Detecting concurrency, not just order.",
+      "situation": "You need to detect whether two updates were truly concurrent (neither caused the other), so you can flag a conflict.",
+      "options": [
+        "Vector clocks can tell concurrent events apart from causally ordered ones; a single Lamport timestamp only gives a total order and cannot distinguish concurrency",
+        "A single Lamport timestamp tells you whether two events were concurrent",
+        "Wall-clock timestamps are sufficient to detect concurrency",
+        "Concurrency cannot be detected in distributed systems"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A Lamport clock gives a consistent total order but loses information: if event A has a smaller timestamp than B, you cannot tell whether A happened-before B or they were concurrent. Vector clocks track a counter per node, so comparing two vectors reveals causally-before, causally-after, or concurrent (neither dominates). That concurrency signal is exactly what conflict-detecting stores need.",
+      "hint": "Which clock lets you say 'these two were concurrent' rather than just 'this one has a smaller number'?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "failure-detection-heartbeats",
+      "title": "Detecting a Dead Node",
+      "description": "The limits of failure detection.",
+      "situation": "A node stops responding to heartbeats for 10 seconds. Your system declares it dead and promotes a replica. The node was actually just slow and comes back.",
+      "options": [
+        "Heartbeats give perfect, instant failure detection",
+        "You cannot perfectly distinguish a slow node from a dead one over an async network; tune timeouts and use fencing so a wrongly-declared-dead node cannot cause split-brain when it returns",
+        "Longer timeouts eliminate all false positives with no downside",
+        "A node that misses one heartbeat is definitely dead"
+      ],
+      "correctAnswer": 1,
+      "explanation": "On an asynchronous network you fundamentally cannot tell 'crashed' from 'slow or partitioned', so any failure detector trades false positives (declaring a live node dead) against detection latency. Short timeouts react fast but mis-fire; long timeouts are safe but slow. Because a wrongly-evicted node may return believing it is still valid, you need fencing (tokens, leases) so its late actions are rejected, preventing split-brain.",
+      "hint": "Can a heartbeat timeout tell the difference between a dead node and a slow one? What protects you when you guess wrong?",
+      "difficulty": "intermediate",
+      "points": 12
+    }
+  ]
+}

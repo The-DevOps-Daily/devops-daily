@@ -1,0 +1,255 @@
+{
+  "id": "concurrency-and-race-conditions-quiz",
+  "title": "Concurrency and Race Conditions Quiz",
+  "description": "The bugs that only show up under load and never in a debugger: race conditions, deadlocks, memory visibility, lock-free pitfalls, and the difference between code that looks correct and code that is actually thread-safe.",
+  "category": "Programming",
+  "icon": "Cpu",
+  "totalPoints": 172,
+  "theme": {
+    "primaryColor": "red",
+    "gradientFrom": "from-red-500",
+    "gradientTo": "to-orange-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-24 minutes",
+    "difficultyLevels": {
+      "beginner": 2,
+      "intermediate": 7,
+      "advanced": 4
+    },
+    "createdDate": "2026-06-25",
+    "tags": [
+      "concurrency",
+      "race-conditions",
+      "threads",
+      "locking",
+      "system-design"
+    ]
+  },
+  "questions": [
+    {
+      "id": "lost-update-race",
+      "title": "The Lost Update",
+      "description": "The classic race condition.",
+      "situation": "Two threads each read a shared counter (value 0), add 1, and write it back, with no synchronisation.",
+      "codeExample": "// both threads run:\ntmp = counter;   // reads 0\ntmp = tmp + 1;   // 1\ncounter = tmp;   // writes 1",
+      "options": [
+        "The counter can end at 1 because both threads read 0 before either writes, so one update is lost",
+        "The counter always ends at 2",
+        "The counter ends at 0",
+        "This is safe because increment is a single operation"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Increment is read-modify-write, three steps, not one atomic operation. If both threads read 0 before either writes back, both compute 1 and the final value is 1, not 2. One update is silently lost. Fixing it needs an atomic increment, a lock, or a compare-and-swap loop.",
+      "hint": "Is 'counter++' really one indivisible step at the hardware level?",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "deadlock-conditions",
+      "title": "The Four Conditions for Deadlock",
+      "description": "What must all hold for a deadlock.",
+      "situation": "You are reasoning about whether a design can deadlock.",
+      "options": [
+        "Deadlock needs only two threads, nothing else matters",
+        "Deadlock requires all four of: mutual exclusion, hold-and-wait, no preemption, and circular wait; break any one and you cannot deadlock",
+        "Deadlock is impossible if you use enough threads",
+        "Deadlock only happens with database locks"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Coffman's four conditions must hold simultaneously: mutual exclusion (resources are exclusive), hold-and-wait (a thread holds one resource while waiting for another), no preemption (resources can't be forcibly taken), and circular wait (a cycle of waiters). Deadlock prevention works by denying one of them, most commonly breaking circular wait with a global lock ordering.",
+      "hint": "There is a famous set of four conditions. Breaking any single one prevents deadlock.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "lock-ordering",
+      "title": "Preventing Deadlock With Lock Ordering",
+      "description": "The most practical deadlock fix.",
+      "situation": "Thread A locks mutex X then Y; thread B locks Y then X. They deadlock.",
+      "options": [
+        "Add a third mutex to coordinate them",
+        "Increase the thread priority of A",
+        "Establish a global lock acquisition order (always lock X before Y) so a circular wait cannot form",
+        "Use a longer timeout so they eventually succeed"
+      ],
+      "correctAnswer": 2,
+      "explanation": "The deadlock here is a circular wait: A holds X waiting for Y, B holds Y waiting for X. Imposing a consistent global order (everyone acquires X before Y) makes a cycle impossible, breaking Coffman's circular-wait condition. Lock ordering is the standard, robust fix; timeouts only convert a deadlock into a livelock or repeated failure.",
+      "hint": "If everyone always grabs locks in the same order, can a cycle of waiters ever form?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "toctou",
+      "title": "Check-Then-Act (TOCTOU)",
+      "description": "A race hiding in innocent code.",
+      "situation": "Two threads run: if the username is not taken, create the account.",
+      "codeExample": "if (!userExists(name)) {\n    createUser(name);   // race window here\n}",
+      "options": [
+        "This is safe because the check happens right before the create",
+        "It only fails if the database is slow",
+        "Adding a comment fixes it",
+        "It is a time-of-check-to-time-of-use race: both threads can pass the check before either creates, producing duplicate accounts; fix with an atomic operation or a unique constraint"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Between the check (userExists) and the act (createUser) there is a window where another thread can slip through. Both threads see 'not taken' and both create. This TOCTOU race is fixed by making check-and-act atomic: a unique database constraint, an INSERT ... ON CONFLICT, or a lock held across both steps. The gap between checking and acting is where concurrency bugs live.",
+      "hint": "What can another thread do in the gap between the 'if' and the 'create'?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "memory-visibility",
+      "title": "Memory Visibility",
+      "description": "A write that another thread never sees.",
+      "situation": "Thread A sets a plain shared boolean 'ready = true'. Thread B loops 'while (!ready) {}'. Thread B sometimes never exits the loop.",
+      "options": [
+        "Without proper memory ordering (a volatile/atomic flag or a memory barrier), B may read a cached stale value forever; visibility is not guaranteed across threads",
+        "Impossible: once A writes, B sees it immediately",
+        "B is just slow and will eventually see it",
+        "The compiler always forces shared reads to memory"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Without synchronisation, the compiler and CPU are free to cache 'ready' in a register and reorder operations, so B can spin on a stale value indefinitely. Correctness needs a memory ordering guarantee: a volatile/atomic flag, a lock, or an explicit memory barrier, which forces the write to be published and the read to observe it. Concurrency is about visibility and ordering, not just mutual exclusion.",
+      "hint": "Does writing a plain variable in one thread guarantee another thread ever sees the new value?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "optimistic-vs-pessimistic",
+      "title": "Optimistic vs Pessimistic Locking",
+      "description": "Pick the strategy for low contention.",
+      "situation": "Updates to a row are frequent but rarely conflict. You want maximum throughput.",
+      "options": [
+        "Pessimistic locking: lock the row for the whole transaction every time",
+        "Optimistic concurrency: read a version number, and on write check it has not changed (compare-and-set), retrying on the rare conflict",
+        "Disable locking entirely",
+        "Use a global lock for the whole table"
+      ],
+      "correctAnswer": 1,
+      "explanation": "When conflicts are rare, optimistic concurrency wins: you don't hold a lock during the work, you just verify on commit that the version you read is still current (a version column or compare-and-set) and retry the occasional conflict. Pessimistic locking serialises everyone even though they rarely collide, throttling throughput. Choose pessimistic only when contention is high enough that retries would dominate.",
+      "hint": "If conflicts are rare, do you want to lock up front, or check at the end and retry the few that clash?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "livelock",
+      "title": "Livelock vs Deadlock",
+      "description": "Busy but going nowhere.",
+      "situation": "Two threads keep detecting a conflict, both back off, both retry at the same time, and repeat, forever, never making progress, while consuming CPU.",
+      "options": [
+        "This is a deadlock",
+        "This is normal and harmless",
+        "This is a livelock: threads are active and changing state but make no progress; randomised backoff usually breaks the symmetry",
+        "This is a memory leak"
+      ],
+      "correctAnswer": 2,
+      "explanation": "In a deadlock threads are blocked and idle. In a livelock they are running, responding to each other, but their combined behaviour produces no forward progress, like two people stepping the same way to pass in a hallway. The classic fix is to break the symmetry, usually with randomised (exponential) backoff so the threads stop retrying in lockstep.",
+      "hint": "Deadlock threads are stuck and idle. These threads are busy but still get nowhere. What is that called, and what breaks the symmetry?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "cas-compare-and-swap",
+      "title": "Compare-and-Swap",
+      "description": "The primitive behind lock-free code.",
+      "situation": "You want to increment a shared counter without a lock.",
+      "codeExample": "do {\n  old = counter.load();\n  next = old + 1;\n} while (!counter.compareAndSwap(old, next));",
+      "options": [
+        "This is broken because it has no lock",
+        "The loop can never terminate",
+        "CAS is slower than a mutex in every case",
+        "Compare-and-swap atomically sets the value only if it still equals 'old'; the loop retries if another thread changed it in between, giving a correct lock-free increment"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Compare-and-swap is a single atomic instruction: 'if the value is still old, set it to next, else fail'. The retry loop re-reads and tries again on contention, so the increment is correct without a lock. CAS is the foundation of lock-free data structures. It can spin under heavy contention, but for low-to-moderate contention it often beats locking.",
+      "hint": "What does CAS check before it writes, and why does the loop retry?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "aba-problem",
+      "title": "The ABA Problem",
+      "description": "When compare-and-swap is fooled.",
+      "situation": "A lock-free algorithm reads value A, another thread changes it to B and back to A, then the first thread's compare-and-swap on 'A' succeeds, even though the world changed underneath it.",
+      "options": [
+        "This is the ABA problem: CAS only checks the value, not whether it changed and changed back; fix it with a version/tag counter or hazard pointers",
+        "This is fine, the value is A so nothing changed",
+        "ABA only affects databases",
+        "Using a bigger integer fixes it"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Compare-and-swap checks equality of the value, not its history. If a value goes A to B to A, a stale CAS comparing against A succeeds even though the underlying structure (e.g. a freed-and-reused node) is different, causing subtle corruption. The standard fixes are a tagged pointer / version counter (so A-with-tag-1 differs from A-with-tag-3) or hazard pointers to manage reuse.",
+      "hint": "CAS sees the value is back to A and is happy. What did it fail to notice?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "thread-safe-vs-reentrant",
+      "title": "Thread-Safe vs Reentrant",
+      "description": "Two related but distinct properties.",
+      "situation": "A teammate says 'this function is reentrant, so it is automatically thread-safe.'",
+      "options": [
+        "Correct, the terms mean the same thing",
+        "Not necessarily: reentrant means safe to re-enter (e.g. via recursion or a signal handler) without corrupting its own state; thread-safe means safe to call concurrently from multiple threads. They overlap but are not identical",
+        "Thread-safe is a subset of reentrant",
+        "Neither matters in modern languages"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Reentrancy is about a function being safely interrupted and re-entered (recursion, signal handlers) without relying on shared mutable state mid-call. Thread safety is about correctness under concurrent calls from different threads. A function can be reentrant but not thread-safe (or vice versa) depending on what shared state it touches and how. Treating them as synonyms hides real bugs.",
+      "hint": "One is about being safely re-entered mid-execution; the other is about concurrent callers. Same thing?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "immutability-concurrency",
+      "title": "Why Immutability Helps",
+      "description": "The simplest concurrency strategy.",
+      "situation": "You want to share data across threads with the least risk of races.",
+      "options": [
+        "Make the data mutable and add many locks",
+        "Immutability has no effect on concurrency",
+        "Make the shared data immutable: if nothing can change it after creation, concurrent reads need no synchronisation and there are no write races",
+        "Only one thread should ever exist"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Races require concurrent access where at least one party writes. Immutable data is never written after construction, so any number of threads can read it safely with no locks and no visibility issues. This is why functional and 'value object' styles scale well concurrently: the cheapest race to fix is the one that cannot occur. Mutation is shared only by replacing references atomically.",
+      "hint": "Races need a writer. What if nothing can be written after creation?",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "blocking-event-loop",
+      "title": "Blocking the Event Loop",
+      "description": "A concurrency pitfall in async runtimes.",
+      "situation": "In a single-threaded async runtime (like Node.js), a request handler runs a heavy synchronous CPU computation that takes 2 seconds.",
+      "options": [
+        "Other requests are handled normally in parallel",
+        "Only the slow request is affected, others are fine",
+        "Async runtimes never block",
+        "The event loop is blocked for 2 seconds, so all other requests stall until it finishes; offload CPU-heavy work to a worker thread or separate process"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Single-threaded async runtimes get concurrency from never blocking the event loop on I/O. But a synchronous CPU-bound computation holds the one thread, so every other pending request waits the full 2 seconds. The fix is to move CPU-heavy work off the event loop, to worker threads, a thread pool, or a separate service, keeping the loop free to interleave I/O.",
+      "hint": "If there's one thread running the loop, what happens to everyone else while it crunches numbers for 2 seconds?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "double-checked-locking",
+      "title": "Double-Checked Locking",
+      "description": "A famous broken-then-fixed pattern.",
+      "situation": "A singleton uses double-checked locking: check if instance is null, lock, check again, then construct, all to avoid locking on every call.",
+      "options": [
+        "Without proper memory ordering it can be broken: another thread may see a non-null but partially-constructed instance; it needs the instance field to be atomic/volatile with the right memory semantics",
+        "It is always safe in every language",
+        "It is always broken and can never be made to work",
+        "The two checks are redundant and one should be removed"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Double-checked locking is correct only if the shared instance field has the right memory ordering. Without it, the publishing thread's writes (object construction) can be reordered relative to the reference assignment, so another thread sees a non-null reference to a not-yet-fully-constructed object. Declaring the field volatile/atomic (with acquire-release semantics) makes the publication safe. It is the canonical example of why memory ordering, not just locking, matters.",
+      "hint": "The danger is a reader seeing the reference set before the object is fully built. What property of the field prevents that?",
+      "difficulty": "intermediate",
+      "points": 12
+    }
+  ]
+}

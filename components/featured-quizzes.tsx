@@ -14,6 +14,9 @@ import {
   Cloud,
   GitBranch,
   Terminal,
+  Network,
+  Calculator,
+  Cpu,
   LucideIcon,
 } from 'lucide-react';
 import { SectionHeader } from '@/components/section-header';
@@ -29,6 +32,9 @@ const iconComponents: Record<string, LucideIcon> = {
   Cloud,
   GitBranch,
   Terminal,
+  Network,
+  Calculator,
+  Cpu,
   Brain,
 };
 
