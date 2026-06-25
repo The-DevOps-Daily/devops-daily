@@ -774,6 +774,9 @@
   "public/images/posts/kubernetes-1-37-feature-freeze-whats-locked-in.svg": "9639e1c02c2f363a",
   "public/images/quizzes/ebpf-network-observability-quiz-og.svg": "529df65c0b5af3ad",
   "public/images/flashcards/aws-lambda-cold-start-optimization-og.svg": "622a69a9ee601a98",
-  "public/images/posts/spacex-cursor-acquisition-betting-on-one-ai-tool.svg": "e3958b68343696f8",
-  "public/images/posts/ansible-automation-platform-credential-leak-cve-2026-11807.svg": "89e9bd21fd97d37b"
+  "public/images/interview-questions/scaling-on-call-program-og.svg": "2955bda998befd6e",
+  "public/images/interview-questions/designing-on-call-schedule-coverage-og.svg": "40adeb4277d7c83c",
+  "public/images/interview-questions/reducing-on-call-alert-fatigue-og.svg": "6f7947849ef32c8d",
+  "public/images/interview-questions/on-call-rotation-escalation-basics-og.svg": "c7d78304d22c5a28",
+  "public/images/interview-questions/escalation-policy-design-og.svg": "d75157ebb1d1a0f7"
 }

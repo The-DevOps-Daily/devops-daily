@@ -1,0 +1,40 @@
+{
+  "id": "on-call-rotation-escalation-basics",
+  "slug": "on-call-rotation-escalation-basics",
+  "title": "On-Call Rotation and Escalation Basics",
+  "question": "You're about to go on-call for the first time. In your own words, what is an on-call rotation, and why do teams bother setting up a formal escalation policy instead of just pinging whoever happens to be online when something breaks?",
+  "answer": "An on-call rotation is a schedule that decides who is responsible for responding to production alerts at any given moment. Instead of \"everyone is sort of responsible,\" one named person owns the pager for a defined window, then it rotates to the next person.\n\nAn escalation policy is the set of rules for what happens when that person doesn't respond. A normal policy looks like: page the primary, wait a few minutes for an acknowledgement, and if nothing comes back, page the secondary. Still nothing? Page the on-call manager.\n\nWhy formalize it instead of pinging whoever's around? A few reasons.\n\nFirst, it removes the bystander problem. If you message a busy channel at 3am, everyone assumes someone else has it and nobody picks it up. A rotation makes one person clearly accountable.\n\nSecond, it removes a single point of failure. People sleep, lose signal, or are mid-flight. The escalation chain guarantees that if the first responder is unreachable, the alert still reaches a human instead of dying silently.\n\nThird, it protects people. A defined schedule means you know exactly when you're responsible and when you're truly off. Ad-hoc \"just ping someone\" means everyone is always a little bit on-call, which burns people out.\n\nThe one distinction worth knowing on day one: acknowledging an alert means \"I've got this, stop escalating.\" Resolving it means \"the problem is actually fixed.\" New people forget to ack, the system thinks nobody responded, and it escalates to their manager at 3am. Don't be that person.",
+  "explanation": "This is a warm-up question to confirm a junior candidate actually understands the basics before going on-call. You want to hear the two core concepts (rotation = who responds, escalation = what happens if they don't) and at least one reason the structure exists beyond \"so we know who to call.\" The strongest junior answers mention the ack-vs-resolve distinction or the single-point-of-failure angle without being prompted. If they think on-call means they personally have to fix everything, that's a coaching flag, not a disqualifier.",
+  "category": "Incident Management",
+  "difficulty": "beginner",
+  "tier": "junior",
+  "tags": [
+    "incident-management",
+    "on-call",
+    "escalation",
+    "pagerduty"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "A basic escalation policy expressed as tiers and timeouts",
+      "code": "# What \"page the next person if nobody answers\" actually means\nescalation_policy:\n  name: payments-team\n  rules:\n    - level: 1\n      notify: primary_on_call\n      escalate_after: 5m   # no ack in 5 min -> go to level 2\n    - level: 2\n      notify: secondary_on_call\n      escalate_after: 5m\n    - level: 3\n      notify: engineering_manager\n      escalate_after: 10m\n  # If level 3 still doesn't ack, loop back to level 1 once,\n  # then open a major incident. Never let an alert dead-end."
+    }
+  ],
+  "followUpQuestions": [
+    "What's the difference between acknowledging an alert and resolving it, and why does it matter?",
+    "It's the end of your shift and there's still an open incident. How do you hand off cleanly?",
+    "What would you want in place before you ever get your first page?"
+  ],
+  "commonMistakes": [
+    "Thinking on-call means you personally fix every problem. The job is to respond, triage, and pull in the right people. Escalating to someone who knows the system is a correct move, not a failure.",
+    "Not acknowledging alerts. If you don't ack, the system assumes you're unreachable and escalates up the chain, often waking up your manager for something you were already handling.",
+    "Confusing severity with escalation. Severity is how bad it is; escalation is who gets contacted and when. A low-severity alert shouldn't page the whole chain."
+  ],
+  "relatedTopics": [
+    "incident-response",
+    "runbooks",
+    "escalation-policy",
+    "alerting"
+  ]
+}
