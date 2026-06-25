@@ -1,0 +1,46 @@
+{
+  "id": "designing-on-call-schedule-coverage",
+  "slug": "designing-on-call-schedule-coverage",
+  "title": "Designing an On-Call Schedule",
+  "question": "You've got six engineers split across two time zones and you need 24/7 coverage. How would you actually design the rotation? Walk me through the trade-offs you'd weigh.",
+  "answer": "With two time zones, the goal I'd push for is follow-the-sun, so nobody gets paged at 3am on a regular basis. Each region covers their own daytime, and the pager hands off when their day ends.\n\nConcretely: split the six into two groups of three by region. Each region runs a weekly rotation during their working hours. When region A's day ends, coverage passes to region B who is just starting theirs. Overnight pages for region A land on region B, who is awake. That alone removes most of the pain of on-call.\n\nI'd also run a primary plus secondary, not primary only. The secondary is the safety net for when the primary misses a page. With three people per region you can do that without crushing anyone: roughly one week as primary and a different week as secondary out of every three.\n\nRotation length: weekly is the usual sweet spot. Daily means constant context switching and bad handoffs. Monthly means one bad month ruins someone and they lose touch with the system between turns. A week is long enough to keep context and short enough to recover.\n\nThe trade-offs I care about:\n\n- Fairness. Load should be even, and the schedule has to bend for PTO and holidays through overrides, not by silently dumping shifts on whoever's available.\n- Handoffs. Every shift change needs a written handoff: open incidents, risky changes shipping, anything being watched. A follow-the-sun handoff that loses context is worse than one tired person who remembers everything.\n- Coverage gaps. With only three per region, watch for the case where one person is on primary and there's nobody fresh for secondary. Never schedule the same person as both primary and secondary at once.\n- Compensation. On-call is work. Whether it's pay, time off, or reduced project load that week, it has to be acknowledged or people quietly resent it.\n\nThe anti-pattern I'd avoid: a single 24/7 rotation in one region where someone eats overnight pages every shift. With two time zones you've been handed the fix for free, so use it.",
+  "explanation": "This tests whether a mid-level engineer can reason about real scheduling constraints rather than reciting \"we use PagerDuty.\" The detail that separates strong answers is recognizing that two time zones is an opportunity for follow-the-sun, not just a complication. Listen for primary plus secondary, sane rotation length with a justification, and the human factors: fairness, PTO overrides, handoffs, and compensation. Bonus points if they flag that a six-person team means rotations come around often and that's a retention risk.",
+  "category": "Incident Management",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "incident-management",
+    "on-call",
+    "scheduling",
+    "pagerduty"
+  ],
+  "codeExamples": [
+    {
+      "language": "hcl",
+      "label": "Follow-the-sun schedule with two regional layers (Terraform + PagerDuty)",
+      "code": "# Two layers, each restricted to its region's working hours.\n# PagerDuty fills overnight gaps in one layer from the other.\nresource \"pagerduty_schedule\" \"payments_24x7\" {\n  name      = \"Payments 24x7\"\n  time_zone = \"UTC\"\n\n  # Region A (e.g. Europe) covers 07:00-19:00 UTC\n  layer {\n    name                         = \"EU daytime\"\n    start                        = \"2024-01-01T07:00:00Z\"\n    rotation_virtual_start       = \"2024-01-01T07:00:00Z\"\n    rotation_turn_length_seconds = 604800 # weekly\n    users = [var.eu_user_1, var.eu_user_2, var.eu_user_3]\n\n    restriction {\n      type              = \"daily_restriction\"\n      start_time_of_day = \"07:00:00\"\n      duration_seconds  = 43200 # 12h\n    }\n  }\n\n  # Region B (e.g. US) covers 19:00-07:00 UTC\n  layer {\n    name                         = \"US daytime\"\n    start                        = \"2024-01-01T19:00:00Z\"\n    rotation_virtual_start       = \"2024-01-01T19:00:00Z\"\n    rotation_turn_length_seconds = 604800\n    users = [var.us_user_1, var.us_user_2, var.us_user_3]\n\n    restriction {\n      type              = \"daily_restriction\"\n      start_time_of_day = \"19:00:00\"\n      duration_seconds  = 43200\n    }\n  }\n}"
+    },
+    {
+      "language": "bash",
+      "label": "Adding a PTO override so the schedule bends instead of breaking",
+      "code": "# Engineer on the EU layer is out next week.\n# Don't reshuffle the rotation, just override the window.\ncurl -s -X POST \\\n  \"https://api.pagerduty.com/schedules/PSCHED01/overrides\" \\\n  -H \"Authorization: Token token=$PD_TOKEN\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"override\": {\n      \"start\": \"2024-06-10T07:00:00Z\",\n      \"end\":   \"2024-06-17T07:00:00Z\",\n      \"user\":  { \"id\": \"PUSER02\", \"type\": \"user_reference\" }\n    }\n  }'"
+    }
+  ],
+  "followUpQuestions": [
+    "One engineer goes on PTO during their scheduled week. How do you cover it without dumping it on one person?",
+    "What would you change about this design if the team grew to 30 engineers?",
+    "How do you actually compensate people for being on-call, and what happens if you don't?"
+  ],
+  "commonMistakes": [
+    "Running a single 24/7 rotation where the same person absorbs overnight pages. With two time zones, follow-the-sun removes most night pages for free.",
+    "Skipping the secondary. Primary-only means one missed page (phone on silent, dead zone) and the alert goes unanswered.",
+    "Picking a rotation length without thinking. Daily rotations wreck handoffs and context; monthly rotations burn people out and let them lose touch between turns.",
+    "Treating fairness and PTO as afterthoughts. No override mechanism means the schedule quietly becomes unfair and people stop trusting it."
+  ],
+  "relatedTopics": [
+    "on-call",
+    "follow-the-sun",
+    "incident-response",
+    "team-health"
+  ]
+}

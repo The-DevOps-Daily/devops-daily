@@ -1,0 +1,46 @@
+{
+  "id": "escalation-policy-design",
+  "slug": "escalation-policy-design",
+  "title": "Designing an Escalation Policy",
+  "question": "An alert fires at 3am and pages the primary on-call. Walk me through what your escalation policy should do from that moment, step by step, and tell me what failure modes you're designing around.",
+  "answer": "Step one: the primary gets paged through a channel that will actually wake them, push plus an escalating phone call, not just a Slack message. The policy starts an acknowledgement timer, say 5 to 8 minutes.\n\nStep two: if the primary acks, escalation stops and they own it. If the timer expires with no ack, the policy automatically pages the secondary. Same ack timer.\n\nStep three: if the secondary also doesn't ack, it escalates to the on-call manager or engineering manager. For a real major incident, this is also where you'd auto-create an incident channel and pull in an incident commander.\n\nThat's the happy path. The failure modes I'm actually designing around are the interesting part:\n\n- The first responder is asleep or has no signal. That's why there's a secondary, and why the notification escalates from push to phone call rather than relying on one quiet channel.\n- The alert dead-ends. Every policy needs a final catch-all so an unacked alert eventually reaches a manager or opens an incident. It should never just stop.\n- The wrong team gets paged. Routing should send the alert to the team that owns the failing service, based on a service or team label, not to a single central pager.\n- Non-urgent things page humans. Severity-based routing matters here. A SEV1 pages immediately and notifies the manager and incident channel. A SEV3 should become a ticket or a Slack message, not a 3am phone call. If it doesn't need a human right now, it isn't a page.\n- Alert storms. When one outage trips fifty alerts, grouping and deduplication keep it to one notification instead of fifty phone calls.\n\nThe edge case I'd call out: don't let escalation loop forever. Loop the chain once, maybe twice, then hand off to a guaranteed catch-all like a major-incident process. And every page should carry a link to its runbook, so the person you woke up at 3am has somewhere to start instead of a blank screen.",
+  "explanation": "This is the core mid-level question on the topic. A weak candidate describes only the happy path (primary, then secondary, then manager). A strong one talks about what they're defending against: dead-ended alerts, single points of failure, wrong-team routing, and non-actionable pages. The phrase to listen for is severity-based routing, because that's where most teams' escalation pain actually comes from. Auto-creating an incident channel, attaching runbooks, and capping the escalation loop are senior-leaning signals.",
+  "category": "Incident Management",
+  "difficulty": "intermediate",
+  "tier": "mid",
+  "tags": [
+    "incident-management",
+    "escalation",
+    "on-call",
+    "alerting"
+  ],
+  "codeExamples": [
+    {
+      "language": "hcl",
+      "label": "Escalation policy with ack timeouts and a manager catch-all (Terraform + PagerDuty)",
+      "code": "resource \"pagerduty_escalation_policy\" \"payments\" {\n  name      = \"Payments escalation\"\n  num_loops = 2 # loop the chain twice, then stop dead-ending\n\n  rule {\n    escalation_delay_in_minutes = 6 # ack window before next level\n    target {\n      type = \"schedule_reference\"\n      id   = pagerduty_schedule.payments_primary.id\n    }\n  }\n\n  rule {\n    escalation_delay_in_minutes = 6\n    target {\n      type = \"schedule_reference\"\n      id   = pagerduty_schedule.payments_secondary.id\n    }\n  }\n\n  rule {\n    escalation_delay_in_minutes = 10\n    target {\n      type = \"user_reference\"\n      id   = var.engineering_manager_id # final catch-all\n    }\n  }\n}"
+    },
+    {
+      "language": "yaml",
+      "label": "Severity-based routing so only real urgency pages a human (Alertmanager)",
+      "code": "route:\n  receiver: default-ticket\n  group_by: ['alertname', 'service']\n  group_wait: 30s\n  group_interval: 5m\n  routes:\n    # SEV1: page immediately, also notify the incident channel\n    - matchers: [severity=\"critical\"]\n      receiver: pagerduty-page\n      continue: true\n    - matchers: [severity=\"critical\"]\n      receiver: slack-incidents\n    # SEV3 and below: ticket, not a 3am phone call\n    - matchers: [severity=~\"warning|info\"]\n      receiver: default-ticket\n\n# Don't page for every pod when the whole cluster is down\ninhibit_rules:\n  - source_matchers: [alertname=\"ClusterDown\"]\n    target_matchers: [severity=\"warning\"]\n    equal: ['cluster']"
+    }
+  ],
+  "followUpQuestions": [
+    "How does your escalation policy change for a SEV1 versus a SEV3?",
+    "What would you do differently when you've got 100 services instead of one?",
+    "How do you stop a non-urgent alert from waking up an entire escalation chain?"
+  ],
+  "commonMistakes": [
+    "No acknowledgement timeout, or one so long the alert sits unanswered for 20 minutes before escalating.",
+    "No final catch-all. If the last person in the chain misses the page, the alert silently dies and nobody finds out until customers complain.",
+    "Paging on non-actionable or low-severity alerts. Every false page at 3am makes the next real one easier to ignore.",
+    "Relying on a single notification channel like Slack. If their phone is on silent, a Slack ping does nothing."
+  ],
+  "relatedTopics": [
+    "incident-response",
+    "alerting",
+    "on-call",
+    "severity-levels"
+  ]
+}

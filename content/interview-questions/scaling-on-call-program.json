@@ -1,0 +1,48 @@
+{
+  "id": "scaling-on-call-program",
+  "slug": "scaling-on-call-program",
+  "title": "Scaling an On-Call Program Across Many Teams",
+  "question": "You've been asked to design the on-call program for an org that grew from one team to fifteen in a year. Right now it's a free-for-all. What does a healthy on-call program look like at that scale, and how would you measure whether it's working?",
+  "answer": "The core shift is from central on-call to service ownership. The team that builds a service runs its on-call. You build it, you run it. A single central ops team can't own fifteen teams' services, because the people getting paged have no power to fix the root cause, so the noise never goes away.\n\nSo I'd route alerts to the owning team based on a service or team label, and make sure every service has a named owner. No orphan services, no central pager catching everything.\n\nThen I'd standardize the things that should be consistent and let teams own the rest. Standardize: severity definitions, the incident process (who declares an incident, the incident commander role, comms), the paging tooling and a golden-path alerting setup, runbook expectations, and the compensation policy. Let each team own their own schedule and their own alerts within that frame. Consistency where it matters, autonomy where it doesn't.\n\nThe part most people skip is governance through metrics instead of vibes. I'd track on-call health across teams:\n\n- Pages per shift, and specifically off-hours pages per shift. This is the burnout signal.\n- Percent of pages that were actionable versus auto-resolved.\n- Time to acknowledge, plus MTTA and MTTR.\n- Alerts with no runbook attached.\n- On-call satisfaction from a short recurring survey.\n\nThen set thresholds that trigger a review. For example, any team over a set number of off-hours pages per week gets a dedicated session to fix their alerting, treated as real work with time allocated, not a nag. On-call health becomes something with an owner and a dashboard, like a product.\n\nThe edge cases at this scale:\n\n- Teams too small to staff 24/7 alone. Pool a few related teams into a shared rotation, or use follow-the-sun across regions. Don't pretend a four-person team can sustainably cover nights forever.\n- Shared infrastructure. The platform team owns the platform, but you need crisp boundaries so they don't become the dumping ground for every alert that's vaguely infra-shaped. Alerts route to the service owner first.\n- Culture. None of the metrics work without blameless postmortems. If reporting a noisy alert or a bad night gets you blamed, people hide it and the data goes dark.\n\nThe failure mode I'd watch hardest: a central team quietly staying responsible for everyone's reliability. That breaks the feedback loop where the team that can fix the noise is the team that feels it.",
+  "explanation": "This is a staff or senior-plus question about organizational design, not tooling. The single idea that has to be present is service ownership: you build it, you run it, with alerts routed to the owning team. From there, strong candidates separate what to standardize (severity, incident process, tooling, comp) from what to leave to teams (schedules, their own alerts), and they govern with on-call health metrics rather than just MTTR. Listen for off-hours page rate as the burnout signal, the small-team pooling problem, and the platform-team-as-dumping-ground trap. Tying it back to blameless culture shows they understand why the metrics survive contact with reality.",
+  "category": "Incident Management",
+  "difficulty": "advanced",
+  "tier": "senior",
+  "tags": [
+    "incident-management",
+    "on-call",
+    "platform-engineering",
+    "sre",
+    "escalation"
+  ],
+  "codeExamples": [
+    {
+      "language": "yaml",
+      "label": "Route alerts to the owning team, not a central pager (Alertmanager)",
+      "code": "# Every alert carries a team label set by the owning service.\n# Routing fans out to each team's own receiver. No central catch-all\n# that silently absorbs everyone's noise.\nroute:\n  receiver: platform-fallback   # only for truly unlabeled alerts\n  group_by: ['team', 'service']\n  routes:\n    - matchers: [team=\"payments\"]\n      receiver: pd-payments\n    - matchers: [team=\"search\"]\n      receiver: pd-search\n    - matchers: [team=\"checkout\"]\n      receiver: pd-checkout\n\n# Catch orphan services early: alert when something pages\n# the fallback, because that means a service has no owner.\n# - alert: UnownedServicePaging\n#   expr: count(ALERTS{team=\"\"}) > 0"
+    },
+    {
+      "language": "promql",
+      "label": "On-call health SLIs you can actually put on a dashboard",
+      "code": "# Off-hours pages per team this week (the burnout signal).\n# Assumes a recording rule tags pages fired outside 08:00-20:00.\nsum by (team) (\n  increase(oncall_pages_total{window=\"off_hours\"}[7d])\n)\n\n# Share of pages that were actionable (not auto-resolved).\nsum by (team) (increase(oncall_pages_total{actionable=\"true\"}[30d]))\n  / sum by (team) (increase(oncall_pages_total[30d]))\n\n# Teams over the off-hours budget: these get a tuning session.\nsum by (team) (increase(oncall_pages_total{window=\"off_hours\"}[7d])) > 5"
+    }
+  ],
+  "followUpQuestions": [
+    "How do you stop the central platform team from becoming the dumping ground for every alert?",
+    "Which metrics would warn you that on-call is unhealthy before people start quitting?",
+    "How do you handle a team that's too small to staff 24/7 coverage on its own?"
+  ],
+  "commonMistakes": [
+    "Keeping a central ops team responsible for everyone's services. The people getting paged can't fix the root cause, so the noise is permanent.",
+    "Measuring only MTTR and ignoring on-call load. A team can have great MTTR while quietly burning out from page volume.",
+    "Mandating tooling without a migration path or a golden-path setup, so each team reinvents alerting badly.",
+    "Treating on-call quality as each team's private business with no org-wide visibility. Without shared metrics, the worst rotations stay invisible until people leave."
+  ],
+  "relatedTopics": [
+    "service-ownership",
+    "platform-engineering",
+    "on-call",
+    "sre-culture",
+    "incident-response"
+  ]
+}
