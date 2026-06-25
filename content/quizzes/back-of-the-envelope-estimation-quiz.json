@@ -1,0 +1,253 @@
+{
+  "id": "back-of-the-envelope-estimation-quiz",
+  "title": "Back-of-the-Envelope Estimation Quiz",
+  "description": "The napkin-math skill that makes or breaks a system design interview: turning users into QPS, data into storage, traffic into bandwidth, and knowing the latency numbers every engineer should have memorised.",
+  "category": "System Design",
+  "icon": "Calculator",
+  "totalPoints": 162,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "16-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 3
+    },
+    "createdDate": "2026-06-25",
+    "tags": [
+      "estimation",
+      "capacity-planning",
+      "system-design",
+      "latency",
+      "scalability"
+    ]
+  },
+  "questions": [
+    {
+      "id": "seconds-in-a-day",
+      "title": "The Number to Memorise",
+      "description": "The single most useful constant for capacity math.",
+      "situation": "To convert 'per day' into 'per second' quickly, you need the seconds in a day.",
+      "options": [
+        "About 86,400 (and you usually round to ~100,000 for fast math)",
+        "About 3,600 (and you usually round to 1,000)",
+        "About 1,000,000",
+        "About 10,000"
+      ],
+      "correctAnswer": 0,
+      "explanation": "24 x 3,600 = 86,400 seconds per day. For fast estimation people round it to ~100,000 (10^5), so 'X per day' divided by 100,000 gives a quick average per-second rate. Memorising ~100K seconds/day is the highest-leverage constant in estimation math.",
+      "hint": "24 hours times 3,600 seconds. Then round to a power of ten.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "daily-to-qps",
+      "title": "Daily Requests to Average QPS",
+      "description": "The most common conversion in a design interview.",
+      "situation": "Your API serves 1 billion requests per day, spread fairly evenly.",
+      "options": [
+        "About 1,000 requests/second",
+        "About 10,000 requests/second",
+        "About 100,000 requests/second",
+        "About 1 million requests/second"
+      ],
+      "correctAnswer": 1,
+      "explanation": "1,000,000,000 / 86,400 ~= 11,600/s, or using the ~100,000 sec/day shortcut, 1e9 / 1e5 = 10,000/s. So roughly 10K average QPS. The shortcut gets you within ~15% of the exact number, which is all estimation needs.",
+      "hint": "Divide a billion by ~100,000.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "peak-factor",
+      "title": "Average vs Peak",
+      "description": "Why you never size for the average.",
+      "situation": "Your average traffic is 10,000 QPS. You are sizing capacity for the system.",
+      "options": [
+        "Provision for exactly 10,000 QPS, the average",
+        "Provision for 100x the average to be totally safe",
+        "Provision for a peak that is typically 2-3x the average (or more for spiky workloads), so plan for ~20,000-30,000+ QPS with headroom",
+        "Peak does not matter if the average is known"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Traffic is bursty: daily peaks commonly run 2-3x the daily average, and event-driven spikes (launches, news, flash sales) go far higher. Sizing for the average guarantees you fall over at peak. A reasonable default is to estimate peak at 2-3x average and add headroom, then revisit for known spike patterns.",
+      "hint": "Real traffic has peaks. What multiple of the average is a common rule of thumb?",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "powers-of-two",
+      "title": "Powers of Two as Data Sizes",
+      "description": "The KB/MB/GB shortcuts.",
+      "situation": "You need quick data-size intuition for estimation.",
+      "codeExample": "2^10 = ?\n2^20 = ?\n2^30 = ?",
+      "options": [
+        "They are all roughly equal to a thousand",
+        "2^10 ~ 1 million, 2^20 ~ 1 billion, 2^30 ~ 1 trillion",
+        "2^10 ~ 100, 2^20 ~ 10,000, 2^30 ~ 1 million",
+        "2^10 ~ 1 thousand, 2^20 ~ 1 million, 2^30 ~ 1 billion"
+      ],
+      "correctAnswer": 3,
+      "explanation": "2^10 = 1,024 ~ 1 thousand (a KB), 2^20 = 1,048,576 ~ 1 million (a MB), 2^30 ~ 1 billion (a GB), 2^40 ~ 1 trillion (a TB). Memorising that each 10 powers of two is about 3 orders of magnitude lets you convert between bytes and human numbers instantly.",
+      "hint": "Every 10 powers of two is roughly 3 zeros in base 10.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "profile-storage",
+      "title": "Sizing a User Table",
+      "description": "Users times row size.",
+      "situation": "You have 100 million users. Each user profile row is about 1 KB.",
+      "options": [
+        "About 100 GB total",
+        "About 100 MB total",
+        "About 1 TB total",
+        "About 100 TB total"
+      ],
+      "correctAnswer": 0,
+      "explanation": "100,000,000 users x 1 KB = 100,000,000 KB = ~100 GB (since 1 million KB ~ 1 GB). This kind of users x row-size product is the bread and butter of storage estimation; once you have raw size you multiply by replication factor and add indexes/overhead.",
+      "hint": "100 million x 1 KB. A million KB is about a GB.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "latency-ordering",
+      "title": "Latency Numbers, Ordered",
+      "description": "Know the hierarchy cold.",
+      "situation": "Order these from fastest to slowest: a main-memory (RAM) reference, an SSD random read, a round trip within the same datacenter, a round trip from California to Europe and back.",
+      "options": [
+        "Same-DC round trip < RAM reference < SSD read < CA-to-Europe round trip",
+        "RAM reference (~100 ns) < SSD random read (~16-100 us) < same-DC round trip (~0.5 ms) < CA-to-Europe round trip (~150 ms)",
+        "SSD read < RAM reference < CA-to-Europe < same-DC",
+        "They are all roughly the same once you account for caching"
+      ],
+      "correctAnswer": 1,
+      "explanation": "The canonical hierarchy: RAM reference ~100 ns, SSD random read ~16-100 us (100-1000x slower than RAM), a same-datacenter round trip ~0.5 ms, and a transcontinental round trip ~150 ms (bounded by the speed of light). Each step is roughly an order of magnitude or more. Knowing this ordering lets you reason about where a design will be slow before you build it.",
+      "hint": "Memory, then local flash, then local network, then the speed of light across an ocean.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "feed-qps",
+      "title": "DAU to System QPS",
+      "description": "From users to load.",
+      "situation": "A social feed has 100 million daily active users, and each user makes about 10 feed requests per day.",
+      "options": [
+        "About 1,000 QPS average",
+        "About 100,000 QPS average",
+        "About 10,000 QPS average",
+        "About 1 million QPS average"
+      ],
+      "correctAnswer": 2,
+      "explanation": "100M users x 10 requests = 1 billion requests/day. Divided by ~100,000 sec/day, that is ~10,000 QPS average, and you would then size for ~20-30K+ at peak. Reads usually dominate a feed, so you would also split this into read vs write paths.",
+      "hint": "Users times requests-per-user gives daily total, then divide by ~100K.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "image-bandwidth",
+      "title": "Egress Bandwidth",
+      "description": "Traffic times object size.",
+      "situation": "Your CDN origin serves 10,000 images per second, and each image averages 200 KB.",
+      "options": [
+        "About 2 MB/s",
+        "About 200 MB/s",
+        "About 200 GB/s",
+        "About 2 GB/s"
+      ],
+      "correctAnswer": 3,
+      "explanation": "10,000 images/s x 200 KB = 2,000,000 KB/s = ~2 GB/s (since a million KB ~ a GB). That is ~16 Gbps of egress, which immediately tells you a single origin will not do and you need a CDN and careful egress-cost planning. Bandwidth estimates are rate x object-size.",
+      "hint": "10,000 x 200 KB per second. Convert KB to GB.",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "log-storage-per-day",
+      "title": "Daily Log Volume",
+      "description": "Rate times size times time.",
+      "situation": "A service handles 1,000 requests/second and writes a ~1 KB log line per request, all day.",
+      "options": [
+        "About 86 GB/day",
+        "About 86 MB/day",
+        "About 1 TB/day",
+        "About 8 GB/day"
+      ],
+      "correctAnswer": 0,
+      "explanation": "1,000 req/s x 1 KB = 1 MB/s of logs. Over 86,400 seconds that is ~86,400 MB ~= 86 GB/day. This is why log retention and sampling matter: a modest 1K QPS service generates tens of GB of logs daily, which is real money at cloud storage and ingestion prices.",
+      "hint": "Per-second log volume first, then multiply by seconds in a day.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "cache-hit-effective-latency",
+      "title": "Cache Hit Ratio and Effective Latency",
+      "description": "Weighted-average latency.",
+      "situation": "A cache hit takes 1 ms and serves 90% of reads; a miss takes 100 ms (it goes to the database). What is the approximate average read latency?",
+      "options": [
+        "About 1 ms, because most reads hit",
+        "About 11 ms (0.9 x 1 ms + 0.1 x 100 ms)",
+        "About 100 ms, dominated by misses",
+        "About 50 ms, the midpoint"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Effective latency is a weighted average: 0.9 x 1 ms + 0.1 x 100 ms = 0.9 + 10 = ~11 ms. Notice the 10% of slow misses dominate the average, that is why raising a 90% hit rate to 99% (0.99 x 1 + 0.01 x 100 = ~2 ms) is such a big win. The tail of misses, not the common hit, drives the number.",
+      "hint": "Weight each path by its probability and add. Which term dominates?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "sequential-read-1mb",
+      "title": "Reading 1 MB Sequentially",
+      "description": "Throughput, not just latency.",
+      "situation": "Roughly how long to read 1 MB sequentially from main memory versus from a fast SSD?",
+      "options": [
+        "Both take about 1 second",
+        "Memory is slower than SSD for sequential reads",
+        "Memory: tens of microseconds; SSD: a few hundred microseconds to ~1 ms; both far faster than a network fetch from another continent",
+        "Both take about 100 ms"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Sequential bandwidth is high: reading 1 MB from RAM is on the order of tens of microseconds, and from a fast SSD on the order of a few hundred microseconds to about a millisecond. Both crush a cross-continent network round trip (~150 ms). The lesson: for bulk data, sequential local reads are cheap; the expensive thing is round trips and random access, not raw bytes.",
+      "hint": "Sequential local reads are fast. Compare microseconds/ms to a 150 ms ocean round trip.",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "write-storage-per-year",
+      "title": "Annual Write Storage",
+      "description": "Scale a daily rate to a year.",
+      "situation": "Users post 10 million 300-byte messages per day. Roughly how much raw message storage per year (ignore replication and indexes)?",
+      "options": [
+        "About 1 GB/year",
+        "About 1 PB/year",
+        "About 100 TB/year",
+        "About 1 TB/year"
+      ],
+      "correctAnswer": 3,
+      "explanation": "10M x 300 bytes = 3,000,000,000 bytes = ~3 GB/day. Over 365 days that is ~1,000 GB ~= ~1 TB/year of raw message text. You would then multiply by replication factor (often 3x) and add indexing/metadata overhead, but the raw figure is ~1 TB/year.",
+      "hint": "Daily bytes first (10M x 300), then x365.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "round-trip-budget",
+      "title": "Round Trips in a Latency Budget",
+      "description": "Why chatty designs miss SLAs.",
+      "situation": "Your p99 latency budget is 200 ms, and each cross-continent round trip costs ~150 ms.",
+      "options": [
+        "You can afford at most one such round trip; a chatty design with multiple sequential cross-continent calls blows the budget, so co-locate or parallelise",
+        "You can comfortably fit several cross-continent round trips in the budget",
+        "Latency budgets do not apply to distributed calls",
+        "Adding more round trips reduces total latency"
+      ],
+      "correctAnswer": 0,
+      "explanation": "With a 200 ms budget and ~150 ms per transcontinental round trip, one round trip already eats most of it; two sequential ones (300 ms) miss entirely. This is why estimation matters before design: you either reduce round trips (batch, co-locate data near compute) or parallelise independent calls so they overlap. Counting round trips against the budget is a core back-of-envelope check.",
+      "hint": "Divide the budget by the cost of one round trip. How many fit?",
+      "difficulty": "intermediate",
+      "points": 12
+    }
+  ]
+}

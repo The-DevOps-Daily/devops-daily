@@ -769,5 +769,11 @@
   "public/images/posts/hashicorp-vault-secrets-management-best-practices.svg": "1efb2ec948430a29",
   "public/images/posts/ai-sre-agents-what-they-fix-and-break.svg": "24e14ac88ae0fdc6",
   "public/images/posts/digitalocean-serverless-inference-first-call.svg": "50922d86ae48658d",
-  "public/images/news/2026-week-26.svg": "1816e2fea0004e65"
+  "public/images/news/2026-week-26.svg": "1816e2fea0004e65",
+  "public/images/posts/grpc-go-authorization-bypass-cve-2026-33186.svg": "fcabfaff3bf55007",
+  "public/images/posts/kubernetes-1-37-feature-freeze-whats-locked-in.svg": "9639e1c02c2f363a",
+  "public/images/quizzes/ebpf-network-observability-quiz-og.svg": "529df65c0b5af3ad",
+  "public/images/flashcards/aws-lambda-cold-start-optimization-og.svg": "622a69a9ee601a98",
+  "public/images/posts/spacex-cursor-acquisition-betting-on-one-ai-tool.svg": "e3958b68343696f8",
+  "public/images/posts/ansible-automation-platform-credential-leak-cve-2026-11807.svg": "89e9bd21fd97d37b"
 }

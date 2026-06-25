@@ -28,6 +28,9 @@ Shield,
  Lock,
   Settings,
   Workflow,
+  Network,
+  Calculator,
+  Cpu,
 } from 'lucide-react';
 import { GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -53,6 +56,9 @@ Shield,
  Lock,
   Settings,
   Workflow,
+  Network,
+  Calculator,
+  Cpu,
 };
 
 // Add GraduationCap to iconMap
