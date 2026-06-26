@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { Check, Copy } from 'lucide-react';
 import hljs from 'highlight.js/lib/core';
 import bash from 'highlight.js/lib/languages/bash';
 import python from 'highlight.js/lib/languages/python';
@@ -253,11 +254,22 @@ function hashChar(ch: string): number {
 
 function TabsBlock({ spec }: { spec: TabsSpec }) {
   const [active, setActive] = useState(0);
+  const [copied, setCopied] = useState(false);
   const current = spec.tabs[active] ?? spec.tabs[0];
   const codeHtml = useMemo(
     () => highlightCode(current.code, current.lang),
     [current]
   );
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(current.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* clipboard unavailable */
+    }
+  };
 
   return (
     <div className="not-prose my-6 overflow-hidden rounded-xl border border-border">
@@ -285,12 +297,27 @@ function TabsBlock({ spec }: { spec: TabsSpec }) {
           </button>
         ))}
       </div>
-      <pre className="m-0 overflow-auto bg-muted p-4 text-[13px] leading-relaxed text-foreground">
-        <code
-          className={`hljs language-${current.lang ?? 'plaintext'}`}
-          dangerouslySetInnerHTML={{ __html: codeHtml }}
-        />
-      </pre>
+      <div className="group relative">
+        <button
+          type="button"
+          onClick={copy}
+          aria-label={copied ? 'Copied' : 'Copy code'}
+          className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/50 bg-background/80 text-muted-foreground opacity-0 transition-all duration-200 hover:bg-background hover:text-foreground focus:opacity-100 group-hover:opacity-100"
+        >
+          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+        </button>
+        {/* data-processed keeps CodeBlockWrapper from re-wrapping (it would add
+            margin and a stale-closure copy button that copies the wrong tab) */}
+        <pre
+          data-processed="true"
+          className="m-0 overflow-auto bg-muted p-4 text-[13px] leading-relaxed text-foreground"
+        >
+          <code
+            className={`hljs language-${current.lang ?? 'plaintext'}`}
+            dangerouslySetInnerHTML={{ __html: codeHtml }}
+          />
+        </pre>
+      </div>
     </div>
   );
 }

@@ -718,3 +718,6 @@ html {
 .dark .post-callout--warning .post-callout__label { color: #fbbf24; }
 .dark .post-callout--important .post-callout__icon,
 .dark .post-callout--important .post-callout__label { color: #f87171; }
+
+/* Tabs code panel: no stray margin (CodeBlockWrapper is skipped via data-processed) */
+.post-tabs pre { margin: 0 !important; }
