@@ -183,6 +183,14 @@ This is a private preview: **us-east-2 only**, new projects only. See the [docs]
 
 Use callouts for caveats, gotchas, and prerequisites you want to stand out. Don't overuse them; one or two per post keeps them meaningful.
 
+**GitHub repo card** — ` ```github ` with a repo URL (or `owner/repo`) renders a live repo card: avatar, name, description, topics, language, stars, forks, and license, fetched client-side from the GitHub API. Great for linking the companion repo of a build-log.
+
+```github
+https://github.com/The-DevOps-Daily/devops-daily
+```
+
+The body can be a full `https://github.com/owner/repo` URL or just `owner/repo`. Data is fetched at view time (the site is statically exported), cached per session, and degrades to a simple link card if the GitHub API is unreachable or rate-limited. Use it once where the repo matters rather than after every mention.
+
 ## OG Image
 
 After creating the post, remind the user to generate the OG image:

@@ -122,9 +122,10 @@ marked.use(
   markedHighlight({
     langPrefix: 'hljs language-',
     highlight(code, lang) {
-      // Interactive fences carry JSON for their renderers; leave the text
+      // Interactive fences carry JSON/URLs for their renderers; leave the text
       // untouched so the code renderer below can parse it.
-      if (lang === 'chart' || lang === 'terminal' || lang === 'tabs') return code;
+      if (lang === 'chart' || lang === 'terminal' || lang === 'tabs' || lang === 'github')
+        return code;
       const language = hljs.getLanguage(lang) ? lang : 'plaintext';
       return hljs.highlight(code, { language }).value;
     },
@@ -147,6 +148,16 @@ function escapeHtml(value: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// Accept a github.com URL or a bare "owner/repo" and return "owner/repo".
+function parseRepoSlug(input: string): string | null {
+  const s = input.trim();
+  const fromUrl = s.match(/github\.com\/([\w.-]+)\/([\w.-]+)/i);
+  if (fromUrl) return `${fromUrl[1]}/${fromUrl[2].replace(/\.git$/i, '')}`;
+  const bare = s.match(/^([\w.-]+)\/([\w.-]+)$/);
+  if (bare) return `${bare[1]}/${bare[2].replace(/\.git$/i, '')}`;
+  return null;
 }
 
 // Custom renderer: headings get anchor links, and ```chart fences become
@@ -187,6 +198,13 @@ marked.use({
           // fall through to a visible code block
         }
         return `<pre><code class="hljs language-tabs">${escapeHtml(text)}</code></pre>`;
+      }
+      if (lang === 'github') {
+        const slug = parseRepoSlug(text);
+        if (slug) {
+          return `<div class="post-github not-prose" data-repo="${escapeHtml(slug)}"></div>`;
+        }
+        return `<pre><code class="hljs language-github">${escapeHtml(text)}</code></pre>`;
       }
       return false;
     },
