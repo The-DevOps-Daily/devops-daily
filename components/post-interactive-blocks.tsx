@@ -71,8 +71,16 @@ function TerminalBlock({ spec }: { spec: TerminalSpec }) {
   const [done, setDone] = useState(false);
   const [started, setStarted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const runId = useRef(0);
+
+  // The full final content, rendered invisibly to reserve the box height up
+  // front so the typing animation never grows the box (no page jump).
+  const allLines = useMemo(
+    () => spec.steps.flatMap((s) => stepToLines(s, prompt)),
+    [spec, prompt]
+  );
 
   const clearTimers = () => {
     timers.current.forEach((t) => clearTimeout(t));
@@ -166,6 +174,13 @@ function TerminalBlock({ spec }: { spec: TerminalSpec }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep the latest line in view while typing (only matters once the content
+  // exceeds the capped height).
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lines, typing]);
+
   return (
     <div ref={containerRef} className="not-prose my-6 overflow-hidden rounded-xl border border-border bg-[#0b0f17] shadow-lg">
       <div className="flex items-center gap-2 border-b border-white/10 bg-white/5 px-4 py-2.5">
@@ -199,17 +214,27 @@ function TerminalBlock({ spec }: { spec: TerminalSpec }) {
           </button>
         )}
       </div>
-      <div className="max-h-[28rem] overflow-auto px-4 py-3 font-mono text-[13px] leading-relaxed">
-        {lines.map((line, i) => (
-          <TerminalLine key={i} line={line} />
-        ))}
-        {typing && (
-          <div className="whitespace-pre-wrap break-words">
-            <span className="select-none text-emerald-400">{typing.prompt}&nbsp;</span>
-            <span className="text-slate-100">{typing.text}</span>
-            <span className="ml-0.5 inline-block h-4 w-2 -translate-y-[1px] animate-pulse bg-slate-300 align-middle" />
-          </div>
-        )}
+      <div className="relative max-h-[28rem] overflow-hidden font-mono text-[13px] leading-relaxed">
+        {/* invisible ghost: reserves the final height (incl. wrapping) so the
+            box is stable from the first frame and the page never jumps */}
+        <div aria-hidden className="invisible px-4 py-3">
+          {allLines.map((line, i) => (
+            <TerminalLine key={i} line={line} />
+          ))}
+        </div>
+        {/* animated content overlays the ghost and scrolls internally */}
+        <div ref={scrollRef} className="absolute inset-0 overflow-auto px-4 py-3">
+          {lines.map((line, i) => (
+            <TerminalLine key={i} line={line} />
+          ))}
+          {typing && (
+            <div className="whitespace-pre-wrap break-words">
+              <span className="select-none text-emerald-400">{typing.prompt}&nbsp;</span>
+              <span className="text-slate-100">{typing.text}</span>
+              <span className="ml-0.5 inline-block h-4 w-2 -translate-y-[1px] animate-pulse bg-slate-300 align-middle" />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
