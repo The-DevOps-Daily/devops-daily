@@ -76,7 +76,10 @@ There is a second, quieter tax it removes: distance. Because functions run in th
 
 This is a private preview, and it reads like one. Worth being clear-eyed about the limits before you plan anything around it.
 
-- **One region, new projects only.** Everything is `us-east-2` and only works on projects created after the preview opened. Your existing Neon databases will not grow these features in place, which matters if you were hoping to bolt functions onto a production project.
+:::warning
+**One region, new projects only.** Everything is in AWS `us-east-2` and only works on projects created after the preview opened. Your existing Neon databases will not grow these features in place, which matters if you were hoping to bolt functions onto a production project.
+:::
+
 - **Functions are not a job runner.** They are explicitly request/response and real-time, not background jobs. Queued, retryable, cancellable work still belongs to something like QStash or Inngest. That is an honest scoping decision, but it means "move my whole backend here" is not yet on the table.
 - **Fixed function sizing.** Memory is fixed (2048 MiB at preview), so this is not a knob-for-everything compute platform yet.
 - **Billing is half-documented.** The per-model token prices are public and look like pass-through, but Neon has not publicly spelled out whether there is a markup or preview credits on the AI Gateway. For a side project that is noise; for a budget forecast it is a question to ask before you commit.

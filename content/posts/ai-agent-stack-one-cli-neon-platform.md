@@ -63,41 +63,38 @@ Three lines of intent: turn on the AI gateway, give me a bucket called `images`,
 
 `neon link` creates and attaches a Neon project. The new platform features are private preview, so there are two constraints worth stating up front: everything is in AWS `us-east-2`, and it only works on projects created inside the preview. Your existing Neon databases do not grow these features in place.
 
-```bash
-neonctl link --org-id <org> --project-name ai-agent --region-id aws-us-east-2
-# Created project ... ("ai-agent") in aws-us-east-2 and linked .neon on branch main
-```
+Then `neon deploy` reads `neon.ts` and provisions the declared services. Here is the whole sequence, link through deploy:
 
-Then `neon deploy` reads `neon.ts` and provisions the declared services:
-
-```
-Applied changes
-┌────────┬─────────┬───────────────────┐
-│ Action │ Kind    │ Identifier        │
-├────────┼─────────┼───────────────────┤
-│ create │ service │ bucket:images     │
-│ create │ service │ function:imagegen │
-└────────┴─────────┴───────────────────┘
-
-Function URLs
-  • imagegen: https://br-green-star-…-imagegen.compute.c-3.us-east-2.aws.neon.tech/
-
-Utilized services: Postgres, Object Storage, Functions, AI Gateway
-Pulled 11 Neon variables into .env.local
+```terminal
+{
+  "title": "link + deploy",
+  "steps": [
+    { "comment": "create the project (us-east-2, preview only)" },
+    { "cmd": "neonctl link --project-name ai-agent --region-id aws-us-east-2", "output": "Created project (\"ai-agent\") in aws-us-east-2 and linked .neon on branch main" },
+    { "comment": "read neon.ts and provision everything it declares" },
+    { "cmd": "neonctl deploy", "output": "Applied changes\n  create  service  bucket:images\n  create  service  function:imagegen\n\nFunction URLs\n  imagegen: https://br-green-star-...-imagegen.compute.c-3.us-east-2.aws.neon.tech/\n\nUtilized services: Postgres, Object Storage, Functions, AI Gateway\nPulled 11 Neon variables into .env.local" }
+  ]
+}
 ```
 
 That last line is the actual product. Eleven environment variables (the `DATABASE_URL`, the S3 access key/secret/endpoint, and the AI gateway token and base URL) all written for me, all scoped to this branch. The four credentials I would normally collect from four dashboards arrived from one `deploy`.
 
 ## The model call: one credential, any provider
 
-The AI Gateway is OpenAI-compatible. Your existing SDK works by changing only the base URL. To sanity-check it without the agent, a plain chat completion against the cheapest catalog model:
+The AI Gateway is OpenAI-compatible. Your existing SDK works by changing only the base URL, so the same chat completion against the cheapest catalog model looks like this in whatever you already use:
 
-```bash
-curl "$NEON_AI_GATEWAY_BASE_URL/ai-gateway/mlflow/v1/chat/completions" \
-  -H "Authorization: Bearer $NEON_AI_GATEWAY_TOKEN" \
-  -d '{"model":"gpt-5-nano","messages":[{"role":"user",
-       "content":"In one sentence, what is Neon branching?"}]}'
+```tabs
+{
+  "title": "Same gateway call, three SDKs (only the base URL changes)",
+  "tabs": [
+    { "label": "curl", "lang": "bash", "code": "curl \"$NEON_AI_GATEWAY_BASE_URL/ai-gateway/mlflow/v1/chat/completions\" \\\n  -H \"Authorization: Bearer $NEON_AI_GATEWAY_TOKEN\" \\\n  -d '{\"model\":\"gpt-5-nano\",\"messages\":[\n        {\"role\":\"user\",\"content\":\"What is Neon branching?\"}]}'" },
+    { "label": "Python", "lang": "python", "code": "from openai import OpenAI\n\nclient = OpenAI(base_url=GATEWAY_URL, api_key=GATEWAY_TOKEN)\nclient.chat.completions.create(\n    model=\"gpt-5-nano\",\n    messages=[{\"role\": \"user\", \"content\": \"What is Neon branching?\"}],\n)" },
+    { "label": "Node", "lang": "javascript", "code": "import OpenAI from 'openai';\n\nconst client = new OpenAI({ baseURL: GATEWAY_URL, apiKey: GATEWAY_TOKEN });\nawait client.chat.completions.create({\n  model: 'gpt-5-nano',\n  messages: [{ role: 'user', content: 'What is Neon branching?' }],\n});" }
+  ]
+}
 ```
+
+Hitting it once returns exactly what you would expect from the model:
 
 ```json
 {
@@ -166,7 +163,10 @@ From an empty directory to a deployed agent that generates an image, stores it, 
 
 The build was smooth, but it is private preview and a few seams are worth knowing before you plan around it.
 
-- **One region, new projects only.** `us-east-2`, and only projects created in the preview. Not something you bolt onto an existing production database today.
+:::warning
+**One region, new projects only.** Everything is in AWS `us-east-2` and only works on projects created inside the preview. You cannot bolt these features onto an existing production database today.
+:::
+
 - **Functions are request/response, not a job runner.** Great for the agent's synchronous loop and streaming; background work (queues, retries, schedules) still belongs to something like Inngest or QStash.
 - **Two gateway dialects, and it matters.** The `OPENAI_BASE_URL` Neon injects points at the OpenAI *Responses* API route. A plain chat-completions call needs the `mlflow` dialect route instead. I hit a `404` until I switched routes. The SKILL docs the template ships actually explain this, which is the kind of detail that saves you ten minutes if you read it first.
 - **Billing is half-public.** Per-model token prices are listed, but whether there is a markup or preview credits on top is not spelled out. Fine for a demo, a question to ask before a budget.
