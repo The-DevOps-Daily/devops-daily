@@ -1,4 +1,4 @@
-import { marked, type Tokens } from 'marked';
+import { marked, type Tokens, type TokenizerAndRendererExtension } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
 import hljs, { type HLJSApi, type Language } from 'highlight.js';
@@ -122,9 +122,10 @@ marked.use(
   markedHighlight({
     langPrefix: 'hljs language-',
     highlight(code, lang) {
-      // Chart fences carry JSON for the chart renderer; leave the text
+      // Interactive fences carry JSON/URLs for their renderers; leave the text
       // untouched so the code renderer below can parse it.
-      if (lang === 'chart') return code;
+      if (lang === 'chart' || lang === 'terminal' || lang === 'tabs' || lang === 'github')
+        return code;
       const language = hljs.getLanguage(lang) ? lang : 'plaintext';
       return hljs.highlight(code, { language }).value;
     },
@@ -149,6 +150,16 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;');
 }
 
+// Accept a github.com URL or a bare "owner/repo" and return "owner/repo".
+function parseRepoSlug(input: string): string | null {
+  const s = input.trim();
+  const fromUrl = s.match(/github\.com\/([\w.-]+)\/([\w.-]+)/i);
+  if (fromUrl) return `${fromUrl[1]}/${fromUrl[2].replace(/\.git$/i, '')}`;
+  const bare = s.match(/^([\w.-]+)\/([\w.-]+)$/);
+  if (bare) return `${bare[1]}/${bare[2].replace(/\.git$/i, '')}`;
+  return null;
+}
+
 // Custom renderer: headings get anchor links, and ```chart fences become
 // placeholders that ChartBlockWrapper hydrates client-side.
 marked.use({
@@ -165,6 +176,35 @@ marked.use({
           // mistake is obvious in the rendered post instead of a blank hole
         }
         return `<pre><code class="hljs language-chart">${escapeHtml(text)}</code></pre>`;
+      }
+      if (lang === 'terminal') {
+        try {
+          const spec = JSON.parse(text);
+          if (spec && typeof spec === 'object' && Array.isArray(spec.steps)) {
+            return `<div class="post-terminal not-prose" data-terminal="${escapeHtml(JSON.stringify(spec))}"></div>`;
+          }
+        } catch {
+          // fall through to a visible code block
+        }
+        return `<pre><code class="hljs language-terminal">${escapeHtml(text)}</code></pre>`;
+      }
+      if (lang === 'tabs') {
+        try {
+          const spec = JSON.parse(text);
+          if (spec && typeof spec === 'object' && Array.isArray(spec.tabs)) {
+            return `<div class="post-tabs not-prose" data-tabs="${escapeHtml(JSON.stringify(spec))}"></div>`;
+          }
+        } catch {
+          // fall through to a visible code block
+        }
+        return `<pre><code class="hljs language-tabs">${escapeHtml(text)}</code></pre>`;
+      }
+      if (lang === 'github') {
+        const slug = parseRepoSlug(text);
+        if (slug) {
+          return `<div class="post-github not-prose" data-repo="${escapeHtml(slug)}"></div>`;
+        }
+        return `<pre><code class="hljs language-github">${escapeHtml(text)}</code></pre>`;
       }
       return false;
     },
@@ -205,6 +245,62 @@ marked.use({
     },
   },
 });
+
+// Callout / admonition blocks:  :::note  ...  :::  (also tip, warning, important)
+// Inner content is parsed as markdown so links, lists, and code still work.
+const CALLOUT_VARIANTS: Record<string, string> = {
+  note: 'Note',
+  tip: 'Tip',
+  warning: 'Warning',
+  important: 'Important',
+  info: 'Note',
+};
+
+const CALLOUT_ICONS: Record<string, string> = {
+  note: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  tip: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.1 14c.2-1 .7-1.7 1.4-2.5A4.6 4.6 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.8 1.2 1.5 1.4 2.5"/>',
+  warning:
+    '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  important:
+    '<path d="M7.9 2h8.3L22 7.9v8.3L16.2 22H7.9L2 16.2V7.9L7.9 2z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+};
+
+function calloutIcon(variant: string): string {
+  const paths = CALLOUT_ICONS[variant] ?? CALLOUT_ICONS.note;
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+}
+
+const calloutExtension: TokenizerAndRendererExtension = {
+  name: 'callout',
+  level: 'block',
+  start(src) {
+    const m = src.match(/^:::(?:note|tip|warning|important|info)\b/m);
+    return m ? m.index : undefined;
+  },
+  tokenizer(src) {
+    const rule =
+      /^:::(note|tip|warning|important|info)[ \t]*(?:\n)([\s\S]*?)\n:::[ \t]*(?:\n+|$)/;
+    const match = rule.exec(src);
+    if (!match) return undefined;
+    const tokens: Tokens.Generic[] = [];
+    this.lexer.blockTokens(match[2], tokens);
+    return {
+      type: 'callout',
+      raw: match[0],
+      variant: match[1],
+      tokens,
+    };
+  },
+  renderer(token) {
+    const variant = (token as Tokens.Generic).variant as string;
+    const inner = this.parser.parse((token as Tokens.Generic).tokens ?? []);
+    const label = CALLOUT_VARIANTS[variant] ?? 'Note';
+    return `<div class="post-callout post-callout--${variant}"><span class="post-callout__icon">${calloutIcon(variant)}</span><div class="post-callout__content"><span class="post-callout__label">${label}</span><div class="post-callout__body">${inner}</div></div></div>`;
+  },
+};
+
+marked.use({ extensions: [calloutExtension] });
 
 export function parseMarkdown(content: string): string {
   const result = marked.parse(content);

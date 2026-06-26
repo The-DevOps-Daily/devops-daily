@@ -3,6 +3,8 @@ import { parseMarkdown } from '@/lib/markdown';
 import { cn } from '@/lib/utils';
 import { CodeBlockWrapper } from '@/components/code-block-wrapper';
 import { ChartBlockWrapper } from '@/components/post-chart-blocks';
+import { TerminalBlockWrapper, TabsBlockWrapper } from '@/components/post-interactive-blocks';
+import { GithubEmbedWrapper } from '@/components/post-github-embed';
 import { HeadingWrapper } from '@/components/heading-with-anchor';
 
 const PROSE_CLASS =
@@ -34,7 +36,13 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
     <HeadingWrapper>
       <CodeBlockWrapper>
         <ChartBlockWrapper>
-          <MarkdownHtml html={parseMarkdown(content)} className={className} />
+          <TerminalBlockWrapper>
+            <TabsBlockWrapper>
+              <GithubEmbedWrapper>
+                <MarkdownHtml html={parseMarkdown(content)} className={className} />
+              </GithubEmbedWrapper>
+            </TabsBlockWrapper>
+          </TerminalBlockWrapper>
         </ChartBlockWrapper>
       </CodeBlockWrapper>
     </HeadingWrapper>
