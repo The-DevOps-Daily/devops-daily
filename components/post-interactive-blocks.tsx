@@ -1,7 +1,15 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import hljs from 'highlight.js/lib/core';
+import bash from 'highlight.js/lib/languages/bash';
+import python from 'highlight.js/lib/languages/python';
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import jsonLang from 'highlight.js/lib/languages/json';
+import yaml from 'highlight.js/lib/languages/yaml';
+import goLang from 'highlight.js/lib/languages/go';
 import {
   type TerminalSpec,
   type TerminalStep,
@@ -9,6 +17,33 @@ import {
   parseTerminalSpec,
   parseTabsSpec,
 } from '@/lib/post-interactive';
+
+/* Lazy, one-time highlight.js registration for the languages tabs use. */
+let hljsReady = false;
+function ensureHljs() {
+  if (hljsReady) return;
+  const langs: Record<string, Parameters<typeof hljs.registerLanguage>[1]> = {
+    bash, sh: bash, shell: bash, python, py: python,
+    javascript, js: javascript, typescript, ts: typescript,
+    json: jsonLang, yaml, yml: yaml, go: goLang,
+  };
+  for (const [name, def] of Object.entries(langs)) hljs.registerLanguage(name, def);
+  hljsReady = true;
+}
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function highlightCode(code: string, lang?: string): string {
+  ensureHljs();
+  if (lang && hljs.getLanguage(lang)) {
+    try {
+      return hljs.highlight(code, { language: lang }).value;
+    } catch {
+      /* fall through to escaped plain text */
+    }
+  }
+  return escapeHtml(code);
+}
 
 /* ================================================================== */
 /* Terminal: animated command/output replay                            */
@@ -143,10 +178,23 @@ function TerminalBlock({ spec }: { spec: TerminalSpec }) {
           <button
             type="button"
             onClick={() => run()}
-            className="ml-auto rounded-md px-2 py-1 font-mono text-[11px] text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-[11px] text-slate-400 transition-colors hover:bg-white/10 hover:text-slate-200"
             aria-label="Replay terminal"
           >
-            ↺ replay
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-3.5 w-3.5"
+              aria-hidden="true"
+            >
+              <path d="M3 12a9 9 0 1 0 2.6-6.4L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
+            Replay
           </button>
         )}
       </div>
@@ -206,42 +254,43 @@ function hashChar(ch: string): number {
 function TabsBlock({ spec }: { spec: TabsSpec }) {
   const [active, setActive] = useState(0);
   const current = spec.tabs[active] ?? spec.tabs[0];
+  const codeHtml = useMemo(
+    () => highlightCode(current.code, current.lang),
+    [current]
+  );
 
   return (
-    <div className="not-prose my-6 overflow-hidden rounded-xl border border-border bg-muted/30">
+    <div className="not-prose my-6 overflow-hidden rounded-xl border border-border">
       {spec.title && (
-        <div className="border-b border-border px-4 py-2 text-sm font-medium text-foreground">
+        <div className="border-b border-border bg-muted/40 px-4 py-2 text-sm font-medium text-foreground">
           {spec.title}
         </div>
       )}
-      <div role="tablist" className="flex flex-wrap gap-1 border-b border-border bg-muted/50 px-2 pt-2">
+      <div role="tablist" className="flex flex-wrap items-end gap-1 border-b border-border bg-muted/40 px-2 pt-1.5">
         {spec.tabs.map((tab, i) => (
           <button
             key={i}
             role="tab"
+            type="button"
             aria-selected={i === active}
             onClick={() => setActive(i)}
             className={
-              'rounded-t-md px-3 py-1.5 text-sm font-medium transition-colors ' +
+              'rounded-t-md border-b-2 px-3 py-1.5 text-sm font-medium transition-colors ' +
               (i === active
-                ? 'bg-[#0b0f17] text-slate-100'
-                : 'text-muted-foreground hover:text-foreground')
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground')
             }
           >
             {tab.label}
           </button>
         ))}
       </div>
-      <div className="bg-[#0b0f17]">
-        {current.lang && (
-          <div className="px-4 pt-2 font-mono text-[11px] uppercase tracking-wide text-slate-500">
-            {current.lang}
-          </div>
-        )}
-        <pre className="overflow-auto px-4 py-3 font-mono text-[13px] leading-relaxed text-slate-100">
-          <code>{current.code}</code>
-        </pre>
-      </div>
+      <pre className="m-0 overflow-auto bg-muted p-4 text-[13px] leading-relaxed text-foreground">
+        <code
+          className={`hljs language-${current.lang ?? 'plaintext'}`}
+          dangerouslySetInnerHTML={{ __html: codeHtml }}
+        />
+      </pre>
     </div>
   );
 }
