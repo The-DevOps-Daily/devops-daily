@@ -636,3 +636,41 @@ html {
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+
+/* ------------------------------------------------------------------ */
+/* Post callouts / admonitions  (:::note :::tip :::warning :::important) */
+/* Rendered by the marked callout extension in lib/markdown.ts.         */
+/* ------------------------------------------------------------------ */
+.post-callout {
+  margin: 1.5rem 0;
+  border: 1px solid hsl(var(--border));
+  border-left-width: 4px;
+  border-radius: 0.6rem;
+  padding: 0.9rem 1.1rem;
+  background: hsl(var(--muted) / 0.4);
+}
+.post-callout__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+.post-callout__body > :first-child { margin-top: 0; }
+.post-callout__body > :last-child { margin-bottom: 0; }
+
+.post-callout--note,
+.post-callout--info { border-left-color: #3b82f6; background: rgb(59 130 246 / 0.07); }
+.post-callout--note .post-callout__label,
+.post-callout--info .post-callout__label { color: #3b82f6; }
+
+.post-callout--tip { border-left-color: #10b981; background: rgb(16 185 129 / 0.07); }
+.post-callout--tip .post-callout__label { color: #10b981; }
+
+.post-callout--warning { border-left-color: #f59e0b; background: rgb(245 158 11 / 0.08); }
+.post-callout--warning .post-callout__label { color: #d97706; }
+
+.post-callout--important { border-left-color: #ef4444; background: rgb(239 68 68 / 0.07); }
+.post-callout--important .post-callout__label { color: #ef4444; }
+
+.dark .post-callout--warning .post-callout__label { color: #fbbf24; }

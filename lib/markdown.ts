@@ -1,4 +1,4 @@
-import { marked, type Tokens } from 'marked';
+import { marked, type Tokens, type TokenizerAndRendererExtension } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
 import hljs, { type HLJSApi, type Language } from 'highlight.js';
@@ -122,9 +122,9 @@ marked.use(
   markedHighlight({
     langPrefix: 'hljs language-',
     highlight(code, lang) {
-      // Chart fences carry JSON for the chart renderer; leave the text
+      // Interactive fences carry JSON for their renderers; leave the text
       // untouched so the code renderer below can parse it.
-      if (lang === 'chart') return code;
+      if (lang === 'chart' || lang === 'terminal' || lang === 'tabs') return code;
       const language = hljs.getLanguage(lang) ? lang : 'plaintext';
       return hljs.highlight(code, { language }).value;
     },
@@ -166,6 +166,28 @@ marked.use({
         }
         return `<pre><code class="hljs language-chart">${escapeHtml(text)}</code></pre>`;
       }
+      if (lang === 'terminal') {
+        try {
+          const spec = JSON.parse(text);
+          if (spec && typeof spec === 'object' && Array.isArray(spec.steps)) {
+            return `<div class="post-terminal not-prose" data-terminal="${escapeHtml(JSON.stringify(spec))}"></div>`;
+          }
+        } catch {
+          // fall through to a visible code block
+        }
+        return `<pre><code class="hljs language-terminal">${escapeHtml(text)}</code></pre>`;
+      }
+      if (lang === 'tabs') {
+        try {
+          const spec = JSON.parse(text);
+          if (spec && typeof spec === 'object' && Array.isArray(spec.tabs)) {
+            return `<div class="post-tabs not-prose" data-tabs="${escapeHtml(JSON.stringify(spec))}"></div>`;
+          }
+        } catch {
+          // fall through to a visible code block
+        }
+        return `<pre><code class="hljs language-tabs">${escapeHtml(text)}</code></pre>`;
+      }
       return false;
     },
     heading({ tokens, depth }: Tokens.Heading) {
@@ -205,6 +227,47 @@ marked.use({
     },
   },
 });
+
+// Callout / admonition blocks:  :::note  ...  :::  (also tip, warning, important)
+// Inner content is parsed as markdown so links, lists, and code still work.
+const CALLOUT_VARIANTS: Record<string, string> = {
+  note: 'Note',
+  tip: 'Tip',
+  warning: 'Warning',
+  important: 'Important',
+  info: 'Note',
+};
+
+const calloutExtension: TokenizerAndRendererExtension = {
+  name: 'callout',
+  level: 'block',
+  start(src) {
+    const m = src.match(/^:::(?:note|tip|warning|important|info)\b/m);
+    return m ? m.index : undefined;
+  },
+  tokenizer(src) {
+    const rule =
+      /^:::(note|tip|warning|important|info)[ \t]*(?:\n)([\s\S]*?)\n:::[ \t]*(?:\n+|$)/;
+    const match = rule.exec(src);
+    if (!match) return undefined;
+    const tokens: Tokens.Generic[] = [];
+    this.lexer.blockTokens(match[2], tokens);
+    return {
+      type: 'callout',
+      raw: match[0],
+      variant: match[1],
+      tokens,
+    };
+  },
+  renderer(token) {
+    const variant = (token as Tokens.Generic).variant as string;
+    const inner = this.parser.parse((token as Tokens.Generic).tokens ?? []);
+    const label = CALLOUT_VARIANTS[variant] ?? 'Note';
+    return `<div class="post-callout post-callout--${variant}"><div class="post-callout__label">${label}</div><div class="post-callout__body">${inner}</div></div>`;
+  },
+};
+
+marked.use({ extensions: [calloutExtension] });
 
 export function parseMarkdown(content: string): string {
   const result = marked.parse(content);

@@ -139,6 +139,50 @@ Example, a trend line:
 
 Guidance: prefer real, cited numbers over invented ones; keep charts to a handful of bars/series so they stay readable; always validate the fence is parseable JSON before finishing (a quick `node -e` JSON.parse over each ` ```chart ` block).
 
+## Interactive blocks
+
+Beyond charts, posts can embed three more interactive elements. All use the same fence/directive mechanism as charts, and all fall back gracefully (a bad spec renders as a plain code block, so a typo never breaks the build). Reach for them to make technical posts feel alive instead of a wall of text. Validate every fence's JSON before finishing.
+
+**Animated terminal** — ` ```terminal ` replays a command sequence with a typewriter effect, traffic-light window chrome, and a replay button. It animates when scrolled into view and respects `prefers-reduced-motion`. Ideal for build-logs and any "run these commands" walkthrough.
+
+```terminal
+{
+  "title": "deploy",
+  "prompt": "$",
+  "steps": [
+    { "comment": "create the project and deploy" },
+    { "cmd": "neonctl deploy", "output": "Applied changes\nFunction URL: https://...neon.tech/" },
+    { "cmd": "curl $URL/todos", "output": "[{\"id\":1,\"text\":\"hello\"}]" }
+  ]
+}
+```
+
+Each step takes `cmd` (typed after the prompt), `output` (revealed after), and/or `comment` (a dimmed `# ...` line). Optional top-level `title`, `prompt` (default `$`), and `autoplay` (default true; set false to show it all immediately with a replay control).
+
+**Tabbed code** — ` ```tabs ` shows the same thing several ways (e.g. one API call as curl / OpenAI SDK / Anthropic SDK), switchable. Great for "one endpoint, any SDK" style points.
+
+```tabs
+{
+  "title": "Call the gateway",
+  "tabs": [
+    { "label": "curl", "lang": "bash", "code": "curl $URL/v1/chat/completions -d '{...}'" },
+    { "label": "OpenAI SDK", "lang": "python", "code": "client.chat.completions.create(...)" }
+  ]
+}
+```
+
+Each tab needs `label` and `code`; `lang` is an optional caption. (Tabs render monospace without token coloring.)
+
+**Callouts** — admonition blocks via a `:::` directive (not a code fence). Inner content is full markdown (links, lists, bold, inline code all work). Variants: `note`, `tip`, `warning`, `important`.
+
+```text
+:::warning
+This is a private preview: **us-east-2 only**, new projects only. See the [docs](https://example.com).
+:::
+```
+
+Use callouts for caveats, gotchas, and prerequisites you want to stand out. Don't overuse them; one or two per post keeps them meaningful.
+
 ## OG Image
 
 After creating the post, remind the user to generate the OG image:
