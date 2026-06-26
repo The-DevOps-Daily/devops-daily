@@ -778,5 +778,12 @@
   "public/images/interview-questions/designing-on-call-schedule-coverage-og.svg": "40adeb4277d7c83c",
   "public/images/interview-questions/reducing-on-call-alert-fatigue-og.svg": "6f7947849ef32c8d",
   "public/images/interview-questions/on-call-rotation-escalation-basics-og.svg": "c7d78304d22c5a28",
-  "public/images/interview-questions/escalation-policy-design-og.svg": "d75157ebb1d1a0f7"
+  "public/images/interview-questions/escalation-policy-design-og.svg": "d75157ebb1d1a0f7",
+  "public/images/posts/ansible-automation-platform-credential-leak-cve-2026-11807.svg": "89e9bd21fd97d37b",
+  "public/images/posts/spacex-cursor-acquisition-betting-on-one-ai-tool.svg": "e3958b68343696f8",
+  "public/images/quizzes/concurrency-and-race-conditions-quiz-og.svg": "892970c93b5209ed",
+  "public/images/quizzes/distributed-systems-fundamentals-quiz-og.svg": "4beb4f5fea6551fb",
+  "public/images/quizzes/message-queues-delivery-guarantees-quiz-og.svg": "19aff25de6bd5bf5",
+  "public/images/quizzes/back-of-the-envelope-estimation-quiz-og.svg": "87b7b6dc36a4ce2a",
+  "public/images/checklists/hashicorp-vault-secrets-management-og.svg": "64e8fd766100a3cc"
 }
