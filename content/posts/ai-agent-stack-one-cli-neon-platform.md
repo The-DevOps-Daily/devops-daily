@@ -24,7 +24,7 @@ A working AI agent has an unglamorous shopping list. It needs a database to reme
 
 Neon's June 2026 platform preview collapses that list. The pitch is that the database, the compute, the storage, and the model gateway all come from one account and branch together. I wanted to know if that was real or a slide, so I built the canonical example end to end: an image-generating agent that takes a prompt, calls a model, stores the result, and indexes it in Postgres. This is the build log, with the real commands and output, and the parts where the preview still shows.
 
-(Companion repo: [The-DevOps-Daily/neon-ai-agent-demo](https://github.com/The-DevOps-Daily/neon-ai-agent-demo). Everything below ran against a fresh project created while writing.)
+(Companion repo: [The-DevOps-Daily/neon-ai-agent](https://github.com/The-DevOps-Daily/neon-ai-agent). Everything below ran against a fresh project created while writing.)
 
 ## One command to scaffold the whole stack
 
