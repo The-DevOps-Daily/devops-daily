@@ -1,7 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 
-const WEB_IMAGE_EXTENSIONS = ['svg', 'png', 'jpg'];
+// PNG first: the OG/card images are generated as PNG (the SVG sources are
+// pruned from the deploy to stay under Cloudflare Pages' file cap), so the
+// web display resolves to the PNG that actually ships. SVG remains a fallback
+// for assets that only exist as SVG (logos, placeholders).
+const WEB_IMAGE_EXTENSIONS = ['png', 'svg', 'jpg'];
 
 // In production builds the public/ tree is immutable, so one readdir per
 // image directory replaces thousands of per-page existsSync calls during
