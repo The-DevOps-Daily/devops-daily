@@ -16,6 +16,7 @@
 import fs from 'fs';
 import path from 'path';
 import type { InterviewQuestion, ExperienceTier } from '@/lib/interview-utils';
+import { tagToSlug } from '@/lib/tag-utils';
 
 const TIER_ORDER: Record<ExperienceTier, number> = {
   junior: 0,
@@ -41,8 +42,7 @@ function loadAll(): InterviewQuestion[] {
   // consistent global order keeps the listing page and the llms.txt
   // export deterministic across builds.
   return out.sort((a, b) => {
-    const tierDelta =
-      (TIER_ORDER[a.tier] ?? 99) - (TIER_ORDER[b.tier] ?? 99);
+    const tierDelta = (TIER_ORDER[a.tier] ?? 99) - (TIER_ORDER[b.tier] ?? 99);
     if (tierDelta !== 0) return tierDelta;
     return a.slug.localeCompare(b.slug);
   });
@@ -51,42 +51,69 @@ function loadAll(): InterviewQuestion[] {
 export const interviewQuestions: InterviewQuestion[] = loadAll();
 
 export const getQuestionBySlug = (slug: string): InterviewQuestion | undefined => {
-  return interviewQuestions.find(q => q.slug === slug);
+  return interviewQuestions.find((q) => q.slug === slug);
 };
 
 export const getQuestionsByCategory = (category: string): InterviewQuestion[] => {
-  return interviewQuestions.filter(q => q.category === category);
+  return interviewQuestions.filter((q) => q.category === category);
 };
 
 export const getQuestionsByDifficulty = (difficulty: string): InterviewQuestion[] => {
-  return interviewQuestions.filter(q => q.difficulty === difficulty);
+  return interviewQuestions.filter((q) => q.difficulty === difficulty);
 };
 
 export const getQuestionsByTier = (tier: ExperienceTier): InterviewQuestion[] => {
-  return interviewQuestions.filter(q => q.tier === tier);
+  return interviewQuestions.filter((q) => q.tier === tier);
 };
 
 export const getQuestionCountsByTier = (): Record<ExperienceTier, number> => {
   return {
-    junior: interviewQuestions.filter(q => q.tier === 'junior').length,
-    mid: interviewQuestions.filter(q => q.tier === 'mid').length,
-    senior: interviewQuestions.filter(q => q.tier === 'senior').length,
+    junior: interviewQuestions.filter((q) => q.tier === 'junior').length,
+    mid: interviewQuestions.filter((q) => q.tier === 'mid').length,
+    senior: interviewQuestions.filter((q) => q.tier === 'senior').length,
   };
 };
 
 export const getQuestionsByTag = (tag: string): InterviewQuestion[] => {
-  return interviewQuestions.filter(q => q.tags.includes(tag));
+  return interviewQuestions.filter((q) => q.tags.includes(tag));
 };
 
 export const getAllCategories = (): string[] => {
-  return Array.from(new Set(interviewQuestions.map(q => q.category))).sort();
+  return Array.from(new Set(interviewQuestions.map((q) => q.category))).sort();
 };
 
 export const getAllTags = (): string[] => {
-  const tags = interviewQuestions.flatMap(q => q.tags);
+  const tags = interviewQuestions.flatMap((q) => q.tags);
   return Array.from(new Set(tags)).sort();
 };
 
 export const getAllTiers = (): ExperienceTier[] => {
   return ['junior', 'mid', 'senior'];
+};
+
+export interface InterviewTopic {
+  name: string;
+  slug: string;
+  count: number;
+}
+
+// Topics (categories) with their slugs and question counts, sorted by how many
+// questions touch each one. Drives the topic-overview chips and the
+// /interview-questions/topic/[topic] landing pages.
+export const getAllTopics = (): InterviewTopic[] => {
+  const counts = new Map<string, number>();
+  for (const q of interviewQuestions) {
+    counts.set(q.category, (counts.get(q.category) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([name, count]) => ({ name, slug: tagToSlug(name), count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+};
+
+export const getTopicBySlug = (slug: string): InterviewTopic | undefined => {
+  return getAllTopics().find((t) => t.slug === slug);
+};
+
+export const getQuestionsByTopicSlug = (slug: string): InterviewQuestion[] => {
+  return interviewQuestions.filter((q) => tagToSlug(q.category) === slug);
 };

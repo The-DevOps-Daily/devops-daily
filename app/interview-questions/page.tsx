@@ -6,22 +6,23 @@ import {
   Users,
   TrendingUp,
   Award,
-  Brain,
-  Eye,
-  Target,
-  Layers,
+  Play,
+  Shuffle,
+  RotateCcw,
 } from 'lucide-react';
 import {
   interviewQuestions,
   getQuestionCountsByTier,
+  getAllTopics,
 } from '@/content/interview-questions';
 import { PageHero } from '@/components/page-hero';
+import { QuestionBrowser } from '@/components/interview-questions/question-browser';
 import type { ExperienceTier } from '@/lib/interview-utils';
 
 export const metadata: Metadata = {
   title: 'DevOps Interview Questions | The DevOps Daily',
   description:
-    'In-depth DevOps interview questions with detailed answers, code examples, and explanations. Prepare for Kubernetes, Docker, Terraform, CI/CD, AWS, and more.',
+    'Practice 110+ real DevOps interview questions with hidden answers, code examples, and explanations. Search by topic, drill by experience level, and share any question. Kubernetes, Terraform, CI/CD, GitOps, SRE and more.',
   keywords: [
     'devops interview questions',
     'kubernetes interview',
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'DevOps Interview Questions - The DevOps Daily',
     description:
-      'In-depth DevOps interview questions with detailed answers, code examples, and explanations. Prepare for your next interview.',
+      'Practice real DevOps interview questions with hidden answers, code examples, and explanations. Search by topic, drill by level, share any question.',
     type: 'website',
     url: '/interview-questions',
     siteName: 'The DevOps Daily',
@@ -71,7 +72,7 @@ export const metadata: Metadata = {
     creator: '@TheDevOpsDaily',
     title: 'DevOps Interview Questions - The DevOps Daily',
     description:
-      'In-depth DevOps interview questions with detailed answers, code examples, and explanations.',
+      'Practice real DevOps interview questions with hidden answers, code examples, and explanations.',
     images: ['/images/interview-questions/interview-questions-og.png'],
   },
 };
@@ -103,39 +104,30 @@ const tierConfig = {
   },
 } as const;
 
-const steps = [
+const quickStart = [
   {
-    icon: Brain,
-    title: 'Think it through',
-    description: 'Read the prompt and answer out loud, like a real interview.',
+    href: '/interview-questions/practice',
+    icon: Play,
+    title: 'Start a session',
+    description: 'Work through every question, think-first then reveal.',
   },
   {
-    icon: Eye,
-    title: 'Reveal the answer',
-    description: 'Compare against a model answer, code, and common mistakes.',
+    href: '/interview-questions/practice?random=1',
+    icon: Shuffle,
+    title: 'Random mix',
+    description: 'A shuffled run across all levels and topics.',
   },
   {
-    icon: Target,
-    title: 'Mark your confidence',
-    description: 'Track what you know and loop back to the weak spots.',
+    href: '/interview-questions/practice?mode=review',
+    icon: RotateCcw,
+    title: 'Review pile',
+    description: 'Re-drill only the ones you flagged for review.',
   },
 ];
 
-// Topics covered, derived from the question set so the list stays in sync with
-// content. Sorted by how many questions touch each topic.
-function getTopicCounts(): Array<{ name: string; count: number }> {
-  const counts = new Map<string, number>();
-  for (const q of interviewQuestions) {
-    counts.set(q.category, (counts.get(q.category) ?? 0) + 1);
-  }
-  return Array.from(counts.entries())
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-}
-
 export default function InterviewQuestionsPage() {
   const questionsByTier = getQuestionCountsByTier();
-  const topics = getTopicCounts();
+  const topics = getAllTopics();
   const tiers = ['junior', 'mid', 'senior'] as ExperienceTier[];
 
   return (
@@ -144,7 +136,7 @@ export default function InterviewQuestionsPage() {
         icon={Briefcase}
         title="DevOps Interview Questions"
         accentWord="Interview"
-        description={`Practice ${interviewQuestions.length} real interview questions with hidden answers. Think through each one, then reveal the model answer to compare.`}
+        description={`Practice ${interviewQuestions.length} real interview questions with hidden answers. Think through each one, reveal the model answer, and share the tricky ones.`}
         breadcrumbs={[{ label: 'Interview Questions' }]}
         badge="Mock Interview Practice"
         stats={[
@@ -155,37 +147,43 @@ export default function InterviewQuestionsPage() {
       />
 
       <div className="container mx-auto px-4 max-w-4xl py-10">
-        {/* How it works */}
+        {/* Quick start */}
         <section className="mb-12">
-          <p className="text-xs font-mono text-muted-foreground mb-3">// how it works</p>
-          <div className="rounded-md border bg-card divide-y md:divide-y-0 md:divide-x divide-border grid grid-cols-1 md:grid-cols-3">
-            {steps.map((step, i) => {
-              const Icon = step.icon;
+          <p className="text-xs font-mono text-muted-foreground mb-3">// jump in</p>
+          <div className="grid gap-px grid-cols-1 sm:grid-cols-3 bg-border border rounded-md overflow-hidden">
+            {quickStart.map((action) => {
+              const Icon = action.icon;
               return (
-                <div key={step.title} className="flex items-start gap-3 p-5">
-                  <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 text-primary text-sm font-mono font-semibold">
-                    {i + 1}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm mb-1 flex items-center gap-1.5">
-                      <Icon className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
-                      {step.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {step.description}
-                    </p>
-                  </div>
-                </div>
+                <Link
+                  key={action.href}
+                  href={action.href}
+                  className="group bg-card p-5 transition-colors hover:bg-muted/40"
+                >
+                  <Icon
+                    className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-3"
+                    strokeWidth={1.5}
+                  />
+                  <h3 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
+                    {action.title}
+                  </h3>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    {action.description}
+                  </p>
+                </Link>
               );
             })}
           </div>
         </section>
 
-        {/* Choose your level */}
+        {/* Browse all */}
         <section className="mb-12">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-mono text-muted-foreground">// choose your level</p>
-          </div>
+          <p className="text-xs font-mono text-muted-foreground mb-3">// browse all questions</p>
+          <QuestionBrowser questions={interviewQuestions} />
+        </section>
+
+        {/* Browse by level */}
+        <section className="mb-12">
+          <p className="text-xs font-mono text-muted-foreground mb-3">// browse by level</p>
           <div className="grid gap-px grid-cols-1 sm:grid-cols-3 bg-border border rounded-md overflow-hidden">
             {tiers.map((tier) => {
               const config = tierConfig[tier];
@@ -198,10 +196,7 @@ export default function InterviewQuestionsPage() {
                   className="group bg-card p-5 flex flex-col transition-colors hover:bg-muted/40"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <Icon
-                      className={`w-5 h-5 ${config.iconColor}`}
-                      strokeWidth={1.5}
-                    />
+                    <Icon className={`w-5 h-5 ${config.iconColor}`} strokeWidth={1.5} />
                     <span className="flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/80 uppercase tracking-wider">
                       <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
                       {config.range}
@@ -225,21 +220,19 @@ export default function InterviewQuestionsPage() {
           </div>
         </section>
 
-        {/* Topics covered */}
+        {/* Browse by topic */}
         <section className="mb-12">
-          <p className="text-xs font-mono text-muted-foreground mb-3 flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5" strokeWidth={1.5} />
-            <span>// topics covered</span>
-          </p>
+          <p className="text-xs font-mono text-muted-foreground mb-3">// browse by topic</p>
           <div className="flex flex-wrap gap-2">
             {topics.map((topic) => (
-              <span
-                key={topic.name}
-                className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 text-xs"
+              <Link
+                key={topic.slug}
+                href={`/interview-questions/topic/${topic.slug}`}
+                className="inline-flex items-center gap-1.5 rounded-md border bg-card px-2.5 py-1 text-xs transition-colors hover:border-primary/40 hover:text-primary"
               >
-                <span className="text-foreground">{topic.name}</span>
+                <span>{topic.name}</span>
                 <span className="font-mono text-muted-foreground/70">{topic.count}</span>
-              </span>
+              </Link>
             ))}
           </div>
         </section>

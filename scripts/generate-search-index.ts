@@ -11,7 +11,7 @@ import { getAllComparisons } from '../lib/comparisons.js';
 import { getAllFlashCardSets } from '../lib/flashcard-loader.js';
 import { getAllQuizzes } from '../lib/quiz-loader.js';
 import { TOOLS, CATEGORY_LABEL } from '../lib/tools.js';
-import { interviewQuestions } from '../content/interview-questions/index.js';
+import { interviewQuestions, getAllTopics } from '../content/interview-questions/index.js';
 import type { SearchItem } from '../lib/search-types.js';
 
 // Static pages
@@ -376,6 +376,19 @@ async function generateSearchIndex() {
   }));
   searchIndex.push(...interviewItems);
   console.log(`  ✓ Added ${interviewItems.length} interview questions`);
+
+  // Add interview topic landing pages
+  const interviewTopicItems: SearchItem[] = getAllTopics().map((topic) => ({
+    id: `interview-topic-${topic.slug}`,
+    type: 'interview-question',
+    title: `${topic.name} Interview Questions`,
+    description: `Browse ${topic.count} ${topic.name} DevOps interview questions across experience levels`,
+    url: `/interview-questions/topic/${topic.slug}`,
+    category: topic.name,
+    icon: '💬',
+  }));
+  searchIndex.push(...interviewTopicItems);
+  console.log(`  ✓ Added ${interviewTopicItems.length} interview topic pages`);
 
   // Calculate size
   const json = JSON.stringify(searchIndex);
