@@ -5,6 +5,8 @@ import {
   Fingerprint,
   Clock,
   Container,
+  CalendarClock,
+  Hash,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -253,6 +255,93 @@ export const TOOLS: Tool[] = [
         question: 'Is my data sent anywhere?',
         answer:
           'No. Parsing and formatting happen entirely in your browser.',
+      },
+    ],
+  },
+  {
+    slug: 'timestamp-converter',
+    title: 'Unix Timestamp Converter',
+    shortTitle: 'Timestamp',
+    description:
+      'Convert Unix epoch timestamps to and from human-readable dates. Auto-detects seconds vs milliseconds, shows UTC, local time, ISO 8601, and relative time. Runs entirely in your browser.',
+    tagline: 'Epoch to date and back. UTC, local, ISO 8601, and relative time, with a live clock.',
+    icon: CalendarClock,
+    keywords: [
+      'unix timestamp',
+      'epoch',
+      'time converter',
+      'epoch to date',
+      'date to epoch',
+      'iso 8601',
+      'utc',
+      'date +%s',
+    ],
+    category: 'scheduling',
+    relatedPosts: [],
+    faqs: [
+      {
+        question: 'What is a Unix timestamp?',
+        answer:
+          'The number of seconds since 1970-01-01 00:00:00 UTC (the Unix epoch), ignoring leap seconds. It is the standard way computers store a point in time. `date +%s` prints the current one.',
+      },
+      {
+        question: 'Seconds or milliseconds?',
+        answer:
+          'Unix tools use seconds (10 digits until the year 2286). JavaScript, Java, and many APIs use milliseconds (13 digits). This tool auto-detects which you pasted by its length and tells you which it assumed.',
+      },
+      {
+        question: 'What is the year 2038 problem?',
+        answer:
+          'A signed 32-bit timestamp overflows on 2038-01-19 03:14:07 UTC. Systems still storing time in a 32-bit int will wrap to a negative number. The fix is 64-bit time, which most modern systems already use.',
+      },
+      {
+        question: 'Is my input sent to a server?',
+        answer: 'No. All conversion happens locally in your browser.',
+      },
+    ],
+  },
+  {
+    slug: 'hash-generator',
+    title: 'Hash and Checksum Generator',
+    shortTitle: 'Hash / Checksum',
+    description:
+      'Generate MD5, SHA-1, SHA-256, SHA-384, and SHA-512 hashes of text or a file, and verify a download against an expected checksum. Runs entirely in your browser.',
+    tagline: 'MD5 / SHA hashes of text or a file, plus a checksum verifier. Browser-only.',
+    icon: Hash,
+    keywords: [
+      'hash',
+      'checksum',
+      'md5',
+      'sha256',
+      'sha-256',
+      'sha1',
+      'sha512',
+      'sha256sum',
+      'file integrity',
+      'verify download',
+    ],
+    category: 'security',
+    relatedPosts: [],
+    faqs: [
+      {
+        question: 'Which hash should I use?',
+        answer:
+          'Use SHA-256 for integrity and checksums; it is the modern default (`sha256sum`). MD5 and SHA-1 are broken for security (collisions are practical) but still appear on download pages, so they are here for verification, not for protecting anything.',
+      },
+      {
+        question: 'Can I verify a downloaded file?',
+        answer:
+          'Yes. Drop the file in, pick the algorithm the project publishes, and paste their expected checksum into the verify box. The tool highlights a match or mismatch. The file is read locally and never uploaded.',
+      },
+      {
+        question: 'Is a hash the same as encryption?',
+        answer:
+          'No. Hashing is one-way: you cannot recover the input from the hash. Encryption is reversible with a key. Hashes are for integrity and fingerprints; never use a raw hash to store passwords (use bcrypt/argon2 instead).',
+      },
+      {
+        question: 'Is my data uploaded anywhere?',
+        answer:
+          'No. SHA hashing uses the browser Web Crypto API and MD5 runs in JavaScript, both locally. Nothing leaves your machine.',
       },
     ],
   },
