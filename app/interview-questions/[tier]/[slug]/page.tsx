@@ -2,7 +2,11 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Briefcase } from 'lucide-react';
-import { interviewQuestions, getQuestionBySlug } from '@/content/interview-questions';
+import {
+  interviewQuestions,
+  getQuestionBySlug,
+  getQuestionsByTier,
+} from '@/content/interview-questions';
 import { InterviewQuestionPage } from '@/components/interview-questions/interview-question-page';
 import { BreadcrumbSchema, QAPageSchema } from '@/components/schema-markup';
 import { PageHero } from '@/components/page-hero';
@@ -30,13 +34,13 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { tier, slug } = await params;
-  
+
   if (!validTiers.includes(tier as ExperienceTier)) {
     return { title: 'Not Found' };
   }
 
   const question = getQuestionBySlug(slug);
-  
+
   if (!question || question.tier !== tier) {
     return { title: 'Not Found' };
   }
@@ -45,9 +49,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   // Some questions are long enough that the auto-built description blows
   // past 160 chars; trim at sentence boundary so Google does not truncate.
   const description = truncateMetaDescription(
-    `${question.question} - ${question.category} interview question for ${tier} DevOps engineers`,
+    `${question.question} - ${question.category} interview question for ${tier} DevOps engineers`
   );
-  
+
   return {
     title: { absolute: `${question.title} - Interview Question` },
     description,
@@ -79,18 +83,38 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function QuestionPage({ params }: PageProps) {
   const { tier, slug } = await params;
-  
+
   if (!validTiers.includes(tier as ExperienceTier)) {
     notFound();
   }
 
   const question = getQuestionBySlug(slug);
-  
+
   if (!question || question.tier !== tier) {
     notFound();
   }
 
   const capitalizedTier = tier.charAt(0).toUpperCase() + tier.slice(1);
+
+  // Prev/next within the same tier so the question page doubles as a walk-through.
+  const tierQuestions = getQuestionsByTier(tier as ExperienceTier);
+  const position = tierQuestions.findIndex((q) => q.slug === question.slug);
+  const prev =
+    position > 0
+      ? {
+          tier: tierQuestions[position - 1].tier,
+          slug: tierQuestions[position - 1].slug,
+          title: tierQuestions[position - 1].title,
+        }
+      : null;
+  const next =
+    position >= 0 && position < tierQuestions.length - 1
+      ? {
+          tier: tierQuestions[position + 1].tier,
+          slug: tierQuestions[position + 1].slug,
+          title: tierQuestions[position + 1].title,
+        }
+      : null;
 
   const crossTypeRelated = await getRelatedAcrossTypes({
     current: {
@@ -107,9 +131,7 @@ export default async function QuestionPage({ params }: PageProps) {
   // to 5 so the section stays readable but still gives crawlers and readers
   // a meaningful set of next-step links.
   const related = interviewQuestions
-    .filter(
-      (q) => q.category === question.category && q.slug !== question.slug,
-    )
+    .filter((q) => q.category === question.category && q.slug !== question.slug)
     .sort((a, b) => {
       if (a.tier === tier && b.tier !== tier) return -1;
       if (a.tier !== tier && b.tier === tier) return 1;
@@ -142,7 +164,12 @@ export default async function QuestionPage({ params }: PageProps) {
           { label: question.title },
         ]}
       />
-      <InterviewQuestionPage question={question} tier={tier as ExperienceTier} />
+      <InterviewQuestionPage
+        question={question}
+        tier={tier as ExperienceTier}
+        prev={prev}
+        next={next}
+      />
 
       {/* Inline ad slot between the question body and the sibling list, sat
           where readers naturally pause before deciding whether to keep
@@ -166,9 +193,7 @@ export default async function QuestionPage({ params }: PageProps) {
                   {q.title}
                 </Link>
                 {q.tier !== tier && (
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {q.tier}
-                  </span>
+                  <span className="ml-2 text-xs text-muted-foreground">{q.tier}</span>
                 )}
               </li>
             ))}

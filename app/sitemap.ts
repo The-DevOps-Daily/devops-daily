@@ -8,7 +8,7 @@ import { getAllNews } from '@/lib/news';
 import { getActiveGames } from '@/lib/games';
 import { getAllFlashCardSets } from '@/lib/flashcard-loader';
 import { getAllChecklists } from '@/lib/checklists';
-import { interviewQuestions } from '@/content/interview-questions';
+import { interviewQuestions, getAllTopics } from '@/content/interview-questions';
 import { getAllAdventDays } from '@/lib/advent';
 import { getAllComparisons } from '@/lib/comparisons';
 import { getAllNewsletters } from '@/lib/newsletters';
@@ -25,22 +25,35 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
   // Get all content
-  const [posts, categories, guides, exercises, quizzes, news, games, flashcards, adventDays, comparisons, newsletters, checklists, hacktoberfestDays] =
-    await Promise.all([
-      getAllPosts(),
-      getAllCategories(),
-      getAllGuides(),
-      getAllExercises(),
-      getQuizMetadata(),
-      getAllNews(),
-      getActiveGames(),
-      getAllFlashCardSets(),
-      getAllAdventDays(),
-      getAllComparisons(),
-      getAllNewsletters(),
-      getAllChecklists(),
-      getAllHacktoberfestDays(),
-    ]);
+  const [
+    posts,
+    categories,
+    guides,
+    exercises,
+    quizzes,
+    news,
+    games,
+    flashcards,
+    adventDays,
+    comparisons,
+    newsletters,
+    checklists,
+    hacktoberfestDays,
+  ] = await Promise.all([
+    getAllPosts(),
+    getAllCategories(),
+    getAllGuides(),
+    getAllExercises(),
+    getQuizMetadata(),
+    getAllNews(),
+    getActiveGames(),
+    getAllFlashCardSets(),
+    getAllAdventDays(),
+    getAllComparisons(),
+    getAllNewsletters(),
+    getAllChecklists(),
+    getAllHacktoberfestDays(),
+  ]);
 
   const latestPostDate = posts[0]?.updatedAt || posts[0]?.date || posts[0]?.publishedAt;
   const latestGuideDate = guides[0]?.updatedAt || guides[0]?.publishedAt;
@@ -200,6 +213,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Interview topic landing pages (e.g. /interview-questions/topic/kubernetes)
+  const interviewTopicRoutes = getAllTopics().map((t) => ({
+    url: `${baseUrl}/interview-questions/topic/${t.slug}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
+  }));
+
   // Comparison routes
   const comparisonRoutes = comparisons.map((c) => ({
     url: `${baseUrl}/comparisons/${c.slug}`,
@@ -286,6 +306,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...flashcardRoutes,
     ...checklistRoutes,
     ...interviewRoutes,
+    ...interviewTopicRoutes,
     ...adventRoutes,
     ...hacktoberfestRoutes,
     ...comparisonRoutes,
