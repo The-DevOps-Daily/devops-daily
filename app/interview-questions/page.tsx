@@ -1,15 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import {
-  Briefcase,
-  ArrowRight,
-  Users,
-  TrendingUp,
-  Award,
-  Play,
-  Shuffle,
-  RotateCcw,
-} from 'lucide-react';
+import { Briefcase, ArrowRight, Users, TrendingUp, Award, Shuffle, RotateCcw } from 'lucide-react';
 import {
   interviewQuestions,
   getQuestionCountsByTier,
@@ -104,27 +95,6 @@ const tierConfig = {
   },
 } as const;
 
-const quickStart = [
-  {
-    href: '/interview-questions/practice',
-    icon: Play,
-    title: 'Start a session',
-    description: 'Work through every question, think-first then reveal.',
-  },
-  {
-    href: '/interview-questions/practice?random=1',
-    icon: Shuffle,
-    title: 'Random mix',
-    description: 'A shuffled run across all levels and topics.',
-  },
-  {
-    href: '/interview-questions/practice?mode=review',
-    icon: RotateCcw,
-    title: 'Review pile',
-    description: 'Re-drill only the ones you flagged for review.',
-  },
-];
-
 export default function InterviewQuestionsPage() {
   const questionsByTier = getQuestionCountsByTier();
   const topics = getAllTopics();
@@ -147,43 +117,9 @@ export default function InterviewQuestionsPage() {
       />
 
       <div className="container mx-auto px-4 max-w-4xl py-10">
-        {/* Quick start */}
+        {/* Browse by level — the first decision most people make */}
         <section className="mb-12">
-          <p className="text-xs font-mono text-muted-foreground mb-3">// jump in</p>
-          <div className="grid gap-px grid-cols-1 sm:grid-cols-3 bg-border border rounded-md overflow-hidden">
-            {quickStart.map((action) => {
-              const Icon = action.icon;
-              return (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="group bg-card p-5 transition-colors hover:bg-muted/40"
-                >
-                  <Icon
-                    className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors mb-3"
-                    strokeWidth={1.5}
-                  />
-                  <h3 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
-                    {action.title}
-                  </h3>
-                  <p className="text-muted-foreground text-xs leading-relaxed">
-                    {action.description}
-                  </p>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Browse all */}
-        <section className="mb-12">
-          <p className="text-xs font-mono text-muted-foreground mb-3">// browse all questions</p>
-          <QuestionBrowser questions={interviewQuestions} />
-        </section>
-
-        {/* Browse by level */}
-        <section className="mb-12">
-          <p className="text-xs font-mono text-muted-foreground mb-3">// browse by level</p>
+          <p className="text-xs font-mono text-muted-foreground mb-3">// pick your level</p>
           <div className="grid gap-px grid-cols-1 sm:grid-cols-3 bg-border border rounded-md overflow-hidden">
             {tiers.map((tier) => {
               const config = tierConfig[tier];
@@ -218,6 +154,30 @@ export default function InterviewQuestionsPage() {
               );
             })}
           </div>
+        </section>
+
+        {/* Browse / search all questions */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <p className="text-xs font-mono text-muted-foreground">// browse all questions</p>
+            <div className="flex items-center gap-3 text-xs font-mono">
+              <Link
+                href="/interview-questions/practice?random=1"
+                className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
+              >
+                <Shuffle className="w-3.5 h-3.5" strokeWidth={1.5} />
+                random
+              </Link>
+              <Link
+                href="/interview-questions/practice?mode=review"
+                className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary"
+              >
+                <RotateCcw className="w-3.5 h-3.5" strokeWidth={1.5} />
+                review pile
+              </Link>
+            </div>
+          </div>
+          <QuestionBrowser questions={interviewQuestions} />
         </section>
 
         {/* Browse by topic */}
