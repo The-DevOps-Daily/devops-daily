@@ -194,7 +194,7 @@ A few adoption notes:
 
 - **Application-side generation still works.** If your services generate ids before inserting, switch the client library to a UUIDv7 generator. Most language ecosystems now have one, and the database does not care who produced the value as long as it is a valid v7.
 - **ORMs are catching up.** Check whether your ORM lets you set a database default expression for the id column; if so, `DEFAULT uuidv7()` is the cleanest path. If it generates ids in application code, point it at a v7 library.
-- **You do not need PostgreSQL 18 to start.** If you are on 14 to 17, you can adopt UUIDv7 today by generating it in the application or with a small SQL function, then the upgrade to 18 just lets you drop that shim for the native function.
+- **You do not need PostgreSQL 18 to start.** If you are on 14 to 17, you can adopt UUIDv7 today by generating it in the application or with a small SQL function, then the upgrade to 18 just lets you drop that shim for the native function. Plenty of managed Postgres is already on 18 as well (Neon, for example, defaults new projects to Postgres 18), so you can try `uuidv7()` on a fresh database without upgrading anything yourself.
 
 ## Key takeaways
 
