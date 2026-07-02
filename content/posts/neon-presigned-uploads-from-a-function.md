@@ -140,7 +140,7 @@ I ran the whole sequence against the deployed function. The key line is the dire
     { "comment": "PUT the bytes STRAIGHT to storage (no function in the path)" },
     { "cmd": "curl -s -X PUT \"$UPLOAD_URL\" --data-binary 'uploaded straight to storage' -w '%{http_code}'", "output": "200" },
     { "comment": "record the metadata" },
-    { "cmd": "curl -s -X POST $URL/files/confirm -d '{\"key\":\"...\",\"filename\":\"notes.txt\",\"bytes\":51}' -w '%{http_code}'", "output": "201" },
+    { "cmd": "curl -s -X POST $URL/files/confirm -d '{\"key\":\"...\",\"filename\":\"notes.txt\",\"bytes\":28}' -w '%{http_code}'", "output": "201" },
     { "comment": "download it back through a presigned GET; bytes match" },
     { "cmd": "curl -sL $URL/files/3", "output": "uploaded straight to storage" }
   ]
