@@ -21,13 +21,13 @@ tags:
   - serverless
 ---
 
-If your files already live in Amazon S3, the pitch for storage that branches with your database is appealing but the word "migration" makes it sound like a project. It mostly is not. Neon's object storage speaks the S3 API, so the code you already wrote, the AWS SDK calls, the presigned URLs, the multipart uploads, keeps working. What changes is how you point the client and where the bucket comes from, and that is a small, mechanical diff. The actual data move is a copy loop you can run once.
+If your files already live in Amazon S3, the pitch for storage that branches with your database is appealing but the word "migration" makes it sound like a project. It mostly is not. Neon's object storage speaks the S3 API, so the code you already wrote, the AWS SDK calls and presigned URLs, keeps working. What changes is how you point the client and where the bucket comes from, and that is a small, mechanical diff. The actual data move is a copy loop you can run once. The one thing to do up front is confirm the object operations your app actually relies on: the demo here exercises `PutObject`, `GetObject`, listing, and presigned URLs, and I flag the S3 features you should check for yourself further down.
 
 This post is the practical version: what stays identical, the exact config that changes, a script to copy the objects across, and an honest list of the S3 features that do not have an equivalent so you know what to check before you commit. The [repo](https://github.com/The-DevOps-Daily/neon-storage-demo) with the working client is at the end.
 
 ## TL;DR
 
-- Neon object storage is S3-compatible. Your `@aws-sdk/client-s3` code, `PutObject`, `GetObject`, `getSignedUrl`, multipart, works unchanged.
+- Neon object storage is S3-compatible. Your `@aws-sdk/client-s3` code for the common operations, `PutObject`, `GetObject`, `getSignedUrl`, listing, works unchanged (these are what the demo verifies). Confirm anything beyond that, like multipart for large objects, against the current preview.
 - The diff is the client config: point `endpoint` at the Neon storage endpoint, pin `region: 'us-east-2'`, set `forcePathStyle: true`. The bucket is declared in `neon.ts` instead of created in the console, and credentials are injected per branch.
 - Move the data with a list-and-copy loop between two S3 clients (source AWS, destination Neon).
 - What does not carry over: S3 bucket policies, event notifications and Lambda triggers, storage classes and Glacier transitions, and cross-region replication. Object CRUD and presigning do.
@@ -117,14 +117,14 @@ Two things to verify before you cut over. First, if your database stores full S3
 
 ## What does not carry over
 
-Being honest about the edges saves you a surprise in production. The object operations port cleanly; the S3 platform features around them may not have an equivalent in the preview:
+Being honest about the edges saves you a surprise in production. The core object operations port cleanly (these are the ones the demo exercises); the larger-object and S3 platform features around them you should confirm against the preview before you rely on them, since this is an early preview and the surface is still filling in:
 
 | Feature | Carries over? |
 | --- | --- |
-| `PutObject` / `GetObject` / `DeleteObject` | Yes |
-| Presigned URLs (`getSignedUrl`) | Yes |
-| Multipart upload | Yes |
-| List, prefixes, pagination | Yes |
+| `PutObject` / `GetObject` / `DeleteObject` | Yes (verified in the demo) |
+| Presigned URLs (`getSignedUrl`) | Yes (verified in the demo) |
+| List, prefixes, pagination | Yes (verified in the demo) |
+| Multipart upload | Part of the S3 API; verify for your large-object uploads |
 | Bucket policies / ACLs | Check; model differs |
 | Event notifications, Lambda triggers | No direct equivalent |
 | Storage classes, Glacier transitions | No |
