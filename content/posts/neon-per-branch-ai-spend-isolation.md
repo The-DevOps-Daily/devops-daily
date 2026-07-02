@@ -1,6 +1,6 @@
 ---
 title: 'Per-Branch AI Endpoints: Isolating Model Spend Across Prod, Preview, and CI'
-excerpt: 'When previews, CI, and production all call models with the same key, you cannot tell what a preview cost or notice a runaway test until the invoice. Because a Neon branch carries its own gateway endpoint and its own usage ledger, model spend is attributed and isolated per environment. I proved it: a CI branch spent tokens while production stayed flat.'
+excerpt: 'When previews, CI, and production all call models with the same key, you cannot tell what a preview cost or notice a runaway test until the invoice. Because a Neon branch is its own deployment with a usage ledger that lives in the branch''s Postgres, model spend is attributed and isolated per environment. I proved it: a CI branch spent tokens while production stayed flat.'
 category:
   name: 'DevOps'
   slug: 'devops'
@@ -23,12 +23,12 @@ tags:
 
 AI spend is hard to see. In most setups the same gateway credential is used by production, every preview environment, CI, and whatever load test someone ran on Friday. All of that lands in one undifferentiated number. You cannot answer "what did that preview cost," you cannot cap a specific environment, and you find out a CI job went into a retry loop against an expensive model when the monthly invoice arrives, not when it happens.
 
-The reason is that spend is attributed to a key, and the key is shared. Neon changes what is shared: each branch has its own gateway endpoint, and if you log usage to Postgres, that ledger lives on the branch too. So a preview or CI branch calls models through its own endpoint and records its own spend, and none of it moves production's numbers. I tested it by running calls on a CI branch and watching production's ledger stay flat. The [repo](https://github.com/The-DevOps-Daily/neon-ai-gateway-demo) is at the end.
+The reason is that spend is attributed to a key, and the key is shared. Neon changes what is shared: each branch is its own deployment, and if you log usage to Postgres, that ledger lives on the branch too. So a preview or CI branch records its own spend in its own ledger, and none of it moves production's numbers. I tested it by running calls on a CI branch and watching production's ledger stay flat. The [repo](https://github.com/The-DevOps-Daily/neon-ai-gateway-demo) is at the end.
 
 ## TL;DR
 
 - One shared gateway key means one undifferentiated bill: no per-environment attribution, no per-environment cap, and no early warning when a preview or CI job spends a lot.
-- On Neon, each branch has its own gateway endpoint, and a usage log stored in Postgres lives on the branch. Calls on a branch record against the branch.
+- On Neon, each branch is its own deployment (its own function endpoint), and the usage log you keep in Postgres lives on the branch. Calls on a branch record against the branch's ledger.
 - I tested it: two model calls on a `ci-run` branch raised the branch's token count while production's ledger stayed exactly where it was.
 - Copy-on-write means a branch inherits production's ledger snapshot at branch time; the isolation is in what happens after, new spend on a branch never touches production.
 
@@ -49,7 +49,7 @@ Tagging requests helps a little, but it is bookkeeping bolted on after the fact,
 
 ## The Neon model: spend rides the branch
 
-On Neon the gateway endpoint is per branch, and because you log usage to Postgres and Postgres branches, the ledger is per branch too. A call made against a branch's function URL goes through that branch's gateway endpoint and writes to that branch's `usage_log`. Production's ledger is a different table on a different branch.
+On Neon each branch is its own deployment with its own function URL, and because you log usage to Postgres and Postgres branches, the usage ledger is per branch too. A call made against a branch's function URL writes to that branch's `usage_log`, and that ledger is what makes spend attributable per environment: production's ledger is a different table on a different branch. The isolation demonstrated here is that per-branch ledger in Postgres, not a claim that Neon meters the gateway credential itself separately per branch. That distinction matters: the attribution you can rely on is the one you record yourself, in the branch's database.
 
 The usage view is an ordinary query over that branch's log:
 
@@ -75,14 +75,14 @@ I read production's usage, branched a `ci-run` environment, made two model calls
   "prompt": "$",
   "steps": [
     { "comment": "production's ledger to start" },
-    { "cmd": "curl -s $MAIN/usage", "output": "gpt-5-nano: 25 tokens | claude-haiku-4-5: 44 | gemini-2-5-flash: 37" },
+    { "cmd": "curl -s $MAIN/usage", "output": "claude-haiku-4-5: 44 tokens | gemini-2-5-flash: 37 | gpt-5-nano: 25" },
     { "comment": "branch a CI environment and run two calls against it" },
     { "cmd": "neon branches create --name ci-run && neon deploy --branch ci-run", "output": "chat: https://br-red-butterfly-...-chat.compute..." },
     { "cmd": "curl -s $BRANCH/chat -d '{\"model\":\"gpt-5-nano\",\"prompt\":\"...\"}'  # x2", "output": "200\n200" },
     { "comment": "the branch's ledger grew..." },
     { "cmd": "curl -s $BRANCH/usage", "output": "gpt-5-nano: 71 tokens | claude-haiku-4-5: 44 | gemini-2-5-flash: 37" },
     { "comment": "...and production's did NOT move" },
-    { "cmd": "curl -s $MAIN/usage", "output": "gpt-5-nano: 25 tokens | claude-haiku-4-5: 44 | gemini-2-5-flash: 37" },
+    { "cmd": "curl -s $MAIN/usage", "output": "claude-haiku-4-5: 44 tokens | gemini-2-5-flash: 37 | gpt-5-nano: 25" },
     { "cmd": "neon branches delete ci-run", "output": "Deleted branch ci-run" }
   ]
 }
@@ -99,7 +99,7 @@ Because storage is copy-on-write, a new branch inherits production's ledger as i
 - **Attribution.** Each environment's spend is a query against its own ledger, so "what did this preview cost" has an answer.
 - **Containment.** A runaway CI job or a preview load test spends against its branch, not production's budget or rate limit.
 - **Cleanup.** Delete the branch and its spend record goes with it; there is no separate accounting resource to prune.
-- **Governance.** Because each environment authenticates through its own branch endpoint, you can reason about and bound non-production usage separately from the real thing.
+- **Governance.** Because each environment records against its own branch ledger, you can reason about and bound non-production usage separately from the real thing.
 
 ## The repo
 
@@ -111,4 +111,4 @@ https://github.com/The-DevOps-Daily/neon-ai-gateway-demo
 
 ## Wrapping up
 
-Model spend is only invisible because it is attributed to a shared key. Move the endpoint and the usage ledger onto the branch and the picture inverts: every environment has its own gateway and its own record, a preview or CI run spends against itself, and production's numbers are unaffected by anything a branch does. You get per-environment attribution and containment for free, and cleanup is the same `delete a branch` that already tears down the rest of the preview.
+Model spend is only invisible because it is attributed to a shared key. Move the usage ledger onto the branch and the picture inverts: every environment keeps its own record, a preview or CI run spends against itself, and production's numbers are unaffected by anything a branch does. You get per-environment attribution and containment for free, and cleanup is the same `delete a branch` that already tears down the rest of the preview.
