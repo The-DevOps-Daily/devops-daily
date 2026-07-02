@@ -789,6 +789,5 @@
   "public/images/news/2026-week-27.svg": "eae359bef85541ed",
   "public/images/posts/hostnetwork-footgun-cve-2026-32193.svg": "1a10a62dbbc9dd88",
   "public/images/posts/postgres-18-uuidv7-primary-keys.svg": "0d125c707a3b914c",
-  "public/images/posts/neon-functions-postgres-mcp-server.svg": "aa2a997adfc1c28c",
-  "public/images/posts/neon-model-fallback-and-routing.svg": "1d74d4e667338c64"
+  "public/images/posts/neon-functions-postgres-mcp-server.svg": "aa2a997adfc1c28c"
 }
