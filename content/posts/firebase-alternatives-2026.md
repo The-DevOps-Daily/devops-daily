@@ -79,6 +79,12 @@ The Firestore version avoids the join because joins are expensive in reads; the 
 
 The tradeoffs to go in with eyes open: you are adopting Postgres, which means learning RLS policies (powerful, but a real learning curve) and thinking relationally instead of in documents. It is open source and self-hostable, so you are not locked to the hosted product the way you were with Firestore.
 
+### You want a database-first platform with a killer dev workflow: Neon
+
+[Neon](https://neon.com) comes at this from the opposite direction to a bundled BaaS. Its core is serverless Postgres with one standout feature Firebase never had: **branching**. You can fork the entire database, schema and data, in seconds, so every pull request or preview environment gets its own isolated copy to run migrations against and throw away. For teams whose pain with Firebase was as much about testing and environments as about the bill, that workflow is the reason to look.
+
+Be honest about what it is today, though. Neon started as the database layer, not a full Firebase replacement, so on its own it does not give you auth, functions, or storage the way Supabase does. What is changing is that Neon's [platform preview](https://devops-daily.com/posts/neon-backend-platform-not-just-postgres) is adding exactly those pieces, functions that run on a database branch, S3-compatible object storage that branches with your data, and Neon Auth, which moves it from "just Postgres" toward a fuller backend. So the honest positioning in 2026: reach for Neon when the database and the branching workflow are what you care about most, and treat the surrounding platform as promising and worth watching, with the preview caveats that implies, rather than a like-for-like swap for all of Firebase yet.
+
 ### You want to own the whole thing: Appwrite or PocketBase
 
 If the lesson you took from Firebase is "never again build on something I cannot run myself," two options stand out.
@@ -108,7 +114,7 @@ Often "replace Firebase" really means "replace one Firebase feature," and the be
 
 - **Auth only:** Clerk, WorkOS, or Supabase Auth (usable standalone).
 - **Realtime only:** Ably, Pusher, or Liveblocks bolted onto whatever database you already run.
-- **Database only:** Postgres platforms like Neon or Supabase. Neon is the database slice specifically (Postgres with branching, and a platform preview adding functions, storage, and auth), not a drop-in for all of Firebase, so reach for it when the database is the part you want to modernize and you are happy to source auth and the rest elsewhere.
+- **Database only:** a managed Postgres like Neon or Supabase, wired to whatever auth and realtime you pick separately (see the Neon note above if branch-per-environment is the workflow you want).
 
 Composing focused tools is more wiring than adopting one BaaS, but it avoids trading one lock-in for another and lets each piece be best-in-class.
 
@@ -117,13 +123,14 @@ Composing focused tools is more wiring than adopting one BaaS, but it avoids tra
 | If your top priority is... | Start with | Why |
 | --- | --- | --- |
 | Closest Firebase-like DX, but relational | Supabase | Postgres + familiar SDK, RLS, realtime |
+| Database + a branch-per-PR workflow | Neon | Serverless Postgres with branching; platform preview adding functions/storage/auth |
 | Owning and self-hosting everything | Appwrite | Full BaaS surface on your own infra |
 | Dead-simple, single-server, cheap | PocketBase | One Go binary, SQLite, zero ops |
 | Realtime reactivity as the core | Convex | Reactive TS queries, now self-hostable |
 | GraphQL-first team | Nhost | Postgres + Hasura GraphQL |
 | Committed to AWS | Amplify Gen 2 | TS-first on-ramp to AWS services |
 | Edge-first, compose-your-own | Cloudflare | Workers + D1 + R2 + Durable Objects |
-| Just one missing piece | Clerk / Ably / Neon | Best-in-class single slice |
+| Just one missing piece | Clerk / WorkOS / Ably | Best-in-class single slice |
 
 :::warning
 Treat any migration estimate that ignores the data model as fiction. Moving the *code* off Firebase's SDK is the easy week. Re-modeling denormalized documents into whatever your target expects, rewriting every query, and porting your security rules is the real project. Scope that first, and it will tell you whether a document-shaped target (less re-modeling) or a relational one (more up front, better afterward) is right for you.
