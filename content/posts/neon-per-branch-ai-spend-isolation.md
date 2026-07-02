@@ -54,7 +54,7 @@ On Neon the gateway endpoint is per branch, and because you log usage to Postgre
 The usage view is an ordinary query over that branch's log:
 
 ```typescript
-// GET /usage — tokens grouped by model, from THIS branch's log
+// GET /usage: tokens grouped by model, from THIS branch's log
 const rows = await db
   .select({
     model: usageLog.model,
