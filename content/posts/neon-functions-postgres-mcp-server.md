@@ -4,9 +4,9 @@ excerpt: 'Most of what an MCP server does is run database queries on behalf of a
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-07-01'
-publishedAt: '2026-07-01T15:00:00Z'
-updatedAt: '2026-07-01T15:00:00Z'
+date: '2026-07-02'
+publishedAt: '2026-07-02T09:00:00Z'
+updatedAt: '2026-07-02T09:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
@@ -146,11 +146,25 @@ The Neon CLI scaffolds the template, links (or creates) a project, pushes the sc
 }
 ```
 
-That last URL is the deployed MCP server. The function and the Postgres branch it queries are in the same region, `us-east-2`. The MCP endpoint is that URL plus `/mcp`.
+That last URL is the deployed MCP server. The function and the Postgres branch it queries are in the same region, `us-east-2`. The MCP endpoint is that URL plus `/mcp`. If you want to iterate before deploying, `neon dev` serves the same function locally at `http://localhost:8787` with the MCP endpoint at `/mcp`.
 
 :::warning
-A Neon Function has a **public HTTPS URL, reachable by anyone who has it.** This example does not authenticate callers, which is fine for a demo but not for anything real. Before you expose a database-backed MCP server, check an API key or token at the top of the handler, and remember that the tools can read and write your data.
+A Neon Function has a **public HTTPS URL, reachable by anyone who has it.** This example runs open for the demo, which is not acceptable for anything real: these tools read and write your database. Gate the endpoint before you share the URL.
 :::
+
+The gate is a few lines of Hono middleware in front of `/mcp`. The repo ships it env-gated: leave `MCP_TOKEN` unset and the demo stays open, set it and every request needs the bearer token.
+
+```typescript
+app.use('/mcp', async (c, next) => {
+  const token = process.env.MCP_TOKEN;
+  if (token && c.req.header('authorization') !== `Bearer ${token}`) {
+    return c.json({ error: 'unauthorized' }, 401);
+  }
+  await next();
+});
+```
+
+Most MCP clients can send custom headers, so the agent side is one config line (`Authorization: Bearer <token>`). I verified the gate directly against the app: no header and a wrong token both get a 401, the right token passes through to the transport, and with `MCP_TOKEN` unset the endpoint behaves exactly as before.
 
 ## Wire up a client and watch it work
 
