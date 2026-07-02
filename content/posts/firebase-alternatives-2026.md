@@ -7,7 +7,7 @@ category:
 date: '2026-07-02'
 publishedAt: '2026-07-02T15:00:00Z'
 updatedAt: '2026-07-02T15:00:00Z'
-readingTime: '11 min read'
+readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -29,7 +29,7 @@ So a ranked list of "the 10 best Firebase alternatives" is close to useless: it 
 
 - Firebase is five services in one SDK. Pick your alternative by which service is hurting, not by a leaderboard.
 - People leave for two reasons: the **Firestore bill scales with reads and writes, not users**, so cost tracks your query patterns and surprises you at 6 to 12 months; and the **document data model does not port**, so the longer you stay the more expensive leaving gets.
-- The most direct swap is **Supabase** (Postgres, auth, realtime, storage, functions behind a Firebase-like SDK). If you want to own the whole thing, **Appwrite** or **PocketBase**. If realtime reactivity is the point, **Convex**. GraphQL-first, **Nhost**. All-in on a hyperscaler, **AWS Amplify** or the **Cloudflare** stack.
+- The most direct swap is **Supabase** (Postgres, auth, realtime, storage, functions behind a Firebase-like SDK). **Neon** is the Postgres-with-branching option whose platform preview is growing into a fuller backend (functions, storage, auth). If you want to own the whole thing, **Appwrite** or **PocketBase**. If realtime reactivity is the point, **Convex**. GraphQL-first, **Nhost**. All-in on a hyperscaler, **AWS Amplify** or the **Cloudflare** stack.
 - The real cost of leaving is re-modeling your data from documents to relations. Decide NoSQL-shaped or SQL-shaped first; everything else follows.
 
 ## Prerequisites
@@ -79,11 +79,19 @@ The Firestore version avoids the join because joins are expensive in reads; the 
 
 The tradeoffs to go in with eyes open: you are adopting Postgres, which means learning RLS policies (powerful, but a real learning curve) and thinking relationally instead of in documents. It is open source and self-hostable, so you are not locked to the hosted product the way you were with Firestore.
 
-### You want a database-first platform with a killer dev workflow: Neon
+### You want a Postgres platform that branches, and is growing into a backend: Neon
 
-[Neon](https://neon.com) comes at this from the opposite direction to a bundled BaaS. Its core is serverless Postgres with one standout feature Firebase never had: **branching**. You can fork the entire database, schema and data, in seconds, so every pull request or preview environment gets its own isolated copy to run migrations against and throw away. For teams whose pain with Firebase was as much about testing and environments as about the bill, that workflow is the reason to look.
+[Neon](https://neon.com) approaches the Firebase problem from the database up rather than from the BaaS down, and in 2026 that direction is the one worth watching. Its foundation is serverless Postgres with a feature Firebase never had: **branching**. You can fork the entire database, schema and data together, in seconds, so every pull request or preview environment gets an isolated copy to run migrations against and throw away when it merges. Combined with scale-to-zero compute, that makes spinning up a real backend per branch cheap. If your pain with Firebase was as much about broken staging environments and nerve-wracking migrations as about the bill, that workflow on its own is a reason to look.
 
-Be honest about what it is today, though. Neon started as the database layer, not a full Firebase replacement, so on its own it does not give you auth, functions, or storage the way Supabase does. What is changing is that Neon's [platform preview](https://devops-daily.com/posts/neon-backend-platform-not-just-postgres) is adding exactly those pieces, functions that run on a database branch, S3-compatible object storage that branches with your data, and Neon Auth, which moves it from "just Postgres" toward a fuller backend. So the honest positioning in 2026: reach for Neon when the database and the branching workflow are what you care about most, and treat the surrounding platform as promising and worth watching, with the preview caveats that implies, rather than a like-for-like swap for all of Firebase yet.
+What makes Neon relevant to a *Firebase* comparison specifically, rather than just "a nice Postgres host," is where it is heading. Historically Neon was the database layer and nothing else: you brought your own auth, functions, and storage. Its [platform preview](https://devops-daily.com/posts/neon-backend-platform-not-just-postgres) is now filling in the exact pieces that made Firebase a bundle, and it does it by extending the branching model to each one:
+
+- **Functions** run Node compute on a database branch, so your backend logic forks and scales to zero alongside the data it talks to.
+- **Object storage** is S3-compatible and branches with the database, so a preview branch gets its own copy of your files, not a shared bucket.
+- **Neon Auth** issues JWTs and stores identity as rows in a schema in your own Postgres, so the user who signs in is data you can join to your tables instead of a record in a separate service.
+
+That is the shape of a backend platform assembled *around* Postgres and its branching workflow, which is close to the opposite of the bet Firebase made on a proprietary document store.
+
+The honest caveat matters: those platform pieces are a preview, not a mature GA product (new projects, a single region today), so this is a "database-first, platform forming" story rather than a like-for-like Firebase replacement you would bet a launch on this week. Where Neon is already strongest is as the relational core plus the branch-per-environment workflow; the surrounding services are promising and moving quickly. So if you need the full bundle immediately, Supabase is the more complete answer today. If the database and its dev workflow are what you care about most, and you want the rest of your backend to inherit that same branching model as it lands, Neon is the one to bet on for where this is going.
 
 ### You want to own the whole thing: Appwrite or PocketBase
 
