@@ -57,7 +57,7 @@ That is a Terraform module plus a CI job plus a cleanup job, and step 7 is the o
 On Neon, the bucket is part of the branch. You declare it once:
 
 ```typescript
-// neon.ts — the ONLY storage configuration, shared by every branch
+// neon.ts: the ONLY storage configuration, shared by every branch
 import { defineConfig } from '@neon/config/v1';
 
 export default defineConfig({
