@@ -790,8 +790,5 @@
   "public/images/posts/hostnetwork-footgun-cve-2026-32193.svg": "1a10a62dbbc9dd88",
   "public/images/posts/postgres-18-uuidv7-primary-keys.svg": "0d125c707a3b914c",
   "public/images/posts/neon-functions-postgres-mcp-server.svg": "aa2a997adfc1c28c",
-  "public/images/posts/neon-functions-preview-environments-backend.svg": "9d1873881a014c08",
-  "public/images/posts/neon-functions-realtime-without-websockets.svg": "3e888dcedd744c6a",
-  "public/images/news/2026-week-28.svg": "5851218083f37bc4",
-  "public/images/posts/neon-everything-on-your-branch-architecture.svg": "3f60932b84e3d1bc"
+  "public/images/posts/neon-one-key-for-claude-gpt-gemini.svg": "1d1c1775705e5265"
 }
