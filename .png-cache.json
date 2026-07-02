@@ -790,5 +790,6 @@
   "public/images/posts/hostnetwork-footgun-cve-2026-32193.svg": "1a10a62dbbc9dd88",
   "public/images/posts/postgres-18-uuidv7-primary-keys.svg": "0d125c707a3b914c",
   "public/images/posts/neon-functions-postgres-mcp-server.svg": "aa2a997adfc1c28c",
-  "public/images/posts/neon-functions-preview-environments-backend.svg": "9d1873881a014c08"
+  "public/images/posts/neon-functions-preview-environments-backend.svg": "9d1873881a014c08",
+  "public/images/posts/neon-functions-realtime-without-websockets.svg": "3e888dcedd744c6a"
 }
