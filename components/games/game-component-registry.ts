@@ -39,6 +39,7 @@ import ScalableSentry from '@/components/games/scalable-sentry';
 import ScalingSimulator from '@/components/games/scaling-simulator';
 import ServiceMeshSimulator from '@/components/games/service-mesh-simulator';
 import SmtpFlowSimulator from '@/components/games/smtp-flow-simulator';
+import SqlTerminalSimulator from '@/components/games/sql-terminal-simulator';
 import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
 import TcpVsUdpSimulator from '@/components/games/tcp-vs-udp';
 import TerraformTerminalSimulator from '@/components/games/terraform-terminal-simulator';
@@ -68,6 +69,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'linux-terminal': LinuxTerminal,
   'packet-journey': PacketJourney,
   'postgres-wire-protocol': PostgresWireProtocolSimulator,
+  'sql-terminal-simulator': SqlTerminalSimulator,
   'postgres-terminal-simulator': PostgresTerminalSimulator,
   'deployment-strategies': DeploymentStrategies,
   'gitops-workflow': GitOpsWorkflow,

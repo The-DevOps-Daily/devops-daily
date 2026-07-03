@@ -33,6 +33,36 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'sql-terminal-simulator',
+    type: 'simulator',
+    title: 'SQL Terminal Simulator',
+    seoTitle: 'SQL Terminal Simulator: Practice SQL Queries in the Browser',
+    description:
+      'Practice SQL in an interactive browser terminal. Learn SELECT, WHERE, ORDER BY, DISTINCT, aggregates, GROUP BY, HAVING, JOINs, subqueries, and window functions against a small e-commerce schema, with single-table queries evaluated live and verified Postgres output.',
+    iconName: 'Database',
+    badgeText: 'New',
+    color: 'from-sky-500 to-indigo-600',
+    href: '/games/sql-terminal-simulator',
+    tags: [
+      'sql',
+      'postgres',
+      'postgresql',
+      'database',
+      'queries',
+      'select',
+      'joins',
+      'aggregates',
+      'terminal',
+      'backend',
+      'educational',
+      'interactive',
+    ],
+    isNew: true,
+    featured: true,
+    category: 'Database',
+    createdAt: '2026-07-03',
+  },
+  {
     id: 'postgres-terminal-simulator',
     type: 'simulator',
     title: 'PostgreSQL Terminal Simulator',
