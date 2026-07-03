@@ -136,6 +136,10 @@ The sweet spot for keyset is exactly where `OFFSET` hurts: infinite scroll, "loa
 4. **Return a cursor, not a page number.** Encode the last row's key as an opaque token the client sends back for the next page.
 5. **Measure at depth.** Compare `EXPLAIN (ANALYZE)` on a deep page before and after, and watch `actual rows` collapse from `offset + limit` down to `limit`.
 
+:::tip
+Want to practice the `EXPLAIN` and `ORDER BY` mechanics behind this hands-on? The [PostgreSQL Terminal Simulator](/games/postgres-terminal-simulator) runs `EXPLAIN` before and after an index in the browser, and the [SQL Terminal Simulator](/games/sql-terminal-simulator) lets you write and run the queries against a sample schema.
+:::
+
 ## Wrapping up
 
 `OFFSET` is not broken, it is just doing exactly what it says: skipping rows by counting past them, which costs more the deeper you go. On shallow pages nobody notices; on the deep pages that real traffic reaches, that linear cost is a latency cliff you cannot index your way out of. Keyset pagination trades random page access, which most feeds and APIs never needed, for pages that cost the same at any depth. Find your deep-pagination endpoints, give them a unique ordering with an index to match, and seek instead of skip. The reward is pagination that stays fast at row one and row ten million alike.
