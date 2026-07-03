@@ -12,9 +12,11 @@ const seoLearningPoints = [
   'Filter rows with WHERE using comparison operators and LIKE',
   'Sort and cap results with ORDER BY, DESC, and LIMIT',
   'Summarise data with count, sum, avg, min, max, GROUP BY, and HAVING',
-  'Combine tables with JOINs on matching keys',
-  'Compare rows against a subquery result',
+  'Combine tables with JOINs and keep unmatched rows with LEFT JOIN',
+  'Change data with INSERT, UPDATE, and DELETE and read their command tags',
+  'Compare rows against a subquery and name subqueries with WITH (CTEs)',
   'Rank rows within groups using window functions',
+  'Test yourself in Challenge mode by writing queries from a plain-English prompt',
 ];
 
 function SqlTerminalEducational() {
@@ -30,7 +32,8 @@ function SqlTerminalEducational() {
             <li>How ORDER BY, ASC/DESC, and LIMIT shape a result set</li>
             <li>How DISTINCT and the aggregates count, sum, avg, min, and max summarise data</li>
             <li>How GROUP BY buckets rows and HAVING filters those groups</li>
-            <li>How JOINs, subqueries, and window functions work across tables</li>
+            <li>How JOINs, LEFT JOINs, subqueries, and window functions work across tables</li>
+            <li>How INSERT, UPDATE, and DELETE change data, and how CTEs (WITH) name a subquery</li>
           </ul>
         </div>
         <div>
@@ -52,8 +55,12 @@ function SqlTerminalEducational() {
               <strong className="text-foreground">Shape:</strong> ORDER BY, LIMIT
             </li>
             <li>
-              <strong className="text-foreground">Relate:</strong> JOIN, subqueries, and rank() window
-              functions
+              <strong className="text-foreground">Relate:</strong> JOIN, LEFT JOIN, subqueries, WITH
+              (CTEs), and rank() window functions
+            </li>
+            <li>
+              <strong className="text-foreground">Write:</strong> INSERT, UPDATE, DELETE and their
+              psql command tags
             </li>
           </ul>
         </div>
@@ -94,6 +101,34 @@ function SqlTerminalEducational() {
           (new accounts get $200 in credits). Load a table or two, then re-run the lessons here against
           your own data.
         </p>
+      </div>
+
+      <div className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-4">
+        <h4 className="mb-2 text-sm font-semibold">Related reading</h4>
+        <p className="mb-2 text-sm text-muted-foreground">
+          Once the queries click, these deep dives cover the schema and query patterns that keep a
+          Postgres database fast as it grows:
+        </p>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li>
+            <a
+              href="https://devops-daily.com/posts/postgres-18-uuidv7-primary-keys"
+              className="font-medium text-primary underline underline-offset-2"
+            >
+              Stop Using Random UUIDs as Primary Keys
+            </a>{' '}
+            — why random UUIDs hurt index and primary-key performance, and what to use instead.
+          </li>
+          <li>
+            <a
+              href="https://devops-daily.com/posts/stop-paginating-with-offset"
+              className="font-medium text-primary underline underline-offset-2"
+            >
+              Stop Paginating With OFFSET
+            </a>{' '}
+            — how keyset pagination beats LIMIT/OFFSET as tables get large.
+          </li>
+        </ul>
       </div>
 
       <div className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-4">

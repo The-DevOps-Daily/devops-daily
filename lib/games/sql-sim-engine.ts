@@ -30,6 +30,15 @@ export interface QueryError {
   error: string;
 }
 
+/**
+ * Result of a data-modifying statement (INSERT/UPDATE/DELETE). The demo does
+ * not persist changes; it returns the psql-style command tag so learners see
+ * what Postgres reports (e.g. `INSERT 0 1`, `UPDATE 1`, `DELETE 2`).
+ */
+export interface QueryCommand {
+  command: string;
+}
+
 interface ColumnDef {
   name: string;
   type: ColType;
@@ -231,6 +240,40 @@ const CANNED_QUERIES: CannedEntry[] = [
         ['Desk Lamp', 'Furniture', '34.99', 3],
         ['Pen Set', 'Stationery', '12.99', 1],
         ['Notebook', 'Stationery', '4.99', 2],
+      ],
+    },
+  },
+  {
+    // LEFT JOIN: every customer, plus their pending order (NULL when none).
+    // The status filter lives in the ON clause so unmatched customers survive.
+    sql:
+      "SELECT c.name, o.order_id, o.status FROM customers c LEFT JOIN orders o ON o.customer_id = c.customer_id AND o.status = 'pending' ORDER BY c.name;",
+    result: {
+      columns: ['name', 'order_id', 'status'],
+      rows: [
+        ['Alice Johnson', 1007, 'pending'],
+        ['Bob Smith', null, null],
+        ['Carol White', 1010, 'pending'],
+        ['David Brown', null, null],
+        ['Emma Davis', null, null],
+        ['Frank Miller', null, null],
+        ['Grace Lee', null, null],
+        ['Henry Wilson', null, null],
+      ],
+    },
+  },
+  {
+    // CTE: name a subquery with WITH, then reference it twice (main + AVG).
+    sql:
+      'WITH customer_spend AS (SELECT c.name, SUM(oi.quantity * p.price) AS total FROM customers c JOIN orders o ON o.customer_id = c.customer_id JOIN order_items oi ON oi.order_id = o.order_id JOIN products p ON p.product_id = oi.product_id GROUP BY c.name) SELECT name, total FROM customer_spend WHERE total > (SELECT avg(total) FROM customer_spend) ORDER BY total DESC;',
+    result: {
+      columns: ['name', 'total'],
+      rows: [
+        ['Bob Smith', '579.96'],
+        ['David Brown', '399.99'],
+        ['Grace Lee', '399.99'],
+        ['Emma Davis', '399.98'],
+        ['Alice Johnson', '349.91'],
       ],
     },
   },
@@ -778,22 +821,108 @@ function evaluateSingleTable(sql: string): QueryResult | QueryError | null {
   return { columns: outputColumns, rows: formattedRows };
 }
 
+// --------------------------------------------------------------------------
+// DML (INSERT / UPDATE / DELETE).
+// --------------------------------------------------------------------------
+
+/**
+ * Evaluate a data-modifying statement. The dataset is never mutated (so the
+ * other lessons stay reproducible); instead we return the psql command tag
+ * Postgres would report. Row counts for UPDATE/DELETE come from evaluating the
+ * WHERE clause against the live table, so `UPDATE 1` / `DELETE 2` are accurate.
+ */
+function evaluateDml(sql: string): QueryCommand | QueryError | null {
+  const keyword = sql.match(/^(insert|update|delete)\b/i);
+  if (!keyword) return null;
+  const kind = keyword[1].toLowerCase();
+
+  if (kind === 'insert') {
+    const values = sql.match(/\bvalues\b([\s\S]+)$/i);
+    let count = 1;
+    if (values) {
+      const tuples = splitTopLevel(values[1], ',').filter((part) => part.trim().startsWith('('));
+      if (tuples.length > 0) count = tuples.length;
+    }
+    return { command: `INSERT 0 ${count}` };
+  }
+
+  const tableMatch =
+    kind === 'delete'
+      ? sql.match(/^delete\s+from\s+(\w+)/i)
+      : sql.match(/^update\s+(\w+)\s+set\b/i);
+  const tableName = (tableMatch?.[1] ?? '').toLowerCase();
+  const table = TABLE_MAP[tableName];
+  if (!table) {
+    return { error: `relation "${tableMatch?.[1] ?? ''}" does not exist in this playground` };
+  }
+
+  let rows = table.rows;
+  const whereMatch = sql.match(/\bwhere\b\s+([\s\S]+)$/i);
+  if (whereMatch) {
+    const predicate = buildWherePredicate(whereMatch[1].trim(), table);
+    if ('error' in predicate) return { error: predicate.error };
+    rows = rows.filter((row) => predicate(row));
+  }
+
+  return { command: `${kind.toUpperCase()} ${rows.length}` };
+}
+
+// --------------------------------------------------------------------------
+// Challenge grading.
+// --------------------------------------------------------------------------
+
+function cellKey(value: string | number | null): string {
+  if (value === null || value === undefined) return ' null';
+  return String(value);
+}
+
+/**
+ * Compare two query results for challenge grading. Two results match when both
+ * ran without error, have the same number of columns, and hold the same rows
+ * in the same order with the same cell values. Column headers/aliases are
+ * ignored (comparison is purely positional), so an aliased solution still
+ * grades as correct.
+ */
+export function resultsMatch(
+  a: QueryResult | QueryError | QueryCommand,
+  b: QueryResult | QueryError | QueryCommand,
+): boolean {
+  if ('error' in a || 'error' in b) return false;
+  if ('command' in a || 'command' in b) return false;
+  if (a.columns.length !== b.columns.length) return false;
+  if (a.rows.length !== b.rows.length) return false;
+  for (let i = 0; i < a.rows.length; i += 1) {
+    const rowA = a.rows[i];
+    const rowB = b.rows[i];
+    if (rowA.length !== rowB.length) return false;
+    for (let j = 0; j < rowA.length; j += 1) {
+      if (cellKey(rowA[j]) !== cellKey(rowB[j])) return false;
+    }
+  }
+  return true;
+}
+
 /**
  * Run a SQL query against the in-memory dataset.
  *
- * Returns a `{ columns, rows }` result or a `{ error }` object with a friendly
- * message. Single-table SELECTs are evaluated live; the lesson join/subquery/
- * window queries return verified Postgres output.
+ * Returns a `{ columns, rows }` result, a `{ command }` tag for INSERT/UPDATE/
+ * DELETE, or a `{ error }` object with a friendly message. Single-table SELECTs
+ * are evaluated live; the lesson join/subquery/window/CTE queries return
+ * verified Postgres output.
  */
-export function runQuery(sql: string): QueryResult | QueryError {
+export function runQuery(sql: string): QueryResult | QueryError | QueryCommand {
   const cleaned = sql.trim().replace(/;+\s*$/, '').replace(/\s+/g, ' ').trim();
 
   if (!cleaned) return { error: 'Enter a SQL query to run.' };
 
-  // Canned lookup first so join/subquery/window lesson queries return their
+  // Canned lookup first so join/subquery/window/CTE lesson queries return their
   // verified Postgres output.
   const canned = CANNED_LOOKUP.get(normalizeSql(cleaned));
   if (canned) return canned;
+
+  // Data-modifying statements return a psql command tag (nothing is persisted).
+  const dml = evaluateDml(cleaned);
+  if (dml) return dml;
 
   if (!/^select\b/i.test(cleaned)) {
     return { error: 'This playground only runs SELECT queries.' };
