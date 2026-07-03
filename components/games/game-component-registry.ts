@@ -30,6 +30,7 @@ import MessageQueueSimulator from '@/components/games/message-queue-simulator';
 import MicroservicesSimulator from '@/components/games/microservices-simulator';
 import OAuthOidcFlowSimulator from '@/components/games/oauth-oidc-flow-simulator';
 import PacketJourney from '@/components/games/packet-journey';
+import PostgresTerminalSimulator from '@/components/games/postgres-terminal-simulator';
 import PostgresWireProtocolSimulator from '@/components/games/postgres-wire-protocol-simulator';
 import PromqlPlayground from '@/components/games/promql-playground';
 import RateLimitSimulator from '@/components/games/rate-limit-simulator';
@@ -67,6 +68,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'linux-terminal': LinuxTerminal,
   'packet-journey': PacketJourney,
   'postgres-wire-protocol': PostgresWireProtocolSimulator,
+  'postgres-terminal-simulator': PostgresTerminalSimulator,
   'deployment-strategies': DeploymentStrategies,
   'gitops-workflow': GitOpsWorkflow,
   'cicd-stack-generator': CicdStackGenerator,
