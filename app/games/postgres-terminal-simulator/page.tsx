@@ -110,6 +110,50 @@ function PostgresTerminalEducational() {
           <li>Knowing that ROLLBACK undoes an open transaction is what makes changes safe to try.</li>
         </ul>
       </div>
+
+      <div className="mt-4">
+        <h4 className="mb-2 text-sm font-semibold">Related reading</h4>
+        <p className="mb-2 text-sm text-muted-foreground">
+          The plans you read here are downstream of how you design the schema. These deep dives cover
+          the choices that decide whether Postgres stays fast as the data grows:
+        </p>
+        <ul className="space-y-2 text-sm text-muted-foreground">
+          <li>
+            <a
+              href="https://devops-daily.com/posts/postgres-18-uuidv7-primary-keys"
+              className="font-medium text-primary underline underline-offset-2"
+            >
+              Stop Using Random UUIDs as Primary Keys
+            </a>{' '}
+            — how a random primary key scatters index writes, and the time-ordered fix.
+          </li>
+          <li>
+            <a
+              href="https://devops-daily.com/posts/stop-paginating-with-offset"
+              className="font-medium text-primary underline underline-offset-2"
+            >
+              Stop Paginating With OFFSET
+            </a>{' '}
+            — why deep OFFSET pages read and discard everything before them, and how keyset pagination
+            keeps EXPLAIN flat at any depth.
+          </li>
+        </ul>
+      </div>
+
+      <div className="mt-4 rounded-md border border-primary/20 bg-primary/5 p-4">
+        <h4 className="mb-2 text-sm font-semibold">Learn the SQL side too</h4>
+        <p className="text-sm text-muted-foreground">
+          This lab is about the psql tool and the query planner. To practice writing the queries
+          themselves, try the{' '}
+          <a
+            href="/games/sql-terminal-simulator"
+            className="font-medium text-primary underline underline-offset-2"
+          >
+            SQL Terminal Simulator
+          </a>
+          .
+        </p>
+      </div>
     </>
   );
 }
