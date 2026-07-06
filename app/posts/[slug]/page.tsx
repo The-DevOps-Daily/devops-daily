@@ -4,6 +4,8 @@ import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { OptimizedImage } from '@/components/optimized-image';
 import { getPostBySlug, getAllPosts, getRelatedPosts } from '@/lib/posts';
+import { getLinkableTagSlugs } from '@/lib/tags';
+import { tagToSlug } from '@/lib/tag-utils';
 import { notFound, redirect } from 'next/navigation';
 import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
 import { RelatedPosts } from '@/components/related-posts';
@@ -108,6 +110,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     { name: post.title, url: `/posts/${post.slug}` },
   ];
 
+  const linkableTags = await getLinkableTagSlugs();
+
   return (
     <>
       <ArticleSchema post={post} />
@@ -161,15 +165,21 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                     <h3 className="mb-2 text-lg font-semibold">Tags</h3>
                     <div className="flex flex-wrap gap-2">
                       {post.tags.map((tag) => {
-                        const tagSlug = tag.toLowerCase().replace(/\s+/g, '-');
-                        return (
+                        const tagSlug = tagToSlug(tag);
+                        const base =
+                          'px-3 py-1 text-sm rounded-full bg-secondary text-secondary-foreground';
+                        return linkableTags.has(tagSlug) ? (
                           <a
                             key={tag}
                             href={`/tags/${tagSlug}`}
-                            className="px-3 py-1 text-sm transition-colors rounded-full bg-secondary text-secondary-foreground hover:bg-primary/40 hover:text-white"
+                            className={`${base} transition-colors hover:bg-primary/40 hover:text-white`}
                           >
                             {tag}
                           </a>
+                        ) : (
+                          <span key={tag} className={base}>
+                            {tag}
+                          </span>
                         );
                       })}
                     </div>
