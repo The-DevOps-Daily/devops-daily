@@ -1,7 +1,7 @@
 import { PageHero } from '@/components/page-hero';
 import { PostsList } from '@/components/posts-list';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
-import { getPostsByTagSlug, getGuidesByTagSlug, getAllTags, getTagBySlug } from '@/lib/tags';
+import { getPostsByTagSlug, getGuidesByTagSlug, getPagedTags, getTagBySlug } from '@/lib/tags';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { Tags } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
 export const dynamicParams = false;
 
 export async function generateStaticParams() {
-  const tags = await getAllTags();
+  const tags = await getPagedTags();
   return tags.map((tag) => ({
     tag: tag.slug,
   }));

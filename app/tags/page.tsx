@@ -1,5 +1,5 @@
 import { PageHero } from '@/components/page-hero';
-import { getAllTags } from '@/lib/tags';
+import { getPagedTags } from '@/lib/tags';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TagsPage() {
-  const tags = await getAllTags();
+  const tags = await getPagedTags();
 
   const schemaItems = [
     { name: 'Home', url: '/' },

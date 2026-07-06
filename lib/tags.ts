@@ -61,6 +61,24 @@ export async function getAllTags(): Promise<Tag[]> {
   return tags.sort((a, b) => b.count - a.count);
 }
 
+// A tag used by fewer than this many items doesn't get its own page: a single-post
+// tag is a thin near-duplicate of that post and mostly inflates the static-file
+// count. This is a reversible knob — once the site renders on demand (no CF Pages
+// file cap) it can drop back to 1 to restore every tag page at zero file cost.
+export const MIN_TAG_PAGE_COUNT = 2;
+
+// Tags that get their own page (count >= threshold). Used for route generation,
+// the tags index, and to decide which tag chips link out.
+export async function getPagedTags(): Promise<Tag[]> {
+  const tags = await getAllTags();
+  return tags.filter((t) => t.count >= MIN_TAG_PAGE_COUNT);
+}
+
+export async function getLinkableTagSlugs(): Promise<Set<string>> {
+  const tags = await getPagedTags();
+  return new Set(tags.map((t) => t.slug));
+}
+
 export async function getTagBySlug(slug: string): Promise<string | null> {
   const tags = await getAllTags();
   const tag = tags.find((t) => t.slug === slug);

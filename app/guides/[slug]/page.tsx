@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema, TechArticleSchema } from '@/components/schema-markup';
 import { tagToSlug } from '@/lib/tag-utils';
+import { getLinkableTagSlugs } from '@/lib/tags';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { GuidePartNavigation } from '@/components/guide-part-navigation';
 import { ReportIssue } from '@/components/report-issue';
@@ -83,6 +84,8 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
     { name: guide.title, url: `/guides/${guide.slug}` },
   ];
 
+  const linkableTags = await getLinkableTagSlugs();
+
   return (
     <>
       <BreadcrumbSchema items={schemaItems} />
@@ -142,14 +145,20 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
                     <div className="flex flex-wrap gap-2">
                       {guide.tags.map((tag) => {
                         const tagSlug = tagToSlug(tag);
-                        return (
+                        const base =
+                          'px-3 py-1 text-sm rounded-full bg-secondary text-secondary-foreground';
+                        return linkableTags.has(tagSlug) ? (
                           <a
                             key={tag}
                             href={`/tags/${tagSlug}`}
-                            className="px-3 py-1 text-sm transition-colors rounded-full bg-secondary text-secondary-foreground hover:bg-primary/40 hover:text-primary-foreground"
+                            className={`${base} transition-colors hover:bg-primary/40 hover:text-primary-foreground`}
                           >
                             {tag}
                           </a>
+                        ) : (
+                          <span key={tag} className={base}>
+                            {tag}
+                          </span>
                         );
                       })}
                     </div>
