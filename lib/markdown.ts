@@ -124,7 +124,13 @@ marked.use(
     highlight(code, lang) {
       // Interactive fences carry JSON/URLs for their renderers; leave the text
       // untouched so the code renderer below can parse it.
-      if (lang === 'chart' || lang === 'terminal' || lang === 'tabs' || lang === 'github')
+      if (
+        lang === 'chart' ||
+        lang === 'terminal' ||
+        lang === 'tabs' ||
+        lang === 'github' ||
+        lang === 'diagram'
+      )
         return code;
       const language = hljs.getLanguage(lang) ? lang : 'plaintext';
       return hljs.highlight(code, { language }).value;
@@ -198,6 +204,17 @@ marked.use({
           // fall through to a visible code block
         }
         return `<pre><code class="hljs language-tabs">${escapeHtml(text)}</code></pre>`;
+      }
+      if (lang === 'diagram') {
+        try {
+          const spec = JSON.parse(text);
+          if (spec && typeof spec === 'object' && typeof spec.type === 'string') {
+            return `<div class="post-diagram not-prose" data-diagram="${escapeHtml(JSON.stringify(spec))}"></div>`;
+          }
+        } catch {
+          // fall through to a visible code block
+        }
+        return `<pre><code class="hljs language-diagram">${escapeHtml(text)}</code></pre>`;
       }
       if (lang === 'github') {
         const slug = parseRepoSlug(text);

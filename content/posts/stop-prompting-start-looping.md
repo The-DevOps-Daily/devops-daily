@@ -45,6 +45,19 @@ A plain language model answers once and stops. You ask, it replies, the interact
 2. **Take an action.** Call one tool: read a file, edit code, run a command, run the tests.
 3. **Verify.** Check whether that action moved closer to the goal. If yes, stop. If no, loop.
 
+```diagram
+{
+  "type": "loop",
+  "nodes": [
+    { "label": "Gather context", "variant": "soft" },
+    { "label": "Take action", "variant": "solid" },
+    { "label": "Verify", "variant": "accent" }
+  ],
+  "loopTop": "goal met? stop",
+  "loopBack": "not met, go again"
+}
+```
+
 Most real tasks finish in three to eight of these iterations. Simple lookups take one or two. A gnarly multi-step change can take fifteen or more. The important shift is that the model is no longer the whole system. It is one step inside a loop that carries state forward and decides when the work is done.
 
 ```terminal
@@ -92,6 +105,44 @@ Loops are not free, and the cost does not grow linearly. Every iteration re-send
 
 That is not a reason to avoid loops. It is the reason you always give a loop a stop condition and a budget: a goal that can be checked, a maximum number of turns, or both. A loop that cannot end is not autonomy. It is an open tab.
 
+## Split the model: a cheap executor, an expert on call
+
+There is one more lever, and it is about cost. You do not have to run the whole loop on your most capable model. A pattern that keeps showing up is to run the loop on a fast, cheaper model, the executor, and have it consult a stronger, pricier model, the advisor, only when it hits something hard: a plan, a tricky review, an architectural call.
+
+The executor runs every turn and does the bulk of the work, so most of your tokens are billed at the lower rate. The advisor is a tool the executor calls on demand, a handful of times, for the decisions that actually need the extra capability. Advice comes back, the executor keeps going. You get expert-level judgement on the few steps that need it without paying expert rates for the whole run.
+
+```diagram
+{
+  "type": "graph",
+  "title": "the advisor pattern: a cheap executor, an expert on call",
+  "columns": [
+    [
+      {
+        "id": "exec",
+        "label": "Executor",
+        "sub": "Sonnet 5, every turn",
+        "icon": "gear",
+        "tone": "slate",
+        "detail": "Runs the loop and does the bulk of the work, so most of your tokens are billed at the lower rate."
+      }
+    ],
+    [
+      {
+        "id": "adv",
+        "label": "Advisor",
+        "sub": "Fable 5, on-demand",
+        "icon": "shield",
+        "tone": "accent",
+        "detail": "Consulted only for the hard calls: a plan, a tricky review, an architectural decision. Pricier per token, but you spend very few of them."
+      }
+    ]
+  ],
+  "edges": [["exec", "adv", "tool call"]]
+}
+```
+
+It is the same instinct as splitting the builder from the judge, applied to cost: put the expensive thinking where it earns its keep, and let a cheaper model carry the routine.
+
 ## Loops come in more than one shape
 
 Plan, build, judge is the general shape, but you will meet it wearing different clothes. A few worth knowing:
@@ -100,11 +151,19 @@ Plan, build, judge is the general shape, but you will meet it wearing different 
 
 **The experiment loop.** When the goal is "make this better" instead of "make this pass," the verifier becomes a metric instead of a test. Read the current code, propose one change, run a short measurement, and keep the change only if the number improved, otherwise roll it back. Andrej Karpathy has described tuning models this way: many small, cheap experiments running overnight, keeping the handful that help and throwing the rest away. The pattern generalizes to anything you can score, from query latency to bundle size.
 
-```text
-read  ->  propose one change  ->  measure  ->  better?
-                                              |-- yes --> keep the change
-                                              +-- no  --> roll back
-                                              then repeat
+```diagram
+{
+  "type": "branch",
+  "nodes": [
+    { "label": "Read", "icon": "box", "tone": "slate" },
+    { "label": "Propose change", "icon": "gear", "tone": "blue" },
+    { "label": "Measure", "icon": "activity", "tone": "amber" }
+  ],
+  "branch": [
+    { "label": "better, keep it", "variant": "good" },
+    { "label": "worse, roll back", "variant": "bad" }
+  ]
+}
 ```
 
 **The overnight triage loop.** The autonomous version starts with a discovery step: read the CI failures, the open issues, and the recent commits to find the work. Then, for each item, it plans a fix, makes it in an isolated git worktree so parallel agents cannot collide, verifies against tests, and opens a PR. You wake up to a queue of reviewed changes instead of a blank editor.

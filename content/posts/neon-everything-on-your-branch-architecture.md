@@ -56,15 +56,29 @@ Teams paper over this with scripts: a bucket-prefix-per-branch convention, a bes
 
 On Neon's platform preview, one branch carries the whole stack:
 
-```text
-main branch                          neon branches create + deploy
-┌─────────────────────────────┐      ┌─────────────────────────────┐
-│ Postgres  ── rows            │      │ Postgres  ── copy of rows    │
-│ Storage   ── files (bucket)  │ ───► │ Storage   ── copy of files   │
-│ Functions ── api URL         │ fork │ Functions ── its OWN api URL │
-│ AI Gateway── model config    │ all  │ AI Gateway── model config    │
-└─────────────────────────────┘      └─────────────────────────────┘
-        shared, production                 isolated, disposable
+```diagram
+{
+  "type": "infra",
+  "title": "one branch carries the whole stack",
+  "flow": [
+    { "label": "Production", "sub": "main branch", "icon": "database", "tone": "slate" },
+    { "label": "Fork", "sub": "instant, copy-on-write", "icon": "branch", "tone": "green" }
+  ],
+  "groups": [
+    {
+      "label": "A Neon branch",
+      "sub": "isolated, disposable",
+      "icon": "branch",
+      "tone": "green",
+      "nodes": [
+        { "label": "Postgres", "sub": "copy of rows", "icon": "database", "tone": "violet" },
+        { "label": "Storage", "sub": "copy of files", "icon": "box", "tone": "blue" },
+        { "label": "Functions", "sub": "own API URL", "icon": "gear", "tone": "amber" },
+        { "label": "AI Gateway", "sub": "model config", "icon": "net", "tone": "green" }
+      ]
+    }
+  ]
+}
 ```
 
 The database and storage are copy-on-write, so the branch starts as a reference to the parent's state and only stores what you change. The function redeploys onto the branch with its own URL. The gateway config comes along. Delete the branch and every layer goes with it.
