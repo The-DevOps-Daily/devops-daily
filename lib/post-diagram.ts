@@ -19,6 +19,9 @@ export type DiagramTone =
 
 export type DiagramVariant = 'soft' | 'solid' | 'accent' | 'good' | 'bad' | 'line';
 
+/** Health status shown as a small dot on the node. */
+export type DiagramStatus = 'ok' | 'warn' | 'down';
+
 export interface DiagramNode {
   id?: string;
   label: string;
@@ -26,6 +29,10 @@ export interface DiagramNode {
   icon?: string;
   tone?: DiagramTone;
   variant?: DiagramVariant;
+  /** Small status dot (ok = green, warn = amber, down = red). */
+  status?: DiagramStatus;
+  /** Extra text revealed when the node is hovered or tapped (graph mode). */
+  detail?: string;
 }
 
 export interface DiagramGroup {
@@ -68,6 +75,7 @@ export interface DiagramSpec {
 
 const TONES: DiagramTone[] = ['slate', 'blue', 'green', 'violet', 'red', 'amber', 'accent'];
 const VARIANTS: DiagramVariant[] = ['soft', 'solid', 'accent', 'good', 'bad', 'line'];
+const STATUSES: DiagramStatus[] = ['ok', 'warn', 'down'];
 
 function str(v: unknown): string | undefined {
   return typeof v === 'string' ? v : undefined;
@@ -88,6 +96,8 @@ function node(v: unknown): DiagramNode | null {
     icon: str(o.icon),
     tone,
     variant,
+    status: STATUSES.includes(o.status as DiagramStatus) ? (o.status as DiagramStatus) : undefined,
+    detail: str(o.detail),
   };
 }
 

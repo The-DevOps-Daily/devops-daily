@@ -59,14 +59,14 @@ Here is the trap. A function under load does not run as one process; the runtime
   "title": "Postgres fans one NOTIFY out to every isolate",
   "columns": [
     [ { "id": "write", "label": "A write", "sub": "calls pg_notify", "icon": "box", "tone": "amber" } ],
-    [ { "id": "pg", "label": "Postgres", "sub": "LISTEN / NOTIFY", "icon": "database", "tone": "violet" } ],
+    [ { "id": "pg", "label": "Postgres", "sub": "LISTEN / NOTIFY", "icon": "database", "tone": "violet", "detail": "One pg_notify reaches every isolate that holds a LISTEN connection. That cross-isolate fan-out is exactly what an in-process broadcast cannot do." } ],
     [
-      { "id": "iso1", "label": "Isolate A", "sub": "its SSE clients", "icon": "gear", "tone": "blue" },
+      { "id": "iso1", "label": "Isolate A", "sub": "its SSE clients", "icon": "gear", "tone": "blue", "detail": "Keeps its own set of open SSE connections in memory, plus one LISTEN connection to Postgres." },
       { "id": "iso2", "label": "Isolate B", "sub": "its SSE clients", "icon": "gear", "tone": "blue" }
     ],
     [
-      { "id": "b1", "label": "Browsers", "sub": "EventSource", "icon": "globe", "tone": "green" },
-      { "id": "b2", "label": "Browsers", "sub": "EventSource", "icon": "globe", "tone": "green" }
+      { "id": "b1", "label": "Browsers", "sub": "EventSource", "icon": "globe", "tone": "green", "status": "ok" },
+      { "id": "b2", "label": "Browsers", "sub": "EventSource", "icon": "globe", "tone": "green", "status": "ok" }
     ]
   ],
   "edges": [["write", "pg", "pg_notify"], ["pg", "iso1", "LISTEN"], ["pg", "iso2", "LISTEN"], ["iso1", "b1", "SSE"], ["iso2", "b2", "SSE"]]

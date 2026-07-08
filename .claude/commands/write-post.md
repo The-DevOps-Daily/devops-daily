@@ -201,7 +201,7 @@ Pick a `type`:
 - **`infra`** — host/cluster diagrams. `groups: [{ label, sub?, icon?, tone?, nodes?: [...], groups?: [...] }]` (groups nest), plus an optional top `flow: [...]` request path.
 - **`graph`** — a non-linear DAG. `columns: [[{ id, label, sub?, icon?, tone? }]]` and `edges: [[fromId, toId]]` (or `[fromId, toId, "label"]` to put a port or verb on the edge); edges are drawn between columns, hover a node to isolate its path, Trace fires request packets.
 
-Nodes take an `icon` (a name from the built-in set or any emoji) and a `tone` (`slate` / `blue` / `green` / `violet` / `red` / `amber` / `accent`). Built-in icons: `globe`, `box`, `database`, `queue`, `cpu`, `server`, `net`, `branch`, `gear`, `check`, `rocket`, `activity`, `pod`, `k8s`, `cloud`, `shield`, `lock`.
+Nodes take an `icon` (a name from the built-in set or any emoji) and a `tone` (`slate` / `blue` / `green` / `violet` / `red` / `amber` / `accent`). Built-in icons: `globe`, `box`, `database`, `queue`, `cpu`, `server`, `net`, `branch`, `gear`, `check`, `rocket`, `activity`, `pod`, `k8s`, `cloud`, `shield`, `lock`. A node can also carry a `status` (`ok` / `warn` / `down`, drawn as a small coloured dot, handy for incident diagrams) and, in a `graph`, a `detail` string that is revealed in a strip below the diagram when you hover or tap the node.
 
 Example, a Docker-on-a-Pi infra diagram:
 

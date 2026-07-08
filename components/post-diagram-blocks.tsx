@@ -56,6 +56,7 @@ function NodeCard({ node }: { node: DiagramNode }) {
   if (node.variant) {
     return (
       <div className={'pd-node pd-fill v-' + node.variant}>
+        {node.status && <span className={'pd-dot s-' + node.status} />}
         <div className="pd-lab">{node.label}</div>
         {node.sub && <div className="pd-sub is-italic">{node.sub}</div>}
       </div>
@@ -63,6 +64,7 @@ function NodeCard({ node }: { node: DiagramNode }) {
   }
   return (
     <div className="pd-node">
+      {node.status && <span className={'pd-dot s-' + node.status} />}
       <PdIcon name={node.icon} tone={node.tone} />
       <div>
         <div className="pd-lab">{node.label}</div>
@@ -238,8 +240,18 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [paths, setPaths] = useState<EdgePath[]>([]);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<string | null>(null);
+  const active = pinned ?? hovered;
   const layer: Record<string, number> = {};
-  columns.forEach((col, ci) => col.forEach((n) => n.id && (layer[n.id] = ci)));
+  const byId: Record<string, DiagramNode> = {};
+  columns.forEach((col, ci) =>
+    col.forEach((n) => {
+      if (n.id) {
+        layer[n.id] = ci;
+        byId[n.id] = n;
+      }
+    })
+  );
 
   const draw = () => {
     const wrap = wrapRef.current;
@@ -293,7 +305,7 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
     });
     return set;
   };
-  const hi = hovered ? connected(hovered) : null;
+  const hi = active ? connected(active) : null;
 
   const firePacket = (pathEl: SVGPathElement, delay: number) => {
     setTimeout(() => {
@@ -337,7 +349,7 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
           </button>
         )}
       </div>
-      <div className={'pd-graph' + (hovered ? ' pd-dim' : '')} ref={wrapRef}>
+      <div className={'pd-graph' + (active ? ' pd-dim' : '')} ref={wrapRef}>
         <svg className="pd-edges" ref={svgRef} aria-hidden="true">
           {paths.map((p) => {
             const hot = hi && (hi.has(p.from) && hi.has(p.to) && (p.from === hovered || p.to === hovered));
@@ -368,13 +380,15 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
               return (
                 <div
                   key={id}
-                  className={'pd-node' + (dim ? ' pd-faded' : '') + (id === hovered ? ' pd-hot' : '')}
+                  className={'pd-node pd-clickable' + (dim ? ' pd-faded' : '') + (id === active ? ' pd-hot' : '')}
                   ref={(el) => {
                     nodeRefs.current[id] = el;
                   }}
                   onMouseEnter={() => setHovered(id)}
                   onMouseLeave={() => setHovered(null)}
+                  onClick={() => setPinned((p) => (p === id ? null : id))}
                 >
+                  {n.status && <span className={'pd-dot s-' + n.status} />}
                   <PdIcon name={n.icon} tone={n.tone} />
                   <div>
                     <div className="pd-lab">{n.label}</div>
@@ -386,6 +400,11 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
           </div>
         ))}
       </div>
+      {active && byId[active]?.detail && (
+        <div className="pd-detail">
+          <b>{byId[active].label}</b> {byId[active].detail}
+        </div>
+      )}
     </div>
   );
 }
@@ -532,6 +551,14 @@ const STYLES = `
 .pdiag .pd-graph.pd-dim .pd-node.pd-faded{ opacity:.34; }
 .pdiag .pd-graph.pd-dim .pd-edge:not(.hot),.pdiag .pd-graph.pd-dim .pd-edge-flow:not(.hot){ opacity:.1; }
 .pdiag .pd-node.pd-hot{ border-color:var(--pd-accent); box-shadow:0 0 0 2px rgba(224,121,43,.16); }
+.pdiag .pd-clickable{ cursor:pointer; }
+.pdiag .pd-dot{ position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; box-shadow:0 0 0 3px var(--pd-card); }
+.pdiag .pd-dot.s-ok{ background:var(--pd-green); }
+.pdiag .pd-dot.s-warn{ background:var(--pd-amber); }
+.pdiag .pd-dot.s-down{ background:var(--pd-red); }
+.pdiag .pd-detail{ margin-top:14px; font-size:13px; color:var(--pd-muted); background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:10px; padding:10px 14px; animation:pd-pop .2s ease; }
+@keyframes pd-pop{ from{ opacity:0; transform:translateY(-3px); } }
+.pdiag .pd-detail b{ color:var(--pd-ink); font-weight:650; }
 .pdiag .pd-pkt{ fill:var(--pd-accent); }
 @media (max-width:760px){ .pdiag .pd-row{ flex-direction:column; } .pdiag .pd-conn{ display:none; } .pdiag .pd-graph{ flex-direction:column; gap:14px; } .pdiag .pd-edges{ display:none; } }
 `;
