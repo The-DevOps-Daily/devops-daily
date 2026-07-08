@@ -122,6 +122,18 @@ On the frontend you do not hand-roll any of this. The `@neondatabase/auth` packa
 
 ## The part that matters: the user is a row in your database
 
+```diagram
+{
+  "type": "graph",
+  "title": "the user is a row you can join to, no sync glue",
+  "columns": [
+    [ { "id": "auth", "label": "neon_auth.user", "sub": "identity, same Postgres", "icon": "lock", "tone": "accent", "detail": "Neon Auth stores user, session, and account data in a neon_auth schema inside the same database. The token's id is this table's primary key." } ],
+    [ { "id": "app", "label": "your tables", "sub": "orders, profiles ...", "icon": "database", "tone": "blue", "detail": "Point a user_id foreign key straight at neon_auth.user. No webhook to copy users, no nightly job to reconcile them." } ]
+  ],
+  "edges": [["app", "auth", "foreign key"]]
+}
+```
+
 This is where the single-project design pays off. Neon Auth stores its data in a `neon_auth` schema inside the same Postgres as your app. It is not hidden behind an API; it is tables you can query:
 
 ```terminal
