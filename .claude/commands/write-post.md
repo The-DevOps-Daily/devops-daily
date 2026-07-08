@@ -199,7 +199,7 @@ Pick a `type`:
 - **`loop`** — a flow with a labelled loop-back arc and an optional `goal` bar. Adds `goal?`, `loopTop?`, `loopBack?`. Nodes usually use a `variant` fill (`soft` / `solid` / `accent`) instead of an icon.
 - **`branch`** — a flow that splits into outcomes. Adds `branch: [{ label, variant }]` (use `good` / `bad` variants).
 - **`infra`** — host/cluster diagrams. `groups: [{ label, sub?, icon?, tone?, nodes?: [...], groups?: [...] }]` (groups nest), plus an optional top `flow: [...]` request path.
-- **`graph`** — a non-linear DAG. `columns: [[{ id, label, sub?, icon?, tone? }]]` and `edges: [[fromId, toId]]`; edges are drawn between columns, hover a node to isolate its path, Trace fires request packets.
+- **`graph`** — a non-linear DAG. `columns: [[{ id, label, sub?, icon?, tone? }]]` and `edges: [[fromId, toId]]` (or `[fromId, toId, "label"]` to put a port or verb on the edge); edges are drawn between columns, hover a node to isolate its path, Trace fires request packets.
 
 Nodes take an `icon` (a name from the built-in set or any emoji) and a `tone` (`slate` / `blue` / `green` / `violet` / `red` / `amber` / `accent`). Built-in icons: `globe`, `box`, `database`, `queue`, `cpu`, `server`, `net`, `branch`, `gear`, `check`, `rocket`, `activity`, `pod`, `k8s`, `cloud`, `shield`, `lock`.
 

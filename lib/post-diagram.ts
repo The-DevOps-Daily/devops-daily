@@ -37,6 +37,9 @@ export interface DiagramGroup {
   groups?: DiagramGroup[];
 }
 
+/** A directed edge: [fromId, toId] with an optional short label (port, verb). */
+export type DiagramEdge = [string, string, string?];
+
 export type DiagramType = 'flow' | 'loop' | 'branch' | 'infra' | 'graph';
 
 export interface DiagramSpec {
@@ -57,8 +60,8 @@ export interface DiagramSpec {
   flow?: DiagramNode[];
   /** graph: columns of nodes (each node needs an id). */
   columns?: DiagramNode[][];
-  /** graph: directed edges as [fromId, toId] pairs. */
-  edges?: [string, string][];
+  /** graph: directed edges as [fromId, toId] or [fromId, toId, label]. */
+  edges?: DiagramEdge[];
   /** flow / graph: show the Trace button and packet animation (default true). */
   trace?: boolean;
 }
@@ -111,14 +114,16 @@ function group(v: unknown): DiagramGroup | null {
   return g;
 }
 
-function edges(v: unknown): [string, string][] {
+function edges(v: unknown): DiagramEdge[] {
   if (!Array.isArray(v)) return [];
   return v
     .filter(
-      (e): e is [string, string] =>
+      (e): e is unknown[] =>
         Array.isArray(e) && typeof e[0] === 'string' && typeof e[1] === 'string'
     )
-    .map((e) => [e[0], e[1]] as [string, string]);
+    .map((e) =>
+      (typeof e[2] === 'string' ? [e[0], e[1], e[2]] : [e[0], e[1]]) as DiagramEdge
+    );
 }
 
 export function parseDiagramSpec(raw: string): DiagramSpec | null {

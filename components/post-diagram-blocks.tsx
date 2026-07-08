@@ -224,6 +224,9 @@ interface EdgePath {
   d: string;
   from: string;
   to: string;
+  label?: string;
+  mx: number;
+  my: number;
 }
 
 function GraphDiagram({ spec }: { spec: DiagramSpec }) {
@@ -258,6 +261,9 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
         id: 'e' + i,
         from: e[0],
         to: e[1],
+        label: e[2],
+        mx: (x1 + x2) / 2,
+        my: (y1 + y2) / 2,
         d: `M${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`,
       });
     });
@@ -345,6 +351,11 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
                     flowRefs.current[p.id] = el;
                   }}
                 />
+                {p.label && (
+                  <text className={'pd-edge-label' + (hot ? ' hot' : '')} x={p.mx} y={p.my}>
+                    {p.label}
+                  </text>
+                )}
               </g>
             );
           })}
@@ -515,6 +526,9 @@ const STYLES = `
 .pdiag .pd-edge-flow{ fill:none; stroke:color-mix(in srgb,var(--pd-accent) 55%,var(--pd-line2)); stroke-width:2; stroke-dasharray:3 11; opacity:.8; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-edge-flow{ animation:pd-dash 1.1s linear infinite; } }
 .pdiag .pd-edge.hot,.pdiag .pd-edge-flow.hot{ stroke:var(--pd-accent); opacity:1; }
+.pdiag .pd-edge-label{ font-family:var(--pd-mono); font-size:11px; fill:var(--pd-muted); text-anchor:middle; dominant-baseline:middle; paint-order:stroke; stroke:var(--pd-bg); stroke-width:5px; stroke-linejoin:round; }
+.pdiag .pd-edge-label.hot{ fill:var(--pd-accent); }
+.pdiag .pd-graph.pd-dim .pd-edge-label:not(.hot){ opacity:.1; }
 .pdiag .pd-graph.pd-dim .pd-node.pd-faded{ opacity:.34; }
 .pdiag .pd-graph.pd-dim .pd-edge:not(.hot),.pdiag .pd-graph.pd-dim .pd-edge-flow:not(.hot){ opacity:.1; }
 .pdiag .pd-node.pd-hot{ border-color:var(--pd-accent); box-shadow:0 0 0 2px rgba(224,121,43,.16); }

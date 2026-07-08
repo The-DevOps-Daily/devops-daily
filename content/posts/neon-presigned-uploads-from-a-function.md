@@ -67,7 +67,7 @@ The presigned pattern removes all three, because the large transfer never involv
       { "id": "pg", "label": "Postgres", "sub": "metadata row", "icon": "database", "tone": "violet" }
     ]
   ],
-  "edges": [["client", "fn"], ["client", "store"], ["fn", "pg"]]
+  "edges": [["client", "fn", "presign"], ["client", "store", "PUT bytes"], ["fn", "pg", "metadata"]]
 }
 ```
 

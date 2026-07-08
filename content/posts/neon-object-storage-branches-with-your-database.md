@@ -52,6 +52,35 @@ People work around this with a bucket-prefix-per-branch convention and a script 
 
 ## How a Neon branch forks the bucket
 
+```diagram
+{
+  "type": "infra",
+  "title": "each branch gets its own database and its own bucket",
+  "groups": [
+    {
+      "label": "main",
+      "sub": "production",
+      "icon": "branch",
+      "tone": "slate",
+      "nodes": [
+        { "label": "Postgres", "sub": "rows", "icon": "database", "tone": "violet" },
+        { "label": "Bucket", "sub": "the real files", "icon": "box", "tone": "blue" }
+      ]
+    },
+    {
+      "label": "a branch",
+      "sub": "copy-on-write, isolated",
+      "icon": "branch",
+      "tone": "green",
+      "nodes": [
+        { "label": "Postgres", "sub": "copy of rows", "icon": "database", "tone": "violet" },
+        { "label": "Bucket", "sub": "copy of files", "icon": "box", "tone": "green" }
+      ]
+    }
+  ]
+}
+```
+
 On Neon, the bucket is declared alongside the database and the functions, so it is part of what a branch is:
 
 ```typescript
