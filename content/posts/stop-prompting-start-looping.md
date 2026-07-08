@@ -45,6 +45,19 @@ A plain language model answers once and stops. You ask, it replies, the interact
 2. **Take an action.** Call one tool: read a file, edit code, run a command, run the tests.
 3. **Verify.** Check whether that action moved closer to the goal. If yes, stop. If no, loop.
 
+```diagram
+{
+  "type": "loop",
+  "nodes": [
+    { "label": "Gather context", "variant": "soft" },
+    { "label": "Take action", "variant": "solid" },
+    { "label": "Verify", "variant": "accent" }
+  ],
+  "loopTop": "goal met? stop",
+  "loopBack": "not met, go again"
+}
+```
+
 Most real tasks finish in three to eight of these iterations. Simple lookups take one or two. A gnarly multi-step change can take fifteen or more. The important shift is that the model is no longer the whole system. It is one step inside a loop that carries state forward and decides when the work is done.
 
 ```terminal
@@ -100,11 +113,19 @@ Plan, build, judge is the general shape, but you will meet it wearing different 
 
 **The experiment loop.** When the goal is "make this better" instead of "make this pass," the verifier becomes a metric instead of a test. Read the current code, propose one change, run a short measurement, and keep the change only if the number improved, otherwise roll it back. Andrej Karpathy has described tuning models this way: many small, cheap experiments running overnight, keeping the handful that help and throwing the rest away. The pattern generalizes to anything you can score, from query latency to bundle size.
 
-```text
-read  ->  propose one change  ->  measure  ->  better?
-                                              |-- yes --> keep the change
-                                              +-- no  --> roll back
-                                              then repeat
+```diagram
+{
+  "type": "branch",
+  "nodes": [
+    { "label": "Read", "icon": "box", "tone": "slate" },
+    { "label": "Propose change", "icon": "gear", "tone": "blue" },
+    { "label": "Measure", "icon": "activity", "tone": "amber" }
+  ],
+  "branch": [
+    { "label": "better, keep it", "variant": "good" },
+    { "label": "worse, roll back", "variant": "bad" }
+  ]
+}
 ```
 
 **The overnight triage loop.** The autonomous version starts with a discovery step: read the CI failures, the open issues, and the recent commits to find the work. Then, for each item, it plans a fix, makes it in an isolated git worktree so parallel agents cannot collide, verifies against tests, and opens a PR. You wake up to a queue of reviewed changes instead of a blank editor.

@@ -191,6 +191,46 @@ https://github.com/The-DevOps-Daily/devops-daily
 
 The body can be a full `https://github.com/owner/repo` URL or just `owner/repo`. Data is fetched at view time (the site is statically exported), cached per session, and degrades to a simple link card if the GitHub API is unreachable or rate-limited. Use it once where the repo matters rather than after every mention.
 
+**Diagram** — ` ```diagram ` renders a clean, theme-aware, lightly animated diagram from JSON: step flows, loops, branches, infrastructure groups, and small node/edge graphs. Connectors flow, nodes lift on hover, and flow/graph diagrams get a Trace button; all of it respects `prefers-reduced-motion` and falls back to a code block on a bad spec. Use it for architecture, request paths, and process loops instead of an ASCII diagram or a screenshot.
+
+Pick a `type`:
+
+- **`flow`** — a row of steps with flowing arrows. `nodes: [{ label, sub?, icon?, tone? }]`. Trace button on by default.
+- **`loop`** — a flow with a labelled loop-back arc and an optional `goal` bar. Adds `goal?`, `loopTop?`, `loopBack?`. Nodes usually use a `variant` fill (`soft` / `solid` / `accent`) instead of an icon.
+- **`branch`** — a flow that splits into outcomes. Adds `branch: [{ label, variant }]` (use `good` / `bad` variants).
+- **`infra`** — host/cluster diagrams. `groups: [{ label, sub?, icon?, tone?, nodes?: [...], groups?: [...] }]` (groups nest), plus an optional top `flow: [...]` request path.
+- **`graph`** — a non-linear DAG. `columns: [[{ id, label, sub?, icon?, tone? }]]` and `edges: [[fromId, toId]]`; edges are drawn between columns, hover a node to isolate its path, Trace fires request packets.
+
+Nodes take an `icon` (a name from the built-in set or any emoji) and a `tone` (`slate` / `blue` / `green` / `violet` / `red` / `amber` / `accent`). Built-in icons: `globe`, `box`, `database`, `queue`, `cpu`, `server`, `net`, `branch`, `gear`, `check`, `rocket`, `activity`, `pod`, `k8s`, `cloud`, `shield`, `lock`.
+
+Example, a Docker-on-a-Pi infra diagram:
+
+```diagram
+{
+  "type": "infra",
+  "flow": [
+    { "label": "Internet", "icon": "globe", "tone": "slate" },
+    { "label": "nginx :443", "icon": "globe", "tone": "green" },
+    { "label": "app :3000", "icon": "box", "tone": "blue" }
+  ],
+  "groups": [
+    {
+      "label": "Raspberry Pi 5",
+      "sub": "Docker Compose",
+      "icon": "cpu",
+      "tone": "red",
+      "nodes": [
+        { "label": "nginx", "sub": "reverse proxy", "icon": "globe", "tone": "green" },
+        { "label": "app", "sub": "Node.js", "icon": "box", "tone": "blue" },
+        { "label": "Postgres", "sub": "pgdata", "icon": "database", "tone": "violet" }
+      ]
+    }
+  ]
+}
+```
+
+Keep diagrams to a handful of nodes so they stay readable, and validate the JSON before finishing (a quick `node -e` JSON.parse over each ` ```diagram ` block). For a sprawling topology that needs auto-routing, a plain image is still the better choice.
+
 ## OG Image
 
 After creating the post, remind the user to generate the OG image:
