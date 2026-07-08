@@ -49,6 +49,35 @@ Tagging requests helps a little, but it is bookkeeping bolted on after the fact,
 
 ## The Neon model: spend rides the branch
 
+```diagram
+{
+  "type": "infra",
+  "title": "spend rides the branch, not a shared key",
+  "groups": [
+    {
+      "label": "production",
+      "sub": "flat while others spend",
+      "icon": "branch",
+      "tone": "slate",
+      "nodes": [
+        { "label": "Function", "sub": "gateway calls", "icon": "gear", "tone": "blue" },
+        { "label": "usage_log", "sub": "its Postgres", "icon": "database", "tone": "violet" }
+      ]
+    },
+    {
+      "label": "CI or preview branch",
+      "sub": "own deployment + own ledger",
+      "icon": "branch",
+      "tone": "green",
+      "nodes": [
+        { "label": "Function", "sub": "gateway calls", "icon": "gear", "tone": "blue" },
+        { "label": "usage_log", "sub": "branch Postgres", "icon": "database", "tone": "green" }
+      ]
+    }
+  ]
+}
+```
+
 On Neon each branch is its own deployment with its own function URL, and because you log usage to Postgres and Postgres branches, the usage ledger is per branch too. A call made against a branch's function URL writes to that branch's `usage_log`, and that ledger is what makes spend attributable per environment: production's ledger is a different table on a different branch. The isolation demonstrated here is that per-branch ledger in Postgres, not a claim that Neon meters the gateway credential itself separately per branch. That distinction matters: the attribution you can rely on is the one you record yourself, in the branch's database.
 
 The usage view is an ordinary query over that branch's log:
