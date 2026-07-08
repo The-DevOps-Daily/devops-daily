@@ -90,6 +90,36 @@ I ran this against the files demo: the branch came up with a copy of the three f
 
 ## Bucket-per-environment vs branch-scoped bucket
 
+```diagram
+{
+  "type": "infra",
+  "title": "provisioned per environment vs carried by the branch",
+  "groups": [
+    {
+      "label": "a bucket per environment",
+      "sub": "a resource to provision and tear down",
+      "icon": "cloud",
+      "tone": "red",
+      "nodes": [
+        { "label": "new bucket", "icon": "box", "tone": "slate" },
+        { "label": "IAM + CORS", "icon": "lock", "tone": "slate" },
+        { "label": "lifecycle + teardown", "sub": "still leaves orphans", "icon": "gear", "tone": "amber" }
+      ]
+    },
+    {
+      "label": "bucket on the branch",
+      "sub": "nothing per environment to manage",
+      "icon": "branch",
+      "tone": "green",
+      "nodes": [
+        { "label": "preview branch", "sub": "created + destroyed together", "icon": "branch", "tone": "green" },
+        { "label": "its bucket", "sub": "copy-on-write, scoped creds", "icon": "box", "tone": "blue" }
+      ]
+    }
+  ]
+}
+```
+
 | | A bucket per environment | Bucket on the branch |
 | --- | --- | --- |
 | Provisioning per preview | Create bucket, policy, IAM, CORS, lifecycle | None; declared once in `neon.ts` |
