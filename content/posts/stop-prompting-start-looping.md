@@ -92,6 +92,29 @@ Loops are not free, and the cost does not grow linearly. Every iteration re-send
 
 That is not a reason to avoid loops. It is the reason you always give a loop a stop condition and a budget: a goal that can be checked, a maximum number of turns, or both. A loop that cannot end is not autonomy. It is an open tab.
 
+## Loops come in more than one shape
+
+Plan, build, judge is the general shape, but you will meet it wearing different clothes. A few worth knowing:
+
+**The fix-until-green loop.** The simplest useful loop. The goal is a passing test suite, the action is an edit, the verifier is the test runner, and it ends when the suite is green. This is the loop most people meet first, and the one-liner above is exactly it.
+
+**The experiment loop.** When the goal is "make this better" instead of "make this pass," the verifier becomes a metric instead of a test. Read the current code, propose one change, run a short measurement, and keep the change only if the number improved, otherwise roll it back. Andrej Karpathy has described tuning models this way: many small, cheap experiments running overnight, keeping the handful that help and throwing the rest away. The pattern generalizes to anything you can score, from query latency to bundle size.
+
+```text
+read  ->  propose one change  ->  measure  ->  better?
+                                              |-- yes --> keep the change
+                                              +-- no  --> roll back
+                                              then repeat
+```
+
+**The overnight triage loop.** The autonomous version starts with a discovery step: read the CI failures, the open issues, and the recent commits to find the work. Then, for each item, it plans a fix, makes it in an isolated git worktree so parallel agents cannot collide, verifies against tests, and opens a PR. You wake up to a queue of reviewed changes instead of a blank editor.
+
+**The research loop.** Loops are not only for code. Give an agent a question and it can loop too: gather sources, read one, ask "do I have enough to answer confidently," and either search for more or write the answer. Same cycle, no compiler in sight.
+
+:::note
+One mechanic ties all of these together: the agent forgets. Each turn starts fresh, so a loop needs somewhere outside the model to remember what it has learned. In practice that is a state file, a markdown scratchpad, or an issue tracker that the loop reads at the start of every iteration and writes back to at the end. The loop is the engine. The state file is the memory.
+:::
+
 ## Try it: watch a loop run
 
 Reading about a loop only gets you so far. We built an interactive simulator that runs one task through the full plan-build-judge loop, slowly, one phase at a time, so you can see the hand-offs, the decision to loop or stop, the context window growing, and the token cost climbing.

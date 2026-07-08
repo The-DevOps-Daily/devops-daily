@@ -165,18 +165,45 @@ export default function AgenticLoopSimulator() {
   const restart = (keepPlaying: boolean) => { setIdx(-1); setPlaying(keepPlaying); };
   const onPlay = () => { if (atEnd) { restart(true); return; } setPlaying((p) => !p); };
   const onStep = () => { setPlaying(false); setIdx((i) => Math.min(i + 1, steps.length - 1)); };
+  const onPrev = () => { setPlaying(false); setIdx((i) => Math.max(-1, i - 1)); };
   const onReset = () => { setPlaying(false); setIdx(-1); };
   const onToggleJudge = () => { setPlaying(false); setIdx(-1); setSeparateJudge((v) => !v); };
 
   const tokPct = Math.min(100, (view.tokens / TOTAL_BUDGET) * 100);
 
   return (
-    <div className="alsim">
+    <div
+      className="alsim"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowRight') { e.preventDefault(); onStep(); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); onPrev(); }
+        else if (e.key === ' ' && e.target === e.currentTarget) { e.preventDefault(); onPlay(); }
+      }}
+    >
       <style>{CSS}</style>
 
       <p className="als-eyebrow">Agentic loop · three agents</p>
       <h2 className="als-h">A loop of three agents: plan, build, judge</h2>
       <div className="als-task"><span className="als-dot" /> Task: <b>add a working /signup endpoint (hash the password, return 201)</b></div>
+
+      <div className="als-controls">
+        <button className="als-btn als-primary" onClick={onPlay}>{playing ? '❙❙ Pause' : atEnd ? '↻ Replay' : '▶ Play'}</button>
+        <button className="als-btn" onClick={onPrev} title="Previous step">&lsaquo; Prev</button>
+        <button className="als-btn" onClick={onStep} title="Next step">Next &rsaquo;</button>
+        <span className="als-label">or use &larr; &rarr;</span>
+        <button className="als-btn" onClick={onReset}>&#8635; Restart</button>
+        <span className="als-label">Speed</span>
+        <div className="als-seg">
+          {[0.5, 1, 2].map((s) => (
+            <button key={s} className={`als-btn${speed === s ? ' als-on' : ''}`} onClick={() => setSpeed(s)}>{s}&times;</button>
+          ))}
+        </div>
+        <span className="als-spacer" />
+        <button className={`als-toggle${separateJudge ? ' als-ton' : ''}`} onClick={onToggleJudge} aria-pressed={separateJudge}>
+          <span className="als-sw" /><span>Separate judge agent</span>
+        </button>
+      </div>
 
       <div className="als-loop">
         {CARDS.map((c, i) => (
@@ -236,22 +263,6 @@ export default function AgenticLoopSimulator() {
           <div className="als-rt"><b>{view.result.title}</b><span>{view.result.text}</span></div>
         </div>
       )}
-
-      <div className="als-controls">
-        <button className="als-btn als-primary" onClick={onPlay}>{playing ? '❙❙ Pause' : atEnd ? '↻ Replay' : '▶ Play'}</button>
-        <button className="als-btn" onClick={onStep}>Step &rsaquo;</button>
-        <button className="als-btn" onClick={onReset}>&#8635; Restart</button>
-        <span className="als-label">Speed</span>
-        <div className="als-seg">
-          {[0.5, 1, 2].map((s) => (
-            <button key={s} className={`als-btn${speed === s ? ' als-on' : ''}`} onClick={() => setSpeed(s)}>{s}&times;</button>
-          ))}
-        </div>
-        <span className="als-spacer" />
-        <button className={`als-toggle${separateJudge ? ' als-ton' : ''}`} onClick={onToggleJudge} aria-pressed={separateJudge}>
-          <span className="als-sw" /><span>Separate judge agent</span>
-        </button>
-      </div>
 
       <div className="als-maps">
         <div className="als-m als-mplan"><b>Plan</b>In Claude Code: a planner subagent, or a plan-mode turn that writes the next step.</div>
