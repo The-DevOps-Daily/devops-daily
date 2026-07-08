@@ -42,6 +42,23 @@ The AI gateway pattern removes it. You talk to one endpoint with one credential,
 
 A gateway sits between your code and the model providers. You send it an OpenAI-shaped chat request with a `model` field; it authenticates you once, forwards the request to the right provider, and returns an OpenAI-shaped response. Your application never holds a provider key and never imports a provider SDK. Adding a new model is choosing a different string, not onboarding a new vendor.
 
+```diagram
+{
+  "type": "graph",
+  "title": "one credential in, any model out",
+  "columns": [
+    [ { "id": "app", "label": "Your code", "sub": "OpenAI-shaped request", "icon": "box", "tone": "blue" } ],
+    [ { "id": "gw", "label": "AI Gateway", "sub": "one credential", "icon": "net", "tone": "accent", "detail": "Authenticates you once and forwards to the provider named in the model field. Your code never holds a provider key or imports a provider SDK." } ],
+    [
+      { "id": "claude", "label": "Claude", "icon": "cpu", "tone": "violet" },
+      { "id": "gpt", "label": "GPT", "icon": "cpu", "tone": "green" },
+      { "id": "gemini", "label": "Gemini", "icon": "cpu", "tone": "amber" }
+    ]
+  ],
+  "edges": [["app", "gw", "model: ..."], ["gw", "claude"], ["gw", "gpt"], ["gw", "gemini"]]
+}
+```
+
 That is valuable anywhere, but on serverless it is especially clean, because the function has no long-lived config to hold the keys in. Neon injects the gateway credential at deploy time.
 
 ## On Neon: one line of config
