@@ -43,12 +43,27 @@ This post is a build-log for a realtime chat that answers it. It runs a [Neon Fu
 
 There are two backends and one browser. The Next.js app handles sign-in and serves chat history over HTTP; the Neon Function is the WebSocket server the browser talks to directly for live messages.
 
-```text
-Browser ──(history, HTTP)──▶ Next.js /api/messages ──▶ Postgres
-Browser ──(wss://…?token=JWT)──▶ Neon Function
-                                     │  verify JWT (JWKS)
-                                     │  INSERT message
-                                     └▶ pg_notify ──▶ every isolate ──▶ all sockets
+```diagram
+{
+  "type": "graph",
+  "title": "two backends, one browser: HTTP history and an authenticated socket",
+  "columns": [
+    [ { "id": "b", "label": "Browser", "icon": "globe", "tone": "slate" } ],
+    [
+      { "id": "next", "label": "Next.js", "sub": "/api/messages", "icon": "box", "tone": "blue", "detail": "Handles sign-in and serves chat history over ordinary HTTP." },
+      { "id": "fn", "label": "Neon Function", "sub": "WebSocket server", "icon": "shield", "tone": "accent", "detail": "The upgrade hook verifies the JWT against the Neon Auth JWKS and rejects with 401 before the socket is accepted. Stored identity is the token's sub, never a name the client sends." }
+    ],
+    [ { "id": "pg", "label": "Postgres", "sub": "messages + LISTEN/NOTIFY", "icon": "database", "tone": "violet" } ],
+    [ { "id": "iso", "label": "Every isolate", "sub": "its own sockets", "icon": "gear", "tone": "green" } ]
+  ],
+  "edges": [
+    ["b", "next", "history"],
+    ["b", "fn", "wss ?token"],
+    ["next", "pg", "read"],
+    ["fn", "pg", "insert + notify"],
+    ["pg", "iso", "fan-out"]
+  ]
+}
 ```
 
 A Neon Function is a long-running Node.js handler, not a per-request lambda, which is what makes a WebSocket server possible at all. The function exports two entry points: `fetch` for ordinary HTTP, and `upgrade` for the WebSocket handshake.
