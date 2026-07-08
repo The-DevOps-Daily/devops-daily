@@ -51,14 +51,27 @@ The presigned pattern removes all three, because the large transfer never involv
 
 ## The flow
 
-```text
-1. client  ── "I want to upload notes.txt" ─────────►  function
-2. function ── presigned PUT url (valid 1h) ────────►  client
-3. client  ── PUT the bytes straight to storage ───►  object storage
-4. client  ── "done, here's the key + size" ───────►  function ── writes metadata row ──► Postgres
+```diagram
+{
+  "type": "graph",
+  "title": "presigned upload: the bytes bypass the function",
+  "columns": [
+    [
+      { "id": "client", "label": "Browser", "sub": "the client", "icon": "globe", "tone": "slate" }
+    ],
+    [
+      { "id": "fn", "label": "Function", "sub": "issues url + records", "icon": "gear", "tone": "blue" }
+    ],
+    [
+      { "id": "store", "label": "Object storage", "sub": "the bytes land here", "icon": "database", "tone": "green" },
+      { "id": "pg", "label": "Postgres", "sub": "metadata row", "icon": "database", "tone": "violet" }
+    ]
+  ],
+  "edges": [["client", "fn"], ["client", "store"], ["fn", "pg"]]
+}
 ```
 
-Steps 1, 2, and 4 are tiny JSON requests to the function. Step 3, the only large transfer, goes directly to storage and never touches your code.
+Hover the browser to see it in action: it talks to the function for a presigned URL and to write metadata, but the large transfer goes straight to object storage. Those function round trips are tiny JSON requests. The only large transfer, the bytes themselves, never touches your code.
 
 ## The code
 

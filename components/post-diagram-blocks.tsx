@@ -96,19 +96,12 @@ function prefersReducedMotion(): boolean {
 
 function RowDiagram({ spec }: { spec: DiagramSpec }) {
   const nodes = spec.nodes ?? [];
-  const rowRef = useRef<HTMLDivElement>(null);
-  const nodeEls = useRef<HTMLElement[]>([]);
-  const [showTrace] = useState(spec.type === 'flow' && spec.trace !== false && nodes.length > 1);
-
-  useEffect(() => {
-    const els = Array.from(rowRef.current?.querySelectorAll<HTMLElement>('.pd-node') ?? []);
-    nodeEls.current = els;
-    els.forEach((e, i) => setTimeout(() => e.classList.add('pd-in'), 80 * i + 60));
-  }, []);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const showTrace = spec.type === 'flow' && spec.trace !== false && nodes.length > 1;
 
   const trace = () => {
     if (prefersReducedMotion()) return;
-    const els = nodeEls.current;
+    const els = Array.from(rootRef.current?.querySelectorAll<HTMLElement>('.pd-row .pd-node') ?? []);
     els.forEach((e) => e.classList.remove('pd-pulse'));
     els.forEach((e, i) =>
       setTimeout(() => {
@@ -119,8 +112,19 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
     );
   };
 
+  const row = (
+    <div className="pd-row">
+      {nodes.map((n, i) => (
+        <React.Fragment key={i}>
+          <NodeCard node={n} />
+          {i < nodes.length - 1 && <Conn />}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="pdiag">
+    <div className="pdiag" ref={rootRef}>
       {spec.title && <div className="pd-title">{spec.title}</div>}
       {showTrace && (
         <div className="pd-toolbar">
@@ -130,23 +134,20 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
         </div>
       )}
       {spec.goal && <div className="pd-goal">{spec.goal}</div>}
-      {spec.loopTop && <div className="pd-toplabel">{spec.loopTop}</div>}
-      <div className="pd-row" ref={rowRef}>
-        {nodes.map((n, i) => (
-          <React.Fragment key={i}>
-            <NodeCard node={n} />
-            {i < nodes.length - 1 && <Conn />}
-          </React.Fragment>
-        ))}
-      </div>
-      {spec.type === 'loop' && (
-        <div className="pd-loopback">
-          <svg viewBox="0 0 1000 62" preserveAspectRatio="none" aria-hidden="true">
-            <path className="track" d="M 960 8 C 960 56, 700 60, 500 60 C 300 60, 40 56, 40 12" />
-            <path className="track" d="M 40 12 l -7 10 M 40 12 l 9 6" />
-          </svg>
-          {spec.loopBack && <span className="pd-lb-label">{spec.loopBack}</span>}
+      {spec.type === 'loop' ? (
+        <div className="pd-loopwrap">
+          {spec.loopTop && <div className="pd-toplabel">{spec.loopTop}</div>}
+          {row}
+          <div className="pd-loopback">
+            <svg viewBox="0 0 1000 62" preserveAspectRatio="none" aria-hidden="true">
+              <path className="track" d="M 960 8 C 960 56, 700 60, 500 60 C 300 60, 40 56, 40 12" />
+              <path className="track" d="M 40 12 l -7 10 M 40 12 l 9 6" />
+            </svg>
+            {spec.loopBack && <span className="pd-lb-label">{spec.loopBack}</span>}
+          </div>
         </div>
+      ) : (
+        row
       )}
       {spec.type === 'branch' && spec.branch && spec.branch.length > 0 && (
         <div className="pd-branch">
@@ -356,7 +357,7 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
               return (
                 <div
                   key={id}
-                  className={'pd-node pd-in' + (dim ? ' pd-faded' : '') + (id === hovered ? ' pd-hot' : '')}
+                  className={'pd-node' + (dim ? ' pd-faded' : '') + (id === hovered ? ' pd-hot' : '')}
                   ref={(el) => {
                     nodeRefs.current[id] = el;
                   }}
@@ -457,8 +458,9 @@ const STYLES = `
 .pdiag .pd-goal{ font-family:var(--pd-mono); font-size:13px; background:var(--pd-soft-bg); border:1px solid var(--pd-line); border-radius:8px; padding:8px 14px; width:fit-content; max-width:100%; margin:0 auto 22px; text-align:center; }
 .pdiag .pd-toplabel{ text-align:center; font-size:13px; font-style:italic; color:var(--pd-muted); margin-bottom:8px; }
 .pdiag .pd-row{ display:flex; align-items:stretch; justify-content:center; flex-wrap:wrap; gap:4px; }
-.pdiag .pd-node{ position:relative; display:flex; align-items:center; gap:11px; background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:13px; padding:12px 15px; min-width:140px; opacity:0; transform:translateY(8px); transition:transform .22s,box-shadow .22s,border-color .22s,opacity .22s; }
-.pdiag .pd-node.pd-in{ opacity:1; transform:none; }
+.pdiag .pd-node{ position:relative; display:flex; align-items:center; gap:11px; background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:13px; padding:12px 15px; min-width:140px; transition:transform .22s,box-shadow .22s,border-color .22s; }
+@media (prefers-reduced-motion:no-preference){ .pdiag .pd-node{ animation:pd-enter .3s ease backwards; } }
+@keyframes pd-enter{ from{ opacity:0; transform:translateY(6px); } }
 .pdiag .pd-node:hover{ transform:translateY(-3px); border-color:var(--pd-accent); box-shadow:0 10px 30px -14px rgba(224,121,43,.45); }
 .pdiag .pd-node.pd-pulse{ border-color:var(--pd-accent); box-shadow:0 0 0 3px rgba(224,121,43,.15),0 12px 30px -12px rgba(224,121,43,.5); transform:translateY(-3px); opacity:1; }
 .pdiag .pd-lab{ font-weight:650; font-size:14px; }
@@ -489,6 +491,7 @@ const STYLES = `
 .pdiag .pd-conn .flow{ stroke:var(--pd-accent); stroke-width:2.4; stroke-linecap:round; stroke-dasharray:4 10; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-conn .flow{ animation:pd-dash .95s linear infinite; } }
 @keyframes pd-dash{ to{ stroke-dashoffset:-14; } }
+.pdiag .pd-loopwrap{ width:fit-content; max-width:100%; margin:0 auto; }
 .pdiag .pd-loopback{ position:relative; height:60px; margin-top:6px; }
 .pdiag .pd-loopback svg{ width:100%; height:100%; overflow:visible; }
 .pdiag .pd-loopback .track{ fill:none; stroke:var(--pd-line2); stroke-width:1.6; }
