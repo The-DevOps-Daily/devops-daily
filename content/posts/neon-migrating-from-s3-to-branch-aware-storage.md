@@ -63,6 +63,19 @@ This is the reassuring part. The application code that touches storage does not 
 
 ## The diff that changes
 
+```diagram
+{
+  "type": "flow",
+  "title": "same SDK, repointed: a config diff and a copy loop",
+  "nodes": [
+    { "label": "Your app", "sub": "@aws-sdk/client-s3, unchanged", "icon": "box", "tone": "blue" },
+    { "label": "Client config", "sub": "endpoint, region, forcePathStyle", "icon": "gear", "tone": "amber" },
+    { "label": "Copy loop", "sub": "list + copy, AWS to Neon", "icon": "queue", "tone": "violet" },
+    { "label": "Neon storage", "sub": "S3-compatible, rides the branch", "icon": "box", "tone": "green" }
+  ]
+}
+```
+
 Three config differences and two operational ones:
 
 - **`endpoint`.** AWS infers it from the region; for Neon you set it explicitly to the injected `AWS_ENDPOINT_URL_S3`.
