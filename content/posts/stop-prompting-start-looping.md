@@ -105,6 +105,44 @@ Loops are not free, and the cost does not grow linearly. Every iteration re-send
 
 That is not a reason to avoid loops. It is the reason you always give a loop a stop condition and a budget: a goal that can be checked, a maximum number of turns, or both. A loop that cannot end is not autonomy. It is an open tab.
 
+## Split the model: a cheap executor, an expert on call
+
+There is one more lever, and it is about cost. You do not have to run the whole loop on your most capable model. A pattern that keeps showing up is to run the loop on a fast, cheaper model, the executor, and have it consult a stronger, pricier model, the advisor, only when it hits something hard: a plan, a tricky review, an architectural call.
+
+The executor runs every turn and does the bulk of the work, so most of your tokens are billed at the lower rate. The advisor is a tool the executor calls on demand, a handful of times, for the decisions that actually need the extra capability. Advice comes back, the executor keeps going. You get expert-level judgement on the few steps that need it without paying expert rates for the whole run.
+
+```diagram
+{
+  "type": "graph",
+  "title": "the advisor pattern: a cheap executor, an expert on call",
+  "columns": [
+    [
+      {
+        "id": "exec",
+        "label": "Executor",
+        "sub": "Sonnet 5, every turn",
+        "icon": "gear",
+        "tone": "slate",
+        "detail": "Runs the loop and does the bulk of the work, so most of your tokens are billed at the lower rate."
+      }
+    ],
+    [
+      {
+        "id": "adv",
+        "label": "Advisor",
+        "sub": "Fable 5, on-demand",
+        "icon": "shield",
+        "tone": "accent",
+        "detail": "Consulted only for the hard calls: a plan, a tricky review, an architectural decision. Pricier per token, but you spend very few of them."
+      }
+    ]
+  ],
+  "edges": [["exec", "adv", "tool call"]]
+}
+```
+
+It is the same instinct as splitting the builder from the judge, applied to cost: put the expensive thinking where it earns its keep, and let a cheaper model carry the routine.
+
 ## Loops come in more than one shape
 
 Plan, build, judge is the general shape, but you will meet it wearing different clothes. A few worth knowing:
