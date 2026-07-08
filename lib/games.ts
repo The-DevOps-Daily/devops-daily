@@ -33,6 +33,35 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'agentic-loop-simulator',
+    type: 'simulator',
+    title: 'Agentic Loop Simulator',
+    seoTitle: 'Agentic Loop Simulator: How AI Coding Agents Actually Work',
+    description:
+      'Watch a coding agent run an agentic loop, one step at a time. A planner, a builder, and a judge cycle through plan, build, verify, and repeat until the goal is met. Toggle the separate judge off to see why an agent grading its own work ships confident bugs. An animation-first, interactive explainer of loop engineering and how it maps to Claude Code.',
+    iconName: 'Workflow',
+    badgeText: 'New',
+    color: 'from-amber-500 to-orange-600',
+    href: '/games/agentic-loop-simulator',
+    tags: [
+      'ai',
+      'agents',
+      'agentic',
+      'loops',
+      'loop-engineering',
+      'claude-code',
+      'llm',
+      'coding-agents',
+      'automation',
+      'educational',
+      'interactive',
+    ],
+    isNew: true,
+    featured: true,
+    category: 'DevOps',
+    createdAt: '2026-07-08',
+  },
+  {
     id: 'sql-terminal-simulator',
     type: 'simulator',
     title: 'SQL Terminal Simulator',
