@@ -58,6 +58,20 @@ Add a third provider and it gets worse, not linearly but combinatorially, becaus
 
 ## The gateway way: a loop
 
+```diagram
+{
+  "type": "flow",
+  "title": "fallback is a loop over model names",
+  "nodes": [
+    { "label": "Request", "icon": "box", "tone": "blue" },
+    { "label": "Claude", "sub": "primary", "icon": "cpu", "tone": "violet" },
+    { "label": "GPT", "sub": "on error, next", "icon": "cpu", "tone": "green" },
+    { "label": "Gemini", "sub": "on error, next", "icon": "cpu", "tone": "amber" },
+    { "label": "Answer", "sub": "first success wins", "icon": "check", "tone": "green" }
+  ]
+}
+```
+
 Through the gateway, every model is the same POST and the same HTTP status code, so the decision to fall back is uniform. Order your models, try them in turn, and stop at the first success:
 
 ```typescript
