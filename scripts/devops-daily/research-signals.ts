@@ -27,6 +27,21 @@ function argValue(flag: string, fallback: string): string {
 
 const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
+/**
+ * Strip control characters (code point < 0x20 or 0x7F) and collapse whitespace.
+ * Crawled feed text is untrusted; this keeps control sequences out of the
+ * signals file so it cannot smuggle hidden instructions into the post-writing
+ * agent's prompt.
+ */
+function clean(s: string): string {
+  let out = '';
+  for (const ch of s ?? '') {
+    const c = ch.codePointAt(0) ?? 0;
+    out += c < 0x20 || c === 0x7f ? ' ' : ch;
+  }
+  return out.replace(/\s+/g, ' ').trim();
+}
+
 async function main() {
   const days = parseInt(argValue('--days', '4'), 10);
   const max = parseInt(argValue('--max', '60'), 10);
@@ -51,12 +66,12 @@ async function main() {
   });
 
   const signals = items.slice(0, max).map((item) => ({
-    title: item.title,
-    url: item.url,
-    source: item.source,
+    title: clean(item.title),
+    url: clean(item.url),
+    source: clean(item.source),
     publishedAt: item.publishedAt,
-    category: item.category ?? null,
-    excerpt: (item.excerpt ?? '').slice(0, 280),
+    category: item.category ? clean(item.category) : null,
+    excerpt: clean(item.excerpt ?? '').slice(0, 280),
   }));
 
   const payload = JSON.stringify(
