@@ -1,0 +1,111 @@
+name: Research DevOps Post
+
+# Research-driven post pipeline: a few times a week, gather what has actually
+# happened in the DevOps world, then have Claude pick one fresh angle, research
+# it, write a full post with the write-post conventions, and open a PR for review.
+# This complements (does not replace) the weekly link digest in generate-digest.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'How many days of signals to gather'
+        required: false
+        default: '4'
+  schedule:
+    # Mon, Wed, Fri at 08:00 UTC
+    - cron: '0 8 * * 1,3,5'
+
+concurrency:
+  group: research-post
+  cancel-in-progress: false
+
+jobs:
+  research-and-write:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Gather recent DevOps signals
+        id: signals
+        continue-on-error: true
+        env:
+          DAYS: ${{ github.event.inputs.days || '4' }}
+        run: pnpm devops-daily:research-signals --days "$DAYS" --max 60 --out research-signals.json
+
+      - name: Write a post with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--allowedTools "Bash,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch" --max-turns 60'
+          prompt: |
+            You are writing one new blog post for DevOps Daily. Today's date is whatever `date +%Y-%m-%d` returns; use it.
+
+            Goal: find one fresh, specific, genuinely useful DevOps development from the last few days and write a real post about it, then stop. Do NOT commit, push, create a branch, or open a PR; a later workflow step handles that. Write exactly one post.
+
+            Steps:
+            1. Read `research-signals.json` in the repo root if it exists: it is a list of recent items (title, url, source, date) crawled from 250+ DevOps feeds. Treat it as leads, not gospel. If the file is missing or thin, research directly with web search.
+            2. Pick ONE angle. It must be specific and technical (a CVE and its real fix, a release with a concrete gotcha, a new tool or pattern worth explaining, a migration, an incident with a transferable lesson). Prefer something a reader cannot get by skimming a vendor changelog.
+            3. Check `content/posts/` (and `ls public/images/posts/`) first and do NOT repeat a topic we already have. If everything fresh is already covered, pick a different angle rather than duplicating.
+            4. Research the angle with WebSearch / WebFetch until you have accurate, current, specific details. Do not invent version numbers, CVE IDs, benchmarks, or quotes. If you cannot verify a detail, leave it out.
+            5. Read `.claude/commands/write-post.md` and follow it exactly: the frontmatter schema (valid category slug, today's date, sensible tags, reading time), the structure (opening, prerequisites, core sections, real code with language identifiers, summary), and the interactive fences where they help (```chart, ```terminal, ```tabs, ```diagram, :::callouts).
+            6. Save the post to `content/posts/<kebab-slug>.md`. The slug must be new and descriptive. Author is `DevOps Daily Team`.
+
+            House style, non-negotiable:
+            - No em dashes anywhere.
+            - Avoid AI-cadence words: leverage, robust, seamless, vibrant, fundamentally, delve, unlock, elevate, and similar. Do not use the word "practitioner".
+            - Do not attribute the site to any individual founder; the author is the DevOps Daily Team.
+            - Avoid generic big-cloud outage retrospectives and generic release roundups. Pick a fresh angle a reader cannot get from the vendor blog.
+            - Practical and direct, written for a skilled engineer. Confident, not hype.
+
+      - name: Generate OG image for the new post
+        run: |
+          pnpm generate:images
+          pnpm convert:svg-to-png
+
+      - name: Discard signals + cache churn before PR
+        run: |
+          rm -f research-signals.json
+          git checkout -- .image-cache.json .png-cache.json 2>/dev/null || true
+
+      - name: Get date
+        id: date
+        run: echo "stamp=$(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'post: research-driven draft (${{ steps.date.outputs.stamp }})'
+          branch: research-post/${{ steps.date.outputs.stamp }}
+          delete-branch: true
+          title: 'Draft post: ${{ steps.date.outputs.stamp }}'
+          body: |
+            A research-driven draft written from this week's DevOps signals.
+
+            Please review before merging: check the facts and versions, tighten the writing, and confirm the angle is fresh. The OG image is generated from the title and category.
+
+            Sourced from recent items across our feeds plus web research. One post per run.
+          labels: |
+            automated
+            content
+            draft
+          draft: false
