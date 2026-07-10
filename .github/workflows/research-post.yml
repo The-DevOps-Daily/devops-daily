@@ -56,15 +56,12 @@ jobs:
         run: pnpm devops-daily:research-signals --days "$DAYS" --max 60 --out research-signals.json
 
       - name: Write a post with Claude
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # No Bash and no git tools: this step only reads research and writes one
-          # markdown file. Feed content is untrusted, so withholding shell access means a
-          # prompt-injection attempt in a crawled title cannot run commands against the
-          # runner's secrets. Image generation and the PR happen in later, non-agent steps.
-          claude_args: '--allowedTools "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch" --max-turns 60'
-          prompt: |
+        # No Bash and no git tools in the allowlist below: this step only reads research
+        # and writes one markdown file, so untrusted feed content cannot run commands
+        # against the runner's secrets. Git and images happen in later, non-agent steps.
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PROMPT: |
             You are writing one new blog post for DevOps Daily. Today's date is ${{ steps.date.outputs.stamp }}; use it in the frontmatter.
 
             Goal: find one fresh, specific, genuinely useful DevOps development from the last few days and write a real post about it, then stop. You cannot run shell commands, commit, push, branch, or open a PR; later workflow steps handle git and images. Write exactly one post as a single markdown file.
@@ -85,6 +82,11 @@ jobs:
             - Do not attribute the site to any individual founder; the author is the DevOps Daily Team.
             - Avoid generic big-cloud outage retrospectives and generic release roundups. Pick a fresh angle a reader cannot get from the vendor blog.
             - Practical and direct, written for a skilled engineer. Confident, not hype.
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude -p "$PROMPT" \
+            --allowedTools "Read,Write,Edit,Glob,Grep,WebSearch,WebFetch" \
+            --max-turns 60
 
       - name: Generate OG image for the new post
         run: |
