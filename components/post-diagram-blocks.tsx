@@ -137,6 +137,7 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
       )}
       {spec.goal && <div className="pd-goal">{spec.goal}</div>}
       {spec.type === 'loop' ? (
+        <div className="pd-gscroll">
         <div className="pd-loopwrap">
           {spec.loopTop && <div className="pd-toplabel">{spec.loopTop}</div>}
           {row}
@@ -147,6 +148,7 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
             </svg>
             {spec.loopBack && <span className="pd-lb-label">{spec.loopBack}</span>}
           </div>
+        </div>
         </div>
       ) : (
         row
@@ -349,6 +351,7 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
           </button>
         )}
       </div>
+      <div className="pd-gscroll">
       <div className={'pd-graph' + (active ? ' pd-dim' : '')} ref={wrapRef}>
         <svg className="pd-edges" ref={svgRef} aria-hidden="true">
           {paths.map((p) => {
@@ -399,6 +402,7 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
             })}
           </div>
         ))}
+      </div>
       </div>
       {active && byId[active]?.detail && (
         <div className="pd-detail">
@@ -560,5 +564,22 @@ const STYLES = `
 @keyframes pd-pop{ from{ opacity:0; transform:translateY(-3px); } }
 .pdiag .pd-detail b{ color:var(--pd-ink); font-weight:650; }
 .pdiag .pd-pkt{ fill:var(--pd-accent); }
-@media (max-width:760px){ .pdiag .pd-row{ flex-direction:column; } .pdiag .pd-conn{ display:none; } .pdiag .pd-graph{ flex-direction:column; gap:14px; } .pdiag .pd-edges{ display:none; } }
+.pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; }
+@media (max-width:760px){
+  /* Simple flows stack; they read fine as a vertical list without arrows. */
+  .pdiag .pd-row{ flex-direction:column; }
+  .pdiag .pd-conn{ display:none; }
+  /* Complex diagrams keep their real layout and scroll sideways instead of
+     collapsing, so edges, the loop arc, and parallel branches stay meaningful.
+     The scroll wrapper (.pd-gscroll) keeps each diagram from widening the page. */
+  .pdiag .pd-graph{ width:max-content; min-width:100%; gap:26px; }
+  .pdiag .pd-col{ flex:none; }
+  .pdiag .pd-loopwrap{ width:max-content; max-width:none; min-width:100%; }
+  .pdiag .pd-loopwrap .pd-row{ flex-direction:row; }
+  .pdiag .pd-loopwrap .pd-conn{ display:block; }
+  .pdiag .pd-branch{ justify-content:flex-start; gap:26px; overflow-x:auto; overflow-y:hidden; padding-bottom:4px; }
+  .pdiag .pd-gscroll,
+  .pdiag .pd-branch{ -webkit-overflow-scrolling:touch; scrollbar-width:thin; scroll-snap-type:x proximity; }
+  .pdiag .pd-gscroll > *{ scroll-snap-align:start; }
+}
 `;
