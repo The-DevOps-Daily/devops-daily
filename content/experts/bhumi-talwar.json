@@ -1,0 +1,16 @@
+{
+  "name": "Your Name",
+  "slug": "your-name",
+  "title": "DevOps Engineer",
+  "bio": "A short bio about yourself and your experience...",
+  "avatar": "/images/experts/your-name.jpg",
+  "specialties": ["Docker", "Kubernetes", "Terraform", "CI/CD"],
+  "location": "City, Country",
+  "availableForHire": true,
+  "links": {
+    "website": "https://yoursite.com",
+    "github": "https://github.com/your-username",
+    "linkedin": "https://linkedin.com/in/your-profile",
+    "twitter": "https://x.com/your-handle"
+  }
+}
