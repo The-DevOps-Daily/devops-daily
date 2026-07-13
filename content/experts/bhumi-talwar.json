@@ -1,15 +1,15 @@
 {
-  "name": "Your Name",
-  "slug": "your-name",
+  "name": "Bhumi Talwar",
+  "slug": "bhumi-talwar",
   "title": "DevOps Engineer",
   "bio": "A short bio about yourself and your experience...",
-  "avatar": "/images/experts/your-name.jpg",
+  "avatar": "/images/experts/bhumi-talwar.jpg",
   "specialties": ["Docker", "Kubernetes", "Terraform", "CI/CD"],
-  "location": "City, Country",
+  "location": "Lucknow, India",
   "availableForHire": true,
   "links": {
     "website": "https://yoursite.com",
-    "github": "https://github.com/your-username",
+    "github": "https://github.com/BhumiTalwar",
     "linkedin": "https://linkedin.com/in/your-profile",
     "twitter": "https://x.com/your-handle"
   }
