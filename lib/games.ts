@@ -33,6 +33,36 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'docker-under-the-hood-simulator',
+    type: 'simulator',
+    title: 'How Docker Works Under the Hood',
+    seoTitle: 'How Docker Works Under the Hood: From docker run to the Kernel',
+    description:
+      'Watch what really happens when you run docker run -p 8080:80 nginx, one layer at a time. Step down the whole stack: the CLI, the daemon, the registry pull, containerd, the OCI runtime bundle, runc, the running container, and the shared Linux kernel. Every stage shows the real low-level command you can run yourself, so it doubles as a tour of the primitives that make a container: namespaces, cgroups, and runc. A container is not a small VM, and this shows you why.',
+    iconName: 'Boxes',
+    badgeText: 'New',
+    color: 'from-sky-500 to-blue-600',
+    href: '/games/docker-under-the-hood-simulator',
+    tags: [
+      'docker',
+      'containers',
+      'containerd',
+      'runc',
+      'namespaces',
+      'cgroups',
+      'oci',
+      'linux',
+      'kernel',
+      'devops',
+      'interactive',
+      'educational',
+    ],
+    isNew: true,
+    featured: true,
+    category: 'DevOps',
+    createdAt: '2026-07-14',
+  },
+  {
     id: 'agentic-loop-simulator',
     type: 'simulator',
     title: 'Agentic Loop Simulator',
