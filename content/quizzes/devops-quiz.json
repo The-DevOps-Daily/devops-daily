@@ -197,5 +197,19 @@
       "difficulty": "advanced",
       "points": 22
     }
+    ,
+    { "question": "Which of the following best describes the core goal of DevOps?",
+      "options": [
+        "To isolate the development team from the operations team.",
+        "To break down silos and improve collaboration between development and operations.",
+        "To automate testing without involving the QA team.",
+        "To replace all software engineers with system administrators."
+      ],
+      "correctAnswer": 1,
+      "explanation": "The primary goal of DevOps is to bridge the gap between development (Dev) and operations (Ops) teams, fostering collaboration, shared responsibility, and faster continuous delivery.",
+      "hint": "Focus on the relationship between the two main teams in the name.",
+      "difficulty": "beginner",
+      "points": 10
+    }
   ]
 }
