@@ -9,12 +9,37 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * `docker run -p 8080:80 nginx`. It steps down the whole stack one layer at a
  * time: the CLI, the daemon, the registry pull, containerd, the OCI bundle,
  * runc, the running container, and the shared kernel. Each stage explains what
- * happens and shows the real low-level command you can run yourself to see it,
- * so it doubles as a tour of the actual primitives (namespaces, cgroups, runc).
+ * happens and shows the real low-level command you can run yourself, so it
+ * doubles as a tour of the actual primitives (namespaces, cgroups, runc).
  *
  * Fully self-contained. Styling is scoped under `.dhk` (classes prefixed
- * `dhk-`) so it never collides with the site's global Tailwind layer.
+ * `dhk-`) with the site's amber accent so it matches the other simulators.
  */
+
+/* Crisp inline SVG icons instead of unicode glyphs (which render unevenly). */
+const ICONS: Record<string, string> = {
+  terminal: '<path d="M4 17l6-6-6-6"/><path d="M12 19h8"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/>',
+  cloud: '<path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.6 1.5A4 4 0 0 0 6 19z"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/>',
+  package: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5L12 12l8-4.5M12 12v9"/>',
+  play: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5l6 3.5-6 3.5z"/>',
+  container: '<rect x="3" y="7" width="18" height="11" rx="1.5"/><path d="M8 7V5h8v2M8 11v3M12 11v3M16 11v3"/>',
+  cpu: '<rect x="6" y="6" width="12" height="12" rx="1.5"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+};
+
+function Icon({ name }: { name: string }) {
+  return (
+    <span
+      className="dhk-svg"
+      aria-hidden="true"
+      dangerouslySetInnerHTML={{
+        __html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] ?? ''}</svg>`,
+      }}
+    />
+  );
+}
 
 interface Stage {
   key: string;
@@ -36,7 +61,7 @@ function buildStages(imageLocal: boolean): Stage[] {
     {
       key: 'cli',
       actor: 'Docker CLI',
-      icon: '⌨',
+      icon: 'terminal',
       title: 'You run a command',
       tag: 'REST over a Unix socket',
       detail:
@@ -47,7 +72,7 @@ function buildStages(imageLocal: boolean): Stage[] {
     {
       key: 'dockerd',
       actor: 'Docker daemon',
-      icon: '⚙',
+      icon: 'gear',
       title: 'dockerd takes the request',
       tag: 'the long-running engine',
       detail:
@@ -58,7 +83,7 @@ function buildStages(imageLocal: boolean): Stage[] {
     {
       key: 'pull',
       actor: 'Registry',
-      icon: '☁',
+      icon: 'cloud',
       title: 'Pull the image',
       tag: 'only the missing layers',
       detail:
@@ -78,7 +103,7 @@ function buildStages(imageLocal: boolean): Stage[] {
     {
       key: 'containerd',
       actor: 'containerd',
-      icon: '▤',
+      icon: 'layers',
       title: 'dockerd hands off to containerd',
       tag: 'the container supervisor',
       detail:
@@ -89,7 +114,7 @@ function buildStages(imageLocal: boolean): Stage[] {
     {
       key: 'bundle',
       actor: 'OCI bundle',
-      icon: '❏',
+      icon: 'package',
       title: 'Assemble the runtime bundle',
       tag: 'config.json + rootfs',
       detail:
@@ -109,7 +134,7 @@ function buildStages(imageLocal: boolean): Stage[] {
     {
       key: 'runc',
       actor: 'runc',
-      icon: '▶',
+      icon: 'play',
       title: 'runc creates the container',
       tag: 'namespaces + cgroups, then exec',
       detail:
@@ -120,7 +145,7 @@ function buildStages(imageLocal: boolean): Stage[] {
     {
       key: 'container',
       actor: 'Running container',
-      icon: '◧',
+      icon: 'container',
       title: 'The container is running',
       tag: 'an isolated process, not a VM',
       detail:
@@ -131,7 +156,7 @@ function buildStages(imageLocal: boolean): Stage[] {
     {
       key: 'kernel',
       actor: 'Linux kernel',
-      icon: '⬡',
+      icon: 'cpu',
       title: 'It all runs on the shared kernel',
       tag: 'namespaces · cgroups · networking · mounts',
       detail:
@@ -153,8 +178,6 @@ export default function DockerUnderTheHoodSimulator() {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Rebuild the stage list when the "image already local" toggle flips, and
-  // keep the active index in range.
   useEffect(() => {
     const next = buildStages(imageLocal);
     setStages(next);
@@ -225,36 +248,21 @@ export default function DockerUnderTheHoodSimulator() {
 
       <div className="dhk-controls">
         <button className="dhk-btn dhk-primary" onClick={togglePlay} type="button">
-          {playing ? '⏸ Pause' : atEnd ? '↻ Replay' : '▶ Play'}
+          {playing ? 'Pause' : atEnd ? 'Replay' : 'Play'}
         </button>
-        <button
-          className="dhk-btn"
-          onClick={() => go(active - 1)}
-          disabled={active === 0}
-          type="button"
-        >
+        <button className="dhk-btn" onClick={() => go(active - 1)} disabled={active === 0} type="button">
           Prev
         </button>
-        <button
-          className="dhk-btn"
-          onClick={() => go(active + 1)}
-          disabled={atEnd}
-          type="button"
-        >
+        <button className="dhk-btn" onClick={() => go(active + 1)} disabled={atEnd} type="button">
           Next
         </button>
         <label className="dhk-toggle">
-          <input
-            type="checkbox"
-            checked={imageLocal}
-            onChange={(e) => setImageLocal(e.target.checked)}
-          />
+          <input type="checkbox" checked={imageLocal} onChange={(e) => setImageLocal(e.target.checked)} />
           <span>nginx already pulled</span>
         </label>
       </div>
 
       <div className="dhk-grid">
-        {/* Flow column */}
         <ol className="dhk-flow" aria-label="Docker run pipeline">
           {stages.map((s, i) => {
             const state = i < active ? 'done' : i === active ? 'active' : 'todo';
@@ -266,8 +274,8 @@ export default function DockerUnderTheHoodSimulator() {
                   onClick={() => go(i)}
                   aria-current={i === active}
                 >
-                  <span className="dhk-ico" aria-hidden="true">
-                    {i < active ? '✓' : s.icon}
+                  <span className="dhk-ico">
+                    <Icon name={i < active ? 'check' : s.icon} />
                   </span>
                   <span className="dhk-stagelabel">
                     <span className="dhk-actor">{s.actor}</span>
@@ -280,7 +288,6 @@ export default function DockerUnderTheHoodSimulator() {
           })}
         </ol>
 
-        {/* Detail panel */}
         <div className="dhk-panel">
           <div className="dhk-panelhead">
             <span className="dhk-chip">{current.tag}</span>
@@ -289,8 +296,8 @@ export default function DockerUnderTheHoodSimulator() {
             </span>
           </div>
           <h3 className="dhk-paneltitle">
-            <span className="dhk-ico dhk-panico" aria-hidden="true">
-              {current.icon}
+            <span className="dhk-ico dhk-panico">
+              <Icon name={current.icon} />
             </span>
             {current.title}
           </h3>
@@ -341,22 +348,25 @@ export default function DockerUnderTheHoodSimulator() {
 }
 
 const CSS = `
-.dhk{ --dhk-bg:#0f141d; --dhk-card:#151c27; --dhk-line:#25303f; --dhk-line2:#33465c; --dhk-ink:#e8edf6; --dhk-mut:#93a1b5; --dhk-acc:#3d8bff; --dhk-acc2:#7cc0ff; --dhk-amber:#f2a35a; --dhk-green:#42c98a;
+.dhk{ --dhk-bg:#0f141d; --dhk-card:#171e29; --dhk-line:#262f3d; --dhk-line2:#35455a; --dhk-ink:#e8edf6; --dhk-mut:#93a1b5;
+  --dhk-acc:#f2b043; --dhk-acc2:#f7c877; --dhk-accsoft:#f2b0431a; --dhk-green:#46d888;
   --dhk-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   color:var(--dhk-ink); background:var(--dhk-bg); border:1px solid var(--dhk-line); border-radius:18px; padding:22px; margin:1.5rem 0;
   box-shadow:0 1px 2px rgba(0,0,0,.25),0 24px 60px -40px rgba(0,0,0,.8); }
 .dhk *{ box-sizing:border-box; }
-.dhk-eyebrow{ font-family:var(--dhk-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--dhk-acc2); margin:0; }
+.dhk-svg{ display:inline-flex; }
+.dhk-svg svg{ width:20px; height:20px; display:block; }
+.dhk-eyebrow{ font-family:var(--dhk-mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--dhk-acc); margin:0; }
 .dhk-h{ font-size:22px; font-weight:750; margin:6px 0 14px; color:#fff; line-height:1.15; }
 .dhk-cmdbar{ display:flex; align-items:center; gap:10px; background:#0a0e15; border:1px solid var(--dhk-line); border-radius:10px; padding:11px 14px; font-family:var(--dhk-mono); font-size:14px; overflow-x:auto; }
 .dhk-dollar{ color:var(--dhk-green); }
-.dhk-cmdtext{ color:#dfe7f2; white-space:nowrap; } .dhk-cmdtext b{ color:var(--dhk-amber); font-weight:700; }
+.dhk-cmdtext{ color:#dfe7f2; white-space:nowrap; } .dhk-cmdtext b{ color:var(--dhk-acc); font-weight:700; }
 .dhk-controls{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:14px 0 16px; }
-.dhk-btn{ font-family:var(--dhk-mono); font-size:13px; color:var(--dhk-ink); background:var(--dhk-card); border:1px solid var(--dhk-line2); border-radius:9px; padding:7px 13px; cursor:pointer; transition:border-color .15s,color .15s,opacity .15s; }
+.dhk-btn{ font-family:var(--dhk-mono); font-size:13px; color:var(--dhk-ink); background:var(--dhk-card); border:1px solid var(--dhk-line2); border-radius:9px; padding:7px 15px; cursor:pointer; transition:border-color .15s,color .15s,opacity .15s; }
 .dhk-btn:hover:not(:disabled){ border-color:var(--dhk-acc); color:var(--dhk-acc2); }
 .dhk-btn:disabled{ opacity:.4; cursor:default; }
-.dhk-primary{ background:var(--dhk-acc); border-color:var(--dhk-acc); color:#04121f; font-weight:650; }
-.dhk-primary:hover{ background:var(--dhk-acc2); border-color:var(--dhk-acc2); color:#04121f; }
+.dhk-primary{ background:var(--dhk-acc); border-color:var(--dhk-acc); color:#1a1204; font-weight:700; }
+.dhk-primary:hover{ background:var(--dhk-acc2); border-color:var(--dhk-acc2); color:#1a1204; }
 .dhk-toggle{ display:inline-flex; align-items:center; gap:7px; margin-left:auto; font-size:13px; color:var(--dhk-mut); cursor:pointer; user-select:none; }
 .dhk-toggle input{ accent-color:var(--dhk-acc); width:15px; height:15px; }
 .dhk-grid{ display:grid; grid-template-columns:minmax(230px,300px) 1fr; gap:20px; align-items:start; }
@@ -364,24 +374,24 @@ const CSS = `
 .dhk-stage{ position:relative; }
 .dhk-stagebtn{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:transparent; border:1px solid transparent; border-radius:12px; padding:9px 10px; cursor:pointer; transition:background .15s,border-color .15s; }
 .dhk-stagebtn:hover{ background:rgba(255,255,255,.03); }
-.dhk-ico{ flex:none; width:36px; height:36px; display:grid; place-items:center; border-radius:10px; font-size:17px; background:var(--dhk-card); border:1px solid var(--dhk-line2); color:var(--dhk-mut); transition:all .2s; }
+.dhk-ico{ flex:none; width:36px; height:36px; display:grid; place-items:center; border-radius:10px; background:var(--dhk-card); border:1px solid var(--dhk-line2); color:var(--dhk-mut); transition:all .2s; }
 .dhk-stagelabel{ display:flex; flex-direction:column; min-width:0; }
 .dhk-actor{ font-family:var(--dhk-mono); font-size:11px; letter-spacing:.03em; text-transform:uppercase; color:var(--dhk-mut); }
 .dhk-title{ font-size:13.5px; font-weight:600; color:var(--dhk-ink); line-height:1.2; }
 .dhk-conn{ position:absolute; left:27px; top:54px; height:calc(100% - 46px); width:2px; background:var(--dhk-line2); }
-.dhk-done .dhk-ico{ background:rgba(66,201,138,.14); border-color:rgba(66,201,138,.5); color:var(--dhk-green); }
+.dhk-done .dhk-ico{ background:rgba(70,216,136,.13); border-color:rgba(70,216,136,.5); color:var(--dhk-green); }
 .dhk-done .dhk-conn{ background:linear-gradient(var(--dhk-green),var(--dhk-line2)); }
-.dhk-active .dhk-stagebtn{ background:rgba(61,139,255,.1); border-color:rgba(61,139,255,.4); }
-.dhk-active .dhk-ico{ background:rgba(61,139,255,.18); border-color:var(--dhk-acc); color:var(--dhk-acc2); box-shadow:0 0 0 4px rgba(61,139,255,.12); animation:dhk-pulse 1.8s ease-out infinite; }
+.dhk-active .dhk-stagebtn{ background:var(--dhk-accsoft); border-color:rgba(242,176,67,.4); }
+.dhk-active .dhk-ico{ background:rgba(242,176,67,.16); border-color:var(--dhk-acc); color:var(--dhk-acc2); animation:dhk-pulse 1.8s ease-out infinite; }
 .dhk-active .dhk-title{ color:#fff; }
 .dhk-todo .dhk-ico,.dhk-todo .dhk-title{ opacity:.55; }
-@keyframes dhk-pulse{ 0%{ box-shadow:0 0 0 3px rgba(61,139,255,.28); } 70%{ box-shadow:0 0 0 10px rgba(61,139,255,0); } 100%{ box-shadow:0 0 0 10px rgba(61,139,255,0); } }
+@keyframes dhk-pulse{ 0%{ box-shadow:0 0 0 3px rgba(242,176,67,.28); } 70%{ box-shadow:0 0 0 10px rgba(242,176,67,0); } 100%{ box-shadow:0 0 0 10px rgba(242,176,67,0); } }
 .dhk-panel{ background:var(--dhk-card); border:1px solid var(--dhk-line); border-radius:14px; padding:18px; min-height:260px; }
 .dhk-panelhead{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
-.dhk-chip{ font-family:var(--dhk-mono); font-size:11.5px; color:var(--dhk-acc2); background:rgba(61,139,255,.12); border:1px solid rgba(61,139,255,.3); border-radius:999px; padding:4px 11px; }
+.dhk-chip{ font-family:var(--dhk-mono); font-size:11.5px; color:var(--dhk-acc2); background:rgba(242,176,67,.12); border:1px solid rgba(242,176,67,.32); border-radius:999px; padding:4px 11px; }
 .dhk-step{ font-family:var(--dhk-mono); font-size:11.5px; color:var(--dhk-mut); }
 .dhk-paneltitle{ display:flex; align-items:center; gap:11px; font-size:18px; font-weight:700; color:#fff; margin:0 0 8px; }
-.dhk-panico{ width:34px; height:34px; font-size:16px; }
+.dhk-panico{ width:38px; height:38px; background:rgba(242,176,67,.14); border-color:rgba(242,176,67,.4); color:var(--dhk-acc2); }
 .dhk-detail{ font-size:14.5px; line-height:1.6; color:#cdd7e5; margin:0 0 14px; }
 .dhk-artifact{ background:#0a0e15; border:1px solid var(--dhk-line); border-radius:10px; margin:0 0 14px; overflow:hidden; }
 .dhk-artlabel{ font-family:var(--dhk-mono); font-size:11px; color:var(--dhk-mut); padding:8px 12px; border-bottom:1px solid var(--dhk-line); }
@@ -394,7 +404,7 @@ const CSS = `
 .dhk-copy:hover{ color:var(--dhk-ink); border-color:var(--dhk-acc); }
 .dhk-cmdnote{ font-size:12.5px; color:var(--dhk-mut); margin:8px 2px 0; line-height:1.5; }
 .dhk-prims{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
-.dhk-prim{ font-family:var(--dhk-mono); font-size:12px; color:var(--dhk-amber); background:rgba(242,163,90,.1); border:1px solid rgba(242,163,90,.35); border-radius:8px; padding:5px 11px; animation:dhk-rise .4s ease backwards; }
+.dhk-prim{ font-family:var(--dhk-mono); font-size:12px; color:var(--dhk-acc2); background:rgba(242,176,67,.1); border:1px solid rgba(242,176,67,.35); border-radius:8px; padding:5px 11px; animation:dhk-rise .4s ease backwards; }
 .dhk-prim:nth-child(2){ animation-delay:.08s; } .dhk-prim:nth-child(3){ animation-delay:.16s; } .dhk-prim:nth-child(4){ animation-delay:.24s; }
 @keyframes dhk-rise{ from{ opacity:0; transform:translateY(5px); } }
 .dhk-foot{ font-size:13px; line-height:1.6; color:var(--dhk-mut); margin:16px 0 0; border-top:1px solid var(--dhk-line); padding-top:14px; }
