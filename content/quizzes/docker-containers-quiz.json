@@ -1,0 +1,99 @@
+{
+  "title": "Docker & Containers Quiz",
+  "slug": "docker-containers-quiz",
+  "description": "Test your core knowledge of containerization, Dockerfiles, and image layers.",
+  "category": "DevOps",
+  "difficulty": "medium",
+  "questions": [
+    {
+      "question": "Which Dockerfile instruction specifies the command that always runs when the container starts, and cannot be easily overridden?",
+      "options": ["CMD", "ENTRYPOINT", "RUN", "START"],
+      "correct": 1,
+      "explanation": "ENTRYPOINT configures a container that will run as an executable. While CMD can be easily overridden by passing arguments at runtime, ENTRYPOINT requires the --entrypoint flag to override."
+    },
+    {
+      "question": "What is the primary benefit of using multi-stage Docker builds?",
+      "options": [
+        "To run multiple containers at once",
+        "To minimize final image size by leaving build tools behind",
+        "To speed up networking layers",
+        "To automatically restart failing containers"
+      ],
+      "correct": 1,
+      "explanation": "Multi-stage builds allow you to use intermediate images to compile code or install dependencies, then copy only the necessary artifacts into a minimal final production image."
+    },
+    {
+      "question": "Which command is used to remove all stopped containers, unused networks, and dangling images at once?",
+      "options": ["docker clean all", "docker container rm -f", "docker system prune", "docker image rm -f"],
+      "correct": 2,
+      "explanation": "docker system prune removes all unused data, including stopped containers, dangling images, and build caches, helping free up disk space."
+    },
+    {
+      "question": "What happens to data inside a container's writable layer when the container is deleted?",
+      "options": [
+        "The data is permanently lost",
+        "The data is automatically saved to a volume",
+        "The data moves to the host's temp directory",
+        "The data remains intact and attaches to the next container"
+      ],
+      "correct": 0,
+      "explanation": "A container's local storage layer is ephemeral. Unless you explicitly persist the data using Docker Volumes or Bind Mounts, deleting the container permanently wipes out its writable layer."
+    },
+    {
+      "question": "In a Dockerfile, what does the 'COPY' instruction do compared to 'ADD'?",
+      "options": [
+        "COPY only copies local files, while ADD can fetch remote URLs and unpack tar archives",
+        "ADD only copies local files, while COPY can download files from GitHub",
+        "There is no difference; they are exact aliases",
+        "COPY moves files, while ADD duplicates files"
+      ],
+      "correct": 0,
+      "explanation": "COPY is preferred for its predictability, simply moving local files into the container image. ADD has extra features like remote URL downloading and automatic tar extraction."
+    },
+    {
+      "question": "Which flag is used to run a Docker container detached in the background?",
+      "options": ["-b", "-bg", "-d", "-background"],
+      "correct": 2,
+      "explanation": "The -d (or --detach) flag runs the container in the background and prints the new container ID to your terminal."
+    },
+    {
+      "question": "How does Docker isolate processes from each other on a shared Linux host?",
+      "options": [
+        "By launching a lightweight Hyper-V virtual machine for each container",
+        "Using Linux namespaces and control groups (cgroups)",
+        "By compiling the application binaries directly into the host kernel",
+        "Using strict user/group permission hierarchies"
+      ],
+      "correct": 1,
+      "explanation": "Docker uses native Linux kernel features: Namespaces provide isolation (processes, networks, mount points), while cgroups govern resource limitations (CPU, Memory)."
+    },
+    {
+      "question": "What is a 'dangling' Docker image?",
+      "options": [
+        "An image that is actively being downloaded",
+        "An image with no tag that is no longer associated with any container",
+        "An image stored on a remote container registry",
+        "An unverified third-party image layer"
+      ],
+      "correct": 1,
+      "explanation": "Dangling images appear as <none>:<none> when running docker images. They usually occur when you build an image with an existing tag name, making the old build layers untagged."
+    },
+    {
+      "question": "Which Docker network driver connects a container directly to the host's network interface, removing isolation?",
+      "options": ["bridge", "overlay", "host", "macvlan"],
+      "correct": 2,
+      "explanation": "The host network mode removes the network isolation between the container and the Docker host, letting the container use the host's IP address and port space directly."
+    },
+    {
+      "question": "Why should you order Dockerfile instructions from least-frequently changed to most-frequently changed?",
+      "options": [
+        "To avoid syntax validation errors",
+        "To maximize Docker layer caching and speed up subsequent builds",
+        "Because Docker reads instructions from bottom to top",
+        "To ensure the container can boot up faster"
+      ],
+      "correct": 1,
+      "explanation": "Docker caches the output of each instruction layer. If a layer changes (like application code), all subsequent layers must be rebuilt from scratch. Placing frequent updates at the bottom keeps earlier layers cached."
+    }
+  ]
+}
