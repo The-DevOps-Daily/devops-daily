@@ -216,7 +216,7 @@ Announcements BazelCon 2026 - details The Details at a Glance: What: BazelCon 20
 
 **📅 Jul 7, 2026** • **📰 Bazel Blog**
 
-[**🔗 Read more**](/2026/07/07/bazel-q2-2026-community-update.html)
+[**🔗 Read more**](https://blog.bazel.build/2026/07/07/bazel-q2-2026-community-update.html)
 
 ---
 
