@@ -11,6 +11,7 @@ import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
 import DbmsSimulator from '@/components/games/dbms-simulator';
 import DdosSimulator from '@/components/games/ddos-simulator';
 import DeploymentStrategies from '@/components/games/deployment-strategies-simulator';
+import DockerUnderTheHoodSimulator from '@/components/games/docker-under-the-hood-simulator';
 import DevOpsMemes from '@/components/games/devops-memes';
 import DevOpsScorecard from '@/components/games/devops-scorecard';
 import DnsSimulator from '@/components/games/dns-simulator';
@@ -49,6 +50,7 @@ import UptimeDefender from '@/components/games/uptime-defender';
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'agentic-loop-simulator': AgenticLoopSimulator,
+  'docker-under-the-hood-simulator': DockerUnderTheHoodSimulator,
   'tcp-vs-udp': TcpVsUdpSimulator,
   'dns-simulator': DnsSimulator,
   'docker-terminal-simulator': DockerTerminalSimulator,
