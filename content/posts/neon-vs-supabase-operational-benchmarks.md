@@ -187,22 +187,17 @@ The attach-vs-clone story makes a testable prediction: copy-on-write operations 
 
 ```chart
 {
-  "type": "line",
+  "type": "bar",
   "title": "Read replica creation as the database grows",
   "unit": "s",
-  "caption": "Median time to a replica answering queries at 100k, 1M, and 5M seeded rows.",
-  "x": ["100k rows", "1M rows", "5M rows"],
-  "series": [
-    {
-      "name": "Neon",
-      "color": "#10b981",
-      "data": [7.9, 8.0, 8.2]
-    },
-    {
-      "name": "Supabase",
-      "color": "#38bdf8",
-      "data": [181.0, 181.8, 202.7]
-    }
+  "caption": "Median time to a replica answering queries at 100k, 1M, and 5M seeded rows. Neon shares storage with the primary (flat); Supabase clones the database, so its time climbs with size.",
+  "rows": [
+    { "label": "Neon · 100k rows", "value": 7.9, "series": "Neon" },
+    { "label": "Supabase · 100k rows", "value": 181.0, "series": "Supabase" },
+    { "label": "Neon · 1M rows", "value": 8.0, "series": "Neon" },
+    { "label": "Supabase · 1M rows", "value": 181.8, "series": "Supabase" },
+    { "label": "Neon · 5M rows", "value": 8.2, "series": "Neon" },
+    { "label": "Supabase · 5M rows", "value": 202.7, "series": "Supabase" }
   ]
 }
 ```

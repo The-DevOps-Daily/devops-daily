@@ -53,6 +53,9 @@ export interface ChartSpec {
   /** line */
   x?: Array<string | number>;
   series?: LineSeries[] | DotSeries[] | CdfSeries[];
+  /** line: use a log10 y-axis (values must be > 0). Spreads out a squished
+   *  low end next to a large spike. Opt-in; linear otherwise. */
+  log?: boolean;
 }
 
 export function parseChartSpec(raw: string): ChartSpec | null {

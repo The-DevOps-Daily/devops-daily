@@ -86,11 +86,26 @@ function LineChart({ spec }: { spec: ChartSpec }) {
   const padB = 34;
   const points = Math.max(...series.map((s) => s.data.length));
   const all = series.flatMap((s) => s.data);
-  const maxV = Math.max(...all) * 1.06;
-  const minV = Math.min(0, Math.min(...all));
   const x = (i: number) => padL + (i / Math.max(1, points - 1)) * (width - padL - padR);
-  const y = (v: number) => padT + (1 - (v - minV) / (maxV - minV)) * (height - padT - padB);
-  const yTicks = [...Array(4).keys()].map((t) => minV + ((maxV - minV) * (t + 1)) / 4);
+
+  // Log axis (opt-in): spreads a squished low end next to a large spike. Falls
+  // back to linear when any value is <= 0, since log10 is undefined there.
+  const canLog = spec.log && all.every((v) => v > 0);
+  let y: (v: number) => number;
+  let yTicks: number[];
+  if (canLog) {
+    const loB = 10 ** Math.floor(Math.log10(Math.min(...all)));
+    const hiB = 10 ** Math.ceil(Math.log10(Math.max(...all)));
+    const lg = (v: number) => Math.log10(Math.max(v, loB));
+    y = (v: number) => padT + (1 - (lg(v) - lg(loB)) / (lg(hiB) - lg(loB))) * (height - padT - padB);
+    yTicks = [];
+    for (let t = loB; t <= hiB + 1e-6; t *= 10) yTicks.push(t);
+  } else {
+    const maxV = Math.max(...all) * 1.06;
+    const minV = Math.min(0, Math.min(...all));
+    y = (v: number) => padT + (1 - (v - minV) / (maxV - minV)) * (height - padT - padB);
+    yTicks = [...Array(4).keys()].map((t) => minV + ((maxV - minV) * (t + 1)) / 4);
+  }
   const labels = spec.x ?? [...Array(points).keys()].map((i) => i + 1);
   const labelStep = Math.ceil(labels.length / 8);
 
