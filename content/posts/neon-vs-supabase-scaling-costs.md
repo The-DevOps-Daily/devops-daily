@@ -53,7 +53,8 @@ Disagree with the assumptions? Good: they are parameters, not conclusions. Clone
   "type": "line",
   "title": "Monthly cost of the same application as it grows",
   "unit": "$",
-  "caption": "List prices June 2026, verified against both pricing pages. Model and assumptions are open source; rerun with your own workload.",
+  "log": true,
+  "caption": "Log scale, so the early-stage gap stays visible next to the scale-stage spike. List prices June 2026, verified against both pricing pages. Model and assumptions are open source; rerun with your own workload.",
   "x": [
     "launch month",
     "first customers",
