@@ -82,7 +82,7 @@ That is the whole thing. Each `pgx-*` image is built `FROM scratch` and contains
 
 ```diagram
 {
-  "mode": "infra",
+  "type": "flow",
   "title": "Composing a Postgres image with pglayers",
   "nodes": [
     { "label": "postgres:17 (official base)", "icon": "database" },

@@ -46,9 +46,9 @@ seccomp (secure computing mode) is a kernel feature that filters syscalls per pr
 
 ```diagram
 {
-  "mode": "flow",
+  "type": "flow",
   "title": "What a seccomp profile changes",
-  "steps": [
+  "nodes": [
     { "label": "Attacker gets code execution in the container", "icon": "cpu" },
     { "label": "Tries a container-escape syscall (unshare, keyctl, mount)", "icon": "activity" },
     { "label": "No profile: kernel runs it, escape proceeds", "icon": "server" },
@@ -133,9 +133,9 @@ Now deploy the workload with the matching label and, critically, **exercise it**
 
 ```diagram
 {
-  "mode": "loop",
+  "type": "loop",
   "title": "The record-review-enforce loop",
-  "steps": [
+  "nodes": [
     { "label": "Record: run the workload under a ProfileRecording", "icon": "activity" },
     { "label": "Exercise every code path (tests, jobs, edge cases)", "icon": "rocket" },
     { "label": "Review the generated SeccompProfile syscall list", "icon": "check" },

@@ -26,7 +26,7 @@ This is not a "learn these 40 tools" post. It is a map of where the DevOps role 
 
 ```diagram
 {
-  "mode": "branch",
+  "type": "branch",
   "title": "Where the DevOps role forks",
   "nodes": [{ "label": "DevOps Engineer (today)", "icon": "gear" }],
   "branch": [
