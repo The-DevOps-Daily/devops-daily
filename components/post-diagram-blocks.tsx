@@ -78,9 +78,18 @@ function NodeCard({ node }: { node: DiagramNode }) {
 function Conn() {
   return (
     <svg className="pd-conn" viewBox="0 0 58 24" height="24" preserveAspectRatio="none" aria-hidden="true">
-      <line className="base" x1="3" y1="12" x2="47" y2="12" />
-      <line className="flow" x1="3" y1="12" x2="47" y2="12" />
-      <path className="head" d="M45 8l6 4-6 4" />
+      {/* straight arrow, default */}
+      <g className="c-h">
+        <line className="base" x1="3" y1="12" x2="47" y2="12" />
+        <line className="flow" x1="3" y1="12" x2="47" y2="12" />
+        <path className="head" d="M45 8l6 4-6 4" />
+      </g>
+      {/* down-then-right elbow, shown when the arrow lands at a line break */}
+      <g className="c-w">
+        <path className="base" fill="none" d="M12 2 V9 Q12 17 24 17 H50" />
+        <path className="flow" fill="none" d="M12 2 V9 Q12 17 24 17 H50" />
+        <path className="head" d="M48 13l6 4-6 4" />
+      </g>
     </svg>
   );
 }
@@ -266,16 +275,45 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
     );
   };
 
+  // Each connector is glued to the node it points into (.pd-seg), so on a wrap
+  // the arrow travels to the new line with its node instead of orphaning.
   const row = (
     <div className="pd-row">
-      {nodes.map((n, i) => (
-        <React.Fragment key={i}>
+      {nodes.length > 0 && <NodeCard node={nodes[0]} />}
+      {nodes.slice(1).map((n, i) => (
+        <div className="pd-seg" key={i + 1}>
+          <Conn />
           <NodeCard node={n} />
-          {i < nodes.length - 1 && <Conn />}
-        </React.Fragment>
+        </div>
       ))}
     </div>
   );
+
+  // Mark the connector of any segment that wrapped to a new line, so it can
+  // render a down-then-right elbow instead of a floating straight arrow.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const mark = () => {
+      root.querySelectorAll<HTMLElement>('.pd-row').forEach((rowEl) => {
+        const first = rowEl.firstElementChild as HTMLElement | null;
+        let prevTop = first ? first.offsetTop : 0;
+        rowEl.querySelectorAll<HTMLElement>(':scope > .pd-seg').forEach((seg) => {
+          const conn = seg.querySelector<HTMLElement>('.pd-conn');
+          if (conn) conn.classList.toggle('is-wrap', seg.offsetTop > prevTop + 4);
+          prevTop = seg.offsetTop;
+        });
+      });
+    };
+    mark();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(mark) : null;
+    if (ro) ro.observe(root);
+    window.addEventListener('resize', mark);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', mark);
+    };
+  }, []);
 
   return (
     <div className="pdiag" ref={rootRef}>
@@ -662,10 +700,14 @@ const STYLES = `
 .pdiag .pd-ic.t-amber{ color:var(--pd-amber); background:color-mix(in srgb,var(--pd-amber) 16%,transparent); }
 .pdiag .pd-ic.t-accent{ color:var(--pd-accent); background:color-mix(in srgb,var(--pd-accent) 15%,transparent); }
 .pdiag .pd-ic.t-slate{ color:var(--pd-slate); background:color-mix(in srgb,var(--pd-slate) 13%,transparent); }
+.pdiag .pd-seg{ display:inline-flex; align-items:stretch; }
 .pdiag .pd-conn{ width:56px; align-self:center; }
 .pdiag .pd-conn .base{ stroke:var(--pd-line2); stroke-width:2; }
 .pdiag .pd-conn .head{ fill:none; stroke:var(--pd-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .pdiag .pd-conn .flow{ stroke:var(--pd-accent); stroke-width:2.4; stroke-linecap:round; stroke-dasharray:4 10; }
+.pdiag .pd-conn .c-w{ display:none; }
+.pdiag .pd-conn.is-wrap .c-h{ display:none; }
+.pdiag .pd-conn.is-wrap .c-w{ display:block; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-conn .flow{ animation:pd-dash .95s linear infinite; } }
 @keyframes pd-dash{ to{ stroke-dashoffset:-14; } }
 .pdiag .pd-loopwrap{ width:fit-content; max-width:100%; margin:0 auto; }
@@ -725,8 +767,10 @@ const STYLES = `
 .pdiag .pd-pkt{ fill:var(--pd-accent); }
 .pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; }
 @media (max-width:760px){
-  /* Simple flows stack; they read fine as a vertical list without arrows. */
+  /* Simple flows stack; they read fine as a vertical list without arrows.
+     display:contents flattens the segment so its node stacks like the rest. */
   .pdiag .pd-row{ flex-direction:column; }
+  .pdiag .pd-seg{ display:contents; }
   .pdiag .pd-conn{ display:none; }
   /* Complex diagrams keep their real layout and scroll sideways instead of
      collapsing, so edges, the loop arc, and parallel branches stay meaningful.
