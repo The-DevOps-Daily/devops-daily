@@ -46,7 +46,7 @@ Terraform does not call your API. It calls your provider binary over gRPC, and y
 {
   "type": "flow",
   "title": "Where a provider sits",
-  "steps": [
+  "nodes": [
     { "label": "terraform apply", "sub": "core computes the plan", "icon": "gear" },
     { "label": "Provider (gRPC)", "sub": "your Go binary", "icon": "box" },
     { "label": "API client", "sub": "HTTP + Bearer token", "icon": "net" },
