@@ -90,7 +90,7 @@ Code execution inside one container is bad. What makes this a cluster compromise
 {
   "type": "flow",
   "title": "From one pod to the whole cluster",
-  "steps": [
+  "nodes": [
     { "label": "Compromised pod", "sub": "any workload in the cluster", "icon": "pod" },
     { "label": "Unauth gRPC to repo-server", "sub": "GenerateManifest + malicious kustomize opts", "icon": "net" },
     { "label": "RCE in repo-server", "sub": "reads env, grabs REDIS_PASSWORD", "icon": "cpu" },
