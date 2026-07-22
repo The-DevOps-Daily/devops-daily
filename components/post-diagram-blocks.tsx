@@ -7,6 +7,7 @@ import {
   type DiagramSpec,
   type DiagramNode,
   type DiagramGroup,
+  type DiagramTone,
 } from '@/lib/post-diagram';
 
 /* ------------------------------------------------------------------ */
@@ -77,9 +78,18 @@ function NodeCard({ node }: { node: DiagramNode }) {
 function Conn() {
   return (
     <svg className="pd-conn" viewBox="0 0 58 24" height="24" preserveAspectRatio="none" aria-hidden="true">
-      <line className="base" x1="3" y1="12" x2="47" y2="12" />
-      <line className="flow" x1="3" y1="12" x2="47" y2="12" />
-      <path className="head" d="M45 8l6 4-6 4" />
+      {/* straight arrow, default */}
+      <g className="c-h">
+        <line className="base" x1="3" y1="12" x2="47" y2="12" />
+        <line className="flow" x1="3" y1="12" x2="47" y2="12" />
+        <path className="head" d="M45 8l6 4-6 4" />
+      </g>
+      {/* down-then-right elbow, shown when the arrow lands at a line break */}
+      <g className="c-w">
+        <path className="base" fill="none" d="M12 2 V9 Q12 17 24 17 H50" />
+        <path className="flow" fill="none" d="M12 2 V9 Q12 17 24 17 H50" />
+        <path className="head" d="M48 13l6 4-6 4" />
+      </g>
     </svg>
   );
 }
@@ -92,8 +102,159 @@ function prefersReducedMotion(): boolean {
   );
 }
 
+/* Tone name -> CSS custom property, and the auto-assign order for branch paths
+   that don't declare a tone, so every fork gets a distinct color for free. */
+const TONE_VAR: Record<string, string> = {
+  blue: '--pd-blue',
+  green: '--pd-green',
+  violet: '--pd-violet',
+  red: '--pd-red',
+  amber: '--pd-amber',
+  accent: '--pd-accent',
+  slate: '--pd-slate',
+};
+const PATH_TONES: DiagramTone[] = ['violet', 'blue', 'green', 'amber', 'red', 'accent'];
+
+function pathTone(node: DiagramNode, i: number): DiagramTone {
+  return node.tone && TONE_VAR[node.tone] ? node.tone : PATH_TONES[i % PATH_TONES.length];
+}
+function toneColor(tone: string): string {
+  return `var(${TONE_VAR[tone] ?? '--pd-slate'})`;
+}
+
 /* ------------------------------------------------------------------ */
-/* flow / loop / branch                                                */
+/* branch — parent forks into colored paths with drawn connectors      */
+/* ------------------------------------------------------------------ */
+
+function BranchDiagram({ spec }: { spec: DiagramSpec }) {
+  const parents = spec.nodes ?? [];
+  const legs = spec.branch ?? [];
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
+  const legRefs = useRef<(HTMLElement | null)[]>([]);
+  const flowRefs = useRef<(SVGPathElement | null)[]>([]);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [paths, setPaths] = useState<{ i: number; d: string }[]>([]);
+  const [active, setActive] = useState<number | null>(null);
+
+  const draw = () => {
+    const wrap = wrapRef.current;
+    const parent = parentRef.current;
+    if (!wrap || !parent) return;
+    const gr = wrap.getBoundingClientRect();
+    const pr = parent.getBoundingClientRect();
+    const px = pr.left + pr.width / 2 - gr.left;
+    const py = pr.bottom - gr.top;
+    const next: { i: number; d: string }[] = [];
+    legRefs.current.forEach((leg, i) => {
+      if (!leg) return;
+      const lr = leg.getBoundingClientRect();
+      const cx = lr.left + lr.width / 2 - gr.left;
+      const cy = lr.top - gr.top;
+      const midY = py + (cy - py) * 0.5;
+      next.push({ i, d: `M ${px} ${py} C ${px} ${midY}, ${cx} ${midY}, ${cx} ${cy}` });
+    });
+    setPaths(next);
+  };
+
+  useEffect(() => {
+    draw();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => draw()) : null;
+    if (ro && wrapRef.current) ro.observe(wrapRef.current);
+    window.addEventListener('resize', draw);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', draw);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const trace = () => {
+    if (prefersReducedMotion()) return;
+    paths.forEach((p, idx) => {
+      const el = flowRefs.current[p.i];
+      const svg = svgRef.current;
+      if (!el || !svg) return;
+      setTimeout(() => {
+        const len = el.getTotalLength();
+        const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        dot.setAttribute('r', '4.5');
+        dot.setAttribute('fill', toneColor(pathTone(legs[p.i], p.i)));
+        svg.appendChild(dot);
+        let start: number | null = null;
+        const dur = 720;
+        const step = (ts: number) => {
+          if (start === null) start = ts;
+          const t = Math.min(1, (ts - start) / dur);
+          const pt = el.getPointAtLength(t * len);
+          dot.setAttribute('cx', String(pt.x));
+          dot.setAttribute('cy', String(pt.y));
+          if (t < 1) requestAnimationFrame(step);
+          else if (dot.parentNode) svg.removeChild(dot);
+        };
+        requestAnimationFrame(step);
+      }, idx * 90);
+    });
+  };
+
+  return (
+    <div className="pdiag">
+      <div className="pd-toolbar">
+        {spec.title && <span className="pd-title pd-title-inline">{spec.title}</span>}
+        {spec.trace !== false && legs.length > 0 && (
+          <button type="button" className="pd-btn" onClick={trace}>
+            &#9654; Trace paths
+          </button>
+        )}
+      </div>
+      <div className={'pd-tree' + (active !== null ? ' pd-dim' : '')} ref={wrapRef}>
+        <svg className="pd-tree-links" ref={svgRef} aria-hidden="true">
+          {paths.map((p) => (
+            <React.Fragment key={p.i}>
+              <path className="pd-tlink" d={p.d} />
+              <path
+                className={'pd-tlink-flow' + (active === p.i ? ' hot' : '')}
+                d={p.d}
+                pathLength={1}
+                style={{ stroke: toneColor(pathTone(legs[p.i], p.i)), animationDelay: 0.1 + p.i * 0.08 + 's' }}
+                ref={(el) => {
+                  flowRefs.current[p.i] = el;
+                }}
+              />
+            </React.Fragment>
+          ))}
+        </svg>
+        <div className="pd-prow" ref={parentRef}>
+          {parents.map((n, i) => (
+            <NodeCard node={n} key={i} />
+          ))}
+        </div>
+        <div className="pd-branch">
+          {legs.map((n, i) => {
+            const tone = pathTone(n, i);
+            return (
+              <div
+                className={'pd-leg' + (active !== null && active !== i ? ' pd-faded' : '')}
+                key={i}
+                ref={(el) => {
+                  legRefs.current[i] = el;
+                }}
+                style={{ ['--pc' as string]: toneColor(tone) }}
+                onMouseEnter={() => setActive(i)}
+                onMouseLeave={() => setActive(null)}
+              >
+                <NodeCard node={{ ...n, tone }} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* flow / loop                                                         */
 /* ------------------------------------------------------------------ */
 
 function RowDiagram({ spec }: { spec: DiagramSpec }) {
@@ -114,16 +275,45 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
     );
   };
 
+  // Each connector is glued to the node it points into (.pd-seg), so on a wrap
+  // the arrow travels to the new line with its node instead of orphaning.
   const row = (
     <div className="pd-row">
-      {nodes.map((n, i) => (
-        <React.Fragment key={i}>
+      {nodes.length > 0 && <NodeCard node={nodes[0]} />}
+      {nodes.slice(1).map((n, i) => (
+        <div className="pd-seg" key={i + 1}>
+          <Conn />
           <NodeCard node={n} />
-          {i < nodes.length - 1 && <Conn />}
-        </React.Fragment>
+        </div>
       ))}
     </div>
   );
+
+  // Mark the connector of any segment that wrapped to a new line, so it can
+  // render a down-then-right elbow instead of a floating straight arrow.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const mark = () => {
+      root.querySelectorAll<HTMLElement>('.pd-row').forEach((rowEl) => {
+        const first = rowEl.firstElementChild as HTMLElement | null;
+        let prevTop = first ? first.offsetTop : 0;
+        rowEl.querySelectorAll<HTMLElement>(':scope > .pd-seg').forEach((seg) => {
+          const conn = seg.querySelector<HTMLElement>('.pd-conn');
+          if (conn) conn.classList.toggle('is-wrap', seg.offsetTop > prevTop + 4);
+          prevTop = seg.offsetTop;
+        });
+      });
+    };
+    mark();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(mark) : null;
+    if (ro) ro.observe(root);
+    window.addEventListener('resize', mark);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', mark);
+    };
+  }, []);
 
   return (
     <div className="pdiag" ref={rootRef}>
@@ -152,16 +342,6 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
         </div>
       ) : (
         row
-      )}
-      {spec.type === 'branch' && spec.branch && spec.branch.length > 0 && (
-        <div className="pd-branch">
-          {spec.branch.map((n, i) => (
-            <div className="pd-leg" key={i}>
-              <span className="pd-down">&darr;</span>
-              <NodeCard node={n} />
-            </div>
-          ))}
-        </div>
       )}
     </div>
   );
@@ -422,6 +602,7 @@ function DiagramBlock({ spec }: { spec: DiagramSpec }) {
   let inner: React.ReactElement;
   if (spec.type === 'graph') inner = <GraphDiagram spec={spec} />;
   else if (spec.type === 'infra') inner = <InfraDiagram spec={spec} />;
+  else if (spec.type === 'branch') inner = <BranchDiagram spec={spec} />;
   else inner = <RowDiagram spec={spec} />;
   return <div className="not-prose pd-card">{inner}</div>;
 }
@@ -519,10 +700,14 @@ const STYLES = `
 .pdiag .pd-ic.t-amber{ color:var(--pd-amber); background:color-mix(in srgb,var(--pd-amber) 16%,transparent); }
 .pdiag .pd-ic.t-accent{ color:var(--pd-accent); background:color-mix(in srgb,var(--pd-accent) 15%,transparent); }
 .pdiag .pd-ic.t-slate{ color:var(--pd-slate); background:color-mix(in srgb,var(--pd-slate) 13%,transparent); }
+.pdiag .pd-seg{ display:inline-flex; align-items:stretch; }
 .pdiag .pd-conn{ width:56px; align-self:center; }
 .pdiag .pd-conn .base{ stroke:var(--pd-line2); stroke-width:2; }
 .pdiag .pd-conn .head{ fill:none; stroke:var(--pd-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .pdiag .pd-conn .flow{ stroke:var(--pd-accent); stroke-width:2.4; stroke-linecap:round; stroke-dasharray:4 10; }
+.pdiag .pd-conn .c-w{ display:none; }
+.pdiag .pd-conn.is-wrap .c-h{ display:none; }
+.pdiag .pd-conn.is-wrap .c-w{ display:block; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-conn .flow{ animation:pd-dash .95s linear infinite; } }
 @keyframes pd-dash{ to{ stroke-dashoffset:-14; } }
 .pdiag .pd-loopwrap{ width:fit-content; max-width:100%; margin:0 auto; }
@@ -530,9 +715,25 @@ const STYLES = `
 .pdiag .pd-loopback svg{ width:100%; height:100%; overflow:visible; }
 .pdiag .pd-loopback .track{ fill:none; stroke:var(--pd-line2); stroke-width:1.6; }
 .pdiag .pd-lb-label{ position:absolute; left:50%; bottom:2px; transform:translateX(-50%); font-size:13px; font-style:italic; color:var(--pd-muted); background:var(--pd-bg); padding:0 10px; }
-.pdiag .pd-branch{ display:flex; justify-content:center; gap:56px; margin-top:8px; }
-.pdiag .pd-leg{ display:flex; flex-direction:column; align-items:center; gap:6px; }
-.pdiag .pd-down{ color:var(--pd-muted); font-size:20px; line-height:1; }
+/* branch tree: parent forks into colored paths with drawn connectors */
+.pdiag .pd-tree{ position:relative; }
+.pdiag .pd-tree-links{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }
+.pdiag .pd-tlink{ fill:none; stroke:var(--pd-line2); stroke-width:2; }
+.pdiag .pd-tlink-flow{ fill:none; stroke-width:2.4; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:1; }
+@media (prefers-reduced-motion:no-preference){ .pdiag .pd-tlink-flow{ animation:pd-draw .9s cubic-bezier(.4,.5,.2,1) forwards; } }
+@media (prefers-reduced-motion:reduce){ .pdiag .pd-tlink-flow{ stroke-dashoffset:0; } }
+@keyframes pd-draw{ to{ stroke-dashoffset:0; } }
+.pdiag .pd-tree.pd-dim .pd-tlink-flow:not(.hot){ opacity:.25; }
+.pdiag .pd-tree-links .pd-tlink-flow.hot{ filter:drop-shadow(0 0 5px currentColor); }
+.pdiag .pd-prow{ display:flex; justify-content:center; gap:12px; position:relative; z-index:1; }
+.pdiag .pd-prow .pd-node{ border-color:color-mix(in srgb,var(--pd-accent) 42%,var(--pd-line2)); box-shadow:0 0 0 4px color-mix(in srgb,var(--pd-accent) 9%,transparent); }
+.pdiag .pd-prow .pd-ic{ color:var(--pd-accent); background:color-mix(in srgb,var(--pd-accent) 15%,transparent); }
+.pdiag .pd-branch{ display:grid; grid-auto-flow:column; grid-auto-columns:1fr; gap:14px; margin-top:74px; position:relative; z-index:1; }
+.pdiag .pd-leg{ position:relative; background:var(--pd-card); border:1px solid var(--pd-line2); border-top:2px solid color-mix(in srgb,var(--pc) 62%,transparent); border-radius:13px; transition:transform .24s,box-shadow .24s,border-color .24s,opacity .24s; }
+.pdiag .pd-leg .pd-node{ border:none; background:transparent; width:100%; }
+.pdiag .pd-leg:hover, .pdiag .pd-tree.pd-dim .pd-leg:not(.pd-faded){ transform:translateY(-4px); border-color:color-mix(in srgb,var(--pc) 60%,transparent); box-shadow:0 16px 38px -18px color-mix(in srgb,var(--pc) 85%,transparent); }
+.pdiag .pd-tree.pd-dim .pd-leg.pd-faded{ opacity:.36; }
+.pdiag .pd-tree.pd-dim .pd-leg.pd-faded .pd-ic{ opacity:.6; }
 .pdiag .pd-group{ border:1.5px solid var(--pd-line2); border-radius:16px; padding:14px 16px 18px; background:var(--pd-card); margin-top:16px; }
 .pdiag .pd-ghead{ display:flex; align-items:center; gap:10px; margin-bottom:14px; }
 .pdiag .pd-gtitle{ font-weight:700; font-size:15px; }
@@ -566,8 +767,10 @@ const STYLES = `
 .pdiag .pd-pkt{ fill:var(--pd-accent); }
 .pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; }
 @media (max-width:760px){
-  /* Simple flows stack; they read fine as a vertical list without arrows. */
+  /* Simple flows stack; they read fine as a vertical list without arrows.
+     display:contents flattens the segment so its node stacks like the rest. */
   .pdiag .pd-row{ flex-direction:column; }
+  .pdiag .pd-seg{ display:contents; }
   .pdiag .pd-conn{ display:none; }
   /* Complex diagrams keep their real layout and scroll sideways instead of
      collapsing, so edges, the loop arc, and parallel branches stay meaningful.
@@ -577,9 +780,13 @@ const STYLES = `
   .pdiag .pd-loopwrap{ width:max-content; max-width:none; min-width:100%; }
   .pdiag .pd-loopwrap .pd-row{ flex-direction:row; }
   .pdiag .pd-loopwrap .pd-conn{ display:block; }
-  .pdiag .pd-branch{ justify-content:flex-start; gap:26px; overflow-x:auto; overflow-y:hidden; padding-bottom:4px; }
-  .pdiag .pd-gscroll,
-  .pdiag .pd-branch{ -webkit-overflow-scrolling:touch; scrollbar-width:thin; scroll-snap-type:x proximity; }
+  /* branch: connectors can't fan on a phone, so hide them and stack the
+     color-coded cards with a colored edge instead. */
+  .pdiag .pd-tree-links{ display:none; }
+  .pdiag .pd-prow{ justify-content:flex-start; }
+  .pdiag .pd-branch{ grid-auto-flow:row; grid-auto-columns:auto; gap:10px; margin-top:16px; }
+  .pdiag .pd-leg{ border-top:1px solid var(--pd-line2); border-left:3px solid color-mix(in srgb,var(--pc) 65%,transparent); }
+  .pdiag .pd-gscroll{ -webkit-overflow-scrolling:touch; scrollbar-width:thin; scroll-snap-type:x proximity; }
   .pdiag .pd-gscroll > *{ scroll-snap-align:start; }
 }
 `;
