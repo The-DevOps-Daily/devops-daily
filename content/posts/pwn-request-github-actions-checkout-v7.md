@@ -70,9 +70,9 @@ An attacker opens a PR from a fork. Their `npm test`, or a `postinstall` script,
 
 ```diagram
 {
-  "mode": "flow",
+  "type": "flow",
   "title": "The pwn request",
-  "steps": [
+  "nodes": [
     { "label": "Attacker opens PR from a fork", "icon": "branch" },
     { "label": "pull_request_target fires in BASE repo context (secrets + write token)", "icon": "activity" },
     { "label": "Workflow checks out the fork's head commit", "icon": "box" },
