@@ -22,13 +22,11 @@ tags:
 
 Sending a newsletter looks like the simplest job in the world. You have a list of addresses, you have some HTML, you loop.
 
-Then the first send goes out and you learn that a for-loop over an address list is the one part of the problem that does not matter. What matters is what happens around it: whether mailbox providers believe you are who you claim to be, what you do when 40 of those addresses bounce, how someone gets off the list in one click without emailing you, and what you do when the cron job fires twice.
+Then you send the first one, and you find out that the loop is the only part of the problem that does not matter.
 
-This is how the DevOps Daily newsletter is actually sent. Not a vendor comparison and not a tutorial for a service you have to buy. The mechanics here apply whether you are on SES directly, on a provider, or on a mail server you run yourself.
+What matters is everything around it. Whether mailbox providers believe you are who you say you are. What happens to the 40 addresses that bounce. How someone gets off the list in one click at 2am without emailing you. What happens when the cron job fires twice because a deploy restarted the worker mid-run.
 
-:::note
-Disclosure: our newsletter runs on [smtpfast](https://smtpfa.st), which is built by the same team as DevOps Daily. Everything below is provider-agnostic, and the parts that are specific to us are marked as such.
-:::
+This is how the DevOps Daily newsletter actually goes out. It is not a vendor comparison and not a tutorial for something you have to buy. The mechanics are the same whether you are on SES directly, on a provider, or on a mail server you run yourself, and most of them are things you want in place before your first send rather than after your first bad one.
 
 ## TLDR
 
@@ -241,7 +239,39 @@ The numbers worth alerting on, from Google's published Postmaster thresholds and
 | Complaint rate | under 0.1% | 0.1-0.3% | over 0.3% |
 | Delivery rate | over 98% | 95-98% | under 95% |
 
-A complaint rate above 0.3% will get you throttled by major providers. Note how small that is: three complaints per thousand messages. On a list of five thousand, fifteen people hitting "report spam" is the difference between fine and throttled, which is why the unsubscribe link has to be easy to find.
+The complaint number is the one people misread, because of how small it is:
+
+```chart
+{
+  "type": "bar",
+  "title": "Complaints on a 5,000-address send",
+  "unit": " people",
+  "caption": "Google Postmaster Tools treats a 0.3% complaint rate as the point where throttling starts. On a 5,000-address list that is 15 people.",
+  "rows": [
+    { "label": "Healthy (0.1%)", "value": 5, "series": "ok" },
+    { "label": "Investigate (0.3%)", "value": 15, "series": "warn" },
+    { "label": "Throttled (0.5%)", "value": 25, "series": "bad" }
+  ],
+  "series": [
+    { "name": "ok", "color": "#10b981" },
+    { "name": "warn", "color": "#f59e0b" },
+    { "name": "bad", "color": "#ef4444" }
+  ]
+}
+```
+
+Fifteen people out of five thousand hitting "report spam" is the difference between fine and throttled. That is the entire argument for making the unsubscribe link easy to find: every reader who cannot find it has exactly one other button available, and it is far more expensive to you.
+
+## The setup behind this newsletter
+
+Concretely, for the DevOps Daily newsletter:
+
+- **Content** comes out of the same repo the site is built from. An issue is assembled from posts published since the last send, so there is no separate copy to keep in sync.
+- **Sending** goes through [smtpfast](https://smtpfa.st), with SES underneath it. The parts we care about are the ones above: bounce and complaint webhooks that write suppressions, `List-Unsubscribe` handled at the API level, and a stored `Message-ID` per message.
+- **Contacts and suppressions** live in Postgres, because the audience is a join and the suppression list needs a unique constraint doing real work.
+- **Scheduling** is a cron job with the uniqueness constraint above as its safety net, not a carefully written script.
+
+The interesting thing about that list is how little of it is about sending. One bullet moves the bytes. The rest is bookkeeping that decides whether the bytes arrive.
 
 ## What this adds up to
 
