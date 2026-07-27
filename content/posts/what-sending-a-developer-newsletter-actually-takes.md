@@ -107,7 +107,11 @@ Two details in that join are worth dwelling on.
 
 First, the suppression check is part of the query that builds the audience, not a filter applied later in application code. If it is a later step, some future code path will skip it.
 
-Second, the join is scoped. If your system has any notion of multiple owners (teams, workspaces, projects), the suppression list belongs to one of them, and matching on email alone will either leak one tenant's unsubscribes into another's list or silently fail to apply them. We got this wrong: our suppression uniqueness was keyed on the user rather than the owning team, so a second team's unsubscribes could quietly land against the first team's rows and never take effect. The fix was a unique key on `(team_id, email)` instead of `(user_id, email)`. Worth checking in your own schema, because the symptom is invisible until someone who unsubscribed tells you they are still receiving mail.
+Second, the join is scoped. If your system has any notion of multiple owners (teams, workspaces, projects), the suppression list belongs to one of them, and matching on email alone will either leak one tenant's unsubscribes into another's list or silently fail to apply them.
+
+This is worth checking in your own schema, because it is a subtle one. The trap is a unique key that was written before multi-tenancy existed: `(user_id, email)` looks correct in isolation, but once rows are owned by a team rather than a user, a second team cannot hold its own row for an address the first already has. An upsert then reaches into the other tenant's row instead of creating one, and the second tenant ends up with no suppression at all. Key it on `(team_id, email)` and the problem disappears.
+
+The reason to go looking rather than wait: the symptom is invisible from the inside. Nothing errors, no row is missing, and the queue reports a successful send. You find out when someone who unsubscribed tells you they are still receiving mail.
 
 ## Bounces and complaints have to close the loop
 
