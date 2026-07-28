@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import AgenticLoopSimulator from '@/components/games/agentic-loop-simulator';
+import BounceTriageSimulator from '@/components/games/bounce-triage-simulator';
 import AwsVpcSimulator from '@/components/games/aws-vpc-simulator';
 import BCDRSimulator from '@/components/games/bcdr-simulator';
 import BugHunter from '@/components/games/bug-hunter';
@@ -50,6 +51,7 @@ import UptimeDefender from '@/components/games/uptime-defender';
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'agentic-loop-simulator': AgenticLoopSimulator,
+  'bounce-triage-simulator': BounceTriageSimulator,
   'docker-under-the-hood-simulator': DockerUnderTheHoodSimulator,
   'tcp-vs-udp': TcpVsUdpSimulator,
   'dns-simulator': DnsSimulator,
