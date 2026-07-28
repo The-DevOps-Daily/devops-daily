@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import {
   Search,
   Filter,
+  MailWarning,
   RotateCcw,
   Sparkles,
   Zap,
@@ -39,6 +40,7 @@ import Link from 'next/link';
 // Icon mapping for serializable icon names
 const iconMap: Record<string, LucideIcon> = {
   Bug,
+  MailWarning,
   Network,
   Trophy,
   Boxes,
