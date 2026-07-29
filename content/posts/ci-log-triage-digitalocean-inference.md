@@ -1,5 +1,5 @@
 ---
-title: 'Your CI Log Is 4,000 Lines. The Answer Is 26 of Them.'
+title: 'Triaging Failing CI Logs with DigitalOcean Serverless Inference'
 excerpt: 'We built a GitHub Action that reads a failing job log and tells you what broke, using DigitalOcean serverless inference. The interesting part was not the model call. It was throwing away 92% of the log before sending it.'
 category:
   name: 'CI/CD'
@@ -160,7 +160,7 @@ Rules:
 
 "If the log does not say, write what it would take to find out" is the line that earns its place. Without it you get confident guesses. With it you get a model that says the log is inconclusive, which is a genuinely useful answer.
 
-## The gotcha that cost us an hour
+## The gotcha that looks like a broken API key
 
 Our first call returned HTTP 200, a valid response body, and an empty string.
 
