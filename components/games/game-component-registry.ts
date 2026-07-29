@@ -48,6 +48,7 @@ import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simul
 import TcpVsUdpSimulator from '@/components/games/tcp-vs-udp';
 import TerraformTerminalSimulator from '@/components/games/terraform-terminal-simulator';
 import UptimeDefender from '@/components/games/uptime-defender';
+import WebhookDeliverySimulator from '@/components/games/webhook-delivery-simulator';
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'agentic-loop-simulator': AgenticLoopSimulator,
@@ -99,6 +100,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'service-mesh-simulator': ServiceMeshSimulator,
   'smtp-flow-simulator': SmtpFlowSimulator,
   'fork-bomb-simulator': ForkBombSimulator,
+  'webhook-delivery-simulator': WebhookDeliverySimulator,
 };
 
 export function getGameComponent(slug: string): ComponentType | undefined {

@@ -33,6 +33,7 @@ import {
   Mail,
   MessageSquare,
   GitBranch,
+  Webhook,
   LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -59,6 +60,7 @@ const iconMap: Record<string, LucideIcon> = {
   Mail,
   MessageSquare,
   GitBranch,
+  Webhook,
 };
 
 // Serializable game type with icon component
