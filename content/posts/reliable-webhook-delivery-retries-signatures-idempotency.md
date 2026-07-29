@@ -451,6 +451,8 @@ The delivery problems are the same everywhere, so the checklist is portable whet
 6. **Prefer sequence numbers over strict ordering.** Strict FIFO buys you head-of-line blocking.
 7. **Build the log before you need it,** and let customers read it.
 
-If you want to see the retry and signature mechanics behave rather than read about them, [Svix Dispatch](https://www.svix.com/?ref=devops-daily) is the hosted version of everything above, and their [docs](https://docs.svix.com/) are unusually specific about their own behaviour, which is why this article could cite exact numbers instead of hand-waving.
+If you would rather watch these mechanics behave than read about them, our [webhook delivery simulator](/games/webhook-delivery-simulator) runs the whole thing in the browser: pick how the endpoint responds, watch the backoff between attempts, break the signature four different ways to see which check catches it, and redeliver a message to watch the dedup path run. The signatures it shows are real HMAC, so you can verify one yourself with the code above.
+
+For the hosted version of all of this, [Svix Dispatch](https://www.svix.com/?ref=devops-daily) is what the article has been citing throughout, and their [docs](https://docs.svix.com/) are unusually specific about their own behaviour, which is why this article could quote exact numbers instead of hand-waving.
 
 For related reading on the same underlying problem, our post on [designing automation with failure in mind](/posts/designing-automation-with-failure-in-mind) covers the general pattern, and the [message queue simulator](/games/message-queue-simulator) is a good way to build intuition for at-least-once delivery before you have to debug it in production.
