@@ -39,9 +39,36 @@ If you are earlier than that and trying to choose a direction, our post on [five
 
 ## Why the table stakes do not create openings
 
-A quick note on the market before the list. Demand is genuinely there: the Burning Glass Institute reported DevOps engineer postings growing around 18% annually since 2020, and the SRE and platform engineering titles have grown out of the same demand rather than replacing it.
+Start with what the table stakes actually look like across the profession. These are the 2025 Stack Overflow Developer Survey numbers for professional developers:
 
-But growth in postings does not mean growth in every skill equally, and the reason is structural. The table-stakes skills have been commoditised by the platforms themselves.
+```chart
+{
+  "type": "bar",
+  "title": "Cloud and infrastructure tool usage, professional developers",
+  "unit": "%",
+  "caption": "Stack Overflow Developer Survey 2025, professional developers. Note this is all professional developers, not DevOps roles specifically: within DevOps job descriptions Terraform is close to universal. That gap is the point.",
+  "rows": [
+    { "label": "Docker", "value": 73.8, "series": "commodity" },
+    { "label": "AWS", "value": 45.9, "series": "commodity" },
+    { "label": "Kubernetes", "value": 30.1, "series": "specialist" },
+    { "label": "Azure", "value": 27.2, "series": "commodity" },
+    { "label": "Google Cloud", "value": 24.3, "series": "commodity" },
+    { "label": "Terraform", "value": 18.7, "series": "specialist" },
+    { "label": "Ansible", "value": 11.2, "series": "specialist" },
+    { "label": "DigitalOcean", "value": 11.1, "series": "commodity" }
+  ],
+  "series": [
+    { "name": "commodity", "color": "#64748b" },
+    { "name": "specialist", "color": "#f59e0b" }
+  ]
+}
+```
+
+Docker is the interesting one. The survey recorded a 17 point jump in a single year, the largest of any technology it tracks, taking it to nearly three quarters of professional developers. A skill that three quarters of the profession has is not a differentiator, it is a keyboard.
+
+Read the rest of that chart carefully, though, because it is easy to draw the wrong conclusion. Terraform at 18.7% looks like a scarce skill. It is scarce across all developers, and close to universal within the DevOps roles you are competing for. The chart shows what the profession looks like, not what your applicant pool looks like, and those are different populations.
+
+The reason none of this creates openings is structural: the table-stakes skills have been commoditised by the platforms themselves.
 
 Nobody is paid to install Kubernetes any more. Managed control planes made that a solved problem: DigitalOcean's DOKS, EKS, GKE and AKS all hand you a working cluster from a form or an API call. The interesting work moved to everything that happens after the cluster exists, which is a different skill with the same name on a CV.
 
@@ -52,6 +79,33 @@ The pattern repeats. Each generation of tooling makes the mechanical part easy a
 ## The skills that create openings
 
 Here is the honest version of the second list. Each one maps to a sentence a manager said to get headcount approved.
+
+Before the list, one piece of evidence that specialisation is what moves the number. Same survey, median salaries by role:
+
+```chart
+{
+  "type": "bar",
+  "title": "Median annual salary by role",
+  "unit": "$",
+  "caption": "Stack Overflow Developer Survey 2025, global medians across all respondents. Geography moves these numbers far more than role does, so read the gaps between roles rather than the absolute figures.",
+  "rows": [
+    { "label": "Engineering manager", "value": 130000, "series": "lead" },
+    { "label": "Cloud infrastructure engineer", "value": 103113, "series": "specialist" },
+    { "label": "Security professional", "value": 96146, "series": "specialist" },
+    { "label": "DevOps engineer", "value": 87011, "series": "generalist" },
+    { "label": "Data engineer", "value": 81210, "series": "specialist" },
+    { "label": "Backend developer", "value": 79742, "series": "generalist" },
+    { "label": "Full-stack developer", "value": 72509, "series": "generalist" }
+  ],
+  "series": [
+    { "name": "lead", "color": "#8b5cf6" },
+    { "name": "specialist", "color": "#f59e0b" },
+    { "name": "generalist", "color": "#64748b" }
+  ]
+}
+```
+
+The gap worth noticing is the one inside infrastructure work. "Cloud infrastructure engineer" sits about $16,000 above "DevOps engineer" on the same survey. Those two titles describe people with largely the same toolkit. The difference is that one is named after a tool category and the other after a problem the business has, and the roles named after problems are the ones someone had to justify.
 
 ### 1. Making a cloud bill go down without breaking anything
 
