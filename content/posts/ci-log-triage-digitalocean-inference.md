@@ -1,5 +1,5 @@
 ---
-title: 'Triaging Failing CI Logs with DigitalOcean Serverless Inference'
+title: 'Explaining CI Failures Automatically with a GitHub Action'
 excerpt: 'We built a GitHub Action that reads a failing job log and tells you what broke, using DigitalOcean serverless inference. The interesting part was not the model call. It was throwing away 92% of the log before sending it.'
 category:
   name: 'CI/CD'
