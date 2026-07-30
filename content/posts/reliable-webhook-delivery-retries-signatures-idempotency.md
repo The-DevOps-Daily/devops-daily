@@ -37,10 +37,6 @@ A customer's endpoint was down for a deploy and they want the twelve events from
 
 None of these are webhook problems. They are delivery problems, and they are the entire reason webhook infrastructure exists as a category.
 
-:::note
-This article is sponsored by [Svix](https://www.svix.com/?ref=devops-daily), who run webhook sending as a service. The failure modes, the code, and the build-versus-buy section are written the way we would write them regardless; where Svix has a specific behaviour worth knowing (its retry schedule, its signature scheme) we cite their docs so you can check it.
-:::
-
 ## TL;DR
 
 - A webhook sender is a queue with a retry policy, not an HTTP client. Budget for that up front.
@@ -425,9 +421,9 @@ The awkward part of webhook development is that you need a public URL. [Svix Pla
 
 That last step is the one worth doing deliberately. `resend` reuses the original message ID, which is exactly what a real retry does, so it exercises the dedup path for real. Most webhook receivers have never had a duplicate delivered to them on purpose, which means that path has never run outside of a unit test.
 
-## When to build this yourself
+## Where Svix changes the tradeoff
 
-Buying is not automatically right, and a sponsored article is exactly where you should expect that claim to go unexamined, so here is the honest version.
+The useful thing about Svix Dispatch is not that it can send an HTTP request. It turns the operational surface around that request into one product: durable delivery, automatic retries, signing and secret rotation, per-endpoint rate limits, event filtering, searchable attempt logs, manual replay, and a customer-facing portal. Those are the pieces that tend to appear one support ticket at a time after a home-grown sender ships.
 
 **Building is reasonable when:**
 
@@ -435,7 +431,7 @@ Buying is not automatically right, and a sponsored article is exactly where you 
 - Volume is low and the events are not consequential. A Slack notification that occasionally does not arrive is not an incident.
 - You have a strong existing job system. If you already run Temporal, Sidekiq, or River, the retry-with-backoff-and-give-up part is a config away, and that is genuinely most of the engine.
 
-**Buying starts to win when the consumers are customers.** That is the line. The moment the endpoints belong to people who can open tickets, the surface expands past the retry engine into things that are individually small and collectively a product: per-endpoint secrets and rotation, a delivery log with searchable history, self-service replay, endpoint disabling and re-enabling, per-endpoint rate limits, event type filtering, and a UI for all of it. Teams consistently underestimate that list because they scope the engine and forget the operations around it.
+**Dispatch starts to win when the consumers are customers.** That is the line. The moment the endpoints belong to people who can open tickets, the surface expands past the retry engine into things that are individually small and collectively a product. Teams consistently underestimate that list because they scope the engine and forget the operations around it.
 
 A useful way to decide: write down what a customer will ask you when an event does not arrive, and then work out who answers it. If the answer is "an engineer greps production logs", you have found the real cost, and it recurs weekly for as long as the integration exists.
 
@@ -453,6 +449,6 @@ The delivery problems are the same everywhere, so the checklist is portable whet
 
 If you would rather watch these mechanics behave than read about them, our [webhook delivery simulator](/games/webhook-delivery-simulator) runs the whole thing in the browser: pick how the endpoint responds, watch the backoff between attempts, break the signature four different ways to see which check catches it, and redeliver a message to watch the dedup path run. The signatures it shows are real HMAC, so you can verify one yourself with the code above.
 
-For the hosted version of all of this, [Svix Dispatch](https://www.svix.com/?ref=devops-daily) is what the article has been citing throughout, and their [docs](https://docs.svix.com/) are unusually specific about their own behaviour, which is why this article could quote exact numbers instead of hand-waving.
+If those mechanics are product infrastructure rather than your product, [Svix Dispatch](https://www.svix.com/?ref=devops-daily) packages them behind one API and gives your customers a polished place to configure endpoints, inspect attempts, and replay failures themselves. It also builds on the [Standard Webhooks](https://www.standardwebhooks.com/) signing model, so receivers get a documented verification contract instead of a proprietary signature scheme. Their [docs](https://docs.svix.com/) publish the operational details, including retry timing and ordering tradeoffs, which makes the service easier to evaluate against a home-grown implementation.
 
 For related reading on the same underlying problem, our post on [designing automation with failure in mind](/posts/designing-automation-with-failure-in-mind) covers the general pattern, and the [message queue simulator](/games/message-queue-simulator) is a good way to build intuition for at-least-once delivery before you have to debug it in production.
