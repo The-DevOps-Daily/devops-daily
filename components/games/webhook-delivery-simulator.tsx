@@ -130,12 +130,30 @@ function FlowNode({
   );
 }
 
-function FlowArrow() {
+function FlowArrow({ animate = false, delay = 0 }: { animate?: boolean; delay?: number }) {
   return (
-    <ArrowRight
-      aria-hidden="true"
-      className="h-4 w-4 shrink-0 rotate-90 text-muted-foreground/60 sm:rotate-0"
-    />
+    <div className="relative flex h-5 shrink-0 items-center justify-center sm:w-6">
+      <ArrowRight
+        aria-hidden="true"
+        className={`h-4 w-4 rotate-90 sm:rotate-0 ${
+          animate ? 'text-primary' : 'text-muted-foreground/60'
+        }`}
+      />
+      {animate && (
+        <>
+          <span
+            aria-hidden="true"
+            className="webhook-packet-y absolute h-1.5 w-1.5 rounded-full bg-primary sm:hidden"
+            style={{ animationDelay: `${delay}ms` }}
+          />
+          <span
+            aria-hidden="true"
+            className="webhook-packet-x absolute hidden h-1.5 w-1.5 rounded-full bg-primary sm:block"
+            style={{ animationDelay: `${delay}ms` }}
+          />
+        </>
+      )}
+    </div>
   );
 }
 
@@ -151,6 +169,7 @@ export default function WebhookDeliverySimulator() {
 
   const seenRef = useRef<Set<string>>(new Set());
   const timersRef = useRef<number[]>([]);
+  const attemptRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const messageCounterRef = useRef(1);
   const deliveryKeyRef = useRef(1);
 
@@ -314,6 +333,7 @@ export default function WebhookDeliverySimulator() {
     ? Math.min(selectedAttemptIndex ?? active.revealed - 1, active.revealed - 1)
     : 0;
   const currentAttempt = active?.attempts[currentAttemptIndex];
+  const lastVisibleAttempt = active?.attempts[Math.max(0, active.revealed - 1)];
   const deliveryReachedReceiver = active
     ? active.attempts.slice(0, active.revealed).some((attempt) => attempt.result === 'delivered')
     : false;
@@ -337,6 +357,32 @@ export default function WebhookDeliverySimulator() {
       : currentAttempt?.status === null
         ? 'Outcome unknown'
         : 'Not reached';
+
+  useEffect(() => {
+    if (!active || selectedAttemptIndex !== null) return;
+    attemptRefs.current[active.revealed - 1]?.scrollIntoView({
+      behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    });
+  }, [active, selectedAttemptIndex]);
+
+  const deliveryStatus = !active
+    ? 'Ready'
+    : revealing
+      ? `Following attempt ${active.revealed} of ${active.attempts.length}`
+      : RESULT_LABELS[lastVisibleAttempt!.result];
+  const deliveryStatusTone = !active
+    ? 'bg-muted-foreground'
+    : revealing
+      ? 'bg-sky-500'
+      : lastVisibleAttempt?.result === 'delivered'
+        ? 'bg-emerald-500'
+        : 'bg-rose-500';
+  const flowAnimationKey = active ? `${active.key}-${active.revealed}` : 'idle';
+  const retryProgress = active
+    ? ((Math.min(active.revealed, active.attempts.length) - 1) / (MAX_ATTEMPTS - 1)) * 100
+    : 0;
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-card">
@@ -415,8 +461,18 @@ export default function WebhookDeliverySimulator() {
               Follow one message from your app to the receiver.
             </p>
           </div>
-          <div className="font-mono text-[11px] text-muted-foreground">
-            {active?.messageId ?? 'Ready to send'}
+          <div className="min-w-0 text-right">
+            <div className="flex items-center justify-end gap-1.5 text-[11px] font-medium">
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${deliveryStatusTone} ${
+                  revealing ? 'motion-safe:animate-pulse' : ''
+                }`}
+              />
+              {deliveryStatus}
+            </div>
+            <div className="mt-0.5 max-w-64 truncate font-mono text-[10px] text-muted-foreground">
+              {active?.messageId ?? 'Choose an event and endpoint response'}
+            </div>
           </div>
         </div>
 
@@ -427,7 +483,7 @@ export default function WebhookDeliverySimulator() {
             value={active?.event.eventType ?? SAMPLE_EVENTS[eventIndex].eventType}
             tone={active ? 'active' : 'neutral'}
           />
-          <FlowArrow />
+          <FlowArrow key={`${flowAnimationKey}-1`} animate={Boolean(active)} />
           <FlowNode
             icon={Inbox}
             label="Delivery queue"
@@ -440,14 +496,14 @@ export default function WebhookDeliverySimulator() {
             }
             tone={currentAttempt?.result === 'retrying' ? 'warning' : active ? 'active' : 'neutral'}
           />
-          <FlowArrow />
+          <FlowArrow key={`${flowAnimationKey}-2`} animate={Boolean(active)} delay={140} />
           <FlowNode
             icon={ShieldCheck}
             label="Signed request"
             value={active ? 'HMAC-SHA256 attached' : 'ID + time + body'}
             tone={active ? 'active' : 'neutral'}
           />
-          <FlowArrow />
+          <FlowArrow key={`${flowAnimationKey}-3`} animate={Boolean(active)} delay={280} />
           <FlowNode
             icon={Server}
             label="Customer endpoint"
@@ -460,7 +516,11 @@ export default function WebhookDeliverySimulator() {
             }
             tone={endpointTone}
           />
-          <FlowArrow />
+          <FlowArrow
+            key={`${flowAnimationKey}-4`}
+            animate={currentAttempt?.result === 'delivered'}
+            delay={420}
+          />
           <FlowNode
             icon={Webhook}
             label="Receiver"
@@ -494,7 +554,15 @@ export default function WebhookDeliverySimulator() {
 
         <div className="overflow-x-auto pb-1">
           <div className="relative min-w-[640px]">
-            <div className="absolute left-8 right-8 top-5 h-px bg-border" aria-hidden="true" />
+            <div
+              className="absolute left-8 right-8 top-5 h-px overflow-hidden bg-border"
+              aria-hidden="true"
+            >
+              <div
+                className="h-full bg-primary/70 transition-[width] duration-500 ease-out"
+                style={{ width: `${retryProgress}%` }}
+              />
+            </div>
             <ol className="relative grid grid-cols-8 gap-2" aria-live="polite">
               {Array.from({ length: MAX_ATTEMPTS }, (_, index) => {
                 const attempt = active?.attempts[index];
@@ -508,6 +576,9 @@ export default function WebhookDeliverySimulator() {
                       type="button"
                       disabled={!isRevealed}
                       onClick={() => setSelectedAttemptIndex(index)}
+                      ref={(node) => {
+                        attemptRefs.current[index] = node;
+                      }}
                       aria-label={`Attempt ${index + 1}${
                         attempt ? ` at ${formatDelay(attempt.atSeconds)}` : ''
                       }`}
@@ -750,7 +821,7 @@ svix-signature: ${signatureHeader || 'computing...'}`}
           </summary>
           <div className="divide-y divide-border border-t border-border">
             {deliveries.map((delivery) => {
-              const finalAttempt = delivery.attempts.at(-1)!;
+              const visibleAttempt = delivery.attempts[Math.max(0, delivery.revealed - 1)];
               return (
                 <div
                   key={delivery.key}
@@ -760,7 +831,7 @@ svix-signature: ${signatureHeader || 'computing...'}`}
                     {delivery.messageId}
                   </span>
                   <span className="font-mono">{delivery.event.eventType}</span>
-                  <StatusPill attempt={finalAttempt} />
+                  <StatusPill attempt={visibleAttempt} />
                   {delivery.dedup?.outcome === 'duplicate_ignored' && (
                     <span className="text-amber-700 dark:text-amber-300">Duplicate ignored</span>
                   )}
@@ -790,6 +861,47 @@ svix-signature: ${signatureHeader || 'computing...'}`}
           <ArrowRight className="h-4 w-4" />
         </a>
       </div>
+      <style jsx global>{`
+        @keyframes webhook-packet-x {
+          from {
+            opacity: 0;
+            transform: translateX(-9px);
+          }
+          25% {
+            opacity: 1;
+          }
+          to {
+            opacity: 0;
+            transform: translateX(9px);
+          }
+        }
+        @keyframes webhook-packet-y {
+          from {
+            opacity: 0;
+            transform: translateY(-9px);
+          }
+          25% {
+            opacity: 1;
+          }
+          to {
+            opacity: 0;
+            transform: translateY(9px);
+          }
+        }
+        .webhook-packet-x {
+          animation: webhook-packet-x 520ms ease-out both;
+        }
+        .webhook-packet-y {
+          animation: webhook-packet-y 520ms ease-out both;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .webhook-packet-x,
+          .webhook-packet-y {
+            animation: none;
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
   );
 }
