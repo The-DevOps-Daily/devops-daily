@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { parseMarkdown } from '@/lib/markdown';
-import { parseChartSpec, formatValue, formatAxisValue, niceAxisTicks, median, percentile } from '@/lib/post-charts';
+import {
+  parseChartSpec,
+  formatValue,
+  formatAxisValue,
+  niceAxisTicks,
+  wrapChartLabel,
+  median,
+  percentile,
+} from '@/lib/post-charts';
 
 const BAR_SPEC = {
   type: 'bar',
@@ -71,6 +79,18 @@ describe('post chart embeds', () => {
     expect(niceAxisTicks(0, 1655.08)).toEqual([0, 500, 1000, 1500, 2000]);
     expect(niceAxisTicks(-8, 12)).toEqual([-10, -5, 0, 5, 10, 15]);
     expect(niceAxisTicks(5, 5)).toEqual([5]);
+  });
+
+  it('wraps long chart labels without losing the full first words', () => {
+    expect(wrapChartLabel('Cross-region to Postgres')).toEqual(['Cross-region to Postgres']);
+    expect(wrapChartLabel('Function to co-located Postgres database')).toEqual([
+      'Function to co-located',
+      'Postgres database',
+    ]);
+    expect(wrapChartLabel('a'.repeat(70))).toEqual([
+      'a'.repeat(28),
+      `${'a'.repeat(25)}...`,
+    ]);
   });
 
   it('accepts cdf specs and renders the fence placeholder', () => {

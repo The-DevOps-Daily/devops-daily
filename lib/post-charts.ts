@@ -105,6 +105,30 @@ export function niceAxisTicks(min: number, max: number, targetIntervals = 4): nu
   return Array.from({ length: count + 1 }, (_, i) => Number((first + i * step).toPrecision(12)));
 }
 
+/** Wrap a chart label at a word boundary and cap the second line so labels can
+ * never spill into the plot area. */
+export function wrapChartLabel(label: string, maxChars = 28): string[] {
+  const text = label.trim();
+  const chars = Array.from(text);
+  if (chars.length <= maxChars) return [text];
+
+  const candidate = chars.slice(0, maxChars + 1);
+  const whitespaceIndex = candidate.reduce(
+    (last, char, index) => (/\s/.test(char) ? index : last),
+    -1
+  );
+  const breakAt = whitespaceIndex >= Math.floor(maxChars * 0.55) ? whitespaceIndex : maxChars;
+  const first = chars.slice(0, breakAt).join('').trim();
+  const remainder = chars.slice(breakAt).join('').trim();
+  const remainderChars = Array.from(remainder);
+  const second =
+    remainderChars.length > maxChars
+      ? `${remainderChars.slice(0, Math.max(1, maxChars - 3)).join('').trimEnd()}...`
+      : remainder;
+
+  return second ? [first, second] : [first];
+}
+
 export function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
