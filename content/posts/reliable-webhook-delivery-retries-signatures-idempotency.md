@@ -299,9 +299,29 @@ Two files. The sender goes through Svix; the receiver is what you would hand a c
 
 ```typescript
 // sender.ts
-import { Svix } from 'svix';
+import { ApiException, Svix } from 'svix';
 
 const svix = new Svix(process.env.SVIX_AUTH_TOKEN!);
+
+// Event types belong to the environment, not to one customer. Run this once
+// during deployment before creating endpoints that filter on these names.
+export async function configureWebhookEventTypes() {
+  const eventTypes = [
+    { name: 'invoice.paid', description: 'An invoice was paid' },
+    { name: 'invoice.payment_failed', description: 'An invoice payment failed' },
+  ];
+
+  await Promise.all(
+    eventTypes.map(async (eventType) => {
+      try {
+        await svix.eventType.get(eventType.name);
+      } catch (err) {
+        if (!(err instanceof ApiException) || err.code !== 404) throw err;
+        await svix.eventType.create(eventType);
+      }
+    }),
+  );
+}
 
 // One Svix "application" per customer. The uid is your own customer ID,
 // which means you never have to store a mapping.
@@ -338,6 +358,8 @@ export async function emitInvoicePaid(customerId: string, invoice: Invoice) {
   );
 }
 ```
+
+The setup call is not optional when you use `filterTypes`: Svix rejects an endpoint that names event types the environment does not know yet. Register them once during deployment, then onboard as many customer applications as you need.
 
 Note what is absent: no queue, no attempt table, no backoff scheduler, no dead-letter handling. That is the part being bought.
 
