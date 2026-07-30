@@ -77,6 +77,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     'm.do.co',           // DigitalOcean referral
     'amzn.to',           // Amazon short links
     'amazon.com/.*tag=', // Amazon affiliate tags
+    '[?&]ref=devops-daily', // Partner referral links
   ];
   const hasAffiliateLinks = affiliatePatterns.some(pattern =>
     new RegExp(pattern).test(post.content)
