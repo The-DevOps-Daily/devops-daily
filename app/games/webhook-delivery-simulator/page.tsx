@@ -61,8 +61,21 @@ function WebhookDeliveryEducational() {
           retry schedule and genuine Standard Webhooks signatures. Dispatch adds the durable queue,
           endpoint controls, attempt history, replay, and customer portal that turn these mechanics
           into a complete delivery product. For the underlying queue and throttling concepts, try
-          the <a href="/games/message-queue-simulator">message queue simulator</a> and{' '}
-          <a href="/games/rate-limit-simulator">rate limit simulator</a>.
+          the{' '}
+          <a
+            href="/games/message-queue-simulator"
+            className="font-medium text-primary underline underline-offset-2"
+          >
+            message queue simulator
+          </a>{' '}
+          and{' '}
+          <a
+            href="/games/rate-limit-simulator"
+            className="font-medium text-primary underline underline-offset-2"
+          >
+            rate limit simulator
+          </a>
+          .
         </p>
       </div>
     </>
@@ -74,7 +87,7 @@ export default function WebhookDeliverySimulatorPage() {
     <SimulatorShell
       slug="webhook-delivery-simulator"
       fallbackTitle="Webhook Delivery Simulator"
-      fallbackDescription="Send a webhook, choose how the endpoint responds, and watch every delivery attempt, the exponential backoff between them, the real HMAC signature, and how a receiver deduplicates a redelivery."
+      fallbackDescription="Send a webhook through retries, signature verification, and receiver-side deduplication."
       educational={<WebhookDeliveryEducational />}
       seoLearningPoints={seoLearningPoints}
       shareText="Watch what production actually does with a webhook: retries, exponential backoff, HMAC signature verification and idempotency, all in the browser."

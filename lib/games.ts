@@ -68,7 +68,7 @@ const games: Game[] = [
     title: 'Webhook Delivery Simulator',
     seoTitle: 'Webhook Delivery Simulator: Retries, Backoff and Signature Verification',
     description:
-      'Send a webhook to an endpoint you control and watch what production actually does with it. Pick how the endpoint responds (200, timeout, 400, 429, 500, or intermittent) and see every delivery attempt, the exponential backoff between them, and why each response is retried or dropped. Inspect the real headers, payload and HMAC-SHA256 signature, then break verification on purpose by editing the body, using the wrong secret, or replaying an old request, and see which check catches it. Redeliver the same message to watch a receiver deduplicate it.',
+      'Send a webhook through a production-style delivery flow. Change endpoint responses, watch retries and backoff, inspect real HMAC-SHA256 signatures, and redeliver the same message to see receiver-side deduplication.',
     iconName: 'Webhook',
     badgeText: 'New',
     color: 'from-blue-500 to-indigo-600',
