@@ -1,10 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Sparkles, ExternalLink, Heart } from 'lucide-react';
 import { sponsors } from '@/lib/sponsors';
+import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface InlineSponsorsProps {
   className?: string;
@@ -54,12 +54,11 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
 
                   {/* Logo */}
                   <div className="shrink-0 h-16 w-24 flex items-center justify-center">
-                    <Image
-                      src={sponsor.logo || '/placeholder.svg'}
-                      alt={sponsor.name}
+                    <SponsorLogo
+                      sponsor={sponsor}
                       width={120}
                       height={60}
-                      className={cn('h-auto w-auto max-h-16', sponsor.className)}
+                      className="h-auto w-auto max-h-16"
                     />
                   </div>
 
@@ -106,12 +105,11 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
             className="group inline-flex items-center justify-center px-4 py-2 rounded-md hover:bg-muted/50 transition-colors"
             title={sponsor.tagline}
           >
-            <Image
-              src={sponsor.logo || '/placeholder.svg'}
-              alt={sponsor.name}
+            <SponsorLogo
+              sponsor={sponsor}
               width={100}
               height={40}
-              className={cn('h-auto w-auto max-h-8 opacity-50 group-hover:opacity-80 transition-opacity', sponsor.className)}
+              className="h-auto w-auto max-h-8 opacity-50 group-hover:opacity-80 transition-opacity"
             />
           </Link>
         ))}
@@ -168,12 +166,11 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                   <div className="relative space-y-4">
                     {/* Logo */}
                     <div className="h-16 flex items-center">
-                      <Image
-                        src={sponsor.logo || '/placeholder.svg'}
-                        alt={sponsor.name}
+                      <SponsorLogo
+                        sponsor={sponsor}
                         width={120}
                         height={60}
-                        className={cn('h-auto w-auto max-h-16', sponsor.className)}
+                        className="h-auto w-auto max-h-16"
                       />
                     </div>
 

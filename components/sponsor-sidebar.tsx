@@ -1,10 +1,10 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Clock, Sparkles, ExternalLink } from 'lucide-react';
 import { CarbonAds } from '@/components/carbon-ads';
 import { sponsors } from '@/lib/sponsors';
 import { NewsletterForm } from '@/components/footer/newsletter-form';
+import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface SponsorSidebarProps {
   className?: string;
@@ -57,14 +57,12 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                 {/* Logo. The wordmark carries the sponsor name, so the row
                     pairs it with the tagline rather than repeating the name. */}
                 <div className="flex w-24 shrink-0 items-center">
-                  <Image
-                    src={sponsor.logo || '/placeholder.svg'}
-                    alt={sponsor.name}
+                  <SponsorLogo
+                    sponsor={sponsor}
                     width={120}
                     height={40}
                     className={cn(
                       'h-auto max-h-7 w-auto max-w-24 object-contain',
-                      sponsor.className,
                       sponsor.sidebarClassName
                     )}
                   />
