@@ -79,6 +79,32 @@ export function formatValue(v: number, unit?: string): string {
   return unit ? `${v.toLocaleString()}${unit}` : v.toLocaleString();
 }
 
+/** Short axis labels preserve chart area without sacrificing source precision. */
+export function formatAxisValue(v: number, unit?: string): string {
+  if (unit === 'min' && Math.abs(v) >= 60) {
+    const hours = Math.round((v / 60) * 10) / 10;
+    return `${hours.toLocaleString()}h`;
+  }
+  return formatValue(v, unit);
+}
+
+/** Generate readable linear ticks rather than floating-point interpolation artifacts. */
+export function niceAxisTicks(min: number, max: number, targetIntervals = 4): number[] {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+  if (min === max) return [min];
+
+  const rawStep = Math.abs(max - min) / Math.max(1, targetIntervals);
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const normalized = rawStep / magnitude;
+  const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 2.5 ? 2.5 : normalized <= 5 ? 5 : 10;
+  const step = factor * magnitude;
+  const first = Math.floor(min / step) * step;
+  const last = Math.ceil(max / step) * step;
+  const count = Math.round((last - first) / step);
+
+  return Array.from({ length: count + 1 }, (_, i) => Number((first + i * step).toPrecision(12)));
+}
+
 export function median(values: number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);

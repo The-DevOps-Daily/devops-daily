@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseMarkdown } from '@/lib/markdown';
-import { parseChartSpec, formatValue, median, percentile } from '@/lib/post-charts';
+import { parseChartSpec, formatValue, formatAxisValue, niceAxisTicks, median, percentile } from '@/lib/post-charts';
 
 const BAR_SPEC = {
   type: 'bar',
@@ -63,8 +63,15 @@ describe('post chart embeds', () => {
     expect(formatValue(2176, 'ms')).toBe('2.18s');
     expect(formatValue(13558, 'ms')).toBe('13.6s');
     expect(formatValue(42, '%')).toBe('42%');
+    expect(formatAxisValue(500, 'min')).toBe('8.3h');
+    expect(formatAxisValue(30, 'min')).toBe('30min');
   });
 
+  it('generates rounded linear axis ticks', () => {
+    expect(niceAxisTicks(0, 1655.08)).toEqual([0, 500, 1000, 1500, 2000]);
+    expect(niceAxisTicks(-8, 12)).toEqual([-10, -5, 0, 5, 10, 15]);
+    expect(niceAxisTicks(5, 5)).toEqual([5]);
+  });
 
   it('accepts cdf specs and renders the fence placeholder', () => {
     const spec = {

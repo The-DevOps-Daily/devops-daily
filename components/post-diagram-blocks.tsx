@@ -331,10 +331,11 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
         <div className="pd-loopwrap">
           {spec.loopTop && <div className="pd-toplabel">{spec.loopTop}</div>}
           {row}
-          <div className="pd-loopback">
-            <svg viewBox="0 0 1000 62" preserveAspectRatio="none" aria-hidden="true">
-              <path className="track" d="M 960 8 C 960 56, 700 60, 500 60 C 300 60, 40 56, 40 12" />
-              <path className="track" d="M 40 12 l -7 10 M 40 12 l 9 6" />
+          <div className="pd-loopback" aria-label={spec.loopBack ?? 'Return to the first step'}>
+            <svg viewBox="0 0 1000 42" preserveAspectRatio="none" aria-hidden="true">
+              <path className="track" d="M 960 1 V 21 Q 960 31 948 31 H 52 Q 40 31 40 21 V 6" />
+              <path className="flow" pathLength="1" d="M 960 1 V 21 Q 960 31 948 31 H 52 Q 40 31 40 21 V 6" />
+              <path className="head" d="M 34 12 L 40 4 L 46 12" />
             </svg>
             {spec.loopBack && <span className="pd-lb-label">{spec.loopBack}</span>}
           </div>
@@ -711,10 +712,14 @@ const STYLES = `
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-conn .flow{ animation:pd-dash .95s linear infinite; } }
 @keyframes pd-dash{ to{ stroke-dashoffset:-14; } }
 .pdiag .pd-loopwrap{ width:fit-content; max-width:100%; margin:0 auto; }
-.pdiag .pd-loopback{ position:relative; height:60px; margin-top:6px; }
+.pdiag .pd-loopback{ position:relative; height:42px; margin-top:8px; }
 .pdiag .pd-loopback svg{ width:100%; height:100%; overflow:visible; }
-.pdiag .pd-loopback .track{ fill:none; stroke:var(--pd-line2); stroke-width:1.6; }
-.pdiag .pd-lb-label{ position:absolute; left:50%; bottom:2px; transform:translateX(-50%); font-size:13px; font-style:italic; color:var(--pd-muted); background:var(--pd-bg); padding:0 10px; }
+.pdiag .pd-loopback .track{ fill:none; stroke:var(--pd-line2); stroke-width:1.8; vector-effect:non-scaling-stroke; }
+.pdiag .pd-loopback .flow{ fill:none; stroke:var(--pd-accent); stroke-width:2.2; stroke-linecap:round; stroke-dasharray:.008 .022; opacity:.7; vector-effect:non-scaling-stroke; }
+.pdiag .pd-loopback .head{ fill:none; stroke:var(--pd-accent); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
+@media (prefers-reduced-motion:no-preference){ .pdiag .pd-loopback .flow{ animation:pd-loop-flow 1.8s linear infinite; } }
+@keyframes pd-loop-flow{ to{ stroke-dashoffset:-.12; } }
+.pdiag .pd-lb-label{ position:absolute; left:50%; top:19px; transform:translate(-50%,-50%); max-width:calc(100% - 140px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--pd-mono); font-size:11.5px; font-style:normal; color:var(--pd-muted); background:var(--pd-card); border:1px solid var(--pd-line); border-radius:999px; padding:4px 10px; box-shadow:0 1px 2px rgba(20,18,14,.06); }
 /* branch tree: parent forks into colored paths with drawn connectors */
 .pdiag .pd-tree{ position:relative; }
 .pdiag .pd-tree-links{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }

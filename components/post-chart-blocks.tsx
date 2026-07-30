@@ -10,6 +10,8 @@ import {
   type CdfSeries,
   parseChartSpec,
   formatValue,
+  formatAxisValue,
+  niceAxisTicks,
   median,
   percentile,
   seriesColor,
@@ -80,42 +82,48 @@ function LineChart({ spec }: { spec: ChartSpec }) {
   const series = spec.series as LineSeries[];
   const width = 720;
   const height = 300;
-  const padL = 56;
-  const padR = 16;
+  const padR = 18;
   const padT = 12;
   const padB = 34;
   const points = Math.max(...series.map((s) => s.data.length));
   const all = series.flatMap((s) => s.data);
-  const x = (i: number) => padL + (i / Math.max(1, points - 1)) * (width - padL - padR);
 
   // Log axis (opt-in): spreads a squished low end next to a large spike. Falls
   // back to linear when any value is <= 0, since log10 is undefined there.
   const canLog = spec.log && all.every((v) => v > 0);
-  let y: (v: number) => number;
   let yTicks: number[];
+  let scaleY: (v: number) => number;
   if (canLog) {
     const loB = 10 ** Math.floor(Math.log10(Math.min(...all)));
-    const hiB = 10 ** Math.ceil(Math.log10(Math.max(...all)));
+    let hiB = 10 ** Math.ceil(Math.log10(Math.max(...all)));
+    if (hiB === loB) hiB *= 10;
     const lg = (v: number) => Math.log10(Math.max(v, loB));
-    y = (v: number) => padT + (1 - (lg(v) - lg(loB)) / (lg(hiB) - lg(loB))) * (height - padT - padB);
+    scaleY = (v: number) => (lg(v) - lg(loB)) / (lg(hiB) - lg(loB));
     yTicks = [];
     for (let t = loB; t <= hiB + 1e-6; t *= 10) yTicks.push(t);
   } else {
-    const maxV = Math.max(...all) * 1.06;
-    const minV = Math.min(0, Math.min(...all));
-    y = (v: number) => padT + (1 - (v - minV) / (maxV - minV)) * (height - padT - padB);
-    yTicks = [...Array(4).keys()].map((t) => minV + ((maxV - minV) * (t + 1)) / 4);
+    const dataMin = Math.min(0, Math.min(...all));
+    const dataMax = Math.max(...all);
+    yTicks = niceAxisTicks(dataMin, dataMax);
+    const axisMin = yTicks[0] ?? dataMin;
+    const axisMax = yTicks.at(-1) ?? dataMax;
+    scaleY = (v: number) => (v - axisMin) / Math.max(Number.EPSILON, axisMax - axisMin);
   }
+  const yLabels = yTicks.map((v) => formatAxisValue(v, spec.unit));
+  const longestYLabel = Math.max(...yLabels.map((label) => label.length), 4);
+  const padL = Math.min(108, Math.max(52, longestYLabel * 7 + 14));
+  const x = (i: number) => padL + (i / Math.max(1, points - 1)) * (width - padL - padR);
+  const y = (v: number) => padT + (1 - scaleY(v)) * (height - padT - padB);
   const labels = spec.x ?? [...Array(points).keys()].map((i) => i + 1);
   const labelStep = Math.ceil(labels.length / 8);
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={spec.title ?? 'Line chart'}>
-      {yTicks.map((v) => (
+      {yTicks.map((v, i) => (
         <g key={v}>
           <line x1={padL} y1={y(v)} x2={width - padR} y2={y(v)} className="stroke-border" strokeOpacity={0.4} />
           <text x={padL - 8} y={y(v) + 4} fontSize={11.5} textAnchor="end" className="fill-muted-foreground">
-            {formatValue(v, spec.unit)}
+            {yLabels[i]}
           </text>
         </g>
       ))}
@@ -295,10 +303,14 @@ export function PostChart({ spec }: { spec: ChartSpec }) {
       {spec.title && (
         <figcaption className="mb-4 text-sm font-semibold text-foreground">{spec.title}</figcaption>
       )}
-      {spec.type === 'bar' && <BarChart spec={spec} />}
-      {spec.type === 'line' && <LineChart spec={spec} />}
-      {spec.type === 'dots' && <DotPlot spec={spec} />}
-      {spec.type === 'cdf' && <CdfChart spec={spec} />}
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
+        <div className="min-w-[34rem]">
+          {spec.type === 'bar' && <BarChart spec={spec} />}
+          {spec.type === 'line' && <LineChart spec={spec} />}
+          {spec.type === 'dots' && <DotPlot spec={spec} />}
+          {spec.type === 'cdf' && <CdfChart spec={spec} />}
+        </div>
+      </div>
       <Legend spec={spec} />
       {spec.caption && <p className="mt-3 text-xs text-muted-foreground">{spec.caption}</p>}
     </figure>
