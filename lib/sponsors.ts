@@ -6,6 +6,8 @@
 export interface Sponsor {
   name: string;
   logo: string;
+  /** Optional logo variant for dark mode. */
+  darkLogo?: string;
   url: string;
   tagline?: string;
   description?: string;
@@ -25,7 +27,8 @@ export interface Sponsor {
 export const sponsors: Sponsor[] = [
   {
     name: 'Svix',
-    logo: '/svix.svg',
+    logo: '/svix-brand.svg',
+    darkLogo: '/svix-brand-light.svg',
     url: 'https://www.svix.com/?ref=devops-daily',
     tagline: 'Webhooks as a service',
     description:
