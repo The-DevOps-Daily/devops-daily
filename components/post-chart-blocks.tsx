@@ -12,6 +12,7 @@ import {
   formatValue,
   formatAxisValue,
   niceAxisTicks,
+  wrapChartLabel,
   median,
   percentile,
   seriesColor,
@@ -24,8 +25,13 @@ import {
 function BarChart({ spec }: { spec: ChartSpec }) {
   const rows = spec.rows as BarRow[];
   const width = 720;
-  const rowH = 42;
-  const labelW = 190;
+  const labels = rows.map((row) => wrapChartLabel(row.label));
+  const hasWrappedLabel = labels.some((lines) => lines.length > 1);
+  const rowH = hasWrappedLabel ? 50 : 42;
+  const longestLabelLine = Math.max(
+    ...labels.flatMap((lines) => lines.map((line) => Array.from(line).length))
+  );
+  const labelW = Math.min(240, Math.max(150, longestLabelLine * 7.5 + 18));
   const valueW = spec.tickLabel ? 150 : 90;
   const pad = 6;
   const height = rows.length * rowH + pad * 2;
@@ -40,9 +46,22 @@ function BarChart({ spec }: { spec: ChartSpec }) {
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={spec.title ?? 'Bar chart'}>
       {rows.map((r, i) => {
         const cy = pad + i * rowH + rowH / 2;
+        const labelLines = labels[i];
         return (
           <g key={`${r.label}-${i}`}>
-            <text x={0} y={cy + 4} fontSize={13} className="fill-muted-foreground">{r.label}</text>
+            <title>{`${r.label}: ${formatValue(r.value, spec.unit)}`}</title>
+            <text
+              x={0}
+              y={labelLines.length > 1 ? cy - 3 : cy + 4}
+              fontSize={13}
+              className="fill-muted-foreground"
+            >
+              {labelLines.map((line, lineIndex) => (
+                <tspan x={0} dy={lineIndex === 0 ? 0 : 14} key={line}>
+                  {line}
+                </tspan>
+              ))}
+            </text>
             <line x1={labelW} y1={cy} x2={width - valueW} y2={cy} className="stroke-border" strokeOpacity={0.5} />
             <rect
               x={labelW}
