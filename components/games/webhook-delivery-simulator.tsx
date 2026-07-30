@@ -557,20 +557,9 @@ export default function WebhookDeliverySimulator() {
                 const isRevealed = Boolean(attempt && index < active!.revealed);
                 const isSelected = Boolean(active && isRevealed && index === currentAttemptIndex);
                 const isUnused = Boolean(active && !attempt);
-                const connectorComplete = Boolean(
-                  active && index < active.revealed - 1 && index < active.attempts.length - 1
-                );
 
                 return (
-                  <li className="relative" key={index}>
-                    {index < MAX_ATTEMPTS - 1 && (
-                      <span
-                        aria-hidden="true"
-                        className={`absolute left-full top-5 h-px w-2 transition-colors duration-500 ${
-                          connectorComplete ? 'bg-primary/70' : 'bg-border'
-                        }`}
-                      />
-                    )}
+                  <li key={index}>
                     <button
                       type="button"
                       disabled={!isRevealed}
