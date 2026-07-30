@@ -49,7 +49,15 @@ function WebhookDeliveryEducational() {
       <div className="mt-6 border-t border-border pt-5">
         <h4 className="mb-2 text-sm font-semibold">From simulator to production</h4>
         <p className="text-sm leading-relaxed text-muted-foreground">
-          This simulator uses the published{' '}
+          The{' '}
+          <a
+            href="/posts/reliable-webhook-delivery-retries-signatures-idempotency"
+            className="font-medium text-primary underline underline-offset-2"
+          >
+            production webhook delivery guide
+          </a>{' '}
+          turns this flow into a typed sender and receiver you can build from. This simulator uses
+          the published{' '}
           <a
             href="https://www.svix.com/?ref=devops-daily"
             className="font-medium text-primary underline underline-offset-2"
