@@ -358,16 +358,16 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
             <svg viewBox={`0 0 ${loopGeometry.width} 54`} preserveAspectRatio="none" aria-hidden="true">
               <path
                 className="track"
-                d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 2`}
+                d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 0`}
               />
               <path
                 className="flow"
                 pathLength="1"
-                d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 2`}
+                d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 0`}
               />
               <path
                 className="head"
-                d={`M ${loopGeometry.left - 6} 10 L ${loopGeometry.left} 2 L ${loopGeometry.left + 6} 10`}
+                d={`M ${loopGeometry.left - 6} 8 L ${loopGeometry.left} 0 L ${loopGeometry.left + 6} 8`}
               />
             </svg>
             {spec.loopBack && <span className="pd-lb-label">{spec.loopBack}</span>}
