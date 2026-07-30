@@ -42,7 +42,12 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                   href={sponsor.url}
                   target="_blank"
                   rel="noopener noreferrer sponsored"
-                  className="group relative flex items-center gap-4 p-4 bg-background/80 backdrop-blur-sm rounded-md border border-border hover:border-primary/40 hover:bg-muted/30 transition-colors"
+                  className={cn(
+                    'group relative flex items-center gap-4 p-4 bg-background/80 backdrop-blur-sm rounded-md border transition-colors',
+                    sponsor.featured
+                      ? cn('md:col-span-2', sponsor.accentClassName)
+                      : 'border-border hover:border-primary/40 hover:bg-muted/30'
+                  )}
                 >
                   {/* External link indicator */}
                   <ExternalLink className="absolute top-3 right-3 h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -143,9 +148,16 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer sponsored"
-                className="group relative"
+                className={cn('group relative', sponsor.featured && 'md:col-span-2')}
               >
-                <div className="relative h-full p-6 rounded-md border border-border bg-background hover:border-primary/40 hover:bg-muted/30 transition-colors">
+                <div
+                  className={cn(
+                    'relative h-full p-6 rounded-md border bg-background transition-colors',
+                    sponsor.featured
+                      ? sponsor.accentClassName
+                      : 'border-border hover:border-primary/40 hover:bg-muted/30'
+                  )}
+                >
                   {/* Hover gradient overlay */}
                   <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 

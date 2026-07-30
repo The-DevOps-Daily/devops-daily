@@ -17,7 +17,12 @@ interface SponsorSidebarProps {
 
 export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarProps) {
   return (
-    <div className={cn('sticky top-8 space-y-6', className)}>
+    <div className={cn('sticky top-8 space-y-5', className)}>
+      {/* Carbon Ads sits first: the sponsor list below it grows every time a
+          sponsor is added, and at four sponsors the ad had been pushed off the
+          bottom of a laptop screen entirely. */}
+      <CarbonAds />
+
       {/* Sponsors Section */}
       <div className="relative">
         {/* Background decoration */}
@@ -25,64 +30,63 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
 
         <div className="relative rounded-xl border border-border/50 overflow-hidden backdrop-blur-sm bg-card/50">
           {/* Header with gradient */}
-         <div className="relative bg-linear-to-r from-primary/10 to-primary/5 px-4 py-3">
-           <div className="flex items-center justify-between">
+         <div className="relative bg-linear-to-r from-primary/10 to-primary/5 px-4 py-2.5">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="font-semibold">Our Sponsors</span>
+              <span className="font-semibold text-sm">Our Sponsors</span>
             </div>
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-1">
+            <p className="text-[10px] text-muted-foreground mt-0.5">
               We earn commissions when you shop through the links below.
             </p>
          </div>
 
-          <div className="p-4 space-y-3">
+          <div className="p-3 space-y-2">
             {sponsors.map((sponsor) => (
               <Link
                 key={sponsor.name}
                 href={sponsor.url}
                 target="_blank"
-                rel="noopener noreferrer"
-                className="group relative flex flex-col items-center p-5 bg-linear-to-b from-background to-muted/50 rounded-md border border-border hover:border-primary/40 hover:bg-muted/30 transition-colors"
+                rel="noopener noreferrer sponsored"
+                title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}
+                className={cn(
+                  'group relative flex items-center gap-3 rounded-md border px-3 py-2.5 transition-colors',
+                  sponsor.accentClassName ??
+                    'border-border bg-muted/20 hover:border-primary/40 hover:bg-muted/40'
+                )}
               >
-                {/* Subtle background pattern */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent rounded-lg" />
-                </div>
-
-                {/* External link indicator */}
-                <ExternalLink className="absolute top-2 right-2 h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                {/* Logo */}
-                <div className="relative z-10 h-12 flex items-center justify-center mb-3">
+                {/* Logo. The wordmark carries the sponsor name, so the row
+                    pairs it with the tagline rather than repeating the name. */}
+                <div className="flex w-24 shrink-0 items-center">
                   <Image
                     src={sponsor.logo || '/placeholder.svg'}
                     alt={sponsor.name}
                     width={120}
-                    height={60}
-                    className={cn('h-auto w-auto max-h-12', sponsor.className, sponsor.sidebarClassName)}
+                    height={40}
+                    className={cn(
+                      'h-auto max-h-7 w-auto max-w-24 object-contain',
+                      sponsor.className,
+                      sponsor.sidebarClassName
+                    )}
                   />
                 </div>
 
-                {/* Sponsor info */}
-                <div className="relative z-10 text-center">
-                  <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                    {sponsor.name}
+                {sponsor.tagline && (
+                  <p className="min-w-0 flex-1 text-[11px] leading-snug text-muted-foreground transition-colors group-hover:text-foreground/80">
+                    {sponsor.tagline}
                   </p>
-                  {sponsor.tagline && (
-                    <p className="text-xs text-muted-foreground mt-1">{sponsor.tagline}</p>
-                  )}
-                </div>
+                )}
+
+                {/* External link indicator */}
+                <ExternalLink className="absolute top-1.5 right-1.5 h-3 w-3 text-muted-foreground opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Link>
             ))}
           </div>
 
           {/* Optional CTA */}
-          <div className="px-4 pb-4">
+          <div className="px-3 pb-3">
             <a
               href="/sponsorship"
-              className="block text-center text-sm text-muted-foreground hover:text-primary transition-colors"
+              className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors"
             >
               Become a sponsor →
             </a>
@@ -90,8 +94,6 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
         </div>
       </div>
 
-      {/* Carbon Ads Section */}
-      <CarbonAds />
       {/* Newsletter Subscription Section */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
         <h3 className="font-semibold text-sm mb-2">Stay Updated</h3>
