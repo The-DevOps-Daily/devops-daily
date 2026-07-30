@@ -333,7 +333,17 @@ export default function WebhookDeliverySimulator() {
     ? Math.min(selectedAttemptIndex ?? active.revealed - 1, active.revealed - 1)
     : 0;
   const currentAttempt = active?.attempts[currentAttemptIndex];
+  const selectedNextAttempt = active?.attempts[currentAttemptIndex + 1];
   const lastVisibleAttempt = active?.attempts[Math.max(0, active.revealed - 1)];
+  const nextScheduledAttempt = active?.attempts[active.revealed];
+  const selectedRetryDelay =
+    currentAttempt && selectedNextAttempt
+      ? selectedNextAttempt.atSeconds - currentAttempt.atSeconds
+      : null;
+  const timeWarpDelay =
+    revealing && lastVisibleAttempt && nextScheduledAttempt
+      ? nextScheduledAttempt.atSeconds - lastVisibleAttempt.atSeconds
+      : null;
   const deliveryReachedReceiver = active
     ? active.attempts.slice(0, active.revealed).some((attempt) => attempt.result === 'delivered')
     : false;
@@ -487,7 +497,9 @@ export default function WebhookDeliverySimulator() {
             value={
               currentAttempt
                 ? currentAttempt.result === 'retrying'
-                  ? `Retry ${currentAttempt.attempt + 1} scheduled`
+                  ? selectedRetryDelay !== null
+                    ? `Next attempt in ${formatDelay(selectedRetryDelay)}`
+                    : 'Retry scheduled'
                   : `Attempt ${currentAttempt.attempt} complete`
                 : 'Durable message'
             }
@@ -535,9 +547,25 @@ export default function WebhookDeliverySimulator() {
 
       <section className="border-b border-border p-4" aria-label="Delivery attempts">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Activity className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold">Retry schedule</h2>
+            {timeWarpDelay !== null && (
+              <span
+                key={`${active?.key}-${active?.revealed}`}
+                aria-live="polite"
+                className="relative inline-flex overflow-hidden rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-1 font-mono text-[10px] font-medium text-sky-700 dark:text-sky-300"
+              >
+                <span className="relative z-10 inline-flex items-center gap-1.5">
+                  <FastForward className="h-3 w-3" />
+                  Fast-forwarding {formatDelay(timeWarpDelay)}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="webhook-time-warp absolute inset-x-0 bottom-0 h-px bg-sky-500"
+                />
+              </span>
+            )}
           </div>
           {active && (
             <div className="flex items-center gap-3 font-mono text-[11px] text-muted-foreground">
@@ -882,9 +910,22 @@ svix-signature: ${signatureHeader || 'computing...'}`}
         .webhook-packet-y {
           animation: webhook-packet-y 520ms ease-out both;
         }
+        @keyframes webhook-time-warp {
+          from {
+            transform: scaleX(0);
+          }
+          to {
+            transform: scaleX(1);
+          }
+        }
+        .webhook-time-warp {
+          animation: webhook-time-warp 700ms linear both;
+          transform-origin: left;
+        }
         @media (prefers-reduced-motion: reduce) {
           .webhook-packet-x,
-          .webhook-packet-y {
+          .webhook-packet-y,
+          .webhook-time-warp {
             animation: none;
             opacity: 0;
           }
