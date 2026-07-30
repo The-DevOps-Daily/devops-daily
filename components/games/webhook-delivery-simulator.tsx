@@ -380,9 +380,6 @@ export default function WebhookDeliverySimulator() {
         ? 'bg-emerald-500'
         : 'bg-rose-500';
   const flowAnimationKey = active ? `${active.key}-${active.revealed}` : 'idle';
-  const retryProgress = active
-    ? ((Math.min(active.revealed, active.attempts.length) - 1) / (MAX_ATTEMPTS - 1)) * 100
-    : 0;
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-card">
@@ -554,24 +551,26 @@ export default function WebhookDeliverySimulator() {
 
         <div className="overflow-x-auto pb-1">
           <div className="relative min-w-[640px]">
-            <div
-              className="absolute left-8 right-8 top-5 h-px overflow-hidden bg-border"
-              aria-hidden="true"
-            >
-              <div
-                className="h-full bg-primary/70 transition-[width] duration-500 ease-out"
-                style={{ width: `${retryProgress}%` }}
-              />
-            </div>
             <ol className="relative grid grid-cols-8 gap-2" aria-live="polite">
               {Array.from({ length: MAX_ATTEMPTS }, (_, index) => {
                 const attempt = active?.attempts[index];
                 const isRevealed = Boolean(attempt && index < active!.revealed);
                 const isSelected = Boolean(active && isRevealed && index === currentAttemptIndex);
                 const isUnused = Boolean(active && !attempt);
+                const connectorComplete = Boolean(
+                  active && index < active.revealed - 1 && index < active.attempts.length - 1
+                );
 
                 return (
-                  <li key={index}>
+                  <li className="relative" key={index}>
+                    {index < MAX_ATTEMPTS - 1 && (
+                      <span
+                        aria-hidden="true"
+                        className={`absolute left-full top-5 h-px w-2 transition-colors duration-500 ${
+                          connectorComplete ? 'bg-primary/70' : 'bg-border'
+                        }`}
+                      />
+                    )}
                     <button
                       type="button"
                       disabled={!isRevealed}
