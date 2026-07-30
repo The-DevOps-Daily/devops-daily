@@ -260,6 +260,9 @@ function BranchDiagram({ spec }: { spec: DiagramSpec }) {
 function RowDiagram({ spec }: { spec: DiagramSpec }) {
   const nodes = spec.nodes ?? [];
   const rootRef = useRef<HTMLDivElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const loopRef = useRef<HTMLDivElement>(null);
+  const [loopGeometry, setLoopGeometry] = useState({ width: 1000, left: 40, right: 960 });
   const showTrace = spec.type === 'flow' && spec.trace !== false && nodes.length > 1;
 
   const trace = () => {
@@ -278,7 +281,7 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
   // Each connector is glued to the node it points into (.pd-seg), so on a wrap
   // the arrow travels to the new line with its node instead of orphaning.
   const row = (
-    <div className="pd-row">
+    <div className="pd-row" ref={rowRef}>
       {nodes.length > 0 && <NodeCard node={nodes[0]} />}
       {nodes.slice(1).map((n, i) => (
         <div className="pd-seg" key={i + 1}>
@@ -304,6 +307,26 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
           prevTop = seg.offsetTop;
         });
       });
+
+      const loop = loopRef.current;
+      const rowNodes = rowRef.current?.querySelectorAll<HTMLElement>(':scope .pd-node');
+      if (loop && rowNodes?.length) {
+        const loopRect = loop.getBoundingClientRect();
+        const firstRect = rowNodes[0].getBoundingClientRect();
+        const lastRect = rowNodes[rowNodes.length - 1].getBoundingClientRect();
+        const next = {
+          width: Math.max(1, loopRect.width),
+          left: firstRect.left + firstRect.width / 2 - loopRect.left,
+          right: lastRect.left + lastRect.width / 2 - loopRect.left,
+        };
+        setLoopGeometry((current) =>
+          Math.abs(current.width - next.width) < 0.5 &&
+          Math.abs(current.left - next.left) < 0.5 &&
+          Math.abs(current.right - next.right) < 0.5
+            ? current
+            : next
+        );
+      }
     };
     mark();
     const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(mark) : null;
@@ -331,11 +354,21 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
         <div className="pd-loopwrap">
           {spec.loopTop && <div className="pd-toplabel">{spec.loopTop}</div>}
           {row}
-          <div className="pd-loopback" aria-label={spec.loopBack ?? 'Return to the first step'}>
-            <svg viewBox="0 0 1000 42" preserveAspectRatio="none" aria-hidden="true">
-              <path className="track" d="M 960 1 V 21 Q 960 31 948 31 H 52 Q 40 31 40 21 V 6" />
-              <path className="flow" pathLength="1" d="M 960 1 V 21 Q 960 31 948 31 H 52 Q 40 31 40 21 V 6" />
-              <path className="head" d="M 34 12 L 40 4 L 46 12" />
+          <div className="pd-loopback" ref={loopRef} aria-label={spec.loopBack ?? 'Return to the first step'}>
+            <svg viewBox={`0 0 ${loopGeometry.width} 54`} preserveAspectRatio="none" aria-hidden="true">
+              <path
+                className="track"
+                d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 2`}
+              />
+              <path
+                className="flow"
+                pathLength="1"
+                d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 2`}
+              />
+              <path
+                className="head"
+                d={`M ${loopGeometry.left - 6} 10 L ${loopGeometry.left} 2 L ${loopGeometry.left + 6} 10`}
+              />
             </svg>
             {spec.loopBack && <span className="pd-lb-label">{spec.loopBack}</span>}
           </div>
@@ -711,15 +744,15 @@ const STYLES = `
 .pdiag .pd-conn.is-wrap .c-w{ display:block; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-conn .flow{ animation:pd-dash .95s linear infinite; } }
 @keyframes pd-dash{ to{ stroke-dashoffset:-14; } }
-.pdiag .pd-loopwrap{ width:fit-content; max-width:100%; margin:0 auto; }
-.pdiag .pd-loopback{ position:relative; height:42px; margin-top:8px; }
+.pdiag .pd-loopwrap{ width:max-content; min-width:100%; margin:0 auto; }
+.pdiag .pd-loopback{ position:relative; height:54px; margin-top:0; }
 .pdiag .pd-loopback svg{ width:100%; height:100%; overflow:visible; }
 .pdiag .pd-loopback .track{ fill:none; stroke:var(--pd-line2); stroke-width:1.8; vector-effect:non-scaling-stroke; }
 .pdiag .pd-loopback .flow{ fill:none; stroke:var(--pd-accent); stroke-width:2.2; stroke-linecap:round; stroke-dasharray:.008 .022; opacity:.7; vector-effect:non-scaling-stroke; }
 .pdiag .pd-loopback .head{ fill:none; stroke:var(--pd-accent); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-loopback .flow{ animation:pd-loop-flow 1.8s linear infinite; } }
 @keyframes pd-loop-flow{ to{ stroke-dashoffset:-.12; } }
-.pdiag .pd-lb-label{ position:absolute; left:50%; top:19px; transform:translate(-50%,-50%); max-width:calc(100% - 140px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--pd-mono); font-size:11.5px; font-style:normal; color:var(--pd-muted); background:var(--pd-card); border:1px solid var(--pd-line); border-radius:999px; padding:4px 10px; box-shadow:0 1px 2px rgba(20,18,14,.06); }
+.pdiag .pd-lb-label{ position:absolute; left:50%; top:9px; transform:translateX(-50%); max-width:calc(100% - 140px); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--pd-mono); font-size:11.5px; font-style:normal; color:var(--pd-muted); background:var(--pd-card); border:1px solid var(--pd-line); border-radius:999px; padding:4px 10px; box-shadow:0 1px 2px rgba(20,18,14,.06); }
 /* branch tree: parent forks into colored paths with drawn connectors */
 .pdiag .pd-tree{ position:relative; }
 .pdiag .pd-tree-links{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }
