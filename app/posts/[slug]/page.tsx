@@ -74,12 +74,12 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
   // Check if post content contains affiliate links
   const affiliatePatterns = [
-    'm.do.co',           // DigitalOcean referral
-    'amzn.to',           // Amazon short links
+    'm.do.co', // DigitalOcean referral
+    'amzn.to', // Amazon short links
     'amazon.com/.*tag=', // Amazon affiliate tags
     '[?&]ref=devops-daily', // Partner referral links
   ];
-  const hasAffiliateLinks = affiliatePatterns.some(pattern =>
+  const hasAffiliateLinks = affiliatePatterns.some((pattern) =>
     new RegExp(pattern).test(post.content)
   );
 
@@ -140,6 +140,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                     alt={post.title}
                     width={1200}
                     height={630}
+                    priority
                     className="w-full h-auto"
                   />
                 </div>
@@ -190,13 +191,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
 
               {/* Report Issue Component */}
               <div className="mt-8">
-              <ReportIssue title={post.title} type="post" slug={post.slug} variant="compact" />
-            </div>
+                <ReportIssue title={post.title} type="post" slug={post.slug} variant="compact" />
+              </div>
 
-            {/* Giscus Discussions */}
-            <GiscusComments className="mt-12" title={post.title} />
+              {/* Giscus Discussions */}
+              <GiscusComments className="mt-12" title={post.title} />
 
-            {mainRelatedPosts.length > 0 && (
+              {mainRelatedPosts.length > 0 && (
                 <RelatedPosts
                   posts={mainRelatedPosts.map((p) => ({
                     ...p,
