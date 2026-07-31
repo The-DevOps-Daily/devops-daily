@@ -10,6 +10,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 25
 
     steps:
       - name: Checkout code
@@ -18,7 +19,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10
+          version: 10.34.5
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -29,5 +30,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Run markdown validation tests
+      # Keep the existing type backlog visible while it is paid down incrementally.
+      - name: Report TypeScript baseline
+        continue-on-error: true
+        run: pnpm typecheck
+
+      # Keep the existing lint backlog visible while it is paid down incrementally.
+      - name: Report ESLint baseline
+        continue-on-error: true
+        run: pnpm lint
+
+      - name: Run tests
         run: pnpm test
+
+      - name: Install browser for smoke tests
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser smoke tests
+        run: pnpm test:e2e
