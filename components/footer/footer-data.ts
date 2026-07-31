@@ -106,8 +106,8 @@ export const contentSection: FooterSection = {
 export const resourcesSection: FooterSection = {
   title: 'Resources',
   links: [
-    { href: '/roadmap', label: 'Roadmap' },
-    { href: '/roadmaps', label: 'Roadmaps' },
+    { href: '/roadmap', label: 'Career Roadmap' },
+    { href: '/roadmaps', label: 'Learning Roadmaps' },
     { href: '/toolbox', label: 'Toolbox' },
     { href: '/games', label: 'All Games' },
     { href: '/quizzes', label: 'Quizzes' },
