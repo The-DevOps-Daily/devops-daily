@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dice6, Gamepad2, Sparkles } from 'lucide-react';
 import { getAllGames } from '@/lib/games';
 import { PageHero } from '@/components/page-hero';
-import { GamesList, SerializableGame } from '@/components/games-list';
+import { GamesList } from '@/components/games-list';
 import { LottiePlayer } from '@/components/lottie-player';
 
 export const metadata: Metadata = {
@@ -80,12 +80,12 @@ export default async function GamesPage() {
               Have an idea for a DevOps game or simulator?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              We're always looking to expand our collection with fun and useful games for the DevOps
-              community. Share your ideas and we might build it next!
+              We are always looking to expand our collection with useful DevOps games and
+              simulators. Share your idea and we might build it next.
             </p>
-            <Button size="lg">
-              <Dice6 className="mr-2 h-4 w-4" />
+            <Button size="lg" asChild>
               <Link href="https://github.com/The-DevOps-Daily/devops-daily/issues/new/choose">
+                <Dice6 className="mr-2 h-4 w-4" />
                 Suggest a Game
               </Link>
             </Button>

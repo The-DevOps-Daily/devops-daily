@@ -31,71 +31,73 @@ export async function Hero() {
   return (
     <div className="pb-8">
       <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-start pt-8 sm:pt-12 relative z-10">
-      <div className="lg:col-span-7 max-w-3xl">
-        {/* Latest post link */}
-        {latestPost && (
-          <Link
-            href={`/posts/${latestPost.slug}`}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 group"
-          >
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
-              New
-            </span>
-            <span className="truncate max-w-[300px] sm:max-w-none">{latestPost.title}</span>
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-          </Link>
-        )}
-
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
-          Learn DevOps by{' '}
-          <span className="text-primary relative inline-block">
-            doing
-            <svg
-              className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
-              viewBox="0 0 120 12"
-              preserveAspectRatio="none"
+        <div className="lg:col-span-7 max-w-3xl">
+          {/* Latest post link */}
+          {latestPost && (
+            <Link
+              href={`/posts/${latestPost.slug}`}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8 group"
             >
-              <path
-                d="M2 9 Q15 2 30 8 Q45 1 60 7 Q75 2 90 9 Q105 4 118 7"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                fill="none"
-                strokeLinecap="round"
-              />
-            </svg>
-          </span>
-          ,<br />
-          not just reading.
-        </h1>
-
-        <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
-          <span className="font-mono tabular-nums text-foreground">{totalContent}+</span>{' '}
-          simulators, quizzes, and hands-on exercises for engineers who prefer a terminal over a slide deck.
-        </p>
-
-        {/* CTA buttons */}
-        <div className="flex flex-wrap items-center gap-3 mt-8">
-          <Button asChild size="lg">
-            <Link href="/games" className="group">
-              Try a Simulator
-              <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                New
+              </span>
+              <span className="truncate max-w-[300px] sm:max-w-none">{latestPost.title}</span>
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Link>
-          </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="/exercises">Start an Exercise</Link>
-          </Button>
+          )}
+
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]">
+            Learn DevOps by{' '}
+            <span className="text-primary relative inline-block">
+              doing
+              <svg
+                className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
+                viewBox="0 0 120 12"
+                preserveAspectRatio="none"
+              >
+                <path
+                  d="M2 9 Q15 2 30 8 Q45 1 60 7 Q75 2 90 9 Q105 4 118 7"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  fill="none"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+            ,<br />
+            not just reading.
+          </h1>
+
+          <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
+            <span className="font-mono tabular-nums text-foreground">{totalContent}+</span>{' '}
+            articles, guides, and hands-on learning tools for engineers who prefer a terminal over a
+            slide deck.
+          </p>
+
+          {/* CTA buttons */}
+          <div className="flex flex-wrap items-center gap-3 mt-8">
+            <Button asChild size="lg">
+              <Link href="/games" className="group">
+                Try a Simulator
+                <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="lg">
+              <Link href="/exercises">Start an Exercise</Link>
+            </Button>
+          </div>
+
+          {/* Social proof */}
+          <p className="mt-4 text-sm text-muted-foreground">
+            Join <span className="font-mono tabular-nums">5,000+</span> DevOps engineers learning
+            every week
+          </p>
         </div>
 
-        {/* Social proof */}
-        <p className="mt-4 text-sm text-muted-foreground">
-          Join <span className="font-mono tabular-nums">5,000+</span> DevOps engineers learning every week
-        </p>
-      </div>
-
-      {/* Right column — animated command demo terminal */}
-      <div className="lg:col-span-5 w-full lg:pt-4">
-        <HeroDemoTerminal />
-      </div>
+        {/* Right column — animated command demo terminal */}
+        <div className="lg:col-span-5 w-full lg:pt-4">
+          <HeroDemoTerminal />
+        </div>
       </div>
 
       {/* Terminal-style stats block */}
@@ -114,7 +116,7 @@ export async function Hero() {
               <span className="text-green-500">$</span>
               <span className="text-muted-foreground">cat content-overview.txt</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-y-2 gap-x-4 pl-4 py-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-y-2 gap-x-4 pl-4 py-1">
               <Link
                 href="/games"
                 className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
@@ -122,7 +124,17 @@ export async function Hero() {
                 <span className="text-primary font-semibold tabular-nums">{games.length}</span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors">
                   {' '}
-                  simulators
+                  tools
+                </span>
+              </Link>
+              <Link
+                href="/guides"
+                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+              >
+                <span className="text-primary font-semibold tabular-nums">{guides.length}</span>
+                <span className="text-muted-foreground group-hover:text-foreground transition-colors">
+                  {' '}
+                  guides
                 </span>
               </Link>
               <Link
