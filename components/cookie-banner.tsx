@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Cookie, X, Check } from 'lucide-react';
+import { getCookieConsent, setCookieConsent } from '@/lib/cookie-consent';
 
 export function CookieBanner() {
   const [visible, setVisible] = useState(false);
@@ -8,22 +9,24 @@ export function CookieBanner() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const shouldShow = !localStorage.getItem('cookieAccepted');
-      setVisible(shouldShow);
-      // Delay showing banner to avoid LCP impact
+      const shouldShow = getCookieConsent() === null;
       if (shouldShow) {
-        const timer = setTimeout(() => setIsLoaded(true), 100);
+        const timer = setTimeout(() => {
+          setVisible(true);
+          setIsLoaded(true);
+        }, 100);
         return () => clearTimeout(timer);
       }
     }
   }, []);
 
   const acceptCookies = () => {
-    localStorage.setItem('cookieAccepted', 'true');
+    setCookieConsent('accepted');
     setVisible(false);
   };
 
   const dismissBanner = () => {
+    setCookieConsent('rejected');
     setVisible(false);
   };
 
@@ -63,9 +66,9 @@ export function CookieBanner() {
 
         {/* Content */}
         <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-          We use cookies to enhance your experience and analyze site usage.
+          Allow analytics cookies to help us understand and improve site usage.
           <br className="hidden sm:block" />
-          By continuing, you agree to our cookie policy.
+          You can continue without enabling analytics.
         </p>
 
         {/* Action buttons */}
@@ -83,7 +86,7 @@ export function CookieBanner() {
             "
           >
             <Check className="h-3.5 w-3.5" />
-            Accept All
+            Allow analytics
           </button>
           <button
             onClick={dismissBanner}
@@ -94,7 +97,7 @@ export function CookieBanner() {
               focus:outline-none focus:ring-2 focus:ring-muted focus:ring-offset-2
             "
           >
-            Not now
+            Continue without
           </button>
         </div>
       </div>

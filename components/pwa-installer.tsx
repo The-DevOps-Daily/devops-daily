@@ -16,95 +16,54 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
+function isRunningStandalone() {
+  if (typeof window === 'undefined') return false;
+  const navigatorWithStandalone = navigator as Navigator & { standalone?: boolean };
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    navigatorWithStandalone.standalone === true
+  );
+}
+
 export function PWAInstaller() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(isRunningStandalone);
 
   useEffect(() => {
-    // Register service worker
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('✅ Service Worker registered successfully:', registration.scope);
-
-          // Handle updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content is available, show refresh prompt
-                  if (confirm('New content is available! Would you like to refresh?')) {
-                    window.location.reload();
-                  }
-                }
-              });
-            }
-          });
-        })
-        .catch((error) => {
-          console.error('❌ Service Worker registration failed:', error);
-        });
-
-      // Listen for skip waiting message
-      navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'SKIP_WAITING') {
-          window.location.reload();
-        }
-      });
-    }
-
-    // Check if app is already installed
-    const checkIfInstalled = () => {
-      // Check if running in standalone mode (PWA installed)
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      // Check if running in WebKit standalone (iOS)
-      const isWebkitStandalone = (navigator as any).standalone === true;
-
-      setIsInstalled(isStandalone || isWebkitStandalone);
-    };
-
-    // Check if user permanently dismissed the prompt
+    // next-pwa owns service-worker registration. This component only owns
+    // the browser install prompt and its UI lifecycle.
+    const installed = isRunningStandalone();
     const isPermanentlyDismissed =
       localStorage.getItem('pwa-install-dismissed-permanent') === 'true';
+    let showTimer: ReturnType<typeof setTimeout> | undefined;
 
-    // Handle PWA install prompt
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later
       setDeferredPrompt(e);
 
-      // Only show if not permanently dismissed and not installed
-      if (!isPermanentlyDismissed && !isInstalled) {
-        // Show after user has spent some time on the site (more respectful)
-        setTimeout(() => {
-          if (!isInstalled && !isPermanentlyDismissed) {
-            setShowInstallPrompt(true);
-          }
-        }, 30000); // Show after 30 seconds
+      if (!isPermanentlyDismissed && !installed) {
+        showTimer = setTimeout(() => setShowInstallPrompt(true), 30_000);
       }
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', () => {
+    const handleAppInstalled = () => {
+      if (showTimer) clearTimeout(showTimer);
       setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
-      // Clear any dismissal flags since user installed
       localStorage.removeItem('pwa-install-dismissed-permanent');
-      console.log('✅ PWA was installed successfully');
-    });
+    };
 
-    // Initial checks
-    checkIfInstalled();
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
+      if (showTimer) clearTimeout(showTimer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [isInstalled]);
+  }, []);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
@@ -115,11 +74,7 @@ export function PWAInstaller() {
     // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
 
-    if (outcome === 'accepted') {
-      console.log('✅ User accepted the install prompt');
-    } else {
-      console.log('❌ User dismissed the install prompt');
-      // Set permanent dismissal flag
+    if (outcome === 'dismissed') {
       localStorage.setItem('pwa-install-dismissed-permanent', 'true');
     }
 
@@ -180,6 +135,7 @@ export function PWAInstaller() {
               size="sm"
               onClick={handleDismiss}
               className="shrink-0 h-8 w-8 p-0"
+              aria-label="Dismiss install prompt"
             >
               <X className="h-4 w-4" />
             </Button>

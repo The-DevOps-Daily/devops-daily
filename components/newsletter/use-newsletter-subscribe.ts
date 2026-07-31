@@ -12,8 +12,7 @@ const SUBMIT_TIMEOUT_MS = 10_000;
 
 export type SubscribeStatus = 'idle' | 'submitting' | 'ok' | 'error';
 
-const FRIENDLY_ERROR =
-  'Could not subscribe right now. Please try again in a minute.';
+const FRIENDLY_ERROR = 'Could not subscribe right now. Please try again in a minute.';
 
 /**
  * Client-side newsletter signup that posts to SMTPfast and exposes
@@ -29,7 +28,7 @@ export function useNewsletterSubscribe() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const submit = async (formData: FormData) => {
-    if (status === 'submitting') return;
+    if (status === 'submitting') return false;
     setStatus('submitting');
     setErrorMsg(null);
 
@@ -48,23 +47,22 @@ export function useNewsletterSubscribe() {
         // markup or a parse error in the toast.
         const body = await res.json().catch(() => ({}));
         const apiError =
-          typeof body?.error === 'string' && body.error.length < 200
-            ? body.error
-            : null;
+          typeof body?.error === 'string' && body.error.length < 200 ? body.error : null;
         throw new Error(apiError || FRIENDLY_ERROR);
       }
       setStatus('ok');
+      return true;
     } catch (err) {
       setStatus('error');
-      const aborted =
-        err instanceof DOMException && err.name === 'AbortError';
+      const aborted = err instanceof DOMException && err.name === 'AbortError';
       setErrorMsg(
         aborted
           ? 'The request timed out. Check your connection and try again.'
           : err instanceof Error && err.message
             ? err.message
-            : FRIENDLY_ERROR,
+            : FRIENDLY_ERROR
       );
+      return false;
     } finally {
       clearTimeout(timeout);
     }

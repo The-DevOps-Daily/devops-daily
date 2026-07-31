@@ -5,19 +5,12 @@ import './globals.css';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { ThemeProvider } from '@/components/theme-provider';
-import {
-  OrganizationSchema,
-  WebsiteSchema,
-} from '@/components/schema-markup';
+import { OrganizationSchema, WebsiteSchema } from '@/components/schema-markup';
 import { CookieBanner } from '@/components/cookie-banner';
-import { GoogleAnalytics } from '@next/third-parties/google';
-import Script from 'next/script';
 import { PWAInstaller } from '@/components/pwa-installer';
-import { KonamiCodeListener } from '@/components/konami-code-listener';
-import { BookPromotionPopup } from '@/components/book-promotion-popup';
 import { SkipToContent } from '@/components/skip-to-content';
-import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
-import { BackToTop } from '@/components/back-to-top';
+import { SiteAnalytics } from '@/components/site-analytics';
+import { DeferredSiteExtras } from '@/components/deferred-site-extras';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -126,7 +119,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <GoogleAnalytics gaId="G-DRHMSC6G9R" />
         <link
           rel="alternate"
           type="application/rss+xml"
@@ -147,24 +139,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <SkipToContent />
           <Header />
-          <main id="main-content" className="flex-1">{children}</main>
-         <Footer />
-         <CookieBanner />
-         <PWAInstaller />
-         <BookPromotionPopup />
-         <KonamiCodeListener />
-         <KeyboardShortcuts />
-         <BackToTop />
-       </ThemeProvider>
-       {/* Ahrefs Analytics — lazyOnload so it doesn't compete with
-           first-paint or early user interactions (INP). */}
-       <Script
-         id="ahrefs-analytics"
-         src="https://analytics.ahrefs.com/analytics.js"
-         data-key="DDU3onGEafDWd/obeLf2Pw"
-         strategy="lazyOnload"
-       />
-     </body>
+          <main id="main-content" className="flex-1">
+            {children}
+          </main>
+          <Footer />
+          <CookieBanner />
+          <PWAInstaller />
+          <SiteAnalytics />
+          <DeferredSiteExtras />
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

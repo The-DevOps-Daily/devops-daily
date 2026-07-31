@@ -1,97 +1,92 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import Confetti from 'react-confetti'
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, CheckCircle2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Confetti from 'react-confetti';
+import { useNewsletterSubscribe } from '@/components/newsletter/use-newsletter-subscribe';
 
 export function BookPromotionPopup() {
-  const [isVisible, setIsVisible] = useState(false)
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [email, setEmail] = useState('')
-  const [showThankYou, setShowThankYou] = useState(false)
-  const [showConfetti, setShowConfetti] = useState(false)
+  const [isVisible, setIsVisible] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [email, setEmail] = useState('');
+  const [showThankYou, setShowThankYou] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { status, errorMsg, submit } = useNewsletterSubscribe();
 
   useEffect(() => {
     // Check if user has already dismissed or subscribed
-    const dismissed = localStorage.getItem('book-promo-dismissed')
-    const subscribed = localStorage.getItem('book-promo-subscribed')
+    const dismissed = localStorage.getItem('book-promo-dismissed');
+    const subscribed = localStorage.getItem('book-promo-subscribed');
 
     if (dismissed || subscribed) {
-      return
+      return;
     }
 
     // Don't show if PWA prompt is currently visible or was recently interacted with
     // to avoid overlapping corner notifications
     const checkPWAState = () => {
-      const pwaTimestamp = localStorage.getItem('pwa-last-interaction')
+      const pwaTimestamp = localStorage.getItem('pwa-last-interaction');
       if (pwaTimestamp) {
-        const timeSinceInteraction = Date.now() - parseInt(pwaTimestamp)
+        const timeSinceInteraction = Date.now() - parseInt(pwaTimestamp);
         // Wait at least 1 minute after PWA interaction before showing ebook popup
         if (timeSinceInteraction < 60000) {
-          return false
+          return false;
         }
       }
-      return true
-    }
+      return true;
+    };
 
     // Show popup after 3 minutes to avoid being intrusive
     const timer = setTimeout(() => {
       // Double-check PWA state right before showing
       if (checkPWAState()) {
-        setIsVisible(true)
-        setTimeout(() => setIsLoaded(true), 100)
+        setIsVisible(true);
+        setTimeout(() => setIsLoaded(true), 100);
       }
-    }, 180000) // 3 minutes (180 seconds)
+    }, 180000); // 3 minutes (180 seconds)
 
     return () => {
-      clearTimeout(timer)
-      setShowConfetti(false)
-    }
-  }, [])
+      clearTimeout(timer);
+      setShowConfetti(false);
+    };
+  }, []);
 
   const handleDismiss = () => {
-    setShowConfetti(false)
-    setIsLoaded(false)
+    setShowConfetti(false);
+    setIsLoaded(false);
     setTimeout(() => {
-      setIsVisible(false)
-      localStorage.setItem('book-promo-dismissed', 'true')
-    }, 300)
-  }
+      setIsVisible(false);
+      localStorage.setItem('book-promo-dismissed', 'true');
+    }, 300);
+  };
 
   const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!email) return
+    if (!email) return;
 
-    // Submit to SMTPfast in the background — user stays on the popup, no
-    // new window. Failures are silent on purpose; the thank-you toast
-    // shows regardless because we don't want to dampen the celebration UX
-    // for transient errors. (The form will retry if they re-engage.)
-    const formData = new FormData(e.target as HTMLFormElement)
-    formData.append('source', 'book_promo_popup')
-    fetch('https://smtpfa.st/api/forms/cmomznsaf0001utvb88nateg7/submit', {
-      method: 'POST',
-      body: formData,
-    }).catch(() => {})
+    const formData = new FormData(e.target as HTMLFormElement);
+    formData.append('source', 'book_promo_popup');
+    const subscribed = await submit(formData);
+    if (!subscribed) return;
 
-    // Show thank you message
-    setShowThankYou(true)
-    localStorage.setItem('book-promo-subscribed', 'true')
+    setShowThankYou(true);
+    localStorage.setItem('book-promo-subscribed', 'true');
 
     // Show celebration confetti
-    setShowConfetti(true)
+    setShowConfetti(true);
 
     // Auto-close after 3 seconds
     setTimeout(() => {
-      setShowConfetti(false)
-      setIsLoaded(false)
-      setTimeout(() => setIsVisible(false), 300)
-    }, 3000)
-  }
+      setShowConfetti(false);
+      setIsLoaded(false);
+      setTimeout(() => setIsVisible(false), 300);
+    }, 3000);
+  };
 
-  if (!isVisible) return null
+  if (!isVisible) return null;
 
   return (
     <>
@@ -114,10 +109,10 @@ export function BookPromotionPopup() {
             initial={{ x: 400, opacity: 0 }}
             animate={{
               x: isLoaded ? 0 : 400,
-              opacity: isLoaded ? 1 : 0
+              opacity: isLoaded ? 1 : 0,
             }}
             exit={{ x: 400, opacity: 0 }}
-            transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+            transition={{ type: 'spring', duration: 0.5, bounce: 0.3 }}
             className="fixed bottom-4 right-4 z-50 w-[calc(100vw-2rem)] sm:w-96 max-w-sm shadow-2xl"
           >
             {/* Compact card */}
@@ -166,6 +161,7 @@ export function BookPromotionPopup() {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="your@email.com"
+                          aria-label="Email address"
                           required
                           className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
                         />
@@ -180,9 +176,14 @@ export function BookPromotionPopup() {
                           style={{ position: 'absolute', left: '-9999px' }}
                         />
 
-                        <Button type="submit" className="w-full">
-                          Subscribe
+                        <Button type="submit" className="w-full" disabled={status === 'submitting'}>
+                          {status === 'submitting' ? 'Subscribing...' : 'Subscribe'}
                         </Button>
+                        {status === 'error' && errorMsg && (
+                          <p role="alert" className="text-xs text-rose-500">
+                            {errorMsg}
+                          </p>
+                        )}
                       </form>
                     </div>
 
@@ -200,16 +201,16 @@ export function BookPromotionPopup() {
                   /* Thank you message */
                   <div className="text-center py-4">
                     <div className="mb-2 flex justify-center">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-2xl">
-                        🎉
+                      <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                        <CheckCircle2 className="h-7 w-7 text-green-500" />
                       </div>
                     </div>
-                    <h3 className="text-lg font-bold mb-2">Thank You! ✨</h3>
+                    <h3 className="text-lg font-bold mb-2">Thank you</h3>
                     <p className="text-sm text-muted-foreground mb-1">
-                      Check your inbox! 📬
+                      Check your inbox for the confirmation email.
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      We'll notify you when it launches! 🚀
+                      We will notify you when the book launches.
                     </p>
                   </div>
                 )}
@@ -219,5 +220,5 @@ export function BookPromotionPopup() {
         )}
       </AnimatePresence>
     </>
-  )
+  );
 }
