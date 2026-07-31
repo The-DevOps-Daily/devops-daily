@@ -2,6 +2,7 @@ import withPWAInit from '@ducanh2912/next-pwa';
 
 const withPWA = withPWAInit({
   dest: 'public',
+  register: true,
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
@@ -17,9 +18,9 @@ const withPWA = withPWAInit({
     '!_redirects',
     '!robots.txt',
     '!sitemap.xml',
-    '!**/*.md',  // Exclude markdown files (LLM-only)
-    '!**/*.txt',  // Exclude text files to prevent .txt redirects
-    '!**/*.{png,jpg,jpeg,svg,gif,webp,ico}',  // Don't precache images - use runtime caching instead
+    '!**/*.md', // Exclude markdown files (LLM-only)
+    '!**/*.txt', // Exclude text files to prevent .txt redirects
+    '!**/*.{png,jpg,jpeg,svg,gif,webp,ico}', // Don't precache images - use runtime caching instead
   ],
   workboxOptions: {
     disableDevLogs: true,
@@ -122,6 +123,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Keep static exports available while the existing TypeScript baseline is
+  // paid down. CI reports the backlog separately.
   typescript: {
     ignoreBuildErrors: true,
   },

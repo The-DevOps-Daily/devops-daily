@@ -2,7 +2,7 @@
 # Multi-stage build for optimized development and production images
 
 ARG NODE_VERSION=22.13.1
-ARG PNPM_VERSION=9.12.3
+ARG PNPM_VERSION=10.34.5
 
 # ===========================================================================
 # Stage 1: Base image with common dependencies

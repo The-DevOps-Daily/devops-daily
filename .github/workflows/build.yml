@@ -18,7 +18,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
-          version: 10
+          version: 10.34.5
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -30,7 +30,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Audit dependencies
-        run: pnpm audit --audit-level=high || true
+        run: pnpm audit --audit-level=critical
 
       - name: Validate game registry
         run: pnpm validate:games
@@ -39,3 +39,6 @@ jobs:
         run: pnpm build:fast
         env:
           NODE_OPTIONS: --max-old-space-size=8192
+
+      - name: Check for broken links
+        run: pnpm check-links

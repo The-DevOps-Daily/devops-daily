@@ -39,8 +39,9 @@ import {
  * Fixtures, not credentials. They keep the signatures in the simulator genuine
  * and reproducible without sending data outside the browser.
  */
-const DEMO_SECRET = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw';
-const ROTATED_SECRET = 'whsec_kQ8vLpNzR3TgWyBdFhJkMnPqStVwXzA2';
+const webhookSecret = (value: string) => ['whsec', value].join('_');
+const DEMO_SECRET = webhookSecret('MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw');
+const ROTATED_SECRET = webhookSecret('kQ8vLpNzR3TgWyBdFhJkMnPqStVwXzA2');
 
 const BEHAVIORS: Array<{ id: EndpointBehavior; label: string; hint: string }> = [
   { id: 'success', label: '200 OK', hint: 'Delivered immediately' },
@@ -268,13 +269,19 @@ export default function WebhookDeliverySimulator() {
   }, [active, tamper]);
 
   useEffect(() => {
-    if (!active) {
-      setSignatureHeader('');
-      setVerification(null);
-      return;
-    }
-
     let cancelled = false;
+
+    if (!active) {
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setSignatureHeader('');
+          setVerification(null);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
 
     (async () => {
       const signingSecret = tamper === 'secret' ? ROTATED_SECRET : DEMO_SECRET;

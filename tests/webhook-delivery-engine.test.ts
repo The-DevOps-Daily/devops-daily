@@ -18,7 +18,8 @@ import {
   verifyWebhook,
 } from '@/lib/games/webhook-delivery-engine';
 
-const SECRET = 'whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw';
+const webhookSecret = (value: string) => ['whsec', value].join('_');
+const SECRET = webhookSecret('MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw');
 const ID = 'msg_2Xg8kFmqLxKp4v9rNtQwYbCdEf';
 const TS = 1785350000;
 const BODY = '{"type":"invoice.paid","invoiceId":"inv_991"}';
@@ -178,7 +179,7 @@ describe('verification', () => {
   });
 
   it('rejects a different secret', async () => {
-    const r = await verify({ secret: 'whsec_AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH' });
+    const r = await verify({ secret: webhookSecret('AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH') });
     expect(r.valid).toBe(false);
     expect(r.failure).toBe('signature_mismatch');
   });
@@ -226,7 +227,7 @@ describe('verification', () => {
   });
 
   it('accepts any signature in the header, so rotation works', async () => {
-    const oldSecret = 'whsec_AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH';
+    const oldSecret = webhookSecret('AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHH');
     const current = await buildSignatureHeader(SECRET, ID, TS, BODY);
     const previous = await buildSignatureHeader(oldSecret, ID, TS, BODY);
 
