@@ -42,6 +42,10 @@ test('representative article and simulator routes render', async ({ page }) => {
 
   await page.goto('/games/webhook-delivery-simulator');
   await expect(
-    page.getByRole('heading', { name: 'Webhook Delivery Simulator', exact: true })
+    page.getByRole('heading', {
+      level: 1,
+      name: 'Webhook Delivery Simulator',
+      exact: true,
+    })
   ).toBeVisible();
 });
