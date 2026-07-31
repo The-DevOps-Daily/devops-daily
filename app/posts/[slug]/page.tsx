@@ -6,7 +6,7 @@ import { OptimizedImage } from '@/components/optimized-image';
 import { getPostBySlug, getAllPosts, getRelatedPosts } from '@/lib/posts';
 import { getLinkableTagSlugs } from '@/lib/tags';
 import { tagToSlug } from '@/lib/tag-utils';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
 import { RelatedPosts } from '@/components/related-posts';
 import { RelatedAcrossTypes } from '@/components/related-across-types';
