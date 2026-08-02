@@ -51,7 +51,7 @@ None of these are webhook problems. They are delivery problems, and they are the
 - Node.js 20 or newer, for the examples
 - Comfort with HTTP semantics: status codes, timeouts, request bodies
 - A rough idea of HMAC (a keyed hash; same input plus same key gives the same digest)
-- Optional: a free [Svix](https://www.svix.com/?ref=devops-daily) account, if you want to run the sending half against the real API
+- Optional: a free [Svix](https://link.svix.com/devopsdaily) account, if you want to run the sending half against the real API
 
 ## Why a POST is not a delivery
 
@@ -469,6 +469,6 @@ The delivery problems are the same everywhere, so the checklist is portable whet
 6. **Prefer sequence numbers over strict ordering.** Strict FIFO buys you head-of-line blocking.
 7. **Build the log before you need it,** and let customers read it.
 
-If those mechanics are product infrastructure rather than your product, [Svix Dispatch](https://www.svix.com/?ref=devops-daily) packages them behind one API and gives your customers a polished place to configure endpoints, inspect attempts, and replay failures themselves. It also builds on the [Standard Webhooks](https://www.standardwebhooks.com/) signing model, so receivers get a documented verification contract instead of a proprietary signature scheme. Their [docs](https://docs.svix.com/) publish the operational details, including retry timing and ordering tradeoffs, which makes the service easier to evaluate against a home-grown implementation.
+If those mechanics are product infrastructure rather than your product, [Svix Dispatch](https://link.svix.com/devopsdaily) packages them behind one API and gives your customers a polished place to configure endpoints, inspect attempts, and replay failures themselves. It also builds on the [Standard Webhooks](https://www.standardwebhooks.com/) signing model, so receivers get a documented verification contract instead of a proprietary signature scheme. Their [docs](https://docs.svix.com/) publish the operational details, including retry timing and ordering tradeoffs, which makes the service easier to evaluate against a home-grown implementation.
 
 For an interactive walkthrough of retries, signatures, and duplicate handling, try the [webhook delivery simulator](/games/webhook-delivery-simulator). For related reading on the same underlying problem, our post on [designing automation with failure in mind](/posts/designing-automation-with-failure-in-mind) covers the general pattern, and the [message queue simulator](/games/message-queue-simulator) is a good way to build intuition for at-least-once delivery before you have to debug it in production.

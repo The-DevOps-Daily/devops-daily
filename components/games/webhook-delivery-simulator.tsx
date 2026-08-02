@@ -875,7 +875,7 @@ svix-signature: ${signatureHeader || 'computing...'}`}
           </p>
         </div>
         <a
-          href="https://www.svix.com/?ref=devops-daily"
+          href="https://link.svix.com/devopsdaily"
           target="_blank"
           rel="noopener noreferrer sponsored"
           className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-primary hover:underline"
