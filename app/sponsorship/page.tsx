@@ -19,16 +19,16 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Sponsorship - Reach 25,000+ DevOps Engineers',
+  title: 'Sponsorship - Reach 20,000+ DevOps Engineers',
   description:
-    'Partner with DevOps Daily to reach 25,000+ monthly readers, 5,000+ newsletter subscribers, and a highly engaged audience of DevOps engineers, SREs, and technical decision-makers.',
+    'Partner with DevOps Daily to reach 20,000+ monthly readers, 1,500 newsletter subscribers, and 23.7M syndicated impressions across an audience of DevOps engineers, SREs, and technical decision-makers.',
   alternates: {
     canonical: '/sponsorship',
   },
   openGraph: {
-    title: 'Sponsor DevOps Daily - Reach 25,000+ DevOps Engineers',
+    title: 'Sponsor DevOps Daily - Reach 20,000+ DevOps Engineers',
     description:
-      'Partner with DevOps Daily to connect with 25,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
+      'Partner with DevOps Daily to connect with 20,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
     url: '/sponsorship',
     type: 'website',
     images: [
@@ -42,18 +42,22 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sponsor DevOps Daily - Reach 25,000+ DevOps Engineers',
+    title: 'Sponsor DevOps Daily - Reach 20,000+ DevOps Engineers',
     description:
-      'Partner with DevOps Daily to reach 25,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
+      'Partner with DevOps Daily to reach 20,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
     images: ['/og-image.png'],
   },
 };
 
+// Figures a sponsor could ask us to back up, so each one names what it
+// measures and over what window. Syndicated reach is listed separately from
+// owned audience on purpose: rolling them into one number reads better and
+// falls apart the moment someone asks which is which.
 const STATS = [
-  { value: '25,000+', label: 'Monthly readers', detail: 'organic + newsletter' },
-  { value: '5,000+', label: 'Newsletter subs', detail: 'weekly digest' },
+  { value: '23.7M', label: 'Syndicated impressions', detail: 'daily.dev, 45 days to 2 Aug 2026' },
+  { value: '20,000+', label: 'Monthly readers', detail: 'devops-daily.com' },
+  { value: '1,500', label: 'Newsletter subscribers', detail: 'weekly, every Monday' },
   { value: '600+', label: 'Content pieces', detail: 'posts, guides, labs' },
-  { value: '85%', label: 'Senior engineers', detail: 'mid-to-staff level' },
 ];
 
 const AUDIENCE = [
@@ -68,7 +72,7 @@ const CHANNELS = [
   {
     title: 'Weekly Newsletter',
     description:
-      '5,000+ engineers get a curated DevOps digest every Monday. Sponsored slot with copy you control.',
+      '1,500 engineers get a curated DevOps digest every Monday. Sponsored slot with copy you control.',
     icon: Newspaper,
     metric: '45%+ open rate',
   },
@@ -239,7 +243,7 @@ export default function SponsorshipPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
               Reach{' '}
               <span className="text-primary relative inline-block">
-                25,000+
+                20,000+
                 <svg
                   className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
                   viewBox="0 0 200 12"
