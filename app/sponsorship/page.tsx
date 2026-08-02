@@ -219,26 +219,46 @@ export default function SponsorshipPage() {
       <BreadcrumbSchema items={breadcrumbItems} />
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        {/* Hero */}
-        <div className="rounded-xl border border-border bg-card p-8 sm:p-10">
-          <div className="flex items-start justify-between gap-4">
+        {/* Hero. The rocket is decorative line art, drawn inline rather than
+            shipped as an asset so it inherits the accent colour and stays
+            crisp at any size. aria-hidden: it carries no meaning. */}
+        <div className="relative overflow-hidden rounded-xl border border-border bg-card p-8 sm:p-10">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 240 240"
+            className="pointer-events-none absolute -right-6 top-1/2 hidden h-[300px] w-[300px] -translate-y-1/2 text-primary/20 lg:block"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M120 26c22 20 34 48 34 80 0 14-2 27-6 39h-56c-4-12-6-25-6-39 0-32 12-60 34-80z" />
+            <circle cx="120" cy="96" r="16" />
+            <path d="M86 116c-14 8-24 22-26 40 10-2 20-6 28-12" />
+            <path d="M154 116c14 8 24 22 26 40-10-2-20-6-28-12" />
+            <path d="M104 145h32l-6 16h-20z" />
+            <path d="M112 172c0 8 3 14 8 20 5-6 8-12 8-20" />
+          </svg>
+
+          <div className="relative flex items-start justify-between gap-4">
             <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
               Media kit 2026
             </span>
             <span className="font-mono text-[11px] text-muted-foreground">devops-daily.com</span>
           </div>
 
-          <h1 className="mt-8 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
+          <h1 className="relative mt-8 max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:max-w-[62%]">
             Reach the DevOps audience that{' '}
             <span className="text-primary">drives decisions</span>
           </h1>
 
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+          <p className="relative mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
             DevOps Daily is where developers, platform engineers, SREs and technical leaders go
             while they are deciding what to build with.
           </p>
 
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="relative mt-7 flex flex-wrap gap-3">
             <Button asChild>
               <a href="mailto:sponsorship@devops-daily.com">
                 <Mail className="mr-2 h-4 w-4" />
