@@ -16,6 +16,7 @@ import {
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { sponsors } from '@/lib/sponsors';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -217,286 +218,238 @@ export default function SponsorshipPage() {
     <>
       <BreadcrumbSchema items={breadcrumbItems} />
 
-      {/* Hero */}
-      <div className="relative overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 -z-10 opacity-[0.07] dark:opacity-[0.09]"
-          style={{
-            backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-            maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-          }}
-        />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/[0.04] via-transparent to-transparent" />
-
-        <div className="container relative mx-auto px-4 py-16 md:py-20">
-          <div className="max-w-4xl mx-auto text-center">
-            <p className="text-xs font-mono text-muted-foreground mb-3">// sponsorship</p>
-
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-primary/20 bg-primary/5 text-xs font-mono text-primary mb-6">
-              <Rocket className="w-3.5 h-3.5" strokeWidth={1.5} />
-              Limited slots available
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
-              Reach{' '}
-              <span className="text-primary relative inline-block">
-                20,000+
-                <svg
-                  className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
-                  viewBox="0 0 200 12"
-                  preserveAspectRatio="none"
-                >
-                  <path
-                    d="M2 9 Q25 2 50 8 Q75 1 100 7 Q125 2 150 9 Q175 4 198 7"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>{' '}
-              DevOps engineers
-              <br />
-              who decide what to buy.
-            </h1>
-
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-              DevOps Daily is where practicing platform engineers, SREs, and cloud architects come
-              to learn by doing. Your product lives inside real tutorials and interactive labs, not
-              next to cat videos.
-            </p>
-
-            <div className="flex flex-wrap justify-center gap-3">
-              <Button asChild size="lg">
-                <a
-                  href="mailto:info@devops-daily.com?subject=Sponsorship Inquiry"
-                  className="group"
-                >
-                  <Mail className="mr-2 h-4 w-4" strokeWidth={1.5} />
-                  Get the media kit
-                  <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                </a>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <a href="#packages">See packages</a>
-              </Button>
-            </div>
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+        {/* Hero */}
+        <div className="rounded-xl border border-border bg-card p-8 sm:p-10">
+          <div className="flex items-start justify-between gap-4">
+            <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
+              Media kit 2026
+            </span>
+            <span className="font-mono text-[11px] text-muted-foreground">devops-daily.com</span>
           </div>
-        </div>
-      </div>
 
-      <div className="container mx-auto px-4">
-        <SectionSeparator command="cat audience.csv" />
+          <h1 className="mt-8 text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl">
+            Reach the DevOps audience that{' '}
+            <span className="text-primary">drives decisions</span>
+          </h1>
 
-        {/* Stats */}
-        <section className="my-12 max-w-5xl mx-auto">
-          <dl className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border border rounded-md overflow-hidden">
-            {STATS.map((s) => (
-              <div key={s.label} className="bg-card p-5">
-                <dt className="text-[11px] uppercase tracking-wider text-muted-foreground font-mono">
-                  {s.label}
-                </dt>
-                <dd className="text-2xl sm:text-3xl font-bold tabular-nums mt-1 text-foreground">
-                  {s.value}
-                </dd>
-                <dd className="text-xs text-muted-foreground/80 mt-0.5 font-mono">{s.detail}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-
-        {/* Audience breakdown */}
-        <section className="my-12 max-w-3xl mx-auto">
-          <SectionHeader
-            label="audience"
-            title="Who you're reaching"
-            description="Breakdown of who visits, based on reader surveys and subscription sign-ups."
-          />
-          <ul className="space-y-2 font-mono text-sm">
-            {AUDIENCE.map((a) => (
-              <li
-                key={a.label}
-                className="flex items-center justify-between gap-4 rounded-md border bg-card px-4 py-3"
-              >
-                <span className="text-foreground">{a.label}</span>
-                <span className="text-primary tabular-nums font-semibold">{a.share}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <SectionSeparator command="ls /placement-channels" />
-
-        {/* Channels */}
-        <section className="my-12 max-w-5xl mx-auto">
-          <SectionHeader
-            label="channels"
-            title="Where your brand shows up"
-            description="Four distinct surfaces, each with its own audience and format."
-          />
-          <div className="grid gap-px sm:grid-cols-2 bg-border border rounded-md overflow-hidden">
-            {CHANNELS.map((c) => {
-              const Icon = c.icon;
-              return (
-                <div key={c.title} className="bg-card p-5">
-                  <div className="flex items-start gap-3 mb-2">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <h3 className="font-semibold">{c.title}</h3>
-                        <span className="text-[11px] font-mono tabular-nums text-primary shrink-0">
-                          {c.metric}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {c.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <SectionSeparator command="cat why-sponsor.md" />
-
-        {/* Why Sponsor */}
-        <section className="my-12 max-w-4xl mx-auto">
-          <SectionHeader label="why sponsor" title="Why sponsor DevOps Daily" />
-          <div className="grid gap-px sm:grid-cols-2 bg-border border rounded-md overflow-hidden">
-            {WHY.map((w) => {
-              const Icon = w.icon;
-              return (
-                <div key={w.title} className="bg-card p-5">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold mb-1">{w.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {w.description}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <SectionSeparator command="ls /packages" />
-
-        {/* Packages */}
-        <section id="packages" className="my-12 max-w-5xl mx-auto scroll-mt-20">
-          <SectionHeader
-            label="packages"
-            title="Sponsorship packages"
-            description="Start with awareness, scale to category ownership. Cancel anytime."
-          />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {PACKAGES.map((pkg) => (
-              <div
-                key={pkg.name}
-                className={`relative rounded-md border bg-card p-6 flex flex-col ${
-                  pkg.popular
-                    ? 'border-primary/50 bg-primary/[0.03] ring-1 ring-primary/20'
-                    : 'border-border'
-                }`}
-              >
-                {pkg.popular && (
-                  <span className="absolute -top-2.5 right-4 px-2 py-0.5 text-[10px] font-mono tabular-nums uppercase tracking-wider text-primary bg-background border border-primary/40 rounded">
-                    most popular
-                  </span>
-                )}
-                <p className="text-xs font-mono text-muted-foreground mb-1">// {pkg.name.toLowerCase()}</p>
-                <h3 className="text-xl font-bold mb-1">{pkg.name}</h3>
-                <p className="text-sm text-muted-foreground mb-4">{pkg.description}</p>
-                <div className="mb-5 font-mono tabular-nums">
-                  <span className="text-3xl font-bold text-foreground">{pkg.price}</span>
-                  {pkg.cadence && (
-                    <span className="text-sm text-muted-foreground">{pkg.cadence}</span>
-                  )}
-                </div>
-                <ul className="space-y-2 flex-1 mb-6">
-                  {pkg.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2
-                        className="h-4 w-4 text-primary mt-0.5 shrink-0"
-                        strokeWidth={1.5}
-                      />
-                      <span className="text-foreground">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  asChild
-                  variant={pkg.popular ? 'default' : 'outline'}
-                  className="w-full"
-                >
-                  <a
-                    href={`mailto:info@devops-daily.com?subject=Sponsorship Inquiry - ${pkg.name}`}
-                  >
-                    {pkg.price === 'Custom' ? 'Get a quote' : `Start with ${pkg.name}`}
-                  </a>
-                </Button>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground text-center mt-6 font-mono">
-            All packages include monthly reporting with impressions, clicks, and top-referring content.
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-muted-foreground">
+            DevOps Daily is where developers, platform engineers, SREs and technical leaders go
+            while they are deciding what to build with.
           </p>
-        </section>
 
-        <SectionSeparator command="cat faq.md" />
-
-        {/* FAQ */}
-        <section className="my-12 max-w-3xl mx-auto">
-          <SectionHeader label="faq" title="Frequently asked" />
-          <div className="space-y-3">
-            {FAQ.map((f) => (
-              <div key={f.q} className="rounded-md border bg-card p-5">
-                <h3 className="font-semibold mb-2">{f.q}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.a}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Final CTA */}
-        <section className="my-16 max-w-3xl mx-auto">
-          <div className="rounded-md border bg-primary/5 p-8 text-center">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <Users className="w-5 h-5 text-primary" strokeWidth={1.5} />
-              <p className="text-xs font-mono text-primary uppercase tracking-wider">
-                Let&apos;s talk
-              </p>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-              Ready to reach engineers who build?
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              Tell us about your product and who you want to reach. We respond within 24 hours with
-              a media kit and available slots.
-            </p>
-            <Button asChild size="lg">
-              <a
-                href="mailto:info@devops-daily.com?subject=Sponsorship Inquiry"
-                className="group"
-              >
-                <Mail className="mr-2 h-4 w-4" strokeWidth={1.5} />
-                info@devops-daily.com
-                <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Button asChild>
+              <a href="mailto:sponsorship@devops-daily.com">
+                <Mail className="mr-2 h-4 w-4" />
+                sponsorship@devops-daily.com
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href="#packages">
+                See packages
+                <ArrowRight className="ml-2 h-4 w-4" />
               </a>
             </Button>
           </div>
-        </section>
+        </div>
+
+        {/* Reach. Each figure names what it measures and over what window, so
+            none of it falls apart when a sponsor asks what is behind it. */}
+        <div className="mt-6">
+          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
+            Our reach
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {STATS.map((stat) => (
+              <div key={stat.label} className="rounded-xl border border-border bg-card p-5">
+                <div className="text-3xl font-bold leading-none tracking-tight">{stat.value}</div>
+                <div className="mt-3 text-sm font-medium">{stat.label}</div>
+                <div className="mt-1 text-xs text-muted-foreground">{stat.detail}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Audience */}
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="mb-5 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
+              Who we reach
+            </h2>
+            <div className="space-y-3">
+              {AUDIENCE.map((role) => (
+                <div key={role.label}>
+                  <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                    <span className="text-sm">{role.label}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{role.share}</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-primary" style={{ width: role.share }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
+              From our reader survey. Engineers who evaluate tools as part of the job.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="mb-5 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
+              How your content gets distributed
+            </h2>
+            <ol className="space-y-2.5">
+              {[
+                'We write the technical piece',
+                'Published on DevOps Daily',
+                'Amplified on daily.dev',
+                'Featured in the weekly newsletter',
+                'Indexed by search engines, compounding',
+              ].map((step, i) => (
+                <li key={step} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10 font-mono text-[10px] text-primary">
+                    {i + 1}
+                  </span>
+                  <span className="text-sm leading-snug">{step}</span>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
+              We do not sell banner ads. We write technical content developers want to read.
+            </p>
+          </div>
+        </div>
+
+        {/* Why */}
+        <div className="mt-6 grid gap-3 md:grid-cols-3">
+          {WHY.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.title} className="rounded-xl border border-border bg-card p-6">
+                <Icon className="h-5 w-5 text-primary" />
+                <h3 className="mt-4 text-sm font-semibold">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Channels */}
+        <div className="mt-6">
+          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
+            Where your brand appears
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {CHANNELS.map((channel) => {
+              const Icon = channel.icon;
+              return (
+                <div key={channel.title} className="rounded-xl border border-border bg-card p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <span className="font-mono text-[11px] text-muted-foreground">
+                      {channel.metric}
+                    </span>
+                  </div>
+                  <h3 className="mt-4 text-sm font-semibold">{channel.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    {channel.description}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Packages */}
+        <div id="packages" className="mt-6 scroll-mt-24">
+          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
+            Packages
+          </h2>
+          <div className="grid gap-3 lg:grid-cols-3">
+            {PACKAGES.map((pkg) => (
+              <div
+                key={pkg.name}
+                className={
+                  pkg.popular
+                    ? 'rounded-xl border border-primary/40 bg-primary/5 p-6'
+                    : 'rounded-xl border border-border bg-card p-6'
+                }
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold">{pkg.name}</h3>
+                  {pkg.popular && (
+                    <span className="rounded-full border border-primary/40 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-primary">
+                      Most picked
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold tracking-tight">{pkg.price}</span>
+                  <span className="text-sm text-muted-foreground">{pkg.cadence}</span>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">{pkg.description}</p>
+                <ul className="mt-5 space-y-2 border-t border-border pt-5">
+                  {pkg.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-sm">
+                      <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+                      <span className="leading-snug text-muted-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Custom packages available. Tell us what you are launching and we will work out what fits.
+          </p>
+        </div>
+
+        {/* Current sponsors */}
+        <div className="mt-6 rounded-xl border border-border bg-card p-6">
+          <h2 className="mb-4 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
+            Current sponsors
+          </h2>
+          <div className="flex flex-wrap items-center gap-6">
+            {sponsors.map((sponsor) => (
+              <span key={sponsor.name} className="text-sm font-medium text-muted-foreground">
+                {sponsor.name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <SectionSeparator command="cat /sponsorship/faq.md" />
+
+        {/* FAQ */}
+        <div className="mt-6">
+          <SectionHeader label="faq" title="Questions we get asked" />
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
+            {FAQ.map((item) => (
+              <div key={item.q} className="rounded-xl border border-border bg-card p-6">
+                <h3 className="text-sm font-semibold">{item.q}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-8 text-center">
+          <Rocket className="mx-auto h-6 w-6 text-primary" />
+          <h2 className="mt-4 text-xl font-bold">Let us build something great together.</h2>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
+            Tell us what you are launching and who you need to reach. We reply within a day.
+          </p>
+          <Button asChild className="mt-6">
+            <a href="mailto:sponsorship@devops-daily.com">
+              <Mail className="mr-2 h-4 w-4" />
+              sponsorship@devops-daily.com
+            </a>
+          </Button>
+        </div>
       </div>
     </>
   );
