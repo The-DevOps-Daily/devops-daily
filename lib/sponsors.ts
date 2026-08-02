@@ -29,7 +29,7 @@ export const sponsors: Sponsor[] = [
     name: 'Svix',
     logo: '/svix-brand.svg',
     darkLogo: '/svix-brand-light.svg',
-    url: 'https://www.svix.com/?ref=devops-daily',
+    url: 'https://link.svix.com/devopsdaily',
     tagline: 'Webhooks as a service',
     description:
       'Svix Dispatch sends your webhooks for you: retries with exponential backoff, signed payloads, idempotency keys, and a delivery log your customers can see.',

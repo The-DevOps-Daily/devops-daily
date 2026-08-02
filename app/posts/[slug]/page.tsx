@@ -78,6 +78,10 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     'amzn.to', // Amazon short links
     'amazon.com/.*tag=', // Amazon affiliate tags
     '[?&]ref=devops-daily', // Partner referral links
+    // Sponsors' own tracked short links. These carry no ref= param, so
+    // without an entry here a post could lose its disclosure banner purely
+    // by switching to the link the sponsor asked us to use.
+    'link\\.svix\\.com',
   ];
   const hasAffiliateLinks = affiliatePatterns.some((pattern) =>
     new RegExp(pattern).test(post.content)

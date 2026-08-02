@@ -59,7 +59,7 @@ function WebhookDeliveryEducational() {
           turns this flow into a typed sender and receiver you can build from. This simulator uses
           the published{' '}
           <a
-            href="https://www.svix.com/?ref=devops-daily"
+            href="https://link.svix.com/devopsdaily"
             className="font-medium text-primary underline underline-offset-2"
             target="_blank"
             rel="noopener noreferrer sponsored"
