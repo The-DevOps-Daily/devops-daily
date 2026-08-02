@@ -12,6 +12,19 @@ import {
   BookOpen,
   Rocket,
   ArrowRight,
+  Eye,
+  Code2,
+  Boxes,
+  ShieldCheck,
+  Server,
+  Cloud,
+  UserRound,
+  PenLine,
+  Globe,
+  Link2,
+  Search,
+  Scale,
+  Heart,
 } from 'lucide-react';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
@@ -55,10 +68,49 @@ export const metadata: Metadata = {
 // owned audience on purpose: rolling them into one number reads better and
 // falls apart the moment someone asks which is which.
 const STATS = [
-  { value: '23.7M', label: 'Syndicated impressions', detail: 'daily.dev, 45 days to 2 Aug 2026' },
-  { value: '20,000+', label: 'Monthly readers', detail: 'devops-daily.com' },
-  { value: '1,500', label: 'Newsletter subscribers', detail: 'weekly, every Monday' },
-  { value: '600+', label: 'Content pieces', detail: 'posts, guides, labs' },
+  { value: '23.7M', label: 'Syndicated impressions', detail: 'daily.dev, 45 days to 2 Aug 2026', icon: Eye },
+  { value: '20,000+', label: 'Monthly readers', detail: 'devops-daily.com', icon: Users },
+  { value: '1,500', label: 'Newsletter subscribers', detail: 'weekly, every Monday', icon: Mail },
+  { value: '600+', label: 'Content pieces', detail: 'posts, guides, labs', icon: TrendingUp },
+];
+
+/** Roles from the reader survey, with an icon each for the audience row. */
+const AUDIENCE_ICONS: Record<string, typeof Code2> = {
+  'DevOps / Platform engineers': Code2,
+  'Site reliability engineers (SRE)': ShieldCheck,
+  'Cloud / infra architects': Cloud,
+  'Backend / fullstack engineers': Server,
+  'Engineering managers / leadership': UserRound,
+};
+
+/** The path a sponsored piece travels, which is the product being sold. */
+const DISTRIBUTION = [
+  { label: 'We write the technical piece', icon: PenLine },
+  { label: 'Published on DevOps Daily', icon: Globe },
+  { label: 'Amplified on daily.dev', icon: Link2 },
+  { label: 'Featured in the newsletter', icon: Mail },
+  { label: 'Indexed by search engines', icon: Search },
+];
+
+const WHAT_WE_CREATE = [
+  {
+    title: 'Technical tutorials',
+    description:
+      'Hands-on guides that solve a real problem, with your product used the way someone actually would.',
+    icon: BookOpen,
+  },
+  {
+    title: 'Comparison pages',
+    description:
+      'Side-by-side evaluations that catch people mid-decision. The highest-intent traffic we have.',
+    icon: Scale,
+  },
+  {
+    title: 'Interactive simulators',
+    description:
+      'Browser simulators that teach a primitive by making the reader operate it. Your product taught, not advertised.',
+    icon: Gamepad2,
+  },
 ];
 
 const AUDIENCE = [
@@ -283,7 +335,10 @@ export default function SponsorshipPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {STATS.map((stat) => (
               <div key={stat.label} className="rounded-xl border border-border bg-card p-5">
-                <div className="text-3xl font-bold leading-none tracking-tight">{stat.value}</div>
+                <stat.icon className="h-6 w-6 text-primary" />
+                <div className="mt-4 text-3xl font-bold leading-none tracking-tight">
+                  {stat.value}
+                </div>
                 <div className="mt-3 text-sm font-medium">{stat.label}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{stat.detail}</div>
               </div>
@@ -292,52 +347,83 @@ export default function SponsorshipPage() {
         </div>
 
         {/* Audience */}
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="mt-6">
           <div className="rounded-xl border border-border bg-card p-6">
             <h2 className="mb-5 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
               Who we reach
             </h2>
-            <div className="space-y-3">
-              {AUDIENCE.map((role) => (
-                <div key={role.label}>
-                  <div className="mb-1.5 flex items-baseline justify-between gap-3">
-                    <span className="text-sm">{role.label}</span>
-                    <span className="font-mono text-xs text-muted-foreground">{role.share}</span>
+            <div className="grid grid-cols-2 gap-y-6 sm:grid-cols-3 lg:grid-cols-5">
+              {AUDIENCE.map((role) => {
+                const Icon = AUDIENCE_ICONS[role.label] ?? Code2;
+                return (
+                  <div
+                    key={role.label}
+                    className="flex flex-col items-center px-2 text-center lg:border-r lg:border-border lg:last:border-r-0"
+                  >
+                    <Icon className="h-6 w-6 text-primary" />
+                    {/* flex-1 keeps the percentages on one line when a role label wraps */}
+                    <span className="mt-3 flex-1 text-xs leading-snug">{role.label}</span>
+                    <span className="mt-1.5 font-mono text-sm font-semibold text-primary">
+                      {role.share}
+                    </span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary" style={{ width: role.share }} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
-              From our reader survey. Engineers who evaluate tools as part of the job.
+            <p className="mt-6 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+              From our reader survey. An engaged technical audience actively evaluating tools.
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-card p-6">
+          {/* Distribution, as the chain it actually is. */}
+          <div className="mt-6 rounded-xl border border-border bg-card p-6">
             <h2 className="mb-5 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
               How your content gets distributed
             </h2>
-            <ol className="space-y-2.5">
-              {[
-                'We write the technical piece',
-                'Published on DevOps Daily',
-                'Amplified on daily.dev',
-                'Featured in the weekly newsletter',
-                'Indexed by search engines, compounding',
-              ].map((step, i) => (
-                <li key={step} className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-primary/40 bg-primary/10 font-mono text-[10px] text-primary">
-                    {i + 1}
-                  </span>
-                  <span className="text-sm leading-snug">{step}</span>
-                </li>
+            <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {DISTRIBUTION.map((step, i) => (
+                <div key={step.label} className="relative">
+                  <div className="flex h-full flex-col items-center rounded-lg border border-border bg-background p-4 text-center">
+                    <step.icon className="h-5 w-5 text-primary" />
+                    <span className="mt-3 text-xs leading-snug">{step.label}</span>
+                  </div>
+                  {i < DISTRIBUTION.length - 1 && (
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="absolute -right-2.5 top-1/2 hidden h-4 w-4 -translate-y-1/2 text-primary/50 lg:block"
+                    />
+                  )}
+                </div>
               ))}
-            </ol>
-            <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
-              We do not sell banner ads. We write technical content developers want to read.
-            </p>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/50 p-3">
+                <Users className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-xs">Developers discover your product</span>
+              </div>
+              <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/50 p-3">
+                <TrendingUp className="h-4 w-4 shrink-0 text-primary" />
+                <span className="text-xs">Evergreen traffic keeps compounding</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* What we create */}
+        <div className="mt-6">
+          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
+            What we create
+          </h2>
+          <div className="grid gap-3 md:grid-cols-3">
+            {WHAT_WE_CREATE.map((item) => (
+              <div key={item.title} className="rounded-xl border border-border bg-card p-6">
+                <item.icon className="h-6 w-6 text-primary" />
+                <h3 className="mt-4 text-sm font-semibold text-primary">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {item.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -439,6 +525,18 @@ export default function SponsorshipPage() {
               </span>
             ))}
           </div>
+        </div>
+
+        {/* The positioning statement, given its own bar so it lands. */}
+        <div className="mt-6 flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5 text-center sm:flex-row sm:justify-center sm:gap-6 sm:text-left">
+          <div className="flex items-center gap-2.5">
+            <Heart className="h-4 w-4 shrink-0 fill-primary text-primary" />
+            <span className="text-sm font-semibold">We don&apos;t sell ads.</span>
+          </div>
+          <span className="hidden h-5 w-px bg-border sm:block" />
+          <span className="text-sm text-muted-foreground">
+            We write technical content <span className="text-primary">developers want to read.</span>
+          </span>
         </div>
 
         <SectionSeparator command="cat /sponsorship/faq.md" />
