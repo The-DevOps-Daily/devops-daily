@@ -53,11 +53,14 @@ function PdIcon({ name, tone }: { name?: string; tone?: string }) {
   return <span className={cls}>{name}</span>;
 }
 
-function NodeCard({ node }: { node: DiagramNode }) {
+function NodeCard({ node, step }: { node: DiagramNode; step?: number }) {
+  const statusLabel = node.status ? `Status: ${node.status}.` : null;
   if (node.variant) {
     return (
       <div className={'pd-node pd-fill v-' + node.variant}>
-        {node.status && <span className={'pd-dot s-' + node.status} />}
+        {step && <span className="pd-sr">Step {step}. </span>}
+        {node.status && <span className={'pd-dot s-' + node.status} aria-hidden="true" />}
+        {statusLabel && <span className="pd-sr">{statusLabel}</span>}
         <div className="pd-lab">{node.label}</div>
         {node.sub && <div className="pd-sub is-italic">{node.sub}</div>}
       </div>
@@ -65,7 +68,9 @@ function NodeCard({ node }: { node: DiagramNode }) {
   }
   return (
     <div className="pd-node">
-      {node.status && <span className={'pd-dot s-' + node.status} />}
+      {step && <span className="pd-sr">Step {step}. </span>}
+      {node.status && <span className={'pd-dot s-' + node.status} aria-hidden="true" />}
+      {statusLabel && <span className="pd-sr">{statusLabel}</span>}
       <PdIcon name={node.icon} tone={node.tone} />
       <div>
         <div className="pd-lab">{node.label}</div>
@@ -78,18 +83,9 @@ function NodeCard({ node }: { node: DiagramNode }) {
 function Conn() {
   return (
     <svg className="pd-conn" viewBox="0 0 58 24" height="24" preserveAspectRatio="none" aria-hidden="true">
-      {/* straight arrow, default */}
-      <g className="c-h">
-        <line className="base" x1="3" y1="12" x2="47" y2="12" />
-        <line className="flow" x1="3" y1="12" x2="47" y2="12" />
-        <path className="head" d="M45 8l6 4-6 4" />
-      </g>
-      {/* down-then-right elbow, shown when the arrow lands at a line break */}
-      <g className="c-w">
-        <path className="base" fill="none" d="M12 2 V9 Q12 17 24 17 H50" />
-        <path className="flow" fill="none" d="M12 2 V9 Q12 17 24 17 H50" />
-        <path className="head" d="M48 13l6 4-6 4" />
-      </g>
+      <line className="base" x1="3" y1="12" x2="47" y2="12" />
+      <line className="flow" x1="3" y1="12" x2="47" y2="12" />
+      <path className="head" d="M45 8l6 4-6 4" />
     </svg>
   );
 }
@@ -271,20 +267,37 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
   const flowNodeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const flowNumberRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const flowPathRefs = useRef<(SVGPathElement | null)[]>([]);
+  const flowRequiredWidthRef = useRef(0);
+  const traceTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [loopGeometry, setLoopGeometry] = useState({ width: 1000, left: 40, right: 960 });
   const [flowPaths, setFlowPaths] = useState<FlowGridPath[]>([]);
+  const [flowNeedsGrid, setFlowNeedsGrid] = useState(false);
+  const [staticTrace, setStaticTrace] = useState(false);
   const showTrace = spec.type === 'flow' && spec.trace !== false && nodes.length > 1;
-  const useStepGrid = spec.type === 'flow' && nodes.length > 4;
+  const useStepGrid = spec.type === 'flow' && (nodes.length > 4 || flowNeedsGrid);
+
+  const clearTrace = () => {
+    traceTimersRef.current.forEach(clearTimeout);
+    traceTimersRef.current = [];
+    flowPathRefs.current.forEach((path) => path?.classList.remove('is-tracing'));
+    rootRef.current
+      ?.querySelectorAll<HTMLElement>('.pd-flow-content .pd-node')
+      .forEach((node) => node.classList.remove('pd-pulse'));
+  };
 
   const trace = () => {
-    if (prefersReducedMotion()) return;
+    clearTrace();
+    if (prefersReducedMotion()) {
+      setStaticTrace(true);
+      traceTimersRef.current.push(setTimeout(() => setStaticTrace(false), 1600));
+      return;
+    }
+    setStaticTrace(false);
     const els = Array.from(
       rootRef.current?.querySelectorAll<HTMLElement>('.pd-flow-content .pd-node') ?? []
     );
-    flowPathRefs.current.forEach((path) => path?.classList.remove('is-tracing'));
-    els.forEach((e) => e.classList.remove('pd-pulse'));
-    els.forEach((e, i) =>
-      setTimeout(() => {
+    els.forEach((e, i) => {
+      const timer = setTimeout(() => {
         els.forEach((x) => x.classList.remove('pd-pulse'));
         e.classList.add('pd-pulse');
         const path = flowPathRefs.current[i - 1];
@@ -292,12 +305,60 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
           path.classList.remove('is-tracing');
           void path.getBoundingClientRect();
           path.classList.add('is-tracing');
-          setTimeout(() => path.classList.remove('is-tracing'), 560);
+          traceTimersRef.current.push(
+            setTimeout(() => path.classList.remove('is-tracing'), 560)
+          );
         }
-        if (i === els.length - 1) setTimeout(() => e.classList.remove('pd-pulse'), 620);
-      }, 500 * i)
-    );
+        if (i === els.length - 1) {
+          traceTimersRef.current.push(
+            setTimeout(() => e.classList.remove('pd-pulse'), 620)
+          );
+        }
+      }, 500 * i);
+      traceTimersRef.current.push(timer);
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      traceTimersRef.current.forEach(clearTimeout);
+      traceTimersRef.current = [];
+    };
+  }, []);
+
+  // Short flows stay as connected rows while they fit. If their real content
+  // overflows the article column, switch to the same measured grid as a long
+  // flow; switch back automatically when the available width grows again.
+  useEffect(() => {
+    if (spec.type !== 'flow' || nodes.length > 4) return;
+    const measure = () => {
+      if (window.matchMedia('(max-width: 760px)').matches) {
+        setFlowNeedsGrid(false);
+        return;
+      }
+
+      const row = rowRef.current;
+      if (row) {
+        flowRequiredWidthRef.current = row.scrollWidth;
+        setFlowNeedsGrid(row.scrollWidth > row.clientWidth + 1);
+        return;
+      }
+
+      const grid = flowGridRef.current;
+      if (grid && grid.clientWidth >= flowRequiredWidthRef.current + 16) {
+        setFlowNeedsGrid(false);
+      }
+    };
+
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (ro && rootRef.current) ro.observe(rootRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [flowNeedsGrid, nodes.length, spec.type]);
 
   useEffect(() => {
     if (!useStepGrid) return;
@@ -393,7 +454,7 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
                 flowNodeRefs.current[i] = el;
               }}
             >
-              <NodeCard node={n} />
+              <NodeCard node={n} step={i + 1} />
             </div>
           </li>
         ))}
@@ -404,32 +465,21 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
       className={'pd-row' + (spec.type === 'flow' ? ' pd-flow-row pd-flow-content' : '')}
       ref={rowRef}
     >
-      {nodes.length > 0 && <NodeCard node={nodes[0]} />}
+      {nodes.length > 0 && <NodeCard node={nodes[0]} step={1} />}
       {nodes.slice(1).map((n, i) => (
         <div className="pd-seg" key={i + 1}>
           <Conn />
-          <NodeCard node={n} />
+          <NodeCard node={n} step={i + 2} />
         </div>
       ))}
     </div>
   );
 
-  // Mark the connector of any segment that wrapped to a new line, so it can
-  // render a down-then-right elbow instead of a floating straight arrow.
+  // Keep the loop-back arc anchored to the first and last cards as it resizes.
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    const mark = () => {
-      root.querySelectorAll<HTMLElement>('.pd-row').forEach((rowEl) => {
-        const first = rowEl.firstElementChild as HTMLElement | null;
-        let prevTop = first ? first.offsetTop : 0;
-        rowEl.querySelectorAll<HTMLElement>(':scope > .pd-seg').forEach((seg) => {
-          const conn = seg.querySelector<HTMLElement>('.pd-conn');
-          if (conn) conn.classList.toggle('is-wrap', seg.offsetTop > prevTop + 4);
-          prevTop = seg.offsetTop;
-        });
-      });
-
+    const measureLoop = () => {
       const loop = loopRef.current;
       const rowNodes = rowRef.current?.querySelectorAll<HTMLElement>(':scope .pd-node');
       if (loop && rowNodes?.length) {
@@ -450,18 +500,18 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
         );
       }
     };
-    mark();
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(mark) : null;
+    measureLoop();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measureLoop) : null;
     if (ro) ro.observe(root);
-    window.addEventListener('resize', mark);
+    window.addEventListener('resize', measureLoop);
     return () => {
       if (ro) ro.disconnect();
-      window.removeEventListener('resize', mark);
+      window.removeEventListener('resize', measureLoop);
     };
   }, []);
 
   return (
-    <div className="pdiag" ref={rootRef}>
+    <div className={'pdiag' + (staticTrace ? ' pd-static-trace' : '')} ref={rootRef}>
       {spec.type === 'flow' && (spec.title || showTrace) ? (
         <div className="pd-toolbar">
           {spec.title && <span className="pd-title pd-title-inline">{spec.title}</span>}
@@ -731,7 +781,12 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
                   onMouseLeave={() => setHovered(null)}
                   onClick={() => setPinned((p) => (p === id ? null : id))}
                 >
-                  {n.status && <span className={'pd-dot s-' + n.status} />}
+                  {n.status && (
+                    <>
+                      <span className={'pd-dot s-' + n.status} aria-hidden="true" />
+                      <span className="pd-sr">Status: {n.status}.</span>
+                    </>
+                  )}
                   <PdIcon name={n.icon} tone={n.tone} />
                   <div>
                     <div className="pd-lab">{n.label}</div>
@@ -824,6 +879,7 @@ const STYLES = `
   --pd-blue:#6fa8ff; --pd-green:#57d08a; --pd-violet:#a996f5; --pd-red:#f6857f; --pd-amber:#e6b45e; --pd-slate:#9aa6b8;
   box-shadow:0 1px 2px rgba(0,0,0,.2),0 8px 30px -20px rgba(0,0,0,.5); }
 .pdiag *{ box-sizing:border-box; }
+.pdiag .pd-sr{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 .pdiag .pd-title{ font-family:var(--pd-mono); font-size:12.5px; color:var(--pd-muted); letter-spacing:.04em; margin-bottom:14px; }
 .pdiag .pd-title-inline{ margin-bottom:0; }
 .pdiag .pd-toolbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
@@ -840,6 +896,7 @@ const STYLES = `
 .pdiag .pd-flow-link-head{ fill:none; stroke:var(--pd-muted); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .pdiag .pd-flow-link-trace{ fill:none; stroke:var(--pd-accent); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:1; opacity:0; }
 .pdiag .pd-flow-link-trace.is-tracing{ opacity:1; animation:pd-flow-trace .52s ease-out forwards; }
+.pdiag.pd-static-trace .pd-flow-link-trace{ opacity:1; stroke-dashoffset:0; animation:none; }
 @keyframes pd-flow-trace{ to{ stroke-dashoffset:0; } }
 .pdiag .pd-flow-grid{ position:relative; z-index:1; list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr)); column-gap:14px; row-gap:38px; }
 .pdiag .pd-flow-step{ position:relative; min-width:0; display:grid; grid-template-columns:30px minmax(0,1fr); align-items:stretch; gap:10px; }
@@ -852,6 +909,7 @@ const STYLES = `
 @keyframes pd-enter{ from{ opacity:0; transform:translateY(6px); } }
 .pdiag .pd-node:hover{ transform:translateY(-3px); border-color:var(--pd-accent); box-shadow:0 10px 30px -14px rgba(224,121,43,.45); }
 .pdiag .pd-node.pd-pulse{ border-color:var(--pd-accent); box-shadow:0 0 0 3px rgba(224,121,43,.15),0 12px 30px -12px rgba(224,121,43,.5); transform:translateY(-3px); opacity:1; }
+.pdiag.pd-static-trace .pd-flow-content .pd-node{ border-color:color-mix(in srgb,var(--pd-accent) 62%,var(--pd-line2)); box-shadow:0 0 0 2px color-mix(in srgb,var(--pd-accent) 12%,transparent); }
 .pdiag .pd-lab{ font-weight:650; font-size:14px; }
 .pdiag .pd-sub{ font-size:12px; color:var(--pd-muted); font-family:var(--pd-mono); margin-top:1px; }
 .pdiag .pd-sub.is-italic{ font-style:italic; font-family:inherit; opacity:.75; }
@@ -879,10 +937,8 @@ const STYLES = `
 .pdiag .pd-conn .base{ stroke:var(--pd-line2); stroke-width:2; }
 .pdiag .pd-conn .head{ fill:none; stroke:var(--pd-muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
 .pdiag .pd-conn .flow{ stroke:var(--pd-accent); stroke-width:2.4; stroke-linecap:round; stroke-dasharray:4 10; }
-.pdiag .pd-conn .c-w{ display:none; }
-.pdiag .pd-conn.is-wrap .c-h{ display:none; }
-.pdiag .pd-conn.is-wrap .c-w{ display:block; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-conn .flow{ animation:pd-dash .95s linear infinite; } }
+@media (prefers-reduced-motion:reduce){ .pdiag .pd-node{ transition:none; } }
 @keyframes pd-dash{ to{ stroke-dashoffset:-14; } }
 .pdiag .pd-loopwrap{ width:max-content; min-width:100%; margin:0 auto; }
 .pdiag .pd-loopback{ position:relative; height:54px; margin-top:0; }
