@@ -12,6 +12,7 @@ import {
   BookOpen,
   Rocket,
   ArrowRight,
+  Heart,
 } from 'lucide-react';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
@@ -19,16 +20,16 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Sponsorship - Reach 25,000+ DevOps Engineers',
+  title: 'Sponsorship - Reach 20,000+ DevOps Engineers',
   description:
-    'Partner with DevOps Daily to reach 25,000+ monthly readers, 5,000+ newsletter subscribers, and a highly engaged audience of DevOps engineers, SREs, and technical decision-makers.',
+    'Partner with DevOps Daily to reach 20,000+ monthly readers, 1,500 newsletter subscribers, and a highly engaged audience of DevOps engineers, SREs, and technical decision-makers.',
   alternates: {
     canonical: '/sponsorship',
   },
   openGraph: {
-    title: 'Sponsor DevOps Daily - Reach 25,000+ DevOps Engineers',
+    title: 'Sponsor DevOps Daily - Reach 20,000+ DevOps Engineers',
     description:
-      'Partner with DevOps Daily to connect with 25,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
+      'Partner with DevOps Daily to connect with 20,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
     url: '/sponsorship',
     type: 'website',
     images: [
@@ -42,18 +43,18 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sponsor DevOps Daily - Reach 25,000+ DevOps Engineers',
+    title: 'Sponsor DevOps Daily - Reach 20,000+ DevOps Engineers',
     description:
-      'Partner with DevOps Daily to reach 25,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
+      'Partner with DevOps Daily to reach 20,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
     images: ['/og-image.png'],
   },
 };
 
 const STATS = [
-  { value: '25,000+', label: 'Monthly readers', detail: 'organic + newsletter' },
-  { value: '5,000+', label: 'Newsletter subs', detail: 'weekly digest' },
+  { value: '24M', label: 'Syndicated impressions', detail: 'daily.dev, 45 days' },
+  { value: '20,000+', label: 'Monthly readers', detail: 'devops-daily.com' },
+  { value: '1,500', label: 'Newsletter subs', detail: 'weekly digest' },
   { value: '600+', label: 'Content pieces', detail: 'posts, guides, labs' },
-  { value: '85%', label: 'Senior engineers', detail: 'mid-to-staff level' },
 ];
 
 const AUDIENCE = [
@@ -68,7 +69,7 @@ const CHANNELS = [
   {
     title: 'Weekly Newsletter',
     description:
-      '5,000+ engineers get a curated DevOps digest every Monday. Sponsored slot with copy you control.',
+      '1,500 engineers get a curated DevOps digest every Monday. Sponsored slot with copy you control.',
     icon: Newspaper,
     metric: '45%+ open rate',
   },
@@ -147,7 +148,7 @@ const PACKAGES = [
       'Dedicated newsletter slot (weekly)',
       'One sponsored tutorial or tool spotlight post',
       'Simulator/game inline mention on 3 pages',
-      'Priority response + monthly call',
+      'Priority response over email',
     ],
     popular: true,
   },
@@ -162,7 +163,7 @@ const PACKAGES = [
       'Custom content series (4+ pieces)',
       'Co-branded webinar or live workshop',
       'First look at new simulator slots',
-      'Quarterly strategy session',
+      'Quarterly performance summary',
     ],
     popular: false,
   },
@@ -239,7 +240,7 @@ export default function SponsorshipPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
               Reach{' '}
               <span className="text-primary relative inline-block">
-                25,000+
+                20,000+
                 <svg
                   className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
                   viewBox="0 0 200 12"
@@ -384,6 +385,20 @@ export default function SponsorshipPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Closes the section on the thing that actually differentiates us
+              from an ad network, since that is what sponsors are comparing. */}
+          <div className="mt-4 flex flex-col items-center gap-3 rounded-md border bg-card p-5 text-center sm:flex-row sm:justify-center sm:gap-6 sm:text-left">
+            <div className="flex items-center gap-2.5">
+              <Heart className="h-4 w-4 shrink-0 fill-primary text-primary" strokeWidth={1.5} />
+              <span className="text-sm font-semibold">We don&apos;t sell ads.</span>
+            </div>
+            <span className="hidden h-5 w-px bg-border sm:block" />
+            <span className="text-sm text-muted-foreground">
+              We write technical content{' '}
+              <span className="text-primary">developers want to read.</span>
+            </span>
           </div>
         </section>
 
