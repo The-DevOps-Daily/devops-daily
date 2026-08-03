@@ -264,10 +264,13 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
   const loopRef = useRef<HTMLDivElement>(null);
   const [loopGeometry, setLoopGeometry] = useState({ width: 1000, left: 40, right: 960 });
   const showTrace = spec.type === 'flow' && spec.trace !== false && nodes.length > 1;
+  const useStepGrid = spec.type === 'flow' && nodes.length > 4;
 
   const trace = () => {
     if (prefersReducedMotion()) return;
-    const els = Array.from(rootRef.current?.querySelectorAll<HTMLElement>('.pd-row .pd-node') ?? []);
+    const els = Array.from(
+      rootRef.current?.querySelectorAll<HTMLElement>('.pd-flow-content .pd-node') ?? []
+    );
     els.forEach((e) => e.classList.remove('pd-pulse'));
     els.forEach((e, i) =>
       setTimeout(() => {
@@ -278,10 +281,25 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
     );
   };
 
-  // Each connector is glued to the node it points into (.pd-seg), so on a wrap
-  // the arrow travels to the new line with its node instead of orphaning.
-  const row = (
-    <div className="pd-row" ref={rowRef}>
+  // A short flow remains a literal connected row. Longer flows cannot fit in
+  // an article column without misleading wrap-around arrows, so they become a
+  // compact numbered process grid with an explicit reading order.
+  const row = useStepGrid ? (
+    <ol className="pd-flow-grid pd-flow-content" aria-label={spec.title ?? 'Process flow'}>
+      {nodes.map((n, i) => (
+        <li className="pd-flow-step" key={i}>
+          <span className="pd-step-number" aria-hidden="true">
+            {String(i + 1).padStart(2, '0')}
+          </span>
+          <NodeCard node={n} />
+        </li>
+      ))}
+    </ol>
+  ) : (
+    <div
+      className={'pd-row' + (spec.type === 'flow' ? ' pd-flow-row pd-flow-content' : '')}
+      ref={rowRef}
+    >
       {nodes.length > 0 && <NodeCard node={nodes[0]} />}
       {nodes.slice(1).map((n, i) => (
         <div className="pd-seg" key={i + 1}>
@@ -340,13 +358,17 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
 
   return (
     <div className="pdiag" ref={rootRef}>
-      {spec.title && <div className="pd-title">{spec.title}</div>}
-      {showTrace && (
+      {spec.type === 'flow' && (spec.title || showTrace) ? (
         <div className="pd-toolbar">
-          <button type="button" className="pd-btn" onClick={trace}>
-            &#9654; Trace flow
-          </button>
+          {spec.title && <span className="pd-title pd-title-inline">{spec.title}</span>}
+          {showTrace && (
+            <button type="button" className="pd-btn" onClick={trace}>
+              &#9654; Trace flow
+            </button>
+          )}
         </div>
+      ) : (
+        spec.title && <div className="pd-title">{spec.title}</div>
       )}
       {spec.goal && <div className="pd-goal">{spec.goal}</div>}
       {spec.type === 'loop' ? (
@@ -707,6 +729,11 @@ const STYLES = `
 .pdiag .pd-goal{ font-family:var(--pd-mono); font-size:13px; background:var(--pd-soft-bg); border:1px solid var(--pd-line); border-radius:8px; padding:8px 14px; width:fit-content; max-width:100%; margin:0 auto 22px; text-align:center; }
 .pdiag .pd-toplabel{ text-align:center; font-size:13px; font-style:italic; color:var(--pd-muted); margin-bottom:8px; }
 .pdiag .pd-row{ display:flex; align-items:stretch; justify-content:center; flex-wrap:wrap; gap:4px; }
+.pdiag .pd-flow-row{ flex-wrap:nowrap; overflow-x:auto; justify-content:safe center; }
+.pdiag .pd-flow-grid{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr)); gap:12px; }
+.pdiag .pd-flow-step{ min-width:0; display:grid; grid-template-columns:30px minmax(0,1fr); align-items:start; gap:10px; }
+.pdiag .pd-step-number{ display:grid; place-items:center; width:30px; height:30px; margin-top:10px; border:1px solid color-mix(in srgb,var(--pd-accent) 42%,var(--pd-line2)); border-radius:9px; background:color-mix(in srgb,var(--pd-accent) 9%,var(--pd-card)); color:var(--pd-accent); font-family:var(--pd-mono); font-size:10.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+.pdiag .pd-flow-step .pd-node{ width:100%; min-width:0; }
 .pdiag .pd-node{ position:relative; display:flex; align-items:center; gap:11px; background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:13px; padding:12px 15px; min-width:140px; transition:transform .22s,box-shadow .22s,border-color .22s; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-node{ animation:pd-enter .3s ease backwards; } }
 @keyframes pd-enter{ from{ opacity:0; transform:translateY(6px); } }
@@ -805,9 +832,11 @@ const STYLES = `
 .pdiag .pd-pkt{ fill:var(--pd-accent); }
 .pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; }
 @media (max-width:760px){
+  .pdiag .pd-toolbar{ align-items:flex-start; flex-wrap:wrap; }
   /* Simple flows stack; they read fine as a vertical list without arrows.
      display:contents flattens the segment so its node stacks like the rest. */
   .pdiag .pd-row{ flex-direction:column; }
+  .pdiag .pd-flow-row{ overflow-x:visible; }
   .pdiag .pd-seg{ display:contents; }
   .pdiag .pd-conn{ display:none; }
   /* Complex diagrams keep their real layout and scroll sideways instead of
