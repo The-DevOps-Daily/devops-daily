@@ -281,47 +281,23 @@ export default function SponsorshipPage() {
             className="pointer-events-none absolute -right-8 bottom-0 hidden h-full w-auto text-primary lg:block"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2.5"
+            strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <defs>
-              <pattern id="sponsor-dots" width="15" height="15" patternUnits="userSpaceOnUse">
-                <circle cx="1.5" cy="1.5" r="1.5" fill="currentColor" stroke="none" />
-              </pattern>
-              {/* Fades the dot field out toward the headline so it never
-                  competes with the text it sits behind. */}
-              <linearGradient id="sponsor-fade" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0" stopColor="white" stopOpacity="0" />
-                <stop offset="0.65" stopColor="white" stopOpacity="1" />
-              </linearGradient>
-              <mask id="sponsor-mask">
-                <rect width="300" height="300" fill="url(#sponsor-fade)" />
-              </mask>
-            </defs>
-            <rect
-              width="300"
-              height="300"
-              fill="url(#sponsor-dots)"
-              stroke="none"
-              mask="url(#sponsor-mask)"
-              className="text-primary/25"
-            />
-
-            <g className="text-primary/40" transform="rotate(32 172 118)">
-              <path d="M172 42c17 21 26 47 26 76 0 18-2 34-7 48h-38c-5-14-7-30-7-48 0-29 9-55 26-76z" />
-              <circle cx="172" cy="108" r="14" />
-              <path d="M146 128c-13 9-22 24-24 42 10-2 19-7 26-14" />
-              <path d="M198 128c13 9 22 24 24 42-10-2-19-7-26-14" />
-              <path d="M155 166h34l-5 18h-24z" />
-              <path d="M163 192l-9 26" />
-              <path d="M172 194l-3 30" />
-              <path d="M181 192l7 26" />
+            <g className="text-primary/70" transform="rotate(35 172 120)">
+              <path d="M172 36C192 58 204 90 204 124c0 22-4 40-10 54h-44c-6-14-10-32-10-54 0-34 12-66 32-88z" />
+              <circle cx="172" cy="106" r="15" />
+              <path d="M140 132c-18 10-30 30-32 52 12-2 26-10 35-20" />
+              <path d="M204 132c18 10 30 30 32 52-12-2-26-10-35-20" />
+              <path d="M152 178h40l-6 20h-28z" />
+              <path d="M160 206l-12 38" />
+              <path d="M172 208l-4 42" />
+              <path d="M184 206l10 38" />
             </g>
-
-            <g className="text-primary/30">
-              <path d="M96 268c-3-16 11-29 26-25 4-19 24-29 41-19 9-14 30-12 37 4 15-3 28 9 28 25" />
-              <path d="M28 288c-2-11 8-20 18-17 3-13 17-20 28-13 6-9 20-8 25 3" />
+            <g className="text-primary/50">
+              <path d="M96 288c-18 0-24-20-10-30-4-20 18-34 34-24 8-20 38-24 50-4 18-8 38 6 34 26 16 4 16 32-2 32z" />
+              <path d="M18 296c-12 0-16-14-7-21-3-14 12-24 23-17 6-14 26-16 34-3z" />
             </g>
           </svg>
 
