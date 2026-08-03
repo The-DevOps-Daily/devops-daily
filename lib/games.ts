@@ -33,6 +33,34 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'log-aggregation-pipeline-simulator',
+    type: 'simulator',
+    title: 'Log Aggregation Pipeline Simulator',
+    seoTitle: 'Log Aggregation Pipeline Simulator: Parsing, Backpressure and Search',
+    description:
+      'Follow production logs from applications through collection, parsing, filtering, buffering, sharded indexing, and search. Trigger traffic spikes, parser failures, and slow indexing to see where backpressure builds and logs can be lost.',
+    iconName: 'Database',
+    badgeText: 'New',
+    color: 'from-sky-500 to-indigo-600',
+    href: '/games/log-aggregation-pipeline-simulator',
+    tags: [
+      'logs',
+      'observability',
+      'elasticsearch',
+      'fluent-bit',
+      'parsing',
+      'backpressure',
+      'monitoring',
+      'sre',
+      'educational',
+      'interactive',
+    ],
+    isNew: true,
+    featured: true,
+    category: 'Observability',
+    createdAt: '2026-08-03',
+  },
+  {
     id: 'docker-under-the-hood-simulator',
     type: 'simulator',
     title: 'How Docker Works Under the Hood',
