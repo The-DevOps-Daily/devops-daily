@@ -257,12 +257,22 @@ function BranchDiagram({ spec }: { spec: DiagramSpec }) {
 /* flow / loop                                                         */
 /* ------------------------------------------------------------------ */
 
+interface FlowGridPath {
+  d: string;
+  head: string;
+}
+
 function RowDiagram({ spec }: { spec: DiagramSpec }) {
   const nodes = spec.nodes ?? [];
   const rootRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const loopRef = useRef<HTMLDivElement>(null);
+  const flowGridRef = useRef<HTMLDivElement>(null);
+  const flowNodeRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const flowNumberRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const flowPathRefs = useRef<(SVGPathElement | null)[]>([]);
   const [loopGeometry, setLoopGeometry] = useState({ width: 1000, left: 40, right: 960 });
+  const [flowPaths, setFlowPaths] = useState<FlowGridPath[]>([]);
   const showTrace = spec.type === 'flow' && spec.trace !== false && nodes.length > 1;
   const useStepGrid = spec.type === 'flow' && nodes.length > 4;
 
@@ -271,30 +281,124 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
     const els = Array.from(
       rootRef.current?.querySelectorAll<HTMLElement>('.pd-flow-content .pd-node') ?? []
     );
+    flowPathRefs.current.forEach((path) => path?.classList.remove('is-tracing'));
     els.forEach((e) => e.classList.remove('pd-pulse'));
     els.forEach((e, i) =>
       setTimeout(() => {
         els.forEach((x) => x.classList.remove('pd-pulse'));
         e.classList.add('pd-pulse');
+        const path = flowPathRefs.current[i - 1];
+        if (path) {
+          path.classList.remove('is-tracing');
+          void path.getBoundingClientRect();
+          path.classList.add('is-tracing');
+          setTimeout(() => path.classList.remove('is-tracing'), 560);
+        }
         if (i === els.length - 1) setTimeout(() => e.classList.remove('pd-pulse'), 620);
       }, 500 * i)
     );
   };
 
+  useEffect(() => {
+    if (!useStepGrid) return;
+    const draw = () => {
+      const grid = flowGridRef.current;
+      if (!grid) return;
+      const gr = grid.getBoundingClientRect();
+      const next: FlowGridPath[] = [];
+
+      for (let i = 0; i < nodes.length - 1; i++) {
+        const source = flowNodeRefs.current[i];
+        const targetNode = flowNodeRefs.current[i + 1];
+        const targetNumber = flowNumberRefs.current[i + 1];
+        if (!source || !targetNode || !targetNumber) continue;
+
+        const sr = source.getBoundingClientRect();
+        const nr = targetNode.getBoundingClientRect();
+        const tr = targetNumber.getBoundingClientRect();
+        const sameRow = Math.abs(sr.top - nr.top) < 4;
+
+        if (sameRow) {
+          const x1 = sr.right - gr.left;
+          const y1 = sr.top + sr.height / 2 - gr.top;
+          const x2 = tr.left - gr.left - 3;
+          const y2 = tr.top + tr.height / 2 - gr.top;
+          const bend = Math.max(5, (x2 - x1) * 0.45);
+          next.push({
+            d: `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`,
+            head: `M ${x2 - 5} ${y2 - 4} L ${x2} ${y2} L ${x2 - 5} ${y2 + 4}`,
+          });
+        } else {
+          const x1 = sr.left + sr.width / 2 - gr.left;
+          const y1 = sr.bottom - gr.top;
+          const x2 = tr.left + tr.width / 2 - gr.left;
+          const y2 = tr.top - gr.top - 3;
+          const midY = y1 + (y2 - y1) / 2;
+          next.push({
+            d: `M ${x1} ${y1} V ${midY} H ${x2} V ${y2}`,
+            head: `M ${x2 - 4} ${y2 - 5} L ${x2} ${y2} L ${x2 + 4} ${y2 - 5}`,
+          });
+        }
+      }
+
+      setFlowPaths(next);
+    };
+
+    draw();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(draw) : null;
+    if (ro && flowGridRef.current) ro.observe(flowGridRef.current);
+    window.addEventListener('resize', draw);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', draw);
+    };
+  }, [nodes.length, useStepGrid]);
+
   // A short flow remains a literal connected row. Longer flows cannot fit in
   // an article column without misleading wrap-around arrows, so they become a
-  // compact numbered process grid with an explicit reading order.
+  // compact numbered process grid with measured connectors between its rows.
   const row = useStepGrid ? (
-    <ol className="pd-flow-grid pd-flow-content" aria-label={spec.title ?? 'Process flow'}>
-      {nodes.map((n, i) => (
-        <li className="pd-flow-step" key={i}>
-          <span className="pd-step-number" aria-hidden="true">
-            {String(i + 1).padStart(2, '0')}
-          </span>
-          <NodeCard node={n} />
-        </li>
-      ))}
-    </ol>
+    <div className="pd-flow-grid-wrap pd-flow-content" ref={flowGridRef}>
+      <svg className="pd-flow-links" aria-hidden="true">
+        {flowPaths.map((path, i) => (
+          <React.Fragment key={i}>
+            <path className="pd-flow-link" d={path.d} />
+            <path
+              className="pd-flow-link-trace"
+              d={path.d}
+              pathLength={1}
+              ref={(el) => {
+                flowPathRefs.current[i] = el;
+              }}
+            />
+            <path className="pd-flow-link-head" d={path.head} />
+          </React.Fragment>
+        ))}
+      </svg>
+      <ol className="pd-flow-grid" aria-label={spec.title ?? 'Process flow'}>
+        {nodes.map((n, i) => (
+          <li className="pd-flow-step" key={i}>
+            <span
+              className="pd-step-number"
+              aria-hidden="true"
+              ref={(el) => {
+                flowNumberRefs.current[i] = el;
+              }}
+            >
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <div
+              className="pd-flow-node"
+              ref={(el) => {
+                flowNodeRefs.current[i] = el;
+              }}
+            >
+              <NodeCard node={n} />
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
   ) : (
     <div
       className={'pd-row' + (spec.type === 'flow' ? ' pd-flow-row pd-flow-content' : '')}
@@ -730,10 +834,19 @@ const STYLES = `
 .pdiag .pd-toplabel{ text-align:center; font-size:13px; font-style:italic; color:var(--pd-muted); margin-bottom:8px; }
 .pdiag .pd-row{ display:flex; align-items:stretch; justify-content:center; flex-wrap:wrap; gap:4px; }
 .pdiag .pd-flow-row{ flex-wrap:nowrap; overflow-x:auto; justify-content:safe center; }
-.pdiag .pd-flow-grid{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr)); gap:12px; }
-.pdiag .pd-flow-step{ min-width:0; display:grid; grid-template-columns:30px minmax(0,1fr); align-items:start; gap:10px; }
-.pdiag .pd-step-number{ display:grid; place-items:center; width:30px; height:30px; margin-top:10px; border:1px solid color-mix(in srgb,var(--pd-accent) 42%,var(--pd-line2)); border-radius:9px; background:color-mix(in srgb,var(--pd-accent) 9%,var(--pd-card)); color:var(--pd-accent); font-family:var(--pd-mono); font-size:10.5px; font-weight:700; font-variant-numeric:tabular-nums; }
-.pdiag .pd-flow-step .pd-node{ width:100%; min-width:0; }
+.pdiag .pd-flow-grid-wrap{ position:relative; }
+.pdiag .pd-flow-links{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }
+.pdiag .pd-flow-link{ fill:none; stroke:var(--pd-line2); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.pdiag .pd-flow-link-head{ fill:none; stroke:var(--pd-muted); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.pdiag .pd-flow-link-trace{ fill:none; stroke:var(--pd-accent); stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:1; opacity:0; }
+.pdiag .pd-flow-link-trace.is-tracing{ opacity:1; animation:pd-flow-trace .52s ease-out forwards; }
+@keyframes pd-flow-trace{ to{ stroke-dashoffset:0; } }
+.pdiag .pd-flow-grid{ position:relative; z-index:1; list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr)); column-gap:14px; row-gap:38px; }
+.pdiag .pd-flow-step{ position:relative; min-width:0; display:grid; grid-template-columns:30px minmax(0,1fr); align-items:stretch; gap:10px; }
+.pdiag .pd-step-number{ position:relative; display:grid; place-items:center; width:30px; height:30px; margin-top:10px; border:1px solid color-mix(in srgb,var(--pd-accent) 42%,var(--pd-line2)); border-radius:9px; background:color-mix(in srgb,var(--pd-accent) 9%,var(--pd-card)); color:var(--pd-accent); font-family:var(--pd-mono); font-size:10.5px; font-weight:700; font-variant-numeric:tabular-nums; }
+.pdiag .pd-step-number::after{ content:""; position:absolute; left:100%; top:50%; width:10px; border-top:1px solid var(--pd-line2); }
+.pdiag .pd-flow-node{ min-width:0; height:100%; }
+.pdiag .pd-flow-node .pd-node{ width:100%; min-width:0; height:100%; }
 .pdiag .pd-node{ position:relative; display:flex; align-items:center; gap:11px; background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:13px; padding:12px 15px; min-width:140px; transition:transform .22s,box-shadow .22s,border-color .22s; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-node{ animation:pd-enter .3s ease backwards; } }
 @keyframes pd-enter{ from{ opacity:0; transform:translateY(6px); } }
@@ -833,6 +946,9 @@ const STYLES = `
 .pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; }
 @media (max-width:760px){
   .pdiag .pd-toolbar{ align-items:flex-start; flex-wrap:wrap; }
+  .pdiag .pd-flow-links{ display:none; }
+  .pdiag .pd-flow-grid{ row-gap:12px; }
+  .pdiag .pd-flow-step:not(:last-child)::after{ content:""; position:absolute; left:14px; top:40px; bottom:-12px; border-left:1px solid var(--pd-line2); }
   /* Simple flows stack; they read fine as a vertical list without arrows.
      display:contents flattens the segment so its node stacks like the rest. */
   .pdiag .pd-row{ flex-direction:column; }
