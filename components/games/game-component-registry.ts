@@ -29,6 +29,7 @@ import KubernetesTerminalSimulator from '@/components/games/kubernetes-terminal-
 import LatencyPercentilesSimulator from '@/components/games/latency-percentiles-simulator';
 import LinuxTerminal from '@/components/games/linux-terminal';
 import LoadBalancerSimulator from '@/components/games/load-balancer-simulator';
+import LogAggregationPipelineSimulator from '@/components/games/log-aggregation-pipeline-simulator';
 import MessageQueueSimulator from '@/components/games/message-queue-simulator';
 import MicroservicesSimulator from '@/components/games/microservices-simulator';
 import MongodbTerminalSimulator from '@/components/games/mongodb-terminal-simulator';
@@ -64,6 +65,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'javascript-promises-async-await-simulator': JavascriptPromisesAsyncSimulator,
   'git-concepts-simulator': GitConceptsSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
+  'log-aggregation-pipeline-simulator': LogAggregationPipelineSimulator,
   'message-queue-simulator': MessageQueueSimulator,
   'oauth-oidc-flow-simulator': OAuthOidcFlowSimulator,
   'scaling-simulator': ScalingSimulator,
