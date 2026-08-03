@@ -204,7 +204,7 @@ const PACKAGES = [
       'Dedicated newsletter slot (weekly)',
       'One sponsored tutorial or tool spotlight post',
       'Simulator/game inline mention on 3 pages',
-      'Priority response + monthly call',
+      'Priority response over email',
     ],
     popular: true,
   },
@@ -277,27 +277,58 @@ export default function SponsorshipPage() {
         <div className="relative overflow-hidden rounded-xl border border-border bg-card p-8 sm:p-10">
           <svg
             aria-hidden="true"
-            viewBox="0 0 240 240"
-            className="pointer-events-none absolute -right-6 top-1/2 hidden h-[300px] w-[300px] -translate-y-1/2 text-primary/20 lg:block"
+            viewBox="0 0 300 300"
+            className="pointer-events-none absolute -right-8 bottom-0 hidden h-full w-auto text-primary lg:block"
             fill="none"
             stroke="currentColor"
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <path d="M120 26c22 20 34 48 34 80 0 14-2 27-6 39h-56c-4-12-6-25-6-39 0-32 12-60 34-80z" />
-            <circle cx="120" cy="96" r="16" />
-            <path d="M86 116c-14 8-24 22-26 40 10-2 20-6 28-12" />
-            <path d="M154 116c14 8 24 22 26 40-10-2-20-6-28-12" />
-            <path d="M104 145h32l-6 16h-20z" />
-            <path d="M112 172c0 8 3 14 8 20 5-6 8-12 8-20" />
+            <defs>
+              <pattern id="sponsor-dots" width="15" height="15" patternUnits="userSpaceOnUse">
+                <circle cx="1.5" cy="1.5" r="1.5" fill="currentColor" stroke="none" />
+              </pattern>
+              {/* Fades the dot field out toward the headline so it never
+                  competes with the text it sits behind. */}
+              <linearGradient id="sponsor-fade" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="white" stopOpacity="0" />
+                <stop offset="0.65" stopColor="white" stopOpacity="1" />
+              </linearGradient>
+              <mask id="sponsor-mask">
+                <rect width="300" height="300" fill="url(#sponsor-fade)" />
+              </mask>
+            </defs>
+            <rect
+              width="300"
+              height="300"
+              fill="url(#sponsor-dots)"
+              stroke="none"
+              mask="url(#sponsor-mask)"
+              className="text-primary/25"
+            />
+
+            <g className="text-primary/40" transform="rotate(32 172 118)">
+              <path d="M172 42c17 21 26 47 26 76 0 18-2 34-7 48h-38c-5-14-7-30-7-48 0-29 9-55 26-76z" />
+              <circle cx="172" cy="108" r="14" />
+              <path d="M146 128c-13 9-22 24-24 42 10-2 19-7 26-14" />
+              <path d="M198 128c13 9 22 24 24 42-10-2-19-7-26-14" />
+              <path d="M155 166h34l-5 18h-24z" />
+              <path d="M163 192l-9 26" />
+              <path d="M172 194l-3 30" />
+              <path d="M181 192l7 26" />
+            </g>
+
+            <g className="text-primary/30">
+              <path d="M96 268c-3-16 11-29 26-25 4-19 24-29 41-19 9-14 30-12 37 4 15-3 28 9 28 25" />
+              <path d="M28 288c-2-11 8-20 18-17 3-13 17-20 28-13 6-9 20-8 25 3" />
+            </g>
           </svg>
 
-          <div className="relative flex items-start justify-between gap-4">
+          <div className="relative">
             <span className="font-mono text-[11px] uppercase tracking-[0.15em] text-primary">
               Media kit 2026
             </span>
-            <span className="font-mono text-[11px] text-muted-foreground">devops-daily.com</span>
           </div>
 
           <h1 className="relative mt-8 max-w-3xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:max-w-[62%]">
