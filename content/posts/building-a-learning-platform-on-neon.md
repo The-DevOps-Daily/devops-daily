@@ -1,5 +1,5 @@
 ---
-title: 'Durable Core, Disposable Infrastructure: Building on Neon'
+title: 'Half Our Infrastructure Is Meant to Be Deleted'
 excerpt: 'Every hands-on lab gets its own Postgres branch, AI generation runs outside the request cycle, and cleanup is core infrastructure rather than a chore.'
 category:
   name: 'DevOps'
