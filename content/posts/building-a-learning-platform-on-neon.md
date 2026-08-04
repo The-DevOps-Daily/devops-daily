@@ -284,24 +284,20 @@ It is worth being precise about what is real here, because the platform also shi
 
 Handing someone a live Postgres connection means thinking about what they can do with it.
 
-**Statement filtering.** A denylist runs before anything reaches the database:
+**A statement timeout, which is the control doing most of the work.** Every lab connection is opened with one:
 
 ```typescript
-const BLOCKED_SQL = [
-  /\bCOPY\b/i,
-  /\b(?:CREATE|ALTER|DROP)\s+(?:DATABASE|ROLE|USER|TABLESPACE)\b/i,
-  /\bALTER\s+SYSTEM\b/i,
-  /\b(?:GRANT|REVOKE)\b/i,
-  /\bSET\s+(?:ROLE|SESSION\s+AUTHORIZATION)\b/i,
-  /\b(?:DO|CALL)\s+/i,
-  /\b(?:pg_sleep|pg_read_file|pg_write_file|pg_terminate_backend|lo_import|lo_export|dblink)\s*\(/i,
-];
+const pool = new Pool({ connectionString: connString, statement_timeout: 5000 });
 ```
 
-The targets are file access, privilege escalation, cross-database links, and denial of service through `pg_sleep`. Note what is *not* blocked: `DROP TABLE`, `DELETE`, `UPDATE` without a `WHERE`. Those are the learner's own sandbox to ruin, and ruining it is educational.
+Five seconds per statement. That single setting handles the entire category of runaway queries: an accidental cartesian join, a deliberate `pg_sleep`, a `generate_series` with too many zeroes. Postgres cancels it and the learner gets an error instead of us getting a bill.
+
+**A statement denylist, as a second layer.** Before anything reaches the database, a pattern check rejects statements in a few categories: server-side file access, privilege and role changes, cross-database links, and process control. The learner gets a plain message rather than a Postgres error.
+
+Note what is deliberately *not* rejected: `DROP TABLE`, `DELETE` without a `WHERE`, anything else destructive within their own schema. That is their sandbox to ruin, and ruining it is educational.
 
 :::warning
-A regex denylist is a mitigation, not a boundary. It is a second line of defence behind the branch itself being disposable and isolated. If your threat model needs a real boundary, use a restricted role and let Postgres enforce it.
+A pattern-based denylist is a mitigation, not a boundary. It is the weakest layer here and it is behind two stronger ones: the branch is disposable and isolated, and the statement timeout bounds anything that does get through. If you need a real boundary, use a restricted Postgres role and let the database enforce it. That is on our list.
 :::
 
 **Size limits.** After a learner's query, we measure the database:
@@ -321,7 +317,7 @@ if (sizeBytes !== null && sizeBytes > maxBytes) {
 
 **Connection strings are short-lived internal values.** They live on the session row while it is active and are nulled out the moment it ends.
 
-**Rate limits everywhere.** Fifteen lab starts an hour, 180 terminal executions an hour, 120 cache lookups an hour. Rejected generation attempts are logged with a hashed IP so abuse patterns are visible without storing raw addresses.
+**Rate limits everywhere.** Lab starts, terminal executions and even cache lookups are each capped per user per hour. Rejected generation attempts are logged with a hashed IP, so abuse patterns are visible without storing raw addresses.
 
 ## Cleanup is infrastructure, not housekeeping
 
@@ -352,12 +348,7 @@ Design notes that took a while to get right:
 - **Oldest first.** The longest-running waste goes first.
 - **The status update is conditional**, the same trick as the worker, so a session already ended by the normal path is not clobbered.
 
-Cleanup runs about every ten minutes. Daily review runs once a day. Both are plain authenticated endpoints, called by Coolify's scheduler:
-
-```bash
-curl -X POST https://learning.devops-daily.com/api/cron/lab-cleanup \
-  -H "Authorization: Bearer $CRON_SECRET"
-```
+Cleanup runs about every ten minutes. Daily review runs once a day. Both are plain authenticated endpoints behind a shared secret, called on a schedule by Coolify.
 
 Being HTTP endpoints rather than in-process timers means they work identically whether the app runs as one instance or several, and you can trigger one by hand during an incident.
 
@@ -393,7 +384,8 @@ Webhooks are treated as at-least-once, because they are.
 | Learner abandons a lab | `expiresAt` on the session; cleanup sweeps expired `READY` sessions |
 | Learner opens many labs | One active lab per user, enforced by tearing down existing ones on start |
 | Runaway `INSERT` fills the branch | Post-execution `pg_database_size` check, session closed with 413 |
-| Dangerous SQL | Denylist before execution, plus branch isolation behind it |
+| Runaway or long-running query | `statement_timeout` cancels it after five seconds |
+| Dangerous SQL | Denylist before execution, with branch isolation and the timeout behind it |
 | Duplicate generation dispatch | Conditional claim `WHERE status = 'PENDING'` |
 | AI Gateway unavailable | Generation fails with a readable reason; grading falls back to local scoring |
 | Neon Function not deployed | `prepWorkerConfigured()` is false, generation runs synchronously |
