@@ -191,12 +191,12 @@ function phaseStatus(state: PreviewEnvironmentState, stages: PreviewStageId[]): 
 
 function friendlyStatus(state: PreviewEnvironmentState): string {
   if (state.status === 'configured') return 'A pull request asks for a safe place to test.';
-  if (state.status === 'blocked') return 'Something broke. Read the signal and choose a fix.';
-  if (state.status === 'ready') return 'Your change is live in its own temporary environment.';
+  if (state.status === 'blocked') return 'Both workflows are paused until you choose a fix.';
+  if (state.status === 'ready') return 'The preview is ready. Open it and choose one result.';
   if (state.status === 'reviewed') {
     return state.reviewDecision === 'approve'
-      ? 'The reviewer likes it. The preview has done its job.'
-      : 'The reviewer found a problem. The preview protected production.';
+      ? 'Review recorded. Close the PR when you are ready to clean up.'
+      : 'Changes requested. Close this preview before updating the PR.';
   }
   if (state.status === 'cleaning') {
     const step = CLEANUP_STEPS[state.cleanupIndex];
@@ -659,9 +659,11 @@ export default function PreviewEnvironmentSimulator() {
               onCheckedChange={(checked) => resetWith(scenarioId, checked)}
             />
             <label htmlFor="preview-challenge-mode" className="min-w-0 cursor-pointer">
-              <span className="block text-xs font-semibold">Challenge mode</span>
+              <span className="block text-xs font-semibold">Add a problem to solve</span>
               <span className="block truncate text-[10px] text-muted-foreground">
-                {challengeMode ? 'One step will need your help' : selectedScenario.detail}
+                {challengeMode
+                  ? 'The deployment will pause once so you can fix it'
+                  : `Optional · ${selectedScenario.detail}`}
               </span>
             </label>
           </div>
@@ -690,10 +692,22 @@ export default function PreviewEnvironmentSimulator() {
 
       <div className="p-3 sm:p-4">
         <div
-          className="mb-3 flex min-h-11 flex-col gap-2 rounded-lg border bg-background/60 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
+          className={cn(
+            'mb-3 flex min-h-11 rounded-lg border bg-background/60 px-3 py-2.5',
+            state.status === 'ready' || state.status === 'reviewed'
+              ? 'flex-col items-center justify-center gap-2 text-center'
+              : 'items-center justify-center'
+          )}
           aria-live="polite"
         >
-          <div className="flex items-center text-left">
+          <div
+            className={cn(
+              'flex items-center',
+              state.status === 'ready' || state.status === 'reviewed'
+                ? 'justify-center text-center'
+                : 'text-left'
+            )}
+          >
             {state.status === 'blocked' ? (
               <AlertTriangle className="mr-2 h-4 w-4 shrink-0 text-red-500" />
             ) : state.status === 'ready' ||
@@ -707,7 +721,7 @@ export default function PreviewEnvironmentSimulator() {
           </div>
 
           {state.status === 'ready' && (
-            <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+            <div className="grid w-full max-w-sm grid-cols-2 gap-2">
               <Button
                 type="button"
                 size="sm"
@@ -732,7 +746,7 @@ export default function PreviewEnvironmentSimulator() {
             <Button
               type="button"
               size="sm"
-              className="w-full sm:w-auto"
+              className="w-full max-w-xs"
               onClick={() => {
                 setState((current) => beginPreviewTeardown(current, 'pr-closed'));
                 setRunning(true);
@@ -743,25 +757,20 @@ export default function PreviewEnvironmentSimulator() {
           )}
         </div>
 
-        <DualLaneTimeline state={state} />
-        <ResourceBlueprint state={state} />
-
         {failure && (
-          <div className="mt-4 rounded-xl border border-red-500/40 bg-red-500/5 p-4">
-            <div className="flex items-start gap-3">
-              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-red-500/10 text-red-500">
+          <div className="mx-auto mb-3 max-w-3xl rounded-xl border border-red-500/40 bg-red-500/5 p-3 sm:p-4">
+            <div className="flex flex-col items-center text-center">
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">
                 <AlertTriangle className="h-4 w-4" />
               </div>
-              <div>
-                <h3 className="font-semibold">Oops: {failure.label}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{failure.summary}</p>
-                <p className="mt-2 font-mono text-xs text-red-700 dark:text-red-300">
-                  {failure.signal}
-                </p>
-              </div>
+              <h3 className="mt-2 font-semibold">Preview paused: {failure.label}</h3>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{failure.summary}</p>
+              <p className="mt-2 max-w-full overflow-x-auto rounded-md border bg-background/70 px-3 py-2 font-mono text-xs text-red-700 dark:text-red-300">
+                {failure.signal}
+              </p>
             </div>
-            <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              What would you try?
+            <p className="mt-4 text-center text-xs font-semibold">
+              Which fix should Argo apply so the preview can continue?
             </p>
             <div className="mt-2 grid gap-2 md:grid-cols-3">
               {failure.remediationOptions.map((option) => (
@@ -769,7 +778,7 @@ export default function PreviewEnvironmentSimulator() {
                   key={option.id}
                   type="button"
                   variant="outline"
-                  className="h-auto min-h-10 justify-start whitespace-normal text-left"
+                  className="h-auto min-h-10 justify-center whitespace-normal text-center"
                   onClick={() => {
                     setState((current) => applyPreviewRemediation(current, option.id));
                     if (option.id === failure.correctRemediationId) setRunning(true);
@@ -780,12 +789,15 @@ export default function PreviewEnvironmentSimulator() {
               ))}
             </div>
             {state.failedRemediationAttempts > 0 && (
-              <p className="mt-3 text-sm text-red-700 dark:text-red-300">
-                Not quite. {state.lastEvent}
+              <p className="mt-3 text-center text-sm text-red-700 dark:text-red-300">
+                That will not fix this signal. {state.lastEvent}
               </p>
             )}
           </div>
         )}
+
+        <DualLaneTimeline state={state} />
+        <ResourceBlueprint state={state} />
 
         {(state.status === 'cleaning' || state.status === 'removed') && (
           <div className="mt-4 rounded-xl border bg-background/70 p-4">
