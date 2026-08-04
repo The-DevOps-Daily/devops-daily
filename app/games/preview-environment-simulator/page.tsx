@@ -88,7 +88,7 @@ export default function PreviewEnvironmentSimulatorPage() {
     <SimulatorShell
       slug="preview-environment-simulator"
       fallbackTitle="Preview Environment Simulator"
-      fallbackDescription="Build a pull-request preview from Git intent, diagnose reconciliation failures, review deployment evidence, and tear every resource down cleanly."
+      fallbackDescription="See how a pull request becomes a temporary copy of your app, then review it and watch every resource disappear."
       educational={<PreviewEnvironmentEducational />}
       seoLearningPoints={seoLearningPoints}
       shareText="I built a pull-request preview from Git intent to review evidence—and proved the cleanup path works."
