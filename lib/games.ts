@@ -33,6 +33,35 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'preview-environment-simulator',
+    type: 'simulator',
+    title: 'Preview Environment Simulator',
+    seoTitle: 'Preview Environment Simulator: From Pull Request to Teardown',
+    description:
+      'Turn pull-request intent into an isolated preview environment. Choose services, data, resources, access, and TTL; follow GitOps reconciliation; diagnose failures; inspect review evidence; and prove every resource is removed.',
+    iconName: 'Workflow',
+    badgeText: 'New',
+    color: 'from-blue-500 to-cyan-600',
+    href: '/games/preview-environment-simulator',
+    tags: [
+      'preview environments',
+      'gitops',
+      'kubernetes',
+      'argo cd',
+      'github actions',
+      'pull requests',
+      'uat',
+      'platform engineering',
+      'ephemeral environments',
+      'educational',
+      'interactive',
+    ],
+    isNew: true,
+    featured: true,
+    category: 'DevOps',
+    createdAt: '2026-08-04',
+  },
+  {
     id: 'log-aggregation-pipeline-simulator',
     type: 'simulator',
     title: 'Log Aggregation Pipeline Simulator',
