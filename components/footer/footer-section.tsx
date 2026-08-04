@@ -24,6 +24,8 @@ export function FooterSection({ section, label }: FooterSectionProps) {
           <li key={link.href}>
             <Link
               href={link.href}
+              target={link.external ? '_blank' : undefined}
+              rel={link.external ? 'noopener noreferrer' : undefined}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               {link.label}
