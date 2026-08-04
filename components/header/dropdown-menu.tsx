@@ -68,17 +68,17 @@ export function DropdownMenu({ sections, isOpen, onClose }: DropdownMenuProps) {
               sections.length > 1 ? 'w-[680px] max-w-[90vw]' : 'w-[340px] max-w-[90vw]'
             )}
           >
-            <div className="p-5 bg-linear-to-br from-background/50 to-muted/20">
+            <div className="p-4 bg-linear-to-br from-background/50 to-muted/20">
               <div
                 className={cn(
-                  'grid gap-6',
+                  'grid gap-5',
                   sections.length > 1 ? 'grid-cols-2' : 'grid-cols-1'
                 )}
               >
                 {sections.map((section, sectionIndex) => (
-                  <div key={sectionIndex} className="space-y-3">
+                  <div key={sectionIndex} className="space-y-2.5">
                     {/* Section Header */}
-                    <div className="flex items-center gap-2.5 pb-3 border-b border-border/60">
+                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-border/60">
                       {section.icon && (
                         <div
                           className={cn(
@@ -124,14 +124,14 @@ export function DropdownMenu({ sections, isOpen, onClose }: DropdownMenuProps) {
                     </div>
 
                     {/* Section Items */}
-                    <div className="grid grid-cols-1 gap-2">
+                    <div className="grid grid-cols-1 gap-1">
                       {section.items.map((item, itemIndex) => (
                         <Link
                           key={itemIndex}
                           href={item.href}
                           onClick={onClose}
                           className={cn(
-                            'group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 border',
+                            'group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-300 border',
                             'hover:bg-linear-to-r hover:from-primary/5 hover:to-purple-500/5 hover:shadow-md hover:scale-[1.01] hover:border-primary/20',
                             'border-transparent hover:border-primary/10',
                             item.featured &&
@@ -142,7 +142,7 @@ export function DropdownMenu({ sections, isOpen, onClose }: DropdownMenuProps) {
                         >
                           <div
                             className={cn(
-                              'shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300',
+                              'shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300',
                               item.featured
                                 ? 'bg-linear-to-br from-primary/20 to-purple-500/20 text-primary group-hover:bg-primary/30 border border-primary/20'
                                 : 'bg-linear-to-br from-muted to-muted/50 group-hover:bg-linear-to-br group-hover:from-primary/15 group-hover:to-purple-500/15 text-muted-foreground group-hover:text-primary border border-border/50'
@@ -156,7 +156,7 @@ export function DropdownMenu({ sections, isOpen, onClose }: DropdownMenuProps) {
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-0.5">
                               <h4
                                 className={cn(
                                   'font-semibold text-sm transition-colors',
@@ -176,7 +176,7 @@ export function DropdownMenu({ sections, isOpen, onClose }: DropdownMenuProps) {
                               {item.featured && <Sparkles className="w-3 h-3 text-primary" />}
                             </div>
                             {item.description && (
-                              <p className="text-xs font-medium leading-relaxed text-muted-foreground group-hover:text-muted-foreground/80">
+                              <p className="text-xs font-medium leading-snug text-muted-foreground group-hover:text-muted-foreground/80">
                                 {item.description}
                               </p>
                             )}
