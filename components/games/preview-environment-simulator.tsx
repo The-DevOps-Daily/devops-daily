@@ -15,6 +15,8 @@ import {
   GitPullRequest,
   Globe2,
   LoaderCircle,
+  Network,
+  Package,
   Play,
   RefreshCw,
   ServerCog,
@@ -107,24 +109,68 @@ const PREVIEW_SCENARIOS: PreviewScenario[] = [
   },
 ];
 
-const PHASES: { label: string; stages: PreviewStageId[] }[] = [
-  { label: 'Ask', stages: ['intent'] },
-  { label: 'Build', stages: ['coordinate', 'reconcile'] },
-  { label: 'Launch', stages: ['provision', 'expose'] },
-  { label: 'Review', stages: ['verify'] },
+type TimelinePhaseId = 'intent' | 'plan' | 'create' | 'review' | 'remove';
+type TimelineLane = 'developer' | 'platform';
+
+interface TimelinePhase {
+  id: TimelinePhaseId;
+  label: string;
+  developer: { title: string; detail: string; icon: LucideIcon };
+  platform: { title: string; detail: string; icon: LucideIcon };
+}
+
+const TIMELINE_PHASES: TimelinePhase[] = [
+  {
+    id: 'intent',
+    label: 'Intent',
+    developer: {
+      title: 'Add preview label',
+      detail: 'PR #184 · checkout-v2',
+      icon: GitPullRequest,
+    },
+    platform: { title: 'Detect PR intent', detail: 'Webhook sees the label', icon: Workflow },
+  },
+  {
+    id: 'plan',
+    label: 'Plan',
+    developer: { title: 'Watch checks run', detail: 'Live status returns to the PR', icon: Clock3 },
+    platform: {
+      title: 'Render desired state',
+      detail: 'ApplicationSet + Helm values',
+      icon: Package,
+    },
+  },
+  {
+    id: 'create',
+    label: 'Create',
+    developer: { title: 'Receive test domains', detail: 'Web and API preview URLs', icon: Globe2 },
+    platform: { title: 'Create isolated stack', detail: 'Namespace + apps + data', icon: Boxes },
+  },
+  {
+    id: 'review',
+    label: 'Review',
+    developer: { title: 'Try the change', detail: 'Approve or request changes', icon: UserCheck },
+    platform: {
+      title: 'Verify what is running',
+      detail: 'Health + commit revision',
+      icon: ShieldCheck,
+    },
+  },
+  {
+    id: 'remove',
+    label: 'Remove',
+    developer: {
+      title: 'Close or merge PR',
+      detail: 'The preview is no longer needed',
+      icon: Trash2,
+    },
+    platform: {
+      title: 'Prune the preview',
+      detail: 'Argo deletes generated resources',
+      icon: RefreshCw,
+    },
+  },
 ];
-
-const SERVICE_LABELS = {
-  web: 'Web app',
-  api: 'API',
-  worker: 'Worker',
-} as const;
-
-const DATA_LABELS = {
-  synthetic: 'Test data',
-  'masked-snapshot': 'Safe data copy',
-  'shared-stage': 'Shared staging data',
-} as const;
 
 function scenarioState(scenarioId: PreviewScenarioId, challengeMode: boolean) {
   const scenario = PREVIEW_SCENARIOS.find((item) => item.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
@@ -142,10 +188,6 @@ function phaseStatus(state: PreviewEnvironmentState, stages: PreviewStageId[]): 
   if (statuses.some((status) => status === 'active' || status === 'remediated')) return 'active';
   if (statuses.some((status) => status === 'complete')) return 'active';
   return 'pending';
-}
-
-function combinedStatus(state: PreviewEnvironmentState, stages: PreviewStageId[]): StageStatus {
-  return phaseStatus(state, stages);
 }
 
 function friendlyStatus(state: PreviewEnvironmentState): string {
@@ -177,124 +219,305 @@ function friendlyStatus(state: PreviewEnvironmentState): string {
   return stage ? messages[stage.id] : 'Finishing the preview…';
 }
 
-function stageHasStarted(state: PreviewEnvironmentState, stage: PreviewStageId): boolean {
-  return state.stageStatuses[stage] !== 'pending';
+function timelineStatus(
+  state: PreviewEnvironmentState,
+  phase: TimelinePhaseId,
+  lane: TimelineLane
+): StageStatus {
+  if (phase === 'intent') return phaseStatus(state, ['intent']);
+  if (phase === 'plan') return phaseStatus(state, ['coordinate', 'reconcile']);
+  if (phase === 'create') return phaseStatus(state, ['provision', 'expose']);
+  if (phase === 'review') {
+    if (lane === 'developer' && state.status === 'ready') return 'active';
+    if (
+      lane === 'developer' &&
+      (state.status === 'reviewed' || state.status === 'cleaning' || state.status === 'removed')
+    ) {
+      return 'complete';
+    }
+    return phaseStatus(state, ['verify']);
+  }
+
+  if (lane === 'developer') {
+    if (state.status === 'reviewed') return 'active';
+    if (state.status === 'cleaning' || state.status === 'removed') return 'complete';
+  }
+  if (lane === 'platform') {
+    if (state.status === 'cleaning') return 'active';
+    if (state.status === 'removed') return 'complete';
+  }
+  return 'pending';
 }
 
-function NodeCard({
-  icon: Icon,
-  title,
-  label,
-  status,
-  large = false,
-  children,
-}: {
-  icon: LucideIcon;
-  title: string;
-  label: string;
-  status: StageStatus;
-  large?: boolean;
-  children?: React.ReactNode;
-}) {
+function StatusIcon({ status, icon: Icon }: { status: StageStatus; icon: LucideIcon }) {
   const active = status === 'active' || status === 'remediated';
   const complete = status === 'complete';
   const failed = status === 'failed';
 
+  if (active) return <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />;
+  if (complete) return <Check className="h-4 w-4" />;
+  if (failed) return <AlertTriangle className="h-4 w-4" />;
+  return <Icon className="h-4 w-4" />;
+}
+
+function LaneStep({
+  item,
+  status,
+  showArrow = false,
+}: {
+  item: { title: string; detail: string; icon: LucideIcon };
+  status: StageStatus;
+  showArrow?: boolean;
+}) {
   return (
-    <div
-      className={cn(
-        'relative flex min-h-32 flex-col rounded-xl border bg-background/80 p-4 transition-all duration-500',
-        large && 'min-h-56',
-        status === 'pending' && 'border-dashed opacity-40',
-        active && 'border-blue-500/50 bg-blue-500/8 shadow-sm shadow-blue-500/10',
-        complete && 'border-emerald-500/35 bg-emerald-500/5',
-        failed && 'border-red-500/50 bg-red-500/8 shadow-sm shadow-red-500/10'
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="grid h-9 w-9 place-items-center rounded-lg border bg-background">
-          {active ? (
-            <LoaderCircle className="h-4 w-4 motion-safe:animate-spin text-blue-500" />
-          ) : failed ? (
-            <AlertTriangle className="h-4 w-4 text-red-500" />
-          ) : complete ? (
-            <Check className="h-4 w-4 text-emerald-500" />
-          ) : (
-            <Icon className="h-4 w-4 text-muted-foreground" />
-          )}
+    <div className="relative h-full">
+      <div
+        className={cn(
+          'flex h-full min-h-24 flex-col rounded-lg border bg-background/85 p-3 transition-all duration-500',
+          status === 'pending' && 'border-dashed opacity-40',
+          (status === 'active' || status === 'remediated') &&
+            'border-blue-500/50 bg-blue-500/8 text-blue-700 dark:text-blue-300',
+          status === 'complete' && 'border-emerald-500/35 bg-emerald-500/5',
+          status === 'failed' && 'border-red-500/50 bg-red-500/8 text-red-700 dark:text-red-300'
+        )}
+      >
+        <div className="flex items-center gap-2">
+          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border bg-background">
+            <StatusIcon status={status} icon={item.icon} />
+          </span>
+          <p className="text-xs font-semibold leading-tight">{item.title}</p>
         </div>
-        {complete && (
-          <Badge
-            variant="outline"
-            className="border-emerald-500/30 text-[10px] text-emerald-700 dark:text-emerald-300"
-          >
-            Ready
-          </Badge>
-        )}
+        <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{item.detail}</p>
       </div>
-      <p className="mt-3 text-sm font-semibold">{title}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-      {children}
+      {showArrow && (
+        <ArrowRight
+          className={cn(
+            'absolute -right-4 top-1/2 z-20 h-4 w-4 -translate-y-1/2 text-muted-foreground/30',
+            status === 'complete' && 'text-emerald-500',
+            (status === 'active' || status === 'remediated') && 'text-blue-500'
+          )}
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 }
 
-function FlowArrow({ status }: { status: StageStatus }) {
-  const active = status === 'active' || status === 'remediated';
-  const complete = status === 'complete';
+function LaneLabel({ lane }: { lane: TimelineLane }) {
+  const developer = lane === 'developer';
+  return (
+    <div className="flex h-full flex-col justify-center rounded-lg border bg-background/60 px-3 py-2">
+      <div className="flex items-center gap-2">
+        {developer ? (
+          <UserCheck className="h-4 w-4 text-blue-500" />
+        ) : (
+          <Workflow className="h-4 w-4 text-violet-500" />
+        )}
+        <span className="text-xs font-semibold">{developer ? 'Developer' : 'Argo CD'}</span>
+      </div>
+      <span className="mt-1 text-[10px] text-muted-foreground">
+        {developer ? 'what you see' : 'what happens'}
+      </span>
+    </div>
+  );
+}
+
+function DualLaneTimeline({ state }: { state: PreviewEnvironmentState }) {
+  return (
+    <div className="rounded-xl border bg-gradient-to-br from-blue-500/5 via-background to-violet-500/5 p-3 sm:p-4">
+      <div className="hidden lg:block">
+        <div className="grid grid-cols-[108px_repeat(5,minmax(0,1fr))] gap-4">
+          <div />
+          {TIMELINE_PHASES.map((phase, index) => (
+            <p
+              key={phase.id}
+              className="text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+            >
+              {index + 1}. {phase.label}
+            </p>
+          ))}
+
+          <LaneLabel lane="developer" />
+          {TIMELINE_PHASES.map((phase, index) => (
+            <LaneStep
+              key={`developer-${phase.id}`}
+              item={phase.developer}
+              status={timelineStatus(state, phase.id, 'developer')}
+              showArrow={index < TIMELINE_PHASES.length - 1}
+            />
+          ))}
+
+          <LaneLabel lane="platform" />
+          {TIMELINE_PHASES.map((phase, index) => (
+            <LaneStep
+              key={`platform-${phase.id}`}
+              item={phase.platform}
+              status={timelineStatus(state, phase.id, 'platform')}
+              showArrow={index < TIMELINE_PHASES.length - 1}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3 lg:hidden">
+        {TIMELINE_PHASES.map((phase, index) => (
+          <section key={phase.id} className="rounded-lg border bg-background/55 p-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {index + 1}. {phase.label}
+            </p>
+            <LaneStep
+              item={phase.developer}
+              status={timelineStatus(state, phase.id, 'developer')}
+            />
+            <div className="flex items-center justify-center gap-2 py-1.5 text-[10px] text-muted-foreground">
+              <ArrowDown className="h-3.5 w-3.5" /> platform response
+            </div>
+            <LaneStep item={phase.platform} status={timelineStatus(state, phase.id, 'platform')} />
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type ResourceStatus = 'waiting' | 'creating' | 'ready' | 'removed' | 'failed';
+
+function resourceStatus(
+  state: PreviewEnvironmentState,
+  stage: PreviewStageId,
+  removed: boolean,
+  failureIds: PreviewFailureId[] = []
+): ResourceStatus {
+  if (removed) return 'removed';
+  if (state.activeFailure && failureIds.includes(state.activeFailure)) return 'failed';
+  const status = state.stageStatuses[stage];
+  if (status === 'pending') return 'waiting';
+  if (status === 'active' || status === 'remediated') return 'creating';
+  if (status === 'failed') return 'failed';
+  return 'ready';
+}
+
+function ResourceTile({
+  icon: Icon,
+  title,
+  detail,
+  status,
+  readyLabel,
+  removedLabel,
+}: {
+  icon: LucideIcon;
+  title: string;
+  detail: string;
+  status: ResourceStatus;
+  readyLabel?: string;
+  removedLabel?: string;
+}) {
+  const labels: Record<ResourceStatus, string> = {
+    waiting: 'Waiting',
+    creating: 'Creating',
+    ready: readyLabel ?? 'Created',
+    removed: removedLabel ?? 'Removed',
+    failed: 'Blocked',
+  };
   return (
     <div
       className={cn(
-        'flex min-h-8 items-center justify-center text-muted-foreground/30 transition-colors duration-500',
-        active && 'text-blue-500',
-        complete && 'text-emerald-500'
+        'rounded-lg border bg-background/75 p-3 transition-all duration-500',
+        status === 'waiting' && 'border-dashed opacity-35',
+        status === 'creating' && 'border-blue-500/50 bg-blue-500/8',
+        status === 'ready' && 'border-emerald-500/35 bg-emerald-500/5',
+        status === 'removed' && 'border-dashed opacity-35',
+        status === 'failed' && 'border-red-500/50 bg-red-500/8'
       )}
-      aria-hidden="true"
     >
-      <ArrowDown className={cn('h-5 w-5 lg:hidden', active && 'motion-safe:animate-bounce')} />
-      <div className="relative hidden w-full items-center lg:flex">
-        <div className="h-px flex-1 bg-current" />
-        {active && (
-          <span className="absolute left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-current motion-safe:animate-ping" />
-        )}
-        <ArrowRight className="h-5 w-5" />
+      <div className="flex items-center justify-between gap-2">
+        <Icon className="h-4 w-4" />
+        <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
+          {labels[status]}
+        </span>
       </div>
+      <p className="mt-2 text-xs font-semibold">{title}</p>
+      <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{detail}</p>
     </div>
   );
 }
 
-function PhaseRail({ state }: { state: PreviewEnvironmentState }) {
+function ResourceBlueprint({ state }: { state: PreviewEnvironmentState }) {
+  const reviewUrlRemoved = state.cleanupStatuses['review-url'] === 'complete';
+  const workloadsRemoved = state.cleanupStatuses.workloads === 'complete';
+  const dependenciesRemoved = state.cleanupStatuses.dependencies === 'complete';
+  const namespaceRemoved = state.cleanupStatuses.namespace === 'complete';
+  const podCount = state.config.services.length;
+
   return (
-    <ol className="grid grid-cols-4 gap-1" aria-label="Preview environment progress">
-      {PHASES.map((phase, index) => {
-        const status = phaseStatus(state, phase.stages);
-        return (
-          <li key={phase.label} className="relative flex flex-col items-center text-center">
-            {index > 0 && (
-              <span
-                className={cn(
-                  'absolute right-1/2 top-3 h-px w-full bg-border',
-                  (status === 'active' || status === 'complete') && 'bg-blue-500/45'
-                )}
-              />
-            )}
-            <span
-              className={cn(
-                'relative z-10 grid h-6 w-6 place-items-center rounded-full border bg-background font-mono text-[10px] text-muted-foreground',
-                status === 'active' && 'border-blue-500 bg-blue-500 text-white',
-                status === 'complete' && 'border-emerald-500 bg-emerald-500 text-white',
-                status === 'failed' && 'border-red-500 bg-red-500 text-white'
-              )}
-            >
-              {status === 'complete' ? <Check className="h-3.5 w-3.5" /> : index + 1}
-            </span>
-            <span className="mt-1.5 text-[11px] font-medium text-muted-foreground">
-              {phase.label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
+    <div className="mt-4 rounded-xl border border-dashed bg-background/45 p-3 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold">What Argo creates for preview #184</p>
+          <p className="text-xs text-muted-foreground">
+            Each tile appears as its owning stage reconciles.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground">
+          <span className="rounded border bg-background px-2 py-1">ApplicationSet</span>
+          <ArrowRight className="h-3.5 w-3.5" />
+          <span className="rounded border bg-background px-2 py-1">Helm release</span>
+          <ArrowRight className="h-3.5 w-3.5" />
+          <span className="rounded border bg-background px-2 py-1">preview-pr-184</span>
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <ResourceTile
+          icon={Boxes}
+          title="Namespace"
+          detail="Isolation boundary"
+          status={resourceStatus(state, 'provision', namespaceRemoved, ['quota-exceeded'])}
+        />
+        <ResourceTile
+          icon={ServerCog}
+          title={`${podCount} app pod${podCount === 1 ? '' : 's'}`}
+          detail="PR image revisions"
+          status={resourceStatus(state, 'provision', workloadsRemoved, [
+            'quota-exceeded',
+            'missing-secret',
+            'readiness-failure',
+            'revision-drift',
+          ])}
+        />
+        <ResourceTile
+          icon={ServerCog}
+          title="Worker node capacity"
+          detail="Pods scheduled here"
+          status={resourceStatus(state, 'provision', namespaceRemoved, ['quota-exceeded'])}
+          readyLabel="Allocated"
+          removedLabel="Released"
+        />
+        <ResourceTile
+          icon={Database}
+          title="Isolated database"
+          detail="Safe preview data"
+          status={resourceStatus(state, 'expose', dependenciesRemoved, ['readiness-failure'])}
+        />
+        <ResourceTile
+          icon={Database}
+          title="Redis cache"
+          detail="Preview-scoped state"
+          status={resourceStatus(state, 'expose', dependenciesRemoved)}
+        />
+        <ResourceTile
+          icon={Network}
+          title="Domain + TLS"
+          detail="Private review URL"
+          status={resourceStatus(state, 'expose', reviewUrlRemoved, ['dns-pending'])}
+        />
+      </div>
+
+      <p className="mt-3 text-[10px] text-muted-foreground">
+        Pods normally use existing worker nodes. Cluster autoscaling adds a node only when more
+        capacity is needed.
+      </p>
+    </div>
   );
 }
 
@@ -309,14 +532,6 @@ export default function PreviewEnvironmentSimulator() {
   const generatedIntent = useMemo(() => getGeneratedIntent(state.config), [state.config]);
   const failure = state.activeFailure ? PREVIEW_FAILURES[state.activeFailure] : null;
   const canAdvance = ['configured', 'running', 'cleaning'].includes(state.status);
-  const platformStatus = combinedStatus(state, ['coordinate', 'reconcile']);
-  const previewStatus = combinedStatus(state, ['provision', 'expose']);
-  const reviewStatus = combinedStatus(state, ['verify']);
-  const reviewUrlRemoved = state.cleanupStatuses['review-url'] === 'complete';
-  const workloadsRemoved = state.cleanupStatuses.workloads === 'complete';
-  const dependenciesRemoved = state.cleanupStatuses.dependencies === 'complete';
-  const namespaceRemoved = state.cleanupStatuses.namespace === 'complete';
-  const gitIntentClosed = state.cleanupStatuses['git-intent'] === 'complete';
 
   useEffect(() => {
     if (!running || !canAdvance) return;
@@ -446,10 +661,8 @@ export default function PreviewEnvironmentSimulator() {
       </div>
 
       <div className="p-4 sm:p-5">
-        <PhaseRail state={state} />
-
         <div
-          className="my-5 flex min-h-11 items-center justify-center rounded-lg border bg-background/60 px-3 text-center"
+          className="mb-4 flex min-h-11 items-center justify-center rounded-lg border bg-background/60 px-3 text-center"
           aria-live="polite"
         >
           {state.status === 'blocked' ? (
@@ -464,121 +677,8 @@ export default function PreviewEnvironmentSimulator() {
           <p className="text-sm font-medium">{friendlyStatus(state)}</p>
         </div>
 
-        <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-blue-500/5 via-background to-cyan-500/5 p-3 sm:p-5">
-          <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-blue-500/5 blur-3xl" />
-          <div className="relative grid items-stretch gap-2 lg:grid-cols-[145px_44px_125px_44px_minmax(280px,1fr)_44px_155px]">
-            <NodeCard
-              icon={GitPullRequest}
-              title="Pull request"
-              label="Here is my change"
-              status={state.stageStatuses.intent}
-            >
-              <div className="mt-auto pt-3">
-                <Badge variant="secondary" className="font-mono text-[10px]">
-                  8f3c2a1
-                </Badge>
-              </div>
-            </NodeCard>
-
-            <FlowArrow
-              status={
-                state.stageStatuses.intent === 'complete' && !gitIntentClosed
-                  ? platformStatus
-                  : 'pending'
-              }
-            />
-
-            <NodeCard
-              icon={Workflow}
-              title="Platform"
-              label={
-                gitIntentClosed
-                  ? 'Cleanup recorded'
-                  : platformStatus === 'pending'
-                    ? 'Waiting'
-                    : 'Builds a safe copy'
-              }
-              status={gitIntentClosed ? 'pending' : platformStatus}
-            />
-
-            <FlowArrow status={namespaceRemoved ? 'pending' : previewStatus} />
-
-            <NodeCard
-              icon={Boxes}
-              title="Preview #184"
-              label={namespaceRemoved ? 'Namespace removed' : 'Temporary mini-production'}
-              status={namespaceRemoved ? 'pending' : previewStatus}
-              large
-            >
-              {stageHasStarted(state, 'provision') && !namespaceRemoved ? (
-                <div className="mt-4 flex flex-1 flex-col">
-                  <div className="grid flex-1 gap-2 sm:grid-cols-3">
-                    {state.config.services.map((service) => (
-                      <div
-                        key={service}
-                        className={cn(
-                          'flex min-h-16 items-center justify-center rounded-lg border bg-background/80 px-2 text-center transition-opacity',
-                          workloadsRemoved && 'opacity-20'
-                        )}
-                      >
-                        <div>
-                          <ServerCog className="mx-auto h-4 w-4 text-blue-500" />
-                          <p className="mt-1 text-xs font-medium">{SERVICE_LABELS[service]}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div
-                    className={cn(
-                      'mt-2 flex items-center justify-between rounded-lg border border-dashed bg-background/60 px-3 py-2 text-xs transition-opacity',
-                      (!stageHasStarted(state, 'expose') || dependenciesRemoved) && 'opacity-20'
-                    )}
-                  >
-                    <span className="inline-flex items-center gap-1.5">
-                      <Database className="h-3.5 w-3.5" />
-                      {DATA_LABELS[state.config.dataStrategy]}
-                    </span>
-                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid flex-1 place-items-center py-8 text-center text-xs text-muted-foreground">
-                  <div>
-                    {namespaceRemoved ? (
-                      <CheckCircle2 className="mx-auto mb-2 h-7 w-7 text-emerald-500" />
-                    ) : (
-                      <Boxes className="mx-auto mb-2 h-7 w-7 opacity-40" />
-                    )}
-                    {namespaceRemoved ? 'Removed cleanly' : 'The temporary app will appear here'}
-                  </div>
-                </div>
-              )}
-            </NodeCard>
-
-            <FlowArrow status={reviewUrlRemoved ? 'pending' : reviewStatus} />
-
-            <NodeCard
-              icon={UserCheck}
-              title="Reviewer"
-              label={
-                reviewUrlRemoved
-                  ? 'URL removed'
-                  : stageHasStarted(state, 'expose')
-                    ? 'Opens a private URL'
-                    : 'Waiting for a link'
-              }
-              status={reviewUrlRemoved ? 'pending' : reviewStatus}
-            >
-              {stageHasStarted(state, 'expose') && !reviewUrlRemoved && (
-                <div className="mt-auto pt-3">
-                  <div className="flex items-center gap-1.5 rounded-md border bg-background px-2 py-1.5 font-mono text-[9px] text-blue-700 dark:text-blue-300">
-                    <Globe2 className="h-3 w-3 shrink-0" /> pr-184.preview.dev
-                  </div>
-                </div>
-              )}
-            </NodeCard>
-          </div>
-        </div>
+        <DualLaneTimeline state={state} />
+        <ResourceBlueprint state={state} />
 
         {failure && (
           <div className="mt-4 rounded-xl border border-red-500/40 bg-red-500/5 p-4">
