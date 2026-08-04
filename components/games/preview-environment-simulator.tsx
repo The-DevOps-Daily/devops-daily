@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowDown,
   ArrowRight,
   Boxes,
   Check,
@@ -21,7 +20,6 @@ import {
   RefreshCw,
   ServerCog,
   ShieldCheck,
-  Sparkles,
   Trash2,
   UserCheck,
   Workflow,
@@ -30,6 +28,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import {
   CLEANUP_STEPS,
@@ -264,16 +263,19 @@ function LaneStep({
   item,
   status,
   showArrow = false,
+  compact = false,
 }: {
   item: { title: string; detail: string; icon: LucideIcon };
   status: StageStatus;
   showArrow?: boolean;
+  compact?: boolean;
 }) {
   return (
     <div className="relative h-full">
       <div
         className={cn(
-          'flex h-full min-h-24 flex-col rounded-lg border bg-background/85 p-3 transition-all duration-500',
+          'flex h-full flex-col rounded-lg border bg-background/85 transition-all duration-500',
+          compact ? 'min-h-14 p-2' : 'min-h-20 p-3',
           status === 'pending' && 'border-dashed opacity-40',
           (status === 'active' || status === 'remediated') &&
             'border-blue-500/50 bg-blue-500/8 text-blue-700 dark:text-blue-300',
@@ -282,12 +284,26 @@ function LaneStep({
         )}
       >
         <div className="flex items-center gap-2">
-          <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md border bg-background">
+          <span
+            className={cn(
+              'grid shrink-0 place-items-center rounded-md border bg-background',
+              compact ? 'h-6 w-6' : 'h-7 w-7'
+            )}
+          >
             <StatusIcon status={status} icon={item.icon} />
           </span>
-          <p className="text-xs font-semibold leading-tight">{item.title}</p>
+          <p className={cn('font-semibold leading-tight', compact ? 'text-[11px]' : 'text-xs')}>
+            {item.title}
+          </p>
         </div>
-        <p className="mt-2 text-[11px] leading-snug text-muted-foreground">{item.detail}</p>
+        <p
+          className={cn(
+            'mt-2 text-[11px] leading-snug text-muted-foreground',
+            compact && 'hidden sm:block'
+          )}
+        >
+          {item.detail}
+        </p>
       </div>
       {showArrow && (
         <ArrowRight
@@ -325,7 +341,7 @@ function LaneLabel({ lane }: { lane: TimelineLane }) {
 function DualLaneTimeline({ state }: { state: PreviewEnvironmentState }) {
   return (
     <div className="rounded-xl border bg-gradient-to-br from-blue-500/5 via-background to-violet-500/5 p-3 sm:p-4">
-      <div className="hidden lg:block">
+      <div className="hidden xl:block">
         <div className="grid grid-cols-[108px_repeat(5,minmax(0,1fr))] gap-4">
           <div />
           {TIMELINE_PHASES.map((phase, index) => (
@@ -359,22 +375,42 @@ function DualLaneTimeline({ state }: { state: PreviewEnvironmentState }) {
         </div>
       </div>
 
-      <div className="space-y-3 lg:hidden">
-        {TIMELINE_PHASES.map((phase, index) => (
-          <section key={phase.id} className="rounded-lg border bg-background/55 p-3">
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {index + 1}. {phase.label}
-            </p>
-            <LaneStep
-              item={phase.developer}
-              status={timelineStatus(state, phase.id, 'developer')}
-            />
-            <div className="flex items-center justify-center gap-2 py-1.5 text-[10px] text-muted-foreground">
-              <ArrowDown className="h-3.5 w-3.5" /> platform response
+      <div className="xl:hidden">
+        <div className="grid grid-cols-[30px_minmax(0,1fr)_14px_minmax(0,1fr)] items-center gap-1.5 sm:grid-cols-[72px_minmax(0,1fr)_18px_minmax(0,1fr)] sm:gap-2">
+          <div />
+          <div className="flex items-center justify-center gap-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">
+            <UserCheck className="h-3.5 w-3.5" /> Developer
+          </div>
+          <div />
+          <div className="flex items-center justify-center gap-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-300">
+            <Workflow className="h-3.5 w-3.5" /> Argo CD
+          </div>
+
+          {TIMELINE_PHASES.map((phase, index) => (
+            <div key={phase.id} className="contents">
+              <div
+                className="text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                title={`${index + 1}. ${phase.label}`}
+              >
+                <span className="sm:hidden">{index + 1}</span>
+                <span className="hidden sm:inline">
+                  {index + 1}. {phase.label}
+                </span>
+              </div>
+              <LaneStep
+                item={phase.developer}
+                status={timelineStatus(state, phase.id, 'developer')}
+                compact
+              />
+              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/45" aria-hidden="true" />
+              <LaneStep
+                item={phase.platform}
+                status={timelineStatus(state, phase.id, 'platform')}
+                compact
+              />
             </div>
-            <LaneStep item={phase.platform} status={timelineStatus(state, phase.id, 'platform')} />
-          </section>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -422,7 +458,7 @@ function ResourceTile({
   return (
     <div
       className={cn(
-        'rounded-lg border bg-background/75 p-3 transition-all duration-500',
+        'rounded-lg border bg-background/75 p-2.5 transition-all duration-500 sm:p-3',
         status === 'waiting' && 'border-dashed opacity-35',
         status === 'creating' && 'border-blue-500/50 bg-blue-500/8',
         status === 'ready' && 'border-emerald-500/35 bg-emerald-500/5',
@@ -437,7 +473,9 @@ function ResourceTile({
         </span>
       </div>
       <p className="mt-2 text-xs font-semibold">{title}</p>
-      <p className="mt-0.5 text-[10px] leading-snug text-muted-foreground">{detail}</p>
+      <p className="mt-0.5 hidden text-[10px] leading-snug text-muted-foreground sm:block">
+        {detail}
+      </p>
     </div>
   );
 }
@@ -458,7 +496,7 @@ function ResourceBlueprint({ state }: { state: PreviewEnvironmentState }) {
             Each tile appears as its owning stage reconciles.
           </p>
         </div>
-        <div className="flex items-center gap-2 font-mono text-[10px] text-muted-foreground">
+        <div className="hidden items-center gap-2 font-mono text-[10px] text-muted-foreground md:flex">
           <span className="rounded border bg-background px-2 py-1">ApplicationSet</span>
           <ArrowRight className="h-3.5 w-3.5" />
           <span className="rounded border bg-background px-2 py-1">Helm release</span>
@@ -513,7 +551,7 @@ function ResourceBlueprint({ state }: { state: PreviewEnvironmentState }) {
         />
       </div>
 
-      <p className="mt-3 text-[10px] text-muted-foreground">
+      <p className="mt-3 hidden text-[10px] text-muted-foreground sm:block">
         Pods normally use existing worker nodes. Cluster autoscaling adds a node only when more
         capacity is needed.
       </p>
@@ -532,6 +570,9 @@ export default function PreviewEnvironmentSimulator() {
   const generatedIntent = useMemo(() => getGeneratedIntent(state.config), [state.config]);
   const failure = state.activeFailure ? PREVIEW_FAILURES[state.activeFailure] : null;
   const canAdvance = ['configured', 'running', 'cleaning'].includes(state.status);
+  const canConfigure = state.status === 'configured' || state.status === 'removed';
+  const selectedScenario =
+    PREVIEW_SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
 
   useEffect(() => {
     if (!running || !canAdvance) return;
@@ -557,8 +598,8 @@ export default function PreviewEnvironmentSimulator() {
 
   return (
     <div className="overflow-hidden rounded-xl border bg-muted/15 shadow-sm">
-      <div className="border-b bg-background/85 p-4 sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="border-b bg-background/85 p-3 sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge
@@ -576,7 +617,7 @@ export default function PreviewEnvironmentSimulator() {
               Build it, open it, review it, then watch it disappear.
             </p>
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Clock3 className="h-3.5 w-3.5" /> about {metrics.provisionMinutes} min
             </span>
@@ -589,92 +630,117 @@ export default function PreviewEnvironmentSimulator() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-2 sm:grid-cols-3">
-          {PREVIEW_SCENARIOS.map((option) => {
-            const Icon = option.icon;
-            const selected = scenarioId === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => resetWith(option.id, challengeMode)}
-                className={cn(
-                  'flex items-center gap-3 rounded-lg border bg-background/60 p-3 text-left transition-colors',
-                  selected
-                    ? 'border-blue-500/45 bg-blue-500/8'
-                    : 'text-muted-foreground hover:border-blue-500/30 hover:text-foreground'
-                )}
-                aria-pressed={selected}
-              >
-                <span
-                  className={cn(
-                    'grid h-9 w-9 shrink-0 place-items-center rounded-lg border',
-                    selected && 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300'
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold">{option.label}</span>
-                  <span className="block text-xs text-muted-foreground">{option.detail}</span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border bg-muted/25 p-3 md:flex-row md:items-end">
+          <label className="block min-w-0 md:w-56">
+            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Example
+            </span>
+            <select
+              value={scenarioId}
+              disabled={!canConfigure}
+              onChange={(event) =>
+                resetWith(event.target.value as PreviewScenarioId, challengeMode)
+              }
+              className="h-9 w-full rounded-md border bg-background px-3 text-sm font-medium outline-none transition-colors focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {PREVIEW_SCENARIOS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => resetWith(scenarioId, !challengeMode)}
-            className={cn(
-              'inline-flex items-center gap-2 rounded-full border bg-background/60 px-3 py-1.5 text-xs font-medium transition-colors',
-              challengeMode &&
-                'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-            )}
-            aria-pressed={challengeMode}
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            {challengeMode
-              ? 'Challenge on: one thing will break'
-              : 'Make it interesting: break one thing'}
-          </button>
+          <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border bg-background/65 px-3 py-2">
+            <Switch
+              id="preview-challenge-mode"
+              checked={challengeMode}
+              disabled={!canConfigure}
+              onCheckedChange={(checked) => resetWith(scenarioId, checked)}
+            />
+            <label htmlFor="preview-challenge-mode" className="min-w-0 cursor-pointer">
+              <span className="block text-xs font-semibold">Challenge mode</span>
+              <span className="block truncate text-[10px] text-muted-foreground">
+                {challengeMode ? 'One step will need your help' : selectedScenario.detail}
+              </span>
+            </label>
+          </div>
 
-          <div className="flex gap-2">
-            {state.status === 'configured' || state.status === 'removed' ? (
-              <Button type="button" size="sm" onClick={start}>
-                <Play className="h-4 w-4" />
-                {state.status === 'removed' ? 'Build another' : 'Create preview'}
-              </Button>
-            ) : (
+          <div className="flex shrink-0 gap-2">
+            {!canConfigure && (
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
+                className="flex-1 md:flex-none"
                 onClick={() => resetWith(scenarioId, challengeMode)}
               >
-                <RefreshCw className="h-4 w-4" /> Start over
+                <RefreshCw className="h-4 w-4" /> Reset
+              </Button>
+            )}
+            {canConfigure && (
+              <Button type="button" size="sm" className="flex-1 md:flex-none" onClick={start}>
+                <Play className="h-4 w-4" />
+                {state.status === 'removed' ? 'Build again' : 'Create preview'}
               </Button>
             )}
           </div>
         </div>
       </div>
 
-      <div className="p-4 sm:p-5">
+      <div className="p-3 sm:p-4">
         <div
-          className="mb-4 flex min-h-11 items-center justify-center rounded-lg border bg-background/60 px-3 text-center"
+          className="mb-3 flex min-h-11 flex-col gap-2 rounded-lg border bg-background/60 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between"
           aria-live="polite"
         >
-          {state.status === 'blocked' ? (
-            <AlertTriangle className="mr-2 h-4 w-4 shrink-0 text-red-500" />
-          ) : state.status === 'ready' ||
-            state.status === 'reviewed' ||
-            state.status === 'removed' ? (
-            <CheckCircle2 className="mr-2 h-4 w-4 shrink-0 text-emerald-500" />
-          ) : (
-            <Workflow className="mr-2 h-4 w-4 shrink-0 text-blue-500" />
+          <div className="flex items-center text-left">
+            {state.status === 'blocked' ? (
+              <AlertTriangle className="mr-2 h-4 w-4 shrink-0 text-red-500" />
+            ) : state.status === 'ready' ||
+              state.status === 'reviewed' ||
+              state.status === 'removed' ? (
+              <CheckCircle2 className="mr-2 h-4 w-4 shrink-0 text-emerald-500" />
+            ) : (
+              <Workflow className="mr-2 h-4 w-4 shrink-0 text-blue-500" />
+            )}
+            <p className="text-sm font-medium">{friendlyStatus(state)}</p>
+          </div>
+
+          {state.status === 'ready' && (
+            <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setState((current) => recordPreviewReview(current, 'approve'))}
+              >
+                <Check className="h-4 w-4" /> Looks good
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setState((current) => recordPreviewReview(current, 'request-changes'))
+                }
+              >
+                <X className="h-4 w-4" /> Needs work
+              </Button>
+            </div>
           )}
-          <p className="text-sm font-medium">{friendlyStatus(state)}</p>
+
+          {state.status === 'reviewed' && (
+            <Button
+              type="button"
+              size="sm"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setState((current) => beginPreviewTeardown(current, 'pr-closed'));
+                setRunning(true);
+              }}
+            >
+              <Trash2 className="h-4 w-4" /> Close PR &amp; clean up
+            </Button>
+          )}
         </div>
 
         <DualLaneTimeline state={state} />
@@ -718,62 +784,6 @@ export default function PreviewEnvironmentSimulator() {
                 Not quite. {state.lastEvent}
               </p>
             )}
-          </div>
-        )}
-
-        {state.status === 'ready' && (
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-emerald-500/10 text-emerald-500">
-                <Globe2 className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Open the preview and try the change</h3>
-                <p className="text-sm text-muted-foreground">
-                  Production is untouched while you decide.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setState((current) => recordPreviewReview(current, 'approve'))}
-              >
-                <Check className="h-4 w-4" /> Looks good
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  setState((current) => recordPreviewReview(current, 'request-changes'))
-                }
-              >
-                <X className="h-4 w-4" /> Needs work
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {state.status === 'reviewed' && (
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="font-semibold">The review is finished</h3>
-              <p className="text-sm text-muted-foreground">
-                Now remove the temporary copy before it becomes forgotten infrastructure.
-              </p>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => {
-                setState((current) => beginPreviewTeardown(current, 'pr-closed'));
-                setRunning(true);
-              }}
-            >
-              <Trash2 className="h-4 w-4" /> Close PR &amp; clean up
-            </Button>
           </div>
         )}
 
