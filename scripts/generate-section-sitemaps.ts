@@ -148,6 +148,17 @@ async function build() {
     if (entries.length === 0) {
       throw new Error(`${file} produced zero URLs, refusing to write an empty sitemap`);
     }
+    // The failure mode here is a renamed field silently producing
+    // /games/undefined for every row, which is worse than no sitemap because
+    // it feeds Google a list of 404s. Fail the build instead.
+    const broken = entries.filter((e) => /\/(undefined|null)(\/|$)/.test(e.loc) || !e.loc.startsWith(`${SITE}/`));
+    if (broken.length > 0) {
+      throw new Error(`${file} has ${broken.length} malformed URLs, first: ${broken[0].loc}`);
+    }
+    const seen = new Set(entries.map((e) => e.loc));
+    if (seen.size !== entries.length) {
+      throw new Error(`${file} contains ${entries.length - seen.size} duplicate URLs`);
+    }
     await fs.writeFile(path.join(PUBLIC_DIR, file), renderUrlset(entries), 'utf-8');
     total += entries.length;
     console.log(`  ${file.padEnd(28)} ${entries.length} URLs`);
