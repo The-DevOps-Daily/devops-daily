@@ -180,7 +180,7 @@ The honest way to evaluate this is on a change you were going to split anyway.
 
 Step 5 is the one to pay attention to, because auto-retargeting is the feature that decides whether stacking is sustainable for your team or an occasional trick for big changes. Doing it by hand is exactly the friction that kept this workflow niche outside of companies that built tooling for it.
 
-If you want to shore up the underlying Git first, our [Git concepts simulator](/games/git-concepts-simulator) covers branching and rebasing interactively, and [resolving merge conflicts](/posts/how-to-resolve-git-merge-conflicts) covers the situation you are most likely to hit mid-stack.
+If you want to shore up the underlying Git first, our [Git concepts simulator](/games/git-concepts-simulator) covers branching and rebasing interactively, and [resolving merge conflicts](/posts/how-do-i-resolve-merge-conflicts-in-a-git-repository) covers the situation you are most likely to hit mid-stack.
 
 ## Wrapping up
 
