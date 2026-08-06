@@ -4,6 +4,9 @@ import { SearchPageClient } from '@/components/search-page-client';
 
 export const metadata: Metadata = {
   title: 'Search',
+  // The results are client-rendered, so there is nothing here for a crawler to
+  // index. follow is kept so the links out of it still pass through.
+  robots: { index: false, follow: true },
   description: 'Search across DevOps Daily posts, guides, quizzes, games, flashcards, comparisons, and tools to find content on Docker, Kubernetes, AWS, CI/CD, and more.',
   alternates: {
     canonical: '/search',
