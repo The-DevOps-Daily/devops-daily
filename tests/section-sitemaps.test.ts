@@ -111,6 +111,17 @@ describe('section sitemaps', () => {
     expect(listed.sort()).toEqual([...SECTIONS].sort());
   });
 
+  // robots.txt is the only thing that tells a crawler these files exist. Nobody
+  // submits them by hand, and a crawler we have never heard of will only find
+  // them this way. If the index stops being listed here, discovery silently
+  // reverts to /sitemap.xml alone and no test would otherwise notice.
+  it('robots.txt advertises both the full sitemap and the index', async () => {
+    const robots = (await import('../app/robots')).default();
+    const listed = Array.isArray(robots.sitemap) ? robots.sitemap : [robots.sitemap];
+    expect(listed).toContain(`${SITE}/sitemap.xml`);
+    expect(listed).toContain(`${SITE}/sitemap-index.xml`);
+  });
+
   it('lastmod values, where present, are valid ISO dates', () => {
     for (const file of SECTIONS) {
       const dates = [...read(file).matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((m) => m[1]);
