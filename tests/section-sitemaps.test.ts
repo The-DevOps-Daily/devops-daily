@@ -19,10 +19,19 @@ const SITE = 'https://devops-daily.com';
 const SECTIONS = [
   'sitemap-posts.xml',
   'sitemap-guides.xml',
-  'sitemap-interactive.xml',
-  'sitemap-learning.xml',
-  'sitemap-timely.xml',
-  'sitemap-taxonomy.xml',
+  'sitemap-games.xml',
+  'sitemap-exercises.xml',
+  'sitemap-quizzes.xml',
+  'sitemap-flashcards.xml',
+  'sitemap-checklists.xml',
+  'sitemap-interview-questions.xml',
+  'sitemap-comparisons.xml',
+  'sitemap-news.xml',
+  'sitemap-newsletters.xml',
+  'sitemap-advent-of-devops.xml',
+  'sitemap-hacktoberfest.xml',
+  'sitemap-categories.xml',
+  'sitemap-tools.xml',
 ];
 
 function read(file: string): string {
@@ -70,6 +79,16 @@ describe('section sitemaps', () => {
   it.each(SECTIONS)('%s has no duplicate URLs', (file) => {
     const urls = locs(read(file));
     expect(new Set(urls).size).toBe(urls.length);
+  });
+
+  // The naming rule is the whole point: a file called sitemap-quizzes.xml must
+  // contain /quizzes URLs and nothing else. Enforcing it here means a future
+  // section cannot quietly become a themed grab-bag whose name needs a gloss.
+  it.each(SECTIONS)('%s only contains URLs under the prefix it is named after', (file) => {
+    const prefix = file.replace(/^sitemap-/, '').replace(/\.xml$/, '');
+    for (const url of locs(read(file))) {
+      expect(url.startsWith(`${SITE}/${prefix}/`), `${url} does not belong in ${file}`).toBe(true);
+    }
   });
 
   it('no URL appears in more than one section', () => {

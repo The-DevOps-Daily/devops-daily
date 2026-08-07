@@ -84,13 +84,23 @@ async function build() {
       getAllCategories(),
     ]);
 
+  // One sitemap per URL prefix, named after that prefix. /posts lives in
+  // sitemap-posts.xml, /quizzes in sitemap-quizzes.xml, and so on.
+  //
+  // The rule is mechanical on purpose. Grouping several prefixes into a themed
+  // file means inventing a name for the theme, and then nobody can tell what is
+  // in the file without reading this script. It also blends the indexing rates
+  // of formats we want to compare: if Google is indexing quizzes but not
+  // flashcards, a combined file hides that and a split one shows it.
+  //
+  // Adding a section later is one entry here.
   const sections: Record<string, Entry[]> = {
-    // Editorial: the pages that are supposed to earn search traffic.
     'sitemap-posts.xml': (posts as { slug: string; updatedAt?: string; date?: string; publishedAt?: string }[]).map((p) => ({
       loc: `${SITE}/posts/${p.slug}`,
       lastmod: iso(p.updatedAt || p.date || p.publishedAt),
     })),
 
+    // Both the guide landing page and each of its parts.
     'sitemap-guides.xml': (guides as { slug: string; updatedAt?: string; publishedAt?: string; parts?: { slug: string }[] }[]).flatMap((g) => [
       { loc: `${SITE}/guides/${g.slug}`, lastmod: iso(g.updatedAt || g.publishedAt) },
       ...(g.parts ?? []).map((part) => ({
@@ -99,50 +109,52 @@ async function build() {
       })),
     ]),
 
-    // Interactive: simulators and hands-on exercises.
-    'sitemap-interactive.xml': [
-      ...(games as { id: string }[]).map((g) => ({ loc: `${SITE}/games/${g.id}` })),
-      ...(exercises as { id: string; updatedAt?: string; publishedAt?: string }[]).map((e) => ({
-        loc: `${SITE}/exercises/${e.id}`,
-        lastmod: iso(e.updatedAt || e.publishedAt),
-      })),
-    ],
+    'sitemap-games.xml': (games as { id: string }[]).map((g) => ({ loc: `${SITE}/games/${g.id}` })),
 
-    // Study material: the formats most at risk of reading as derivative.
-    'sitemap-learning.xml': [
-      ...(quizzes as { id?: string; slug?: string; createdDate?: string }[]).map((q) => ({
-        loc: `${SITE}/quizzes/${q.slug ?? q.id}`,
-        lastmod: iso(q.createdDate),
-      })),
-      ...(flashcards as { id: string }[]).map((f) => ({ loc: `${SITE}/flashcards/${f.id}` })),
-      ...(checklists as { slug: string; updatedDate?: string; createdDate?: string }[]).map((c) => ({
-        loc: `${SITE}/checklists/${c.slug}`,
-        lastmod: iso(c.updatedDate || c.createdDate),
-      })),
+    'sitemap-exercises.xml': (exercises as { id: string; updatedAt?: string; publishedAt?: string }[]).map((e) => ({
+      loc: `${SITE}/exercises/${e.id}`,
+      lastmod: iso(e.updatedAt || e.publishedAt),
+    })),
+
+    'sitemap-quizzes.xml': (quizzes as { id?: string; slug?: string; createdDate?: string }[]).map((q) => ({
+      loc: `${SITE}/quizzes/${q.slug ?? q.id}`,
+      lastmod: iso(q.createdDate),
+    })),
+
+    'sitemap-flashcards.xml': (flashcards as { id: string }[]).map((f) => ({ loc: `${SITE}/flashcards/${f.id}` })),
+
+    'sitemap-checklists.xml': (checklists as { slug: string; updatedDate?: string; createdDate?: string }[]).map((c) => ({
+      loc: `${SITE}/checklists/${c.slug}`,
+      lastmod: iso(c.updatedDate || c.createdDate),
+    })),
+
+    // Individual questions and the topic hubs. Both sit under the same prefix.
+    'sitemap-interview-questions.xml': [
       ...interviewQuestions.map((q) => ({ loc: `${SITE}/interview-questions/${q.tier}/${q.slug}` })),
       ...getAllTopics().map((t) => ({ loc: `${SITE}/interview-questions/topic/${t.slug}` })),
     ],
 
-    // Time-boxed and comparison content.
-    'sitemap-timely.xml': [
-      ...(news as { slug: string; date?: string }[]).map((n) => ({ loc: `${SITE}/news/${n.slug}`, lastmod: iso(n.date) })),
-      ...(newsletters as { slug: string }[]).map((n) => ({ loc: `${SITE}/newsletters/${n.slug}` })),
-      ...(advent as { slug?: string; day?: number; updatedAt?: string; publishedAt?: string }[]).map((d) => ({
-        loc: `${SITE}/advent-of-devops/${d.slug ?? `day-${d.day}`}`,
-        lastmod: iso(d.updatedAt || d.publishedAt),
-      })),
-      ...(hacktoberfest as { slug?: string; day?: number }[]).map((d) => ({
-        loc: `${SITE}/hacktoberfest/${d.slug ?? `day-${d.day}`}`,
-      })),
-      ...(comparisons as { slug: string }[]).map((c) => ({ loc: `${SITE}/comparisons/${c.slug}` })),
-    ],
+    'sitemap-comparisons.xml': (comparisons as { slug: string }[]).map((c) => ({ loc: `${SITE}/comparisons/${c.slug}` })),
 
-    // Taxonomy and utility pages. Split out so their indexing rate does not
-    // get blended into the editorial numbers.
-    'sitemap-taxonomy.xml': [
-      ...(categories as { slug: string }[]).map((c) => ({ loc: `${SITE}/categories/${c.slug}` })),
-      ...TOOLS.map((t) => ({ loc: `${SITE}/tools/${t.slug}` })),
-    ],
+    'sitemap-news.xml': (news as { slug: string; date?: string }[]).map((n) => ({
+      loc: `${SITE}/news/${n.slug}`,
+      lastmod: iso(n.date),
+    })),
+
+    'sitemap-newsletters.xml': (newsletters as { slug: string }[]).map((n) => ({ loc: `${SITE}/newsletters/${n.slug}` })),
+
+    'sitemap-advent-of-devops.xml': (advent as { slug?: string; day?: number; updatedAt?: string; publishedAt?: string }[]).map((d) => ({
+      loc: `${SITE}/advent-of-devops/${d.slug ?? `day-${d.day}`}`,
+      lastmod: iso(d.updatedAt || d.publishedAt),
+    })),
+
+    'sitemap-hacktoberfest.xml': (hacktoberfest as { slug?: string; day?: number }[]).map((d) => ({
+      loc: `${SITE}/hacktoberfest/${d.slug ?? `day-${d.day}`}`,
+    })),
+
+    'sitemap-categories.xml': (categories as { slug: string }[]).map((c) => ({ loc: `${SITE}/categories/${c.slug}` })),
+
+    'sitemap-tools.xml': TOOLS.map((t) => ({ loc: `${SITE}/tools/${t.slug}` })),
   };
 
   let total = 0;
