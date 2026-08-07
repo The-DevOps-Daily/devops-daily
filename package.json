@@ -14,7 +14,7 @@
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "build": "pnpm images:all && pnpm copy:markdown && pnpm generate-search-index && pnpm generate-feed && next build && pnpm copy:markdown:out",
+    "build": "pnpm images:all && pnpm copy:markdown && pnpm generate-search-index && pnpm generate-feed && pnpm generate-section-sitemaps && next build && pnpm copy:markdown:out",
     "build:fast": "pnpm copy:markdown && pnpm generate-search-index && pnpm generate-feed && next build && pnpm copy:markdown:out",
     "build:cf": "pnpm copy:markdown && pnpm generate-search-index && pnpm generate-feed && next build && pnpm copy:markdown:out",
     "build:images": "pnpm images:all",
@@ -49,7 +49,8 @@
     "hooks:install": "sh scripts/git-hooks/install.sh",
     "check-links": "node --import tsx scripts/check-broken-links.ts",
     "check-internal-links": "tsx scripts/check-internal-links.ts",
-    "audit-content": "tsx scripts/audit-content.ts"
+    "audit-content": "tsx scripts/audit-content.ts",
+    "generate-section-sitemaps": "tsx scripts/generate-section-sitemaps.ts"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

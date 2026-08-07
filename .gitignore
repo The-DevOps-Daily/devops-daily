@@ -42,3 +42,9 @@ package-lock.json
 
 # skill eval workspace
 skill-eval-workspace/
+
+# Generated at build time by scripts/generate-section-sitemaps.ts. Committing
+# them means a stale snapshot sitting next to the real thing.
+# Globbed rather than listed, so adding a section does not need a second edit
+# here. Does not match /public/sitemap.xml, which has no hyphen.
+/public/sitemap-*.xml

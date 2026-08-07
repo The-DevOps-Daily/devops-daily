@@ -11,6 +11,9 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/cdn-cgi/',
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    // Both are listed so every crawler that reads robots.txt finds the section
+    // sitemaps without anyone submitting them by hand. The index points at one
+    // file per content type; /sitemap.xml stays as the complete list.
+    sitemap: [`${baseUrl}/sitemap.xml`, `${baseUrl}/sitemap-index.xml`],
   };
 }
