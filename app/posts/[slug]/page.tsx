@@ -11,6 +11,8 @@ import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
 import { RelatedPosts } from '@/components/related-posts';
 import { RelatedAcrossTypes } from '@/components/related-across-types';
 import { getRelatedAcrossTypes } from '@/lib/related-cross-type';
+import { RelatedSimulators } from '@/components/related-simulators';
+import { getRelatedSimulators } from '@/lib/related-simulators';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
 import { ReportIssue } from '@/components/report-issue';
 import { GiscusComments } from '@/components/giscus-comments';
@@ -95,6 +97,14 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
   // exercises, flashcards, or interview questions on the same topic. The
   // within-type "Related Posts" section above stays; this is the "also worth
   // your time" mix that nudges readers between content kinds.
+  // Hands-on simulators matching this post's topic. Kept separate from the
+  // cross-type mix above because that section caps each type at one of three
+  // slots, so a simulator regularly lost to a quiz or checklist.
+  const relatedSimulators = await getRelatedSimulators({
+    tags: post.tags ?? [],
+    categorySlug: post.category?.slug,
+  });
+
   const crossTypeRelated = await getRelatedAcrossTypes({
     current: {
       type: 'post',
@@ -150,6 +160,13 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
                 </div>
               )}
               <PostContent content={post.content} />
+
+              {relatedSimulators.length > 0 && (
+                <RelatedSimulators
+                  simulators={relatedSimulators}
+                  className="mt-12 pt-8 border-t border-border"
+                />
+              )}
 
               {/* Inline Sponsors */}
               <InlineSponsors variant="full" />
