@@ -42,3 +42,13 @@ package-lock.json
 
 # skill eval workspace
 skill-eval-workspace/
+
+# Generated at build time by scripts/generate-section-sitemaps.ts. Committing
+# them means a stale snapshot sitting next to the real thing.
+/public/sitemap-posts.xml
+/public/sitemap-guides.xml
+/public/sitemap-interactive.xml
+/public/sitemap-learning.xml
+/public/sitemap-timely.xml
+/public/sitemap-taxonomy.xml
+/public/sitemap-index.xml

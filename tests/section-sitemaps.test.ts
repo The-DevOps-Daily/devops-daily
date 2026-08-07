@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -33,6 +34,16 @@ function locs(xml: string): string[] {
 }
 
 describe('section sitemaps', () => {
+  // The files are build artefacts and are not committed, so generate them
+  // first. This also means the test exercises the generator itself rather than
+  // a snapshot of its output, which is the point.
+  beforeAll(() => {
+    execFileSync('npx', ['tsx', 'scripts/generate-section-sitemaps.ts'], {
+      cwd: process.cwd(),
+      stdio: 'pipe',
+    });
+  }, 120_000);
+
   it.each(SECTIONS)('%s exists and is a well-formed urlset', (file) => {
     const xml = read(file);
     expect(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>')).toBe(true);

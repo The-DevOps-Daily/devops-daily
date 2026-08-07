@@ -56,9 +56,12 @@ function renderUrlset(entries: Entry[]): string {
 }
 
 function renderIndex(files: string[]): string {
-  const now = new Date().toISOString();
+  // Deliberately no <lastmod>. Stamping the current time would make this file
+  // change on every run, producing a diff on every build for no information
+  // gain. It is optional in the spec, and crawlers use each child sitemap's
+  // own dates anyway.
   const items = files
-    .map((f) => `  <sitemap>\n    <loc>${SITE}/${f}</loc>\n    <lastmod>${now}</lastmod>\n  </sitemap>`)
+    .map((f) => `  <sitemap>\n    <loc>${SITE}/${f}</loc>\n  </sitemap>`)
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items}\n</sitemapindex>\n`;
 }
