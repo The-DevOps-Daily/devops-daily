@@ -11,19 +11,26 @@ import {
   Clock3,
   Code2,
   Database,
+  GitBranch,
+  GitCommit,
+  GitMerge,
   GitPullRequest,
   Globe2,
   LoaderCircle,
+  LockKeyhole,
   Network,
   Package,
+  Pause,
   Play,
   RefreshCw,
   ServerCog,
   ShieldCheck,
+  ShoppingCart,
   Trash2,
   UserCheck,
   Workflow,
   X,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -44,20 +51,29 @@ import {
   recordPreviewReview,
   type PreviewEnvironmentConfig,
   type PreviewEnvironmentState,
+  type PreviewFailure,
   type PreviewFailureId,
   type PreviewStageId,
   type StageStatus,
 } from '@/lib/games/preview-environment-engine';
 
 type PreviewScenarioId = 'api-change' | 'checkout-flow' | 'full-product';
+type StoryActor = 'developer' | 'platform';
+type StoryPhaseId = 'intent' | 'plan' | 'create' | 'review' | 'remove';
 
 interface PreviewScenario {
   id: PreviewScenarioId;
   label: string;
   detail: string;
-  icon: LucideIcon;
   failure: PreviewFailureId;
   config: Partial<PreviewEnvironmentConfig>;
+}
+
+interface StoryPhase {
+  id: StoryPhaseId;
+  label: string;
+  developerTitle: string;
+  platformTitle: string;
 }
 
 const PREVIEW_SCENARIOS: PreviewScenario[] = [
@@ -65,7 +81,6 @@ const PREVIEW_SCENARIOS: PreviewScenario[] = [
     id: 'api-change',
     label: 'API change',
     detail: 'One backend service',
-    icon: ServerCog,
     failure: 'missing-secret',
     config: {
       mode: 'single-service',
@@ -80,7 +95,6 @@ const PREVIEW_SCENARIOS: PreviewScenario[] = [
     id: 'checkout-flow',
     label: 'Checkout flow',
     detail: 'Web and API together',
-    icon: Globe2,
     failure: 'branch-mismatch',
     config: {
       mode: 'full-stack',
@@ -95,7 +109,6 @@ const PREVIEW_SCENARIOS: PreviewScenario[] = [
     id: 'full-product',
     label: 'Full product',
     detail: 'Web, API, and worker',
-    icon: Boxes,
     failure: 'revision-drift',
     config: {
       mode: 'full-stack',
@@ -108,315 +121,86 @@ const PREVIEW_SCENARIOS: PreviewScenario[] = [
   },
 ];
 
-type TimelinePhaseId = 'intent' | 'plan' | 'create' | 'review' | 'remove';
-type TimelineLane = 'developer' | 'platform';
-
-interface TimelinePhase {
-  id: TimelinePhaseId;
-  label: string;
-  developer: { title: string; detail: string; icon: LucideIcon };
-  platform: { title: string; detail: string; icon: LucideIcon };
-}
-
-const TIMELINE_PHASES: TimelinePhase[] = [
+const STORY_PHASES: StoryPhase[] = [
   {
     id: 'intent',
-    label: 'Intent',
-    developer: {
-      title: 'Add preview label',
-      detail: 'PR #184 · checkout-v2',
-      icon: GitPullRequest,
-    },
-    platform: { title: 'Detect PR intent', detail: 'Webhook sees the label', icon: Workflow },
+    label: 'Open PR',
+    developerTitle: 'Ask for a preview',
+    platformTitle: 'Notice the pull request',
   },
   {
     id: 'plan',
     label: 'Plan',
-    developer: { title: 'Watch checks run', detail: 'Live status returns to the PR', icon: Clock3 },
-    platform: {
-      title: 'Render desired state',
-      detail: 'ApplicationSet + Helm values',
-      icon: Package,
-    },
+    developerTitle: 'Watch the checks',
+    platformTitle: 'Build the desired state',
   },
   {
     id: 'create',
-    label: 'Create',
-    developer: { title: 'Receive test domains', detail: 'Web and API preview URLs', icon: Globe2 },
-    platform: { title: 'Create isolated stack', detail: 'Namespace + apps + data', icon: Boxes },
+    label: 'Deploy',
+    developerTitle: 'Wait for the preview links',
+    platformTitle: 'Create an isolated environment',
   },
   {
     id: 'review',
     label: 'Review',
-    developer: { title: 'Try the change', detail: 'Approve or request changes', icon: UserCheck },
-    platform: {
-      title: 'Verify what is running',
-      detail: 'Health + commit revision',
-      icon: ShieldCheck,
-    },
+    developerTitle: 'Try the change',
+    platformTitle: 'Prove the right code is healthy',
   },
   {
     id: 'remove',
-    label: 'Remove',
-    developer: {
-      title: 'Close or merge PR',
-      detail: 'The preview is no longer needed',
-      icon: Trash2,
-    },
-    platform: {
-      title: 'Prune the preview',
-      detail: 'Argo deletes generated resources',
-      icon: RefreshCw,
-    },
+    label: 'Clean up',
+    developerTitle: 'Close the pull request',
+    platformTitle: 'Remove every temporary resource',
   },
 ];
 
-function scenarioState(scenarioId: PreviewScenarioId, challengeMode: boolean) {
+type ResourceStatus = 'waiting' | 'creating' | 'ready' | 'removed' | 'failed';
+
+function scenarioState(scenarioId: PreviewScenarioId, addProblem: boolean) {
   const scenario = PREVIEW_SCENARIOS.find((item) => item.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
   return createPreviewEnvironmentState({
     ...scenario.config,
-    injectedFailure: challengeMode ? scenario.failure : 'none',
+    injectedFailure: addProblem ? scenario.failure : 'none',
     revisionGate: true,
   });
 }
 
-function phaseStatus(state: PreviewEnvironmentState, stages: PreviewStageId[]): StageStatus {
-  const statuses = stages.map((stage) => state.stageStatuses[stage]);
-  if (statuses.includes('failed')) return 'failed';
-  if (statuses.every((status) => status === 'complete')) return 'complete';
-  if (statuses.some((status) => status === 'active' || status === 'remediated')) return 'active';
-  if (statuses.some((status) => status === 'complete')) return 'active';
-  return 'pending';
+function storyPhaseIndex(state: PreviewEnvironmentState): number {
+  if (state.status === 'reviewed' || state.status === 'cleaning' || state.status === 'removed') {
+    return 4;
+  }
+  if (state.status === 'ready') return 3;
+
+  const stage = PREVIEW_STAGES[Math.min(state.stageIndex, PREVIEW_STAGES.length - 1)]?.id;
+  if (stage === 'coordinate' || stage === 'reconcile') return 1;
+  if (stage === 'provision' || stage === 'expose') return 2;
+  if (stage === 'verify') return 3;
+  return 0;
 }
 
-function friendlyStatus(state: PreviewEnvironmentState): string {
-  if (state.status === 'configured') return 'A pull request asks for a safe place to test.';
-  if (state.status === 'blocked') return 'Both workflows are paused until you choose a fix.';
-  if (state.status === 'ready') return 'The preview is ready. Open it and choose one result.';
-  if (state.status === 'reviewed') {
-    return state.reviewDecision === 'approve'
-      ? 'Review recorded. Close the PR when you are ready to clean up.'
-      : 'Changes requested. Close this preview before updating the PR.';
+function activeStageId(state: PreviewEnvironmentState): PreviewStageId {
+  return PREVIEW_STAGES[Math.min(state.stageIndex, PREVIEW_STAGES.length - 1)]?.id ?? 'verify';
+}
+
+function friendlyStatus(state: PreviewEnvironmentState, actor: StoryActor): string {
+  if (state.status === 'configured') {
+    return actor === 'developer'
+      ? 'Add the preview label to begin.'
+      : 'The preview request reaches Argo CD.';
   }
+  if (state.status === 'blocked') return 'Argo paused before an unsafe preview could be shared.';
+  if (state.status === 'ready') return 'The temporary app is ready for a human decision.';
+  if (state.status === 'reviewed') return 'The review is recorded. One clean-up step remains.';
   if (state.status === 'cleaning') {
     const step = CLEANUP_STEPS[state.cleanupIndex];
-    return step
-      ? `Cleaning up: ${step.label.toLowerCase()}…`
-      : 'Checking that nothing was left behind…';
+    return step ? `${step.label}…` : 'Confirming the environment is empty…';
   }
-  if (state.status === 'removed') return 'Gone. No forgotten server, database, URL, or cloud bill.';
+  if (state.status === 'removed') return 'The preview is gone and its cost is back to zero.';
 
-  const stage = PREVIEW_STAGES[state.stageIndex];
-  const messages: Record<PreviewStageId, string> = {
-    intent: 'Reading what changed in the pull request…',
-    coordinate: 'Choosing the matching version of every service…',
-    reconcile: 'Turning the plan into temporary infrastructure…',
-    provision: 'Starting a private copy of the application…',
-    expose: 'Adding safe test data and a review URL…',
-    verify: 'Checking that the right code is healthy and ready…',
-  };
-  return stage ? messages[stage.id] : 'Finishing the preview…';
+  return actor === 'developer'
+    ? 'What the developer sees at this moment.'
+    : 'How Argo CD responds behind the scenes.';
 }
-
-function timelineStatus(
-  state: PreviewEnvironmentState,
-  phase: TimelinePhaseId,
-  lane: TimelineLane
-): StageStatus {
-  if (phase === 'intent') return phaseStatus(state, ['intent']);
-  if (phase === 'plan') return phaseStatus(state, ['coordinate', 'reconcile']);
-  if (phase === 'create') return phaseStatus(state, ['provision', 'expose']);
-  if (phase === 'review') {
-    if (lane === 'developer' && state.status === 'ready') return 'active';
-    if (
-      lane === 'developer' &&
-      (state.status === 'reviewed' || state.status === 'cleaning' || state.status === 'removed')
-    ) {
-      return 'complete';
-    }
-    return phaseStatus(state, ['verify']);
-  }
-
-  if (lane === 'developer') {
-    if (state.status === 'reviewed') return 'active';
-    if (state.status === 'cleaning' || state.status === 'removed') return 'complete';
-  }
-  if (lane === 'platform') {
-    if (state.status === 'cleaning') return 'active';
-    if (state.status === 'removed') return 'complete';
-  }
-  return 'pending';
-}
-
-function StatusIcon({ status, icon: Icon }: { status: StageStatus; icon: LucideIcon }) {
-  const active = status === 'active' || status === 'remediated';
-  const complete = status === 'complete';
-  const failed = status === 'failed';
-
-  if (active) return <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />;
-  if (complete) return <Check className="h-4 w-4" />;
-  if (failed) return <AlertTriangle className="h-4 w-4" />;
-  return <Icon className="h-4 w-4" />;
-}
-
-function LaneStep({
-  item,
-  status,
-  showArrow = false,
-  compact = false,
-}: {
-  item: { title: string; detail: string; icon: LucideIcon };
-  status: StageStatus;
-  showArrow?: boolean;
-  compact?: boolean;
-}) {
-  return (
-    <div className="relative h-full">
-      <div
-        className={cn(
-          'flex h-full flex-col rounded-lg border bg-background/85 transition-all duration-500',
-          compact ? 'min-h-14 p-2' : 'min-h-20 p-3',
-          status === 'pending' && 'border-dashed opacity-40',
-          (status === 'active' || status === 'remediated') &&
-            'border-blue-500/50 bg-blue-500/8 text-blue-700 dark:text-blue-300',
-          status === 'complete' && 'border-emerald-500/35 bg-emerald-500/5',
-          status === 'failed' && 'border-red-500/50 bg-red-500/8 text-red-700 dark:text-red-300'
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'grid shrink-0 place-items-center rounded-md border bg-background',
-              compact ? 'h-6 w-6' : 'h-7 w-7'
-            )}
-          >
-            <StatusIcon status={status} icon={item.icon} />
-          </span>
-          <p className={cn('font-semibold leading-tight', compact ? 'text-[11px]' : 'text-xs')}>
-            {item.title}
-          </p>
-        </div>
-        <p
-          className={cn(
-            'mt-2 text-[11px] leading-snug text-muted-foreground',
-            compact && 'hidden sm:block'
-          )}
-        >
-          {item.detail}
-        </p>
-      </div>
-      {showArrow && (
-        <ArrowRight
-          className={cn(
-            'absolute -right-4 top-1/2 z-20 h-4 w-4 -translate-y-1/2 text-muted-foreground/30',
-            status === 'complete' && 'text-emerald-500',
-            (status === 'active' || status === 'remediated') && 'text-blue-500'
-          )}
-          aria-hidden="true"
-        />
-      )}
-    </div>
-  );
-}
-
-function LaneLabel({ lane }: { lane: TimelineLane }) {
-  const developer = lane === 'developer';
-  return (
-    <div className="flex h-full flex-col justify-center rounded-lg border bg-background/60 px-3 py-2">
-      <div className="flex items-center gap-2">
-        {developer ? (
-          <UserCheck className="h-4 w-4 text-blue-500" />
-        ) : (
-          <Workflow className="h-4 w-4 text-violet-500" />
-        )}
-        <span className="text-xs font-semibold">{developer ? 'Developer' : 'Argo CD'}</span>
-      </div>
-      <span className="mt-1 text-[10px] text-muted-foreground">
-        {developer ? 'what you see' : 'what happens'}
-      </span>
-    </div>
-  );
-}
-
-function DualLaneTimeline({ state }: { state: PreviewEnvironmentState }) {
-  return (
-    <div className="rounded-xl border bg-gradient-to-br from-blue-500/5 via-background to-violet-500/5 p-3 sm:p-4">
-      <div className="hidden xl:block">
-        <div className="grid grid-cols-[108px_repeat(5,minmax(0,1fr))] gap-4">
-          <div />
-          {TIMELINE_PHASES.map((phase, index) => (
-            <p
-              key={phase.id}
-              className="text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
-            >
-              {index + 1}. {phase.label}
-            </p>
-          ))}
-
-          <LaneLabel lane="developer" />
-          {TIMELINE_PHASES.map((phase, index) => (
-            <LaneStep
-              key={`developer-${phase.id}`}
-              item={phase.developer}
-              status={timelineStatus(state, phase.id, 'developer')}
-              showArrow={index < TIMELINE_PHASES.length - 1}
-            />
-          ))}
-
-          <LaneLabel lane="platform" />
-          {TIMELINE_PHASES.map((phase, index) => (
-            <LaneStep
-              key={`platform-${phase.id}`}
-              item={phase.platform}
-              status={timelineStatus(state, phase.id, 'platform')}
-              showArrow={index < TIMELINE_PHASES.length - 1}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="xl:hidden">
-        <div className="grid grid-cols-[30px_minmax(0,1fr)_14px_minmax(0,1fr)] items-center gap-1.5 sm:grid-cols-[72px_minmax(0,1fr)_18px_minmax(0,1fr)] sm:gap-2">
-          <div />
-          <div className="flex items-center justify-center gap-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-300">
-            <UserCheck className="h-3.5 w-3.5" /> Developer
-          </div>
-          <div />
-          <div className="flex items-center justify-center gap-1.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-300">
-            <Workflow className="h-3.5 w-3.5" /> Argo CD
-          </div>
-
-          {TIMELINE_PHASES.map((phase, index) => (
-            <div key={phase.id} className="contents">
-              <div
-                className="text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
-                title={`${index + 1}. ${phase.label}`}
-              >
-                <span className="sm:hidden">{index + 1}</span>
-                <span className="hidden sm:inline">
-                  {index + 1}. {phase.label}
-                </span>
-              </div>
-              <LaneStep
-                item={phase.developer}
-                status={timelineStatus(state, phase.id, 'developer')}
-                compact
-              />
-              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/45" aria-hidden="true" />
-              <LaneStep
-                item={phase.platform}
-                status={timelineStatus(state, phase.id, 'platform')}
-                compact
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type ResourceStatus = 'waiting' | 'creating' | 'ready' | 'removed' | 'failed';
 
 function resourceStatus(
   state: PreviewEnvironmentState,
@@ -433,137 +217,654 @@ function resourceStatus(
   return 'ready';
 }
 
-function ResourceTile({
-  icon: Icon,
-  title,
-  detail,
+function StoryProgress({ activeIndex, done }: { activeIndex: number; done: boolean }) {
+  return (
+    <ol className="grid grid-cols-5" aria-label="Preview environment lifecycle">
+      {STORY_PHASES.map((phase, index) => {
+        const complete = done || index < activeIndex;
+        const active = !done && index === activeIndex;
+        return (
+          <li key={phase.id} className="relative flex flex-col items-center">
+            {index > 0 && (
+              <span
+                className={cn(
+                  'absolute right-1/2 top-3 h-0.5 w-full bg-border transition-colors duration-500',
+                  (complete || active) && 'bg-emerald-500/60'
+                )}
+                aria-hidden="true"
+              />
+            )}
+            <span
+              className={cn(
+                'relative z-10 grid h-6 w-6 place-items-center rounded-full border bg-background text-[10px] font-semibold transition-all duration-500',
+                complete && 'border-emerald-500 bg-emerald-500 text-white',
+                active && 'scale-110 border-blue-500 text-blue-600 ring-4 ring-blue-500/10'
+              )}
+            >
+              {complete ? <Check className="h-3.5 w-3.5" /> : index + 1}
+            </span>
+            <span
+              className={cn(
+                'mt-1.5 text-center text-[10px] font-medium text-muted-foreground',
+                (complete || active) && 'text-foreground'
+              )}
+            >
+              {phase.label}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function PerspectiveHandoff({ actor }: { actor: StoryActor }) {
+  return (
+    <div className="inline-flex items-center gap-1 rounded-full border bg-background/80 p-1 text-xs">
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all duration-500',
+          actor === 'developer'
+            ? 'bg-blue-500/12 font-semibold text-blue-700 dark:text-blue-300'
+            : 'text-muted-foreground'
+        )}
+      >
+        <UserCheck className="h-3.5 w-3.5" /> Developer
+      </span>
+      <ArrowRight
+        className={cn(
+          'h-3.5 w-3.5 text-muted-foreground transition-transform duration-500',
+          actor === 'platform' && 'translate-x-0.5 text-violet-500'
+        )}
+      />
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all duration-500',
+          actor === 'platform'
+            ? 'bg-violet-500/12 font-semibold text-violet-700 dark:text-violet-300'
+            : 'text-muted-foreground'
+        )}
+      >
+        <Workflow className="h-3.5 w-3.5" /> Argo CD
+      </span>
+    </div>
+  );
+}
+
+function StageStatusIcon({ status }: { status: StageStatus }) {
+  if (status === 'complete') return <Check className="h-4 w-4 text-emerald-500" />;
+  if (status === 'failed') return <AlertTriangle className="h-4 w-4 text-red-500" />;
+  if (status === 'active' || status === 'remediated') {
+    return <LoaderCircle className="h-4 w-4 text-blue-500 motion-safe:animate-spin" />;
+  }
+  return <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />;
+}
+
+function CheckRow({
+  label,
   status,
-  readyLabel,
-  removedLabel,
+  detail,
+}: {
+  label: string;
+  status: StageStatus;
+  detail: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 border-b px-3 py-3 last:border-0">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border bg-background">
+        <StageStatusIcon status={status} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">{label}</p>
+        <p className="truncate text-xs text-muted-foreground">{detail}</p>
+      </div>
+    </div>
+  );
+}
+
+function ResourceNode({
+  icon: Icon,
+  label,
+  status,
 }: {
   icon: LucideIcon;
-  title: string;
-  detail: string;
+  label: string;
   status: ResourceStatus;
-  readyLabel?: string;
-  removedLabel?: string;
 }) {
-  const labels: Record<ResourceStatus, string> = {
-    waiting: 'Waiting',
-    creating: 'Creating',
-    ready: readyLabel ?? 'Created',
-    removed: removedLabel ?? 'Removed',
-    failed: 'Blocked',
+  const statusLabel: Record<ResourceStatus, string> = {
+    waiting: 'waiting',
+    creating: 'creating',
+    ready: 'ready',
+    removed: 'removed',
+    failed: 'blocked',
   };
+
   return (
     <div
       className={cn(
-        'rounded-lg border bg-background/75 p-2.5 transition-all duration-500 sm:p-3',
-        status === 'waiting' && 'border-dashed opacity-35',
-        status === 'creating' && 'border-blue-500/50 bg-blue-500/8',
-        status === 'ready' && 'border-emerald-500/35 bg-emerald-500/5',
-        status === 'removed' && 'border-dashed opacity-35',
-        status === 'failed' && 'border-red-500/50 bg-red-500/8'
+        'flex min-h-20 flex-col items-center justify-center rounded-xl border bg-background/85 p-2 text-center transition-all duration-700',
+        status === 'waiting' && 'translate-y-2 border-dashed opacity-25',
+        status === 'creating' &&
+          'scale-[1.03] border-blue-500/60 bg-blue-500/8 shadow-lg shadow-blue-500/10',
+        status === 'ready' && 'border-emerald-500/40 bg-emerald-500/5',
+        status === 'removed' && 'scale-90 border-dashed opacity-20',
+        status === 'failed' && 'border-red-500/60 bg-red-500/8 text-red-600'
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <Icon className="h-4 w-4" />
-        <span className="text-[9px] font-medium uppercase tracking-wide text-muted-foreground">
-          {labels[status]}
-        </span>
-      </div>
-      <p className="mt-2 text-xs font-semibold">{title}</p>
-      <p className="mt-0.5 hidden text-[10px] leading-snug text-muted-foreground sm:block">
-        {detail}
+      {status === 'creating' ? (
+        <LoaderCircle className="h-5 w-5 motion-safe:animate-spin" />
+      ) : status === 'ready' ? (
+        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+      ) : status === 'failed' ? (
+        <AlertTriangle className="h-5 w-5" />
+      ) : (
+        <Icon className="h-5 w-5" />
+      )}
+      <p className="mt-1.5 text-xs font-semibold">{label}</p>
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        {statusLabel[status]}
       </p>
     </div>
   );
 }
 
-function ResourceBlueprint({ state }: { state: PreviewEnvironmentState }) {
-  const reviewUrlRemoved = state.cleanupStatuses['review-url'] === 'complete';
-  const workloadsRemoved = state.cleanupStatuses.workloads === 'complete';
-  const dependenciesRemoved = state.cleanupStatuses.dependencies === 'complete';
-  const namespaceRemoved = state.cleanupStatuses.namespace === 'complete';
-  const podCount = state.config.services.length;
+function DeveloperScene({
+  phase,
+  state,
+  reviewUrl,
+}: {
+  phase: StoryPhase;
+  state: PreviewEnvironmentState;
+  reviewUrl: string;
+}) {
+  if (phase.id === 'intent') {
+    return (
+      <div className="mx-auto grid w-full max-w-4xl gap-5 md:grid-cols-[1.35fr_0.65fr] md:items-center">
+        <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
+          <div className="flex items-center gap-2 border-b px-4 py-3">
+            <GitPullRequest className="h-4 w-4 text-emerald-500" />
+            <span className="text-sm font-semibold">Checkout v2</span>
+            <Badge variant="outline" className="ml-auto text-[10px]">
+              Open
+            </Badge>
+          </div>
+          <div className="space-y-3 p-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <GitBranch className="h-3.5 w-3.5" /> checkout-v2 → main
+            </div>
+            <div className="rounded-lg border bg-muted/25 p-3">
+              <div className="h-2 w-3/4 rounded bg-emerald-500/35" />
+              <div className="mt-2 h-2 w-1/2 rounded bg-emerald-500/25" />
+              <div className="mt-2 h-2 w-2/3 rounded bg-red-500/20" />
+              <div className="mt-2 h-2 w-5/6 rounded bg-emerald-500/20" />
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-xl border border-blue-500/40 bg-blue-500/8 p-6 text-center shadow-lg shadow-blue-500/10">
+          <span className="relative grid h-14 w-14 place-items-center rounded-full border border-blue-500/40 bg-background text-blue-600">
+            <Zap className="h-6 w-6" />
+            <span className="absolute inset-0 rounded-full ring-4 ring-blue-500/10 motion-safe:animate-ping" />
+          </span>
+          <p className="mt-3 text-sm font-semibold">preview</p>
+          <p className="text-xs text-muted-foreground">Label added</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase.id === 'plan') {
+    return (
+      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-xl border bg-background shadow-sm">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="flex items-center gap-2">
+            <GitCommit className="h-4 w-4" />
+            <span className="text-sm font-semibold">Checks</span>
+          </div>
+          <span className="text-xs text-muted-foreground">sha-8f3c2a1</span>
+        </div>
+        <CheckRow label="Read pull request" status={state.stageStatuses.intent} detail="PR #184" />
+        <CheckRow
+          label="Match service versions"
+          status={state.stageStatuses.coordinate}
+          detail="web + api"
+        />
+        <CheckRow
+          label="Prepare preview deployment"
+          status={state.stageStatuses.reconcile}
+          detail="Argo CD"
+        />
+      </div>
+    );
+  }
+
+  if (phase.id === 'create') {
+    const linksReady = state.stageStatuses.expose === 'complete';
+    return (
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="rounded-xl border bg-background p-4 shadow-sm sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violet-500/12 text-violet-600">
+              <Workflow className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold">Atomsized preview bot</p>
+                <span className="text-[10px] text-muted-foreground">just now</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {linksReady ? 'Your isolated preview is ready.' : 'Building your isolated preview…'}
+              </p>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {['Web preview', 'API preview'].map((label, index) => (
+                  <div
+                    key={label}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg border p-3 transition-all duration-700',
+                      linksReady
+                        ? 'border-emerald-500/35 bg-emerald-500/5'
+                        : 'border-dashed opacity-45'
+                    )}
+                  >
+                    {linksReady ? (
+                      <Globe2 className="h-4 w-4 text-emerald-500" />
+                    ) : (
+                      <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold">{label}</p>
+                      <p className="truncate font-mono text-[10px] text-muted-foreground">
+                        {linksReady
+                          ? index === 0
+                            ? reviewUrl
+                            : 'api-pr-184.preview.acme.dev'
+                          : 'Generating secure domain…'}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase.id === 'review') {
+    return (
+      <div className="mx-auto grid w-full max-w-4xl gap-4 md:grid-cols-[1.4fr_0.6fr]">
+        <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
+          <div className="flex items-center gap-2 border-b bg-muted/30 px-3 py-2">
+            <LockKeyhole className="h-3.5 w-3.5 text-emerald-500" />
+            <span className="truncate font-mono text-[10px] text-muted-foreground">
+              {reviewUrl}
+            </span>
+          </div>
+          <div className="grid min-h-56 place-items-center bg-gradient-to-br from-blue-500/8 to-violet-500/8 p-5">
+            <div className="w-full max-w-sm rounded-xl border bg-background p-4 shadow-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold">Acme Checkout</span>
+                <ShoppingCart className="h-4 w-4" />
+              </div>
+              <div className="mt-4 flex items-center gap-3 rounded-lg bg-muted/45 p-3">
+                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500/25 to-violet-500/25" />
+                <div className="flex-1">
+                  <div className="h-2.5 w-2/3 rounded bg-foreground/70" />
+                  <div className="mt-2 h-2 w-1/3 rounded bg-muted-foreground/35" />
+                </div>
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              </div>
+              <div className="mt-3 h-9 rounded-lg bg-blue-500/80" />
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-5 text-center">
+          <ShieldCheck className="h-10 w-10 text-emerald-500" />
+          <p className="mt-3 font-semibold">Safe to explore</p>
+          <p className="mt-1 text-xs text-muted-foreground">Production is untouched</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="mt-4 rounded-xl border border-dashed bg-background/45 p-3 sm:p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold">What Argo creates for preview #184</p>
-          <p className="text-xs text-muted-foreground">
-            Each tile appears as its owning stage reconciles.
-          </p>
-        </div>
-        <div className="hidden items-center gap-2 font-mono text-[10px] text-muted-foreground md:flex">
-          <span className="rounded border bg-background px-2 py-1">ApplicationSet</span>
-          <ArrowRight className="h-3.5 w-3.5" />
-          <span className="rounded border bg-background px-2 py-1">Helm release</span>
-          <ArrowRight className="h-3.5 w-3.5" />
-          <span className="rounded border bg-background px-2 py-1">preview-pr-184</span>
-        </div>
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        <ResourceTile
-          icon={Boxes}
-          title="Namespace"
-          detail="Isolation boundary"
-          status={resourceStatus(state, 'provision', namespaceRemoved, ['quota-exceeded'])}
-        />
-        <ResourceTile
-          icon={ServerCog}
-          title={`${podCount} app pod${podCount === 1 ? '' : 's'}`}
-          detail="PR image revisions"
-          status={resourceStatus(state, 'provision', workloadsRemoved, [
-            'quota-exceeded',
-            'missing-secret',
-            'readiness-failure',
-            'revision-drift',
-          ])}
-        />
-        <ResourceTile
-          icon={ServerCog}
-          title="Worker node capacity"
-          detail="Pods scheduled here"
-          status={resourceStatus(state, 'provision', namespaceRemoved, ['quota-exceeded'])}
-          readyLabel="Allocated"
-          removedLabel="Released"
-        />
-        <ResourceTile
-          icon={Database}
-          title="Isolated database"
-          detail="Safe preview data"
-          status={resourceStatus(state, 'expose', dependenciesRemoved, ['readiness-failure'])}
-        />
-        <ResourceTile
-          icon={Database}
-          title="Redis cache"
-          detail="Preview-scoped state"
-          status={resourceStatus(state, 'expose', dependenciesRemoved)}
-        />
-        <ResourceTile
-          icon={Network}
-          title="Domain + TLS"
-          detail="Private review URL"
-          status={resourceStatus(state, 'expose', reviewUrlRemoved, ['dns-pending'])}
-        />
-      </div>
-
-      <p className="mt-3 hidden text-[10px] text-muted-foreground sm:block">
-        Pods normally use existing worker nodes. Cluster autoscaling adds a node only when more
-        capacity is needed.
+    <div className="mx-auto flex w-full max-w-xl flex-col items-center rounded-xl border bg-background p-8 text-center shadow-sm">
+      <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-500/10 text-emerald-500">
+        {state.status === 'reviewed' ? (
+          <GitMerge className="h-7 w-7" />
+        ) : (
+          <Check className="h-7 w-7" />
+        )}
+      </span>
+      <p className="mt-4 text-lg font-semibold">
+        {state.status === 'reviewed' ? 'Review complete' : 'Pull request closed'}
       </p>
+      <p className="mt-1 text-sm text-muted-foreground">The preview can now disappear.</p>
+    </div>
+  );
+}
+
+function FailureScene({
+  failure,
+  state,
+  onFix,
+}: {
+  failure: PreviewFailure;
+  state: PreviewEnvironmentState;
+  onFix: (remediationId: string, correct: boolean) => void;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-3xl text-center">
+      <span className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-red-500/40 bg-red-500/10 text-red-500">
+        <AlertTriangle className="h-6 w-6" />
+      </span>
+      <p className="mt-3 text-lg font-semibold">Deployment paused</p>
+      <p className="mt-1 text-sm text-muted-foreground">{failure.summary}</p>
+      <div className="mx-auto mt-4 max-w-2xl overflow-x-auto rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 font-mono text-xs text-red-700 dark:text-red-300">
+        {failure.signal}
+      </div>
+      <p className="mt-5 text-sm font-semibold">Which fix should Argo apply?</p>
+      <div className="mt-3 grid gap-2 md:grid-cols-3">
+        {failure.remediationOptions.map((option) => (
+          <Button
+            key={option.id}
+            type="button"
+            variant="outline"
+            className="h-auto min-h-12 justify-center whitespace-normal text-center"
+            onClick={() => onFix(option.id, option.id === failure.correctRemediationId)}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </div>
+      {state.failedRemediationAttempts > 0 && (
+        <p className="mt-3 text-sm text-red-700 dark:text-red-300">
+          That does not repair this signal. {state.lastEvent}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ArgoScene({
+  phase,
+  state,
+  failure,
+  onFix,
+}: {
+  phase: StoryPhase;
+  state: PreviewEnvironmentState;
+  failure: PreviewFailure | null;
+  onFix: (remediationId: string, correct: boolean) => void;
+}) {
+  if (failure) return <FailureScene failure={failure} state={state} onFix={onFix} />;
+
+  if (phase.id === 'intent') {
+    return (
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-5 sm:flex-row">
+        {[
+          { icon: GitPullRequest, label: 'PR #184', detail: 'preview label' },
+          { icon: Zap, label: 'Webhook', detail: 'event received' },
+          { icon: Workflow, label: 'ApplicationSet', detail: 'generator matched' },
+        ].map((item, index) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label} className="contents">
+              <div className="flex w-full max-w-52 flex-col items-center rounded-xl border bg-background p-5 text-center shadow-sm">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-violet-500/10 text-violet-600">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <p className="mt-3 text-sm font-semibold">{item.label}</p>
+                <p className="text-xs text-muted-foreground">{item.detail}</p>
+              </div>
+              {index < 2 && (
+                <div className="relative h-6 w-px bg-border sm:h-px sm:w-16">
+                  <span className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500 motion-safe:animate-ping" />
+                  <ArrowRight className="absolute -right-1.5 top-1/2 hidden h-3 w-3 -translate-y-1/2 text-violet-500 sm:block" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (phase.id === 'plan') {
+    const coordinateStatus = state.stageStatuses.coordinate;
+    const reconcileStatus = state.stageStatuses.reconcile;
+    return (
+      <div className="mx-auto w-full max-w-4xl">
+        <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center">
+          <ResourceNode icon={GitBranch} label="PR generator" status="ready" />
+          <ArrowRight className="mx-auto h-5 w-5 rotate-90 text-muted-foreground md:rotate-0" />
+          <ResourceNode
+            icon={Package}
+            label="Helm values"
+            status={
+              coordinateStatus === 'failed'
+                ? 'failed'
+                : coordinateStatus === 'complete'
+                  ? 'ready'
+                  : 'creating'
+            }
+          />
+          <ArrowRight className="mx-auto h-5 w-5 rotate-90 text-muted-foreground md:rotate-0" />
+          <ResourceNode
+            icon={Workflow}
+            label="Preview app"
+            status={
+              reconcileStatus === 'failed'
+                ? 'failed'
+                : reconcileStatus === 'complete'
+                  ? 'ready'
+                  : reconcileStatus === 'pending'
+                    ? 'waiting'
+                    : 'creating'
+            }
+          />
+        </div>
+        <div className="mt-5 flex flex-wrap justify-center gap-2 font-mono text-[10px] text-muted-foreground">
+          <span className="rounded border bg-background px-2 py-1">branch: checkout-v2</span>
+          <span className="rounded border bg-background px-2 py-1">namespace: preview-pr-184</span>
+          <span className="rounded border bg-background px-2 py-1">
+            ttl: {state.config.ttlHours}h
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase.id === 'create') {
+    const reviewUrlRemoved = state.cleanupStatuses['review-url'] === 'complete';
+    const workloadsRemoved = state.cleanupStatuses.workloads === 'complete';
+    const dependenciesRemoved = state.cleanupStatuses.dependencies === 'complete';
+    const namespaceRemoved = state.cleanupStatuses.namespace === 'complete';
+    return (
+      <div className="mx-auto w-full max-w-5xl rounded-2xl border-2 border-dashed border-violet-500/35 bg-violet-500/5 p-3 sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Boxes className="h-4 w-4 text-violet-500" />
+            <span className="font-mono text-xs font-semibold">namespace / preview-pr-184</span>
+          </div>
+          <Badge variant="outline" className="text-[10px]">
+            isolated
+          </Badge>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          <ResourceNode
+            icon={Boxes}
+            label="Namespace"
+            status={resourceStatus(state, 'provision', namespaceRemoved, ['quota-exceeded'])}
+          />
+          <ResourceNode
+            icon={ServerCog}
+            label={`${state.config.services.length} app pods`}
+            status={resourceStatus(state, 'provision', workloadsRemoved, [
+              'quota-exceeded',
+              'missing-secret',
+              'readiness-failure',
+              'revision-drift',
+            ])}
+          />
+          <ResourceNode
+            icon={Network}
+            label="Network"
+            status={resourceStatus(state, 'provision', namespaceRemoved)}
+          />
+          <ResourceNode
+            icon={Database}
+            label="Database"
+            status={resourceStatus(state, 'expose', dependenciesRemoved, ['readiness-failure'])}
+          />
+          <ResourceNode
+            icon={Database}
+            label="Redis"
+            status={resourceStatus(state, 'expose', dependenciesRemoved)}
+          />
+          <ResourceNode
+            icon={Globe2}
+            label="Domain + TLS"
+            status={resourceStatus(state, 'expose', reviewUrlRemoved, ['dns-pending'])}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (phase.id === 'review') {
+    const ready = state.stageStatuses.verify === 'complete' || state.status === 'ready';
+    return (
+      <div className="mx-auto grid w-full max-w-4xl gap-4 md:grid-cols-[0.8fr_1.2fr]">
+        <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-6 text-center">
+          {ready ? (
+            <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+          ) : (
+            <LoaderCircle className="h-12 w-12 text-blue-500 motion-safe:animate-spin" />
+          )}
+          <p className="mt-3 text-lg font-semibold">{ready ? 'Healthy & Synced' : 'Verifying…'}</p>
+          <p className="mt-1 font-mono text-xs text-muted-foreground">sha-8f3c2a1</p>
+        </div>
+        <div className="rounded-xl border bg-background p-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold">preview-pr-184</p>
+            <Badge
+              variant="outline"
+              className={cn(ready && 'border-emerald-500/40 text-emerald-600')}
+            >
+              {ready ? 'Synced' : 'Progressing'}
+            </Badge>
+          </div>
+          <div className="mt-6 flex items-center justify-center gap-2 sm:gap-4">
+            {[Globe2, ServerCog, Database].map((Icon, index) => (
+              <div key={index} className="contents">
+                <span className="grid h-12 w-12 place-items-center rounded-xl border border-emerald-500/35 bg-emerald-500/5">
+                  <Icon className="h-5 w-5" />
+                </span>
+                {index < 2 && <ArrowRight className="h-4 w-4 text-emerald-500" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const cleanupStatus = (stepId: (typeof CLEANUP_STEPS)[number]['id']): ResourceStatus => {
+    const status = state.cleanupStatuses[stepId];
+    if (status === 'complete' || state.status === 'removed') return 'removed';
+    if (status === 'active') return 'creating';
+    return 'ready';
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-5xl">
+      <div className="rounded-2xl border-2 border-dashed p-4 sm:p-6">
+        <div className="flex items-center justify-between gap-2">
+          <p className="font-mono text-xs font-semibold">namespace / preview-pr-184</p>
+          <Badge variant="outline">{state.status === 'removed' ? '$0.00/hr' : 'Pruning…'}</Badge>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+          <ResourceNode icon={Globe2} label="Domain" status={cleanupStatus('review-url')} />
+          <ResourceNode icon={ServerCog} label="App pods" status={cleanupStatus('workloads')} />
+          <ResourceNode icon={Database} label="Data" status={cleanupStatus('dependencies')} />
+          <ResourceNode icon={Boxes} label="Namespace" status={cleanupStatus('namespace')} />
+          <ResourceNode icon={Workflow} label="Argo app" status={cleanupStatus('git-intent')} />
+        </div>
+        {state.status === 'removed' && (
+          <div className="mt-5 flex items-center justify-center gap-2 text-sm font-semibold text-emerald-600">
+            <CheckCircle2 className="h-5 w-5" /> Nothing left behind
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SceneWindow({
+  actor,
+  phase,
+  sceneKey,
+  children,
+}: {
+  actor: StoryActor;
+  phase: StoryPhase;
+  sceneKey: string;
+  children: React.ReactNode;
+}) {
+  const developer = actor === 'developer';
+  return (
+    <div
+      className={cn(
+        'overflow-hidden rounded-2xl border bg-background shadow-xl transition-colors duration-500',
+        developer
+          ? 'border-blue-500/35 shadow-blue-500/5'
+          : 'border-violet-500/35 shadow-violet-500/5'
+      )}
+    >
+      <div className="flex items-center gap-3 border-b bg-muted/35 px-3 py-2.5 sm:px-4">
+        <div className="flex gap-1.5" aria-hidden="true">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
+        </div>
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-md border bg-background/80 px-3 py-1 font-mono text-[10px] text-muted-foreground">
+          {developer ? <LockKeyhole className="h-3 w-3" /> : <Workflow className="h-3 w-3" />}
+          <span className="truncate">
+            {developer
+              ? phase.id === 'review'
+                ? 'preview-pr-184.atomsized.dev'
+                : 'github.com/acme/store/pull/184'
+              : 'argo.acme.internal/applications/preview-pr-184'}
+          </span>
+        </div>
+        <Badge
+          variant="outline"
+          className={cn(
+            'hidden text-[10px] sm:inline-flex',
+            developer ? 'border-blue-500/30 text-blue-600' : 'border-violet-500/30 text-violet-600'
+          )}
+        >
+          {developer ? 'Developer view' : 'Argo CD view'}
+        </Badge>
+      </div>
+      <div
+        key={sceneKey}
+        className="grid min-h-[390px] place-items-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/35 p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-4 motion-safe:duration-500 sm:min-h-[430px] sm:p-7"
+      >
+        {children}
+      </div>
     </div>
   );
 }
 
 export default function PreviewEnvironmentSimulator() {
   const [scenarioId, setScenarioId] = useState<PreviewScenarioId>('checkout-flow');
-  const [challengeMode, setChallengeMode] = useState(false);
+  const [addProblem, setAddProblem] = useState(false);
   const [state, setState] = useState(() => scenarioState('checkout-flow', false));
   const [running, setRunning] = useState(false);
+  const [storyStarted, setStoryStarted] = useState(false);
+  const [actorBeat, setActorBeat] = useState<StoryActor>('developer');
 
   const metrics = useMemo(() => getPreviewMetrics(state.config), [state.config]);
   const evidence = useMemo(() => getPreviewEvidence(state.config), [state.config]);
@@ -571,34 +872,78 @@ export default function PreviewEnvironmentSimulator() {
   const failure = state.activeFailure ? PREVIEW_FAILURES[state.activeFailure] : null;
   const canAdvance = ['configured', 'running', 'cleaning'].includes(state.status);
   const canConfigure = state.status === 'configured' || state.status === 'removed';
+  const phaseIndex = storyPhaseIndex(state);
+  const phase = STORY_PHASES[phaseIndex];
+  const stageId = activeStageId(state);
   const selectedScenario =
     PREVIEW_SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
 
+  const actor: StoryActor =
+    state.status === 'blocked' || state.status === 'cleaning' || state.status === 'removed'
+      ? 'platform'
+      : state.status === 'configured'
+        ? storyStarted
+          ? actorBeat
+          : 'developer'
+        : state.status === 'ready' || state.status === 'reviewed'
+          ? 'developer'
+          : actorBeat;
+
   useEffect(() => {
     if (!running || !canAdvance) return;
-    const timer = window.setInterval(() => {
-      setState((current) => advancePreviewEnvironment(current));
-    }, 900);
-    return () => window.clearInterval(timer);
-  }, [canAdvance, running]);
 
-  const resetWith = (nextScenario: PreviewScenarioId, nextChallenge: boolean) => {
+    const cleaning = state.status === 'cleaning';
+    const timer = window.setTimeout(
+      () => {
+        if (cleaning) {
+          setState((current) => advancePreviewEnvironment(current));
+          return;
+        }
+
+        if (actorBeat === 'developer') {
+          setActorBeat('platform');
+          return;
+        }
+
+        setState((current) => advancePreviewEnvironment(current));
+        setActorBeat('developer');
+      },
+      cleaning ? 850 : 1250
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [actorBeat, canAdvance, running, state.cleanupIndex, state.stageIndex, state.status]);
+
+  const resetWith = (nextScenario: PreviewScenarioId, nextAddProblem: boolean) => {
     setScenarioId(nextScenario);
-    setChallengeMode(nextChallenge);
-    setState(scenarioState(nextScenario, nextChallenge));
+    setAddProblem(nextAddProblem);
+    setState(scenarioState(nextScenario, nextAddProblem));
+    setActorBeat('developer');
+    setStoryStarted(false);
     setRunning(false);
   };
 
   const start = () => {
-    if (state.status === 'removed') {
-      setState(scenarioState(scenarioId, challengeMode));
-    }
+    if (state.status === 'removed') setState(scenarioState(scenarioId, addProblem));
+    setActorBeat('developer');
+    setStoryStarted(true);
     setRunning(true);
   };
 
+  const applyFix = (remediationId: string, correct: boolean) => {
+    setState((current) => applyPreviewRemediation(current, remediationId));
+    if (correct) {
+      setActorBeat('platform');
+      setRunning(true);
+    }
+  };
+
+  const sceneKey = `${phase.id}-${actor}-${stageId}-${state.status}-${state.cleanupIndex}`;
+  const sharedDecision = state.status === 'ready' || state.status === 'reviewed';
+
   return (
     <div className="overflow-hidden rounded-xl border bg-muted/15 shadow-sm">
-      <div className="border-b bg-background/85 p-3 sm:p-4">
+      <div className="border-b bg-background/90 p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -610,11 +955,9 @@ export default function PreviewEnvironmentSimulator() {
               </Badge>
               <span className="text-xs text-muted-foreground">checkout-v2</span>
             </div>
-            <h2 className="mt-2 text-xl font-semibold">
-              Give this pull request its own temporary app
-            </h2>
+            <h2 className="mt-2 text-xl font-semibold">Watch a preview environment come alive</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Build it, open it, review it, then watch it disappear.
+              One moment at a time—from the developer action to Argo&apos;s response.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -626,21 +969,19 @@ export default function PreviewEnvironmentSimulator() {
               {state.status === 'removed' ? '$0.00' : `$${metrics.hourlyCost.toFixed(2)}`}/hr
             </span>
             <span>·</span>
-            <span>deletes in {state.config.ttlHours}h</span>
+            <span>TTL {state.config.ttlHours}h</span>
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 rounded-xl border bg-muted/25 p-3 md:flex-row md:items-end">
-          <label className="block min-w-0 md:w-56">
+        <div className="mt-4 grid gap-3 rounded-xl border bg-muted/25 p-3 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
+          <label className="block min-w-0">
             <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Example
             </span>
             <select
               value={scenarioId}
               disabled={!canConfigure}
-              onChange={(event) =>
-                resetWith(event.target.value as PreviewScenarioId, challengeMode)
-              }
+              onChange={(event) => resetWith(event.target.value as PreviewScenarioId, addProblem)}
               className="h-9 w-full rounded-md border bg-background px-3 text-sm font-medium outline-none transition-colors focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {PREVIEW_SCENARIOS.map((option) => (
@@ -651,213 +992,174 @@ export default function PreviewEnvironmentSimulator() {
             </select>
           </label>
 
-          <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border bg-background/65 px-3 py-2">
+          <div className="flex min-w-0 items-center gap-3 rounded-lg border bg-background/70 px-3 py-2">
             <Switch
-              id="preview-challenge-mode"
-              checked={challengeMode}
+              id="preview-problem-mode"
+              checked={addProblem}
               disabled={!canConfigure}
               onCheckedChange={(checked) => resetWith(scenarioId, checked)}
             />
-            <label htmlFor="preview-challenge-mode" className="min-w-0 cursor-pointer">
+            <label htmlFor="preview-problem-mode" className="min-w-0 cursor-pointer">
               <span className="block text-xs font-semibold">Add a problem to solve</span>
               <span className="block truncate text-[10px] text-muted-foreground">
-                {challengeMode
-                  ? 'The deployment will pause once so you can fix it'
+                {addProblem
+                  ? 'Argo will pause once and let you repair the deployment'
                   : `Optional · ${selectedScenario.detail}`}
               </span>
             </label>
-          </div>
-
-          <div className="flex shrink-0 gap-2">
-            {!canConfigure && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="flex-1 md:flex-none"
-                onClick={() => resetWith(scenarioId, challengeMode)}
-              >
-                <RefreshCw className="h-4 w-4" /> Reset
-              </Button>
-            )}
-            {canConfigure && (
-              <Button type="button" size="sm" className="flex-1 md:flex-none" onClick={start}>
-                <Play className="h-4 w-4" />
-                {state.status === 'removed' ? 'Build again' : 'Create preview'}
-              </Button>
-            )}
           </div>
         </div>
       </div>
 
       <div className="p-3 sm:p-4">
-        <div
-          className={cn(
-            'mb-3 flex min-h-11 rounded-lg border bg-background/60 px-3 py-2.5',
-            state.status === 'ready' || state.status === 'reviewed'
-              ? 'flex-col items-center justify-center gap-2 text-center'
-              : 'items-center justify-center'
-          )}
-          aria-live="polite"
-        >
-          <div
-            className={cn(
-              'flex items-center',
-              state.status === 'ready' || state.status === 'reviewed'
-                ? 'justify-center text-center'
-                : 'text-left'
-            )}
-          >
-            {state.status === 'blocked' ? (
-              <AlertTriangle className="mr-2 h-4 w-4 shrink-0 text-red-500" />
-            ) : state.status === 'ready' ||
-              state.status === 'reviewed' ||
-              state.status === 'removed' ? (
-              <CheckCircle2 className="mr-2 h-4 w-4 shrink-0 text-emerald-500" />
-            ) : (
-              <Workflow className="mr-2 h-4 w-4 shrink-0 text-blue-500" />
-            )}
-            <p className="text-sm font-medium">{friendlyStatus(state)}</p>
+        <StoryProgress activeIndex={phaseIndex} done={state.status === 'removed'} />
+
+        <div className="my-3 flex flex-col items-center justify-center gap-2 text-center sm:my-4">
+          <PerspectiveHandoff actor={actor} />
+          <div aria-live="polite">
+            <p className="text-sm font-semibold">
+              {actor === 'developer' ? phase.developerTitle : phase.platformTitle}
+            </p>
+            <p className="text-xs text-muted-foreground">{friendlyStatus(state, actor)}</p>
           </div>
-
-          {state.status === 'ready' && (
-            <div className="grid w-full max-w-sm grid-cols-2 gap-2">
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setState((current) => recordPreviewReview(current, 'approve'))}
-              >
-                <Check className="h-4 w-4" /> Looks good
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() =>
-                  setState((current) => recordPreviewReview(current, 'request-changes'))
-                }
-              >
-                <X className="h-4 w-4" /> Needs work
-              </Button>
-            </div>
-          )}
-
-          {state.status === 'reviewed' && (
-            <Button
-              type="button"
-              size="sm"
-              className="w-full max-w-xs"
-              onClick={() => {
-                setState((current) => beginPreviewTeardown(current, 'pr-closed'));
-                setRunning(true);
-              }}
-            >
-              <Trash2 className="h-4 w-4" /> Close PR &amp; clean up
-            </Button>
-          )}
         </div>
 
-        {failure && (
-          <div className="mx-auto mb-3 max-w-3xl rounded-xl border border-red-500/40 bg-red-500/5 p-3 sm:p-4">
-            <div className="flex flex-col items-center text-center">
-              <div className="grid h-9 w-9 place-items-center rounded-full bg-red-500/10 text-red-500">
-                <AlertTriangle className="h-4 w-4" />
-              </div>
-              <h3 className="mt-2 font-semibold">Preview paused: {failure.label}</h3>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{failure.summary}</p>
-              <p className="mt-2 max-w-full overflow-x-auto rounded-md border bg-background/70 px-3 py-2 font-mono text-xs text-red-700 dark:text-red-300">
-                {failure.signal}
-              </p>
+        <SceneWindow actor={actor} phase={phase} sceneKey={sceneKey}>
+          {actor === 'developer' ? (
+            <DeveloperScene phase={phase} state={state} reviewUrl={evidence.reviewUrl} />
+          ) : (
+            <ArgoScene phase={phase} state={state} failure={failure} onFix={applyFix} />
+          )}
+        </SceneWindow>
+
+        <div
+          className={cn(
+            'mt-3 flex min-h-11 gap-2 rounded-xl border bg-background/75 p-2.5',
+            sharedDecision
+              ? 'flex-col items-center justify-center text-center'
+              : 'flex-wrap items-center justify-center sm:justify-between'
+          )}
+        >
+          {!sharedDecision && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {running && canAdvance ? (
+                <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
+              ) : state.status === 'removed' ? (
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : (
+                <Clock3 className="h-4 w-4" />
+              )}
+              <span>
+                {running && state.status === 'running'
+                  ? 'Auto-playing both points of view'
+                  : friendlyStatus(state, actor)}
+              </span>
             </div>
-            <p className="mt-4 text-center text-xs font-semibold">
-              Which fix should Argo apply so the preview can continue?
-            </p>
-            <div className="mt-2 grid gap-2 md:grid-cols-3">
-              {failure.remediationOptions.map((option) => (
+          )}
+
+          <div className="flex w-full flex-wrap justify-center gap-2 sm:w-auto">
+            {state.status === 'configured' && !storyStarted && (
+              <Button type="button" size="sm" onClick={start}>
+                <Play className="h-4 w-4" /> Start the story
+              </Button>
+            )}
+
+            {(state.status === 'running' || (state.status === 'configured' && storyStarted)) && (
+              <>
                 <Button
-                  key={option.id}
                   type="button"
+                  size="sm"
                   variant="outline"
-                  className="h-auto min-h-10 justify-center whitespace-normal text-center"
+                  onClick={() => setRunning((current) => !current)}
+                >
+                  {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  {running ? 'Pause' : 'Resume'}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => resetWith(scenarioId, addProblem)}
+                >
+                  <RefreshCw className="h-4 w-4" /> Start over
+                </Button>
+              </>
+            )}
+
+            {state.status === 'blocked' && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => resetWith(scenarioId, addProblem)}
+              >
+                <RefreshCw className="h-4 w-4" /> Start over
+              </Button>
+            )}
+
+            {state.status === 'ready' && (
+              <>
+                <p className="w-full text-sm font-semibold">What did you find in the preview?</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setState((current) => recordPreviewReview(current, 'approve'))}
+                >
+                  <Check className="h-4 w-4" /> Looks good
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setState((current) => recordPreviewReview(current, 'request-changes'))
+                  }
+                >
+                  <X className="h-4 w-4" /> Needs work
+                </Button>
+              </>
+            )}
+
+            {state.status === 'reviewed' && (
+              <>
+                <p className="w-full text-sm font-semibold">The review is done.</p>
+                <Button
+                  type="button"
+                  size="sm"
                   onClick={() => {
-                    setState((current) => applyPreviewRemediation(current, option.id));
-                    if (option.id === failure.correctRemediationId) setRunning(true);
+                    setState((current) => beginPreviewTeardown(current, 'pr-closed'));
+                    setActorBeat('platform');
+                    setRunning(true);
                   }}
                 >
-                  {option.label}
+                  <Trash2 className="h-4 w-4" /> Close PR &amp; watch cleanup
                 </Button>
-              ))}
-            </div>
-            {state.failedRemediationAttempts > 0 && (
-              <p className="mt-3 text-center text-sm text-red-700 dark:text-red-300">
-                That will not fix this signal. {state.lastEvent}
-              </p>
+              </>
+            )}
+
+            {state.status === 'removed' && (
+              <Button type="button" size="sm" onClick={start}>
+                <RefreshCw className="h-4 w-4" /> Watch again
+              </Button>
             )}
           </div>
-        )}
+        </div>
 
-        <DualLaneTimeline state={state} />
-        <ResourceBlueprint state={state} />
-
-        {(state.status === 'cleaning' || state.status === 'removed') && (
-          <div className="mt-4 rounded-xl border bg-background/70 p-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold">Nothing left behind</h3>
-              <Badge
-                variant="outline"
-                className={cn(
-                  state.status === 'removed' &&
-                    'border-emerald-500/35 text-emerald-700 dark:text-emerald-300'
-                )}
-              >
-                {state.status === 'removed' ? '$0.00/hr' : 'Cleaning…'}
-              </Badge>
-            </div>
-            <div className="mt-3 grid grid-cols-5 gap-1.5">
-              {CLEANUP_STEPS.map((step) => {
-                const status = state.cleanupStatuses[step.id];
-                return (
-                  <div key={step.id} className="text-center">
-                    <div
-                      className={cn(
-                        'mx-auto grid h-8 w-8 place-items-center rounded-full border text-muted-foreground',
-                        status === 'active' && 'border-blue-500 text-blue-500',
-                        status === 'complete' && 'border-emerald-500 bg-emerald-500 text-white'
-                      )}
-                    >
-                      {status === 'complete' ? (
-                        <Check className="h-4 w-4" />
-                      ) : status === 'active' ? (
-                        <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
-                      ) : (
-                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                      )}
-                    </div>
-                    <p className="mt-1.5 hidden text-[10px] text-muted-foreground sm:block">
-                      {step.label.replace('Remove ', '').replace('Close ', '')}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <details className="group mt-5 border-t pt-4">
+        <details className="group mt-4 border-t pt-4">
           <summary className="flex cursor-pointer list-none items-center justify-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
             <Code2 className="h-4 w-4" />
-            See what the platform does under the hood
+            Inspect the generated evidence
             <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
           </summary>
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             <div className="rounded-lg border bg-background/70 p-3">
-              <p className="text-xs font-semibold">The request</p>
+              <p className="text-xs font-semibold">Preview request</p>
               <pre className="mt-2 overflow-x-auto rounded-md bg-zinc-950 p-3 font-mono text-xs leading-relaxed text-zinc-200">
                 {generatedIntent}
               </pre>
             </div>
             <div className="rounded-lg border bg-background/70 p-3">
-              <p className="text-xs font-semibold">The proof returned to the PR</p>
+              <p className="text-xs font-semibold">Evidence returned to PR #184</p>
               <dl className="mt-2 grid gap-2 text-xs sm:grid-cols-2">
                 <div>
                   <dt className="text-muted-foreground">Private URL</dt>
