@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -20,8 +20,6 @@ import {
   LockKeyhole,
   Network,
   Package,
-  Pause,
-  Play,
   RefreshCw,
   ServerCog,
   ShieldCheck,
@@ -182,10 +180,16 @@ function activeStageId(state: PreviewEnvironmentState): PreviewStageId {
   return PREVIEW_STAGES[Math.min(state.stageIndex, PREVIEW_STAGES.length - 1)]?.id ?? 'verify';
 }
 
-function friendlyStatus(state: PreviewEnvironmentState, actor: StoryActor): string {
+function friendlyStatus(
+  state: PreviewEnvironmentState,
+  actor: StoryActor,
+  storyStarted: boolean
+): string {
   if (state.status === 'configured') {
     return actor === 'developer'
-      ? 'Add the preview label to begin.'
+      ? storyStarted
+        ? 'The preview label is attached to PR #184.'
+        : 'Add the preview label to begin.'
       : 'The preview request reaches Argo CD.';
   }
   if (state.status === 'blocked') return 'Argo paused before an unsafe preview could be shared.';
@@ -372,10 +376,12 @@ function DeveloperScene({
   phase,
   state,
   reviewUrl,
+  storyStarted,
 }: {
   phase: StoryPhase;
   state: PreviewEnvironmentState;
   reviewUrl: string;
+  storyStarted: boolean;
 }) {
   if (phase.id === 'intent') {
     return (
@@ -400,13 +406,24 @@ function DeveloperScene({
             </div>
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center rounded-xl border border-blue-500/40 bg-blue-500/8 p-6 text-center shadow-lg shadow-blue-500/10">
+        <div
+          className={cn(
+            'flex flex-col items-center justify-center rounded-xl border p-6 text-center transition-all duration-700',
+            storyStarted
+              ? 'border-blue-500/40 bg-blue-500/8 shadow-lg shadow-blue-500/10'
+              : 'border-dashed bg-background/60 text-muted-foreground'
+          )}
+        >
           <span className="relative grid h-14 w-14 place-items-center rounded-full border border-blue-500/40 bg-background text-blue-600">
             <Zap className="h-6 w-6" />
-            <span className="absolute inset-0 rounded-full ring-4 ring-blue-500/10 motion-safe:animate-ping" />
+            {storyStarted && (
+              <span className="absolute inset-0 rounded-full ring-4 ring-blue-500/10 motion-safe:animate-ping" />
+            )}
           </span>
           <p className="mt-3 text-sm font-semibold">preview</p>
-          <p className="text-xs text-muted-foreground">Label added</p>
+          <p className="text-xs text-muted-foreground">
+            {storyStarted ? 'Label added' : 'Ready to add'}
+          </p>
         </div>
       </div>
     );
@@ -850,7 +867,10 @@ function SceneWindow({
       </div>
       <div
         key={sceneKey}
-        className="grid min-h-[390px] place-items-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/35 p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-right-4 motion-safe:duration-500 sm:min-h-[430px] sm:p-7"
+        className={cn(
+          'grid min-h-[390px] place-items-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/35 p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-700 sm:min-h-[430px] sm:p-7',
+          developer ? 'motion-safe:slide-in-from-left-4' : 'motion-safe:slide-in-from-right-4'
+        )}
       >
         {children}
       </div>
@@ -862,7 +882,6 @@ export default function PreviewEnvironmentSimulator() {
   const [scenarioId, setScenarioId] = useState<PreviewScenarioId>('checkout-flow');
   const [addProblem, setAddProblem] = useState(false);
   const [state, setState] = useState(() => scenarioState('checkout-flow', false));
-  const [running, setRunning] = useState(false);
   const [storyStarted, setStoryStarted] = useState(false);
   const [actorBeat, setActorBeat] = useState<StoryActor>('developer');
 
@@ -870,8 +889,8 @@ export default function PreviewEnvironmentSimulator() {
   const evidence = useMemo(() => getPreviewEvidence(state.config), [state.config]);
   const generatedIntent = useMemo(() => getGeneratedIntent(state.config), [state.config]);
   const failure = state.activeFailure ? PREVIEW_FAILURES[state.activeFailure] : null;
-  const canAdvance = ['configured', 'running', 'cleaning'].includes(state.status);
-  const canConfigure = state.status === 'configured' || state.status === 'removed';
+  const canConfigure =
+    state.status === 'removed' || (state.status === 'configured' && !storyStarted);
   const phaseIndex = storyPhaseIndex(state);
   const phase = STORY_PHASES[phaseIndex];
   const stageId = activeStageId(state);
@@ -889,57 +908,40 @@ export default function PreviewEnvironmentSimulator() {
           ? 'developer'
           : actorBeat;
 
-  useEffect(() => {
-    if (!running || !canAdvance) return;
-
-    const cleaning = state.status === 'cleaning';
-    const timer = window.setTimeout(
-      () => {
-        if (cleaning) {
-          setState((current) => advancePreviewEnvironment(current));
-          return;
-        }
-
-        if (actorBeat === 'developer') {
-          setActorBeat('platform');
-          return;
-        }
-
-        setState((current) => advancePreviewEnvironment(current));
-        setActorBeat('developer');
-      },
-      cleaning ? 850 : 1250
-    );
-
-    return () => window.clearTimeout(timer);
-  }, [actorBeat, canAdvance, running, state.cleanupIndex, state.stageIndex, state.status]);
-
   const resetWith = (nextScenario: PreviewScenarioId, nextAddProblem: boolean) => {
     setScenarioId(nextScenario);
     setAddProblem(nextAddProblem);
     setState(scenarioState(nextScenario, nextAddProblem));
     setActorBeat('developer');
     setStoryStarted(false);
-    setRunning(false);
   };
 
   const start = () => {
     if (state.status === 'removed') setState(scenarioState(scenarioId, addProblem));
     setActorBeat('developer');
     setStoryStarted(true);
-    setRunning(true);
+  };
+
+  const nextScene = () => {
+    if (actor === 'developer') {
+      setActorBeat('platform');
+      return;
+    }
+
+    setState((current) => advancePreviewEnvironment(current));
+    setActorBeat('developer');
   };
 
   const applyFix = (remediationId: string, correct: boolean) => {
     setState((current) => applyPreviewRemediation(current, remediationId));
     if (correct) {
       setActorBeat('platform');
-      setRunning(true);
     }
   };
 
   const sceneKey = `${phase.id}-${actor}-${stageId}-${state.status}-${state.cleanupIndex}`;
   const sharedDecision = state.status === 'ready' || state.status === 'reviewed';
+  const cleanupStep = CLEANUP_STEPS[state.cleanupIndex];
 
   return (
     <div className="overflow-hidden rounded-xl border bg-muted/15 shadow-sm">
@@ -957,7 +959,7 @@ export default function PreviewEnvironmentSimulator() {
             </div>
             <h2 className="mt-2 text-xl font-semibold">Watch a preview environment come alive</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              One moment at a time—from the developer action to Argo&apos;s response.
+              Move at your own pace from the developer action to Argo&apos;s response.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1020,13 +1022,20 @@ export default function PreviewEnvironmentSimulator() {
             <p className="text-sm font-semibold">
               {actor === 'developer' ? phase.developerTitle : phase.platformTitle}
             </p>
-            <p className="text-xs text-muted-foreground">{friendlyStatus(state, actor)}</p>
+            <p className="text-xs text-muted-foreground">
+              {friendlyStatus(state, actor, storyStarted)}
+            </p>
           </div>
         </div>
 
         <SceneWindow actor={actor} phase={phase} sceneKey={sceneKey}>
           {actor === 'developer' ? (
-            <DeveloperScene phase={phase} state={state} reviewUrl={evidence.reviewUrl} />
+            <DeveloperScene
+              phase={phase}
+              state={state}
+              reviewUrl={evidence.reviewUrl}
+              storyStarted={storyStarted}
+            />
           ) : (
             <ArgoScene phase={phase} state={state} failure={failure} onFix={applyFix} />
           )}
@@ -1042,17 +1051,19 @@ export default function PreviewEnvironmentSimulator() {
         >
           {!sharedDecision && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {running && canAdvance ? (
-                <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
-              ) : state.status === 'removed' ? (
+              {state.status === 'removed' ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : state.status === 'blocked' ? (
+                <AlertTriangle className="h-4 w-4 text-red-500" />
               ) : (
-                <Clock3 className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4" />
               )}
               <span>
-                {running && state.status === 'running'
-                  ? 'Auto-playing both points of view'
-                  : friendlyStatus(state, actor)}
+                {state.status === 'cleaning'
+                  ? 'Each click removes the highlighted resource.'
+                  : state.status === 'running' || (state.status === 'configured' && storyStarted)
+                    ? `Read the ${actor === 'developer' ? 'developer' : 'Argo CD'} view, then continue.`
+                    : friendlyStatus(state, actor, storyStarted)}
               </span>
             </div>
           )}
@@ -1060,20 +1071,17 @@ export default function PreviewEnvironmentSimulator() {
           <div className="flex w-full flex-wrap justify-center gap-2 sm:w-auto">
             {state.status === 'configured' && !storyStarted && (
               <Button type="button" size="sm" onClick={start}>
-                <Play className="h-4 w-4" /> Start the story
+                <Zap className="h-4 w-4" /> Add preview label
               </Button>
             )}
 
             {(state.status === 'running' || (state.status === 'configured' && storyStarted)) && (
               <>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setRunning((current) => !current)}
-                >
-                  {running ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  {running ? 'Pause' : 'Resume'}
+                <Button type="button" size="sm" onClick={nextScene}>
+                  {actor === 'developer'
+                    ? 'Next: see Argo’s response'
+                    : 'Next: see the developer update'}
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
                 <Button
                   type="button"
@@ -1129,12 +1137,21 @@ export default function PreviewEnvironmentSimulator() {
                   onClick={() => {
                     setState((current) => beginPreviewTeardown(current, 'pr-closed'));
                     setActorBeat('platform');
-                    setRunning(true);
                   }}
                 >
-                  <Trash2 className="h-4 w-4" /> Close PR &amp; watch cleanup
+                  <Trash2 className="h-4 w-4" /> Close PR &amp; start cleanup
                 </Button>
               </>
+            )}
+
+            {state.status === 'cleaning' && cleanupStep && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setState((current) => advancePreviewEnvironment(current))}
+              >
+                {cleanupStep.label} <ArrowRight className="h-4 w-4" />
+              </Button>
             )}
 
             {state.status === 'removed' && (
