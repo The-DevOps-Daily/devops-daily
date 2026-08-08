@@ -152,7 +152,7 @@ const STORY_PHASES: StoryPhase[] = [
   },
 ];
 
-type ResourceStatus = 'waiting' | 'creating' | 'ready' | 'removed' | 'failed';
+type ResourceStatus = 'waiting' | 'creating' | 'ready' | 'removing' | 'removed' | 'failed';
 
 function scenarioState(scenarioId: PreviewScenarioId, addProblem: boolean) {
   const scenario = PREVIEW_SCENARIOS.find((item) => item.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
@@ -275,6 +275,7 @@ function ResourceNode({
     waiting: 'waiting',
     creating: 'creating',
     ready: 'ready',
+    removing: 'ready to remove',
     removed: 'removed',
     failed: 'blocked',
   };
@@ -287,11 +288,15 @@ function ResourceNode({
         status === 'creating' &&
           'scale-[1.03] border-blue-500/60 bg-blue-500/8 shadow-lg shadow-blue-500/10',
         status === 'ready' && 'border-emerald-500/40 bg-emerald-500/5',
+        status === 'removing' &&
+          'scale-[1.03] border-amber-500/60 bg-amber-500/8 text-amber-700 shadow-lg shadow-amber-500/10 dark:text-amber-300',
         status === 'removed' && 'scale-90 border-dashed opacity-20',
         status === 'failed' && 'border-red-500/60 bg-red-500/8 text-red-600'
       )}
     >
-      {status === 'creating' ? (
+      {status === 'removing' ? (
+        <Trash2 className="h-4 w-4 text-amber-500" />
+      ) : status === 'creating' ? (
         <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
       ) : status === 'ready' ? (
         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -793,7 +798,7 @@ function ArgoScene({
   const cleanupStatus = (stepId: (typeof CLEANUP_STEPS)[number]['id']): ResourceStatus => {
     const status = state.cleanupStatuses[stepId];
     if (status === 'complete' || state.status === 'removed') return 'removed';
-    if (status === 'active') return 'creating';
+    if (status === 'active') return 'removing';
     return 'ready';
   };
 
