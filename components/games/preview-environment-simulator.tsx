@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   AlertTriangle,
+  ArrowDown,
   ArrowRight,
   Boxes,
   Check,
@@ -52,7 +53,6 @@ import {
   type PreviewFailure,
   type PreviewFailureId,
   type PreviewStageId,
-  type StageStatus,
 } from '@/lib/games/preview-environment-engine';
 
 type PreviewScenarioId = 'api-change' | 'checkout-flow' | 'full-product';
@@ -129,13 +129,13 @@ const STORY_PHASES: StoryPhase[] = [
   {
     id: 'plan',
     label: 'Plan',
-    developerTitle: 'Watch the checks',
+    developerTitle: 'Build and publish the image',
     platformTitle: 'Build the desired state',
   },
   {
     id: 'create',
     label: 'Deploy',
-    developerTitle: 'Wait for the preview links',
+    developerTitle: 'Wait for the preview URL',
     platformTitle: 'Create an isolated environment',
   },
   {
@@ -262,70 +262,6 @@ function StoryProgress({ activeIndex, done }: { activeIndex: number; done: boole
   );
 }
 
-function PerspectiveHandoff({ actor }: { actor: StoryActor }) {
-  return (
-    <div className="inline-flex items-center gap-1 rounded-full border bg-background/80 p-1 text-xs">
-      <span
-        className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all duration-500',
-          actor === 'developer'
-            ? 'bg-blue-500/12 font-semibold text-blue-700 dark:text-blue-300'
-            : 'text-muted-foreground'
-        )}
-      >
-        <UserCheck className="h-3.5 w-3.5" /> Developer
-      </span>
-      <ArrowRight
-        className={cn(
-          'h-3.5 w-3.5 text-muted-foreground transition-transform duration-500',
-          actor === 'platform' && 'translate-x-0.5 text-violet-500'
-        )}
-      />
-      <span
-        className={cn(
-          'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all duration-500',
-          actor === 'platform'
-            ? 'bg-violet-500/12 font-semibold text-violet-700 dark:text-violet-300'
-            : 'text-muted-foreground'
-        )}
-      >
-        <Workflow className="h-3.5 w-3.5" /> Argo CD
-      </span>
-    </div>
-  );
-}
-
-function StageStatusIcon({ status }: { status: StageStatus }) {
-  if (status === 'complete') return <Check className="h-4 w-4 text-emerald-500" />;
-  if (status === 'failed') return <AlertTriangle className="h-4 w-4 text-red-500" />;
-  if (status === 'active' || status === 'remediated') {
-    return <LoaderCircle className="h-4 w-4 text-blue-500 motion-safe:animate-spin" />;
-  }
-  return <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />;
-}
-
-function CheckRow({
-  label,
-  status,
-  detail,
-}: {
-  label: string;
-  status: StageStatus;
-  detail: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 border-b px-3 py-3 last:border-0">
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border bg-background">
-        <StageStatusIcon status={status} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="truncate text-xs text-muted-foreground">{detail}</p>
-      </div>
-    </div>
-  );
-}
-
 function ResourceNode({
   icon: Icon,
   label,
@@ -347,7 +283,7 @@ function ResourceNode({
     <div
       className={cn(
         'flex min-h-20 flex-col items-center justify-center rounded-xl border bg-background/85 p-2 text-center transition-all duration-700',
-        status === 'waiting' && 'translate-y-2 border-dashed opacity-25',
+        status === 'waiting' && 'translate-y-2 border-dashed opacity-55',
         status === 'creating' &&
           'scale-[1.03] border-blue-500/60 bg-blue-500/8 shadow-lg shadow-blue-500/10',
         status === 'ready' && 'border-emerald-500/40 bg-emerald-500/5',
@@ -377,15 +313,17 @@ function DeveloperScene({
   state,
   reviewUrl,
   storyStarted,
+  active,
 }: {
   phase: StoryPhase;
   state: PreviewEnvironmentState;
   reviewUrl: string;
   storyStarted: boolean;
+  active: boolean;
 }) {
   if (phase.id === 'intent') {
     return (
-      <div className="mx-auto grid w-full max-w-4xl gap-5 md:grid-cols-[1.35fr_0.65fr] md:items-center">
+      <div className="mx-auto grid w-full max-w-4xl grid-cols-[1.35fr_0.65fr] items-center gap-3 sm:gap-5">
         <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
           <div className="flex items-center gap-2 border-b px-4 py-3">
             <GitPullRequest className="h-4 w-4 text-emerald-500" />
@@ -394,7 +332,7 @@ function DeveloperScene({
               Open
             </Badge>
           </div>
-          <div className="space-y-3 p-4">
+          <div className="space-y-2 p-3 sm:space-y-3 sm:p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <GitBranch className="h-3.5 w-3.5" /> checkout-v2 → main
             </div>
@@ -408,13 +346,13 @@ function DeveloperScene({
         </div>
         <div
           className={cn(
-            'flex flex-col items-center justify-center rounded-xl border p-6 text-center transition-all duration-700',
+            'flex flex-col items-center justify-center rounded-xl border p-3 text-center transition-all duration-700 sm:p-6',
             storyStarted
               ? 'border-blue-500/40 bg-blue-500/8 shadow-lg shadow-blue-500/10'
               : 'border-dashed bg-background/60 text-muted-foreground'
           )}
         >
-          <span className="relative grid h-14 w-14 place-items-center rounded-full border border-blue-500/40 bg-background text-blue-600">
+          <span className="relative grid h-11 w-11 place-items-center rounded-full border border-blue-500/40 bg-background text-blue-600 sm:h-14 sm:w-14">
             <Zap className="h-6 w-6" />
             {storyStarted && (
               <span className="absolute inset-0 rounded-full ring-4 ring-blue-500/10 motion-safe:animate-ping" />
@@ -430,26 +368,32 @@ function DeveloperScene({
   }
 
   if (phase.id === 'plan') {
+    const developerStatus = (stage: 'coordinate' | 'reconcile'): ResourceStatus => {
+      const status = state.stageStatuses[stage];
+      if (status === 'failed' || status === 'complete' || status === 'remediated') return 'ready';
+      if (status === 'pending') return 'waiting';
+      return active ? 'creating' : 'ready';
+    };
+
     return (
-      <div className="mx-auto w-full max-w-3xl overflow-hidden rounded-xl border bg-background shadow-sm">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <GitCommit className="h-4 w-4" />
-            <span className="text-sm font-semibold">Checks</span>
-          </div>
-          <span className="text-xs text-muted-foreground">sha-8f3c2a1</span>
+      <div className="mx-auto w-full max-w-3xl">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <ResourceNode
+            icon={Code2}
+            label="Build container image"
+            status={developerStatus('coordinate')}
+          />
+          <ArrowRight className="mx-auto h-5 w-5 text-blue-500" />
+          <ResourceNode
+            icon={Package}
+            label="Push to registry"
+            status={developerStatus('reconcile')}
+          />
         </div>
-        <CheckRow label="Read pull request" status={state.stageStatuses.intent} detail="PR #184" />
-        <CheckRow
-          label="Match service versions"
-          status={state.stageStatuses.coordinate}
-          detail="web + api"
-        />
-        <CheckRow
-          label="Prepare preview deployment"
-          status={state.stageStatuses.reconcile}
-          detail="Argo CD"
-        />
+        <div className="mx-auto mt-3 flex w-fit max-w-full items-center gap-2 rounded-full border bg-background px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
+          <GitCommit className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">registry.acme.dev/checkout:sha-8f3c2a1</span>
+        </div>
       </div>
     );
   }
@@ -458,7 +402,19 @@ function DeveloperScene({
     const linksReady = state.stageStatuses.expose === 'complete';
     return (
       <div className="mx-auto w-full max-w-3xl">
-        <div className="rounded-xl border bg-background p-4 shadow-sm sm:p-6">
+        <div className="mb-3 flex items-center gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/5 p-3">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-emerald-500/12 text-emerald-600">
+            <Package className="h-4 w-4" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold">Image available to Argo CD</p>
+            <p className="truncate font-mono text-[10px] text-muted-foreground">
+              checkout@sha256:8f3c2a1
+            </p>
+          </div>
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+        </div>
+        <div className="rounded-xl border bg-background p-4 shadow-sm">
           <div className="flex items-start gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violet-500/12 text-violet-600">
               <Workflow className="h-4 w-4" />
@@ -469,9 +425,11 @@ function DeveloperScene({
                 <span className="text-[10px] text-muted-foreground">just now</span>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {linksReady ? 'Your isolated preview is ready.' : 'Building your isolated preview…'}
+                {linksReady
+                  ? 'Your isolated preview is ready.'
+                  : 'Waiting while Argo CD creates your isolated preview.'}
               </p>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="mt-4 grid grid-cols-2 gap-2">
                 {['Web preview', 'API preview'].map((label, index) => (
                   <div
                     key={label}
@@ -508,8 +466,22 @@ function DeveloperScene({
   }
 
   if (phase.id === 'review') {
+    const previewReady = state.stageStatuses.verify === 'complete' || state.status === 'ready';
+
+    if (!previewReady) {
+      return (
+        <div className="mx-auto flex w-full max-w-lg flex-col items-center rounded-2xl border border-dashed bg-background/55 p-6 text-center text-muted-foreground">
+          <span className="grid h-12 w-12 place-items-center rounded-full border bg-background">
+            <Globe2 className="h-5 w-5" />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-foreground">Preview URL not shared yet</p>
+          <p className="mt-1 text-xs">Argo CD is checking health and the deployed image digest.</p>
+        </div>
+      );
+    }
+
     return (
-      <div className="mx-auto grid w-full max-w-4xl gap-4 md:grid-cols-[1.4fr_0.6fr]">
+      <div className="mx-auto grid w-full max-w-4xl grid-cols-[1.4fr_0.6fr] gap-3 sm:gap-4">
         <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
           <div className="flex items-center gap-2 border-b bg-muted/30 px-3 py-2">
             <LockKeyhole className="h-3.5 w-3.5 text-emerald-500" />
@@ -517,7 +489,7 @@ function DeveloperScene({
               {reviewUrl}
             </span>
           </div>
-          <div className="grid min-h-56 place-items-center bg-gradient-to-br from-blue-500/8 to-violet-500/8 p-5">
+          <div className="grid min-h-40 place-items-center bg-gradient-to-br from-blue-500/8 to-violet-500/8 p-3 sm:min-h-56 sm:p-5">
             <div className="w-full max-w-sm rounded-xl border bg-background p-4 shadow-lg">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">Acme Checkout</span>
@@ -608,17 +580,40 @@ function ArgoScene({
   state,
   failure,
   onFix,
+  active,
+  storyStarted,
 }: {
   phase: StoryPhase;
   state: PreviewEnvironmentState;
   failure: PreviewFailure | null;
   onFix: (remediationId: string, correct: boolean) => void;
+  active: boolean;
+  storyStarted: boolean;
 }) {
   if (failure) return <FailureScene failure={failure} state={state} onFix={onFix} />;
 
+  const argoStatus = (status: ResourceStatus): ResourceStatus =>
+    !active && status === 'creating' ? 'waiting' : status;
+
   if (phase.id === 'intent') {
+    if (!active) {
+      return (
+        <div className="mx-auto flex w-full max-w-lg flex-col items-center rounded-2xl border border-dashed bg-background/55 p-6 text-center text-muted-foreground">
+          <span className="grid h-12 w-12 place-items-center rounded-full border bg-background">
+            <Clock3 className="h-5 w-5" />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-foreground">No Argo CD action yet</p>
+          <p className="mt-1 max-w-sm text-xs">
+            {storyStarted
+              ? 'The preview label is attached. Argo CD is waiting for the pull-request event.'
+              : 'Argo CD waits until the developer adds the preview label.'}
+          </p>
+        </div>
+      );
+    }
+
     return (
-      <div className="mx-auto flex w-full max-w-4xl flex-col items-center justify-center gap-5 sm:flex-row">
+      <div className="mx-auto grid w-full max-w-4xl grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2 sm:gap-4">
         {[
           { icon: GitPullRequest, label: 'PR #184', detail: 'preview label' },
           { icon: Zap, label: 'Webhook', detail: 'event received' },
@@ -627,15 +622,15 @@ function ArgoScene({
           const Icon = item.icon;
           return (
             <div key={item.label} className="contents">
-              <div className="flex w-full max-w-52 flex-col items-center rounded-xl border bg-background p-5 text-center shadow-sm">
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-violet-500/10 text-violet-600">
+              <div className="flex min-w-0 flex-col items-center rounded-xl border bg-background p-2 text-center shadow-sm sm:p-5">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-500/10 text-violet-600 sm:h-12 sm:w-12">
                   <Icon className="h-5 w-5" />
                 </span>
-                <p className="mt-3 text-sm font-semibold">{item.label}</p>
-                <p className="text-xs text-muted-foreground">{item.detail}</p>
+                <p className="mt-2 text-xs font-semibold sm:mt-3 sm:text-sm">{item.label}</p>
+                <p className="text-[10px] text-muted-foreground sm:text-xs">{item.detail}</p>
               </div>
               {index < 2 && (
-                <div className="relative h-6 w-px bg-border sm:h-px sm:w-16">
+                <div className="relative h-px w-4 bg-border sm:w-16">
                   <span className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500 motion-safe:animate-ping" />
                   <ArrowRight className="absolute -right-1.5 top-1/2 hidden h-3 w-3 -translate-y-1/2 text-violet-500 sm:block" />
                 </div>
@@ -652,25 +647,25 @@ function ArgoScene({
     const reconcileStatus = state.stageStatuses.reconcile;
     return (
       <div className="mx-auto w-full max-w-4xl">
-        <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center">
+        <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2 sm:gap-3">
           <ResourceNode icon={GitBranch} label="PR generator" status="ready" />
-          <ArrowRight className="mx-auto h-5 w-5 rotate-90 text-muted-foreground md:rotate-0" />
+          <ArrowRight className="mx-auto h-5 w-5 text-muted-foreground" />
           <ResourceNode
             icon={Package}
             label="Helm values"
-            status={
+            status={argoStatus(
               coordinateStatus === 'failed'
                 ? 'failed'
                 : coordinateStatus === 'complete'
                   ? 'ready'
                   : 'creating'
-            }
+            )}
           />
-          <ArrowRight className="mx-auto h-5 w-5 rotate-90 text-muted-foreground md:rotate-0" />
+          <ArrowRight className="mx-auto h-5 w-5 text-muted-foreground" />
           <ResourceNode
             icon={Workflow}
             label="Preview app"
-            status={
+            status={argoStatus(
               reconcileStatus === 'failed'
                 ? 'failed'
                 : reconcileStatus === 'complete'
@@ -678,10 +673,10 @@ function ArgoScene({
                   : reconcileStatus === 'pending'
                     ? 'waiting'
                     : 'creating'
-            }
+            )}
           />
         </div>
-        <div className="mt-5 flex flex-wrap justify-center gap-2 font-mono text-[10px] text-muted-foreground">
+        <div className="mt-3 flex flex-wrap justify-center gap-1.5 font-mono text-[10px] text-muted-foreground sm:mt-5 sm:gap-2">
           <span className="rounded border bg-background px-2 py-1">branch: checkout-v2</span>
           <span className="rounded border bg-background px-2 py-1">namespace: preview-pr-184</span>
           <span className="rounded border bg-background px-2 py-1">
@@ -708,41 +703,47 @@ function ArgoScene({
             isolated
           </Badge>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
           <ResourceNode
             icon={Boxes}
             label="Namespace"
-            status={resourceStatus(state, 'provision', namespaceRemoved, ['quota-exceeded'])}
+            status={argoStatus(
+              resourceStatus(state, 'provision', namespaceRemoved, ['quota-exceeded'])
+            )}
           />
           <ResourceNode
             icon={ServerCog}
             label={`${state.config.services.length} app pods`}
-            status={resourceStatus(state, 'provision', workloadsRemoved, [
-              'quota-exceeded',
-              'missing-secret',
-              'readiness-failure',
-              'revision-drift',
-            ])}
+            status={argoStatus(
+              resourceStatus(state, 'provision', workloadsRemoved, [
+                'quota-exceeded',
+                'missing-secret',
+                'readiness-failure',
+                'revision-drift',
+              ])
+            )}
           />
           <ResourceNode
             icon={Network}
             label="Network"
-            status={resourceStatus(state, 'provision', namespaceRemoved)}
+            status={argoStatus(resourceStatus(state, 'provision', namespaceRemoved))}
           />
           <ResourceNode
             icon={Database}
             label="Database"
-            status={resourceStatus(state, 'expose', dependenciesRemoved, ['readiness-failure'])}
+            status={argoStatus(
+              resourceStatus(state, 'expose', dependenciesRemoved, ['readiness-failure'])
+            )}
           />
           <ResourceNode
             icon={Database}
             label="Redis"
-            status={resourceStatus(state, 'expose', dependenciesRemoved)}
+            status={argoStatus(resourceStatus(state, 'expose', dependenciesRemoved))}
           />
           <ResourceNode
             icon={Globe2}
             label="Domain + TLS"
-            status={resourceStatus(state, 'expose', reviewUrlRemoved, ['dns-pending'])}
+            status={argoStatus(resourceStatus(state, 'expose', reviewUrlRemoved, ['dns-pending']))}
           />
         </div>
       </div>
@@ -752,8 +753,8 @@ function ArgoScene({
   if (phase.id === 'review') {
     const ready = state.stageStatuses.verify === 'complete' || state.status === 'ready';
     return (
-      <div className="mx-auto grid w-full max-w-4xl gap-4 md:grid-cols-[0.8fr_1.2fr]">
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-6 text-center">
+      <div className="mx-auto grid w-full max-w-4xl grid-cols-[0.8fr_1.2fr] gap-3 sm:gap-4">
+        <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-3 text-center sm:p-6">
           {ready ? (
             <CheckCircle2 className="h-12 w-12 text-emerald-500" />
           ) : (
@@ -772,7 +773,7 @@ function ArgoScene({
               {ready ? 'Synced' : 'Progressing'}
             </Badge>
           </div>
-          <div className="mt-6 flex items-center justify-center gap-2 sm:gap-4">
+          <div className="mt-4 flex items-center justify-center gap-1 sm:mt-6 sm:gap-4">
             {[Globe2, ServerCog, Database].map((Icon, index) => (
               <div key={index} className="contents">
                 <span className="grid h-12 w-12 place-items-center rounded-xl border border-emerald-500/35 bg-emerald-500/5">
@@ -822,25 +823,32 @@ function SceneWindow({
   actor,
   phase,
   sceneKey,
+  active,
   children,
 }: {
   actor: StoryActor;
   phase: StoryPhase;
   sceneKey: string;
+  active: boolean;
   children: React.ReactNode;
 }) {
   const developer = actor === 'developer';
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border bg-background shadow-xl transition-colors duration-500',
-        developer
-          ? 'border-blue-500/35 shadow-blue-500/5'
-          : 'border-violet-500/35 shadow-violet-500/5'
+        'overflow-hidden rounded-2xl border bg-background transition-all duration-500',
+        active &&
+          developer &&
+          'border-blue-500/55 shadow-xl shadow-blue-500/10 ring-2 ring-blue-500/10',
+        active &&
+          !developer &&
+          'border-violet-500/55 shadow-xl shadow-violet-500/10 ring-2 ring-violet-500/10',
+        !active && 'border-border/70 bg-muted/5 shadow-sm'
       )}
+      aria-current={active ? 'step' : undefined}
     >
       <div className="flex items-center gap-3 border-b bg-muted/35 px-3 py-2.5 sm:px-4">
-        <div className="flex gap-1.5" aria-hidden="true">
+        <div className="hidden gap-1.5 sm:flex" aria-hidden="true">
           <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/70" />
@@ -855,20 +863,41 @@ function SceneWindow({
               : 'argo.acme.internal/applications/preview-pr-184'}
           </span>
         </div>
+      </div>
+      <div
+        className={cn(
+          'flex items-center justify-between gap-3 border-b px-3 py-2 text-xs sm:px-4',
+          developer ? 'bg-blue-500/5' : 'bg-violet-500/5'
+        )}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          {developer ? (
+            <UserCheck className="h-4 w-4 shrink-0 text-blue-600" />
+          ) : (
+            <Workflow className="h-4 w-4 shrink-0 text-violet-600" />
+          )}
+          <span className="font-semibold">{developer ? 'Developer' : 'Argo CD'}</span>
+          <span className="truncate text-muted-foreground">
+            · {developer ? phase.developerTitle : phase.platformTitle}
+          </span>
+        </div>
         <Badge
           variant="outline"
           className={cn(
-            'hidden text-[10px] sm:inline-flex',
-            developer ? 'border-blue-500/30 text-blue-600' : 'border-violet-500/30 text-violet-600'
+            'shrink-0 text-[10px] transition-colors',
+            active && developer && 'border-blue-500/35 bg-blue-500/10 text-blue-700',
+            active && !developer && 'border-violet-500/35 bg-violet-500/10 text-violet-700',
+            !active && 'text-muted-foreground'
           )}
         >
-          {developer ? 'Developer view' : 'Argo CD view'}
+          {active ? 'Active' : 'Waiting'}
         </Badge>
       </div>
       <div
         key={sceneKey}
         className={cn(
-          'grid min-h-[390px] place-items-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/35 p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-700 sm:min-h-[430px] sm:p-7',
+          'grid min-h-[230px] place-items-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/35 p-3 transition-opacity motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-700 sm:min-h-[260px] sm:p-5',
+          !active && 'opacity-90',
           developer ? 'motion-safe:slide-in-from-left-4' : 'motion-safe:slide-in-from-right-4'
         )}
       >
@@ -923,25 +952,70 @@ export default function PreviewEnvironmentSimulator() {
   };
 
   const nextScene = () => {
-    if (actor === 'developer') {
+    if (state.status === 'configured') {
+      if (actor === 'developer') {
+        setActorBeat('platform');
+      } else {
+        setState((current) => advancePreviewEnvironment(current));
+        setActorBeat('developer');
+      }
+      return;
+    }
+
+    if (actor === 'developer' && stageId === 'coordinate') {
+      setState((current) => advancePreviewEnvironment(current));
+      setActorBeat('developer');
+      return;
+    }
+
+    if (actor === 'developer' && stageId === 'reconcile') {
       setActorBeat('platform');
       return;
     }
 
     setState((current) => advancePreviewEnvironment(current));
-    setActorBeat('developer');
+    setActorBeat('platform');
   };
 
   const applyFix = (remediationId: string, correct: boolean) => {
     setState((current) => applyPreviewRemediation(current, remediationId));
     if (correct) {
-      setActorBeat('platform');
+      setActorBeat(stageId === 'coordinate' ? 'developer' : 'platform');
     }
   };
 
-  const sceneKey = `${phase.id}-${actor}-${stageId}-${state.status}-${state.cleanupIndex}`;
+  const developerSceneKey = `developer-${phase.id}-${actor}-${stageId}-${state.status}-${state.cleanupIndex}-${storyStarted}`;
+  const argoSceneKey = `argo-${phase.id}-${actor}-${stageId}-${state.status}-${state.cleanupIndex}-${storyStarted}`;
   const sharedDecision = state.status === 'ready' || state.status === 'reviewed';
   const cleanupStep = CLEANUP_STEPS[state.cleanupIndex];
+  const handoffLabel =
+    actor === 'platform'
+      ? 'Argo CD is responding'
+      : !storyStarted
+        ? 'Argo CD waits for the preview label'
+        : phase.id === 'intent'
+          ? 'Argo CD waits for the pull-request event'
+          : phase.id === 'plan'
+            ? 'Argo CD waits for the registry image'
+            : phase.id === 'remove'
+              ? 'Argo CD waits for the pull request to close'
+              : 'Argo CD holds its current state';
+  const nextButtonLabel =
+    state.status === 'configured'
+      ? actor === 'developer'
+        ? 'Send label to Argo CD'
+        : 'Next: build the image'
+      : actor === 'developer'
+        ? stageId === 'coordinate'
+          ? 'Next: push the image'
+          : 'Hand image to Argo CD'
+        : stageId === 'reconcile'
+          ? 'Next: create resources'
+          : stageId === 'provision'
+            ? 'Next: add data & domain'
+            : stageId === 'expose'
+              ? 'Next: verify the preview'
+              : 'Next: share the preview';
 
   return (
     <div className="overflow-hidden rounded-xl border bg-muted/15 shadow-sm">
@@ -959,7 +1033,7 @@ export default function PreviewEnvironmentSimulator() {
             </div>
             <h2 className="mt-2 text-xl font-semibold">Watch a preview environment come alive</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Move at your own pace from the developer action to Argo&apos;s response.
+              Keep both sides in view while the image moves from the developer to Argo CD.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1016,8 +1090,18 @@ export default function PreviewEnvironmentSimulator() {
       <div className="p-3 sm:p-4">
         <StoryProgress activeIndex={phaseIndex} done={state.status === 'removed'} />
 
-        <div className="my-3 flex flex-col items-center justify-center gap-2 text-center sm:my-4">
-          <PerspectiveHandoff actor={actor} />
+        <div className="my-3 flex flex-col items-center justify-center gap-1 text-center sm:my-4">
+          <Badge
+            variant="outline"
+            className={cn(
+              'text-[10px]',
+              actor === 'developer'
+                ? 'border-blue-500/30 bg-blue-500/5 text-blue-700'
+                : 'border-violet-500/30 bg-violet-500/5 text-violet-700'
+            )}
+          >
+            Current turn · {actor === 'developer' ? 'Developer' : 'Argo CD'}
+          </Badge>
           <div aria-live="polite">
             <p className="text-sm font-semibold">
               {actor === 'developer' ? phase.developerTitle : phase.platformTitle}
@@ -1028,17 +1112,58 @@ export default function PreviewEnvironmentSimulator() {
           </div>
         </div>
 
-        <SceneWindow actor={actor} phase={phase} sceneKey={sceneKey}>
-          {actor === 'developer' ? (
-            <DeveloperScene
-              phase={phase}
-              state={state}
-              reviewUrl={evidence.reviewUrl}
-              storyStarted={storyStarted}
+        <SceneWindow
+          actor="developer"
+          phase={phase}
+          sceneKey={developerSceneKey}
+          active={actor === 'developer'}
+        >
+          <DeveloperScene
+            phase={phase}
+            state={state}
+            reviewUrl={evidence.reviewUrl}
+            storyStarted={storyStarted}
+            active={actor === 'developer'}
+          />
+        </SceneWindow>
+
+        <div className="relative flex min-h-14 items-center justify-center py-2" aria-hidden="true">
+          <span
+            className={cn(
+              'absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-blue-500/30 to-violet-500/40',
+              actor === 'platform' && 'from-blue-500/60 to-violet-500/70'
+            )}
+          />
+          <span
+            className={cn(
+              'relative inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-[10px] font-medium text-muted-foreground shadow-sm',
+              actor === 'platform' && 'border-violet-500/35 text-violet-700'
+            )}
+          >
+            <ArrowDown
+              className={cn(
+                'h-3.5 w-3.5',
+                actor === 'platform' && 'text-violet-500 motion-safe:animate-bounce'
+              )}
             />
-          ) : (
-            <ArgoScene phase={phase} state={state} failure={failure} onFix={applyFix} />
-          )}
+            {handoffLabel}
+          </span>
+        </div>
+
+        <SceneWindow
+          actor="platform"
+          phase={phase}
+          sceneKey={argoSceneKey}
+          active={actor === 'platform'}
+        >
+          <ArgoScene
+            phase={phase}
+            state={state}
+            failure={failure}
+            onFix={applyFix}
+            active={actor === 'platform'}
+            storyStarted={storyStarted}
+          />
         </SceneWindow>
 
         <div
@@ -1078,9 +1203,7 @@ export default function PreviewEnvironmentSimulator() {
             {(state.status === 'running' || (state.status === 'configured' && storyStarted)) && (
               <>
                 <Button type="button" size="sm" onClick={nextScene}>
-                  {actor === 'developer'
-                    ? 'Next: see Argo’s response'
-                    : 'Next: see the developer update'}
+                  {nextButtonLabel}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
                 <Button
