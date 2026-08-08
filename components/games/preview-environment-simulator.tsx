@@ -282,7 +282,7 @@ function ResourceNode({
   return (
     <div
       className={cn(
-        'flex min-h-20 flex-col items-center justify-center rounded-xl border bg-background/85 p-2 text-center transition-all duration-700',
+        'flex min-h-16 flex-col items-center justify-center rounded-xl border bg-background/85 p-2 text-center transition-all duration-700',
         status === 'waiting' && 'translate-y-2 border-dashed opacity-55',
         status === 'creating' &&
           'scale-[1.03] border-blue-500/60 bg-blue-500/8 shadow-lg shadow-blue-500/10',
@@ -292,15 +292,15 @@ function ResourceNode({
       )}
     >
       {status === 'creating' ? (
-        <LoaderCircle className="h-5 w-5 motion-safe:animate-spin" />
+        <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
       ) : status === 'ready' ? (
-        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
       ) : status === 'failed' ? (
-        <AlertTriangle className="h-5 w-5" />
+        <AlertTriangle className="h-4 w-4" />
       ) : (
-        <Icon className="h-5 w-5" />
+        <Icon className="h-4 w-4" />
       )}
-      <p className="mt-1.5 text-xs font-semibold">{label}</p>
+      <p className="mt-1 text-xs font-semibold">{label}</p>
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
         {statusLabel[status]}
       </p>
@@ -325,40 +325,40 @@ function DeveloperScene({
     return (
       <div className="mx-auto grid w-full max-w-4xl grid-cols-[1.35fr_0.65fr] items-center gap-3 sm:gap-5">
         <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
-          <div className="flex items-center gap-2 border-b px-4 py-3">
+          <div className="flex items-center gap-2 border-b px-3 py-2">
             <GitPullRequest className="h-4 w-4 text-emerald-500" />
             <span className="text-sm font-semibold">Checkout v2</span>
             <Badge variant="outline" className="ml-auto text-[10px]">
               Open
             </Badge>
           </div>
-          <div className="space-y-2 p-3 sm:space-y-3 sm:p-4">
+          <div className="space-y-1.5 p-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <GitBranch className="h-3.5 w-3.5" /> checkout-v2 → main
             </div>
-            <div className="rounded-lg border bg-muted/25 p-3">
+            <div className="rounded-lg border bg-muted/25 p-2">
               <div className="h-2 w-3/4 rounded bg-emerald-500/35" />
-              <div className="mt-2 h-2 w-1/2 rounded bg-emerald-500/25" />
-              <div className="mt-2 h-2 w-2/3 rounded bg-red-500/20" />
-              <div className="mt-2 h-2 w-5/6 rounded bg-emerald-500/20" />
+              <div className="mt-1.5 h-2 w-1/2 rounded bg-emerald-500/25" />
+              <div className="mt-1.5 h-2 w-2/3 rounded bg-red-500/20" />
+              <div className="mt-1.5 h-2 w-5/6 rounded bg-emerald-500/20" />
             </div>
           </div>
         </div>
         <div
           className={cn(
-            'flex flex-col items-center justify-center rounded-xl border p-3 text-center transition-all duration-700 sm:p-6',
+            'flex flex-col items-center justify-center rounded-xl border p-3 text-center transition-all duration-700',
             storyStarted
               ? 'border-blue-500/40 bg-blue-500/8 shadow-lg shadow-blue-500/10'
               : 'border-dashed bg-background/60 text-muted-foreground'
           )}
         >
-          <span className="relative grid h-11 w-11 place-items-center rounded-full border border-blue-500/40 bg-background text-blue-600 sm:h-14 sm:w-14">
-            <Zap className="h-6 w-6" />
+          <span className="relative grid h-10 w-10 place-items-center rounded-full border border-blue-500/40 bg-background text-blue-600">
+            <Zap className="h-5 w-5" />
             {storyStarted && (
               <span className="absolute inset-0 rounded-full ring-4 ring-blue-500/10 motion-safe:animate-ping" />
             )}
           </span>
-          <p className="mt-3 text-sm font-semibold">preview</p>
+          <p className="mt-2 text-sm font-semibold">preview</p>
           <p className="text-xs text-muted-foreground">
             {storyStarted ? 'Label added' : 'Ready to add'}
           </p>
@@ -401,8 +401,8 @@ function DeveloperScene({
   if (phase.id === 'create') {
     const linksReady = state.stageStatuses.expose === 'complete';
     return (
-      <div className="mx-auto w-full max-w-3xl">
-        <div className="mb-3 flex items-center gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/5 p-3">
+      <div className="mx-auto grid w-full max-w-4xl gap-2 sm:grid-cols-[0.7fr_1.3fr] sm:items-stretch">
+        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/35 bg-emerald-500/5 p-3 sm:flex-col sm:justify-center sm:text-center">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-emerald-500/12 text-emerald-600">
             <Package className="h-4 w-4" />
           </span>
@@ -414,7 +414,7 @@ function DeveloperScene({
           </div>
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
         </div>
-        <div className="rounded-xl border bg-background p-4 shadow-sm">
+        <div className="rounded-xl border bg-background p-3 shadow-sm">
           <div className="flex items-start gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violet-500/12 text-violet-600">
               <Workflow className="h-4 w-4" />
@@ -429,12 +429,12 @@ function DeveloperScene({
                   ? 'Your isolated preview is ready.'
                   : 'Waiting while Argo CD creates your isolated preview.'}
               </p>
-              <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 {['Web preview', 'API preview'].map((label, index) => (
                   <div
                     key={label}
                     className={cn(
-                      'flex items-center gap-3 rounded-lg border p-3 transition-all duration-700',
+                      'flex items-center gap-2 rounded-lg border p-2 transition-all duration-700',
                       linksReady
                         ? 'border-emerald-500/35 bg-emerald-500/5'
                         : 'border-dashed opacity-45'
@@ -470,11 +470,11 @@ function DeveloperScene({
 
     if (!previewReady) {
       return (
-        <div className="mx-auto flex w-full max-w-lg flex-col items-center rounded-2xl border border-dashed bg-background/55 p-6 text-center text-muted-foreground">
-          <span className="grid h-12 w-12 place-items-center rounded-full border bg-background">
+        <div className="mx-auto flex w-full max-w-lg flex-col items-center rounded-2xl border border-dashed bg-background/55 p-3 text-center text-muted-foreground">
+          <span className="grid h-10 w-10 place-items-center rounded-full border bg-background">
             <Globe2 className="h-5 w-5" />
           </span>
-          <p className="mt-3 text-sm font-semibold text-foreground">Preview URL not shared yet</p>
+          <p className="mt-2 text-sm font-semibold text-foreground">Preview URL not shared yet</p>
           <p className="mt-1 text-xs">Argo CD is checking health and the deployed image digest.</p>
         </div>
       );
@@ -489,27 +489,27 @@ function DeveloperScene({
               {reviewUrl}
             </span>
           </div>
-          <div className="grid min-h-40 place-items-center bg-gradient-to-br from-blue-500/8 to-violet-500/8 p-3 sm:min-h-56 sm:p-5">
-            <div className="w-full max-w-sm rounded-xl border bg-background p-4 shadow-lg">
+          <div className="grid min-h-32 place-items-center bg-gradient-to-br from-blue-500/8 to-violet-500/8 p-2">
+            <div className="w-full max-w-sm rounded-xl border bg-background p-3 shadow-lg">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold">Acme Checkout</span>
                 <ShoppingCart className="h-4 w-4" />
               </div>
-              <div className="mt-4 flex items-center gap-3 rounded-lg bg-muted/45 p-3">
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500/25 to-violet-500/25" />
+              <div className="mt-2 flex items-center gap-2 rounded-lg bg-muted/45 p-2">
+                <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500/25 to-violet-500/25" />
                 <div className="flex-1">
                   <div className="h-2.5 w-2/3 rounded bg-foreground/70" />
                   <div className="mt-2 h-2 w-1/3 rounded bg-muted-foreground/35" />
                 </div>
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
               </div>
-              <div className="mt-3 h-9 rounded-lg bg-blue-500/80" />
+              <div className="mt-2 h-7 rounded-lg bg-blue-500/80" />
             </div>
           </div>
         </div>
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-5 text-center">
-          <ShieldCheck className="h-10 w-10 text-emerald-500" />
-          <p className="mt-3 font-semibold">Safe to explore</p>
+        <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-3 text-center">
+          <ShieldCheck className="h-8 w-8 text-emerald-500" />
+          <p className="mt-2 font-semibold">Safe to explore</p>
           <p className="mt-1 text-xs text-muted-foreground">Production is untouched</p>
         </div>
       </div>
@@ -517,15 +517,15 @@ function DeveloperScene({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-xl flex-col items-center rounded-xl border bg-background p-8 text-center shadow-sm">
-      <span className="grid h-16 w-16 place-items-center rounded-full bg-emerald-500/10 text-emerald-500">
+    <div className="mx-auto flex w-full max-w-xl flex-col items-center rounded-xl border bg-background p-4 text-center shadow-sm">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-500/10 text-emerald-500">
         {state.status === 'reviewed' ? (
           <GitMerge className="h-7 w-7" />
         ) : (
           <Check className="h-7 w-7" />
         )}
       </span>
-      <p className="mt-4 text-lg font-semibold">
+      <p className="mt-2 text-base font-semibold">
         {state.status === 'reviewed' ? 'Review complete' : 'Pull request closed'}
       </p>
       <p className="mt-1 text-sm text-muted-foreground">The preview can now disappear.</p>
@@ -544,16 +544,16 @@ function FailureScene({
 }) {
   return (
     <div className="mx-auto w-full max-w-3xl text-center">
-      <span className="mx-auto grid h-14 w-14 place-items-center rounded-full border border-red-500/40 bg-red-500/10 text-red-500">
+      <span className="mx-auto grid h-10 w-10 place-items-center rounded-full border border-red-500/40 bg-red-500/10 text-red-500">
         <AlertTriangle className="h-6 w-6" />
       </span>
-      <p className="mt-3 text-lg font-semibold">Deployment paused</p>
+      <p className="mt-2 text-base font-semibold">Deployment paused</p>
       <p className="mt-1 text-sm text-muted-foreground">{failure.summary}</p>
-      <div className="mx-auto mt-4 max-w-2xl overflow-x-auto rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 font-mono text-xs text-red-700 dark:text-red-300">
+      <div className="mx-auto mt-2 max-w-2xl overflow-x-auto rounded-lg border border-red-500/30 bg-red-500/5 px-3 py-2 font-mono text-xs text-red-700 dark:text-red-300">
         {failure.signal}
       </div>
-      <p className="mt-5 text-sm font-semibold">Which fix should Argo apply?</p>
-      <div className="mt-3 grid gap-2 md:grid-cols-3">
+      <p className="mt-3 text-sm font-semibold">Which fix should Argo apply?</p>
+      <div className="mt-2 grid gap-2 md:grid-cols-3">
         {failure.remediationOptions.map((option) => (
           <Button
             key={option.id}
@@ -598,11 +598,11 @@ function ArgoScene({
   if (phase.id === 'intent') {
     if (!active) {
       return (
-        <div className="mx-auto flex w-full max-w-lg flex-col items-center rounded-2xl border border-dashed bg-background/55 p-6 text-center text-muted-foreground">
-          <span className="grid h-12 w-12 place-items-center rounded-full border bg-background">
+        <div className="mx-auto flex w-full max-w-lg flex-col items-center rounded-2xl border border-dashed bg-background/55 p-3 text-center text-muted-foreground">
+          <span className="grid h-10 w-10 place-items-center rounded-full border bg-background">
             <Clock3 className="h-5 w-5" />
           </span>
-          <p className="mt-3 text-sm font-semibold text-foreground">No Argo CD action yet</p>
+          <p className="mt-2 text-sm font-semibold text-foreground">No Argo CD action yet</p>
           <p className="mt-1 max-w-sm text-xs">
             {storyStarted
               ? 'The preview label is attached. Argo CD is waiting for the pull-request event.'
@@ -622,11 +622,11 @@ function ArgoScene({
           const Icon = item.icon;
           return (
             <div key={item.label} className="contents">
-              <div className="flex min-w-0 flex-col items-center rounded-xl border bg-background p-2 text-center shadow-sm sm:p-5">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-500/10 text-violet-600 sm:h-12 sm:w-12">
+              <div className="flex min-w-0 flex-col items-center rounded-xl border bg-background p-2 text-center shadow-sm sm:p-3">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-violet-500/10 text-violet-600 sm:h-10 sm:w-10">
                   <Icon className="h-5 w-5" />
                 </span>
-                <p className="mt-2 text-xs font-semibold sm:mt-3 sm:text-sm">{item.label}</p>
+                <p className="mt-2 text-xs font-semibold sm:text-sm">{item.label}</p>
                 <p className="text-[10px] text-muted-foreground sm:text-xs">{item.detail}</p>
               </div>
               {index < 2 && (
@@ -676,7 +676,7 @@ function ArgoScene({
             )}
           />
         </div>
-        <div className="mt-3 flex flex-wrap justify-center gap-1.5 font-mono text-[10px] text-muted-foreground sm:mt-5 sm:gap-2">
+        <div className="mt-2 flex flex-wrap justify-center gap-1.5 font-mono text-[10px] text-muted-foreground sm:gap-2">
           <span className="rounded border bg-background px-2 py-1">branch: checkout-v2</span>
           <span className="rounded border bg-background px-2 py-1">namespace: preview-pr-184</span>
           <span className="rounded border bg-background px-2 py-1">
@@ -693,8 +693,8 @@ function ArgoScene({
     const dependenciesRemoved = state.cleanupStatuses.dependencies === 'complete';
     const namespaceRemoved = state.cleanupStatuses.namespace === 'complete';
     return (
-      <div className="mx-auto w-full max-w-5xl rounded-2xl border-2 border-dashed border-violet-500/35 bg-violet-500/5 p-3 sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-2">
+      <div className="mx-auto w-full max-w-5xl rounded-2xl border-2 border-dashed border-violet-500/35 bg-violet-500/5 p-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Boxes className="h-4 w-4 text-violet-500" />
             <span className="font-mono text-xs font-semibold">namespace / preview-pr-184</span>
@@ -754,16 +754,18 @@ function ArgoScene({
     const ready = state.stageStatuses.verify === 'complete' || state.status === 'ready';
     return (
       <div className="mx-auto grid w-full max-w-4xl grid-cols-[0.8fr_1.2fr] gap-3 sm:gap-4">
-        <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-3 text-center sm:p-6">
+        <div className="flex flex-col items-center justify-center rounded-xl border bg-background p-3 text-center">
           {ready ? (
-            <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+            <CheckCircle2 className="h-9 w-9 text-emerald-500" />
           ) : (
-            <LoaderCircle className="h-12 w-12 text-blue-500 motion-safe:animate-spin" />
+            <LoaderCircle className="h-9 w-9 text-blue-500 motion-safe:animate-spin" />
           )}
-          <p className="mt-3 text-lg font-semibold">{ready ? 'Healthy & Synced' : 'Verifying…'}</p>
+          <p className="mt-2 text-base font-semibold">
+            {ready ? 'Healthy & Synced' : 'Verifying…'}
+          </p>
           <p className="mt-1 font-mono text-xs text-muted-foreground">sha-8f3c2a1</p>
         </div>
-        <div className="rounded-xl border bg-background p-4">
+        <div className="rounded-xl border bg-background p-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold">preview-pr-184</p>
             <Badge
@@ -773,10 +775,10 @@ function ArgoScene({
               {ready ? 'Synced' : 'Progressing'}
             </Badge>
           </div>
-          <div className="mt-4 flex items-center justify-center gap-1 sm:mt-6 sm:gap-4">
+          <div className="mt-2 flex items-center justify-center gap-1 sm:gap-4">
             {[Globe2, ServerCog, Database].map((Icon, index) => (
               <div key={index} className="contents">
-                <span className="grid h-12 w-12 place-items-center rounded-xl border border-emerald-500/35 bg-emerald-500/5">
+                <span className="grid h-9 w-9 place-items-center rounded-xl border border-emerald-500/35 bg-emerald-500/5 sm:h-10 sm:w-10">
                   <Icon className="h-5 w-5" />
                 </span>
                 {index < 2 && <ArrowRight className="h-4 w-4 text-emerald-500" />}
@@ -797,12 +799,12 @@ function ArgoScene({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <div className="rounded-2xl border-2 border-dashed p-4 sm:p-6">
+      <div className="rounded-2xl border-2 border-dashed p-3">
         <div className="flex items-center justify-between gap-2">
           <p className="font-mono text-xs font-semibold">namespace / preview-pr-184</p>
           <Badge variant="outline">{state.status === 'removed' ? '$0.00/hr' : 'Pruning…'}</Badge>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
           <ResourceNode icon={Globe2} label="Domain" status={cleanupStatus('review-url')} />
           <ResourceNode icon={ServerCog} label="App pods" status={cleanupStatus('workloads')} />
           <ResourceNode icon={Database} label="Data" status={cleanupStatus('dependencies')} />
@@ -810,7 +812,7 @@ function ArgoScene({
           <ResourceNode icon={Workflow} label="Argo app" status={cleanupStatus('git-intent')} />
         </div>
         {state.status === 'removed' && (
-          <div className="mt-5 flex items-center justify-center gap-2 text-sm font-semibold text-emerald-600">
+          <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-emerald-600">
             <CheckCircle2 className="h-5 w-5" /> Nothing left behind
           </div>
         )}
@@ -847,7 +849,7 @@ function SceneWindow({
       )}
       aria-current={active ? 'step' : undefined}
     >
-      <div className="flex items-center gap-3 border-b bg-muted/35 px-3 py-2.5 sm:px-4">
+      <div className="flex items-center gap-3 border-b bg-muted/35 px-3 py-1.5 sm:px-4">
         <div className="hidden gap-1.5 sm:flex" aria-hidden="true">
           <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-amber-500/70" />
@@ -866,7 +868,7 @@ function SceneWindow({
       </div>
       <div
         className={cn(
-          'flex items-center justify-between gap-3 border-b px-3 py-2 text-xs sm:px-4',
+          'flex items-center justify-between gap-3 border-b px-3 py-1.5 text-xs sm:px-4',
           developer ? 'bg-blue-500/5' : 'bg-violet-500/5'
         )}
       >
@@ -896,7 +898,7 @@ function SceneWindow({
       <div
         key={sceneKey}
         className={cn(
-          'grid min-h-[230px] place-items-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/35 p-3 transition-opacity motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-700 sm:min-h-[260px] sm:p-5',
+          'grid min-h-[140px] place-items-center overflow-hidden bg-gradient-to-br from-background via-background to-muted/35 p-2 transition-opacity motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-700 sm:min-h-[150px] sm:p-3',
           !active && 'opacity-90',
           developer ? 'motion-safe:slide-in-from-left-4' : 'motion-safe:slide-in-from-right-4'
         )}
@@ -1087,10 +1089,10 @@ export default function PreviewEnvironmentSimulator() {
         </div>
       </div>
 
-      <div className="p-3 sm:p-4">
+      <div className="p-3">
         <StoryProgress activeIndex={phaseIndex} done={state.status === 'removed'} />
 
-        <div className="my-3 flex flex-col items-center justify-center gap-1 text-center sm:my-4">
+        <div className="my-2 flex flex-col items-center justify-center gap-1 text-center sm:flex-row sm:gap-3">
           <Badge
             variant="outline"
             className={cn(
@@ -1102,11 +1104,11 @@ export default function PreviewEnvironmentSimulator() {
           >
             Current turn · {actor === 'developer' ? 'Developer' : 'Argo CD'}
           </Badge>
-          <div aria-live="polite">
+          <div aria-live="polite" className="sm:flex sm:items-center sm:gap-2 sm:text-left">
             <p className="text-sm font-semibold">
               {actor === 'developer' ? phase.developerTitle : phase.platformTitle}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground sm:before:mr-2 sm:before:content-['·']">
               {friendlyStatus(state, actor, storyStarted)}
             </p>
           </div>
@@ -1127,7 +1129,7 @@ export default function PreviewEnvironmentSimulator() {
           />
         </SceneWindow>
 
-        <div className="relative flex min-h-14 items-center justify-center py-2" aria-hidden="true">
+        <div className="relative flex min-h-10 items-center justify-center py-1" aria-hidden="true">
           <span
             className={cn(
               'absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gradient-to-b from-blue-500/30 to-violet-500/40',
@@ -1136,7 +1138,7 @@ export default function PreviewEnvironmentSimulator() {
           />
           <span
             className={cn(
-              'relative inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-[10px] font-medium text-muted-foreground shadow-sm',
+              'relative inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-[10px] font-medium text-muted-foreground shadow-sm',
               actor === 'platform' && 'border-violet-500/35 text-violet-700'
             )}
           >
@@ -1168,7 +1170,7 @@ export default function PreviewEnvironmentSimulator() {
 
         <div
           className={cn(
-            'mt-3 flex min-h-11 gap-2 rounded-xl border bg-background/75 p-2.5',
+            'mt-2 flex min-h-10 gap-2 rounded-xl border bg-background/75 p-2',
             sharedDecision
               ? 'flex-col items-center justify-center text-center'
               : 'flex-wrap items-center justify-center sm:justify-between'
