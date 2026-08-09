@@ -42,3 +42,7 @@ package-lock.json
 
 # skill eval workspace
 skill-eval-workspace/
+
+# Generated at build time by scripts/generate-devto-feed.ts, like the sitemaps.
+# Committing it would put a stale copy next to the real one.
+/public/feed-devto.xml
