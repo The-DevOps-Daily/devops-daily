@@ -173,4 +173,33 @@ describe('the syndication feed', () => {
       expect(item).toContain('Originally published at');
     }
   });
+
+  it('carries none of the back catalogue, only posts from the floor onwards', async () => {
+    // The site has 500+ posts. The feed exists to syndicate new writing, not
+    // to republish years of archive on another platform as though it were new.
+    const xml = fs.readFileSync(FEED, 'utf-8');
+    const dates = [...xml.matchAll(/<pubDate>([^<]+)<\/pubDate>/g)].map(
+      (m) => new Date(m[1]),
+    );
+    expect(dates.length).toBeGreaterThan(0);
+    const floor = new Date('2026-07-09T00:00:00Z');
+    for (const date of dates) {
+      expect(date.getTime()).toBeGreaterThanOrEqual(floor.getTime());
+    }
+
+    const posts = (await getAllPosts()) as Array<unknown>;
+    expect(dates.length).toBeLessThan(posts.length);
+  });
+
+  it('leaves out any post that opted out with syndicate:false', async () => {
+    const xml = fs.readFileSync(FEED, 'utf-8');
+    const posts = (await getAllPosts()) as Array<{ slug: string; syndicate?: boolean }>;
+    for (const post of posts) {
+      if (post.syndicate === false) {
+        expect(xml, `${post.slug} opted out but is in the feed`).not.toContain(
+          `/posts/${post.slug}<`,
+        );
+      }
+    }
+  });
 });

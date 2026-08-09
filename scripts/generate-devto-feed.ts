@@ -20,8 +20,20 @@ import { parseMarkdown } from '../lib/markdown.js';
 import { toPortableMarkdown } from '../lib/portable-markdown.js';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
-/** dev.to imports the most recent items; more than this is wasted bytes. */
-const ITEM_LIMIT = 30;
+
+/**
+ * Nothing published before this date is ever syndicated. Change this one line
+ * to move the starting point.
+ *
+ * Deliberately a fixed date rather than a rolling window such as "the last 30
+ * days". A rolling window silently drops a post if the importer is paused or
+ * fails for longer than the window, and nobody would notice. A fixed floor
+ * cannot lose anything: a post is either always in the feed or never was.
+ */
+const SYNDICATE_FROM = new Date('2026-07-09T00:00:00Z');
+
+/** A cap on top of the date floor, so a busy month cannot produce a huge file. */
+const ITEM_LIMIT = 50;
 
 function xmlEscape(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -34,6 +46,11 @@ function cdata(s: string): string {
 
 interface Post {
   slug: string;
+  /** Set `syndicate: false` in a post's frontmatter to keep it out of this
+   *  feed. Used for posts already published elsewhere by hand, which a date
+   *  floor cannot express: the ones most likely to be duplicates are the
+   *  recent ones, which is exactly what the floor lets through. */
+  syndicate?: boolean;
   title: string;
   excerpt?: string;
   content?: string;
@@ -47,7 +64,13 @@ interface Post {
 async function build() {
   const posts = (await getAllPosts()) as Post[];
 
-  const items = posts
+  const eligible = posts.filter((post) => {
+    if (post.syndicate === false) return false;
+    const published = new Date(post.publishedAt || post.date || 0);
+    return published >= SYNDICATE_FROM;
+  });
+
+  const items = eligible
     .slice()
     .sort((a, b) => {
       const da = new Date(a.publishedAt || a.date || 0).getTime();
@@ -57,7 +80,13 @@ async function build() {
     .slice(0, ITEM_LIMIT);
 
   if (items.length === 0) {
-    throw new Error('No posts found, refusing to write an empty feed');
+    // Either every post predates the floor or every one opted out. Both mean
+    // the configuration is wrong, and a silently empty feed would look like
+    // the importer had broken instead.
+    throw new Error(
+      `No posts to syndicate. ${posts.length} exist, but none published on or after ` +
+        `${SYNDICATE_FROM.toISOString().slice(0, 10)} without syndicate:false.`,
+    );
   }
 
   const rendered = items.map((post) => {
@@ -101,7 +130,11 @@ ${rendered.join('')}
 
   const outPath = path.join(process.cwd(), 'public', 'feed-devto.xml');
   await fs.writeFile(outPath, rss, 'utf-8');
-  console.log(`  feed-devto.xml  ${items.length} posts`);
+  const optedOut = posts.filter((p) => p.syndicate === false).length;
+  console.log(
+    `  feed-devto.xml  ${items.length} posts ` +
+      `(from ${SYNDICATE_FROM.toISOString().slice(0, 10)}, ${optedOut} opted out)`,
+  );
 }
 
 build().catch((err) => {
