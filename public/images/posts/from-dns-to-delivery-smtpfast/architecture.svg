@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Receipt Relay with SMTPFast architecture</title>
+  <desc id="desc">A browser sends receipt data to FastAPI on DigitalOcean App Platform. FastAPI validates and sends the email through SMTPFast. SMTPFast delivers to a recipient mail server and returns lifecycle events through both a trace API and signed webhooks.</desc>
+  <rect width="1200" height="620" rx="24" fill="#090909"/>
+  <g stroke="#242421" stroke-width="1">
+    <path d="M0 90H1200M0 180H1200M0 270H1200M0 360H1200M0 450H1200M0 540H1200"/>
+    <path d="M100 0V620M200 0V620M300 0V620M400 0V620M500 0V620M600 0V620M700 0V620M800 0V620M900 0V620M1000 0V620M1100 0V620"/>
+  </g>
+  <text x="64" y="67" fill="#9b9a92" font-family="ui-monospace, monospace" font-size="13" letter-spacing="2">RECEIPT RELAY · REQUEST AND EVENT FLOW</text>
+
+  <g font-family="ui-sans-serif, system-ui">
+    <rect x="64" y="140" width="220" height="170" rx="16" fill="#141412" stroke="#34342f"/>
+    <circle cx="94" cy="171" r="7" fill="#42e68b"/>
+    <text x="112" y="177" fill="#f3f2ed" font-size="20" font-weight="650">Browser</text>
+    <text x="92" y="217" fill="#94938c" font-size="14">Validated receipt form</text>
+    <text x="92" y="245" fill="#94938c" font-size="14">Short delivery polling</text>
+    <text x="92" y="273" fill="#94938c" font-size="14">No provider secrets</text>
+
+    <rect x="350" y="140" width="250" height="170" rx="16" fill="#141412" stroke="#34342f"/>
+    <circle cx="380" cy="171" r="7" fill="#42e68b"/>
+    <text x="398" y="177" fill="#f3f2ed" font-size="20" font-weight="650">FastAPI</text>
+    <text x="378" y="217" fill="#94938c" font-size="14">Render HTML + text</text>
+    <text x="378" y="245" fill="#94938c" font-size="14">Keep API key server-side</text>
+    <text x="378" y="273" fill="#94938c" font-size="14">Verify webhook HMAC</text>
+
+    <rect x="666" y="140" width="220" height="170" rx="16" fill="#141412" stroke="#34342f"/>
+    <circle cx="696" cy="171" r="7" fill="#42e68b"/>
+    <text x="714" y="177" fill="#f3f2ed" font-size="20" font-weight="650">SMTPFast</text>
+    <text x="694" y="217" fill="#94938c" font-size="14">Queue and relay email</text>
+    <text x="694" y="245" fill="#94938c" font-size="14">Expose per-email trace</text>
+    <text x="694" y="273" fill="#94938c" font-size="14">Sign delivery webhooks</text>
+
+    <rect x="952" y="140" width="184" height="170" rx="16" fill="#141412" stroke="#34342f"/>
+    <circle cx="982" cy="171" r="7" fill="#42e68b"/>
+    <text x="1000" y="177" fill="#f3f2ed" font-size="20" font-weight="650">Inbox</text>
+    <text x="980" y="217" fill="#94938c" font-size="14">Recipient server</text>
+    <text x="980" y="245" fill="#94938c" font-size="14">Accept or reject</text>
+    <text x="980" y="273" fill="#94938c" font-size="14">Open and click</text>
+  </g>
+
+  <g fill="none" stroke="#42e68b" stroke-width="2">
+    <path d="M284 207H350"/>
+    <path d="M600 207H666"/>
+    <path d="M886 207H952"/>
+  </g>
+  <g fill="#42e68b">
+    <path d="M343 202l8 5-8 5z"/>
+    <path d="M659 202l8 5-8 5z"/>
+    <path d="M945 202l8 5-8 5z"/>
+  </g>
+  <g fill="#a09f97" font-family="ui-monospace, monospace" font-size="11">
+    <text x="295" y="194">POST receipt</text>
+    <text x="614" y="194">POST /emails</text>
+    <text x="897" y="194">SMTP relay</text>
+  </g>
+
+  <path d="M776 310V404H475V310" fill="none" stroke="#f4b45e" stroke-width="2" stroke-dasharray="7 6"/>
+  <path d="M481 318l-6-9-6 9z" fill="#f4b45e"/>
+  <text x="538" y="387" fill="#f4b45e" font-family="ui-monospace, monospace" font-size="12">SIGNED WEBHOOK · RAW-BODY HMAC</text>
+
+  <path d="M776 310V474H194V310" fill="none" stroke="#717069" stroke-width="1.5" stroke-dasharray="5 7"/>
+  <path d="M200 318l-6-9-6 9z" fill="#717069"/>
+  <text x="405" y="457" fill="#92918a" font-family="ui-monospace, monospace" font-size="12">GET /emails/:id · SHORT UI POLLING</text>
+
+  <rect x="64" y="525" width="1072" height="40" rx="10" fill="#11110f" stroke="#292925"/>
+  <circle cx="88" cy="545" r="5" fill="#42e68b"/>
+  <text x="104" y="550" fill="#94938c" font-family="ui-sans-serif, system-ui" font-size="13">FastAPI runs on App Platform. SMTPFast owns the email pipeline. A production webhook consumer persists events durably.</text>
+</svg>
