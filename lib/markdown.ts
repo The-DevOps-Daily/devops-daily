@@ -319,6 +319,17 @@ const calloutExtension: TokenizerAndRendererExtension = {
 
 marked.use({ extensions: [calloutExtension] });
 
+// Keep post images previewable from their source Markdown files. Authors can
+// link to assets under public/ with a relative filesystem path, while the site
+// still emits the public URL that Next.js serves.
+marked.use({
+  walkTokens(token) {
+    if (token.type === 'image') {
+      token.href = token.href.replace(/^(?:\.\.\/)+public\//, '/');
+    }
+  },
+});
+
 export function parseMarkdown(content: string): string {
   const result = marked.parse(content);
   return typeof result === 'string' ? result : '';
