@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
   <title id="title">Receipt Relay with SMTPFast architecture</title>
-  <desc id="desc">A browser sends receipt data to FastAPI on DigitalOcean App Platform. FastAPI validates and sends the email through SMTPFast. SMTPFast delivers to a recipient mail server and returns lifecycle events through both a trace API and signed webhooks.</desc>
+  <desc id="desc">A browser sends receipt data to a FastAPI application. FastAPI validates and sends the email through SMTPFast. SMTPFast delivers to a recipient mail server and returns lifecycle events through both a trace API and signed webhooks.</desc>
   <rect width="1200" height="620" rx="24" fill="#090909"/>
   <g stroke="#242421" stroke-width="1">
     <path d="M0 90H1200M0 180H1200M0 270H1200M0 360H1200M0 450H1200M0 540H1200"/>
@@ -64,5 +64,5 @@
 
   <rect x="64" y="525" width="1072" height="40" rx="10" fill="#11110f" stroke="#292925"/>
   <circle cx="88" cy="545" r="5" fill="#42e68b"/>
-  <text x="104" y="550" fill="#94938c" font-family="ui-sans-serif, system-ui" font-size="13">FastAPI runs on App Platform. SMTPFast owns the email pipeline. A production webhook consumer persists events durably.</text>
+  <text x="104" y="550" fill="#94938c" font-family="ui-sans-serif, system-ui" font-size="13">FastAPI owns the application boundary. SMTPFast owns the email pipeline. A production webhook consumer persists events durably.</text>
 </svg>

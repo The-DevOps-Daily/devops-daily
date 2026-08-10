@@ -45,7 +45,7 @@ In this guide, you build **Receipt Relay**, a FastAPI application that sends a t
 - A domain you control and access to its DNS configuration
 - An inbox you control for the live test
 - Basic familiarity with FastAPI and HTTP APIs
-- Optional: Docker and Terraform for the deployment section
+- Optional: Docker for the container section
 
 This walkthrough uses a Cloudflare-managed domain because SMTPFast provides a one-click setup for it. Other DNS providers work too; you add the same records manually.
 
@@ -176,9 +176,22 @@ Fix provider setup errors here, before proceeding:
 
 With the direct request working, put a small application boundary around it. The browser never receives the SMTPFast key and never calls SMTPFast directly.
 
+The complete application is available as a reusable GitHub template:
+
+```github
+https://github.com/The-DevOps-Daily/smtpfast-receipt-relay
+```
+
 ### 6. Install and configure the application
 
-From the Receipt Relay project directory, create a virtual environment and install the project with its development tools:
+Click **Use this template** on GitHub to create your own repository, or clone the reference application directly:
+
+```bash
+git clone https://github.com/The-DevOps-Daily/smtpfast-receipt-relay.git
+cd smtpfast-receipt-relay
+```
+
+Create a virtual environment and install the project with its development tools:
 
 ```bash
 python3 -m venv .venv
@@ -540,7 +553,7 @@ Check spam. A technically successful first send from a new domain can still be f
 
 ## Run the same app in Docker
 
-The project includes a non-root Docker image and Terraform for DigitalOcean App Platform. Run the container locally with the same `.env` file:
+The project includes a non-root Docker image. Run the container locally with the same `.env` file:
 
 ```bash
 docker build -t smtpfast-receipt-relay .
@@ -558,19 +571,11 @@ curl http://localhost:8080/health
 
 Expected output:
 
-```json
-{ "status": "ok" }
+```text
+{"status":"ok"}
 ```
 
-The App Platform deployment is naturally two-stage:
-
-1. Deploy with the SMTPFast API key and verified sender.
-2. Read the public webhook URL from the deployment output.
-3. Create the SMTPFast webhook using that HTTPS endpoint.
-4. Add the returned signing secret.
-5. Apply again and test the webhook.
-
-Treat Terraform state as sensitive. Values marked sensitive are hidden from ordinary output, but state still stores resource arguments. Use an encrypted remote backend with restricted access for shared infrastructure.
+You can deploy the same image to any container platform that accepts environment variables and exposes a public HTTPS URL. Once that URL exists, create the SMTPFast webhook, store its signing secret in the platform's secret manager, and restart the application.
 
 ## Production checklist
 
