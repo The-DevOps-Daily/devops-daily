@@ -99,6 +99,9 @@ const CHALLENGES: Record<Mode, Challenge[]> = {
   ],
 };
 
+/** Per-tile delay so a carry reads as a ripple rather than one flash. */
+const STAGGER_MS = 45;
+
 const PERM_LETTERS = ['r', 'w', 'x'] as const;
 const PERM_GROUPS = ['owner', 'group', 'other'] as const;
 
@@ -123,6 +126,22 @@ function toOctets(bits: string): number[] {
 
 function permOctal(bits: string): string {
   return [0, 1, 2].map((g) => bitsToNumber(bits.slice(g * 3, g * 3 + 3))).join('');
+}
+
+/**
+ * Screen readers get the group context that sighted users read from the
+ * headings above the tiles: "owner read", not "place value r".
+ */
+function tileLabel(mode: Mode, i: number, place: string, bit: string): string {
+  const state = bit === '1' ? 'on' : 'off';
+  if (mode === 'perms') {
+    const word = ['read', 'write', 'execute'][i % 3];
+    return `${PERM_GROUPS[Math.floor(i / 3)]} ${word}, ${state}`;
+  }
+  if (mode === 'subnet') {
+    return `Octet ${Math.floor(i / 8) + 1}, place value ${place}, ${state}`;
+  }
+  return `Place value ${place}, ${state}`;
 }
 
 function permSymbolic(bits: string): string {
@@ -158,16 +177,21 @@ export default function BinaryByteSimulator() {
 
   // Apply a new bit string and flash whichever tiles actually moved, which is
   // what makes a carry legible when counting.
-  const applyBits = useCallback((next: string) => {
-    setBits((prev) => {
+  // Note: the diff is computed from the current render's `bits` rather than
+  // inside a setBits updater. An updater has to be pure, and StrictMode runs it
+  // twice, so queueing another state update from inside it is a bug waiting to
+  // happen.
+  const applyBits = useCallback(
+    (next: string) => {
       const moved = new Set<number>();
       for (let i = 0; i < next.length; i++) {
-        if (prev[i] !== next[i]) moved.add(i);
+        if (bits[i] !== next[i]) moved.add(i);
       }
       setChanged(moved);
-      return next;
-    });
-  }, []);
+      setBits(next);
+    },
+    [bits]
+  );
 
   const toggleBit = useCallback(
     (i: number) => {
@@ -198,7 +222,9 @@ export default function BinaryByteSimulator() {
   // The flash is decorative, so clear it shortly after it lands.
   useEffect(() => {
     if (changed.size === 0) return;
-    const t = setTimeout(() => setChanged(new Set()), 380);
+    // Hold long enough for the last staggered tile to finish its flip.
+    const spread = Math.max(...changed) - Math.min(...changed);
+    const t = setTimeout(() => setChanged(new Set()), 360 + spread * STAGGER_MS);
     return () => clearTimeout(t);
   }, [changed]);
 
@@ -220,6 +246,13 @@ export default function BinaryByteSimulator() {
     [width]
   );
 
+  // The rightmost tile that moved is where a carry starts, so the stagger is
+  // measured from there.
+  const rightmostChanged = useMemo(
+    () => (changed.size ? Math.max(...changed) : 0),
+    [changed]
+  );
+
   const renderTile = useCallback(
     (i: number, b: string) => {
       const on = b === '1';
@@ -236,9 +269,13 @@ export default function BinaryByteSimulator() {
             tileRefs.current[i] = el;
           }}
           className={'bs-tile' + (on ? ' bs-lit' : '') + (changed.has(i) ? ' bs-flash' : '')}
+          // A carry travels from the low bit upward, so tiles further left flip
+          // fractionally later. Without this stagger every changed tile flashes
+          // at once and the ripple the copy promises is not actually visible.
+          style={changed.has(i) ? { animationDelay: `${(rightmostChanged - i) * STAGGER_MS}ms` } : undefined}
           onClick={() => toggleBit(i)}
           onKeyDown={(e) => onTileKey(e, i)}
-          aria-label={`Bit ${i + 1}, place value ${place}, currently ${b}`}
+          aria-label={tileLabel(mode, i, place, b)}
           aria-pressed={on}
         >
           <span className="bs-place">{place}</span>
@@ -264,7 +301,7 @@ export default function BinaryByteSimulator() {
         on a focused tile. The same tiles become a byte, a set of file permissions, and a subnet mask.
       </p>
 
-      <div className="bs-modes" role="tablist" aria-label="Simulator mode">
+      <div className="bs-modes" role="group" aria-label="Simulator mode">
         {(
           [
             ['byte', 'Byte', '8 bits'],
@@ -274,8 +311,7 @@ export default function BinaryByteSimulator() {
         ).map(([m, label, hint]) => (
           <button
             key={m}
-            role="tab"
-            aria-selected={mode === m}
+            aria-pressed={mode === m}
             className={`bs-mode${mode === m ? ' bs-on' : ''}`}
             onClick={() => switchMode(m)}
           >
@@ -286,7 +322,7 @@ export default function BinaryByteSimulator() {
       </div>
 
       {/* ---------- readout ---------- */}
-      <div className="bs-readout">
+      <div className="bs-readout" role="status" aria-live="polite" aria-atomic="true">
         {mode === 'byte' && (
           <>
             <div className="bs-big">
@@ -367,17 +403,17 @@ export default function BinaryByteSimulator() {
                   {maskValid
                     ? prefixLen >= 31
                       ? prefixLen === 32
-                        ? '0 (a single host route)'
-                        : '2 (a point-to-point link)'
+                        ? '1 address, a single host route'
+                        : '2 addresses, a point-to-point link'
                       : (2 ** (32 - prefixLen) - 2).toLocaleString()
                     : '—'}
                 </span>
               </div>
               {!maskValid && (
                 <div className="bs-warn">
-                  A mask has to be a solid run of 1s from the left. You have a gap, so this is not a
-                  usable subnet mask. That rule is why masks are written as <b>/{prefixLen}</b> rather
-                  than as an arbitrary pattern.
+                  A mask has to be a solid run of 1s from the left. You have a gap, so this is not
+                  a usable mask and it has no prefix length. That rule is why a mask can be written
+                  as a single number like <b>/24</b> instead of a pattern.
                 </div>
               )}
             </div>
@@ -461,14 +497,14 @@ export default function BinaryByteSimulator() {
         <button
           className="bs-btn"
           onClick={() => applyBits(bits.slice(1) + '0')}
-          title="Shift left, which doubles the value"
+          title="Shift left. Doubles the value, and the top bit falls off the end."
         >
           &laquo; Shift
         </button>
         <button
           className="bs-btn"
           onClick={() => applyBits('0' + bits.slice(0, -1))}
-          title="Shift right, which halves the value"
+          title="Shift right. Halves the value, discarding the remainder."
         >
           Shift &raquo;
         </button>
@@ -489,7 +525,14 @@ export default function BinaryByteSimulator() {
           </div>
           <div className="bs-chactions">
             {!showChallenge ? (
-              <button className="bs-btn bs-primary" onClick={() => setShowChallenge(true)}>
+              <button
+                className="bs-btn bs-primary"
+                onClick={() => {
+                  // Counting would keep changing the board under the learner.
+                  setCounting(false);
+                  setShowChallenge(true);
+                }}
+              >
                 Start
               </button>
             ) : (
@@ -531,7 +574,7 @@ export default function BinaryByteSimulator() {
 const CSS = `
 .bytesim {
   --bs-ground: #0a0d14; --bs-panel: #121824; --bs-panel2: #161d2c; --bs-line: #263144;
-  --bs-ink: #e8edf6; --bs-muted: #8b96ab; --bs-faint: #5b6577;
+  --bs-ink: #e8edf6; --bs-muted: #8b96ab; --bs-faint: #8e99ad;
   --bs-accent: #f2b043; --bs-accent2: #ffcf7a; --bs-good: #46d888; --bs-bad: #fb7185;
   --bs-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
   background: radial-gradient(900px 440px at 72% -12%, #17203233, transparent 60%), var(--bs-ground);
@@ -573,12 +616,12 @@ const CSS = `
 
 .bytesim .bs-board { background: var(--bs-panel); border: 1px solid var(--bs-line); border-radius: 14px; padding: 16px 14px; margin-bottom: 16px; overflow-x: auto; }
 .bytesim .bs-groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 9px; min-width: 420px; }
-.bytesim .bs-groups-4 { grid-template-columns: repeat(4, 1fr); min-width: 660px; }
+.bytesim .bs-groups-4 { grid-template-columns: repeat(4, 1fr); min-width: 880px; }
 .bytesim .bs-group { font-family: var(--bs-mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--bs-faint); text-align: center; }
 .bytesim .bs-tiles { display: grid; gap: 8px; min-width: 420px; }
 .bytesim .bs-tiles-byte { grid-template-columns: repeat(8, 1fr); }
 .bytesim .bs-tiles-perms { grid-template-columns: repeat(9, 1fr); }
-.bytesim .bs-octets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; min-width: 660px; }
+.bytesim .bs-octets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; min-width: 880px; }
 .bytesim .bs-octet { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
 
 .bytesim .bs-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; aspect-ratio: 3 / 4; background: linear-gradient(180deg, #1b2333, #141a27); border: 1px solid var(--bs-line); border-radius: 9px; cursor: pointer; padding: 6px 2px; transition: background .22s, border-color .22s, transform .18s, box-shadow .22s; }

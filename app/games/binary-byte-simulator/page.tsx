@@ -14,7 +14,7 @@ const seoLearningPoints = [
   'How chmod numbers work: why 755 and 644 mean what they mean, and how they map to rwxr-xr-x',
   'Why an SSH private key needs 600, and why 777 is almost never the right answer',
   'How a subnet mask is built from bits, why it must be a solid run of 1s, and where /24 and /26 come from',
-  'Why shifting bits left doubles a number and shifting right halves it',
+  'Why shifting bits left doubles a number until the top bit falls off the end',
 ];
 
 function BinaryEducational() {
@@ -81,7 +81,7 @@ function BinaryEducational() {
           one point, so the 1s must run solidly from the left. Try flipping a bit in the middle of the
           run: the simulator will tell you the mask is invalid, which is the same thing your router
           would say. That rule is why a mask can be written as a single number, <code>/24</code>,
-          instead of a pattern, and why borrowing one more bit always halves the number of hosts.
+          instead of a pattern, and why borrowing one more bit halves the address space each time.
         </p>
       </div>
 
