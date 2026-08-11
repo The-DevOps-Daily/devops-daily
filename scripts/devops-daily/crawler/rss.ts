@@ -15,6 +15,21 @@ const parser = new Parser({
 /**
  * Crawl an RSS feed
  */
+/**
+ * Resolves a feed item's link against the feed's own URL.
+ *
+ * Returns the input unchanged when it cannot be parsed, because a slightly
+ * wrong link is better than dropping the item, and the link checker will
+ * catch anything that is still relative.
+ */
+export function absoluteUrl(link: string, feedUrl: string): string {
+  try {
+    return new URL(link, feedUrl).href;
+  } catch {
+    return link;
+  }
+}
+
 export async function crawlRssFeed(source: Source): Promise<NewsItem[]> {
   try {
     console.log(`Crawling RSS: ${source.name} (${source.url})`);
@@ -29,7 +44,12 @@ export async function crawlRssFeed(source: Source): Promise<NewsItem[]> {
 
       items.push({
         title: item.title,
-        url: item.link,
+        // Some feeds publish relative links. The Bazel blog does, and one of
+        // them reached a digest as `/2026/08/05/new-websites-incoming.html`,
+        // which the link checker correctly read as a broken internal link and
+        // which failed the build on main. Resolve against the feed URL so a
+        // relative link becomes the absolute one the reader needs.
+        url: absoluteUrl(item.link, source.url),
         excerpt: extractExcerpt(item),
         source: source.name,
         publishedAt: item.pubDate || item.isoDate || new Date().toISOString(),
