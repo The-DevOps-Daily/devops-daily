@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { toPortableMarkdown, CUSTOM_FENCES } from '@/lib/portable-markdown';
+import { toPortableMarkdown, toPortableHtml, CUSTOM_FENCES } from '@/lib/portable-markdown';
 import { getAllPosts } from '@/lib/posts';
 
 /**
@@ -137,6 +137,64 @@ describe('toPortableMarkdown', () => {
   });
 });
 
+/**
+ * parseMarkdown renders for our own pages. Off-site, two of its assumptions
+ * break: root-relative URLs resolve against the importing site, and the
+ * copy-link button on every heading arrives as visible markup with no CSS to
+ * hide it. That button is what showed up as raw <svg> text on dev.to.
+ */
+describe('toPortableHtml', () => {
+  const SITE = 'https://devops-daily.com';
+
+  it('reduces a decorated heading to a plain one', () => {
+    const html =
+      '<h2 id="h2-tldr" class="group relative scroll-mt-24">\n' +
+      '  <a href="#h2-tldr" class="no-underline">TL;DR</a>\n' +
+      '  <button class="copy-heading-link" aria-label="Copy"><svg viewBox="0 0 24 24"></svg></button>\n' +
+      '</h2>';
+    expect(toPortableHtml(html, SITE)).toBe('<h2>TL;DR</h2>');
+  });
+
+  it('leaves no button or svg behind', () => {
+    const html = '<h3><a href="#x">T</a><button><svg></svg></button></h3>';
+    const out = toPortableHtml(html, SITE);
+    expect(out).not.toContain('<button');
+    expect(out).not.toContain('<svg');
+  });
+
+  it('makes a root-relative image absolute, so it loads off-site', () => {
+    const html = '<img src="/images/posts/a.png" alt="x">';
+    expect(toPortableHtml(html, SITE)).toContain('src="https://devops-daily.com/images/posts/a.png"');
+  });
+
+  it('makes a root-relative link absolute', () => {
+    const html = '<a href="/games/dns-simulator">try it</a>';
+    expect(toPortableHtml(html, SITE)).toContain('href="https://devops-daily.com/games/dns-simulator"');
+  });
+
+  it('leaves an already absolute URL alone', () => {
+    const html = '<a href="https://example.com/x">y</a><img src="https://cdn.example.com/z.png">';
+    expect(toPortableHtml(html, SITE)).toBe(html);
+  });
+
+  it('leaves a protocol-relative URL alone', () => {
+    // //cdn.example.com already resolves against the scheme, and prefixing
+    // our domain would break it.
+    const html = '<img src="//cdn.example.com/z.png">';
+    expect(toPortableHtml(html, SITE)).toBe(html);
+  });
+
+  it('leaves an in-page anchor alone', () => {
+    const html = '<a href="#section">jump</a>';
+    expect(toPortableHtml(html, SITE)).toBe(html);
+  });
+
+  it('keeps the heading text, so nothing is lost by the cleaning', () => {
+    const html = '<h2 id="a"><a href="#a">The 200 is only the first hop</a><button></button></h2>';
+    expect(toPortableHtml(html, SITE)).toContain('The 200 is only the first hop');
+  });
+});
+
 describe('the syndication feed', () => {
   const FEED = path.join(process.cwd(), 'public', 'feed-devto.xml');
 
@@ -172,6 +230,18 @@ describe('the syndication feed', () => {
     for (const item of items) {
       expect(item).toContain('Originally published at');
     }
+  });
+
+  it('carries no site-only chrome and no root-relative URL', () => {
+    // All three were in the first version of this feed. The buttons were
+    // visible as raw markup on dev.to; the relative URLs would have resolved
+    // against dev.to and 404'd.
+    const xml = fs.readFileSync(FEED, 'utf-8');
+    expect(xml).not.toContain('<button');
+    expect(xml).not.toContain('<svg');
+    expect(xml).not.toContain('copy-heading-link');
+    expect(xml).not.toContain('src="/');
+    expect(xml).not.toContain('href="/');
   });
 
   it('carries none of the back catalogue, only posts from the floor onwards', async () => {

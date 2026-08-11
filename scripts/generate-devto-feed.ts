@@ -17,7 +17,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { getAllPosts } from '../lib/posts.js';
 import { parseMarkdown } from '../lib/markdown.js';
-import { toPortableMarkdown } from '../lib/portable-markdown.js';
+import { toPortableMarkdown, toPortableHtml } from '../lib/portable-markdown.js';
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
@@ -92,7 +92,9 @@ async function build() {
   const rendered = items.map((post) => {
     const url = `${SITE}/posts/${post.slug}`;
     const portable = toPortableMarkdown(post.content || '');
-    const html = portable ? parseMarkdown(portable) : (post.excerpt || '');
+    // parseMarkdown renders for our own pages, so it emits root-relative
+    // URLs and per-heading copy buttons. Both are wrong off-site.
+    const html = portable ? toPortableHtml(parseMarkdown(portable), SITE) : (post.excerpt || '');
 
     // A visible canonical line as well as the dev.to setting. The setting is
     // what search engines act on; this is what a reader sees.
