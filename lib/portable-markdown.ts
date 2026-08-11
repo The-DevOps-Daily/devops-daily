@@ -198,3 +198,36 @@ export function toPortableMarkdown(markdown: string): string {
 
 /** Every fence language this module rewrites. Exported for the tests. */
 export const CUSTOM_FENCES = ['diagram', 'chart', 'terminal', 'tabs', 'github'] as const;
+
+/**
+ * Cleans rendered site HTML for a feed another platform will import.
+ *
+ * `parseMarkdown` produces HTML for our own pages, which assumes two things
+ * that are false anywhere else: that the reader is on devops-daily.com, so
+ * root-relative URLs resolve, and that our CSS and JavaScript are present, so
+ * interactive chrome makes sense.
+ *
+ * Off-site both assumptions break. A root-relative `/images/...` resolves
+ * against the importing site and 404s, and the copy-link button on every
+ * heading arrives as visible markup with no styles to hide it.
+ */
+export function toPortableHtml(html: string, siteUrl: string): string {
+  let out = html;
+
+  // Headings render as an anchor plus a copy-link button, both of which are
+  // affordances for our own page. Reduce each one back to a plain heading.
+  out = out.replace(
+    /<h([1-6])[^>]*>\s*<a[^>]*>\s*([\s\S]*?)\s*<\/a>[\s\S]*?<\/h\1>/g,
+    (_whole, level: string, text: string) => `<h${level}>${text.trim()}</h${level}>`,
+  );
+
+  // Anything left over from a heading block that did not match the shape above.
+  out = out.replace(/<button[\s\S]*?<\/button>/g, '');
+
+  // Root-relative URLs only work on our own domain. An importer resolves them
+  // against itself, so the image or link silently points at the wrong site.
+  const base = siteUrl.replace(/\/$/, '');
+  out = out.replace(/(\s(?:src|href)=")\/(?!\/)/g, `$1${base}/`);
+
+  return out;
+}
