@@ -1,5 +1,6 @@
 ---
 title: 'Karpenter Spot Storm Fallback Gap: The Production Loop Nobody Talks About'
+seoTitle: 'Karpenter Spot Storm Fallback Gap: The Production Loop'
 excerpt: 'When AWS spot capacity dries up in a region, Karpenter does not automatically fall back to on-demand. It retries the same dying offerings on a 3-minute loop. Here is why, and how to design around it.'
 category:
   name: 'Kubernetes'

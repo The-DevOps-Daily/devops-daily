@@ -1,5 +1,6 @@
 ---
 title: 'How to Split a Terraform File (main.tf) into Several Files (No Modules)'
+seoTitle: 'How to Split a Terraform File Into Several Files'
 excerpt: 'Organizing Terraform configurations by splitting a single main.tf file into multiple files can improve readability and maintainability. Learn how to do this without using modules.'
 category:
   name: 'Terraform'

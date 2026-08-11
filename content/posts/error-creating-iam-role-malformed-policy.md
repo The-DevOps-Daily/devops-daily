@@ -1,5 +1,6 @@
 ---
 title: 'Terraform: Error Creating IAM Role. MalformedPolicyDocument: Has Prohibited Field Resource'
+seoTitle: 'Terraform IAM Role Error: MalformedPolicyDocument'
 excerpt: "Learn how to resolve the 'MalformedPolicyDocument: Has prohibited field Resource' error when creating an IAM role in Terraform."
 category:
   name: 'Terraform'

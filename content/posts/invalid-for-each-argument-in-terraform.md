@@ -1,5 +1,6 @@
 ---
 title: 'Terraform Failing with Invalid for_each Argument / The Given "for_each" Argument Value is Unsuitable'
+seoTitle: 'Terraform: Invalid for_each Argument Value Is Unsuitable'
 excerpt: 'Learn how to troubleshoot and fix the "Invalid for_each argument" error in Terraform.'
 category:
   name: 'Terraform'

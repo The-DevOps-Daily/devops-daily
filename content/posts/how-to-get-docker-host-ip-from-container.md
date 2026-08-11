@@ -1,5 +1,6 @@
 ---
 title: 'How to Get the IP Address of the Docker Host from Inside a Docker Container'
+seoTitle: 'How to Get the Docker Host IP From Inside a Container'
 excerpt: "Need your container to talk to the Docker host? Learn practical ways to discover the host's IP address from inside a container, with examples for Linux, macOS, and Windows."
 category:
   name: 'Docker'

@@ -1,5 +1,6 @@
 ---
 title: 'Difference Between ClusterIP, NodePort and LoadBalancer Service Types in Kubernetes'
+seoTitle: 'ClusterIP vs NodePort vs LoadBalancer in Kubernetes'
 excerpt: 'Understand the key differences between ClusterIP, NodePort, and LoadBalancer service types in Kubernetes, when to use each, and how they expose applications.'
 category:
   name: 'Kubernetes'

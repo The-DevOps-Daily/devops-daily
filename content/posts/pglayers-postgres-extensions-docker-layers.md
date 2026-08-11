@@ -1,5 +1,6 @@
 ---
 title: 'Stop Compiling Postgres Extensions in Your Dockerfile: How pglayers Works'
+seoTitle: 'Stop Compiling Postgres Extensions in Your Dockerfile'
 excerpt: 'Adding pgvector or PostGIS to a Postgres image usually means apt-get, build tools, and a fat, slow image. pglayers ships each extension as a scratch Docker layer you COPY in. Here is how it works and when to use it.'
 category:
   name: 'Docker'

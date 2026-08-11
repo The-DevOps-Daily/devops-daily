@@ -1,5 +1,6 @@
 ---
 title: 'Distributed Tracing with OpenTelemetry: From Instrumentation to Visualization'
+seoTitle: 'Distributed Tracing with OpenTelemetry: A Practical Guide'
 excerpt: 'A walkthrough of instrumenting a real service with OpenTelemetry, running the Collector, and finding the slow span in Jaeger when a request hops across five microservices.'
 category:
   name: 'DevOps'

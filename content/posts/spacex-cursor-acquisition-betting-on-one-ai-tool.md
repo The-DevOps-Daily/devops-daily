@@ -1,5 +1,6 @@
 ---
 title: 'SpaceX Just Bought Cursor for $60B. What That Means If Your Team Lives in It'
+seoTitle: 'SpaceX Bought Cursor for $60B: What It Means for Your Team'
 excerpt: 'SpaceX is acquiring Anysphere, the maker of Cursor, in a $60 billion all-stock deal, the largest acquisition of a venture-backed startup ever. The number is the headline. The real question for engineering teams is what it means to build your daily workflow on a tool whose owner just changed.'
 category:
   name: 'DevOps'

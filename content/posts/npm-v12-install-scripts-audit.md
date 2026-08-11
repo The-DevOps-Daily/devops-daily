@@ -1,5 +1,6 @@
 ---
 title: 'npm v12 Will Stop Running Install Scripts. We Audited Our Repos to See What Actually Breaks'
+seoTitle: 'npm v12 Stops Install Scripts: We Audited Our Own Repos'
 excerpt: 'Starting with npm v12 (estimated July 2026), dependency install scripts will not run unless you allowlist them. We ran the new audit tooling on our own production repos: 65 packages flagged, 4 that matter, and a surprising amount of nothing breaking.'
 category:
   name: 'DevOps'

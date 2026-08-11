@@ -1,5 +1,6 @@
 ---
 title: 'Firebase Alternatives in 2026: Choose by Why You Are Leaving, Not by a Ranking'
+seoTitle: 'Firebase Alternatives in 2026: Choose by Why You Are Leaving'
 excerpt: 'Most "Firebase alternatives" lists rank tools you cannot compare, because Firebase is five products in a trench coat. The useful question is which part you are replacing and why you are leaving: the Firestore bill that scales with reads, or the data model you cannot port. Here is an honest map of Supabase, Appwrite, Convex, PocketBase, Nhost, Amplify and the rest, grouped by the reason you are actually switching.'
 category:
   name: 'Cloud'

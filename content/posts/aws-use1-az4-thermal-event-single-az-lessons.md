@@ -1,5 +1,6 @@
 ---
 title: 'When One Data Center Room Got Hot: AWS US-EAST-1, Coinbase, and the DR Drill That Was Not'
+seoTitle: 'AWS US-EAST-1 Thermal Event: The DR Drill That Was Not'
 excerpt: 'On May 7, 2026, cooling failed in a single hall of one US-EAST-1 data center. Coinbase, FanDuel, and CME Group went down for hours, and Coinbase publicly confirmed their backup systems did not work as expected. Here is what happened, the multi-AZ checklist that would have caught it, and the AWS Fault Injection Simulator commands to run the drill before the next thermal event.'
 category:
   name: 'AWS'

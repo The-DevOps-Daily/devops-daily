@@ -1,5 +1,6 @@
 ---
 title: 'Why Running Postgres on Kubernetes Is Still a Bad Idea (And What to Do Instead)'
+seoTitle: 'Why Running Postgres on Kubernetes Is Still a Bad Idea'
 excerpt: 'Everyone wants to run databases on Kubernetes, but should you? We explore the real challenges of stateful workloads and better alternatives.'
 category:
   name: 'Kubernetes'

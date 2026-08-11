@@ -1,5 +1,6 @@
 ---
 title: 'Use Terraform to set up a Lambda function triggered by a scheduled event source'
+seoTitle: 'Terraform: A Lambda Function Triggered by a Scheduled Event'
 excerpt: 'Learn how to use Terraform to create an AWS Lambda function triggered by a scheduled event source, such as a cron job.'
 category:
   name: 'Terraform'

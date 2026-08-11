@@ -1,5 +1,6 @@
 ---
 title: 'The pwn request just got harder: what actions/checkout v7 changes, and what it does not'
+seoTitle: 'The pwn Request Got Harder: What checkout v7 Changes'
 excerpt: 'GitHub is backporting a fork-checkout block to actions/checkout, with enforcement on July 20, 2026. Here is what a pwn request actually is, what the change stops, and the three ways your pipeline is still exposed after you upgrade.'
 category:
   name: 'CI/CD'

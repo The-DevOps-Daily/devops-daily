@@ -1,5 +1,6 @@
 ---
 title: 'Security-Focused Code Reviews: Catching Vulnerabilities Before Production'
+seoTitle: 'Security-Focused Code Reviews: Catching Bugs Before Production'
 excerpt: 'Learn how to review code with a security mindset. This guide covers common vulnerability patterns, language-specific pitfalls, and practical checklists for finding injection flaws, auth bypass, and logic bugs that automated tools miss.'
 category:
   name: 'Security'

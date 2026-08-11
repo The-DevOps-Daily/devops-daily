@@ -1,5 +1,6 @@
 ---
 title: 'Cilium 1.19 ClusterMesh Policy Flip: The Silent Default That Will Drop Your Cross-Cluster Traffic'
+seoTitle: 'Cilium 1.19 ClusterMesh: The Default That Drops Your Traffic'
 excerpt: 'Cilium 1.19 changed how network policies without a cluster selector resolve in a ClusterMesh. East/West traffic that 1.18 implicitly allowed is now silently dropped. Here is how to find every affected policy before you upgrade.'
 category:
   name: 'Kubernetes'

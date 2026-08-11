@@ -1,5 +1,6 @@
 ---
 title: 'Understanding Kubernetes Operators: A Deep Dive with a Practical Example'
+seoTitle: 'Understanding Kubernetes Operators: A Practical Deep Dive'
 excerpt: 'Learn the concepts behind Kubernetes operators, why they exist, and how the control loop pattern works, then build one yourself to solidify your understanding.'
 category:
   name: 'Kubernetes'

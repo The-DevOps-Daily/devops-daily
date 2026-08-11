@@ -1,5 +1,6 @@
 ---
 title: 'How to Manage Multiple Environments in Kubernetes (Staging, QA, Production)'
+seoTitle: 'How to Manage Multiple Environments in Kubernetes'
 excerpt: 'Learn practical strategies for managing multiple Kubernetes environments like staging, QA, and production. This guide covers namespace organization, configuration management, and deployment workflows.'
 category:
   name: 'Kubernetes'

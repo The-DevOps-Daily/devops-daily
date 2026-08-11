@@ -1,5 +1,6 @@
 ---
 title: 'Stop Using Random UUIDs as Primary Keys: uuidv7() Lands in PostgreSQL 18'
+seoTitle: 'Stop Using Random UUIDs as Keys: uuidv7() in PostgreSQL 18'
 excerpt: 'Random UUIDv4 primary keys quietly wreck insert speed and bloat indexes on large tables. PostgreSQL 18 ships a native time-ordered uuidv7() that keeps the upsides of UUIDs without the B-tree penalty. Here are the numbers and how to adopt it.'
 category:
   name: 'DevOps'

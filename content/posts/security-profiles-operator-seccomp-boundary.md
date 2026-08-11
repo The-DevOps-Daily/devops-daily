@@ -1,5 +1,6 @@
 ---
 title: 'Build the Container Boundary You Do Not Have: Seccomp Profiles with the Security Profiles Operator'
+seoTitle: 'Seccomp Profiles with the Security Profiles Operator'
 excerpt: 'A container is not a security boundary out of the box, but you can build one. Here is a hands-on guide to recording, tuning, and enforcing seccomp profiles with the Security Profiles Operator, which just shipped v1.0.'
 category:
   name: 'Kubernetes'

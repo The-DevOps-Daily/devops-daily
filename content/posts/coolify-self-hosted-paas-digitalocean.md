@@ -1,5 +1,6 @@
 ---
 title: 'Coolify: Self-Hosted PaaS on DigitalOcean - Deploy Apps Without Vendor Lock-In'
+seoTitle: 'Coolify: Self-Hosted PaaS on DigitalOcean, No Vendor Lock-In'
 excerpt: 'Set up Coolify on a DigitalOcean droplet and get your own Vercel-like platform for deploying Next.js apps, databases, and more - with auto SSL, GitHub auto-deploy, and no per-seat pricing.'
 category:
   name: 'DevOps'

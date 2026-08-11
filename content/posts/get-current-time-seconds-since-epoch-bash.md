@@ -1,5 +1,6 @@
 ---
 title: 'How to Get the Current Time in Seconds Since the Epoch in Bash on Linux'
+seoTitle: 'Get the Current Time in Seconds Since the Epoch in Bash'
 excerpt: "Learn how to get Unix timestamps in Bash for logging, benchmarking, and time calculations. Includes examples of converting timestamps, measuring elapsed time, and practical use cases."
 category:
   name: 'Bash'

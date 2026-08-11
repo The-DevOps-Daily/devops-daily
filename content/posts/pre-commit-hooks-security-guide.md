@@ -1,5 +1,6 @@
 ---
 title: 'Pre-commit Hooks for Security: Stop Secrets Before They Hit Your Repository'
+seoTitle: 'Pre-commit Hooks for Security: Stop Secrets Before They Land'
 excerpt: 'Once a secret is committed to Git, it lives forever in the history. Pre-commit hooks with gitleaks, detect-secrets, and custom checks catch credentials before that happens.'
 category:
   name: 'Security'

@@ -51,7 +51,10 @@ export async function generateMetadata({
   // the meta tag stays in range without dropping keywords.
   return detailPageMetadata({
     path: `/posts/${post.slug}`,
-    title: post.title,
+    // Bing flags a <title> over 70 characters as liable to be truncated or
+    // ignored. `seoTitle` shortens it for search without touching the
+    // headline a reader sees, the same way guides and games already do.
+    title: post.seoTitle || post.title,
     description: truncateMetaDescription(post.excerpt),
     image: socialImage || post.image || '/og-image.png',
     article: {

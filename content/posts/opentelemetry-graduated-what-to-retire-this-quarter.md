@@ -1,5 +1,6 @@
 ---
 title: "OpenTelemetry Just Graduated: What to Retire from Your Stack This Quarter"
+seoTitle: 'OpenTelemetry Graduated: What to Retire From Your Stack'
 excerpt: "On May 21, 2026, CNCF graduated OpenTelemetry. All three core signals (traces, metrics, logs) are now production-ready, the project is the second-most-active in CNCF after Kubernetes itself, and Anthropic, Bloomberg, Capital One, eBay, and Heroku run it at scale. Here is the decision framework for what proprietary agents you can stop running, what is still risky, and the 90-day adoption checklist."
 category:
   name: 'DevOps'

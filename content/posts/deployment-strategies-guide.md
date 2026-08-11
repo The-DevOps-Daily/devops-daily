@@ -1,5 +1,6 @@
 ---
 title: 'Deployment Strategies: Blue-Green, Canary, and Rolling Deployments Explained'
+seoTitle: 'Deployment Strategies: Blue-Green, Canary and Rolling Explained'
 excerpt: 'Learn how to deploy applications safely using blue-green, canary, and rolling deployment strategies. Understand the theory, trade-offs, and decision-making behind each approach.'
 category:
   name: 'DevOps'

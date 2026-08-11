@@ -1,5 +1,6 @@
 ---
 title: 'OpenTofu in 2026: Should You Switch from Terraform (and What It Actually Costs You)'
+seoTitle: 'OpenTofu in 2026: Should You Switch from Terraform?'
 excerpt: 'OpenTofu has matured into a real Terraform alternative in 2026. Here is what the fork gives you, why the migration is easier than you think, and where the actual lock-in hides.'
 category:
   name: 'Terraform'

@@ -1,5 +1,6 @@
 ---
 title: 'DevOps Engineer, What''s Next? Five Career Paths for the Next Five Years'
+seoTitle: 'DevOps Engineer: Five Career Paths for the Next Five Years'
 excerpt: 'The generic "DevOps Engineer" title is splitting into specialized tracks. Here are five honest career paths for the next five years, what each one really involves, who thrives in it, and the first concrete step to take.'
 category:
   name: 'DevOps'

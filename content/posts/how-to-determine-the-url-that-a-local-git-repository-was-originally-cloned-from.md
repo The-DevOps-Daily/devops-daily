@@ -1,5 +1,6 @@
 ---
 title: 'How to Determine the URL That a Local Git Repository Was Originally Cloned From'
+seoTitle: 'How to Find the URL a Local Git Repository Was Cloned From'
 excerpt: 'Find out where your Git repository came from by checking remote URLs. Learn how to view, verify, and manage remote repository connections using git remote commands.'
 category:
   name: 'Git'

@@ -1,5 +1,6 @@
 ---
 title: 'Fixing "A Reference to Resource Type Must Be Followed by At Least One Attribute Access" in Terraform'
+seoTitle: 'Fix "Reference to Resource Type Must Be Followed by Attribute"'
 excerpt: "Learn how to resolve the error 'A reference to resource type must be followed by at least one attribute access' in Terraform."
 category:
   name: 'Terraform'

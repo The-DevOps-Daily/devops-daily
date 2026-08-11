@@ -1,5 +1,6 @@
 ---
 title: "How NetEase Games Cut LLM Cold Starts From 42 Minutes to 30 Seconds Using Fluid"
+seoTitle: 'NetEase Cut LLM Cold Starts From 42 Minutes to 30 Seconds'
 excerpt: "NetEase Games published a Kubernetes case study walking through how they took their serverless GPU inference cold-start time from 42 minutes down to under 30 seconds. The bottleneck isn't the GPU. It's the 60GB model weights crossing a region. Here is what they did with the CNCF Fluid project and how to apply the same pattern even if you are not on Kubernetes."
 category:
   name: 'Kubernetes'

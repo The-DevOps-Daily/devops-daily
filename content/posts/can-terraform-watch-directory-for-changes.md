@@ -1,5 +1,6 @@
 ---
 title: 'Can Terraform Watch a Directory for Changes? Working With Dynamic Files'
+seoTitle: 'Can Terraform Watch a Directory for Changes?'
 excerpt: "Learn how to handle scenarios where you need Terraform to respond to file changes, and explore alternatives to automatic directory watching."
 category:
   name: 'Terraform'

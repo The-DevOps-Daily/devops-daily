@@ -1,5 +1,6 @@
 ---
 title: 'How Do I Get Logs from All Pods of a Kubernetes Replication Controller?'
+seoTitle: 'How to Get Logs From All Pods of a Replication Controller'
 excerpt: 'Learn how to retrieve logs from all Pods managed by a Kubernetes replication controller. Understand the commands and best practices for effective logging.'
 category:
   name: 'Kubernetes'

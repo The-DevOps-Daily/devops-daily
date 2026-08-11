@@ -1,5 +1,6 @@
 ---
 title: 'How to Get docker-compose to Always Re-create Containers from Fresh Images'
+seoTitle: 'Force docker-compose to Re-create Containers From Fresh Images'
 excerpt: 'Want to make sure docker-compose always uses the latest image and re-creates containers? Learn the right flags, workflow, and best practices to avoid stale containers in development and CI.'
 category:
   name: 'Docker'

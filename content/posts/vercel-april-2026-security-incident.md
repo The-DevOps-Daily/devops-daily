@@ -1,5 +1,6 @@
 ---
 title: 'The Vercel April 2026 Security Incident: What Happened and What to Do About It'
+seoTitle: 'The Vercel April 2026 Security Incident: What to Do About It'
 excerpt: 'Vercel disclosed a security incident that started with a compromised OAuth app at Context.ai, escalated through a Vercel employee Google Workspace account, and reached internal systems plus customer environment variables not marked sensitive. Here is the attack chain, what was exposed, and what to change in your deployments.'
 category:
   name: 'DevOps'

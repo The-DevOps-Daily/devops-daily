@@ -1,5 +1,6 @@
 ---
 title: 'Secrets Management Guide: Vault, AWS Secrets Manager, and Azure Key Vault'
+seoTitle: 'Secrets Management: Vault, AWS Secrets Manager, Key Vault'
 excerpt: 'Stop storing secrets in .env files and environment variables. This guide covers secrets management fundamentals, HashiCorp Vault dynamic secrets, AWS Secrets Manager rotation, and Azure Key Vault with practical code examples.'
 category:
   name: 'Security'

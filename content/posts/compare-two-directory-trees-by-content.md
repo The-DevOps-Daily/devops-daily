@@ -1,5 +1,6 @@
 ---
 title: 'How to Compare Two Directory Trees and Find Files That Differ by Content'
+seoTitle: 'How to Compare Two Directory Trees by File Content'
 excerpt: "Learn different methods to compare two directory structures and identify which files have different content, using tools like diff, rsync, and custom scripts."
 category:
   name: 'Linux'

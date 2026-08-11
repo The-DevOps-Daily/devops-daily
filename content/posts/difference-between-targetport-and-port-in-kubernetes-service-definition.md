@@ -1,5 +1,6 @@
 ---
 title: 'Difference Between targetPort and port in Kubernetes Service Definition'
+seoTitle: 'targetPort vs port in a Kubernetes Service Definition'
 excerpt: "Understand the distinction between targetPort and port in Kubernetes Service definitions, and learn how they impact your application's networking."
 category:
   name: 'Kubernetes'

@@ -1,5 +1,6 @@
 ---
 title: 'How to Get Current Date and Time in Linux Terminal and Create Custom Commands'
+seoTitle: 'Get the Current Date and Time in the Linux Terminal'
 excerpt: "Learn how to display the current date and time in various formats using the date command, and create custom shell aliases for quick access to your preferred formats."
 category:
   name: 'Linux'

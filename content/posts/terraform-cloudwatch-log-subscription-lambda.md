@@ -1,5 +1,6 @@
 ---
 title: 'How to Configure CloudWatch Logs Subscription Filter to Lambda With Terraform'
+seoTitle: 'Configure a CloudWatch Logs Subscription to Lambda in Terraform'
 excerpt: "Learn how to stream CloudWatch Logs to a Lambda function using Terraform, including proper permissions and error handling."
 category:
   name: 'Terraform'

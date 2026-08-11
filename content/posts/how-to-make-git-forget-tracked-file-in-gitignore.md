@@ -1,5 +1,6 @@
 ---
 title: 'How to Make Git Forget About a File That Was Tracked But Is Now in .gitignore'
+seoTitle: 'Make Git Forget a Tracked File That Is Now in .gitignore'
 excerpt: 'Learn how to remove files from Git tracking while keeping them locally when you add them to .gitignore after they were already committed.'
 category:
   name: 'Git'

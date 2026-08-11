@@ -1,5 +1,6 @@
 ---
 title: 'Send an Email by Hand: The Raw SMTP Conversation (and Why You Should Not Do It in Production)'
+seoTitle: 'Send an Email by Hand: The Raw SMTP Conversation'
 excerpt: 'You can open a socket to a mail server and type an email one command at a time. Doing it once teaches you what every email API hides. Here is the full SMTP conversation, byte by byte, and the exact reasons production sending needs more than a telnet session.'
 category:
   name: 'Networking'

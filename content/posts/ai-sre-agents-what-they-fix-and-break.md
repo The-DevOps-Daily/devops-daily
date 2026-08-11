@@ -1,5 +1,6 @@
 ---
 title: 'AI SRE Agents: What They Actually Fix, and What They Will Happily Break'
+seoTitle: 'AI SRE Agents: What They Fix and What They Break'
 excerpt: 'AI SRE is now its own category, with every incident vendor shipping an agent that investigates and remediates on its own. Here is the honest split: where these agents genuinely earn their keep, where they are oversold, and the one risk nobody puts on the marketing page.'
 category:
   name: 'DevOps'

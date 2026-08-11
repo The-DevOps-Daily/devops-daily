@@ -1,5 +1,6 @@
 ---
 title: 'node-postgres Silently Ignores Your TLS Config When the URL Says sslmode'
+seoTitle: 'node-postgres Ignores Your TLS Config When the URL Says sslmode'
 excerpt: 'If your connection string contains sslmode=require, the pg library throws away the ssl options object where you loaded your CA certificate, and verification fails with "self-signed certificate in certificate chain". Here is the trap, the fix, and the v9 changes coming.'
 category:
   name: 'DevOps'

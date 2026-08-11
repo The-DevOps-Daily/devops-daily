@@ -1,5 +1,6 @@
 ---
 title: "The 3 Infrastructure Decisions That Determine Your Engineering Velocity"
+seoTitle: 'The 3 Infrastructure Decisions That Set Engineering Velocity'
 excerpt: "Provisioning model, environment strategy, and deployment surface. Everything else is optimization. Here's how to make these foundational choices without killing your team's momentum."
 category:
   name: "DevOps"

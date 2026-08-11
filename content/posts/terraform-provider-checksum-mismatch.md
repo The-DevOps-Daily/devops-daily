@@ -1,5 +1,6 @@
 ---
 title: 'Terraform: Failed to install provider, does not match checksums from dependency lock file'
+seoTitle: 'Terraform: Provider Does Not Match Checksums in the Lock File'
 excerpt: 'Troubleshoot the Terraform error about provider checksums not matching the dependency lock file and learn safe fixes and best practices.'
 category:
   name: 'Terraform'

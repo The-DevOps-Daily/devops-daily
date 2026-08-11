@@ -1,5 +1,6 @@
 ---
 title: 'Claude Code Source Leaked via npm Source Maps: Lessons for Every DevOps Team'
+seoTitle: 'Claude Code Source Leaked via npm Source Maps: The Lessons'
 excerpt: 'Anthropic accidentally shipped source maps in their npm package, exposing 512,000 lines of Claude Code source. Here is what went wrong and how to prevent it in your own CI/CD pipeline.'
 category:
   name: 'DevOps'

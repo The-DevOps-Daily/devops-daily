@@ -1,5 +1,6 @@
 ---
 title: "node-ipc DNS-Tunneling Supply Chain Attack: Your Egress Firewall Probably Missed This"
+seoTitle: 'node-ipc DNS Tunnelling: Your Egress Firewall Probably Missed It'
 excerpt: "On May 14, 2026, three malicious versions of the node-ipc npm package shipped a payload that hunts AWS, SSH, kubeconfig, and GitHub CLI credentials, then smuggles them out through DNS TXT queries. Most orgs filter HTTPS egress. Almost nobody filters DNS. Here is what the payload does and how to close the gap."
 category:
   name: 'DevOps'

@@ -1,5 +1,6 @@
 ---
 title: 'Designing Rate Limiting for APIs: Algorithms, Patterns, and Implementation'
+seoTitle: 'Designing Rate Limiting for APIs: Algorithms and Patterns'
 excerpt: 'A practical comparison of token bucket, leaky bucket, fixed window, and sliding window rate limiting, with copy-paste Redis and FastAPI code, nginx config, and guidance on which one to actually use.'
 category:
   name: 'DevOps'

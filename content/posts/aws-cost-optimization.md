@@ -1,5 +1,6 @@
 ---
 title: 'How We Reduced Our AWS Bill by 73% While Actually Improving Performance'
+seoTitle: 'How We Cut Our AWS Bill by 73% and Improved Performance'
 excerpt: 'The counterintuitive strategies we used to slash cloud costs while actually improving application performance.'
 category:
   name: 'Cloud'

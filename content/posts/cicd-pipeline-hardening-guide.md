@@ -1,5 +1,6 @@
 ---
 title: 'CI/CD Pipeline Hardening: A Practical Guide to Securing Your Build Infrastructure'
+seoTitle: 'CI/CD Pipeline Hardening: Securing Your Build Infrastructure'
 excerpt: 'Your CI/CD pipeline has access to source code, secrets, and production environments. Here is how to harden it against supply chain attacks, secret exfiltration, and artifact tampering.'
 category:
   name: 'Security'

@@ -1,5 +1,6 @@
 ---
 title: 'Where Does the Convention of Using /healthz for Application Health Checks Come From?'
+seoTitle: 'Where Does the /healthz Health Check Convention Come From?'
 excerpt: 'Discover the origins of the /healthz endpoint convention for application health checks and why it has become a standard in modern software development.'
 category:
   name: 'DevOps'

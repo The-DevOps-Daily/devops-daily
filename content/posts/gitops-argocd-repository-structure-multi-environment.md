@@ -1,5 +1,6 @@
 ---
 title: 'GitOps with Argo CD: Structuring Your Repository for Multi-Environment Deployments'
+seoTitle: 'GitOps with Argo CD: Multi-Environment Repository Structure'
 excerpt: 'A practical guide to laying out your Git repository for Argo CD across dev, staging, and production. See real folder structures, Kustomize and Helm patterns, and the pitfalls that bite teams in production.'
 category:
   name: 'DevOps'

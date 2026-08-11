@@ -1,5 +1,6 @@
 ---
 title: 'Per-Branch AI Endpoints: Isolating Model Spend Across Prod, Preview, and CI'
+seoTitle: 'Per-Branch AI Endpoints: Isolating Model Spend'
 excerpt: 'When previews, CI, and production all call models with the same key, you cannot tell what a preview cost or notice a runaway test until the invoice. Because a Neon branch is its own deployment with a usage ledger that lives in the branch''s Postgres, model spend is attributed and isolated per environment. I proved it: a CI branch spent tokens while production stayed flat.'
 category:
   name: 'DevOps'

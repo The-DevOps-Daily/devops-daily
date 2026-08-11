@@ -1,5 +1,6 @@
 ---
 title: 'Ingress-NGINX Is Retired: A Real Migration to Gateway API With ingress2gateway 1.0'
+seoTitle: 'Ingress-NGINX Is Retired: A Real Migration to Gateway API'
 excerpt: 'In March 2026 the Kubernetes project retired ingress-nginx with no replacement waiting in the wings. Roughly half of all clusters still run it. This post is the migration that does not involve a flag day: how to inventory your annotations, what ingress2gateway 1.0 translates and what it silently drops, the side-by-side cutover pattern with the actual PromQL, and how to pick between Envoy Gateway, kgateway, Cilium Gateway, and Istio.'
 category:
   name: 'Kubernetes'

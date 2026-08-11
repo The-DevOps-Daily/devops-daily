@@ -1,5 +1,6 @@
 ---
 title: 'Neon vs Supabase in Production: We Benchmarked the Operations That Page You at 3am'
+seoTitle: 'Neon vs Supabase: Benchmarking the Operations That Page You'
 excerpt: 'Two benchmark sessions against Neon and Supabase Pro measured what spec sheets never show: compute resizes cost 39 seconds of real downtime on one platform and zero on the other, read replicas differ by 23x, and branch creation has a tail you should know about.'
 category:
   name: 'DevOps'

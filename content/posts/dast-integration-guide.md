@@ -1,5 +1,6 @@
 ---
 title: 'How to Integrate DAST Into Your CI/CD Pipeline (With OWASP ZAP Examples)'
+seoTitle: 'How to Integrate DAST Into CI/CD With OWASP ZAP'
 excerpt: 'A practical guide to Dynamic Application Security Testing. Learn how DAST works, set up OWASP ZAP scans, compare it with Burp Suite, and automate security testing in your CI/CD pipeline with quality gates.'
 category:
   name: 'Security'

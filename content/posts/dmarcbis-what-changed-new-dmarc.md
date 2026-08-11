@@ -1,5 +1,6 @@
 ---
 title: 'DMARCbis Is Here: What Changed in the New DMARC and What to Do to Your Records'
+seoTitle: 'DMARCbis Is Here: What Changed and What to Do to Your Records'
 excerpt: 'DMARC finally became a real internet standard in 2026. The pct tag is gone, there are two new tags, and the Public Suffix List is out. Here is what actually changed and the exact edits to make to your DNS.'
 category:
   name: 'Networking'

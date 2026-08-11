@@ -1,5 +1,6 @@
 ---
 title: 'Cannot Connect to Docker Daemon at unix:/var/run/docker.sock - Is the Docker Daemon Running?'
+seoTitle: 'Cannot Connect to the Docker Daemon at docker.sock: The Fix'
 excerpt: "Fix the common 'Cannot connect to the Docker daemon' error with practical solutions for Linux, macOS, and Windows. Learn why this happens and how to resolve permissions and service issues."
 category:
   name: 'Docker'

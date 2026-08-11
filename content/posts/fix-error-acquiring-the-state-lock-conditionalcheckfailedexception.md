@@ -1,5 +1,6 @@
 ---
 title: 'How to Fix "Error acquiring the state lock: ConditionalCheckFailedException"'
+seoTitle: 'Fix "Error acquiring the state lock" in Terraform'
 excerpt: 'Learn how to diagnose and fix Terraform state lock errors that prevent your infrastructure deployments from running.'
 category:
   name: 'Terraform'

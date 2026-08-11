@@ -1,5 +1,6 @@
 ---
 title: 'The US Government Pulled Two Frontier Models Overnight. The Real Lesson Is About Your Stack'
+seoTitle: 'Two Frontier Models Pulled Overnight: The Lesson for Your Stack'
 excerpt: 'On June 12, 2026, an export-control directive forced Anthropic to disable Claude Fable 5 and Mythos 5 for every user worldwide, three days after launch. The policy fight is interesting. The operational lesson for anyone building on a single model provider is more urgent.'
 category:
   name: 'DevOps'

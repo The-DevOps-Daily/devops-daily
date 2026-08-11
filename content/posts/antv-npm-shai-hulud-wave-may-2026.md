@@ -1,5 +1,6 @@
 ---
 title: 'AntV npm Compromise: The Shai-Hulud Worm Comes for Your Dashboards (May 19, 2026)'
+seoTitle: 'AntV npm Compromise: The Shai-Hulud Worm Returns'
 excerpt: 'A new Shai-Hulud wave landed at 01:56 UTC on May 19 and rode the @antv maintainer account through 323 packages including echarts-for-react. Here is what got published, what it steals, and the lockfile grep that tells you if you are exposed.'
 category:
   name: 'DevOps'

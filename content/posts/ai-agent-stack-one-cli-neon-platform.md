@@ -1,5 +1,6 @@
 ---
 title: 'I Gave an AI Agent a Database, Compute, Storage, and Models From One CLI'
+seoTitle: 'I Gave an AI Agent a Database, Storage and Models From One CLI'
 excerpt: 'An AI agent usually needs four accounts: a database, somewhere to run, object storage, and a model provider. I wired all four from a single Neon credential and had a deployed image-generating agent in a few minutes. Here is the actual build log, the config that ties it together, and the honest caveats.'
 category:
   name: 'DevOps'

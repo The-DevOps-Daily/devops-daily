@@ -1,5 +1,6 @@
 ---
 title: "Hetzner's Third Price Increase in Three Months: What DevOps Teams Should Do"
+seoTitle: 'Hetzner Raised Prices Three Times: What DevOps Teams Should Do'
 excerpt: 'Hetzner is changing dedicated server and cloud pricing again on June 15, 2026. Here is what changed, why customers are frustrated, and how to decide whether to stay, resize, or move workloads.'
 category:
   name: 'FinOps'

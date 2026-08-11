@@ -1,5 +1,6 @@
 ---
 title: 'How to Fix Terraform Import "Index Value Required" Error for String Keys'
+seoTitle: 'Fix Terraform Import "Index Value Required" for String Keys'
 excerpt: "Learn how to resolve the 'Index value required' error when importing resources with for_each in Terraform, and understand the correct syntax for string-based resource keys."
 category:
   name: 'Terraform'

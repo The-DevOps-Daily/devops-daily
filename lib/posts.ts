@@ -13,6 +13,12 @@ const POSTS_DIR = path.join(process.cwd(), 'content', 'posts');
 // Define the expected Post type for type safety
 export type Post = {
   title: string;
+  /**
+   * Shorter title for the <title> tag only, leaving the headline a reader
+   * sees unchanged. Bing flags anything over 70 characters as liable to be
+   * truncated or ignored. Guides and games already have the same field.
+   */
+  seoTitle?: string;
   slug: string;
   excerpt?: string;
   content: string;

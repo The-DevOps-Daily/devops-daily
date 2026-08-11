@@ -1,5 +1,6 @@
 ---
 title: "When the Malicious Hook Is in the Other Manifest: 700+ Repos, 8 Packagist Packages, One package.json Trick"
+seoTitle: '700+ Repos Hit by a Malicious Hook Hidden in package.json'
 excerpt: "On May 22, 2026, Socket disclosed a Composer supply chain attack that hid an npm-style postinstall command inside package.json on PHP projects. composer.json was clean, the PHP review missed it, and 700+ GitHub repos pulled it in. Here is the exact payload, why ecosystem-boundary blindness keeps catching teams, and how to wire your CI to look at both manifests."
 category:
   name: 'DevOps'

@@ -1,5 +1,6 @@
 ---
 title: 'Should .terraform.lock.hcl Be in .gitignore? (The Answer Might Surprise You)'
+seoTitle: 'Should .terraform.lock.hcl Be in .gitignore?'
 excerpt: 'The .terraform.lock.hcl file causes confusion for many Terraform users. Learn why you should commit it to version control and how to handle it properly.'
 category:
   name: 'Terraform'

@@ -1,5 +1,6 @@
 ---
 title: 'The provided execution role does not have permissions to call DescribeNetworkInterfaces on EC2'
+seoTitle: 'Lambda Role Cannot Call DescribeNetworkInterfaces on EC2'
 excerpt: "Learn how to resolve the 'execution role does not have permissions to call DescribeNetworkInterfaces' error in AWS EC2."
 category:
   name: 'AWS'
