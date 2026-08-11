@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import AgenticLoopSimulator from '@/components/games/agentic-loop-simulator';
+import BinaryByteSimulator from '@/components/games/binary-byte-simulator';
 import BounceTriageSimulator from '@/components/games/bounce-triage-simulator';
 import AwsVpcSimulator from '@/components/games/aws-vpc-simulator';
 import BCDRSimulator from '@/components/games/bcdr-simulator';
@@ -53,6 +54,7 @@ import WebhookDeliverySimulator from '@/components/games/webhook-delivery-simula
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'agentic-loop-simulator': AgenticLoopSimulator,
+  'binary-byte-simulator': BinaryByteSimulator,
   'bounce-triage-simulator': BounceTriageSimulator,
   'docker-under-the-hood-simulator': DockerUnderTheHoodSimulator,
   'tcp-vs-udp': TcpVsUdpSimulator,
