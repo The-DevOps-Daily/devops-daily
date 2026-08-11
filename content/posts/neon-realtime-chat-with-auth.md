@@ -4,10 +4,10 @@ excerpt: 'A WebSocket cannot carry an Authorization header, so how do you know w
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-07-22'
-publishedAt: '2026-07-22T09:00:00Z'
-updatedAt: '2026-07-22T09:00:00Z'
-readingTime: '9 min read'
+date: '2026-08-11'
+publishedAt: '2026-08-11T09:00:00Z'
+updatedAt: '2026-08-11T09:00:00Z'
+readingTime: '11 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -23,11 +23,11 @@ tags:
 
 Realtime and auth are each straightforward on their own. Put them together and you hit a wall almost immediately: a browser cannot set an `Authorization` header on a WebSocket. The `WebSocket` constructor takes a URL and, optionally, a subprotocol, and that is it. So the moment you want a socket that only authenticated users can open, you have to answer a question that a normal HTTP request never asks: how does the server know who is on the other end of this connection, before it accepts it?
 
-This post is a build-log for a realtime chat that answers it. It runs a [Neon Function](https://neon.com/docs/compute/functions/overview) as the WebSocket server, uses [Neon Auth](https://neon.com/docs/neon-auth/overview) for identity, and stores messages in the same Postgres. Every socket is authenticated with a Neon Auth JWT that the function verifies before it accepts the upgrade, the stored identity comes from the verified token rather than anything the client claims, and messages fan out across isolates with Postgres `LISTEN`/`NOTIFY`. If you have not seen how Neon Auth issues those tokens, the previous post, [auth for a Postgres app without a separate service](https://devops-daily.com/posts/neon-auth-without-a-separate-service), covers it. The full [repo](https://github.com/The-DevOps-Daily/neon-auth-demo) is at the end.
+This post is a build-log for a realtime chat that answers it. It runs a [Neon Function](https://neon.com/docs/compute/functions/overview) as the WebSocket server, uses [Neon Auth](https://neon.com/docs/neon-auth/overview) for identity, and stores messages in the same Postgres. Every socket is authenticated with a Neon Auth JWT that the function verifies before it accepts the upgrade, the stored identity comes from the verified token rather than anything the client claims, and messages fan out across isolates with Postgres `LISTEN`/`NOTIFY`. If you have not seen how Neon Auth issues those tokens, the previous post, [auth for a Postgres app without a separate service](/posts/neon-auth-without-a-separate-service), covers it. The full [repo](https://github.com/The-DevOps-Daily/neon-auth-demo) is at the end.
 
 ## TL;DR
 
-- Browsers cannot set headers on a WebSocket, so the client passes its Neon Auth JWT as a `?token=` query parameter.
+- Browsers cannot set headers on a WebSocket, so the client passes its Neon Auth JWT as a `?token=` query parameter. The `Sec-WebSocket-Protocol` subprotocol is the alternative that keeps it out of access logs, and the post covers when to prefer it.
 - The function exports `{ fetch, upgrade }`. The `upgrade` hook verifies the token against the Neon Auth JWKS and rejects with `401` before the socket is ever accepted.
 - The identity written to each message is the `sub` from the verified token, never a name the client sends. That is the difference between "signed in as Alice" and "typed the name Alice".
 - Broadcasting in-process only reaches clients on the same isolate. Postgres `LISTEN`/`NOTIFY` fans each message out to every isolate so the chat is genuinely shared.
@@ -35,7 +35,7 @@ This post is a build-log for a realtime chat that answers it. It runs a [Neon Fu
 
 ## Prerequisites
 
-- A [Neon](https://neon.com) project with Neon Auth enabled (`auth: true` in `neon.ts`, see [the previous post](https://devops-daily.com/posts/neon-auth-without-a-separate-service))
+- A [Neon](https://neon.com) project with Neon Auth enabled (`auth: true` in `neon.ts`, see [the previous post](/posts/neon-auth-without-a-separate-service))
 - Comfort with WebSockets and JWTs
 - Node.js and the Neon CLI
 
@@ -126,8 +126,36 @@ async upgrade(req, socket, head) {
 Rejecting at the handshake matters. An unauthenticated client never gets an open socket, so there is no "connected but not yet authenticated" state to babysit, no first-message-must-be-a-token dance, and no window where an anonymous connection is holding a slot. The check is a precondition of the upgrade, not a step after it.
 
 :::warning
-Tokens in a URL are visible in server and proxy logs, so keep them short-lived. Neon Auth tokens expire quickly (about 15 minutes), and the client re-mints on every reconnect, so a leaked one is stale fast. This is the standard trade-off for WebSocket auth given that headers are off the table; the short TTL is what makes it acceptable.
+Tokens in a URL are visible in server and proxy logs, so keep them short-lived. Neon Auth tokens expire quickly (about 15 minutes), and the client re-mints on every reconnect, so a leaked one is stale fast. The short TTL is what makes this acceptable.
 :::
+
+### The subprotocol alternative
+
+The query parameter is not the only option, and if you noticed that the `WebSocket` constructor also takes a subprotocol, you have already spotted the other one. Whatever you pass there is sent as a `Sec-WebSocket-Protocol` header, which means the token travels in a header after all:
+
+```typescript
+// The token rides in Sec-WebSocket-Protocol instead of the URL.
+const ws = new WebSocket(WS_URL, ['auth', token]);
+```
+
+The server reads it from `req.headers['sec-websocket-protocol']` and must echo one of the offered values back in the handshake response, or the browser drops the connection.
+
+The advantage is real: request URLs are logged by almost every proxy and server by default, and headers usually are not, so this keeps the token out of your access logs. The costs are that the subprotocol value must be a valid token per the WebSocket spec (a JWT is fine, it is base64url and dots), you now have to remember the echo step, and you are using a protocol negotiation field for something that is not a protocol.
+
+This build uses the query parameter because it is the simpler thing to demonstrate and the short TTL bounds the exposure. If you are running this where your proxy logs are retained and widely readable, the subprotocol version is the better default, and it changes about four lines.
+
+### A socket outlives its token
+
+One thing the handshake check does not give you: the token is verified once, at connect. A socket opened with a valid token stays open after that token expires, potentially for hours. For a chat that is usually fine, and it is what this build does.
+
+If you need revocation to bite on a live connection, the handshake is not enough. The usual fix is to record the token's `exp` at connect time and close the socket when it passes, forcing the client through its normal reconnect path with a fresh token:
+
+```typescript
+const expiresAt = (payload.exp as number) * 1000;
+setTimeout(() => ws.close(4001, 'token expired'), expiresAt - Date.now());
+```
+
+Because the client already re-mints on every reconnect, that turns into a brief blip rather than a logout.
 
 ## The identity comes from the token, not the client
 
@@ -145,7 +173,7 @@ ws.on('message', async (data) => {
 });
 ```
 
-`userId` and `userName` come from the verified token; `body` is the only thing the client controls. That is the line between "signed in as Alice" and "sent a message with the name Alice attached". If you trusted a client-supplied id, any connected user could write a message as anyone else. Because the id is the `sub` claim, it is also the primary key of `neon_auth.user`, so every row is attributable to a real account you can join against, which is the whole point of the [previous post](https://devops-daily.com/posts/neon-auth-without-a-separate-service).
+`userId` and `userName` come from the verified token; `body` is the only thing the client controls. That is the line between "signed in as Alice" and "sent a message with the name Alice attached". If you trusted a client-supplied id, any connected user could write a message as anyone else. Because the id is the `sub` claim, it is also the primary key of `neon_auth.user`, so every row is attributable to a real account you can join against, which is the whole point of the [previous post](/posts/neon-auth-without-a-separate-service).
 
 ## Fan-out: why in-process broadcasting is not enough
 
