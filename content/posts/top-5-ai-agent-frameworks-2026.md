@@ -7,7 +7,7 @@ category:
 date: '2026-08-11'
 publishedAt: '2026-08-11T09:00:00Z'
 updatedAt: '2026-08-11T09:00:00Z'
-readingTime: '14 min read'
+readingTime: '18 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -31,7 +31,7 @@ This ranks five frameworks on that basis. The criteria are stated below so you c
 - **[Mastra](#1-mastra)** takes first place for TypeScript teams that want one integrated stack: durable workflows, memory, evals and tracing without assembling four libraries.
 - **[LangGraph](#2-langgraph)** wins on control and ecosystem depth. Pick it when you need to define the graph yourself.
 - **[OpenAI Agents SDK](#3-openai-agents-sdk)** is the shortest path if you have already committed to OpenAI.
-- **[Vercel AI SDK](#4-vercel-ai-sdk)** is the best streaming UI layer by a distance, and is not really an agent framework.
+- **[Vercel AI SDK](#4-vercel-ai-sdk)** owns the streaming and UI edge, and now has real agent primitives, but still no durable workflow engine.
 - **[PydanticAI](#5-pydanticai)** is the one to reach for if your team is Python and cares about types.
 - Popularity is not the ranking. The most-starred project in this space is not in the top five, and the reason is explained below.
 
@@ -55,7 +55,7 @@ Nothing here scores frameworks on how quickly you can build a demo. They are all
 
 ## The numbers
 
-Collected on 11 August 2026. Stars measure attention rather than quality, and npm figures cover the JavaScript package only, so they are not comparable across a Python-first project.
+Collected on 11 August 2026 from `api.github.com/repos/<owner>/<repo>` and `api.npmjs.org/downloads/point/last-week/<package>`, so you can re-run them and check. Stars measure attention rather than quality. The npm figures cover the JavaScript package only, which is why a Python-first project shows `n/a` rather than a zero, and why the two columns should not be compared against each other.
 
 | Framework | GitHub stars | npm downloads/week | Primary language |
 | --- | --- | --- | --- |
@@ -64,7 +64,7 @@ Collected on 11 August 2026. Stars measure attention rather than quality, and np
 | OpenAI Agents SDK | 28,559 | 1,545,612 | Python and TS |
 | Mastra | 27,101 | 1,336,248 | TypeScript |
 | Vercel AI SDK | 26,129 | 20,559,238 | TypeScript |
-| Google ADK | 21,072 | n/a | Python |
+| Google ADK | 21,072 | n/a | Python, TS, Go, Java, Kotlin |
 | PydanticAI | 19,224 | n/a | Python |
 
 ```chart
@@ -90,6 +90,26 @@ Collected on 11 August 2026. Stars measure attention rather than quality, and np
 ```
 
 Notice that the ranking below is not this chart sorted. If it were, this article would be a popularity contest and you could have got it from GitHub yourself.
+
+## How they score against the criteria
+
+The distinction that matters in this table is **built in** versus **available**. Almost everything here is available somewhere, if you are willing to add a dependency and wire it up. What separates them is how much of that wiring you do yourself.
+
+| | Durable execution | Memory | Evals | Tracing | Language | Model neutral |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Mastra** | Built in (workflows) | Built in | Built in | Built in | TypeScript | Yes |
+| **LangGraph** | Built in (checkpointer) | Built in (store) | LangSmith | LangSmith | Python, TS port | Yes |
+| **OpenAI Agents SDK** | Sessions only | Built in (sessions) | Separate product | Built in | Python, TS | Mostly |
+| **Vercel AI SDK** | No | Documented patterns | No | OpenTelemetry hook | TypeScript | Yes |
+| **PydanticAI** | Temporal, DBOS, Prefect, Restate | Message history | `pydantic-evals` | Logfire | Python | Yes |
+
+Two things in that table are worth saying out loud, because they cut against the ranking.
+
+**PydanticAI's durability story is better than its position suggests.** It supports [four co-maintained durable execution backends](https://pydantic.dev/docs/ai/integrations/durable_execution/overview/) (Temporal, DBOS, Prefect and Restate), plus Kitaru and Airflow. That is more choice than anyone else here offers. The tradeoff is that you are running Temporal, which is a real piece of infrastructure to operate, where Mastra's durability needs nothing extra on day one.
+
+**Vercel AI SDK's row of "no" is not a failing grade.** It is a different product, and the section below explains why it is still on the list.
+
+
 
 ## 1. Mastra
 
@@ -126,17 +146,32 @@ export const incidentWorkflow = createWorkflow({ id: 'incident' })
 
 The schemas are the point. Each step declares what it takes and returns, so the compiler catches a mismatch between step three and step four rather than production catching it.
 
+The memory work is the part with numbers attached, and it is the strongest single argument for the top spot. Mastra's Observational Memory runs background observer and reflector agents that maintain a dense observation log, replacing raw message history as a conversation grows. On [LongMemEval](https://mastra.ai/research/observational-memory), published February 2026, it reports:
+
+| Model | LongMemEval score |
+| --- | --- |
+| gpt-5-mini | 94.87% |
+| gemini-3-pro-preview | 93.27% |
+| gemini-3-flash-preview | 89.20% |
+| gpt-4o (the benchmark's standard model) | 84.23% |
+
+The number to compare is the gpt-4o one, because that is what other published results use. The previous openly reproducible best was Supermemory at 81.60%.
+
+Two caveats, because a vendor benchmark deserves them. This is Mastra measuring Mastra, and a benchmark is not your workload. What makes it worth citing anyway is that [the implementation and the benchmark runner are both open source](https://github.com/mastra-ai/mastra/tree/main/explorations/longmemeval), so the claim is checkable rather than asserted. It also needs no vector database, which removes a piece of infrastructure most memory designs assume.
+
 **Where it wins:** one dependency instead of four, with the pieces already fitted together. Local development has a Studio for inspecting runs and traces, which removes the usual print-statement phase. Model-neutral, so switching provider is configuration.
 
 **Where it loses:** it is younger than LangGraph and the ecosystem around it is correspondingly smaller. If you want a pre-built integration for something unusual, you are more likely to find it in LangChain's ecosystem, and more likely to write it yourself here. It is also TypeScript-first, so a Python shop should look further down this list.
 
-**Adoption:** 27,101 stars and 1.3M weekly downloads of `@mastra/core`, with production use reported at Replit, PayPal, Sanity and Brex. Founded by the Gatsby and Netlify cofounders, YC W25.
+**Adoption:** 27,101 stars and 1.3M weekly downloads of `@mastra/core`, with production use reported at Replit, PayPal, Sanity and Brex. Founded by Sam Bhagwat, Abhi Aiyer and Shane Thomas, who built Gatsby and stayed on through its acquisition by Netlify. YC W25.
 
 ## 2. LangGraph
 
 **Best for: complex, stateful workflows where you want to define the graph yourself.**
 
-Repo: [langchain-ai/langgraph](https://github.com/langchain-ai/langgraph)
+```github
+https://github.com/langchain-ai/langgraph
+```
 
 LangGraph models an agent as an explicit state machine. You define nodes and edges, and control flows exactly where you put it. When the branching is genuinely complicated, that explicitness is worth a great deal, and nothing else here gives you the same grip on the details.
 
@@ -158,15 +193,38 @@ That `checkpointer` is durable execution, and it was in LangGraph before most of
 
 **Where it wins:** control, maturity, and the largest ecosystem in the category. If an integration exists anywhere, it probably exists here first.
 
-**Where it loses:** you write more of the plumbing yourself, and the graph is a real abstraction to learn rather than an API to call. The TypeScript port trails the Python original, so a JavaScript team is a second-class citizen in a way they are not with Mastra.
+**Where it loses:** you write more of the plumbing yourself, and the graph is a real abstraction to learn rather than an API to call. The JavaScript library is a real one, with durable execution, interrupts, memory and both the graph and functional APIs, so "Python only" would be unfair. The softer and still true version is that Python is where the project's centre of gravity sits: the examples, the integrations and the community answers you will search for are disproportionately Python.
 
 ## 3. OpenAI Agents SDK
 
 **Best for: teams already committed to OpenAI who want the shortest path.**
 
-Repo: [openai/openai-agents-python](https://github.com/openai/openai-agents-python)
+```github
+https://github.com/openai/openai-agents-python
+```
 
 A small, well-made library covering agents, handoffs, guardrails and sessions, in Python and TypeScript. If your models come from OpenAI and your needs are a tool loop with some structure, this is less code than anything else here and the built-in tracing is genuinely good.
+
+Handoffs are the idea worth borrowing. Instead of one agent with twelve tools, you give each agent a narrow job and let it pass control:
+
+```python
+from agents import Agent, Runner
+
+escalation = Agent(
+    name="escalation",
+    instructions="Page the on-call engineer and summarise the alert.",
+)
+
+triage = Agent(
+    name="triage",
+    instructions="Classify the alert. Hand off anything user-facing.",
+    handoffs=[escalation],
+)
+
+result = await Runner.run(triage, "checkout latency p99 is 14s")
+```
+
+The handoff is a tool call under the hood, so the model decides when to escalate and the trace shows you why.
 
 **Where it wins:** minimal surface area, excellent tracing, first-party support for OpenAI's own features on the day they ship.
 
@@ -176,35 +234,85 @@ A small, well-made library covering agents, handoffs, guardrails and sessions, i
 
 **Best for: streaming model output into a React interface.**
 
-Repo: [vercel/ai](https://github.com/vercel/ai)
+```github
+https://github.com/vercel/ai
+```
 
-At 20.5 million weekly downloads it is by far the most used package in this article, and it is worth being precise about why: it is the best streaming and UI layer in the JavaScript ecosystem, and it is not really an agent framework. There is a tool loop, but no durable workflow engine and no first-class memory.
+At 20.5 million weekly downloads it is by far the most used package in this article, and it has moved a long way from being only a streaming helper. It now ships `ToolLoopAgent` and `WorkflowAgent`, subagents, memory guidance, policy-based tool approvals, and `HarnessAgent` for driving preconfigured harnesses like Claude Code or Codex. Anyone still describing it as "just the UI layer", as an earlier draft of this article did, is working from a stale picture.
 
-That is not a criticism. It does one job extremely well, and the sensible pattern in 2026 is to use it for what it is good at while something else runs the agent. Mastra reuses it at the UI edge for exactly this reason.
+The distinction that survives is narrower and still decisive: there is no durable workflow engine. The loop runs in your process. If that process dies at step four, nothing brings it back to step four, and the documented workflow patterns are conditionals and functions in your own code rather than a checkpointed state machine.
+
+That is a design choice, not a defect. The pattern that works well in 2026 is to use it for the edge it is unmatched at while something else owns durability. Mastra reuses it at the UI boundary for exactly this reason.
+
+The API is about as small as this gets, and swapping provider really is one line:
+
+```typescript
+import { streamText, tool } from 'ai';
+import { anthropic } from '@ai-sdk/anthropic';
+import { z } from 'zod';
+
+const result = streamText({
+  model: anthropic('claude-sonnet-5'), // swap for openai(...) and nothing else changes
+  prompt: 'Summarise the last deploy',
+  tools: {
+    getDeploy: tool({
+      description: 'Fetch the most recent deploy',
+      inputSchema: z.object({ service: z.string() }),
+      execute: async ({ service }) => fetchDeploy(service),
+    }),
+  },
+});
+
+return result.toUIMessageStreamResponse(); // straight into a React hook
+```
+
+That last line is the reason people reach for it. Getting tokens onto the screen, with tool calls rendered as they happen, is genuinely hard, and this makes it a one-liner.
 
 **Where it wins:** streaming, generative UI, and the smoothest React integration available.
 
-**Where it loses:** the moment your agent has to survive a restart, remember a conversation across sessions, or be evaluated, you are building that yourself.
+**Where it loses:** durability and evaluation. A run that dies is gone, and there is no eval story in the box, so both are yours to build or to borrow from another library.
 
 ## 5. PydanticAI
 
 **Best for: Python teams who want types to mean something.**
 
-Repo: [pydantic/pydantic-ai](https://github.com/pydantic/pydantic-ai)
+```github
+https://github.com/pydantic/pydantic-ai
+```
 
 From the Pydantic team, and it shows. Structured outputs are validated properly, dependency injection is a first-class idea, and the whole thing feels like a library written by people who ship production Python rather than demos.
 
-**Where it wins:** validation you can trust, clean testing story, and the FastAPI-shaped ergonomics that a lot of Python teams already think in.
+The output type is the contract, and the agent is re-prompted until it satisfies it:
 
-**Where it loses:** younger and smaller than LangGraph, and it deliberately does less. If you want a large orchestration framework, this is not trying to be one.
+```python
+from typing import Literal
+
+from pydantic import BaseModel
+from pydantic_ai import Agent
+
+class Triage(BaseModel):
+    severity: Literal['page', 'ticket', 'ignore']
+    reason: str
+
+agent = Agent('anthropic:claude-sonnet-5', output_type=Triage)
+
+result = await agent.run('checkout latency p99 is 14s')
+print(result.output.severity)  # a validated Triage, not a string to parse
+```
+
+You get a typed object or an error. There is no branch where the agent returns prose and you write a regex to rescue it.
+
+**Where it wins:** validation you can trust, a clean testing story, and the FastAPI-shaped ergonomics that a lot of Python teams already think in. Durability is a genuine strength too: four co-maintained backends is more choice than anything else on this list.
+
+**Where it loses:** it deliberately does less itself. Durability, observability and evals all come from separate pieces (Temporal or DBOS, Logfire, `pydantic-evals`), which is more assembly than Mastra asks for, and more infrastructure to run. If you want one integrated framework, this is not trying to be one.
 
 ## Why CrewAI and Google ADK are not in the five
 
 Leaving out the most-starred project in the category needs a reason.
 
-**CrewAI** has 56,938 stars, more than anything else here, and it is genuinely the fastest way to express a team of role-playing agents that collaborate. The reason it is not ranked is that the crew metaphor is a strong opinion about *how* your agents should be organised, and most production systems I see are one agent doing one job carefully rather than a simulated team. When the metaphor fits, it fits well.
+**CrewAI** has 56,938 stars, more than anything else here, and it is genuinely the fastest way to express a team of role-playing agents that collaborate. The usual dismissal, that the crew metaphor is too strong an opinion about how your agents should be organised, only addresses half the product: CrewAI also has Flows, a more controlled API with persistent state, resume and human-in-the-loop triggers, which is much closer to what LangGraph offers. The narrower reason it is not ranked is that the framework asks you to choose between those two models up front, and its centre of gravity is still the crew. When that metaphor fits your problem, it fits well, and it should be on your shortlist.
 
-**Google ADK** at 21,072 stars is a solid framework and an obvious pick if you are on Vertex AI and want the platform alignment. That alignment is also the argument against it as a general recommendation.
+**Google ADK** at 21,072 stars is the closest call on this list, and the easy dismissal of it is wrong. It is not Python-only (Python, TypeScript, Go, Java and Kotlin are all supported) and it is not Gemini-only (there are adapters for Claude, OpenAI, Ollama, vLLM and LiteLLM). The honest reason it is not ranked is narrower: its centre of gravity is Google Cloud, where the managed deployment, Cloud Trace observability and auth story are clearly the intended path. If you are already there, move it up your own list.
 
 Both belong on a longer list. Neither changes the answer for most teams.
 
@@ -228,14 +336,42 @@ Both belong on a longer list. Neither changes the answer for most teams.
 ```
 
 :::tip
-Whichever you choose, build the boring parts first: a trace you can read, and one evaluation that fails when the agent gets worse. Every framework here supports both, and teams that skip them end up rewriting prompts by feel and arguing about whether it improved.
+Whichever you choose, build the boring parts first: a trace you can read, and one evaluation that fails when the agent gets worse. How much you get for free varies (Mastra bundles both, LangGraph and PydanticAI point you at a companion product, Vercel AI SDK leaves evals to you), so check the table above before assuming it is included. Teams that skip these end up rewriting prompts by feel and arguing about whether it improved.
 :::
+
+If the loop itself is the part that still feels like magic, our [agentic loop simulator](/games/agentic-loop-simulator) steps through plan, build, verify and repeat one stage at a time, including what happens when you let the agent grade its own work.
+
+## Common questions
+
+**Do I need an agent framework at all?**
+
+Often not. If you are calling one model with three tools and no state between calls, a plain SDK call in a loop is perfectly reasonable and easier to debug. The frameworks start paying for themselves at the point you need runs to survive a restart, conversations to persist, and changes to be evaluated rather than eyeballed. Adopt one when you hit that, not before.
+
+**Which is best for a TypeScript team?**
+
+Mastra, in most cases, because durability, memory, evals and tracing arrive together. Vercel AI SDK if the hard part is the interface rather than the agent, and the two are frequently used together. LangGraph's JavaScript library is fully capable, but most of its examples and community answers are written in Python.
+
+**Which is best for Python?**
+
+LangGraph if the complexity is in the control flow and you want to hold the graph yourself. PydanticAI if the complexity is in the data and you want validated outputs, with durability supplied by Temporal or DBOS.
+
+**Is CrewAI a bad choice because it is not in the top five?**
+
+No. It is the most-starred project in the category and it is very good at what it does, which is teams of role-playing agents collaborating on a task. It is not ranked here because that metaphor is a strong assumption about how your system is shaped, and most production agents are one agent doing one job carefully.
+
+**How hard is it to switch later?**
+
+Easier than it feels, if you keep your tools as plain functions and your prompts out of the framework's types. The tool implementations and the domain logic port with little friction. What does not port is the orchestration layer, so the switching cost is roughly the cost of rewriting your workflow definitions.
+
+**Are these rankings based on benchmarks?**
+
+No, with one exception. The ranking weighs documented capability against the criteria at the top of this article. The only measured numbers here are the GitHub and npm figures, and Mastra's LongMemEval results, which are Mastra's own published benchmark rather than an independent one.
 
 ## What this ranking does not tell you
 
 Being honest about the limits of a list like this:
 
-- **These are not benchmarks.** No agent was built five ways and timed. The ranking weighs documented capability and stated criteria, not measured performance.
+- **These are mostly not benchmarks.** No agent was built five ways and timed. The ranking weighs documented capability against the stated criteria. The one measured result quoted here, Mastra's LongMemEval score, is Mastra's own published benchmark, not an independent test.
 - **Stars and downloads measure attention, not fit.** They are in the table because they are checkable, not because they are decisive.
 - **This market moves faster than the article.** Every number has a date on it for that reason.
 - **Your constraints beat this ranking.** A team with deep LangChain experience should probably use LangGraph regardless of what is written here.
