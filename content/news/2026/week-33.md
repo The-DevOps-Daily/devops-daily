@@ -160,7 +160,7 @@ We're happy to announce the launch of the new bazel.build documentation site and
 
 **📅 Aug 5, 2026** • **📰 Bazel Blog**
 
-[**🔗 Read more**](/2026/08/05/new-websites-incoming.html)
+[**🔗 Read more**](https://blog.bazel.build/2026/08/05/new-websites-incoming.html)
 
 ### 📄 How the GitHub legal team used Copilot CLI to streamline their workflows
 
