@@ -4,9 +4,9 @@ excerpt: 'The usual way to add auth is to run a second system next to your datab
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-07-20'
-publishedAt: '2026-07-20T09:00:00Z'
-updatedAt: '2026-07-20T09:00:00Z'
+date: '2026-08-11'
+publishedAt: '2026-08-11T09:00:00Z'
+updatedAt: '2026-08-11T09:00:00Z'
 readingTime: '8 min read'
 author:
   name: 'DevOps Daily Team'
@@ -177,6 +177,18 @@ Neon's headline feature is database branching: fork the whole database, data and
 
 With a separate auth service this is genuinely hard. You either point every preview at one shared auth tenant (so preview signups pollute real data) or you script the creation and teardown of a throwaway tenant per environment. When auth lives in the branch, you get an isolated identity store for free every time you branch, and it disappears when the branch does.
 
+## Where this does not fit
+
+The single-project design has a cost, and it is worth being straight about it before you build on this.
+
+**It is beta, and the region is fixed.** The platform preview this uses is [available only in AWS US East (Ohio)](https://neon.com/docs/compute/functions/overview), `aws-us-east-2`. If your data has to live in the EU, this is not a decision you can make yet.
+
+**Coupling identity to your database provider is a real trade.** The usual argument for a separate auth service is that it is separate: you can move your database without touching your login flow. Here the two move together. That is exactly what removes the sync layer, and it is also what you give up. The mitigating detail is that it is [Better Auth](https://www.better-auth.com/) underneath with a standard schema, so an exit is a Postgres migration rather than a re-implementation, but it is still work you would not otherwise do.
+
+**Standard JWT caveats still apply.** Verification is stateless, so a token stays valid until it expires. If you need a sign-out that takes effect immediately everywhere, you need a check against session state on the requests that matter, the same as with any JWT setup.
+
+None of these are reasons not to use it. They are the questions to answer first, and "we are in one AWS region and we are staying on Postgres" makes most of them go away.
+
 ## The repo
 
 A full working example, a Next.js app with Neon Auth plus a WebSocket chat backend that verifies these tokens, is here:
@@ -185,7 +197,7 @@ A full working example, a Next.js app with Neon Auth plus a WebSocket chat backe
 https://github.com/The-DevOps-Daily/neon-auth-demo
 ```
 
-The next post in this series, [realtime chat with auth](https://devops-daily.com/posts/neon-realtime-chat-with-auth), builds on this and takes the token to the hard place: authenticating a WebSocket, where the browser cannot even set an `Authorization` header.
+The next post in this series, [realtime chat with auth](/posts/neon-realtime-chat-with-auth), builds on this and takes the token to the hard place: authenticating a WebSocket, where the browser cannot even set an `Authorization` header.
 
 ## Wrapping up
 
