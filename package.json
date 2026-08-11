@@ -139,7 +139,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "fast-glob": "^3.3.3",
-    "postcss": "^8.5.25",
+    "postcss": "^8.5.26",
     "prettier": "^3.8.3",
     "sharp": "^0.35.3",
     "tailwindcss": "^4.2.4",
