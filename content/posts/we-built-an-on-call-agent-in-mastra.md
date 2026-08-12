@@ -4,9 +4,9 @@ excerpt: 'Most agent tutorials stop at the happy path. We built a real on-call a
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-08-11'
-publishedAt: '2026-08-11T09:00:00Z'
-updatedAt: '2026-08-11T09:00:00Z'
+date: '2026-08-12'
+publishedAt: '2026-08-12T09:00:00Z'
+updatedAt: '2026-08-12T09:00:00Z'
 readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
@@ -254,7 +254,9 @@ Ten lines, and the difference between an agent that is crash-safe and one that m
 
 **Orphan recovery is not automatic.** Nothing sweeps up stuck runs for you. If your process can die, something in your deployment has to call the restart path on boot, and that something is your code.
 
-**The API has moved.** We first installed `@mastra/core@0.10` because that is what a plain semver range resolved to, and the current release is `1.57`. Between them, `createRunAsync()` became `createRun()`, and `getWorkflowRunById()` returns the run flattened rather than under a `snapshot` key. The library is moving fast, which is mostly good, but pin your version and expect to read the changelog.
+**The API has moved.** We first installed `@mastra/core@0.10` because that is what a plain semver range resolved to, then pinned `1.57.0` for everything here. Between those two versions, `createRunAsync()` became `createRun()`, and `getWorkflowRunById()` returns the run flattened rather than under a `snapshot` key.
+
+How fast is fast? `1.58.0` shipped overnight while this article was being finished. That is not a complaint, an actively developed library is what you want here, but it does mean you should pin your version and read the changelog rather than trusting a blog post, including this one.
 
 ## What the framework is actually buying you
 
