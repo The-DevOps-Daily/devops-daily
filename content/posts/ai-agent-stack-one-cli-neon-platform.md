@@ -61,7 +61,7 @@ Three lines of intent: turn on the AI gateway, give me a bucket called `images`,
 
 ## Linking creates the project, deploying creates everything else
 
-`neon link` creates and attaches a Neon project. The new platform features are private preview, so there are two constraints worth stating up front: everything is in AWS `us-east-2`, and it only works on projects created inside the preview. Your existing Neon databases do not grow these features in place.
+`neon link` creates and attaches a Neon project. The new platform features are private preview, so there are two constraints worth stating up front: everything is in AWS `us-east-2`, and it only works on projects created inside the preview. Your existing Neon projects do not grow these features in place.
 
 Then `neon deploy` reads `neon.ts` and provisions the declared services. Here is the whole sequence, link through deploy:
 
@@ -176,7 +176,7 @@ The build was smooth, but it is private preview and a few seams are worth knowin
 
 Yes, with an asterisk for "preview." The genuinely useful part is not any single feature, it is that the four pieces an agent needs arrive together, branch together, and authenticate with one credential. If you have ever spent the first afternoon of an AI side project wiring a database to a compute host to an S3 bucket to a model provider, collapsing that into one `neon.ts` and one `deploy` is a real reduction in moving parts.
 
-Whether you should build on it today depends on your appetite for a private preview and for vendor consolidation. But as a statement of direction, an agent stack from one CLI is a clear one. We dig into the strategy behind it in [Neon is becoming a backend platform, not just Postgres](https://devops-daily.com/posts/neon-backend-platform-not-just-postgres), and we benchmark Neon's database side in the [Neon vs Supabase series](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks). As these features leave preview, we will keep testing them the same way: real projects, real output, and the demo code published so you can run it yourself.
+Whether you should build on it today depends on your appetite for a private preview and for vendor consolidation. But as a statement of direction, an agent stack from one CLI is a clear one. We dig into the strategy behind it in [Neon is becoming a backend platform, not just Postgres](https://devops-daily.com/posts/neon-backend-platform-not-just-postgres), and we benchmark the database side in the [Neon vs Supabase series](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks). As these features leave preview, we will keep testing them the same way: real projects, real output, and the demo code published so you can run it yourself.
 
 The full project is on GitHub. Clone it, point `neonctl` at a new `us-east-2` project, and `deploy`:
 

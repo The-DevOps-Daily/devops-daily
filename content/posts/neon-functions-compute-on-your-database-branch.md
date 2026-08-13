@@ -122,7 +122,7 @@ Same query, same database. The only thing that changed is where the caller sits.
   "type": "bar",
   "title": "Median time for one SELECT 1 round trip",
   "unit": "ms",
-  "caption": "Median of 30 round trips to the same Neon Postgres (us-east-2), warm connection. 'From the function' runs inside Neon Functions, co-located with the branch. 'From Europe' is a machine on another continent. Your own gap depends on where your compute runs, but distance is latency.",
+  "caption": "Median of 30 round trips to the same Lakebase Postgres (us-east-2), warm connection. 'From the function' runs inside Neon Functions, co-located with the branch. 'From Europe' is a machine on another continent. Your own gap depends on where your compute runs, but distance is latency.",
   "rows": [
     { "label": "From the function (us-east-2)", "value": 1.19 },
     { "label": "From Europe", "value": 134.54 }

@@ -23,7 +23,7 @@ tags:
 
 Teaching Postgres by showing someone a code block is a waste of everybody's time. They need a database they can break.
 
-That requirement is what shaped most of the architecture behind [DevOps Daily Pro](https://learning.devops-daily.com), our paid learning platform. Learners get quizzes, AI-graded mock interviews, spaced repetition and progress tracking, but the part that actually costs engineering effort is the hands-on labs: a real PostgreSQL database, per learner, that they can run real SQL against and then throw away.
+That requirement is what shaped most of the architecture behind [DevOps Daily Pro](https://learning.devops-daily.com), our paid learning platform. Learners get quizzes, AI-graded mock interviews, spaced repetition and progress tracking, but the part that actually costs engineering effort is the hands-on labs: a real Postgres database, per learner, that they can run real SQL against and then throw away.
 
 This is a write-up of how that works, what Neon does for us in each part of it, and the decisions we would defend if you disagreed with them.
 
@@ -63,7 +63,7 @@ The honest version: we could have built all of this on plain Postgres plus a que
   "nodes": [
     { "label": "Browser", "sub": "Next.js App Router", "tone": "slate" },
     { "label": "App server", "sub": "route handlers, session, entitlements", "tone": "blue" },
-    { "label": "Neon Postgres", "sub": "durable state via Prisma", "tone": "green" },
+    { "label": "Lakebase Postgres", "sub": "durable state via Prisma", "tone": "green" },
     { "label": "Neon Branches", "sub": "one throwaway DB per lab", "tone": "violet" },
     { "label": "Neon Function", "sub": "prepworker, async generation", "tone": "amber" },
     { "label": "AI Gateway", "sub": "OpenAI-compatible model calls", "tone": "accent" }
@@ -278,7 +278,7 @@ The SQL terminal is the same mechanism pointed at a different experience: a seed
 
 Lesson completion is tracked separately from the branch. Close the terminal, lose the database, keep the progress.
 
-It is worth being precise about what is real here, because the platform also ships Linux, Docker, Git and Kubernetes terminals, and **those are simulators**. They replay scripted behaviour. The SQL terminal and the PostgreSQL labs are the ones backed by a real database on a real branch. Conflating the two in marketing copy would be a lie, and learners would discover it in about four minutes.
+It is worth being precise about what is real here, because the platform also ships Linux, Docker, Git and Kubernetes terminals, and **those are simulators**. They replay scripted behaviour. The SQL terminal and the Postgres labs are the ones backed by a real database on a real branch. Conflating the two in marketing copy would be a lie, and learners would discover it in about four minutes.
 
 ## Safety, isolation and cost control
 
