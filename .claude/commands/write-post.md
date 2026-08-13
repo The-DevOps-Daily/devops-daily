@@ -243,7 +243,7 @@ The OG image is auto-generated from the post title and category — no manual im
 
 ## Writing about Neon
 
-Neon publishes its own terminology reference, mirrored at `.claude/neon-terminology.md`. That document is scoped to Neon's own docs and changelog, so do not apply it wholesale to our editorial. Follow the rules below, which are the parts that transfer, and read the mirrored file when writing a Neon-heavy piece.
+Neon publishes its own terminology reference at [neondatabase/website](https://github.com/neondatabase/website/blob/main/.claude/neon-terminology.md). That document is scoped to Neon's own docs and changelog, so do not apply it wholesale to our editorial. The rules below are the parts that transfer.
 
 **Naming.** Since Neon joined Databricks, the database product is **Lakebase Postgres**; "Neon" is the brand and the access path. Neon-owned names keep "Neon": Neon Console, Neon CLI, Neon Auth, Neon MCP Server, Neon Serverless Driver, Data API. Avoid "Neon Postgres", "the Neon platform" (Neon is part of the Databricks platform), and "the Neon architecture" (the category term is lowercase "lakebase architecture").
 
