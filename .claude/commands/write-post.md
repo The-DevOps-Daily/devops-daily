@@ -241,6 +241,18 @@ npm run convert:svg-to-png:parallel
 
 The OG image is auto-generated from the post title and category — no manual image creation needed. The social image will be at `/images/posts/<slug>.png` (1200x630px).
 
+## Writing about Neon
+
+Neon publishes its own terminology reference at [neondatabase/website](https://github.com/neondatabase/website/blob/main/.claude/neon-terminology.md). That document is scoped to Neon's own docs and changelog, so do not apply it wholesale to our editorial. The rules below are the parts that transfer.
+
+**Naming.** Since Neon joined Databricks, the database product is **Lakebase Postgres**; "Neon" is the brand and the access path. Neon-owned names keep "Neon": Neon Console, Neon CLI, Neon Auth, Neon MCP Server, Neon Serverless Driver, Data API. Avoid "Neon Postgres", "the Neon platform" (Neon is part of the Databricks platform), and "the Neon architecture" (the category term is lowercase "lakebase architecture").
+
+**Do not mass-rename.** Readers search for "Neon", and our comparison content ranks on it. Keep titles, slugs, and the "Neon vs Supabase" framing as they are. Use "Lakebase Postgres" where the database itself is being named, and plain "on Neon" in procedural text ("create a project on Neon"), which reads better than the full product name.
+
+**Never rewrite recorded output.** CLI transcripts and model responses are evidence. `Utilized services: Postgres, Functions` is what the CLI prints, and a model answer that says "Neon Postgres" is what the model said. Changing either makes the post a false record. This is the main reason terminology passes here have to be done by reading, not by search and replace.
+
+**Terms worth getting right:** compute (not instance or server), branch, project, endpoint, read replica (lowercase, two words), connection string (not DSN or connection URL), CU after first use of compute unit. Use `postgresql://` in connection strings, not `postgres://`. Prefer Postgres over PostgreSQL except when citing the project or a version such as PostgreSQL 18.
+
 ## Validation Checklist
 
 Before finishing, verify:

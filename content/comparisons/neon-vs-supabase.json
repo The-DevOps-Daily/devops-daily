@@ -179,7 +179,7 @@
     {
       "scenario": "Background-worker product with bursty Sidekiq/BullMQ traffic and long idle stretches overnight",
       "recommendation": "toolA",
-      "explanation": "Scale-to-zero is the only mechanism that makes these workloads cheap. A 2-CU Neon database that handles a daily burst and idles the rest of the time costs a fraction of a Supabase Pro project running a Small instance 24/7, even before counting storage savings."
+      "explanation": "Scale-to-zero is the only mechanism that makes these workloads cheap. A 2-CU Neon compute that handles a daily burst and idles the rest of the time costs a fraction of a Supabase Pro project running a Small instance 24/7, even before counting storage savings."
     },
     {
       "scenario": "Mobile app with thousands of simultaneous WebSocket connections subscribing to row changes",
