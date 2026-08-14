@@ -9,7 +9,6 @@ import { OrganizationSchema, WebsiteSchema } from '@/components/schema-markup';
 import { CookieBanner } from '@/components/cookie-banner';
 import { PWAInstaller } from '@/components/pwa-installer';
 import { SkipToContent } from '@/components/skip-to-content';
-import Script from 'next/script';
 import { SiteAnalytics } from '@/components/site-analytics';
 import { DeferredSiteExtras } from '@/components/deferred-site-extras';
 
@@ -120,22 +119,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Google Consent Mode v2. Must run before gtag.js, so it lives here
-            rather than in SiteAnalytics: `beforeInteractive` is only supported
-            in the root layout.
-
-            Analytics storage starts denied, so GA loads for every visitor but
-            sets no cookies until someone allows it. That gives cookieless
-            pings for everyone and full data after consent.
-
-            Before this, GA did not load at all without consent, so the site
-            counted only the few people who clicked the banner. Real traffic
-            was ~7k uniques a day while GA reported a couple of hundred. */}
-        <Script id="consent-mode-default" strategy="beforeInteractive">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;
-var c=null;try{c=localStorage.getItem('cookie-consent');if(c===null&&localStorage.getItem('cookieAccepted')==='true'){c='accepted';}}catch(e){}
-gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:c==='accepted'?'granted':'denied',functionality_storage:'granted',personalization_storage:'denied',security_storage:'granted',wait_for_update:500});`}
-        </Script>
         <link
           rel="alternate"
           type="application/rss+xml"

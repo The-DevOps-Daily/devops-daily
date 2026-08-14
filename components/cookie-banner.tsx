@@ -66,9 +66,9 @@ export function CookieBanner() {
 
         {/* Content */}
         <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-          Allow analytics cookies to help us understand and improve site usage.
+          We use cookies to analyse site usage and improve DevOps Daily.
           <br className="hidden sm:block" />
-          You can continue without enabling analytics.
+          See our <a href="/privacy" className="underline hover:text-foreground">Privacy Policy</a> for details.
         </p>
 
         {/* Action buttons */}
@@ -86,7 +86,7 @@ export function CookieBanner() {
             "
           >
             <Check className="h-3.5 w-3.5" />
-            Allow analytics
+            Got it
           </button>
           <button
             onClick={dismissBanner}
@@ -97,7 +97,7 @@ export function CookieBanner() {
               focus:outline-none focus:ring-2 focus:ring-muted focus:ring-offset-2
             "
           >
-            Continue without
+            Dismiss
           </button>
         </div>
       </div>
