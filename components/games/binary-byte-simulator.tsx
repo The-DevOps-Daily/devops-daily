@@ -2,6 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import {
+  type BitDiff,
+  type PredictMode,
+  breakdown,
+  diagnose,
+  expectedAnswer,
+  explainDiff,
+  parseGuess,
+  randomRound,
+} from '@/lib/binary-predict';
+
 /**
  * Binary Byte Simulator.
  *
@@ -159,11 +170,51 @@ export default function BinaryByteSimulator() {
   const [challengeIdx, setChallengeIdx] = useState(0);
   const [showChallenge, setShowChallenge] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  // Predict mode: the board is shown, the computed value is not, and the
+  // learner reads it off the bits. `verdict` is null until they submit.
+  const [predicting, setPredicting] = useState(false);
+  const [guess, setGuess] = useState('');
+  const [verdict, setVerdict] = useState<{ correct: boolean; diffs: BitDiff[] } | null>(null);
   const tileRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const guessRef = useRef<HTMLInputElement | null>(null);
 
   const width = WIDTH[mode];
   const challenge = CHALLENGES[mode][challengeIdx];
   const solved = showChallenge && bits === challenge.target;
+
+  // Subnet masks are read as a dotted quad and constrained to contiguous ones,
+  // which is a different exercise, so predicting is offered on the other two.
+  const canPredict = mode === 'byte' || mode === 'perms';
+  const predictMode = mode as PredictMode;
+
+  const startRound = useCallback(() => {
+    const next = randomRound(mode as PredictMode);
+    setPredicting(true);
+    setGuess('');
+    setVerdict(null);
+    setCounting(false);
+    setShowChallenge(false);
+    setChanged(new Set());
+    setBits(next);
+    // Focus lands on the input so the round can be answered from the keyboard.
+    requestAnimationFrame(() => guessRef.current?.focus());
+  }, [mode]);
+
+  const exitPredict = useCallback(() => {
+    setPredicting(false);
+    setGuess('');
+    setVerdict(null);
+  }, []);
+
+  const checkGuess = useCallback(() => {
+    const parsed = parseGuess(predictMode, guess);
+    if (parsed === null) {
+      setVerdict(null);
+      return;
+    }
+    const diffs = diagnose(predictMode, bits, parsed);
+    setVerdict({ correct: diffs.length === 0, diffs });
+  }, [bits, guess, predictMode]);
 
   // Switching mode resets the board to that mode's width.
   const switchMode = useCallback((next: Mode) => {
@@ -173,6 +224,9 @@ export default function BinaryByteSimulator() {
     setCounting(false);
     setChallengeIdx(0);
     setShowChallenge(false);
+    setPredicting(false);
+    setGuess('');
+    setVerdict(null);
   }, []);
 
   // Apply a new bit string and flash whichever tiles actually moved, which is
@@ -189,6 +243,9 @@ export default function BinaryByteSimulator() {
       }
       setChanged(moved);
       setBits(next);
+      // Flipping a tile changes the answer, so a previous verdict no longer
+      // describes what is on the board.
+      setVerdict(null);
     },
     [bits]
   );
@@ -326,20 +383,25 @@ export default function BinaryByteSimulator() {
         {mode === 'byte' && (
           <>
             <div className="bs-big">
-              <span className="bs-bigval">{value}</span>
+              <span className={`bs-bigval${predicting ? ' bs-hidden' : ''}`}>
+                {predicting ? '?' : value}
+              </span>
               <span className="bs-biglabel">decimal</span>
             </div>
             <div className="bs-side">
-              <button className="bs-chip" onClick={() => copy(`0x${value.toString(16).toUpperCase().padStart(2, '0')}`, 'hex')}>
-                <span className="bs-chipk">hex</span>
-                <span className="bs-chipv">0x{value.toString(16).toUpperCase().padStart(2, '0')}</span>
-                <span className="bs-copy">{copied === 'hex' ? 'copied' : 'copy'}</span>
-              </button>
+              {!predicting && (
+                <button className="bs-chip" onClick={() => copy(`0x${value.toString(16).toUpperCase().padStart(2, '0')}`, 'hex')}>
+                  <span className="bs-chipk">hex</span>
+                  <span className="bs-chipv">0x{value.toString(16).toUpperCase().padStart(2, '0')}</span>
+                  <span className="bs-copy">{copied === 'hex' ? 'copied' : 'copy'}</span>
+                </button>
+              )}
               <button className="bs-chip" onClick={() => copy(bits, 'bin')}>
                 <span className="bs-chipk">binary</span>
                 <span className="bs-chipv">{bits}</span>
                 <span className="bs-copy">{copied === 'bin' ? 'copied' : 'copy'}</span>
               </button>
+              {!predicting && (
               <div className="bs-chip bs-static">
                 <span className="bs-chipk">as maths</span>
                 <span className="bs-chipv bs-sum">
@@ -352,6 +414,7 @@ export default function BinaryByteSimulator() {
                         .join(' + ')}
                 </span>
               </div>
+              )}
             </div>
           </>
         )}
@@ -359,15 +422,19 @@ export default function BinaryByteSimulator() {
         {mode === 'perms' && (
           <>
             <div className="bs-big">
-              <span className="bs-bigval">{permOctal(bits)}</span>
+              <span className={`bs-bigval${predicting ? ' bs-hidden' : ''}`}>
+                {predicting ? '???' : permOctal(bits)}
+              </span>
               <span className="bs-biglabel">octal</span>
             </div>
             <div className="bs-side">
-              <button className="bs-chip" onClick={() => copy(`chmod ${permOctal(bits)} file.sh`, 'chmod')}>
-                <span className="bs-chipk">command</span>
-                <span className="bs-chipv">chmod {permOctal(bits)} file.sh</span>
-                <span className="bs-copy">{copied === 'chmod' ? 'copied' : 'copy'}</span>
-              </button>
+              {!predicting && (
+                <button className="bs-chip" onClick={() => copy(`chmod ${permOctal(bits)} file.sh`, 'chmod')}>
+                  <span className="bs-chipk">command</span>
+                  <span className="bs-chipv">chmod {permOctal(bits)} file.sh</span>
+                  <span className="bs-copy">{copied === 'chmod' ? 'copied' : 'copy'}</span>
+                </button>
+              )}
               <div className="bs-chip bs-static">
                 <span className="bs-chipk">ls -l</span>
                 <span className="bs-chipv">-{permSymbolic(bits)}</span>
@@ -489,7 +556,10 @@ export default function BinaryByteSimulator() {
         </button>
         <button
           className={`bs-btn${counting ? ' bs-on' : ''}`}
-          onClick={() => setCounting((c) => !c)}
+          onClick={() => {
+            if (!counting && predicting) exitPredict();
+            setCounting((c) => !c);
+          }}
         >
           {counting ? 'Stop' : 'Count up'}
         </button>
@@ -516,6 +586,131 @@ export default function BinaryByteSimulator() {
         the whole of binary arithmetic.
       </p>
 
+      {/* ---------- predict ---------- */}
+      {canPredict && (
+        <div
+          className={`bs-predict${
+            verdict ? (verdict.correct ? ' bs-solved' : ' bs-wrong') : ''
+          }`}
+        >
+          <div className="bs-chtop">
+            <div>
+              <span className="bs-chlabel">Predict</span>
+              <span className="bs-chprompt">
+                {predicting
+                  ? mode === 'perms'
+                    ? 'Read the chmod value off the tiles'
+                    : 'Read the decimal value off the tiles'
+                  : 'Hide the value and work it out from the bits'}
+              </span>
+            </div>
+            <div className="bs-chactions">
+              {!predicting ? (
+                <button className="bs-btn bs-primary" onClick={startRound}>
+                  Start
+                </button>
+              ) : (
+                <>
+                  <button className="bs-btn" onClick={startRound}>
+                    New round &rsaquo;
+                  </button>
+                  <button className="bs-btn" onClick={exitPredict}>
+                    Exit
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {predicting && (
+            <div className="bs-chbody">
+              <form
+                className="bs-guessrow"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  checkGuess();
+                }}
+              >
+                <label className="bs-guesslabel" htmlFor="bs-guess">
+                  {mode === 'perms' ? 'chmod' : 'decimal'}
+                </label>
+                <input
+                  id="bs-guess"
+                  ref={guessRef}
+                  className="bs-guess"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={3}
+                  placeholder={mode === 'perms' ? '755' : '0-255'}
+                  value={guess}
+                  onChange={(e) => {
+                    setGuess(e.target.value);
+                    setVerdict(null);
+                  }}
+                  aria-describedby="bs-verdict"
+                />
+                <button className="bs-btn bs-primary" type="submit" disabled={!guess.trim()}>
+                  Check
+                </button>
+                <button
+                  className="bs-btn"
+                  type="button"
+                  onClick={() => {
+                    setGuess(expectedAnswer(predictMode, bits));
+                    setVerdict({ correct: true, diffs: [] });
+                  }}
+                >
+                  Reveal
+                </button>
+              </form>
+
+              <div id="bs-verdict" role="status" aria-live="polite">
+                {verdict === null ? (
+                  <p className="bs-chnote bs-chwait">
+                    {guess.trim() && parseGuess(predictMode, guess) === null
+                      ? mode === 'perms'
+                        ? 'Three digits, each 0 to 7. For example 755.'
+                        : 'A whole number from 0 to 255.'
+                      : 'The tiles are the only clue. Add up what is switched on.'}
+                  </p>
+                ) : verdict.correct ? (
+                  <div className="bs-chnote">
+                    <p>
+                      <b>Correct.</b> {expectedAnswer(predictMode, bits)} is what those tiles say.
+                    </p>
+                    <ul className="bs-sums">
+                      {breakdown(predictMode, bits).map((line) => (
+                        <li key={line}>{line}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="bs-chnote">
+                    <p>
+                      <b>
+                        Not {guess.trim()}, and the gap is {verdict.diffs.length} bit
+                        {verdict.diffs.length > 1 ? 's' : ''}.
+                      </b>
+                    </p>
+                    <ul className="bs-diffs">
+                      {verdict.diffs.map((d) => (
+                        <li key={d.index} className={d.missed ? 'bs-miss' : 'bs-extra'}>
+                          {explainDiff(d)}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="bs-chwait">
+                      Look at those tiles again, then try once more.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ---------- challenge ---------- */}
       <div className={`bs-challenge${solved ? ' bs-solved' : ''}`}>
         <div className="bs-chtop">
@@ -528,8 +723,10 @@ export default function BinaryByteSimulator() {
               <button
                 className="bs-btn bs-primary"
                 onClick={() => {
-                  // Counting would keep changing the board under the learner.
+                  // Counting would keep changing the board under the learner,
+                  // and predict mode hides the value this challenge reveals.
                   setCounting(false);
+                  exitPredict();
                   setShowChallenge(true);
                 }}
               >
@@ -647,6 +844,20 @@ const CSS = `
 .bytesim .bs-hint { margin: 0 0 20px; font-size: 12.5px; line-height: 1.6; color: var(--bs-muted); max-width: 74ch; }
 .bytesim .bs-hint b { color: var(--bs-ink); }
 
+.bytesim .bs-predict { background: var(--bs-panel); border: 1px solid var(--bs-line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; transition: border-color .25s, background .25s; }
+.bytesim .bs-predict.bs-solved { border-color: var(--bs-good); background: #46d8880f; }
+.bytesim .bs-predict.bs-wrong { border-color: #e0894a; background: #e0894a0f; }
+.bytesim .bs-bigval.bs-hidden { opacity: .35; letter-spacing: .05em; }
+.bytesim .bs-guessrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.bytesim .bs-guesslabel { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--bs-dim); }
+.bytesim .bs-guess { width: 6.5em; padding: 7px 10px; font: 600 16px/1.2 var(--bs-mono, ui-monospace, SFMono-Regular, Menlo, monospace); color: var(--bs-fg); background: var(--bs-bg); border: 1px solid var(--bs-line); border-radius: 8px; }
+.bytesim .bs-guess:focus-visible { outline: 2px solid var(--bs-accent); outline-offset: 1px; }
+.bytesim .bs-btn[disabled] { opacity: .45; cursor: not-allowed; }
+.bytesim .bs-sums, .bytesim .bs-diffs { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+.bytesim .bs-sums li { font-family: var(--bs-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 13px; color: var(--bs-dim); }
+.bytesim .bs-diffs li { font-size: 13px; }
+.bytesim .bs-diffs li.bs-miss { color: var(--bs-good); }
+.bytesim .bs-diffs li.bs-extra { color: #e0894a; }
 .bytesim .bs-challenge { background: var(--bs-panel); border: 1px solid var(--bs-line); border-radius: 12px; padding: 14px 16px; transition: border-color .25s, background .25s; }
 .bytesim .bs-challenge.bs-solved { border-color: var(--bs-good); background: #46d8880f; }
 .bytesim .bs-chtop { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
