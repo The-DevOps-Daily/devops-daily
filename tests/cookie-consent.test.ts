@@ -36,52 +36,48 @@ describe('cookie consent', () => {
 });
 
 /**
- * The 31 July consent change stopped GA loading at all without a click, so
- * the site counted only the few visitors who accepted the banner. Cloudflare
- * showed ~7k uniques a day while GA reported a couple of hundred.
+ * Analytics has been through two failed consent designs. Gating gtag.js behind
+ * a click (31 July) collapsed GA to a couple of hundred visitors a day against
+ * ~7k real ones. Consent Mode with analytics storage denied (PR #1548) did not
+ * recover it either, because GA only models denied traffic once a property
+ * clears Google's thresholds, one of which is 1,000 daily consented users on 7
+ * of the previous 28 days. This site does not clear that bar.
  *
- * The fix is Google Consent Mode: gtag.js loads for everyone, with analytics
- * storage denied until consent. These lock in the parts that broke.
+ * Analytics now loads unconditionally. These tests lock that in, and check the
+ * banner does not claim to offer a choice the code no longer honours.
  */
-describe('analytics consent wiring', () => {
+describe('analytics wiring', () => {
   const layout = readFileSync(join(process.cwd(), 'app', 'layout.tsx'), 'utf-8');
   const analytics = readFileSync(
     join(process.cwd(), 'components', 'site-analytics.tsx'),
     'utf-8',
   );
+  const banner = readFileSync(
+    join(process.cwd(), 'components', 'cookie-banner.tsx'),
+    'utf-8',
+  );
 
-  it('loads Google Analytics for every visitor, not only after consent', () => {
-    // The regression was `if (consent !== 'accepted') return null;` above the
-    // GoogleAnalytics element, which made the whole component render nothing.
+  it('loads Google Analytics for every visitor', () => {
     const gaIndex = analytics.indexOf('<GoogleAnalytics');
     expect(gaIndex).toBeGreaterThan(-1);
-    const beforeGa = analytics.slice(0, gaIndex);
-    expect(beforeGa).not.toMatch(/return null/);
+    // Both regressions worked by returning early above this element.
+    expect(analytics.slice(0, gaIndex)).not.toMatch(/return null/);
   });
 
-  it('sets a Consent Mode default before gtag.js runs', () => {
-    expect(layout).toContain('consent-mode-default');
-    // beforeInteractive is what puts it ahead of gtag.js. Without it the
-    // default can land after the first ping and the ping sets a cookie.
-    expect(layout).toMatch(/id="consent-mode-default"[\s\S]{0,120}beforeInteractive/);
-    expect(layout).toContain("gtag('consent','default'");
+  it('does not gate analytics on a stored consent choice', () => {
+    expect(analytics).not.toContain('cookie-consent');
+    expect(analytics).not.toMatch(/consent === 'accepted'/);
   });
 
-  it('denies analytics storage by default and grants it on consent', () => {
-    expect(layout).toContain("analytics_storage:c==='accepted'?'granted':'denied'");
-    expect(analytics).toContain("gtag('consent', 'update', { analytics_storage: 'granted' })");
+  it('no longer sets a Consent Mode default', () => {
+    expect(layout).not.toContain('consent-mode-default');
+    expect(layout).not.toContain("gtag('consent','default'");
   });
 
-  it('reads the stored choice in the default, so a returning visitor is not downgraded', () => {
-    // Someone who already accepted must start granted, or their first
-    // pageview of every session is recorded cookielessly.
-    expect(layout).toContain("localStorage.getItem('cookie-consent')");
-    expect(layout).toContain("localStorage.getItem('cookieAccepted')");
-  });
-
-  it('keeps advertising signals denied, since the site does not run ads', () => {
-    for (const key of ['ad_storage', 'ad_user_data', 'ad_personalization']) {
-      expect(layout).toContain(`${key}:'denied'`);
-    }
+  it('does not offer a reject button that would do nothing', () => {
+    // A control that claims to switch analytics off while gtag.js loads
+    // regardless is worse than no control at all.
+    expect(banner).not.toContain('Allow analytics');
+    expect(banner).not.toContain('Continue without');
   });
 });
