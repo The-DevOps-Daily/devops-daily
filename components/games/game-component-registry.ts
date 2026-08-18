@@ -12,6 +12,7 @@ import DatabaseReplicationShardingScaling from '@/components/games/database-repl
 import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
 import DbmsSimulator from '@/components/games/dbms-simulator';
 import DdosSimulator from '@/components/games/ddos-simulator';
+import DockerEscape from '@/components/games/docker-escape';
 import DeploymentStrategies from '@/components/games/deployment-strategies-simulator';
 import DockerUnderTheHoodSimulator from '@/components/games/docker-under-the-hood-simulator';
 import DevOpsMemes from '@/components/games/devops-memes';
@@ -88,6 +89,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'gitops-workflow': GitOpsWorkflow,
   'cicd-stack-generator': CicdStackGenerator,
   'ddos-simulator': DdosSimulator,
+  'docker-escape': DockerEscape,
   'aws-vpc-simulator': AwsVpcSimulator,
   'rest-vs-graphql': RestVsGraphql,
   'bug-hunter': BugHunter,
