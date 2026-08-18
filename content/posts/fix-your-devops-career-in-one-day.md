@@ -29,12 +29,19 @@ Do the first three even if you do nothing else. They take an afternoon between t
 
 ## TLDR
 
-- **The synonym check is the highest-value 20 minutes** in this list. A plain keyword filter rejected a strong engineer for writing OpenTofu instead of Terraform.
+- **We counted 1,785 real job postings.** Podman appears in zero of them. OpenTofu appears in seven, never without Terraform beside it.
+- **The synonym check is the highest-value 20 minutes** in this list, and it is the one with numbers behind it.
 - **Buzzword padding is theatre.** A 30-item skills list did not improve scores in our test. Exact nouns from the posting do.
 - **Write the three-boundary story.** Interviewers are testing whether you debug boundaries or brands.
 - **Name one thing you own** and tell someone. Most engineers have no answer to "what are you the person for?"
 - **Fix your on-call answer.** It is the question candidates lose on and the one they never prepare.
 - Career breaks cost points on **six of eight models** we tested. That is worth knowing before you explain yours.
+
+## How the posting numbers were gathered
+
+Every percentage in the next section comes from the same corpus: all top-level comments in the Hacker News "Who is hiring" threads for March through August 2026, fetched from the public Algolia API. That is 1,785 postings, of which 338 mention DevOps, SRE, platform engineering or the core tooling.
+
+It is a sample with a known bias. Hacker News skews toward startups and remote-friendly companies, so it under-represents enterprise hiring, where the exact-match filtering is usually worse rather than better. Treat the direction as solid and the precise percentages as indicative.
 
 ## Prerequisites
 
@@ -50,14 +57,51 @@ When we [tested how AI screens DevOps resumes](/posts/ai-resume-screening-devops
 
 That filter cannot reason. It matches strings. So the job is to make sure the strings match.
 
-Open the three postings. For every tool, write down the exact form they use. Then make sure your CV contains that exact form, alongside whatever you actually use:
+To find out how bad the mismatch actually is, we counted. We pulled **1,785 real job postings** from six months of Hacker News "Who is hiring" threads, March to August 2026, and kept the 338 that mention DevOps, SRE, platform or the core tooling. Then for each pair of equivalent terms we asked a narrow question: among postings that mention either form, how many mention only one?
+
+```chart
+{
+  "type": "bar",
+  "title": "Postings naming only one side of an equivalent pair",
+  "unit": "%",
+  "caption": "338 infrastructure postings from six Hacker News hiring threads, March to August 2026. Percentage is of postings mentioning either term.",
+  "rows": [
+    { "label": "Docker / Podman", "value": 100 },
+    { "label": "CI/CD / CICD", "value": 100 },
+    { "label": "Kubernetes / K8s", "value": 96 },
+    { "label": "PostgreSQL / Postgres", "value": 96 },
+    { "label": "Terraform / OpenTofu", "value": 93 },
+    { "label": "Golang / Go", "value": 92 }
+  ]
+}
+```
+
+Almost nothing names both. And two results are worth stating outright:
+
+**Podman appears in zero of 1,785 postings.** Not zero of the infrastructure ones. Zero of all of them. **OpenTofu appears in seven**, and in every case alongside Terraform, never on its own.
+
+So a CV that says Podman where the market says Docker, or OpenTofu where the market says Terraform, does not match a slightly smaller set of jobs. On an exact-match filter it matches nothing. You are not being judged on the substitution, you are being excluded before anyone sees it.
+
+The rest split in ways worth knowing:
+
+| pair | postings naming only the first | only the second |
+| --- | --- | --- |
+| Kubernetes / K8s | 121 | 35 |
+| PostgreSQL / Postgres | 57 | 50 |
+| Terraform / OpenTofu | 95 | 0 |
+| Docker / Podman | 69 | 0 |
+
+PostgreSQL versus Postgres is nearly a coin flip, which means picking one form and sticking to it costs you about half the postings that mention the database at all. Kubernetes versus K8s runs three to one, so writing only "K8s" is the more expensive mistake of the two.
+
+The fix costs nothing. Write both forms once each:
 
 ```text
 Terraform (and OpenTofu)
 Docker (and Podman)
-GitHub Actions (previously Jenkins)
 Kubernetes / K8s
-CI/CD  ← spell it both ways, some filters match "CI/CD", some "CICD"
+PostgreSQL (Postgres)
+CI/CD and CICD
+GitHub Actions (previously Jenkins)
 ```
 
 Write years as numerals. "5 years" and "five years" are different strings to a regex, and only one of them is what the pattern is looking for.
