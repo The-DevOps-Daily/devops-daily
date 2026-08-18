@@ -125,5 +125,10 @@
       "category": "Commands",
       "tags": ["validate", "syntax"]
     }
+    ,
+    {
+      "front": "What is the purpose of the 'terraform.tfstate' file?",
+      "back": "It maps real-world infrastructure resources to your configuration, keeps track of metadata, and improves performance for large infrastructures. It acts as the single source of truth for Terraform."
+    }
   ]
 }
