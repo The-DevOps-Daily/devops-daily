@@ -1,6 +1,6 @@
 ---
-title: 'The 9 Types of API Testing, and Where Each One Belongs in Your Pipeline'
-excerpt: 'Knowing the difference between load testing and stress testing is the easy part. The decision that actually shapes your delivery is which of the nine runs on every pull request, which runs after merge, and which only ever runs against production.'
+title: 'The 9 Types of API Testing, and Where Each Belongs in Your Pipeline'
+excerpt: 'Telling load testing from stress testing is easy. What shapes delivery is which of the nine run on every pull request, and which only run after a deploy.'
 category:
   name: 'CI/CD'
   slug: 'ci-cd'
