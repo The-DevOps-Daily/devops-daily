@@ -301,6 +301,7 @@ function FlowNode({
   status,
   owner,
   progressDurationMs,
+  readyLabel,
   compact = false,
 }: {
   icon: LucideIcon;
@@ -309,6 +310,7 @@ function FlowNode({
   status: FlowStatus;
   owner: FlowOwner;
   progressDurationMs?: number;
+  readyLabel?: string;
   compact?: boolean;
 }) {
   const ownerMeta = FLOW_OWNERS[owner];
@@ -318,7 +320,7 @@ function FlowNode({
     waiting: 'waiting',
     current: owner === 'developer' ? 'your turn' : 'running',
     creating: 'working',
-    ready: 'ready',
+    ready: readyLabel ?? 'ready',
     removing: 'removing',
     removed: 'removed',
     failed: 'needs attention',
@@ -731,6 +733,7 @@ function ArchitectureFlow({
                   detail="CI packages the change"
                   status={buildStatus}
                   owner="pipeline"
+                  readyLabel="succeeded"
                   progressDurationMs={
                     buildStatus === 'current' || buildStatus === 'creating'
                       ? PIPELINE_STEP_MS
@@ -744,6 +747,7 @@ function ArchitectureFlow({
                   detail="checkout:sha-8f3c2a1"
                   status={registryStatus}
                   owner="pipeline"
+                  readyLabel="succeeded"
                   progressDurationMs={registryStatus === 'current' ? PIPELINE_STEP_MS : undefined}
                   compact
                 />
