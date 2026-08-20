@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   ArrowDown,
@@ -218,10 +218,8 @@ function friendlyStatus(
   if (state.status === 'blocked') return 'The unsafe path is paused until you choose a repair.';
   if (state.status === 'ready') return 'The URL now points to the exact running revision.';
   if (state.status === 'reviewed') return 'The review is recorded; close the PR to clean up.';
-  if (state.status === 'cleaning') {
-    const step = CLEANUP_STEPS[state.cleanupIndex];
-    return step ? `${step.label} is the next cleanup action.` : 'Checking that nothing remains.';
-  }
+  if (state.status === 'cleaning')
+    return 'Argo CD is deleting the whole preview environment automatically.';
   if (state.status === 'removed') return 'The environment is gone and its cost is back to zero.';
 
   const stage = activeStageId(state);
@@ -300,7 +298,7 @@ function FlowNode({
     current: 'your turn',
     creating: 'working',
     ready: 'ready',
-    removing: 'remove next',
+    removing: 'removing',
     removed: 'removed',
     failed: 'needs attention',
   };
@@ -509,7 +507,7 @@ function ArchitectureFlow({
   onFix: (remediationId: string, correct: boolean) => void;
 }) {
   const stages = state.stageStatuses;
-  const cleaning = state.status === 'cleaning' || state.status === 'removed';
+  const cleanupStarted = state.status === 'cleaning' || state.status === 'removed';
 
   const automaticStatus = (
     stage: PreviewStageId,
@@ -523,19 +521,13 @@ function ArchitectureFlow({
     return 'waiting';
   };
 
-  const cleanupStatus = (stepId: (typeof CLEANUP_STEPS)[number]['id']): FlowStatus => {
-    if (!cleaning) return 'ready';
-    const status = state.cleanupStatuses[stepId];
-    if (status === 'complete' || state.status === 'removed') return 'removed';
-    if (status === 'active') return 'removing';
+  const cleanupStatus = (): FlowStatus => {
+    if (state.status === 'removed') return 'removed';
+    if (state.status === 'cleaning') return 'removing';
     return 'ready';
   };
 
-  const prStatus: FlowStatus = !storyStarted
-    ? 'current'
-    : state.status === 'removed'
-      ? 'removed'
-      : 'ready';
+  const prStatus: FlowStatus = !storyStarted ? 'current' : cleanupStarted ? 'removed' : 'ready';
 
   const automationStatus: FlowStatus =
     state.activeFailure === 'branch-mismatch'
@@ -568,8 +560,8 @@ function ArchitectureFlow({
             : 'ready'
           : 'waiting';
 
-  const argoStatus: FlowStatus = cleaning
-    ? cleanupStatus('git-intent')
+  const argoStatus: FlowStatus = cleanupStarted
+    ? cleanupStatus()
     : stages.reconcile === 'failed'
       ? 'failed'
       : stages.reconcile === 'complete'
@@ -580,34 +572,34 @@ function ArchitectureFlow({
             : 'waiting'
           : 'waiting';
 
-  const namespaceStatus = cleaning
-    ? cleanupStatus('namespace')
+  const namespaceStatus = cleanupStarted
+    ? cleanupStatus()
     : automaticStatus('provision', ['quota-exceeded']);
-  const workloadsStatus = cleaning
-    ? cleanupStatus('workloads')
+  const workloadsStatus = cleanupStarted
+    ? cleanupStatus()
     : automaticStatus('provision', [
         'quota-exceeded',
         'missing-secret',
         'readiness-failure',
         'revision-drift',
       ]);
-  const dataStatus = cleaning
-    ? cleanupStatus('dependencies')
+  const dataStatus = cleanupStarted
+    ? cleanupStatus()
     : automaticStatus('expose', ['readiness-failure']);
-  const urlStatus = cleaning
-    ? cleanupStatus('review-url')
-    : automaticStatus('expose', ['dns-pending']);
+  const urlStatus = cleanupStarted ? cleanupStatus() : automaticStatus('expose', ['dns-pending']);
 
   const returnStatus: FlowStatus =
-    stages.verify === 'failed'
-      ? 'failed'
-      : stages.verify === 'complete' || state.status === 'ready' || cleaning
-        ? state.status === 'removed'
-          ? 'removed'
-          : 'ready'
-        : stages.verify === 'active' || stages.verify === 'remediated'
-          ? 'creating'
-          : 'waiting';
+    state.status === 'cleaning'
+      ? 'creating'
+      : state.status === 'removed'
+        ? 'removed'
+        : stages.verify === 'failed'
+          ? 'failed'
+          : stages.verify === 'complete' || state.status === 'ready'
+            ? 'ready'
+            : stages.verify === 'active' || stages.verify === 'remediated'
+              ? 'creating'
+              : 'waiting';
 
   const developerActive =
     actor === 'developer' &&
@@ -623,16 +615,15 @@ function ArchitectureFlow({
     state.status === 'ready' ||
     state.status === 'reviewed' ||
     state.status === 'cleaning' ||
-    state.status === 'removed' ||
     ['provision', 'expose', 'verify'].includes(activeStageId(state));
 
   const cleanupMessage =
     state.status === 'cleaning'
-      ? `${CLEANUP_STEPS[state.cleanupIndex]?.label ?? 'Confirm cleanup'} is next.`
+      ? 'Argo CD is pruning the namespace, workloads, data, and URL together.'
       : state.status === 'removed'
-        ? 'Nothing remains. Cost is $0.00/hr.'
+        ? 'The whole preview is gone. Cost is $0.00/hr.'
         : state.status === 'reviewed'
-          ? 'Close the pull request to start the same path in reverse.'
+          ? 'Close the pull request to trigger automatic deletion.'
           : 'Close the PR, remove the label, or let the TTL expire.';
 
   return (
@@ -729,7 +720,9 @@ function ArchitectureFlow({
             number="03"
             title="Ephemeral environment"
             active={environmentActive}
-            complete={state.status === 'ready' || state.status === 'reviewed'}
+            complete={
+              state.status === 'ready' || state.status === 'reviewed' || state.status === 'removed'
+            }
           >
             <div className="space-y-2">
               <FlowNode
@@ -802,18 +795,26 @@ function ArchitectureFlow({
         >
           {returnStatus === 'creating' ? (
             <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
-          ) : returnStatus === 'ready' ? (
+          ) : returnStatus === 'ready' || returnStatus === 'removed' ? (
             <CheckCircle2 className="h-4 w-4" />
           ) : (
             <RefreshCw className="h-4 w-4" />
           )}
           <span>
             <strong className="font-semibold text-foreground">
-              Running status returns to PR #184.
+              {state.status === 'cleaning'
+                ? 'Argo CD reports cleanup progress to PR #184.'
+                : state.status === 'removed'
+                  ? 'Cleanup confirmed on PR #184.'
+                  : 'Running status returns to PR #184.'}
             </strong>{' '}
-            {returnStatus === 'ready'
-              ? 'The URL and deployed digest match the change.'
-              : 'Health and the deployed revision will appear here.'}
+            {state.status === 'cleaning'
+              ? 'The entire preview is being pruned automatically.'
+              : state.status === 'removed'
+                ? 'No preview resources remain.'
+                : returnStatus === 'ready'
+                  ? 'The URL and deployed digest match the change.'
+                  : 'Health and the deployed revision will appear here.'}
           </span>
         </div>
 
@@ -824,8 +825,16 @@ function ArchitectureFlow({
             state.status === 'removed' && 'bg-emerald-500/8 text-emerald-700 dark:text-emerald-300'
           )}
         >
-          <Trash2 className="h-4 w-4 shrink-0" />
-          <strong className="font-semibold text-foreground">Cleanup follows the same path.</strong>
+          {state.status === 'cleaning' ? (
+            <LoaderCircle className="h-4 w-4 shrink-0 motion-safe:animate-spin" />
+          ) : state.status === 'removed' ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+          ) : (
+            <Trash2 className="h-4 w-4 shrink-0" />
+          )}
+          <strong className="font-semibold text-foreground">
+            Automatic cleanup removes the preview as one unit.
+          </strong>
           <span>{cleanupMessage}</span>
         </div>
       </div>
@@ -839,6 +848,26 @@ export default function PreviewEnvironmentSimulator() {
   const [state, setState] = useState(() => scenarioState('checkout-flow', false));
   const [storyStarted, setStoryStarted] = useState(false);
   const [actorBeat, setActorBeat] = useState<StoryActor>('developer');
+
+  useEffect(() => {
+    if (state.status !== 'cleaning') return;
+
+    const cleanupTimer = window.setTimeout(() => {
+      setState((current) => {
+        let next = current;
+        for (
+          let index = 0;
+          index <= CLEANUP_STEPS.length && next.status === 'cleaning';
+          index += 1
+        ) {
+          next = advancePreviewEnvironment(next);
+        }
+        return next;
+      });
+    }, 2000);
+
+    return () => window.clearTimeout(cleanupTimer);
+  }, [state.status]);
 
   const metrics = useMemo(() => getPreviewMetrics(state.config), [state.config]);
   const evidence = useMemo(() => getPreviewEvidence(state.config), [state.config]);
@@ -918,7 +947,6 @@ export default function PreviewEnvironmentSimulator() {
   };
 
   const sharedDecision = state.status === 'ready' || state.status === 'reviewed';
-  const cleanupStep = CLEANUP_STEPS[state.cleanupIndex];
   const nextButtonLabel =
     state.status === 'configured'
       ? actor === 'developer'
@@ -1050,6 +1078,8 @@ export default function PreviewEnvironmentSimulator() {
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               {state.status === 'removed' ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              ) : state.status === 'cleaning' ? (
+                <LoaderCircle className="h-4 w-4 text-amber-500 motion-safe:animate-spin" />
               ) : state.status === 'blocked' ? (
                 <AlertTriangle className="h-4 w-4 text-red-500" />
               ) : (
@@ -1057,7 +1087,7 @@ export default function PreviewEnvironmentSimulator() {
               )}
               <span>
                 {state.status === 'cleaning'
-                  ? 'Each click removes the resource marked “remove next”.'
+                  ? 'Argo CD is removing the entire preview automatically. No more clicks needed.'
                   : state.status === 'running' || (state.status === 'configured' && storyStarted)
                     ? 'Find the glowing step in the map, then continue.'
                     : friendlyStatus(state, actor, storyStarted)}
@@ -1134,19 +1164,9 @@ export default function PreviewEnvironmentSimulator() {
                     setActorBeat('platform');
                   }}
                 >
-                  <Trash2 className="h-4 w-4" /> Close PR &amp; start cleanup
+                  <Trash2 className="h-4 w-4" /> Close PR &amp; trigger automatic cleanup
                 </Button>
               </>
-            )}
-
-            {state.status === 'cleaning' && cleanupStep && (
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setState((current) => advancePreviewEnvironment(current))}
-              >
-                {cleanupStep.label} <ArrowRight className="h-4 w-4" />
-              </Button>
             )}
 
             {state.status === 'removed' && (
