@@ -53,7 +53,15 @@ type PreviewScenarioId = 'api-change' | 'checkout-flow' | 'full-product';
 type StoryActor = 'developer' | 'platform';
 type ControlBeat = 'detect' | 'render';
 type StoryPhaseId = 'intent' | 'plan' | 'create' | 'review' | 'remove';
-type FlowStatus = 'waiting' | 'current' | 'creating' | 'ready' | 'removing' | 'removed' | 'failed';
+type FlowStatus =
+  | 'waiting'
+  | 'current'
+  | 'creating'
+  | 'ready'
+  | 'complete'
+  | 'removing'
+  | 'removed'
+  | 'failed';
 type FlowOwner = 'developer' | 'pipeline' | 'argo' | 'cluster';
 
 interface PreviewScenario {
@@ -237,7 +245,8 @@ function friendlyStatus(
   if (state.status === 'reviewed') return 'The review is recorded; close the PR to clean up.';
   if (state.status === 'cleaning')
     return 'Argo CD is deleting the whole preview environment automatically.';
-  if (state.status === 'removed') return 'The environment is gone and its cost is back to zero.';
+  if (state.status === 'removed')
+    return 'The environment is gone. Add the preview label again to create a new one.';
 
   const stage = activeStageId(state);
   if (stage === 'coordinate') return 'CI builds the change into an immutable container image.';
@@ -321,6 +330,7 @@ function FlowNode({
     current: owner === 'developer' ? 'your turn' : 'running',
     creating: 'working',
     ready: readyLabel ?? 'ready',
+    complete: readyLabel ?? 'complete',
     removing: 'removing',
     removed: 'removed',
     failed: 'needs attention',
@@ -345,6 +355,7 @@ function FlowNode({
             ? 'border-emerald-500/70 bg-emerald-500/8 shadow-md shadow-emerald-500/10'
             : 'border-violet-500/70 bg-violet-500/8 shadow-md shadow-violet-500/10'),
         status === 'ready' && 'border-emerald-500/40 bg-emerald-500/5',
+        status === 'complete' && 'border-border bg-muted/10 opacity-55',
         status === 'removing' && 'border-amber-500/60 bg-amber-500/8',
         status === 'removed' && 'scale-[0.97] border-dashed opacity-30',
         status === 'failed' && 'border-red-500/60 bg-red-500/8'
@@ -359,6 +370,7 @@ function FlowNode({
           status === 'creating' && owner === 'argo' && 'border-violet-500/40 text-violet-600',
           status === 'creating' && owner === 'cluster' && 'border-emerald-500/40 text-emerald-600',
           status === 'ready' && 'border-emerald-500/35 text-emerald-600',
+          status === 'complete' && 'border-border text-muted-foreground',
           status === 'removing' && 'border-amber-500/35 text-amber-600',
           status === 'failed' && 'border-red-500/35 text-red-600'
         )}
@@ -394,7 +406,7 @@ function FlowNode({
         )}
         {status === 'creating' && !showProgress ? (
           <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
-        ) : status === 'ready' ? (
+        ) : status === 'ready' || status === 'complete' ? (
           <CheckCircle2 className="h-4 w-4" />
         ) : status === 'removing' ? (
           <Trash2 className="h-4 w-4" />
@@ -416,10 +428,17 @@ function FlowNode({
         <span
           className={cn(
             'mb-1 flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-wide',
-            ownerMeta.textClass
+            ownerMeta.textClass,
+            status === 'complete' && 'text-muted-foreground'
           )}
         >
-          <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', ownerMeta.dotClass)} />
+          <span
+            className={cn(
+              'h-1.5 w-1.5 shrink-0 rounded-full',
+              ownerMeta.dotClass,
+              status === 'complete' && 'bg-muted-foreground/60'
+            )}
+          />
           {ownerMeta.label}
         </span>
         <div
@@ -592,37 +611,43 @@ function ArchitectureFlow({
   const prStatus: FlowStatus = !storyStarted ? 'current' : cleanupStarted ? 'removed' : 'ready';
 
   const automationStatus: FlowStatus =
-    state.activeFailure === 'branch-mismatch'
-      ? 'failed'
-      : stages.reconcile === 'complete'
-        ? 'ready'
-        : stages.reconcile === 'active' && actor === 'platform'
-          ? controlBeat === 'detect'
-            ? 'creating'
-            : 'ready'
-          : 'waiting';
+    state.status === 'removed'
+      ? 'complete'
+      : state.activeFailure === 'branch-mismatch'
+        ? 'failed'
+        : stages.reconcile === 'complete'
+          ? 'ready'
+          : stages.reconcile === 'active' && actor === 'platform'
+            ? controlBeat === 'detect'
+              ? 'creating'
+              : 'ready'
+            : 'waiting';
 
   const buildStatus: FlowStatus =
-    stages.coordinate === 'failed'
-      ? 'failed'
-      : stages.coordinate === 'complete'
-        ? 'ready'
-        : stages.coordinate === 'active' || stages.coordinate === 'remediated'
-          ? actor === 'developer'
-            ? 'current'
-            : 'creating'
-          : 'waiting';
+    state.status === 'removed'
+      ? 'complete'
+      : stages.coordinate === 'failed'
+        ? 'failed'
+        : stages.coordinate === 'complete'
+          ? 'ready'
+          : stages.coordinate === 'active' || stages.coordinate === 'remediated'
+            ? actor === 'developer'
+              ? 'current'
+              : 'creating'
+            : 'waiting';
 
   const registryStatus: FlowStatus =
-    stages.reconcile === 'failed'
-      ? 'failed'
-      : stages.reconcile === 'complete'
-        ? 'ready'
-        : stages.reconcile === 'active' || stages.reconcile === 'remediated'
-          ? actor === 'developer'
-            ? 'current'
-            : 'ready'
-          : 'waiting';
+    state.status === 'removed'
+      ? 'complete'
+      : stages.reconcile === 'failed'
+        ? 'failed'
+        : stages.reconcile === 'complete'
+          ? 'ready'
+          : stages.reconcile === 'active' || stages.reconcile === 'remediated'
+            ? actor === 'developer'
+              ? 'current'
+              : 'ready'
+            : 'waiting';
 
   const argoStatus: FlowStatus = cleanupStarted
     ? cleanupStatus()
@@ -716,13 +741,21 @@ function ArchitectureFlow({
             number="01"
             title="Developer intent"
             active={developerActive}
-            complete={stages.reconcile === 'complete' || environmentActive}
+            complete={
+              state.status !== 'removed' && (stages.reconcile === 'complete' || environmentActive)
+            }
           >
             <div className="space-y-2">
               <FlowNode
                 icon={GitPullRequest}
                 label="PR #184 + preview label"
-                detail={storyStarted ? 'checkout-v2 → main' : 'Add the label to request a preview'}
+                detail={
+                  state.status === 'removed'
+                    ? 'PR closed · preview label removed'
+                    : storyStarted
+                      ? 'checkout-v2 → main'
+                      : 'Add the label to request a preview'
+                }
                 status={prStatus}
                 owner="developer"
               />
@@ -761,13 +794,19 @@ function ArchitectureFlow({
             number="02"
             title="GitOps control plane"
             active={controlActive}
-            complete={stages.reconcile === 'complete' || environmentActive}
+            complete={
+              state.status !== 'removed' && (stages.reconcile === 'complete' || environmentActive)
+            }
           >
             <div className="space-y-2">
               <FlowNode
                 icon={GitBranch}
                 label="Automation repository"
-                detail="Automatically detects the labeled PR"
+                detail={
+                  state.status === 'removed'
+                    ? 'Previous detection run completed'
+                    : 'Automatically detects the labeled PR'
+                }
                 status={automationStatus}
                 owner="argo"
                 progressDurationMs={automationStatus === 'creating' ? ARGO_STEP_MS : undefined}
@@ -792,9 +831,7 @@ function ArchitectureFlow({
             number="03"
             title="Ephemeral environment"
             active={environmentActive}
-            complete={
-              state.status === 'ready' || state.status === 'reviewed' || state.status === 'removed'
-            }
+            complete={state.status === 'ready' || state.status === 'reviewed'}
           >
             <div className="space-y-2">
               <FlowNode
@@ -1133,14 +1170,27 @@ export default function PreviewEnvironmentSimulator() {
         <div className="my-2 flex flex-col items-center justify-center gap-1 text-center sm:flex-row sm:gap-3">
           <Badge
             variant="outline"
-            className={cn('gap-1.5 text-[10px]', activeOwnerMeta.badgeClass)}
+            className={cn(
+              'gap-1.5 text-[10px]',
+              state.status === 'removed'
+                ? 'border-border bg-muted/30 text-muted-foreground'
+                : activeOwnerMeta.badgeClass
+            )}
           >
-            <span className={cn('h-1.5 w-1.5 rounded-full', activeOwnerMeta.dotClass)} />
-            Active · {activeOwnerMeta.label}
+            {state.status === 'removed' ? (
+              <CheckCircle2 className="h-3 w-3" />
+            ) : (
+              <span className={cn('h-1.5 w-1.5 rounded-full', activeOwnerMeta.dotClass)} />
+            )}
+            {state.status === 'removed' ? 'Run complete' : `Active · ${activeOwnerMeta.label}`}
           </Badge>
           <div aria-live="polite" className="sm:flex sm:items-center sm:gap-2 sm:text-left">
             <p className="text-sm font-semibold">
-              {actor === 'developer' ? phase.developerTitle : phase.platformTitle}
+              {state.status === 'removed'
+                ? 'Preview removed'
+                : actor === 'developer'
+                  ? phase.developerTitle
+                  : phase.platformTitle}
             </p>
             <p className="text-xs text-muted-foreground sm:before:mr-2 sm:before:content-['·']">
               {friendlyStatus(state, actor, storyStarted, controlBeat)}
@@ -1259,7 +1309,7 @@ export default function PreviewEnvironmentSimulator() {
 
             {state.status === 'removed' && (
               <Button type="button" size="sm" onClick={start}>
-                <RefreshCw className="h-4 w-4" /> Watch again
+                <Zap className="h-4 w-4" /> Add preview label again
               </Button>
             )}
           </div>
