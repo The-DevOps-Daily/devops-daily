@@ -53,6 +53,7 @@ type PreviewScenarioId = 'api-change' | 'checkout-flow' | 'full-product';
 type StoryActor = 'developer' | 'platform';
 type StoryPhaseId = 'intent' | 'plan' | 'create' | 'review' | 'remove';
 type FlowStatus = 'waiting' | 'current' | 'creating' | 'ready' | 'removing' | 'removed' | 'failed';
+type FlowOwner = 'developer' | 'pipeline' | 'argo' | 'cluster';
 
 interface PreviewScenario {
   id: PreviewScenarioId;
@@ -146,6 +147,36 @@ const STORY_PHASES: StoryPhase[] = [
     platformTitle: 'Remove every temporary resource',
   },
 ];
+
+const FLOW_OWNERS: Record<
+  FlowOwner,
+  { label: string; dotClass: string; textClass: string; badgeClass: string }
+> = {
+  developer: {
+    label: 'Developer',
+    dotClass: 'bg-blue-500',
+    textClass: 'text-blue-700 dark:text-blue-300',
+    badgeClass: 'border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-300',
+  },
+  pipeline: {
+    label: 'CI pipeline',
+    dotClass: 'bg-amber-500',
+    textClass: 'text-amber-700 dark:text-amber-300',
+    badgeClass: 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300',
+  },
+  argo: {
+    label: 'Argo CD · auto',
+    dotClass: 'bg-violet-500',
+    textClass: 'text-violet-700 dark:text-violet-300',
+    badgeClass: 'border-violet-500/30 bg-violet-500/5 text-violet-700 dark:text-violet-300',
+  },
+  cluster: {
+    label: 'K8s · auto',
+    dotClass: 'bg-emerald-500',
+    textClass: 'text-emerald-700 dark:text-emerald-300',
+    badgeClass: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300',
+  },
+};
 
 function scenarioState(scenarioId: PreviewScenarioId, addProblem: boolean) {
   const scenario = PREVIEW_SCENARIOS.find((item) => item.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
@@ -251,6 +282,7 @@ function FlowNode({
   label,
   detail,
   status,
+  owner,
   tone = 'platform',
   compact = false,
 }: {
@@ -258,9 +290,11 @@ function FlowNode({
   label: string;
   detail: string;
   status: FlowStatus;
+  owner: FlowOwner;
   tone?: StoryActor;
   compact?: boolean;
 }) {
+  const ownerMeta = FLOW_OWNERS[owner];
   const statusLabel: Record<FlowStatus, string> = {
     waiting: 'waiting',
     current: 'your turn',
@@ -321,6 +355,15 @@ function FlowNode({
         )}
       </span>
       <div className="min-w-0 flex-1">
+        <span
+          className={cn(
+            'mb-1 flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-wide',
+            ownerMeta.textClass
+          )}
+        >
+          <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', ownerMeta.dotClass)} />
+          {ownerMeta.label}
+        </span>
         <div
           className={cn('flex items-start gap-x-2 gap-y-0.5', compact ? 'flex-col' : 'flex-wrap')}
         >
@@ -625,6 +668,7 @@ function ArchitectureFlow({
                 label="PR #184 + preview label"
                 detail={storyStarted ? 'checkout-v2 → main' : 'Add the label to request a preview'}
                 status={prStatus}
+                owner="developer"
                 tone="developer"
               />
               <div className="grid grid-cols-1 gap-2 2xl:grid-cols-2">
@@ -633,6 +677,7 @@ function ArchitectureFlow({
                   label="Build image"
                   detail="CI packages the change"
                   status={buildStatus}
+                  owner="pipeline"
                   tone="developer"
                   compact
                 />
@@ -641,6 +686,7 @@ function ArchitectureFlow({
                   label="Push registry"
                   detail="checkout:sha-8f3c2a1"
                   status={registryStatus}
+                  owner="pipeline"
                   tone="developer"
                   compact
                 />
@@ -660,8 +706,9 @@ function ArchitectureFlow({
               <FlowNode
                 icon={GitBranch}
                 label="Automation repository"
-                detail="Resolves PR metadata and environment identity"
+                detail="Automatically detects the labeled PR"
                 status={automationStatus}
+                owner="argo"
               />
               <div className="flex justify-center" aria-hidden="true">
                 <ArrowDown className="h-4 w-4 text-muted-foreground" />
@@ -671,6 +718,7 @@ function ArchitectureFlow({
                 label="Argo CD ApplicationSet"
                 detail="Commit and image digest become Helm values"
                 status={argoStatus}
+                owner="argo"
               />
             </div>
           </FlowZone>
@@ -689,6 +737,7 @@ function ArchitectureFlow({
                 label="Kubernetes namespace"
                 detail="preview-pr-184 · isolated boundary"
                 status={namespaceStatus}
+                owner="cluster"
               />
               <div
                 className={cn(
@@ -705,6 +754,7 @@ function ArchitectureFlow({
                     label={service === 'worker' ? 'Worker' : service.toUpperCase()}
                     detail="application"
                     status={workloadsStatus}
+                    owner="cluster"
                     compact
                   />
                 ))}
@@ -715,6 +765,7 @@ function ArchitectureFlow({
                   label={state.config.dataStrategy === 'synthetic' ? 'Synthetic DB' : 'DB snapshot'}
                   detail="isolated data"
                   status={dataStatus}
+                  owner="cluster"
                   compact
                 />
                 <FlowNode
@@ -722,6 +773,7 @@ function ArchitectureFlow({
                   label="Redis"
                   detail="isolated cache"
                   status={dataStatus}
+                  owner="cluster"
                   compact
                 />
               </div>
@@ -730,6 +782,7 @@ function ArchitectureFlow({
                 label="Review URL"
                 detail={urlStatus === 'ready' ? reviewUrl : 'DNS · ingress · TLS · revision'}
                 status={urlStatus}
+                owner="cluster"
               />
             </div>
           </FlowZone>
@@ -809,6 +862,15 @@ export default function PreviewEnvironmentSimulator() {
         : state.status === 'ready' || state.status === 'reviewed'
           ? 'developer'
           : actorBeat;
+  const activeOwner: FlowOwner =
+    actor === 'developer' &&
+    state.status === 'running' &&
+    (stageId === 'coordinate' || stageId === 'reconcile')
+      ? 'pipeline'
+      : actor === 'developer'
+        ? 'developer'
+        : 'argo';
+  const activeOwnerMeta = FLOW_OWNERS[activeOwner];
 
   const resetWith = (nextScenario: PreviewScenarioId, nextAddProblem: boolean) => {
     setScenarioId(nextScenario);
@@ -952,14 +1014,10 @@ export default function PreviewEnvironmentSimulator() {
         <div className="my-2 flex flex-col items-center justify-center gap-1 text-center sm:flex-row sm:gap-3">
           <Badge
             variant="outline"
-            className={cn(
-              'text-[10px]',
-              actor === 'developer'
-                ? 'border-blue-500/30 bg-blue-500/5 text-blue-700'
-                : 'border-violet-500/30 bg-violet-500/5 text-violet-700'
-            )}
+            className={cn('gap-1.5 text-[10px]', activeOwnerMeta.badgeClass)}
           >
-            Current turn · {actor === 'developer' ? 'Developer' : 'Argo CD'}
+            <span className={cn('h-1.5 w-1.5 rounded-full', activeOwnerMeta.dotClass)} />
+            Active · {activeOwnerMeta.label}
           </Badge>
           <div aria-live="polite" className="sm:flex sm:items-center sm:gap-2 sm:text-left">
             <p className="text-sm font-semibold">
