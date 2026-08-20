@@ -276,7 +276,7 @@ function FlowNode({
       className={cn(
         'relative flex min-w-0 items-center gap-2.5 rounded-lg border bg-background p-2.5 transition-all duration-500',
         compact && 'p-2',
-        status === 'waiting' && 'border-dashed opacity-45',
+        status === 'waiting' && 'border-dashed bg-muted/10 text-muted-foreground',
         status === 'current' &&
           (tone === 'developer'
             ? 'border-blue-500/70 bg-blue-500/8 shadow-md shadow-blue-500/10'
@@ -321,13 +321,24 @@ function FlowNode({
         )}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-xs font-semibold">{label}</p>
+        <div
+          className={cn('flex items-start gap-x-2 gap-y-0.5', compact ? 'flex-col' : 'flex-wrap')}
+        >
+          <p
+            className={cn(
+              'min-w-0 break-words text-xs font-semibold leading-snug',
+              compact ? 'w-full' : 'flex-1'
+            )}
+          >
+            {label}
+          </p>
           <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
             {statusLabel[status]}
           </span>
         </div>
-        <p className="truncate text-[10px] text-muted-foreground">{detail}</p>
+        <p className="mt-0.5 break-words text-[10px] leading-snug text-muted-foreground">
+          {detail}
+        </p>
       </div>
     </div>
   );
@@ -584,11 +595,13 @@ function ArchitectureFlow({
   return (
     <div className="overflow-hidden rounded-2xl border-2 border-slate-400/40 bg-background shadow-lg">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-blue-500">
             Desired state → running evidence
           </p>
-          <p className="text-sm font-semibold">One control path from pull request to preview URL</p>
+          <p className="break-words text-sm font-semibold leading-snug">
+            One control path from pull request to preview URL
+          </p>
         </div>
         <Badge
           variant="outline"
@@ -614,7 +627,7 @@ function ArchitectureFlow({
                 status={prStatus}
                 tone="developer"
               />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 2xl:grid-cols-2">
                 <FlowNode
                   icon={Code2}
                   label="Build image"
