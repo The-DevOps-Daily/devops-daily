@@ -51,6 +51,7 @@ import {
 
 type PreviewScenarioId = 'api-change' | 'checkout-flow' | 'full-product';
 type StoryActor = 'developer' | 'platform';
+type ControlBeat = 'detect' | 'render';
 type StoryPhaseId = 'intent' | 'plan' | 'create' | 'review' | 'remove';
 type FlowStatus = 'waiting' | 'current' | 'creating' | 'ready' | 'removing' | 'removed' | 'failed';
 type FlowOwner = 'developer' | 'pipeline' | 'argo' | 'cluster';
@@ -150,33 +151,48 @@ const STORY_PHASES: StoryPhase[] = [
 
 const FLOW_OWNERS: Record<
   FlowOwner,
-  { label: string; dotClass: string; textClass: string; badgeClass: string }
+  {
+    label: string;
+    dotClass: string;
+    strokeClass: string;
+    textClass: string;
+    badgeClass: string;
+  }
 > = {
   developer: {
     label: 'Developer',
     dotClass: 'bg-blue-500',
+    strokeClass: 'stroke-blue-500',
     textClass: 'text-blue-700 dark:text-blue-300',
     badgeClass: 'border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-300',
   },
   pipeline: {
     label: 'CI pipeline',
     dotClass: 'bg-amber-500',
+    strokeClass: 'stroke-amber-500',
     textClass: 'text-amber-700 dark:text-amber-300',
     badgeClass: 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300',
   },
   argo: {
     label: 'Argo CD · auto',
     dotClass: 'bg-violet-500',
+    strokeClass: 'stroke-violet-500',
     textClass: 'text-violet-700 dark:text-violet-300',
     badgeClass: 'border-violet-500/30 bg-violet-500/5 text-violet-700 dark:text-violet-300',
   },
   cluster: {
     label: 'K8s · auto',
     dotClass: 'bg-emerald-500',
+    strokeClass: 'stroke-emerald-500',
     textClass: 'text-emerald-700 dark:text-emerald-300',
     badgeClass: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300',
   },
 };
+
+const REQUEST_HANDOFF_MS = 900;
+const PIPELINE_STEP_MS = 5000;
+const ARGO_STEP_MS = 2500;
+const VERIFY_STEP_MS = 2000;
 
 function scenarioState(scenarioId: PreviewScenarioId, addProblem: boolean) {
   const scenario = PREVIEW_SCENARIOS.find((item) => item.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
@@ -207,12 +223,13 @@ function activeStageId(state: PreviewEnvironmentState): PreviewStageId {
 function friendlyStatus(
   state: PreviewEnvironmentState,
   actor: StoryActor,
-  storyStarted: boolean
+  storyStarted: boolean,
+  controlBeat: ControlBeat
 ): string {
   if (state.status === 'configured') {
     if (!storyStarted) return 'Add the preview label to begin.';
     return actor === 'developer'
-      ? 'The preview label is now attached to PR #184.'
+      ? 'The preview label is attached; CI starts automatically.'
       : 'The pull-request event is moving into the control plane.';
   }
   if (state.status === 'blocked') return 'The unsafe path is paused until you choose a repair.';
@@ -226,8 +243,10 @@ function friendlyStatus(
   if (stage === 'coordinate') return 'CI builds the change into an immutable container image.';
   if (stage === 'reconcile') {
     return actor === 'developer'
-      ? 'Push the image digest so Argo CD can deploy exactly this revision.'
-      : 'ApplicationSet turns pull-request metadata into Helm values.';
+      ? 'CI pushes the immutable image digest to the registry.'
+      : controlBeat === 'detect'
+        ? 'Argo CD detects the labeled pull request automatically.'
+        : 'ApplicationSet turns pull-request metadata into Helm values.';
   }
   if (stage === 'provision') return 'Argo CD creates the namespace and application workloads.';
   if (stage === 'expose') return 'Data, cache, DNS, ingress, and TLS join the environment.';
@@ -281,7 +300,7 @@ function FlowNode({
   detail,
   status,
   owner,
-  tone = 'platform',
+  progressDurationMs,
   compact = false,
 }: {
   icon: LucideIcon;
@@ -289,13 +308,15 @@ function FlowNode({
   detail: string;
   status: FlowStatus;
   owner: FlowOwner;
-  tone?: StoryActor;
+  progressDurationMs?: number;
   compact?: boolean;
 }) {
   const ownerMeta = FLOW_OWNERS[owner];
+  const showProgress =
+    Boolean(progressDurationMs) && (status === 'current' || status === 'creating');
   const statusLabel: Record<FlowStatus, string> = {
     waiting: 'waiting',
-    current: 'your turn',
+    current: owner === 'developer' ? 'your turn' : 'running',
     creating: 'working',
     ready: 'ready',
     removing: 'removing',
@@ -310,11 +331,17 @@ function FlowNode({
         compact && 'p-2',
         status === 'waiting' && 'border-dashed bg-muted/10 text-muted-foreground',
         status === 'current' &&
-          (tone === 'developer'
+          (owner === 'developer'
             ? 'border-blue-500/70 bg-blue-500/8 shadow-md shadow-blue-500/10'
-            : 'border-violet-500/70 bg-violet-500/8 shadow-md shadow-violet-500/10'),
+            : owner === 'pipeline'
+              ? 'border-amber-500/70 bg-amber-500/8 shadow-md shadow-amber-500/10'
+              : owner === 'cluster'
+                ? 'border-emerald-500/70 bg-emerald-500/8 shadow-md shadow-emerald-500/10'
+                : 'border-violet-500/70 bg-violet-500/8 shadow-md shadow-violet-500/10'),
         status === 'creating' &&
-          'border-violet-500/70 bg-violet-500/8 shadow-md shadow-violet-500/10',
+          (owner === 'cluster'
+            ? 'border-emerald-500/70 bg-emerald-500/8 shadow-md shadow-emerald-500/10'
+            : 'border-violet-500/70 bg-violet-500/8 shadow-md shadow-violet-500/10'),
         status === 'ready' && 'border-emerald-500/40 bg-emerald-500/5',
         status === 'removing' && 'border-amber-500/60 bg-amber-500/8',
         status === 'removed' && 'scale-[0.97] border-dashed opacity-30',
@@ -324,15 +351,46 @@ function FlowNode({
       <span
         className={cn(
           'relative grid h-8 w-8 shrink-0 place-items-center rounded-md border bg-background',
-          status === 'current' && tone === 'developer' && 'border-blue-500/40 text-blue-600',
-          status === 'current' && tone === 'platform' && 'border-violet-500/40 text-violet-600',
-          status === 'creating' && 'border-violet-500/40 text-violet-600',
+          status === 'current' && owner === 'developer' && 'border-blue-500/40 text-blue-600',
+          status === 'current' && owner === 'pipeline' && 'border-amber-500/40 text-amber-600',
+          status === 'current' && owner === 'argo' && 'border-violet-500/40 text-violet-600',
+          status === 'creating' && owner === 'argo' && 'border-violet-500/40 text-violet-600',
+          status === 'creating' && owner === 'cluster' && 'border-emerald-500/40 text-emerald-600',
           status === 'ready' && 'border-emerald-500/35 text-emerald-600',
           status === 'removing' && 'border-amber-500/35 text-amber-600',
           status === 'failed' && 'border-red-500/35 text-red-600'
         )}
       >
-        {status === 'creating' ? (
+        {showProgress && (
+          <svg
+            className="pointer-events-none absolute -inset-1 h-10 w-10 -rotate-90 overflow-visible"
+            viewBox="0 0 40 40"
+            aria-hidden="true"
+          >
+            <circle cx="20" cy="20" r="18" fill="none" strokeWidth="2" className="stroke-border" />
+            <circle
+              cx="20"
+              cy="20"
+              r="18"
+              fill="none"
+              pathLength="100"
+              strokeDasharray="100"
+              strokeDashoffset="100"
+              strokeLinecap="round"
+              strokeWidth="2"
+              className={ownerMeta.strokeClass}
+            >
+              <animate
+                attributeName="stroke-dashoffset"
+                from="100"
+                to="0"
+                dur={`${progressDurationMs}ms`}
+                fill="freeze"
+              />
+            </circle>
+          </svg>
+        )}
+        {status === 'creating' && !showProgress ? (
           <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
         ) : status === 'ready' ? (
           <CheckCircle2 className="h-4 w-4" />
@@ -347,7 +405,7 @@ function FlowNode({
           <span
             className={cn(
               'absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full ring-2 ring-background motion-safe:animate-pulse',
-              tone === 'developer' ? 'bg-blue-500' : 'bg-violet-500'
+              ownerMeta.dotClass
             )}
           />
         )}
@@ -494,6 +552,7 @@ function FailurePanel({
 function ArchitectureFlow({
   state,
   actor,
+  controlBeat,
   storyStarted,
   reviewUrl,
   failure,
@@ -501,6 +560,7 @@ function ArchitectureFlow({
 }: {
   state: PreviewEnvironmentState;
   actor: StoryActor;
+  controlBeat: ControlBeat;
   storyStarted: boolean;
   reviewUrl: string;
   failure: PreviewFailure | null;
@@ -532,10 +592,12 @@ function ArchitectureFlow({
   const automationStatus: FlowStatus =
     state.activeFailure === 'branch-mismatch'
       ? 'failed'
-      : stages.intent === 'complete'
+      : stages.reconcile === 'complete'
         ? 'ready'
-        : storyStarted && actor === 'platform'
-          ? 'creating'
+        : stages.reconcile === 'active' && actor === 'platform'
+          ? controlBeat === 'detect'
+            ? 'creating'
+            : 'ready'
           : 'waiting';
 
   const buildStatus: FlowStatus =
@@ -566,8 +628,9 @@ function ArchitectureFlow({
       ? 'failed'
       : stages.reconcile === 'complete'
         ? 'ready'
-        : stages.reconcile === 'active' || stages.reconcile === 'remediated'
-          ? actor === 'platform'
+        : (stages.reconcile === 'active' || stages.reconcile === 'remediated') &&
+            actor === 'platform'
+          ? controlBeat === 'render'
             ? 'creating'
             : 'waiting'
           : 'waiting';
@@ -660,7 +723,6 @@ function ArchitectureFlow({
                 detail={storyStarted ? 'checkout-v2 → main' : 'Add the label to request a preview'}
                 status={prStatus}
                 owner="developer"
-                tone="developer"
               />
               <div className="grid grid-cols-1 gap-2 2xl:grid-cols-2">
                 <FlowNode
@@ -669,7 +731,11 @@ function ArchitectureFlow({
                   detail="CI packages the change"
                   status={buildStatus}
                   owner="pipeline"
-                  tone="developer"
+                  progressDurationMs={
+                    buildStatus === 'current' || buildStatus === 'creating'
+                      ? PIPELINE_STEP_MS
+                      : undefined
+                  }
                   compact
                 />
                 <FlowNode
@@ -678,7 +744,7 @@ function ArchitectureFlow({
                   detail="checkout:sha-8f3c2a1"
                   status={registryStatus}
                   owner="pipeline"
-                  tone="developer"
+                  progressDurationMs={registryStatus === 'current' ? PIPELINE_STEP_MS : undefined}
                   compact
                 />
               </div>
@@ -700,6 +766,7 @@ function ArchitectureFlow({
                 detail="Automatically detects the labeled PR"
                 status={automationStatus}
                 owner="argo"
+                progressDurationMs={automationStatus === 'creating' ? ARGO_STEP_MS : undefined}
               />
               <div className="flex justify-center" aria-hidden="true">
                 <ArrowDown className="h-4 w-4 text-muted-foreground" />
@@ -710,6 +777,7 @@ function ArchitectureFlow({
                 detail="Commit and image digest become Helm values"
                 status={argoStatus}
                 owner="argo"
+                progressDurationMs={argoStatus === 'creating' ? ARGO_STEP_MS : undefined}
               />
             </div>
           </FlowZone>
@@ -731,6 +799,7 @@ function ArchitectureFlow({
                 detail="preview-pr-184 · isolated boundary"
                 status={namespaceStatus}
                 owner="cluster"
+                progressDurationMs={namespaceStatus === 'creating' ? ARGO_STEP_MS : undefined}
               />
               <div
                 className={cn(
@@ -748,6 +817,7 @@ function ArchitectureFlow({
                     detail="application"
                     status={workloadsStatus}
                     owner="cluster"
+                    progressDurationMs={workloadsStatus === 'creating' ? ARGO_STEP_MS : undefined}
                     compact
                   />
                 ))}
@@ -759,6 +829,7 @@ function ArchitectureFlow({
                   detail="isolated data"
                   status={dataStatus}
                   owner="cluster"
+                  progressDurationMs={dataStatus === 'creating' ? ARGO_STEP_MS : undefined}
                   compact
                 />
                 <FlowNode
@@ -767,6 +838,7 @@ function ArchitectureFlow({
                   detail="isolated cache"
                   status={dataStatus}
                   owner="cluster"
+                  progressDurationMs={dataStatus === 'creating' ? ARGO_STEP_MS : undefined}
                   compact
                 />
               </div>
@@ -776,6 +848,7 @@ function ArchitectureFlow({
                 detail={urlStatus === 'ready' ? reviewUrl : 'DNS · ingress · TLS · revision'}
                 status={urlStatus}
                 owner="cluster"
+                progressDurationMs={urlStatus === 'creating' ? ARGO_STEP_MS : undefined}
               />
             </div>
           </FlowZone>
@@ -848,6 +921,7 @@ export default function PreviewEnvironmentSimulator() {
   const [state, setState] = useState(() => scenarioState('checkout-flow', false));
   const [storyStarted, setStoryStarted] = useState(false);
   const [actorBeat, setActorBeat] = useState<StoryActor>('developer');
+  const [controlBeat, setControlBeat] = useState<ControlBeat>('detect');
 
   useEffect(() => {
     if (state.status !== 'cleaning') return;
@@ -901,68 +975,81 @@ export default function PreviewEnvironmentSimulator() {
         : 'argo';
   const activeOwnerMeta = FLOW_OWNERS[activeOwner];
 
+  useEffect(() => {
+    if (!storyStarted || (state.status !== 'configured' && state.status !== 'running')) return;
+
+    const currentStage = stageId;
+    let delayMs = REQUEST_HANDOFF_MS;
+    let nextAction: 'advance' | 'handoff-to-argo' | 'render-application' = 'advance';
+
+    if (state.status === 'running') {
+      if (currentStage === 'coordinate') {
+        delayMs = PIPELINE_STEP_MS;
+      } else if (currentStage === 'reconcile' && actorBeat === 'developer') {
+        delayMs = PIPELINE_STEP_MS;
+        nextAction = 'handoff-to-argo';
+      } else if (currentStage === 'reconcile' && controlBeat === 'detect') {
+        delayMs = ARGO_STEP_MS;
+        nextAction = 'render-application';
+      } else if (currentStage === 'verify') {
+        delayMs = VERIFY_STEP_MS;
+      } else {
+        delayMs = ARGO_STEP_MS;
+      }
+    }
+
+    const automationTimer = window.setTimeout(() => {
+      if (nextAction === 'handoff-to-argo') {
+        setActorBeat('platform');
+        setControlBeat('detect');
+        return;
+      }
+
+      if (nextAction === 'render-application') {
+        setControlBeat('render');
+        return;
+      }
+
+      setState((current) => advancePreviewEnvironment(current));
+      setActorBeat(
+        state.status === 'configured' || currentStage === 'coordinate' ? 'developer' : 'platform'
+      );
+    }, delayMs);
+
+    return () => window.clearTimeout(automationTimer);
+  }, [actorBeat, controlBeat, stageId, state.status, storyStarted]);
+
   const resetWith = (nextScenario: PreviewScenarioId, nextAddProblem: boolean) => {
     setScenarioId(nextScenario);
     setAddProblem(nextAddProblem);
     setState(scenarioState(nextScenario, nextAddProblem));
     setActorBeat('developer');
+    setControlBeat('detect');
     setStoryStarted(false);
   };
 
   const start = () => {
     if (state.status === 'removed') setState(scenarioState(scenarioId, addProblem));
     setActorBeat('developer');
+    setControlBeat('detect');
     setStoryStarted(true);
   };
 
-  const nextScene = () => {
-    if (state.status === 'configured') {
-      if (actor === 'developer') {
-        setActorBeat('platform');
-      } else {
-        setState((current) => advancePreviewEnvironment(current));
-        setActorBeat('developer');
-      }
-      return;
-    }
-
-    if (actor === 'developer' && stageId === 'coordinate') {
-      setState((current) => advancePreviewEnvironment(current));
-      setActorBeat('developer');
-      return;
-    }
-
-    if (actor === 'developer' && stageId === 'reconcile') {
-      setActorBeat('platform');
-      return;
-    }
-
-    setState((current) => advancePreviewEnvironment(current));
-    setActorBeat('platform');
-  };
-
   const applyFix = (remediationId: string, correct: boolean) => {
-    setState((current) => applyPreviewRemediation(current, remediationId));
+    setState((current) => {
+      const remediated = applyPreviewRemediation(current, remediationId);
+      return correct ? advancePreviewEnvironment(remediated) : remediated;
+    });
     if (correct) setActorBeat(stageId === 'coordinate' ? 'developer' : 'platform');
   };
 
   const sharedDecision = state.status === 'ready' || state.status === 'reviewed';
-  const nextButtonLabel =
+  const automaticStepMessage =
     state.status === 'configured'
-      ? actor === 'developer'
-        ? 'Send PR event'
-        : 'Next: build the image'
-      : actor === 'developer'
-        ? stageId === 'coordinate'
-          ? 'Next: push the image'
-          : 'Hand image to Argo CD'
-        : stageId === 'reconcile'
-          ? 'Next: create the namespace'
-          : stageId === 'provision'
-            ? 'Next: add data & URL'
-            : stageId === 'expose'
-              ? 'Next: return evidence'
-              : 'Next: share the preview';
+      ? 'Preview requested. The pipeline starts automatically.'
+      : activeOwner === 'pipeline'
+        ? 'This pipeline step completes automatically in 5 seconds.'
+        : 'Argo CD and Kubernetes advance automatically when reconciliation finishes.';
 
   return (
     <div className="overflow-hidden rounded-xl border bg-muted/15 shadow-sm">
@@ -1052,7 +1139,7 @@ export default function PreviewEnvironmentSimulator() {
               {actor === 'developer' ? phase.developerTitle : phase.platformTitle}
             </p>
             <p className="text-xs text-muted-foreground sm:before:mr-2 sm:before:content-['·']">
-              {friendlyStatus(state, actor, storyStarted)}
+              {friendlyStatus(state, actor, storyStarted, controlBeat)}
             </p>
           </div>
         </div>
@@ -1060,6 +1147,7 @@ export default function PreviewEnvironmentSimulator() {
         <ArchitectureFlow
           state={state}
           actor={actor}
+          controlBeat={controlBeat}
           storyStarted={storyStarted}
           reviewUrl={evidence.reviewUrl}
           failure={failure}
@@ -1080,6 +1168,8 @@ export default function PreviewEnvironmentSimulator() {
                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
               ) : state.status === 'cleaning' ? (
                 <LoaderCircle className="h-4 w-4 text-amber-500 motion-safe:animate-spin" />
+              ) : state.status === 'running' || (state.status === 'configured' && storyStarted) ? (
+                <LoaderCircle className="h-4 w-4 text-violet-500 motion-safe:animate-spin" />
               ) : state.status === 'blocked' ? (
                 <AlertTriangle className="h-4 w-4 text-red-500" />
               ) : (
@@ -1089,8 +1179,8 @@ export default function PreviewEnvironmentSimulator() {
                 {state.status === 'cleaning'
                   ? 'Argo CD is removing the entire preview automatically. No more clicks needed.'
                   : state.status === 'running' || (state.status === 'configured' && storyStarted)
-                    ? 'Find the glowing step in the map, then continue.'
-                    : friendlyStatus(state, actor, storyStarted)}
+                    ? automaticStepMessage
+                    : friendlyStatus(state, actor, storyStarted, controlBeat)}
               </span>
             </div>
           )}
@@ -1103,20 +1193,14 @@ export default function PreviewEnvironmentSimulator() {
             )}
 
             {(state.status === 'running' || (state.status === 'configured' && storyStarted)) && (
-              <>
-                <Button type="button" size="sm" onClick={nextScene}>
-                  {nextButtonLabel}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => resetWith(scenarioId, addProblem)}
-                >
-                  <RefreshCw className="h-4 w-4" /> Start over
-                </Button>
-              </>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => resetWith(scenarioId, addProblem)}
+              >
+                <RefreshCw className="h-4 w-4" /> Start over
+              </Button>
             )}
 
             {state.status === 'blocked' && (
