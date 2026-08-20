@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import AgenticLoopSimulator from '@/components/games/agentic-loop-simulator';
+import HerokuStyleNameGenerator from '@/components/games/heroku-style-name-generator';
 import BinaryByteSimulator from '@/components/games/binary-byte-simulator';
 import BounceTriageSimulator from '@/components/games/bounce-triage-simulator';
 import AwsVpcSimulator from '@/components/games/aws-vpc-simulator';
@@ -68,6 +69,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'javascript-promises-async-await-simulator': JavascriptPromisesAsyncSimulator,
   'git-concepts-simulator': GitConceptsSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
+  'heroku-style-name-generator': HerokuStyleNameGenerator,
   'log-aggregation-pipeline-simulator': LogAggregationPipelineSimulator,
   'message-queue-simulator': MessageQueueSimulator,
   'oauth-oidc-flow-simulator': OAuthOidcFlowSimulator,

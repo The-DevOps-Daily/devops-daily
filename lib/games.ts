@@ -33,6 +33,22 @@ export interface Game {
  */
 const games: Game[] = [
   {
+    id: 'heroku-style-name-generator',
+    type: 'game',
+    title: 'Heroku-Style Name Generator',
+    seoTitle: 'Heroku-Style Name Generator: How Heroku, Docker and Kubernetes Invent Names',
+    description:
+      'Generate names the way Heroku, Docker, Kubernetes, and petname do, see how the word lists combine, and learn when the birthday problem makes random names collide.',
+    iconName: 'Dices',
+    badgeText: 'New',
+    color: 'from-purple-500 to-indigo-600',
+    href: '/games/heroku-style-name-generator',
+    tags: ['fun', 'interactive', 'heroku', 'docker', 'kubernetes', 'naming', 'educational'],
+    isNew: true,
+    category: 'DevOps',
+    createdAt: '2026-08-20',
+  },
+  {
     id: 'log-aggregation-pipeline-simulator',
     type: 'simulator',
     title: 'Log Aggregation Pipeline Simulator',
