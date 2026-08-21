@@ -41,13 +41,11 @@ font-family="system-ui, -apple-system, sans-serif"
 font-family="Arial, sans-serif"
 \`\`\`
 
-### Files Modified
+### Shared renderer
 
-- \`scripts/generate-post-images-svg.ts\` - Post OG images (news, guides, exercises, advent)
-- \`scripts/generate-post-images-svg-parallel.ts\` - Parallel version for faster generation
-- \`scripts/generate-checklist-images-svg.ts\` - Checklist OG images
-- \`scripts/generate-interview-images-svg.ts\` - Interview question OG images
-- \`scripts/generate-quiz-og.ts\` - Quiz OG images
+- \`scripts/og-utils.ts\` owns the adaptive 1200x630 cover layout.
+- \`scripts/generate-content-og.ts\` discovers and generates every supported content type.
+- \`scripts/generate-quiz-og.ts\` remains available for CLI compatibility and uses the same renderer.
 
 ## Benefits
 
@@ -81,14 +79,17 @@ We considered using Resvg's \`loadSystemFonts: false\` option, but this causes *
 To verify consistency:
 
 \`\`\`bash
-# Generate images
-npm run generate:images
+# Generate missing images
+pnpm generate:images
+
+# Render and pixel-check all current content without writing files
+pnpm validate:images
 
 # Check git status - only NEW content should show modified images
 git status
 
 # Verify no regeneration on subsequent runs
-npm run generate:images
+pnpm generate:images
 git status  # Should show no changes
 \`\`\`
 
@@ -96,6 +97,7 @@ git status  # Should show no changes
 
 **Important:** This change only affects **new** image generation. Existing PNG files are NOT modified unless their source content changes.
 
-- When new posts/guides/checklists are added, their OG images will use Arial
+- New posts, guides, exercises, news, Advent entries, quizzes, games, checklists,
+  interview questions, comparisons, flashcards, and tools use the shared layout
 - Existing images will be regenerated naturally over time as content is updated
 - No mass regeneration is needed or performed
