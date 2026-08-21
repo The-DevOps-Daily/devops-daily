@@ -312,6 +312,7 @@ function FlowNode({
   owner,
   progressDurationMs,
   readyLabel,
+  reference,
   compact = false,
 }: {
   icon: LucideIcon;
@@ -321,6 +322,11 @@ function FlowNode({
   owner: FlowOwner;
   progressDurationMs?: number;
   readyLabel?: string;
+  reference?: {
+    href: string;
+    label: string;
+    sponsored?: boolean;
+  };
   compact?: boolean;
 }) {
   const ownerMeta = FLOW_OWNERS[owner];
@@ -460,6 +466,17 @@ function FlowNode({
         <p className="mt-0.5 break-words text-[10px] leading-snug text-muted-foreground">
           {detail}
         </p>
+        {reference && (
+          <a
+            href={reference.href}
+            target="_blank"
+            rel={`noopener noreferrer${reference.sponsored ? ' sponsored' : ''}`}
+            className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
+          >
+            {reference.label}
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          </a>
+        )}
       </div>
     </div>
   );
@@ -728,12 +745,23 @@ function ArchitectureFlow({
             One control path from pull request to preview URL
           </p>
         </div>
-        <Badge
-          variant="outline"
-          className="gap-1.5 border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300"
-        >
-          <GitCommit className="h-3 w-3" /> sha-8f3c2a1 retained
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="https://atomsized.com/preview-environments"
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Inspired by Atomsized
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          </a>
+          <Badge
+            variant="outline"
+            className="gap-1.5 border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300"
+          >
+            <GitCommit className="h-3 w-3" /> sha-8f3c2a1 retained
+          </Badge>
+        </div>
       </div>
 
       <div className="p-3">
@@ -871,6 +899,10 @@ function ArchitectureFlow({
                   detail="isolated data"
                   status={dataStatus}
                   owner="cluster"
+                  reference={{
+                    href: 'https://neon.com/branching',
+                    label: 'Neon',
+                  }}
                   progressDurationMs={dataStatus === 'creating' ? ARGO_STEP_MS : undefined}
                   compact
                 />
@@ -1314,28 +1346,6 @@ export default function PreviewEnvironmentSimulator() {
               </Button>
             )}
           </div>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t pt-3 text-xs text-muted-foreground">
-          <span>See this pattern in practice:</span>
-          <a
-            href="https://atomsized.com/preview-environments"
-            target="_blank"
-            rel="noopener noreferrer sponsored"
-            className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:text-blue-600 hover:underline dark:hover:text-blue-400"
-          >
-            Atomsized · full preview environments
-            <ExternalLink className="h-3 w-3" aria-hidden="true" />
-          </a>
-          <a
-            href="https://neon.com/branching"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:text-emerald-600 hover:underline dark:hover:text-emerald-400"
-          >
-            Neon · preview database branches
-            <ExternalLink className="h-3 w-3" aria-hidden="true" />
-          </a>
         </div>
 
         <details className="group mt-4 border-t pt-4">
