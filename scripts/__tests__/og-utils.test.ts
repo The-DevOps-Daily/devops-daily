@@ -60,6 +60,46 @@ describe('content cover renderer', () => {
     expect(svg).not.toContain('...');
   });
 
+  it('uses a distinct purpose label and motif for every content type', () => {
+    const expectedSections = {
+      post: 'ARTICLE / INSIGHT',
+      guide: 'GUIDE / PATH',
+      exercise: 'EXERCISE / LAB',
+      news: 'NEWS / DIGEST',
+      advent: 'ADVENT / DAY',
+      quiz: 'QUIZ / CHALLENGE',
+      game: 'GAME / SIMULATOR',
+      checklist: 'CHECKLIST / PROGRESS',
+      interview: 'INTERVIEW / PREP',
+      comparison: 'COMPARE / DECIDE',
+      flashcard: 'FLASHCARDS / RECALL',
+      tool: 'TOOL / UTILITY',
+    } as const;
+
+    for (const type of CONTENT_COVER_TYPES) {
+      const svg = buildContentCoverSvg({
+        type,
+        title: 'Safe Production Deployments',
+        category: 'DevOps',
+      });
+
+      expect(svg).toContain(`data-cover-motif="${type}"`);
+      expect(svg).toContain(expectedSections[type]);
+    }
+  });
+
+  it('preserves explicit section label overrides', () => {
+    const svg = buildContentCoverSvg({
+      type: 'exercise',
+      title: 'Safe Production Deployments',
+      category: 'DevOps',
+      sectionLabel: 'CUSTOM / LABEL',
+    });
+
+    expect(svg).toContain('CUSTOM / LABEL');
+    expect(svg).not.toContain('EXERCISE / LAB');
+  });
+
   it('keeps the longest current-style title inside the rendered title area', () => {
     expectTitleInsideBounds(
       'When the Malicious Hook Is in the Other Manifest: 700+ Repos, 8 Packagist Packages, One package.json Trick'
