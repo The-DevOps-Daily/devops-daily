@@ -10,6 +10,7 @@ import {
   type CdfSeries,
   parseChartSpec,
   formatValue,
+  barValueColumnWidth,
   formatAxisValue,
   niceAxisTicks,
   wrapChartLabel,
@@ -32,18 +33,30 @@ function BarChart({ spec }: { spec: ChartSpec }) {
     ...labels.flatMap((lines) => lines.map((line) => Array.from(line).length))
   );
   const labelW = Math.min(240, Math.max(150, longestLabelLine * 7.5 + 18));
-  const valueW = spec.tickLabel ? 150 : 90;
+  const valueLabels = rows.map((row) => formatValue(row.value, spec.unit));
+  const valueW = barValueColumnWidth(valueLabels, 13, 90);
+  const tickLabels = rows
+    .filter((row) => row.tick != null)
+    .map((row) => `${spec.tickLabel ?? 'tick'} ${formatValue(row.tick!, spec.unit)}`);
+  const tickValueW = tickLabels.length ? barValueColumnWidth(tickLabels, 11.5, 72) : 0;
+  const valuesW = valueW + tickValueW;
+  const plotEnd = width - valuesW;
   const pad = 6;
   const height = rows.length * rowH + pad * 2;
   const max = Math.max(...rows.map((r) => Math.max(r.value, r.tick ?? 0))) * 1.08;
-  const scale = (v: number) => (v / max) * (width - labelW - valueW);
+  const scale = (v: number) => (v / max) * (plotEnd - labelW);
 
   const seriesNames = [...new Set(rows.map((r) => r.series).filter(Boolean))] as string[];
   const colorFor = (row: BarRow) =>
     row.series ? seriesColor(seriesNames.indexOf(row.series)) : seriesColor(0);
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={spec.title ?? 'Bar chart'}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width="100%"
+      role="img"
+      aria-label={spec.title ?? 'Bar chart'}
+    >
       {rows.map((r, i) => {
         const cy = pad + i * rowH + rowH / 2;
         const labelLines = labels[i];
@@ -62,7 +75,14 @@ function BarChart({ spec }: { spec: ChartSpec }) {
                 </tspan>
               ))}
             </text>
-            <line x1={labelW} y1={cy} x2={width - valueW} y2={cy} className="stroke-border" strokeOpacity={0.5} />
+            <line
+              x1={labelW}
+              y1={cy}
+              x2={plotEnd}
+              y2={cy}
+              className="stroke-border"
+              strokeOpacity={0.5}
+            />
             <rect
               x={labelW}
               y={cy - 7}
@@ -82,11 +102,24 @@ function BarChart({ spec }: { spec: ChartSpec }) {
                 strokeWidth={2}
               />
             )}
-            <text x={width - valueW + 12} y={cy + 4} fontSize={13} fontWeight={600} className="fill-foreground">
-              {formatValue(r.value, spec.unit)}
+            <text
+              x={plotEnd + valueW - 6}
+              y={cy + 4}
+              fontSize={13}
+              fontWeight={600}
+              textAnchor="end"
+              className="fill-foreground"
+            >
+              {valueLabels[i]}
             </text>
             {r.tick != null && (
-              <text x={width - valueW + 78} y={cy + 4} fontSize={11.5} className="fill-muted-foreground">
+              <text
+                x={width - 6}
+                y={cy + 4}
+                fontSize={11.5}
+                textAnchor="end"
+                className="fill-muted-foreground"
+              >
                 {spec.tickLabel ?? 'tick'} {formatValue(r.tick, spec.unit)}
               </text>
             )}

@@ -79,6 +79,15 @@ export function formatValue(v: number, unit?: string): string {
   return unit ? `${v.toLocaleString()}${unit}` : v.toLocaleString();
 }
 
+/** Reserve enough SVG space for formatted bar values, including their unit. */
+export function barValueColumnWidth(labels: string[], fontSize: number, minWidth: number): number {
+  const widest = labels.reduce(
+    (maxWidth, label) => Math.max(maxWidth, Array.from(label).length * fontSize * 0.58),
+    0
+  );
+  return Math.max(minWidth, Math.ceil(widest + 18));
+}
+
 /** Short axis labels preserve chart area without sacrificing source precision. */
 export function formatAxisValue(v: number, unit?: string): string {
   if (unit === 'min' && Math.abs(v) >= 60) {
