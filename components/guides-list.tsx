@@ -32,7 +32,7 @@ export function GuidesList({ guides, className }: GuidesListProps) {
             />
           </div>
           <div className="flex flex-1 flex-col p-5 sm:p-6">
-            <Badge variant="secondary" className="mb-2">
+            <Badge variant="secondary" className="mb-2 self-start">
               <span>{guide.category.name}</span>
             </Badge>
             <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
