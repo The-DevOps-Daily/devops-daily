@@ -12,6 +12,7 @@ import {
   Clock3,
   Code2,
   Database,
+  ExternalLink,
   GitBranch,
   GitCommit,
   GitPullRequest,
@@ -1313,6 +1314,28 @@ export default function PreviewEnvironmentSimulator() {
               </Button>
             )}
           </div>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t pt-3 text-xs text-muted-foreground">
+          <span>See this pattern in practice:</span>
+          <a
+            href="https://atomsized.com/preview-environments"
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:text-blue-600 hover:underline dark:hover:text-blue-400"
+          >
+            Atomsized · full preview environments
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          </a>
+          <a
+            href="https://neon.com/branching"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:text-emerald-600 hover:underline dark:hover:text-emerald-400"
+          >
+            Neon · preview database branches
+            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+          </a>
         </div>
 
         <details className="group mt-4 border-t pt-4">
