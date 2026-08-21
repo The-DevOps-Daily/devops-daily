@@ -30,13 +30,13 @@ export default async function LatestGuides({ className, limit = 6 }: LatestGuide
             href={`/guides/${guide.slug}`}
             className="group flex flex-col overflow-hidden rounded-md border border-border hover:border-primary/40 hover:bg-muted/30 transition-colors"
           >
-            <div className="relative h-48 overflow-hidden">
+            <div className="relative aspect-[40/21] overflow-hidden bg-muted/30">
               <OptimizedImage
                 src={guide.image || '/placeholder.svg'}
                 alt={guide.title}
                 fill
                 priority={index === 0}
-                className="transition-transform group-hover:scale-105 object-cover"
+                className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
               />
             </div>
             <div className="flex-1 p-6">
@@ -50,9 +50,7 @@ export default async function LatestGuides({ className, limit = 6 }: LatestGuide
               <div className="mt-4 flex items-center text-sm text-muted-foreground">
                 <Calendar className="mr-1 h-4 w-4" />
                 {guide.publishedAt ? (
-                  <time dateTime={guide.publishedAt}>
-                    {guide.publishedAt.split('T')[0]}
-                  </time>
+                  <time dateTime={guide.publishedAt}>{guide.publishedAt.split('T')[0]}</time>
                 ) : (
                   <span>Unknown date</span>
                 )}
