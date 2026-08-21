@@ -137,7 +137,7 @@ Output:
 // Main execution
 if (import.meta.url === `file://${process.argv[1]}`) {
   const options = parseArgs();
-  
+
   generateQuizOG(options)
     .then(() => {
       console.log('\n✨ Quiz OG images generated successfully!\n');

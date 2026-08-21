@@ -18,19 +18,22 @@ export function escapeXml(text: unknown): string {
     .replace(/'/g, '&apos;');
 }
 
-export type ContentCoverType =
-  | 'post'
-  | 'guide'
-  | 'exercise'
-  | 'news'
-  | 'advent'
-  | 'quiz'
-  | 'game'
-  | 'checklist'
-  | 'interview'
-  | 'comparison'
-  | 'flashcard'
-  | 'tool';
+export const CONTENT_COVER_TYPES = [
+  'post',
+  'guide',
+  'exercise',
+  'news',
+  'advent',
+  'quiz',
+  'game',
+  'checklist',
+  'interview',
+  'comparison',
+  'flashcard',
+  'tool',
+] as const;
+
+export type ContentCoverType = (typeof CONTENT_COVER_TYPES)[number];
 
 export interface ContentCoverOptions {
   type: ContentCoverType;
@@ -63,10 +66,20 @@ const CONTENT_COVER_STYLES: Record<
   advent: { accent: '#10b981', pale: '#6ee7b7', dark: '#0b1715', label: 'ADVENT OF DEVOPS' },
   quiz: { accent: '#f59e0b', pale: '#fbbf24', dark: '#211508', label: 'INTERACTIVE QUIZ' },
   game: { accent: '#ec4899', pale: '#f9a8d4', dark: '#291126', label: 'INTERACTIVE LAB' },
-  checklist: { accent: '#14b8a6', pale: '#5eead4', dark: '#09221e', label: 'INTERACTIVE CHECKLIST' },
+  checklist: {
+    accent: '#14b8a6',
+    pale: '#5eead4',
+    dark: '#09221e',
+    label: 'INTERACTIVE CHECKLIST',
+  },
   interview: { accent: '#6366f1', pale: '#a5b4fc', dark: '#15152f', label: 'INTERVIEW QUESTION' },
   comparison: { accent: '#d97706', pale: '#fbbf24', dark: '#211508', label: 'COMPARISON' },
-  flashcard: { accent: '#f43f5e', pale: '#fda4af', dark: '#281019', label: 'INTERACTIVE FLASHCARDS' },
+  flashcard: {
+    accent: '#f43f5e',
+    pale: '#fda4af',
+    dark: '#281019',
+    label: 'INTERACTIVE FLASHCARDS',
+  },
   tool: { accent: '#10b981', pale: '#6ee7b7', dark: '#092218', label: 'DEVOPS TOOL' },
 };
 
@@ -123,10 +136,9 @@ function wrapMeasured(text: string, fontSize: number, maxWidth: number): string[
   return lines;
 }
 
-function fitCategory(category: string): Pick<
-  ContentCoverLayout,
-  'categoryFontSize' | 'categoryBadgeWidth' | 'categoryDisplay'
-> {
+function fitCategory(
+  category: string
+): Pick<ContentCoverLayout, 'categoryFontSize' | 'categoryBadgeWidth' | 'categoryDisplay'> {
   const clean = cleanOgText(category) || 'GENERAL';
   for (const fontSize of [16, 15, 14, 13, 12]) {
     const width = estimatedTextWidth(clean, fontSize, 700) + 54;

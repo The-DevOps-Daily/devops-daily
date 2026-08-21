@@ -1,33 +1,27 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background gradient -->
+<svg width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Security-Focused Code Reviews: Catching Vulnerabilities Before Production" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1" />
-    </linearGradient>
-    <!-- Pattern overlay -->
-    <pattern id="grid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-      <line x1="0" y1="0" x2="0" y2="40" stroke="#60a5fa" stroke-width="1" opacity="0.1"/>
-      <line x1="0" y1="0" x2="40" y2="0" stroke="#60a5fa" stroke-width="1" opacity="0.1"/>
-    </pattern>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse"><stop stop-color="#08090c"/><stop offset="1" stop-color="#0d1b31"/></linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(1010 120) rotate(142) scale(520 400)" gradientUnits="userSpaceOnUse"><stop stop-color="#3b82f6" stop-opacity=".32"/><stop offset="1" stop-color="#3b82f6" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M44 0H0V44" fill="none" stroke="#93c5fd" stroke-opacity=".05"/><circle cx="22" cy="22" r="1.5" fill="#93c5fd" fill-opacity=".075"/></pattern>
   </defs>
-
-  <!-- Background -->
-  <rect width="1200" height="630" fill="url(#bgGradient)"/>
-
-  <!-- Grid pattern -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
   <rect width="1200" height="630" fill="url(#grid)"/>
-
-  <!-- Category badge -->
-  <rect x="80" y="80" width="196" height="40" rx="20" fill="#3b82f6"/>
-  <text x="100" y="107" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#f8fafc">SECURITY</text>
-
-  <!-- Title -->
-  <text x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Security-Focused Code Reviews:</text>
-<text x="80" y="370" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Catching Vulnerabilities</text>
-<text x="80" y="440" font-family="Arial, sans-serif" font-size="56" font-weight="bold" fill="#f8fafc">Before Production</text>
-
-  <!-- DevOps Daily branding -->
-  <text x="80" y="550" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#60a5fa">DevOps Daily</text>
+  <rect x="28" y="28" width="1144" height="574" rx="32" fill="none" stroke="#93c5fd" stroke-opacity=".2"/>
+  <g transform="translate(930 220)" opacity=".22"><rect x="0" y="0" width="188" height="190" rx="28" fill="#3b82f6" fill-opacity=".12" stroke="#93c5fd" stroke-width="2"/><circle cx="94" cy="76" r="28" fill="none" stroke="#93c5fd" stroke-width="4"/><path d="M47 135h94M60 159h68" stroke="#93c5fd" stroke-width="5" stroke-linecap="round"/></g>
+  <rect x="80" y="70" width="150" height="40" rx="20" fill="#3b82f6" fill-opacity=".14" stroke="#93c5fd" stroke-opacity=".76"/>
+  <circle cx="100" cy="90" r="4" fill="#93c5fd"/>
+  <text x="114" y="97" font-family="Arial, sans-serif" font-size="16" font-weight="700" letter-spacing=".7" fill="#93c5fd">Security</text>
+  <text x="1120" y="96" font-family="Menlo, Monaco, monospace" font-size="14" letter-spacing="1.4" fill="#a1a1aa" text-anchor="end">POST / COVER</text>
+  <rect x="80" y="150" width="56" height="56" rx="16" fill="#3b82f6"/>
+  <circle cx="108" cy="178" r="15" fill="none" stroke="#081018" stroke-width="3"/>
+  <path d="M101 178h14m-7-7v14" stroke="#081018" stroke-width="3" stroke-linecap="round"/>
+  <text x="158" y="185" font-family="Menlo, Monaco, monospace" font-size="18" font-weight="700" letter-spacing="2" fill="#93c5fd">DEVOPS ARTICLE</text>
+  <text data-cover-title-line="true" x="80" y="300" font-family="Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="-1.1" fill="#fafafa">Security-Focused Code Reviews:</text>
+<text data-cover-title-line="true" x="80" y="356" font-family="Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="-1.1" fill="#fafafa">Catching Vulnerabilities Before</text>
+<text data-cover-title-line="true" x="80" y="412" font-family="Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="-1.1" fill="#fafafa">Production</text>
+  <line x1="80" y1="510" x2="1120" y2="510" stroke="#fafafa" stroke-opacity=".12"/>
+  <rect x="80" y="540" width="22" height="22" rx="7" fill="#3b82f6"/>
+  <text x="116" y="558" font-family="Arial, sans-serif" font-size="19" font-weight="800" fill="#fafafa">DevOps Daily</text>
+  <text x="1120" y="558" font-family="Menlo, Monaco, monospace" font-size="14" fill="#a1a1aa" text-anchor="end">DEVOPS-DAILY.COM</text>
 </svg>

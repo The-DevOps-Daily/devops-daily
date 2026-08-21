@@ -1,25 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Resvg } from '@resvg/resvg-js';
-import {
-  buildContentCoverSvg,
-  layoutContentCoverTitle,
-  type ContentCoverType,
-} from '../og-utils';
-
-const TYPES: ContentCoverType[] = [
-  'post',
-  'guide',
-  'exercise',
-  'news',
-  'advent',
-  'quiz',
-  'game',
-  'checklist',
-  'interview',
-  'comparison',
-  'flashcard',
-  'tool',
-];
+import { buildContentCoverSvg, CONTENT_COVER_TYPES, layoutContentCoverTitle } from '../og-utils';
 
 function expectTitleInsideBounds(title: string, category = 'DevOps'): void {
   const layout = layoutContentCoverTitle(title, category);
@@ -52,7 +33,7 @@ function expectTitleInsideBounds(title: string, category = 'DevOps'): void {
 }
 
 describe('content cover renderer', () => {
-  it.each(TYPES)('renders a valid 1200x630 %s cover', (type) => {
+  it.each(CONTENT_COVER_TYPES)('renders a valid 1200x630 %s cover', (type) => {
     const svg = buildContentCoverSvg({
       type,
       title: 'A Practical Guide to Safe Production Deployments',

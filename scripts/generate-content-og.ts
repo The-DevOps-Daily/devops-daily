@@ -14,6 +14,7 @@ import { CATEGORY_LABEL, TOOLS } from '../lib/tools.js';
 import {
   buildContentCoverSvg,
   cleanOgText,
+  CONTENT_COVER_TYPES,
   layoutContentCoverTitle,
   type ContentCoverType,
 } from './og-utils.js';
@@ -75,42 +76,129 @@ async function collectItems(): Promise<CoverItem[]> {
   ]);
 
   for (const post of posts) {
-    items.push({ type: 'post', slug: post.slug, title: post.title, category: post.category?.name || 'DevOps', directory: 'posts', ogSuffix: false });
+    items.push({
+      type: 'post',
+      slug: post.slug,
+      title: post.title,
+      category: post.category?.name || 'DevOps',
+      directory: 'posts',
+      ogSuffix: false,
+    });
   }
   for (const guide of guides) {
-    items.push({ type: 'guide', slug: guide.slug, title: guide.title, category: guide.category?.name || 'Guide', directory: 'guides', ogSuffix: false });
+    items.push({
+      type: 'guide',
+      slug: guide.slug,
+      title: guide.title,
+      category: guide.category?.name || 'Guide',
+      directory: 'guides',
+      ogSuffix: false,
+    });
   }
   for (const exercise of exercises) {
-    items.push({ type: 'exercise', slug: exercise.id, title: exercise.title, category: exercise.category?.name || 'Exercise', directory: 'exercises', ogSuffix: false });
+    items.push({
+      type: 'exercise',
+      slug: exercise.id,
+      title: exercise.title,
+      category: exercise.category?.name || 'Exercise',
+      directory: 'exercises',
+      ogSuffix: false,
+    });
   }
   for (const digest of news) {
-    items.push({ type: 'news', slug: digest.slug, title: digest.title, category: `Week ${digest.week}, ${digest.year}`, directory: 'news', ogSuffix: false });
+    items.push({
+      type: 'news',
+      slug: digest.slug,
+      title: digest.title,
+      category: `Week ${digest.week}, ${digest.year}`,
+      directory: 'news',
+      ogSuffix: false,
+    });
   }
   for (const day of adventDays) {
-    items.push({ type: 'advent', slug: day.slug, title: day.title.replace(/^Day \d+\s*-\s*/, ''), category: `Day ${day.day} · ${day.category || 'DevOps'}`, directory: 'advent', ogSuffix: false });
+    items.push({
+      type: 'advent',
+      slug: day.slug,
+      title: day.title.replace(/^Day \d+\s*-\s*/, ''),
+      category: `Day ${day.day} · ${day.category || 'DevOps'}`,
+      directory: 'advent',
+      ogSuffix: false,
+    });
   }
   for (const game of games) {
     if (game.isComingSoon) continue;
-    items.push({ type: 'game', slug: game.id, title: game.title, category: game.category || game.type || 'Interactive', directory: 'games', ogSuffix: true });
+    items.push({
+      type: 'game',
+      slug: game.id,
+      title: game.title,
+      category: game.category || game.type || 'Interactive',
+      directory: 'games',
+      ogSuffix: true,
+    });
   }
   for (const tool of TOOLS) {
-    items.push({ type: 'tool', slug: tool.slug, title: tool.title, category: CATEGORY_LABEL[tool.category], directory: 'tools', ogSuffix: false });
+    items.push({
+      type: 'tool',
+      slug: tool.slug,
+      title: tool.title,
+      category: CATEGORY_LABEL[tool.category],
+      directory: 'tools',
+      ogSuffix: false,
+    });
   }
 
   for (const quiz of await readJsonDirectory('content/quizzes')) {
-    items.push({ type: 'quiz', slug: required(quiz.id, 'quiz id'), title: required(quiz.title, 'quiz title'), category: quiz.category || 'Quiz', directory: 'quizzes', ogSuffix: true });
+    items.push({
+      type: 'quiz',
+      slug: required(quiz.id, 'quiz id'),
+      title: required(quiz.title, 'quiz title'),
+      category: quiz.category || 'Quiz',
+      directory: 'quizzes',
+      ogSuffix: true,
+    });
   }
   for (const checklist of await readJsonDirectory('content/checklists')) {
-    items.push({ type: 'checklist', slug: required(checklist.slug || checklist.id, 'checklist slug'), title: required(checklist.title, 'checklist title'), category: checklist.category || 'Checklist', directory: 'checklists', ogSuffix: true });
+    items.push({
+      type: 'checklist',
+      slug: required(checklist.slug || checklist.id, 'checklist slug'),
+      title: required(checklist.title, 'checklist title'),
+      category: checklist.category || 'Checklist',
+      directory: 'checklists',
+      ogSuffix: true,
+    });
   }
   for (const question of await readJsonDirectory('content/interview-questions')) {
-    items.push({ type: 'interview', slug: required(question.slug || question.id, 'interview slug'), title: required(question.title, 'interview title'), category: [question.category, question.difficulty].filter(Boolean).join(' · ') || 'Interview', directory: 'interview-questions', ogSuffix: true });
+    items.push({
+      type: 'interview',
+      slug: required(question.slug || question.id, 'interview slug'),
+      title: required(question.title, 'interview title'),
+      category: [question.category, question.difficulty].filter(Boolean).join(' · ') || 'Interview',
+      directory: 'interview-questions',
+      ogSuffix: true,
+    });
   }
   for (const comparison of await readJsonDirectory('content/comparisons')) {
-    items.push({ type: 'comparison', slug: required(comparison.slug || comparison.id, 'comparison slug'), title: required(comparison.title || `${comparison.toolA?.name || ''} vs ${comparison.toolB?.name || ''}`, 'comparison title'), category: comparison.category || 'Comparison', directory: 'comparisons', ogSuffix: true });
+    items.push({
+      type: 'comparison',
+      slug: required(comparison.slug || comparison.id, 'comparison slug'),
+      title: required(
+        comparison.title || `${comparison.toolA?.name || ''} vs ${comparison.toolB?.name || ''}`,
+        'comparison title'
+      ),
+      category: comparison.category || 'Comparison',
+      directory: 'comparisons',
+      ogSuffix: true,
+    });
   }
   for (const flashcard of await readJsonDirectory('content/flashcards')) {
-    items.push({ type: 'flashcard', slug: required(flashcard.id, 'flashcard id'), title: required(flashcard.title, 'flashcard title'), category: flashcard.category || 'Flashcards', directory: 'flashcards', ogSuffix: true });
+    items.push({
+      type: 'flashcard',
+      slug: required(flashcard.id, 'flashcard id'),
+      title: required(flashcard.title, 'flashcard title'),
+      category: flashcard.category || 'Flashcards',
+      directory: 'flashcards',
+      ogSuffix: true,
+    });
   }
 
   return items;
@@ -159,9 +247,12 @@ function assertRenderedTitleBounds(image: ReturnType<Resvg['render']>, item: Cov
         }
       }
     }
-    if (maxX < minX) throw new Error(`Could not detect title line ${lineIndex + 1} for ${item.type}/${item.slug}`);
+    if (maxX < minX)
+      throw new Error(`Could not detect title line ${lineIndex + 1} for ${item.type}/${item.slug}`);
     if (maxX - minX + 1 > layout.maxWidth + 2 || maxX > 80 + layout.maxWidth + 2) {
-      throw new Error(`Rendered title overflow on line ${lineIndex + 1} for ${item.type}/${item.slug}`);
+      throw new Error(
+        `Rendered title overflow on line ${lineIndex + 1} for ${item.type}/${item.slug}`
+      );
     }
   }
 }
@@ -181,22 +272,23 @@ async function writeCover(item: CoverItem): Promise<'generated' | 'skipped' | 'v
     title: item.title,
     category: item.category,
   });
-  if (/\{\{[^}]+\}\}/.test(svg)) throw new Error(`Unresolved SVG placeholder for ${item.type}/${item.slug}`);
+  if (/\{\{[^}]+\}\}/.test(svg))
+    throw new Error(`Unresolved SVG placeholder for ${item.type}/${item.slug}`);
 
   const renderSvg = check
-    ? svg.replace(
-        /(<text data-cover-title-line="true"[^>]*fill=")#[^"]+("[^>]*>)/g,
-        '$1#ff00ff$2'
-      )
+    ? svg.replace(/(<text data-cover-title-line="true"[^>]*fill=")#[^"]+("[^>]*>)/g, '$1#ff00ff$2')
     : svg;
   const rendered = new Resvg(renderSvg, { fitTo: { mode: 'width', value: 1200 } }).render();
   if (rendered.width !== 1200 || rendered.height !== 630) {
-    throw new Error(`Invalid cover dimensions for ${item.type}/${item.slug}: ${rendered.width}x${rendered.height}`);
+    throw new Error(
+      `Invalid cover dimensions for ${item.type}/${item.slug}: ${rendered.width}x${rendered.height}`
+    );
   }
   if (check) {
     assertRenderedTitleBounds(rendered, item);
     const signature = [...rendered.asPng().subarray(0, 4)];
-    if (signature.join(',') !== '137,80,78,71') throw new Error(`Invalid PNG for ${item.type}/${item.slug}`);
+    if (signature.join(',') !== '137,80,78,71')
+      throw new Error(`Invalid PNG for ${item.type}/${item.slug}`);
     return 'validated';
   }
   const png = await sharp(rendered.asPng())
@@ -213,16 +305,17 @@ async function writeCover(item: CoverItem): Promise<'generated' | 'skipped' | 'v
     await fs.rename(temporarySvg, svgPath);
     await fs.rename(temporaryPng, pngPath);
   } finally {
-    await Promise.all([
-      fs.rm(temporarySvg, { force: true }),
-      fs.rm(temporaryPng, { force: true }),
-    ]);
+    await Promise.all([fs.rm(temporarySvg, { force: true }), fs.rm(temporaryPng, { force: true })]);
   }
   return 'generated';
 }
 
 async function main(): Promise<void> {
   const allItems = await collectItems();
+  const inventory = CONTENT_COVER_TYPES.map((type) => {
+    const count = allItems.filter((item) => item.type === type).length;
+    return `${type}=${count}`;
+  }).join(', ');
   const items = selectItems(allItems);
   if (onlyKeys.size > 0 && items.length !== onlyKeys.size) {
     const matched = new Set(items.map((item) => `${item.type}/${item.slug}`));
@@ -241,7 +334,10 @@ async function main(): Promise<void> {
     validated += results.filter((result) => result === 'validated').length;
   }
 
-  console.log(`Content covers: ${generated} generated, ${skipped} skipped, ${validated} validated, ${items.length} selected (${allItems.length} total).`);
+  console.log(`Content cover inventory: ${inventory}.`);
+  console.log(
+    `Content covers: ${generated} generated, ${skipped} skipped, ${validated} validated, ${items.length} selected (${allItems.length} total).`
+  );
 }
 
 main().catch((error) => {

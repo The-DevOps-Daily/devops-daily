@@ -26,6 +26,7 @@
     "generate-devto-feed": "tsx scripts/generate-devto-feed.ts",
     "generate:images": "tsx scripts/generate-content-og.ts",
     "generate:images:preview": "tsx scripts/generate-content-og.ts --preview --force",
+    "regenerate:content-covers": "pnpm generate:images -- --force && pnpm prune:svgs && pnpm validate:images",
     "validate:images": "tsx scripts/generate-content-og.ts --check",
     "convert:svg-to-png": "tsx scripts/convert-svg-to-png-parallel.ts",
     "start": "next start",

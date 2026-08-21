@@ -24,6 +24,7 @@ PR #898 showed 100+ images being regenerated despite no content changes, just be
 ### Use Universal Fonts
 
 Replaced system-dependent fonts with **Arial**, which is:
+
 - ✅ Available on Windows, macOS, and Linux by default
 - ✅ Consistent rendering across platforms
 - ✅ Professional appearance
@@ -46,6 +47,10 @@ font-family="Arial, sans-serif"
 - \`scripts/og-utils.ts\` owns the adaptive 1200x630 cover layout.
 - \`scripts/generate-content-og.ts\` discovers and generates every supported content type.
 - \`scripts/generate-quiz-og.ts\` remains available for CLI compatibility and uses the same renderer.
+- The code-native templates cover posts, guides, exercises, news, Advent entries,
+  quizzes, games, checklists, interview questions, comparisons, flashcards, and tools.
+- \`pnpm regenerate:content-covers\` deliberately regenerates the complete active
+  content library, prunes unreferenced intermediate SVGs, and validates every cover.
 
 ## Benefits
 
@@ -79,25 +84,33 @@ We considered using Resvg's \`loadSystemFonts: false\` option, but this causes *
 To verify consistency:
 
 \`\`\`bash
+
 # Generate missing images
+
 pnpm generate:images
 
 # Render and pixel-check all current content without writing files
+
 pnpm validate:images
 
 # Check git status - only NEW content should show modified images
+
 git status
 
 # Verify no regeneration on subsequent runs
+
 pnpm generate:images
-git status  # Should show no changes
+git status # Should show no changes
 \`\`\`
 
 ## Migration
 
-**Important:** This change only affects **new** image generation. Existing PNG files are NOT modified unless their source content changes.
+The initial migration regenerated every active content cover so old and new content
+use the same layout. The files keep their existing public paths and names, so route
+metadata does not need to change.
 
-- New posts, guides, exercises, news, Advent entries, quizzes, games, checklists,
-  interview questions, comparisons, flashcards, and tools use the shared layout
-- Existing images will be regenerated naturally over time as content is updated
-- No mass regeneration is needed or performed
+After migration, normal generation remains intentionally idempotent:
+
+- \`pnpm generate:images\` creates covers that do not exist yet
+- \`pnpm validate:images\` renders and checks the full active library without writing files
+- \`pnpm regenerate:content-covers\` is the explicit full-regeneration path for future design changes
