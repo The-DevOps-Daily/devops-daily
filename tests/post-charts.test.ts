@@ -3,6 +3,7 @@ import { parseMarkdown } from '@/lib/markdown';
 import {
   parseChartSpec,
   formatValue,
+  barValueColumnWidth,
   formatAxisValue,
   niceAxisTicks,
   wrapChartLabel,
@@ -73,6 +74,12 @@ describe('post chart embeds', () => {
     expect(formatValue(42, '%')).toBe('42%');
     expect(formatAxisValue(500, 'min')).toBe('8.3h');
     expect(formatAxisValue(30, 'min')).toBe('30min');
+  });
+
+  it('reserves enough width for bar values and their units', () => {
+    const labels = [formatValue(1.4, 'B commits'), formatValue(2.9, 'B commits')];
+    expect(labels).toEqual(['1.4B commits', '2.9B commits']);
+    expect(barValueColumnWidth(labels, 13, 90)).toBeGreaterThan(90);
   });
 
   it('generates rounded linear axis ticks', () => {
