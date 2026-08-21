@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  GraduationCap,
   FileText,
   Map,
   Target,
@@ -31,6 +32,11 @@ export interface NavItem {
   external?: boolean;
   badge?: string;
   featured?: boolean;
+}
+
+/** Main-nav entries always render an icon, unlike dropdown items. */
+export interface MainNavItem extends NavItem {
+  icon: NonNullable<NavItem['icon']>;
 }
 
 export interface NavSection {
@@ -88,11 +94,18 @@ export const sectionColors = {
 } as const;
 
 // Main navigation items (no dropdowns)
-export const mainNavigation = [
+export const mainNavigation: MainNavItem[] = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Posts', href: '/posts', icon: FileText },
   { label: 'Guides', href: '/guides', icon: BookOpen },
-  { label: 'News', href: '/news', icon: Newspaper, badge: 'New' },
+  // The paid platform lives on its own subdomain, so this one leaves the site.
+  {
+    label: 'Pro',
+    href: 'https://learning.devops-daily.com',
+    icon: GraduationCap,
+    external: true,
+    badge: 'New',
+  },
 ];
 
 // Dropdown navigation data
@@ -198,6 +211,12 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
       description: 'Discover by topic and author',
       color: 'purple',
       items: [
+        {
+          label: 'News',
+          href: '/news',
+          description: 'Weekly DevOps news roundups',
+          icon: Newspaper,
+        },
         {
           label: 'Categories',
           href: '/categories',

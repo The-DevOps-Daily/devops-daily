@@ -57,6 +57,8 @@ export function MobileMenu({ isOpen, onClose }: MobileMenuProps) {
                     <Link
                       key={item.href}
                       href={item.href}
+                      target={item.external ? '_blank' : undefined}
+                      rel={item.external ? 'noopener noreferrer' : undefined}
                       className="flex items-center gap-4 px-4 text-base font-semibold leading-7 transition-all duration-300 border border-transparent rounded-2xl hover:bg-linear-to-r hover:from-primary/10 hover:to-purple-500/10 hover:shadow-md hover:border-primary/20"
                       onClick={onClose}
                     >

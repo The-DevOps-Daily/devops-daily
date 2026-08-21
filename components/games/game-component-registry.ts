@@ -1,5 +1,7 @@
 import type { ComponentType } from 'react';
 import AgenticLoopSimulator from '@/components/games/agentic-loop-simulator';
+import HerokuStyleNameGenerator from '@/components/games/heroku-style-name-generator';
+import BinaryByteSimulator from '@/components/games/binary-byte-simulator';
 import BounceTriageSimulator from '@/components/games/bounce-triage-simulator';
 import AwsVpcSimulator from '@/components/games/aws-vpc-simulator';
 import BCDRSimulator from '@/components/games/bcdr-simulator';
@@ -11,6 +13,7 @@ import DatabaseReplicationShardingScaling from '@/components/games/database-repl
 import DbIndexingSimulator from '@/components/games/db-indexing-simulator';
 import DbmsSimulator from '@/components/games/dbms-simulator';
 import DdosSimulator from '@/components/games/ddos-simulator';
+import DockerEscape from '@/components/games/docker-escape';
 import DeploymentStrategies from '@/components/games/deployment-strategies-simulator';
 import DockerUnderTheHoodSimulator from '@/components/games/docker-under-the-hood-simulator';
 import DevOpsMemes from '@/components/games/devops-memes';
@@ -53,6 +56,7 @@ import WebhookDeliverySimulator from '@/components/games/webhook-delivery-simula
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'agentic-loop-simulator': AgenticLoopSimulator,
+  'binary-byte-simulator': BinaryByteSimulator,
   'bounce-triage-simulator': BounceTriageSimulator,
   'docker-under-the-hood-simulator': DockerUnderTheHoodSimulator,
   'tcp-vs-udp': TcpVsUdpSimulator,
@@ -65,6 +69,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'javascript-promises-async-await-simulator': JavascriptPromisesAsyncSimulator,
   'git-concepts-simulator': GitConceptsSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
+  'heroku-style-name-generator': HerokuStyleNameGenerator,
   'log-aggregation-pipeline-simulator': LogAggregationPipelineSimulator,
   'message-queue-simulator': MessageQueueSimulator,
   'oauth-oidc-flow-simulator': OAuthOidcFlowSimulator,
@@ -86,6 +91,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'gitops-workflow': GitOpsWorkflow,
   'cicd-stack-generator': CicdStackGenerator,
   'ddos-simulator': DdosSimulator,
+  'docker-escape': DockerEscape,
   'aws-vpc-simulator': AwsVpcSimulator,
   'rest-vs-graphql': RestVsGraphql,
   'bug-hunter': BugHunter,

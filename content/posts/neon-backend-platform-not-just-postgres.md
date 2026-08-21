@@ -63,7 +63,7 @@ The clearest way to see the value is to count the moving parts in a typical "bra
   "caption": "Illustrative count for a branchable AI app, not a benchmark.",
   "rows": [
     { "label": "Assemble it yourself", "value": 7 },
-    { "label": "Neon platform", "value": 1 }
+    { "label": "Neon primitives", "value": 1 }
   ]
 }
 ```
@@ -77,7 +77,7 @@ There is a second, quieter tax it removes: distance. Because functions run in th
 This is a private preview, and it reads like one. Worth being clear-eyed about the limits before you plan anything around it.
 
 :::warning
-**One region, new projects only.** Everything is in AWS `us-east-2` and only works on projects created after the preview opened. Your existing Neon databases will not grow these features in place, which matters if you were hoping to bolt functions onto a production project.
+**One region, new projects only.** Everything is in AWS `us-east-2` and only works on projects created after the preview opened. Your existing Neon projects will not grow these features in place, which matters if you were hoping to bolt functions onto a production project.
 :::
 
 - **Functions are not a job runner.** They are explicitly request/response and real-time, not background jobs. Queued, retryable, cancellable work still belongs to something like QStash or Inngest. That is an honest scoping decision, but it means "move my whole backend here" is not yet on the table.
@@ -99,4 +99,4 @@ The honest framing is that Neon is making a bet: that the database, not the comp
 
 For now, the thing to internalize is that "Neon" no longer means "a Postgres host." It means a database with compute, storage, and model access growing out of it, all sharing the one trick Neon was already good at. If you have only ever evaluated it as a place to put a connection string, it is worth a second look on those terms.
 
-We benchmark Neon's database side in depth in our [Neon vs Supabase series](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks), and keep a running [Neon vs Supabase comparison](https://devops-daily.com/comparisons/neon-vs-supabase) covering architecture and pricing side by side. As these platform features leave preview, we will put them through the same treatment: real projects, real numbers, and the harness published so you can argue with our data instead of someone's vibes.
+We benchmark the database side in depth in our [Neon vs Supabase series](https://devops-daily.com/posts/neon-vs-supabase-free-tier-benchmarks), and keep a running [Neon vs Supabase comparison](https://devops-daily.com/comparisons/neon-vs-supabase) covering architecture and pricing side by side. As these platform features leave preview, we will put them through the same treatment: real projects, real numbers, and the harness published so you can argue with our data instead of someone's vibes.

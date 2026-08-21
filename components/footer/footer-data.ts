@@ -20,6 +20,8 @@ export interface SocialLink {
 export interface FooterLink {
   href: string;
   label: string;
+  /** Set for links that leave the site, e.g. the platform subdomain. */
+  external?: boolean;
 }
 
 export interface FooterSection {
@@ -106,6 +108,7 @@ export const contentSection: FooterSection = {
 export const resourcesSection: FooterSection = {
   title: 'Resources',
   links: [
+    { href: 'https://learning.devops-daily.com', label: 'DevOps Daily Pro', external: true },
     { href: '/roadmap', label: 'Career Roadmap' },
     { href: '/roadmaps', label: 'Learning Roadmaps' },
     { href: '/toolbox', label: 'Toolbox' },

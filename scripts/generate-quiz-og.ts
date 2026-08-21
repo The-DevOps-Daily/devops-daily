@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { convertSvgToPng, escapeXml, splitTitle, titleFontSize } from './og-utils';
+import { buildContentCoverSvg, convertSvgToPng } from './og-utils';
 
 interface QuizOGOptions {
   title: string;
@@ -11,72 +11,7 @@ interface QuizOGOptions {
   theme?: 'default' | 'security' | 'devops' | 'cloud' | 'sre';
 }
 
-interface ThemeConfig {
-  template: string;
-  bgGradient: [string, string];
-  accentGradient: [string, string];
-  textColor: string;
-}
-
-const THEMES: Record<string, ThemeConfig> = {
-  default: {
-    template: 'quiz-template-default.svg',
-    bgGradient: ['#1c1917', '#292524'],
-    accentGradient: ['#d97706', '#fbbf24'],
-    textColor: '#fbbf24',
-  },
-  security: {
-    template: 'quiz-template-security.svg',
-    bgGradient: ['#5b21b6', '#1e40af'],
-    accentGradient: ['#8b5cf6', '#60a5fa'],
-    textColor: '#a78bfa',
-  },
-  devops: {
-    template: 'quiz-template-devops.svg',
-    bgGradient: ['#c2410c', '#b45309'],
-    accentGradient: ['#fb923c', '#fbbf24'],
-    textColor: '#fbbf24',
-  },
-  cloud: {
-    template: 'quiz-template-cloud.svg',
-    bgGradient: ['#1e3a8a', '#1e40af'],
-    accentGradient: ['#3b82f6', '#60a5fa'],
-    textColor: '#60a5fa',
-  },
-  sre: {
-    template: 'quiz-template-sre.svg',
-    bgGradient: ['#991b1b', '#c2410c'],
-    accentGradient: ['#ef4444', '#fb923c'],
-    textColor: '#fb923c',
-  },
-};
-
-/**
- * Generate title text elements for SVG
- */
-function generateTitleLines(title: string): string {
-  const lines = splitTitle(title);
-  const baseY = 280;
-  const lineHeight = 65;
-
-  return lines
-    .map((line, index) => {
-      const y = baseY + index * lineHeight;
-      const fontSize = titleFontSize(lines.length);
-      return `  <!-- Title line ${index + 1} -->
-  <text x="80" y="${y}" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="bold" fill="#ffffff">${escapeXml(line)}</text>`;
-    })
-    .join('\n');
-}
-
-/**
- * Calculate badge width based on category length
- */
-function calculateBadgeWidth(category: string): number {
-  const baseWidth = 100;
-  const charWidth = 12; // Approximate width per character
-  return baseWidth + category.length * charWidth;
-}
+const SUPPORTED_THEMES = ['default', 'security', 'devops', 'cloud', 'sre'] as const;
 
 /**
  * Generate quiz OG image
@@ -89,31 +24,17 @@ async function generateQuizOG(options: QuizOGOptions): Promise<void> {
     throw new Error('Missing required parameters: title, category, and slug are required');
   }
 
-  const themeConfig = THEMES[theme];
-  if (!themeConfig) {
-    throw new Error(`Invalid theme: ${theme}. Available themes: ${Object.keys(THEMES).join(', ')}`);
+  if (!SUPPORTED_THEMES.includes(theme)) {
+    throw new Error(`Invalid theme: ${theme}. Available themes: ${SUPPORTED_THEMES.join(', ')}`);
   }
 
   // Paths
-  const templatePath = path.join(process.cwd(), 'templates', 'svg', themeConfig.template);
   const outputSvgPath = path.join(process.cwd(), 'public', 'images', 'quizzes', `${slug}-og.svg`);
   const outputPngPath = path.join(process.cwd(), 'public', 'images', 'quizzes', `${slug}-og.png`);
 
-  // Read template
-  let svgContent = await fs.readFile(templatePath, 'utf-8');
-
-  // Calculate badge width
-  const badgeWidth = calculateBadgeWidth(category);
-
-  // Generate title lines
-  const titleLines = generateTitleLines(title);
-
-  // Replace placeholders
-  svgContent = svgContent
-    .replace(/{{TITLE}}/g, escapeXml(title))
-    .replace(/{{CATEGORY}}/g, escapeXml(category))
-    .replace(/{{BADGE_WIDTH}}/g, badgeWidth.toString())
-    .replace(/{{TITLE_LINES}}/g, titleLines);
+  // Theme remains accepted for CLI compatibility; the shared renderer now
+  // provides the consistent quiz palette and adaptive title layout.
+  const svgContent = buildContentCoverSvg({ type: 'quiz', title, category });
 
   // Write SVG file
   await fs.writeFile(outputSvgPath, svgContent, 'utf-8');
@@ -216,7 +137,7 @@ Output:
 // Main execution
 if (import.meta.url === `file://${process.argv[1]}`) {
   const options = parseArgs();
-  
+
   generateQuizOG(options)
     .then(() => {
       console.log('\n✨ Quiz OG images generated successfully!\n');
