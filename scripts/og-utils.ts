@@ -57,31 +57,118 @@ export interface ContentCoverLayout {
 
 const CONTENT_COVER_STYLES: Record<
   ContentCoverType,
-  { accent: string; pale: string; dark: string; label: string }
+  { accent: string; pale: string; dark: string; label: string; section: string }
 > = {
-  post: { accent: '#3b82f6', pale: '#93c5fd', dark: '#0d1b31', label: 'DEVOPS ARTICLE' },
-  guide: { accent: '#8b5cf6', pale: '#c4b5fd', dark: '#1b1431', label: 'PRACTICAL GUIDE' },
-  exercise: { accent: '#3b82f6', pale: '#93c5fd', dark: '#10182b', label: 'HANDS-ON EXERCISE' },
-  news: { accent: '#06b6d4', pale: '#67e8f9', dark: '#09232c', label: 'DEVOPS NEWS' },
-  advent: { accent: '#10b981', pale: '#6ee7b7', dark: '#0b1715', label: 'ADVENT OF DEVOPS' },
-  quiz: { accent: '#f59e0b', pale: '#fbbf24', dark: '#211508', label: 'INTERACTIVE QUIZ' },
-  game: { accent: '#ec4899', pale: '#f9a8d4', dark: '#291126', label: 'INTERACTIVE LAB' },
+  post: {
+    accent: '#3b82f6',
+    pale: '#93c5fd',
+    dark: '#0d1b31',
+    label: 'DEVOPS ARTICLE',
+    section: 'ARTICLE / INSIGHT',
+  },
+  guide: {
+    accent: '#8b5cf6',
+    pale: '#c4b5fd',
+    dark: '#1b1431',
+    label: 'PRACTICAL GUIDE',
+    section: 'GUIDE / PATH',
+  },
+  exercise: {
+    accent: '#3b82f6',
+    pale: '#93c5fd',
+    dark: '#10182b',
+    label: 'HANDS-ON EXERCISE',
+    section: 'EXERCISE / LAB',
+  },
+  news: {
+    accent: '#06b6d4',
+    pale: '#67e8f9',
+    dark: '#09232c',
+    label: 'DEVOPS NEWS',
+    section: 'NEWS / DIGEST',
+  },
+  advent: {
+    accent: '#10b981',
+    pale: '#6ee7b7',
+    dark: '#0b1715',
+    label: 'ADVENT OF DEVOPS',
+    section: 'ADVENT / DAY',
+  },
+  quiz: {
+    accent: '#f59e0b',
+    pale: '#fbbf24',
+    dark: '#211508',
+    label: 'INTERACTIVE QUIZ',
+    section: 'QUIZ / CHALLENGE',
+  },
+  game: {
+    accent: '#ec4899',
+    pale: '#f9a8d4',
+    dark: '#291126',
+    label: 'INTERACTIVE LAB',
+    section: 'GAME / SIMULATOR',
+  },
   checklist: {
     accent: '#14b8a6',
     pale: '#5eead4',
     dark: '#09221e',
     label: 'INTERACTIVE CHECKLIST',
+    section: 'CHECKLIST / PROGRESS',
   },
-  interview: { accent: '#6366f1', pale: '#a5b4fc', dark: '#15152f', label: 'INTERVIEW QUESTION' },
-  comparison: { accent: '#d97706', pale: '#fbbf24', dark: '#211508', label: 'COMPARISON' },
+  interview: {
+    accent: '#6366f1',
+    pale: '#a5b4fc',
+    dark: '#15152f',
+    label: 'INTERVIEW QUESTION',
+    section: 'INTERVIEW / PREP',
+  },
+  comparison: {
+    accent: '#d97706',
+    pale: '#fbbf24',
+    dark: '#211508',
+    label: 'COMPARISON',
+    section: 'COMPARE / DECIDE',
+  },
   flashcard: {
     accent: '#f43f5e',
     pale: '#fda4af',
     dark: '#281019',
     label: 'INTERACTIVE FLASHCARDS',
+    section: 'FLASHCARDS / RECALL',
   },
-  tool: { accent: '#10b981', pale: '#6ee7b7', dark: '#092218', label: 'DEVOPS TOOL' },
+  tool: {
+    accent: '#10b981',
+    pale: '#6ee7b7',
+    dark: '#092218',
+    label: 'DEVOPS TOOL',
+    section: 'TOOL / UTILITY',
+  },
 };
+
+function buildContentCoverMotif(
+  type: ContentCoverType,
+  style: (typeof CONTENT_COVER_STYLES)[ContentCoverType]
+): string {
+  const motifs: Record<ContentCoverType, string> = {
+    post: `<path d="M57 39h62l26 26v101H57z" fill="${style.accent}" fill-opacity=".13" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><path d="M119 39v27h26" fill="none" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><path d="M77 92h49M77 116h49M77 140h32" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/>`,
+    guide: `<circle cx="101" cy="103" r="58" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><circle cx="101" cy="103" r="8" fill="${style.pale}"/><path d="M123 75 110 111 78 130l13-37z" fill="${style.accent}" fill-opacity=".34" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><path d="m91 93 19 18" stroke="${style.pale}" stroke-width="3" stroke-linecap="round"/>`,
+    exercise: `<rect x="39" y="47" width="124" height="112" rx="17" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><path d="M39 72h124" stroke="${style.pale}" stroke-width="3"/><circle cx="55" cy="60" r="4" fill="${style.pale}"/><circle cx="69" cy="60" r="4" fill="${style.pale}" fill-opacity=".65"/><circle cx="83" cy="60" r="4" fill="${style.pale}" fill-opacity=".35"/><path d="m61 98 18 14-18 14M92 127h43" fill="none" stroke="${style.pale}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>`,
+    news: `<rect x="43" y="43" width="116" height="120" rx="14" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><rect x="59" y="65" width="42" height="38" rx="7" fill="${style.accent}" fill-opacity=".3" stroke="${style.pale}" stroke-width="3"/><path d="M114 68h27M114 84h27M114 100h27M60 120h81M60 139h62" stroke="${style.pale}" stroke-width="4" stroke-linecap="round"/>`,
+    advent: `<rect x="45" y="47" width="112" height="115" rx="16" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><path d="M45 78h112M72 39v18M130 39v18" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/><path d="m101 94 7 14 15 2-11 11 3 16-14-8-14 8 3-16-11-11 15-2z" fill="${style.accent}" fill-opacity=".42" stroke="${style.pale}" stroke-width="2.5" stroke-linejoin="round"/>`,
+    quiz: `<circle cx="101" cy="91" r="48" fill="${style.accent}" fill-opacity=".12" stroke="${style.pale}" stroke-width="3"/><path d="M82 78c2-15 14-23 28-21 14 2 23 13 21 27-2 12-10 17-20 22-8 4-10 8-10 14" fill="none" stroke="${style.pale}" stroke-width="7" stroke-linecap="round"/><circle cx="101" cy="137" r="5" fill="${style.pale}"/><path d="M55 165h24M89 165h24M123 165h24" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/>`,
+    game: `<path d="M62 73c10-10 23-15 39-15s29 5 39 15l17 58c5 18-16 28-27 15l-16-18H88l-16 18c-11 13-32 3-27-15z" fill="${style.accent}" fill-opacity=".13" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><path d="M70 93v31M55 108h30" stroke="${style.pale}" stroke-width="6" stroke-linecap="round"/><circle cx="129" cy="98" r="6" fill="${style.pale}"/><circle cx="145" cy="115" r="6" fill="${style.pale}"/><path d="M89 78h24" stroke="${style.pale}" stroke-width="4" stroke-linecap="round"/>`,
+    checklist: `<rect x="43" y="38" width="116" height="130" rx="17" fill="${style.accent}" fill-opacity=".11" stroke="${style.pale}" stroke-width="3"/><path d="m61 73 7 7 13-16M61 107l7 7 13-16M61 141l7 7 13-16" fill="none" stroke="${style.pale}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M94 74h45M94 108h45M94 142h45" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/>`,
+    interview: `<path d="M42 52h104a15 15 0 0 1 15 15v57a15 15 0 0 1-15 15H94l-28 22 7-22H57a15 15 0 0 1-15-15V67a15 15 0 0 1 15-15z" fill="${style.accent}" fill-opacity=".12" stroke="${style.pale}" stroke-width="3" stroke-linejoin="round"/><circle cx="76" cy="95" r="6" fill="${style.pale}"/><circle cx="101" cy="95" r="6" fill="${style.pale}" fill-opacity=".7"/><circle cx="126" cy="95" r="6" fill="${style.pale}" fill-opacity=".4"/>`,
+    comparison: `<rect x="38" y="50" width="50" height="108" rx="13" fill="${style.accent}" fill-opacity=".12" stroke="${style.pale}" stroke-width="3"/><rect x="114" y="50" width="50" height="108" rx="13" fill="${style.accent}" fill-opacity=".12" stroke="${style.pale}" stroke-width="3"/><text x="63" y="116" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="${style.pale}" text-anchor="middle">A</text><text x="139" y="116" font-family="Arial, sans-serif" font-size="38" font-weight="800" fill="${style.pale}" text-anchor="middle">B</text><path d="m91 78 10-10 10 10M111 68v72M111 140l-10-10-10 10" fill="none" stroke="${style.pale}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
+    flashcard: `<rect x="54" y="45" width="105" height="118" rx="15" fill="${style.accent}" fill-opacity=".08" stroke="${style.pale}" stroke-width="3" transform="rotate(7 106 104)"/><rect x="42" y="42" width="105" height="118" rx="15" fill="${style.accent}" fill-opacity=".16" stroke="${style.pale}" stroke-width="3"/><path d="M67 77h55M67 101h55M67 125h35" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/><path d="m116 137 8 8 14-16" fill="none" stroke="${style.pale}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`,
+    tool: `<path d="M51 65h100M51 103h100M51 141h100" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/><circle cx="83" cy="65" r="12" fill="${style.accent}" fill-opacity=".45" stroke="${style.pale}" stroke-width="3"/><circle cx="126" cy="103" r="12" fill="${style.accent}" fill-opacity=".45" stroke="${style.pale}" stroke-width="3"/><circle cx="72" cy="141" r="12" fill="${style.accent}" fill-opacity=".45" stroke="${style.pale}" stroke-width="3"/>`,
+  };
+
+  return `<g data-cover-motif="${type}" transform="translate(918 207)" opacity=".28">
+    <rect x="0" y="0" width="202" height="206" rx="30" fill="${style.accent}" fill-opacity=".08" stroke="${style.pale}" stroke-width="2"/>
+    ${motifs[type]}
+  </g>`;
+}
 
 function estimatedTextWidth(text: string, fontSize: number, weight = 800): number {
   let em = 0;
@@ -197,16 +284,14 @@ export function buildContentCoverSvg(options: ContentCoverOptions): string {
   const style = CONTENT_COVER_STYLES[options.type];
   const layout = layoutContentCoverTitle(title, category);
   const eyebrow = cleanOgText(options.eyebrow) || style.label;
-  const sectionLabel = cleanOgText(options.sectionLabel) || `${options.type.toUpperCase()} / COVER`;
+  const sectionLabel = cleanOgText(options.sectionLabel) || style.section;
   const titleSvg = layout.lines
     .map(
       (line, index) =>
         `<text data-cover-title-line="true" x="80" y="${layout.titleY + index * layout.lineHeight}" font-family="Arial, sans-serif" font-size="${layout.fontSize}" font-weight="800" letter-spacing="-1.1" fill="#fafafa">${escapeXml(line)}</text>`
     )
     .join('\n');
-  const motif = layout.wide
-    ? ''
-    : `<g transform="translate(930 220)" opacity=".22"><rect x="0" y="0" width="188" height="190" rx="28" fill="${style.accent}" fill-opacity=".12" stroke="${style.pale}" stroke-width="2"/><circle cx="94" cy="76" r="28" fill="none" stroke="${style.pale}" stroke-width="4"/><path d="M47 135h94M60 159h68" stroke="${style.pale}" stroke-width="5" stroke-linecap="round"/></g>`;
+  const motif = layout.wide ? '' : buildContentCoverMotif(options.type, style);
 
   return `<svg width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="${escapeXml(title)}" xmlns="http://www.w3.org/2000/svg">
   <defs>
