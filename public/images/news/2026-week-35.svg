@@ -1,0 +1,29 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="DevOps Weekly Digest - Week 35, 2026" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse"><stop stop-color="#08090c"/><stop offset="1" stop-color="#09232c"/></linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="translate(1010 120) rotate(142) scale(520 400)" gradientUnits="userSpaceOnUse"><stop stop-color="#06b6d4" stop-opacity=".32"/><stop offset="1" stop-color="#06b6d4" stop-opacity="0"/></radialGradient>
+    <pattern id="grid" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M44 0H0V44" fill="none" stroke="#67e8f9" stroke-opacity=".05"/><circle cx="22" cy="22" r="1.5" fill="#67e8f9" fill-opacity=".075"/></pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect x="28" y="28" width="1144" height="574" rx="32" fill="none" stroke="#67e8f9" stroke-opacity=".2"/>
+  <g data-cover-motif="news" transform="translate(918 207)" opacity=".28">
+    <rect x="0" y="0" width="202" height="206" rx="30" fill="#06b6d4" fill-opacity=".08" stroke="#67e8f9" stroke-width="2"/>
+    <rect x="43" y="43" width="116" height="120" rx="14" fill="#06b6d4" fill-opacity=".11" stroke="#67e8f9" stroke-width="3"/><rect x="59" y="65" width="42" height="38" rx="7" fill="#06b6d4" fill-opacity=".3" stroke="#67e8f9" stroke-width="3"/><path d="M114 68h27M114 84h27M114 100h27M60 120h81M60 139h62" stroke="#67e8f9" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <rect x="80" y="70" width="173" height="40" rx="20" fill="#06b6d4" fill-opacity=".14" stroke="#67e8f9" stroke-opacity=".76"/>
+  <circle cx="100" cy="90" r="4" fill="#67e8f9"/>
+  <text x="114" y="97" font-family="Arial, sans-serif" font-size="16" font-weight="700" letter-spacing=".7" fill="#67e8f9">Week 35, 2026</text>
+  <text x="1120" y="96" font-family="Menlo, Monaco, monospace" font-size="14" letter-spacing="1.4" fill="#a1a1aa" text-anchor="end">NEWS / DIGEST</text>
+  <rect x="80" y="150" width="56" height="56" rx="16" fill="#06b6d4"/>
+  <circle cx="108" cy="178" r="15" fill="none" stroke="#081018" stroke-width="3"/>
+  <path d="M101 178h14m-7-7v14" stroke="#081018" stroke-width="3" stroke-linecap="round"/>
+  <text x="158" y="185" font-family="Menlo, Monaco, monospace" font-size="18" font-weight="700" letter-spacing="2" fill="#67e8f9">DEVOPS NEWS</text>
+  <text data-cover-title-line="true" x="80" y="300" font-family="Arial, sans-serif" font-size="56" font-weight="800" letter-spacing="-1.1" fill="#fafafa">DevOps Weekly Digest -</text>
+<text data-cover-title-line="true" x="80" y="368" font-family="Arial, sans-serif" font-size="56" font-weight="800" letter-spacing="-1.1" fill="#fafafa">Week 35, 2026</text>
+  <line x1="80" y1="510" x2="1120" y2="510" stroke="#fafafa" stroke-opacity=".12"/>
+  <rect x="80" y="540" width="22" height="22" rx="7" fill="#06b6d4"/>
+  <text x="116" y="558" font-family="Arial, sans-serif" font-size="19" font-weight="800" fill="#fafafa">DevOps Daily</text>
+  <text x="1120" y="558" font-family="Menlo, Monaco, monospace" font-size="14" fill="#a1a1aa" text-anchor="end">DEVOPS-DAILY.COM</text>
+</svg>
