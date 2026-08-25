@@ -183,25 +183,28 @@ const PIPELINE_STEPS: Array<{
   },
   {
     id: 'detect',
-    title: 'Detect preview label',
-    detail: 'The GitOps controller notices the pull request',
+    title: 'Observe labeled pull request',
+    detail: 'The ApplicationSet generator matches the preview label',
     duration: 2500,
-    command: 'applicationset: matched label preview',
+    command: 'poll GitHub → matched PR #PR_NUMBER label=preview',
   },
   {
     id: 'render',
-    title: 'Render desired state',
-    detail: 'Argo CD generates applications and Helm values',
+    title: 'Generate Argo application',
+    detail: 'The commit image becomes Helm values and desired state',
     duration: 2500,
-    command: 'argocd app sync preview-pr-PR_NUMBER',
+    command: 'render Application preview-pr-PR_NUMBER',
   },
 ];
 
 const SCENES: Array<{ id: Scene; number: string; label: string }> = [
   { id: 'developer', number: '01', label: 'Developer intent' },
-  { id: 'gitops', number: '02', label: 'GitOps control plane' },
+  { id: 'gitops', number: '02', label: 'CI → GitOps handoff' },
   { id: 'environment', number: '03', label: 'Ephemeral environment' },
 ];
+
+const ACTIVE_CONTROL =
+  'cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#58a6ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117]';
 
 function labelClasses(label: string): string {
   return (
@@ -230,6 +233,32 @@ function activeStage(state: PreviewEnvironmentState): PreviewStageId | null {
 
 function stageDone(state: PreviewEnvironmentState, id: PreviewStageId): boolean {
   return state.stageStatuses[id] === 'complete' || state.stageStatuses[id] === 'remediated';
+}
+
+function UnavailableControl({
+  children,
+  className,
+  tooltip = 'Unavailable in this simulator',
+}: {
+  children: ReactNode;
+  className?: string;
+  tooltip?: string;
+}) {
+  return (
+    <span
+      className={cn('group relative inline-flex cursor-not-allowed', className)}
+      aria-disabled="true"
+      title={tooltip}
+    >
+      <span className="transition-opacity group-hover:opacity-45">{children}</span>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute left-1/2 top-full z-50 mt-1.5 w-max max-w-48 -translate-x-1/2 rounded-md border border-[#30363d] bg-[#161b22] px-2 py-1 text-center text-[10px] font-medium text-[#c9d1d9] opacity-0 shadow-xl transition-opacity group-hover:opacity-100"
+      >
+        {tooltip}
+      </span>
+    </span>
+  );
 }
 
 function GitHubChrome({
@@ -264,16 +293,29 @@ function GitHubChrome({
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const selected = tab.id === activeTab;
+          const content = (
+            <>
+              <Icon className="size-4" aria-hidden="true" />
+              {tab.label}
+            </>
+          );
+          if (!selected) {
+            return (
+              <UnavailableControl
+                key={tab.id}
+                className="shrink-0 border-b-2 border-transparent px-3 py-2 text-xs font-medium text-[#8b949e]"
+              >
+                <span className="flex items-center gap-2">{content}</span>
+              </UnavailableControl>
+            );
+          }
           return (
             <div
               key={tab.id}
-              className={cn(
-                'flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-medium',
-                selected ? 'border-[#f78166] text-[#e6edf3]' : 'border-transparent text-[#8b949e]'
-              )}
+              aria-current="page"
+              className="flex shrink-0 items-center gap-2 border-b-2 border-[#f78166] px-3 py-2 text-xs font-medium text-[#e6edf3]"
             >
-              <Icon className="size-4" aria-hidden="true" />
-              {tab.label}
+              {content}
             </div>
           );
         })}
@@ -301,17 +343,23 @@ function PullRequestList({ onOpen }: { onOpen: (pullRequest: PullRequestScenario
     <GitHubChrome activeTab="pulls">
       <div className="p-3 sm:p-5">
         <div className="mb-4 flex flex-col gap-2 sm:flex-row">
-          <div className="flex min-h-9 flex-1 items-center rounded-md border border-[#30363d] bg-[#010409] px-3 text-xs text-[#8b949e]">
-            <Search className="mr-2 size-4" aria-hidden="true" />
-            is:pr is:open
-          </div>
+          <UnavailableControl className="flex-1">
+            <span className="flex min-h-9 w-full items-center rounded-md border border-[#30363d] bg-[#010409] px-3 text-xs text-[#8b949e]">
+              <Search className="mr-2 size-4" aria-hidden="true" />
+              is:pr is:open
+            </span>
+          </UnavailableControl>
           <div className="flex gap-2">
-            <span className="rounded-md border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-semibold">
-              Labels
-            </span>
-            <span className="rounded-md bg-[#238636] px-3 py-2 text-xs font-semibold">
-              New pull request
-            </span>
+            <UnavailableControl>
+              <span className="rounded-md border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-semibold">
+                Labels
+              </span>
+            </UnavailableControl>
+            <UnavailableControl>
+              <span className="rounded-md bg-[#238636] px-3 py-2 text-xs font-semibold opacity-70">
+                New pull request
+              </span>
+            </UnavailableControl>
           </div>
         </div>
         <div className="overflow-hidden rounded-md border border-[#30363d]">
@@ -319,7 +367,9 @@ function PullRequestList({ onOpen }: { onOpen: (pullRequest: PullRequestScenario
             <span className="flex items-center gap-2 font-semibold">
               <GitPullRequest className="size-4 text-[#3fb950]" aria-hidden="true" />3 Open
             </span>
-            <span className="text-[#8b949e]">18 Closed</span>
+            <UnavailableControl className="text-[#8b949e]">
+              <span>18 Closed</span>
+            </UnavailableControl>
             <span className="ml-auto hidden text-[#8b949e] sm:inline">Sort</span>
           </div>
           {PULL_REQUESTS.map((pullRequest) => (
@@ -327,7 +377,10 @@ function PullRequestList({ onOpen }: { onOpen: (pullRequest: PullRequestScenario
               key={pullRequest.id}
               type="button"
               onClick={() => onOpen(pullRequest)}
-              className="group flex w-full gap-3 border-b border-[#21262d] px-4 py-4 text-left last:border-b-0 hover:bg-[#161b22]"
+              className={cn(
+                ACTIVE_CONTROL,
+                'group flex w-full gap-3 border-b border-[#21262d] px-4 py-4 text-left last:border-b-0 hover:bg-[#161b22] hover:shadow-[inset_3px_0_0_#2f81f7]'
+              )}
             >
               <GitPullRequest
                 className="mt-0.5 size-4 shrink-0 text-[#3fb950]"
@@ -380,7 +433,10 @@ function PullRequestDetail({
         <button
           type="button"
           onClick={onBack}
-          className="mb-4 flex items-center gap-2 text-xs font-medium text-[#2f81f7] hover:underline"
+          className={cn(
+            ACTIVE_CONTROL,
+            'mb-4 flex items-center gap-2 rounded px-1 py-0.5 text-xs font-medium text-[#2f81f7] hover:bg-[#1f6feb1f] hover:underline'
+          )}
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           Pull requests
@@ -412,19 +468,24 @@ function PullRequestDetail({
             'Commits ' + pullRequest.commits,
             'Checks 0',
             'Files changed ' + pullRequest.changedFiles,
-          ].map((tab, index) => (
-            <span
-              key={tab}
-              className={cn(
-                'shrink-0 border-b-2 px-3 py-2 text-xs font-medium',
-                index === 0
-                  ? 'border-[#f78166] text-[#e6edf3]'
-                  : 'border-transparent text-[#8b949e]'
-              )}
-            >
-              {tab}
-            </span>
-          ))}
+          ].map((tab, index) =>
+            index === 0 ? (
+              <span
+                key={tab}
+                aria-current="page"
+                className="shrink-0 border-b-2 border-[#f78166] px-3 py-2 text-xs font-medium text-[#e6edf3]"
+              >
+                {tab}
+              </span>
+            ) : (
+              <UnavailableControl
+                key={tab}
+                className="shrink-0 border-b-2 border-transparent px-3 py-2 text-xs font-medium text-[#8b949e]"
+              >
+                <span>{tab}</span>
+              </UnavailableControl>
+            )
+          )}
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
@@ -468,7 +529,10 @@ function PullRequestDetail({
                 <button
                   type="button"
                   onClick={onToggleLabels}
-                  className="rounded p-1 text-[#8b949e] hover:bg-[#21262d]"
+                  className={cn(
+                    ACTIVE_CONTROL,
+                    'rounded p-1 text-[#8b949e] hover:bg-[#21262d] hover:text-[#e6edf3]'
+                  )}
                   aria-label="Add a label"
                 >
                   <Tag className="size-4" aria-hidden="true" />
@@ -482,7 +546,10 @@ function PullRequestDetail({
               <button
                 type="button"
                 onClick={onToggleLabels}
-                className="mt-3 w-full rounded-md border border-[#30363d] bg-[#21262d] px-3 py-2 text-left font-semibold hover:bg-[#30363d]"
+                className={cn(
+                  ACTIVE_CONTROL,
+                  'mt-3 w-full rounded-md border border-[#30363d] bg-[#21262d] px-3 py-2 text-left font-semibold hover:border-[#58a6ff] hover:bg-[#30363d]'
+                )}
               >
                 Add label
               </button>
@@ -490,7 +557,11 @@ function PullRequestDetail({
                 <div className="absolute right-0 top-10 z-20 w-64 overflow-hidden rounded-md border border-[#30363d] bg-[#161b22] shadow-2xl shadow-black/60">
                   <div className="border-b border-[#30363d] px-3 py-2">
                     <strong>Apply labels</strong>
-                    <div className="mt-2 flex items-center rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-[#8b949e]">
+                    <div
+                      aria-disabled="true"
+                      title="Unavailable in this simulator"
+                      className="mt-2 flex cursor-not-allowed items-center rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-[#8b949e] hover:opacity-50"
+                    >
                       <Search className="mr-2 size-3.5" aria-hidden="true" />
                       Filter labels
                     </div>
@@ -499,25 +570,46 @@ function PullRequestDetail({
                     ['preview', 'Create an isolated review environment'],
                     ['enhancement', 'New feature or request'],
                     ['frontend', 'Storefront change'],
-                  ].map(([label, description]) => (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={label === 'preview' ? onAddPreview : undefined}
-                      className="flex w-full gap-2 border-b border-[#21262d] px-3 py-2.5 text-left last:border-b-0 hover:bg-[#21262d]"
-                    >
-                      <span
+                  ].map(([label, description]) => {
+                    const available = label === 'preview';
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        disabled={!available}
+                        onClick={available ? onAddPreview : undefined}
                         className={cn(
-                          'mt-1 size-3 shrink-0 rounded-full border',
-                          labelClasses(label)
+                          'group relative flex w-full gap-2 border-b border-[#21262d] px-3 py-2.5 text-left last:border-b-0',
+                          available
+                            ? cn(
+                                ACTIVE_CONTROL,
+                                'hover:bg-[#21262d] hover:shadow-[inset_3px_0_0_#3fb950]'
+                              )
+                            : 'cursor-not-allowed hover:bg-[#21262d]'
                         )}
-                      />
-                      <span>
-                        <strong className="block">{label}</strong>
-                        <span className="text-[10px] leading-4 text-[#8b949e]">{description}</span>
-                      </span>
-                    </button>
-                  ))}
+                      >
+                        <span
+                          className={cn(
+                            'mt-1 size-3 shrink-0 rounded-full border',
+                            labelClasses(label)
+                          )}
+                        />
+                        <span
+                          className={cn(!available && 'transition-opacity group-hover:opacity-20')}
+                        >
+                          <strong className="block">{label}</strong>
+                          <span className="text-[10px] leading-4 text-[#8b949e]">
+                            {description}
+                          </span>
+                        </span>
+                        {!available && (
+                          <span className="pointer-events-none absolute inset-0 grid place-items-center bg-[#161b22e6] text-[10px] font-semibold text-[#c9d1d9] opacity-0 transition-opacity group-hover:opacity-100">
+                            Unavailable in this simulator
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -534,7 +626,10 @@ function PullRequestDetail({
           <button
             type="button"
             onClick={onToggleLabels}
-            className="shrink-0 rounded-md bg-[#238636] px-3 py-2 text-xs font-semibold hover:bg-[#2ea043]"
+            className={cn(
+              ACTIVE_CONTROL,
+              'shrink-0 rounded-md bg-[#238636] px-3 py-2 text-xs font-semibold shadow-sm hover:bg-[#2ea043] hover:shadow-[0_0_0_3px_#23863633]'
+            )}
           >
             Add label
           </button>
@@ -544,7 +639,13 @@ function PullRequestDetail({
   );
 }
 
-function CircularProgress({ progress }: { progress: number }) {
+function CircularProgress({
+  progress,
+  tone = 'blue',
+}: {
+  progress: number;
+  tone?: 'blue' | 'purple';
+}) {
   const circumference = 2 * Math.PI * 10;
   return (
     <svg className="size-6 -rotate-90" viewBox="0 0 24 24" aria-hidden="true">
@@ -554,7 +655,7 @@ function CircularProgress({ progress }: { progress: number }) {
         cy="12"
         r="10"
         fill="none"
-        stroke="#2f81f7"
+        stroke={tone === 'purple' ? '#8957e5' : '#2f81f7'}
         strokeLinecap="round"
         strokeWidth="2"
         strokeDasharray={circumference}
@@ -588,7 +689,10 @@ function FailurePanel({
             key={option.id}
             type="button"
             onClick={() => onRemediate(option.id)}
-            className="rounded-md border border-[#30363d] bg-[#161b22] p-3 text-left text-xs hover:border-[#58a6ff]"
+            className={cn(
+              ACTIVE_CONTROL,
+              'rounded-md border border-[#30363d] bg-[#161b22] p-3 text-left text-xs hover:border-[#58a6ff] hover:bg-[#1f6feb14]'
+            )}
           >
             <strong className="block">{option.label}</strong>
             <span className="mt-1 block leading-4 text-[#8b949e]">{option.explanation}</span>
@@ -605,11 +709,13 @@ function FailurePanel({
 function PipelineIcon({
   status,
   progress,
+  tone,
 }: {
   status: 'waiting' | 'running' | 'successful' | 'failed';
   progress: number;
+  tone: 'blue' | 'purple';
 }) {
-  if (status === 'running') return <CircularProgress progress={progress} />;
+  if (status === 'running') return <CircularProgress progress={progress} tone={tone} />;
   if (status === 'successful') {
     return (
       <span className="grid size-6 place-items-center rounded-full bg-[#238636]">
@@ -643,27 +749,76 @@ function GitOpsScene({
   const index = PIPELINE_STEPS.findIndex((step) => step.id === beat);
   const current = PIPELINE_STEPS[index];
   const failed = state.status === 'blocked';
+  const argoActive = index >= 2;
+  const artifactState = index < 1 ? 'Waiting' : index === 1 ? 'Publishing' : 'Available';
   return (
     <GitHubChrome activeTab="actions">
       <div className="grid min-h-[500px] md:grid-cols-[200px_minmax(0,1fr)]">
         <aside className="border-b border-[#21262d] p-4 md:border-b-0 md:border-r">
           <strong className="mb-4 flex items-center gap-2 text-xs">
             <Workflow className="size-4" aria-hidden="true" />
-            Actions
+            System handoff
           </strong>
-          <div className="rounded-md bg-[#21262d] px-3 py-2 text-xs font-semibold">
-            Preview environment
+          <div
+            className={cn(
+              'rounded-md border p-3 text-xs transition-colors',
+              !argoActive ? 'border-[#1f6feb] bg-[#1f6feb1f]' : 'border-[#30363d] bg-[#161b22]'
+            )}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <Github className="size-4" aria-hidden="true" />
+              GitHub Actions
+            </div>
+            <div className="mt-1 text-[10px] text-[#8b949e]">Build and publish the image</div>
+            <div className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-[#58a6ff]">
+              {argoActive ? 'Successful' : 'Active · CI pipeline'}
+            </div>
           </div>
-          <div className="mt-3 space-y-2 text-xs text-[#8b949e]">
-            <div>CI</div>
-            <div>Code quality</div>
-            <div>Deploy production</div>
+
+          <div className="flex flex-col items-center py-2 text-[10px] text-[#8b949e]">
+            <span>↓</span>
+            <div
+              className={cn(
+                'my-1 w-full rounded-md border px-2 py-2 text-center',
+                artifactState === 'Available'
+                  ? 'border-[#3fb95066] bg-[#2386361a] text-[#7ee787]'
+                  : 'border-[#30363d] bg-[#010409]'
+              )}
+            >
+              <Package className="mx-auto mb-1 size-4" aria-hidden="true" />
+              <strong className="block">Image + commit SHA</strong>
+              <span>{artifactState}</span>
+            </div>
+            <span>↓</span>
+          </div>
+
+          <div
+            className={cn(
+              'rounded-md border p-3 text-xs transition-colors',
+              argoActive
+                ? 'border-[#8957e5] bg-[#6e40c91f]'
+                : 'border-[#30363d] bg-[#161b22] opacity-60'
+            )}
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <Workflow className="size-4 text-[#a371f7]" aria-hidden="true" />
+              Argo CD
+            </div>
+            <div className="mt-1 text-[10px] text-[#8b949e]">
+              Observe and reconcile desired state
+            </div>
+            <div className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-[#a371f7]">
+              {argoActive ? 'Active · control plane' : 'Waiting for artifact'}
+            </div>
           </div>
           <a
             href="https://atomsized.com/preview-environments"
             target="_blank"
             rel="noreferrer"
-            className="mt-6 flex gap-2 rounded-md border border-[#30363d] p-3 text-[10px] leading-4 text-[#8b949e] hover:border-[#58a6ff] hover:text-[#58a6ff]"
+            className={cn(
+              ACTIVE_CONTROL,
+              'mt-6 flex gap-2 rounded-md border border-[#30363d] p-3 text-[10px] leading-4 text-[#8b949e] hover:border-[#58a6ff] hover:text-[#58a6ff]'
+            )}
           >
             <Sparkles className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
             <span>
@@ -682,10 +837,10 @@ function GitOpsScene({
                 ) : (
                   <LoaderCircle className="size-5 animate-spin text-[#58a6ff]" aria-hidden="true" />
                 )}
-                Preview environment #{pullRequest.number}
+                Automation handoff #{pullRequest.number}
               </h3>
               <p className="mt-1 text-xs text-[#8b949e]">
-                Pull request #{pullRequest.number} · {pullRequest.branch} · {pullRequest.commit}
+                CI publishes an immutable artifact; Argo CD turns it into desired state.
               </p>
             </div>
             <span
@@ -694,14 +849,18 @@ function GitOpsScene({
                 failed ? 'border-[#f85149] text-[#ff7b72]' : 'border-[#1f6feb] text-[#58a6ff]'
               )}
             >
-              {failed ? 'Action required' : 'In progress'}
+              {failed
+                ? 'Action required'
+                : argoActive
+                  ? 'Argo CD control plane'
+                  : 'GitHub Actions pipeline'}
             </span>
           </div>
 
           <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(240px,0.8fr)_minmax(300px,1.2fr)]">
             <div className="overflow-hidden rounded-md border border-[#30363d]">
               <div className="border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs font-semibold">
-                Jobs
+                Two automated systems
               </div>
               {PIPELINE_STEPS.map((step, stepIndex) => {
                 const status =
@@ -713,28 +872,45 @@ function GitOpsScene({
                         ? 'failed'
                         : 'running';
                 return (
-                  <div
-                    key={step.id}
-                    className={cn(
-                      'flex gap-3 border-b border-[#21262d] px-3 py-3 last:border-b-0',
-                      stepIndex === index && 'bg-[#1f6feb14]'
-                    )}
-                  >
-                    <PipelineIcon status={status} progress={stepIndex === index ? progress : 100} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex justify-between gap-2">
-                        <strong className="text-xs">{step.title}</strong>
-                        <span className="text-[10px] uppercase tracking-wide text-[#8b949e]">
-                          {status === 'waiting'
-                            ? 'Waiting'
-                            : status === 'running'
-                              ? 'Running'
-                              : status === 'successful'
-                                ? 'Successful'
-                                : 'Failed'}
-                        </span>
+                  <div key={step.id}>
+                    {stepIndex === 0 && (
+                      <div className="flex items-center gap-2 border-b border-[#21262d] bg-[#1f6feb0f] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#58a6ff]">
+                        <Github className="size-3.5" aria-hidden="true" />
+                        CI pipeline · GitHub Actions
                       </div>
-                      <p className="mt-1 text-[10px] leading-4 text-[#8b949e]">{step.detail}</p>
+                    )}
+                    {stepIndex === 2 && (
+                      <div className="flex items-center gap-2 border-y border-[#30363d] bg-[#6e40c914] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a371f7]">
+                        <Workflow className="size-3.5" aria-hidden="true" />
+                        GitOps control plane · Argo CD
+                      </div>
+                    )}
+                    <div
+                      className={cn(
+                        'flex gap-3 border-b border-[#21262d] px-3 py-3 last:border-b-0',
+                        stepIndex === index && (argoActive ? 'bg-[#6e40c914]' : 'bg-[#1f6feb14]')
+                      )}
+                    >
+                      <PipelineIcon
+                        status={status}
+                        progress={stepIndex === index ? progress : 100}
+                        tone={stepIndex >= 2 ? 'purple' : 'blue'}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex justify-between gap-2">
+                          <strong className="text-xs">{step.title}</strong>
+                          <span className="text-[10px] uppercase tracking-wide text-[#8b949e]">
+                            {status === 'waiting'
+                              ? 'Waiting'
+                              : status === 'running'
+                                ? 'Running'
+                                : status === 'successful'
+                                  ? 'Successful'
+                                  : 'Failed'}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-[10px] leading-4 text-[#8b949e]">{step.detail}</p>
+                      </div>
                     </div>
                   </div>
                 );
@@ -743,48 +919,81 @@ function GitOpsScene({
 
             <div className="overflow-hidden rounded-md border border-[#30363d] bg-[#010409]">
               <div className="flex justify-between border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
-                <strong>{current.title}</strong>
+                <strong
+                  className={cn(
+                    'flex items-center gap-2',
+                    argoActive ? 'text-[#a371f7]' : 'text-[#58a6ff]'
+                  )}
+                >
+                  {argoActive ? (
+                    <Workflow className="size-4" aria-hidden="true" />
+                  ) : (
+                    <Github className="size-4" aria-hidden="true" />
+                  )}
+                  {argoActive ? 'Argo CD controller' : 'GitHub Actions runner'}
+                </strong>
                 <span className="text-[#8b949e]">{current.duration / 1000}s</span>
               </div>
               <div className="min-h-56 space-y-2 overflow-x-auto p-4 font-mono text-[11px] leading-5">
-                <div className="text-[#8b949e]">Runner image: ubuntu-latest</div>
-                <div>
-                  <span className="text-[#3fb950]">✓</span> Checkout {pullRequest.branch} at{' '}
-                  {pullRequest.commit}
-                </div>
-                {index > 0 && (
-                  <div>
-                    <span className="text-[#3fb950]">✓</span> Image built successfully
-                  </div>
+                {argoActive ? (
+                  <>
+                    <div className="text-[#8b949e]">
+                      controller: argocd-applicationset-controller
+                    </div>
+                    <div>repository: acme/store · pull request #{pullRequest.number}</div>
+                    <div>image: registry.example.dev/store:{pullRequest.commit}</div>
+                    {index > 2 && (
+                      <div>
+                        <span className="text-[#3fb950]">✓</span> matched label=preview
+                      </div>
+                    )}
+                    <div className={cn('text-[#a371f7]', !failed && 'animate-pulse')}>
+                      <span>controller › </span>
+                      {current.command.replace('PR_NUMBER', String(pullRequest.number))}
+                    </div>
+                    {index > 2 && (
+                      <div className="text-[#8b949e]">
+                        helm.values.image.tag={pullRequest.commit}
+                        <br />
+                        metadata.namespace=preview-pr-{pullRequest.number}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="text-[#8b949e]">Runner image: ubuntu-latest</div>
+                    <div>
+                      <span className="text-[#3fb950]">✓</span> Checkout {pullRequest.branch} at{' '}
+                      {pullRequest.commit}
+                    </div>
+                    {index > 0 && (
+                      <div>
+                        <span className="text-[#3fb950]">✓</span> Image built successfully
+                      </div>
+                    )}
+                    <div className={cn('text-[#58a6ff]', !failed && 'animate-pulse')}>
+                      <span>$ </span>
+                      {current.command.replace('SHA', pullRequest.commit)}
+                    </div>
+                  </>
                 )}
-                {index > 1 && (
-                  <div>
-                    <span className="text-[#3fb950]">✓</span> Image pushed to registry
-                  </div>
-                )}
-                {index > 2 && (
-                  <div>
-                    <span className="text-[#3fb950]">✓</span> preview label detected
-                  </div>
-                )}
-                <div className={cn('text-[#58a6ff]', !failed && 'animate-pulse')}>
-                  <span>$ </span>
-                  {current.command
-                    .replace('SHA', pullRequest.commit)
-                    .replace('PR_NUMBER', String(pullRequest.number))}
-                </div>
                 {failed ? (
                   <div className="text-[#ff7b72]">Error: {state.lastEvent}</div>
                 ) : (
                   <div className="flex items-center gap-2 text-[#8b949e]">
                     <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
-                    This automated step continues on its own.
+                    {argoActive
+                      ? 'The controller is reconciling desired state.'
+                      : 'The CI pipeline continues on its own.'}
                   </div>
                 )}
               </div>
               <div className="h-1 bg-[#21262d]">
                 <div
-                  className="h-full bg-[#2f81f7] transition-[width] duration-100"
+                  className={cn(
+                    'h-full transition-[width] duration-100',
+                    argoActive ? 'bg-[#8957e5]' : 'bg-[#2f81f7]'
+                  )}
                   style={{ width: String(progress) + '%' }}
                 />
               </div>
@@ -797,7 +1006,7 @@ function GitOpsScene({
           ) : (
             <div className="mt-4 flex items-center gap-2 rounded-md border border-[#30363d] bg-[#161b22] p-3 text-xs text-[#8b949e]">
               <Clock3 className="size-4 shrink-0 text-[#58a6ff]" aria-hidden="true" />
-              No click needed — build, push, detection, and rendering are automated.
+              No click needed — CI hands the image to Argo CD, then the control plane reconciles it.
             </div>
           )}
         </div>
@@ -1008,7 +1217,10 @@ function EnvironmentScene({
                 href="https://neon.com/branching"
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-blue-400 hover:underline"
+                className={cn(
+                  ACTIVE_CONTROL,
+                  'mt-2 inline-flex items-center gap-1 rounded text-[10px] font-semibold text-blue-400 hover:underline'
+                )}
               >
                 Preview database branching by Neon
                 <ExternalLink className="size-3" aria-hidden="true" />
@@ -1083,12 +1295,17 @@ function EnvironmentScene({
               </span>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => onReview('request-changes')}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+                onClick={() => onReview('request-changes')}
+              >
                 Request changes
               </Button>
               <Button
                 size="sm"
-                className="bg-emerald-600 text-white hover:bg-emerald-500"
+                className="cursor-pointer bg-emerald-600 text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-500 hover:shadow-[0_0_0_3px_#10b98133] active:translate-y-0 active:scale-[0.98]"
                 onClick={() => onReview('approve')}
               >
                 Approve preview
@@ -1108,7 +1325,12 @@ function EnvironmentScene({
                 Close the PR to watch Argo CD remove the environment automatically.
               </span>
             </div>
-            <Button size="sm" variant="destructive" onClick={onClose}>
+            <Button
+              size="sm"
+              variant="destructive"
+              className="cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+              onClick={onClose}
+            >
               <Trash2 className="size-4" aria-hidden="true" />
               Close PR & clean up
             </Button>
@@ -1135,7 +1357,11 @@ function EnvironmentScene({
                 The pipeline succeeded earlier; Argo CD is no longer active.
               </span>
             </div>
-            <Button size="sm" onClick={onAgain}>
+            <Button
+              size="sm"
+              className="cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"
+              onClick={onAgain}
+            >
               <RotateCcw className="size-4" aria-hidden="true" />
               Add preview label again
             </Button>
@@ -1261,7 +1487,19 @@ export function PreviewEnvironmentSimulator() {
                 Watch intent become an isolated environment
               </h2>
             </div>
-            <label className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-border bg-background/50 px-3 py-2">
+            <label
+              title={
+                scene === 'developer'
+                  ? 'Toggle a realistic failure scenario'
+                  : 'Unavailable while the simulation is running'
+              }
+              className={cn(
+                'flex shrink-0 items-center justify-between gap-3 rounded-lg border border-border bg-background/50 px-3 py-2 transition-all',
+                scene === 'developer'
+                  ? 'cursor-pointer hover:-translate-y-0.5 hover:border-blue-500/60 hover:bg-blue-500/5'
+                  : 'cursor-not-allowed opacity-55'
+              )}
+            >
               <span>
                 <strong className="block text-xs">Practice a failure</strong>
                 <span className="block text-[10px] text-muted-foreground">
