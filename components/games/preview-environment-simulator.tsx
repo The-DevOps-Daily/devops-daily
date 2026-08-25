@@ -1,105 +1,95 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowRight,
+  ArrowLeft,
   Boxes,
   Check,
   CheckCircle2,
-  ChevronDown,
+  CircleDot,
   Clock3,
   Code2,
   Database,
   ExternalLink,
   GitBranch,
-  GitCommit,
   GitPullRequest,
   Globe2,
+  HardDrive,
+  Layers3,
   LoaderCircle,
+  LockKeyhole,
+  MessageSquare,
   Package,
-  RefreshCw,
+  Play,
+  RotateCcw,
+  Search,
   ServerCog,
+  ShieldCheck,
+  Sparkles,
+  Tag,
   Trash2,
   Workflow,
-  X,
-  Zap,
-  type LucideIcon,
+  XCircle,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
+import { Github } from '@/components/icons/social-icons';
 import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
 import {
-  CLEANUP_STEPS,
   PREVIEW_FAILURES,
-  PREVIEW_STAGES,
   advancePreviewEnvironment,
   applyPreviewRemediation,
   beginPreviewTeardown,
   createPreviewEnvironmentState,
-  getGeneratedIntent,
-  getPreviewEvidence,
   getPreviewMetrics,
   recordPreviewReview,
   type PreviewEnvironmentConfig,
   type PreviewEnvironmentState,
-  type PreviewFailure,
   type PreviewFailureId,
   type PreviewStageId,
 } from '@/lib/games/preview-environment-engine';
+import { cn } from '@/lib/utils';
 
-type PreviewScenarioId = 'api-change' | 'checkout-flow' | 'full-product';
-type StoryActor = 'developer' | 'platform';
-type ControlBeat = 'detect' | 'render';
-type StoryPhaseId = 'intent' | 'plan' | 'create' | 'review' | 'remove';
-type FlowStatus =
-  | 'waiting'
-  | 'current'
-  | 'creating'
-  | 'ready'
-  | 'complete'
-  | 'removing'
-  | 'removed'
-  | 'failed';
-type FlowOwner = 'developer' | 'pipeline' | 'argo' | 'cluster';
+type Scene = 'developer' | 'gitops' | 'environment';
+type PipelineBeat = 'build' | 'push' | 'detect' | 'render';
+type ResourceState = 'queued' | 'creating' | 'ready' | 'removing' | 'removed';
 
-interface PreviewScenario {
-  id: PreviewScenarioId;
-  label: string;
-  detail: string;
+interface PullRequestScenario {
+  id: string;
+  number: number;
+  title: string;
+  author: string;
+  branch: string;
+  commit: string;
+  opened: string;
+  comments: number;
+  commits: number;
+  changedFiles: number;
+  additions: number;
+  deletions: number;
+  summary: string;
+  labels: string[];
+  config: PreviewEnvironmentConfig;
   failure: PreviewFailureId;
-  config: Partial<PreviewEnvironmentConfig>;
 }
 
-interface StoryPhase {
-  id: StoryPhaseId;
-  label: string;
-  developerTitle: string;
-  platformTitle: string;
-}
-
-const PREVIEW_SCENARIOS: PreviewScenario[] = [
+const PULL_REQUESTS: PullRequestScenario[] = [
   {
-    id: 'api-change',
-    label: 'API change',
-    detail: 'One backend service',
-    failure: 'missing-secret',
-    config: {
-      mode: 'single-service',
-      services: ['api'],
-      dataStrategy: 'synthetic',
-      resourceProfile: 'lean',
-      reviewerAccess: 'team-sso',
-      ttlHours: 4,
-    },
-  },
-  {
-    id: 'checkout-flow',
-    label: 'Checkout flow',
-    detail: 'Web and API together',
-    failure: 'branch-mismatch',
+    id: 'checkout',
+    number: 184,
+    title: 'feat: redesign the checkout flow',
+    author: 'maya-dev',
+    branch: 'checkout-v2',
+    commit: '8f3c2a1',
+    opened: '18 minutes ago',
+    comments: 3,
+    commits: 4,
+    changedFiles: 12,
+    additions: 428,
+    deletions: 96,
+    summary:
+      'Reworks checkout across the storefront and API. The team needs a safe place to test the full flow before merging.',
+    labels: ['frontend', 'api'],
     config: {
       mode: 'full-stack',
       services: ['web', 'api'],
@@ -107,1284 +97,1266 @@ const PREVIEW_SCENARIOS: PreviewScenario[] = [
       resourceProfile: 'balanced',
       reviewerAccess: 'team-sso',
       ttlHours: 8,
+      revisionGate: true,
+      injectedFailure: 'none',
     },
+    failure: 'branch-mismatch',
   },
   {
-    id: 'full-product',
-    label: 'Full product',
-    detail: 'Web, API, and worker',
-    failure: 'revision-drift',
+    id: 'orders',
+    number: 183,
+    title: 'feat: add the order status endpoint',
+    author: 'nikola-dev',
+    branch: 'order-status-api',
+    commit: 'c61d9e4',
+    opened: '42 minutes ago',
+    comments: 1,
+    commits: 2,
+    changedFiles: 7,
+    additions: 219,
+    deletions: 31,
+    summary:
+      'Adds a customer-facing status endpoint and the sandbox payment integration needed to exercise it.',
+    labels: ['api'],
+    config: {
+      mode: 'single-service',
+      services: ['api'],
+      dataStrategy: 'synthetic',
+      resourceProfile: 'lean',
+      reviewerAccess: 'team-sso',
+      ttlHours: 6,
+      revisionGate: true,
+      injectedFailure: 'none',
+    },
+    failure: 'missing-secret',
+  },
+  {
+    id: 'events',
+    number: 182,
+    title: 'feat: process checkout events asynchronously',
+    author: 'sara-dev',
+    branch: 'checkout-worker',
+    commit: '72ba640',
+    opened: '2 hours ago',
+    comments: 5,
+    commits: 6,
+    changedFiles: 19,
+    additions: 684,
+    deletions: 144,
+    summary:
+      'Introduces a worker and queue so checkout events can be processed away from the request path.',
+    labels: ['backend', 'worker'],
     config: {
       mode: 'full-stack',
       services: ['web', 'api', 'worker'],
       dataStrategy: 'masked-snapshot',
-      resourceProfile: 'production-like',
+      resourceProfile: 'balanced',
       reviewerAccess: 'team-sso',
-      ttlHours: 24,
+      ttlHours: 12,
+      revisionGate: true,
+      injectedFailure: 'none',
     },
+    failure: 'revision-drift',
   },
 ];
 
-const STORY_PHASES: StoryPhase[] = [
-  {
-    id: 'intent',
-    label: 'Open PR',
-    developerTitle: 'Ask for a preview',
-    platformTitle: 'Notice the pull request',
-  },
-  {
-    id: 'plan',
-    label: 'Publish image',
-    developerTitle: 'Build and publish the image',
-    platformTitle: 'Turn metadata into desired state',
-  },
-  {
-    id: 'create',
-    label: 'Deploy',
-    developerTitle: 'Wait for the preview URL',
-    platformTitle: 'Create an isolated environment',
-  },
-  {
-    id: 'review',
-    label: 'Review',
-    developerTitle: 'Try the change',
-    platformTitle: 'Return running evidence',
-  },
-  {
-    id: 'remove',
-    label: 'Clean up',
-    developerTitle: 'Close the pull request',
-    platformTitle: 'Remove every temporary resource',
-  },
-];
-
-const FLOW_OWNERS: Record<
-  FlowOwner,
-  {
-    label: string;
-    dotClass: string;
-    strokeClass: string;
-    textClass: string;
-    badgeClass: string;
-  }
-> = {
-  developer: {
-    label: 'Developer',
-    dotClass: 'bg-blue-500',
-    strokeClass: 'stroke-blue-500',
-    textClass: 'text-blue-700 dark:text-blue-300',
-    badgeClass: 'border-blue-500/30 bg-blue-500/5 text-blue-700 dark:text-blue-300',
-  },
-  pipeline: {
-    label: 'CI pipeline',
-    dotClass: 'bg-amber-500',
-    strokeClass: 'stroke-amber-500',
-    textClass: 'text-amber-700 dark:text-amber-300',
-    badgeClass: 'border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-300',
-  },
-  argo: {
-    label: 'Argo CD · auto',
-    dotClass: 'bg-violet-500',
-    strokeClass: 'stroke-violet-500',
-    textClass: 'text-violet-700 dark:text-violet-300',
-    badgeClass: 'border-violet-500/30 bg-violet-500/5 text-violet-700 dark:text-violet-300',
-  },
-  cluster: {
-    label: 'K8s · auto',
-    dotClass: 'bg-emerald-500',
-    strokeClass: 'stroke-emerald-500',
-    textClass: 'text-emerald-700 dark:text-emerald-300',
-    badgeClass: 'border-emerald-500/30 bg-emerald-500/5 text-emerald-700 dark:text-emerald-300',
-  },
-};
-
-const REQUEST_HANDOFF_MS = 900;
-const PIPELINE_STEP_MS = 5000;
-const ARGO_STEP_MS = 2500;
-const VERIFY_STEP_MS = 2000;
-
-function scenarioState(scenarioId: PreviewScenarioId, addProblem: boolean) {
-  const scenario = PREVIEW_SCENARIOS.find((item) => item.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
-  return createPreviewEnvironmentState({
-    ...scenario.config,
-    injectedFailure: addProblem ? scenario.failure : 'none',
-    revisionGate: true,
-  });
-}
-
-function storyPhaseIndex(state: PreviewEnvironmentState): number {
-  if (state.status === 'reviewed' || state.status === 'cleaning' || state.status === 'removed') {
-    return 4;
-  }
-  if (state.status === 'ready') return 3;
-
-  const stage = PREVIEW_STAGES[Math.min(state.stageIndex, PREVIEW_STAGES.length - 1)]?.id;
-  if (stage === 'coordinate' || stage === 'reconcile') return 1;
-  if (stage === 'provision' || stage === 'expose') return 2;
-  if (stage === 'verify') return 3;
-  return 0;
-}
-
-function activeStageId(state: PreviewEnvironmentState): PreviewStageId {
-  return PREVIEW_STAGES[Math.min(state.stageIndex, PREVIEW_STAGES.length - 1)]?.id ?? 'verify';
-}
-
-function friendlyStatus(
-  state: PreviewEnvironmentState,
-  actor: StoryActor,
-  storyStarted: boolean,
-  controlBeat: ControlBeat
-): string {
-  if (state.status === 'configured') {
-    if (!storyStarted) return 'Add the preview label to begin.';
-    return actor === 'developer'
-      ? 'The preview label is attached; CI starts automatically.'
-      : 'The pull-request event is moving into the control plane.';
-  }
-  if (state.status === 'blocked') return 'The unsafe path is paused until you choose a repair.';
-  if (state.status === 'ready') return 'The URL now points to the exact running revision.';
-  if (state.status === 'reviewed') return 'The review is recorded; close the PR to clean up.';
-  if (state.status === 'cleaning')
-    return 'Argo CD is deleting the whole preview environment automatically.';
-  if (state.status === 'removed')
-    return 'The environment is gone. Add the preview label again to create a new one.';
-
-  const stage = activeStageId(state);
-  if (stage === 'coordinate') return 'CI builds the change into an immutable container image.';
-  if (stage === 'reconcile') {
-    return actor === 'developer'
-      ? 'CI pushes the immutable image digest to the registry.'
-      : controlBeat === 'detect'
-        ? 'Argo CD detects the labeled pull request automatically.'
-        : 'ApplicationSet turns pull-request metadata into Helm values.';
-  }
-  if (stage === 'provision') return 'Argo CD creates the namespace and application workloads.';
-  if (stage === 'expose') return 'Data, cache, DNS, ingress, and TLS join the environment.';
-  return 'Health and the deployed revision travel back to the pull request.';
-}
-
-function StoryProgress({ activeIndex, done }: { activeIndex: number; done: boolean }) {
-  return (
-    <ol className="grid grid-cols-5" aria-label="Preview environment lifecycle">
-      {STORY_PHASES.map((phase, index) => {
-        const complete = done || index < activeIndex;
-        const active = !done && index === activeIndex;
-        return (
-          <li key={phase.id} className="relative flex flex-col items-center">
-            {index > 0 && (
-              <span
-                className={cn(
-                  'absolute right-1/2 top-3 h-0.5 w-full bg-border transition-colors duration-500',
-                  (complete || active) && 'bg-emerald-500/60'
-                )}
-                aria-hidden="true"
-              />
-            )}
-            <span
-              className={cn(
-                'relative z-10 grid h-6 w-6 place-items-center rounded-full border bg-background text-[10px] font-semibold transition-all duration-500',
-                complete && 'border-emerald-500 bg-emerald-500 text-white',
-                active && 'scale-110 border-blue-500 text-blue-600 ring-4 ring-blue-500/10'
-              )}
-            >
-              {complete ? <Check className="h-3.5 w-3.5" /> : index + 1}
-            </span>
-            <span
-              className={cn(
-                'mt-1.5 text-center text-[10px] font-medium text-muted-foreground',
-                (complete || active) && 'text-foreground'
-              )}
-            >
-              {phase.label}
-            </span>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-function FlowNode({
-  icon: Icon,
-  label,
-  detail,
-  status,
-  owner,
-  progressDurationMs,
-  readyLabel,
-  reference,
-  compact = false,
-}: {
-  icon: LucideIcon;
-  label: string;
+const PIPELINE_STEPS: Array<{
+  id: PipelineBeat;
+  title: string;
   detail: string;
-  status: FlowStatus;
-  owner: FlowOwner;
-  progressDurationMs?: number;
-  readyLabel?: string;
-  reference?: {
-    href: string;
-    label: string;
-    sponsored?: boolean;
-  };
-  compact?: boolean;
-}) {
-  const ownerMeta = FLOW_OWNERS[owner];
-  const showProgress =
-    Boolean(progressDurationMs) && (status === 'current' || status === 'creating');
-  const statusLabel: Record<FlowStatus, string> = {
-    waiting: 'waiting',
-    current: owner === 'developer' ? 'your turn' : 'running',
-    creating: 'working',
-    ready: readyLabel ?? 'ready',
-    complete: readyLabel ?? 'complete',
-    removing: 'removing',
-    removed: 'removed',
-    failed: 'needs attention',
-  };
+  duration: number;
+  command: string;
+}> = [
+  {
+    id: 'build',
+    title: 'Build container image',
+    detail: 'GitHub Actions packages the PR change',
+    duration: 5000,
+    command: 'docker build --tag checkout:SHA .',
+  },
+  {
+    id: 'push',
+    title: 'Push image to registry',
+    detail: 'The immutable commit image becomes available',
+    duration: 5000,
+    command: 'docker push registry.example.dev/checkout:SHA',
+  },
+  {
+    id: 'detect',
+    title: 'Detect preview label',
+    detail: 'The GitOps controller notices the pull request',
+    duration: 2500,
+    command: 'applicationset: matched label preview',
+  },
+  {
+    id: 'render',
+    title: 'Render desired state',
+    detail: 'Argo CD generates applications and Helm values',
+    duration: 2500,
+    command: 'argocd app sync preview-pr-PR_NUMBER',
+  },
+];
 
+const SCENES: Array<{ id: Scene; number: string; label: string }> = [
+  { id: 'developer', number: '01', label: 'Developer intent' },
+  { id: 'gitops', number: '02', label: 'GitOps control plane' },
+  { id: 'environment', number: '03', label: 'Ephemeral environment' },
+];
+
+function labelClasses(label: string): string {
   return (
-    <div
-      className={cn(
-        'relative flex min-w-0 items-center gap-2.5 rounded-lg border bg-background p-2.5 transition-all duration-500',
-        compact && 'p-2',
-        status === 'waiting' && 'border-dashed bg-muted/10 text-muted-foreground',
-        status === 'current' &&
-          (owner === 'developer'
-            ? 'border-blue-500/70 bg-blue-500/8 shadow-md shadow-blue-500/10'
-            : owner === 'pipeline'
-              ? 'border-amber-500/70 bg-amber-500/8 shadow-md shadow-amber-500/10'
-              : owner === 'cluster'
-                ? 'border-emerald-500/70 bg-emerald-500/8 shadow-md shadow-emerald-500/10'
-                : 'border-violet-500/70 bg-violet-500/8 shadow-md shadow-violet-500/10'),
-        status === 'creating' &&
-          (owner === 'cluster'
-            ? 'border-emerald-500/70 bg-emerald-500/8 shadow-md shadow-emerald-500/10'
-            : 'border-violet-500/70 bg-violet-500/8 shadow-md shadow-violet-500/10'),
-        status === 'ready' && 'border-emerald-500/40 bg-emerald-500/5',
-        status === 'complete' && 'border-border bg-muted/10 opacity-55',
-        status === 'removing' && 'border-amber-500/60 bg-amber-500/8',
-        status === 'removed' && 'scale-[0.97] border-dashed opacity-30',
-        status === 'failed' && 'border-red-500/60 bg-red-500/8'
-      )}
-    >
-      <span
-        className={cn(
-          'relative grid h-8 w-8 shrink-0 place-items-center rounded-md border bg-background',
-          status === 'current' && owner === 'developer' && 'border-blue-500/40 text-blue-600',
-          status === 'current' && owner === 'pipeline' && 'border-amber-500/40 text-amber-600',
-          status === 'current' && owner === 'argo' && 'border-violet-500/40 text-violet-600',
-          status === 'creating' && owner === 'argo' && 'border-violet-500/40 text-violet-600',
-          status === 'creating' && owner === 'cluster' && 'border-emerald-500/40 text-emerald-600',
-          status === 'ready' && 'border-emerald-500/35 text-emerald-600',
-          status === 'complete' && 'border-border text-muted-foreground',
-          status === 'removing' && 'border-amber-500/35 text-amber-600',
-          status === 'failed' && 'border-red-500/35 text-red-600'
-        )}
-      >
-        {showProgress && (
-          <svg
-            className="pointer-events-none absolute -inset-1 h-10 w-10 -rotate-90 overflow-visible"
-            viewBox="0 0 40 40"
-            aria-hidden="true"
-          >
-            <circle cx="20" cy="20" r="18" fill="none" strokeWidth="2" className="stroke-border" />
-            <circle
-              cx="20"
-              cy="20"
-              r="18"
-              fill="none"
-              pathLength="100"
-              strokeDasharray="100"
-              strokeDashoffset="100"
-              strokeLinecap="round"
-              strokeWidth="2"
-              className={ownerMeta.strokeClass}
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                from="100"
-                to="0"
-                dur={`${progressDurationMs}ms`}
-                fill="freeze"
-              />
-            </circle>
-          </svg>
-        )}
-        {status === 'creating' && !showProgress ? (
-          <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
-        ) : status === 'ready' || status === 'complete' ? (
-          <CheckCircle2 className="h-4 w-4" />
-        ) : status === 'removing' ? (
-          <Trash2 className="h-4 w-4" />
-        ) : status === 'failed' ? (
-          <AlertTriangle className="h-4 w-4" />
-        ) : (
-          <Icon className="h-4 w-4" />
-        )}
-        {(status === 'current' || status === 'creating') && (
-          <span
-            className={cn(
-              'absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full ring-2 ring-background motion-safe:animate-pulse',
-              ownerMeta.dotClass
-            )}
-          />
-        )}
-      </span>
-      <div className="min-w-0 flex-1">
-        <span
-          className={cn(
-            'mb-1 flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-wide',
-            ownerMeta.textClass,
-            status === 'complete' && 'text-muted-foreground'
-          )}
-        >
-          <span
-            className={cn(
-              'h-1.5 w-1.5 shrink-0 rounded-full',
-              ownerMeta.dotClass,
-              status === 'complete' && 'bg-muted-foreground/60'
-            )}
-          />
-          {ownerMeta.label}
-        </span>
-        <div
-          className={cn('flex items-start gap-x-2 gap-y-0.5', compact ? 'flex-col' : 'flex-wrap')}
-        >
-          <p
-            className={cn(
-              'min-w-0 break-words text-xs font-semibold leading-snug',
-              compact ? 'w-full' : 'flex-1'
-            )}
-          >
-            {label}
-          </p>
-          <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {statusLabel[status]}
-          </span>
-        </div>
-        <p className="mt-0.5 break-words text-[10px] leading-snug text-muted-foreground">
-          {detail}
-        </p>
-        {reference && (
-          <a
-            href={reference.href}
-            target="_blank"
-            rel={`noopener noreferrer${reference.sponsored ? ' sponsored' : ''}`}
-            className="mt-1 inline-flex items-center gap-1 text-[10px] font-medium text-foreground/80 underline-offset-4 hover:text-foreground hover:underline"
-          >
-            {reference.label}
-            <ExternalLink className="h-3 w-3" aria-hidden="true" />
-          </a>
-        )}
-      </div>
-    </div>
+    {
+      frontend: 'border-blue-500/40 bg-blue-500/10 text-blue-300',
+      api: 'border-violet-500/40 bg-violet-500/10 text-violet-300',
+      backend: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300',
+      worker: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+      preview: 'border-fuchsia-500/50 bg-fuchsia-500/15 text-fuchsia-200',
+      enhancement: 'border-sky-500/40 bg-sky-500/10 text-sky-300',
+    }[label] ?? 'border-border bg-muted text-muted-foreground'
   );
 }
 
-function FlowZone({
-  number,
-  title,
-  active,
-  complete,
+function activeStage(state: PreviewEnvironmentState): PreviewStageId | null {
+  const ids: PreviewStageId[] = [
+    'intent',
+    'coordinate',
+    'reconcile',
+    'provision',
+    'expose',
+    'verify',
+  ];
+  return ids.find((id) => state.stageStatuses[id] === 'active') ?? null;
+}
+
+function stageDone(state: PreviewEnvironmentState, id: PreviewStageId): boolean {
+  return state.stageStatuses[id] === 'complete' || state.stageStatuses[id] === 'remediated';
+}
+
+function GitHubChrome({
+  activeTab,
   children,
 }: {
-  number: string;
-  title: string;
-  active: boolean;
-  complete: boolean;
-  children: React.ReactNode;
+  activeTab: 'pulls' | 'actions';
+  children: ReactNode;
 }) {
+  const tabs = [
+    { id: 'code', label: 'Code', icon: Code2 },
+    { id: 'issues', label: 'Issues', icon: CircleDot },
+    { id: 'pulls', label: 'Pull requests', icon: GitPullRequest },
+    { id: 'actions', label: 'Actions', icon: Play },
+  ];
   return (
-    <section
-      className={cn(
-        'min-w-0 rounded-xl border bg-muted/10 p-3 transition-all duration-500',
-        active && 'border-blue-500/45 bg-blue-500/[0.03] shadow-lg shadow-blue-500/5',
-        complete && !active && 'border-emerald-500/25'
-      )}
-    >
-      <div className="mb-2 flex items-center gap-2 border-b pb-2">
-        <span
-          className={cn(
-            'font-mono text-[10px] font-bold text-blue-500',
-            complete && 'text-emerald-500'
-          )}
-        >
-          {number}
+    <div className="overflow-hidden rounded-xl border border-[#30363d] bg-[#0d1117] text-[#e6edf3] shadow-2xl shadow-black/20">
+      <div className="flex min-h-14 items-center gap-3 border-b border-[#21262d] bg-[#010409] px-3 sm:px-5">
+        <Github className="size-6 shrink-0 fill-current" aria-hidden="true" />
+        <div className="min-w-0 text-sm">
+          <span className="text-[#8b949e]">acme / </span>
+          <span className="font-semibold text-[#2f81f7]">store</span>
+        </div>
+        <span className="rounded-full border border-[#30363d] px-2 py-0.5 text-[10px] text-[#8b949e]">
+          Public
         </span>
-        <h3 className="text-sm font-semibold">{title}</h3>
-        {complete && <CheckCircle2 className="ml-auto h-4 w-4 text-emerald-500" />}
       </div>
+      <nav
+        aria-label="Repository navigation"
+        className="flex gap-1 overflow-x-auto border-b border-[#21262d] bg-[#010409] px-2 pt-1 sm:px-4"
+      >
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const selected = tab.id === activeTab;
+          return (
+            <div
+              key={tab.id}
+              className={cn(
+                'flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-xs font-medium',
+                selected ? 'border-[#f78166] text-[#e6edf3]' : 'border-transparent text-[#8b949e]'
+              )}
+            >
+              <Icon className="size-4" aria-hidden="true" />
+              {tab.label}
+            </div>
+          );
+        })}
+      </nav>
       {children}
-    </section>
+    </div>
   );
 }
 
-function FlowArrow({ active }: { active: boolean }) {
+function Label({ children }: { children: string }) {
   return (
-    <div className="relative grid place-items-center py-0.5 lg:px-1 lg:py-0" aria-hidden="true">
-      <span
-        className={cn(
-          'absolute h-full w-px bg-border lg:h-px lg:w-full',
-          active && 'bg-blue-500/60'
-        )}
+    <span
+      className={cn(
+        'rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+        labelClasses(children)
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function PullRequestList({ onOpen }: { onOpen: (pullRequest: PullRequestScenario) => void }) {
+  return (
+    <GitHubChrome activeTab="pulls">
+      <div className="p-3 sm:p-5">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+          <div className="flex min-h-9 flex-1 items-center rounded-md border border-[#30363d] bg-[#010409] px-3 text-xs text-[#8b949e]">
+            <Search className="mr-2 size-4" aria-hidden="true" />
+            is:pr is:open
+          </div>
+          <div className="flex gap-2">
+            <span className="rounded-md border border-[#30363d] bg-[#21262d] px-3 py-2 text-xs font-semibold">
+              Labels
+            </span>
+            <span className="rounded-md bg-[#238636] px-3 py-2 text-xs font-semibold">
+              New pull request
+            </span>
+          </div>
+        </div>
+        <div className="overflow-hidden rounded-md border border-[#30363d]">
+          <div className="flex items-center gap-5 border-b border-[#30363d] bg-[#161b22] px-4 py-3 text-xs">
+            <span className="flex items-center gap-2 font-semibold">
+              <GitPullRequest className="size-4 text-[#3fb950]" aria-hidden="true" />3 Open
+            </span>
+            <span className="text-[#8b949e]">18 Closed</span>
+            <span className="ml-auto hidden text-[#8b949e] sm:inline">Sort</span>
+          </div>
+          {PULL_REQUESTS.map((pullRequest) => (
+            <button
+              key={pullRequest.id}
+              type="button"
+              onClick={() => onOpen(pullRequest)}
+              className="group flex w-full gap-3 border-b border-[#21262d] px-4 py-4 text-left last:border-b-0 hover:bg-[#161b22]"
+            >
+              <GitPullRequest
+                className="mt-0.5 size-4 shrink-0 text-[#3fb950]"
+                aria-hidden="true"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold group-hover:text-[#2f81f7]">
+                    {pullRequest.title}
+                  </span>
+                  {pullRequest.labels.map((label) => (
+                    <Label key={label}>{label}</Label>
+                  ))}
+                </span>
+                <span className="mt-1 block text-xs text-[#8b949e]">
+                  #{pullRequest.number} opened {pullRequest.opened} by {pullRequest.author}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1 text-xs text-[#8b949e]">
+                <MessageSquare className="size-4" aria-hidden="true" />
+                {pullRequest.comments}
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-4 text-center text-xs text-[#8b949e]">
+          Choose a pull request to request its own temporary environment.
+        </p>
+      </div>
+    </GitHubChrome>
+  );
+}
+
+function PullRequestDetail({
+  pullRequest,
+  labelPickerOpen,
+  onBack,
+  onToggleLabels,
+  onAddPreview,
+}: {
+  pullRequest: PullRequestScenario;
+  labelPickerOpen: boolean;
+  onBack: () => void;
+  onToggleLabels: () => void;
+  onAddPreview: () => void;
+}) {
+  return (
+    <GitHubChrome activeTab="pulls">
+      <div className="p-3 sm:p-5">
+        <button
+          type="button"
+          onClick={onBack}
+          className="mb-4 flex items-center gap-2 text-xs font-medium text-[#2f81f7] hover:underline"
+        >
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Pull requests
+        </button>
+        <div className="border-b border-[#21262d] pb-4">
+          <h3 className="text-xl font-normal leading-tight sm:text-2xl">
+            {pullRequest.title}{' '}
+            <span className="font-light text-[#8b949e]">#{pullRequest.number}</span>
+          </h3>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#8b949e]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#238636] px-3 py-1 font-semibold text-white">
+              <GitPullRequest className="size-4" aria-hidden="true" />
+              Open
+            </span>
+            <strong className="text-[#e6edf3]">{pullRequest.author}</strong> wants to merge{' '}
+            {pullRequest.commits} commits into
+            <span className="rounded-full bg-[#388bfd1a] px-2 py-0.5 font-mono text-[#58a6ff]">
+              main
+            </span>
+            from
+            <span className="rounded-full bg-[#388bfd1a] px-2 py-0.5 font-mono text-[#58a6ff]">
+              {pullRequest.branch}
+            </span>
+          </div>
+        </div>
+        <div className="mt-3 flex gap-1 overflow-x-auto border-b border-[#21262d]">
+          {[
+            'Conversation ' + pullRequest.comments,
+            'Commits ' + pullRequest.commits,
+            'Checks 0',
+            'Files changed ' + pullRequest.changedFiles,
+          ].map((tab, index) => (
+            <span
+              key={tab}
+              className={cn(
+                'shrink-0 border-b-2 px-3 py-2 text-xs font-medium',
+                index === 0
+                  ? 'border-[#f78166] text-[#e6edf3]'
+                  : 'border-transparent text-[#8b949e]'
+              )}
+            >
+              {tab}
+            </span>
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+          <div className="min-w-0">
+            <div className="overflow-hidden rounded-md border border-[#30363d]">
+              <div className="border-b border-[#30363d] bg-[#161b22] px-4 py-3 text-xs">
+                <strong>{pullRequest.author}</strong>{' '}
+                <span className="text-[#8b949e]">commented {pullRequest.opened}</span>
+              </div>
+              <div className="space-y-4 p-4 text-sm leading-6">
+                <p>{pullRequest.summary}</p>
+                <div className="rounded-md border border-[#30363d] bg-[#161b22] p-3">
+                  <strong className="flex items-center gap-2 text-xs">
+                    <CheckCircle2 className="size-4 text-[#3fb950]" aria-hidden="true" />
+                    What should reviewers verify?
+                  </strong>
+                  <ul className="mt-2 space-y-1 text-xs text-[#8b949e]">
+                    <li>• The changed services work together.</li>
+                    <li>• Test data stays isolated from production.</li>
+                    <li>• The deployed revision matches commit {pullRequest.commit}.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 rounded-md border border-[#30363d] bg-[#161b22] p-3 text-xs text-[#8b949e]">
+              <strong className="text-[#e6edf3]">{pullRequest.author}</strong> added{' '}
+              {pullRequest.additions} lines and removed {pullRequest.deletions}.
+            </div>
+          </div>
+
+          <aside className="text-xs">
+            {['Reviewers', 'Assignees', 'Projects'].map((heading) => (
+              <div key={heading} className="border-b border-[#21262d] py-3">
+                <strong className="block">{heading}</strong>
+                <span className="text-[#8b949e]">None yet</span>
+              </div>
+            ))}
+            <div className="relative border-b border-[#21262d] py-3">
+              <div className="mb-2 flex items-center justify-between">
+                <strong>Labels</strong>
+                <button
+                  type="button"
+                  onClick={onToggleLabels}
+                  className="rounded p-1 text-[#8b949e] hover:bg-[#21262d]"
+                  aria-label="Add a label"
+                >
+                  <Tag className="size-4" aria-hidden="true" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {pullRequest.labels.map((label) => (
+                  <Label key={label}>{label}</Label>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={onToggleLabels}
+                className="mt-3 w-full rounded-md border border-[#30363d] bg-[#21262d] px-3 py-2 text-left font-semibold hover:bg-[#30363d]"
+              >
+                Add label
+              </button>
+              {labelPickerOpen && (
+                <div className="absolute right-0 top-10 z-20 w-64 overflow-hidden rounded-md border border-[#30363d] bg-[#161b22] shadow-2xl shadow-black/60">
+                  <div className="border-b border-[#30363d] px-3 py-2">
+                    <strong>Apply labels</strong>
+                    <div className="mt-2 flex items-center rounded-md border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-[#8b949e]">
+                      <Search className="mr-2 size-3.5" aria-hidden="true" />
+                      Filter labels
+                    </div>
+                  </div>
+                  {[
+                    ['preview', 'Create an isolated review environment'],
+                    ['enhancement', 'New feature or request'],
+                    ['frontend', 'Storefront change'],
+                  ].map(([label, description]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={label === 'preview' ? onAddPreview : undefined}
+                      className="flex w-full gap-2 border-b border-[#21262d] px-3 py-2.5 text-left last:border-b-0 hover:bg-[#21262d]"
+                    >
+                      <span
+                        className={cn(
+                          'mt-1 size-3 shrink-0 rounded-full border',
+                          labelClasses(label)
+                        )}
+                      />
+                      <span>
+                        <strong className="block">{label}</strong>
+                        <span className="text-[10px] leading-4 text-[#8b949e]">{description}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+        <div className="mt-5 flex items-center justify-between gap-3 rounded-md border border-[#1f6feb] bg-[#0c2d6b33] p-3">
+          <span className="flex items-start gap-2 text-xs">
+            <Sparkles className="mt-0.5 size-4 shrink-0 text-[#58a6ff]" aria-hidden="true" />
+            <span>
+              <strong className="block">Ask for a live preview</strong>
+              <span className="text-[#8b949e]">Add the preview label like a real PR.</span>
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={onToggleLabels}
+            className="shrink-0 rounded-md bg-[#238636] px-3 py-2 text-xs font-semibold hover:bg-[#2ea043]"
+          >
+            Add label
+          </button>
+        </div>
+      </div>
+    </GitHubChrome>
+  );
+}
+
+function CircularProgress({ progress }: { progress: number }) {
+  const circumference = 2 * Math.PI * 10;
+  return (
+    <svg className="size-6 -rotate-90" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" fill="none" stroke="#30363d" strokeWidth="2" />
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        fill="none"
+        stroke="#2f81f7"
+        strokeLinecap="round"
+        strokeWidth="2"
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference * (1 - progress / 100)}
       />
-      <span
-        className={cn(
-          'relative grid h-7 w-7 place-items-center rounded-full border bg-background text-muted-foreground transition-all',
-          active && 'border-blue-500/50 text-blue-600 shadow-md shadow-blue-500/15'
-        )}
-      >
-        <ArrowDown className="h-4 w-4 lg:hidden" />
-        <ArrowRight className="hidden h-4 w-4 lg:block" />
-        {active && (
-          <span className="absolute inset-0 rounded-full ring-4 ring-blue-500/10 motion-safe:animate-ping" />
-        )}
-      </span>
-    </div>
+    </svg>
   );
 }
 
 function FailurePanel({
-  failure,
   state,
-  onFix,
+  onRemediate,
 }: {
-  failure: PreviewFailure;
   state: PreviewEnvironmentState;
-  onFix: (remediationId: string, correct: boolean) => void;
+  onRemediate: (id: string) => void;
 }) {
+  if (!state.activeFailure) return null;
+  const failure = PREVIEW_FAILURES[state.activeFailure];
   return (
-    <div className="mt-3 rounded-xl border border-red-500/40 bg-red-500/5 p-3 text-center">
-      <div className="flex items-center justify-center gap-2 text-red-600 dark:text-red-300">
-        <AlertTriangle className="h-4 w-4" />
-        <p className="text-sm font-semibold">The control path paused</p>
+    <div className="rounded-lg border border-[#f85149] bg-[#49020233] p-4">
+      <div className="flex gap-3">
+        <XCircle className="mt-0.5 size-5 shrink-0 text-[#f85149]" aria-hidden="true" />
+        <div>
+          <strong className="text-[#ff7b72]">{failure.label}</strong>
+          <p className="mt-1 text-xs leading-5 text-[#c9d1d9]">{failure.signal}</p>
+        </div>
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">{failure.summary}</p>
-      <p className="mx-auto mt-2 max-w-2xl rounded-md border border-red-500/25 bg-background/70 px-2 py-1.5 font-mono text-[10px] text-red-700 dark:text-red-300">
-        {failure.signal}
-      </p>
-      <p className="mt-2 text-xs font-semibold">Pick the repair that preserves a safe preview:</p>
-      <div className="mt-2 grid gap-2 sm:grid-cols-3">
+      <div className="mt-3 grid gap-2 sm:grid-cols-3">
         {failure.remediationOptions.map((option) => (
-          <Button
+          <button
             key={option.id}
             type="button"
-            size="sm"
-            variant="outline"
-            className="h-auto min-h-9 whitespace-normal text-center text-xs"
-            onClick={() => onFix(option.id, option.id === failure.correctRemediationId)}
+            onClick={() => onRemediate(option.id)}
+            className="rounded-md border border-[#30363d] bg-[#161b22] p-3 text-left text-xs hover:border-[#58a6ff]"
           >
-            {option.label}
-          </Button>
+            <strong className="block">{option.label}</strong>
+            <span className="mt-1 block leading-4 text-[#8b949e]">{option.explanation}</span>
+          </button>
         ))}
       </div>
       {state.failedRemediationAttempts > 0 && (
-        <p className="mt-2 text-xs text-red-700 dark:text-red-300">
-          That does not repair this signal. {state.lastEvent}
-        </p>
+        <p className="mt-3 text-xs text-[#ff7b72]">{state.lastEvent}</p>
       )}
     </div>
   );
 }
 
-function ArchitectureFlow({
-  state,
-  actor,
-  controlBeat,
-  storyStarted,
-  reviewUrl,
-  failure,
-  onFix,
+function PipelineIcon({
+  status,
+  progress,
 }: {
-  state: PreviewEnvironmentState;
-  actor: StoryActor;
-  controlBeat: ControlBeat;
-  storyStarted: boolean;
-  reviewUrl: string;
-  failure: PreviewFailure | null;
-  onFix: (remediationId: string, correct: boolean) => void;
+  status: 'waiting' | 'running' | 'successful' | 'failed';
+  progress: number;
 }) {
-  const stages = state.stageStatuses;
-  const cleanupStarted = state.status === 'cleaning' || state.status === 'removed';
+  if (status === 'running') return <CircularProgress progress={progress} />;
+  if (status === 'successful') {
+    return (
+      <span className="grid size-6 place-items-center rounded-full bg-[#238636]">
+        <Check className="size-4 text-white" aria-hidden="true" />
+      </span>
+    );
+  }
+  if (status === 'failed') {
+    return (
+      <span className="grid size-6 place-items-center rounded-full bg-[#da3633]">
+        <XCircle className="size-4 text-white" aria-hidden="true" />
+      </span>
+    );
+  }
+  return <span className="size-6 rounded-full border-2 border-[#30363d]" />;
+}
 
-  const automaticStatus = (
-    stage: PreviewStageId,
-    failureIds: PreviewFailureId[] = []
-  ): FlowStatus => {
-    if (state.activeFailure && failureIds.includes(state.activeFailure)) return 'failed';
-    const status = stages[stage];
-    if (status === 'failed') return 'failed';
-    if (status === 'complete') return 'ready';
-    if (status === 'active' || status === 'remediated') return 'creating';
-    return 'waiting';
-  };
-
-  const cleanupStatus = (): FlowStatus => {
-    if (state.status === 'removed') return 'removed';
-    if (state.status === 'cleaning') return 'removing';
-    return 'ready';
-  };
-
-  const prStatus: FlowStatus = !storyStarted ? 'current' : cleanupStarted ? 'removed' : 'ready';
-
-  const automationStatus: FlowStatus =
-    state.status === 'removed'
-      ? 'complete'
-      : state.activeFailure === 'branch-mismatch'
-        ? 'failed'
-        : stages.reconcile === 'complete'
-          ? 'ready'
-          : stages.reconcile === 'active' && actor === 'platform'
-            ? controlBeat === 'detect'
-              ? 'creating'
-              : 'ready'
-            : 'waiting';
-
-  const buildStatus: FlowStatus =
-    state.status === 'removed'
-      ? 'complete'
-      : stages.coordinate === 'failed'
-        ? 'failed'
-        : stages.coordinate === 'complete'
-          ? 'ready'
-          : stages.coordinate === 'active' || stages.coordinate === 'remediated'
-            ? actor === 'developer'
-              ? 'current'
-              : 'creating'
-            : 'waiting';
-
-  const registryStatus: FlowStatus =
-    state.status === 'removed'
-      ? 'complete'
-      : stages.reconcile === 'failed'
-        ? 'failed'
-        : stages.reconcile === 'complete'
-          ? 'ready'
-          : stages.reconcile === 'active' || stages.reconcile === 'remediated'
-            ? actor === 'developer'
-              ? 'current'
-              : 'ready'
-            : 'waiting';
-
-  const argoStatus: FlowStatus = cleanupStarted
-    ? cleanupStatus()
-    : stages.reconcile === 'failed'
-      ? 'failed'
-      : stages.reconcile === 'complete'
-        ? 'ready'
-        : (stages.reconcile === 'active' || stages.reconcile === 'remediated') &&
-            actor === 'platform'
-          ? controlBeat === 'render'
-            ? 'creating'
-            : 'waiting'
-          : 'waiting';
-
-  const namespaceStatus = cleanupStarted
-    ? cleanupStatus()
-    : automaticStatus('provision', ['quota-exceeded']);
-  const workloadsStatus = cleanupStarted
-    ? cleanupStatus()
-    : automaticStatus('provision', [
-        'quota-exceeded',
-        'missing-secret',
-        'readiness-failure',
-        'revision-drift',
-      ]);
-  const dataStatus = cleanupStarted
-    ? cleanupStatus()
-    : automaticStatus('expose', ['readiness-failure']);
-  const urlStatus = cleanupStarted ? cleanupStatus() : automaticStatus('expose', ['dns-pending']);
-
-  const returnStatus: FlowStatus =
-    state.status === 'cleaning'
-      ? 'creating'
-      : state.status === 'removed'
-        ? 'removed'
-        : stages.verify === 'failed'
-          ? 'failed'
-          : stages.verify === 'complete' || state.status === 'ready'
-            ? 'ready'
-            : stages.verify === 'active' || stages.verify === 'remediated'
-              ? 'creating'
-              : 'waiting';
-
-  const developerActive =
-    actor === 'developer' &&
-    (state.status === 'configured' ||
-      activeStageId(state) === 'coordinate' ||
-      activeStageId(state) === 'reconcile');
-  const controlActive =
-    actor === 'platform' &&
-    (state.status === 'configured' ||
-      activeStageId(state) === 'reconcile' ||
-      state.status === 'blocked');
-  const environmentActive =
-    state.status === 'ready' ||
-    state.status === 'reviewed' ||
-    state.status === 'cleaning' ||
-    ['provision', 'expose', 'verify'].includes(activeStageId(state));
-
-  const cleanupMessage =
-    state.status === 'cleaning'
-      ? 'Argo CD is pruning the namespace, workloads, data, and URL together.'
-      : state.status === 'removed'
-        ? 'The whole preview is gone. Cost is $0.00/hr.'
-        : state.status === 'reviewed'
-          ? 'Close the pull request to trigger automatic deletion.'
-          : 'Close the PR, remove the label, or let the TTL expire.';
-
+function GitOpsScene({
+  pullRequest,
+  beat,
+  progress,
+  state,
+  onRemediate,
+}: {
+  pullRequest: PullRequestScenario;
+  beat: PipelineBeat;
+  progress: number;
+  state: PreviewEnvironmentState;
+  onRemediate: (id: string) => void;
+}) {
+  const index = PIPELINE_STEPS.findIndex((step) => step.id === beat);
+  const current = PIPELINE_STEPS[index];
+  const failed = state.status === 'blocked';
   return (
-    <div className="overflow-hidden rounded-2xl border-2 border-slate-400/40 bg-background shadow-lg">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-3 py-2">
-        <div className="min-w-0 flex-1">
-          <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-blue-500">
-            Desired state → running evidence
-          </p>
-          <p className="break-words text-sm font-semibold leading-snug">
-            One control path from pull request to preview URL
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+    <GitHubChrome activeTab="actions">
+      <div className="grid min-h-[500px] md:grid-cols-[200px_minmax(0,1fr)]">
+        <aside className="border-b border-[#21262d] p-4 md:border-b-0 md:border-r">
+          <strong className="mb-4 flex items-center gap-2 text-xs">
+            <Workflow className="size-4" aria-hidden="true" />
+            Actions
+          </strong>
+          <div className="rounded-md bg-[#21262d] px-3 py-2 text-xs font-semibold">
+            Preview environment
+          </div>
+          <div className="mt-3 space-y-2 text-xs text-[#8b949e]">
+            <div>CI</div>
+            <div>Code quality</div>
+            <div>Deploy production</div>
+          </div>
           <a
             href="https://atomsized.com/preview-environments"
             target="_blank"
-            rel="noopener noreferrer sponsored"
-            className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            rel="noreferrer"
+            className="mt-6 flex gap-2 rounded-md border border-[#30363d] p-3 text-[10px] leading-4 text-[#8b949e] hover:border-[#58a6ff] hover:text-[#58a6ff]"
           >
-            Inspired by Atomsized
-            <ExternalLink className="h-3 w-3" aria-hidden="true" />
+            <Sparkles className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+            <span>
+              Pattern inspired by Atomsized
+              <ExternalLink className="ml-1 inline size-3" aria-hidden="true" />
+            </span>
           </a>
-          <Badge
-            variant="outline"
-            className="gap-1.5 border-amber-500/40 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300"
-          >
-            <GitCommit className="h-3 w-3" /> sha-8f3c2a1 retained
-          </Badge>
+        </aside>
+
+        <div className="min-w-0 p-3 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#21262d] pb-4">
+            <div>
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
+                {failed ? (
+                  <XCircle className="size-5 text-[#f85149]" aria-hidden="true" />
+                ) : (
+                  <LoaderCircle className="size-5 animate-spin text-[#58a6ff]" aria-hidden="true" />
+                )}
+                Preview environment #{pullRequest.number}
+              </h3>
+              <p className="mt-1 text-xs text-[#8b949e]">
+                Pull request #{pullRequest.number} · {pullRequest.branch} · {pullRequest.commit}
+              </p>
+            </div>
+            <span
+              className={cn(
+                'rounded-full border px-2.5 py-1 text-[10px] font-semibold',
+                failed ? 'border-[#f85149] text-[#ff7b72]' : 'border-[#1f6feb] text-[#58a6ff]'
+              )}
+            >
+              {failed ? 'Action required' : 'In progress'}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(240px,0.8fr)_minmax(300px,1.2fr)]">
+            <div className="overflow-hidden rounded-md border border-[#30363d]">
+              <div className="border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs font-semibold">
+                Jobs
+              </div>
+              {PIPELINE_STEPS.map((step, stepIndex) => {
+                const status =
+                  stepIndex < index
+                    ? 'successful'
+                    : stepIndex > index
+                      ? 'waiting'
+                      : failed
+                        ? 'failed'
+                        : 'running';
+                return (
+                  <div
+                    key={step.id}
+                    className={cn(
+                      'flex gap-3 border-b border-[#21262d] px-3 py-3 last:border-b-0',
+                      stepIndex === index && 'bg-[#1f6feb14]'
+                    )}
+                  >
+                    <PipelineIcon status={status} progress={stepIndex === index ? progress : 100} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex justify-between gap-2">
+                        <strong className="text-xs">{step.title}</strong>
+                        <span className="text-[10px] uppercase tracking-wide text-[#8b949e]">
+                          {status === 'waiting'
+                            ? 'Waiting'
+                            : status === 'running'
+                              ? 'Running'
+                              : status === 'successful'
+                                ? 'Successful'
+                                : 'Failed'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[10px] leading-4 text-[#8b949e]">{step.detail}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="overflow-hidden rounded-md border border-[#30363d] bg-[#010409]">
+              <div className="flex justify-between border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
+                <strong>{current.title}</strong>
+                <span className="text-[#8b949e]">{current.duration / 1000}s</span>
+              </div>
+              <div className="min-h-56 space-y-2 overflow-x-auto p-4 font-mono text-[11px] leading-5">
+                <div className="text-[#8b949e]">Runner image: ubuntu-latest</div>
+                <div>
+                  <span className="text-[#3fb950]">✓</span> Checkout {pullRequest.branch} at{' '}
+                  {pullRequest.commit}
+                </div>
+                {index > 0 && (
+                  <div>
+                    <span className="text-[#3fb950]">✓</span> Image built successfully
+                  </div>
+                )}
+                {index > 1 && (
+                  <div>
+                    <span className="text-[#3fb950]">✓</span> Image pushed to registry
+                  </div>
+                )}
+                {index > 2 && (
+                  <div>
+                    <span className="text-[#3fb950]">✓</span> preview label detected
+                  </div>
+                )}
+                <div className={cn('text-[#58a6ff]', !failed && 'animate-pulse')}>
+                  <span>$ </span>
+                  {current.command
+                    .replace('SHA', pullRequest.commit)
+                    .replace('PR_NUMBER', String(pullRequest.number))}
+                </div>
+                {failed ? (
+                  <div className="text-[#ff7b72]">Error: {state.lastEvent}</div>
+                ) : (
+                  <div className="flex items-center gap-2 text-[#8b949e]">
+                    <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
+                    This automated step continues on its own.
+                  </div>
+                )}
+              </div>
+              <div className="h-1 bg-[#21262d]">
+                <div
+                  className="h-full bg-[#2f81f7] transition-[width] duration-100"
+                  style={{ width: String(progress) + '%' }}
+                />
+              </div>
+            </div>
+          </div>
+          {failed ? (
+            <div className="mt-4">
+              <FailurePanel state={state} onRemediate={onRemediate} />
+            </div>
+          ) : (
+            <div className="mt-4 flex items-center gap-2 rounded-md border border-[#30363d] bg-[#161b22] p-3 text-xs text-[#8b949e]">
+              <Clock3 className="size-4 shrink-0 text-[#58a6ff]" aria-hidden="true" />
+              No click needed — build, push, detection, and rendering are automated.
+            </div>
+          )}
         </div>
       </div>
+    </GitHubChrome>
+  );
+}
 
-      <div className="p-3">
-        <div className="grid gap-2 lg:grid-cols-[0.9fr_auto_1fr_auto_1.35fr] lg:items-stretch">
-          <FlowZone
-            number="01"
-            title="Developer intent"
-            active={developerActive}
-            complete={
-              state.status !== 'removed' && (stages.reconcile === 'complete' || environmentActive)
-            }
-          >
-            <div className="space-y-2">
-              <FlowNode
-                icon={GitPullRequest}
-                label="PR #184 + preview label"
-                detail={
-                  state.status === 'removed'
-                    ? 'PR closed · preview label removed'
-                    : storyStarted
-                      ? 'checkout-v2 → main'
-                      : 'Add the label to request a preview'
-                }
-                status={prStatus}
-                owner="developer"
-              />
-              <div className="grid grid-cols-1 gap-2 2xl:grid-cols-2">
-                <FlowNode
-                  icon={Code2}
-                  label="Build image"
-                  detail="CI packages the change"
-                  status={buildStatus}
-                  owner="pipeline"
-                  readyLabel="succeeded"
-                  progressDurationMs={
-                    buildStatus === 'current' || buildStatus === 'creating'
-                      ? PIPELINE_STEP_MS
-                      : undefined
-                  }
-                  compact
-                />
-                <FlowNode
-                  icon={Package}
-                  label="Push registry"
-                  detail="checkout:sha-8f3c2a1"
-                  status={registryStatus}
-                  owner="pipeline"
-                  readyLabel="succeeded"
-                  progressDurationMs={registryStatus === 'current' ? PIPELINE_STEP_MS : undefined}
-                  compact
-                />
-              </div>
-            </div>
-          </FlowZone>
+function ResourceStatus({ status }: { status: ResourceState }) {
+  if (status === 'creating' || status === 'removing') {
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide',
+          status === 'creating' ? 'text-blue-400' : 'text-amber-300'
+        )}
+      >
+        <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
+        {status === 'creating' ? 'Creating' : 'Removing'}
+      </span>
+    );
+  }
+  if (status === 'ready' || status === 'removed') {
+    return (
+      <span
+        className={cn(
+          'inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide',
+          status === 'ready' ? 'text-emerald-400' : 'text-muted-foreground'
+        )}
+      >
+        <CheckCircle2 className="size-3" aria-hidden="true" />
+        {status === 'ready' ? 'Ready' : 'Removed'}
+      </span>
+    );
+  }
+  return (
+    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+      Queued
+    </span>
+  );
+}
 
-          <FlowArrow active={automationStatus === 'creating'} />
-
-          <FlowZone
-            number="02"
-            title="GitOps control plane"
-            active={controlActive}
-            complete={
-              state.status !== 'removed' && (stages.reconcile === 'complete' || environmentActive)
-            }
-          >
-            <div className="space-y-2">
-              <FlowNode
-                icon={GitBranch}
-                label="Automation repository"
-                detail={
-                  state.status === 'removed'
-                    ? 'Previous detection run completed'
-                    : 'Automatically detects the labeled PR'
-                }
-                status={automationStatus}
-                owner="argo"
-                progressDurationMs={automationStatus === 'creating' ? ARGO_STEP_MS : undefined}
-              />
-              <div className="flex justify-center" aria-hidden="true">
-                <ArrowDown className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <FlowNode
-                icon={Workflow}
-                label="Argo CD ApplicationSet"
-                detail="Commit and image digest become Helm values"
-                status={argoStatus}
-                owner="argo"
-                progressDurationMs={argoStatus === 'creating' ? ARGO_STEP_MS : undefined}
-              />
-            </div>
-          </FlowZone>
-
-          <FlowArrow active={argoStatus === 'creating'} />
-
-          <FlowZone
-            number="03"
-            title="Ephemeral environment"
-            active={environmentActive}
-            complete={state.status === 'ready' || state.status === 'reviewed'}
-          >
-            <div className="space-y-2">
-              <FlowNode
-                icon={Boxes}
-                label="Kubernetes namespace"
-                detail="preview-pr-184 · isolated boundary"
-                status={namespaceStatus}
-                owner="cluster"
-                progressDurationMs={namespaceStatus === 'creating' ? ARGO_STEP_MS : undefined}
-              />
-              <div
-                className={cn(
-                  'grid gap-1.5',
-                  state.config.services.length === 1 && 'mx-auto w-full max-w-52 grid-cols-1',
-                  state.config.services.length === 2 && 'grid-cols-2',
-                  state.config.services.length >= 3 && 'grid-cols-3'
-                )}
-              >
-                {state.config.services.map((service) => (
-                  <FlowNode
-                    key={service}
-                    icon={ServerCog}
-                    label={service === 'worker' ? 'Worker' : service.toUpperCase()}
-                    detail="application"
-                    status={workloadsStatus}
-                    owner="cluster"
-                    progressDurationMs={workloadsStatus === 'creating' ? ARGO_STEP_MS : undefined}
-                    compact
-                  />
-                ))}
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <FlowNode
-                  icon={Database}
-                  label={state.config.dataStrategy === 'synthetic' ? 'Synthetic DB' : 'DB snapshot'}
-                  detail="isolated data"
-                  status={dataStatus}
-                  owner="cluster"
-                  reference={{
-                    href: 'https://neon.com/branching',
-                    label: 'Neon',
-                  }}
-                  progressDurationMs={dataStatus === 'creating' ? ARGO_STEP_MS : undefined}
-                  compact
-                />
-                <FlowNode
-                  icon={Database}
-                  label="Redis"
-                  detail="isolated cache"
-                  status={dataStatus}
-                  owner="cluster"
-                  progressDurationMs={dataStatus === 'creating' ? ARGO_STEP_MS : undefined}
-                  compact
-                />
-              </div>
-              <FlowNode
-                icon={Globe2}
-                label="Review URL"
-                detail={urlStatus === 'ready' ? reviewUrl : 'DNS · ingress · TLS · revision'}
-                status={urlStatus}
-                owner="cluster"
-                progressDurationMs={urlStatus === 'creating' ? ARGO_STEP_MS : undefined}
-              />
-            </div>
-          </FlowZone>
-        </div>
-
-        {failure && <FailurePanel failure={failure} state={state} onFix={onFix} />}
-
-        <div
-          className={cn(
-            'mt-3 flex items-center justify-center gap-2 border-y border-dashed border-blue-500/30 bg-blue-500/[0.03] px-3 py-2 text-center text-xs text-muted-foreground transition-colors',
-            returnStatus === 'creating' &&
-              'border-blue-500/60 bg-blue-500/8 text-blue-700 dark:text-blue-300',
-            returnStatus === 'ready' &&
-              'border-emerald-500/40 text-emerald-700 dark:text-emerald-300',
-            returnStatus === 'failed' && 'border-red-500/40 text-red-700 dark:text-red-300'
-          )}
-        >
-          {returnStatus === 'creating' ? (
-            <LoaderCircle className="h-4 w-4 motion-safe:animate-spin" />
-          ) : returnStatus === 'ready' || returnStatus === 'removed' ? (
-            <CheckCircle2 className="h-4 w-4" />
-          ) : (
-            <RefreshCw className="h-4 w-4" />
-          )}
-          <span>
-            <strong className="font-semibold text-foreground">
-              {state.status === 'cleaning'
-                ? 'Argo CD reports cleanup progress to PR #184.'
-                : state.status === 'removed'
-                  ? 'Cleanup confirmed on PR #184.'
-                  : 'Running status returns to PR #184.'}
-            </strong>{' '}
-            {state.status === 'cleaning'
-              ? 'The entire preview is being pruned automatically.'
-              : state.status === 'removed'
-                ? 'No preview resources remain.'
-                : returnStatus === 'ready'
-                  ? 'The URL and deployed digest match the change.'
-                  : 'Health and the deployed revision will appear here.'}
-          </span>
-        </div>
-
-        <div
-          className={cn(
-            'mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-muted/35 px-3 py-2 text-xs text-muted-foreground',
-            state.status === 'cleaning' && 'bg-amber-500/8 text-amber-800 dark:text-amber-300',
-            state.status === 'removed' && 'bg-emerald-500/8 text-emerald-700 dark:text-emerald-300'
-          )}
-        >
-          {state.status === 'cleaning' ? (
-            <LoaderCircle className="h-4 w-4 shrink-0 motion-safe:animate-spin" />
-          ) : state.status === 'removed' ? (
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-          ) : (
-            <Trash2 className="h-4 w-4 shrink-0" />
-          )}
-          <strong className="font-semibold text-foreground">
-            Automatic cleanup removes the preview as one unit.
-          </strong>
-          <span>{cleanupMessage}</span>
+function ResourceCard({
+  title,
+  detail,
+  status,
+  icon: Icon,
+  wide,
+  children,
+}: {
+  title: string;
+  detail: string;
+  status: ResourceState;
+  icon: typeof Boxes;
+  wide?: boolean;
+  children?: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-lg border p-3 transition-all duration-500',
+        wide && 'sm:col-span-2',
+        status === 'creating' && 'border-blue-500 bg-blue-500/5 shadow-lg shadow-blue-500/10',
+        status === 'ready' && 'border-emerald-500/40 bg-emerald-500/5',
+        status === 'queued' && 'border-border/60 bg-background/40 opacity-55',
+        status === 'removing' && 'border-amber-400/40 bg-amber-400/5 opacity-70',
+        status === 'removed' && 'border-border/40 bg-background/20 opacity-40'
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-md border border-border text-muted-foreground">
+          <Icon className="size-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap justify-between gap-2">
+            <strong className="text-sm">{title}</strong>
+            <ResourceStatus status={status} />
+          </div>
+          <p className="mt-1 truncate text-xs text-muted-foreground">{detail}</p>
+          {children}
         </div>
       </div>
     </div>
   );
 }
 
-export default function PreviewEnvironmentSimulator() {
-  const [scenarioId, setScenarioId] = useState<PreviewScenarioId>('checkout-flow');
-  const [addProblem, setAddProblem] = useState(false);
-  const [state, setState] = useState(() => scenarioState('checkout-flow', false));
-  const [storyStarted, setStoryStarted] = useState(false);
-  const [actorBeat, setActorBeat] = useState<StoryActor>('developer');
-  const [controlBeat, setControlBeat] = useState<ControlBeat>('detect');
-
-  useEffect(() => {
-    if (state.status !== 'cleaning') return;
-
-    const cleanupTimer = window.setTimeout(() => {
-      setState((current) => {
-        let next = current;
-        for (
-          let index = 0;
-          index <= CLEANUP_STEPS.length && next.status === 'cleaning';
-          index += 1
-        ) {
-          next = advancePreviewEnvironment(next);
-        }
-        return next;
-      });
-    }, 2000);
-
-    return () => window.clearTimeout(cleanupTimer);
-  }, [state.status]);
-
-  const metrics = useMemo(() => getPreviewMetrics(state.config), [state.config]);
-  const evidence = useMemo(() => getPreviewEvidence(state.config), [state.config]);
-  const generatedIntent = useMemo(() => getGeneratedIntent(state.config), [state.config]);
-  const failure = state.activeFailure ? PREVIEW_FAILURES[state.activeFailure] : null;
-  const canConfigure =
-    state.status === 'removed' || (state.status === 'configured' && !storyStarted);
-  const phaseIndex = storyPhaseIndex(state);
-  const phase = STORY_PHASES[phaseIndex];
-  const stageId = activeStageId(state);
-  const selectedScenario =
-    PREVIEW_SCENARIOS.find((scenario) => scenario.id === scenarioId) ?? PREVIEW_SCENARIOS[1];
-
-  const actor: StoryActor =
-    state.status === 'blocked' || state.status === 'cleaning' || state.status === 'removed'
-      ? 'platform'
-      : state.status === 'configured'
-        ? storyStarted
-          ? actorBeat
-          : 'developer'
-        : state.status === 'ready' || state.status === 'reviewed'
-          ? 'developer'
-          : actorBeat;
-  const activeOwner: FlowOwner =
-    actor === 'developer' &&
-    state.status === 'running' &&
-    (stageId === 'coordinate' || stageId === 'reconcile')
-      ? 'pipeline'
-      : actor === 'developer'
-        ? 'developer'
-        : 'argo';
-  const activeOwnerMeta = FLOW_OWNERS[activeOwner];
-
-  useEffect(() => {
-    if (!storyStarted || (state.status !== 'configured' && state.status !== 'running')) return;
-
-    const currentStage = stageId;
-    let delayMs = REQUEST_HANDOFF_MS;
-    let nextAction: 'advance' | 'handoff-to-argo' | 'render-application' = 'advance';
-
-    if (state.status === 'running') {
-      if (currentStage === 'coordinate') {
-        delayMs = PIPELINE_STEP_MS;
-      } else if (currentStage === 'reconcile' && actorBeat === 'developer') {
-        delayMs = PIPELINE_STEP_MS;
-        nextAction = 'handoff-to-argo';
-      } else if (currentStage === 'reconcile' && controlBeat === 'detect') {
-        delayMs = ARGO_STEP_MS;
-        nextAction = 'render-application';
-      } else if (currentStage === 'verify') {
-        delayMs = VERIFY_STEP_MS;
-      } else {
-        delayMs = ARGO_STEP_MS;
-      }
-    }
-
-    const automationTimer = window.setTimeout(() => {
-      if (nextAction === 'handoff-to-argo') {
-        setActorBeat('platform');
-        setControlBeat('detect');
-        return;
-      }
-
-      if (nextAction === 'render-application') {
-        setControlBeat('render');
-        return;
-      }
-
-      setState((current) => advancePreviewEnvironment(current));
-      setActorBeat(
-        state.status === 'configured' || currentStage === 'coordinate' ? 'developer' : 'platform'
-      );
-    }, delayMs);
-
-    return () => window.clearTimeout(automationTimer);
-  }, [actorBeat, controlBeat, stageId, state.status, storyStarted]);
-
-  const resetWith = (nextScenario: PreviewScenarioId, nextAddProblem: boolean) => {
-    setScenarioId(nextScenario);
-    setAddProblem(nextAddProblem);
-    setState(scenarioState(nextScenario, nextAddProblem));
-    setActorBeat('developer');
-    setControlBeat('detect');
-    setStoryStarted(false);
+function EnvironmentScene({
+  pullRequest,
+  state,
+  progress,
+  onRemediate,
+  onReview,
+  onClose,
+  onAgain,
+}: {
+  pullRequest: PullRequestScenario;
+  state: PreviewEnvironmentState;
+  progress: number;
+  onRemediate: (id: string) => void;
+  onReview: (decision: 'approve' | 'request-changes') => void;
+  onClose: () => void;
+  onAgain: () => void;
+}) {
+  const stage = activeStage(state);
+  const cleaning = state.status === 'cleaning';
+  const removed = state.status === 'removed';
+  const ready = state.status === 'ready';
+  const reviewed = state.status === 'reviewed';
+  const metrics = getPreviewMetrics(state.config);
+  const namespace = 'preview-pr-' + pullRequest.number;
+  const reviewUrl = pullRequest.id + '-' + pullRequest.number + '.preview.example.dev';
+  const resourceState = (doneAt: PreviewStageId): ResourceState => {
+    if (removed) return 'removed';
+    if (cleaning) return 'removing';
+    if (stageDone(state, doneAt) || ready || reviewed) return 'ready';
+    if (stage === doneAt) return 'creating';
+    return 'queued';
   };
-
-  const start = () => {
-    if (state.status === 'removed') setState(scenarioState(scenarioId, addProblem));
-    setActorBeat('developer');
-    setControlBeat('detect');
-    setStoryStarted(true);
-  };
-
-  const applyFix = (remediationId: string, correct: boolean) => {
-    setState((current) => {
-      const remediated = applyPreviewRemediation(current, remediationId);
-      return correct ? advancePreviewEnvironment(remediated) : remediated;
-    });
-    if (correct) setActorBeat(stageId === 'coordinate' ? 'developer' : 'platform');
-  };
-
-  const sharedDecision = state.status === 'ready' || state.status === 'reviewed';
-  const automaticStepMessage =
-    state.status === 'configured'
-      ? 'Preview requested. The pipeline starts automatically.'
-      : activeOwner === 'pipeline'
-        ? 'This pipeline step completes automatically in 5 seconds.'
-        : 'Argo CD and Kubernetes advance automatically when reconciliation finishes.';
+  const provision = resourceState('provision');
+  const expose = resourceState('expose');
+  const verify = resourceState('verify');
+  const title =
+    stage === 'provision'
+      ? 'Creating an isolated Kubernetes boundary'
+      : stage === 'expose'
+        ? 'Connecting data, DNS, and TLS'
+        : stage === 'verify'
+          ? 'Running health and revision checks'
+          : cleaning
+            ? 'Deleting the whole preview as one unit'
+            : removed
+              ? 'Preview environment removed'
+              : 'Preview environment is live';
 
   return (
-    <div className="overflow-hidden rounded-xl border bg-muted/15 shadow-sm">
-      <div className="border-b bg-background/90 p-3 sm:p-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className="border-blue-500/30 text-blue-700 dark:text-blue-300"
-              >
-                PR #184
-              </Badge>
-              <span className="text-xs text-muted-foreground">checkout-v2</span>
-            </div>
-            <h2 className="mt-2 text-xl font-semibold">
-              Turn a pull request into a real environment
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Follow one control path from developer intent to a live URL—and back to cleanup.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <Clock3 className="h-3.5 w-3.5" /> about {metrics.provisionMinutes} min
-            </span>
-            <span>·</span>
-            <span>
-              {state.status === 'removed' ? '$0.00' : `$${metrics.hourlyCost.toFixed(2)}`}/hr
-            </span>
-            <span>·</span>
-            <span>TTL {state.config.ttlHours}h</span>
-          </div>
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-black/20">
+      <div className="flex flex-wrap items-center gap-3 border-b border-border bg-muted/30 px-3 py-3 sm:px-5">
+        <span className="grid size-9 place-items-center rounded-lg bg-blue-500/10 text-blue-400">
+          <Layers3 className="size-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h3 className="truncate font-semibold">{namespace}</h3>
+          <p className="text-xs text-muted-foreground">
+            PR #{pullRequest.number} · {pullRequest.commit} · expires in {state.config.ttlHours}h
+          </p>
         </div>
-
-        <div className="mt-3 grid gap-3 rounded-xl border bg-muted/25 p-3 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-          <label className="block min-w-0">
-            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Example
-            </span>
-            <select
-              value={scenarioId}
-              disabled={!canConfigure}
-              onChange={(event) => resetWith(event.target.value as PreviewScenarioId, addProblem)}
-              className="h-9 w-full rounded-md border bg-background px-3 text-sm font-medium outline-none transition-colors focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {PREVIEW_SCENARIOS.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="flex min-w-0 items-center gap-3 rounded-lg border bg-background/70 px-3 py-2">
-            <Switch
-              id="preview-problem-mode"
-              checked={addProblem}
-              disabled={!canConfigure}
-              onCheckedChange={(checked) => resetWith(scenarioId, checked)}
-            />
-            <label htmlFor="preview-problem-mode" className="min-w-0 cursor-pointer">
-              <span className="block text-xs font-semibold">Add a problem to solve</span>
-              <span className="block truncate text-[10px] text-muted-foreground">
-                {addProblem
-                  ? 'The control path will pause once for a safe repair'
-                  : `Optional · ${selectedScenario.detail}`}
-              </span>
-            </label>
-          </div>
-        </div>
+        <span className="ml-auto rounded-full border border-blue-500/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-400">
+          {removed
+            ? 'Removed'
+            : ready || reviewed
+              ? 'Live'
+              : cleaning
+                ? 'Cleaning up'
+                : 'Provisioning'}
+        </span>
       </div>
-
-      <div className="p-3">
-        <StoryProgress activeIndex={phaseIndex} done={state.status === 'removed'} />
-
-        <div className="my-2 flex flex-col items-center justify-center gap-1 text-center sm:flex-row sm:gap-3">
-          <Badge
-            variant="outline"
-            className={cn(
-              'gap-1.5 text-[10px]',
-              state.status === 'removed'
-                ? 'border-border bg-muted/30 text-muted-foreground'
-                : activeOwnerMeta.badgeClass
-            )}
-          >
-            {state.status === 'removed' ? (
-              <CheckCircle2 className="h-3 w-3" />
-            ) : (
-              <span className={cn('h-1.5 w-1.5 rounded-full', activeOwnerMeta.dotClass)} />
-            )}
-            {state.status === 'removed' ? 'Run complete' : `Active · ${activeOwnerMeta.label}`}
-          </Badge>
-          <div aria-live="polite" className="sm:flex sm:items-center sm:gap-2 sm:text-left">
-            <p className="text-sm font-semibold">
-              {state.status === 'removed'
-                ? 'Preview removed'
-                : actor === 'developer'
-                  ? phase.developerTitle
-                  : phase.platformTitle}
-            </p>
-            <p className="text-xs text-muted-foreground sm:before:mr-2 sm:before:content-['·']">
-              {friendlyStatus(state, actor, storyStarted, controlBeat)}
-            </p>
+      <div className="p-3 sm:p-5">
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-border bg-background/60 p-3">
+          {removed || ready || reviewed ? (
+            <CheckCircle2 className="size-5 shrink-0 text-emerald-400" aria-hidden="true" />
+          ) : (
+            <CircularProgress progress={progress} />
+          )}
+          <div className="min-w-0">
+            <strong className="block text-sm">{title}</strong>
+            <span className="block truncate text-xs text-muted-foreground">
+              {removed
+                ? 'CI is historical, Argo CD is idle, and no preview resources remain.'
+                : cleaning
+                  ? 'Namespace, workloads, data branch, and URL are removed together.'
+                  : state.lastEvent}
+            </span>
           </div>
         </div>
 
-        <ArchitectureFlow
-          state={state}
-          actor={actor}
-          controlBeat={controlBeat}
-          storyStarted={storyStarted}
-          reviewUrl={evidence.reviewUrl}
-          failure={failure}
-          onFix={applyFix}
-        />
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(220px,0.5fr)]">
+          <div className="grid content-start gap-3 sm:grid-cols-2">
+            <ResourceCard
+              title="Kubernetes namespace"
+              detail={namespace + ' · isolated network and quota'}
+              status={provision}
+              icon={Boxes}
+              wide
+            />
+            <ResourceCard
+              title="App workloads"
+              detail={state.config.services.join(' + ') + ' · commit ' + pullRequest.commit}
+              status={provision}
+              icon={ServerCog}
+            />
+            <ResourceCard
+              title="Image revision"
+              detail={'registry.example.dev/store:' + pullRequest.commit}
+              status={provision}
+              icon={Package}
+            />
+            <ResourceCard
+              title="Database branch"
+              detail={
+                state.config.dataStrategy === 'synthetic'
+                  ? 'fresh synthetic fixtures'
+                  : 'isolated masked snapshot'
+              }
+              status={expose}
+              icon={Database}
+            >
+              <a
+                href="https://neon.com/branching"
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-blue-400 hover:underline"
+              >
+                Preview database branching by Neon
+                <ExternalLink className="size-3" aria-hidden="true" />
+              </a>
+            </ResourceCard>
+            <ResourceCard
+              title="Redis cache"
+              detail="preview-scoped cache · isolated keys"
+              status={expose}
+              icon={HardDrive}
+            />
+            <ResourceCard
+              title="Review URL"
+              detail={reviewUrl}
+              status={expose}
+              icon={Globe2}
+              wide
+            />
+          </div>
+          <aside className="space-y-3">
+            <div className="rounded-lg border border-border bg-background/50 p-4">
+              <strong className="mb-3 flex items-center gap-2 text-sm">
+                <ShieldCheck className="size-4 text-emerald-400" aria-hidden="true" />
+                Verification
+              </strong>
+              {[
+                ['Health checks', verify],
+                ['Revision match', verify],
+                ['Team SSO', expose],
+                ['Automatic expiry', expose],
+              ].map(([label, status]) => (
+                <div
+                  key={label}
+                  className="flex justify-between gap-2 border-b border-border/60 py-2 text-xs last:border-b-0"
+                >
+                  <span className="text-muted-foreground">{label}</span>
+                  <ResourceStatus status={status as ResourceState} />
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg border border-border bg-background/50 p-3">
+                <span className="text-[10px] uppercase text-muted-foreground">Hourly cost</span>
+                <div className="mt-1 font-mono text-lg font-semibold">
+                  <span>$</span>
+                  {removed ? '0.00' : metrics.hourlyCost.toFixed(2)}
+                </div>
+              </div>
+              <div className="rounded-lg border border-border bg-background/50 p-3">
+                <span className="text-[10px] uppercase text-muted-foreground">Isolation</span>
+                <div className="mt-1 font-mono text-lg font-semibold">
+                  {metrics.isolationScore}%
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
 
-        <div
-          className={cn(
-            'mt-2 flex min-h-10 gap-2 rounded-xl border bg-background/75 p-2',
-            sharedDecision
-              ? 'flex-col items-center justify-center text-center'
-              : 'flex-wrap items-center justify-center sm:justify-between'
-          )}
-        >
-          {!sharedDecision && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {state.status === 'removed' ? (
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-              ) : state.status === 'cleaning' ? (
-                <LoaderCircle className="h-4 w-4 text-amber-500 motion-safe:animate-spin" />
-              ) : state.status === 'running' || (state.status === 'configured' && storyStarted) ? (
-                <LoaderCircle className="h-4 w-4 text-violet-500 motion-safe:animate-spin" />
-              ) : state.status === 'blocked' ? (
-                <AlertTriangle className="h-4 w-4 text-red-500" />
-              ) : (
-                <ArrowRight className="h-4 w-4" />
-              )}
-              <span>
-                {state.status === 'cleaning'
-                  ? 'Argo CD is removing the entire preview automatically. No more clicks needed.'
-                  : state.status === 'running' || (state.status === 'configured' && storyStarted)
-                    ? automaticStepMessage
-                    : friendlyStatus(state, actor, storyStarted, controlBeat)}
+        {state.status === 'blocked' && (
+          <div className="mt-4">
+            <FailurePanel state={state} onRemediate={onRemediate} />
+          </div>
+        )}
+        {ready && (
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <strong className="block text-sm text-emerald-300">
+                The preview is ready for a human decision.
+              </strong>
+              <span className="text-xs text-muted-foreground">
+                Review the URL, then record whether this revision looks right.
               </span>
             </div>
-          )}
-
-          <div className="flex w-full flex-wrap justify-center gap-2 sm:w-auto">
-            {state.status === 'configured' && !storyStarted && (
-              <Button type="button" size="sm" onClick={start}>
-                <Zap className="h-4 w-4" /> Add preview label
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => onReview('request-changes')}>
+                Request changes
               </Button>
-            )}
-
-            {(state.status === 'running' || (state.status === 'configured' && storyStarted)) && (
               <Button
-                type="button"
                 size="sm"
-                variant="ghost"
-                onClick={() => resetWith(scenarioId, addProblem)}
+                className="bg-emerald-600 text-white hover:bg-emerald-500"
+                onClick={() => onReview('approve')}
               >
-                <RefreshCw className="h-4 w-4" /> Start over
+                Approve preview
               </Button>
-            )}
-
-            {state.status === 'blocked' && (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={() => resetWith(scenarioId, addProblem)}
-              >
-                <RefreshCw className="h-4 w-4" /> Start over
-              </Button>
-            )}
-
-            {state.status === 'ready' && (
-              <>
-                <p className="w-full text-sm font-semibold">What did you find at the review URL?</p>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => setState((current) => recordPreviewReview(current, 'approve'))}
-                >
-                  <Check className="h-4 w-4" /> Looks good
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    setState((current) => recordPreviewReview(current, 'request-changes'))
-                  }
-                >
-                  <X className="h-4 w-4" /> Needs work
-                </Button>
-              </>
-            )}
-
-            {state.status === 'reviewed' && (
-              <>
-                <p className="w-full text-sm font-semibold">The review is done.</p>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => {
-                    setState((current) => beginPreviewTeardown(current, 'pr-closed'));
-                    setActorBeat('platform');
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" /> Close PR &amp; trigger automatic cleanup
-                </Button>
-              </>
-            )}
-
-            {state.status === 'removed' && (
-              <Button type="button" size="sm" onClick={start}>
-                <Zap className="h-4 w-4" /> Add preview label again
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <details className="group mt-4 border-t pt-4">
-          <summary className="flex cursor-pointer list-none items-center justify-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground">
-            <Code2 className="h-4 w-4" />
-            Inspect the generated evidence
-            <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="mt-4 grid gap-3 lg:grid-cols-2">
-            <div className="rounded-lg border bg-background/70 p-3">
-              <p className="text-xs font-semibold">Preview request</p>
-              <pre className="mt-2 overflow-x-auto rounded-md bg-zinc-950 p-3 font-mono text-xs leading-relaxed text-zinc-200">
-                {generatedIntent}
-              </pre>
-            </div>
-            <div className="rounded-lg border bg-background/70 p-3">
-              <p className="text-xs font-semibold">Evidence returned to PR #184</p>
-              <dl className="mt-2 grid gap-2 text-xs sm:grid-cols-2">
-                <div>
-                  <dt className="text-muted-foreground">Private URL</dt>
-                  <dd className="mt-0.5 break-all font-mono">{evidence.reviewUrl}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Running commit</dt>
-                  <dd className="mt-0.5 font-mono">{evidence.commit}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Safe data</dt>
-                  <dd className="mt-0.5">{evidence.dataSource}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted-foreground">Automatic expiry</dt>
-                  <dd className="mt-0.5">{evidence.expiresIn}</dd>
-                </div>
-              </dl>
             </div>
           </div>
-        </details>
+        )}
+        {reviewed && (
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-border bg-background/60 p-4 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <strong className="block text-sm">
+                {state.reviewDecision === 'approve'
+                  ? 'Preview approved — the PR can move forward.'
+                  : 'Changes requested — the preview stays isolated.'}
+              </strong>
+              <span className="text-xs text-muted-foreground">
+                Close the PR to watch Argo CD remove the environment automatically.
+              </span>
+            </div>
+            <Button size="sm" variant="destructive" onClick={onClose}>
+              <Trash2 className="size-4" aria-hidden="true" />
+              Close PR & clean up
+            </Button>
+          </div>
+        )}
+        {cleaning && (
+          <div className="mt-4 flex items-center gap-3 rounded-lg border border-amber-400/40 bg-amber-400/5 p-4 text-sm">
+            <LoaderCircle className="size-5 animate-spin text-amber-300" aria-hidden="true" />
+            <span>
+              <strong>Argo CD is pruning the environment.</strong>{' '}
+              <span className="text-muted-foreground">
+                All Kubernetes resources disappear in one cleanup.
+              </span>
+            </span>
+          </div>
+        )}
+        {removed && (
+          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <strong className="block text-sm text-emerald-300">
+                Cleanup complete. Cost is back to $0.00/hr.
+              </strong>
+              <span className="text-xs text-muted-foreground">
+                The pipeline succeeded earlier; Argo CD is no longer active.
+              </span>
+            </div>
+            <Button size="sm" onClick={onAgain}>
+              <RotateCcw className="size-4" aria-hidden="true" />
+              Add preview label again
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+export function PreviewEnvironmentSimulator() {
+  const [selectedId, setSelectedId] = useState(PULL_REQUESTS[0].id);
+  const [developerView, setDeveloperView] = useState<'list' | 'pull'>('list');
+  const [scene, setScene] = useState<Scene>('developer');
+  const [labelPickerOpen, setLabelPickerOpen] = useState(false);
+  const [practiceFailure, setPracticeFailure] = useState(false);
+  const [pipelineBeat, setPipelineBeat] = useState<PipelineBeat>('build');
+  const [progress, setProgress] = useState(0);
+  const selected = useMemo(
+    () => PULL_REQUESTS.find((pullRequest) => pullRequest.id === selectedId) ?? PULL_REQUESTS[0],
+    [selectedId]
+  );
+  const [state, setState] = useState(() => createPreviewEnvironmentState(PULL_REQUESTS[0].config));
+
+  const freshState = (pullRequest: PullRequestScenario) =>
+    createPreviewEnvironmentState({
+      ...pullRequest.config,
+      injectedFailure: practiceFailure ? pullRequest.failure : 'none',
+    });
+
+  const openPullRequest = (pullRequest: PullRequestScenario) => {
+    setSelectedId(pullRequest.id);
+    setState(freshState(pullRequest));
+    setDeveloperView('pull');
+    setLabelPickerOpen(false);
+  };
+
+  const addPreviewLabel = () => {
+    setState(advancePreviewEnvironment(freshState(selected)));
+    setLabelPickerOpen(false);
+    setPipelineBeat('build');
+    setProgress(0);
+    setScene('gitops');
+  };
+
+  useEffect(() => {
+    if (state.status === 'blocked' || state.status === 'ready' || state.status === 'reviewed') {
+      return;
+    }
+
+    let duration = 0;
+    let complete: (() => void) | null = null;
+
+    if (scene === 'gitops') {
+      duration = PIPELINE_STEPS.find((step) => step.id === pipelineBeat)?.duration ?? 0;
+      complete = () => {
+        if (pipelineBeat === 'build') return setPipelineBeat('push');
+        if (pipelineBeat === 'detect') return setPipelineBeat('render');
+        const next = advancePreviewEnvironment(state);
+        setState(next);
+        if (next.status === 'blocked') return;
+        if (pipelineBeat === 'push') setPipelineBeat('detect');
+        if (pipelineBeat === 'render') setScene('environment');
+      };
+    } else if (scene === 'environment' && state.status === 'running') {
+      duration = activeStage(state) === 'verify' ? 2200 : 2800;
+      complete = () => setState(advancePreviewEnvironment(state));
+    } else if (scene === 'environment' && state.status === 'cleaning') {
+      duration = 2600;
+      complete = () => {
+        let cleaned = state;
+        for (let index = 0; index < 6; index += 1) cleaned = advancePreviewEnvironment(cleaned);
+        setState(cleaned);
+      };
+    }
+
+    if (!duration || !complete) return;
+    const startedAt = Date.now();
+    const interval = window.setInterval(
+      () => setProgress(Math.min(100, ((Date.now() - startedAt) / duration) * 100)),
+      80
+    );
+    const timeout = window.setTimeout(complete, duration);
+    return () => {
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    };
+  }, [pipelineBeat, scene, state]);
+
+  const remediate = (id: string) => {
+    if (!state.activeFailure) return;
+    const failure = PREVIEW_FAILURES[state.activeFailure];
+    const remediated = applyPreviewRemediation(state, id);
+    if (remediated.status === 'blocked') return setState(remediated);
+    const advanced = advancePreviewEnvironment(remediated);
+    setState(advanced);
+    if (failure.stage === 'coordinate') setPipelineBeat('detect');
+    if (failure.stage === 'reconcile') setScene('environment');
+  };
+
+  const startAgain = () => {
+    setState(freshState(selected));
+    setScene('developer');
+    setDeveloperView('pull');
+    setLabelPickerOpen(false);
+    setPipelineBeat('build');
+    setProgress(0);
+  };
+
+  const currentSceneIndex = SCENES.findIndex((item) => item.id === scene);
+
+  return (
+    <section className="mx-auto w-full max-w-6xl" aria-label="Preview environment simulator">
+      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="flex flex-col gap-4 border-b border-border px-4 py-4 sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
+                <GitBranch className="size-4" aria-hidden="true" />
+                Pull request → live preview
+              </div>
+              <h2 className="mt-1 text-xl font-bold sm:text-2xl">
+                Watch intent become an isolated environment
+              </h2>
+            </div>
+            <label className="flex shrink-0 items-center justify-between gap-3 rounded-lg border border-border bg-background/50 px-3 py-2">
+              <span>
+                <strong className="block text-xs">Practice a failure</strong>
+                <span className="block text-[10px] text-muted-foreground">
+                  Adds one realistic repair
+                </span>
+              </span>
+              <Switch
+                checked={practiceFailure}
+                onCheckedChange={setPracticeFailure}
+                disabled={scene !== 'developer'}
+                aria-label="Practice a failure"
+              />
+            </label>
+          </div>
+          <ol className="grid grid-cols-3 gap-2" aria-label="Simulator scenes">
+            {SCENES.map((item, index) => {
+              const active = item.id === scene;
+              const complete = index < currentSceneIndex || state.status === 'removed';
+              return (
+                <li
+                  key={item.id}
+                  className={cn(
+                    'relative overflow-hidden rounded-lg border px-2 py-2.5 sm:px-3',
+                    active && 'border-blue-500 bg-blue-500/5',
+                    complete && !active && 'border-emerald-500/30 bg-emerald-500/5',
+                    !active && !complete && 'border-border bg-background/30'
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'grid size-6 shrink-0 place-items-center rounded-full border font-mono text-[10px]',
+                        active && 'border-blue-500 text-blue-400',
+                        complete && !active && 'border-emerald-500 bg-emerald-500 text-white',
+                        !active && !complete && 'border-border text-muted-foreground'
+                      )}
+                    >
+                      {complete && !active ? <Check className="size-3.5" /> : item.number}
+                    </span>
+                    <span className="truncate text-[10px] font-semibold sm:text-xs">
+                      {item.label}
+                    </span>
+                  </div>
+                  {active && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-500" />}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+
+        <div className="p-3 sm:p-5">
+          {scene === 'developer' &&
+            (developerView === 'list' ? (
+              <PullRequestList onOpen={openPullRequest} />
+            ) : (
+              <PullRequestDetail
+                pullRequest={selected}
+                labelPickerOpen={labelPickerOpen}
+                onBack={() => {
+                  setDeveloperView('list');
+                  setLabelPickerOpen(false);
+                }}
+                onToggleLabels={() => setLabelPickerOpen((open) => !open)}
+                onAddPreview={addPreviewLabel}
+              />
+            ))}
+          {scene === 'gitops' && (
+            <GitOpsScene
+              pullRequest={selected}
+              beat={pipelineBeat}
+              progress={progress}
+              state={state}
+              onRemediate={remediate}
+            />
+          )}
+          {scene === 'environment' && (
+            <EnvironmentScene
+              pullRequest={selected}
+              state={state}
+              progress={progress}
+              onRemediate={remediate}
+              onReview={(decision) => setState(recordPreviewReview(state, decision))}
+              onClose={() => setState(beginPreviewTeardown(state, 'pr-closed'))}
+              onAgain={startAgain}
+            />
+          )}
+        </div>
+        <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground sm:px-6">
+          <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
+          Only the developer asks for the preview and reviews it. Everything between those moments
+          is automated.
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export default PreviewEnvironmentSimulator;
