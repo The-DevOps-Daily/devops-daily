@@ -161,7 +161,9 @@ Then close the loop above the single incident. A periodic pass over the last qua
     { "cmd": "grep -l 'status: open' incidents/*/actions.md | wc -l", "output": "12" }
   ]
 }
-``` And "the action items closed" is not the same claim as "we learned something": a review that changed a design or a runbook succeeded even if the document is never reopened.
+```
+
+And "the action items closed" is not the same claim as "we learned something": a review that changed a design or a runbook succeeded even if the document is never reopened.
 
 This is also the honest place for tooling. Incident platforms such as incident.io, Rootly, and FireHydrant capture timeline material from chat while the incident runs and track follow-ups after it, with the exact mechanics varying by product and configuration. That removes transcription and bookkeeping, which are real costs. What no tool supplies is the analysis: the false belief, the local rationality, the synthesis across incidents. Buy the bookkeeping if it helps; the learning stays manual.
 
