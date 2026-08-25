@@ -24,6 +24,21 @@ You know the artifact: a template in Confluence or Notion, filled in three days 
 
 Then there is the other kind. The write-up that gets forwarded between teams, quoted in design reviews a year later, and shows up in onboarding docs. The gap between the two kinds is not writing talent. It is a short list of structural choices, and they are learnable.
 
+```diagram
+{
+  "type": "branch",
+  "nodes": [
+    { "label": "Incident", "icon": "activity", "tone": "red" },
+    { "label": "Review", "sub": "write-up + meeting", "icon": "gear", "tone": "blue" },
+    { "label": "The document", "icon": "box", "tone": "slate" }
+  ],
+  "branch": [
+    { "label": "Written for the reader → forwarded, cited in design reviews, changes decisions", "variant": "good" },
+    { "label": "Written for the process → filed, forgotten, incident repeats", "variant": "bad" }
+  ]
+}
+```
+
 ## TL;DR
 
 - Most postmortems fail because they are written **for the filing cabinet**: the implicit audience is a compliance checkbox, not a future engineer with a decision to make.
@@ -92,7 +107,7 @@ A shape that consistently works:
 
 The timeline advice is a distinction, not a ban: a **curated decision timeline** belongs in the body, because "X joined at 14:07" can matter enormously when it explains a handoff, new expertise, or the authority to take a risky action. What belongs in the appendix is the raw, unannotated export. The difference between the two is annotation: each entry in the body should say what responders observed, what they concluded, and what they did about it.
 
-Keep the wrong turns. The forty minutes spent restarting the wrong service teaches how diagnosis failed, and the useful question about that detour is not "why was it wrong" but **what made it compelling at the time**: the dashboard that happened to look scary, the earlier incident it resembled, the alert that pointed sideways. Reconstructing that local view, what each responder could see, what pressure they were under, which plausible alternatives existed, is the core of the [learning-from-incidents school](https://www.adaptivecapacitylabs.com/blog/), and it is what separates a review from a verdict. Different responders often held different models of the system during the same incident; where those models conflicted is usually the most instructive paragraph in the document.
+Keep the wrong turns. The forty minutes spent restarting the wrong service teaches how diagnosis failed, and the useful question about that detour is not "why was it wrong" but **what made it compelling at the time**: the dashboard that happened to look scary, the earlier incident it resembled, the alert that pointed sideways. Reconstructing that local view, what each responder could see, what pressure they were under, which plausible alternatives existed, is the core of the learning-from-incidents school of thought, and it is what separates a review from a verdict. Different responders often held different models of the system during the same incident; where those models conflicted is usually the most instructive paragraph in the document.
 
 ### Contributing factors, not root cause
 
@@ -119,7 +134,34 @@ The action-item list is where good postmortems go to die. Items created in the r
 - **The same tracker as normal work**, so the fix visibly competes with feature work instead of losing silently.
 - **Not every factor needs an action.** One high-leverage change can address three factors; a factor can be explicitly accepted. What is not acceptable is the unmarked middle where a factor is neither fixed nor owned.
 
-Then close the loop above the single incident. A periodic pass over the last quarter's write-ups, checking which changes shipped, is cheap; the bigger payoff is **cross-incident synthesis**: tagging recurring conditions (ownership gaps, brittle deploy paths, confusing telemetry, escalation friction) and feeding the patterns into design reviews, game days, and roadmap arguments. No individual write-up shows you the pattern; the stack of them does. And "the action items closed" is not the same claim as "we learned something": a review that changed a design or a runbook succeeded even if the document is never reopened.
+```diagram
+{
+  "type": "loop",
+  "goal": "Fewer repeat incidents, faster diagnosis",
+  "nodes": [
+    { "label": "Incident", "variant": "soft" },
+    { "label": "Review", "sub": "surprise + factors", "variant": "soft" },
+    { "label": "Changes ship", "sub": "verified, tracked", "variant": "accent" },
+    { "label": "Synthesis", "sub": "patterns across incidents", "variant": "solid" }
+  ],
+  "loopBack": "feeds design reviews, game days, roadmaps"
+}
+```
+
+Then close the loop above the single incident. A periodic pass over the last quarter's write-ups, checking which changes shipped, is cheap; the bigger payoff is **cross-incident synthesis**: tagging recurring conditions (ownership gaps, brittle deploy paths, confusing telemetry, escalation friction) and feeding the patterns into design reviews, game days, and roadmap arguments. No individual write-up shows you the pattern; the stack of them does. Keeping write-ups as tagged markdown in a repo makes this a five-minute job instead of an archaeology project:
+
+```terminal
+{
+  "title": "cross-incident synthesis",
+  "steps": [
+    { "comment": "every write-up carries factor tags in its frontmatter" },
+    { "cmd": "grep -rl 'factor: escalation-friction' incidents/ | wc -l", "output": "7" },
+    { "cmd": "grep -rl 'factor: confusing-telemetry' incidents/2026/ | wc -l", "output": "5" },
+    { "comment": "seven incidents share one condition: that is a project, not an action item" },
+    { "cmd": "grep -l 'status: open' incidents/*/actions.md | wc -l", "output": "12" }
+  ]
+}
+``` And "the action items closed" is not the same claim as "we learned something": a review that changed a design or a runbook succeeded even if the document is never reopened.
 
 This is also the honest place for tooling. Incident platforms such as incident.io, Rootly, and FireHydrant capture timeline material from chat while the incident runs and track follow-ups after it, with the exact mechanics varying by product and configuration. That removes transcription and bookkeeping, which are real costs. What no tool supplies is the analysis: the false belief, the local rationality, the synthesis across incidents. Buy the bookkeeping if it helps; the learning stays manual.
 
