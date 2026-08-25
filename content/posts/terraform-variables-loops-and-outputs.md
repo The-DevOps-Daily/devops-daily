@@ -62,7 +62,7 @@ environment    = "production"
 instance_count = 3
 ```
 
-Assigning a variable that was never declared is an error; declaring without assigning falls back to the default or prompts interactively. Keep declarations stable in version control and vary the values per environment with `-var-file`:
+Assigning an undeclared variable behaves differently per source: in a tfvars file it is a warning, an unmatched `TF_VAR_*` is silently ignored, and only `-var` with an undeclared name is a hard error. Declaring without assigning falls back to the default or prompts interactively. Keep declarations stable in version control and vary the values per environment with `-var-file`:
 
 ```bash
 terraform apply -var-file="environments/production.tfvars"
@@ -75,7 +75,7 @@ Terraform merges values from several sources. Precedence from lowest to highest:
 1. The `default` in the declaration
 2. Environment variables prefixed `TF_VAR_` (`TF_VAR_environment=staging`)
 3. `terraform.tfvars`
-4. `*.auto.tfvars` (alphabetical order)
+4. `*.auto.tfvars` (alphabetical order; the `.json` variants of tfvars files work the same way)
 5. `-var` and `-var-file` command-line flags (last one wins)
 
 The `TF_VAR_` prefix is the whole story for environment variables: there is no function that reads arbitrary environment variables inside a configuration, by design, so values stay declared and typed. In CI this makes secrets injection clean:
@@ -85,14 +85,17 @@ export TF_VAR_db_password="$SECRET_FROM_VAULT"
 terraform apply    # picked up as var.db_password, never on the command line
 ```
 
-For structured inputs from files, pull them in explicitly with `file()` plus a decoder, typically in a local:
+For file inputs, `file()` reads raw UTF-8 text (an SSH public key, a policy document), and pairing it with a decoder turns structured files into usable values:
 
 ```hcl
 locals {
-  settings = jsondecode(file("${path.module}/settings.json"))
+  ssh_key  = file("${path.module}/keys/deploy.pub")            # raw text as-is
+  settings = jsondecode(file("${path.module}/settings.json"))  # structured
   # yamldecode() works the same way for YAML
 }
 ```
+
+Two caveats: `file()` only reads files that exist before the run starts (it is not part of the dependency graph), and when the data must come from a *program* rather than a file, the [`external` data source](https://registry.terraform.io/providers/hashicorp/external/latest/docs/data-sources/external) runs any executable that prints JSON and exposes its result.
 
 ## Locals: the answer to "variables within variables"
 
@@ -141,14 +144,29 @@ locals {
 }
 ```
 
+On Terraform 1.9+, a validation block can check the selector against the map's actual keys, turning a bad environment name into a clear error instead of a lookup failure:
+
+```hcl
+variable "environment" {
+  type = string
+  validation {
+    condition     = contains(keys(var.instance_types), var.environment)
+    error_message = "environment must be one of: ${join(", ", keys(var.instance_types))}"
+  }
+}
+```
+
 ## Lists and objects: append, pick, iterate
 
 **Appending** is `concat()`, because lists are immutable values, not mutable arrays:
 
 ```hcl
 locals {
-  base_rules  = ["allow-ssh", "allow-https"]
-  all_rules   = concat(local.base_rules, var.extra_rules, ["deny-all"])
+  base_rules = ["allow-ssh", "allow-https"]
+  all_rules  = concat(local.base_rules, var.extra_rules, ["deny-all"])
+
+  # conditional append: the ternary picks a one-element or empty list
+  with_icmp  = concat(local.base_rules, var.allow_icmp ? ["allow-icmp"] : [])
 }
 ```
 
@@ -161,6 +179,10 @@ locals {
 
   # safer with a length guard if the match may not exist
   admin_or_null = length([for u in var.users : u if u.role == "admin"]) > 0 ? [for u in var.users : u if u.role == "admin"][0] : null
+
+  # repeated lookups? re-key the list into a map once, then index directly
+  users_by_name = { for u in var.users : u.name => u }
+  db_owner      = local.users_by_name["db-admin"]
 }
 ```
 
@@ -195,6 +217,7 @@ cannot be determined until apply...
 
 1. **Keys derived from another resource's attributes.** `for_each = toset(aws_instance.web[*].id)` cannot work: the IDs do not exist until apply. Key on something you already know (names, the input variable itself) and reference the resource attributes in the body instead.
 2. **Wrong type.** `for_each` takes a map or a set of strings, not a list. Wrap lists: `for_each = toset(var.names)`.
+3. **`null`.** An optional variable that arrives as `null` is invalid, while an *empty* collection is fine (it just creates zero instances). Normalize: `for_each = var.names == null ? toset([]) : toset(var.names)`, keeping both branches the same type.
 
 The fix is almost always restating the loop over input data rather than over computed results:
 
@@ -219,7 +242,14 @@ output "instance_ips" {
 output "first_ip" {
   value = aws_instance.web[0].private_ip     # or one of them
 }
+
+output "named_ips" {
+  # a labeled map is friendlier than a bare list in shared outputs
+  value = { for i, inst in aws_instance.web : "web-${i}" => inst.private_ip }
+}
 ```
+
+Splat and `for` expressions also behave when `count = 0`: they return an empty collection instead of erroring, so conditional resources need no special guard in outputs.
 
 **With `for_each`**, the resource is a map, so shape the output with `values()` or a `for` expression:
 
@@ -231,7 +261,7 @@ output "user_arns" {
 
 The same pattern applies to [module](/posts/organize-terraform-modules-multiple-environments) outputs: a module called with `for_each` is addressed as a map, and `values(module.env)[*].vpc_id` flattens it.
 
-**Sensitive outputs** refuse to print in `terraform output` and show as `(sensitive value)` in plans. When you legitimately need the value:
+**Sensitive outputs** show as `(sensitive value)` in plans and in the full `terraform output` listing; asking for one *by name* (or with `-raw`/`-json`) prints it, which is the intended escape hatch rather than a bug. When you legitimately need the value:
 
 ```bash
 terraform output -json db_password | jq -r    # -json bypasses redaction
@@ -241,7 +271,18 @@ Or, inside the configuration, wrap with `nonsensitive()` when you can justify th
 
 ## Two errors that are not about your syntax
 
-**`Variables may not be used here`** during `terraform init` means you used `var.*` in a place Terraform evaluates *before* variables exist: the `backend` block, `required_version`, or provider version constraints. Init happens before variable processing, full stop. The options are partial backend config (`terraform init -backend-config=backend-prod.hcl`), a wrapper like Terragrunt, or accepting the duplication. No amount of syntax will make `bucket = var.state_bucket` legal in a backend block.
+**`Variables may not be used here`** during `terraform init` means you used `var.*` in a place Terraform evaluates *before* variables exist: the `backend` block, `required_version`, or version constraints. Note the scope: ordinary **provider arguments are fine with variables** (`region = var.aws_region` is perfectly legal, as is `terraform.workspace`, and most providers also read their own environment variables like `AWS_REGION` if you leave the argument out entirely). The static zone is the backend and version constraints. For backends, the escape hatch is partial configuration, either from a file or inline:
+
+```bash
+terraform init -backend-config=backend-prod.hcl
+# or key by key:
+terraform init \
+  -backend-config="bucket=my-terraform-state" \
+  -backend-config="key=prod/terraform.tfstate" \
+  -backend-config="region=us-east-1"
+```
+
+Beyond that: a wrapper like Terragrunt, or accepting the duplication. No syntax makes `bucket = var.state_bucket` legal inside a backend block.
 
 **Account-specific values you did not declare.** Needing the AWS account ID everywhere tempts people to add `variable "aws_account_id"`. Do not: it is derivable, and derived beats declared because it cannot drift from reality:
 
