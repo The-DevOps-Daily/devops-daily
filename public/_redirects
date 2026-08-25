@@ -23,3 +23,17 @@
 /posts/conditional-attributes-in-terraform /posts/terraform-strings-and-conditionals 301
 /posts/conditional-resource-creation-in-terraform-using-vars /posts/terraform-strings-and-conditionals 301
 /posts/terraform-conditional-data-source /posts/terraform-strings-and-conditionals 301
+/posts/tfvars-vs-variables /posts/terraform-variables-loops-and-outputs 301
+/posts/variables-within-variables /posts/terraform-variables-loops-and-outputs 301
+/posts/get-environment-variable-in-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/append-to-list-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/how-to-for-each-through-a-list-objects-in-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/invalid-for-each-argument-in-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/terraform-outputs-for-resources-with-count /posts/terraform-variables-loops-and-outputs 301
+/posts/variable-keys-in-terraform-maps /posts/terraform-variables-loops-and-outputs 301
+/posts/get-object-from-list-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/display-sensitive-data-output-variables /posts/terraform-variables-loops-and-outputs 301
+/posts/variables-may-not-be-used-here-terraform-init /posts/terraform-variables-loops-and-outputs 301
+/posts/load-input-data-from-file /posts/terraform-variables-loops-and-outputs 301
+/posts/resource-type-attribute-access /posts/terraform-variables-loops-and-outputs 301
+/posts/use-aws-account-id-variable /posts/terraform-variables-loops-and-outputs 301
