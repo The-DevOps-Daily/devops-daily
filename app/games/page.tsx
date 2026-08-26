@@ -89,6 +89,17 @@ export default async function GamesPage() {
                 Suggest a Game
               </Link>
             </Button>
+            <p className="mt-8 text-sm text-muted-foreground">
+              Want more hands-on practice beyond our simulators? We curate{' '}
+              <Link
+                href="https://github.com/The-DevOps-Daily/awesome-interactive-learning"
+                className="font-medium text-primary underline underline-offset-4"
+              >
+                awesome-interactive-learning
+              </Link>
+              , a list of the best browser-based labs, playgrounds and games across the whole
+              DevOps ecosystem.
+            </p>
           </div>
         </div>
       </section>
