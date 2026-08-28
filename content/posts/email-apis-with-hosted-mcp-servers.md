@@ -67,7 +67,7 @@ The design bet is that a small, complete toolset beats a big one for agents: few
 
 [Resend's MCP server](https://resend.com/docs/mcp-server) is the most fully built out in the hosted club. The remote server lives at `https://mcp.resend.com/mcp` with two auth paths: OAuth for web clients (a browser approval flow, no key handling) and a Bearer API key for headless use. There is also an open source `resend-mcp` package if you prefer local, with stdio and HTTP transports.
 
-The tool surface is broad: sending and inbound email, templates, contacts and segments, broadcasts and automations, domains, webhooks, API keys, and request logs. That makes it the strongest option if you want an agent managing your whole email operation rather than just sending, with the corresponding caveat: a large tool surface handed to an autonomous agent deserves a careful look at which tools your use case actually needs exposed.
+The tool surface is broad: sending and inbound email, templates, contacts and segments, broadcasts and automations, domains, webhooks, API keys, and request logs. (For how the two products compare beyond MCP, pricing included, see our full [SMTPfast vs Resend comparison](/comparisons/smtpfast-vs-resend).) That makes it the strongest option if you want an agent managing your whole email operation rather than just sending, with the corresponding caveat: a large tool surface handed to an autonomous agent deserves a careful look at which tools your use case actually needs exposed.
 
 ### AgentMail
 
