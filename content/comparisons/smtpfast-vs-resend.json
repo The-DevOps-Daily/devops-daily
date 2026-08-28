@@ -24,6 +24,7 @@
     "pros": [
       "Lower price at most volumes: 50,000 emails for $19/month, 200,000 for $49/month",
       "Contacts, segments and broadcasts included in every tier, no separate marketing add-on",
+      "Hosted newsletter signup forms included, no separate form tool needed",
       "Hosted MCP server (8 scoped tools) plus an official Terraform provider",
       "Free tier includes 3,000 emails/month, 1,000 contacts and broadcasts, no credit card",
       "Gradual sending warm-up for new accounts protects deliverability by default"
@@ -31,7 +32,7 @@
     "cons": [
       "Free tier is invite-gated: you request access or pay to skip the queue",
       "Fewer official SDKs; the API is straightforward REST but you write more glue yourself",
-      "No inbound email receiving",
+      "No inbound email receiving yet (planned)",
       "Younger product with a smaller community and template ecosystem"
     ]
   },
@@ -40,7 +41,7 @@
     "icon": "Send",
     "website": "https://resend.com",
     "description": "The best-known developer email API of the last few years. React Email templates, SDKs for most languages, inbound email, broadcasts, and a hosted MCP server with a broad tool surface. Free tier of 3,000 emails/month (100/day); Pro from $20.",
-    "color": "#18181B",
+    "color": "#64748B",
     "pros": [
       "Mature ecosystem: official SDKs, React Email, extensive docs and examples",
       "Inbound email receiving, not just sending",
@@ -60,8 +61,8 @@
       "name": "Free tier",
       "category": "Cost",
       "toolA": {
-        "value": "3,000 emails/mo, 1,000 contacts, 1 domain, 2 broadcasts/mo, no card; invite-gated",
-        "rating": "neutral"
+        "value": "3,000 emails/mo with no daily cap, 1,000 contacts, 2 broadcasts/mo, no card; invite-gated",
+        "rating": "good"
       },
       "toolB": {
         "value": "3,000 emails/mo capped at 100/day, 1 domain, instant signup",
@@ -129,11 +130,23 @@
       }
     },
     {
+      "name": "Newsletter signup forms",
+      "category": "Features",
+      "toolA": {
+        "value": "Hosted signup forms that feed contacts and segments directly",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "No hosted forms; add contacts via API, CSV import or manually",
+        "rating": "neutral"
+      }
+    },
+    {
       "name": "Inbound email",
       "category": "Features",
       "toolA": {
-        "value": "Not offered",
-        "rating": "bad"
+        "value": "Not offered yet; on the roadmap",
+        "rating": "neutral"
       },
       "toolB": {
         "value": "Inbound receiving with webhooks",
@@ -199,6 +212,18 @@
         "value": "SOC 2 Type II messaging for security reviews",
         "rating": "good"
       }
+    },
+    {
+      "name": "Team workspaces",
+      "category": "Operations",
+      "toolA": {
+        "value": "Teams with shared domains and owner-level billing",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "Team members per workspace on paid plans",
+        "rating": "good"
+      }
     }
   ],
   "useCases": [
@@ -220,7 +245,7 @@
     {
       "scenario": "You need to receive email, not just send it",
       "recommendation": "toolB",
-      "explanation": "Resend has inbound receiving with webhooks; SMTPfast does not offer inbound at all. This one is not a tradeoff, it is a hard requirement filter."
+      "explanation": "Resend has inbound receiving with webhooks today; SMTPfast does not offer inbound yet (it is on the roadmap). If receiving is a launch requirement, this one is a hard filter, not a tradeoff."
     },
     {
       "scenario": "AI agents sending email on your behalf",
@@ -236,7 +261,7 @@
   "faqs": [
     {
       "question": "Are the free tiers really equivalent?",
-      "answer": "Both give 3,000 emails a month on one domain. The differences: Resend caps you at 100 emails a day but signup is instant; SMTPfast has no daily cap and includes 1,000 contacts and 2 broadcasts a month, but free access is invite-gated, so you either request an invite or start on a paid tier."
+      "answer": "Both give 3,000 emails a month on one domain, so on volume they are equal. The tradeoffs differ: Resend caps you at 100 emails a day but signup is instant; SMTPfast has no daily cap and includes 1,000 contacts, hosted signup forms and 2 broadcasts a month, but free access is invite-gated, so you request an invite or start on a paid tier."
     },
     {
       "question": "Which is cheaper as volume grows?",
@@ -295,7 +320,7 @@
   ],
   "verdict": {
     "summary": "Resend is the safer default for teams that want the biggest ecosystem: SDKs everywhere, React Email, inbound receiving and a compliance story for security reviews. SMTPfast is the value pick and the simpler one to reason about: contacts and broadcasts included everywhere, meaningfully lower prices from 10k to 200k emails a month, a scoped hosted MCP server, and an official Terraform provider. If you need inbound email or React Email, pick Resend and do not look back. If your bill is driven by volume, or you want transactional and newsletter in one product without a marketing-tier upsell, SMTPfast costs less at every step and does both.",
-    "toolAScore": 4.2,
+    "toolAScore": 4.3,
     "toolBScore": 4.4,
     "recommendation": "Choose SMTPfast if your bill is volume-driven, you want transactional plus newsletter on one plan, or you want a Terraform-managed setup with a small, auditable agent toolset. Choose Resend if you need inbound email, React Email templates, official SDKs in your language, or a SOC 2 answer for procurement. Both are REST APIs with hosted MCP servers, so switching later is mostly DNS records and a changed send call."
   },
