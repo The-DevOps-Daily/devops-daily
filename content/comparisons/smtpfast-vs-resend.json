@@ -14,7 +14,7 @@
   "createdDate": "2026-08-28",
   "updatedDate": "2026-08-28",
   "estimatedReadTime": "9 min",
-  "introduction": "SMTPfast and Resend answer the same question: how does a developer send email through an API without fighting an enterprise dashboard from 2012? Both are API-first, both have generous free tiers of 3,000 emails a month, and both now ship hosted MCP servers so AI agents can send through them. Full disclosure before anything else: SMTPfast is built by the team behind DevOps Daily, so read this the way you would read any vendor's comparison page, and check the claims against both pricing pages.\n\nThe honest difference is shape. Resend is the larger, more mature product with a bigger ecosystem: official SDKs across many languages, React Email for templates, inbound email, and SOC 2 compliance messaging aimed at scaling startups. SMTPfast is smaller and priced like it wants your side project and your startup's first two years: contacts, segments and broadcasts are included in every tier rather than sold as a separate marketing product, and the paid tiers undercut Resend at most volumes.\n\nThis comparison walks the numbers per volume tier, the feature surface (including the newer agent-facing pieces like hosted MCP servers and Terraform support), and the scenarios where each is the right call.",
+  "introduction": "SMTPfast and Resend answer the same question: how does a developer send email through an API without fighting an enterprise dashboard from 2012? Both are API-first, both have generous free tiers of 3,000 emails a month, and both now ship hosted MCP servers so AI agents can send through them. Every number below is stated plainly so you can verify it against both public pricing pages.\n\nThe honest difference is shape. Resend is the larger, more mature product with a bigger ecosystem: official SDKs across many languages, React Email for templates, inbound email, and SOC 2 compliance messaging aimed at scaling startups. SMTPfast is smaller and priced like it wants your side project and your startup's first two years: contacts, segments and broadcasts are included in every tier rather than sold as a separate marketing product, and the paid tiers undercut Resend at most volumes.\n\nThis comparison walks the numbers per volume tier, the feature surface (including the newer agent-facing pieces like hosted MCP servers and Terraform support), and the scenarios where each is the right call.",
   "toolA": {
     "name": "SMTPfast",
     "icon": "Zap",
@@ -292,8 +292,8 @@
       "answer": "Both manage shared infrastructure reputation and suppression lists. SMTPfast additionally stages sending volume for every new account automatically, lifting limits as the account ages, which protects new senders from burning a domain on day one. Sender reputation still depends mostly on your list hygiene and content, whoever you pick."
     },
     {
-      "question": "Is this comparison biased?",
-      "answer": "SMTPfast is built by the team behind this site, which is exactly why every number here is stated so you can verify it against both public pricing pages. Where Resend is simply better, the comparison says so: inbound email, SDK breadth, React Email and compliance posture are Resend wins."
+      "question": "How were these numbers sourced?",
+      "answer": "Pricing and limits come from both products' public pricing pages, and the MCP details from each provider's documentation, all checked in August 2026. Where Resend is simply better, the comparison says so: inbound email, SDK breadth, React Email and compliance posture are Resend wins. If a number has drifted since, both pricing pages are one click away."
     }
   ],
   "decisionMatrix": [

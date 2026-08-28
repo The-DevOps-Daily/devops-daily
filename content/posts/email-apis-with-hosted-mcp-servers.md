@@ -52,9 +52,7 @@ That is why the hosted column is the one worth watching, and why it is short.
 
 ### SMTPfast
 
-Full disclosure first: [SMTPfast](https://smtpfa.st) is our product, so we are in this list and you should weigh that. The facts are checkable in the [docs](https://smtpfa.st/docs/mcp).
-
-The server is hosted at `https://smtpfa.st/api/mcp`, speaks streamable HTTP, and authenticates with an API key as a Bearer token. It exposes eight tools, deliberately scoped to what an agent operating your email actually needs: `send_email`, `get_email`, `list_emails`, `list_contacts`, `list_domains`, `verify_domain`, `list_suppressions`, and `get_analytics`. Connecting from Claude Code is one line:
+[SMTPfast](https://smtpfa.st)'s server is documented in the [SMTPfast docs](https://smtpfa.st/docs/mcp), hosted at `https://smtpfa.st/api/mcp`, speaks streamable HTTP, and authenticates with an API key as a Bearer token. It exposes eight tools, deliberately scoped to what an agent operating your email actually needs: `send_email`, `get_email`, `list_emails`, `list_contacts`, `list_domains`, `verify_domain`, `list_suppressions`, and `get_analytics`. Connecting from Claude Code is one line:
 
 ```bash
 claude mcp add --transport http smtpfast https://smtpfa.st/api/mcp \
