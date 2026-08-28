@@ -61,6 +61,8 @@ claude mcp add --transport http smtpfast https://smtpfa.st/api/mcp \
 
 The design bet is that a small, complete toolset beats a big one for agents: fewer tools means less for a model to misuse, and `list_suppressions` is there because the first thing a well-behaved agent should do before a send is check who it must not email.
 
+The server also speaks the current protocol revision, 2026-07-28: fully stateless per-request metadata, `server/discover`, and cacheable tool listings, with clients on the older 2025 revisions still supported.
+
 ### Resend
 
 [Resend's MCP server](https://resend.com/docs/mcp-server) is the most fully built out in the hosted club. The remote server lives at `https://mcp.resend.com/mcp` with two auth paths: OAuth for web clients (a browser approval flow, no key handling) and a Bearer API key for headless use. There is also an open source `resend-mcp` package if you prefer local, with stdio and HTTP transports.
