@@ -181,7 +181,7 @@
       "name": "Hosted MCP server for AI agents",
       "category": "Ecosystem",
       "toolA": {
-        "value": "Yes, /api/mcp, 8 scoped tools, API-key auth",
+        "value": "Yes, /api/mcp, 8 scoped tools, API-key auth, speaks the 2026-07-28 spec",
         "rating": "good"
       },
       "toolB": {
