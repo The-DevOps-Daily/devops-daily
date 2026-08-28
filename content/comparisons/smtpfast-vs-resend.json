@@ -118,6 +118,18 @@
       }
     },
     {
+      "name": "SMTP relay",
+      "category": "Features",
+      "toolA": {
+        "value": "SMTP interface available alongside the REST API",
+        "rating": "good"
+      },
+      "toolB": {
+        "value": "SMTP interface (smtp.resend.com) alongside the REST API",
+        "rating": "good"
+      }
+    },
+    {
       "name": "Contacts, segments and broadcasts",
       "category": "Features",
       "toolA": {
