@@ -20,6 +20,10 @@ export interface Newsletter {
   week: number;
   year: number;
   content: string;
+  /** The issue's greeting paragraph, extracted for archive cards. */
+  intro: string;
+  /** First few post titles in the issue, for archive cards. */
+  highlights: string[];
 }
 
 export interface NewsletterMeta {
@@ -29,6 +33,8 @@ export interface NewsletterMeta {
   date: string;
   week: number;
   year: number;
+  intro: string;
+  highlights: string[];
 }
 
 const loadNewsletters = createCachedLoader(async () => {
@@ -40,6 +46,17 @@ const loadNewsletters = createCachedLoader(async () => {
 
         const rendered = await remark().use(remarkHtml).process(content);
 
+        // Greeting: first non-empty, non-heading, non-image line of the body.
+        const intro =
+          content
+            .split('\n')
+            .map((line) => line.trim())
+            .find((line) => line && !line.startsWith('#') && !line.startsWith('![')) ?? '';
+        // Post titles: the "### [Title](url)" entries, first few.
+        const highlights = [...content.matchAll(/^### \[([^\]]+)\]/gm)]
+          .map((m) => m[1])
+          .slice(0, 4);
+
         return {
           slug,
           title: data.title || `Newsletter ${slug}`,
@@ -48,6 +65,8 @@ const loadNewsletters = createCachedLoader(async () => {
           week: data.week || 0,
           year: data.year || 0,
           content: String(rendered),
+          intro,
+          highlights,
         };
       } catch (error) {
         throw new Error(`Failed to parse newsletter file ${file}: ${formatUnknownError(error)}`);
