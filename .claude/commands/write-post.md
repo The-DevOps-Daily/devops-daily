@@ -101,6 +101,13 @@ Four `type` values are supported:
 
 Common optional fields: `title`, `caption` (use it to cite sources and state assumptions), `unit` (`'$'`, `'%'`, `'ms'`, `'s'`, or a free-form suffix). Colors auto-assign from a theme-safe palette; set `color` per series only when you need specific brand colors (e.g. amber `#f59e0b` for the site accent).
 
+More options:
+
+- **`refs`** (bar and line): labeled reference lines for thresholds, e.g. `"refs": [{ "value": 200, "label": "SLO" }]`. On line charts they draw horizontally on the value axis; on bar charts, vertically. Optional `color` and `dash` per ref.
+- **`dash`** on a line series (e.g. `"dash": "6 5"`) distinguishes projected/experimental series from solid actuals; the legend shows the pattern.
+- Bar rows accept **negative values** (cost deltas, regressions); bars extend left of an automatic zero baseline.
+- Line/dot points carry hover tooltips with the exact value automatically.
+
 Example, a grouped bar comparison:
 
 ```chart
