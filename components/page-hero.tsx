@@ -19,6 +19,10 @@ interface PageHeroProps {
   children?: React.ReactNode;
   /** Rendered in the decorative right region on lg+ screens (hidden below). */
   sideContent?: React.ReactNode;
+  /** Set when sideContent is interactive (forms, buttons): re-enables pointer
+   *  events on lg+ and renders the content below the hero text on small
+   *  screens instead of hiding it. */
+  interactiveSideContent?: boolean;
 }
 
 export function PageHero({
@@ -32,6 +36,7 @@ export function PageHero({
   badge,
   children,
   sideContent,
+  interactiveSideContent = false,
 }: PageHeroProps) {
   // Build title with optional accent word
   const renderTitle = () => {
@@ -94,7 +99,11 @@ export function PageHero({
 
       {/* Optional content in the decorative right region */}
       {sideContent && (
-        <div className="absolute right-8 xl:right-20 top-1/2 -translate-y-1/2 hidden lg:block pointer-events-none">
+        <div
+          className={`absolute right-8 xl:right-20 top-1/2 -translate-y-1/2 hidden lg:block ${
+            interactiveSideContent ? 'pointer-events-auto z-10' : 'pointer-events-none'
+          }`}
+        >
           {sideContent}
         </div>
       )}
@@ -155,6 +164,12 @@ export function PageHero({
 
           {/* Optional extra content */}
           {children && <div className="mt-6">{children}</div>}
+
+          {/* Interactive side content stacks below the text on small screens
+              (the absolute right-side slot only exists on lg+). */}
+          {sideContent && interactiveSideContent && (
+            <div className="mt-8 lg:hidden">{sideContent}</div>
+          )}
         </div>
       </div>
     </div>

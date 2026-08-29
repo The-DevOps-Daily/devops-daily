@@ -51,6 +51,7 @@ export default async function NewslettersPage() {
           { label: 'cadence', value: 'Weekly' },
           { label: 'lands on', value: 'Monday' },
         ]}
+        interactiveSideContent
         sideContent={
           <div className="w-full max-w-sm">
             <NewsletterForm
