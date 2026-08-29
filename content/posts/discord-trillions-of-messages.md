@@ -7,7 +7,7 @@ category:
 date: '2026-08-29'
 publishedAt: '2026-08-29T16:00:00Z'
 updatedAt: '2026-08-29T16:00:00Z'
-readingTime: '11 min read'
+readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -24,7 +24,17 @@ Some engineering stories are worth studying because the numbers are absurd, and 
 
 The arc in one paragraph: in 2017 Discord ran 12 Cassandra nodes storing billions of messages. By early 2022 that had grown to 177 nodes storing trillions, and the cluster was hurting in ways that paged humans. In 2022 they moved everything to ScyllaDB, ending at 72 nodes of 9TB each, with p99 read latency dropping from a wandering 40-125ms to a steady 15ms. Fewer nodes, more data, an order of magnitude calmer tail.
 
-The migration headline is fun, but the durable lessons live in the three problems that forced it, and in the thing they built that was not a database at all.
+The migration headline is fun, but the durable lessons live in the data model, the three problems that forced the migration, and the thing they built that was not a database at all.
+
+## First, the data model that carried them
+
+The 2017 chapter starts where most scaling stories do: the original database hit a wall. Discord launched on a single MongoDB replica set, and by November 2015, at 100 million messages, the data and indexes no longer fit in RAM and latency went unpredictable. Their traffic made it worse than it sounds: reads and writes were roughly 50/50, and reads were highly random, which is the workload page caches hate most.
+
+The move to Cassandra came with the design decision the whole story rests on. Messages are identified by Snowflake IDs (Twitter's chronologically sortable 64-bit IDs), so the natural key was `(channel_id, message_id)`: all of a channel's messages in one partition, sorted by time for free. Then the import taught them the classic wide-partition lesson: big channels blew past 100MB per partition, and giant partitions meant GC pressure and compaction pain. Cassandra advertises support for 2GB partitions; Discord's write-up delivers one of the great one-liners of database operations: just because it can be done does not mean it should.
+
+The fix was **time bucketing**. They measured their largest channels and found that 10 days of messages stayed comfortably under 100MB, so the key became `((channel_id, bucket), message_id)`, where the bucket is derived from the timestamp. Partition size is now bounded no matter how big a channel gets, and quiet channels just query a few sequential buckets.
+
+That key design is the most reusable artifact in the whole saga. "Partition by tenant" is where everyone starts; "partition by tenant plus a bounded time window" is where high-write systems end up, and getting there before the import, rather than six months into production, is the cheap version.
 
 ## Problem 1: the hot partition
 
@@ -63,6 +73,16 @@ The third pain was compaction falling behind. Cassandra compacts SSTables in the
 
 Every ops team knows some version of this: a routine background process that quietly becomes a manual, rotating chore. The lesson is diagnostic: **when babysitting a system becomes a recurring calendar event, the system is telling you its design no longer fits your load.** Discord's answer was not better runbooks; it was removing the reason the runbook existed.
 
+## The tombstone wars
+
+Deletes deserve their own chapter, because in log-structured databases a delete is not a removal, it is a **tombstone**: a marker written on top, reconciled at read time, cleaned up later by compaction. Discord ran into both of the classic tombstone disasters, five years apart.
+
+The first was self-inflicted and invisible: their writer sent null values for unset columns, and Cassandra treats a null write as a delete. Result: about **12 tombstones written per average message**, pure overhead, fixed by simply not writing nulls. The generalizable habit is knowing what your driver actually emits, because ORMs and serializers make this class of mistake silently.
+
+The second is the famous one. Six months after launch, a node started running ten-second stop-the-world GC pauses. The cause was one channel, a Puzzles & Dragons subreddit server, that had deleted its way down to **one visible message sitting on top of millions of tombstones**. Every load of that channel made Cassandra wade through the graveyard to find the survivor. The mitigation: cut tombstone lifetime from 10 days to 2 (with nightly repairs to make that safe) and track empty buckets so queries skip them entirely.
+
+Tombstones also close the loop on the 2022 migration: the final blocker before the ScyllaDB migrator could finish was compacting gigantic tombstone ranges in Cassandra. The deletes of 2017 were still shaping operations five years later, which is the most honest definition of technical debt you will find.
+
 ## The part everyone skips: the layer in front
 
 Here is the piece that transfers to every stack, at every scale. Before migrating anything, Discord built **data services**: a Rust layer that sits between the API and the database, whose star feature is **request coalescing**. When a thousand users request the same message row at once (exactly what a hot channel produces), the service makes one database query and fans the result out to all thousand waiters. Consistent hash routing by channel ID sends all traffic for a channel to the same service instance, so coalescing actually catches the duplicates.
@@ -83,11 +103,61 @@ Notice what this means: the hot-partition problem was partially solved **before 
 
 Their storage hardware story rhymes with this: cloud persistent disks had the durability but not the latency, so they built "super-disks": local NVMe for speed, RAID-mirrored to persistent disks for durability. Same pattern again: keep the slow-but-safe thing, put a fast layer in front of it.
 
+### Coalescing is small enough to build yourself
+
+The idea sounds exotic at Discord's scale and is almost embarrassingly small in code. Here is the whole mechanism, runnable as-is: keep a map of in-flight requests per key, and make duplicate callers await the existing one.
+
+```python
+import asyncio
+
+db_queries = 0
+
+async def db_read(key):
+    global db_queries
+    db_queries += 1
+    await asyncio.sleep(0.05)          # one slow database read
+    return f"row:{key}"
+
+class Coalescer:
+    def __init__(self):
+        self.inflight = {}
+
+    async def read(self, key):
+        if key in self.inflight:        # someone already asked: wait for theirs
+            return await asyncio.shield(self.inflight[key])
+        task = asyncio.create_task(db_read(key))
+        self.inflight[key] = task
+        try:
+            return await task
+        finally:
+            del self.inflight[key]
+```
+
+Fire a hot-channel burst at it, with and without coalescing (this is a real run, not sketched output):
+
+```terminal
+{
+  "title": "request coalescing",
+  "prompt": "$",
+  "steps": [
+    { "cmd": "python3 coalesce.py" },
+    { "comment": "1,000 concurrent reads of the same key, through the coalescer" },
+    { "output": "clients served: 1000, database queries: 1" },
+    { "comment": "same 1,000 reads, no coalescing" },
+    { "output": "clients served: 1000, database queries: 1000" }
+  ]
+}
+```
+
+One thousand callers, one database query. In Go this is `singleflight` from the standard extended library; in most stacks it is twenty lines. If your system has any hot-key read pattern, this is among the highest ratio of latency saved to code written that exists.
+
 ## The migration itself
 
 The plan was to migrate with ScyllaDB's Spark-based migrator, estimated at three months. They did not want to babysit a migration for a quarter, so they rewrote the migrator in Rust, and the estimate fell to **nine days**, running at up to 3.2 million messages per second, with the last obstacle being enormous tombstone ranges in Cassandra that needed compacting before they would move.
 
 Two things worth keeping from that: first, migration tooling is code, and investing engineer-weeks in it can buy back engineer-months of supervised risk. Second, the messages moved while Discord kept running; the era where a migration of this size implied a maintenance window is simply over, and your users' expectations know it.
+
+Worth stealing from the 2017 playbook too: before Cassandra went primary, they ran a **dark launch**, double-writing to MongoDB and Cassandra while reads still came from the old system. It surfaced a genuinely subtle bug before users could: concurrent edits and deletes, racing under Cassandra's last-write-wins conflict resolution, could resurrect corpses of deleted messages as corrupted rows with only a primary key and text. The fix (delete any message missing required columns like the author) is less important than the pattern: double-write early, read-compare quietly, and let the race conditions introduce themselves while the blast radius is zero.
 
 ## What this means if you are not Discord
 
