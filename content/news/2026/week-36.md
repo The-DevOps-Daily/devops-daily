@@ -238,6 +238,22 @@ These are the lessons we learned evaluating LLMs for real-world secret scanning.
 
 ## 🏗️ IaC
 
+### 📄 From Operator to Agent Manager: The Real Shift in Network Engineering
+
+I’ve been saying for ten years that network automation was three years away from being the only way to do things. Every year I moved the goalposts, because the data never caught up to the rhetoric. Af
+
+**📅 Aug 31, 2026** • **📰 DevOps.com**
+
+[**🔗 Read more**](https://devops.com/from-operator-to-agent-manager-the-real-shift-in-network-engineering/)
+
+### 📄 Amazon OpenSearch Service adds new Cluster Insights for faster diagnosis of cluster status
+
+Amazon OpenSearch Service has expanded Cluster Insights with 17 new insights that identify the root causes behind Red and Yellow cluster status and provide actionable recommendations to resolve them. 
+
+**📅 Aug 31, 2026** • **📰 CloudFormation Updates**
+
+[**🔗 Read more**](https://aws.amazon.com/about-aws/whats-new/2026/08/opensearch-cluster-status-insight/)
+
 ### 📄 Amazon Bedrock AgentCore Memory now supports fine-grained access control
 
 Amazon Bedrock AgentCore Memory now supports fine-grained access control (FGAC), enabling you to enforce per-user and per-tenant memory isolation through AgentCore Gateway without building custom auth
@@ -266,6 +282,14 @@ Every platform team fields the same questions: What is running? What breaks if w
 
 ## 📊 Observability
 
+### 📄 OpenTelemetry Go Logs API and SDK reach release candidate status
+
+OpenTelemetry Go v1.47.0-rc.1 is here. This release promotes the Logs API and SDK to release candidate (RC), the final stage before we provide stable v1 compatibility guarantees. We believe the design
+
+**📅 Aug 31, 2026** • **📰 OpenTelemetry Blog**
+
+[**🔗 Read more**](https://opentelemetry.io/blog/2026/go-logs-api-sdk-rc/)
+
 ### 📄 Lunar Cyber Launches Token Exposure Monitoring as Infostealers Target Developer and AI Credentials
 
 Bnei Brak, Israel, 31st August 2026, CyberNewswire
@@ -274,13 +298,13 @@ Bnei Brak, Israel, 31st August 2026, CyberNewswire
 
 [**🔗 Read more**](https://devops.com/lunar-cyber-launches-token-exposure-monitoring-as-infostealers-target-developer-and-ai-credentials/)
 
-### 📄 AWS Transform now in scope for FedRAMP Class C
+### 📄 New Relic's Japan Region Is Now Generally Available
 
-AWS Transform is now in scope for FedRAMP Class C (formerly Moderate baseline) in the US East (Ohio) Region. You can now use AWS Transform to build applications and run workloads that are subject to F
+New Relic's Japan region is now generally available. Ensure data sovereignty for regulated industries with in-region data storage and AI processing.
 
-**📅 Aug 28, 2026** • **📰 CloudFormation Updates**
+**📅 Aug 31, 2026** • **📰 New Relic Blog**
 
-[**🔗 Read more**](https://aws.amazon.com/about-aws/whats-new/2026/08/aws-transform-fedramp-class-c/)
+[**🔗 Read more**](https://newrelic.com/blog/news/japan-region-generally-available)
 
 ### 📄 From one switch to a control panel: meet `dataCollection`
 
@@ -342,14 +366,6 @@ Broadcom launches TrueSource Trusted Artifacts to provide hardened Spring depend
 
 [**🔗 Read more**](https://devops.com/broadcom-launches-trusted-artifact-service-for-spring-framework/)
 
-### 📄 Tide launched Raziel for AI security. It assumes hackers are inside.
-
-Michael Loewy, co-founder of the Tide Foundation, says the security industry was already losing ground to hackers before AI. Everything The post Tide launched Raziel for AI security. It assumes hacker
-
-**📅 Aug 31, 2026** • **📰 The New Stack**
-
-[**🔗 Read more**](https://thenewstack.io/tide-raziel-emergent-authority/)
-
 ### 📄 Gitea 1.27.3 is released
 
 We are excited to announce the release of **Gitea 1.27.3**, the third patch release for the 1.27 series. It contains a large batch of security fixes covering Gitea Actions, the API, the package regist
@@ -365,14 +381,6 @@ We are happy to announce the first release of **Gitea for VS Code**. Gitea Actio
 **📅 Aug 28, 2026** • **📰 Gitea Blog**
 
 [**🔗 Read more**](https://blog.gitea.com/release-of-gitea-vscode-1.0.0/)
-
-### 📄 Security Incident Affecting JetBrains Cadence
-
-We are investigating a security incident affecting JetBrains Cadence. Cadence is a JetBrains-hosted service that integrates with PyCharm through an optional plugin, and lets you run your projects on c
-
-**📅 Aug 28, 2026** • **📰 JetBrains Blog**
-
-[**🔗 Read more**](https://blog.jetbrains.com/pycharm/2026/08/cadence-security-incident-august-2026/)
 
 ### 📄 Neo Security: Securing Infrastructure in the Agentic Era
 
@@ -494,6 +502,30 @@ In the beginning of April, three attacks detected in the Guardicore Global Senso
 
 [**🔗 Read more**](https://www.akamai.com/blog/security/the-nansh0u-campaign-hackers-arsenal-grows-stronger)
 
+### 📄 Cloud CISO Perspectives: Tips on securing the water sector in the AI era
+
+Welcome to the second Cloud CISO Perspectives for August 2026. Today, Chris Sistrunk and Stephanie Kiel detail the critical issues facing the water sector, and actionable steps that OT operators can t
+
+**📅 Aug 31, 2026** • **📰 Google Cloud Blog**
+
+[**🔗 Read more**](https://cloud.google.com/blog/products/identity-security/cloud-ciso-perspectives-tips-on-securing-water-sector-ai-era/)
+
+### 📄 From weeks to minutes: The new agentic era of data pipelines
+
+Data pipelines are the backbone of the modern enterprise, yet a barrier to entry exists for orchestrating them, making this critical capability unavailable to many data professionals. Following our an
+
+**📅 Aug 31, 2026** • **📰 Google Cloud Blog**
+
+[**🔗 Read more**](https://cloud.google.com/blog/products/data-analytics/build-data-pipelines-in-less-time-with-data-agent-kit/)
+
+### 📄 What’s new in AI infrastructure and orchestration in August
+
+Welcome back to What’s new in AI infrastructure and orchestration this month, a collection of product updates, how-tos, customer stories, research and other resources about all the AI compute, network
+
+**📅 Aug 31, 2026** • **📰 Google Cloud Blog**
+
+[**🔗 Read more**](https://cloud.google.com/blog/topics/ai-infrastructure/whats-new-in-ai-infrastructure-this-month/)
+
 ### 📄 Introducing Adaptive Intelligence: undermining the economics of every bot attack
 
 Bot operators have historically had the economic advantage, bypassing static, deterministic detection rules with cheap proxies and retooling. Cloudflare's new Adaptive Intelligence engine flips this d
@@ -550,33 +582,33 @@ Like many enterprises, you have already put real time, budget and engineering at
 
 [**🔗 Read more**](https://www.suse.com/c/from-stalled-pocs-to-enterprise-ai-why-an-open-platform-holds-the-key/)
 
-### 📄 Celebrating excellence: Honoring the Red Hat Academy APAC award winners
-
-The future of technology depends on a workforce equipped with practical, industry-relevant skills. As organizations accelerate their adoption of open source, cloud, automation, and enterprise technolo
-
-**📅 Aug 28, 2026** • **📰 Red Hat Blog**
-
-[**🔗 Read more**](https://www.redhat.com/en/blog/celebrating-excellence-honoring-red-hat-academy-apac-award-winners)
-
-### 📄 How we saved 100 terabytes of memory by optimizing 1.1.1.1’s DNS cache
-
-Five Rust-level memory optimizations to the DNS cache layout of Big Pineapple cut per-entry memory by 56%, freeing approximately 100 TB of memory across Cloudflare's fleet.
-
-**📅 Aug 27, 2026** • **📰 Cloudflare Blog**
-
-[**🔗 Read more**](https://blog.cloudflare.com/dns-cache-memory-optimization-1111/)
-
-### 📄 Reimagining work: How Pythian’s internal AI playbook delivers customer ROI
-
-When Pythian rolled out Google Cloud’s Gemini Enterprise across our 500-person company in 27 countries, the goal was simple: use our own company as a proving ground to discover how enterprise AI actua
-
-**📅 Aug 27, 2026** • **📰 Google Cloud Blog**
-
-[**🔗 Read more**](https://cloud.google.com/blog/topics/startups/how-pythians-internal-ai-playbook-delivers-customer-roi/)
-
 ---
 
 ## 📰 Misc
+
+### 📄 Visual Studio Code 1.136 (Insiders)
+
+Learn what's new in Visual Studio Code 1.136 (Insiders) Read the full article
+
+**📅 Sep 2, 2026** • **📰 VS Code Blog**
+
+[**🔗 Read more**](https://code.visualstudio.com/updates/v1_136)
+
+### 📄 Shai-Hulud: Whoever controls your package registry controls your pipeline
+
+On September 15, 2025, npm’s registry did something unprecedented: Packages began updating themselves. No maintainer ran npm publish. No pull The post Shai-Hulud: Whoever controls your package registr
+
+**📅 Aug 31, 2026** • **📰 The New Stack**
+
+[**🔗 Read more**](https://thenewstack.io/shai-hulud-pipeline-security/)
+
+### 📄 Cut coding agent token use with better tool output
+
+Before an AI coding agent writes a single line of code, it has already spent tokens. For example, on source The post Cut coding agent token use with better tool output appeared first on The New Stack.
+
+**📅 Aug 31, 2026** • **📰 The New Stack**
+
+[**🔗 Read more**](https://thenewstack.io/cut-coding-agent-tokens/)
 
 ### 📄 Ten Great DevOps Job Opportunities
 
@@ -586,6 +618,14 @@ DevOps.com is now providing a weekly DevOps jobs report through which opportunit
 
 [**🔗 Read more**](https://devops.com/ten-great-devops-job-opportunities-21/)
 
+### 📄 Fine-Tuning SOTA Object Detection Models on Real-World Datasets
+
+In our previous blog post in this series, we discussed state-of-the-art models for object detection: the architectures, the theory, and what makes YOLO12, YOLO26, and RF-DETR tick. If you want the the
+
+**📅 Aug 31, 2026** • **📰 JetBrains Blog**
+
+[**🔗 Read more**](https://blog.jetbrains.com/pycharm/2026/08/fine-tuning-sota-object-detection-models-on-real-world-datasets/)
+
 ### 📄 Anthropic’s Claude fixed all 10 alignment failures. Then it tried to cheat 2.4% of the time.
 
 Anthropic is putting AI agents to work on one of the field’s hardest problems: keeping other AI systems aligned with The post Anthropic’s Claude fixed all 10 alignment failures. Then it tried to cheat
@@ -593,6 +633,14 @@ Anthropic is putting AI agents to work on one of the field’s hardest problems:
 **📅 Aug 31, 2026** • **📰 The New Stack**
 
 [**🔗 Read more**](https://thenewstack.io/claude-automated-alignment-research/)
+
+### 📄 Canonical Data Mesh: scaling data governance
+
+Data governance is easy to describe and much harder to operate. Most organizations can define ownership, document policies, and agree that data should be easier to find and trust. The difficult part s
+
+**📅 Aug 31, 2026** • **📰 Canonical Blog**
+
+[**🔗 Read more**](https://canonical.com//blog/canonical-data-mesh-scaling-data-governance)
 
 ### 📄 Your agent context needs a development lifecycle
 
@@ -602,14 +650,6 @@ Skills, agent configurations, prompt instructions, and rules files. These artifa
 
 [**🔗 Read more**](https://thenewstack.io/agent-context-development-lifecycle/)
 
-### 📄 DeepSeek’s first vision model vs. Gemini 3.7 Flash: It comes down to spend vs. speed
-
-DeepSeek released V4 Flash Vision Exp on August 21, its first model that accepts image input. Image input means a The post DeepSeek’s first vision model vs. Gemini 3.7 Flash: It comes down to spend vs
-
-**📅 Aug 31, 2026** • **📰 The New Stack**
-
-[**🔗 Read more**](https://thenewstack.io/deepseek-gemini-vision-comparison/)
-
 ### 📄 From Leaderboards to Model Profiles: A Deep Dive Evaluation of LLMs for Agentic Coding
 
 Beyond the resolve rate Imagine plugging two LLMs from different frontier labs into the same coding agent and finding that they solve exactly the same number of benchmark tasks. If the evaluation stop
@@ -617,14 +657,6 @@ Beyond the resolve rate Imagine plugging two LLMs from different frontier labs i
 **📅 Aug 31, 2026** • **📰 JetBrains Blog**
 
 [**🔗 Read more**](https://blog.jetbrains.com/junie/2026/08/from-leaderboards-to-profiles/)
-
-### 📄 VS Code 1.135 Gives AI Coding Agents a Second Opinion
-
-VS Code 1.135 adds Rubber Duck AI review, persistent agent sessions, Agent Host infrastructure and clearer token usage as Microsoft builds a more agentic IDE.
-
-**📅 Aug 31, 2026** • **📰 DevOps.com**
-
-[**🔗 Read more**](https://devops.com/vs-code-1-135-gives-ai-coding-agents-a-second-opinion/)
 
 ### 📄 Sunsetting of the JetBrains Teacher Pack for Bootcamps
 
@@ -649,27 +681,3 @@ As the telco industry transitions toward Autonomous Networks Level 4, a fundamen
 **📅 Aug 28, 2026** • **📰 Ubuntu Blog**
 
 [**🔗 Read more**](https://ubuntu.com//blog/ai-harnesses-for-telco-autonomous-networks)
-
-### 📄 Managing enterprise AI at scale: Hosting, deployment patterns, and Day 2 operations
-
-In our previous article, Enterprise AI model selection: Balancing performance, privacy, and operational fit, we described the 4 layers that make up an effective enterprise AI architecture. In this art
-
-**📅 Aug 28, 2026** • **📰 Red Hat Blog**
-
-[**🔗 Read more**](https://www.redhat.com/en/blog/managing-enterprise-ai-scale-hosting-deployment-patterns-and-day-2-operations)
-
-### 📄 Learning while building: How Red Hat Training accelerates technical growth
-
-Managing complex data systems and learning new software platforms can feel like navigating a maze in the dark. Whether you’re stepping into a command-line environment for the 1st time or mapping intri
-
-**📅 Aug 28, 2026** • **📰 Red Hat Blog**
-
-[**🔗 Read more**](https://www.redhat.com/en/blog/learning-while-building-how-red-hat-training-accelerates-technical-growth)
-
-### 📄 Arduino® VENTUNO™ Q is available for pre-order with Ubuntu pre-installed
-
-London, UK – August 25, 2026 – Following our initial collaboration announcement in March 2026, Canonical and Arduino (a subsidiary of Qualcomm Technologies, Inc.) are excited to announce that VENTUNO 
-
-**📅 Aug 25, 2026** • **📰 Ubuntu Blog**
-
-[**🔗 Read more**](https://ubuntu.com//blog/arduino-ventuno-q-is-available-for-pre-order-with-ubuntu-pre-installed)
