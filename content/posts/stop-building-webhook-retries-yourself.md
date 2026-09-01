@@ -160,7 +160,7 @@ try {
 
 Two rules the SDK enforces that hand-rolled code usually gets wrong: verify the raw request body bytes, never a re-serialized JSON object (one reordered key and the HMAC fails), and reject timestamps outside a tolerance window so a captured request cannot be replayed later. The secret is per endpoint, which is why the setup script prints one `whsec_` per path.
 
-We tested the negative path by posting a hand-built request with a wrong signature to `/ok`: the receiver logged `signature rejected` and answered 401, and nothing downstream ran.
+We tested the negative path by posting a hand-built request with a forged `svix-signature` to `/ok`: the receiver logged `signature rejected: No matching signature found`, answered 401, and nothing downstream ran.
 
 ## Dead endpoints and what happens after retries run out
 
