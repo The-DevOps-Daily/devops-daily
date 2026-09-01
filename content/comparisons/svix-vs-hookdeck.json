@@ -236,8 +236,8 @@
     },
     {
       "scenario": "You want an outbound delivery layer you can self-host under a permissive license and pay per event when managed",
-      "recommendation": "either",
-      "explanation": "Both qualify. Svix's server is MIT and Outpost is Apache 2.0. Managed pricing differs in shape: Outpost is usage-based (50,000 events free, then $10 per million) while Svix moves from a generous free tier to a $490/month Professional plan. Small senders with volume beyond the free tier will find Outpost cheaper; teams that want the portal and compliance breadth pay for Svix."
+      "recommendation": "toolA",
+      "explanation": "Both are permissively licensed (Svix MIT, Outpost Apache 2.0). Svix's server has years of production history behind the same API the SaaS exposes, ships an on-prem option with FIPS 140-3 on Enterprise, and its managed free tier already includes 50,000 messages with an SLA. Outpost is cheaper per event once you pass the free allowance (50,000 events, then $10 per million) and is the better fit for a small sender that mainly wants an engine; for the fuller self-hosted product, Svix."
     },
     {
       "scenario": "Your services consume webhooks from Stripe, Shopify, GitHub and others, and your consumers are fragile",
@@ -261,8 +261,23 @@
     },
     {
       "scenario": "You want one vendor for both directions",
-      "recommendation": "either",
-      "explanation": "Both now offer it. Svix pairs Dispatch with Ingest under one account; Hookdeck pairs the Event Gateway with Outpost as separate products. Choose by which direction matters more to you: sending-heavy teams lean Svix, receiving-heavy teams lean Hookdeck."
+      "recommendation": "toolA",
+      "explanation": "Both now offer it, but not in the same shape. Svix runs Dispatch and Ingest under one account, one dashboard, and one pricing page; Hookdeck's Event Gateway and Outpost are separate products with separate pricing and, for the gateway, a US-only region. If one vendor means one contract and one console, Svix is the tidier answer today."
+    },
+    {
+      "scenario": "Your customers want events delivered into their queues or data warehouses, not only over HTTP",
+      "recommendation": "toolA",
+      "explanation": "Svix connectors deliver the same message to SQS, SNS, EventBridge, RabbitMQ, Snowflake, BigQuery, ClickHouse, and Redshift, so a data-platform customer skips the webhook-to-warehouse glue entirely. Outpost covers queues (SQS, S3, RabbitMQ, Pub/Sub, EventBridge, Kafka) but not warehouses."
+    },
+    {
+      "scenario": "You need an uptime SLA before you are ready to pay",
+      "recommendation": "toolA",
+      "explanation": "Svix's free tier carries a 99.9% uptime SLA (99.99% on Professional, 99.999% on Enterprise). Hookdeck publishes SLAs from the Growth plan ($499+/month) on both the Event Gateway and Outpost."
+    },
+    {
+      "scenario": "Your API publishes many event types and customers need to discover and subscribe to them",
+      "recommendation": "toolA",
+      "explanation": "Svix models event types as first-class objects with schemas, filters endpoints by event type, and exposes the catalog to customers in the App Portal. Outpost has topic-based subscriptions and an API for building a portal, which is workable but leaves the catalog UI to you."
     }
   ],
   "faqs": [
@@ -314,24 +329,36 @@
     },
     {
       "criteria": "Open-source, self-hosted sending under a permissive license",
-      "recommendation": "either"
+      "recommendation": "toolA"
     },
     {
       "criteria": "Broadest compliance list (HIPAA, PCI, four regions)",
       "recommendation": "toolA"
     },
     {
-      "criteria": "Connectors into customers' queues and warehouses",
-      "recommendation": "either"
+      "criteria": "Connectors into customers' queues and data warehouses",
+      "recommendation": "toolA"
     },
     {
-      "criteria": "One vendor for both directions",
-      "recommendation": "either"
+      "criteria": "One vendor, one account, both directions",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Uptime SLA on the free tier",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Event catalog and per-event-type subscriptions for customers",
+      "recommendation": "toolA"
+    },
+    {
+      "criteria": "Embeddable customer portal without building UI",
+      "recommendation": "toolA"
     }
   ],
   "verdict": {
-    "summary": "Both vendors now sell both directions, and each is strongest where it started. For sending, Svix Dispatch offers the more complete product on the published evidence: an embeddable customer portal, a documented retry schedule with bulk recovery, Standard Webhooks signatures across nine SDKs, connectors, four data regions, and the longest compliance list; Outpost counters with Apache 2.0 licensing, usage-based managed pricing, and Standard Webhooks compatibility. For receiving, Hookdeck's Event Gateway documents more control (Retry-After, per-destination rates, pause and resume, a localhost CLI) than Svix Ingest, which covers the core gateway functions but is the newer product and is US-only on Hookdeck's side rather than Svix's. Regions are the clearest hard differentiator: the Event Gateway is US-hosted only, while Svix offers four regions across its products.",
-    "toolAScore": 4.4,
+    "summary": "Both vendors now sell both directions, and each is strongest where it started, with Svix covering more of the whole picture: one account for sending and receiving, four data regions, an SLA from the free tier up, an embeddable customer portal, and connectors into queues and warehouses. For sending, Svix Dispatch offers the more complete product on the published evidence: an embeddable customer portal, a documented retry schedule with bulk recovery, Standard Webhooks signatures across nine SDKs, connectors, four data regions, and the longest compliance list; Outpost counters with Apache 2.0 licensing, usage-based managed pricing, and Standard Webhooks compatibility. For receiving, Hookdeck's Event Gateway documents more control (Retry-After, per-destination rates, pause and resume, a localhost CLI) than Svix Ingest, which covers the core gateway functions but is the newer product and is US-only on Hookdeck's side rather than Svix's. Regions are the clearest hard differentiator: the Event Gateway is US-hosted only, while Svix offers four regions across its products.",
+    "toolAScore": 4.5,
     "toolBScore": 4.3,
     "recommendation": "Choose Svix if sending is your main job, you want the portal and compliance breadth, or you need EU residency for received webhooks. Choose Hookdeck if receiving is your main job and you want the deepest retry and rate controls plus local forwarding, or if you want usage-based outbound pricing with an Apache-licensed engine. Evaluate the direction that carries your traffic first; the other product from the same vendor is the tiebreaker, not the decision."
   },
