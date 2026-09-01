@@ -1,6 +1,6 @@
 ---
 title: 'Stop Building Webhook Retries Yourself'
-excerpt: 'We pointed a webhook sender at a receiver designed to fail in every way production fails: outages, 429s, timeouts, dead endpoints, bad signatures. Then we watched the retries, the schedule, the signature checks, and the replay happen without writing any of it. Here is the whole run, with the code and the attempt logs.'
+excerpt: 'We pointed a webhook sender at a receiver built to fail the common ways production fails: outages, 429s, timeouts, dead endpoints, bad signatures. Then we watched the retries, the schedule, the signature checks, and the replay happen without writing any of it. Here is the run, with the code and the attempt logs.'
 category:
   name: 'DevOps'
   slug: 'devops'
@@ -32,16 +32,16 @@ Everything below is a real run on September 1, 2026. Where we quote a timing, it
 
 ## TLDR
 
-- A single message create fanned out to five endpoints, each modeling a failure. Svix retried the flaky one on its schedule (immediately, 5 seconds, 5 minutes) and it recovered on attempt three at 19:25:23, four minutes after the first failure, with no code on our side.
+- A single message create fanned out to five endpoints: one healthy control and four failure modes. Svix retried the flaky one on its schedule and it recovered on attempt three at 19:25:23, about four minutes after the first failure, with no code on our side.
 - The receiver's `Retry-After: 60` on a 429 was not honored: the retry arrived 11 seconds later, on the sender's schedule. If you rely on `Retry-After`, that is a real limitation to know.
-- A hung endpoint was cut off at the 15-second timeout, recorded as `request timed out`, and retried.
-- Every delivery carried Standard Webhooks headers; the receiver verified them with a 10-line handler and rejected tampered payloads with 401.
+- A hung endpoint was recorded as `request timed out` (Svix's documented delivery timeout is 15 seconds) and retried.
+- Every delivery carried Standard Webhooks signature headers; the receiver verified them with a short handler using the Svix SDK and rejected a forged payload with 401.
 - Replay is an API call, not a project: resend one message, or recover everything that failed for one endpoint since a timestamp.
 
 ## Prerequisites
 
 - Node.js 22 and a Svix account (the free tier covers this whole exercise)
-- A public HTTPS URL for the receiver. Svix refuses plain-HTTP endpoint URLs, so on a fresh VM we used Caddy with automatic TLS on an `sslip.io` hostname (`157-230-57-75.sslip.io` resolves to that IP, and Let's Encrypt is happy to issue for it)
+- A public HTTPS URL for the receiver. Svix Cloud rejects plain-HTTP endpoint URLs (`Endpoint URL schemes must be https when endpoint_https_only is set`), so on a fresh VM we used Caddy with automatic TLS on an `sslip.io` hostname (`157-230-57-75.sslip.io` resolves to that IP, and Let's Encrypt issues for it)
 - `npm install` in the demo repo
 
 ## A receiver built to fail
@@ -121,7 +121,7 @@ const msg = await svix.message.create(
 );
 ```
 
-That single message fans out to all five endpoints. Here is what the receiver saw in the first eleven seconds:
+That single message fans out to all five endpoints. Here is what the receiver saw in the first eleven seconds (log lines condensed to time, path, status, and note; the full JSON lines are in the repo's `RESULTS.md`, and this first message ran against the receiver before we added the `/ok` dedup path, hence `accepted` rather than `accepted and processed`):
 
 ```terminal
 {
@@ -129,7 +129,7 @@ That single message fans out to all five endpoints. Here is what the receiver sa
   "prompt": "$",
   "autoplay": true,
   "steps": [
-    { "cmd": "docker logs receiver | grep msg_3IjuoZ | cut -c1-110" },
+    { "cmd": "docker logs receiver | grep msg_3IjuoZ   # condensed" },
     { "output": "{\"at\":\"19:21:14.552Z\",\"path\":\"/flaky\",\"status\":500,\"note\":\"attempt 1: simulated outage\"}\n{\"at\":\"19:21:14.555Z\",\"path\":\"/dead\",\"status\":503,\"note\":\"attempt 1: permanently down\"}\n{\"at\":\"19:21:14.567Z\",\"path\":\"/ok\",\"status\":200,\"note\":\"accepted\"}\n{\"at\":\"19:21:14.575Z\",\"path\":\"/slow\",\"status\":0,\"note\":\"attempt 1: holding the connection open (will time out)\"}\n{\"at\":\"19:21:14.578Z\",\"path\":\"/ratelimited\",\"status\":429,\"note\":\"attempt 1: 429 with Retry-After: 60\"}\n{\"at\":\"19:21:19.059Z\",\"path\":\"/flaky\",\"status\":500,\"note\":\"attempt 2: simulated outage\"}\n{\"at\":\"19:21:19.152Z\",\"path\":\"/dead\",\"status\":503,\"note\":\"attempt 2: permanently down\"}\n{\"at\":\"19:21:25.710Z\",\"path\":\"/ratelimited\",\"status\":200,\"note\":\"attempt 2: accepted after backoff\"}" }
   ]
 }
@@ -153,17 +153,17 @@ Svix's documented schedule is immediate, then 5 seconds, 5 minutes, 30 minutes, 
 }
 ```
 
-Read the `/flaky` line: two failures, then success at the five-minute slot, and the receiver's own log agrees (`attempt 3: recovered`). This is the entire "transient outage" story, and it cost zero lines of retry code.
+Read the `/flaky` line: two failures, then success on the third attempt, which arrived about four minutes after the second failure (the documented interval for that slot is five minutes, measured from the previous failure). The receiver's own log agrees (`attempt 3: recovered`). That is the entire transient-outage case, and it cost zero lines of retry code.
 
 Two details matter more than the happy path.
 
 **`Retry-After` was not honored.** Our receiver answered the first `/ratelimited` attempt with `429` and `Retry-After: 60`. The retry came 11 seconds later, on the sender's own schedule, not 60 seconds later. Svix documents no `Retry-After` support, and this run confirms it. What Svix offers instead is sender-side: a per-endpoint rate limit (messages per second) you configure, and as of late August 2026, receiver-side response headers `webhook-delivery: abort-message` (stop retrying this message) and `webhook-delivery: disable` (stop sending to this endpoint). Those solve "stop" and "slow down in general", not "come back in exactly N seconds". If your consumers lean on `Retry-After`, know this going in.
 
-**Timeouts are counted as failures, at 15 seconds.** The `/slow` endpoint held the connection open. The sender gave up at its 15-second limit, logged `request timed out` with no HTTP status, and the retry landed at 19:22:49, about 95 seconds after the first attempt began. The second attempt succeeded because our receiver only misbehaves once per message. In production, a consumer that takes 20 seconds to process a webhook and then returns 200 has still failed from the sender's point of view; acknowledge fast, process later.
+**Timeouts are counted as failures.** The `/slow` endpoint held the connection open. The sender gave up (its documented limit is 15 seconds; our logs record the attempt start and the failure, not the exact cutoff), logged `request timed out` with no HTTP status, and the retry landed at 19:22:49, about 95 seconds after the first attempt began. The second attempt succeeded because our receiver only misbehaves once per message. In production, a consumer that takes 20 seconds to process a webhook and then returns 200 has still failed from the sender's point of view; acknowledge fast, process later.
 
 ## Signatures: the handler you must not skip
 
-Every delivery carries three headers: `svix-id`, `svix-timestamp`, and `svix-signature`. They are Svix-branded aliases of the [Standard Webhooks](https://www.standardwebhooks.com/) headers, so any Standard Webhooks library verifies them; the Svix SDK does too:
+Every delivery carries three headers: `svix-id`, `svix-timestamp`, and `svix-signature`. They are Svix-branded aliases of the [Standard Webhooks](https://www.standardwebhooks.com/) `webhook-*` headers with identical values, so a Standard Webhooks library verifies them once you map the names (the Svix SDK accepts both spellings):
 
 ```javascript
 import { Webhook } from "svix";
@@ -180,13 +180,13 @@ try {
 }
 ```
 
-Two rules the SDK enforces that hand-rolled code usually gets wrong: verify the raw request body bytes, never a re-serialized JSON object (one reordered key and the HMAC fails), and reject timestamps outside a tolerance window so a captured request cannot be replayed later. The secret is per endpoint, which is why the setup script prints one `whsec_` per path.
+Two rules that hand-rolled code usually gets wrong: verify the raw request body exactly as received, never a re-serialized JSON object (one reordered key and the HMAC fails), and reject timestamps outside a tolerance window so a captured request cannot be replayed later; the SDK handles the second, the first is on you. The secret is per endpoint, which is why the setup script prints one `whsec_` per path.
 
 We tested the negative path by posting a hand-built request with a forged `svix-signature` to `/ok`: the receiver logged `signature rejected: No matching signature found`, answered 401, and nothing downstream ran.
 
 ## Dead endpoints and what happens after retries run out
 
-`/dead` returns 503 forever. We watched it take the first four scheduled attempts on the documented cadence: 19:21:14, 19:21:18 (5 s), 19:26:17 (5 min), and 19:56:45 (30 min); the 2-hour, 5-hour, and two 10-hour attempts were still ahead when we stopped recording. After the eighth failure the message is marked failed and Svix emits an operational webhook, `message.attempt.exhausted`, to *you*, the sender, so your own systems can react (open a ticket, email the customer). Endpoints that keep failing get disabled automatically, with an `endpoint.disabled` event: per the docs, once an endpoint has had failures spread across a 24-hour window, five further days of nothing but failures trips the switch. Both behaviors are configurable per environment.
+`/dead` returns 503 forever. We watched it take the first four scheduled attempts on the documented cadence: 19:21:14, 19:21:18 (5 s), 19:26:17 (5 min), and 19:56:45 (30 min); the 2-hour, 5-hour, and two 10-hour attempts were still ahead when we stopped recording. After the eighth failure the message is marked failed and Svix emits an operational webhook, `message.attempt.exhausted`, to *you*, the sender, so your own systems can react (open a ticket, email the customer). Endpoints that keep failing get disabled automatically, with an `endpoint.disabled` event: per the docs, once an endpoint has failures at least 12 hours apart within a 24-hour window, five further days of nothing but failures trips the switch. Both behaviors are configurable per environment.
 
 Who carries that state is the difference between the two approaches. In the do-it-yourself version, every one of those transitions is a row you update, a job you schedule, and an alert you wire. Here it is a webhook you subscribe to.
 
@@ -218,7 +218,7 @@ We ran both against the dead endpoint at 19:58, right after its 30-minute attemp
 }
 ```
 
-Your customers get the same two operations in the embeddable App Portal (Resend on a message, and "Recover Failed Messages" from a date on an endpoint) without a support ticket, and the `trigger=manual` marker keeps the audit trail honest about who caused a delivery. In this run the endpoint was still dead, so the replays failed too, which is the correct outcome: recovery re-delivers, it does not pretend.
+Your customers get the same two operations in the embeddable App Portal (Resend on a message, and "Recover Failed Messages" from a date on an endpoint) without a support ticket, and the `trigger=manual` marker separates operator-initiated deliveries from scheduled ones in the audit trail. In this run the endpoint was still dead, so the replays failed too, which is the correct outcome: recovery re-delivers, it does not pretend.
 
 ## What you did not have to build
 
@@ -252,4 +252,4 @@ The DIY version is not hard to start and is hard to finish: the scheduler is sma
 
 If you also need the other direction, receiving other people's webhooks, the tradeoffs differ; our [Svix vs Hookdeck comparison](/comparisons/svix-vs-hookdeck) covers both directions and both vendors.
 
-The demo repo runs in ten minutes against a free Svix account and a throwaway VM. Point it at your own receiver, break things your way, and read the attempt log. The retry code you were about to write is the part you can skip.
+The demo repo takes about ten minutes to set up against a free Svix account and a throwaway VM; letting the retry schedule play out to the 30-minute slot, as we did, takes about 45. Point it at your own receiver, break things your way, and read the attempt log. The retry code you were about to write is the part you can skip.
