@@ -126,7 +126,7 @@ Svix's documented schedule is immediate, then 5 seconds, 5 minutes, 30 minutes, 
   "autoplay": true,
   "steps": [
     { "cmd": "node sender/report.js msg_3IjuoZxzSCwvwWsTpkqeZCF3zjD" },
-    { "output": "/ok  (1 attempts)\n  19:21:14  http 200  success  trigger=scheduled\n\n/flaky  (3 attempts)\n  19:21:14  http 500  fail     trigger=scheduled\n  19:21:18  http 500  fail     trigger=scheduled\n  19:25:23  http 200  success  trigger=scheduled\n\n/ratelimited  (2 attempts)\n  19:21:14  http 429  fail     trigger=scheduled\n  19:21:25  http 200  success  trigger=scheduled\n\n/slow  (2 attempts)\n  19:21:14  http -    fail     trigger=scheduled  request timed out\n  19:22:49  http 200  success  trigger=scheduled\n\n/dead  (3 attempts)\n  19:21:14  http 503  fail     trigger=scheduled\n  19:21:18  http 503  fail     trigger=scheduled\n  19:26:17  http 503  fail     trigger=scheduled" }
+    { "output": "/ok  (1 attempts)\n  19:21:14  http 200  success  trigger=scheduled\n\n/flaky  (3 attempts)\n  19:21:14  http 500  fail     trigger=scheduled\n  19:21:18  http 500  fail     trigger=scheduled\n  19:25:23  http 200  success  trigger=scheduled\n\n/ratelimited  (2 attempts)\n  19:21:14  http 429  fail     trigger=scheduled\n  19:21:25  http 200  success  trigger=scheduled\n\n/slow  (2 attempts)\n  19:21:14  http -    fail     trigger=scheduled  request timed out\n  19:22:49  http 200  success  trigger=scheduled\n\n/dead  (4 attempts)\n  19:21:14  http 503  fail     trigger=scheduled\n  19:21:18  http 503  fail     trigger=scheduled\n  19:26:17  http 503  fail     trigger=scheduled\n  19:56:45  http 503  fail     trigger=scheduled" }
   ]
 }
 ```
@@ -164,7 +164,7 @@ We tested the negative path by posting a hand-built request with a forged `svix-
 
 ## Dead endpoints and what happens after retries run out
 
-`/dead` returns 503 forever. It will walk the full schedule: attempt 4 at the 30-minute mark, then 2 hours, 5 hours, 10 hours, 10 hours. After the eighth failure the message is marked failed and Svix emits an operational webhook, `message.attempt.exhausted`, to *you*, the sender, so your own systems can react (open a ticket, email the customer). If an endpoint fails everything for five consecutive days it is disabled automatically and you get `endpoint.disabled`; both behaviors are configurable per environment.
+`/dead` returns 503 forever. It walked the schedule exactly as documented while we watched: attempts at 19:21:14, 19:21:18 (5 s), 19:26:17 (5 min), and 19:56:45 (30 min), with 2 hours, 5 hours, 10 hours, and 10 hours still to come. After the eighth failure the message is marked failed and Svix emits an operational webhook, `message.attempt.exhausted`, to *you*, the sender, so your own systems can react (open a ticket, email the customer). If an endpoint fails everything for five consecutive days it is disabled automatically and you get `endpoint.disabled`; both behaviors are configurable per environment.
 
 The point is who carries the state. In the do-it-yourself version, every one of those transitions is a row you update, a job you schedule, and an alert you wire. Here it is a webhook you subscribe to.
 
@@ -180,7 +180,23 @@ await svix.messageAttempt.resend(APP, "msg_3IjuoZ...", "ep-dead");
 await svix.endpoint.recover(APP, "ep-dead", { since: new Date("2026-09-01T19:00:00Z") });
 ```
 
-Your customers get the same two buttons in the embeddable App Portal (Resend, and "Recover Failed Messages" from a date) without a support ticket. Manual retries show up in the attempt log as `trigger=manual`, which keeps the audit trail honest about who caused a delivery.
+We ran both against the dead endpoint at 19:58, right after its 30-minute attempt. Each produced a new delivery within seconds, and the attempt log tells them apart from the schedule:
+
+```terminal
+{
+  "title": "replay",
+  "prompt": "$",
+  "autoplay": true,
+  "steps": [
+    { "cmd": "node sender/replay.js resend /dead msg_3IjuoZxzSCwvwWsTpkqeZCF3zjD", "output": "resend requested for msg_3IjuoZxzSCwvwWsTpkqeZCF3zjD -> /dead" },
+    { "cmd": "node sender/replay.js recover /dead 2026-09-01T19:00:00Z", "output": "recover started for /dead since 2026-09-01T19:00:00Z: { task: 'endpoint.recover', status: 'running' }" },
+    { "cmd": "node sender/report.js msg_3IjuoZxzSCwvwWsTpkqeZCF3zjD | grep -A7 /dead" },
+    { "output": "/dead  (6 attempts)\n  19:21:14  http 503  fail  trigger=scheduled\n  19:21:18  http 503  fail  trigger=scheduled\n  19:26:17  http 503  fail  trigger=scheduled\n  19:56:45  http 503  fail  trigger=scheduled\n  19:58:40  http 503  fail  trigger=manual\n  19:58:50  http 503  fail  trigger=manual" }
+  ]
+}
+```
+
+Your customers get the same two operations in the embeddable App Portal (Resend on a message, and "Recover Failed Messages" from a date on an endpoint) without a support ticket, and the `trigger=manual` marker keeps the audit trail honest about who caused a delivery. In this run the endpoint was still dead, so the replays failed too, which is the correct outcome: recovery re-delivers, it does not pretend.
 
 ## What you did not have to build
 
