@@ -49,11 +49,11 @@
       "Per-destination delivery rate limits (per second, minute, hour, or concurrency) protect downstream systems",
       "CLI forwards gateway events to a local server, making webhook development and debugging painless",
       "Issues and alerting built in, with metrics export on higher tiers",
-      "Outpost extends the platform to outbound delivery under Apache 2.0, with webhook, SQS, RabbitMQ, Pub/Sub, EventBridge, and Kafka destinations"
+      "Outpost extends the platform to outbound delivery under Apache 2.0 (self-hosted, or managed from $10 per million events) with webhook, SQS, S3, RabbitMQ, Pub/Sub, EventBridge, and Kafka destinations"
     ],
     "cons": [
       "Outbound sending is a newer, separate product; the mature, opinionated sender features live with Svix",
-      "Free tier is small (10,000 events a month, 3-day retention, single user) and retention stays short until Growth",
+      "Free tier is small (10,000 events a month, 3-day retention, single user), retention stays short until Growth, and the Event Gateway is US-hosted only",
       "SSO, SLAs, and metrics export sit on the $499+/month Growth plan",
       "Default throughput is 5 events per second per destination; higher rates are a plan and configuration matter"
     ]
@@ -139,7 +139,7 @@
         "rating": "good"
       },
       "toolB": {
-        "value": "Outpost ships a developer portal for outbound; the gateway's dashboard is for your own team",
+        "value": "Outpost ships a multi-tenant developer portal for outbound; the gateway dashboard is for your own team",
         "rating": "neutral"
       }
     },
@@ -163,7 +163,7 @@
         "rating": "good"
       },
       "toolB": {
-        "value": "Gateway delivers to HTTP, CLI, mock; Outpost adds SQS, RabbitMQ, Pub/Sub, EventBridge, Kafka",
+        "value": "Gateway delivers to HTTP, CLI, mock; Outpost adds SQS, S3, RabbitMQ, Pub/Sub, EventBridge, Kafka",
         "rating": "good"
       }
     },
@@ -199,7 +199,7 @@
         "rating": "good"
       },
       "toolB": {
-        "value": "SOC 2; regional options not prominently documented",
+        "value": "Event Gateway hosted in the US only (per Hookdeck); managed Outpost adds an EU option; SOC 2",
         "rating": "neutral"
       }
     },
@@ -207,7 +207,7 @@
       "name": "Free tier",
       "category": "Cost",
       "toolA": {
-        "value": "50,000 messages/month, 30-day retention, 200 msg/s, 99.9% SLA",
+        "value": "50,000 messages/month, 30-day retention, 200 msg/s, 3 users, 99.9% SLA",
         "rating": "good"
       },
       "toolB": {
@@ -223,7 +223,7 @@
         "rating": "neutral"
       },
       "toolB": {
-        "value": "Team from $39/month: pay-as-you-go events, 7-day retention; Growth from $499/month adds SLAs, SSO, metrics export",
+        "value": "Team from $39/month: pay-as-you-go events, 7-day retention; Growth from $499/month adds SLAs, SSO, metrics export; managed Outpost from $10 per million events",
         "rating": "good"
       }
     }
@@ -257,7 +257,7 @@
     {
       "scenario": "Compliance drives the decision: data residency, HIPAA, PCI",
       "recommendation": "toolA",
-      "explanation": "Svix publishes US, EU, Canada, and Australia regions and SOC 2 Type II, HIPAA, GDPR, CCPA, and PCI-DSS. Hookdeck is SOC 2 compliant; confirm residency requirements with them directly, since regional options are not prominent in public docs."
+      "explanation": "Svix publishes US, EU, Canada, and Australia regions and SOC 2 Type II, HIPAA, GDPR, CCPA, and PCI-DSS. Hookdeck is SOC 2 compliant, but its own documentation states the Event Gateway is hosted in the US only, with an EU option only on managed Outpost; EU residency for received webhooks is a blocker there today."
     },
     {
       "scenario": "You need one platform for both directions with a single vendor",
@@ -280,7 +280,7 @@
     },
     {
       "question": "Can I self-host either one?",
-      "answer": "Svix's full server is open source under MIT (Rust, backed by Postgres and Redis) and is the same code as the SaaS. Hookdeck's Event Gateway is SaaS only, but its outbound product Outpost is open source under Apache 2.0 and ships as a Go binary or container you can run yourself."
+      "answer": "Svix's full server is open source under MIT (Rust, backed by Postgres and Redis) and is the same code as the SaaS. Hookdeck's Event Gateway is SaaS only, but its outbound product Outpost is open source under Apache 2.0, ships as a Go binary or container, and is also offered managed from $10 per million events on the identical codebase."
     },
     {
       "question": "How do the free tiers compare?",
