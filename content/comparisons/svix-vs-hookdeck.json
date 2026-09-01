@@ -23,7 +23,7 @@
     "description": "Svix Dispatch sends webhooks for API providers: apps, endpoints, event types, retries with exponential backoff, Standard Webhooks signatures, an embeddable App Portal, transformations, and connectors to queues and warehouses. Svix Ingest receives webhooks from third parties with verification, retries, throttling, filtering, transformations, routing, and fan-out. The open-source server is MIT licensed.",
     "color": "#3B82F6",
     "pros": [
-      "Most complete sending stack: apps, endpoints, event types, and an embeddable App Portal where customers manage endpoints, inspect attempts, and replay",
+      "The more established sending stack: apps, endpoints, event types with a customer-facing catalog, and an embeddable App Portal where customers manage endpoints, inspect attempts, and replay",
       "Documented 8-attempt exponential retry schedule over roughly 27 hours, with Recover Failed and Replay Missing for bulk recovery via portal or API",
       "Led the Standard Webhooks specification; signatures verify with any Standard Webhooks library, Ed25519 available",
       "MIT-licensed open-source server (Rust, Postgres, Redis) for self-hosting, plus SaaS with US, EU, Canada, and Australia data residency and SOC 2 Type II, HIPAA, GDPR, CCPA, PCI-DSS",
@@ -32,9 +32,9 @@
     ],
     "cons": [
       "Sending retries follow a fixed schedule unless you are on Enterprise, and Retry-After from the receiver is not honored (receivers can instead send webhook-delivery: abort-message or disable headers)",
-      "Ingest is the newer product: fewer documented controls than Hookdeck's Event Gateway (no per-destination rate rules or localhost-forwarding CLI documented)",
+      "Ingest is the newer product: fewer documented controls than Hookdeck's Event Gateway (no per-destination rate rules or Retry-After handling documented)",
       "Paid sending starts at $490/month (Professional) with the same 50,000 included messages as Free; the gap between tiers is large",
-      "Static source IPs, an unbranded portal, and the SOC 2 report require the Professional tier; the open-source server does not carry every hosted feature"
+      "Static source IPs, an unbranded portal, and the SOC 2 report require the Professional tier; the open-source server excludes the built-in UI and some advanced features"
     ]
   },
   "toolB": {
@@ -44,16 +44,16 @@
     "description": "Hookdeck Event Gateway receives and routes webhooks and events: sources, connections, and destinations with queueing, configurable retry rules, Retry-After support, per-destination rate limits, filtering, transformations, issues and alerts, and a CLI that forwards events to localhost. Outpost sends webhooks and events to customers, open source under Apache 2.0, self-hosted or managed.",
     "color": "#7C3AED",
     "pros": [
-      "Deepest receiving gateway: retry rules (linear or exponential, up to 50 automatic attempts, retry on chosen status codes) and Retry-After honored, including -1 to stop",
+      "The more configurable receiving gateway: retry rules (linear or exponential, up to 50 automatic attempts, retry on chosen status codes) and Retry-After honored, including -1 to stop",
       "Per-destination delivery rates (per second, minute, hour, or concurrency) and pause/resume protect fragile internal consumers",
       "CLI forwards gateway events to a local server for development; unlimited transformations on every tier including Free",
       "Issues and alerting built in, with metrics export and SSO on the Growth plan",
-      "Outpost: Apache 2.0, at-least-once delivery, exponential or custom retry schedules, Standard Webhooks-compatible signatures, a JWT-authenticated API for building a tenant portal, destinations for webhooks, SQS, S3, RabbitMQ, Pub/Sub, EventBridge, Kafka",
+      "Outpost: Apache 2.0 with the portal included, at-least-once delivery, exponential or custom retry schedules, Standard Webhooks-compatible signatures, operator events for exhausted retries and disabled destinations, destinations for webhooks, SQS, S3, RabbitMQ, Pub/Sub, EventBridge, Kafka",
       "Managed Outpost pricing is usage-based: first 50,000 events free, then $10 per million, uncapped throughput; retries are not charged on either product"
     ],
     "cons": [
       "Event Gateway is hosted in the US only (per Hookdeck's own documentation); EU and Asia regions exist only for managed Outpost on Growth and above",
-      "Outpost deliberately omits per-tenant delivery rate limits, and its self-service portal is an API you build a UI on rather than an embeddable portal",
+      "Outpost deliberately omits per-tenant delivery rate limits, and its portal is a hosted redirect rather than a component you embed in your own UI",
       "Event Gateway free tier is small: 10,000 events a month, 3-day retention, one user; SLAs and SSO sit on the $499+/month Growth plan",
       "Default Event Gateway throughput is 5 events per second per destination; higher rates are a configuration and plan matter"
     ]
@@ -99,7 +99,7 @@
       "name": "Sending: signatures",
       "category": "Security",
       "toolA": {
-        "value": "Standard Webhooks (svix-id, svix-timestamp, svix-signature; HMAC-SHA256), optional Ed25519; verifiers in 9 SDK languages",
+        "value": "Standard Webhooks headers (webhook-id/timestamp/signature, sent with svix- aliases on many accounts; HMAC-SHA256), optional Ed25519; verifiers in 9 SDK languages",
         "rating": "good"
       },
       "toolB": {
@@ -111,24 +111,24 @@
       "name": "Sending: customer-facing portal",
       "category": "Sending",
       "toolA": {
-        "value": "Embeddable App Portal: customers manage endpoints, view attempts, replay, recover failed",
+        "value": "Embeddable App Portal (in your own app) where customers manage endpoints, view attempts, replay, recover failed; event catalog included",
         "rating": "good"
       },
       "toolB": {
-        "value": "Outpost: JWT-authenticated API to build your own self-service portal",
-        "rating": "neutral"
+        "value": "Outpost ships a built-in, brandable self-service portal reached via a JWT redirect link: destinations, event history, manual retries",
+        "rating": "good"
       }
     },
     {
       "name": "Sending: failure escalation and replay",
       "category": "Sending",
       "toolA": {
-        "value": "message.attempt.exhausted operational webhook; endpoints failing 5 days auto-disabled (configurable); Recover Failed and Replay Missing",
+        "value": "message.attempt.exhausted operational webhook; endpoints auto-disabled after sustained failure (five days of nothing but failures, once failures have spanned a 24-hour window; configurable); Recover Failed and Replay Missing",
         "rating": "good"
       },
       "toolB": {
-        "value": "Outpost: automatic and manual retries with at-least-once delivery; escalation hooks not detailed publicly",
-        "rating": "neutral"
+        "value": "Outpost: operator events (attempt.failed, alert.attempt.exhausted_retries, consecutive-failure alerts, alert.destination.disabled) to HTTP, SQS, Pub/Sub, or RabbitMQ sinks; automatic and manual retries",
+        "rating": "good"
       }
     },
     {
@@ -147,11 +147,11 @@
       "name": "Sending: open source and self-hosting",
       "category": "Licensing & Governance",
       "toolA": {
-        "value": "Server open source under MIT (Rust, Postgres, Redis); hosted service adds features beyond the open-source build; on-prem on Enterprise",
+        "value": "Server open source under MIT (Rust, Postgres, Redis), API-compatible with the SaaS; the built-in UI and some advanced features are SaaS-only; on-prem on Enterprise",
         "rating": "good"
       },
       "toolB": {
-        "value": "Outpost open source under Apache 2.0 (Go binary or container; Redis, Postgres, a queue); managed version runs the same codebase",
+        "value": "Outpost open source under Apache 2.0 (Go; Redis, Postgres, a queue), including the portal; managed version runs the identical codebase",
         "rating": "good"
       }
     },
@@ -195,8 +195,8 @@
       "name": "Receiving: local development",
       "category": "Receiving",
       "toolA": {
-        "value": "Ingest: dashboard and CLI; no documented localhost forwarding",
-        "rating": "neutral"
+        "value": "svix listen (Svix Play) forwards webhook traffic to localhost; Ingest adds a polling endpoint for firewalled consumers",
+        "rating": "good"
       },
       "toolB": {
         "value": "Event Gateway CLI forwards events to a local server",
@@ -232,12 +232,12 @@
     {
       "scenario": "You run an API or SaaS and need to send webhooks to many customers, with a portal they log into",
       "recommendation": "toolA",
-      "explanation": "Svix Dispatch is the more complete sending product today: embeddable App Portal, the documented 8-attempt schedule with bulk recovery, Standard Webhooks signatures in nine SDKs, connectors into customers' queues and warehouses. Outpost gives you the delivery engine and a JWT API to build a portal, which is less than the finished portal Svix ships."
+      "explanation": "Svix Dispatch is the more established sending product: an App Portal you embed in your own application, first-class event types with a catalog customers browse, the documented 8-attempt schedule with bulk recovery, Standard Webhooks signatures in nine SDKs, and connectors into customers' queues and warehouses. Outpost covers the core (delivery engine, retries, signatures, a built-in redirect portal, operator events) and is the younger of the two."
     },
     {
       "scenario": "You want an outbound delivery layer you can self-host under a permissive license and pay per event when managed",
-      "recommendation": "toolA",
-      "explanation": "Both are permissively licensed (Svix MIT, Outpost Apache 2.0). Svix's server has years of production history behind the same API the SaaS exposes, ships an on-prem option with FIPS 140-3 on Enterprise, and its managed free tier already includes 50,000 messages with an SLA. Outpost is cheaper per event once you pass the free allowance (50,000 events, then $10 per million) and is the better fit for a small sender that mainly wants an engine; for the fuller self-hosted product, Svix."
+      "recommendation": "either",
+      "explanation": "Both are permissively licensed (Svix MIT, Outpost Apache 2.0) and both have a managed option on the same API. The self-hosted builds differ in shape: Outpost ships the identical codebase including its portal; Svix's open-source server is API-compatible with the SaaS but leaves the built-in UI and some advanced features to the hosted product. Managed pricing differs too: Outpost is usage-based (50,000 events free, then $10 per million), Svix moves from a generous free tier to a $490/month Professional plan. Small self-hosters with a portal need lean Outpost; teams that want the mature server and compliance breadth lean Svix."
     },
     {
       "scenario": "Your services consume webhooks from Stripe, Shopify, GitHub and others, and your consumers are fragile",
@@ -246,8 +246,8 @@
     },
     {
       "scenario": "You develop webhook consumers locally and want events forwarded to your laptop",
-      "recommendation": "toolB",
-      "explanation": "The Hookdeck CLI forwards Event Gateway events to a local server, which is the workflow most teams want during development. Svix Ingest documents a CLI and dashboard but not localhost forwarding."
+      "recommendation": "either",
+      "explanation": "Both forward to localhost: the Hookdeck CLI forwards Event Gateway events to a local server, and Svix's `svix listen` (Svix Play) tunnels webhook traffic to a local port; Svix Ingest also offers a polling endpoint for consumers that cannot expose any port."
     },
     {
       "scenario": "EU data residency is mandatory for the webhooks you receive",
@@ -261,8 +261,8 @@
     },
     {
       "scenario": "You want one vendor for both directions",
-      "recommendation": "toolA",
-      "explanation": "Both now offer it, but not in the same shape. Svix runs Dispatch and Ingest under one account, one dashboard, and one pricing page; Hookdeck's Event Gateway and Outpost are separate products with separate pricing and, for the gateway, a US-only region. If one vendor means one contract and one console, Svix is the tidier answer today."
+      "recommendation": "either",
+      "explanation": "Both now offer it. Svix runs Dispatch and Ingest under one account and one pricing page; Hookdeck runs the Event Gateway and managed Outpost as two products with separate pricing under one dashboard. Choose by the direction that carries your traffic: sending-heavy teams lean Svix, receiving-heavy teams lean Hookdeck."
     },
     {
       "scenario": "Your customers want events delivered into their queues or data warehouses, not only over HTTP",
@@ -287,7 +287,7 @@
     },
     {
       "question": "What is Svix's retry schedule for sent webhooks?",
-      "answer": "Immediately, then 5 seconds, 5 minutes, 30 minutes, 2 hours, 5 hours, 10 hours, and 10 hours more: 8 attempts over roughly 27 hours. After that the message is marked failed and a message.attempt.exhausted operational webhook fires. Custom schedules are an Enterprise feature. Receivers can stop retries early by responding with a webhook-delivery: abort-message header; Retry-After is not honored."
+      "answer": "Immediately, then 5 seconds, 5 minutes, 30 minutes, 2 hours, 5 hours, 10 hours, and 10 hours more: 8 attempts over roughly 27 hours. After that the message is marked failed and a message.attempt.exhausted operational webhook fires. Custom schedules are an Enterprise feature. Receivers can stop retries early with a webhook-delivery: abort-message response header; Retry-After is not honored."
     },
     {
       "question": "Does Hookdeck honor Retry-After?",
@@ -295,7 +295,7 @@
     },
     {
       "question": "Can I self-host either one?",
-      "answer": "For sending, both: Svix's server is open source under MIT (Rust, backed by Postgres and Redis; the hosted service carries some additional features), and Outpost is open source under Apache 2.0 (Go, with Redis, Postgres, and a message queue). Neither vendor's receiving gateway is self-hostable."
+      "answer": "For sending, both: Svix's server is open source under MIT (Rust, backed by Postgres and Redis) and API-compatible with the SaaS, though the built-in UI and some advanced features stay hosted-only; Outpost is open source under Apache 2.0 (Go, with Redis, Postgres, and a message queue), ships its portal, and is the same code as the managed version. Neither vendor's receiving gateway is self-hostable."
     },
     {
       "question": "How do the free tiers compare?",
@@ -303,7 +303,7 @@
     },
     {
       "question": "Which signature scheme should I verify against?",
-      "answer": "Svix sends Standard Webhooks headers (svix-id, svix-timestamp, svix-signature; HMAC-SHA256, base64) and any Standard Webhooks library verifies them; Ed25519 is optional. Outpost signs with Standard Webhooks-compatible signatures as well. Hookdeck's Event Gateway signs the deliveries it forwards to your services with an x-hookdeck-signature header (HMAC-SHA256, base64)."
+      "answer": "Svix sends Standard Webhooks headers (webhook-id, webhook-timestamp, webhook-signature, delivered with svix- aliases on many accounts; HMAC-SHA256, base64) and any Standard Webhooks library verifies them; Ed25519 is optional. Outpost signs with Standard Webhooks-compatible signatures as well. Hookdeck's Event Gateway signs the deliveries it forwards to your services with an x-hookdeck-signature header (HMAC-SHA256, base64)."
     }
   ],
   "decisionMatrix": [
@@ -325,11 +325,11 @@
     },
     {
       "criteria": "Local webhook development with a CLI tunnel",
-      "recommendation": "toolB"
+      "recommendation": "either"
     },
     {
       "criteria": "Open-source, self-hosted sending under a permissive license",
-      "recommendation": "toolA"
+      "recommendation": "either"
     },
     {
       "criteria": "Broadest compliance list (HIPAA, PCI, four regions)",
@@ -340,8 +340,8 @@
       "recommendation": "toolA"
     },
     {
-      "criteria": "One vendor, one account, both directions",
-      "recommendation": "toolA"
+      "criteria": "One vendor for both directions",
+      "recommendation": "either"
     },
     {
       "criteria": "Uptime SLA on the free tier",
@@ -352,13 +352,13 @@
       "recommendation": "toolA"
     },
     {
-      "criteria": "Embeddable customer portal without building UI",
+      "criteria": "Customer portal embedded in your own app (rather than a hosted redirect)",
       "recommendation": "toolA"
     }
   ],
   "verdict": {
-    "summary": "Both vendors now sell both directions, and each is strongest where it started, with Svix covering more of the whole picture: one account for sending and receiving, four data regions, an SLA from the free tier up, an embeddable customer portal, and connectors into queues and warehouses. For sending, Svix Dispatch offers the more complete product on the published evidence: an embeddable customer portal, a documented retry schedule with bulk recovery, Standard Webhooks signatures across nine SDKs, connectors, four data regions, and the longest compliance list; Outpost counters with Apache 2.0 licensing, usage-based managed pricing, and Standard Webhooks compatibility. For receiving, Hookdeck's Event Gateway documents more control (Retry-After, per-destination rates, pause and resume, a localhost CLI) than Svix Ingest, which covers the core gateway functions but is the newer product and is US-only on Hookdeck's side rather than Svix's. Regions are the clearest hard differentiator: the Event Gateway is US-hosted only, while Svix offers four regions across its products.",
-    "toolAScore": 4.5,
+    "summary": "Both vendors now sell both directions, and each is more developed where it started. For sending, Svix Dispatch has the longer track record and the broader surface on the published evidence: an App Portal you embed in your own product, first-class event types, a documented retry schedule with bulk recovery, Standard Webhooks signatures across nine SDKs, connectors into queues and data warehouses, four data regions, an SLA from the free tier up, and the longest compliance list. Outpost counters with Apache 2.0 licensing including its portal, usage-based managed pricing, operator events, and Standard Webhooks compatibility. For receiving, Hookdeck's Event Gateway documents more control (Retry-After, per-destination rates, pause and resume) than Svix Ingest, which covers the core gateway functions and is the newer product. Regions are the clearest hard differentiator: Hookdeck states its Event Gateway is US-hosted only, while Svix offers four regions across its products.",
+    "toolAScore": 4.4,
     "toolBScore": 4.3,
     "recommendation": "Choose Svix if sending is your main job, you want the portal and compliance breadth, or you need EU residency for received webhooks. Choose Hookdeck if receiving is your main job and you want the deepest retry and rate controls plus local forwarding, or if you want usage-based outbound pricing with an Apache-licensed engine. Evaluate the direction that carries your traffic first; the other product from the same vendor is the tiebreaker, not the decision."
   },
