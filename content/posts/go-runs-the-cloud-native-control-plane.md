@@ -1,6 +1,6 @@
 ---
 title: 'Go Is Not Just for CLIs. It Runs the Cloud Native Control Plane'
-excerpt: 'Docker, Kubernetes, etcd, Terraform, Vault, Prometheus, CoreDNS, Caddy, MinIO, CockroachDB: we pulled the real language breakdown of 17 infrastructure projects from GitHub, explain why Go keeps winning the control plane, list where it does not, and build a static cross-compiled binary to show the reason in 5 MB.'
+excerpt: 'Docker, Kubernetes, etcd, Terraform, Vault, Prometheus, CoreDNS, Caddy, MinIO, CockroachDB: we pulled the real language breakdown of 20 infrastructure projects from GitHub, explain why Go keeps winning the control plane, list where it does not, and build a static cross-compiled HTTP server to show the reason in under 6 MB.'
 category:
   name: 'DevOps'
   slug: 'devops'
@@ -20,14 +20,14 @@ tags:
   - DevOps
 ---
 
-There is a meme that goes around every few months: a list of infrastructure tools, each followed by "is Go", ending with "still, you think Go is just for CLIs." It is funny because it is true, and it is worth taking seriously because the reasons behind it decide what a DevOps engineer should learn to read. So instead of repeating the list, we measured it. The language statistics below come from the GitHub API for each project's main repository on September 1, 2026, and the build demo at the end runs for real.
+There is a meme that goes around every few months: a list of infrastructure tools, each followed by "is Go", ending with "still, you think Go is just for CLIs." The list is accurate, and the reasons behind it decide what a DevOps engineer should learn to read. So instead of repeating the list, we measured it. The language statistics below come from the GitHub API for each project's main repository on September 1, 2026, and the build demo at the end was run for real.
 
 ## TLDR
 
-- Of 17 projects that define the cloud native stack, 16 are majority Go, most above 90%. The exception, Grafana, is a Go backend under a TypeScript frontend.
-- The reasons are concrete, not fashion: one static binary, cross-compilation from one machine, goroutines for daemons that juggle thousands of connections, sub-minute compile cycles, and the gravitational pull of Docker and Kubernetes having chosen Go first.
-- Go does not own everything. The fastest data paths (nginx, HAProxy, Redis, Envoy) are C and C++, the JVM still runs Kafka, Elasticsearch, and Jenkins, Ansible is Python, and Rust is taking the newest proxies and pipelines (Linkerd's proxy, Vector, Cloudflare's Pingora).
-- For DevOps engineers the practical takeaway is not "rewrite your scripts in Go" but "learn enough Go to read the tools you operate." The upgrade path from reading Kubernetes source to writing an operator is short.
+- Of 20 projects that define the cloud native stack, 19 are majority Go, most above 90%. The exception, Grafana, is a Go backend under a TypeScript frontend.
+- The reasons are concrete: one self-contained binary, cross-compilation from one machine, goroutines for daemons that juggle thousands of connections, fast compiles, and the gravitational pull of Docker and Kubernetes having chosen Go first.
+- Go does not own everything. The fastest data paths (nginx, HAProxy, Redis, Envoy) are C and C++, the JVM still runs Kafka, Elasticsearch, and Jenkins, Ansible is Python, and the newest proxies and pipelines are Rust (Linkerd's proxy, Vector, Cloudflare's Pingora).
+- For DevOps engineers the practical takeaway is "learn enough Go to read the tools you operate" rather than "rewrite your scripts in Go." The step from reading Kubernetes source to writing an operator is short.
 
 ## Prerequisites
 
@@ -69,27 +69,27 @@ Everyone knows the meme list; here is what the repositories say. Percentages are
 }
 ```
 
-Three things the numbers say that the meme does not:
+The numbers add three things the meme leaves out:
 
 - **The core is Go even where the total is not.** Vault (66% Go) and Consul (76%) carry large JavaScript and SCSS shares because they ship web UIs; the servers are Go. Grafana is the honest outlier: the product is a TypeScript frontend and a Go backend in roughly equal measure, so "Grafana is Go" is half true.
 - **The projects are polyglot at the edges.** Cilium is 10% C because its datapath is eBPF programs; Hugo carries 2.5% C for a bundled library; CockroachDB has 3% Starlark for Bazel build files. Go owns the control logic, not every byte.
-- **The pattern holds across vendors and foundations.** HashiCorp, the CNCF projects, Grafana Labs, MinIO, and Cockroach Labs made the same choice independently, which is the interesting part.
+- **The pattern holds across vendors and foundations.** HashiCorp, the CNCF projects, Grafana Labs, MinIO, and Cockroach Labs all landed on the same language, and the reasons below are the ones their engineers cite.
 
 ## Why Go keeps winning the control plane
 
-None of these teams picked Go because it is elegant. They picked it because the operational properties match what infrastructure software has to do.
+The reasons these teams give are operational: the properties of a Go program match what infrastructure software has to do.
 
-**One static binary.** A Go program compiles to a single executable with no runtime to install and, with `CGO_ENABLED=0`, no shared libraries at all. `kubectl`, `terraform`, and `caddy` are downloaded as one file and run. The demo below shows what that looks like: a working HTTP server in about 5 MB, `ldd` reporting "not a dynamic executable". For tools that must run on a fleet of hosts you do not fully control, that is the whole ballgame. Compare distributing a Python tool (interpreter version, virtualenv, native wheels) or a JVM service (JDK, heap flags, startup time).
+**One self-contained binary.** A Go program compiles to a single executable with the Go runtime (scheduler, garbage collector) linked in, so there is nothing to install beside it, and a pure-Go program built with `CGO_ENABLED=0` links statically on Linux with no shared-library dependencies. `kubectl`, `terraform`, and `caddy` are downloaded as one file and run. The demo below shows what that looks like: a working HTTP server in under 6 MB, `ldd` reporting "not a dynamic executable". For tools that must run on a fleet of hosts you do not fully control, that matters more than any language feature. Compare distributing a Python tool (interpreter version, virtualenv, native wheels) or a JVM service (JDK, heap flags, startup time).
 
-**Cross-compile from one laptop.** `GOOS=linux GOARCH=arm64 go build` produces an ARM Linux binary from a Mac in the same command that produced the x86 one. Release pipelines for these tools are a matrix of environment variables, not a fleet of build machines. This is why every one of them ships darwin, linux, and windows builds for two or three architectures on day one.
+**Cross-compile from one laptop.** `GOOS=linux GOARCH=arm64 go build` produces an ARM Linux binary from a Mac in the same command that produced the x86 one, as long as the code stays cgo-free (cgo needs a C toolchain for the target). Release pipelines for these tools are largely a matrix of environment variables rather than a fleet of build machines, which is why the CLIs among them ship darwin, linux, and windows builds for several architectures from the first release.
 
 **Goroutines fit daemons.** A control-plane component holds thousands of long-lived connections: watch streams in the API server, gossip in Consul, scrape targets in Prometheus, backends behind Traefik. Goroutines make "one lightweight thread per connection" the natural design instead of a callback pyramid or a thread pool tuned by hand, and channels give the coordination primitives. The Kubernetes controller pattern (watch, queue, reconcile) is idiomatic Go.
 
-**The compile loop is fast.** Kubernetes is one of the largest Go codebases in existence and still builds in minutes; a single package rebuilds in seconds. Teams that ship weekly, with hundreds of contributors, feel this daily.
+**The compile loop is fast.** Fast compilation was an explicit design goal of the language, and it shows in day-to-day work on large codebases: a changed package rebuilds in seconds, and a full build of something the size of Kubernetes is a coffee break rather than a lunch break. Teams that ship weekly with hundreds of contributors feel this daily.
 
-**A garbage collector that is good enough, and predictable.** Infrastructure code allocates constantly (parsing YAML, JSON, protobuf), and Go's low-pause GC keeps tail latency acceptable for control-plane work without manual memory management. It is not free (see the counter-list), but it is the right trade for coordination software.
+**A garbage collector that is good enough for the control plane.** Infrastructure code allocates constantly (parsing YAML, JSON, protobuf), and Go's concurrent, low-pause collector keeps latency acceptable for coordination work without manual memory management. It is not free: GC CPU time and occasional pauses are real, which is exactly why the data-path projects in the next section chose otherwise.
 
-**Gravity.** Docker chose Go in 2013; Kubernetes followed in 2014; client libraries, CRD tooling, controller-runtime, and the CNCF's project template all came out Go-shaped. By 2018, starting an infrastructure project in anything else meant re-implementing the ecosystem's plumbing. Gravity is a real technical reason once it exists.
+**Gravity.** Docker chose Go in 2013; Kubernetes was rewritten from a Java prototype into Go before its 2014 launch; client libraries, CRD tooling, controller-runtime, and much of the CNCF's shared plumbing came out Go-shaped. A few years in, starting an infrastructure project in anything else meant re-implementing a lot of that plumbing. Gravity is a real technical reason once it exists.
 
 ## Where Go does not run the show
 
@@ -123,16 +123,16 @@ The meme stops at the control plane on purpose, because the data plane and the o
 }
 ```
 
-- **The hot data path is still C and C++.** nginx, HAProxy, Redis, and Envoy sit where every byte and every microsecond count, and a garbage collector is a cost they refuse to pay. Notice that Envoy, the proxy inside Istio, is C++ while Istio's control plane is 98% Go: the split inside one product is the cleanest illustration of the rule.
+- **The hot data path is still C and C++.** nginx, HAProxy, Redis, and Envoy sit where every byte and every microsecond count, and none of them accept a garbage collector on that path. Istio is the cleanest illustration inside one product: its control plane is 98% Go, its sidecar and waypoint proxies are Envoy in C++, and its newer ambient mode adds a Rust node proxy, ztunnel, for L4 traffic.
 - **The JVM runs the big stateful systems.** Kafka, Elasticsearch, and Jenkins predate the Go wave and carry ecosystems too large to move. They cost more memory and startup time, and they are not going anywhere.
-- **Python owns configuration management and glue.** Ansible is Python because its job is to be extended by people who are not systems programmers, and that audience is Python's.
-- **Rust is winning the new data paths.** Linkerd rewrote its proxy from Go to Rust for exactly the latency and memory reasons above; Vector (observability pipelines) and Cloudflare's Pingora (which replaced nginx inside Cloudflare) chose Rust from the start. Where Go's GC is a cost, the new projects reach for Rust; where Go's productivity matters more, they still reach for Go.
+- **Python holds configuration management and glue.** Ansible is Python, extended by a large audience of operators who write Python modules and plugins rather than systems code.
+- **Rust is taking the new data paths.** Linkerd's 2.x proxy was written in Rust from the start (its 1.x proxy was Scala on the JVM) for latency and memory reasons, while its control plane is Go; Vector (observability pipelines) and Cloudflare's Pingora (which replaced Cloudflare's nginx-based origin-facing proxies) chose Rust as well. Where a GC on the hot path is a cost, new projects reach for Rust; where developer throughput matters more, they still reach for Go.
 
-The picture in 2026 is therefore two layers: Go for the control plane (scheduling, coordination, configuration, APIs) and C, C++, or increasingly Rust for the data plane (bytes on the wire, storage engines). A DevOps engineer touches the first layer constantly and the second rarely.
+The rough picture in 2026 is two layers: Go for the control plane (scheduling, coordination, configuration, APIs) and C, C++, or increasingly Rust for the data plane (bytes on the wire, storage engines). It is rough because Go does carry real data-path work too: MinIO serves objects, CockroachDB stores rows, and Prometheus ingests samples, all in Go. As a rule of thumb for where a DevOps engineer's reading time goes, it holds.
 
-## The five-megabyte proof
+## The six-megabyte demonstration
 
-The argument about static binaries is easy to make and easy to check. Here is a complete HTTP service:
+The claim about self-contained binaries is easy to check. Here is a complete HTTP service (`go.mod` is two lines: `module healthz` and the Go version):
 
 ```go
 package main
@@ -154,7 +154,7 @@ func main() {
 }
 ```
 
-We built it on a Raspberry Pi (arm64, Go 1.26) and cross-compiled it for three other targets from the same shell:
+We built it on a Raspberry Pi (arm64, Go 1.26), ran it, and cross-compiled it for three other targets from the same shell:
 
 ```terminal
 {
@@ -166,13 +166,14 @@ We built it on a Raspberry Pi (arm64, Go 1.26) and cross-compiled it for three o
     { "cmd": "ls -l healthz | awk '{print $5\" bytes\"}'", "output": "5374114 bytes" },
     { "cmd": "file healthz", "output": "healthz: ELF 64-bit LSB executable, ARM aarch64, statically linked, stripped" },
     { "cmd": "ldd healthz", "output": "\tnot a dynamic executable" },
+    { "cmd": "./healthz & sleep 1; curl -s localhost:8080/healthz", "output": "listening on :8080\nok from raspberrypi at 2026-09-01T21:05:55Z" },
     { "comment": "same source, other platforms, no other machines involved" },
     { "cmd": "for t in linux/amd64 darwin/arm64 windows/amd64; do GOOS=${t%/*} GOARCH=${t#*/} CGO_ENABLED=0 go build -ldflags=\"-s -w\" -o healthz-${t/\\//-} . && echo \"$t $(stat -c %s healthz-${t/\\//-}) bytes\"; done", "output": "linux/amd64 5771426 bytes\ndarwin/arm64 5428114 bytes\nwindows/amd64 5901312 bytes" }
   ]
 }
 ```
 
-Five and a half megabytes, no runtime, no shared libraries, four platforms from one directory. Every tool in the first chart ships this way, and that single property explains more of the meme than any language feature does. It is also why `FROM scratch` containers are normal in this ecosystem: the image is the binary.
+Between 5.4 and 5.9 MB per target, nothing to install beside it, no shared libraries on the Linux build we inspected, four platforms from one directory. The CLIs and single-binary servers in the first chart (kubectl, terraform, caddy, etcd, MinIO) ship in exactly this shape, and that property explains more of the meme than any language feature does. It is also why `FROM scratch` containers are normal in this ecosystem: the image is the binary. (Not universal: Grafana ships its frontend assets alongside the binary, and Hugo's extended build uses cgo.)
 
 ## What this means if you run this stack
 
@@ -180,7 +181,7 @@ You do not have to write Go to benefit from the fact that your infrastructure is
 
 - **Error messages become searchable at the source.** When `kubectl` or `terraform` prints something cryptic, the string is in a Go file you can find in seconds, with the condition that produced it right above.
 - **Configuration semantics stop being folklore.** The definitive answer to "what does this Helm flag do" is a short Go function, and it is usually clearer than the docs.
-- **Extending the tools is the same language as the tools.** Kubernetes operators, Terraform providers, Prometheus exporters, Caddy modules, Traefik plugins: all Go, all built with libraries the projects themselves maintain. Our [guide to writing a simple Kubernetes operator](/posts/write-simple-kubernetes-operator) starts from exactly that position.
-- **The language is small.** Go's spec fits in an afternoon; reading competence takes a weekend of following code in a project you already use. That is a better return than most certifications.
+- **Extending the tools is the same language as the tools.** Kubernetes operators, Terraform providers, Prometheus exporters, Caddy modules, and Traefik plugins are written in Go against libraries the projects maintain. Our [guide to writing a simple Kubernetes operator](/posts/write-simple-kubernetes-operator) starts from exactly that position.
+- **The language is small.** The Go specification is short enough to read in a sitting, and reading competence comes quickly from following code in a project you already run. That is a good return for the time.
 
-The meme is right, and the reason it is right is operational: the properties that make Go a good CLI language (one binary, fast start, cross-compile) are the same properties a control plane needs, plus goroutines for the daemons. The data plane will keep going to C and Rust. Everything that schedules, coordinates, and configures will keep being Go, and it is worth being able to read.
+The meme holds, for operational reasons: the properties that make Go a good CLI language (one binary, fast start, cross-compile) are the same properties a control plane needs, plus goroutines for the daemons. The data plane keeps going to C and Rust. The layer that schedules, coordinates, and configures your infrastructure is written in Go, and it is worth being able to read.
