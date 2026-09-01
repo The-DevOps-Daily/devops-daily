@@ -105,7 +105,23 @@ This is the part worth seeing rather than reading about. Everything below is a r
 }
 ```
 
-There it is: three ordinary SQL statements came back out as a structured, ordered, transaction-delimited change stream, without the application writing a single event. (The `test_decoding` plugin above is the built-in demo decoder; real pipelines use `pgoutput` or `wal2json` for structured output.) If you read [our WAL post](https://devops-daily.com/posts/wal-as-the-source-of-truth-lakebase-storage-s3), those LSNs are old friends: the stream's cursor is just a position in the log.
+There it is: three ordinary SQL statements came back out as a structured, ordered, transaction-delimited change stream, without the application writing a single event.
+
+The `test_decoding` plugin above is the built-in demo decoder; real pipelines use `pgoutput` (the protocol-native one) or `wal2json`. Same session with a `wal2json` slot, and the same insert becomes machine-readable (also real output):
+
+```terminal
+{
+  "title": "wal2json: the same stream as JSON",
+  "prompt": "neondb=>",
+  "steps": [
+    { "cmd": "SELECT data FROM pg_logical_slot_peek_changes('json_demo', NULL, NULL, 'format-version', '2');", "output": "{\"action\":\"B\"}\n{\"action\":\"I\",\"schema\":\"public\",\"table\":\"orders_cdc\",\"columns\":[{\"name\":\"id\",\"type\":\"integer\",\"value\":1},{\"name\":\"customer\",\"type\":\"text\",\"value\":\"grace\"},...]}\n{\"action\":\"C\"}" }
+  ]
+}
+```
+
+Two function families matter here: `peek_changes` reads without consuming (we used it above so the demos are re-runnable), while `get_changes` consumes, advancing the slot's acknowledged position, which is what a real consumer does on every poll. One honest subtlety we hit while testing: after consuming, `restart_lsn` (and so the retained-WAL number) does not drop instantly; Postgres advances it lazily once decoding no longer needs the older segments. Do not panic-tune based on a retention figure measured seconds after a catch-up. If you read [our WAL post](https://devops-daily.com/posts/wal-as-the-source-of-truth-lakebase-storage-s3), those LSNs are old friends: the stream's cursor is just a position in the log.
+
+One more piece the stream does not give you: the past. A slot starts at creation time, so a new consumer needs the **initial snapshot problem** solved: copy the existing table contents first, then apply changes from the stream without a gap. Postgres supports this handoff properly (a slot creation can export a consistent snapshot to read the baseline from), and it is precisely the fiddly part that Debezium and the managed vendors have production-hardened; if you hand-roll a consumer, this is where the subtle bugs live.
 
 CDC's superpower over the outbox is completeness: every committed change to the captured tables, including the UPDATE someone runs by hand during an incident. The fine print: DDL and sequences are not part of the stream, UPDATE/DELETE detail depends on the table's REPLICA IDENTITY, a crash can redeliver recent changes (consumers still deduplicate), and you inherit the table schema as your event schema. Plus one sharp operational edge.
 
