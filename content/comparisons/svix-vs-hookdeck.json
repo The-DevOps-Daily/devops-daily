@@ -12,8 +12,8 @@
     "Hookdeck",
     "API Platforms"
   ],
-  "createdDate": "2026-09-01T18:00:00Z",
-  "updatedDate": "2026-09-01T18:00:00Z",
+  "createdDate": "2026-09-02T09:00:00Z",
+  "updatedDate": "2026-09-02T09:00:00Z",
   "estimatedReadTime": "12 min read",
   "introduction": "Svix and Hookdeck each started on one side of the webhook wire and have since crossed over. Svix began as webhooks-as-a-service for API providers (send to your customers, with retries, signatures, and a customer portal) and added Svix Ingest, a gateway for the webhooks you receive from Stripe, GitHub, Shopify and others. Hookdeck began as the Event Gateway for receiving and routing inbound webhooks and added Outpost, an open-source outbound delivery layer offered self-hosted or managed. In 2026 both vendors sell both directions, so the useful comparison is two comparisons: sending (Svix Dispatch against Outpost) and receiving (Svix Ingest against the Event Gateway).\n\nThe products are not mirror images. On the sending side Svix has years of head start and the most complete customer-facing tooling, while Outpost is younger, cheaper per event, and Apache-licensed. On the receiving side the Event Gateway is the deeper product (configurable retry rules, Retry-After support, per-destination rate control, a CLI that forwards to localhost) while Ingest covers the core gateway needs with the fewer knobs of a newer product.\n\nThis page lays out the delivery mechanics per direction (retry schedules, receiver-side controls, rate limiting, replay), the security model (Standard Webhooks signatures, HMAC options), what each vendor open-sources and under which license, data regions and compliance, and current published pricing for all four products. It ends with a use-case guide and a verdict that names a winner per direction.",
   "toolA": {
