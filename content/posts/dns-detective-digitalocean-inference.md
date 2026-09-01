@@ -22,7 +22,7 @@ tags:
 
 Ask an LLM "why does mail to my domain bounce?" and you get a plausible list of everything that has ever caused a bounce. Ask an engineer, and they do something different: they run `dig`, look at the answer, and let the evidence pick the next question. The difference is not knowledge; it is that the engineer is allowed to touch the network.
 
-So we gave the model the network. **DNS Detective** is a small agent, running on [DigitalOcean Serverless Inference](https://www.digitalocean.com/products/gradient), that diagnoses DNS, TLS and email-record problems by calling real probe tools in a loop: resolve records, shake hands with TLS endpoints, pull registration data, fetch URLs. It probes, reads, probes again, and delivers a diagnosis where every claim cites a lookup it actually ran. The whole thing is about 300 lines of Python, and this post walks the build plus three real diagnoses recorded as they happened.
+So we gave the model the network. **DNS Detective** is a small agent, running on [DigitalOcean Serverless Inference](https://www.digitalocean.com/products/inference-engine), that diagnoses DNS, TLS and email-record problems by calling real probe tools in a loop: resolve records, shake hands with TLS endpoints, pull registration data, fetch URLs. It probes, reads, probes again, and delivers a diagnosis where every claim cites a lookup it actually ran. The whole thing is about 300 lines of Python, and this post walks the build plus three real diagnoses recorded as they happened.
 
 ```github
 The-DevOps-Daily/dns-detective
@@ -38,7 +38,7 @@ The-DevOps-Daily/dns-detective
 ## Prerequisites
 
 - Python 3.10+, `pip install dnspython`
-- A [DigitalOcean Serverless Inference](https://www.digitalocean.com/products/gradient) API key
+- A [DigitalOcean Serverless Inference](https://www.digitalocean.com/products/inference-engine) API key
 - No infrastructure: the agent is one file, the probes run from wherever you run it
 
 ## The architecture is one loop
