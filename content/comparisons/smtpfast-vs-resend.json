@@ -280,8 +280,8 @@
     },
     {
       "scenario": "You need to receive email, not just send it",
-      "recommendation": "toolB",
-      "explanation": "Resend has inbound receiving with webhooks today; SMTPfast does not offer inbound yet (it is on the roadmap). If receiving is a launch requirement, this one is a hard filter, not a tradeoff."
+      "recommendation": "either",
+      "explanation": "Both receive email now: Resend with inbound webhooks, SMTPfast with per-domain receiving on paid plans, a Resend-compatible receiving API and an email.received webhook. If you already integrate Resend receiving, the SMTPfast endpoints and objects have the same shape."
     },
     {
       "scenario": "AI agents sending email on your behalf",
