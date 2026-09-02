@@ -56,7 +56,6 @@
     "audit-content": "tsx scripts/audit-content.ts"
   },
   "dependencies": {
-    "@ducanh2912/next-pwa": "^10.2.9",
     "@giscus/react": "^3.1.0",
     "@next/third-parties": "^16.2.12",
     "@radix-ui/react-accordion": "1.2.12",
@@ -152,5 +151,14 @@
     "typescript": "^6.0.3",
     "vite": "7.3.5",
     "vitest": "^4.1.10"
+  },
+  "pnpm": {
+    "overrides": {
+      "js-yaml@3": "^3.15.2",
+      "js-yaml@4": "^4.3.2",
+      "postcss@<8.5.23": "^8.5.23",
+      "undici@7": "^7.29.0",
+      "browserslist": "^4.28.7"
+    }
   }
 }
