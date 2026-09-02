@@ -40,6 +40,7 @@ import OAuthOidcFlowSimulator from '@/components/games/oauth-oidc-flow-simulator
 import PacketJourney from '@/components/games/packet-journey';
 import PostgresTerminalSimulator from '@/components/games/postgres-terminal-simulator';
 import PostgresWireProtocolSimulator from '@/components/games/postgres-wire-protocol-simulator';
+import PreviewEnvironmentSimulator from '@/components/games/preview-environment-simulator';
 import PromqlPlayground from '@/components/games/promql-playground';
 import RateLimitSimulator from '@/components/games/rate-limit-simulator';
 import RestVsGraphql from '@/components/games/rest-vs-graphql-simulator';
@@ -84,6 +85,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'linux-terminal': LinuxTerminal,
   'packet-journey': PacketJourney,
   'postgres-wire-protocol': PostgresWireProtocolSimulator,
+  'preview-environment-simulator': PreviewEnvironmentSimulator,
   'sql-terminal-simulator': SqlTerminalSimulator,
   'postgres-terminal-simulator': PostgresTerminalSimulator,
   'mongodb-terminal-simulator': MongodbTerminalSimulator,
