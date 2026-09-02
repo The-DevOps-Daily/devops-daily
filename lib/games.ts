@@ -38,7 +38,7 @@ const games: Game[] = [
     title: 'Preview Environment Simulator',
     seoTitle: 'Preview Environment Simulator: From Pull Request to Teardown',
     description:
-      'See how a pull request becomes a temporary copy of your app—complete with a private URL, safe test data, review checks, and automatic cleanup.',
+      'See how a pull request becomes a temporary copy of your app, complete with a private URL, safe test data, review checks, and automatic cleanup.',
     iconName: 'Workflow',
     badgeText: 'New',
     color: 'from-blue-500 to-cyan-600',

@@ -110,7 +110,7 @@ export default function PreviewEnvironmentSimulatorPage() {
       fallbackDescription="See how a pull request becomes a temporary copy of your app, then review it and watch every resource disappear."
       educational={<PreviewEnvironmentEducational />}
       seoLearningPoints={seoLearningPoints}
-      shareText="I built a pull-request preview from Git intent to review evidence—and proved the cleanup path works."
+      shareText="I built a pull-request preview from Git intent to review evidence, and proved the cleanup path works."
     >
       <PreviewEnvironmentSimulator />
     </SimulatorShell>
