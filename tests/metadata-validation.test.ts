@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
+import matter from '../lib/front-matter';
 import fg from 'fast-glob';
 
 describe('Metadata and OpenGraph Validation', () => {

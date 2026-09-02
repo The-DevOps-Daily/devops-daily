@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import path from 'path';
 import fg from 'fast-glob';
 import fs from 'fs';
-import matter from 'gray-matter';
+import matter from '../lib/front-matter';
 
 describe('Data Integrity', () => {
   describe('Internal Links', () => {

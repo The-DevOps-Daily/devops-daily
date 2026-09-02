@@ -50,9 +50,10 @@ export const getInterviewProgress = (category?: string): InterviewQuestionProgre
   if (typeof window === 'undefined') return {};
   
   const key = category ? `${STORAGE_PREFIX}${category}` : `${STORAGE_PREFIX}all`;
-  const stored = localStorage.getItem(key);
   try {
-    return stored ? JSON.parse(stored) : {};
+    const stored = localStorage.getItem(key);
+    const parsed = stored ? JSON.parse(stored) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
   } catch {
     return {};
   }

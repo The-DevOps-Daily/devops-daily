@@ -365,6 +365,8 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
     circle: ['cx', 'cy', 'r', 'fill', 'stroke'],
     details: ['open'],
   },
+  // Keep attribute case: the SVG viewBox on heading and callout icons must survive.
+  parser: { lowerCaseAttributeNames: false },
   allowedSchemes: ['http', 'https', 'mailto'],
   allowedSchemesByTag: { img: ['http', 'https'] },
   allowProtocolRelative: false,

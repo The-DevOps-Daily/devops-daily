@@ -1,19 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
+import { parseFrontMatter } from './front-matter';
 
-// gray-matter picks its parser from the text after the opening `---`, and
-// its `js`/`javascript` engines are eval(). Content arrives through pull
-// requests and is parsed on CI and on maintainer machines, so only YAML
-// (and JSON) front matter is accepted.
-const noCodeFrontMatter = {
-  parse(): never {
-    throw new Error('JavaScript front matter is not allowed');
-  },
-};
-const FRONT_MATTER_OPTIONS = {
-  engines: { js: noCodeFrontMatter, javascript: noCodeFrontMatter, coffee: noCodeFrontMatter, coffeescript: noCodeFrontMatter, cson: noCodeFrontMatter },
-};
 
 export const CONTENT_CACHE_DURATION =
   process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
@@ -93,7 +81,7 @@ export async function readMarkdownFile<
   mapItem: (data: D, content: string, file: string) => T | Promise<T>
 ): Promise<T> {
   const raw = await readTextFile(filePath);
-  const { data, content } = matter(raw, FRONT_MATTER_OPTIONS);
+  const { data, content } = parseFrontMatter(raw);
 
   return mapItem(data as D, content, path.basename(filePath));
 }
