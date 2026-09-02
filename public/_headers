@@ -1,14 +1,12 @@
 /*
   Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
   X-Content-Type-Options: nosniff
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-src https://giscus.app; frame-ancestors 'self'
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-src https://giscus.app; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://smtpfa.st
 
 /sw.js
-  Service-Worker-Allowed: /
   Cache-Control: no-cache
-
-/offline.html
-  Cache-Control: public, max-age=86400
 
 /404.html
   Content-Type: text/html; charset=utf-8
@@ -17,19 +15,8 @@
 /_next/static/*
   Cache-Control: public, max-age=31536000, immutable
 
-/posts/*
-  Cache-Control: public, max-age=3600
-
-/guides/*
-  Cache-Control: public, max-age=3600
-
-# Game pages - prevent embedding by default
-/games/*
-  Cache-Control: public, max-age=3600
-
 # Allow games to be embedded on external sites via the /embed route
 # Remove the global CSP before applying the embed-specific policy.
 /games/*/embed
   ! Content-Security-Policy
-  Cache-Control: public, max-age=3600
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-ancestors *
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-ancestors *; object-src 'none'; base-uri 'self'; form-action 'self'

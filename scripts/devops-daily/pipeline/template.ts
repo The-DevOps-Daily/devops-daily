@@ -69,7 +69,7 @@ ${summary}
 
 **📅 ${date}** • **📰 ${item.source}**${tagsSection}
 
-[**🔗 Read more**](${item.url})`;
+${item.url ? `[**🔗 Read more**](${item.url})` : ''}`;
 }
 
 /**

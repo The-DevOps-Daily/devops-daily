@@ -37,7 +37,7 @@ const ICONS: Record<string, string> = {
 function PdIcon({ name, tone }: { name?: string; tone?: string }) {
   if (!name) return null;
   const cls = 'pd-ic' + (tone ? ' t-' + tone : '');
-  if (ICONS[name]) {
+  if (Object.hasOwn(ICONS, name) && ICONS[name]) {
     // Safe: the injected markup is a trusted, hardcoded constant (ICONS[name]).
     // `name` is only used as a lookup key; unknown values fall through to the
     // React-escaped text branch below, so author input never reaches innerHTML.
@@ -462,7 +462,18 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
     </div>
   ) : (
     <div
-      className={'pd-row' + (spec.type === 'flow' ? ' pd-flow-row pd-flow-content' : '')}
+      className={
+        'pd-row' +
+        (spec.type === 'flow' ? ' pd-flow-row pd-flow-content' : '') +
+        (spec.type === 'loop' ? ' pd-loopwide-row' : '')
+      }
+      style={
+        spec.type === 'loop'
+          ? {
+              gridTemplateColumns: `minmax(0,1fr) repeat(${Math.max(0, nodes.length - 1)},minmax(28px,48px) minmax(0,1fr))`,
+            }
+          : undefined
+      }
       ref={rowRef}
     >
       {nodes.length > 0 && <NodeCard node={nodes[0]} step={1} />}
@@ -526,27 +537,48 @@ function RowDiagram({ spec }: { spec: DiagramSpec }) {
       )}
       {spec.goal && <div className="pd-goal">{spec.goal}</div>}
       {spec.type === 'loop' ? (
-        <div className="pd-gscroll">
+        <div className="pd-gscroll pd-loopscroll">
         <div className="pd-loopwrap">
           {spec.loopTop && <div className="pd-toplabel">{spec.loopTop}</div>}
-          {row}
-          <div className="pd-loopback" ref={loopRef} aria-label={spec.loopBack ?? 'Return to the first step'}>
-            <svg viewBox={`0 0 ${loopGeometry.width} 54`} preserveAspectRatio="none" aria-hidden="true">
-              <path
-                className="track"
-                d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 0`}
-              />
-              <path
-                className="flow"
-                pathLength="1"
-                d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 0`}
-              />
-              <path
-                className="head"
-                d={`M ${loopGeometry.left - 6} 8 L ${loopGeometry.left} 0 L ${loopGeometry.left + 6} 8`}
-              />
-            </svg>
-            {spec.loopBack && <span className="pd-lb-label">{spec.loopBack}</span>}
+          <div className="pd-loopwide">
+            {row}
+            <div className="pd-loopback" ref={loopRef} aria-label={spec.loopBack ?? 'Return to the first step'}>
+              <svg viewBox={`0 0 ${loopGeometry.width} 54`} preserveAspectRatio="none" aria-hidden="true">
+                <path
+                  className="track"
+                  d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 0`}
+                />
+                <path
+                  className="flow"
+                  pathLength="1"
+                  d={`M ${loopGeometry.right} 0 V 38 Q ${loopGeometry.right} 48 ${loopGeometry.right - 10} 48 H ${loopGeometry.left + 10} Q ${loopGeometry.left} 48 ${loopGeometry.left} 38 V 0`}
+                />
+                <path
+                  className="head"
+                  d={`M ${loopGeometry.left - 6} 8 L ${loopGeometry.left} 0 L ${loopGeometry.left + 6} 8`}
+                />
+              </svg>
+              {spec.loopBack && <span className="pd-lb-label">{spec.loopBack}</span>}
+            </div>
+          </div>
+          <div className="pd-loopcompact">
+            <div className="pd-loopgrid">
+              {nodes.map((node, i) => {
+                const gridRow = Math.floor(i / 2) + 1;
+                const gridColumn = gridRow % 2 === 1 ? (i % 2) + 1 : 2 - (i % 2);
+                return (
+                  <div className="pd-loopcell" style={{ gridColumn, gridRow }} key={i}>
+                    <NodeCard node={node} step={i + 1} />
+                    {i < nodes.length - 1 && <Conn />}
+                  </div>
+                );
+              })}
+            </div>
+            {spec.loopBack && (
+              <div className="pd-loopfeedback" aria-label={spec.loopBack}>
+                <span className="pd-lb-label">{spec.loopBack}</span>
+              </div>
+            )}
           </div>
         </div>
         </div>
@@ -873,7 +905,7 @@ const STYLES = `
   --pd-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   border:1px solid var(--pd-line); border-radius:16px; background:var(--pd-bg); padding:24px 22px;
   box-shadow:0 1px 2px rgba(20,18,14,.03),0 8px 30px -20px rgba(20,18,14,.16);
-  font-family:inherit; color:var(--pd-ink); }
+  font-family:inherit; color:var(--pd-ink); container-type:inline-size; }
 .dark .pdiag{ --pd-card:#131a24; --pd-bg:#0f141d; --pd-ink:#e8edf6; --pd-muted:#8b96ab; --pd-line:#27303f; --pd-line2:#33405280;
   --pd-soft-bg:#1b2431; --pd-soft-ink:#e8edf6; --pd-solid-bg:#e8edf6; --pd-solid-ink:#10151d; --pd-accent:#f2a35a;
   --pd-blue:#6fa8ff; --pd-green:#57d08a; --pd-violet:#a996f5; --pd-red:#f6857f; --pd-amber:#e6b45e; --pd-slate:#9aa6b8;
@@ -940,7 +972,12 @@ const STYLES = `
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-conn .flow{ animation:pd-dash .95s linear infinite; } }
 @media (prefers-reduced-motion:reduce){ .pdiag .pd-node{ transition:none; } }
 @keyframes pd-dash{ to{ stroke-dashoffset:-14; } }
-.pdiag .pd-loopwrap{ width:max-content; min-width:100%; margin:0 auto; }
+.pdiag .pd-loopwrap{ width:100%; min-width:0; margin:0 auto; }
+.pdiag .pd-loopwide-row{ display:grid; align-items:stretch; width:100%; gap:0; }
+.pdiag .pd-loopwide-row > .pd-node,.pdiag .pd-loopwide-row .pd-seg .pd-node{ width:100%; min-width:0; }
+.pdiag .pd-loopwide-row .pd-seg{ display:contents; }
+.pdiag .pd-loopwide-row .pd-conn{ width:100%; max-width:48px; justify-self:center; }
+.pdiag .pd-loopcompact{ display:none; }
 .pdiag .pd-loopback{ position:relative; height:54px; margin-top:0; }
 .pdiag .pd-loopback svg{ width:100%; height:100%; overflow:visible; }
 .pdiag .pd-loopback .track{ fill:none; stroke:var(--pd-line2); stroke-width:1.8; vector-effect:non-scaling-stroke; }
@@ -1000,6 +1037,35 @@ const STYLES = `
 .pdiag .pd-detail b{ color:var(--pd-ink); font-weight:650; }
 .pdiag .pd-pkt{ fill:var(--pd-accent); }
 .pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; }
+@container (max-width:760px){
+  .pdiag .pd-loopscroll{ overflow:visible; }
+  .pdiag .pd-loopwrap{ width:100%; max-width:100%; min-width:0; }
+  .pdiag .pd-loopwide{ display:none; }
+  .pdiag .pd-loopcompact{ position:relative; display:block; padding-left:22px; }
+  .pdiag .pd-loopcompact::before{ content:""; position:absolute; left:3px; top:18px; bottom:48px; width:2px; border-radius:2px; background:repeating-linear-gradient(to top,var(--pd-accent) 0 6px,transparent 6px 14px); background-size:2px 14px; opacity:.72; }
+  .pdiag .pd-loopcompact::after{ content:"\\2191"; position:absolute; left:-2px; top:3px; color:var(--pd-accent); font-family:var(--pd-mono); font-size:15px; line-height:1; }
+  .pdiag .pd-loopgrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:58px; row-gap:52px; padding:8px 0 4px; }
+  .pdiag .pd-loopcell{ position:relative; min-width:0; }
+  .pdiag .pd-loopcell .pd-node{ width:100%; min-width:0; height:100%; }
+  .pdiag .pd-loopcell .pd-conn{ position:absolute; display:block; width:44px; height:24px; margin:0; z-index:2; }
+  .pdiag .pd-loopcell:nth-child(4n+1) .pd-conn{ left:calc(100% + 7px); top:50%; transform:translateY(-50%); }
+  .pdiag .pd-loopcell:nth-child(4n+2) .pd-conn{ left:50%; top:calc(100% + 14px); transform:translateX(-50%) rotate(90deg); }
+  .pdiag .pd-loopcell:nth-child(4n+3) .pd-conn{ right:calc(100% + 7px); top:50%; transform:translateY(-50%) rotate(180deg); }
+  .pdiag .pd-loopcell:nth-child(4n) .pd-conn{ left:50%; top:calc(100% + 14px); transform:translateX(-50%) rotate(90deg); }
+  .pdiag .pd-loopfeedback{ margin-top:18px; text-align:center; }
+  .pdiag .pd-loopfeedback .pd-lb-label{ position:static; display:inline-block; transform:none; max-width:100%; white-space:normal; }
+}
+@media (prefers-reduced-motion:no-preference){
+  .pdiag .pd-loopcompact::before{ animation:pd-loop-vertical 1s linear infinite; }
+  .pdiag .pd-loopwrap .pd-lb-label{ animation:pd-feedback-pulse 2.2s ease-in-out infinite; }
+}
+@keyframes pd-loop-vertical{ to{ background-position-y:-14px; } }
+@keyframes pd-feedback-pulse{ 50%{ border-color:color-mix(in srgb,var(--pd-accent) 58%,var(--pd-line)); box-shadow:0 0 0 3px color-mix(in srgb,var(--pd-accent) 10%,transparent); } }
+@container (max-width:520px){
+  .pdiag .pd-loopgrid{ grid-template-columns:minmax(0,1fr); row-gap:48px; column-gap:0; }
+  .pdiag .pd-loopgrid .pd-loopcell{ grid-column:1!important; grid-row:auto!important; }
+  .pdiag .pd-loopgrid .pd-loopcell .pd-conn{ left:50%; right:auto; top:calc(100% + 12px); transform:translateX(-50%) rotate(90deg); }
+}
 @media (max-width:760px){
   .pdiag .pd-toolbar{ align-items:flex-start; flex-wrap:wrap; }
   .pdiag .pd-flow-links{ display:none; }
@@ -1011,14 +1077,10 @@ const STYLES = `
   .pdiag .pd-flow-row{ overflow-x:visible; }
   .pdiag .pd-seg{ display:contents; }
   .pdiag .pd-conn{ display:none; }
-  /* Complex diagrams keep their real layout and scroll sideways instead of
-     collapsing, so edges, the loop arc, and parallel branches stay meaningful.
-     The scroll wrapper (.pd-gscroll) keeps each diagram from widening the page. */
+  /* Complex graph diagrams keep their real layout and scroll sideways so
+     their edges remain meaningful. Loop diagrams stack via the container rule. */
   .pdiag .pd-graph{ width:max-content; min-width:100%; gap:26px; }
   .pdiag .pd-col{ flex:none; }
-  .pdiag .pd-loopwrap{ width:max-content; max-width:none; min-width:100%; }
-  .pdiag .pd-loopwrap .pd-row{ flex-direction:row; }
-  .pdiag .pd-loopwrap .pd-conn{ display:block; }
   /* branch: connectors can't fan on a phone, so hide them and stack the
      color-coded cards with a colored edge instead. */
   .pdiag .pd-tree-links{ display:none; }

@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
+import { parseFrontMatter } from './front-matter';
+
 
 export const CONTENT_CACHE_DURATION =
   process.env.NODE_ENV === 'production' && !process.env.NEXT_RUNTIME
@@ -80,7 +81,7 @@ export async function readMarkdownFile<
   mapItem: (data: D, content: string, file: string) => T | Promise<T>
 ): Promise<T> {
   const raw = await readTextFile(filePath);
-  const { data, content } = matter(raw);
+  const { data, content } = parseFrontMatter(raw);
 
   return mapItem(data as D, content, path.basename(filePath));
 }

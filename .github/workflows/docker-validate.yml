@@ -17,6 +17,9 @@ on:
       - 'docker-compose*.yaml'
       - '.github/workflows/docker-validate.yml'
 
+permissions:
+  contents: read
+
 jobs:
   validate-dockerfiles:
     name: Validate Docker Configuration

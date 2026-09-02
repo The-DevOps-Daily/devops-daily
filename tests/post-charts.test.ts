@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { parseMarkdown } from '@/lib/markdown';
 import {
   parseChartSpec,
+  paddedDomain,
   formatValue,
+  barValueColumnWidth,
   formatAxisValue,
   niceAxisTicks,
   wrapChartLabel,
@@ -75,6 +77,12 @@ describe('post chart embeds', () => {
     expect(formatAxisValue(30, 'min')).toBe('30min');
   });
 
+  it('reserves enough width for bar values and their units', () => {
+    const labels = [formatValue(1.4, 'B commits'), formatValue(2.9, 'B commits')];
+    expect(labels).toEqual(['1.4B commits', '2.9B commits']);
+    expect(barValueColumnWidth(labels, 13, 90)).toBeGreaterThan(90);
+  });
+
   it('generates rounded linear axis ticks', () => {
     expect(niceAxisTicks(0, 1655.08)).toEqual([0, 500, 1000, 1500, 2000]);
     expect(niceAxisTicks(-8, 12)).toEqual([-10, -5, 0, 5, 10, 15]);
@@ -118,5 +126,78 @@ describe('post chart embeds', () => {
   it('computes medians', () => {
     expect(median([3, 1, 2])).toBe(2);
     expect(median([4, 1, 2, 3])).toBe(2.5);
+  });
+});
+
+describe('stricter spec validation (2026-08 upgrade)', () => {
+  it('accepts negative values and refs', () => {
+    const spec = parseChartSpec(
+      JSON.stringify({
+        type: 'bar',
+        rows: [{ label: 'delta', value: -12 }],
+        refs: [{ value: 0, label: 'baseline' }],
+      })
+    );
+    expect(spec).not.toBeNull();
+  });
+
+  it('rejects rows with non-finite or missing values', () => {
+    expect(parseChartSpec(JSON.stringify({ type: 'bar', rows: [{ label: 'a' }] }))).toBeNull();
+    expect(
+      parseChartSpec(JSON.stringify({ type: 'bar', rows: [{ label: 'a', value: 'x' }] }))
+    ).toBeNull();
+  });
+
+  it('rejects line series with empty or malformed data', () => {
+    expect(
+      parseChartSpec(JSON.stringify({ type: 'line', series: [{ name: 's', data: [] }] }))
+    ).toBeNull();
+    expect(parseChartSpec(JSON.stringify({ type: 'line', series: [{ name: 's' }] }))).toBeNull();
+    expect(
+      parseChartSpec(JSON.stringify({ type: 'line', series: [{ name: 's', data: [1, null] }] }))
+    ).toBeNull();
+  });
+
+  it('rejects dots series with empty samples, accepts a single cdf sample', () => {
+    expect(
+      parseChartSpec(JSON.stringify({ type: 'dots', series: [{ name: 's', samples: [] }] }))
+    ).toBeNull();
+    expect(
+      parseChartSpec(JSON.stringify({ type: 'cdf', series: [{ name: 's', samples: [1] }] }))
+    ).not.toBeNull();
+  });
+
+  it('rejects refs without finite values', () => {
+    expect(
+      parseChartSpec(
+        JSON.stringify({
+          type: 'line',
+          series: [{ name: 's', data: [1, 2] }],
+          refs: [{ label: 'no value' }],
+        })
+      )
+    ).toBeNull();
+  });
+});
+
+describe('paddedDomain', () => {
+  it('pads a normal domain on both sides', () => {
+    const [lo, hi] = paddedDomain(10, 110, 0.05);
+    expect(lo).toBeLessThan(10);
+    expect(hi).toBeGreaterThan(110);
+  });
+
+  it('handles negative domains without clipping', () => {
+    const [lo, hi] = paddedDomain(-50, -10, 0.05);
+    expect(lo).toBeLessThan(-50);
+    expect(hi).toBeGreaterThan(-10);
+  });
+
+  it('handles degenerate all-equal and all-zero domains', () => {
+    for (const v of [5, 0]) {
+      const [lo, hi] = paddedDomain(v, v, 0.05);
+      expect(hi).toBeGreaterThan(lo);
+      expect(Number.isFinite(lo) && Number.isFinite(hi)).toBe(true);
+    }
   });
 });

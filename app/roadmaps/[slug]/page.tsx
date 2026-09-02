@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description:
         'A beginner-friendly roadmap specifically designed for aspiring DevOps engineers. Clear, focused learning path without the overwhelm.',
       alternates: {
-        canonical: '/roadmaps/junior',
+        canonical: '/roadmap/junior',
       },
       openGraph: {
         title: 'Junior DevOps Roadmap - Start Your DevOps Journey',
@@ -59,7 +59,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description:
         'Master the integration of security practices into the DevOps pipeline. Learn to build secure, compliant, and resilient systems.',
       alternates: {
-        canonical: '/roadmaps/devsecops',
+        canonical: '/roadmap/devsecops',
       },
       openGraph: {
         title: 'DevSecOps Roadmap - Security-First DevOps',

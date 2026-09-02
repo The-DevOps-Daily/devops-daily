@@ -322,6 +322,14 @@
   overflow-wrap: anywhere;
 }
 
+/* Tailwind Typography adds visible backticks through pseudo-elements by
+ * default. The rounded inline-code treatment already supplies the visual
+ * boundary, so keep the Markdown delimiters out of the rendered text. */
+.prose code::before,
+.prose code::after {
+  content: none !important;
+}
+
 /* Inline links — same story as inline code. A raw URL used as link text
  * (citations, footnotes, "see also" links) has no spaces, so without an
  * explicit break opportunity the anchor pushes the row wider than the

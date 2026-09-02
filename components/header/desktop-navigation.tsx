@@ -15,9 +15,13 @@ export function DesktopNavigation() {
       <div className="hidden lg:flex lg:items-center lg:gap-1">
         {/* Main Navigation Links */}
         {mainNavigation.map((item) => (
+          // External entries leave the site, so they render as a plain anchor
+          // with the usual noopener guard rather than a client-routed Link.
           <Link
             key={item.href}
             href={item.href}
+            target={item.external ? '_blank' : undefined}
+            rel={item.external ? 'noopener noreferrer' : undefined}
             className={cn(
               'flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all duration-300',
               'hover:bg-primary/8 hover:text-primary hover:shadow-sm',

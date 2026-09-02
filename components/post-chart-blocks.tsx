@@ -8,8 +8,11 @@ import {
   type LineSeries,
   type DotSeries,
   type CdfSeries,
+  type ChartRef,
+  paddedDomain,
   parseChartSpec,
   formatValue,
+  barValueColumnWidth,
   formatAxisValue,
   niceAxisTicks,
   wrapChartLabel,
@@ -32,18 +35,57 @@ function BarChart({ spec }: { spec: ChartSpec }) {
     ...labels.flatMap((lines) => lines.map((line) => Array.from(line).length))
   );
   const labelW = Math.min(240, Math.max(150, longestLabelLine * 7.5 + 18));
-  const valueW = spec.tickLabel ? 150 : 90;
+  const valueLabels = rows.map((row) => formatValue(row.value, spec.unit));
+  const valueW = barValueColumnWidth(valueLabels, 13, 90);
+  const tickLabels = rows
+    .filter((row) => row.tick != null)
+    .map((row) => `${spec.tickLabel ?? 'tick'} ${formatValue(row.tick!, spec.unit)}`);
+  const tickValueW = tickLabels.length ? barValueColumnWidth(tickLabels, 11.5, 72) : 0;
+  const valuesW = valueW + tickValueW;
+  const plotEnd = width - valuesW;
   const pad = 6;
   const height = rows.length * rowH + pad * 2;
-  const max = Math.max(...rows.map((r) => Math.max(r.value, r.tick ?? 0))) * 1.08;
-  const scale = (v: number) => (v / max) * (width - labelW - valueW);
+  // Sign-safe domain with a zero baseline, so negative deltas render as bars
+  // extending left instead of being clamped to a sliver.
+  const rawValues = rows.flatMap((r) => (r.tick != null ? [r.value, r.tick] : [r.value]));
+  const refValues = (spec.refs ?? []).map((r) => r.value);
+  const [domMin, domMax] = paddedDomain(
+    Math.min(0, ...rawValues, ...refValues),
+    Math.max(0, ...rawValues, ...refValues),
+    0.08
+  );
+  const xPos = (v: number) =>
+    labelW + ((v - domMin) / (domMax - domMin)) * (plotEnd - labelW);
+  const zeroX = xPos(0);
+  const hasNegative = rawValues.some((v) => v < 0);
 
   const seriesNames = [...new Set(rows.map((r) => r.series).filter(Boolean))] as string[];
   const colorFor = (row: BarRow) =>
     row.series ? seriesColor(seriesNames.indexOf(row.series)) : seriesColor(0);
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={spec.title ?? 'Bar chart'}>
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      width="100%"
+      role="img"
+      aria-label={spec.title ?? 'Bar chart'}
+    >
+      {hasNegative && (
+        <line x1={zeroX} y1={pad} x2={zeroX} y2={height - pad} className="stroke-border" strokeOpacity={0.9} />
+      )}
+      {(spec.refs ?? []).map((ref) => (
+        <g key={`ref-${ref.value}`}>
+          <line
+            x1={xPos(ref.value)} y1={pad} x2={xPos(ref.value)} y2={height - pad}
+            stroke={ref.color ?? '#f59e0b'} strokeDasharray={ref.dash ?? '4 5'} strokeWidth={1.5}
+          />
+          {ref.label && (
+            <text x={xPos(ref.value) + 5} y={pad + 10} fontSize={11} fill={ref.color ?? '#f59e0b'}>
+              {ref.label}
+            </text>
+          )}
+        </g>
+      ))}
       {rows.map((r, i) => {
         const cy = pad + i * rowH + rowH / 2;
         const labelLines = labels[i];
@@ -62,11 +104,18 @@ function BarChart({ spec }: { spec: ChartSpec }) {
                 </tspan>
               ))}
             </text>
-            <line x1={labelW} y1={cy} x2={width - valueW} y2={cy} className="stroke-border" strokeOpacity={0.5} />
+            <line
+              x1={labelW}
+              y1={cy}
+              x2={plotEnd}
+              y2={cy}
+              className="stroke-border"
+              strokeOpacity={0.5}
+            />
             <rect
-              x={labelW}
+              x={Math.min(zeroX, xPos(r.value))}
               y={cy - 7}
-              width={Math.max(2, scale(r.value))}
+              width={Math.max(2, Math.abs(xPos(r.value) - zeroX))}
               height={14}
               rx={4}
               fill={colorFor(r)}
@@ -74,19 +123,32 @@ function BarChart({ spec }: { spec: ChartSpec }) {
             />
             {r.tick != null && (
               <line
-                x1={labelW + scale(r.tick)}
+                x1={xPos(r.tick)}
                 y1={cy - 11}
-                x2={labelW + scale(r.tick)}
+                x2={xPos(r.tick)}
                 y2={cy + 11}
                 stroke="#f59e0b"
                 strokeWidth={2}
               />
             )}
-            <text x={width - valueW + 12} y={cy + 4} fontSize={13} fontWeight={600} className="fill-foreground">
-              {formatValue(r.value, spec.unit)}
+            <text
+              x={plotEnd + valueW - 6}
+              y={cy + 4}
+              fontSize={13}
+              fontWeight={600}
+              textAnchor="end"
+              className="fill-foreground"
+            >
+              {valueLabels[i]}
             </text>
             {r.tick != null && (
-              <text x={width - valueW + 78} y={cy + 4} fontSize={11.5} className="fill-muted-foreground">
+              <text
+                x={width - 6}
+                y={cy + 4}
+                fontSize={11.5}
+                textAnchor="end"
+                className="fill-muted-foreground"
+              >
                 {spec.tickLabel ?? 'tick'} {formatValue(r.tick, spec.unit)}
               </text>
             )}
@@ -105,7 +167,8 @@ function LineChart({ spec }: { spec: ChartSpec }) {
   const padT = 12;
   const padB = 34;
   const points = Math.max(...series.map((s) => s.data.length));
-  const all = series.flatMap((s) => s.data);
+  const refs = spec.refs ?? [];
+  const all = [...series.flatMap((s) => s.data), ...(spec.log ? [] : refs.map((r) => r.value))];
 
   // Log axis (opt-in): spreads a squished low end next to a large spike. Falls
   // back to linear when any value is <= 0, since log10 is undefined there.
@@ -133,7 +196,9 @@ function LineChart({ spec }: { spec: ChartSpec }) {
   const padL = Math.min(108, Math.max(52, longestYLabel * 7 + 14));
   const x = (i: number) => padL + (i / Math.max(1, points - 1)) * (width - padL - padR);
   const y = (v: number) => padT + (1 - scaleY(v)) * (height - padT - padB);
-  const labels = spec.x ?? [...Array(points).keys()].map((i) => i + 1);
+  // Clamp author-provided x labels to the data length so extras never render
+  // beyond the plot.
+  const labels = (spec.x ?? [...Array(points).keys()].map((i) => i + 1)).slice(0, points);
   const labelStep = Math.ceil(labels.length / 8);
 
   return (
@@ -147,19 +212,48 @@ function LineChart({ spec }: { spec: ChartSpec }) {
         </g>
       ))}
       {labels.map((l, i) =>
-        i % labelStep === 0 ? (
-          <text key={`${l}-${i}`} x={x(i)} y={height - 12} fontSize={11.5} textAnchor="middle" className="fill-muted-foreground">
+        i % labelStep === 0 || i === labels.length - 1 ? (
+          <text
+            key={`${l}-${i}`}
+            x={x(i)}
+            y={height - 12}
+            fontSize={11.5}
+            textAnchor={i === 0 ? 'start' : i === labels.length - 1 ? 'end' : 'middle'}
+            className="fill-muted-foreground"
+          >
             {String(l)}
           </text>
         ) : null
       )}
+      {refs.map((ref) => (
+        <g key={`ref-${ref.value}`}>
+          <line
+            x1={padL} y1={y(ref.value)} x2={width - padR} y2={y(ref.value)}
+            stroke={ref.color ?? '#f59e0b'} strokeDasharray={ref.dash ?? '4 5'} strokeWidth={1.5}
+          />
+          {ref.label && (
+            <text x={width - padR} y={y(ref.value) - 6} fontSize={11} textAnchor="end" fill={ref.color ?? '#f59e0b'}>
+              {ref.label}
+            </text>
+          )}
+        </g>
+      ))}
       {series.map((s, si) => {
         const d = s.data.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
         return (
           <g key={s.name}>
-            <path d={d} fill="none" stroke={s.color ?? seriesColor(si)} strokeWidth={2.5} strokeLinejoin="round" />
+            <path
+              d={d}
+              fill="none"
+              stroke={s.color ?? seriesColor(si)}
+              strokeWidth={2.5}
+              strokeDasharray={s.dash}
+              strokeLinejoin="round"
+            />
             {s.data.map((v, i) => (
-              <circle key={i} cx={x(i)} cy={y(v)} r={3} fill={s.color ?? seriesColor(si)} />
+              <circle key={i} cx={x(i)} cy={y(v)} r={3} fill={s.color ?? seriesColor(si)}>
+                <title>{`${s.name}${labels[i] !== undefined ? ` · ${String(labels[i])}` : ''}: ${formatValue(v, spec.unit)}`}</title>
+              </circle>
             ))}
           </g>
         );
@@ -176,10 +270,12 @@ function DotPlot({ spec }: { spec: ChartSpec }) {
   const padX = 6;
   const height = series.length * rowH + labelH;
   const all = series.flatMap((s) => s.samples);
-  const min = Math.min(...all) * 0.94;
-  const max = Math.max(...all) * 1.04;
+  const [min, max] = paddedDomain(Math.min(...all), Math.max(...all), 0.05);
   const scale = (v: number) => padX + ((v - min) / (max - min)) * (width - padX * 2);
   const ticks = [...Array(6).keys()].map((t) => min + ((max - min) * t) / 5);
+  // Deterministic vertical stagger so overlapping samples read as density
+  // instead of a single dot; index-based, so the render is reproducible.
+  const jitter = (j: number) => ((j * 7) % 5) * 3.5 - 7;
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" role="img" aria-label={spec.title ?? 'Distribution plot'}>
@@ -207,7 +303,9 @@ function DotPlot({ spec }: { spec: ChartSpec }) {
               <text x={padX} y={si * rowH + 15} fontSize={13} className="fill-muted-foreground">{s.name}</text>
             )}
             {s.samples.map((v, j) => (
-              <circle key={j} cx={scale(v)} cy={cy + 8} r={4.5} fill={s.color ?? seriesColor(si)} fillOpacity={0.55} />
+              <circle key={j} cx={scale(v)} cy={cy + 8 + jitter(j)} r={4.5} fill={s.color ?? seriesColor(si)} fillOpacity={0.55}>
+                <title>{`${s.name}: ${formatValue(v, spec.unit)}`}</title>
+              </circle>
             ))}
             <line x1={mx} y1={cy - 7} x2={mx} y2={cy + 23} stroke="#f59e0b" strokeWidth={2.5} />
             <text x={mx + 8} y={cy} fontSize={12} fill="#f59e0b" fontWeight={600}>
@@ -229,8 +327,7 @@ function CdfChart({ spec }: { spec: ChartSpec }) {
   const padT = 12;
   const padB = 32;
   const all = series.flatMap((s) => s.samples);
-  const minV = Math.min(...all) * 0.96;
-  const maxV = Math.max(...all) * 1.02;
+  const [minV, maxV] = paddedDomain(Math.min(...all), Math.max(...all), 0.04);
   const x = (v: number) => padL + ((v - minV) / (maxV - minV)) * (width - padL - padR);
   const y = (pct: number) => padT + (1 - pct / 100) * (height - padT - padB);
   const xTicks = [...Array(5).keys()].map((t) => minV + ((maxV - minV) * (t + 1)) / 5);
@@ -271,7 +368,7 @@ function CdfChart({ spec }: { spec: ChartSpec }) {
         const sorted = [...s.samples].sort((a, b) => a - b);
         const d = sorted
           .map((v, i) => {
-            const pct = (i / (sorted.length - 1)) * 100;
+            const pct = sorted.length === 1 ? 100 : (i / (sorted.length - 1)) * 100;
             return `${i === 0 ? 'M' : 'L'}${x(v).toFixed(1)},${y(pct).toFixed(1)}`;
           })
           .join(' ');
@@ -291,14 +388,22 @@ function CdfChart({ spec }: { spec: ChartSpec }) {
 }
 
 function Legend({ spec }: { spec: ChartSpec }) {
-  let names: string[] = [];
+  // Colors must come from renderer indices (position in the series array),
+  // not from a name-filtered list, or unnamed series shift every color after
+  // them.
+  let items: Array<{ name: string; color: string; dash?: string }> = [];
   if (spec.type === 'bar') {
-    names = [...new Set((spec.rows ?? []).map((r) => r.series).filter(Boolean))] as string[];
+    const names = [...new Set((spec.rows ?? []).map((r) => r.series).filter(Boolean))] as string[];
+    items = names.map((name, i) => ({ name, color: seriesColor(i) }));
   } else if (spec.series) {
-    names = (spec.series as Array<{ name: string }>).map((s) => s.name).filter(Boolean);
+    const series = spec.series as Array<{ name?: string; color?: string; dash?: string }>;
+    items = series
+      .map((s, i) => ({ name: s.name ?? '', color: s.color ?? seriesColor(i), dash: s.dash }))
+      .filter((item) => item.name);
   }
-  const overrides = (spec.series as Array<{ name: string; color?: string }> | undefined) ?? [];
-  const items = names.map((name, i) => ({ name, color: overrides[i]?.color ?? seriesColor(i) }));
+  for (const ref of spec.refs ?? []) {
+    if (ref.label) items.push({ name: ref.label, color: ref.color ?? '#f59e0b', dash: ref.dash ?? '4 5' });
+  }
   if (spec.type !== 'line' && spec.tickLabel) items.push({ name: spec.tickLabel, color: '#f59e0b' });
   if (spec.type === 'dots') items.push({ name: 'median', color: '#f59e0b' });
   if (spec.type === 'cdf') items.push({ name: 'p95', color: '#f59e0b' });
@@ -308,7 +413,13 @@ function Legend({ spec }: { spec: ChartSpec }) {
     <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted-foreground">
       {items.map((item) => (
         <span key={item.name} className="inline-flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-sm" style={{ background: item.color }} />
+          {item.dash ? (
+            <svg width={14} height={6} aria-hidden="true">
+              <line x1={0} y1={3} x2={14} y2={3} stroke={item.color} strokeWidth={2} strokeDasharray={item.dash} />
+            </svg>
+          ) : (
+            <span className="h-2 w-2 rounded-sm" style={{ background: item.color }} />
+          )}
           {item.name}
         </span>
       ))}

@@ -4,3 +4,38 @@
 
 # Canonical location for the CI/CD Stack Generator
 /tools/cicd-stack-generator /games/cicd-stack-generator 301
+
+# Duplicate posts merged into the fuller version (Aug 2026)
+/posts/what-does-set-e-mean-in-bash /posts/what-does-set-e-mean-in-bash-script 301
+/posts/local-docker-images-minikube /posts/use-local-docker-images-minikube 301
+/posts/docker-cannot-connect-daemon /posts/cannot-connect-to-docker-daemon 301
+/posts/how-to-resolve-git-merge-conflicts /posts/how-do-i-resolve-merge-conflicts-in-a-git-repository 301
+/posts/prompt-yes-no-cancel-input-linux-shell-script /posts/prompt-for-yes-no-cancel-input-in-linux-shell-script 301
+/posts/redirect-output-to-file-and-stdout-bash /posts/redirect-output-to-file-and-stdout 301
+# Thin Terraform expression posts consolidated into one guide (Aug 2026)
+/posts/concatenate-string-with-variable-in-terraform /posts/terraform-strings-and-conditionals 301
+/posts/how-do-you-do-simple-string-concatenation-in-terraform /posts/terraform-strings-and-conditionals 301
+/posts/check-string-contains-substring-terraform /posts/terraform-strings-and-conditionals 301
+/posts/terraform-convert-list-to-string /posts/terraform-strings-and-conditionals 301
+/posts/and-or-conditional-operator-in-terraform /posts/terraform-strings-and-conditionals 301
+/posts/if-else-elsif-conditional-in-terraform /posts/terraform-strings-and-conditionals 301
+/posts/terraform-conditionals-if-variable-does-not-exist /posts/terraform-strings-and-conditionals 301
+/posts/conditional-attributes-in-terraform /posts/terraform-strings-and-conditionals 301
+/posts/conditional-resource-creation-in-terraform-using-vars /posts/terraform-strings-and-conditionals 301
+/posts/terraform-conditional-data-source /posts/terraform-strings-and-conditionals 301
+/posts/tfvars-vs-variables /posts/terraform-variables-loops-and-outputs 301
+/posts/variables-within-variables /posts/terraform-variables-loops-and-outputs 301
+/posts/get-environment-variable-in-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/append-to-list-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/how-to-for-each-through-a-list-objects-in-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/invalid-for-each-argument-in-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/terraform-outputs-for-resources-with-count /posts/terraform-variables-loops-and-outputs 301
+/posts/variable-keys-in-terraform-maps /posts/terraform-variables-loops-and-outputs 301
+/posts/get-object-from-list-terraform /posts/terraform-variables-loops-and-outputs 301
+/posts/display-sensitive-data-output-variables /posts/terraform-variables-loops-and-outputs 301
+/posts/variables-may-not-be-used-here-terraform-init /posts/terraform-variables-loops-and-outputs 301
+/posts/load-input-data-from-file /posts/terraform-variables-loops-and-outputs 301
+/posts/resource-type-attribute-access /posts/terraform-variables-loops-and-outputs 301
+/posts/use-aws-account-id-variable /posts/terraform-variables-loops-and-outputs 301
+/roadmaps/junior /roadmap/junior 301
+/roadmaps/devsecops /roadmap/devsecops 301

@@ -2,7 +2,7 @@ import { PostsList } from '@/components/posts-list';
 import { PageHero } from '@/components/page-hero';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { getCategoryBySlug, getAllCategories } from '@/lib/categories';
-import { getPostsByCategory } from '@/lib/posts';
+import { getPostsByCategory, toPostSummary } from '@/lib/posts';
 import { getGuidesByCategory } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { BreadcrumbSchema } from '@/components/schema-markup';
@@ -132,7 +132,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             {/* Posts List */}
             <div className="mt-8">
               <h2 className="text-2xl font-semibold mb-2">Posts</h2>
-              <PostsList posts={posts} />
+              <PostsList posts={posts.map(toPostSummary)} />
             </div>
           </div>
 

@@ -61,11 +61,12 @@ export async function getAllTags(): Promise<Tag[]> {
   return tags.sort((a, b) => b.count - a.count);
 }
 
-// A tag used by fewer than this many items doesn't get its own page: a single-post
-// tag is a thin near-duplicate of that post and mostly inflates the static-file
-// count. This is a reversible knob — once the site renders on demand (no CF Pages
-// file cap) it can drop back to 1 to restore every tag page at zero file cost.
-export const MIN_TAG_PAGE_COUNT = 2;
+// A tag used by fewer than this many items doesn't get its own page. A two- or
+// three-item archive is a thin near-duplicate of the posts it lists, and Search
+// Console showed those archives being crawled and then declined. Raising this
+// from 2 to 5 drops ~150 such pages. Reversible knob: lower it again if the
+// tag pages ever earn their keep.
+export const MIN_TAG_PAGE_COUNT = 5;
 
 // Tags that get their own page (count >= threshold). Used for route generation,
 // the tags index, and to decide which tag chips link out.

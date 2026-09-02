@@ -116,10 +116,10 @@ export async function Hero() {
               <span className="text-green-500">$</span>
               <span className="text-muted-foreground">cat content-overview.txt</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-y-2 gap-x-4 pl-4 py-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-4 pl-4 py-1">
               <Link
                 href="/games"
-                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors whitespace-nowrap"
               >
                 <span className="text-primary font-semibold tabular-nums">{games.length}</span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors">
@@ -129,7 +129,7 @@ export async function Hero() {
               </Link>
               <Link
                 href="/guides"
-                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors whitespace-nowrap"
               >
                 <span className="text-primary font-semibold tabular-nums">{guides.length}</span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors">
@@ -139,7 +139,7 @@ export async function Hero() {
               </Link>
               <Link
                 href="/quizzes"
-                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors whitespace-nowrap"
               >
                 <span className="text-primary font-semibold tabular-nums">{quizzes.length}</span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors">
@@ -149,7 +149,7 @@ export async function Hero() {
               </Link>
               <Link
                 href="/exercises"
-                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors whitespace-nowrap"
               >
                 <span className="text-primary font-semibold tabular-nums">{exercises.length}</span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors">
@@ -159,7 +159,7 @@ export async function Hero() {
               </Link>
               <Link
                 href="/checklists"
-                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors whitespace-nowrap"
               >
                 <span className="text-primary font-semibold tabular-nums">{checklists.length}</span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors">
@@ -169,7 +169,7 @@ export async function Hero() {
               </Link>
               <Link
                 href="/posts"
-                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+                className="group hover:bg-muted/50 rounded px-1.5 py-0.5 -mx-1.5 transition-colors whitespace-nowrap"
               >
                 <span className="text-primary font-semibold tabular-nums">{posts.length}</span>
                 <span className="text-muted-foreground group-hover:text-foreground transition-colors">

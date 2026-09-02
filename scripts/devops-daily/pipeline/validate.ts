@@ -1,4 +1,4 @@
-import matter from 'gray-matter';
+import matter from '../../../lib/front-matter';
 import fs from 'fs/promises';
 import path from 'path';
 

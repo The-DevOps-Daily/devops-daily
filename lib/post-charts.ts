@@ -18,8 +18,20 @@ export interface BarRow {
 export interface LineSeries {
   name: string;
   data: number[];
+  /** Dash pattern to distinguish same-colored paths, e.g. "6 5" */
+  dash?: string;
   /** Optional color override; palette order applies when omitted */
   color?: string;
+}
+
+/** A labeled reference line (SLO threshold, capacity limit, incident marker). */
+export interface ChartRef {
+  value: number;
+  label?: string;
+  /** Optional color; defaults to the amber marker color */
+  color?: string;
+  /** Dash pattern; defaults to "4 5" */
+  dash?: string;
 }
 
 export interface DotSeries {
@@ -56,20 +68,58 @@ export interface ChartSpec {
   /** line: use a log10 y-axis (values must be > 0). Spreads out a squished
    *  low end next to a large spike. Opt-in; linear otherwise. */
   log?: boolean;
+  /** line: horizontal reference lines on the value axis (e.g. an SLO).
+   *  bar: vertical reference lines on the value axis (e.g. a budget). */
+  refs?: ChartRef[];
+}
+
+function finiteNumbers(arr: unknown): arr is number[] {
+  return Array.isArray(arr) && arr.length > 0 && arr.every((v) => Number.isFinite(v));
+}
+
+function validRefs(refs: unknown): boolean {
+  if (refs === undefined) return true;
+  return Array.isArray(refs) && refs.every((r) => r && Number.isFinite((r as ChartRef).value));
 }
 
 export function parseChartSpec(raw: string): ChartSpec | null {
   try {
     const spec = JSON.parse(raw) as ChartSpec;
     if (!spec || typeof spec !== 'object') return null;
-    if (spec.type === 'bar' && Array.isArray(spec.rows) && spec.rows.length > 0) return spec;
-    if (spec.type === 'line' && Array.isArray(spec.series) && spec.series.length > 0) return spec;
-    if (spec.type === 'dots' && Array.isArray(spec.series) && spec.series.length > 0) return spec;
-    if (spec.type === 'cdf' && Array.isArray(spec.series) && spec.series.length > 0) return spec;
+    if (!validRefs(spec.refs)) return null;
+    if (spec.type === 'bar') {
+      const rows = spec.rows;
+      if (!Array.isArray(rows) || rows.length === 0) return null;
+      const ok = rows.every(
+        (r) =>
+          r &&
+          typeof r.label === 'string' &&
+          Number.isFinite(r.value) &&
+          (r.tick === undefined || Number.isFinite(r.tick))
+      );
+      return ok ? spec : null;
+    }
+    if (spec.type === 'line') {
+      const series = spec.series as LineSeries[] | undefined;
+      if (!Array.isArray(series) || series.length === 0) return null;
+      return series.every((s) => s && finiteNumbers(s.data)) ? spec : null;
+    }
+    if (spec.type === 'dots' || spec.type === 'cdf') {
+      const series = spec.series as DotSeries[] | undefined;
+      if (!Array.isArray(series) || series.length === 0) return null;
+      return series.every((s) => s && finiteNumbers(s.samples)) ? spec : null;
+    }
     return null;
   } catch {
     return null;
   }
+}
+
+/** Pad a [min, max] domain by a fraction of its span; sign-safe (works for
+ *  negative and all-equal domains, unlike multiplying the endpoints). */
+export function paddedDomain(min: number, max: number, frac = 0.05): [number, number] {
+  const span = max - min || Math.abs(max) || 1;
+  return [min - span * frac, max + span * frac];
 }
 
 export function formatValue(v: number, unit?: string): string {
@@ -77,6 +127,15 @@ export function formatValue(v: number, unit?: string): string {
   if (unit === 's') return `${(Math.round(v * 10) / 10).toLocaleString()}s`;
   if (unit === '%') return `${Math.round(v * 10) / 10}%`;
   return unit ? `${v.toLocaleString()}${unit}` : v.toLocaleString();
+}
+
+/** Reserve enough SVG space for formatted bar values, including their unit. */
+export function barValueColumnWidth(labels: string[], fontSize: number, minWidth: number): number {
+  const widest = labels.reduce(
+    (maxWidth, label) => Math.max(maxWidth, Array.from(label).length * fontSize * 0.58),
+    0
+  );
+  return Math.max(minWidth, Math.ceil(widest + 18));
 }
 
 /** Short axis labels preserve chart area without sacrificing source precision. */

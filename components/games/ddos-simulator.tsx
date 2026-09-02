@@ -162,9 +162,13 @@ export default function DDoSSimulator() {
     const saved = localStorage.getItem('ddos-high-score');
     if (saved) setHighScore(parseInt(saved));
 
-    const savedAchievements = localStorage.getItem('ddos-achievements');
-    if (savedAchievements) {
-      setAchievements(JSON.parse(savedAchievements));
+    try {
+      const savedAchievements = localStorage.getItem('ddos-achievements');
+      const parsed = savedAchievements ? JSON.parse(savedAchievements) : null;
+      if (Array.isArray(parsed)) setAchievements(parsed);
+      else if (savedAchievements) localStorage.removeItem('ddos-achievements');
+    } catch {
+      // unreadable storage: start fresh
     }
 
     setMounted(true);

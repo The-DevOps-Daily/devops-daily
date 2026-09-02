@@ -2,6 +2,7 @@ import { marked, type Tokens, type TokenizerAndRendererExtension } from 'marked'
 import { markedHighlight } from 'marked-highlight';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
 import hljs, { type HLJSApi, type Language } from 'highlight.js';
+import sanitizeHtml from 'sanitize-html';
 
 // Import specific languages for better support
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -159,10 +160,12 @@ function escapeHtml(value: string): string {
 // Accept a github.com URL or a bare "owner/repo" and return "owner/repo".
 function parseRepoSlug(input: string): string | null {
   const s = input.trim();
+  const segment = /^[A-Za-z0-9][\w.-]*$/;
+  const ok = (owner: string, repo: string) => segment.test(owner) && segment.test(repo);
   const fromUrl = s.match(/github\.com\/([\w.-]+)\/([\w.-]+)/i);
-  if (fromUrl) return `${fromUrl[1]}/${fromUrl[2].replace(/\.git$/i, '')}`;
+  if (fromUrl && ok(fromUrl[1], fromUrl[2])) return `${fromUrl[1]}/${fromUrl[2].replace(/\.git$/i, '')}`;
   const bare = s.match(/^([\w.-]+)\/([\w.-]+)$/);
-  if (bare) return `${bare[1]}/${bare[2].replace(/\.git$/i, '')}`;
+  if (bare && ok(bare[1], bare[2])) return `${bare[1]}/${bare[2].replace(/\.git$/i, '')}`;
   return null;
 }
 
@@ -226,14 +229,14 @@ marked.use({
       return false;
     },
     heading({ tokens, depth }: Tokens.Heading) {
-      // Extract text from tokens
-      const text = tokens
-        .map((token) => ('text' in token && token.text) || token.raw || '')
-        .join('');
+      // Render inline markup the normal (escaping) way and slug from the
+      // plain text, so a heading that mentions an HTML tag stays text.
+      const text = this.parser.parseInline(tokens);
+      const plain = this.parser.parseInline(tokens, this.parser.textRenderer);
       const headingTag = `h${depth}`;
 
       // Create a simple slug from the text with heading level prefix to avoid duplicates
-      const baseSlug = text
+      const baseSlug = plain
         .toLowerCase()
         .trim()
         .replace(/[^\w\s-]/g, '') // Remove special characters
@@ -319,7 +322,75 @@ const calloutExtension: TokenizerAndRendererExtension = {
 
 marked.use({ extensions: [calloutExtension] });
 
+// Keep post images previewable from their source Markdown files. Authors can
+// link to assets under public/ with a relative filesystem path, while the site
+// still emits the public URL that Next.js serves.
+const SAFE_URL = /^(?:https?:|mailto:|\/(?!\/)|#|\.{1,2}\/|[\w.-]+(?:\/|$))/i;
+
+marked.use({
+  walkTokens(token) {
+    if (token.type === 'image') {
+      token.href = token.href.replace(/^(?:\.\.\/)+public\//, '/');
+    }
+    // Content comes from pull requests: only http(s), mailto, and
+    // site-relative targets are followed.
+    if ((token.type === 'link' || token.type === 'image') && !SAFE_URL.test(token.href.trim())) {
+      token.href = '#';
+    }
+  },
+});
+
+// Allowlist for the rendered HTML. Everything the renderer above produces is
+// listed here; anything an author writes as raw HTML has to fit the same
+// list, so event handlers, scripts, frames, <base>, <meta>, <form> and
+// <style> never reach the page.
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'ul', 'ol', 'li', 'blockquote', 'pre', 'code',
+    'em', 'strong', 'del', 's', 'b', 'i', 'u', 'mark', 'small', 'sub', 'sup', 'kbd', 'abbr', 'br', 'hr',
+    'span', 'div', 'img', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'caption',
+    'dl', 'dt', 'dd', 'details', 'summary', 'figure', 'figcaption', 'input', 'button', 'svg', 'path', 'circle',
+  ],
+  allowedAttributes: {
+    '*': ['class', 'id', 'title', 'aria-hidden', 'aria-label', 'role'],
+    a: ['href', 'name', 'target', 'rel'],
+    img: ['src', 'alt', 'width', 'height', 'loading', 'decoding'],
+    th: ['align', 'colspan', 'rowspan', 'scope'],
+    td: ['align', 'colspan', 'rowspan'],
+    input: ['type', 'checked', 'disabled'],
+    button: ['type', 'data-heading-id'],
+    div: ['data-chart', 'data-terminal', 'data-tabs', 'data-diagram', 'data-repo'],
+    svg: ['viewBox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'xmlns'],
+    path: ['d', 'fill', 'stroke', 'stroke-linecap', 'stroke-linejoin', 'stroke-width'],
+    circle: ['cx', 'cy', 'r', 'fill', 'stroke'],
+    details: ['open'],
+  },
+  // Keep attribute case: the SVG viewBox on heading and callout icons must survive.
+  parser: { lowerCaseAttributeNames: false },
+  allowedSchemes: ['http', 'https', 'mailto'],
+  allowedSchemesByTag: { img: ['http', 'https'] },
+  allowProtocolRelative: false,
+  // GFM task lists render disabled checkboxes; nothing else may be an input.
+  exclusiveFilter: (frame) => frame.tag === 'input' && frame.attribs.type !== 'checkbox',
+  transformTags: {
+    a: (tagName, attribs) => {
+      const href = attribs.href ?? '';
+      const external = /^https?:\/\//i.test(href);
+      return {
+        tagName,
+        attribs: external
+          ? { ...attribs, rel: attribs.rel ?? 'noopener noreferrer' }
+          : attribs,
+      };
+    },
+  },
+};
+
+export function sanitizeRenderedHtml(html: string): string {
+  return sanitizeHtml(html, SANITIZE_OPTIONS);
+}
+
 export function parseMarkdown(content: string): string {
   const result = marked.parse(content);
-  return typeof result === 'string' ? result : '';
+  return typeof result === 'string' ? sanitizeRenderedHtml(result) : '';
 }

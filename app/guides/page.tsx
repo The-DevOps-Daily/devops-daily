@@ -2,7 +2,7 @@ import { GuidesList } from '@/components/guides-list';
 import { PageHero } from '@/components/page-hero';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { BookOpen } from 'lucide-react';
-import { getAllGuides } from '@/lib/guides';
+import { getAllGuides, toGuideSummary } from '@/lib/guides';
 
 export const metadata = {
   title: 'Guides',
@@ -50,7 +50,7 @@ export default async function GuidesPage() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 my-8">
           <div className="lg:col-span-9">
-            <GuidesList guides={guides} />
+            <GuidesList guides={guides.map(toGuideSummary)} />
           </div>
           <aside className="lg:col-span-3">
             <div className="sticky top-8">

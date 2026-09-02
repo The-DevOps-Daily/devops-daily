@@ -105,9 +105,13 @@ const directionRef = useRef<Direction>('RIGHT');
       setHighScore(parseInt(savedHighScore));
     }
     
-    const savedAchievements = localStorage.getItem('bugHunterAchievements');
-    if (savedAchievements) {
-      setAchievements(JSON.parse(savedAchievements));
+    try {
+      const savedAchievements = localStorage.getItem('bugHunterAchievements');
+      const parsed = savedAchievements ? JSON.parse(savedAchievements) : null;
+      if (Array.isArray(parsed)) setAchievements(parsed);
+      else if (savedAchievements) localStorage.removeItem('bugHunterAchievements');
+    } catch {
+      // unreadable storage: start fresh
     }
   }, []);
   

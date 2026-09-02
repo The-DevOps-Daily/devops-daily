@@ -12,7 +12,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
+import matter from '../../lib/front-matter';
 
 const ROOT_DIR = process.cwd();
 const PUBLIC_IMAGES_DIR = path.join(ROOT_DIR, 'public', 'images');

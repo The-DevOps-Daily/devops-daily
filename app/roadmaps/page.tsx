@@ -110,7 +110,7 @@ export default function RoadmapsPage() {
               const Icon = roadmap.icon;
 
               return (
-                <Link key={roadmap.slug} href={`/roadmaps/${roadmap.slug}`}>
+                <Link key={roadmap.slug} href={`/roadmap/${roadmap.slug}`}>
                   <Card
                     className={cn(
                       'group h-full transition-colors cursor-pointer',

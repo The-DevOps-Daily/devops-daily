@@ -46,8 +46,13 @@ const STORAGE_PREFIX = 'checklist_progress_';
 export const getChecklistProgress = (checklistId: string): ChecklistProgress => {
   if (typeof window === 'undefined') return {};
   
-  const stored = localStorage.getItem(`${STORAGE_PREFIX}${checklistId}`);
-  return stored ? JSON.parse(stored) : {};
+  try {
+    const stored = localStorage.getItem(`${STORAGE_PREFIX}${checklistId}`);
+    const parsed = stored ? JSON.parse(stored) : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
 };
 
 /**

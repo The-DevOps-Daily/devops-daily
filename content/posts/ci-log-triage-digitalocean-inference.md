@@ -24,7 +24,7 @@ A CI job fails. You open the run, scroll past four hundred lines of dependency r
 
 You do this several times a week. It is not hard, it is just tedious, and it is exactly the shape of problem that cheap inference is good at: a lot of text, a small answer, no need for the model to be clever.
 
-So we built it. A GitHub Action that takes a failing job's log and posts what broke, why, and what to try first. It runs on [DigitalOcean's serverless inference](https://docs.digitalocean.com/products/gradient-ai-platform/), the code is [on GitHub](https://github.com/The-DevOps-Daily/ci-log-triage), and the whole thing is about 400 lines.
+So we built it. A GitHub Action that takes a failing job's log and posts what broke, why, and what to try first. It runs on [DigitalOcean's serverless inference](https://docs.digitalocean.com/products/ai-platform/), the code is [on GitHub](https://github.com/The-DevOps-Daily/ci-log-triage), and the whole thing is about 400 lines.
 
 The interesting part turned out not to be the model call. That was twenty lines. The interesting part was everything we did before it.
 

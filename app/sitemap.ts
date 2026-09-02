@@ -14,6 +14,8 @@ import { getAllComparisons } from '@/lib/comparisons';
 import { getAllNewsletters } from '@/lib/newsletters';
 import { getAllHacktoberfestDays } from '@/lib/hacktoberfest';
 import { TOOLS } from '@/lib/tools';
+import { getPagedTags } from '@/lib/tags';
+import { getAllExperts } from '@/lib/experts';
 
 export const dynamic = 'force-static';
 
@@ -268,8 +270,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/sponsorship',
     '/experts',
     '/roadmaps',
-    '/roadmaps/junior',
-    '/roadmaps/devsecops',
+    '/roadmap/junior',
+    '/roadmap/devsecops',
     '/books',
     '/books/devops-survival-guide',
     '/flashcards',
@@ -279,7 +281,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/hacktoberfest',
     '/comparisons',
     '/newsletters',
-    '/search',
   ].map((path) => ({
     url: `${baseUrl}${path}`,
     ...withLastModified(
@@ -293,8 +294,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
+  // Tag pages, expert pages and the interview tiers are indexable but were
+  // only discoverable by crawling.
+  const [pagedTags, experts] = await Promise.all([getPagedTags(), getAllExperts()]);
+  const tagRoutes = [
+    { url: `${baseUrl}/tags`, changeFrequency: 'weekly' as const, priority: 0.5 },
+    ...pagedTags.map((tag) => ({
+      url: `${baseUrl}/tags/${tag.slug}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.5,
+    })),
+  ];
+  const expertRoutes = experts.map((expert) => ({
+    url: `${baseUrl}/experts/${expert.slug}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.5,
+  }));
+  const tierRoutes = ['junior', 'mid', 'senior'].map((tier) => ({
+    url: `${baseUrl}/interview-questions/${tier}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
   return [
     ...routes,
+    ...tagRoutes,
+    ...expertRoutes,
+    ...tierRoutes,
     ...postRoutes,
     ...categoryRoutes,
     ...guideRoutes,
