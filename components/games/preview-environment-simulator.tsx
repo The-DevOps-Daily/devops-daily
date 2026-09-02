@@ -2017,8 +2017,8 @@ function EnvironmentScene({
             <div className="flex-1">
               <strong className="block text-sm">
                 {state.reviewDecision === 'approve'
-                  ? 'Preview approved — the PR can move forward.'
-                  : 'Changes requested — the preview stays isolated.'}
+                  ? 'Preview approved. The PR can move forward.'
+                  : 'Changes requested. The preview stays isolated.'}
               </strong>
               <span className="text-xs text-muted-foreground">
                 Close the PR to watch Argo CD remove the environment automatically.
