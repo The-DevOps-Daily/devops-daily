@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
+  ArrowDown,
   ArrowLeft,
+  Bot,
   Boxes,
   Check,
   CheckCircle2,
@@ -19,8 +21,10 @@ import {
   LoaderCircle,
   LockKeyhole,
   MessageSquare,
+  Network,
   Package,
   Play,
+  RefreshCw,
   RotateCcw,
   Search,
   ServerCog,
@@ -28,6 +32,7 @@ import {
   Sparkles,
   Tag,
   Trash2,
+  Webhook,
   Workflow,
   XCircle,
 } from 'lucide-react';
@@ -50,8 +55,8 @@ import {
 } from '@/lib/games/preview-environment-engine';
 import { cn } from '@/lib/utils';
 
-type Scene = 'developer' | 'ci' | 'gitops' | 'environment';
-type PipelineBeat = 'build' | 'push' | 'detect' | 'render';
+type Scene = 'developer' | 'webhook' | 'ci' | 'gitops' | 'environment';
+type PipelineBeat = 'deliver' | 'match' | 'refresh' | 'build' | 'push';
 type AutomationPhase = 'idle' | 'running' | 'complete';
 type ResourceState = 'queued' | 'creating' | 'ready' | 'removing' | 'removed';
 
@@ -169,6 +174,27 @@ const PIPELINE_STEPS: Array<{
   command: string;
 }> = [
   {
+    id: 'deliver',
+    title: 'Deliver labeled webhook',
+    detail: 'GitHub sends the pull_request labeled event',
+    duration: 3200,
+    command: 'POST /api/webhook/github · action=labeled',
+  },
+  {
+    id: 'match',
+    title: 'Match the preview label',
+    detail: 'The receiver verifies the signature and filters the event',
+    duration: 3200,
+    command: 'label=preview · repository=acme/store',
+  },
+  {
+    id: 'refresh',
+    title: 'Refresh the ApplicationSet',
+    detail: 'The webhook accelerates the pull-request generator refresh',
+    duration: 3200,
+    command: 'refresh applicationset/preview-environments',
+  },
+  {
     id: 'build',
     title: 'Build container image',
     detail: 'GitHub Actions packages the PR change',
@@ -182,30 +208,17 @@ const PIPELINE_STEPS: Array<{
     duration: 5000,
     command: 'docker push registry.example.dev/checkout:SHA',
   },
-  {
-    id: 'detect',
-    title: 'Observe labeled pull request',
-    detail: 'The ApplicationSet generator matches the preview label',
-    duration: 4000,
-    command: 'poll GitHub → matched PR #PR_NUMBER label=preview',
-  },
-  {
-    id: 'render',
-    title: 'Generate Argo application',
-    detail: 'The commit image becomes Helm values and desired state',
-    duration: 4000,
-    command: 'render Application preview-pr-PR_NUMBER',
-  },
 ];
 
-const CI_STEPS = PIPELINE_STEPS.slice(0, 2);
-const ARGO_STEPS = PIPELINE_STEPS.slice(2);
+const WEBHOOK_STEPS = PIPELINE_STEPS.slice(0, 3);
+const CI_STEPS = PIPELINE_STEPS.slice(3);
 
 const SCENES: Array<{ id: Scene; number: string; label: string }> = [
   { id: 'developer', number: '01', label: 'Developer intent' },
-  { id: 'ci', number: '02', label: 'GitHub Actions' },
-  { id: 'gitops', number: '03', label: 'Argo CD control plane' },
-  { id: 'environment', number: '04', label: 'Ephemeral environment' },
+  { id: 'webhook', number: '02', label: 'Webhook event' },
+  { id: 'ci', number: '03', label: 'GitHub Actions' },
+  { id: 'gitops', number: '04', label: 'Argo CD console' },
+  { id: 'environment', number: '05', label: 'PR preview URL' },
 ];
 
 const ACTIVE_CONTROL =
@@ -745,6 +758,7 @@ function AutomationSteps({
   progress,
   failed,
   tone,
+  after,
 }: {
   steps: typeof PIPELINE_STEPS;
   beat: PipelineBeat;
@@ -752,6 +766,7 @@ function AutomationSteps({
   progress: number;
   failed: boolean;
   tone: 'blue' | 'purple';
+  after?: ReactNode;
 }) {
   const activeIndex = steps.findIndex((step) => step.id === beat);
   return (
@@ -802,6 +817,211 @@ function AutomationSteps({
           </div>
         );
       })}
+      {after}
+    </div>
+  );
+}
+
+function WebhookScene({
+  pullRequest,
+  beat,
+  phase,
+  progress,
+  state,
+  onRun,
+  onContinue,
+  onRemediate,
+}: {
+  pullRequest: PullRequestScenario;
+  beat: PipelineBeat;
+  phase: AutomationPhase;
+  progress: number;
+  state: PreviewEnvironmentState;
+  onRun: () => void;
+  onContinue: () => void;
+  onRemediate: (id: string) => void;
+}) {
+  const index = WEBHOOK_STEPS.findIndex((step) => step.id === beat);
+  const current = WEBHOOK_STEPS[Math.max(index, 0)];
+  const failed = state.status === 'blocked';
+  const nodeState = (nodeIndex: number) =>
+    phase === 'complete' || nodeIndex < index
+      ? 'complete'
+      : phase === 'running' && nodeIndex === index
+        ? failed
+          ? 'failed'
+          : 'active'
+        : 'waiting';
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-[#30363d] bg-[#0d1117] text-[#e6edf3] shadow-2xl shadow-black/20">
+      <div className="flex items-center gap-3 border-b border-[#30363d] bg-[#161b22] px-3 py-2">
+        <div className="flex gap-1.5" aria-hidden="true">
+          <span className="size-2.5 rounded-full bg-red-500/80" />
+          <span className="size-2.5 rounded-full bg-amber-500/80" />
+          <span className="size-2.5 rounded-full bg-emerald-500/80" />
+        </div>
+        <div className="flex min-w-0 flex-1 items-center justify-center rounded border border-[#30363d] bg-[#010409] px-3 py-1 font-mono text-[10px] text-[#8b949e]">
+          <LockKeyhole className="mr-2 size-3" aria-hidden="true" />
+          preview-control-plane.internal/webhooks/github
+        </div>
+      </div>
+
+      <div className="border-b border-[#30363d] px-4 py-4 sm:px-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#58a6ff]">
+              GitHub → preview control plane
+            </div>
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
+              {failed ? (
+                <XCircle className="size-5 text-[#f85149]" aria-hidden="true" />
+              ) : phase === 'complete' ? (
+                <CheckCircle2 className="size-5 text-[#3fb950]" aria-hidden="true" />
+              ) : phase === 'running' ? (
+                <LoaderCircle className="size-5 animate-spin text-[#58a6ff]" aria-hidden="true" />
+              ) : (
+                <Webhook className="size-5 text-[#58a6ff]" aria-hidden="true" />
+              )}
+              Deliver the label event
+            </h3>
+            <p className="mt-1 text-xs text-[#8b949e]">
+              A webhook speeds up discovery; the ApplicationSet controller still owns desired state.
+            </p>
+          </div>
+          <span className="rounded-full border border-[#1f6feb] px-2.5 py-1 text-[10px] font-semibold text-[#58a6ff]">
+            pull_request · labeled
+          </span>
+        </div>
+      </div>
+
+      <div className="p-3 sm:p-5">
+        <div className="grid items-stretch gap-2 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
+          {[
+            {
+              icon: Github,
+              eyebrow: 'Source',
+              title: `PR #${pullRequest.number}`,
+              detail: 'preview label added',
+            },
+            {
+              icon: Webhook,
+              eyebrow: 'Delivery',
+              title: 'Webhook receiver',
+              detail: 'signature verified',
+            },
+            {
+              icon: RefreshCw,
+              eyebrow: 'Control plane',
+              title: 'ApplicationSet refresh',
+              detail: 'matching PR discovered',
+            },
+          ].map((node, nodeIndex) => {
+            const status = nodeState(nodeIndex);
+            const Icon = node.icon;
+            return (
+              <div key={node.title} className="contents">
+                {nodeIndex > 0 && (
+                  <div className="grid place-items-center text-[#6e7681]" aria-hidden="true">
+                    <span className="hidden sm:inline">→</span>
+                    <ArrowDown className="size-4 sm:hidden" />
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    'rounded-lg border p-4 transition-all duration-300',
+                    status === 'waiting' && 'border-[#30363d] bg-[#010409] opacity-55',
+                    status === 'active' &&
+                      'border-[#1f6feb] bg-[#1f6feb14] shadow-lg shadow-blue-950/30',
+                    status === 'complete' && 'border-[#238636] bg-[#23863612]',
+                    status === 'failed' && 'border-[#f85149] bg-[#f8514912]'
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="grid size-9 place-items-center rounded-md border border-[#30363d] bg-[#0d1117]">
+                      <Icon className="size-4" aria-hidden="true" />
+                    </span>
+                    {status === 'complete' && (
+                      <CheckCircle2 className="size-4 text-[#3fb950]" aria-hidden="true" />
+                    )}
+                    {status === 'active' && <CircularProgress progress={progress} />}
+                  </div>
+                  <div className="mt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8b949e]">
+                    {node.eyebrow}
+                  </div>
+                  <strong className="mt-1 block text-sm">{node.title}</strong>
+                  <span className="mt-1 block text-xs text-[#8b949e]">{node.detail}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(280px,1.1fr)]">
+          <AutomationSteps
+            steps={WEBHOOK_STEPS}
+            beat={beat}
+            phase={phase}
+            progress={progress}
+            failed={failed}
+            tone="blue"
+          />
+          <div className="overflow-hidden rounded-md border border-[#30363d] bg-[#010409]">
+            <div className="flex items-center justify-between border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
+              <strong className="flex items-center gap-2">
+                <Webhook className="size-4 text-[#58a6ff]" aria-hidden="true" />
+                Delivery payload
+              </strong>
+              <span className="font-mono text-[10px] text-[#8b949e]">X-Hub-Signature-256 ✓</span>
+            </div>
+            <div className="min-h-44 space-y-1 overflow-x-auto p-4 font-mono text-[11px] leading-5">
+              <div className="text-[#8b949e]">event: pull_request</div>
+              <div>action: labeled</div>
+              <div>number: {pullRequest.number}</div>
+              <div>label: preview</div>
+              <div>head.sha: {pullRequest.commit}</div>
+              {phase === 'running' && (
+                <div className="mt-3 animate-pulse text-[#58a6ff]">
+                  receiver › {current.command}
+                </div>
+              )}
+              {phase === 'complete' && (
+                <div className="mt-3 text-[#3fb950]">202 Accepted · refresh queued</div>
+              )}
+              {failed && <div className="mt-3 text-[#ff7b72]">Error: {state.lastEvent}</div>}
+            </div>
+          </div>
+        </div>
+
+        {failed ? (
+          <div className="mt-4">
+            <FailurePanel state={state} onRemediate={onRemediate} />
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-col gap-3 rounded-md border border-[#30363d] bg-[#161b22] p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-[#8b949e]">
+              <Webhook className="size-4 shrink-0 text-[#58a6ff]" aria-hidden="true" />
+              {phase === 'idle'
+                ? 'The label event is ready to leave GitHub.'
+                : phase === 'running'
+                  ? 'Follow the event from GitHub to the ApplicationSet controller.'
+                  : 'The matching PR is now known to the preview control plane.'}
+            </div>
+            {phase === 'idle' && (
+              <Button size="sm" className="cursor-pointer" onClick={onRun}>
+                <Play className="size-4" aria-hidden="true" />
+                Deliver webhook
+              </Button>
+            )}
+            {phase === 'complete' && (
+              <Button size="sm" className="cursor-pointer" onClick={onContinue}>
+                Open GitHub Actions
+                <Workflow className="size-4" aria-hidden="true" />
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -871,7 +1091,7 @@ function GitHubActionsScene({
                 ) : (
                   <CircleDot className="size-5 text-[#8b949e]" aria-hidden="true" />
                 )}
-                Build the PR image
+                Build and publish the preview
               </h3>
               <p className="mt-1 text-xs text-[#8b949e]">
                 GitHub-hosted runner · {pullRequest.branch} · {pullRequest.commit}
@@ -890,6 +1110,24 @@ function GitHubActionsScene({
               progress={progress}
               failed={failed}
               tone="blue"
+              after={
+                <div className="flex gap-3 border-t border-[#21262d] px-3 py-3">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full border-2 border-[#30363d]">
+                    <MessageSquare className="size-3 text-[#8b949e]" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap justify-between gap-2">
+                      <strong className="text-xs">Comment preview URL on PR</strong>
+                      <span className="text-[10px] uppercase tracking-wide text-[#8b949e]">
+                        Waiting for Argo CD
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[10px] leading-4 text-[#8b949e]">
+                      The final job waits for a healthy URL, then calls the GitHub API.
+                    </p>
+                  </div>
+                </div>
+              }
             />
             <div className="overflow-hidden rounded-md border border-[#30363d] bg-[#010409]">
               <div className="flex justify-between border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
@@ -905,7 +1143,7 @@ function GitHubActionsScene({
                 {phase === 'idle' ? (
                   <div className="flex h-40 flex-col items-center justify-center text-center text-[#8b949e]">
                     <Clock3 className="mb-2 size-6" aria-hidden="true" />
-                    <strong className="text-[#c9d1d9]">Workflow queued by the preview label</strong>
+                    <strong className="text-[#c9d1d9]">Workflow queued by the labeled event</strong>
                     <span>Start the walkthrough when you are ready.</span>
                   </div>
                 ) : (
@@ -959,10 +1197,10 @@ function GitHubActionsScene({
                   <Play className="size-4 shrink-0 text-[#58a6ff]" aria-hidden="true" />
                 )}
                 {phase === 'idle'
-                  ? 'The label triggered CI. Click once to watch build and push.'
+                  ? 'The same labeled event also queued this GitHub Actions workflow.'
                   : phase === 'running'
                     ? 'The workflow now advances automatically through its two jobs.'
-                    : `Artifact ready: store:${pullRequest.commit}`}
+                    : `Artifact ready: store:${pullRequest.commit}. The PR comment is waiting for Argo.`}
               </div>
               {phase === 'idle' && (
                 <Button size="sm" className="cursor-pointer" onClick={onRun}>
@@ -976,7 +1214,7 @@ function GitHubActionsScene({
                   className="cursor-pointer bg-violet-600 text-white hover:bg-violet-500"
                   onClick={onContinue}
                 >
-                  Inspect Argo CD
+                  Open Argo CD console
                   <Workflow className="size-4" aria-hidden="true" />
                 </Button>
               )}
@@ -988,9 +1226,51 @@ function GitHubActionsScene({
   );
 }
 
+function ArgoResourceNode({
+  kind,
+  name,
+  status,
+  icon: Icon,
+  wide,
+}: {
+  kind: string;
+  name: string;
+  status: ResourceState;
+  icon: typeof Boxes;
+  wide?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-md border p-3 transition-all duration-500',
+        wide && 'sm:col-span-2',
+        status === 'queued' && 'border-[#302744] bg-[#0e0c15] opacity-50',
+        status === 'creating' && 'border-[#8957e5] bg-[#6e40c91f] shadow-lg shadow-violet-950/30',
+        status === 'ready' && 'border-[#23863688] bg-[#23863612]'
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <span className="grid size-8 shrink-0 place-items-center rounded border border-[#302744] bg-[#08090e]">
+          <Icon className="size-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-[#8b949e]">
+                {kind}
+              </span>
+              <strong className="mt-0.5 block truncate text-xs">{name}</strong>
+            </div>
+            <ResourceStatus status={status} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ArgoControlPlaneScene({
   pullRequest,
-  beat,
   phase,
   progress,
   state,
@@ -999,7 +1279,6 @@ function ArgoControlPlaneScene({
   onRemediate,
 }: {
   pullRequest: PullRequestScenario;
-  beat: PipelineBeat;
   phase: AutomationPhase;
   progress: number;
   state: PreviewEnvironmentState;
@@ -1007,9 +1286,28 @@ function ArgoControlPlaneScene({
   onContinue: () => void;
   onRemediate: (id: string) => void;
 }) {
-  const index = ARGO_STEPS.findIndex((step) => step.id === beat);
-  const current = ARGO_STEPS[Math.max(index, 0)];
   const failed = state.status === 'blocked';
+  const stage = activeStage(state);
+  const ready = state.status === 'ready' || phase === 'complete';
+  const resourceState = (doneAt: PreviewStageId): ResourceState => {
+    if (ready || stageDone(state, doneAt)) return 'ready';
+    if (phase === 'running' && stage === doneAt) return 'creating';
+    return 'queued';
+  };
+  const application = resourceState('reconcile');
+  const provision = resourceState('provision');
+  const expose = resourceState('expose');
+  const verify = resourceState('verify');
+  const activeLabel =
+    stage === 'reconcile'
+      ? 'Generating the Argo CD Application from the ApplicationSet'
+      : stage === 'provision'
+        ? 'Creating the namespace, deployments, and services'
+        : stage === 'expose'
+          ? 'Reconciling ingress, TLS, and isolated data'
+          : stage === 'verify'
+            ? 'Waiting for health and revision checks'
+            : 'All desired resources are healthy and synced';
   return (
     <div className="overflow-hidden rounded-lg border border-[#3b2d5e] bg-[#0b0d14] text-[#e6edf3] shadow-2xl shadow-violet-950/20">
       <div className="flex items-center gap-3 border-b border-[#302744] bg-[#12101b] px-3 py-2">
@@ -1043,10 +1341,12 @@ function ArgoControlPlaneScene({
           <div className="mt-3 rounded-md border border-[#6e40c9] bg-[#6e40c91f] p-3 text-xs">
             <div className="flex items-center gap-2 font-semibold">
               <Layers3 className="size-4 text-[#a371f7]" aria-hidden="true" />
-              {phase === 'complete' ? `preview-pr-${pullRequest.number}` : 'preview-environments'}
+              {application === 'ready'
+                ? `preview-pr-${pullRequest.number}`
+                : 'preview-environments'}
             </div>
             <div className="mt-2 font-mono text-[10px] text-[#8b949e]">
-              {phase === 'complete'
+              {application === 'ready'
                 ? `Application · revision ${pullRequest.commit}`
                 : 'ApplicationSet · watching acme/store'}
             </div>
@@ -1096,62 +1396,120 @@ function ArgoControlPlaneScene({
                 Argo CD independently observes Git and continuously reconciles the cluster.
               </p>
             </div>
-            <span className="rounded-full border border-[#6e40c9] px-2.5 py-1 text-[10px] font-semibold text-[#c6a7ff]">
-              Argo CD · GitOps
-            </span>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-[#6e40c9] px-2.5 py-1 text-[10px] font-semibold text-[#c6a7ff]">
+                Sync · {ready ? 'Synced' : phase === 'running' ? 'Syncing' : 'OutOfSync'}
+              </span>
+              <span
+                className={cn(
+                  'rounded-full border px-2.5 py-1 text-[10px] font-semibold',
+                  ready ? 'border-[#238636] text-[#7ee787]' : 'border-[#d29922] text-[#e3b341]'
+                )}
+              >
+                Health · {ready ? 'Healthy' : 'Progressing'}
+              </span>
+            </div>
           </div>
 
-          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(240px,0.8fr)_minmax(300px,1.2fr)]">
-            <AutomationSteps
-              steps={ARGO_STEPS}
-              beat={beat}
-              phase={phase}
-              progress={progress}
-              failed={failed}
-              tone="purple"
-            />
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
+            <div>
+              <ArgoResourceNode
+                kind="Application"
+                name={`preview-pr-${pullRequest.number}`}
+                status={application}
+                icon={Layers3}
+                wide
+              />
+              <div className="grid h-8 place-items-center text-[#6e7681]" aria-hidden="true">
+                <ArrowDown className="size-4" />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <ArgoResourceNode
+                  kind="Namespace"
+                  name={`preview-pr-${pullRequest.number}`}
+                  status={provision}
+                  icon={Boxes}
+                />
+                {state.config.services.map((service) => (
+                  <ArgoResourceNode
+                    key={service}
+                    kind="Deployment"
+                    name={service}
+                    status={provision}
+                    icon={ServerCog}
+                  />
+                ))}
+                <ArgoResourceNode
+                  kind="Service"
+                  name="preview-entrypoint"
+                  status={provision}
+                  icon={Network}
+                />
+                <ArgoResourceNode
+                  kind="Ingress + certificate"
+                  name={`${pullRequest.id}-${pullRequest.number}.preview.example.dev`}
+                  status={expose}
+                  icon={Globe2}
+                  wide
+                />
+                <ArgoResourceNode
+                  kind="Managed dependency"
+                  name={`Neon branch pr-${pullRequest.number}`}
+                  status={expose}
+                  icon={Database}
+                />
+                <ArgoResourceNode
+                  kind="PostSync health gates"
+                  name="revision + readiness"
+                  status={verify}
+                  icon={ShieldCheck}
+                />
+              </div>
+            </div>
+
             <div className="overflow-hidden rounded-md border border-[#302744] bg-[#08090e]">
               <div className="flex justify-between border-b border-[#302744] bg-[#12101b] px-3 py-2 text-xs">
                 <strong className="flex items-center gap-2 text-[#a371f7]">
                   <ServerCog className="size-4" aria-hidden="true" />
-                  ApplicationSet controller
+                  Live controller events
                 </strong>
                 <span className="text-[#8b949e]">argocd namespace</span>
               </div>
-              <div className="min-h-52 space-y-2 overflow-x-auto p-4 font-mono text-[11px] leading-5">
+              <div className="min-h-72 space-y-2 overflow-x-auto p-4 font-mono text-[11px] leading-5">
                 {phase === 'idle' ? (
-                  <div className="flex h-40 flex-col items-center justify-center text-center text-[#8b949e]">
+                  <div className="flex h-56 flex-col items-center justify-center text-center text-[#8b949e]">
                     <Clock3 className="mb-2 size-6" aria-hidden="true" />
-                    <strong className="text-[#c9d1d9]">Controller is watching GitHub</strong>
-                    <span>Inspect its reconciliation when you are ready.</span>
+                    <strong className="text-[#c9d1d9]">Auto-sync is queued</strong>
+                    <span>The webhook refresh and image artifact are ready.</span>
                   </div>
                 ) : (
                   <>
-                    <div className="text-[#8b949e]">
-                      controller: argocd-applicationset-controller
-                    </div>
-                    <div>source: acme/store · pull request #{pullRequest.number}</div>
-                    <div>artifact: registry.example.dev/store:{pullRequest.commit}</div>
-                    {(index > 0 || phase === 'complete') && (
+                    <div className="text-[#8b949e]">controller: argocd-application-controller</div>
+                    <div>application: preview-pr-{pullRequest.number}</div>
+                    <div>targetRevision: {pullRequest.commit}</div>
+                    {application === 'ready' && (
                       <div>
-                        <span className="text-[#3fb950]">✓</span> matched label=preview
+                        <span className="text-[#3fb950]">✓</span> Application rendered from Helm
                       </div>
                     )}
-                    {phase === 'complete' && (
+                    {provision === 'ready' && (
                       <div>
-                        <span className="text-[#3fb950]">✓</span> generated Application preview-pr-
-                        {pullRequest.number}
-                        <br />
-                        <span className="text-[#8b949e]">
-                          metadata.namespace=preview-pr-{pullRequest.number}
-                        </span>
+                        <span className="text-[#3fb950]">✓</span> namespace and workloads Synced
                       </div>
                     )}
-                    {phase === 'running' && (
-                      <div className="animate-pulse text-[#a371f7]">
-                        <span>controller › </span>
-                        {current.command.replace('PR_NUMBER', String(pullRequest.number))}
+                    {expose === 'ready' && (
+                      <div>
+                        <span className="text-[#3fb950]">✓</span> ingress, TLS, and data branch
+                        Ready
                       </div>
+                    )}
+                    {verify === 'ready' && (
+                      <div>
+                        <span className="text-[#3fb950]">✓</span> application Healthy
+                      </div>
+                    )}
+                    {phase === 'running' && !failed && (
+                      <div className="animate-pulse text-[#a371f7]">controller › {activeLabel}</div>
                     )}
                     {failed && <div className="text-[#ff7b72]">Error: {state.lastEvent}</div>}
                   </>
@@ -1179,10 +1537,10 @@ function ArgoControlPlaneScene({
                   <Play className="size-4 shrink-0 text-[#a371f7]" aria-hidden="true" />
                 )}
                 {phase === 'idle'
-                  ? 'This is a separate system running beside the Kubernetes cluster.'
+                  ? 'This is the real control-plane view: GitHub Actions is no longer on screen.'
                   : phase === 'running'
-                    ? 'Argo CD is turning Git intent into Kubernetes desired state.'
-                    : 'Desired state generated. The cluster can now create the preview.'}
+                    ? 'Argo CD is applying and health-checking the resource tree.'
+                    : 'The application is Synced and Healthy. The workflow can now post the URL.'}
               </div>
               {phase === 'idle' && (
                 <Button
@@ -1191,7 +1549,7 @@ function ArgoControlPlaneScene({
                   onClick={onRun}
                 >
                   <Play className="size-4" aria-hidden="true" />
-                  Watch Argo reconcile
+                  Watch Argo auto-sync
                 </Button>
               )}
               {phase === 'complete' && (
@@ -1200,8 +1558,8 @@ function ArgoControlPlaneScene({
                   className="cursor-pointer bg-violet-600 text-white hover:bg-violet-500"
                   onClick={onContinue}
                 >
-                  Watch resources appear
-                  <Boxes className="size-4" aria-hidden="true" />
+                  Return to pull request
+                  <MessageSquare className="size-4" aria-hidden="true" />
                 </Button>
               )}
             </div>
@@ -1339,42 +1697,102 @@ function EnvironmentScene({
               : 'Preview environment is live';
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-2xl shadow-black/20">
-      <div className="flex flex-wrap items-center gap-3 border-b border-border bg-muted/30 px-3 py-3 sm:px-5">
-        <span className="grid size-9 place-items-center rounded-lg bg-blue-500/10 text-blue-400">
-          <Layers3 className="size-5" aria-hidden="true" />
+    <GitHubChrome activeTab="pulls">
+      <div className="flex flex-wrap items-center gap-3 border-b border-[#30363d] bg-[#161b22] px-3 py-3 sm:px-5">
+        <span className="grid size-9 place-items-center rounded-full bg-[#2386361f] text-[#3fb950]">
+          <GitPullRequest className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <h3 className="truncate font-semibold">{namespace}</h3>
-          <p className="text-xs text-muted-foreground">
-            PR #{pullRequest.number} · {pullRequest.commit} · expires in {state.config.ttlHours}h
+          <h3 className="truncate font-semibold">
+            {pullRequest.title}{' '}
+            <span className="font-normal text-[#8b949e]">#{pullRequest.number}</span>
+          </h3>
+          <p className="text-xs text-[#8b949e]">
+            {pullRequest.author} wants to merge {pullRequest.branch} into main
           </p>
         </div>
-        <span className="ml-auto rounded-full border border-blue-500/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-400">
-          {removed
-            ? 'Removed'
-            : ready || reviewed
-              ? 'Live'
-              : cleaning
-                ? 'Cleaning up'
-                : 'Provisioning'}
+        <span
+          className={cn(
+            'ml-auto rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide',
+            cleaning || removed
+              ? 'border-[#8957e5] text-[#a371f7]'
+              : 'border-[#238636] text-[#3fb950]'
+          )}
+        >
+          {cleaning || removed ? 'Closed' : 'Open'}
         </span>
       </div>
-      <div className="p-3 sm:p-5">
-        <div className="mb-4 flex items-center gap-3 rounded-lg border border-border bg-background/60 p-3">
+      <div className="bg-[#0d1117] p-3 text-[#e6edf3] sm:p-5">
+        <div className="mb-4 grid grid-cols-[32px_minmax(0,1fr)] gap-3">
+          <span className="grid size-8 place-items-center rounded-full bg-[#6e40c9] text-white">
+            <Bot className="size-4" aria-hidden="true" />
+          </span>
+          <div className="overflow-hidden rounded-md border border-[#30363d]">
+            <div className="border-b border-[#30363d] bg-[#161b22] px-3 py-2 text-xs">
+              <strong>preview-environment-bot</strong>{' '}
+              <span className="text-[#8b949e]">
+                {removed ? 'updated this comment after cleanup' : 'commented just now'}
+              </span>
+            </div>
+            <div className="space-y-3 p-4">
+              {removed ? (
+                <>
+                  <strong className="block text-sm">Preview environment removed</strong>
+                  <p className="text-xs text-[#8b949e]">
+                    PR #{pullRequest.number} was closed. Argo CD pruned the Application and every
+                    namespaced resource together.
+                  </p>
+                </>
+              ) : cleaning ? (
+                <div className="flex items-center gap-3">
+                  <LoaderCircle className="size-5 animate-spin text-[#e3b341]" aria-hidden="true" />
+                  <div>
+                    <strong className="block text-sm">Removing preview environment</strong>
+                    <span className="text-xs text-[#8b949e]">Argo CD prune is in progress.</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <strong className="block text-sm text-[#7ee787]">
+                        Preview environment is ready
+                      </strong>
+                      <code className="mt-1 block text-xs text-[#58a6ff]">https://{reviewUrl}</code>
+                    </div>
+                    <span className="rounded-full border border-[#238636] px-2 py-1 text-[10px] font-semibold text-[#7ee787]">
+                      Argo CD · Synced / Healthy
+                    </span>
+                  </div>
+                  <div className="grid gap-2 text-xs text-[#8b949e] sm:grid-cols-3">
+                    <span>Revision · {pullRequest.commit}</span>
+                    <span>Namespace · {namespace}</span>
+                    <span>Expires · {state.config.ttlHours}h</span>
+                  </div>
+                  <div className="flex items-center gap-2 border-t border-[#21262d] pt-3 text-[10px] text-[#8b949e]">
+                    <CheckCircle2 className="size-3.5 text-[#3fb950]" aria-hidden="true" />
+                    GitHub Actions · comment-preview-url · successful
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-4 flex items-center gap-3 rounded-lg border border-[#30363d] bg-[#161b22] p-3">
           {removed || ready || reviewed ? (
-            <CheckCircle2 className="size-5 shrink-0 text-emerald-400" aria-hidden="true" />
+            <CheckCircle2 className="size-5 shrink-0 text-[#3fb950]" aria-hidden="true" />
           ) : (
             <CircularProgress progress={progress} />
           )}
           <div className="min-w-0">
             <strong className="block text-sm">{title}</strong>
-            <span className="block truncate text-xs text-muted-foreground">
+            <span className="block truncate text-xs text-[#8b949e]">
               {removed
                 ? 'CI is historical, Argo CD is idle, and no preview resources remain.'
                 : cleaning
                   ? 'Namespace, workloads, data branch, and URL are removed together.'
-                  : state.lastEvent}
+                  : 'The PR now has the URL, deployed revision, health, and expiry evidence.'}
             </span>
           </div>
         </div>
@@ -1565,7 +1983,7 @@ function EnvironmentScene({
           </div>
         )}
       </div>
-    </div>
+    </GitHubChrome>
   );
 }
 
@@ -1600,10 +2018,10 @@ export function PreviewEnvironmentSimulator() {
   const addPreviewLabel = () => {
     setState(advancePreviewEnvironment(freshState(selected)));
     setLabelPickerOpen(false);
-    setPipelineBeat('build');
+    setPipelineBeat('deliver');
     setAutomationPhase('idle');
     setProgress(0);
-    setScene('ci');
+    setScene('webhook');
   };
 
   useEffect(() => {
@@ -1614,26 +2032,43 @@ export function PreviewEnvironmentSimulator() {
     let duration = 0;
     let complete: (() => void) | null = null;
 
-    if ((scene === 'ci' || scene === 'gitops') && automationPhase === 'running') {
+    if ((scene === 'webhook' || scene === 'ci') && automationPhase === 'running') {
       duration = PIPELINE_STEPS.find((step) => step.id === pipelineBeat)?.duration ?? 0;
       complete = () => {
+        if (pipelineBeat === 'deliver') {
+          setProgress(0);
+          return setPipelineBeat('match');
+        }
+        if (pipelineBeat === 'match') {
+          setProgress(0);
+          return setPipelineBeat('refresh');
+        }
         if (pipelineBeat === 'build') {
           setProgress(0);
           return setPipelineBeat('push');
         }
-        if (pipelineBeat === 'detect') {
-          setProgress(0);
-          return setPipelineBeat('render');
+        if (pipelineBeat === 'refresh') {
+          const next = advancePreviewEnvironment(state);
+          setState(next);
+          setProgress(100);
+          if (next.status === 'blocked') return;
         }
-        const next = advancePreviewEnvironment(state);
-        setState(next);
         setProgress(100);
-        if (next.status === 'blocked') return;
         setAutomationPhase('complete');
       };
-    } else if (scene === 'environment' && state.status === 'running') {
-      duration = activeStage(state) === 'verify' ? 2200 : 2800;
-      complete = () => setState(advancePreviewEnvironment(state));
+    } else if (scene === 'gitops' && automationPhase === 'running') {
+      duration = activeStage(state) === 'verify' ? 3200 : 3600;
+      complete = () => {
+        const next = advancePreviewEnvironment(state);
+        setState(next);
+        if (next.status === 'blocked') return;
+        if (next.status === 'ready') {
+          setProgress(100);
+          setAutomationPhase('complete');
+          return;
+        }
+        setProgress(0);
+      };
     } else if (scene === 'environment' && state.status === 'cleaning') {
       duration = 2600;
       complete = () => {
@@ -1663,11 +2098,18 @@ export function PreviewEnvironmentSimulator() {
     if (remediated.status === 'blocked') return setState(remediated);
     const advanced = advancePreviewEnvironment(remediated);
     setState(advanced);
-    if (failure.stage === 'coordinate') setPipelineBeat('push');
-    if (failure.stage === 'reconcile') setPipelineBeat('render');
-    if (failure.stage === 'coordinate' || failure.stage === 'reconcile') {
+    if (failure.stage === 'coordinate') {
+      setPipelineBeat('refresh');
       setProgress(100);
       setAutomationPhase('complete');
+      return;
+    }
+    if (advanced.status === 'ready') {
+      setProgress(100);
+      setAutomationPhase('complete');
+    } else {
+      setProgress(0);
+      setAutomationPhase('running');
     }
   };
 
@@ -1676,8 +2118,14 @@ export function PreviewEnvironmentSimulator() {
     setAutomationPhase('running');
   };
 
+  const openPipeline = () => {
+    setPipelineBeat('build');
+    setProgress(0);
+    setAutomationPhase('idle');
+    setScene('ci');
+  };
+
   const openControlPlane = () => {
-    setPipelineBeat('detect');
     setProgress(0);
     setAutomationPhase('idle');
     setScene('gitops');
@@ -1694,7 +2142,7 @@ export function PreviewEnvironmentSimulator() {
     setScene('developer');
     setDeveloperView('pull');
     setLabelPickerOpen(false);
-    setPipelineBeat('build');
+    setPipelineBeat('deliver');
     setAutomationPhase('idle');
     setProgress(0);
   };
@@ -1742,7 +2190,7 @@ export function PreviewEnvironmentSimulator() {
               />
             </label>
           </div>
-          <ol className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="Simulator scenes">
+          <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5" aria-label="Simulator scenes">
             {SCENES.map((item, index) => {
               const active = item.id === scene;
               const complete = index < currentSceneIndex || state.status === 'removed';
@@ -1806,10 +2254,21 @@ export function PreviewEnvironmentSimulator() {
               onRemediate={remediate}
             />
           )}
+          {scene === 'webhook' && (
+            <WebhookScene
+              pullRequest={selected}
+              beat={pipelineBeat}
+              phase={automationPhase}
+              progress={progress}
+              state={state}
+              onRun={startAutomation}
+              onContinue={openPipeline}
+              onRemediate={remediate}
+            />
+          )}
           {scene === 'gitops' && (
             <ArgoControlPlaneScene
               pullRequest={selected}
-              beat={pipelineBeat}
               phase={automationPhase}
               progress={progress}
               state={state}
@@ -1832,8 +2291,8 @@ export function PreviewEnvironmentSimulator() {
         </div>
         <div className="flex items-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground sm:px-6">
           <LockKeyhole className="size-4 shrink-0" aria-hidden="true" />
-          The simulator pauses between systems so you can inspect them. In production, CI and Argo
-          CD continue automatically.
+          The simulator pauses between systems. In production, the webhook, CI workflow, Argo CD
+          auto-sync, and PR comment continue automatically.
         </div>
       </div>
     </section>
