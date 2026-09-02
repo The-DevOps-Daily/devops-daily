@@ -288,7 +288,7 @@ export const PREVIEW_FAILURES: Record<PreviewFailureId, PreviewFailure> = {
     summary:
       'Health checks pass, but the worker runs an older image than the commit recorded on the PR.',
     stage: 'verify',
-    signal: 'Expected worker@sha-8f3c2a1; observed worker@sha-72ba640.',
+    signal: 'Expected worker@sha-72ba640, the commit on the pull request; observed worker@sha-5d1e9c0 from the previous build.',
     remediationOptions: [
       {
         id: 'approve-healthy',
