@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import matter from 'gray-matter';
+import matter from '../lib/front-matter';
 import { Resvg } from '@resvg/resvg-js';
 import { escapeXml } from './og-utils';
 

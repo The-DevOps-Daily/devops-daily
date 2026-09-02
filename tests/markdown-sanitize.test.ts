@@ -29,6 +29,7 @@ describe('parseMarkdown sanitization', () => {
     const html = parseMarkdown('## Hello World\n\n```chart\n{"type":"bar","rows":[{"label":"a","value":1}]}\n```');
     expect(html).toContain('<h2 id="h2-hello-world"');
     expect(html).toContain('data-heading-id="h2-hello-world"');
+    expect(html).toContain('viewBox="0 0 24 24"');
     expect(html).toMatch(/<div class="post-chart not-prose" data-chart="[^"]+"><\/div>/);
   });
 
@@ -43,6 +44,15 @@ describe('parseMarkdown sanitization', () => {
     const html = parseMarkdown('[ext](https://example.com) [int](/posts/x)');
     expect(html).toMatch(/<a href="https:\/\/example.com"[^>]*rel="noopener noreferrer"/);
     expect(html).toMatch(/<a href="\/posts\/x">/);
+  });
+});
+
+describe('parseMarkdown callouts', () => {
+  it('keeps the callout icon SVG intact', () => {
+    const html = parseMarkdown(':::warning\nCareful.\n:::');
+    expect(html).toContain('post-callout--warning');
+    expect(html).toContain('viewBox="0 0 24 24"');
+    expect(html).toContain('<path d=');
   });
 });
 

@@ -5,6 +5,9 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https:; frame-src https://giscus.app; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://smtpfa.st
 
+/sw.js
+  Cache-Control: no-cache
+
 /404.html
   Content-Type: text/html; charset=utf-8
   Cache-Control: public, max-age=3600

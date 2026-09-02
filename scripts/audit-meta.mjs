@@ -85,7 +85,7 @@ const URLS = [
 function readMd(file) {
   if (!existsSync(file)) return null;
   const raw = readFileSync(file, 'utf8');
-  const { data } = matter(raw);
+  const { data } = matter(raw, { engines: { js: { parse() { throw new Error('code front matter not allowed'); } }, javascript: { parse() { throw new Error('code front matter not allowed'); } } } });
   return data;
 }
 
