@@ -182,7 +182,7 @@ function estimatedTextWidth(text: string, fontSize: number, weight = 800): numbe
     else if (/[-_+\/=()\[\]{}]/.test(character)) em += 0.5;
     else em += 1;
   }
-  return em * fontSize * (weight >= 800 ? 1.035 : 1.015);
+  return em * fontSize * (weight >= 800 ? 1.06 : 1.03);
 }
 
 function splitLongToken(token: string, fontSize: number, maxWidth: number): string[] {
