@@ -18,6 +18,9 @@ concurrency:
   group: indexnow
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   submit:
     name: Notify IndexNow

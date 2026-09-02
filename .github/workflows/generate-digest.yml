@@ -30,7 +30,7 @@ jobs:
         uses: pnpm/action-setup@v6.0.10
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Generate digest
         run: pnpm devops-daily:generate-news:no-ai
@@ -40,6 +40,14 @@ jobs:
 
       - name: Convert SVG to PNG
         run: pnpm convert:svg-to-png
+
+      # A pull request opened with GITHUB_TOKEN does not trigger the PR
+      # workflows, so the digest branch never saw the build or link check.
+      # Run them here before the PR exists.
+      - name: Build and check links
+        run: pnpm build:fast && pnpm check-links
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Get current week and year
         id: week

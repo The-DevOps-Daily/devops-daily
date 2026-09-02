@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Test Build
@@ -28,7 +31,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Audit dependencies
-        run: pnpm audit --audit-level=critical
+        run: pnpm audit --audit-level=high
 
       - name: Validate game registry
         run: pnpm validate:games
