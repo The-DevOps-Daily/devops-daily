@@ -1306,7 +1306,6 @@ function ArgoControlPlaneScene({
   phase,
   progress,
   state,
-  onRun,
   onContinue,
   onRemediate,
 }: {
@@ -1314,7 +1313,6 @@ function ArgoControlPlaneScene({
   phase: AutomationPhase;
   progress: number;
   state: PreviewEnvironmentState;
-  onRun: () => void;
   onContinue: () => void;
   onRemediate: (id: string) => void;
 }) {
@@ -1446,31 +1444,25 @@ function ArgoControlPlaneScene({
                   <span className={toolbarButton}>{item}</span>
                 </UnavailableControl>
               ))}
-              {phase === 'idle' ? (
-                <button
-                  type="button"
-                  onClick={onRun}
-                  className={cn(
-                    ACTIVE_CONTROL,
-                    toolbarButton,
-                    'bg-[#536e79] hover:bg-[#405b66] hover:shadow-[0_0_0_2px_#00a8c640]'
-                  )}
-                >
-                  <RefreshCw className="size-3" aria-hidden="true" />
-                  Sync
-                </button>
-              ) : (
-                <UnavailableControl tooltip={ready ? 'Already synced' : 'Sync is running'}>
-                  <span className={cn(toolbarButton, 'opacity-70')}>
-                    {ready ? (
-                      <CheckCircle2 className="size-3" aria-hidden="true" />
-                    ) : (
-                      <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
-                    )}
-                    {ready ? 'Synced' : 'Syncing'}
-                  </span>
-                </UnavailableControl>
-              )}
+              <span
+                role="status"
+                aria-live="polite"
+                className={cn(
+                  toolbarButton,
+                  failed && 'bg-[#c4454d]',
+                  !failed && ready && 'bg-[#18a98c]',
+                  !failed && !ready && 'bg-[#008ba5]'
+                )}
+              >
+                {failed ? (
+                  <XCircle className="size-3" aria-hidden="true" />
+                ) : ready ? (
+                  <CheckCircle2 className="size-3" aria-hidden="true" />
+                ) : (
+                  <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
+                )}
+                {failed ? 'Sync blocked' : ready ? 'Synced' : 'Auto-syncing'}
+              </span>
               {['Sync status', 'History and rollback', 'Delete'].map((item, index) => (
                 <UnavailableControl
                   key={item}
@@ -1621,7 +1613,7 @@ function ArgoControlPlaneScene({
                 )}
                 <span className="min-w-0 flex-1 truncate">
                   {phase === 'idle'
-                    ? 'Auto-sync is enabled. Select Sync to watch the controller reconcile the tree.'
+                    ? 'Auto-sync is watching for the new Application.'
                     : phase === 'running'
                       ? `application-controller · ${activeLabel}`
                       : `Sync completed · preview-pr-${pullRequest.number} is Healthy`}
@@ -2219,7 +2211,7 @@ export function PreviewEnvironmentSimulator() {
 
   const openControlPlane = () => {
     setProgress(0);
-    setAutomationPhase('idle');
+    setAutomationPhase('running');
     setScene('gitops');
   };
 
@@ -2364,7 +2356,6 @@ export function PreviewEnvironmentSimulator() {
               phase={automationPhase}
               progress={progress}
               state={state}
-              onRun={startAutomation}
               onContinue={openEnvironment}
               onRemediate={remediate}
             />
