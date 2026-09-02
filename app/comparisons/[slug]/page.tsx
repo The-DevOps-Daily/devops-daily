@@ -5,6 +5,7 @@ import { BreadcrumbSchema, ArticleSchema } from '@/components/schema-markup';
 import { truncateMetaDescription } from '@/lib/meta-description';
 import { detailPageMetadata } from '@/lib/metadata-utils';
 import type { Metadata } from 'next';
+import { toJsonLd } from '@/lib/json-ld';
 
 export const dynamicParams = false;
 
@@ -87,7 +88,7 @@ export default async function ComparisonDetailPage({
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLd(faqSchema) }}
       />
       <ComparisonPageClient comparison={comparison} allComparisons={allComparisons} />
     </>

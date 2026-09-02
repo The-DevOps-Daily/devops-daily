@@ -1,3 +1,4 @@
+import { toJsonLd } from '@/lib/json-ld';
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
@@ -35,7 +36,7 @@ export function OrganizationSchema() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }
@@ -61,7 +62,7 @@ export function WebsiteSchema() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }
@@ -160,7 +161,7 @@ export function ArticleSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }
@@ -234,7 +235,7 @@ export function TechArticleSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }
@@ -299,7 +300,7 @@ export function LearningResourceSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }
@@ -347,7 +348,7 @@ export function SoftwareApplicationSchema({
     <script
       type="application/ld+json"
       // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }
@@ -371,7 +372,7 @@ export function FAQSchema({ questions }: { questions: { question: string; answer
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }
@@ -409,7 +410,7 @@ export function QAPageSchema({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }
@@ -431,7 +432,7 @@ export function BreadcrumbSchema({ items }: { items: { name: string; url: string
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: toJsonLd(schema) }}
     />
   );
 }

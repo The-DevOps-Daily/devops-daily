@@ -4,12 +4,22 @@ import { getAllPosts } from '../lib/posts.js';
 import { getAllNews } from '../lib/news.js';
 import { parseMarkdown } from '../lib/markdown.js';
 
+/** CDATA-wrap without letting a literal `]]>` in the text end the section early. */
+function cdata(text: string): string {
+  return `<![CDATA[${text.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
+}
+
+/** Feed readers resolve nothing relative to the site; make root links absolute. */
+function absolutize(html: string, siteUrl: string): string {
+  return html.replace(/(href|src)="\/(?!\/)/g, `$1="${siteUrl}/`);
+}
+
 async function generateFeed() {
   const [posts, news] = await Promise.all([getAllPosts(), getAllNews()]);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://devops-daily.com';
 
   const rss = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>DevOps Daily</title>
     <link>${siteUrl}</link>
@@ -41,30 +51,30 @@ async function generateFeed() {
         if (item.type === 'news') {
           return `
     <item>
-      <title><![CDATA[${item.title}]]></title>
+      <title>${cdata(item.title)}</title>
       <link>${siteUrl}${item.url}</link>
-      <description><![CDATA[${item.excerpt || item.summary || ''}]]></description>
+      <description>${cdata(item.excerpt || item.summary || '')}</description>
       <pubDate>${new Date(item.dateKey || Date.now()).toUTCString()}</pubDate>
       <guid isPermaLink="true">${siteUrl}${item.url}</guid>
       <category><![CDATA[DevOps News]]></category>
-      <content:encoded><![CDATA[${item.content ? parseMarkdown(item.content) : item.excerpt || item.summary || ''}]]></content:encoded>
+      <content:encoded>${cdata(absolutize(item.content ? parseMarkdown(item.content) : item.excerpt || item.summary || '', siteUrl))}</content:encoded>
     </item>`;
         } else {
           return `
     <item>
-      <title><![CDATA[${item.title}]]></title>
+      <title>${cdata(item.title)}</title>
       <link>${siteUrl}${item.url}</link>
-      <description><![CDATA[${item.excerpt || ''}]]></description>
+      <description>${cdata(item.excerpt || '')}</description>
       <pubDate>${new Date(item.publishedAt || item.date || Date.now()).toUTCString()}</pubDate>
       <guid isPermaLink="true">${siteUrl}${item.url}</guid>
-      ${item.category?.name ? `<category><![CDATA[${item.category.name}]]></category>` : ''}
-      ${item.author?.name ? `<author><![CDATA[${item.author.name}]]></author>` : ''}
+      ${item.category?.name ? `<category>${cdata(item.category.name)}</category>` : ''}
+      ${item.author?.name ? `<dc:creator>${cdata(item.author.name)}</dc:creator>` : ''}
       ${
         item.tags && item.tags.length > 0
-          ? item.tags.map((tag) => `<category><![CDATA[${tag}]]></category>`).join('')
+          ? item.tags.map((tag) => `<category>${cdata(tag)}</category>`).join('')
           : ''
       }
-      <content:encoded><![CDATA[${item.content ? parseMarkdown(item.content) : item.excerpt || ''}]]></content:encoded>
+      <content:encoded>${cdata(absolutize(item.content ? parseMarkdown(item.content) : item.excerpt || '', siteUrl))}</content:encoded>
     </item>`;
         }
       })
