@@ -27,6 +27,14 @@ export type Post = {
   featured?: boolean;
 };
 
+/** A post without its body, for list pages rendered by client components. */
+export type PostSummary = Omit<Post, 'content'>;
+
+export function toPostSummary(post: Post): PostSummary {
+  const { content: _content, ...summary } = post;
+  return summary;
+}
+
 function mapPost(data: Partial<Post>, content: string, filename: string): Post {
   const slug = filename.replace(/\.md$/, '');
   const image = data.image || getPostImagePath(slug);

@@ -4,6 +4,8 @@ import { PostsList } from '@/components/posts-list';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
 import { BookOpen, FileText } from 'lucide-react';
+import { PostSummary } from '@/lib/posts';
+import { GuideSummary } from '@/lib/guides';
 
 type Post = {
   slug: string;
@@ -25,8 +27,8 @@ type Guide = {
 type ExpertContentToggleProps = {
   expertName: string;
   expertSlug: string;
-  posts: Post[];
-  guides: Guide[];
+  posts: PostSummary[];
+  guides: GuideSummary[];
   postCount: number;
   guideCount: number;
   defaultShowPosts?: boolean;

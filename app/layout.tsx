@@ -7,7 +7,6 @@ import { Footer } from '@/components/footer';
 import { ThemeProvider } from '@/components/theme-provider';
 import { OrganizationSchema, WebsiteSchema } from '@/components/schema-markup';
 import { CookieBanner } from '@/components/cookie-banner';
-import { PWAInstaller } from '@/components/pwa-installer';
 import { SkipToContent } from '@/components/skip-to-content';
 import { SiteAnalytics } from '@/components/site-analytics';
 import { DeferredSiteExtras } from '@/components/deferred-site-extras';
@@ -144,7 +143,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
           <Footer />
           <CookieBanner />
-          <PWAInstaller />
           <SiteAnalytics />
           <DeferredSiteExtras />
         </ThemeProvider>

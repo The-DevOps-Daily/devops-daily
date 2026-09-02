@@ -7,6 +7,7 @@ import { Tags } from 'lucide-react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { toPostSummary } from '@/lib/posts';
 
 interface TagPageProps {
   params: Promise<{
@@ -124,7 +125,7 @@ export default async function TagPage({ params }: TagPageProps) {
             {posts.length > 0 && (
               <div className="mb-12">
                 <h2 className="text-2xl font-bold mb-4 mt-4">Posts</h2>
-                <PostsList posts={posts} />
+                <PostsList posts={posts.map(toPostSummary)} />
               </div>
             )}
           </div>

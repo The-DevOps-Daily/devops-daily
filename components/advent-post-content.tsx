@@ -1,5 +1,3 @@
-'use client';
-
 import { parseMarkdown } from '@/lib/markdown';
 import { CodeBlockWrapper } from '@/components/code-block-wrapper';
 import { HeadingWrapper } from '@/components/heading-with-anchor';

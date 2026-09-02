@@ -1,16 +1,16 @@
 'use client';
 
-import { parseMarkdown } from '@/lib/markdown';
 import { CodeBlockWrapper } from '@/components/code-block-wrapper';
 import { HeadingWrapper } from '@/components/heading-with-anchor';
 import { MarkdownHtml } from '@/components/markdown-content';
 import { useEffect, useRef } from 'react';
 
 interface NewsDigestContentProps {
-  content: string;
+  /** Markdown already rendered on the server; this component only groups the DOM. */
+  html: string;
 }
 
-export function NewsDigestContent({ content }: NewsDigestContentProps) {
+export function NewsDigestContent({ html }: NewsDigestContentProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,14 +73,12 @@ export function NewsDigestContent({ content }: NewsDigestContentProps) {
     });
   }, []);
 
-  const htmlContent = parseMarkdown(content);
-
   return (
     <HeadingWrapper>
       <CodeBlockWrapper>
         <MarkdownHtml
           htmlRef={contentRef}
-          html={htmlContent}
+          html={html}
           className="prose-h2:text-2xl prose-h2:font-bold prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-border
             prose-h3:text-lg prose-h3:font-semibold prose-h3:mb-3 prose-h3:text-foreground
             prose-blockquote:border-l-primary prose-blockquote:bg-muted/10 prose-blockquote:my-6 prose-blockquote:py-2

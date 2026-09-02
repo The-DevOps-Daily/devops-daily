@@ -642,7 +642,7 @@ export function runMongo(input: string): RunResult {
     return { kind: 'error', error: 'Commands start with db.<collection>., e.g. db.products.find()' };
   }
   const collectionName = head[1];
-  const collection = COLLECTION_MAP[collectionName];
+  const collection = Object.hasOwn(COLLECTION_MAP, collectionName) ? COLLECTION_MAP[collectionName] : undefined;
   if (!collection) {
     return { kind: 'error', error: `collection "${collectionName}" is not in this playground` };
   }

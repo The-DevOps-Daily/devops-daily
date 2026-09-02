@@ -37,7 +37,7 @@ const ICONS: Record<string, string> = {
 function PdIcon({ name, tone }: { name?: string; tone?: string }) {
   if (!name) return null;
   const cls = 'pd-ic' + (tone ? ' t-' + tone : '');
-  if (ICONS[name]) {
+  if (Object.hasOwn(ICONS, name) && ICONS[name]) {
     // Safe: the injected markup is a trusted, hardcoded constant (ICONS[name]).
     // `name` is only used as a lookup key; unknown values fall through to the
     // React-escaped text branch below, so author input never reaches innerHTML.

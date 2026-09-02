@@ -14,6 +14,7 @@ import { detailPageMetadata } from '@/lib/metadata-utils';
 import Link from 'next/link';
 
 import type { Metadata } from 'next';
+import { parseMarkdown } from '@/lib/markdown';
 
 // Disable dynamic params for static export
 export const dynamicParams = false;
@@ -141,7 +142,7 @@ export default async function NewsDigestPage({
               </header>
 
               {/* Content */}
-              <NewsDigestContent content={digest.content} />
+              <NewsDigestContent html={parseMarkdown(digest.content)} />
 
               {/* Inline Sponsors */}
               <InlineSponsors variant="full" className="my-12" />

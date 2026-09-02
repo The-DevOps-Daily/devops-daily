@@ -3,7 +3,7 @@ import { PageHero } from '@/components/page-hero';
 import { FileText } from 'lucide-react';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
-import { getAllPosts } from '@/lib/posts';
+import { getAllPosts, toPostSummary } from '@/lib/posts';
 
 export const metadata = {
   title: 'All Posts',
@@ -55,7 +55,7 @@ export default async function PostsPage() {
             hidden during search so filtered results stay uninterrupted. */}
         <div className="lg:col-span-9">
           <PostsList
-            posts={posts}
+            posts={posts.map(toPostSummary)}
             sponsorSlot={<InlineSponsors variant="banner" />}
             sponsorAfter={6}
           />

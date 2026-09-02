@@ -160,10 +160,12 @@ function escapeHtml(value: string): string {
 // Accept a github.com URL or a bare "owner/repo" and return "owner/repo".
 function parseRepoSlug(input: string): string | null {
   const s = input.trim();
+  const segment = /^[A-Za-z0-9][\w.-]*$/;
+  const ok = (owner: string, repo: string) => segment.test(owner) && segment.test(repo);
   const fromUrl = s.match(/github\.com\/([\w.-]+)\/([\w.-]+)/i);
-  if (fromUrl) return `${fromUrl[1]}/${fromUrl[2].replace(/\.git$/i, '')}`;
+  if (fromUrl && ok(fromUrl[1], fromUrl[2])) return `${fromUrl[1]}/${fromUrl[2].replace(/\.git$/i, '')}`;
   const bare = s.match(/^([\w.-]+)\/([\w.-]+)$/);
-  if (bare) return `${bare[1]}/${bare[2].replace(/\.git$/i, '')}`;
+  if (bare && ok(bare[1], bare[2])) return `${bare[1]}/${bare[2].replace(/\.git$/i, '')}`;
   return null;
 }
 

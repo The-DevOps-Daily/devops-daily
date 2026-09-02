@@ -14,6 +14,16 @@ export type GuidePart = {
   description?: string;
 };
 
+/** A guide without part bodies, for list pages rendered by client components. */
+export type GuideSummary = Omit<Guide, 'content' | 'parts'> & {
+  parts: Array<Omit<GuidePart, 'content'>>;
+};
+
+export function toGuideSummary(guide: Guide): GuideSummary {
+  const { content: _content, parts, ...rest } = guide;
+  return { ...rest, parts: parts.map(({ content: _c, ...part }) => part) };
+}
+
 export type Guide = {
   title: string;
   /**
