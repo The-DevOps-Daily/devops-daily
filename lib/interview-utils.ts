@@ -51,7 +51,11 @@ export const getInterviewProgress = (category?: string): InterviewQuestionProgre
   
   const key = category ? `${STORAGE_PREFIX}${category}` : `${STORAGE_PREFIX}all`;
   const stored = localStorage.getItem(key);
-  return stored ? JSON.parse(stored) : {};
+  try {
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
 };
 
 /**

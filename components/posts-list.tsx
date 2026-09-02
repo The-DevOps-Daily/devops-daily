@@ -7,10 +7,10 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Calendar, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import type { Post } from '@/lib/posts';
+import type { PostSummary } from '@/lib/posts';
 
 interface PostsListProps {
-  posts: Post[];
+  posts: PostSummary[];
   className?: string;
   /**
    * Optional block (e.g. inline sponsors) to render between items when the

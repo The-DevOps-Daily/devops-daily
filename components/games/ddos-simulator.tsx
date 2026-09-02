@@ -164,7 +164,11 @@ export default function DDoSSimulator() {
 
     const savedAchievements = localStorage.getItem('ddos-achievements');
     if (savedAchievements) {
-      setAchievements(JSON.parse(savedAchievements));
+      try {
+        setAchievements(JSON.parse(savedAchievements));
+      } catch {
+        localStorage.removeItem('ddos-achievements');
+      }
     }
 
     setMounted(true);

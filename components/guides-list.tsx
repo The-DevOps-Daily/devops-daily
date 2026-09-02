@@ -5,11 +5,11 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Clock, BookOpen } from 'lucide-react';
-import { Guides } from '@/lib/guides';
+import type { GuideSummary } from '@/lib/guides';
 
 interface GuidesListProps {
   className?: string;
-  guides: Guides[];
+  guides: GuideSummary[];
 }
 
 export function GuidesList({ guides, className }: GuidesListProps) {
@@ -33,7 +33,7 @@ export function GuidesList({ guides, className }: GuidesListProps) {
           </div>
           <div className="flex flex-1 flex-col p-5 sm:p-6">
             <Badge variant="secondary" className="mb-2 self-start">
-              <span>{guide.category.name}</span>
+              <span>{guide.category?.name}</span>
             </Badge>
             <h3 className="text-xl font-semibold group-hover:text-primary transition-colors">
               {guide.title}

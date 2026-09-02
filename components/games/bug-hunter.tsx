@@ -107,7 +107,11 @@ const directionRef = useRef<Direction>('RIGHT');
     
     const savedAchievements = localStorage.getItem('bugHunterAchievements');
     if (savedAchievements) {
-      setAchievements(JSON.parse(savedAchievements));
+      try {
+        setAchievements(JSON.parse(savedAchievements));
+      } catch {
+        localStorage.removeItem('bugHunterAchievements');
+      }
     }
   }, []);
   

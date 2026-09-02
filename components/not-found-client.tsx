@@ -13,7 +13,10 @@ export function NotFoundClient() {
   }, []);
 
   const isMdRequest = path.endsWith('.md');
-  const strippedPath = isMdRequest ? path.replace(/\.md$/, '') : path;
+  const stripped = isMdRequest ? path.replace(/\.md$/, '') : path;
+  // Only offer a link for a plain site-relative path: `//host/x.md` would
+  // otherwise become a protocol-relative link off the site.
+  const strippedPath = /^\/(?!\/)[\w./-]*$/.test(stripped) ? stripped : '/';
 
   return (
     <main className="min-h-[70vh] flex items-center justify-center px-4">
