@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import { toJsonLd } from '@/lib/json-ld';
 
 export const metadata: Metadata = {
   title: { absolute: 'DevOps Roadmap - Your Path to DevOps Mastery' },
@@ -88,7 +89,7 @@ export default function RoadmapLayout({ children }: { children: React.ReactNode 
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(stagesJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: toJsonLd(stagesJsonLd) }}
       />
       {children}
     </>
