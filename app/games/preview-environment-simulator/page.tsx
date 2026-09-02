@@ -11,6 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const seoLearningPoints = [
   'How a pull-request label or Git declaration creates preview-environment intent',
   'How GitHub Actions, Argo CD ApplicationSets, Helm, and Kubernetes reconcile that intent',
+  'How a Neon database branch gives each preview environment isolated test data',
   'How single-service previews differ from coordinated full-stack UAT environments',
   'How data strategy, resource sizing, access policy, and TTL affect cost and isolation',
   'How to diagnose branch mismatches, quota failures, missing secrets, DNS issues, and revision drift',
@@ -25,22 +26,40 @@ function PreviewEnvironmentEducational() {
         <p className="font-mono text-xs uppercase tracking-wide text-blue-700 dark:text-blue-300">
           DevOps Daily × Atomsized
         </p>
-        <h3 className="mt-2 text-xl font-semibold">Inspired by a real preview-platform workflow</h3>
+        <h3 className="mt-2 text-xl font-semibold">
+          Inspired by Atomsized&apos;s preview-platform workflow
+        </h3>
         <p className="mt-2 max-w-4xl text-sm leading-relaxed text-muted-foreground">
           This simulator was developed in partnership with Atomsized and is inspired by their
           published approach to pull-request previews and coordinated full-stack UAT environments.
-          The simulation is educational: it teaches the platform decisions and control-plane
-          mechanics rather than reproducing a vendor product.
+          The walkthrough centers on Atomsized&apos;s full preview-environment workflow, following
+          the application from pull-request intent through GitOps deployment, review, and automatic
+          teardown.
         </p>
-        <a
-          href="https://atomsized.com/preview-environments"
-          target="_blank"
-          rel="noopener noreferrer sponsored"
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-300"
-        >
-          Read Atomsized&apos;s preview environments case study
-          <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+        <p className="mt-2 max-w-4xl text-sm leading-relaxed text-muted-foreground">
+          The data layer uses a Neon database branch to show how isolated preview data can follow
+          that same pull-request lifecycle.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <a
+            href="https://atomsized.com/preview-environments"
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 underline-offset-4 hover:underline dark:text-blue-300"
+          >
+            Explore Atomsized preview environments
+            <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+          <a
+            href="https://neon.com/branching"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+          >
+            Database branching by Neon
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
       </div>
 
       <h3 className="mb-4 text-xl font-semibold">
