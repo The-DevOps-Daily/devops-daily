@@ -24,6 +24,7 @@ import {
   Network,
   Package,
   Play,
+  Plus,
   RefreshCw,
   RotateCcw,
   Search,
@@ -306,7 +307,7 @@ function GitHubChrome({
       </div>
       <nav
         aria-label="Repository navigation"
-        className="flex gap-1 overflow-x-auto border-b border-[#21262d] bg-[#010409] px-2 pt-1 sm:px-4"
+        className="grid grid-cols-4 gap-1 border-b border-[#21262d] bg-[#010409] px-2 pt-1 sm:flex sm:px-4"
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -314,16 +315,17 @@ function GitHubChrome({
           const content = (
             <>
               <Icon className="size-4" aria-hidden="true" />
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sr-only sm:hidden">{tab.label}</span>
             </>
           );
           if (!selected) {
             return (
               <UnavailableControl
                 key={tab.id}
-                className="shrink-0 border-b-2 border-transparent px-3 py-2 text-xs font-medium text-[#8b949e]"
+                className="min-w-0 justify-center border-b-2 border-transparent px-1 py-2 text-xs font-medium text-[#8b949e] sm:shrink-0 sm:px-3"
               >
-                <span className="flex items-center gap-2">{content}</span>
+                <span className="flex items-center justify-center gap-2">{content}</span>
               </UnavailableControl>
             );
           }
@@ -331,7 +333,7 @@ function GitHubChrome({
             <div
               key={tab.id}
               aria-current="page"
-              className="flex shrink-0 items-center gap-2 border-b-2 border-[#f78166] px-3 py-2 text-xs font-medium text-[#e6edf3]"
+              className="flex min-w-0 items-center justify-center gap-2 border-b-2 border-[#f78166] px-1 py-2 text-xs font-medium text-[#e6edf3] sm:shrink-0 sm:px-3"
             >
               {content}
             </div>
@@ -480,27 +482,31 @@ function PullRequestDetail({
             </span>
           </div>
         </div>
-        <div className="mt-3 flex gap-1 overflow-x-auto border-b border-[#21262d]">
+        <div className="mt-3 grid grid-cols-4 gap-1 border-b border-[#21262d]">
           {[
-            'Conversation ' + pullRequest.comments,
-            'Commits ' + pullRequest.commits,
-            'Checks 0',
-            'Files changed ' + pullRequest.changedFiles,
+            { label: 'Conversation', short: 'Chat', count: pullRequest.comments },
+            { label: 'Commits', short: 'Commits', count: pullRequest.commits },
+            { label: 'Checks', short: 'Checks', count: 0 },
+            { label: 'Files changed', short: 'Files', count: pullRequest.changedFiles },
           ].map((tab, index) =>
             index === 0 ? (
               <span
-                key={tab}
+                key={tab.label}
                 aria-current="page"
-                className="shrink-0 border-b-2 border-[#f78166] px-3 py-2 text-xs font-medium text-[#e6edf3]"
+                className="min-w-0 border-b-2 border-[#f78166] px-1 py-2 text-center text-[10px] font-medium text-[#e6edf3] sm:px-3 sm:text-xs"
               >
-                {tab}
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.short}</span> {tab.count}
               </span>
             ) : (
               <UnavailableControl
-                key={tab}
-                className="shrink-0 border-b-2 border-transparent px-3 py-2 text-xs font-medium text-[#8b949e]"
+                key={tab.label}
+                className="min-w-0 justify-center border-b-2 border-transparent px-1 py-2 text-center text-[10px] font-medium text-[#8b949e] sm:px-3 sm:text-xs"
               >
-                <span>{tab}</span>
+                <span className="truncate">
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.short}</span> {tab.count}
+                </span>
               </UnavailableControl>
             )
           )}
@@ -1231,41 +1237,67 @@ function ArgoResourceNode({
   name,
   status,
   icon: Icon,
-  wide,
+  detail,
 }: {
   kind: string;
   name: string;
   status: ResourceState;
   icon: typeof Boxes;
-  wide?: boolean;
+  detail?: string;
 }) {
+  const statusLabel =
+    status === 'ready' ? 'Healthy' : status === 'creating' ? 'Progressing' : 'Missing';
   return (
     <div
       className={cn(
-        'rounded-md border p-3 transition-all duration-500',
-        wide && 'sm:col-span-2',
-        status === 'queued' && 'border-[#302744] bg-[#0e0c15] opacity-50',
-        status === 'creating' && 'border-[#8957e5] bg-[#6e40c91f] shadow-lg shadow-violet-950/30',
-        status === 'ready' && 'border-[#23863688] bg-[#23863612]'
+        'relative min-h-[58px] rounded-sm border bg-white px-2.5 py-2 shadow-[0_1px_2px_#2135471f] transition-all duration-500',
+        status === 'queued' && 'border-[#c6d1d6] opacity-55',
+        status === 'creating' &&
+          'border-[#0da9c0] shadow-[0_0_0_2px_#0da9c02b,0_2px_5px_#21354724]',
+        status === 'ready' && 'border-[#9fcfc7]'
       )}
     >
-      <div className="flex items-start gap-3">
-        <span className="grid size-8 shrink-0 place-items-center rounded border border-[#302744] bg-[#08090e]">
-          <Icon className="size-4" aria-hidden="true" />
+      <div className="flex min-w-0 items-start gap-2">
+        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#90a6b0] text-white">
+          <Icon className="size-3.5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <div>
-              <span className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-[#8b949e]">
-                {kind}
-              </span>
-              <strong className="mt-0.5 block truncate text-xs">{name}</strong>
-            </div>
-            <ResourceStatus status={status} />
+          <div className="flex min-w-0 items-center justify-between gap-2">
+            <strong className="truncate text-[10px] font-medium text-[#314451]">{name}</strong>
+            <span className="text-xs font-bold text-[#79909b]" aria-hidden="true">
+              ⋮
+            </span>
+          </div>
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-[9px] text-[#657b86]">
+            <span>{kind}</span>
+            <span aria-hidden="true">·</span>
+            {status === 'creating' ? (
+              <LoaderCircle className="size-3 animate-spin text-[#00a8c6]" aria-hidden="true" />
+            ) : status === 'ready' ? (
+              <CheckCircle2 className="size-3 text-[#18b99a]" aria-hidden="true" />
+            ) : (
+              <CircleDot className="size-3 text-[#9aadb6]" aria-hidden="true" />
+            )}
+            <span>{statusLabel}</span>
+            {detail && <span className="ml-auto truncate text-[#8b9ca4]">{detail}</span>}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function ArgoGraphConnector() {
+  return (
+    <>
+      <div className="hidden items-center lg:flex" aria-hidden="true">
+        <span className="w-full border-t border-dashed border-[#91a7b1]" />
+        <span className="-ml-1 text-sm text-[#91a7b1]">›</span>
+      </div>
+      <div className="grid h-5 place-items-center text-[#91a7b1] lg:hidden" aria-hidden="true">
+        <ArrowDown className="size-4" />
+      </div>
+    </>
   );
 }
 
@@ -1308,265 +1340,325 @@ function ArgoControlPlaneScene({
           : stage === 'verify'
             ? 'Waiting for health and revision checks'
             : 'All desired resources are healthy and synced';
+  const syncLabel = ready ? 'Synced' : phase === 'running' ? 'Syncing' : 'OutOfSync';
+  const healthLabel = ready ? 'Healthy' : 'Progressing';
+  const lastSyncLabel = ready ? 'Sync OK' : phase === 'running' ? 'Running' : 'Not synced';
+  const toolbarButton =
+    'inline-flex min-h-7 items-center gap-1 rounded-full bg-[#738792] px-2.5 text-[9px] font-semibold uppercase text-white';
   return (
-    <div className="overflow-hidden rounded-lg border border-[#3b2d5e] bg-[#0b0d14] text-[#e6edf3] shadow-2xl shadow-violet-950/20">
-      <div className="flex items-center gap-3 border-b border-[#302744] bg-[#12101b] px-3 py-2">
-        <div className="flex gap-1.5" aria-hidden="true">
-          <span className="size-2.5 rounded-full bg-red-500/80" />
-          <span className="size-2.5 rounded-full bg-amber-500/80" />
-          <span className="size-2.5 rounded-full bg-emerald-500/80" />
-        </div>
-        <div className="flex min-w-0 flex-1 items-center justify-center rounded border border-[#302744] bg-[#08090e] px-3 py-1 font-mono text-[10px] text-[#8b949e]">
-          <LockKeyhole className="mr-2 size-3" aria-hidden="true" />
-          argo.acme.internal/applications/preview-pr-{pullRequest.number}
-        </div>
-      </div>
-      <div className="flex items-center justify-between border-b border-[#302744] bg-[#171124] px-4 py-3">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <span className="grid size-7 place-items-center rounded bg-[#6e40c9]">
-            <Workflow className="size-4" aria-hidden="true" />
-          </span>
-          Argo CD
-        </div>
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a371f7]">
-          Cluster control plane · outside GitHub
-        </span>
-      </div>
-
-      <div className="grid min-h-[500px] md:grid-cols-[210px_minmax(0,1fr)]">
-        <aside className="border-b border-[#302744] bg-[#0e0c15] p-4 md:border-b-0 md:border-r">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#6e7681]">
-            Control plane state
-          </div>
-          <div className="mt-3 rounded-md border border-[#6e40c9] bg-[#6e40c91f] p-3 text-xs">
-            <div className="flex items-center gap-2 font-semibold">
-              <Layers3 className="size-4 text-[#a371f7]" aria-hidden="true" />
-              {application === 'ready'
-                ? `preview-pr-${pullRequest.number}`
-                : 'preview-environments'}
-            </div>
-            <div className="mt-2 font-mono text-[10px] text-[#8b949e]">
-              {application === 'ready'
-                ? `Application · revision ${pullRequest.commit}`
-                : 'ApplicationSet · watching acme/store'}
-            </div>
-          </div>
-          <div className="my-3 flex items-center justify-center text-[#6e7681]">↑</div>
-          <div className="rounded-md border border-[#3fb95055] bg-[#23863612] p-3 text-center text-[10px] text-[#7ee787]">
-            <Package className="mx-auto mb-1 size-4" aria-hidden="true" />
-            <strong className="block">Registry artifact</strong>
-            store:{pullRequest.commit}
-          </div>
-          <a
-            href="https://atomsized.com/preview-environments"
-            target="_blank"
-            rel="noreferrer"
-            className={cn(
-              ACTIVE_CONTROL,
-              'mt-6 flex gap-2 rounded-md border border-[#302744] p-3 text-[10px] leading-4 text-[#8b949e] hover:border-[#8957e5] hover:text-[#c6a7ff]'
-            )}
-          >
-            <Sparkles className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            <span>
-              Pattern inspired by Atomsized
-              <ExternalLink className="ml-1 inline size-3" aria-hidden="true" />
+    <>
+      <div className="overflow-hidden rounded-lg border border-[#8ca2ac] bg-[#dfe8ec] text-[#2d414c] shadow-2xl shadow-black/20">
+        <div className="flex items-center justify-between border-b border-[#c9d5da] bg-white px-3 py-2 md:hidden">
+          <span className="flex items-center gap-2 font-semibold text-[#173746]">
+            <span className="grid size-7 place-items-center rounded-full bg-[#f36b4f] text-white">
+              <Workflow className="size-4" aria-hidden="true" />
             </span>
-          </a>
-        </aside>
+            argo
+          </span>
+          <span className="text-[9px] font-semibold uppercase text-[#0085a3]">
+            Application details tree
+          </span>
+        </div>
 
-        <div className="min-w-0 p-3 sm:p-5">
-          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#302744] pb-4">
-            <div>
-              <div className="mb-1 text-[10px] text-[#8b949e]">
-                ApplicationSet / preview-environments
+        <div className="md:grid md:grid-cols-[152px_minmax(0,1fr)]">
+          <aside className="hidden min-h-[520px] flex-col bg-[#123441] px-3 py-4 text-[#d7e0e4] md:flex">
+            <div className="flex items-center gap-2 border-b border-[#31515c] pb-4">
+              <span className="grid size-8 place-items-center rounded-full bg-[#f36b4f] text-white">
+                <Workflow className="size-4" aria-hidden="true" />
+              </span>
+              <div>
+                <strong className="block text-base tracking-wide">argo</strong>
+                <span className="block text-[9px] text-[#91a8b2]">v3.3.0</span>
               </div>
-              <h3 className="flex items-center gap-2 text-lg font-semibold">
-                {failed ? (
-                  <XCircle className="size-5 text-[#f85149]" aria-hidden="true" />
-                ) : phase === 'complete' ? (
-                  <CheckCircle2 className="size-5 text-[#3fb950]" aria-hidden="true" />
-                ) : phase === 'running' ? (
-                  <LoaderCircle className="size-5 animate-spin text-[#a371f7]" aria-hidden="true" />
-                ) : (
-                  <CircleDot className="size-5 text-[#8b949e]" aria-hidden="true" />
-                )}
-                Reconcile desired state
-              </h3>
-              <p className="mt-1 text-xs text-[#8b949e]">
-                Argo CD independently observes Git and continuously reconciles the cluster.
-              </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-[#6e40c9] px-2.5 py-1 text-[10px] font-semibold text-[#c6a7ff]">
-                Sync · {ready ? 'Synced' : phase === 'running' ? 'Syncing' : 'OutOfSync'}
-              </span>
-              <span
-                className={cn(
-                  'rounded-full border px-2.5 py-1 text-[10px] font-semibold',
-                  ready ? 'border-[#238636] text-[#7ee787]' : 'border-[#d29922] text-[#e3b341]'
-                )}
-              >
-                Health · {ready ? 'Healthy' : 'Progressing'}
-              </span>
+            <div className="mt-4 space-y-1 text-[10px]">
+              <div className="flex items-center gap-2 rounded bg-[#0d2a35] px-2 py-2 font-semibold text-white">
+                <Layers3 className="size-3.5 text-[#f36b4f]" aria-hidden="true" />
+                Applications
+              </div>
+              {['Settings', 'User info', 'Documentation'].map((item) => (
+                <UnavailableControl key={item} className="block w-full" tooltip="Read-only demo">
+                  <span className="flex w-full items-center gap-2 rounded px-2 py-2 text-[#93aab4]">
+                    <CircleDot className="size-3.5" aria-hidden="true" />
+                    {item}
+                  </span>
+                </UnavailableControl>
+              ))}
             </div>
-          </div>
-
-          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(280px,0.75fr)]">
-            <div>
-              <ArgoResourceNode
-                kind="Application"
-                name={`preview-pr-${pullRequest.number}`}
-                status={application}
-                icon={Layers3}
-                wide
+            <div className="mt-5 border-t border-[#31515c] pt-3 text-[9px] uppercase tracking-wide text-[#91a8b2]">
+              Resource filters
+            </div>
+            <label className="mt-2 text-[9px] text-[#91a8b2]">
+              Name
+              <input
+                readOnly
+                aria-label="Resource name filter"
+                className="mt-1 h-7 w-full cursor-not-allowed rounded-sm border border-[#33545f] bg-[#09232d] px-2 text-[10px] text-[#d7e0e4] outline-none"
+                value=""
               />
-              <div className="grid h-8 place-items-center text-[#6e7681]" aria-hidden="true">
-                <ArrowDown className="size-4" />
+            </label>
+            <div className="mt-4 space-y-2 text-[9px] text-[#91a8b2]">
+              <strong className="block uppercase">Sync status</strong>
+              <div className="flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-[#18b99a]" /> Synced {ready ? 9 : 0}
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-[#f0ae2c]" /> OutOfSync {ready ? 0 : 9}
+              </div>
+              <strong className="block pt-2 uppercase">Health status</strong>
+              <div className="flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-[#18b99a]" /> Healthy {ready ? 9 : 0}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="size-2.5 rounded-full bg-[#13a8db]" /> Progressing {ready ? 0 : 9}
+              </div>
+            </div>
+            <a
+              href="https://atomsized.com/preview-environments"
+              target="_blank"
+              rel="noreferrer"
+              className={cn(
+                ACTIVE_CONTROL,
+                'mt-auto flex items-center gap-1.5 border-t border-[#31515c] pt-3 text-[9px] text-[#91a8b2] hover:text-white'
+              )}
+            >
+              Preview automation by Atomsized
+              <ExternalLink className="size-3" aria-hidden="true" />
+            </a>
+          </aside>
+
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center justify-between gap-3 border-b border-[#d5dee2] bg-white px-3 py-2 text-[9px]">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="shrink-0 text-[#0085a3]">Applications</span>
+                <span className="text-[#8ca0a9]">/</span>
+                <Search className="size-3 shrink-0" aria-hidden="true" />
+                <strong className="truncate">preview-pr-{pullRequest.number}</strong>
+              </div>
+              <span className="hidden shrink-0 font-semibold uppercase text-[#0085a3] sm:block">
+                Application details tree
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-[#d5dee2] bg-white px-3 py-2">
+              {['Details', 'Diff'].map((item) => (
+                <UnavailableControl key={item} tooltip="Read-only in this simulator">
+                  <span className={toolbarButton}>{item}</span>
+                </UnavailableControl>
+              ))}
+              {phase === 'idle' ? (
+                <button
+                  type="button"
+                  onClick={onRun}
+                  className={cn(
+                    ACTIVE_CONTROL,
+                    toolbarButton,
+                    'bg-[#536e79] hover:bg-[#405b66] hover:shadow-[0_0_0_2px_#00a8c640]'
+                  )}
+                >
+                  <RefreshCw className="size-3" aria-hidden="true" />
+                  Sync
+                </button>
+              ) : (
+                <UnavailableControl tooltip={ready ? 'Already synced' : 'Sync is running'}>
+                  <span className={cn(toolbarButton, 'opacity-70')}>
+                    {ready ? (
+                      <CheckCircle2 className="size-3" aria-hidden="true" />
+                    ) : (
+                      <LoaderCircle className="size-3 animate-spin" aria-hidden="true" />
+                    )}
+                    {ready ? 'Synced' : 'Syncing'}
+                  </span>
+                </UnavailableControl>
+              )}
+              {['Sync status', 'History and rollback', 'Delete'].map((item, index) => (
+                <UnavailableControl
+                  key={item}
+                  className={cn(index > 0 && 'hidden sm:inline-flex')}
+                  tooltip="Read-only in this simulator"
+                >
+                  <span className={toolbarButton}>{item}</span>
+                </UnavailableControl>
+              ))}
+              <UnavailableControl tooltip="Read-only in this simulator">
+                <span className={toolbarButton}>
+                  <RefreshCw className="size-3" aria-hidden="true" /> Refresh
+                </span>
+              </UnavailableControl>
+            </div>
+
+            <div className="grid grid-cols-3 divide-x divide-[#d5dee2] border-b border-[#c8d4d9] bg-white">
+              {[
+                {
+                  eyebrow: 'App health',
+                  value: healthLabel,
+                  detail: ready ? 'All resources healthy' : activeLabel,
+                  tone: ready ? '#18b99a' : '#13a8db',
+                },
+                {
+                  eyebrow: 'Sync status',
+                  value: syncLabel,
+                  detail: `to ${pullRequest.commit}`,
+                  tone: ready ? '#18b99a' : '#f0ae2c',
+                },
+                {
+                  eyebrow: 'Last sync',
+                  value: lastSyncLabel,
+                  detail: phase === 'idle' ? 'Auto-sync enabled' : `revision ${pullRequest.commit}`,
+                  tone: ready ? '#18b99a' : '#13a8db',
+                },
+              ].map((metric) => (
+                <div key={metric.eyebrow} className="min-w-0 px-2 py-2.5 sm:px-3">
+                  <span className="block text-[8px] font-semibold uppercase text-[#70858f]">
+                    {metric.eyebrow}
+                  </span>
+                  <strong className="mt-1 flex items-center gap-1 truncate text-[11px] sm:text-sm">
+                    {phase === 'running' && metric.eyebrow !== 'Sync status' ? (
+                      <LoaderCircle
+                        className="size-3.5 shrink-0 animate-spin"
+                        style={{ color: metric.tone }}
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <CheckCircle2
+                        className="size-3.5 shrink-0"
+                        style={{ color: metric.tone }}
+                        aria-hidden="true"
+                      />
+                    )}
+                    {metric.value}
+                  </strong>
+                  <span className="mt-0.5 hidden truncate text-[8px] text-[#71848d] sm:block">
+                    {metric.detail}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="relative bg-[#dfe8ec] p-3 sm:p-4">
+              <div className="absolute left-3 top-3 z-10 hidden items-center divide-x divide-[#c0cdd2] rounded-sm border border-[#bccad0] bg-white text-[#6e848e] shadow-sm sm:flex">
+                {[Layers3, Plus, Search].map((Icon, index) => (
+                  <UnavailableControl key={index} tooltip="View control unavailable">
+                    <span className="grid size-7 place-items-center">
+                      <Icon className="size-3.5" aria-hidden="true" />
+                    </span>
+                  </UnavailableControl>
+                ))}
+                <span className="px-2 text-[9px]">100%</span>
+              </div>
+
+              <div
+                className="grid items-center pt-1 sm:pt-9 lg:grid-cols-[minmax(130px,0.75fr)_30px_minmax(165px,0.95fr)_30px_minmax(190px,1.15fr)]"
+                aria-label={`Argo CD resource tree for preview-pr-${pullRequest.number}`}
+              >
                 <ArgoResourceNode
-                  kind="Namespace"
+                  kind="application"
                   name={`preview-pr-${pullRequest.number}`}
-                  status={provision}
-                  icon={Boxes}
+                  status={application}
+                  icon={Layers3}
+                  detail={pullRequest.commit}
                 />
-                {state.config.services.map((service) => (
+                <ArgoGraphConnector />
+                <div className="space-y-2">
                   <ArgoResourceNode
-                    key={service}
-                    kind="Deployment"
-                    name={service}
+                    kind="namespace"
+                    name={`preview-pr-${pullRequest.number}`}
+                    status={provision}
+                    icon={Boxes}
+                  />
+                  <ArgoResourceNode
+                    kind="deployment"
+                    name={`${pullRequest.id}-web`}
                     status={provision}
                     icon={ServerCog}
                   />
-                ))}
-                <ArgoResourceNode
-                  kind="Service"
-                  name="preview-entrypoint"
-                  status={provision}
-                  icon={Network}
-                />
-                <ArgoResourceNode
-                  kind="Ingress + certificate"
-                  name={`${pullRequest.id}-${pullRequest.number}.preview.example.dev`}
-                  status={expose}
-                  icon={Globe2}
-                  wide
-                />
-                <ArgoResourceNode
-                  kind="Managed dependency"
-                  name={`Neon branch pr-${pullRequest.number}`}
-                  status={expose}
-                  icon={Database}
-                />
-                <ArgoResourceNode
-                  kind="PostSync health gates"
-                  name="revision + readiness"
-                  status={verify}
-                  icon={ShieldCheck}
-                />
+                  <ArgoResourceNode
+                    kind="service"
+                    name={`${pullRequest.id}-entrypoint`}
+                    status={provision}
+                    icon={Network}
+                  />
+                </div>
+                <ArgoGraphConnector />
+                <div className="space-y-2">
+                  <ArgoResourceNode
+                    kind="ingress"
+                    name={`${pullRequest.id}-${pullRequest.number}.preview.example.dev`}
+                    status={expose}
+                    icon={Globe2}
+                  />
+                  <ArgoResourceNode
+                    kind="certificate"
+                    name={`preview-pr-${pullRequest.number}-tls`}
+                    status={expose}
+                    icon={ShieldCheck}
+                  />
+                  <ArgoResourceNode
+                    kind="managed dependency"
+                    name={`Neon branch pr-${pullRequest.number}`}
+                    status={expose}
+                    icon={Database}
+                  />
+                  <ArgoResourceNode
+                    kind="PostSync hook"
+                    name="revision-and-readiness"
+                    status={verify}
+                    icon={CheckCircle2}
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="overflow-hidden rounded-md border border-[#302744] bg-[#08090e]">
-              <div className="flex justify-between border-b border-[#302744] bg-[#12101b] px-3 py-2 text-xs">
-                <strong className="flex items-center gap-2 text-[#a371f7]">
-                  <ServerCog className="size-4" aria-hidden="true" />
-                  Live controller events
-                </strong>
-                <span className="text-[#8b949e]">argocd namespace</span>
-              </div>
-              <div className="min-h-72 space-y-2 overflow-x-auto p-4 font-mono text-[11px] leading-5">
-                {phase === 'idle' ? (
-                  <div className="flex h-56 flex-col items-center justify-center text-center text-[#8b949e]">
-                    <Clock3 className="mb-2 size-6" aria-hidden="true" />
-                    <strong className="text-[#c9d1d9]">Auto-sync is queued</strong>
-                    <span>The webhook refresh and image artifact are ready.</span>
-                  </div>
+              <div className="mt-3 flex min-w-0 items-center gap-2 rounded-sm border border-[#c2d0d5] bg-white px-3 py-2 text-[9px] text-[#617984]">
+                {phase === 'running' ? (
+                  <LoaderCircle
+                    className="size-3.5 shrink-0 animate-spin text-[#00a8c6]"
+                    aria-hidden="true"
+                  />
+                ) : ready ? (
+                  <CheckCircle2 className="size-3.5 shrink-0 text-[#18b99a]" aria-hidden="true" />
                 ) : (
-                  <>
-                    <div className="text-[#8b949e]">controller: argocd-application-controller</div>
-                    <div>application: preview-pr-{pullRequest.number}</div>
-                    <div>targetRevision: {pullRequest.commit}</div>
-                    {application === 'ready' && (
-                      <div>
-                        <span className="text-[#3fb950]">✓</span> Application rendered from Helm
-                      </div>
-                    )}
-                    {provision === 'ready' && (
-                      <div>
-                        <span className="text-[#3fb950]">✓</span> namespace and workloads Synced
-                      </div>
-                    )}
-                    {expose === 'ready' && (
-                      <div>
-                        <span className="text-[#3fb950]">✓</span> ingress, TLS, and data branch
-                        Ready
-                      </div>
-                    )}
-                    {verify === 'ready' && (
-                      <div>
-                        <span className="text-[#3fb950]">✓</span> application Healthy
-                      </div>
-                    )}
-                    {phase === 'running' && !failed && (
-                      <div className="animate-pulse text-[#a371f7]">controller › {activeLabel}</div>
-                    )}
-                    {failed && <div className="text-[#ff7b72]">Error: {state.lastEvent}</div>}
-                  </>
+                  <Clock3 className="size-3.5 shrink-0 text-[#8298a2]" aria-hidden="true" />
                 )}
+                <span className="min-w-0 flex-1 truncate">
+                  {phase === 'idle'
+                    ? 'Auto-sync is enabled. Select Sync to watch the controller reconcile the tree.'
+                    : phase === 'running'
+                      ? `application-controller · ${activeLabel}`
+                      : `Sync completed · preview-pr-${pullRequest.number} is Healthy`}
+                </span>
+                <span className="hidden font-mono text-[#81949d] sm:inline">
+                  store:{pullRequest.commit}
+                </span>
               </div>
-              <div className="h-1 bg-[#211b2f]">
+              <div className="mt-1 h-1 bg-[#c7d4d9]">
                 <div
-                  className="h-full bg-[#8957e5] transition-[width] duration-100"
+                  className="h-full bg-[#00a8c6] transition-[width] duration-100"
                   style={{ width: phase === 'complete' ? '100%' : String(progress) + '%' }}
                 />
               </div>
             </div>
-          </div>
 
-          {failed ? (
-            <div className="mt-4">
-              <FailurePanel state={state} onRemediate={onRemediate} />
-            </div>
-          ) : (
-            <div className="mt-4 flex flex-col gap-3 rounded-md border border-[#302744] bg-[#12101b] p-3 text-xs sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-2 text-[#8b949e]">
-                {phase === 'complete' ? (
-                  <Layers3 className="size-4 shrink-0 text-[#3fb950]" aria-hidden="true" />
-                ) : (
-                  <Play className="size-4 shrink-0 text-[#a371f7]" aria-hidden="true" />
-                )}
-                {phase === 'idle'
-                  ? 'This is the real control-plane view: GitHub Actions is no longer on screen.'
-                  : phase === 'running'
-                    ? 'Argo CD is applying and health-checking the resource tree.'
-                    : 'The application is Synced and Healthy. The workflow can now post the URL.'}
-              </div>
-              {phase === 'idle' && (
-                <Button
-                  size="sm"
-                  className="cursor-pointer bg-violet-600 text-white hover:bg-violet-500"
-                  onClick={onRun}
-                >
-                  <Play className="size-4" aria-hidden="true" />
-                  Watch Argo auto-sync
-                </Button>
-              )}
-              {phase === 'complete' && (
-                <Button
-                  size="sm"
-                  className="cursor-pointer bg-violet-600 text-white hover:bg-violet-500"
-                  onClick={onContinue}
-                >
+            {!failed && phase === 'complete' && (
+              <div className="flex flex-col gap-2 border-t border-[#d5dee2] bg-white px-3 py-2.5 text-[10px] sm:flex-row sm:items-center sm:justify-between">
+                <span className="flex items-center gap-2 text-[#5f747e]">
+                  <CheckCircle2 className="size-3.5 shrink-0 text-[#18b99a]" aria-hidden="true" />
+                  Argo CD is Synced and Healthy. GitHub Actions can post the preview URL.
+                </span>
+                <Button size="sm" className="cursor-pointer" onClick={onContinue}>
                   Return to pull request
                   <MessageSquare className="size-4" aria-hidden="true" />
                 </Button>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+      {failed && (
+        <div className="mt-4">
+          <FailurePanel state={state} onRemediate={onRemediate} />
+        </div>
+      )}
+    </>
   );
 }
 
