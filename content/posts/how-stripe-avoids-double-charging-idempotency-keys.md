@@ -23,9 +23,9 @@ tags:
 
 Take Stripe's own classic example: a service sends `POST /v1/charges` and the socket dies before a response arrives. There are three possible worlds: the request never reached the payment provider, the provider charged the card and the response was lost, or the provider is still working on it. Your code cannot tell them apart, and the customer is waiting. Retry, and you might charge twice. Give up, and you might have taken money without recording an order.
 
-Businesses running on Stripe generated $1.9 trillion in total volume in 2025, by Stripe's own count. At that volume, "the connection dropped" is not an edge case but a steady stream of events, every one of them a potential double charge. The mechanism that keeps that from happening is the idempotency key, and it is one of the few pieces of distributed systems design that a small team can copy in an afternoon. The interesting part is not the header. It is what the server has to remember, in what order, and around which call.
+Businesses running on Stripe generated $1.9 trillion in total volume in 2025, by Stripe's own count. At that scale, dropped connections are routine, and every one is a potential double charge. Idempotency keys let clients retry an ambiguous failure safely, and the pattern is small enough to copy in an afternoon. Whether the promise holds is decided by the server-side state machine: what it remembers, in what order, and around which call.
 
-This post combines Stripe's documented API behaviour with the Rocket Rides reference design that Brandur Leach, then at Stripe, published on his own site, builds a smaller version in Node and Postgres, runs it against concurrent duplicates and a mid-request crash, and shows the run where our first attempt got it wrong.
+This post combines Stripe's documented API behaviour with the separate Rocket Rides reference design that Brandur Leach published on his own site. We build a smaller Node and Postgres version, test it against concurrent duplicates and a mid-request crash, and look closely at the run where our first version failed.
 
 ## TL;DR
 
@@ -33,7 +33,7 @@ This post combines Stripe's documented API behaviour with the Rocket Rides refer
 - The response cache is the easy half. The hard half is a request that dies in the middle: the server has to know how far it got and resume from there without repeating the one step it cannot undo.
 - The pattern is atomic phases and recovery points: group local database writes into transactions, put a marker after each, and treat any call to another system (a card network, an email API) as a boundary that must carry its own idempotency key.
 - Concurrent duplicates are handled by locking the key row, not by hoping they arrive one at a time.
-- A time-based lock is a lease, and it has to outlive your slowest request. A two-second lease let our demo create three rides for one charge; ten seconds avoided the race in the recorded run, and a database constraint is what closes it for good. The output of both runs is below.
+- A time-based lock is a lease. A two-second lease let our demo create three rides for one charge; ten seconds avoided the race in the recorded run, but correctness also needs lease renewal or fencing and invariants the database enforces. The output of both runs is below.
 
 ## Prerequisites
 
@@ -55,17 +55,17 @@ The rules Stripe documents for its own API are worth reading closely, because ea
 - **Keys are client-generated.** Stripe suggests a V4 UUID or another random string with enough entropy; keys can be up to 255 characters. The other common strategy is deriving the key from a business object, such as a shopping cart id, which also protects against a user double-clicking "Pay".
 - **Results are cached whether or not the request succeeded.** Stripe saves the status code and body of the first request for a key "regardless of whether it succeeds or fails", and that includes `500`s. Retrying a `500` with the same key returns the same `500`, because the original attempt may have had side effects that Stripe is still reconciling. The advice is to treat a `500` as indeterminate and let webhooks tell you what really happened.
 - **Parameters are compared.** Reusing a key with a different request body is treated as a client bug and rejected, not silently replayed.
-- **Concurrent duplicates conflict.** A second request with the same key while the first is still running gets a `409 Conflict`, and Stripe does not save an idempotent result for it because no endpoint began executing. You can retry it.
+- **Concurrent conflicts are not stored.** If a request conflicts with another one executing at the same time, Stripe does not save an idempotent result for it, because no endpoint began executing. The client can retry it.
 - **Rate limiting runs before the idempotency layer.** A request that was rate limited with `429` can produce a different result on retry with the same key. The layers are ordered on purpose: a limiter that had to consult the key store would not be much of a limiter.
 - **Keys live at least 24 hours (API v1).** Stripe may prune a key once it is 24 hours old; a key reused after pruning starts a new request. Stripe's newer API v2 has its own retention and replay rules, so check the version you are on.
 - **Only `POST` needs it.** In API v1 every `POST` accepts a key; on `GET` and `DELETE`, which are idempotent by definition, a key has no effect.
 - **Replays are labelled.** A replayed response carries `Idempotent-Replayed: true`, and a `Stripe-Should-Retry` header tells well-behaved clients whether retrying is even worth it. The official SDKs generate keys and retry eligible network failures once you turn retries on (`maxNetworkRetries` in stripe-node); your code still has to treat an indeterminate `500` as unknown and reconcile through webhooks.
 
-None of this is exotic. What makes Stripe's version instructive is the second post, on the same author's blog, that shows how the server side holds together when a request dies halfway through.
+None of this is exotic. Brandur's separate Rocket Rides post shows one way to implement those semantics on the server when a request dies halfway through, and that is the design we build next.
 
 ## What the server has to remember
 
-Consider what "create a charge" means inside a payment company, or inside any service that calls one. It is never a single write. In the Rocket Rides example Stripe's engineer uses (a fictional jetpack rideshare), one API call means: record the ride, charge the customer's card through the card network, store the resulting charge id on the ride, and queue a receipt email. The card network call is the problem. It is a **foreign state mutation**: it changes state in a system whose transaction you do not control. You cannot roll it back with the rest of your work, and you cannot make it happen atomically with your own writes.
+Consider what "create a ride and charge for it" means inside any service that calls a payment provider. It is never a single write. In Brandur's Rocket Rides example (a fictional jetpack rideshare), one API call records a ride, calls Stripe to create a charge, stores the charge id on the ride, and stages a receipt email. The Stripe call is the problem. It is a **foreign state mutation**: it changes state in a system whose transaction you do not control. You cannot roll it back with the rest of your work, and you cannot make it happen atomically with your own writes.
 
 The design answer is to split the request into **atomic phases** separated by those foreign calls, and to write a **recovery point** after each phase so a retry knows where to pick up.
 
@@ -90,9 +90,9 @@ The key row is the memory. In the published design it carries:
 - a fingerprint of the request (method, path, parameters) so a mismatched reuse can be rejected
 - the response code and body once the request has finished
 
-Two background processes complete the picture. A **completer** looks for keys that are locked but old and pushes them through their remaining phases, so a request whose process died does not stay half-done forever. A **reaper** deletes keys after a retention window (Stripe uses 24 hours for its API; the blog design suggests 72) so the table does not grow without bound.
+Three supporting processes complete the picture: an **enqueuer** that drains staged jobs once their transaction has committed, an optional **completer** that pushes unfinished requests through their remaining phases when the client has stopped retrying, and a **reaper** that deletes old keys so the table does not grow without bound. Brandur suggests about 72 hours of retention for the reference design; Stripe's API v1 may prune keys once they are at least 24 hours old.
 
-The elegant consequence is that a retry does not need special-case code. It claims the key, reads the recovery point, and runs whatever phases are left. If the process died after the card was charged but before the charge id was stored, the retry sees `recovery_point = ride_created`, calls the card network again with the same downstream idempotency key, receives the same charge back, and finishes. The customer is charged once.
+As a result, a retry does not need special-case code. It claims the key, reads the recovery point, and runs whatever phases are left. If the process died after the card was charged but before the charge id was stored, the retry sees `recovery_point = ride_created`, calls the card network again with the same downstream idempotency key, receives the same charge back, and finishes. The customer is charged once.
 
 That last sentence hides a requirement: the downstream call must itself be idempotent, keyed by something you derive from your key. Stripe's API gives you that. If you call an API that does not, you are back to guessing.
 
@@ -174,7 +174,7 @@ const claim = await tx(async (c) => {
 if (claim.reply) return json(res, ...claim.reply);
 ```
 
-Three things to notice. After loading the row, the hash of the request body is compared first, so a reused key with a different body never takes the lock. (The demo hashes `JSON.stringify(body)`; production code should hash a canonical form that includes the endpoint and every input that changes the result, and nothing volatile.) The replay check comes next, so a finished request answers instantly. And the lock is taken with a conditional `UPDATE` rather than by reading `locked_at` in JavaScript and deciding, which closes the gap between reading and writing.
+Three things to notice. After loading the row, the hash of the request body is compared first, so a reused key with a different body never takes the lock. (The demo hashes `JSON.stringify(body)`; production code should hash a canonical form that includes the endpoint and every input that changes the result, and nothing volatile.) The replay check comes next, so a finished request answers instantly. And the row lock serialises claimants, while the conditional `UPDATE` evaluates lease expiry in database time and its `rowCount` says whether this claimant got the lease.
 
 ### The phases
 
@@ -268,19 +268,17 @@ The output above is the second run. The first one looked like this:
 }
 ```
 
-Three first-time `201`s and three rides for one provider charge. The claim logic was correct. The lease was 2 seconds, chosen so the crash scenario would not make readers wait. The database told the rest of the story: the key row was created at 24.7 seconds past the minute and the winner's ride at 28.0, more than 3 seconds later, with the other two rides at 28.3 and 29.5. Under twenty concurrent requests on a cold connection pool, the winner took longer than the lease to get from claiming the key to inserting its ride. Two of the waiting requests took the expired lease over, read a recovery point that still said `started`, and each inserted a ride of their own.
+Three first-time `201`s and three rides for one provider charge. The row locking behaved as written; the two-second lease assumption did not. It was chosen so the crash scenario would not make readers wait. A database query afterwards showed `created_at` values of 24.7 seconds past the minute for the key row and 28.0, 28.3 and 29.5 for the three rides. Postgres's `now()` records transaction start rather than the exact insert instant, so these are not precise, but together with the output they are consistent with one picture: under twenty concurrent requests on a cold connection pool, the winner took longer than the lease to get from claiming the key to inserting its ride, and two waiting requests acquired the expired lease while the committed recovery point still said `started`.
 
-The provider's own idempotency saved the money: all three rides point at the same charge, and the customer paid once. The application data was still wrong, and in a system where phase 1 did something with a side effect (reserved inventory, sent a confirmation), the customer would have noticed.
+The provider's own idempotency saved the money: all three rides point at the same charge, and the customer paid once. The application data was still wrong, and in a system where the ride-creation phase did something with a side effect (reserved inventory, sent a confirmation), the customer would have noticed.
 
-The lesson generalises past this demo. **A lock timeout shorter than your slowest honest request is a duplicate generator.** The reference design also lets a retry acquire an expired lock; its optional completer exists for unfinished requests whose clients stopped retrying, and it does not remove the risk of an old worker and a takeover running at the same time. Raising the lease to 10 seconds is what made the recorded run clean, and it is not a fix: no fixed timeout is guaranteed to outlast every pause. What closes the hole is a conservative lease plus renewal or a fencing token, a unique constraint in the database that makes the second ride impossible to insert, and an alert on leases older than the lease itself.
+The lesson generalises past this demo. **A lock timeout shorter than your slowest honest request is a duplicate generator.** The reference design also lets a retry acquire an expired lock; its optional completer exists for unfinished requests whose clients stopped retrying, and it does not remove the risk of an old worker and a takeover running at the same time. Raising the lease to 10 seconds is what made the recorded run clean, and it is not a fix: no fixed timeout is guaranteed to outlast every pause. Production needs a conservative lease plus renewal or a fencing token, database constraints for every local invariant (here, one ride per key), and alerts for stale work.
 
 ## The pattern beyond payments
 
-Once you know the shape, you see it in most APIs that mutate money or state on your behalf.
-
-- **Stripe** is the reference. Set `max_network_retries` in the SDK and it generates keys and retries with backoff for you; look for `Idempotent-Replayed: true` to know when you got a cached answer.
+- **Stripe** is the reference. Current stripe-node retries eligible failures once by default; `maxNetworkRetries` changes that count, and the library adds idempotency keys where appropriate. `Idempotent-Replayed: true` marks a cached server response.
 - **Webhook senders** need the same thing in both directions. [Svix](https://link.svix.com/devopsdaily) accepts an `Idempotency-Key` on its `POST` endpoints and returns the first result for up to 12 hours, so "send this message" is safe to retry; on the receiving side, the message id in the payload is what you deduplicate on. We covered that half in [what it actually takes to deliver a webhook in production](/posts/reliable-webhook-delivery-retries-signatures-idempotency).
-- **Transactional email** is a foreign state mutation with a human on the other end. The [smtpfast](https://smtpfa.st) send API takes an `Idempotency-Key` and returns the original email id for 24 hours, which is what let us write the reply feature in that product without a "did the retry send twice?" path. The same 24-hour window as Stripe is not a coincidence; it is long enough to cover any sane retry policy and short enough that the key table stays small.
+- **Transactional email** is a foreign state mutation with a human on the other end. The [smtpfast](https://smtpfa.st) send API takes an `Idempotency-Key` and returns the original email id on a retry, which is what let us build a reply feature in that product without a "did the retry send twice?" path. Pick your retention window from the retries and reconciliation your clients perform; a day covers most API clients.
 - **Job queues** deliver at least once. Our post on [running a background job that must not be lost](/posts/running-a-background-job-that-must-not-be-lost) is the same idea from the worker's side: durable steps with a recorded position, so a restart resumes rather than repeats.
 
 ## A checklist for your own API
@@ -288,7 +286,7 @@ Once you know the shape, you see it in most APIs that mutate money or state on y
 If you are adding idempotency to a `POST` endpoint, here is the list we would review against:
 
 1. **Scope keys to the caller.** The unique constraint is `(account, key)`, never `key` alone.
-2. **Hash and compare the request.** Reject the same key when the canonical method, path or any outcome-affecting parameter differs, and document the status you return (Stripe uses `409`). Include recipients, amounts and scheduling; leave out volatile transport headers such as tracing ids. A partial fingerprint turns a client bug into a silent wrong answer.
+2. **Hash and compare the request.** Reject the same key when the canonical method, path or any outcome-affecting parameter differs, and document the status you return. Include recipients, amounts and scheduling; leave out volatile transport headers such as tracing ids. A partial fingerprint turns a client bug into a silent wrong answer.
 3. **Claim the key atomically, and let the second caller lose.** `SELECT ... FOR UPDATE` plus a conditional update gets you there. Return `409` for an in-flight duplicate and let clients back off and retry.
 4. **Treat the lock as a lease.** Make it longer than your slowest request measured under load, renew it or fence it with a token, and enforce the one-operation invariant with a unique constraint so a takeover cannot duplicate work even when the lease is wrong.
 5. **Write a recovery point after every local phase**, before the next foreign call. The phase before a foreign call must be committed, or a retry will repeat it.
@@ -300,6 +298,6 @@ If you are adding idempotency to a `POST` endpoint, here is the list we would re
 
 ## The guarantee lives in the state machine
 
-Idempotency keys look like a caching feature and are really a small state machine. The header buys you nothing on its own; the guarantees come from a row that remembers how far a request got, a lock that keeps duplicates from racing, a fingerprint that keeps reused keys from lying, and a discipline about which calls sit at phase boundaries. Stripe published this design because it is the part of payments infrastructure that every integrator eventually has to reinvent, and the demo above is about 200 lines because the idea is small. What is not small is the number of ways to get the details slightly wrong. Our 2-second lease is one; most teams find their own.
+Idempotency keys look like a caching feature and are really a small state machine. The header buys you nothing on its own; the guarantees come from persisted progress, serialised claims, parameter matching, safe foreign calls, and invariants the database enforces. The demo above is about 200 lines because the idea is small. What is not small is the number of ways to get the details slightly wrong, and the two-second run shows why the header and a response cache are not enough on their own.
 
-If you want to feel the retry behaviour rather than read about it, the [webhook delivery simulator](/games/webhook-delivery-simulator) lets you break a receiver and watch retries and deduplication play out, and the [demo repo](https://github.com/The-DevOps-Daily/idempotency-keys-demo) is there to point at your own database.
+To try the behaviour, break a receiver in the [webhook delivery simulator](/games/webhook-delivery-simulator) and watch retries and deduplication play out, or point the [demo repo](https://github.com/The-DevOps-Daily/idempotency-keys-demo) at your own database.
