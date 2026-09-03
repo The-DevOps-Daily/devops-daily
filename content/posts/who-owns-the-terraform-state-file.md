@@ -269,7 +269,7 @@ jobs:
           fi
 ```
 
-Two details in there are deliberate. The step fails on any exit code other than 0 or 2, so expired credentials or a broken backend cannot produce a green run that quietly stops checking. The issue says "plan changes", not "drift", because the person who opens it has to decide which of the two it is. And the plan takes the lock with a short timeout rather than running with `-lock=false`; skipping the lock would let the check read state while an apply is halfway through writing it, and a drift report against a half-applied state is noise. If the morning window collides with real applies, move the schedule or accept the two-minute wait.
+Two details in there are deliberate. The step fails on any exit code other than 0 or 2, so expired credentials or a broken backend cannot produce a green run that quietly stops checking. The issue says "plan changes", not "drift", because the person who opens it has to classify the cause. And the plan takes the lock with a short timeout rather than running with `-lock=false`; skipping the lock would let the check read state while an apply is halfway through writing it, and a drift report against a half-applied state is noise. If the morning window collides with real applies, move the schedule or accept the two-minute wait.
 
 ## Question 4: how does a plan get reviewed?
 
