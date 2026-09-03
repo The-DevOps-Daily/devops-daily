@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 48" width="170" height="48" role="img" aria-label="Atomsized">
+  <g transform="scale(.75)">
+    <rect x="2" y="2" width="60" height="60" rx="10" fill="#0b1f3a"/>
+    <rect x="3" y="3" width="58" height="58" rx="9" fill="none" stroke="#edf3f9" stroke-opacity=".42" stroke-width="2"/>
+    <path d="M18 46 32 16l14 30M23.5 34h17" fill="none" stroke="#f8fafc" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+    <ellipse cx="32" cy="34" rx="23.5" ry="12.5" fill="none" stroke="#4d91d7" stroke-linecap="round" stroke-width="3.5" transform="rotate(-20 32 34)"/>
+    <circle cx="9.92" cy="42.04" r="4" fill="#df725c"/>
+    <circle cx="54.08" cy="25.96" r="4" fill="#f3c84b"/>
+    <circle cx="32" cy="34" r="3.2" fill="#4d91d7" stroke="#f8fafc" stroke-width="1.5"/>
+  </g>
+  <text x="58" y="32" font-family="Inter, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" font-weight="600" letter-spacing="-.5" fill="#0b1f3a">atomsized</text>
+</svg>

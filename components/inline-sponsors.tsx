@@ -12,7 +12,11 @@ interface InlineSponsorsProps {
   showCTA?: boolean;
 }
 
-export function InlineSponsors({ className, variant = 'full', showCTA = true }: InlineSponsorsProps) {
+export function InlineSponsors({
+  className,
+  variant = 'full',
+  showCTA = true,
+}: InlineSponsorsProps) {
   if (variant === 'banner') {
     return (
       <div className={cn('my-12', className)}>
@@ -27,15 +31,15 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
             <div className="flex items-center justify-center gap-2 mb-6">
               <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
               <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-               Sponsored by
-             </span>
-             <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
-           </div>
+                Sponsored by
+              </span>
+              <Heart className="h-4 w-4 text-primary fill-primary animate-pulse" />
+            </div>
             <p className="text-xs text-muted-foreground text-center mb-4">
               We earn commissions when you shop through the links below.
             </p>
 
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
               {sponsors.map((sponsor) => (
                 <Link
                   key={sponsor.name}
@@ -45,7 +49,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                   className={cn(
                     'group relative flex items-center gap-4 p-4 bg-background/80 backdrop-blur-sm rounded-md border transition-colors',
                     sponsor.featured
-                      ? cn('md:col-span-2', sponsor.accentClassName)
+                      ? sponsor.accentClassName
                       : 'border-border hover:border-primary/40 hover:bg-muted/30'
                   )}
                 >
@@ -58,7 +62,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                       sponsor={sponsor}
                       width={120}
                       height={60}
-                      className="h-auto w-auto max-h-16"
+                      className="h-12 w-full max-w-24 object-contain"
                     />
                   </div>
 
@@ -92,29 +96,31 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
   }
 
   if (variant === 'compact') {
-  return (
-    <div className={cn('my-8', className)}>
-      <div className="flex flex-wrap items-center justify-center gap-6">
-        <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">Supported by</span>
-        {sponsors.map((sponsor) => (
-          <Link
-            key={sponsor.name}
-            href={sponsor.url}
-            target="_blank"
-            rel="noopener noreferrer sponsored"
-            className="group inline-flex items-center justify-center px-4 py-2 rounded-md hover:bg-muted/50 transition-colors"
-            title={sponsor.tagline}
-          >
-            <SponsorLogo
-              sponsor={sponsor}
-              width={100}
-              height={40}
-              className="h-auto w-auto max-h-8 opacity-50 group-hover:opacity-80 transition-opacity"
-            />
-          </Link>
-        ))}
+    return (
+      <div className={cn('my-8', className)}>
+        <div className="flex flex-wrap items-center justify-center gap-6">
+          <span className="text-xs text-muted-foreground/60 uppercase tracking-wider">
+            Supported by
+          </span>
+          {sponsors.map((sponsor) => (
+            <Link
+              key={sponsor.name}
+              href={sponsor.url}
+              target="_blank"
+              rel="noopener noreferrer sponsored"
+              className="group inline-flex items-center justify-center px-4 py-2 rounded-md hover:bg-muted/50 transition-colors"
+              title={sponsor.tagline}
+            >
+              <SponsorLogo
+                sponsor={sponsor}
+                width={100}
+                height={40}
+                className="h-8 w-auto max-w-36 object-contain opacity-50 transition-opacity group-hover:opacity-80"
+              />
+            </Link>
+          ))}
+        </div>
       </div>
-    </div>
     );
   }
 
@@ -132,10 +138,10 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-sm font-semibold text-foreground">Proudly Sponsored By</span>
-           </div>
-           <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+            </div>
+            <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
               We earn commissions when you shop through the links below.
-           </p>
+            </p>
           </div>
 
           {/* Sponsors Grid */}
@@ -146,7 +152,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                 href={sponsor.url}
                 target="_blank"
                 rel="noopener noreferrer sponsored"
-                className={cn('group relative', sponsor.featured && 'md:col-span-2')}
+                className="group relative"
               >
                 <div
                   className={cn(
@@ -170,7 +176,7 @@ export function InlineSponsors({ className, variant = 'full', showCTA = true }: 
                         sponsor={sponsor}
                         width={120}
                         height={60}
-                        className="h-auto w-auto max-h-16"
+                        className="h-14 w-full max-w-40 object-contain"
                       />
                     </div>
 
