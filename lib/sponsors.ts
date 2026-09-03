@@ -15,10 +15,7 @@ export interface Sponsor {
   className?: string;
   /** Additional className for sidebar context (sizing, positioning) */
   sidebarClassName?: string;
-  /**
-   * Give this sponsor top billing: it is tinted in the sidebar and takes a
-   * full-width card in the grid layouts instead of a half-width one.
-   */
+  /** Give this sponsor highlighted styling in sponsor placements. */
   featured?: boolean;
   /** Border and background tint for a featured sponsor, in its own brand color. */
   accentClassName?: string;
@@ -35,6 +32,15 @@ export const sponsors: Sponsor[] = [
       'Svix Dispatch sends your webhooks for you: retries with exponential backoff, signed payloads, idempotency keys, and a delivery log your customers can see.',
     featured: true,
     accentClassName: 'border-[#2c70ff]/40 bg-[#2c70ff]/[0.06] hover:border-[#2c70ff]/70',
+  },
+  {
+    name: 'Atomsized',
+    logo: '/atomsized.svg',
+    darkLogo: '/atomsized-light.svg',
+    url: 'https://atomsized.com/',
+    tagline: 'AWS platform engineering and GitOps',
+    description:
+      'Design and automation for reliable AWS and Kubernetes platforms, safer delivery workflows, and preview and UAT environments your engineers can understand and own.',
   },
   {
     name: 'DigitalOcean',
@@ -56,14 +62,16 @@ export const sponsors: Sponsor[] = [
     logo: '/smtpfast.svg',
     url: 'https://smtpfa.st',
     tagline: 'Developer-first email API',
-    description: 'Send transactional and marketing email through a clean REST API. Detailed logs, webhooks, and embeddable signup forms in one dashboard.',
+    description:
+      'Send transactional and marketing email through a clean REST API. Detailed logs, webhooks, and embeddable signup forms in one dashboard.',
   },
   {
     name: 'QuizAPI',
     logo: '/quizapi.svg',
     url: 'https://quizapi.io?ref=devops-daily',
     tagline: 'Developer-first quiz platform',
-    description: 'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',
+    description:
+      'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',
   },
 ];
 

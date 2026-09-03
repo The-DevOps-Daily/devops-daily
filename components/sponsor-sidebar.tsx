@@ -30,7 +30,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
 
         <div className="relative rounded-xl border border-border/50 overflow-hidden backdrop-blur-sm bg-card/50">
           {/* Header with gradient */}
-         <div className="relative bg-linear-to-r from-primary/10 to-primary/5 px-4 py-2.5">
+          <div className="relative bg-linear-to-r from-primary/10 to-primary/5 px-4 py-2.5">
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="font-semibold text-sm">Our Sponsors</span>
@@ -38,9 +38,9 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
             <p className="text-[10px] text-muted-foreground mt-0.5">
               We earn commissions when you shop through the links below.
             </p>
-         </div>
+          </div>
 
-          <div className="p-3 space-y-2">
+          <div className="grid grid-cols-2 gap-px border-y border-border/40 bg-border/40">
             {sponsors.map((sponsor) => (
               <Link
                 key={sponsor.name}
@@ -49,39 +49,32 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
                 rel="noopener noreferrer sponsored"
                 title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}
                 className={cn(
-                  'group relative flex items-center gap-3 rounded-md border px-3 py-2.5 transition-colors',
-                  sponsor.accentClassName ??
-                    'border-border bg-muted/20 hover:border-primary/40 hover:bg-muted/40'
+                  'group relative isolate flex h-16 min-w-0 items-center justify-center bg-card/90 px-3 transition-all',
+                  sponsor.featured
+                    ? 'bg-linear-to-b from-[#2c70ff]/[0.08] to-card/90 shadow-[inset_0_2px_0_rgba(44,112,255,0.55)] hover:from-[#2c70ff]/[0.12]'
+                    : 'hover:bg-muted/70'
                 )}
               >
-                {/* Logo. The wordmark carries the sponsor name, so the row
-                    pairs it with the tagline rather than repeating the name. */}
-                <div className="flex w-24 shrink-0 items-center">
+                <div className="flex w-full min-w-0 items-center justify-center">
                   <SponsorLogo
                     sponsor={sponsor}
                     width={120}
                     height={40}
                     className={cn(
-                      'h-auto max-h-7 w-auto max-w-24 object-contain',
+                      'h-8 w-full max-w-28 object-contain opacity-90 transition-opacity group-hover:opacity-100',
                       sponsor.sidebarClassName
                     )}
                   />
                 </div>
 
-                {sponsor.tagline && (
-                  <p className="min-w-0 flex-1 text-[11px] leading-snug text-muted-foreground transition-colors group-hover:text-foreground/80">
-                    {sponsor.tagline}
-                  </p>
-                )}
-
                 {/* External link indicator */}
-                <ExternalLink className="absolute top-1.5 right-1.5 h-3 w-3 text-muted-foreground opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <ExternalLink className="absolute right-1.5 top-1.5 h-3 w-3 text-muted-foreground opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Link>
             ))}
           </div>
 
           {/* Optional CTA */}
-          <div className="px-3 pb-3">
+          <div className="px-3 py-2.5">
             <a
               href="/sponsorship"
               className="block text-center text-xs text-muted-foreground hover:text-primary transition-colors"
