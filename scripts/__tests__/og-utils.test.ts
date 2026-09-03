@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { Resvg } from '@resvg/resvg-js';
 import { buildContentCoverSvg, CONTENT_COVER_TYPES, layoutContentCoverTitle } from '../og-utils';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const FONT_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'fonts');
+const BOLD_FONT = path.join(FONT_DIR, 'Inter-Bold.ttf');
+const REGULAR_FONT = path.join(FONT_DIR, 'Inter-Regular.ttf');
 
 function expectTitleInsideBounds(title: string, category = 'DevOps'): void {
   const layout = layoutContentCoverTitle(title, category);
@@ -8,7 +14,12 @@ function expectTitleInsideBounds(title: string, category = 'DevOps'): void {
     /(<text data-cover-title-line="true"[^>]*fill=")#[^"]+("[^>]*>)/g,
     '$1#ff00ff$2'
   );
-  const image = new Resvg(svg).render();
+  // Render with the fonts the repo ships rather than whatever the runner has
+  // installed: the CI image's fallback for Arial changes between images, and
+  // the measurement below is only meaningful against a known face.
+  const image = new Resvg(svg, {
+    font: { loadSystemFonts: false, fontFiles: [BOLD_FONT, REGULAR_FONT], defaultFontFamily: 'Inter' },
+  }).render();
   const pixels = image.pixels;
 
   for (let lineIndex = 0; lineIndex < layout.lines.length; lineIndex += 1) {
@@ -39,7 +50,12 @@ describe('content cover renderer', () => {
       title: 'A Practical Guide to Safe Production Deployments',
       category: 'Infrastructure & Delivery',
     });
-    const image = new Resvg(svg).render();
+    // Render with the fonts the repo ships rather than whatever the runner has
+  // installed: the CI image's fallback for Arial changes between images, and
+  // the measurement below is only meaningful against a known face.
+  const image = new Resvg(svg, {
+    font: { loadSystemFonts: false, fontFiles: [BOLD_FONT, REGULAR_FONT], defaultFontFamily: 'Inter' },
+  }).render();
 
     expect(image.width).toBe(1200);
     expect(image.height).toBe(630);
