@@ -23,7 +23,7 @@ tags:
 
 The Terraform incidents that eat a week rarely start with a bad resource block. They start with a question nobody answered early: two people ran `apply` against the same state at the same time; production and a sandbox share one state file and someone ran `destroy` in the wrong directory; a security group was edited in the console in March and nobody noticed until a plan in June wanted to "fix" it; a plan with 40 destroys got applied because the review looked at the HCL diff and not at the plan.
 
-Each of those is a state question, not a syntax question. This post walks through the four that matter: who owns the state file, how it is split, how you detect drift, and how a plan gets reviewed. For the drift part you get a real run with the configuration to reproduce it. Along the way it names the tools built for each problem, because this is the layer where teams usually stop hand-rolling scripts and adopt something.
+Each of those is a state question, not a syntax question. This post walks through the four that matter: who owns the state file, how it is split, how you detect drift, and how a plan gets reviewed. For the drift part you get a real run with the configuration to reproduce it. Along the way it names the tools built for each problem.
 
 ## TL;DR
 
@@ -63,8 +63,8 @@ terraform {
 
 What the bucket and the IAM role need:
 
-- **Versioning on.** Every apply that changes state writes a new object version, and the previous version is your recovery when state is damaged. Each version is a full copy and is billed as one, so add a lifecycle rule that expires noncurrent versions after a period you are comfortable with (30 to 90 days is common) rather than keeping every version forever.
-- **Permissions for the lock file.** The role needs `s3:GetObject`, `s3:PutObject` and `s3:DeleteObject` on `<state key>.tflock`. The state object itself needs `GetObject` and `PutObject` only; Terraform never deletes it.
+- **Versioning on.** Every apply that changes state writes a new object version, and the previous version is your recovery when state is damaged. Each version is a full copy and is billed as one, so add a lifecycle rule that expires noncurrent versions after a period set by your recovery, audit and cost requirements rather than keeping every version forever.
+- **Permissions for the lock file.** The role needs `s3:GetObject`, `s3:PutObject` and `s3:DeleteObject` on `<state key>.tflock`. The state object itself needs `GetObject` and `PutObject` only; Terraform never deletes it. Both need `s3:ListBucket` on the bucket, restricted with an `s3:prefix` condition to the team's state keys.
 - **Bucket policy scoped per state key.** The network team's role can read and write `platform/network/*`; the app team's role can write only `apps/checkout/*`. State files are where over-broad IAM turns into an outage.
 - **Encryption with a customer-managed key** if compliance asks who can decrypt state. Default SSE-S3 is fine for most teams; the point is that state is not a public artifact.
 
@@ -72,11 +72,11 @@ What the bucket and the IAM role need:
 Three different things protect you here, and it helps to keep them apart. The **lock** stops two writers running at once. A **saved plan** (question 4) stops a stale plan from applying: `terraform apply tfplan` refuses if the state changed after the plan was made, whoever changed it. Neither one notices a change made **outside Terraform** that never touched state; that is what drift detection (question 3) is for.
 :::
 
-The same shape exists on every cloud (Azure Blob with lease-based locking, GCS with native locking). The hosted platforms take the decision away from you: HCP Terraform, Spacelift and env0 hold the state and put every run behind their own queue, so there is one serialized writer per stack by construction. Digger is different in kind: it runs Terraform inside your existing CI with your backend, and coordinates pull request locks and plan caching from its own component. More on that split in question 4.
+The same shape exists on every cloud (Azure Blob with lease-based locking, GCS with native locking). The hosted platforms take the decision away from you: HCP Terraform, Spacelift and env0 put every run behind their own queue, so there is one serialized writer per stack by construction. HCP Terraform also hosts the state; Spacelift and env0 can hold it for you or work against a backend you already own. Digger is different in kind: it runs Terraform inside your existing CI with your backend, and coordinates pull request locks and plan caching from its own component. More on that split in question 4.
 
 ## Question 2: how is state split?
 
-One state file for everything works until the day a plan runs for eleven minutes and a three-line change proposes destroying something you did not touch. That happens because of dependencies, not bad luck: change an attribute that forces replacement on a subnet, and every resource that references the subnet follows.
+One state file for everything works until the day a plan runs for eleven minutes and a three-line change proposes destroying something you did not touch. That happens because of dependencies, not bad luck: change an attribute that forces replacement on a subnet, and every resource that references the subnet is re-evaluated, and depending on its schema may be updated in place or replaced too.
 
 The unit of state is the unit of blast radius. Two rules of thumb:
 
@@ -178,7 +178,7 @@ Apply it, then edit one file by hand and delete the other, then plan again. The 
 
 Two things worth reading closely.
 
-First, the exit code. `-detailed-exitcode` returns 0 for an empty plan, 1 for an error and 2 for a successful plan with changes. Exit code 2 is a **change signal**, not a drift verdict: it also fires for code that was merged and never applied, for a variable that changed, or for a provider upgrade that added a default. It becomes a drift detector only when you run it against a stack whose code was fully applied and whose inputs are pinned, so that the only remaining cause of a non-empty plan is the world moving. On a stack that meets those conditions, a scheduled plan that alerts on 2 is a small, honest first version of drift detection, and it is what the hosted platforms run under their drift detection setting.
+First, the exit code. `-detailed-exitcode` returns 0 for an empty plan, 1 for an error and 2 for a successful plan with changes. Exit code 2 is a **change signal**, not a drift verdict: it also fires for code that was merged and never applied, for a variable that changed, or for a provider upgrade that added a default. It becomes a drift detector only when you run it against a stack whose code was fully applied and whose inputs are pinned, so that the only remaining cause of a non-empty plan is the world moving. Even then, a data source that resolved to a new value produces a plan without anyone touching the infrastructure. So treat a scheduled plan as a **change check**: it tells you a stack would change if applied, and a person classifies why. The hosted platforms' drift detection runs on the same signal and adds the classification for you by comparing refreshed state with the last applied configuration.
 
 Second, what the plan wants to do. The hand-edited file shows up as "will be created" with the original `LOG_LEVEL=info`. That is a quirk of this provider: `local_file` identifies a resource by the hash of its content, so a changed file looks like a missing one. A cloud provider would show the same situation as an in-place update (`~ ingress { ... }`). Either way the plan is proposing to **undo** the manual change, and whether that is right depends on why the change was made. Terraform cannot know.
 
@@ -215,11 +215,11 @@ resource "aws_autoscaling_group" "web" {
 
 `ignore_changes` does not stop Terraform from refreshing and recording the attribute. It stops Terraform from planning an update when that attribute differs from the code, which is what you want for values another system legitimately controls.
 
-A drift check that runs on a schedule:
+A change check that runs on a schedule:
 
 ```yaml
-# .github/workflows/drift.yml
-name: drift
+# .github/workflows/change-check.yml
+name: change-check
 on:
   schedule:
     - cron: "17 6 * * 1-5" # weekday mornings, before people start applying
@@ -233,7 +233,7 @@ jobs:
     permissions:
       id-token: write   # OIDC to AWS
       contents: read
-      issues: write     # to open or update the drift issue
+      issues: write     # to open or update the issue for the stack
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v4
@@ -241,7 +241,8 @@ jobs:
           terraform_version: 1.15.8
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::123456789012:role/terraform-plan-readonly
+          # read-only on infrastructure, plus get/put/delete on the .tflock object
+          role-to-assume: arn:aws:iam::123456789012:role/terraform-plan
           aws-region: eu-west-1
       - run: terraform -chdir=infra/${{ matrix.stack }} init -input=false
       - name: plan
@@ -255,24 +256,24 @@ jobs:
           # 0 and 2 are answers; anything else is a broken check and must fail loudly
           if [ "$code" != "0" ] && [ "$code" != "2" ]; then cat plan.txt; exit "$code"; fi
       - if: steps.plan.outputs.code == '2'
-        name: open or update the drift issue for this stack
+        name: open or update the issue for this stack
         env:
           GH_TOKEN: ${{ github.token }}
           STACK: ${{ matrix.stack }}
         run: |
-          existing=$(gh issue list --label drift --state open --search "in:title \"Drift: $STACK\"" --json number -q '.[0].number')
+          existing=$(gh issue list --label plan-changes --state open --search "in:title \"Plan changes: $STACK\"" --json number -q '.[0].number')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --body-file plan.txt
           else
-            gh issue create --title "Drift: $STACK" --body-file plan.txt --label drift
+            gh issue create --title "Plan changes: $STACK" --body-file plan.txt --label plan-changes
           fi
 ```
 
-Two details in there are deliberate. The step fails on any exit code other than 0 or 2, so expired credentials or a broken backend cannot produce a green run that quietly stops checking. And the plan takes the lock with a short timeout rather than running with `-lock=false`; skipping the lock would let the check read state while an apply is halfway through writing it, and a drift report against a half-applied state is noise. If the morning window collides with real applies, move the schedule or accept the two-minute wait.
+Two details in there are deliberate. The step fails on any exit code other than 0 or 2, so expired credentials or a broken backend cannot produce a green run that quietly stops checking. The issue says "plan changes", not "drift", because the person who opens it has to decide which of the two it is. And the plan takes the lock with a short timeout rather than running with `-lock=false`; skipping the lock would let the check read state while an apply is halfway through writing it, and a drift report against a half-applied state is noise. If the morning window collides with real applies, move the schedule or accept the two-minute wait.
 
 ## Question 4: how does a plan get reviewed?
 
-Code review on Terraform has a specific failure mode: reviewers read the HCL diff, which looks small, and approve. Then `apply` runs and the plan they never saw replaces a subnet, which replaces the NAT gateway, which replaces every route. The HCL diff was three lines. The plan was 40 destroys.
+Code review on Terraform has a specific failure mode: reviewers read the HCL diff, which looks small, and approve. Then `apply` runs and the plan they never saw replaces a subnet, and the resources that depend on it get updated or replaced behind it. The HCL diff was three lines. The plan was 40 destroys.
 
 The plan is the artifact that changes infrastructure, so the plan is what needs review. The workflow that follows:
 
@@ -293,7 +294,7 @@ The detail that makes it safe is **apply the saved plan**. `terraform plan -out=
 
 Doing this well with plain GitHub Actions is harder than it looks, and the hard part is exactly "apply the plan that was reviewed". A plan produced on the pull request lives in the pull request's workflow run; the merge to `main` is a different run, with a different commit (the PR ran against a synthetic merge commit, `main` now has a squash or merge commit), and `download-artifact` only sees artifacts from its own run unless you hand it a token and the originating run ID. Teams that push through this end up storing the plan somewhere addressable (S3 keyed by PR number and head SHA), verifying at apply time that the merged tree matches the tree that was planned, and re-planning as a fallback. That is a project, not a snippet.
 
-The version below is honest about that: it reviews the plan on the pull request, and on merge it plans again and applies **that** plan behind an approval gate. The reviewed plan and the applied plan are two runs; the gate shows the second one to a human before it applies.
+The version below is honest about that: it reviews the plan on the pull request, and on merge it plans again in an ungated job, then applies **that** plan from a gated job. The order matters: GitHub evaluates an environment's protection rules before the job starts, so a gated job that runs the plan itself would ask for approval of a plan that does not exist yet. Planning first and gating only the apply gives the approver the actual plan to read.
 
 ```yaml
 # .github/workflows/terraform.yml
@@ -349,12 +350,40 @@ jobs:
           } > comment.md
           gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md
 
-  apply:
+  plan-for-apply:
     if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v4
+        with: { terraform_version: "${{ env.TF_VERSION }}" }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/terraform-plan
+          aws-region: eu-west-1
+      - run: terraform -chdir=$STACK init -input=false
+      - name: plan
+        run: |
+          set -o pipefail
+          terraform -chdir=$STACK plan -input=false -lock-timeout=5m -no-color -out=tfplan | tee plan.txt
+          { echo "### Plan waiting for approval"; grep -E "^Plan:|^No changes" plan.txt || true; } >> "$GITHUB_STEP_SUMMARY"
+      # The plan file holds sensitive values and backend details: same run only, short retention.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: ${{ env.STACK }}/tfplan
+          retention-days: 1
+
+  apply:
+    needs: plan-for-apply
     runs-on: ubuntu-latest
     # The environment's protection rules (required reviewers, prevent self-review,
     # deployment branch = main) are configured in the repository settings; naming
-    # it here only opts the job in.
+    # it here only opts the job in. The approver reads the plan job's summary
+    # and full log before approving.
     environment: production
     permissions:
       id-token: write
@@ -368,26 +397,23 @@ jobs:
           role-to-assume: arn:aws:iam::123456789012:role/terraform-apply
           aws-region: eu-west-1
       - run: terraform -chdir=$STACK init -input=false
-      - name: plan for apply
-        run: |
-          set -o pipefail
-          terraform -chdir=$STACK plan -input=false -lock-timeout=5m -no-color -out=tfplan | tee plan.txt
-          grep -E "^Plan:|^No changes" plan.txt >> "$GITHUB_STEP_SUMMARY" || true
-      - name: apply the saved plan
+      - uses: actions/download-artifact@v4
+        with: { name: tfplan, path: ${{ env.STACK }} }
+      - name: apply the approved plan
         run: terraform -chdir=$STACK apply -input=false tfplan
 ```
 
-What this buys you: the plan is on the pull request where the reviewer is, the summary line (`Plan: 1 to add, 0 to change, 3 to destroy`) is visible without expanding anything, the apply job applies exactly the plan it made, the same Terraform version runs in both jobs, and the environment gate puts a human in front of the apply plan. What it does not buy you: a guarantee that the plan on the pull request and the plan at apply are the same. If someone merged another change to the same stack in between, the apply plan will differ, and the environment approver is the only one who sees it.
+What this buys you: the plan is on the pull request where the reviewer is, the summary line (`Plan: 1 to add, 0 to change, 3 to destroy`) is visible without expanding anything, the apply job applies exactly the plan file the previous job produced (same run, so `download-artifact` finds it), the same Terraform version runs everywhere, and the environment gate puts a human in front of the real apply plan. What it does not buy you: a guarantee that the plan on the pull request and the plan at apply are the same. If someone merged another change to the same stack in between, the apply plan will differ, and the environment approver is the only one who sees it.
 
 Note the `permissions` blocks: once you set any permission on a job, everything you did not list is off, so the plan job needs `pull-requests: write` for the comment and both jobs need `id-token: write` for OIDC. Pull requests from forks get a read-only token and cannot post comments; keep infrastructure repos to branches in the same repository.
 
 Where the tools come in, each with a different answer to "which plan applies":
 
-- **Atlantis** (open source, self-hosted) runs as a pull request bot. `atlantis plan` posts the plan on the PR, `atlantis apply` applies **that saved plan** while the PR is still open, and the PR is merged after the apply succeeded. It holds a lock per directory and workspace for the life of the PR so two PRs cannot plan the same stack against each other. Apply-before-merge is the whole idea, and it is the cleanest answer to the reviewed-plan problem on plain CI infrastructure.
+- **Atlantis** (open source, self-hosted) runs as a pull request bot. `atlantis plan` posts the plan on the PR, `atlantis apply` applies **that saved plan** while the PR is still open, and the PR is merged after the apply succeeded. It holds a lock per directory and workspace for the life of the PR so two PRs cannot plan the same stack against each other. Apply-before-merge is the whole idea: it solves plan identity by never letting a merge happen before the reviewed plan has applied.
 - **Digger** runs the plan and apply steps inside your existing CI (GitHub Actions, GitLab CI), with your runners and your credentials, and adds an orchestrator component that owns the pull request locks and caches plans between the plan and apply steps. State stays in your own backend. It is the option for teams that want the Atlantis workflow without operating an extra server that holds cloud credentials.
-- **HCP Terraform, Spacelift and env0** are hosted run platforms. Each run plans, waits for approval, then applies from that run's plan, so the reviewed plan and the applied plan are one object. On top of that: run queues per stack, dependencies between stacks with output passing (Spacelift stack dependencies, env0 workflows, HCP Terraform run triggers), policy checks against the plan (Sentinel or OPA in HCP Terraform, OPA in Spacelift and env0; "a plan with more than five destroys needs a second approver" becomes a rule rather than a habit), scheduled drift detection with optional remediation runs, and access control over who may trigger what. Which of those are included depends on the plan or edition you are on, so check before assuming.
+- **HCP Terraform, Spacelift and env0** are hosted run platforms. Each run plans, waits for approval, then applies from that run's plan, so the reviewed plan and the applied plan are one object. On top of that: run queues per stack; ordering between stacks (Spacelift stack dependencies and env0 workflows also pass outputs downstream; HCP Terraform run triggers only queue the downstream run, and it reads values through data sources or `tfe_outputs`); policy checks against the plan (Sentinel or OPA in HCP Terraform, OPA in Spacelift and env0; "a plan with more than five destroys needs a second approver" becomes a rule rather than a habit), scheduled drift detection with optional remediation runs, and access control over who may trigger what. Which of those are included depends on the plan or edition you are on, so check before assuming.
 
-The decision between the GitHub Actions version and one of these is not about team size. It is about whether you need any of: a guarantee that the approved plan is the applied plan, more than one PR open against the same stack at a time, dependencies between stacks, or policy that is enforced rather than reviewed. The first of those alone is a good reason.
+The decision between the GitHub Actions version and one of these is not about team size. It is about whether you need any of: a guarantee that the plan reviewed on the pull request is the plan that applies, more than one PR open against the same stack at a time, dependencies between stacks, or policy that is enforced rather than reviewed.
 
 ## The question under all four: what is in the state file?
 
@@ -395,18 +421,18 @@ Everything Terraform knows about a resource is in state, in plain JSON, includin
 
 - RDS master passwords set through `password = var.db_password` are in state.
 - The private key from `tls_private_key` is in state, in full.
-- Every `random_password` result is in state.
+- Every `resource "random_password"` result is in state (the newer `ephemeral "random_password"` is not).
 - Attributes you never set but the provider returns (connection strings, generated tokens) are in state.
 
 `sensitive = true` hides values from plan output. It does nothing to the state file. So the last decision is treating state access as secret access: the bucket policy from question 1, encryption at rest, no `terraform.tfstate` in a repository, ever, and the same care for saved plan files.
 
-Recent Terraform versions let you keep some secrets out of state entirely. This needs both a Terraform version and a provider version that support it; for the AWS provider the Secrets Manager ephemeral resource and `password_wo` on `aws_db_instance` arrived in the 5.87 release, so pin at least that:
+Recent Terraform versions let you keep some secrets out of state entirely. This needs both a Terraform version and a provider version that support it; for the AWS provider, `password_wo` on `aws_db_instance` arrived in release 5.88.0 (the Secrets Manager ephemeral resource a little earlier). Pin the exact version you tested and commit the dependency lock file:
 
 ```hcl
 terraform {
   required_version = ">= 1.11"
   required_providers {
-    aws = { source = "hashicorp/aws", version = ">= 5.87" }
+    aws = { source = "hashicorp/aws", version = "5.88.0" }
   }
 }
 
@@ -432,7 +458,7 @@ Run through these for each state file you own.
 2. IAM scoped so a team can write only its own state keys, including the `.tflock` objects.
 3. No environment shares a state file with another environment.
 4. Components split by owner and lifecycle, with values shared through provider data sources or a parameter store rather than whole-state reads.
-5. A scheduled `plan -detailed-exitcode` per stack that fails on errors, alerts on exit code 2, and lands with someone who classifies the cause.
+5. A scheduled `plan -detailed-exitcode` per stack that fails on errors, opens an issue on exit code 2, and lands with someone who classifies the cause (drift, unapplied code, or a moving data source).
 6. Plans posted on pull requests; applies from a saved plan; one run at a time per stack.
 7. A rule, enforced by tooling or by an approval gate, that a plan with destroys gets a second look.
 8. Secrets moved to ephemeral values and write-only arguments where the provider supports them; state and plan files treated as secret material where it does not.
