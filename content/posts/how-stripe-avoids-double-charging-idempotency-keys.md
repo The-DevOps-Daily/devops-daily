@@ -7,7 +7,7 @@ category:
 date: '2026-09-03'
 publishedAt: '2026-09-03T09:00:00Z'
 updatedAt: '2026-09-03T09:00:00Z'
-readingTime: '18 min read'
+readingTime: '17 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -88,24 +88,7 @@ Most teams meet all of this as a Stripe customer, not as an API author, so here 
 }
 ```
 
-The SDKs retry only network-level failures and responses that say they are retryable, with a short first pause and exponential backoff after that. If you write the loop yourself, keep the same key across attempts, back off exponentially, and add jitter so a fleet of clients recovering from the same blip does not retry in lockstep:
-
-```javascript
-async function withRetries(fn, attempts = 4) {
-  for (let n = 0; ; n++) {
-    try {
-      return await fn(); // fn sends the same Idempotency-Key every time
-    } catch (err) {
-      const retryable = err.type === "StripeConnectionError" || err.statusCode === 429 || err.statusCode >= 500;
-      if (!retryable || n === attempts - 1) throw err;
-      const base = 200 * 2 ** n; // 200, 400, 800 ms ...
-      await new Promise((r) => setTimeout(r, base / 2 + Math.random() * (base / 2)));
-    }
-  }
-}
-```
-
-A `409` on a key that is still in progress belongs in the retryable set too: it means the first attempt is alive and will answer soon.
+With retries turned on, stripe-node retries connection failures, concurrent `409` conflicts and eligible `5xx` responses with exponential backoff and jitter, and it honours `Stripe-Should-Retry`; it deliberately does not retry a real rate-limit `429` on its own. If you write your own policy instead, keep the same idempotency key across attempts, honour `Stripe-Should-Retry` and `Retry-After`, cap the backoff, add jitter, and do not stack your loop on top of the SDK's.
 
 None of this is exotic. Brandur's separate Rocket Rides post shows one way to implement those semantics on the server when a request dies halfway through, and that is the design we build next.
 
@@ -140,49 +123,7 @@ Three supporting processes complete the picture: an **enqueuer** that drains sta
 
 As a result, a retry does not need special-case code. It claims the key, reads the recovery point, and runs whatever phases are left. If the process died after the card was charged but before the charge id was stored, the retry sees `recovery_point = ride_created`, calls the card network again with the same downstream idempotency key, receives the same charge back, and finishes. The customer is charged once.
 
-```diagram
-{
-  "type": "flow",
-  "nodes": [
-    {
-      "label": "Retry arrives",
-      "sub": "same key, same body",
-      "icon": "activity",
-      "tone": "slate"
-    },
-    {
-      "label": "Claim key",
-      "sub": "lease free or expired",
-      "icon": "lock",
-      "tone": "blue"
-    },
-    {
-      "label": "Read recovery point",
-      "sub": "ride_created: skip phase 2",
-      "icon": "database",
-      "tone": "violet"
-    },
-    {
-      "label": "Charge again",
-      "sub": "same derived key",
-      "icon": "cloud",
-      "tone": "amber"
-    },
-    {
-      "label": "Provider replays",
-      "sub": "same charge id",
-      "icon": "check",
-      "tone": "green"
-    },
-    {
-      "label": "Phase 3",
-      "sub": "store id, save response",
-      "icon": "database",
-      "tone": "blue"
-    }
-  ]
-}
-```
+An immediate retry cannot claim the live lease and gets `409`. After the lease expires, a retry claims the key, sees `recovery_point = ride_created`, skips ride creation, calls the provider with the same derived key, receives the same charge id, and completes phase 3.
 
 That last sentence hides a requirement: the downstream call must itself be idempotent, keyed by something you derive from your key. Stripe's API gives you that. If you call an API that does not, you are back to guessing.
 
@@ -201,13 +142,13 @@ What the demo does and does not claim, next to Stripe's documented behaviour:
 | | Stripe API v1 | This demo |
 |---|---|---|
 | Key scope | per account, up to 255 chars | per user, up to 255 chars |
-| Retention | at least 24 hours, then pruned | never pruned (no reaper) |
+| Retention | kept at least 24 hours; may be pruned afterwards | never pruned (no reaper) |
 | Same key, different parameters | rejected | rejected with `409` |
 | Concurrent duplicate | conflict, not stored, retryable | `409` while the lease is held |
 | Endpoint `500` | stored and replayed | not stored; lease expires and the retry resumes |
 | Replay signal | `Idempotent-Replayed: true` header | `replayed: true` field in the body |
-| Recovery of a half-done request | Stripe reconciles internally, fires webhooks | recovery point resumes the remaining phases |
-| Downstream call | the card networks | a second endpoint in the same process |
+| Recovery after an indeterminate `500` | Stripe tries to reconcile and emit webhooks; not guaranteed | recovery point resumes the remaining phases |
+| External boundary | depends on the operation; payment networks for card payments | a second HTTP endpoint in the same process |
 
 ### The tables
 
