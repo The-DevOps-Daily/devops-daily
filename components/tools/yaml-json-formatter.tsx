@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 type InputFormat = 'yaml' | 'json';
 type OutputFormat = 'yaml' | 'json';
@@ -41,7 +41,7 @@ function process(
     }
     return {
       ok: true,
-      output: yaml.dump(data, { indent: 2, lineWidth: 120, quotingType: '"' }),
+      output: yaml.dump(data, { indent: 2, lineWidth: 120 }),
     };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };

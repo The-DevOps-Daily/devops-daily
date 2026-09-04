@@ -2,7 +2,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { SourcesConfig, NewsItem } from './crawler/types.js';
 import { crawlRssFeeds } from './crawler/rss.js';
 import { crawlWebSources } from './crawler/web.js';
