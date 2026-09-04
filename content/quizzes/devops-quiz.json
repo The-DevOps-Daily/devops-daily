@@ -4,7 +4,7 @@
   "description": "Test your knowledge of DevOps practices with real-world scenarios covering CI/CD, infrastructure, monitoring, and incident response",
   "category": "DevOps",
   "icon": "Code",
-  "totalPoints": 155,
+  "totalPoints": 165,
   "theme": {
     "primaryColor": "green",
     "gradientFrom": "from-green-500",
@@ -196,6 +196,23 @@
       "hint": "Think about the three pillars of observability and how they work together in a distributed system.",
       "difficulty": "advanced",
       "points": 22
+    },
+    {
+      "id": "devops-core-goal",
+      "title": "The Core Goal of DevOps",
+      "description": "A new team is debating what adopting DevOps should change about how they work.",
+      "situation": "Development and operations report to different managers, hand work over through tickets, and blame each other when releases fail. Leadership has asked the team to \"do DevOps\".",
+      "options": [
+        "To isolate the development team from the operations team.",
+        "To break down silos and improve collaboration between development and operations.",
+        "To automate testing without involving the QA team.",
+        "To replace all software engineers with system administrators."
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "The primary goal of DevOps is to bridge the gap between development (Dev) and operations (Ops) teams, fostering collaboration, shared responsibility, and faster continuous delivery.",
+      "hint": "Focus on the relationship between the two main teams in the name."
     }
   ]
 }
