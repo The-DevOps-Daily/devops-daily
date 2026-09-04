@@ -13,7 +13,7 @@
     "API Platforms"
   ],
   "createdDate": "2026-09-02T09:00:00Z",
-  "updatedDate": "2026-09-02T09:00:00Z",
+  "updatedDate": "2026-09-04T09:00:00Z",
   "estimatedReadTime": "12 min read",
   "introduction": "Svix and Hookdeck each started on one side of the webhook wire and have since crossed over. Svix began as webhooks-as-a-service for API providers (send to your customers, with retries, signatures, and a customer portal) and added Svix Ingest, a gateway for the webhooks you receive from Stripe, GitHub, Shopify and others. Hookdeck began as the Event Gateway for receiving and routing inbound webhooks and added Outpost, an open-source outbound delivery layer offered self-hosted or managed. In 2026 both vendors sell both directions, so the useful comparison is two comparisons: sending (Svix Dispatch against Outpost) and receiving (Svix Ingest against the Event Gateway).\n\nThe products are not mirror images. On the sending side Svix has years of head start and the most complete customer-facing tooling, while Outpost is younger, cheaper per event, and Apache-licensed. On the receiving side the Event Gateway is the deeper product (configurable retry rules, Retry-After support, per-destination rate control, a CLI that forwards to localhost) while Ingest covers the core gateway needs with the fewer knobs of a newer product.\n\nThis page lays out the delivery mechanics per direction (retry schedules, receiver-side controls, rate limiting, replay), the security model (Standard Webhooks signatures, HMAC options), what each vendor open-sources and under which license, data regions and compliance, and current published pricing for all four products. It ends with a use-case guide and a verdict that names a winner per direction.",
   "toolA": {
@@ -26,8 +26,8 @@
       "The more established sending stack: apps, endpoints, event types with a customer-facing catalog, and an embeddable App Portal where customers manage endpoints, inspect attempts, and replay",
       "Documented 8-attempt exponential retry schedule over roughly 27 hours, with Recover Failed and Replay Missing for bulk recovery via portal or API",
       "Led the Standard Webhooks specification; signatures verify with any Standard Webhooks library, Ed25519 available",
-      "MIT-licensed open-source server (Rust, Postgres, Redis) for self-hosting, plus SaaS with US, EU, Canada, and Australia data residency and SOC 2 Type II, HIPAA, GDPR, CCPA, PCI-DSS",
-      "Connectors deliver the same events to SQS, SNS, EventBridge, RabbitMQ, Snowflake, BigQuery, ClickHouse, and Redshift",
+      "MIT-licensed open-source server (Rust, Postgres, Redis) for self-hosting, plus SaaS with US, EU, Australia, Canada and India data residency plus custom private regions, and SOC 2 Type II, HIPAA, PCI-DSS, PIPEDA, GDPR, CCPA",
+      "Connectors deliver the same events to SQS, SNS, EventBridge, RabbitMQ, Kafka, Google Pub/Sub, Azure Service Bus, S3, Google Cloud Storage, Azure Blob Storage, Snowflake, BigQuery, ClickHouse, and Redshift",
       "Svix Ingest covers receiving too: verification, retries, throttling, filtering, transformations, fan-out, and a polling endpoint for firewalled consumers; free tier available"
     ],
     "cons": [
@@ -123,7 +123,7 @@
       "name": "Sending: failure escalation and replay",
       "category": "Sending",
       "toolA": {
-        "value": "message.attempt.exhausted operational webhook; endpoints auto-disabled after sustained failure (five days of nothing but failures, once failures have spanned a 24-hour window; configurable); Recover Failed and Replay Missing",
+        "value": "message.attempt.exhausted operational webhook; endpoints auto-disabled when every attempt has failed for five days, a clock that only starts once several deliveries have failed within a 24-hour span with at least 12 hours between the first and the last failure (can be turned off per environment); Recover Failed and Replay Missing",
         "rating": "good"
       },
       "toolB": {
@@ -135,7 +135,7 @@
       "name": "Sending: non-HTTP destinations",
       "category": "Sending",
       "toolA": {
-        "value": "Connectors: SQS, SNS, EventBridge, RabbitMQ, Snowflake, BigQuery, ClickHouse, Redshift",
+        "value": "Connectors: SQS, SNS, EventBridge, RabbitMQ, Kafka, Google Pub/Sub, Azure Service Bus, S3, Google Cloud Storage, Azure Blob Storage, Snowflake, BigQuery, ClickHouse, Redshift",
         "rating": "good"
       },
       "toolB": {
@@ -219,7 +219,7 @@
       "name": "Data residency and compliance",
       "category": "Compliance",
       "toolA": {
-        "value": "US, EU, Canada, Australia; SOC 2 Type II, HIPAA, GDPR, CCPA, PCI-DSS",
+        "value": "US, EU, Australia, Canada, India, plus custom private regions; SOC 2 Type II, HIPAA, PCI-DSS, PIPEDA, GDPR, CCPA",
         "rating": "good"
       },
       "toolB": {
@@ -252,12 +252,12 @@
     {
       "scenario": "EU data residency is mandatory for the webhooks you receive",
       "recommendation": "toolA",
-      "explanation": "Hookdeck states the Event Gateway is hosted in the US only; its EU and Asia regions apply to managed Outpost on Growth and above. Svix offers US, EU, Canada, and Australia regions across its products."
+      "explanation": "Hookdeck states the Event Gateway is hosted in the US only; its EU and Asia regions apply to managed Outpost on Growth and above. Svix offers US, EU, Australia, Canada and India regions, plus custom private regions, across its products."
     },
     {
       "scenario": "Compliance breadth drives the decision (HIPAA, PCI, regional residency)",
       "recommendation": "toolA",
-      "explanation": "Svix publishes SOC 2 Type II, HIPAA, GDPR, CCPA, and PCI-DSS with four regions. Hookdeck publishes SOC 2 Type II, GDPR, CCPA, and PIPEDA, with HIPAA from the Growth tier, and fewer regions. Either can pass many reviews; Svix covers more of them out of the gate."
+      "explanation": "Svix publishes SOC 2 Type II, HIPAA, PCI-DSS, PIPEDA, GDPR and CCPA across five regions plus custom private ones. Hookdeck publishes SOC 2 Type II, GDPR, CCPA and PIPEDA, with HIPAA from the Growth tier, and fewer regions. Either can pass many reviews; Svix covers more of them out of the gate."
     },
     {
       "scenario": "You want one vendor for both directions",
@@ -267,7 +267,7 @@
     {
       "scenario": "Your customers want events delivered into their queues or data warehouses, not only over HTTP",
       "recommendation": "toolA",
-      "explanation": "Svix connectors deliver the same message to SQS, SNS, EventBridge, RabbitMQ, Snowflake, BigQuery, ClickHouse, and Redshift, so a data-platform customer skips the webhook-to-warehouse glue entirely. Outpost covers queues (SQS, S3, RabbitMQ, Pub/Sub, EventBridge, Kafka) but not warehouses."
+      "explanation": "Svix connectors deliver the same message to queues and streams (SQS, SNS, EventBridge, RabbitMQ, Kafka, Google Pub/Sub, Azure Service Bus), object storage (S3, Google Cloud Storage, Azure Blob Storage) and warehouses (Snowflake, BigQuery, ClickHouse, Redshift), so a data-platform customer skips the webhook-to-warehouse glue entirely. Outpost covers queues (SQS, S3, RabbitMQ, Pub/Sub, EventBridge, Kafka) but not warehouses."
     },
     {
       "scenario": "You need an uptime SLA before you are ready to pay",
@@ -332,7 +332,7 @@
       "recommendation": "either"
     },
     {
-      "criteria": "Broadest compliance list (HIPAA, PCI, four regions)",
+      "criteria": "Broadest compliance list (HIPAA, PCI, five regions plus private ones)",
       "recommendation": "toolA"
     },
     {
@@ -357,7 +357,7 @@
     }
   ],
   "verdict": {
-    "summary": "Both vendors now sell both directions, and each is more developed where it started. For sending, Svix Dispatch has the longer track record and the broader surface on the published evidence: an App Portal you embed in your own product, first-class event types, a documented retry schedule with bulk recovery, Standard Webhooks signatures across nine SDKs, connectors into queues and data warehouses, four data regions, an SLA from the free tier up, and the longest compliance list. Outpost counters with Apache 2.0 licensing including its portal, usage-based managed pricing, operator events, and Standard Webhooks compatibility. For receiving, Hookdeck's Event Gateway documents more control (Retry-After, per-destination rates, pause and resume) than Svix Ingest, which covers the core gateway functions and is the newer product. Regions are the clearest hard differentiator: Hookdeck states its Event Gateway is US-hosted only, while Svix offers four regions across its products.",
+    "summary": "Both vendors now sell both directions, and each is more developed where it started. For sending, Svix Dispatch has the longer track record and the broader surface on the published evidence: an App Portal you embed in your own product, first-class event types, a documented retry schedule with bulk recovery, Standard Webhooks signatures across nine SDKs, connectors into queues and data warehouses, four data regions, an SLA from the free tier up, and the longest compliance list. Outpost counters with Apache 2.0 licensing including its portal, usage-based managed pricing, operator events, and Standard Webhooks compatibility. For receiving, Hookdeck's Event Gateway documents more control (Retry-After, per-destination rates, pause and resume) than Svix Ingest, which covers the core gateway functions and is the newer product. Regions are the clearest hard differentiator: Hookdeck states its Event Gateway is US-hosted only, while Svix offers five regions (US, EU, Australia, Canada, India) plus custom private regions across its products.",
     "toolAScore": 4.4,
     "toolBScore": 4.3,
     "recommendation": "Choose Svix if sending is your main job, you want the portal and compliance breadth, or you need EU residency for received webhooks. Choose Hookdeck if receiving is your main job and you want the deepest retry and rate controls plus local forwarding, or if you want usage-based outbound pricing with an Apache-licensed engine. Evaluate the direction that carries your traffic first; the other product from the same vendor is the tiebreaker, not the decision."
