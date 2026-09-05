@@ -1,0 +1,16 @@
+{
+  "name": "Anoop Anilkumar",
+  "slug": "anoop-anilkumar",
+  "title": "Software Engineer",
+  "bio": "Software engineer with 4 years building production systems end to end — backend services in Node.js and Python, React and Next.js frontends, LLM-backed automation, and containerised deployment to the cloud. Comfortable owning a feature from data model through to release.",
+  "avatar": "/images/experts/anoop-anilkumar.jpg",
+  "specialties": ["Node.js", "Python", "Docker", "Kubernetes"],
+  "location": "Kollam, India",
+  "availableForHire": true,
+  "links": {
+    "website": "https://anoopanil413.vercel.app/",
+    "github": "https://github.com/Anoopanil413",
+    "linkedin": "https://linkedin.com/in/anoop-anilkumar-b2185114b",
+    "twitter": "https://x.com/anil_anoop96163"
+  }
+}
