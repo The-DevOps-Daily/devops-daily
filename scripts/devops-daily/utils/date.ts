@@ -1,17 +1,26 @@
-import { format, getWeek, getYear, isAfter, isBefore, subDays } from 'date-fns';
+import { format, getISOWeek, getISOWeekYear, isAfter, isBefore, subDays } from 'date-fns';
 
 /**
- * Get the current week number
+ * ISO week number and week-based year for a date, taken from the same
+ * instant so a year-end run never pairs week 1 with the old year. Matches
+ * the `date +%V` / `date +%G` pair the digest workflow uses.
  */
-export function getCurrentWeek(): number {
-  return getWeek(new Date(), { weekStartsOn: 1 });
+export function getIsoWeekAndYear(date: Date = new Date()): { week: number; year: number } {
+  return { week: getISOWeek(date), year: getISOWeekYear(date) };
 }
 
 /**
- * Get the current year
+ * Get the current ISO week number
  */
-export function getCurrentYear(): number {
-  return getYear(new Date());
+export function getCurrentWeek(date: Date = new Date()): number {
+  return getIsoWeekAndYear(date).week;
+}
+
+/**
+ * Get the current ISO week-based year
+ */
+export function getCurrentYear(date: Date = new Date()): number {
+  return getIsoWeekAndYear(date).year;
 }
 
 /**
@@ -54,7 +63,8 @@ export function formatDisplayDate(date: Date | string): string {
  * Generate a branch name for the news digest
  */
 export function generateBranchName(year?: number, week?: number): string {
-  const y = year || getCurrentYear();
-  const w = week || getCurrentWeek();
+  const now = getIsoWeekAndYear();
+  const y = year || now.year;
+  const w = week || now.week;
   return `news-${y}-w${w}`;
 }

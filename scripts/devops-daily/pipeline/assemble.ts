@@ -1,5 +1,5 @@
 import { NewsItem, Digest, DigestMetadata } from '../crawler/types.js';
-import { getCurrentWeek, getCurrentYear, formatISODate } from '../utils/date.js';
+import { getIsoWeekAndYear, formatISODate } from '../utils/date.js';
 import { generateTitle, generateSummary } from './template.js';
 
 /**
@@ -46,8 +46,9 @@ export function assembleDigest(
   week?: number,
   year?: number
 ): Digest {
-  const w = week || getCurrentWeek();
-  const y = year || getCurrentYear();
+  const now = getIsoWeekAndYear();
+  const w = week || now.week;
+  const y = year || now.year;
 
   const metadata: DigestMetadata = {
     title: generateTitle(w, y),

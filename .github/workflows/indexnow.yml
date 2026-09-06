@@ -69,23 +69,20 @@ jobs:
       - name: Map changed paths to URLs
         if: github.event_name == 'push' && steps.diff.outputs.count != '0'
         run: |
-          # Path -> URL mapping mirrors Next.js route structure.
-          awk '
-            /^content\/posts\//           { sub(/^content\/posts\//, "/posts/"); sub(/\.md$/, ""); print; next }
-            /^content\/news\//            { sub(/^content\/news\//, "/news/"); sub(/\.md$/, ""); print; next }
-            /^content\/newsletters\//     { sub(/^content\/newsletters\//, "/newsletters/"); sub(/\.md$/, ""); print; next }
-            /^content\/guides\/[^/]+\//   { sub(/^content\/guides\//, "/guides/"); sub(/\/.*$/, ""); print; next }
-            /^content\/comparisons\//     { sub(/^content\/comparisons\//, "/comparisons/"); sub(/\.md$/, ""); print; next }
-            /^content\/exercises\//       { sub(/^content\/exercises\//, "/exercises/"); sub(/\.json$/, ""); print; next }
-            /^content\/quizzes\//         { sub(/^content\/quizzes\//, "/quizzes/"); sub(/\.json$/, ""); print; next }
-            /^content\/flashcards\//      { sub(/^content\/flashcards\//, "/flashcards/"); sub(/\.json$/, ""); print; next }
-            /^content\/checklists\//      { sub(/^content\/checklists\//, "/checklists/"); sub(/\.json$/, ""); print; next }
-            /^content\/interview-questions\// { sub(/^content\/interview-questions\//, "/interview-questions/"); sub(/\.json$/, ""); print; next }
-            /^content\/advent-of-devops\// { sub(/^content\/advent-of-devops\//, "/advent-of-devops/"); sub(/\.md$/, ""); print; next }
-          ' changed.txt | sort -u > urls.txt
+          # Path -> URL mapping lives in scripts/content-path-to-url.ts so it
+          # is unit tested against the real route shapes (news slugs, guide
+          # parts, json-backed content, interview question tiers).
+          bun scripts/content-path-to-url.ts < changed.txt | sort -u > urls.txt
 
           echo "URLs to submit:"
           cat urls.txt
+
+      - name: Dry-run the IndexNow payload
+        if: github.event_name == 'push' && steps.diff.outputs.count != '0'
+        run: |
+          if [ -s urls.txt ]; then
+            cat urls.txt | bun scripts/submit-indexnow.ts --stdin --dry-run
+          fi
 
       - name: Submit changed URLs to IndexNow
         if: github.event_name == 'push' && steps.diff.outputs.count != '0'
