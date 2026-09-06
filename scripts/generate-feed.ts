@@ -3,15 +3,21 @@ import path from 'path';
 import { getAllPosts } from '../lib/posts.js';
 import { getAllNews } from '../lib/news.js';
 import { parseMarkdown } from '../lib/markdown.js';
+import { toPortableMarkdown, toPortableHtml } from '../lib/portable-markdown.js';
 
 /** CDATA-wrap without letting a literal `]]>` in the text end the section early. */
 function cdata(text: string): string {
   return `<![CDATA[${text.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
 }
 
-/** Feed readers resolve nothing relative to the site; make root links absolute. */
-function absolutize(html: string, siteUrl: string): string {
-  return html.replace(/(href|src)="\/(?!\/)/g, `$1="${siteUrl}/`);
+/**
+ * Feed readers have no React to fill in our interactive blocks and resolve
+ * nothing relative to the site, so items go through the same portable path
+ * as the syndication feed: custom fences become plain markdown, heading
+ * chrome is dropped, and root links become absolute.
+ */
+function renderForFeed(markdown: string, siteUrl: string): string {
+  return toPortableHtml(parseMarkdown(toPortableMarkdown(markdown)), siteUrl);
 }
 
 async function generateFeed() {
@@ -57,7 +63,7 @@ async function generateFeed() {
       <pubDate>${new Date(item.dateKey || Date.now()).toUTCString()}</pubDate>
       <guid isPermaLink="true">${siteUrl}${item.url}</guid>
       <category><![CDATA[DevOps News]]></category>
-      <content:encoded>${cdata(absolutize(item.content ? parseMarkdown(item.content) : item.excerpt || item.summary || '', siteUrl))}</content:encoded>
+      <content:encoded>${cdata(item.content ? renderForFeed(item.content, siteUrl) : item.excerpt || item.summary || '')}</content:encoded>
     </item>`;
         } else {
           return `
@@ -74,7 +80,7 @@ async function generateFeed() {
           ? item.tags.map((tag) => `<category>${cdata(tag)}</category>`).join('')
           : ''
       }
-      <content:encoded>${cdata(absolutize(item.content ? parseMarkdown(item.content) : item.excerpt || '', siteUrl))}</content:encoded>
+      <content:encoded>${cdata(item.content ? renderForFeed(item.content, siteUrl) : item.excerpt || '')}</content:encoded>
     </item>`;
         }
       })

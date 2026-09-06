@@ -48,6 +48,55 @@ describe('toPortableMarkdown', () => {
     expect(out).toContain('2. **End**');
   });
 
+  it('turns a graph diagram into its nodes and connections', () => {
+    const md = [
+      '```diagram',
+      '{ "type": "graph", "title": "Ingress", "columns": [',
+      '  [ { "id": "lb", "label": "Load balancer" } ],',
+      '  [ { "id": "api", "label": "API", "sub": "3 replicas" } ]',
+      '], "edges": [ ["lb", "api", "HTTP"] ] }',
+      '```',
+    ].join('\n');
+    const out = toPortableMarkdown(md);
+    expect(out).toContain('**Ingress**');
+    expect(out).toContain('1. **Load balancer**');
+    expect(out).toContain('2. **API** 3 replicas');
+    expect(out).toContain('- Load balancer -> API (HTTP)');
+  });
+
+  it('turns an infra diagram into nested bullets and keeps the request path', () => {
+    const md = [
+      '```diagram',
+      '{ "type": "infra", "flow": [ { "label": "Client" }, { "label": "Edge" } ], "groups": [',
+      '  { "label": "Region A", "groups": [',
+      '    { "label": "Cluster", "nodes": [ { "label": "web", "sub": "x2" } ] }',
+      '  ] }',
+      '] }',
+      '```',
+    ].join('\n');
+    const out = toPortableMarkdown(md);
+    expect(out).toContain('1. **Client**');
+    expect(out).toContain('- **Region A**');
+    expect(out).toContain('  - **Cluster**');
+    expect(out).toContain('    - **web** x2');
+  });
+
+  it('turns branch and loop diagrams into a list with their extras', () => {
+    const branch = toPortableMarkdown(
+      '```diagram\n{ "type": "branch", "nodes": [ { "label": "Check" } ], "branch": [ { "label": "Pass" }, { "label": "Fail" } ] }\n```',
+    );
+    expect(branch).toContain('1. **Check**');
+    expect(branch).toContain('Outcomes:');
+    expect(branch).toContain('- **Fail**');
+
+    const loop = toPortableMarkdown(
+      '```diagram\n{ "type": "loop", "goal": "Green build", "nodes": [ { "label": "Edit" }, { "label": "Test" } ], "loopBack": "on failure" }\n```',
+    );
+    expect(loop).toContain('*Goal: Green build*');
+    expect(loop).toContain('2. **Test**');
+    expect(loop).toContain('on failure, then back to step 1');
+  });
+
   it('turns a bar chart into a markdown table with its caption', () => {
     const md = [
       '```chart',
@@ -68,6 +117,35 @@ describe('toPortableMarkdown', () => {
     ].join('\n');
     const out = toPortableMarkdown(md);
     expect(out).toContain('| One | 1 | 2 |');
+  });
+
+  it('keeps bar ticks and reference lines', () => {
+    const md = [
+      '```chart',
+      '{ "type": "bar", "unit": "ms", "tickLabel": "p95", "rows": [ { "label": "A", "value": 5, "tick": 9 } ],',
+      '  "refs": [ { "value": 8, "label": "SLO" } ] }',
+      '```',
+    ].join('\n');
+    const out = toPortableMarkdown(md);
+    expect(out).toContain('| | Value | p95 |');
+    expect(out).toContain('| A | 5ms | 9ms |');
+    expect(out).toContain('*SLO: 8ms*');
+  });
+
+  it('numbers the points of a line chart that has no x labels', () => {
+    const out = toPortableMarkdown(
+      '```chart\n{ "type": "line", "series": [ { "name": "One", "data": [1,2,3] } ] }\n```',
+    );
+    expect(out).toContain('| | 1 | 2 | 3 |');
+    expect(out).toContain('| One | 1 | 2 | 3 |');
+  });
+
+  it('summarises sample-based charts per series', () => {
+    const out = toPortableMarkdown(
+      '```chart\n{ "type": "dots", "unit": "ms", "series": [ { "name": "Pooler", "samples": [10, 20, 30, 40] } ] }\n```',
+    );
+    expect(out).toContain('| Series | Samples | Min | Median | p95 | Max |');
+    expect(out).toContain('| Pooler | 4 | 10ms | 25ms | 40ms | 40ms |');
   });
 
   it('turns tabs into one labelled code block per tab', () => {
@@ -134,6 +212,19 @@ describe('toPortableMarkdown', () => {
       if (/^:::(note|tip|warning|important)/m.test(out)) offenders.push(`${post.slug}: callout`);
     }
     expect(offenders).toEqual([]);
+  });
+
+  it('converts every chart and diagram in the corpus to something, never to nothing', async () => {
+    // A variant with no conversion would be dropped silently by replaceFence.
+    const posts = (await getAllPosts()) as Array<{ slug: string; content?: string }>;
+    const empty: string[] = [];
+    for (const post of posts) {
+      const fences = (post.content || '').matchAll(/^```(chart|diagram)[ \t]*\n([\s\S]*?)\n```[ \t]*$/gm);
+      for (const [whole, lang] of fences) {
+        if (toPortableMarkdown(whole).trim() === '') empty.push(`${post.slug}: ${lang}`);
+      }
+    }
+    expect(empty).toEqual([]);
   });
 });
 

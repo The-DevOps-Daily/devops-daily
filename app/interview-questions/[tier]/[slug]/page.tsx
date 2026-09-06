@@ -8,7 +8,7 @@ import {
   getQuestionsByTier,
 } from '@/content/interview-questions';
 import { InterviewQuestionPage } from '@/components/interview-questions/interview-question-page';
-import { BreadcrumbSchema, QAPageSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema } from '@/components/schema-markup';
 import { PageHero } from '@/components/page-hero';
 import { getSocialImagePath } from '@/lib/image-utils';
 import { truncateMetaDescription } from '@/lib/meta-description';
@@ -141,11 +141,6 @@ export default async function QuestionPage({ params }: PageProps) {
 
   return (
     <>
-      <QAPageSchema
-        question={question.question}
-        answer={question.answer}
-        url={`/interview-questions/${tier}/${slug}`}
-      />
       <BreadcrumbSchema
         items={[
           { name: 'Home', url: '/' },

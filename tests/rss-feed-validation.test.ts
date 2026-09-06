@@ -78,6 +78,17 @@ describe('RSS Feed Validation', () => {
       expect(feedContent).toContain('CDATA');
     });
 
+    it('carries no block that a feed reader would show as nothing', () => {
+      // Interactive fences render to empty divs that React fills in on the
+      // site. A reader has no React, so the feed must use the portable form.
+      const feedContent = fs.readFileSync(feedPath, 'utf-8');
+      for (const cls of ['post-diagram', 'post-terminal', 'post-tabs', 'post-chart', 'copy-heading-link']) {
+        expect(feedContent, `${cls} would render as nothing in a reader`).not.toContain(cls);
+      }
+      expect(feedContent).not.toContain('src="/');
+      expect(feedContent).not.toContain('href="/');
+    });
+
     it('should have reasonable feed size (soft check)', () => {
       const stats = fs.statSync(feedPath);
       const sizeInKB = Math.round(stats.size / 1024);

@@ -15,6 +15,8 @@
  * animation and keeps the information.
  */
 
+import { median, percentile } from './post-charts';
+
 /** Runs `fn` over the body of every fence with the given language. */
 function replaceFence(
   markdown: string,
@@ -43,56 +45,176 @@ function cell(value: unknown): string {
   return String(value ?? '').replace(/\|/g, '\\|');
 }
 
-interface DiagramSpec {
-  title?: string;
-  nodes?: Array<{ label?: string; sub?: string }>;
-  groups?: Array<{ label?: string; nodes?: Array<{ label?: string; sub?: string }> }>;
+/** One table line; an empty cell (the label column header) renders as `| |`. */
+function tableRow(cells: string[]): string {
+  return `|${cells.map((c) => (c ? ` ${c} |` : ' |')).join('')}`;
 }
 
+interface DiagramNode {
+  id?: string;
+  label?: string;
+  sub?: string;
+}
+
+interface DiagramGroup {
+  label?: string;
+  sub?: string;
+  nodes?: DiagramNode[];
+  groups?: DiagramGroup[];
+}
+
+interface DiagramSpec {
+  type?: string;
+  title?: string;
+  goal?: string;
+  loopTop?: string;
+  loopBack?: string;
+  nodes?: DiagramNode[];
+  branch?: DiagramNode[];
+  groups?: DiagramGroup[];
+  flow?: DiagramNode[];
+  columns?: DiagramNode[][];
+  edges?: Array<[string, string, string?]>;
+}
+
+function nodeText(node: DiagramNode): string {
+  const label = node.label ?? '';
+  return node.sub ? `**${label}** ${node.sub}` : `**${label}**`;
+}
+
+function numbered(nodes: DiagramNode[]): string[] {
+  return nodes.map((node, i) => `${i + 1}. ${nodeText(node)}`);
+}
+
+function groupLines(groups: DiagramGroup[], depth = 0): string[] {
+  const indent = '  '.repeat(depth);
+  const lines: string[] = [];
+  for (const group of groups) {
+    lines.push(`${indent}- ${nodeText(group)}`);
+    if (group.groups && group.groups.length > 0) {
+      lines.push(...groupLines(group.groups, depth + 1));
+    }
+    for (const node of group.nodes ?? []) {
+      lines.push(`${indent}  - ${nodeText(node)}`);
+    }
+  }
+  return lines;
+}
+
+/**
+ * Every diagram mode has a plain-text shape: flows and loops become a numbered
+ * list, branches add their outcomes, infra boxes nest as bullets, and graphs
+ * list their nodes followed by the edges between them.
+ */
 function diagramToMarkdown(body: string): string {
   const spec = asJson<DiagramSpec>(body);
-  const nodes = spec.nodes ?? (spec.groups ?? []).flatMap((g) => g.nodes ?? []);
-  if (nodes.length === 0) return '';
+  const out: string[] = [];
+  if (spec.title) out.push(`**${spec.title}**`, '');
+  if (spec.goal) out.push(`*Goal: ${spec.goal}*`, '');
 
-  const lines = nodes.map((node, i) => {
-    const label = node.label ?? '';
-    return node.sub ? `${i + 1}. **${label}** ${node.sub}` : `${i + 1}. **${label}**`;
-  });
-  return [spec.title ? `**${spec.title}**` : '', '', ...lines].join('\n').trim();
+  if (spec.type === 'graph') {
+    const nodes = (spec.columns ?? []).flat();
+    const labelOf = new Map(nodes.filter((n) => n.id).map((n) => [n.id as string, n.label ?? n.id]));
+    out.push(...numbered(nodes));
+    const edges = (spec.edges ?? []).filter((e) => Array.isArray(e) && e.length >= 2);
+    if (edges.length > 0) {
+      out.push('', 'Connections:', '');
+      for (const [from, to, label] of edges) {
+        const arrow = `${labelOf.get(from) ?? from} -> ${labelOf.get(to) ?? to}`;
+        out.push(label ? `- ${arrow} (${label})` : `- ${arrow}`);
+      }
+    }
+  } else if (spec.type === 'infra') {
+    if (spec.flow && spec.flow.length > 0) out.push(...numbered(spec.flow), '');
+    out.push(...groupLines(spec.groups ?? []));
+  } else {
+    // flow, loop, branch: a row of nodes. Older specs put nodes in groups.
+    const nodes = spec.nodes ?? (spec.groups ?? []).flatMap((g) => g.nodes ?? []);
+    out.push(...numbered(nodes));
+    if (spec.type === 'loop' && (spec.loopTop || spec.loopBack)) {
+      out.push('', `*${[spec.loopTop, spec.loopBack].filter(Boolean).join(': ')}, then back to step 1.*`);
+    }
+    if (spec.type === 'branch' && spec.branch && spec.branch.length > 0) {
+      out.push('', 'Outcomes:', '', ...spec.branch.map((node) => `- ${nodeText(node)}`));
+    }
+  }
+
+  const text = out.join('\n').trim();
+  return text === (spec.title ? `**${spec.title}**` : '') ? '' : text;
 }
 
 interface ChartSpec {
+  type?: string;
   title?: string;
   caption?: string;
   unit?: string;
-  rows?: Array<{ label?: string; value?: number; series?: string }>;
-  x?: string[];
+  tickLabel?: string;
+  rows?: Array<{ label?: string; value?: number; tick?: number; series?: string }>;
+  x?: Array<string | number>;
   series?: Array<{ name?: string; data?: number[]; samples?: number[] }>;
+  refs?: Array<{ value?: number; label?: string }>;
 }
 
+function withUnit(value: unknown, unit?: string): string {
+  return value === undefined || value === null ? '' : `${value}${unit ?? ''}`;
+}
+
+/**
+ * Bar charts become a label/value table, line charts a series-by-x table, and
+ * sample-based charts (dots, cdf) a summary row per series. Reference lines
+ * and the caption follow as emphasised text.
+ */
 function chartToMarkdown(body: string): string {
   const spec = asJson<ChartSpec>(body);
   const out: string[] = [];
   if (spec.title) out.push(`**${spec.title}**`, '');
+  const unit = spec.unit;
 
   if (spec.rows && spec.rows.length > 0) {
     const hasSeries = spec.rows.some((r) => r.series);
-    out.push(hasSeries ? '| | Value | Series |' : '| | Value |');
-    out.push(hasSeries ? '| --- | --- | --- |' : '| --- | --- |');
+    const hasTick = spec.rows.some((r) => r.tick !== undefined && r.tick !== null);
+    const header = ['', 'Value', ...(hasTick ? [spec.tickLabel ?? 'Tick'] : []), ...(hasSeries ? ['Series'] : [])];
+    out.push(tableRow(header));
+    out.push(tableRow(header.map(() => '---')));
     for (const row of spec.rows) {
-      const value = `${row.value ?? ''}${spec.unit ?? ''}`;
       out.push(
-        hasSeries
-          ? `| ${cell(row.label)} | ${cell(value)} | ${cell(row.series)} |`
-          : `| ${cell(row.label)} | ${cell(value)} |`,
+        tableRow([
+          cell(row.label),
+          cell(withUnit(row.value, unit)),
+          ...(hasTick ? [cell(withUnit(row.tick, unit))] : []),
+          ...(hasSeries ? [cell(row.series)] : []),
+        ]),
       );
     }
-  } else if (spec.x && spec.series) {
-    // Line charts: one column per point, one row per series.
-    out.push(`| | ${spec.x.map(cell).join(' | ')} |`);
-    out.push(`| --- | ${spec.x.map(() => '---').join(' | ')} |`);
+  } else if (spec.series && spec.series.some((s) => Array.isArray(s.samples) && s.samples.length > 0)) {
+    out.push('| Series | Samples | Min | Median | p95 | Max |');
+    out.push('| --- | --- | --- | --- | --- | --- |');
     for (const s of spec.series) {
-      out.push(`| ${cell(s.name)} | ${(s.data ?? []).map(cell).join(' | ')} |`);
+      const samples = (s.samples ?? []).filter((v) => Number.isFinite(v));
+      if (samples.length === 0) continue;
+      const stats = [
+        Math.min(...samples),
+        median(samples),
+        percentile(samples, 95),
+        Math.max(...samples),
+      ].map((v) => cell(withUnit(v, unit)));
+      out.push(`| ${cell(s.name)} | ${samples.length} | ${stats.join(' | ')} |`);
+    }
+  } else if (spec.series && spec.series.length > 0) {
+    // Line charts: one column per point, one row per series. Without x
+    // labels the points are numbered.
+    const points = Math.max(0, ...spec.series.map((s) => s.data?.length ?? 0));
+    const x = spec.x && spec.x.length > 0 ? spec.x.slice(0, points) : [...Array(points).keys()].map((i) => i + 1);
+    out.push(`| | ${x.map(cell).join(' | ')} |`);
+    out.push(`| --- | ${x.map(() => '---').join(' | ')} |`);
+    for (const s of spec.series) {
+      out.push(`| ${cell(s.name)} | ${(s.data ?? []).map((v) => cell(withUnit(v, unit))).join(' | ')} |`);
+    }
+  }
+
+  for (const ref of spec.refs ?? []) {
+    if (ref && ref.value !== undefined) {
+      out.push('', `*${ref.label ?? 'Reference'}: ${withUnit(ref.value, unit)}*`);
     }
   }
 
@@ -103,7 +225,7 @@ function chartToMarkdown(body: string): string {
 interface TerminalSpec {
   title?: string;
   prompt?: string;
-  steps?: Array<{ cmd?: string; output?: string; comment?: string }>;
+  steps?: Array<{ cmd?: string; output?: string; comment?: string; prompt?: string }>;
 }
 
 function terminalToMarkdown(body: string): string {
@@ -115,7 +237,7 @@ function terminalToMarkdown(body: string): string {
   const lines: string[] = [];
   for (const step of steps) {
     if (step.comment) lines.push(`# ${step.comment}`);
-    if (step.cmd) lines.push(`${prompt} ${step.cmd}`);
+    if (step.cmd) lines.push(`${step.prompt || prompt} ${step.cmd}`);
     if (step.output) lines.push(step.output);
   }
 
@@ -158,6 +280,7 @@ const CALLOUT_LABELS: Record<string, string> = {
   tip: 'Tip',
   warning: 'Warning',
   important: 'Important',
+  info: 'Note',
 };
 
 /**
@@ -167,7 +290,7 @@ const CALLOUT_LABELS: Record<string, string> = {
  */
 function convertCallouts(markdown: string): string {
   return markdown.replace(
-    /^:::(note|tip|warning|important)[ \t]*\n([\s\S]*?)\n:::[ \t]*$/gm,
+    /^:::(note|tip|warning|important|info)[ \t]*\n([\s\S]*?)\n:::[ \t]*$/gm,
     (_whole, kind: string, body: string) => {
       const label = CALLOUT_LABELS[kind] ?? kind;
       const quoted = body
