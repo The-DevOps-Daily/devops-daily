@@ -94,6 +94,20 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
   const [historyIndex, setHistoryIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+  // A delayed advance still pending. Cancelled on reset, lesson jump and
+  // unmount so a late callback never moves the new lesson state forward.
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const advanceToken = useRef(0);
+
+  const cancelPendingAdvance = useCallback(() => {
+    if (advanceTimer.current !== null) {
+      clearTimeout(advanceTimer.current);
+      advanceTimer.current = null;
+    }
+    advanceToken.current += 1;
+  }, []);
+
+  useEffect(() => cancelPendingAdvance, [cancelPendingAdvance]);
 
   const currentLesson = lessons[currentLessonIndex];
   const currentCommand = currentLesson?.commands[currentCommandIndex];
@@ -181,7 +195,16 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
       if (isExpected) {
         setCompletedCommands((prev) => new Set(prev).add(key));
         if (advanceDelayMs > 0) {
-          setTimeout(advance, advanceDelayMs);
+          // One pending advance at a time: a repeat of the same step inside
+          // the delay must not advance twice.
+          if (advanceTimer.current === null) {
+            const token = advanceToken.current;
+            advanceTimer.current = setTimeout(() => {
+              advanceTimer.current = null;
+              if (token !== advanceToken.current) return;
+              advance();
+            }, advanceDelayMs);
+          }
         } else {
           advance();
         }
@@ -277,6 +300,7 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
   );
 
   const resetProgress = useCallback(() => {
+    cancelPendingAdvance();
     setCurrentLessonIndex(0);
     setCurrentCommandIndex(0);
     setTerminalHistory([]);
@@ -286,13 +310,22 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
     setCommandHistory([]);
     setHistoryIndex(-1);
     onReset?.();
-  }, [onReset]);
+  }, [cancelPendingAdvance, onReset]);
 
-  const jumpToLesson = useCallback((index: number) => {
-    setCurrentLessonIndex(index);
-    setCurrentCommandIndex(0);
-    setShowHint(false);
-  }, []);
+  const jumpToLesson = useCallback(
+    (index: number) => {
+      cancelPendingAdvance();
+      // Resume at the first command not yet completed, so a step completed
+      // inside the advance delay (or on an earlier visit) is not presented
+      // again with the repeat guard refusing to advance past it.
+      const commands = lessons[index]?.commands ?? [];
+      const firstOpen = commands.findIndex((_, i) => !completedCommands.has(completionKey(index, i)));
+      setCurrentLessonIndex(index);
+      setCurrentCommandIndex(Math.max(0, firstOpen));
+      setShowHint(false);
+    },
+    [cancelPendingAdvance, completedCommands, completionKey, lessons]
+  );
 
   return {
     // progression
