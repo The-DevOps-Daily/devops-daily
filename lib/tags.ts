@@ -10,55 +10,45 @@ export type Tag = {
   count: number;
 };
 
+/**
+ * Count tags across content items by their slug, so `Docker Compose` and
+ * `docker-compose` share one entry. Each item counts at most once per slug,
+ * and the first spelling seen becomes the display name.
+ */
+export function countTags(tagLists: Array<string[] | undefined>): Tag[] {
+  const tagMap = new Map<string, { name: string; count: number }>();
+
+  for (const tags of tagLists) {
+    if (!tags) continue;
+    const seen = new Set<string>();
+    for (const tag of tags) {
+      const slug = tagToSlug(tag);
+      if (!slug || seen.has(slug)) continue;
+      seen.add(slug);
+      const existing = tagMap.get(slug);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        tagMap.set(slug, { name: tag, count: 1 });
+      }
+    }
+  }
+
+  return Array.from(tagMap.entries())
+    .map(([slug, { name, count }]) => ({ name, slug, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** True when any of the item's tags normalizes to the given slug. */
+export function hasTagSlug(tags: string[] | undefined, tagSlug: string): boolean {
+  return !!tags && tags.some((tag) => tagToSlug(tag) === tagSlug);
+}
+
 export async function getAllTags(): Promise<Tag[]> {
   const posts = (await getAllPosts()) as Post[];
   const guides = (await getAllGuides()) as Guide[];
 
-  // Collect all tags from posts and guides
-  // Use slug as key to handle both case-insensitive duplicates and slug conflicts
-  const tagMap = new Map<string, { name: string; count: number }>();
-
-  const processTag = (tag: string) => {
-    const slug = tagToSlug(tag);
-    const existing = tagMap.get(slug);
-
-    if (existing) {
-      // Increment count, keep the first occurrence's casing
-      tagMap.set(slug, {
-        name: existing.name,
-        count: existing.count + 1,
-      });
-    } else {
-      // First occurrence - use this tag's casing
-      tagMap.set(slug, {
-        name: tag,
-        count: 1,
-      });
-    }
-  };
-
-  // Process post tags
-  posts.forEach((post) => {
-    if (post.tags) {
-      post.tags.forEach(processTag);
-    }
-  });
-
-  // Process guide tags
-  guides.forEach((guide) => {
-    if (guide.tags) {
-      guide.tags.forEach(processTag);
-    }
-  });
-
-  // Convert to array and sort by count (descending)
-  const tags = Array.from(tagMap.entries()).map(([slug, { name, count }]) => ({
-    name,
-    slug,
-    count,
-  }));
-
-  return tags.sort((a, b) => b.count - a.count);
+  return countTags([...posts.map((post) => post.tags), ...guides.map((guide) => guide.tags)]);
 }
 
 // A tag used by fewer than this many items doesn't get its own page. A two- or
@@ -87,21 +77,11 @@ export async function getTagBySlug(slug: string): Promise<string | null> {
 }
 
 export async function getPostsByTagSlug(tagSlug: string): Promise<Post[]> {
-  const actualTag = await getTagBySlug(tagSlug);
-  if (!actualTag) return [];
-
   const posts = await getAllPosts();
-  return posts.filter(
-    (post) => post.tags && post.tags.some((tag) => tag.toLowerCase() === actualTag.toLowerCase())
-  );
+  return posts.filter((post) => hasTagSlug(post.tags, tagSlug));
 }
 
 export async function getGuidesByTagSlug(tagSlug: string): Promise<Guide[]> {
-  const actualTag = await getTagBySlug(tagSlug);
-  if (!actualTag) return [];
-
   const guides = await getAllGuides();
-  return guides.filter(
-    (guide) => guide.tags && guide.tags.some((tag) => tag.toLowerCase() === actualTag.toLowerCase())
-  );
+  return guides.filter((guide) => hasTagSlug(guide.tags, tagSlug));
 }

@@ -1,7 +1,7 @@
 import { GuideContent } from '@/components/guide-content';
 import { GuideSidebar } from '@/components/guide-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
-import { getGuideBySlug, getAllGuides, getRelatedGuides } from '@/lib/guides';
+import { getGuideBySlug, getAllGuides, getRelatedGuides, toGuideNav } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema, TechArticleSchema } from '@/components/schema-markup';
@@ -108,7 +108,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           <aside className="order-last lg:col-span-3 lg:order-first">
-            <GuideSidebar guide={guide} />
+            <GuideSidebar guide={toGuideNav(guide)} />
           </aside>
           <div className="lg:col-span-9">
             <article className="prose dark:prose-invert max-w-none">
