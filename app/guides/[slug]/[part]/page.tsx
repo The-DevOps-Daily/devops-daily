@@ -1,7 +1,7 @@
 import { GuideContent } from '@/components/guide-content';
 import { GuideSidebar } from '@/components/guide-sidebar';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
-import { getGuideBySlug, getAllGuides, getGuidePart, getRelatedGuides } from '@/lib/guides';
+import { getGuideBySlug, getAllGuides, getGuidePart, getRelatedGuides, toGuideNav } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema, TechArticleSchema } from '@/components/schema-markup';
@@ -161,7 +161,7 @@ export default async function GuidePartPage({
             <div className="flex flex-col gap-8 lg:flex-row">
               {/* Guide Navigation Sidebar */}
               <aside className="shrink-0 lg:w-80">
-                <GuideSidebar guide={guide} activePart={partSlug} />
+                <GuideSidebar guide={toGuideNav(guide)} activePart={partSlug} />
               </aside>
 
               {/* Article Content */}

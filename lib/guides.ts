@@ -24,6 +24,21 @@ export function toGuideSummary(guide: Guide): GuideSummary {
   return { ...rest, parts: parts.map(({ content: _c, ...part }) => part) };
 }
 
+/** Just what the client-side guide sidebar needs: titles and slugs, no bodies. */
+export type GuideNav = {
+  title: string;
+  slug: string;
+  parts: Array<{ title: string; slug: string }>;
+};
+
+export function toGuideNav(guide: Guide): GuideNav {
+  return {
+    title: guide.title,
+    slug: guide.slug,
+    parts: guide.parts.map(({ title, slug }) => ({ title, slug })),
+  };
+}
+
 export type Guide = {
   title: string;
   /**
