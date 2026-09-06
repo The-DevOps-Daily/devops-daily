@@ -9,7 +9,7 @@ import { crawlWebSources } from './crawler/web.js';
 import { normalizeItems } from './utils/normalize.js';
 import { deduplicate } from './utils/dedupe.js';
 import { applyLimits } from './utils/limit.js';
-import { isWithinLastDays, getCurrentWeek, getCurrentYear } from './utils/date.js';
+import { isWithinLastDays, getIsoWeekAndYear } from './utils/date.js';
 import { classifyItems } from './ai/classify.js';
 import { summarizeItems } from './ai/summarize.js';
 import { assembleDigest } from './pipeline/assemble.js';
@@ -25,6 +25,8 @@ async function main() {
   if (skipAI) {
     console.log('ℹ️  Running with --skip-ai flag (using keyword-based classification)\n');
   }
+  // --force allows replacing a digest file that already exists
+  const force = process.argv.includes('--force');
 
   try {
     // 1. Load sources
@@ -89,8 +91,7 @@ async function main() {
 
     // 10. Assemble digest
     console.log('📝 Assembling digest...');
-    const week = getCurrentWeek();
-    const year = getCurrentYear();
+    const { week, year } = getIsoWeekAndYear();
     const digest = assembleDigest(allItems, week, year);
     printStats(digest);
 
@@ -109,6 +110,16 @@ async function main() {
     const newsDir = path.join(process.cwd(), 'content', 'news', year.toString());
     await fs.mkdir(newsDir, { recursive: true });
     const filePath = path.join(newsDir, `week-${week}.md`);
+    const exists = await fs
+      .access(filePath)
+      .then(() => true)
+      .catch(() => false);
+    if (exists && !force) {
+      console.error(
+        `❌ ${filePath} already exists. Re-run with --force to replace that issue.`
+      );
+      process.exit(1);
+    }
     await fs.writeFile(filePath, markdown, 'utf-8');
     console.log(`  ✓ Written to: ${filePath}\n`);
 
