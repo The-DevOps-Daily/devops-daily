@@ -11,7 +11,6 @@ import {
   wrapChartLabel,
   median,
   percentile,
-  niceAxisTicks,
 } from '@/lib/post-charts';
 
 const BAR_SPEC = {

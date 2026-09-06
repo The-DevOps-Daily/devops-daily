@@ -203,16 +203,18 @@ function headingSlug(plain: string): string {
 function reserveHeadingIds(content: string): void {
   reservedHeadingIds.clear();
   const textRenderer = new TextRenderer();
-  for (const token of marked.lexer(content)) {
-    if (token.type !== 'heading') continue;
-    let plain = token.text;
+  // walkTokens visits nested tokens too (blockquotes, list items, callouts).
+  marked.walkTokens(marked.lexer(content), (token) => {
+    if (token.type !== 'heading') return;
+    const heading = token as Tokens.Heading;
+    let plain = heading.text;
     try {
-      plain = new Parser().parseInline(token.tokens, textRenderer);
+      plain = new Parser().parseInline(heading.tokens, textRenderer);
     } catch {
       // fall back to the raw heading text
     }
-    reservedHeadingIds.add(`h${token.depth}-${headingSlug(plain)}`);
-  }
+    reservedHeadingIds.add(`h${heading.depth}-${headingSlug(plain)}`);
+  });
 }
 
 function uniqueHeadingId(base: string): string {

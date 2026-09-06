@@ -46,6 +46,12 @@ describe('parseMarkdown sanitization', () => {
     expect(ids).toEqual(['h2-example', 'h2-example-2', 'h2-example-1']);
   });
 
+  it('reserves headings nested in blockquotes and lists too', () => {
+    const html = parseMarkdown('## Example\n\n## Example\n\n> ## Example 1\n');
+    const ids = [...html.matchAll(/<h2[^>]*id="([^"]+)"/g)].map((m) => m[1]);
+    expect(ids).toEqual(['h2-example', 'h2-example-2', 'h2-example-1']);
+  });
+
   it('treats a fence language named after an Object.prototype member as a plain code block', () => {
     expect(() => parseMarkdown('```constructor\nfoo\n```\n')).not.toThrow();
     const html = parseMarkdown('```toString\nfoo\n```\n');
