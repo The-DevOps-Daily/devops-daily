@@ -314,17 +314,17 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
 
   const jumpToLesson = useCallback(
     (index: number) => {
-      // A step completed inside the delay is applied before leaving, so the
-      // lesson is not left with a completed but unadvanced command (which the
-      // repeat guard would then refuse to advance again).
-      const pending = advanceTimer.current !== null;
       cancelPendingAdvance();
-      if (pending) advance();
+      // Resume at the first command not yet completed, so a step completed
+      // inside the advance delay (or on an earlier visit) is not presented
+      // again with the repeat guard refusing to advance past it.
+      const commands = lessons[index]?.commands ?? [];
+      const firstOpen = commands.findIndex((_, i) => !completedCommands.has(completionKey(index, i)));
       setCurrentLessonIndex(index);
-      setCurrentCommandIndex(0);
+      setCurrentCommandIndex(Math.max(0, firstOpen));
       setShowHint(false);
     },
-    [advance, cancelPendingAdvance]
+    [cancelPendingAdvance, completedCommands, lessons]
   );
 
   return {

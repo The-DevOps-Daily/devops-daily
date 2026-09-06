@@ -529,9 +529,13 @@ export default function OAuthOidcFlowSimulator() {
                     key={lesson.id}
                     type="button"
                     onClick={() => {
-                      cancelPendingAdvance()?.();
+                      cancelPendingAdvance();
+                      // Resume at the first action not yet completed.
+                      const firstOpen = lesson.actions.findIndex(
+                        (_, actionIndex) => !completedActions.has(`${lessonIndex}-${actionIndex}`)
+                      );
                       setCurrentLessonIndex(lessonIndex);
-                      setCurrentActionIndex(0);
+                      setCurrentActionIndex(Math.max(0, firstOpen));
                       setShowHint(false);
                     }}
                     className={cn(
