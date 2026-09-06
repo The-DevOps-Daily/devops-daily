@@ -16,7 +16,7 @@ import {
   Trophy,
 } from 'lucide-react'
 import Link from 'next/link'
-import * as Icons from 'lucide-react'
+import { FlashcardIcon } from '@/components/flashcard-icon'
 
 export const metadata: Metadata = {
   title: 'DevOps Flashcards',
@@ -75,7 +75,6 @@ export default async function FlashcardsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {flashcardSets.map((set) => {
-              const IconComponent = Icons[set.icon as keyof typeof Icons] || BookOpen
               const difficultyColors = {
                 beginner: 'bg-green-500',
                 intermediate: 'bg-yellow-500',
@@ -95,7 +94,7 @@ export default async function FlashcardsPage() {
                           background: `linear-gradient(135deg, ${set.theme.gradientFrom}, ${set.theme.gradientTo})`,
                         }}
                       >
-                        <IconComponent className="w-6 h-6" />
+                        <FlashcardIcon name={set.icon} className="w-6 h-6" />
                       </div>
                       <Badge
                         variant="secondary"

@@ -8,7 +8,7 @@ import {
 } from '@/content/interview-questions';
 import { PageHero } from '@/components/page-hero';
 import { QuestionBrowser } from '@/components/interview-questions/question-browser';
-import type { ExperienceTier } from '@/lib/interview-utils';
+import { toQuestionSummary, type ExperienceTier } from '@/lib/interview-utils';
 
 export const metadata: Metadata = {
   title: 'DevOps Interview Questions | The DevOps Daily',
@@ -177,7 +177,7 @@ export default function InterviewQuestionsPage() {
               </Link>
             </div>
           </div>
-          <QuestionBrowser questions={interviewQuestions} />
+          <QuestionBrowser questions={interviewQuestions.map(toQuestionSummary)} />
         </section>
 
         {/* Browse by topic */}

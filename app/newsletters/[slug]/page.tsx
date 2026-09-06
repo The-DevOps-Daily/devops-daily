@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getAllNewsletters, getNewsletterBySlug } from '@/lib/newsletters';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { CarbonAds } from '@/components/carbon-ads';
-import { MarkdownHtml } from '@/components/markdown-content';
+import { MarkdownHtml } from '@/components/markdown-html';
 import { Mail, ArrowLeft, Calendar } from 'lucide-react';
 import type { Metadata } from 'next';
 import { NewsletterForm } from '@/components/footer/newsletter-form';

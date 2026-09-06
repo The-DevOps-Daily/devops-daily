@@ -8,13 +8,13 @@ import { tagToSlug } from '@/lib/tag-utils';
 import {
   getDifficultyColor,
   getInterviewProgress,
-  type InterviewQuestion,
+  type InterviewQuestionSummary,
   type ExperienceTier,
   type Difficulty,
 } from '@/lib/interview-utils';
 
 interface QuestionBrowserProps {
-  questions: InterviewQuestion[];
+  questions: InterviewQuestionSummary[];
   /** Fixed tier (tier landing pages) — hides the tier filter. */
   lockedTier?: ExperienceTier;
   /** Fixed topic slug (topic landing pages) — hides the topic filter. */

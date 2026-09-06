@@ -5,7 +5,7 @@ import { QuestionBrowser } from '@/components/interview-questions/question-brows
 import { PageHero } from '@/components/page-hero';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { Briefcase } from 'lucide-react';
-import type { ExperienceTier } from '@/lib/interview-utils';
+import { toQuestionSummary, type ExperienceTier } from '@/lib/interview-utils';
 
 const validTiers: ExperienceTier[] = ['junior', 'mid', 'senior'];
 
@@ -105,7 +105,10 @@ export default async function TierPage({ params }: PageProps) {
       />
 
       <div className="container mx-auto px-4 max-w-4xl py-10">
-        <QuestionBrowser questions={questions} lockedTier={tier as ExperienceTier} />
+        <QuestionBrowser
+          questions={questions.map(toQuestionSummary)}
+          lockedTier={tier as ExperienceTier}
+        />
       </div>
     </>
   );
