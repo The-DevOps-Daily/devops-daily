@@ -160,6 +160,9 @@ export function niceAxisTicks(min: number, max: number, targetIntervals = 4): nu
   const first = Math.floor(min / step) * step;
   const last = Math.ceil(max / step) * step;
   const count = Math.round((last - first) / step);
+  // Values near the float limit overflow the rounded bounds; a two-tick axis
+  // keeps the chart drawable instead of asking for an infinite array.
+  if (![step, first, last, count].every(Number.isFinite) || count > 1000) return [min, max];
 
   return Array.from({ length: count + 1 }, (_, i) => Number((first + i * step).toPrecision(12)));
 }

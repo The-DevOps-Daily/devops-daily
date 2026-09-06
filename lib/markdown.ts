@@ -1,4 +1,4 @@
-import { marked, type Tokens, type TokenizerAndRendererExtension } from 'marked';
+import { marked, type Tokens, type TokenizerAndRendererExtension, Parser, TextRenderer } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
 import hljs, { type HLJSApi, type Language } from 'highlight.js';
@@ -183,12 +183,41 @@ const INTERACTIVE_FENCES: Record<string, { className: string; attr: string; vali
 };
 
 // Heading ids already used in the document being parsed; reset per parse so a
-// repeated heading gets a numbered suffix instead of a duplicate anchor.
+// repeated heading gets a numbered suffix instead of a duplicate anchor. The
+// base ids of every heading in the document are reserved up front, so a
+// suffix never takes the id a later heading ("Example 1" after two "Example")
+// would have had on its own; links to first occurrences stay stable.
 const usedHeadingIds = new Set<string>();
+const reservedHeadingIds = new Set<string>();
+
+function headingSlug(plain: string): string {
+  return plain
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function reserveHeadingIds(content: string): void {
+  reservedHeadingIds.clear();
+  const textRenderer = new TextRenderer();
+  for (const token of marked.lexer(content)) {
+    if (token.type !== 'heading') continue;
+    let plain = token.text;
+    try {
+      plain = new Parser().parseInline(token.tokens, textRenderer);
+    } catch {
+      // fall back to the raw heading text
+    }
+    reservedHeadingIds.add(`h${token.depth}-${headingSlug(plain)}`);
+  }
+}
 
 function uniqueHeadingId(base: string): string {
   let id = base;
-  for (let n = 1; usedHeadingIds.has(id); n++) id = `${base}-${n}`;
+  for (let n = 1; usedHeadingIds.has(id) || (id !== base && reservedHeadingIds.has(id)); n++) id = `${base}-${n}`;
   usedHeadingIds.add(id);
   return id;
 }
@@ -198,7 +227,9 @@ function uniqueHeadingId(base: string): string {
 marked.use({
   renderer: {
     code({ text, lang }: Tokens.Code) {
-      const fence = lang ? INTERACTIVE_FENCES[lang] : undefined;
+      // Own-property lookup: a fence language such as "constructor" must not
+      // resolve to something inherited from Object.prototype.
+      const fence = lang && Object.prototype.hasOwnProperty.call(INTERACTIVE_FENCES, lang) ? INTERACTIVE_FENCES[lang] : undefined;
       if (fence) {
         if (fence.valid(text)) {
           return `<div class="${fence.className} not-prose" ${fence.attr}="${escapeHtml(JSON.stringify(JSON.parse(text)))}"></div>`;
@@ -224,13 +255,7 @@ marked.use({
       const headingTag = `h${depth}`;
 
       // Create a simple slug from the text with heading level prefix to avoid duplicates
-      const baseSlug = plain
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, '') // Remove special characters
-        .replace(/\s+/g, '-') // Replace spaces with hyphens
-        .replace(/-+/g, '-') // Replace multiple hyphens with single
-        .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+      const baseSlug = headingSlug(plain);
 
       // Heading level prefix plus a per-document suffix for repeats
       const slug = uniqueHeadingId(`h${depth}-${baseSlug}`);
@@ -380,6 +405,7 @@ export function sanitizeRenderedHtml(html: string): string {
 
 export function parseMarkdown(content: string): string {
   usedHeadingIds.clear();
+  reserveHeadingIds(content);
   const result = marked.parse(content);
   return typeof result === 'string' ? sanitizeRenderedHtml(result) : '';
 }

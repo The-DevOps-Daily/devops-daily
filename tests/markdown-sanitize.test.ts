@@ -40,6 +40,19 @@ describe('parseMarkdown sanitization', () => {
     expect(html).toContain('id="h2-the-img-srcx-onerroralert1-element"');
   });
 
+  it('never gives a duplicate heading the id a later heading has on its own', () => {
+    const html = parseMarkdown('## Example\n\n## Example\n\n## Example 1\n');
+    const ids = [...html.matchAll(/<h2[^>]*id="([^"]+)"/g)].map((m) => m[1]);
+    expect(ids).toEqual(['h2-example', 'h2-example-2', 'h2-example-1']);
+  });
+
+  it('treats a fence language named after an Object.prototype member as a plain code block', () => {
+    expect(() => parseMarkdown('```constructor\nfoo\n```\n')).not.toThrow();
+    const html = parseMarkdown('```toString\nfoo\n```\n');
+    expect(html).toContain('language-toString');
+    expect(html).not.toContain('data-terminal');
+  });
+
   it('gives repeated headings distinct ids and resets between documents', () => {
     const html = parseMarkdown('### Example Output\n\none\n\n### Example Output\n\ntwo\n\n## Example Output');
     expect(html).toContain('id="h3-example-output"');

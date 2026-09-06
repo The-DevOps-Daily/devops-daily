@@ -11,6 +11,7 @@ import {
   wrapChartLabel,
   median,
   percentile,
+  niceAxisTicks,
 } from '@/lib/post-charts';
 
 const BAR_SPEC = {
@@ -243,6 +244,13 @@ describe('interactive fence validation', () => {
 });
 
 describe('logAxisTicks', () => {
+  it('linear ticks stay finite for values near the float limit', () => {
+    const ticks = niceAxisTicks(0, 1.7e308);
+    expect(ticks.every(Number.isFinite)).toBe(true);
+    expect(ticks.length).toBeGreaterThanOrEqual(2);
+    expect(ticks.length).toBeLessThan(1002);
+  });
+
   it('returns decade ticks spanning the data', () => {
     expect(logAxisTicks([3, 4000])).toEqual({ lo: 1, hi: 10000, ticks: [1, 10, 100, 1000, 10000] });
   });
