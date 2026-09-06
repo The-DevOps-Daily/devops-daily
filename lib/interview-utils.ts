@@ -33,6 +33,32 @@ export interface InterviewQuestion {
   }>;
 }
 
+/** The fields the browsing pages need. Answers and examples stay on detail/practice routes. */
+export type InterviewQuestionSummary = Pick<
+  InterviewQuestion,
+  'id' | 'slug' | 'title' | 'question' | 'category' | 'difficulty' | 'tier' | 'tags'
+>;
+
+export const toQuestionSummary = ({
+  id,
+  slug,
+  title,
+  question,
+  category,
+  difficulty,
+  tier,
+  tags,
+}: InterviewQuestion): InterviewQuestionSummary => ({
+  id,
+  slug,
+  title,
+  question,
+  category,
+  difficulty,
+  tier,
+  tags,
+});
+
 export interface InterviewQuestionProgress {
   [questionId: string]: {
     reviewed: boolean;

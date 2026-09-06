@@ -1,7 +1,7 @@
 import { GuideContent } from '@/components/guide-content';
 import { GuideSidebar } from '@/components/guide-sidebar';
 import { SponsorSidebar } from '@/components/sponsor-sidebar';
-import { getGuideBySlug, getAllGuides, getGuidePart, getRelatedGuides, toGuideNav } from '@/lib/guides';
+import { getGuideBySlug, getAllGuides, getRelatedGuides, toGuideNav } from '@/lib/guides';
 import { notFound } from 'next/navigation';
 import { Breadcrumb } from '@/components/breadcrumb';
 import { BreadcrumbSchema, TechArticleSchema } from '@/components/schema-markup';
@@ -96,13 +96,11 @@ export default async function GuidePartPage({
     notFound();
   }
 
-  const partContent = await getGuidePart(slug, partSlug);
+  const currentPart = guide.parts.find((p) => p.slug === partSlug);
 
-  if (!partContent) {
+  if (!currentPart) {
     notFound();
   }
-
-  const currentPart = guide.parts.find((p) => p.slug === partSlug);
 
   // Find the current part's index and determine previous and next parts
   const currentPartIndex = guide.parts.findIndex((p) => p.slug === partSlug);
@@ -180,7 +178,7 @@ export default async function GuidePartPage({
                 )}
 
                 <div className="dark:prose-invert max-w-none">
-                  <GuideContent content={partContent} />
+                  <GuideContent content={currentPart.content} />
                 </div>
 
                 {/* Navigation buttons */}

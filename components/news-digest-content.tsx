@@ -2,7 +2,7 @@
 
 import { CodeBlockWrapper } from '@/components/code-block-wrapper';
 import { HeadingWrapper } from '@/components/heading-with-anchor';
-import { MarkdownHtml } from '@/components/markdown-content';
+import { MarkdownHtml } from '@/components/markdown-html';
 import { useEffect, useRef } from 'react';
 
 interface NewsDigestContentProps {

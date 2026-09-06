@@ -1,7 +1,12 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { getGuideImagePath } from './image-utils';
-import { createCachedLoader, isFileNotFound, readMarkdownFile } from './content-loader';
+import {
+  CONTENT_CACHE_DURATION,
+  createCachedLoader,
+  isFileNotFound,
+  readMarkdownFile,
+} from './content-loader';
 import { rankRelatedByScore } from './related-content';
 
 const GUIDES_DIR = path.join(process.cwd(), 'content', 'guides');
@@ -84,7 +89,7 @@ export async function getAllGuides(): Promise<Guide[]> {
   return loadGuides();
 }
 
-export async function getGuideBySlug(slug: string): Promise<Guide | null> {
+async function loadGuide(slug: string): Promise<Guide | null> {
   const guideDir = path.join(GUIDES_DIR, slug);
   try {
     const guide = await readMarkdownFile<Guide, Partial<Guide>>(
@@ -137,19 +142,22 @@ export async function getGuideBySlug(slug: string): Promise<Guide | null> {
   }
 }
 
-export async function getGuidePart(guideSlug: string, partSlug: string): Promise<string | null> {
-  const guideDir = path.join(GUIDES_DIR, guideSlug);
-  try {
-    return await readMarkdownFile<string>(
-      path.join(guideDir, `${partSlug}.md`),
-      (_, content) => content
-    );
-  } catch (error) {
-    if (isFileNotFound(error)) {
-      return null;
-    }
-    throw error;
+// Per-slug promise cache so metadata + page renders (and getAllGuides) share one read.
+const guideCache = new Map<string, { promise: Promise<Guide | null>; loadedAt: number }>();
+
+export function getGuideBySlug(slug: string): Promise<Guide | null> {
+  const now = Date.now();
+  const cached = guideCache.get(slug);
+  if (cached && now - cached.loadedAt < CONTENT_CACHE_DURATION) {
+    return cached.promise;
   }
+
+  const promise = loadGuide(slug).catch((error) => {
+    guideCache.delete(slug);
+    throw error;
+  });
+  guideCache.set(slug, { promise, loadedAt: now });
+  return promise;
 }
 
 export async function getGuidesByCategory(categorySlug: string) {

@@ -1,7 +1,8 @@
 import { parseMarkdown } from '@/lib/markdown';
 import { CodeBlockWrapper } from '@/components/code-block-wrapper';
 import { HeadingWrapper } from '@/components/heading-with-anchor';
-import { MarkdownContent, MarkdownHtml } from '@/components/markdown-content';
+import { MarkdownContent } from '@/components/markdown-content';
+import { MarkdownHtml } from '@/components/markdown-html';
 import { SolutionReveal } from '@/components/advent-solution-reveal';
 
 interface AdventPostContentProps {

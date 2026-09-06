@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, BookOpen, Clock, Layers } from 'lucide-react'
 import Link from 'next/link'
-import * as Icons from 'lucide-react'
+import { FlashcardIcon } from '@/components/flashcard-icon'
 import { PageHero } from '@/components/page-hero'
 import { truncateMetaDescription } from '@/lib/meta-description'
 import { detailPageMetadata } from '@/lib/metadata-utils'
@@ -59,7 +59,6 @@ export default async function FlashcardPage({ params }: FlashcardPageProps) {
     notFound()
   }
 
-  const IconComponent = Icons[flashcardSet.icon as keyof typeof Icons] || BookOpen
   const difficultyColors = {
     beginner: 'bg-green-500',
     intermediate: 'bg-yellow-500',
@@ -88,7 +87,7 @@ export default async function FlashcardPage({ params }: FlashcardPageProps) {
                 background: `linear-gradient(135deg, ${flashcardSet.theme.gradientFrom}, ${flashcardSet.theme.gradientTo})`,
               }}
             >
-              <IconComponent className="w-8 h-8" />
+              <FlashcardIcon name={flashcardSet.icon} className="w-8 h-8" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">

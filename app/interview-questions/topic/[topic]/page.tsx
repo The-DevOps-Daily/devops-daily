@@ -9,6 +9,7 @@ import {
 import { QuestionBrowser } from '@/components/interview-questions/question-browser';
 import { PageHero } from '@/components/page-hero';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { toQuestionSummary } from '@/lib/interview-utils';
 
 interface PageProps {
   params: Promise<{ topic: string }>;
@@ -84,7 +85,7 @@ export default async function TopicPage({ params }: PageProps) {
       />
 
       <div className="container mx-auto px-4 max-w-4xl py-10">
-        <QuestionBrowser questions={questions} lockedTopicSlug={topic.slug} />
+        <QuestionBrowser questions={questions.map(toQuestionSummary)} lockedTopicSlug={topic.slug} />
       </div>
     </>
   );
