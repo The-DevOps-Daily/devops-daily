@@ -40,6 +40,19 @@ describe('parseMarkdown sanitization', () => {
     expect(html).toContain('id="h2-the-img-srcx-onerroralert1-element"');
   });
 
+  it('gives repeated headings distinct ids and resets between documents', () => {
+    const html = parseMarkdown('### Example Output\n\none\n\n### Example Output\n\ntwo\n\n## Example Output');
+    expect(html).toContain('id="h3-example-output"');
+    expect(html).toContain('id="h3-example-output-1"');
+    expect(html).toContain('href="#h3-example-output-1"');
+    expect(html).toContain('data-heading-id="h3-example-output-1"');
+    expect(html).toContain('id="h2-example-output"');
+
+    const again = parseMarkdown('### Example Output');
+    expect(again).toContain('id="h3-example-output"');
+    expect(again).not.toContain('h3-example-output-1');
+  });
+
   it('adds rel=noopener to external links and leaves internal ones alone', () => {
     const html = parseMarkdown('[ext](https://example.com) [int](/posts/x)');
     expect(html).toMatch(/<a href="https:\/\/example.com"[^>]*rel="noopener noreferrer"/);

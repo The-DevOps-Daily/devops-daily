@@ -164,6 +164,30 @@ export function niceAxisTicks(min: number, max: number, targetIntervals = 4): nu
   return Array.from({ length: count + 1 }, (_, i) => Number((first + i * step).toPrecision(12)));
 }
 
+export interface LogAxis {
+  lo: number;
+  hi: number;
+  ticks: number[];
+}
+
+/** Decade bounds and ticks for a log10 axis. Returns null when the values
+ *  cannot sit on one: any value <= 0, a decade bound that underflows to 0 or
+ *  overflows to Infinity, or more decades than fit on a chart. Callers fall
+ *  back to a linear axis in that case. */
+export function logAxisTicks(values: number[], maxDecades = 24): LogAxis | null {
+  if (values.length === 0 || !values.every((v) => Number.isFinite(v) && v > 0)) return null;
+  const e0 = Math.floor(Math.log10(Math.min(...values)));
+  let e1 = Math.ceil(Math.log10(Math.max(...values)));
+  if (e1 === e0) e1 += 1;
+  if (e1 - e0 > maxDecades) return null;
+  const lo = 10 ** e0;
+  const hi = 10 ** e1;
+  if (!(lo > 0) || !Number.isFinite(hi)) return null;
+  const ticks: number[] = [];
+  for (let e = e0; e <= e1; e++) ticks.push(10 ** e);
+  return { lo, hi, ticks };
+}
+
 /** Wrap a chart label at a word boundary and cap the second line so labels can
  * never spill into the plot area. */
 export function wrapChartLabel(label: string, maxChars = 28): string[] {
