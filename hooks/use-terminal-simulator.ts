@@ -324,7 +324,7 @@ export function useTerminalSimulator<C extends SimulatorLessonCommand>({
       setCurrentCommandIndex(Math.max(0, firstOpen));
       setShowHint(false);
     },
-    [cancelPendingAdvance, completedCommands, lessons]
+    [cancelPendingAdvance, completedCommands, completionKey, lessons]
   );
 
   return {
