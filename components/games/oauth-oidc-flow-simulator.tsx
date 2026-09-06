@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -390,6 +390,20 @@ export default function OAuthOidcFlowSimulator() {
     return !action.requires?.some((token) => !tokens[token]);
   };
 
+  // A delayed advance still pending, with the step it applies. Cancelled on
+  // reset and unmount; applied first on a lesson change so the step is not
+  // left completed but unadvanced.
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingAdvance = useRef<(() => void) | null>(null);
+  const cancelPendingAdvance = () => {
+    const pending = pendingAdvance.current;
+    if (advanceTimer.current !== null) clearTimeout(advanceTimer.current);
+    advanceTimer.current = null;
+    pendingAdvance.current = null;
+    return pending;
+  };
+  useEffect(() => () => { cancelPendingAdvance(); }, []);
+
   const runAction = (action = currentAction) => {
     if (!canRunAction(action)) {
       appendLog({
@@ -425,9 +439,9 @@ export default function OAuthOidcFlowSimulator() {
     appendLog({ type: action.warning ? 'warning' : 'success', content: action.insight });
 
     const key = `${currentLessonIndex}-${currentActionIndex}`;
-    if (action === currentAction && !completedActions.has(key)) {
+    if (action === currentAction && !completedActions.has(key) && advanceTimer.current === null) {
       setCompletedActions((prev) => new Set(prev).add(key));
-      setTimeout(() => {
+      const advance = () => {
         if (currentActionIndex < currentLesson.actions.length - 1) {
           setCurrentActionIndex((index) => index + 1);
         } else if (currentLessonIndex < LESSONS.length - 1) {
@@ -435,11 +449,18 @@ export default function OAuthOidcFlowSimulator() {
           setCurrentActionIndex(0);
         }
         setShowHint(false);
+      };
+      pendingAdvance.current = advance;
+      advanceTimer.current = setTimeout(() => {
+        advanceTimer.current = null;
+        pendingAdvance.current = null;
+        advance();
       }, 550);
     }
   };
 
   const resetLab = () => {
+    cancelPendingAdvance();
     setCurrentLessonIndex(0);
     setCurrentActionIndex(0);
     setCompletedActions(new Set());
@@ -508,6 +529,7 @@ export default function OAuthOidcFlowSimulator() {
                     key={lesson.id}
                     type="button"
                     onClick={() => {
+                      cancelPendingAdvance()?.();
                       setCurrentLessonIndex(lessonIndex);
                       setCurrentActionIndex(0);
                       setShowHint(false);
