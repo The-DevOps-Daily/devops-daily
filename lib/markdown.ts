@@ -1,8 +1,11 @@
-import { marked, type Tokens, type TokenizerAndRendererExtension } from 'marked';
+import { marked, type Tokens, type TokenizerAndRendererExtension, Parser, TextRenderer } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import { gfmHeadingId } from 'marked-gfm-heading-id';
 import hljs, { type HLJSApi, type Language } from 'highlight.js';
 import sanitizeHtml from 'sanitize-html';
+import { parseChartSpec } from './post-charts';
+import { parseTerminalSpec, parseTabsSpec } from './post-interactive';
+import { parseDiagramSpec } from './post-diagram';
 
 // Import specific languages for better support
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -169,55 +172,73 @@ function parseRepoSlug(input: string): string | null {
   return null;
 }
 
+// Interactive fences become placeholder divs that the client wrappers hydrate.
+// The same parsers the wrappers use decide whether a fence is valid, so a spec
+// that would render as nothing on the client shows up as a code block instead.
+const INTERACTIVE_FENCES: Record<string, { className: string; attr: string; valid: (raw: string) => boolean }> = {
+  chart: { className: 'post-chart', attr: 'data-chart', valid: (raw) => parseChartSpec(raw) !== null },
+  terminal: { className: 'post-terminal', attr: 'data-terminal', valid: (raw) => parseTerminalSpec(raw) !== null },
+  tabs: { className: 'post-tabs', attr: 'data-tabs', valid: (raw) => parseTabsSpec(raw) !== null },
+  diagram: { className: 'post-diagram', attr: 'data-diagram', valid: (raw) => parseDiagramSpec(raw) !== null },
+};
+
+// Heading ids already used in the document being parsed; reset per parse so a
+// repeated heading gets a numbered suffix instead of a duplicate anchor. The
+// base ids of every heading in the document are reserved up front, so a
+// suffix never takes the id a later heading ("Example 1" after two "Example")
+// would have had on its own; links to first occurrences stay stable.
+const usedHeadingIds = new Set<string>();
+const reservedHeadingIds = new Set<string>();
+
+function headingSlug(plain: string): string {
+  return plain
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function reserveHeadingIds(content: string): void {
+  reservedHeadingIds.clear();
+  const textRenderer = new TextRenderer();
+  // walkTokens visits nested tokens too (blockquotes, list items, callouts).
+  marked.walkTokens(marked.lexer(content), (token) => {
+    if (token.type !== 'heading') return;
+    const heading = token as Tokens.Heading;
+    let plain = heading.text;
+    try {
+      plain = new Parser().parseInline(heading.tokens, textRenderer);
+    } catch {
+      // fall back to the raw heading text
+    }
+    reservedHeadingIds.add(`h${heading.depth}-${headingSlug(plain)}`);
+  });
+}
+
+function uniqueHeadingId(base: string): string {
+  let id = base;
+  for (let n = 1; usedHeadingIds.has(id) || (id !== base && reservedHeadingIds.has(id)); n++) id = `${base}-${n}`;
+  usedHeadingIds.add(id);
+  return id;
+}
+
 // Custom renderer: headings get anchor links, and ```chart fences become
 // placeholders that ChartBlockWrapper hydrates client-side.
 marked.use({
   renderer: {
     code({ text, lang }: Tokens.Code) {
-      if (lang === 'chart') {
-        try {
-          const spec = JSON.parse(text);
-          if (spec && typeof spec === 'object' && spec.type) {
-            return `<div class="post-chart not-prose" data-chart="${escapeHtml(JSON.stringify(spec))}"></div>`;
-          }
-        } catch {
-          // malformed spec: fall through to a visible code block so the
-          // mistake is obvious in the rendered post instead of a blank hole
+      // Own-property lookup: a fence language such as "constructor" must not
+      // resolve to something inherited from Object.prototype.
+      const fence = lang && Object.prototype.hasOwnProperty.call(INTERACTIVE_FENCES, lang) ? INTERACTIVE_FENCES[lang] : undefined;
+      if (fence) {
+        if (fence.valid(text)) {
+          return `<div class="${fence.className} not-prose" ${fence.attr}="${escapeHtml(JSON.stringify(JSON.parse(text)))}"></div>`;
         }
-        return `<pre><code class="hljs language-chart">${escapeHtml(text)}</code></pre>`;
-      }
-      if (lang === 'terminal') {
-        try {
-          const spec = JSON.parse(text);
-          if (spec && typeof spec === 'object' && Array.isArray(spec.steps)) {
-            return `<div class="post-terminal not-prose" data-terminal="${escapeHtml(JSON.stringify(spec))}"></div>`;
-          }
-        } catch {
-          // fall through to a visible code block
-        }
-        return `<pre><code class="hljs language-terminal">${escapeHtml(text)}</code></pre>`;
-      }
-      if (lang === 'tabs') {
-        try {
-          const spec = JSON.parse(text);
-          if (spec && typeof spec === 'object' && Array.isArray(spec.tabs)) {
-            return `<div class="post-tabs not-prose" data-tabs="${escapeHtml(JSON.stringify(spec))}"></div>`;
-          }
-        } catch {
-          // fall through to a visible code block
-        }
-        return `<pre><code class="hljs language-tabs">${escapeHtml(text)}</code></pre>`;
-      }
-      if (lang === 'diagram') {
-        try {
-          const spec = JSON.parse(text);
-          if (spec && typeof spec === 'object' && typeof spec.type === 'string') {
-            return `<div class="post-diagram not-prose" data-diagram="${escapeHtml(JSON.stringify(spec))}"></div>`;
-          }
-        } catch {
-          // fall through to a visible code block
-        }
-        return `<pre><code class="hljs language-diagram">${escapeHtml(text)}</code></pre>`;
+        // malformed or incomplete spec: a visible code block makes the
+        // mistake obvious in the rendered post instead of a blank hole
+        return `<pre><code class="hljs language-${lang}">${escapeHtml(text)}</code></pre>`;
       }
       if (lang === 'github') {
         const slug = parseRepoSlug(text);
@@ -236,16 +257,10 @@ marked.use({
       const headingTag = `h${depth}`;
 
       // Create a simple slug from the text with heading level prefix to avoid duplicates
-      const baseSlug = plain
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, '') // Remove special characters
-        .replace(/\s+/g, '-') // Replace spaces with hyphens
-        .replace(/-+/g, '-') // Replace multiple hyphens with single
-        .replace(/^-|-$/g, ''); // Remove leading/trailing hyphens
+      const baseSlug = headingSlug(plain);
 
-      // Add heading level prefix to ensure uniqueness (h1-, h2-, h3-, etc.)
-      const slug = `h${depth}-${baseSlug}`;
+      // Heading level prefix plus a per-document suffix for repeats
+      const slug = uniqueHeadingId(`h${depth}-${baseSlug}`);
 
       return `<${headingTag} id="${slug}" class="group relative scroll-mt-24">
         <a href="#${slug}" class="no-underline text-inherit hover:text-inherit focus:outline-none focus:ring-0 focus:ring-offset-0">
@@ -391,6 +406,8 @@ export function sanitizeRenderedHtml(html: string): string {
 }
 
 export function parseMarkdown(content: string): string {
+  usedHeadingIds.clear();
+  reserveHeadingIds(content);
   const result = marked.parse(content);
   return typeof result === 'string' ? sanitizeRenderedHtml(result) : '';
 }

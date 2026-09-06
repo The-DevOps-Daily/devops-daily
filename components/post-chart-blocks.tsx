@@ -15,6 +15,7 @@ import {
   barValueColumnWidth,
   formatAxisValue,
   niceAxisTicks,
+  logAxisTicks,
   wrapChartLabel,
   median,
   percentile,
@@ -168,21 +169,20 @@ function LineChart({ spec }: { spec: ChartSpec }) {
   const padB = 34;
   const points = Math.max(...series.map((s) => s.data.length));
   const refs = spec.refs ?? [];
-  const all = [...series.flatMap((s) => s.data), ...(spec.log ? [] : refs.map((r) => r.value))];
+  const data = series.flatMap((s) => s.data);
 
   // Log axis (opt-in): spreads a squished low end next to a large spike. Falls
-  // back to linear when any value is <= 0, since log10 is undefined there.
-  const canLog = spec.log && all.every((v) => v > 0);
+  // back to linear when the values cannot sit on a log scale (any <= 0, or
+  // decade bounds that leave the finite range).
+  const logAxis = spec.log ? logAxisTicks(data) : null;
+  const all = logAxis ? data : [...data, ...refs.map((r) => r.value)];
   let yTicks: number[];
   let scaleY: (v: number) => number;
-  if (canLog) {
-    const loB = 10 ** Math.floor(Math.log10(Math.min(...all)));
-    let hiB = 10 ** Math.ceil(Math.log10(Math.max(...all)));
-    if (hiB === loB) hiB *= 10;
+  if (logAxis) {
+    const { lo: loB, hi: hiB, ticks } = logAxis;
     const lg = (v: number) => Math.log10(Math.max(v, loB));
     scaleY = (v: number) => (lg(v) - lg(loB)) / (lg(hiB) - lg(loB));
-    yTicks = [];
-    for (let t = loB; t <= hiB + 1e-6; t *= 10) yTicks.push(t);
+    yTicks = ticks;
   } else {
     const dataMin = Math.min(0, Math.min(...all));
     const dataMax = Math.max(...all);

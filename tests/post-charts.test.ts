@@ -7,6 +7,7 @@ import {
   barValueColumnWidth,
   formatAxisValue,
   niceAxisTicks,
+  logAxisTicks,
   wrapChartLabel,
   median,
   percentile,
@@ -53,6 +54,14 @@ describe('post chart embeds', () => {
     expect(html).not.toContain('post-chart');
     expect(html).toContain('language-chart');
     expect(html).toContain('{ not json');
+  });
+
+  it('renders a chart spec the client parser rejects as a code block', () => {
+    // Valid JSON with the right shape but bad values: the client would return
+    // null and leave the placeholder blank.
+    const html = parseMarkdown('```chart\n{"type":"line","series":[{"name":"x","data":["a"]}]}\n```');
+    expect(html).not.toContain('post-chart');
+    expect(html).toContain('language-chart');
   });
 
   it('leaves other code fences untouched', () => {
@@ -199,5 +208,74 @@ describe('paddedDomain', () => {
       expect(hi).toBeGreaterThan(lo);
       expect(Number.isFinite(lo) && Number.isFinite(hi)).toBe(true);
     }
+  });
+});
+
+describe('interactive fence validation', () => {
+  it('renders a terminal step with a non-string cmd as a code block', () => {
+    const html = parseMarkdown('```terminal\n{"steps":[{"cmd":123}]}\n```');
+    expect(html).not.toContain('post-terminal');
+    expect(html).toContain('language-terminal');
+    expect(html).toContain('{"steps":[{"cmd":123}]}');
+  });
+
+  it('keeps a valid terminal spec as a placeholder', () => {
+    const html = parseMarkdown('```terminal\n{"steps":[{"cmd":"pwd","output":"/app"}]}\n```');
+    expect(html).toMatch(/<div class="post-terminal not-prose" data-terminal="[^"]+"><\/div>/);
+  });
+
+  it('renders tabs without a usable tab as a code block', () => {
+    const html = parseMarkdown('```tabs\n{"tabs":[{"label":"a"}]}\n```');
+    expect(html).not.toContain('post-tabs');
+    expect(html).toContain('language-tabs');
+  });
+
+  it('renders a diagram with an unknown type as a code block', () => {
+    const html = parseMarkdown('```diagram\n{"type":"pie","nodes":[{"label":"a"}]}\n```');
+    expect(html).not.toContain('post-diagram');
+    expect(html).toContain('language-diagram');
+  });
+
+  it('keeps a valid diagram spec as a placeholder', () => {
+    const html = parseMarkdown('```diagram\n{"type":"flow","nodes":[{"label":"a"},{"label":"b"}]}\n```');
+    expect(html).toMatch(/<div class="post-diagram not-prose" data-diagram="[^"]+"><\/div>/);
+  });
+});
+
+describe('logAxisTicks', () => {
+  it('linear ticks stay finite for values near the float limit', () => {
+    const ticks = niceAxisTicks(0, 1.7e308);
+    expect(ticks.every(Number.isFinite)).toBe(true);
+    expect(ticks.length).toBeGreaterThanOrEqual(2);
+    expect(ticks.length).toBeLessThan(1002);
+  });
+
+  it('returns decade ticks spanning the data', () => {
+    expect(logAxisTicks([3, 4000])).toEqual({ lo: 1, hi: 10000, ticks: [1, 10, 100, 1000, 10000] });
+  });
+
+  it('widens a single-decade range to one full decade', () => {
+    expect(logAxisTicks([5, 7])?.ticks).toEqual([1, 10]);
+  });
+
+  it('refuses values that are not strictly positive', () => {
+    expect(logAxisTicks([0, 10])).toBeNull();
+    expect(logAxisTicks([-1, 10])).toBeNull();
+    expect(logAxisTicks([])).toBeNull();
+  });
+
+  it('refuses a lower bound that underflows to zero', () => {
+    // 10 ** -324 is 0; multiplying it by ten forever never reaches the top.
+    expect(logAxisTicks([5e-324])).toBeNull();
+    expect(logAxisTicks([5e-324, 1])).toBeNull();
+  });
+
+  it('refuses an upper bound that overflows and a span too wide to draw', () => {
+    expect(logAxisTicks([1, 1.7e308])).toBeNull();
+    expect(logAxisTicks([1e-30, 1e30])).toBeNull();
+  });
+
+  it('accepts a wide but drawable range', () => {
+    expect(logAxisTicks([1e-3, 1e5])?.ticks).toHaveLength(9);
   });
 });
