@@ -32,7 +32,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Restore Next.js build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .next/cache
           key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs', '!**/node_modules/**', '!.next/**') }}
