@@ -64,6 +64,7 @@ export const sponsors: Sponsor[] = [
     tagline: 'Developer-first email API',
     description:
       'Send transactional and marketing email through a clean REST API. Detailed logs, webhooks, and embeddable signup forms in one dashboard.',
+    sidebarClassName: 'translate-x-2',
   },
   {
     name: 'QuizAPI',
@@ -72,6 +73,7 @@ export const sponsors: Sponsor[] = [
     tagline: 'Developer-first quiz platform',
     description:
       'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',
+    sidebarClassName: 'translate-x-2',
   },
 ];
 
