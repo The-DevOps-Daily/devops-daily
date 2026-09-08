@@ -19,7 +19,7 @@ export function InlineSponsors({
 }: InlineSponsorsProps) {
   if (variant === 'banner') {
     return (
-      <div className={cn('my-12', className)}>
+      <div className={cn('my-12', className)} data-nosnippet>
         <div className="relative rounded-2xl border border-border/50 overflow-hidden bg-linear-to-br from-primary/5 via-background to-primary/5">
           {/* Decorative elements */}
           <div className="absolute inset-0 opacity-30">

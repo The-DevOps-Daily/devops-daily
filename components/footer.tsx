@@ -53,7 +53,7 @@ export function Footer() {
         </div>
 
         {/* Footer bottom — terminal-style bar */}
-        <div className="mt-12 pt-6 border-t border-border/50">
+        <div className="mt-12 pt-6 border-t border-border/50" data-nosnippet>
           <div className="flex flex-col md:flex-row items-center justify-between gap-3 text-xs font-mono text-muted-foreground">
             <p className="tabular-nums">
               <span className="text-green-500/70">$</span> echo &quot;
