@@ -5,9 +5,252 @@
     <link>https://devops-daily.com</link>
     <description>The latest DevOps news, tutorials, and guides</description>
     <language>en</language>
-    <lastBuildDate>Sun, 06 Sep 2026 16:19:12 GMT</lastBuildDate>
+    <lastBuildDate>Mon, 07 Sep 2026 14:42:40 GMT</lastBuildDate>
     <atom:link href="https://devops-daily.com/feed.xml" rel="self" type="application/rss+xml"/>
     
+    <item>
+      <title><![CDATA[DevOps Weekly Digest - Week 37, 2026]]></title>
+      <link>https://devops-daily.com/news/2026-week-37</link>
+      <description><![CDATA[⚡ Curated updates from Kubernetes, cloud native tooling, CI/CD, IaC, observability, and security - handpicked for DevOps professionals!]]></description>
+      <pubDate>Mon, 07 Sep 2026 00:00:00 GMT</pubDate>
+      <guid isPermaLink="true">https://devops-daily.com/news/2026-week-37</guid>
+      <category><![CDATA[DevOps News]]></category>
+      <content:encoded><![CDATA[<blockquote>
+<p>📌 <strong>Handpicked by DevOps Daily</strong> - Your weekly dose of curated DevOps news and updates!</p>
+</blockquote>
+<hr />
+<h2>⚓ Kubernetes</h2><h3>📄 Kubernetes v1.37: KubeletInUserNamespace (aka Rootless mode) Graduates to Beta</h3><p>Kubernetes v1.37 promotes the KubeletInUserNamespace feature gate to beta. With this feature enabled, all of the node components (kubelet, CRI and OCI runtimes, CNI plugins, and kube-proxy) can run as</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 Kubernetes Blog</strong></p>
+<p><a href="https://kubernetes.io/blog/2026/09/04/kubernetes-v1-37-rootless-beta/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Kubernetes isn’t new, but AI makes It scary again</h3><p>Kubernetes isn’t brand new anymore. Yet, for many teams, adopting it still feels intimidating. Even if you’ve watched Kubernetes become the default foundation for production software and AI workloads,</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 CNCF Blog</strong></p>
+<p><a href="https://www.cncf.io/blog/2026/09/04/kubernetes-isnt-new-but-ai-makes-it-scary-again/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Kubernetes v1.37: DRA Updates</h3><p>Kubernetes 1.37 is here and Dynamic Resource Allocation (DRA) keeps pushing past where it started! This release brings DRA Extended Resource support to GA, a milestone the team has been building towar</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 Kubernetes Blog</strong></p>
+<p><a href="https://kubernetes.io/blog/2026/09/03/kubernetes-v1-37-dra-updates/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Agent Substrate, with Tim Hockin and Brandon Royal</h3><p>Tim Hockin is a long term software engineer with Google Cloud and I would argue one of the fathers of Kubernetes. Brandon Royal is a product manager on GKE and has been behind the launch of multiple O</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 Kubernetes Podcast</strong></p>
+<p><a href="https://e780d51f-f115-44a6-8252-aed9216bb521.libsyn.com/agent-sandbox-with-tim-hockin-and-brandon-royal" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 The architecture of autonomy: How ING built a future-proof tech strategy</h3><p>I recently sat down with Marco Eijsackers, ING’s Global Head of Tech Strategy, at their headquarters in Amsterdam. Serving over 40 million customers worldwide with an enterprise tech team of thousands</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 OpenShift Blog</strong></p>
+<p><a href="https://www.redhat.com/en/blog/architecture-autonomy-how-ing-built-future-proof-tech-strategy" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Kubernetes v1.37: Scale Workloads to Zero with HorizontalPodAutoscaler</h3><p>Kubernetes v1.37 includes API support for horizontal autoscaling of workloads down to zero replicas. This feature is now Beta and enabled by default. A HorizontalPodAutoscaler (HPA) that uses a suitab</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 Kubernetes Blog</strong></p>
+<p><a href="https://kubernetes.io/blog/2026/09/02/kubernetes-v1-37-hpa-scale-to-zero-beta/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Kubernetes v1.37: etcd RangeStream Cuts Memory Use on Large List Reads</h3><p>I am excited to announce that etcd RangeStream is graduating to beta in Kubernetes v1.37. Paired with etcd v3.7, it reduces the memory the API server and etcd need to read a large collection, and make</p>
+<p><strong>📅 Sep 1, 2026</strong> • <strong>📰 Kubernetes Blog</strong></p>
+<p><a href="https://kubernetes.io/blog/2026/09/01/kubernetes-v1-37-etcd-range-stream/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Fast model loading for AI inference on Amazon EKS</h3><p>When you scale AI inference on Amazon EKS, every new pod must load model weights into GPU memory before serving traffic. We investigated where cold-start time goes and found two configuration-only cha</p>
+<p><strong>📅 Sep 1, 2026</strong> • <strong>📰 AWS Containers Blog</strong></p>
+<p><a href="https://aws.amazon.com/blogs/containers/fast-model-loading-for-ai-inference-on-amazon-eks/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<hr />
+<h2>☁️ Cloud Native</h2><h3>📄 Safeguard your SUSE Virtualization workloads with Storware</h3><p>Key takeaways: Enterprise IT environments rarely run purely containerized applications. SUSE Virtualization unifies VM and container management on a single platform. Storware Backup and Recovery deliv</p>
+<p><strong>📅 Sep 5, 2026</strong> • <strong>📰 SUSE Blog</strong></p>
+<p><a href="https://www.suse.com/c/safeguard-your-suse-virtualization-workloads-with-storware/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Help us write what you need: Take the SUSE Documentation Survey 2026</h3><p>Key takeaways Docs-first focus: This survey collects feedback exclusively on technical documentation, content architecture and usability, not engineering feature requests or upstream kernel bugs. Full</p>
+<p><strong>📅 Sep 5, 2026</strong> • <strong>📰 SUSE Blog</strong></p>
+<p><a href="https://www.suse.com/c/help-us-write-what-you-need-take-the-suse-documentation-survey-2026/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 YOLO Mode: Agent Autonomy Without the Guardrails</h3><p>YOLO mode lets an AI agent run without asking permission. Learn what it is, why it's risky, and how to run it safely.</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 Docker Blog</strong></p>
+<p><a href="https://www.docker.com/blog/what-is-yolo-mode/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Join OSPOlogy + OSPO Summit China 2026 in Shanghai</h3><p>There’s still time to join OSPOlogy + OSPO Summit China 2026, taking place on September 7, 2026, in Shanghai, China as part of KubeCon + CloudNativeCon + OpenInfra Summit + PyTorch Conference China. T</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 CNCF Blog</strong></p>
+<p><a href="https://www.cncf.io/blog/2026/09/03/join-ospology-ospo-summit-china-2026-in-shanghai/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Building Reproducible AI Evaluation Workflows with Docker Sandboxes</h3><p>Learn how Docker Sandboxes can make AI evaluation workflows more reproducible with consistent execution, structured artifacts, and runtime evidence.</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 Docker Blog</strong></p>
+<p><a href="https://www.docker.com/blog/building-reproducible-ai-evaluation-workflows-with-docker-sandboxes/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Below the Harness: Governing a Multi-Model, Multi-Harness World</h3><p>We believe the future is a multi-model, multi-harness world. And we think it needs a new trust model. In 1988, Norm Hardy described a problem that had been quietly breaking systems for years: the conf</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 Docker Blog</strong></p>
+<p><a href="https://www.docker.com/blog/below-the-harness-governing-a-multi-model-multi-harness-world/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<hr />
+<h2>🔄 CI/CD</h2><h3>📄 Project HydraFusion: Frontier quality via multi-model orchestration</h3><p>In controlled offline evaluations, HydraFusion’s selective coding workflows matched or exceeded the evaluated Opus 5 baseline while reducing estimated workflow cost. Now available as a research previe</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 GitHub Blog</strong></p>
+<p><a href="https://github.blog/ai-and-ml/github-copilot/project-hydrafusion-frontier-quality-via-multi-model-orchestration/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Stories from the Factory Floor: Building a self-driving ops triage loop</h3><p>How the Foundation team at LaunchDarkly automated ops triage with three Cursor agents that take an alert all the way to an open PR.</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 LaunchDarkly Blog</strong></p>
+<p><a href="https://launchdarkly.com/blog/building-a-self-driving-ops-triage-loop/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Introducing the LaunchDarkly AI SDK</h3><p>The LaunchDarkly AI SDK is available for Python and JavaScript and is the path we recommend for every new AgentControl integration.</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 LaunchDarkly Blog</strong></p>
+<p><a href="https://launchdarkly.com/blog/introducing-the-launchdarkly-ai-sdk/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 GitHub Copilot app for Beginners: Run several agents at once</h3><p>Learn how to run parallel agents in the GitHub Copilot app, and experience the moment it stops feeling scary and starts feeling powerful. The post GitHub Copilot app for Beginners: Run several agents </p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 GitHub Blog</strong></p>
+<p><a href="https://github.blog/ai-and-ml/github-copilot/github-copilot-app-for-beginners-run-several-agents-at-once/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Decoding the new AI lingo: Loops, harnesses, squads, hill climbing… oh my!</h3><p>From loop engineering to harnesses, squads, and open weights, the GitHub Podcast breaks down the AI terms showing up in developer conversations. The post Decoding the new AI lingo: Loops, harnesses, s</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 GitHub Blog</strong></p>
+<p><a href="https://github.blog/ai-and-ml/decoding-the-new-ai-lingo-loops-harnesses-squads-hill-climbing-oh-my/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Discover Everything Harness Shipped in August 2026</h3><p>Harness shipped 58 features in August 2026: an agent-scale code repository, AI Code Review, AI Risks scanning, and the Blast Radius Agent. | Blog</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 Harness Blog</strong></p>
+<p><a href="https://www.harness.io/blog/shipped-in-august-2026" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 How we make AI coding more cost efficient without sacrificing task quality</h3><p>Why shorter outputs can cost more, and how GitHub Copilot reduces wasted work across the complete coding task. The post How we make AI coding more cost efficient without sacrificing task quality appea</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 GitHub Blog</strong></p>
+<p><a href="https://github.blog/ai-and-ml/github-copilot/how-we-make-ai-coding-more-cost-efficient-without-sacrificing-task-quality/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 GitLab’s internal playbook to foster AI-fluent technical teams</h3><p>Give two engineering teams the same AI tool and you can end up with two very different outcomes. One team ships faster with fewer bugs, while the other gets burned by an agent that confidently generat</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 GitLab Blog</strong></p>
+<p><a href="https://about.gitlab.com/blog/how-gitlab-fosters-ai-fluent-teams/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Critical remote code execution in vm2, a widely used Node.js sandbox library</h3><p>GitLab's Threat Research Group found a critical sandbox escape vulnerability in vm2, one of the most widely adopted Node.js sandboxing libraries. The vulnerability uses a configuration copied straight</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 GitLab Blog</strong></p>
+<p><a href="https://about.gitlab.com/blog/critical-remote-code-execution-in-vm2/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Catch AI Regressions Before They Ship with AI Evals in CI/CD</h3><p>Harness AI Evals tests AI agent quality in CI/CD, using golden datasets and quality gates to catch behavioral regressions before production. | Blog</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 Harness Blog</strong></p>
+<p><a href="https://www.harness.io/blog/catch-ai-regressions-before-they-ship-with-ai-evals-in-ci-cd" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Building Trust in AI DevOps: Validating the Harness Knowledge Graph</h3><p>Discover our multi-layered validation approach combining AI evals to ensure reliable AI-powered software delivery insights. | Blog</p>
+<p><strong>📅 Aug 31, 2026</strong> • <strong>📰 Harness Blog</strong></p>
+<p><a href="https://www.harness.io/blog/building-trust-in-our-knowledge-graph" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<hr />
+<h2>🏗️ IaC</h2><h3>📄 Amazon EC2 now supports specifying compatible instance types on AMIs</h3><p>Amazon EC2 now enables AMI owners to define which instance types are compatible with their AMIs. Owners can specify supported instance types, unsupported instance types, or both — and any launch attem</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 CloudFormation Updates</strong></p>
+<p><a href="https://aws.amazon.com/about-aws/whats-new/2026/09/ec2-images-supported-instances" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<hr />
+<h2>📊 Observability</h2><h3>📄 Inside the LLM Call: GenAI Observability with OpenTelemetry</h3><p>Your AI agent just took 45 seconds to answer a simple question. Was it the model? A slow tool call? A retry loop? Every time an application calls an LLM, a chain of model calls, tool invocations, and </p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 OpenTelemetry Blog</strong></p>
+<p><a href="https://opentelemetry.io/blog/2026/genai-observability/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Observability’s Gaslighting Problem: “Send Less Data” Isn’t a Strategy</h3><p>A familiar pattern is emerging in observability conversations. As telemetry volumes grow and costs rise, the default recommendation is often to collect less data: Sample more, retain less, index selec</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 DevOps.com</strong></p>
+<p><a href="https://devops.com/observabilitys-gaslighting-problem-send-less-data-isnt-a-strategy/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Observability 2.0: Why DevOps Teams Are Moving From Monitoring to Intelligent System Understanding</h3><p>For a long time, monitoring just meant staring at dashboards and waiting for something to flash red. Engineers tracked things like CPU usage, memory, response times, error rates, and uptime. If a numb</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 DevOps.com</strong></p>
+<p><a href="https://devops.com/observability-2-0-why-devops-teams-are-moving-from-monitoring-to-intelligent-system-understanding/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Proactive Monitoring Tools: Stop Reacting to Incidents After They Happen</h3><p>Reactive monitoring catches problems after users are already affected. Explore the top proactive monitoring tools, how they work, and what separates tools that detect anomalies from tools that prevent</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 New Relic Blog</strong></p>
+<p><a href="https://newrelic.com/blog/observability/proactive-monitoring-tools" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Multi-Cloud Management Tools: A Practical Guide for Engineering Teams</h3><p>Managing infrastructure across AWS, Azure, and GCP? Explore the top multi-cloud management tools, what to look for, and how observability keeps costs, performance, and reliability under control.</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 New Relic Blog</strong></p>
+<p><a href="https://newrelic.com/blog/observability/multi-cloud-management-tools" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Enterprise APM: How to Choose Application Performance Monitoring at Scale</h3><p>Enterprise APM goes beyond basic uptime checks. Explore what enterprise-grade application performance monitoring requires, how it differs from SMB tools, and what to look for when managing distributed</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 New Relic Blog</strong></p>
+<p><a href="https://newrelic.com/blog/observability/enterprise-apm" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 APM Dashboard: What It Shows, How to Use It, and What to Look For</h3><p>An APM dashboard is where performance data becomes actionable. Learn what a good APM dashboard should include, how to read the key metrics, and how unified dashboards accelerate incident resolution.</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 New Relic Blog</strong></p>
+<p><a href="https://newrelic.com/blog/observability/apm-dashboard" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Application Metrics caught my broken size estimator</h3><p>The numbers your app lives on don't belong in logs or on sampled spans. Here's how a browser video converter's KPIs made the case for Application Metrics.</p>
+<p><strong>📅 Sep 1, 2026</strong> • <strong>📰 Sentry Blog</strong></p>
+<p><a href="https://blog.sentry.io/metrics-caught-ai-size-estimate/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 OpenTelemetry Go Logs API and SDK reach release candidate status</h3><p>OpenTelemetry Go v1.47.0-rc.1 is here. This release promotes the Logs API and SDK to release candidate (RC), the final stage before we provide stable v1 compatibility guarantees. We believe the design</p>
+<p><strong>📅 Aug 31, 2026</strong> • <strong>📰 OpenTelemetry Blog</strong></p>
+<p><a href="https://opentelemetry.io/blog/2026/go-logs-api-sdk-rc/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<hr />
+<h2>🔐 Security</h2><h3>📄 Threats Making WAVs - Incident Response to a Cryptomining Attack</h3><p>Guardicore security researchers describe and uncover a full analysis of a cryptomining attack, which hid a cryptominer inside WAV files. The report includes the full attack vectors, from detection, in</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 Linode Blog</strong></p>
+<p><a href="https://www.akamai.com/blog/security/threats-making-wavs-incident-reponse-cryptomining-attack" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Handling vulnerability reports: Recipe card</h3><p>Recipe Handling Vulnerability Reports Target audience (the chef) This recipe is aimed at small and medium non-security focused projects. Maintainers of a high-risk security sensitive project, you prob</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 CNCF Blog</strong></p>
+<p><a href="https://www.cncf.io/blog/2026/09/07/handling-vulnerability-reports-recipe-card/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Introducing the external secrets management console plug-in</h3><p>Red Hat recently released the initial version of the external secrets management console plug-in. It’s an extension of the Red Hat OpenShift web console, which lets you inspect any of the resources de</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 Red Hat Blog</strong></p>
+<p><a href="https://www.redhat.com/en/blog/introducing-external-secrets-management-console-plugin" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 PGConf India 2027 - Dates Announced and CFP Open</h3><p>Hey there, Mark your calendars: PGConf India 2027 is set for March 2–5, 2027 at the Sheraton Grand Hotel at Brigade Gateway, Bengaluru. The Call for Papers is open right now. Important dates CFP close</p>
+<p><strong>📅 Sep 5, 2026</strong> • <strong>📰 PostgreSQL News</strong></p>
+<p><a href="https://www.postgresql.org/about/news/pgconf-india-2027-dates-announced-and-cfp-open-3370/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Escaping the Black Box: How Private Enterprise AI Addresses Compliance, Control and Costs</h3><p>Almost everyone in enterprise AI agrees that nobody wants a black box. Depending on the person, that concern may center on a public model, a hosted service or someone else’s cloud. In each case, the u</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 SUSE Blog</strong></p>
+<p><a href="https://www.suse.com/c/escaping-the-black-box-how-private-enterprise-ai-addresses-compliance-control-and-costs/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Friday Five — September 4, 2026</h3><p>CRN - AI Has Changed Open Source Security, Says Red Hat CEO Matt HicksRed Hat CEO Matt Hicks discusses how AI has transformed open source security, emphasizing the need for better patching and transpa</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 Red Hat Blog</strong></p>
+<p><a href="https://www.redhat.com/en/blog/friday-five-september-4-2026-red-hat" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Introducing context-aware vulnerability discovery and remediation with Cloudflare Managed Defense and OpenAI Daybreak models</h3><p>Use production traffic and security signals to prioritize findings, prepare edge mitigations when safe, and propose code patches. By combining WAF data with OpenAI Daybreak models, Vulnerability Disco</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 Cloudflare Blog</strong></p>
+<p><a href="https://blog.cloudflare.com/vulnerability-discovery-remediation/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Automate proxy injection for Amazon EKS on AWS Fargate using Kyverno</h3><p>Learn how to use a Kyverno mutating admission policy to automatically inject corporate proxy environment variables into Amazon EKS on AWS Fargate pods at admission time, delivering consistent egress c</p>
+<p><strong>📅 Sep 1, 2026</strong> • <strong>📰 AWS Containers Blog</strong></p>
+<p><a href="https://aws.amazon.com/blogs/containers/automate-proxy-injection-for-amazon-eks-on-aws-fargate-using-kyverno/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<hr />
+<h2>💾 Databases</h2><h3>📄 PLEASE_READ_ME: The Opportunistic Ransomware Devastating MySQL Servers</h3><p>Guardicore Labs uncovers a Ransomware detection campaign targeting MySQL servers. Attackers use Double Extortion and publish data to pressure victims.</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 Linode Blog</strong></p>
+<p><a href="https://www.akamai.com/blog/security/please-read-me-opportunistic-ransomware-devastating-mysql-servers" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Investigate DMS migration issues with AWS DevOps Agent</h3><p>Migrating a production database is a high-risk operational event. AWS DMS is a cloud service that migrates relational databases, data warehouses, and other data stores into the AWS Cloud or between en</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 AWS DevOps Blog</strong></p>
+<p><a href="https://aws.amazon.com/blogs/devops/investigate-dms-migration-issues-with-aws-devops-agent/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Spanner migrations: Automating dual-write with Antigravity CLI for minimal disruption</h3><p>When Google's Finance Engineering team needed to modernize their legacy data layer, they chose Spanner, a globally distributed, strongly consistent, multi-model database with high availability capabil</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 Google Cloud Blog</strong></p>
+<p><a href="https://cloud.google.com/blog/topics/developers-practitioners/using-antigravity-cli-to-streamline-dual-write-database-migration/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Serverless MySQL for AI Agents: Store Memory, Tool Outputs, and Searchable State in One Backend</h3><p>MySQL AI, in the sense that matters most to application teams, means MySQL-compatible infrastructure that holds agent memory, tool outputs, embeddings, and persistent application state in one backend,</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 TiDB Blog</strong></p>
+<p><a href="https://www.pingcap.com/blog/mysql-ai/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Introducing YugabyteDB Resource Governance</h3><p>Discover how YugabyteDB Resource Governance helps organizations safely consolidate more databases on shared infrastructure without sacrificing predictable performance. Plus, learn how fair CPU sharing</p>
+<p><strong>📅 Sep 2, 2026</strong> • <strong>📰 Yugabyte Blog</strong></p>
+<p><a href="https://www.yugabyte.com/introducing-yugabytedb-resource-governance/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 What is a Serverless Database and Why It Matters for Modern AI Apps</h3><p>A serverless database is a cloud database that decouples compute from storage, scales capacity automatically as demand changes, and bills for what a workload actually consumes. Servers still exist. Th</p>
+<p><strong>📅 Sep 1, 2026</strong> • <strong>📰 TiDB Blog</strong></p>
+<p><a href="https://www.pingcap.com/blog/serverless-database-2/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Surviving the uncharted: when dedicated OpenStack expertise is your best ally in disaster recovery</h3><p>A customer’s OpenStack control plane went down overnight after their only backup proved stale. Canonical support rebuilt the database cluster live, service by service, without losing a single workload</p>
+<p><strong>📅 Sep 1, 2026</strong> • <strong>📰 Ubuntu Blog</strong></p>
+<p><a href="https://ubuntu.com//blog/support-restores-openstack" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<hr />
+<h2>🌐 Platforms</h2><h3>📄 The Oracle of Delphi Will Steal Your Credentials</h3><p>Our deception technology is able to reroute attackers into honeypots, where they believe that they found their real target. The attacks brute forced passwords for RDP credentials to connect to the vic</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 Linode Blog</strong></p>
+<p><a href="https://www.akamai.com/blog/security/the-oracle-of-delphi-steal-your-credentials" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 The Nansh0u Campaign – Hackers Arsenal Grows Stronger</h3><p>In the beginning of April, three attacks detected in the Guardicore Global Sensor Network (GGSN) caught our attention. All three had source IP addresses originating in South-Africa and hosted by Volum</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 Linode Blog</strong></p>
+<p><a href="https://www.akamai.com/blog/security/the-nansh0u-campaign-hackers-arsenal-grows-stronger" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Amazon Bedrock Managed Knowledge Base introduces user-managed setup for SharePoint, OneDrive, and Confluence data sources</h3><p>AWS announces user-managed setup (3LO) for SharePoint, OneDrive, and Confluence data sources in Amazon Bedrock Managed Knowledge Base. Previously, configuring these data sources required generating 2L</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 CloudFormation Updates</strong></p>
+<p><a href="https://aws.amazon.com/about-aws/whats-new/2026/09/amazon-bedrock-managed-knowledge-base-user-managed-setup-sharepoint-onedrive-confluence/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Amazon Bedrock Managed Knowledge Base now supports ServiceNow as a native data source connector</h3><p>AWS announces the ServiceNow data source connector for Amazon Bedrock Managed Knowledge Base, a fully managed retrieval-augmented generation (RAG) service. Customers can now connect their ServiceNow i</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 CloudFormation Updates</strong></p>
+<p><a href="https://aws.amazon.com/about-aws/whats-new/2026/09/amazon-bedrock-managed-knowledge-base-servicenow-native-data-source-connector/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Amazon Bedrock Managed Knowledge Base now supports automatic sync scheduling for data source connectors</h3><p>AWS announces automatic sync scheduling for Amazon Bedrock Managed Knowledge Base, a fully managed retrieval-augmented generation (RAG) service that handles data ingestion, storage optimization, and a</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 CloudFormation Updates</strong></p>
+<p><a href="https://aws.amazon.com/about-aws/whats-new/2026/09/amazon-bedrock-managed-knowledge-base-automatic-sync-scheduling-data-source-connectors/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 How Yahoo optimizes resources with flexible VMs in Managed Service for Apache Spark</h3><p>As a global media and technology company connecting hundreds of millions of users to finance, sports, and entertainment platforms, Yahoo operates a massive data infrastructure where analytics workload</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 Google Cloud Blog</strong></p>
+<p><a href="https://cloud.google.com/blog/products/data-analytics/how-yahoo-optimizes-apache-spark-with-flexible-vms/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Not All LLM Workloads Are Equal: Benchmarking TPU Performance on Classification vs. Generation</h3><p>Moving Large Language Models (LLMs) from experimental prototypes into enterprise production exposes a critical truth: your infrastructure dictates both your performance ceilings and your unit economic</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 Google Cloud Blog</strong></p>
+<p><a href="https://cloud.google.com/blog/topics/developers-practitioners/not-all-llm-workloads-are-equal-benchmarking-tpu-performance-on-classification-vs-generation/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 CPU + GPU: Why AI platform engineering is a heterogeneous infrastructure problem</h3><p>AI infrastructure conversations often start with GPUs. Accelerators provide much of the compute behind model training and inference, so the focus is understandable. But a production AI workload rarely</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 CNCF Blog</strong></p>
+<p><a href="https://www.cncf.io/blog/2026/09/04/cpu-gpu-why-ai-platform-engineering-is-a-heterogeneous-infrastructure-problem/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 What’s new with Google Cloud</h3><p>Want to know the latest from Google Cloud? Find it here in one handy location. Check back regularly for our newest updates, announcements, resources, events, learning opportunities, and more. Tip: Not</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 Google Cloud Blog</strong></p>
+<p><a href="https://cloud.google.com/blog/topics/inside-google-cloud/whats-new-google-cloud/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Modernizing virtualization in higher education: How automated node recovery protects data integrity</h3><p>Organizations across higher education and enterprise sectors face rising virtualization costs, shifting licensing structures, and architectural decisions that can no longer be deferred. In this landsc</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 OpenShift Blog</strong></p>
+<p><a href="https://www.redhat.com/en/blog/modernizing-virtualization-higher-education-how-automated-node-recovery-protects-data-integrity" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Automating the Experimentation Lifecycle with Kiro, AWS DevOps Agent, and LaunchDarkly</h3><p>Introduction Continuous improvement depends on experimentation. Teams know that the fastest path to better outcomes is to test changes against real user behavior, measure results, and iterate. In prac</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 AWS DevOps Blog</strong></p>
+<p><a href="https://aws.amazon.com/blogs/devops/automating-the-experimentation-lifecycle-with-kiro-aws-devops-agent-and-launchdarkly/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Your Agent Speaks MCP. Give It a Computer.</h3><p>Sprites are disposable cloud computers. They appear instantly, always include durable filesystems, and cost practically nothing when idle. They’re the best and safest place on the Internet to run agen</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 Fly.io Blog</strong></p>
+<p><a href="https://fly.io/blog/sprites-mcp/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<hr />
+<h2>📰 Misc</h2><h3>📄 Visual Studio Code 1.137 (Insiders)</h3><p>Learn what is new in Visual Studio Code Insiders. Read the full article</p>
+<p><strong>📅 Sep 9, 2026</strong> • <strong>📰 VS Code Blog</strong></p>
+<p><a href="https://code.visualstudio.com/updates/v1_137" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 “Twenty years of brand building simply froze in time”: How coding agents select their tools of choice</h3><p>The impact of AI has led to a shift in interest from Search Engine Optimisation (SEO) to Answer Engine Optimisation The post “Twenty years of brand building simply froze in time”: How coding agents se</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 The New Stack</strong></p>
+<p><a href="https://thenewstack.io/coding-agents-tool-choice/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Kotlin 2.4.20 Released</h3><p>The Kotlin 2.4.20 release is out! Here are the main highlights: For the complete list of changes, see What’s new in Kotlin 2.4.20 or the release notes on GitHub. How to install Kotlin 2.4.20 The lates</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 JetBrains Blog</strong></p>
+<p><a href="https://blog.jetbrains.com/kotlin/2026/09/kotlin-2-4-20-released/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Java Annotated Monthly – September 2026</h3><p>This month’s Java Annotated Monthly brings you the latest Java news, a generous dose of AI-focused articles, Kotlin updates, and highlights from a variety of technologies and frameworks, plus plenty m</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 JetBrains Blog</strong></p>
+<p><a href="https://blog.jetbrains.com/idea/2026/09/java-annotated-monthly-september-2026/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 The Rider 2026.3 Early Access Program Is Open</h3><p>The first Early Access build for Rider 2026.3 is now available! It includes rainbow brackets, an easier way to set data breakpoints, a new Game Development plugin category, and filters in code complet</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 JetBrains Blog</strong></p>
+<p><a href="https://blog.jetbrains.com/dotnet/2026/09/07/rider-2026-3-eap/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Why faster coding isn't making delivery any faster</h3><p>Generative AI promised to eliminate one of the biggest sources of friction in software engineering: Writing code. In many ways, it has delivered. Today, an AI coding agent can implement features in mi</p>
+<p><strong>📅 Sep 7, 2026</strong> • <strong>📰 Red Hat Blog</strong></p>
+<p><a href="https://www.redhat.com/en/blog/why-faster-coding-isnt-making-delivery-any-faster" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Permissions belong in the assembly context</h3><p>Someone moves off the finance team at 9 a.m. on a Monday. Your sync runs nightly at 2 a.m. For The post Permissions belong in the assembly context appeared first on The New Stack.</p>
+<p><strong>📅 Sep 6, 2026</strong> • <strong>📰 The New Stack</strong></p>
+<p><a href="https://thenewstack.io/enterprise-rag-permission-assembly/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Polars 2.0 pre-release comes with a 5x speed boost — but it could change row order</h3><p>Working with large datasets can lead to slow queries and out-of-memory errors. Polars, an open-source library that developers and data The post Polars 2.0 pre-release comes with a 5x speed boost — but</p>
+<p><strong>📅 Sep 6, 2026</strong> • <strong>📰 The New Stack</strong></p>
+<p><a href="https://thenewstack.io/polars-streaming-row-order/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Claude Fable 5.1 vs. Fable 5: On real work, I couldn’t tell them apart.</h3><p>Anthropic launched Claude Fable 5.1 this week, calling it “our most advanced model for coding and knowledge work.” There was The post Claude Fable 5.1 vs. Fable 5: On real work, I couldn’t tell them a</p>
+<p><strong>📅 Sep 5, 2026</strong> • <strong>📰 The New Stack</strong></p>
+<p><a href="https://thenewstack.io/claude-fable-upgrade-tested/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Your DevOps Pipeline Is Already a Sustainability Program</h3><p>During my doctoral research on modern engineering practices and operational efficiency, one pattern kept surfacing that I did not expect to find. The engineering teams making the most measurable progr</p>
+<p><strong>📅 Sep 4, 2026</strong> • <strong>📰 DevOps.com</strong></p>
+<p><a href="https://devops.com/your-devops-pipeline-is-already-a-sustainability-program/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 From the Horse’s Mouth: Anthropic Says AI Has Changed the SDLC</h3><p>Anthropic’s AI-native SDLC playbook argues that faster coding is shifting the bottleneck to planning, testing, governance, deployment and operations.</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 DevOps.com</strong></p>
+<p><a href="https://devops.com/from-the-horses-mouth-anthropic-says-ai-has-changed-the-sdlc/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+<h3>📄 Learning to Code in the Age of AI: Advice From a Top Udemy Instructor</h3><p>What should a beginner developer learn in order to keep up in the AI era? This is one of the most debated questions in tech right now. We got in touch with Ardit Sulce, a Python educator with over 650</p>
+<p><strong>📅 Sep 3, 2026</strong> • <strong>📰 JetBrains Blog</strong></p>
+<p><a href="https://blog.jetbrains.com/education/2026/09/03/learning-to-code-in-the-age-of-ai-advice-from-a-top-udemy-instructor/" rel="noopener noreferrer"><strong>🔗 Read more</strong></a></p>
+]]></content:encoded>
+    </item>
     <item>
       <title><![CDATA[How Stripe Avoids Double-Charging Anyone]]></title>
       <link>https://devops-daily.com/posts/how-stripe-avoids-double-charging-idempotency-keys</link>
@@ -11269,167 +11512,6 @@ tests.
 <p>For a monorepo failing forty times a day, we would want a cheaper model and probably a filter so it only triages the first failure on a branch.</p>
 <p>The thing we would not change is the reduction step. It is the difference between a tool that costs almost nothing and one that costs enough to argue about, and it made the answers better rather than worse. Sending everything and letting the model sort it out is the obvious approach, and it is worse in both directions at once.</p>
 <p>Code is at <a href="https://github.com/The-DevOps-Daily/ci-log-triage" rel="noopener noreferrer">The-DevOps-Daily/ci-log-triage</a>. It is MIT, the log reduction is a pure function with tests, and it will work against any OpenAI-compatible endpoint if you would rather point it somewhere else.</p>
-]]></content:encoded>
-    </item>
-    <item>
-      <title><![CDATA[The DevOps Skills That Create Openings, Not Just Pass Filters]]></title>
-      <link>https://devops-daily.com/posts/devops-skills-that-create-job-openings</link>
-      <description><![CDATA[Most skill lists tell you what gets you past a screening. They do not tell you what makes a company decide to hire someone in the first place. Those are different lists, and the second one is shorter, more specific, and worth a lot more.]]></description>
-      <pubDate>Wed, 29 Jul 2026 09:00:00 GMT</pubDate>
-      <guid isPermaLink="true">https://devops-daily.com/posts/devops-skills-that-create-job-openings</guid>
-      <category><![CDATA[DevOps]]></category>
-      <dc:creator><![CDATA[DevOps Daily Team]]></dc:creator>
-      <category><![CDATA[DevOps]]></category><category><![CDATA[Career]]></category><category><![CDATA[Kubernetes]]></category><category><![CDATA[Terraform]]></category><category><![CDATA[FinOps]]></category><category><![CDATA[SRE]]></category>
-      <content:encoded><![CDATA[<p>Every list of "DevOps skills for 2026" contains the same twelve items: Linux, Docker, Kubernetes, a cloud, Terraform, CI/CD, Python, monitoring, Git, Ansible, security, soft skills.</p>
-<p>That list is not wrong. It is just answering a different question than the one you probably have.</p>
-<p>Those skills get you through a screening. They are what a recruiter checks before forwarding your CV, and lacking them will lose you a role. But nobody has ever sat in a planning meeting and said "we should open a headcount because we need someone who knows Git". Roles do not get created because a skill exists. They get created because something is hurting enough that a budget appears.</p>
-<p>So there are two lists. The one everyone publishes is table stakes: necessary, insufficient, and shared by every other applicant. The one worth studying is shorter, and it maps to the sentence a hiring manager actually said to get the role approved.</p>
-<h2>Who this is for</h2><ul>
-<li>Engineers deciding what to learn next and tired of lists that recommend everything</li>
-<li>People with the table stakes already, wondering why the responses are thin</li>
-<li>Anyone who wants to understand hiring from the side that writes the budget</li>
-</ul>
-<p>If you are earlier than that and trying to choose a direction, our post on <a href="https://devops-daily.com/posts/devops-engineer-career-paths-next-five-years">five DevOps career paths</a> covers the tracks themselves. This one is about what creates the vacancy.</p>
-<h2>Why the table stakes do not create openings</h2><p>Start with what the table stakes actually look like across the profession. These are the 2025 Stack Overflow Developer Survey numbers for professional developers:</p>
-<p><strong>Cloud and infrastructure tool usage, professional developers</strong></p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Value</th>
-<th>Series</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Docker</td>
-<td>73.8%</td>
-<td>commodity</td>
-</tr>
-<tr>
-<td>AWS</td>
-<td>45.9%</td>
-<td>commodity</td>
-</tr>
-<tr>
-<td>Kubernetes</td>
-<td>30.1%</td>
-<td>specialist</td>
-</tr>
-<tr>
-<td>Azure</td>
-<td>27.2%</td>
-<td>commodity</td>
-</tr>
-<tr>
-<td>Google Cloud</td>
-<td>24.3%</td>
-<td>commodity</td>
-</tr>
-<tr>
-<td>Terraform</td>
-<td>18.7%</td>
-<td>specialist</td>
-</tr>
-<tr>
-<td>Ansible</td>
-<td>11.2%</td>
-<td>specialist</td>
-</tr>
-<tr>
-<td>DigitalOcean</td>
-<td>11.1%</td>
-<td>commodity</td>
-</tr>
-</tbody></table>
-<p><em>Stack Overflow Developer Survey 2025, professional developers. Note this is all professional developers, not DevOps roles specifically: within DevOps job descriptions Terraform is close to universal. That gap is the point.</em></p>
-<p>Docker is the interesting one. The survey recorded a 17 point jump in a single year, the largest of any technology it tracks, taking it to nearly three quarters of professional developers. A skill that three quarters of the profession has is not a differentiator, it is a keyboard.</p>
-<p>Read the rest of that chart carefully, though, because it is easy to draw the wrong conclusion. Terraform at 18.7% looks like a scarce skill. It is scarce across all developers, and close to universal within the DevOps roles you are competing for. The chart shows what the profession looks like, not what your applicant pool looks like, and those are different populations.</p>
-<p>The reason none of this creates openings is structural: the table-stakes skills have been commoditised by the platforms themselves.</p>
-<p>Nobody is paid to install Kubernetes any more. Managed control planes made that a solved problem: DigitalOcean's DOKS, EKS, GKE and AKS all hand you a working cluster from a form or an API call. The interesting work moved to everything that happens after the cluster exists, which is a different skill with the same name on a CV.</p>
-<p>The same happened to provisioning. Writing HCL is not a differentiator when every platform ships a provider and the docs contain the resource you need. What is hard, and what people are actually hired for, is everything around the HCL: who owns the state, what happens when two teams touch the same resource, how a change gets reviewed when the plan output is four hundred lines.</p>
-<p>The pattern repeats. Each generation of tooling makes the mechanical part easy and moves the value to the judgement part. Learning the mechanical part gets you screened in. Learning the judgement part is what someone writes a job description about.</p>
-<h2>The skills that create openings</h2><p>Here is the honest version of the second list. Each one maps to a sentence a manager said to get headcount approved.</p>
-<p>Before the list, one piece of evidence that specialisation is what moves the number. Same survey, median salaries by role:</p>
-<p><strong>Median annual salary by role</strong></p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Value</th>
-<th>Series</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Engineering manager</td>
-<td>130000$</td>
-<td>lead</td>
-</tr>
-<tr>
-<td>Cloud infrastructure engineer</td>
-<td>103113$</td>
-<td>specialist</td>
-</tr>
-<tr>
-<td>Security professional</td>
-<td>96146$</td>
-<td>specialist</td>
-</tr>
-<tr>
-<td>DevOps engineer</td>
-<td>87011$</td>
-<td>generalist</td>
-</tr>
-<tr>
-<td>Data engineer</td>
-<td>81210$</td>
-<td>specialist</td>
-</tr>
-<tr>
-<td>Backend developer</td>
-<td>79742$</td>
-<td>generalist</td>
-</tr>
-<tr>
-<td>Full-stack developer</td>
-<td>72509$</td>
-<td>generalist</td>
-</tr>
-</tbody></table>
-<p><em>Stack Overflow Developer Survey 2025, global medians across all respondents. Geography moves these numbers far more than role does, so read the gaps between roles rather than the absolute figures.</em></p>
-<p>The gap worth noticing is the one inside infrastructure work. "Cloud infrastructure engineer" sits about $16,000 above "DevOps engineer" on the same survey. Those two titles describe people with largely the same toolkit. The difference is that one is named after a tool category and the other after a problem the business has, and the roles named after problems are the ones someone had to justify.</p>
-<h3>1. Making a cloud bill go down without breaking anything</h3><p><strong>The sentence:</strong> "Our cloud spend went up 60% and nobody can tell me why."</p>
-<p>This creates roles more reliably than almost anything else, because it is the rare technical problem with an obvious number attached. A finance team that cannot explain a line item will fund someone to explain it.</p>
-<p>The skill is not "knows about reserved instances". It is being able to attribute spend to teams and features, find the three things that account for most of the growth, and change them without an incident. That means tagging discipline, understanding how your provider actually bills (per-second versus per-hour, egress, idle load balancers, orphaned volumes and snapshots nobody deleted), and enough political skill to tell a team their service is the problem.</p>
-<p>It is also one of the few areas where you can demonstrate value before you are hired. If you can talk through a real example of finding and fixing a cost problem, that is worth more than a certification.</p>
-<h3>2. Reliability that survives contact with real traffic</h3><p><strong>The sentence:</strong> "We were down for four hours in March and the board asked what we are doing about it."</p>
-<p>Outages create headcount. Not the small ones, the one that reached a customer or a board deck. The role that follows is usually funded for a year and framed as prevention.</p>
-<p>What is being bought is not "knows Prometheus". It is the ability to look at a system and say where it will break first, and then to prove it: capacity that matches actual traffic patterns rather than a guess, alerts that correlate with users being unhappy rather than with CPU being interesting, and a runbook someone can follow at 3am without the person who wrote it.</p>
-<p>The clearest signal you can give here is being able to walk someone through a real incident: what you saw, what you tried, what was wrong about your first theory, what you changed afterwards. Almost nobody prepares this and it lands every time.</p>
-<h3>3. Migrations, which are jobs shaped like projects</h3><p><strong>The sentence:</strong> "We are moving off the old thing and we do not have anyone who has done it before."</p>
-<p>Migration work creates the most explicitly project-shaped hiring in the field: data centre to cloud, one cloud to another, VMs to containers, a monolith to services, or the increasingly common one, an over-engineered setup back to something smaller.</p>
-<p>The skill is sequencing. Anyone can describe the target state. Getting from A to B while the business keeps running is the part that needs experience: what moves first, what runs in parallel, how you cut over without a big-bang weekend, and how you roll back when the cutover goes wrong at 2am.</p>
-<p>This is also the work where "I have done this before" is worth the most, because the failure modes are not in the documentation.</p>
-<h3>4. Making a compliance question stop blocking a sale</h3><p><strong>The sentence:</strong> "We lost a deal because we could not answer their security questionnaire."</p>
-<p>SOC 2, ISO 27001, HIPAA and the rest are treated as a tax by engineers and as a revenue blocker by everyone else. When a compliance gap costs a specific deal, headcount appears quickly, because the cost of not hiring has a number on it.</p>
-<p>The skill is turning a control into infrastructure rather than a spreadsheet: access reviews that come from the identity provider rather than someone's memory, audit logs that are actually queryable, encryption and key rotation that is enforced rather than documented, and evidence that is generated rather than assembled the week before the audit.</p>
-<p>It is not glamorous work and it is well paid for exactly that reason.</p>
-<h3>5. Building the platform your own developers use</h3><p><strong>The sentence:</strong> "It takes a new engineer two weeks to get their first change to production."</p>
-<p>This is the platform engineering role, and its budget comes from developer productivity rather than infrastructure. That distinction matters: the case is made in terms of the other engineers' time, which is a much bigger number than the platform team's salary.</p>
-<p>The skill is product sense applied to internal tools. Knowing which paved road to build, which to leave alone, and how to make the good path the easy path rather than the mandatory one. Platform teams fail when they build something technically impressive that developers work around, and the ability to tell those apart in advance is the thing being hired.</p>
-<h3>6. Running inference in production without a surprise bill</h3><p><strong>The sentence:</strong> "The AI feature works in the demo and we have no idea what happens when everyone uses it."</p>
-<p>The newest of these, and the least crowded. Plenty of people can call a model API. Far fewer can answer what it costs at ten thousand requests a day, what happens when the provider rate-limits you mid-incident, how to cache and batch, when a smaller model is enough, and how to roll back a prompt change the way you roll back a deploy.</p>
-<p>It is infrastructure work with a new failure surface: latency you do not control, costs that scale with usage rather than capacity, and quality regressions that no test catches. We wrote about a small version of this in <a href="https://devops-daily.com/posts/ci-log-triage-digitalocean-inference">explaining CI failures with a GitHub Action</a>, where most of the engineering was reducing the input rather than calling the model.</p>
-<h2>What this means for the table stakes</h2><p>None of this makes the standard list optional. You still need it. The point is what you do with it once you have it.</p>
-<p>Take Terraform. Having it on your CV clears a filter. What creates an opening is being the person who can walk into an organisation where three teams share one state file and nobody dares run apply on a Friday, and fix that. The provider is not the skill. Every platform publishes one, DigitalOcean's included, and the resource reference is a web page. The skill is the operating model around it.</p>
-<p>Same with Kubernetes. The cluster is a form these days. What is scarce is knowing when a team should not be on Kubernetes at all, how to set requests and limits from real data rather than copied defaults, and how to keep the cost of the thing proportional to what it is running.</p>
-<p>The general move is from "I can operate this tool" to "I can tell you what this should cost, when it will break, and what to do instead". That sentence is much harder to write on a CV, which is exactly why it is worth having.</p>
-<h2>How to work out which one to chase</h2><p>Rather than picking from this list by preference, read job descriptions as evidence. Three questions:</p>
-<p><strong>What problem is this role written around?</strong> A description that is a tool list is a screening exercise, and the company probably does not know what they want yet. A description with a paragraph about a specific situation, a migration, a scaling problem, an audit, is a role someone fought to create. Those hire faster and pay better.</p>
-<p><strong>Who is the budget coming from?</strong> Cost roles are funded by finance, reliability roles by whoever owned the outage, platform roles by engineering leadership. It tells you who your actual stakeholder is and what success will be measured on, which is useful before you accept rather than after.</p>
-<p><strong>What did they try first?</strong> Almost every one of these roles exists because someone already tried to solve the problem internally and could not. Asking what has already been attempted is the best interview question available, and the answer tells you whether the problem is technical or organisational. If it is organisational, no amount of Terraform will fix it and you should know that going in.</p>
-<h2>The short version</h2><p>The published skill lists are a floor, not a ladder. They describe what everyone has.</p>
-<p>Openings are created by pain with a budget attached: a bill nobody can explain, an outage that reached the board, a migration nobody has done before, a deal blocked by a questionnaire, developers who take two weeks to ship, an AI feature with unknown economics.</p>
-<p>Pick the pain you find interesting, get genuinely good at it, and be able to tell one real story about solving it. That story is what turns a filtered application into a conversation.</p>
 ]]></content:encoded>
     </item>
   </channel>
