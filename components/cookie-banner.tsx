@@ -34,6 +34,7 @@ export function CookieBanner() {
 
   return (
     <div
+      data-nosnippet
       className={`
         fixed bottom-4 left-4 right-4 md:right-auto md:left-4 md:max-w-sm z-50 
         bg-linear-to-br from-card/95 to-background/95 backdrop-blur-lg 
