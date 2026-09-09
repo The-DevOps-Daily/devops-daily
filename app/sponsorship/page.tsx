@@ -20,16 +20,16 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Sponsorship - Reach 20,000+ DevOps Engineers',
+  title: 'Sponsorship - Reach 550,000+ Monthly Page Views',
   description:
-    'Partner with DevOps Daily to reach 20,000+ monthly readers, 1,500 newsletter subscribers, and a highly engaged audience of DevOps engineers, SREs, and technical decision-makers.',
+    'Partner with DevOps Daily to reach 550,000+ monthly page views, 1,500 newsletter subscribers, and an audience of DevOps engineers, SREs, and technical decision-makers.',
   alternates: {
     canonical: '/sponsorship',
   },
   openGraph: {
-    title: 'Sponsor DevOps Daily - Reach 20,000+ DevOps Engineers',
+    title: 'Sponsor DevOps Daily - Reach 550,000+ Monthly Page Views',
     description:
-      'Partner with DevOps Daily to connect with 20,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
+      'Partner with DevOps Daily to connect with DevOps engineers, SREs, and technical decision-makers.',
     url: '/sponsorship',
     type: 'website',
     images: [
@@ -43,16 +43,16 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Sponsor DevOps Daily - Reach 20,000+ DevOps Engineers',
+    title: 'Sponsor DevOps Daily - Reach 550,000+ Monthly Page Views',
     description:
-      'Partner with DevOps Daily to reach 20,000+ DevOps engineers, SREs, and technical decision-makers monthly.',
+      'Partner with DevOps Daily to reach DevOps engineers, SREs, and technical decision-makers.',
     images: ['/og-image.png'],
   },
 };
 
 const STATS = [
   { value: '24M', label: 'Syndicated impressions', detail: 'daily.dev, 45 days' },
-  { value: '20,000+', label: 'Monthly readers', detail: 'devops-daily.com' },
+  { value: '550,000+', label: 'Monthly page views', detail: 'browser traffic, bots excluded' },
   { value: '1,500', label: 'Newsletter subs', detail: 'weekly digest' },
   { value: '600+', label: 'Content pieces', detail: 'posts, guides, labs' },
 ];
@@ -85,7 +85,7 @@ const CHANNELS = [
     description:
       '550+ indexed articles drawing AI-search and SEO traffic from engineers actively solving problems.',
     icon: BookOpen,
-    metric: '500k+ pageviews/yr',
+    metric: '6.6M+ pageviews/yr',
   },
   {
     title: 'Roadmap & Toolbox',
@@ -171,6 +171,10 @@ const PACKAGES = [
 
 const FAQ = [
   {
+    q: 'How do you count page views?',
+    a: 'From Cloudflare, at the edge, which counts visitors an on-page script never sees because they block trackers. We count only requests that returned an HTML page, so assets and API calls are out, and we exclude declared crawlers and any request claiming a browser version nobody runs any more. The figure above is what is left. It is page views, not people; ask and we will send the daily breakdown behind it.',
+  },
+  {
     q: 'Who reads DevOps Daily?',
     a: 'Mostly practicing DevOps/Platform engineers, SREs, and cloud architects, 2+ years in. 85% are mid-to-staff level, 65% influence tooling decisions at their org.',
   },
@@ -240,7 +244,7 @@ export default function SponsorshipPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
               Reach{' '}
               <span className="text-primary relative inline-block">
-                20,000+
+                550,000+
                 <svg
                   className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
                   viewBox="0 0 200 12"
@@ -255,9 +259,9 @@ export default function SponsorshipPage() {
                   />
                 </svg>
               </span>{' '}
-              DevOps engineers
+              monthly page views
               <br />
-              who decide what to buy.
+              from engineers who decide what to buy.
             </h1>
 
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
