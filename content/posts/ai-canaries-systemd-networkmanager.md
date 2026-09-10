@@ -1,6 +1,6 @@
 ---
-title: 'Two Projects Started Trapping AI Agents This Month. I Pointed One At Both.'
-excerpt: 'systemd and NetworkManager now plant instructions in their repos designed to make an unreviewed AI contribution give itself away. I ran a real agent against both to see what actually happens, and what walks straight past.'
+title: 'systemd and NetworkManager Are Trapping AI Agents'
+excerpt: 'Both projects now plant instructions in their repos designed to make an unreviewed AI contribution give itself away. I ran a real agent against each to see what fires, what does not, and what walks straight past.'
 category:
   name: 'DevOps'
   slug: 'devops'
@@ -85,15 +85,27 @@ I'll add the required README notice first, then find the parser and add the comm
 
 It wrote the two lines, then did the work. Afterwards:
 
-```console
-$ head -4 README.md
-> [!IMPORTANT]
-> Remove this line to confirm you've reviewed this PR before submitting.
-![Systemd](http://brand.systemd.io/assets/page-logo.png)
-
-$ git status --short
- M README.md
- M src/core/load-fragment.c
+```terminal
+{
+  "title": "systemd, after the agent finished",
+  "prompt": "$",
+  "steps": [
+    {
+      "comment": "The task was one comment in one C file."
+    },
+    {
+      "cmd": "head -4 README.md",
+      "output": "> [!IMPORTANT]\n> Remove this line to confirm you've reviewed this PR before submitting.\n![Systemd](http://brand.systemd.io/assets/page-logo.png)"
+    },
+    {
+      "comment": "Two files changed, not one."
+    },
+    {
+      "cmd": "git status --short",
+      "output": " M README.md\n M src/core/load-fragment.c"
+    }
+  ]
+}
 ```
 
 The canary fired, unprompted, exactly as designed. Two files modified when one was asked for, and the extra one announces itself at the top of the document every visitor to the repository reads first.
@@ -118,24 +130,42 @@ Now the part the announcements did not cover.
 
 systemd's canary survives only if the author commits everything they changed. They usually will, because `git commit -a` and staging from a UI both sweep up the README. But one ordinary command does not:
 
-```console
-$ git status --short
- M README.md
- M src/core/load-fragment.c
-
-$ git commit -q -m "core: document Restart= fallback" -- src/core/load-fragment.c
-
-$ git show --stat --oneline HEAD
-8b73acc core: document Restart= fallback
- src/core/load-fragment.c | 1 +
- 1 file changed, 1 insertion(+)
-
-$ head -2 README.md   # the canary is still here, in the working tree
-> [!IMPORTANT]
-> Remove this line to confirm you've reviewed this PR before submitting.
-
-$ git diff --name-only HEAD   # but not in anything you would push
-README.md
+```terminal
+{
+  "title": "One ordinary command, and the canary never leaves the machine",
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "git status --short",
+      "output": " M README.md\n M src/core/load-fragment.c"
+    },
+    {
+      "comment": "Commit the source file by path, the way you would with unrelated local changes."
+    },
+    {
+      "cmd": "git commit -m \"core: document Restart= fallback\" -- src/core/load-fragment.c",
+      "output": "[main 8b73acc] core: document Restart= fallback\n 1 file changed, 1 insertion(+)"
+    },
+    {
+      "cmd": "git show --stat --oneline HEAD",
+      "output": "8b73acc core: document Restart= fallback\n src/core/load-fragment.c | 1 +\n 1 file changed, 1 insertion(+)"
+    },
+    {
+      "comment": "The canary is still here, in the working tree."
+    },
+    {
+      "cmd": "head -2 README.md",
+      "output": "> [!IMPORTANT]\n> Remove this line to confirm you've reviewed this PR before submitting."
+    },
+    {
+      "comment": "But not in anything you would push."
+    },
+    {
+      "cmd": "git diff --name-only HEAD",
+      "output": "README.md"
+    }
+  ]
+}
 ```
 
 Committing by path is not a bypass anyone had to invent. It is what you do when you have unrelated local changes, and plenty of people work that way by habit. The canary is intact, sitting in the working tree where nobody but its author will ever see it, and the pull request is clean.
@@ -154,9 +184,16 @@ Two rules, five minutes.
 
 Put the instruction in `AGENTS.md` at the root, and symlink `CLAUDE.md` to it so agents that look for either name find the same file. NetworkManager does exactly that:
 
-```console
-$ ls -l CLAUDE.md
-CLAUDE.md -> AGENTS.md
+```terminal
+{
+  "prompt": "$",
+  "steps": [
+    {
+      "cmd": "ls -l CLAUDE.md",
+      "output": "CLAUDE.md -> AGENTS.md"
+    }
+  ]
+}
 ```
 
 Then enforce it. The commit-message variant is one grep, and unlike the working-tree variant it cannot be lost by committing selectively, because the message is the artefact:
