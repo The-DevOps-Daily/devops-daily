@@ -1,0 +1,226 @@
+{
+  "id": "ory-vs-keycloak",
+  "slug": "ory-vs-keycloak",
+  "title": "Ory vs Keycloak",
+  "description": "A practical 2026 comparison of Ory and Keycloak for self-hosted identity: one Java server that does everything against a set of Go services you assemble, with the release cadence, authorization models and operational cost of each.",
+  "category": "Identity & Access",
+  "tags": ["Identity", "Authentication", "Authorization", "OAuth", "SSO", "Self-Hosted"],
+  "createdDate": "2026-09-13T09:00:00Z",
+  "updatedDate": "2026-09-13T09:00:00Z",
+  "estimatedReadTime": "12 min read",
+  "introduction": "Both of these are Apache 2.0, both speak OAuth 2.0, OIDC and SAML, and both will run on your own hardware without a licence conversation. That is where the similarity ends. The two projects disagree about what an identity system is.\n\nKeycloak is one Java service that does everything: a login page you can theme, an admin console someone can operate without writing code, LDAP and Active Directory federation, an authorization engine, and a database it expects to own. You deploy one thing and upgrade one thing. It joined the CNCF at incubating level on 10 April 2023 and ships a patch release most months, with 26.7.3 landing on 31 August 2026.\n\nOry is a set of separate Go services, each doing one job: Kratos for identities, credentials and sessions, Hydra for OAuth 2.0 and OIDC, Keto for relationship-based permissions, Oathkeeper as an identity-aware proxy, Polis for enterprise SAML and OIDC federation, and Talos for machine-to-machine credentials. They are single static binaries, which suits Kubernetes. Kratos is headless, so the login, recovery and verification screens are yours to build and to keep maintaining.\n\nThe choice is usually settled by two questions that have nothing to do with protocols. How much of the login experience do you want to own, and how many services do you want to upgrade? Answer those honestly and the rest follows.",
+  "toolA": {
+    "name": "Ory",
+    "icon": "Boxes",
+    "website": "https://www.ory.com",
+    "description": "A set of independent Go services for identity, OAuth, permissions and proxying, designed to be composed. Headless by default, API first, with a managed platform in Ory Network and a commercial licence for self-hosted support.",
+    "color": "#5528FF",
+    "pros": [
+      "Single static Go binaries with small footprints, which suits containers and Kubernetes better than a JVM service",
+      "Use only the parts you need: Hydra alone is a legitimate way to add OAuth to an existing identity store",
+      "Keto implements Google's Zanzibar relationship model, which expresses sharing and hierarchy far better than roles",
+      "Headless design means the login and recovery screens are your own code, with no theme system to fight",
+      "Hydra is OpenID Certified, and 26.2.0 added the device authorization grant and OAuth 2.1 discovery",
+      "Ory Talos covers machine-to-machine credentials with macaroon tokens, a problem most identity servers leave to you"
+    ],
+    "cons": [
+      "You build and then maintain the login, registration, recovery and verification screens for the life of the product",
+      "Every component is another deployment, another config file and another upgrade path",
+      "No LDAP or Active Directory federation in the core; enterprise directories arrive through Polis or not at all",
+      "The self-hosted open-source path has no admin console; the finished console is part of Ory Network",
+      "Open-source releases are infrequent and batched: Kratos, Hydra and Keto all sat at v25.4.0 from November 2024 until v26.2.0 in March 2026",
+      "Each component has its own smaller community, so answers are harder to find than for Keycloak"
+    ]
+  },
+  "toolB": {
+    "name": "Keycloak",
+    "icon": "KeyRound",
+    "website": "https://www.keycloak.org",
+    "description": "A single Java server on Quarkus covering authentication, authorization, user federation and administration, with themeable login pages and a full admin console. CNCF incubating, with commercial support available from Red Hat.",
+    "color": "#008AAA",
+    "pros": [
+      "One deployment and one upgrade path for the whole identity layer",
+      "Finished login, registration, recovery and verification pages that you theme rather than build",
+      "A full admin console, so realms, clients and users can be managed without touching code",
+      "Native LDAP and Active Directory federation, plus identity brokering to social and enterprise providers",
+      "Monthly patch releases and a CNCF incubating project since April 2023, with commercial support through Red Hat",
+      "26.7.0 added a SCIM API in preview, closing a long-standing gap for automated provisioning and deprovisioning"
+    ],
+    "cons": [
+      "A JVM service sized for a server, not a sidecar, which is heavier than a Go binary in a container-dense setup",
+      "You adopt Keycloak's data model for users and realms whether or not it matches your application",
+      "Authorization Services decides at the identity provider, so it cannot see your application's resource state or request context",
+      "Major version upgrades have historically needed care and planning",
+      "Custom logic means Java extensions or deployed JavaScript policies rather than calling an API",
+      "Several of the newest capabilities, including SCIM, AuthZEN and Admin API v2, are preview or experimental rather than supported"
+    ]
+  },
+  "features": [
+    {
+      "name": "Architecture",
+      "category": "Architecture",
+      "toolA": { "value": "Separate services: Kratos, Hydra, Keto, Oathkeeper, Polis, Talos", "rating": "neutral" },
+      "toolB": { "value": "One Java server on Quarkus that does all of it", "rating": "neutral" }
+    },
+    {
+      "name": "Runtime and footprint",
+      "category": "Architecture",
+      "toolA": { "value": "Static Go binaries, small memory footprint, container friendly", "rating": "good" },
+      "toolB": { "value": "JVM on Quarkus; sized for a server rather than a sidecar", "rating": "neutral" }
+    },
+    {
+      "name": "Login and recovery screens",
+      "category": "Features",
+      "toolA": { "value": "Headless. Reference UIs exist, but production screens are yours to build and maintain", "rating": "bad" },
+      "toolB": { "value": "Included and themeable; login, registration, recovery and verification all ship", "rating": "good" }
+    },
+    {
+      "name": "Admin console",
+      "category": "Operations",
+      "toolA": { "value": "API first. The finished console comes with Ory Network, not the self-hosted servers", "rating": "bad" },
+      "toolB": { "value": "Full web console; realms, clients and users manageable without code", "rating": "good" }
+    },
+    {
+      "name": "Protocols",
+      "category": "Features",
+      "toolA": { "value": "OAuth 2.0 and OIDC in Hydra (OpenID Certified), SAML and OIDC federation through Polis", "rating": "good" },
+      "toolB": { "value": "OAuth 2.0, OIDC and SAML in one server", "rating": "good" }
+    },
+    {
+      "name": "Enterprise directory federation",
+      "category": "Features",
+      "toolA": { "value": "No native LDAP or Active Directory; federation is Polis or your own code", "rating": "bad" },
+      "toolB": { "value": "Native LDAP and Active Directory user federation, plus identity brokering", "rating": "good" }
+    },
+    {
+      "name": "Authorization model",
+      "category": "Security",
+      "toolA": { "value": "Keto: Zanzibar relationship tuples, strong for sharing and hierarchies, weak on request context like time of day", "rating": "neutral" },
+      "toolB": { "value": "Authorization Services: role, group, client, time and regex policies, evaluated at the IdP without application state", "rating": "neutral" }
+    },
+    {
+      "name": "Automated provisioning (SCIM)",
+      "category": "Features",
+      "toolA": { "value": "Not a core server feature; provisioning is built against the Kratos admin API", "rating": "neutral" },
+      "toolB": { "value": "SCIM API added in 26.7.0 with CRUD, PATCH, filtering and schema discovery, behind a preview flag", "rating": "neutral" }
+    },
+    {
+      "name": "Release cadence",
+      "category": "Operations",
+      "toolA": { "value": "Batched and infrequent: v25.4.0 in November 2024, then v26.2.0 across Kratos, Hydra and Keto on the same day in March 2026", "rating": "bad" },
+      "toolB": { "value": "Monthly patches; 26.7.3 on 31 August 2026 fixed 20 security issues", "rating": "good" }
+    },
+    {
+      "name": "Operational surface",
+      "category": "Operations",
+      "toolA": { "value": "One deployment and upgrade path per component you adopt, plus the frontend you wrote", "rating": "bad" },
+      "toolB": { "value": "One service and one database to run, back up and upgrade", "rating": "good" }
+    },
+    {
+      "name": "Extensibility",
+      "category": "Architecture",
+      "toolA": { "value": "Webhooks and your own services around an API; no plugin to compile", "rating": "good" },
+      "toolB": { "value": "Java service provider interfaces, themes, and JavaScript policies deployed as server extensions", "rating": "neutral" }
+    },
+    {
+      "name": "Licensing and governance",
+      "category": "Licensing & Governance",
+      "toolA": { "value": "Apache 2.0 core, single-vendor governance, Ory Enterprise License for self-hosted support and CVE SLAs", "rating": "neutral" },
+      "toolB": { "value": "Apache 2.0, CNCF incubating since April 2023, commercial support via Red Hat build of Keycloak", "rating": "good" }
+    },
+    {
+      "name": "Managed option",
+      "category": "Cost",
+      "toolA": { "value": "Ory Network, a first-party managed platform from the same vendor", "rating": "good" },
+      "toolB": { "value": "No first-party SaaS; managed Keycloak comes from Red Hat or third parties", "rating": "neutral" }
+    },
+    {
+      "name": "Machine-to-machine credentials",
+      "category": "Features",
+      "toolA": { "value": "Talos issues and manages macaroon-based API credentials as a dedicated component", "rating": "good" },
+      "toolB": { "value": "Client credentials grant, with key and secret lifecycle managed in the console", "rating": "neutral" }
+    }
+  ],
+  "useCases": [
+    {
+      "scenario": "An internal platform that has to authenticate staff against an existing Active Directory",
+      "recommendation": "toolB",
+      "explanation": "Keycloak federates LDAP and Active Directory natively, which is a configuration screen rather than a project. Ory has no native LDAP in its core servers, so the same requirement becomes Polis or code you write and then own."
+    },
+    {
+      "scenario": "A product where the sign-in screen is part of the brand and design owns every pixel",
+      "recommendation": "toolA",
+      "explanation": "Kratos is headless, so the screens are your components in your framework with no theme system in the way. Keycloak can be themed a long way, but you are still customising someone else's pages, and every major upgrade is a chance for that theme to need attention."
+    },
+    {
+      "scenario": "You already have a user store and only need to become an OAuth provider for third-party clients",
+      "recommendation": "toolA",
+      "explanation": "Hydra does OAuth 2.0 and OIDC without opinions about where identities live, and it is OpenID Certified. Deploying Keycloak for this means adopting its user model as well, which is a large amount of product you did not ask for."
+    },
+    {
+      "scenario": "A small team with no one whose job is identity infrastructure",
+      "recommendation": "toolB",
+      "explanation": "One service, one database, finished login pages and an admin console someone can operate without a deploy. The Ory path asks the same team to build a frontend and to run several services, which is more moving parts than a small team usually wants to carry."
+    },
+    {
+      "scenario": "Permissions shaped like sharing: documents, folders, teams, and users who grant access to other users",
+      "recommendation": "toolA",
+      "explanation": "Keto implements Zanzibar relationship tuples, which is the model Google built for exactly this and which expresses inheritance and delegation directly. Keycloak's role and group policies can approximate it, but the moment a user can share their own resource with another user you are fighting the model."
+    },
+    {
+      "scenario": "Access decisions that depend on request context, such as time of day, device posture or the state of the record",
+      "recommendation": "either",
+      "explanation": "Neither is a good fit and this is the honest answer. Keycloak decides at the identity provider without your application's resource state; Keto's tuples cannot express contextual conditions without denormalising them into the graph. Teams that need this usually keep either product for authentication and put a dedicated policy engine next to the application for authorization."
+    },
+    {
+      "scenario": "You need a security patch cadence you can point an auditor at",
+      "recommendation": "toolB",
+      "explanation": "Keycloak ships patch releases roughly monthly. Ory's open-source servers went from v25.4.0 in November 2024 to v26.2.0 in March 2026, and all three moved on the same day, so the self-hosted open-source path can sit a long time between releases. Ory's answer to this is the Enterprise Licence, which sells CVE patching with an SLA, so it is a budget question rather than an impossible one."
+    }
+  ],
+  "faqs": [
+    {
+      "question": "Is Ory a drop-in replacement for Keycloak?",
+      "answer": "No. They overlap on protocols and almost nowhere else. Moving from Keycloak to Ory means replacing the admin console with API calls, replacing the themed login pages with a frontend you build, and finding another answer for LDAP federation if you use it. Moving the other way means accepting Keycloak's user model. Plan a migration as a project, not a swap."
+    },
+    {
+      "question": "Which one is cheaper to run?",
+      "answer": "Ory's binaries use less memory than a JVM, so the compute bill is usually lower. That is rarely the number that decides it. The bigger cost in the Ory path is the frontend you build and maintain for login, registration, recovery and verification, plus the upgrade work for each component you adopt. Keycloak costs more in RAM and less in engineering time."
+    },
+    {
+      "question": "Can I use just one Ory component?",
+      "answer": "Yes, and it is a common way to adopt it. Hydra on its own turns an existing user store into an OAuth 2.0 and OIDC provider. Keto on its own answers permission questions for an application that authenticates some other way. You are not obliged to take the whole set."
+    },
+    {
+      "question": "Does Keycloak support SCIM?",
+      "answer": "As of 26.7.0 there is a SCIM API with full CRUD and PATCH, filtering, pagination, schema extensions and discovery endpoints. It is preview rather than supported and the scim-api feature is off by default, so enable it deliberately and expect the surface to move before it is final."
+    },
+    {
+      "question": "Are both really open source?",
+      "answer": "The core of both is Apache 2.0 and you can self-host either without paying. The difference is governance and what sits alongside. Keycloak is a CNCF incubating project with commercial support from Red Hat. Ory's servers are Apache 2.0 under single-vendor governance, with the managed Ory Network and a separate Ory Enterprise Licence covering support and guaranteed CVE patching."
+    },
+    {
+      "question": "Which should I pick for a brand new product?",
+      "answer": "Start with Keycloak unless you have a specific reason not to. Working login pages and an admin console on day one are worth more early than architectural purity, and it will carry you a long way. Pick Ory when you know the sign-in experience is part of the product, when you want OAuth without adopting a user model, or when your permissions are relationship shaped."
+    }
+  ],
+  "decisionMatrix": [
+    { "criteria": "You need working login pages without building a frontend", "recommendation": "toolB" },
+    { "criteria": "The sign-in experience is part of the product design", "recommendation": "toolA" },
+    { "criteria": "Users live in LDAP or Active Directory", "recommendation": "toolB" },
+    { "criteria": "You want OAuth without adopting a new user model", "recommendation": "toolA" },
+    { "criteria": "Permissions are about sharing, ownership and hierarchy", "recommendation": "toolA" },
+    { "criteria": "Non-engineers need to administer users and clients", "recommendation": "toolB" },
+    { "criteria": "You run a container-dense Kubernetes platform and care about footprint", "recommendation": "toolA" },
+    { "criteria": "You need a predictable security patch cadence without a commercial contract", "recommendation": "toolB" },
+    { "criteria": "Nobody on the team owns identity infrastructure", "recommendation": "toolB" },
+    { "criteria": "Authorization depends on request context or resource state", "recommendation": "either" }
+  ],
+  "verdict": {
+    "summary": "These are not two versions of the same product and the scores hide that. Keycloak gives you a working identity system on the first afternoon: themed login pages, an admin console, LDAP federation, one service to upgrade, and a patch most months. Ory gives you smaller pieces with clearer boundaries, a better permissions model in Keto, and a login experience that is entirely your own, in exchange for building that experience and running several services whose open-source releases can be sixteen months apart. Most teams are better served by Keycloak, and the ones who are not usually know exactly why.",
+    "toolAScore": 4.1,
+    "toolBScore": 4.4,
+    "recommendation": "Choose Keycloak for a self-hosted identity system that works out of the box, especially with enterprise directories, non-engineer administrators, or a small team. Choose Ory when the sign-in experience is part of your product, when you want one piece such as Hydra rather than the whole thing, or when your authorization is relationship shaped. If your access decisions depend on request context, keep either for authentication and put a dedicated policy engine next to your application."
+  },
+  "relatedTags": ["Identity", "Authentication", "OAuth", "SSO", "Security", "Self-Hosted"]
+}
