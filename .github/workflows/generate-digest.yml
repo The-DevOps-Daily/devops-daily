@@ -61,6 +61,12 @@ jobs:
           commit-message: 'Add DevOps Weekly Digest - Week ${{ steps.week.outputs.week }}, ${{ steps.week.outputs.year }}'
           branch: devops-digest/week-${{ steps.week.outputs.week }}-${{ steps.week.outputs.year }}
           delete-branch: true
+          # build:fast regenerates feed.xml and search-index.json, and
+          # generate:images touches covers for unrelated content. Commit only
+          # the digest's own files.
+          add-paths: |
+            content/news/**
+            public/images/news/**
           title: 'DevOps Weekly Digest - Week ${{ steps.week.outputs.week }}, ${{ steps.week.outputs.year }}'
           body: |
             ## 📰 DevOps Weekly Digest
