@@ -36,10 +36,7 @@ jobs:
         run: pnpm devops-daily:generate-news:no-ai
 
       - name: Generate digest images
-        run: pnpm generate:images
-
-      - name: Convert SVG to PNG
-        run: pnpm convert:svg-to-png
+        run: pnpm images:all
 
       # A pull request opened with GITHUB_TOKEN does not trigger the PR
       # workflows, so the digest branch never saw the build or link check.
