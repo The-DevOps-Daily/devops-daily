@@ -133,7 +133,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "^4.3.0",
     "@tailwindcss/typography": "0.5.19",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.5.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.3",
     "@vitest/ui": "^4.1.10",
