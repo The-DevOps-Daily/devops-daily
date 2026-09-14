@@ -114,7 +114,7 @@
     "react-confetti": "^6.4.0",
     "react-day-picker": "9.14.0",
     "react-dom": "^19.2.5",
-    "react-hook-form": "^7.75.0",
+    "react-hook-form": "^7.87.0",
     "react-resizable-panels": "^4.11.2",
     "recharts": "3.8.1",
     "remark": "^15.0.1",
