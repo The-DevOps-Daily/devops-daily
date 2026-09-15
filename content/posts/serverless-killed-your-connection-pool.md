@@ -176,5 +176,5 @@ Connection pooling was invisible infrastructure for twenty years because the ass
 The repository has both scripts. Point them at your own database and you will have your own version of these numbers in about two minutes.
 
 ```github
-https://github.com/bobbyonmagic/neon-connection-pool-demo
+https://github.com/The-DevOps-Daily/neon-connection-pool-demo
 ```
