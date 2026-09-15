@@ -31,6 +31,7 @@ This post measures it. Every number is from a real Postgres 18 instance, and the
 - **A cold connection costs about eight times the query.** Measured: **341 ms** to connect, query and disconnect against **39 ms** through a reused pool.
 - **The pooled connection string does not fix that.** It measured **313 ms**, saving 28 ms, because you still pay TCP, TLS and authentication to reach the pooler.
 - **What the pooler fixes is the count.** Sixty concurrent invocations cost **60 Postgres backends** direct, and **3** through the pooler.
+- **A module-scope pool is per execution environment, not per application.** `max: 10` means ten connections in each of however many environments your platform decides to run.
 - **The HTTP driver is the one that fixes latency**: **43 ms**, because it never opens a connection at all.
 - There is a benchmark that makes pooling look useless, and it is easy to write by accident. It is in here.
 
@@ -108,6 +109,24 @@ A separate connection polls `pg_stat_activity` throughout and records the peak. 
 **Sixty invocations, sixty backends.** Each one is a real Postgres process, forked, authenticated, given its memory, and torn down again. Through the pooler the same sixty cost three.
 
 That is the ceiling nobody notices until they hit it. `max_connections` on this instance is 450. A long-lived service with a pool of ten never goes near it. A serverless function at sixty concurrent invocations is already using an eighth of the database's entire capacity, and concurrency is the one thing serverless platforms are happy to give you for free.
+
+### The pool you kept is not one pool
+
+Worth being exact here, because it is the part that surprises people who did everything right.
+
+Putting the pool at module scope, outside the handler, is the **correct** thing to do. It is what every serverless provider's documentation tells you, and it is what lets the pool survive between invocations on a warm instance. Move it inside the handler and you are back to the 341 ms column.
+
+But a module-scope pool is per **execution environment**, not per application. Your platform runs sixty concurrent invocations by starting sixty environments, and each one initialises its own module scope. `max: 10` does not mean ten connections. It means ten **per environment**, and you do not control how many of those exist.
+
+```text
+what you wrote          what runs at 60 concurrent
+                        ┌── env 1  → pool(max 10)
+const pool = new Pool(  ├── env 2  → pool(max 10)
+  { max: 10 }           ├── ...
+)                       └── env 60 → pool(max 10)
+```
+
+So the pool did not fail to work. It worked exactly as designed, sixty separate times. That is why the number in the table above is sixty backends rather than ten, and it is the same finding from the other direction: pooling is an optimisation that assumes a process outlives the request, and the platform quietly decides how many processes there are.
 
 ```diagram
 {
