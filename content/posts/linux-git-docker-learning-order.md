@@ -31,7 +31,7 @@ This post is three steps. Each one is a handful of commands you can run right no
 - **Linux first**, because everything above it is a process that owns some files. If those two words are not concrete to you, nothing above them can be.
 - **Git second**, and learn it by breaking something and getting it back. That is the entire value proposition and it takes one minute to feel.
 - **Docker third**, at which point it stops being magic: it is the same process you already met, with its own view of the machine.
-- The payoff: the same script, on a host and in a container, reporting **pid 209964** and **pid 1**, and seeing **155 processes** against **3**.
+- The payoff: the same script, on a host and in a container, reporting **pid 212611** and **pid 1**, and seeing **157 processes** against **3**.
 - You do not need a cloud account, a course, or a Kubernetes cluster to do any of this.
 
 ## Prerequisites
@@ -58,7 +58,10 @@ chmod +x greet.sh
   "title": "your first process",
   "prompt": "$",
   "steps": [
-    { "cmd": "./greet.sh", "output": "hello from bobbyiliev, pid 209861\n  this shell sees 153 processes" }
+    {
+      "cmd": "./greet.sh",
+      "output": "hello from devops-box, pid 212507\n  this shell sees 153 processes"
+    }
   ]
 }
 ```
@@ -97,8 +100,13 @@ cat greet.sh
   "title": "break it, then get it back",
   "prompt": "$",
   "steps": [
-    { "comment": "commit, destroy the file, recover it" },
-    { "cmd": "sh break-and-recover.sh", "output": "committed: 1c42e47 A script that greets\n  file now says: rm -rf /\n  after git checkout: echo \"hello from $(hostname), pid $$\"" }
+    {
+      "comment": "commit, destroy the file, recover it"
+    },
+    {
+      "cmd": "sh break-and-recover.sh",
+      "output": "  committed: 954795c A script that greets\n  file now says: rm -rf /\n  after git checkout: echo \"hello from $(hostname), pid $$\""
+    }
   ]
 }
 ```
@@ -126,19 +134,24 @@ Three lines. Start from a minimal Linux, copy in the file from step one, say wha
   "title": "the same script, twice",
   "prompt": "$",
   "steps": [
-    { "comment": "on the host, then in a container" },
-    { "cmd": "docker build -t journey-demo . && docker run --rm journey-demo", "output": "on the host:      hello from bobbyiliev, pid 209964\n  in the container: hello from 162f4d24197a, pid 1\n  host sees 155 processes, the container sees 3" }
+    {
+      "comment": "on the host, then in a container"
+    },
+    {
+      "cmd": "docker build -t journey-demo . && docker run --rm journey-demo",
+      "output": "  on the host:      hello from devops-box, pid 212611\n  in the container: hello from 1bb590cbed42, pid 1\n  host sees 157 processes, the container sees 3"
+    }
   ]
 }
 ```
 
 Read those three lines slowly, because they are the whole concept.
 
-**The hostname changed.** On the host the script says `bobbyiliev`. In the container it says `162f4d24197a`, a random id. Same script, same `hostname` command, different answer, because the container has its own idea of what machine it is on.
+**The hostname changed.** On the host the script says `devops-box`. In the container it says `1bb590cbed42`, a random id. Same script, same `hostname` command, different answer, because the container has its own idea of what machine it is on.
 
-**The pid went from 209964 to 1.** On the host your script was one process among many, with a large number. In the container it is **process 1**, the first process, as though the machine had just booted. It is not a different kind of thing from step one. It is the same kind of thing with its own numbering.
+**The pid went from 212611 to 1.** On the host your script was one process among many, with a large number. In the container it is **process 1**, the first process, as though the machine had just booted. It is not a different kind of thing from step one. It is the same kind of thing with its own numbering.
 
-**The host sees 155 processes and the container sees 3.** Everything running on that machine is still running. The container just cannot see it.
+**The host sees 157 processes and the container sees 3.** Everything running on that machine is still running. The container just cannot see it.
 
 That is a container: **a normal Linux process that has been given its own view of the hostname, the process list and the filesystem.** Not a small virtual machine, not a magic box. If you did step one, you already know what a process and a file are, so there is nothing left to be mystified by.
 
