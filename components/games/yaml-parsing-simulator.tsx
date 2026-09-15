@@ -91,6 +91,35 @@ folded: >
       'The pipe keeps line breaks, which is what you want for a script. The angle bracket folds them into spaces, which is what you want for prose and what silently breaks a shell script.',
   },
   {
+    title: 'A duplicate key is silent',
+    blurb: 'A config where a block was pasted in twice.',
+    yaml: `replicas: 3
+image: myapp:v2
+resources:
+  cpu: 500m
+replicas: 1`,
+    point:
+      'The spec calls a repeated key an error. Most parsers in use quietly keep the last one, so replicas is 1 and the 3 you read at the top of the file never applied. Nothing warns you.',
+  },
+  {
+    title: 'Anchors and merge keys',
+    blurb: 'The shorthand every CI config uses to avoid repeating itself.',
+    yaml: `defaults: &defaults
+  image: alpine
+  retries: 3
+
+build:
+  <<: *defaults
+  script: make
+
+test:
+  <<: *defaults
+  retries: 5
+  script: make test`,
+    point:
+      'The anchor names a block, the alias reuses it, and the merge key folds it in. A key written next to the merge wins over the merged one, which is how test gets retries: 5 while build keeps 3.',
+  },
+  {
     title: 'Tabs are not indentation',
     blurb: 'Indented with a tab, which looks identical in most editors.',
     yaml: `service:\n\tport: 8080`,
@@ -171,6 +200,9 @@ export default function YamlParsingSimulator() {
         .ys-diff table { width:100%; border-collapse:collapse; font-size:13px; }
         .ys-diff th { text-align:left; color:var(--ys-dim); font-weight:500; padding:4px 8px 4px 0; font-size:12px; }
         .ys-diff td { padding:4px 8px 4px 0; font-family:ui-monospace,monospace; }
+        .ys-notes { margin-top:12px; border:1px solid #38bdf855; background:#38bdf812; border-radius:12px;
+          padding:10px 12px; color:#cbd5e1; font-size:13px; line-height:1.65; display:grid; gap:6px; }
+        .ys-notes code { background:rgba(255,255,255,.08); padding:1px 5px; border-radius:4px; }
         .ys-point { margin-top:12px; border-left:3px solid #38bdf8; padding:8px 0 8px 12px; color:#cbd5e1; line-height:1.65; }
         .ys-agree { margin-top:12px; color:var(--ys-dim); font-size:13px; }
         .ys-kind { font-size:11px; padding:1px 6px; border-radius:999px; border:1px solid currentColor; }
@@ -228,6 +260,23 @@ export default function YamlParsingSimulator() {
           </div>
         </div>
       </div>
+
+      {as12.ok && (as12.duplicates.length > 0 || as12.documents > 1) && (
+        <div className="ys-notes">
+          {as12.duplicates.length > 0 && (
+            <div>
+              <strong>Repeated {as12.duplicates.length === 1 ? 'key' : 'keys'}:</strong>{' '}
+              {as12.duplicates.join(', ')}. The last value won. Most parsers do this without warning.
+            </div>
+          )}
+          {as12.documents > 1 && (
+            <div>
+              This file holds <strong>{as12.documents} documents</strong> separated by <code>---</code>. Only the
+              first is shown here. Tools that expect one document will read only the first too.
+            </div>
+          )}
+        </div>
+      )}
 
       {disagreements.length > 0 ? (
         <div className="ys-diff">

@@ -14,6 +14,8 @@ const seoLearningPoints = [
   'The difference between an empty value, `~`, `null` and an empty string',
   'When a leading zero means octal and when it means decimal',
   'What `|` and `>` do to the newlines in a CI script',
+  'Why a repeated key silently overwrites the one above it',
+  'How anchors, aliases and merge keys work in a CI config',
   'Why a tab in indentation is rejected and so hard to spot',
   'Why quoting is the fix for nearly all of it',
 ];

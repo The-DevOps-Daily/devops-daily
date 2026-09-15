@@ -30,6 +30,12 @@ export interface ParseOk {
   root: Node;
   /** Every scalar that resolved to something other than a string, for the type panel. */
   coercions: Coercion[];
+  /** Keys that appeared more than once. The last one won. */
+  duplicates: string[];
+  /** True when the document used anchors, aliases or a merge key. */
+  usedAnchors: boolean;
+  /** How many documents the file contained. Only the first is shown. */
+  documents: number;
 }
 export interface ParseErr {
   ok: false;
@@ -98,13 +104,28 @@ interface Line {
   raw: string;
 }
 
-function lex(src: string): { lines: Line[]; tabError?: ParseErr } {
+function lex(src: string): { lines: Line[]; tabError?: ParseErr; documents: number; anchors: boolean } {
   const out: Line[] = [];
   const rawLines = src.replace(/\r\n/g, "\n").split("\n");
+  let documents = 0;
+  let anchors = false;
+  let pastFirstDoc = false;
   for (let i = 0; i < rawLines.length; i++) {
     const raw = rawLines[i];
     const withoutComment = stripComment(raw);
     if (withoutComment.trim() === "") continue;
+
+    // A file can hold several documents. Kubernetes manifests routinely do.
+    // Only the first is shown, and the count is reported so the UI can say so.
+    const t = withoutComment.trim();
+    if (t === "---" || t.startsWith("--- ")) {
+      documents++;
+      if (documents > 1) pastFirstDoc = true;
+      continue;
+    }
+    if (t === "...") { pastFirstDoc = true; continue; }
+    if (pastFirstDoc) continue;
+    if (/(^|\s)[&*][A-Za-z0-9_-]+/.test(t) || t.startsWith("<<:")) anchors = true;
 
     const lead = withoutComment.match(/^[ \t]*/)?.[0] ?? "";
     if (lead.includes("\t")) {
@@ -116,11 +137,13 @@ function lex(src: string): { lines: Line[]; tabError?: ParseErr } {
           message: "A tab is used for indentation.",
           hint: "YAML forbids tabs in indentation. Editors show them the same width as spaces, which is why this is so hard to see. Replace the tab with spaces.",
         },
+        documents: 0,
+        anchors: false,
       };
     }
     out.push({ n: i + 1, indent: lead.length, text: withoutComment.trim(), raw });
   }
-  return { lines: out };
+  return { lines: out, documents: Math.max(documents, out.length ? 1 : 0), anchors };
 }
 
 /** Remove a trailing comment, but not a `#` inside quotes. */
@@ -142,11 +165,14 @@ function stripComment(line: string): string {
 /* ------------------------------------------------------------------ parsing */
 
 export function parseYaml(src: string, spec: Spec): ParseResult {
-  const { lines, tabError } = lex(src);
+  const { lines, tabError, documents, anchors: usedAnchors } = lex(src);
   if (tabError) return tabError;
-  if (lines.length === 0) return { ok: true, root: { kind: "null", value: null }, coercions: [] };
+  if (lines.length === 0)
+    return { ok: true, root: { kind: "null", value: null }, coercions: [], duplicates: [], usedAnchors: false, documents: 0 };
 
   const coercions: Coercion[] = [];
+  const duplicates: string[] = [];
+  const anchorStore = new Map<string, Node>();
   let i = 0;
 
   function parseBlock(indent: number, path: string): Node | ParseErr {
@@ -169,7 +195,8 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
           if (isErr(nested)) return nested;
           items.push(nested);
         } else {
-          items.push(scalarFrom(rest, childPath, coercions, spec));
+          const flowItem = parseFlow(rest, childPath, coercions, spec);
+          items.push(flowItem ?? scalarFrom(rest, childPath, coercions, spec));
         }
       }
       return { kind: "seq", items };
@@ -192,20 +219,67 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       const childPath = path ? `${path}.${key}` : key;
       i++;
 
+      const already = entries.findIndex(([k]) => k === key);
+      if (already !== -1) duplicates.push(key);
+
+      // `key: &name` anchors the block that follows. `key: *name` is an alias
+      // to it, and `<<: *name` merges that block's keys into this one. CI files
+      // lean on all three, so a parser that rejects them is useless on real input.
+      const anchorOnly = inline.match(/^&([A-Za-z0-9_-]+)$/);
+      const aliasOnly = inline.match(/^\*([A-Za-z0-9_-]+)$/);
+
+      if (key === "<<" && aliasOnly) {
+        const target = anchorStore.get(aliasOnly[1]);
+        if (target && target.kind === "map") {
+          // A merge key does not overwrite what the mapping already has.
+          for (const [k, v] of target.entries) if (!entries.some(([e]) => e === k)) entries.push([k, v]);
+        }
+        continue;
+      }
+      if (aliasOnly) {
+        const target = anchorStore.get(aliasOnly[1]);
+        push(entries, key, target ?? { kind: "null", value: null });
+        continue;
+      }
+      if (anchorOnly) {
+        if (i < lines.length && lines[i].indent > indent) {
+          const child = parseBlock(lines[i].indent, childPath);
+          if (isErr(child)) return child;
+          anchorStore.set(anchorOnly[1], child);
+          push(entries, key, child);
+        } else {
+          push(entries, key, { kind: "null", value: null });
+        }
+        continue;
+      }
+
       if (inline === "" ) {
         if (i < lines.length && lines[i].indent > indent) {
           const child = parseBlock(lines[i].indent, childPath);
           if (isErr(child)) return child;
-          entries.push([key, child]);
+          push(entries, key, child);
         } else {
-          entries.push([key, { kind: "null", value: null }]);
+          push(entries, key, { kind: "null", value: null });
           coercions.push({ path: childPath, raw: "(nothing)", kind: "null", value: "null" });
         }
       } else if (inline === "|" || inline === ">" || /^[|>][-+]?$/.test(inline)) {
         const block = readBlockScalar(inline, indent);
-        entries.push([key, { kind: "string", value: block }]);
+        push(entries, key, { kind: "string", value: block });
       } else {
-        entries.push([key, scalarFrom(inline, childPath, coercions, spec)]);
+        let value = inline;
+        // A plain scalar may continue on following, more-indented lines. YAML
+        // folds them into one line with single spaces.
+        while (
+          i < lines.length &&
+          lines[i].indent > indent &&
+          !/^(-\s|- $)/.test(lines[i].text) &&
+          !/^.+?:(\s|$)/.test(lines[i].text)
+        ) {
+          value += " " + lines[i].text;
+          i++;
+        }
+        const flow = parseFlow(value, childPath, coercions, spec);
+        push(entries, key, flow ?? scalarFrom(value, childPath, coercions, spec));
       }
     }
     return { kind: "map", entries };
@@ -259,7 +333,18 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       hint: "Every entry in the same mapping or list has to start in the same column.",
     };
   }
-  return { ok: true, root, coercions };
+  return { ok: true, root, coercions, duplicates, usedAnchors, documents };
+}
+
+/**
+ * A repeated key overwrites the earlier one. The YAML spec calls duplicates an
+ * error, but most parsers in use quietly keep the last, which is why a
+ * copy-pasted block can silently replace a setting fifty lines above it.
+ */
+function push(entries: Array<[string, Node]>, key: string, value: Node): void {
+  const at = entries.findIndex(([k]) => k === key);
+  if (at === -1) entries.push([key, value]);
+  else entries[at] = [key, value];
 }
 
 function isErr(n: Node | ParseErr): n is ParseErr {
@@ -273,14 +358,118 @@ function unquote(s: string): string {
   return s;
 }
 
+function stripQuotes(s: string): string {
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) return s.slice(1, -1);
+  return s;
+}
+
+function unescapeDouble(s: string): string {
+  return s.replace(/\\(n|t|r|0|\\|"|\/)/g, (_m, c) =>
+    c === "n" ? "\n" : c === "t" ? "\t" : c === "r" ? "\r" : c === "0" ? "\0" : c,
+  );
+}
+
+/** Parse a flow collection: [a, b] or {k: v}. Nesting is supported. */
+function parseFlow(src: string, path: string, coercions: Coercion[], spec: Spec): Node | null {
+  const t = src.trim();
+  if (!((t.startsWith("[") && t.endsWith("]")) || (t.startsWith("{") && t.endsWith("}")))) return null;
+  const inner = t.slice(1, -1).trim();
+  const isSeq = t.startsWith("[");
+  if (inner === "") return isSeq ? { kind: "seq", items: [] } : { kind: "map", entries: [] };
+
+  const parts = splitFlow(inner);
+  if (isSeq) {
+    return {
+      kind: "seq",
+      items: parts.map((part, i) => {
+        const nested = parseFlow(part, `${path}[${i}]`, coercions, spec);
+        return nested ?? scalarFrom(part.trim(), `${path}[${i}]`, coercions, spec);
+      }),
+    };
+  }
+  const entries: Array<[string, Node]> = [];
+  for (const part of parts) {
+    const at = splitFlowKey(part);
+    if (!at) continue;
+    const k = stripQuotes(at[0].trim());
+    const vRaw = at[1].trim();
+    const p = path ? `${path}.${k}` : k;
+    const nested = parseFlow(vRaw, p, coercions, spec);
+    entries.push([k, nested ?? scalarFrom(vRaw, p, coercions, spec)]);
+  }
+  return { kind: "map", entries };
+}
+
+/** Split on commas that are not inside a nested collection or a quoted string. */
+function splitFlow(s: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let quote: string | null = null;
+  let start = 0;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === "[" || c === "{") depth++;
+    else if (c === "]" || c === "}") depth--;
+    else if (c === "," && depth === 0) {
+      out.push(s.slice(start, i));
+      start = i + 1;
+    }
+  }
+  out.push(s.slice(start));
+  return out.filter((p) => p.trim() !== "");
+}
+
+/** Split "k: v" at the first colon that is not nested or quoted. */
+function splitFlowKey(s: string): [string, string] | null {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === "[" || c === "{") depth++;
+    else if (c === "]" || c === "}") depth--;
+    else if (c === ":" && depth === 0) return [s.slice(0, i), s.slice(i + 1)];
+  }
+  return null;
+}
+
 function scalarFrom(raw: string, path: string, coercions: Coercion[], spec: Spec): Scalar {
   // Quoting is the escape hatch: a quoted scalar is always a string, whatever
   // it looks like. This is the fix for every surprise this engine demonstrates.
-  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
-    return { kind: "string", value: raw.slice(1, -1) };
+  if (raw.startsWith('"') && raw.endsWith('"') && raw.length > 1) {
+    // Double quotes are the only form that processes escapes.
+    return { kind: "string", value: unescapeDouble(raw.slice(1, -1)) };
   }
-  if (raw.startsWith("[") || raw.startsWith("{")) {
-    return { kind: "string", value: raw }; // flow collections are shown as written
+  if (raw.startsWith("'") && raw.endsWith("'") && raw.length > 1) {
+    // Single quotes are literal; the only escape is '' for one quote.
+    return { kind: "string", value: raw.slice(1, -1).replace(/''/g, "'") };
+  }
+  // An explicit tag overrides resolution, which is the other way to stop
+  // `8080` becoming a number.
+  const tag = raw.match(/^!!(str|int|float|bool|null)\s+([\s\S]*)$/);
+  if (tag) {
+    const rest = tag[2].trim();
+    switch (tag[1]) {
+      case "str":
+        return { kind: "string", value: stripQuotes(rest) };
+      case "int":
+        return { kind: "int", value: parseInt(rest, 10) };
+      case "float":
+        return { kind: "float", value: parseFloat(rest) };
+      case "bool":
+        return { kind: "bool", value: /^(true|yes|on|y)$/i.test(rest) };
+      default:
+        return { kind: "null", value: null };
+    }
   }
   const s = resolveScalar(raw, spec);
   if (s.kind !== "string") {
