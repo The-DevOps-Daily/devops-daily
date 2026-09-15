@@ -138,7 +138,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitest/ui": "^4.1.10",
     "eslint": "^9.39.2",
-    "eslint-config-next": "16.3.4",
+    "eslint-config-next": "16.3.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.6",
     "fast-glob": "^3.3.3",
