@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 import AgenticLoopSimulator from '@/components/games/agentic-loop-simulator';
+import YamlParsingSimulator from '@/components/games/yaml-parsing-simulator';
 import HerokuStyleNameGenerator from '@/components/games/heroku-style-name-generator';
 import BinaryByteSimulator from '@/components/games/binary-byte-simulator';
 import BounceTriageSimulator from '@/components/games/bounce-triage-simulator';
@@ -57,6 +58,7 @@ import WebhookDeliverySimulator from '@/components/games/webhook-delivery-simula
 
 export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'agentic-loop-simulator': AgenticLoopSimulator,
+  'yaml-parsing-simulator': YamlParsingSimulator,
   'binary-byte-simulator': BinaryByteSimulator,
   'bounce-triage-simulator': BounceTriageSimulator,
   'docker-under-the-hood-simulator': DockerUnderTheHoodSimulator,

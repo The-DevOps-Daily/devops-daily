@@ -37,12 +37,14 @@ import {
   Gamepad2,
   FlaskConical,
   LucideIcon,
+  FileCode,
 } from 'lucide-react';
 import Link from 'next/link';
 
 // Icon mapping for serializable icon names
 const iconMap: Record<string, LucideIcon> = {
   Bug,
+  FileCode,
   MailWarning,
   Network,
   Trophy,
