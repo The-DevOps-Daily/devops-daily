@@ -32,7 +32,7 @@ This post measures it. Every number is from a real Postgres 18 instance, and the
 - **The pooled connection string does not fix that.** It measured **313 ms**, saving 28 ms, because you still pay TCP, TLS and authentication to reach the pooler.
 - **What the pooler fixes is the count.** Sixty concurrent invocations cost **60 Postgres backends** direct, and **3** through the pooler.
 - **A module-scope pool is per execution environment, not per application.** `max: 10` means ten connections in each of however many environments your platform decides to run.
-- **The HTTP driver is the one that fixes latency**: **43 ms**, because it never opens a connection at all.
+- **The HTTP driver is cheaper, but not free.** 43 ms once its connection is warm, and about 385 ms cold against 650 ms for a cold Postgres connect, both including roughly 334 ms of process startup. It still pays TCP and TLS; it just needs half the round trips.
 - There is a benchmark that makes pooling look useless, and it is easy to write by accident. It is in here.
 
 ## Prerequisites
@@ -166,6 +166,8 @@ The general version of that mistake: **a benchmark that keeps every resource bus
 
 The third row of the first table is the interesting one: **43 ms**, close to the reused pool, with no pool and no process.
 
+**That 43 ms deserves an asterisk, and a reader was right to ask for it.** All four strategies in that table ran inside one Node process, and `fetch` keeps its TLS connection open between calls. So the HTTP driver paid its handshake once and reused it for the other twenty-nine, while `new Client()` closed its connection every time and paid in full on every one. The p95 of 340 ms in that row is the first call, and it is the honest one. The table compares a cold Postgres connect against a warm HTTP one.
+
 That is the HTTP driver, `@neondatabase/serverless`. It does not open a Postgres connection. It sends the query over HTTPS to an endpoint that holds the connections on your behalf.
 
 ```js
@@ -175,6 +177,35 @@ const sql = neon(process.env.DATABASE_URL);
 // no connect, no end, no pool
 const rows = await sql`select 1`;
 ```
+
+### So measure it cold
+
+One query per process, nothing reused, which is the fair comparison:
+
+```terminal
+{
+  "title": "cold, in a fresh process each time",
+  "prompt": "$",
+  "steps": [
+    { "comment": "10 runs each, one query per process" },
+    { "cmd": "for i in $(seq 10); do node pg-cold.mjs; done", "output": "  pg direct   median 650.3 ms   min 426.1" },
+    { "cmd": "for i in $(seq 10); do node http-cold.mjs; done", "output": "  http        median 385.3 ms   min 346.2" }
+  ]
+}
+```
+
+Roughly **334 ms of both numbers is Node starting up**, measured separately, so the work itself is about **51 ms for HTTP against about 316 ms for a Postgres connect**.
+
+**HTTP is not free and never was.** It pays TCP and TLS like anything else. What it does not pay is the rest of the Postgres startup, and that is where the difference lives:
+
+| | round trips before your query runs |
+|---|---|
+| Postgres over TLS | TCP, then an `SSLRequest` and its reply **before TLS can begin**, then the TLS handshake, then a startup message and a multi-step SCRAM challenge and response. Six or seven. |
+| HTTPS | TCP, TLS 1.3, then one request that carries the auth inside it. About three. |
+
+Postgres negotiates TLS inside its own protocol rather than using a TLS port, which costs a round trip before encryption even starts, and SCRAM authentication is a conversation rather than a header. At the 48 ms round trip measured to this region, needing twice the trips is most of the gap.
+
+That also explains the pooler row properly. Routing through pgbouncer does not remove any of those round trips, it just terminates them somewhere else, which is why it saved 28 ms and not 280.
 
 You give things up for it. It is one statement at a time, so interactive transactions need the WebSocket driver instead, and you are on their endpoint rather than speaking the Postgres wire protocol to your own database. But if your function does one or two queries and returns, which is most functions, it removes the entire problem this post is about rather than making it cheaper.
 
