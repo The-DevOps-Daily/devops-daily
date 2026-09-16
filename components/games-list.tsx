@@ -38,6 +38,7 @@ import {
   FlaskConical,
   LucideIcon,
   FileCode,
+  Clock,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -45,6 +46,7 @@ import Link from 'next/link';
 const iconMap: Record<string, LucideIcon> = {
   Bug,
   FileCode,
+  Clock,
   MailWarning,
   Network,
   Trophy,

@@ -1,225 +1,68 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useUrlState } from './use-url-state';
+import {
+  parseCron,
+  nextFireTimes,
+  describeCron,
+  TIMEZONES,
+  type FieldName,
+} from '@/lib/games/cron-sim-engine';
 
-interface Parsed {
-  minute: string;
-  hour: string;
-  dom: string;
-  month: string;
-  dow: string;
-  description: string;
-}
+/**
+ * Cron parser utility.
+ *
+ * Paste an expression, get the next runs. The parsing and the schedule come
+ * from lib/games/cron-sim-engine.ts, the same engine behind
+ * /games/cron-expression-simulator, so the two pages cannot disagree.
+ *
+ * This used to carry its own parser. It got the day-of-month/day-of-week rule
+ * wrong (POSIX ORs those two fields when both are restricted, it ANDed them
+ * unconditionally), could not read `MON` or `JAN`, and searched only a year
+ * ahead, so a February 29 schedule reported no runs at all.
+ */
 
-function describeField(expr: string, name: string, min: number, max: number, names?: string[]): string {
-  if (expr === '*') return `every ${name}`;
-  if (/^\*\/(\d+)$/.test(expr)) {
-    const step = expr.match(/^\*\/(\d+)$/)![1];
-    return `every ${step} ${name}s`;
-  }
-  if (/^\d+$/.test(expr)) {
-    const n = parseInt(expr, 10);
-    if (n < min || n > max) return expr;
-    return names ? `on ${names[n - min]}` : `at ${name} ${n}`;
-  }
-  if (/^\d+-\d+$/.test(expr)) {
-    return `${name}s ${expr.replace('-', ' through ')}`;
-  }
-  if (/^(\d+,)+\d+$/.test(expr)) {
-    return `${name}s ${expr}`;
-  }
-  return expr;
-}
+const PRESETS = ['0 9 * * 1-5', '*/5 * * * *', '0 0 * * 0', '@daily', '30 2 * * 1', '0 */6 * * *'];
 
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
+const FIELD_ORDER: { name: FieldName; label: string }[] = [
+  { name: 'minute', label: 'minute' },
+  { name: 'hour', label: 'hour' },
+  { name: 'dom', label: 'day of month' },
+  { name: 'month', label: 'month' },
+  { name: 'dow', label: 'day of week' },
 ];
-
-const DOW_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-const SPECIAL: Record<string, string> = {
-  '@yearly': 'Once a year at midnight on January 1 (0 0 1 1 *)',
-  '@annually': 'Once a year at midnight on January 1 (0 0 1 1 *)',
-  '@monthly': 'Once a month at midnight on the 1st (0 0 1 * *)',
-  '@weekly': 'Once a week at midnight on Sunday (0 0 * * 0)',
-  '@daily': 'Once a day at midnight (0 0 * * *)',
-  '@midnight': 'Once a day at midnight (0 0 * * *)',
-  '@hourly': 'Once an hour at minute 0 (0 * * * *)',
-};
-
-function parseCron(input: string): Parsed | { error: string } {
-  const trimmed = input.trim();
-  if (!trimmed) return { error: 'Enter a cron expression, for example 0 9 * * 1-5' };
-
-  if (SPECIAL[trimmed]) {
-    return {
-      minute: '',
-      hour: '',
-      dom: '',
-      month: '',
-      dow: '',
-      description: SPECIAL[trimmed],
-    };
-  }
-
-  const parts = trimmed.split(/\s+/);
-  if (parts.length !== 5) {
-    return {
-      error: `Expected 5 space-separated fields (minute hour day-of-month month day-of-week), got ${parts.length}`,
-    };
-  }
-  const [minute, hour, dom, month, dow] = parts;
-
-  const pieces: string[] = [];
-  if (minute === '0' && hour === '0') pieces.push('At midnight');
-  else if (minute === '0' && /^\d+$/.test(hour)) pieces.push(`At ${hour.padStart(2, '0')}:00`);
-  else if (/^\d+$/.test(minute) && /^\d+$/.test(hour))
-    pieces.push(`At ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`);
-  else {
-    pieces.push(
-      `${describeField(minute, 'minute', 0, 59)}, ${describeField(hour, 'hour', 0, 23)}`,
-    );
-  }
-
-  if (dom !== '*') pieces.push(`on day ${dom} of the month`);
-  if (month !== '*') pieces.push(`in ${describeField(month, 'month', 1, 12, MONTH_NAMES)}`);
-  if (dow !== '*') pieces.push(describeField(dow, 'day of week', 0, 7, DOW_NAMES));
-
-  return {
-    minute,
-    hour,
-    dom,
-    month,
-    dow,
-    description: pieces.join(', ') || 'Every minute',
-  };
-}
-
-// --- next-run calculator (covers common patterns: *, */N, N, N-M) ---
-
-type FieldSet = Set<number>;
-
-function expandField(expr: string, min: number, max: number): FieldSet | null {
-  const result = new Set<number>();
-  for (const piece of expr.split(',')) {
-    if (piece === '*') {
-      for (let i = min; i <= max; i++) result.add(i);
-      continue;
-    }
-    const stepMatch = piece.match(/^(\*|\d+(-\d+)?)\/(\d+)$/);
-    if (stepMatch) {
-      const range = stepMatch[1];
-      const step = parseInt(stepMatch[3], 10);
-      let start = min;
-      let end = max;
-      if (range !== '*') {
-        const rangeMatch = range.match(/^(\d+)(?:-(\d+))?$/);
-        if (!rangeMatch) return null;
-        start = parseInt(rangeMatch[1], 10);
-        end = rangeMatch[2] ? parseInt(rangeMatch[2], 10) : max;
-      }
-      for (let i = start; i <= end; i += step) result.add(i);
-      continue;
-    }
-    const rangeMatch = piece.match(/^(\d+)-(\d+)$/);
-    if (rangeMatch) {
-      const start = parseInt(rangeMatch[1], 10);
-      const end = parseInt(rangeMatch[2], 10);
-      for (let i = start; i <= end; i++) result.add(i);
-      continue;
-    }
-    if (/^\d+$/.test(piece)) {
-      result.add(parseInt(piece, 10));
-      continue;
-    }
-    return null;
-  }
-  return result;
-}
-
-function nextRuns(expr: string, count: number): Date[] | null {
-  const trimmed = SPECIAL[expr.trim()] ? expandSpecial(expr.trim()) : expr.trim();
-  const parts = trimmed.split(/\s+/);
-  if (parts.length !== 5) return null;
-
-  const minutes = expandField(parts[0], 0, 59);
-  const hours = expandField(parts[1], 0, 23);
-  const doms = expandField(parts[2], 1, 31);
-  const months = expandField(parts[3], 1, 12);
-  const dows = expandField(parts[4], 0, 7);
-
-  if (!minutes || !hours || !doms || !months || !dows) return null;
-
-  const dowSet = new Set<number>();
-  for (const v of dows) dowSet.add(v % 7);
-
-  const runs: Date[] = [];
-  const d = new Date();
-  d.setSeconds(0, 0);
-  d.setMinutes(d.getMinutes() + 1);
-
-  const maxIterations = 525600; // one year of minutes
-  let iter = 0;
-  while (runs.length < count && iter < maxIterations) {
-    if (
-      minutes.has(d.getMinutes()) &&
-      hours.has(d.getHours()) &&
-      doms.has(d.getDate()) &&
-      months.has(d.getMonth() + 1) &&
-      dowSet.has(d.getDay())
-    ) {
-      runs.push(new Date(d));
-    }
-    d.setMinutes(d.getMinutes() + 1);
-    iter++;
-  }
-  return runs;
-}
-
-function expandSpecial(s: string): string {
-  const map: Record<string, string> = {
-    '@yearly': '0 0 1 1 *',
-    '@annually': '0 0 1 1 *',
-    '@monthly': '0 0 1 * *',
-    '@weekly': '0 0 * * 0',
-    '@daily': '0 0 * * *',
-    '@midnight': '0 0 * * *',
-    '@hourly': '0 * * * *',
-  };
-  return map[s] ?? s;
-}
-
-function formatDate(d: Date): string {
-  return d.toLocaleString(undefined, {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
-}
 
 export function CronParser() {
   const [expr, setExpr] = useUrlState('cron', '0 9 * * 1-5');
+  const [tz, setTz] = useState('UTC');
+  // The browser clock and zone only after mount, so a statically exported page
+  // does not bake in a build-time answer and then hydrate to a different one.
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (local) setTz(local);
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
   const parsed = useMemo(() => parseCron(expr), [expr]);
-  const runs = useMemo(() => {
-    if ('error' in parsed) return null;
-    return nextRuns(expr, 5);
-  }, [expr, parsed]);
+  const schedule = useMemo(
+    () => (now === null ? null : nextFireTimes(parsed, tz, 5, now)),
+    [parsed, tz, now],
+  );
+  const sentence = useMemo(() => describeCron(parsed), [parsed]);
+
+  // The browser's own zone first, then the rest, without repeating it.
+  const zones = useMemo(() => {
+    const seen = new Set<string>();
+    return [tz, ...TIMEZONES].filter((z) => (seen.has(z) ? false : (seen.add(z), true)));
+  }, [tz]);
+
+  const parts = parsed.normalised.split(/\s+/);
+  const badFields = new Set(parsed.errors.map((e) => e.field).filter(Boolean));
 
   return (
     <div className="space-y-6">
@@ -238,55 +81,132 @@ export function CronParser() {
           spellCheck="false"
         />
         <div className="mt-2 flex flex-wrap gap-2 text-xs">
-          {['0 9 * * 1-5', '*/5 * * * *', '0 0 * * 0', '@daily', '30 2 * * 1', '0 */6 * * *'].map(
-            (preset) => (
-              <button
-                key={preset}
-                onClick={() => setExpr(preset)}
-                className="font-mono tabular-nums text-muted-foreground hover:text-primary border border-border rounded px-2 py-0.5 transition-colors"
-              >
-                {preset}
-              </button>
-            ),
-          )}
+          {PRESETS.map((preset) => (
+            <button
+              key={preset}
+              onClick={() => setExpr(preset)}
+              className="font-mono tabular-nums text-muted-foreground hover:text-primary border border-border rounded px-2 py-0.5 transition-colors"
+            >
+              {preset}
+            </button>
+          ))}
         </div>
       </div>
 
-      {'error' in parsed ? (
+      {!parsed.ok ? (
         <div
           role="alert"
           aria-live="polite"
-          className="rounded-md border border-red-500/30 bg-red-500/5 p-4 text-sm font-mono text-red-500"
+          className="rounded-md border border-red-500/30 bg-red-500/5 p-4 text-sm"
         >
-          {parsed.error}
+          {parsed.errors.map((e, i) => (
+            <div key={i} className={i > 0 ? 'mt-2' : undefined}>
+              <p className="font-mono text-red-500">{e.message}</p>
+              {e.hint && <p className="mt-1 text-muted-foreground">{e.hint}</p>}
+            </div>
+          ))}
         </div>
       ) : (
         <>
           <div className="rounded-md border bg-card p-5" aria-live="polite">
             <p className="text-xs font-mono text-muted-foreground mb-2">// human readable</p>
-            <p className="text-lg text-foreground leading-relaxed">{parsed.description}</p>
+            <p className="text-lg text-foreground leading-relaxed">{sentence}</p>
+            {parsed.macro && (
+              <p className="mt-2 text-sm text-muted-foreground font-mono">
+                {parsed.macro} = {parsed.normalised}
+              </p>
+            )}
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {FIELD_ORDER.map((f, i) => (
+                <div
+                  key={f.name}
+                  className={`rounded border px-2 py-1.5 text-center ${
+                    badFields.has(f.name) ? 'border-red-500/50' : 'border-border/60'
+                  }`}
+                >
+                  <div className="font-mono text-sm tabular-nums text-foreground truncate">
+                    {parts[i]}
+                  </div>
+                  <div className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {f.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {parsed.dayOr && (
+              <p className="mt-4 rounded border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-sm text-muted-foreground">
+                Both day fields are set, so cron treats them as <strong>or</strong>, not{' '}
+                <strong>and</strong>. This fires on {parsed.fields!.dom.describe} and also{' '}
+                {parsed.fields!.dow.describe}.
+              </p>
+            )}
           </div>
 
-          {runs && runs.length > 0 && (
-            <div className="rounded-md border bg-card overflow-hidden">
-              <div className="px-4 py-2.5 bg-muted/60 border-b border-border/60 text-xs font-mono text-muted-foreground">
-                // next 5 runs ({Intl.DateTimeFormat().resolvedOptions().timeZone})
-              </div>
+          <div className="rounded-md border bg-card overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-muted/60 border-b border-border/60 text-xs font-mono text-muted-foreground">
+              <span>// next 5 runs</span>
+              <select
+                aria-label="Timezone"
+                value={tz}
+                onChange={(e) => setTz(e.target.value)}
+                className="bg-background border border-input rounded px-2 py-1 font-mono text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                {zones.map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {schedule === null ? (
+              <p className="px-4 py-3 text-sm text-muted-foreground">Working it out.</p>
+            ) : schedule.never ? (
+              <p className="px-4 py-3 text-sm text-muted-foreground">
+                This expression is valid but never fires. Nothing matches in the next{' '}
+                {Math.round(schedule.horizonDays / 365)} years, which means the date it asks for does
+                not exist. <span className="font-mono">0 0 30 2 *</span> is the usual way to get here.
+              </p>
+            ) : (
               <ul className="divide-y divide-border">
-                {runs.map((r, i) => (
+                {schedule.times.map((r, i) => (
                   <li
-                    key={i}
-                    className="flex items-center justify-between px-4 py-3 font-mono text-sm"
+                    key={`${r.at}-${i}`}
+                    className="flex items-center justify-between gap-3 px-4 py-3 font-mono text-sm"
                   >
                     <span className="text-muted-foreground tabular-nums">#{i + 1}</span>
-                    <span className="text-foreground tabular-nums">{formatDate(r)}</span>
+                    <span className="flex-1 text-right text-foreground tabular-nums">
+                      {r.weekday} {r.local}{' '}
+                      <span className="text-muted-foreground">{r.zoneAbbr}</span>
+                      {r.repeated && (
+                        <span className="ml-2 rounded border border-amber-500/50 px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-amber-500">
+                          twice
+                        </span>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+
+            {schedule && schedule.skipped.length > 0 && (
+              <p className="border-t border-border/60 px-4 py-3 text-sm text-muted-foreground">
+                Skipped by daylight saving: {schedule.skipped.map((s) => s.local).join(', ')}. The
+                clock jumps forward over that time in {tz}, so the run does not happen.
+              </p>
+            )}
+          </div>
         </>
       )}
+
+      <p className="text-sm text-muted-foreground">
+        Want to know why a schedule behaves the way it does? The{' '}
+        <a href="/games/cron-expression-simulator" className="underline hover:text-primary">
+          cron expression simulator
+        </a>{' '}
+        runs the same engine with the traps laid out: uneven steps, the two day fields, and what
+        daylight saving does to a job in the small hours.
+      </p>
     </div>
   );
 }
