@@ -166,7 +166,7 @@ The general version of that mistake: **a benchmark that keeps every resource bus
 
 The third row of the first table is the interesting one: **43 ms**, close to the reused pool, with no pool and no process.
 
-**That 43 ms deserves an asterisk, and a reader was right to ask for it.** All four strategies in that table ran inside one Node process, and `fetch` keeps its TLS connection open between calls. So the HTTP driver paid its handshake once and reused it for the other twenty-nine, while `new Client()` closed its connection every time and paid in full on every one. The p95 of 340 ms in that row is the first call, and it is the honest one. The table compares a cold Postgres connect against a warm HTTP one.
+**That 43 ms needs an asterisk.** All four strategies in that table ran inside one Node process, and `fetch` keeps its TLS connection open between calls. So the HTTP driver paid its handshake once and reused it for the other twenty-nine, while `new Client()` closed its connection every time and paid in full on every one. The p95 of 340 ms in that row is the first call, and it is the honest one. The table compares a cold Postgres connect against a warm HTTP one.
 
 That is the HTTP driver, `@neondatabase/serverless`. It does not open a Postgres connection. It sends the query over HTTPS to an endpoint that holds the connections on your behalf.
 
