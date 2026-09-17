@@ -17,7 +17,7 @@ DevOps Daily is a community-driven platform dedicated to providing high-quality 
 
 ## ✨ Features
 
-- 🚀 **Modern Tech Stack**: Built with Next.js 16, React 19, and TypeScript
+- 🚀 **Modern Tech Stack**: Built with Next.js, React and TypeScript
 - � **Rich Content**: Articles, multi-part guides, exercises, quizzes, and interactive games
 - �📱 **Fully Responsive**: Optimized experience across all devices
 - 🌓 **Dark Mode**: Beautiful light and dark theme support
@@ -29,9 +29,38 @@ DevOps Daily is a community-driven platform dedicated to providing high-quality 
 - 🎨 **Beautiful UI**: Built with Tailwind CSS and shadcn/ui components
 - 🔧 **PWA Support**: Install as a Progressive Web App for offline access
 
+## 💛 Sponsors
+
+<!-- sponsors:start -->
+
+DevOps Daily is kept free by its sponsors. If your company wants to reach
+engineers who choose tools, [see the sponsorship page](https://devops-daily.com/sponsorship).
+
+### [Svix](https://link.svix.com/devopsdaily)
+
+<a href="https://link.svix.com/devopsdaily"><picture><source media="(prefers-color-scheme: dark)" srcset="https://devops-daily.com/svix-brand-light.svg"><img src="https://devops-daily.com/svix-brand.svg" alt="Svix" height="44"></picture></a>
+
+Svix Dispatch sends your webhooks for you: retries with exponential backoff, signed payloads, idempotency keys, and a delivery log your customers can see.
+
+### Also sponsored by
+
+| [Atomsized](https://atomsized.com/) | [DigitalOcean](https://m.do.co/c/2a9bba940f39) | [DevDojo](https://devdojo.com) | [SMTPfast](https://smtpfa.st) | [QuizAPI](https://quizapi.io?ref=devops-daily) |
+|:--:|:--:|:--:|:--:|:--:|
+| <a href="https://atomsized.com/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://devops-daily.com/atomsized-light.svg"><img src="https://devops-daily.com/atomsized.svg" alt="Atomsized" height="28"></picture></a> | <a href="https://m.do.co/c/2a9bba940f39"><img src="https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg" alt="DigitalOcean" height="28"></a> | <a href="https://devdojo.com"><img src="https://devops-daily.com/devdojo.svg" alt="DevDojo" height="28"></a> | <a href="https://smtpfa.st"><img src="https://devops-daily.com/smtpfast.svg" alt="SMTPfast" height="28"></a> | <a href="https://quizapi.io?ref=devops-daily"><img src="https://devops-daily.com/quizapi.svg" alt="QuizAPI" height="28"></a> |
+
+- **[Atomsized](https://atomsized.com/)**: AWS platform engineering and GitOps
+- **[DigitalOcean](https://m.do.co/c/2a9bba940f39)**: Cloud infrastructure for developers
+- **[DevDojo](https://devdojo.com)**: Developer community & tools
+- **[SMTPfast](https://smtpfa.st)**: Developer-first email API
+- **[QuizAPI](https://quizapi.io?ref=devops-daily)**: Developer-first quiz platform
+
+<!-- sponsors:end -->
+
 ## Tech Stack
 
-- **Framework**: [Next.js 16](https://nextjs.org/)
+Versions live in `package.json`; this is the shape of the thing.
+
+- **Framework**: [Next.js](https://nextjs.org/) (App Router, static export)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
@@ -222,34 +251,6 @@ npm run check-format
 There is no pre-commit hook, so run these yourself before opening a pull
 request. Installing the ESLint and Prettier extensions in your IDE gives you
 the same feedback as you type.
-
-## 💛 Sponsors
-
-<!-- sponsors:start -->
-
-DevOps Daily is kept free by its sponsors. If your company wants to reach
-engineers who choose tools, [see the sponsorship page](https://devops-daily.com/sponsorship).
-
-### [Svix](https://link.svix.com/devopsdaily)
-
-<a href="https://link.svix.com/devopsdaily"><picture><source media="(prefers-color-scheme: dark)" srcset="https://devops-daily.com/svix-brand-light.svg"><img src="https://devops-daily.com/svix-brand.svg" alt="Svix" height="44"></picture></a>
-
-Svix Dispatch sends your webhooks for you: retries with exponential backoff, signed payloads, idempotency keys, and a delivery log your customers can see.
-
-### Also sponsored by
-
-| [Atomsized](https://atomsized.com/) | [DigitalOcean](https://m.do.co/c/2a9bba940f39) | [DevDojo](https://devdojo.com) | [SMTPfast](https://smtpfa.st) | [QuizAPI](https://quizapi.io?ref=devops-daily) |
-|:--:|:--:|:--:|:--:|:--:|
-| <a href="https://atomsized.com/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://devops-daily.com/atomsized-light.svg"><img src="https://devops-daily.com/atomsized.svg" alt="Atomsized" height="28"></picture></a> | <a href="https://m.do.co/c/2a9bba940f39"><img src="https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg" alt="DigitalOcean" height="28"></a> | <a href="https://devdojo.com"><img src="https://devops-daily.com/devdojo.svg" alt="DevDojo" height="28"></a> | <a href="https://smtpfa.st"><img src="https://devops-daily.com/smtpfast.svg" alt="SMTPfast" height="28"></a> | <a href="https://quizapi.io?ref=devops-daily"><img src="https://devops-daily.com/quizapi.svg" alt="QuizAPI" height="28"></a> |
-
-- **[Atomsized](https://atomsized.com/)**: AWS platform engineering and GitOps
-- **[DigitalOcean](https://m.do.co/c/2a9bba940f39)**: Cloud infrastructure for developers
-- **[DevDojo](https://devdojo.com)**: Developer community & tools
-- **[SMTPfast](https://smtpfa.st)**: Developer-first email API
-- **[QuizAPI](https://quizapi.io?ref=devops-daily)**: Developer-first quiz platform
-
-<!-- sponsors:end -->
-
 ## 🤝 Contributing
 
 We welcome contributions from the community! Whether you want to:
