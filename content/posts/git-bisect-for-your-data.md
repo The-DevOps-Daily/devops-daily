@@ -67,7 +67,7 @@ That is the whole primitive. Everything below is a binary search wrapped around 
 
 Before writing a tool on top of this I wanted to know whether one probe costs one second or thirty, because that is the difference between a usable tool and a party trick.
 
-Measured from a machine in Bulgaria against a Neon project in `eu-central-1`, Postgres 18:
+Measured against a Neon project in `eu-central-1`, Postgres 18, from a client roughly 45 ms of round trip away:
 
 ```terminal
 {

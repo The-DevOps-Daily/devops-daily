@@ -80,7 +80,7 @@ One query per process, a fresh process every time. That is the honest model of a
 
 **From a genuinely cold start, nothing escapes the handshake.** All three are a few hundred milliseconds. The HTTP driver is about 80 ms cheaper because it needs fewer round trips, which is worth explaining and is further down, but it is not a different category. If your function really does start from nothing on every request, a few hundred milliseconds is your floor and no client library moves it much.
 
-These were measured from a machine in Bulgaria against a database in `eu-central-1`, so distance is in every row. Yours will differ. The comparison is the point, and every row pays the same network.
+These were measured against a database in `eu-central-1` from a client roughly 45 ms of round trip away, so distance is in every row. Yours will differ. The comparison is the point, and every row pays the same network.
 
 ### Warm: the process survives
 
