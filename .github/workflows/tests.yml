@@ -45,6 +45,13 @@ jobs:
         continue-on-error: true
         run: pnpm lint
 
+      # The README sponsor block is generated from lib/sponsors.ts. This fails
+      # the build if the two drift, because a stale sponsor list is worse than
+      # none: it shows companies who have stopped paying and omits the ones who
+      # just started.
+      - name: Check the README sponsor block is current
+        run: pnpm generate:readme-sponsors --check
+
       - name: Run tests
         run: pnpm test
 
