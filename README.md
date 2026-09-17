@@ -17,7 +17,7 @@ DevOps Daily is a community-driven platform dedicated to providing high-quality 
 
 ## ✨ Features
 
-- 🚀 **Modern Tech Stack**: Built with Next.js 15, React 19, and TypeScript
+- 🚀 **Modern Tech Stack**: Built with Next.js 16, React 19, and TypeScript
 - � **Rich Content**: Articles, multi-part guides, exercises, quizzes, and interactive games
 - �📱 **Fully Responsive**: Optimized experience across all devices
 - 🌓 **Dark Mode**: Beautiful light and dark theme support
@@ -31,7 +31,7 @@ DevOps Daily is a community-driven platform dedicated to providing high-quality 
 
 ## Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/)
+- **Framework**: [Next.js 16](https://nextjs.org/)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **UI Components**: [shadcn/ui](https://ui.shadcn.com/)
@@ -45,8 +45,10 @@ DevOps Daily is a community-driven platform dedicated to providing high-quality 
 
 ### Prerequisites
 
-- Node.js 18.0.0 or later
-- npm and pnpm 9.0.0 or later
+- Node.js 22.13.1 or later (below 25)
+- pnpm 10 or later (below 11)
+
+Both are enforced by the `engines` field in `package.json`.
 
 ### Installation
 
@@ -66,7 +68,7 @@ pnpm install
 3. **Start the development server:**
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 4. **Open your browser:**
@@ -84,11 +86,18 @@ devopsdaily/
 ├─ content/          # Markdown content files
 │  ├─ posts/         # Blog posts
 │  ├─ guides/        # Multi-part guides
-│  ├─ authors/       # Author information
-│  └─ categories/    # Category information
-│  └─ quizzes/       # Quiz content
-│  └─ exercises/     # Exercise content
-│  └─ news/          # News content
+│  ├─ categories/    # Category information
+│  ├─ quizzes/       # Quiz content
+│  ├─ exercises/     # Exercise content
+│  ├─ news/          # News content
+│  ├─ checklists/    # Checklists
+│  ├─ comparisons/   # Side-by-side tool comparisons
+│  ├─ flashcards/    # Flashcard decks
+│  ├─ interview-questions/  # Interview question sets
+│  ├─ experts/       # Expert directory entries
+│  ├─ newsletters/   # Newsletter issues
+│  ├─ advent-of-devops/     # Advent calendar content
+│  └─ hacktoberfest/ # Hacktoberfest content
 ├─ lib/              # Utility functions and data fetching
 ├─ public/           # Static assets
 │  ├─ images/        # Image files
@@ -168,10 +177,15 @@ Content for part 1 goes here.
 
 The project includes several utility scripts:
 
-- `pnpm run dev`: Start development server
-- `pnpm run build`: Build the production-ready site
-- `pnpm run generate-feed`: Generate RSS feed
-- `pnpm run generate-images`: Generate placeholder images for content
+- `pnpm dev`: Start development server
+- `pnpm build`: Build the production-ready site
+- `pnpm generate-feed`: Generate the RSS feed
+- `pnpm generate:images`: Generate the OG cover image for new content
+- `pnpm images:all`: Generate covers, convert them to PNG and prune the SVGs
+- `pnpm generate-search-index`: Rebuild the client-side search index
+
+`pnpm build` runs the image, markdown, search and feed steps for you, so you
+only need these individually when working on content locally.
 
 ## Customization
 
@@ -183,7 +197,7 @@ Update the site information in `app/layout.tsx` to customize metadata.
 
 The project uses Tailwind CSS for styling. Update the design tokens in:
 
-- `tailwind.config.js`: Configure theme colors and extensions
+- `tailwind.config.ts`: Configure theme colors and extensions
 - `app/globals.css`: Global styles and custom CSS
 
 ### Components
@@ -205,9 +219,9 @@ npm run format
 npm run check-format
 ```
 
-All linting checks run automatically during the pre-commit hook via Husky and lint-staged to ensure code quality standards are maintained.
-
-Install the ESLint and Prettier extensions in your IDE for real-time feedback while coding.
+There is no pre-commit hook, so run these yourself before opening a pull
+request. Installing the ESLint and Prettier extensions in your IDE gives you
+the same feedback as you type.
 
 ## 🤝 Contributing
 
@@ -240,7 +254,12 @@ DevOps Daily supports multiple content types:
 - **Exercises**: Hands-on practical exercises to reinforce learning
 - **Quizzes**: Interactive quizzes to test your knowledge
 - **News**: Curated DevOps news and updates
-- **Games**: Fun interactive games for learning DevOps concepts
+- **Games**: Interactive simulators and games, built as React components rather than markdown
+- **Checklists**: Step-by-step operational checklists
+- **Comparisons**: Side-by-side tool comparisons
+- **Flashcards**: Spaced-repetition decks
+- **Interview Questions**: Practice questions by topic
+- **Experts**: Directory of engineers and the stacks they work with
 
 ## 🚀 Deployment
 
@@ -254,16 +273,16 @@ This project is deployed on [Cloudflare Pages](https://pages.cloudflare.com/) bu
 
 ## 🐳 Docker
 
-DevOps Daily can run in Docker for consistent environments. The project uses a **single universal Dockerfile** that switches between development and production modes via a simple `BUILD_ENV` build argument.
+DevOps Daily can run in Docker for consistent environments. The project uses a **single multi-stage Dockerfile**; pick the mode with `--target`. Development runs the Next.js dev server on Node; production builds the static export and serves it from nginx.
 
 ### Building the Docker Image
 
 ```bash
-# Build production image (default target)
-docker build --build-arg BUILD_ENV=production -t devops-daily:prod .
+# Build production image (static export served by nginx)
+docker build --target production -t devops-daily:prod .
 
-# Build development image
-docker build --build-arg BUILD_ENV=development -t devops-daily:dev .
+# Build development image (Next.js dev server with hot-reload)
+docker build --target development -t devops-daily:dev .
 ```
 
 ### Running the Container
@@ -302,10 +321,10 @@ docker logs -f devops-daily-app
 
 ### Docker Image Details
 
-- **Architecture**: Single universal Dockerfile controlled by `BUILD_ENV` argument
-- **Base Image**: Node.js 20.18.1 (Bullseye Slim)
-- **Environments**: Controlled by `BUILD_ENV=development` or `BUILD_ENV=production`
-- **Smart Builds**: Installs nginx and builds assets only for production
+- **Architecture**: Single multi-stage Dockerfile, selected with `--target`
+- **Base Image**: Node.js 22.13.1 (Bookworm Slim) for the build and dev stages
+- **Production Image**: `nginx:1.27-alpine` serving the static export, so it carries no Node runtime
+- **Environments**: `--target development` or `--target production`
 - **Security**: Runs as non-root user, includes OS security updates
 - **Health Check**: Built-in health check endpoint
 - **Version Pinning**: Node.js, pnpm, and nginx versions are pinned via build args for reproducible builds
@@ -317,22 +336,22 @@ You can customize the versions used in the Docker build:
 ```bash
 # Build production with custom versions
 docker build \
-  --build-arg BUILD_ENV=production \
-  --build-arg NODE_VERSION=20.18.1 \
-  --build-arg PNPM_VERSION=10.11.1 \
+  --target production \
+  --build-arg NODE_VERSION=22.13.1 \
+  --build-arg PNPM_VERSION=10.34.5 \
   -t devops-daily:custom .
 
 # Build development with custom Node/pnpm versions
 docker build \
-  --build-arg BUILD_ENV=development \
-  --build-arg NODE_VERSION=20.18.1 \
-  --build-arg PNPM_VERSION=10.11.1 \
+  --target development \
+  --build-arg NODE_VERSION=22.13.1 \
+  --build-arg PNPM_VERSION=10.34.5 \
   -t devops-daily:dev .
 ```
 
 ### Docker Compose (Recommended)
 
-Docker Compose is the easiest way to manage development and production environments. It automatically passes the `BUILD_ENV` argument to switch between modes.
+Docker Compose is the easiest way to manage development and production environments. Each service already names the build stage it needs, so there is nothing to pass.
 
 #### Quick Start
 
