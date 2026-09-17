@@ -131,6 +131,7 @@ const PACKAGES = [
     description: 'Awareness across the site',
     features: [
       'Logo + tagline on all post pages',
+      'Logo + tagline in the GitHub README (1k+ stars)',
       'One newsletter mention / month',
       'Social shoutout at start of sponsorship',
       'Monthly report (impressions, clicks)',
@@ -144,6 +145,7 @@ const PACKAGES = [
     description: 'Our most popular — prominent reach',
     features: [
       'Everything in Starter',
+      'Featured slot at the top of the GitHub README',
       'Homepage + roadmap placement',
       'Dedicated newsletter slot (weekly)',
       'One sponsored tutorial or tool spotlight post',
