@@ -53,7 +53,8 @@
     "hooks:install": "sh scripts/git-hooks/install.sh",
     "check-links": "node --import tsx scripts/check-broken-links.ts",
     "check-internal-links": "tsx scripts/check-internal-links.ts",
-    "audit-content": "tsx scripts/audit-content.ts"
+    "audit-content": "tsx scripts/audit-content.ts",
+    "generate:readme-sponsors": "tsx scripts/generate-readme-sponsors.ts"
   },
   "dependencies": {
     "@giscus/react": "^3.1.0",
