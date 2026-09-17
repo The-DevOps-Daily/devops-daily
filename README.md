@@ -136,71 +136,9 @@ devopsdaily/
 
 ## Content Management
 
-### Adding a New Post
-
-1. Create a new Markdown file in `content/posts/`, e.g., `my-post.md`
-2. Add frontmatter and content:
-
-```markdown
----
-title: 'My Post Title'
-slug: 'my-post'
-excerpt: 'A short description of the post'
-date: '2025-05-15'
-publishedAt: '2025-05-15T12:00:00Z'
-category:
-  name: 'Kubernetes'
-  slug: 'kubernetes'
-author:
-  name: 'John Doe'
-  slug: 'john-doe'
-tags: ['kubernetes', 'devops', 'containers']
----
-
-# My Post Title
-
-Content goes here in Markdown format.
-```
-
-### Adding a Guide
-
-1. Create a directory in `content/guides/`, e.g., `content/guides/kubernetes-guide/`
-2. Add an `index.md` file for the guide overview:
-
-```markdown
----
-title: 'Kubernetes Guide'
-slug: 'kubernetes-guide'
-description: 'A guide to Kubernetes'
-category:
-  name: 'Kubernetes'
-  slug: 'kubernetes'
-publishedAt: '2025-05-15T12:00:00Z'
-author:
-  name: 'John Doe'
-  slug: 'john-doe'
-tags: ['kubernetes', 'containers', 'orchestration']
----
-
-# Kubernetes Guide
-
-This guide will help you learn Kubernetes from basics to advanced topics.
-```
-
-3. Add part files (e.g., `part-1.md`, `part-2.md`) in the same directory:
-
-```markdown
----
-title: 'Kubernetes Basics'
-slug: 'part-1'
-order: 1
-description: 'Introduction to Kubernetes concepts'
----
-
-# Kubernetes Basics
-
-Content for part 1 goes here.
-```
+Content is markdown with YAML frontmatter under `content/`. Each type has its
+own required fields, and the templates for all of them live in
+[CONTRIBUTING.md](CONTRIBUTING.md#-content-guidelines).
 
 ## Scripts
 
@@ -216,41 +154,7 @@ The project includes several utility scripts:
 `pnpm build` runs the image, markdown, search and feed steps for you, so you
 only need these individually when working on content locally.
 
-## Customization
 
-### Site Information
-
-Update the site information in `app/layout.tsx` to customize metadata.
-
-### Styling
-
-The project uses Tailwind CSS for styling. Update the design tokens in:
-
-- `tailwind.config.ts`: Configure theme colors and extensions
-- `app/globals.css`: Global styles and custom CSS
-
-### Components
-
-UI components are built with shadcn/ui and can be customized in the `components/ui` directory.
-
-## Linting Workflow
-
-The project uses ESLint and Prettier for code quality and formatting. Here are the key commands for your development workflow:
-
-```bash
-# Run ESLint to check for issues
-npm run lint
-
-# Format code with Prettier
-npm run format
-
-# Verify code is properly formatted
-npm run check-format
-```
-
-There is no pre-commit hook, so run these yourself before opening a pull
-request. Installing the ESLint and Prettier extensions in your IDE gives you
-the same feedback as you type.
 ## 🤝 Contributing
 
 We welcome contributions from the community! Whether you want to:
@@ -301,152 +205,15 @@ This project is deployed on [Cloudflare Pages](https://pages.cloudflare.com/) bu
 
 ## 🐳 Docker
 
-DevOps Daily can run in Docker for consistent environments. The project uses a **single multi-stage Dockerfile**; pick the mode with `--target`. Development runs the Next.js dev server on Node; production builds the static export and serves it from nginx.
-
-### Building the Docker Image
+The project ships a multi-stage Dockerfile. The short version:
 
 ```bash
-# Build production image (static export served by nginx)
-docker build --target production -t devops-daily:prod .
-
-# Build development image (Next.js dev server with hot-reload)
-docker build --target development -t devops-daily:dev .
+docker compose up dev     # dev server with hot-reload on :3000
+docker compose up prod    # static export served by nginx on :8080
 ```
 
-### Running the Container
-
-```bash
-# Run production container
-docker run -p 8080:80 devops-daily:prod
-
-# Run in detached mode (background)
-docker run -d -p 8080:80 --name devops-daily-app devops-daily:prod
-
-# Run development container with hot-reload
-docker run -p 3000:3000 -v $(pwd):/app devops-daily:dev
-```
-
-After starting the container, visit [http://localhost:8080](http://localhost:8080) for production or [http://localhost:3000](http://localhost:3000) for development.
-
-### Container Management
-
-```bash
-# Stop the container
-docker stop devops-daily-app
-
-# Start the container
-docker start devops-daily-app
-
-# Remove the container
-docker rm devops-daily-app
-
-# View logs
-docker logs devops-daily-app
-
-# View logs in real-time
-docker logs -f devops-daily-app
-```
-
-### Docker Image Details
-
-- **Architecture**: Single multi-stage Dockerfile, selected with `--target`
-- **Base Image**: Node.js 22.13.1 (Bookworm Slim) for the build and dev stages
-- **Production Image**: `nginx:1.27-alpine` serving the static export, so it carries no Node runtime
-- **Environments**: `--target development` or `--target production`
-- **Security**: Runs as non-root user, includes OS security updates
-- **Health Check**: Built-in health check endpoint
-- **Version Pinning**: Node.js, pnpm, and nginx versions are pinned via build args for reproducible builds
-
-#### Build Arguments
-
-You can customize the versions used in the Docker build:
-
-```bash
-# Build production with custom versions
-docker build \
-  --target production \
-  --build-arg NODE_VERSION=22.13.1 \
-  --build-arg PNPM_VERSION=10.34.5 \
-  -t devops-daily:custom .
-
-# Build development with custom Node/pnpm versions
-docker build \
-  --target development \
-  --build-arg NODE_VERSION=22.13.1 \
-  --build-arg PNPM_VERSION=10.34.5 \
-  -t devops-daily:dev .
-```
-
-### Docker Compose (Recommended)
-
-Docker Compose is the easiest way to manage development and production environments. Each service already names the build stage it needs, so there is nothing to pass.
-
-#### Quick Start
-
-```bash
-# Start development server with hot-reload
-docker compose up dev
-
-# Start in background
-docker compose up -d dev
-
-# View logs
-docker compose logs -f dev
-
-# Stop all services
-docker compose down
-```
-
-#### Available Services
-
-| Service | Port | Description                        |
-| ------- | ---- | ---------------------------------- |
-| `dev`   | 3000 | Development server with hot-reload |
-| `prod`  | 8080 | Production build served via nginx  |
-
-#### Development Mode
-
-```bash
-# Start development server (with hot-reload)
-docker compose up dev
-
-# Rebuild after dependency changes
-docker compose up dev --build
-
-# Run in background
-docker compose up -d dev
-```
-
-The development server mounts your local files, so any changes you make will automatically trigger a reload.
-
-#### Production Mode
-
-```bash
-# Build and run production version
-docker compose up prod --build
-
-# Run in background
-docker compose up -d prod
-```
-
-#### Useful Commands
-
-```bash
-# Stop all services
-docker compose down
-
-# Stop and remove volumes (clean slate)
-docker compose down -v
-
-# View logs for a specific service
-docker compose logs -f dev
-
-# Rebuild a specific service
-docker compose build dev
-
-# Run a one-off command in the dev container
-docker compose run --rm dev pnpm lint
-```
+Build arguments, image internals and the full command reference are in
+[docs/docker.md](docs/docker.md).
 
 ## 📄 License
 

@@ -171,22 +171,17 @@ order: 1
 
 ### Author Information
 
-If you're contributing content, add your author info:
-
-**Location**: `content/authors/<your-slug>.md`
+There is no separate author file. Put your name and a slug in the frontmatter
+of the piece itself:
 
 ```yaml
----
-name: 'Your Name'
-slug: 'your-name'
-bio: 'DevOps Engineer passionate about automation and cloud technologies'
-avatar: '/images/authors/your-name.jpg'
-social:
-  twitter: 'https://twitter.com/yourhandle'
-  github: 'https://github.com/yourhandle'
-  linkedin: 'https://linkedin.com/in/yourhandle'
----
+author:
+  name: 'Your Name'
+  slug: 'your-name'
 ```
+
+The slug is what the site uses to group everything you have written, so keep it
+the same across your contributions.
 
 ### Categories
 
