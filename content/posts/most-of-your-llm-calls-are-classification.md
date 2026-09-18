@@ -24,13 +24,13 @@ Look at where the model calls sit in your systems. Not the chat feature, the plu
 
 Something decides which team a ticket belongs to. Something decides whether a log line is a real failure or noise. Something reads an invoice and pulls out four fields. Something looks at a support message and picks one of six labels.
 
-None of those are generation. Every one is a function from some text to a small set of outcomes, and you are paying a model that can write a sonnet to return the string `billing`.
+Some of those are genuine reasoning problems. Many are not: they are a function from some text to a bounded answer, a label from a fixed set or a handful of typed fields. And you are paying a model that can write a sonnet to return the string `billing`.
 
 That is the argument a new class of model is making, and it is worth taking seriously even if the specific product turns out not to matter. It is also an argument that arrives wrapped in some very large numbers, which is the part worth slowing down for.
 
 ## TLDR
 
-- **Classification and generation are different jobs.** Most model calls in a production pipeline are the first kind, priced and latency-budgeted as though they were the second.
+- **Bounded decisions and open generation are different jobs.** A large share of production model calls are the first kind, priced and latency-budgeted as though they were the second.
 - **TypeSafe AI's Jev** is a "System One model", small and fast, built to return structured decisions. Their headline claims are **193.6x faster and 244.6x cheaper** than frontier models on their own workflow evals.
 - **Read those numbers before repeating them.** Their benchmarks were, in their words, "generally run from our laptops on the West Coast", which measures network latency as much as inference.
 - **There is no ground truth in their evals.** They compare predictions against other models' reference probabilities, not against correct answers, and report no accuracy percentages.
@@ -70,9 +70,9 @@ Their published claims, all theirs and none verified by us:
 | Cost | 244.6x cheaper; $0.042 per million input tokens, output tokens free |
 | Errors | Zero type errors, by construction |
 
-**We have not tested it.** There is no access at the time of writing, so everything in that table is a vendor number and should be read as one.
+**We have not tested it.** We had no access at the time of writing, so everything in that table is a vendor number and should be read as one.
 
-The idea is not novel and that is a point in its favour: small specialised classifiers have always beaten general models on narrow tasks, on every axis except convenience. What is new is packaging that as a hosted API with typed output, which is the part that was previously your problem.
+The idea is not novel and that is a point in its favour: a small model trained for one task has often beaten a general one on that task's latency and cost, sometimes on accuracy too, at the price of building and maintaining it. What is new here is packaging that as a hosted API with typed output, which moves the maintenance to someone else. Whether it also matches the quality is the part to test.
 
 ## How to read a 200x claim
 
@@ -84,11 +84,11 @@ TypeSafe published their methodology, which is more than many do, and it contain
 
 > "generally run from our laptops on the West Coast"
 
-A laptop measuring two hosted APIs is measuring **the network** at least as much as the inference. Their comparison figure for a frontier model on a classification task was **8.566 seconds**. That is not a plausible compute time for a short classification; it is a plausible round trip including queueing, cold paths and distance.
+A laptop calling two hosted APIs measures end-to-end service latency: network, queueing, serving conditions and inference, with no way to separate them. Their comparison figure for a frontier model was **8.566 seconds**, and the materials do not say what the input was, whether the comparison model was doing any reasoning, or how long the output ran. Those change the number a lot.
 
-Move the laptop and both numbers move. That does not make the ratio meaningless, but it means the ratio belongs to that laptop on that day, not to the models.
+That does not make the ratio meaningless. It means the ratio describes two services as reached from one place on one day, which is a different claim from one about the models.
 
-We have hit exactly this in our own writing. A benchmark we published a few days ago compared a warm HTTP connection against a cold Postgres connect and made one look eight times faster than it was. The p95 column was screaming and nobody looked. **Measurement setups lie quietly, and they lie in the direction you were hoping.**
+We have hit exactly this in our own writing. A benchmark we published a few days ago compared a warm HTTP connection against a cold Postgres connect and reported the gap as though it were about the protocols. It was about which one got to reuse its connection. The p95 column said so and we did not look. **A measurement setup fails quietly: nothing errors, you just answer a different question from the one you asked.**
 
 ### What was it compared against
 
@@ -106,11 +106,29 @@ Read that carefully, because it is the most useful sentence in the whole announc
 
 **A guarantee of type validity is not a guarantee of correctness.**
 
-Constrained decoding can make it impossible to return anything but one of your six labels. That eliminates the parser, the fallback and the metric, which is genuine engineering value. It does nothing whatsoever about picking the wrong label. A classifier that confidently returns a valid `billing` for every message about refunds has zero type errors and is completely useless.
+Constrained decoding can make it impossible to return anything but one of your six labels. That removes a real category of work: the parser, and the branch for output that did not match. It does not remove timeouts, refusals, truncation or service errors, so the error handling stays. And it does nothing whatsoever about picking the wrong label. A classifier that confidently returns a valid `billing` for every message about refunds has zero type errors and is completely useless.
 
 This applies to every structured-output feature you use, not just this one. Schema-constrained generation solves parsing. It does not solve being right.
 
 To their credit again, TypeSafe say their workflow evals likely represent *"the higher end of real world gains."*
+
+### The checklist
+
+Those three questions generalise, and they are worth asking of any benchmark, including one of ours:
+
+```text
+1. Where was it measured from, and does that setup separate the thing
+   being claimed from everything around it?
+2. What is the baseline, and was it configured the way a competent user
+   would configure it?
+3. Is there a correctness number, measured against answers someone
+   labelled, rather than agreement with another system?
+4. What exactly does a guarantee cover? Read the scope, not the adjective.
+5. What did the authors themselves say about the limits? It is usually
+   in there, and it is usually the most honest paragraph.
+```
+
+A vendor benchmark that survives those is worth acting on. Most do not survive question three.
 
 ## What to do with this
 
@@ -151,11 +169,13 @@ That last line is the hidden cost nobody puts in the business case, and the firs
 
 ### 3. Build the eval set before you shop
 
-A hundred examples you labelled by hand, drawn from your real traffic, including the ambiguous ones. It is a dull afternoon and it is the only thing that will tell you whether a 200x faster model is 200x faster at being wrong.
+A hundred examples you labelled by hand, drawn from your real traffic. Include the ambiguous ones, the rare classes, and the cases where being wrong costs the most, because an accuracy number that averages over those hides exactly what you need to see. Hold some back so you are not tuning against the whole set.
+
+A hundred is a pilot, not proof. It is enough to rule things out, which is most of what you need early, and it is a dull afternoon rather than a project.
 
 It also outlives any particular vendor. Models will keep arriving; the eval set is the asset.
 
-We built something close to this when we wrote about [explaining CI failures automatically](/posts/ci-log-triage-digitalocean-inference), and the lesson there was the same shape: the interesting engineering was not the model call, it was everything around it. Throwing away 92% of the log before sending it mattered more than which model read the remainder.
+We built something close to this when we wrote about [explaining CI failures automatically](/posts/ci-log-triage-digitalocean-inference), and the lesson there was the same shape: the interesting engineering was not the model call, it was everything around it. What we wrote at the time was that the interesting part was throwing away 92% of the log before sending it.
 
 ### 4. Then look at the price
 
@@ -171,7 +191,7 @@ If you are tracking this category rather than buying today, the things that woul
 - **Third-party measurement** from a machine that is not the vendor's laptop
 - **A published failure mode.** Every classifier has inputs it is bad at, and a vendor who names theirs is telling you they have looked
 
-None of those exist yet for this particular model. That is normal for a launch and it is also the reason to keep your money in your pocket for now.
+We did not find those in the launch materials. That is normal this early, and it is also the reason to wait before moving anything that matters.
 
 ## Summary
 
