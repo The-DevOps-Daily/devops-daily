@@ -1,5 +1,5 @@
 ---
-title: 'Most of Your LLM Calls Are Classification Problems'
+title: 'Jev and the Classification Problem Hiding in Your LLM Bill'
 excerpt: 'Routing, tagging, triage and extraction are classification wearing a chat interface. A new model class is arguing that point loudly, with numbers worth reading carefully. Here is how to tell whether the argument applies to your pipeline, and how to read a 200x claim before you repeat it.'
 category:
   name: 'DevOps'
@@ -15,6 +15,7 @@ featured: false
 tags:
   - AI
   - LLM
+  - Jev
   - Architecture
   - FinOps
   - Benchmarking
