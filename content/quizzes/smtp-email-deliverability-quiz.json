@@ -1,0 +1,291 @@
+{
+  "id": "smtp-email-deliverability-quiz",
+  "title": "SMTP and Email Deliverability Quiz",
+  "description": "Test yourself on the parts of email that actually break: envelope versus header senders, SPF and DKIM alignment, what DMARCbis changed, bounce handling, and why correct records are not the same as good deliverability",
+  "category": "Networking",
+  "icon": "Network",
+  "totalPoints": 225,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 4,
+      "intermediate": 7,
+      "advanced": 4
+    },
+    "createdDate": "2026-09-19"
+  },
+  "questions": [
+    {
+      "id": "envelope-vs-header-from",
+      "title": "The Two From Addresses",
+      "description": "A message shows one sender in the inbox and a different one in the bounce. Which field does the recipient actually see?",
+      "situation": "A customer forwards you a screenshot: the email claims to be from billing@yourcompany.com. Your logs show the bounce went back to a completely different address at a domain you do not own. Nobody has been hacked. Both addresses were set by the sender, in two different places.",
+      "codeExample": "MAIL FROM:<bounces@sender-infra.net>      <- envelope\nRCPT TO:<customer@example.com>\nDATA\nFrom: Billing <billing@yourcompany.com>   <- header\nSubject: Your invoice",
+      "options": [
+        "The header `From:`, set inside DATA. The envelope `MAIL FROM` governs routing and bounces, and normally survives only as a `Return-Path` header most people never open",
+        "Both, concatenated, which is why the screenshot looks odd",
+        "The envelope `MAIL FROM`, because that is what the receiving server validated",
+        "Whichever one SPF passed on, since receivers display the authenticated address"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "SMTP carries the sender twice and does not require the two to match. The envelope `MAIL FROM` is transport: it decides where a bounce goes. The header `From:` is content: it is what the mail client renders. Nothing in the protocol forces agreement, which is precisely why spoofing is trivial and why SPF, DKIM and DMARC exist at all. SPF validates the envelope domain, DKIM signs the message so its signing domain can be verified, and DMARC is the layer that insists one of those authenticated domains matches the header `From:`. If you have never watched this happen at the wire level, it is worth doing once: [Send an Email by Hand](/posts/send-an-email-by-hand-raw-smtp).",
+      "hint": "One of the two is used to decide where a bounce goes. The other is the one a human reads."
+    },
+    {
+      "id": "spf-what-it-checks",
+      "title": "What SPF Actually Authenticates",
+      "description": "Your SPF record is correct and published. A spoofed email still reaches the inbox showing your domain. How?",
+      "situation": "You publish a strict SPF record. A phishing message arrives at a customer showing `From: ceo@yourcompany.com`. You check the headers: SPF passed. The record was never wrong.",
+      "codeExample": "v=spf1 include:_spf.smtpfa.st -all\n\n# The phishing message:\nMAIL FROM:<anything@attacker-domain.com>   SPF checked against THIS\nFrom: ceo@yourcompany.com                  displayed to the human",
+      "options": [
+        "The SPF record needed `-all` rather than `~all` to be enforced",
+        "SPF only authenticates the envelope `MAIL FROM` domain, so an attacker passes SPF on their own domain and puts anything in the header `From:`",
+        "The attacker must have compromised one of the hosts in your `include:`",
+        "SPF had not propagated yet, so receivers fell back to allowing the message"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "SPF authenticates the envelope `MAIL FROM`, and the `HELO` name alongside it. Neither is the address your recipient sees. An attacker sends from their own domain, passes SPF legitimately because it really is their mail server, and writes whatever they like in the header `From:`. SPF passed, and the message is still a forgery. DMARC is what closes the gap, by requiring that at least one mechanism both **passes** and **aligns**: the SPF-authenticated domain or the DKIM signing domain has to match the header `From:`. SPF alone, no matter how strict the `-all`, cannot stop this.",
+      "hint": "Read the record again and ask which of the two sender addresses it is talking about."
+    },
+    {
+      "id": "dmarc-alignment",
+      "title": "Why DMARC Fails When SPF Passes",
+      "description": "SPF passes, DKIM passes, DMARC fails. What is the most likely cause?",
+      "situation": "You send through a provider. Your monitoring shows messages authenticating successfully on both SPF and DKIM, and yet the DMARC aggregate reports keep recording failures. Nothing is misconfigured in the sense of being broken.",
+      "codeExample": "From:          news@yourcompany.com\nMAIL FROM:     bounces@provider-infra.net   SPF: pass (for provider-infra.net)\nDKIM d=        provider-infra.net           DKIM: pass (for provider-infra.net)\nDMARC:         fail",
+      "options": [
+        "The DMARC record is missing a `pct` tag so receivers cannot decide what to enforce",
+        "DKIM and SPF cannot both be evaluated on the same message; receivers pick one",
+        "Neither authenticated domain aligns with the header `From:` domain, and DMARC requires alignment, not merely a pass",
+        "The DMARC policy is set to `p=none`, which always reports a failure"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "DMARC does not ask \"did SPF pass?\". It asks \"did SPF pass **for a domain that matches the header From**, or did DKIM pass for one?\". Here both passed for the provider's own domain, which authenticates the provider, not you. The fix is alignment: a custom return-path subdomain on your domain so envelope SPF aligns, or the provider signing with `d=` set to your domain, which needs the key published and the provider configured to use it. DMARC needs only one mechanism to pass and align, not both. DKIM alignment is usually the more durable of the two, because a signature can survive a forwarder that changes the connecting IP, though a list that rewrites signed headers will break it just as thoroughly.",
+      "hint": "DMARC compares each authenticated domain against a third domain. Which one?"
+    },
+    {
+      "id": "dkim-survives-forwarding",
+      "title": "The Mailing List Problem",
+      "description": "A subscriber forwards your newsletter through a mailing list. SPF breaks. Why does DKIM often survive?",
+      "situation": "Your DMARC reports show a steady trickle of SPF failures, all from the same handful of receiving domains. The messages are legitimate. They are being forwarded through mailing lists and alumni-style forwarding addresses.",
+      "options": [
+        "Forwarders are required by RFC to re-sign with the original private key",
+        "SPF is advisory and receivers skip it for forwarded mail",
+        "DKIM keys are cached by receivers for 24 hours, so a second delivery reuses the first result",
+        "SPF checks the connecting IP, and a forwarder relays from its own IP; DKIM signs the message body and headers, which the forwarder usually leaves intact"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "SPF authenticates a connection: this IP is allowed to send for this envelope domain. Put a forwarder in the middle and the connecting IP changes, so SPF either fails or passes for the forwarder's own domain, which does not align with your `From:` either way. DKIM authenticates the message itself with a signature over selected headers and the body, so it keeps verifying wherever the message travels, as long as nothing rewrites what was signed. A list that rewrites a signed header or the body breaks the signature too, which is why ARC exists: it records what an earlier hop concluded, rather than repairing the original signature. This is the practical reason to make sure DKIM aligns rather than relying on SPF alignment alone.",
+      "hint": "One of the two authenticates the path the mail took. The other authenticates the mail."
+    },
+    {
+      "id": "dmarcbis-pct-removed",
+      "title": "The Tag That Disappeared",
+      "description": "DMARCbis removed `pct`. What happens to a record that still has `pct=10` on it?",
+      "situation": "You rolled out DMARC carefully, using `pct` to apply your policy to a small slice of mail while you watched the reports. That record has been sitting in DNS untouched for a year.",
+      "codeExample": "v=DMARC1; p=reject; pct=10; rua=mailto:dmarc@example.com\n\n# What did you think this meant?\n# What does a DMARCbis receiver do with it?",
+      "options": [
+        "The whole record is invalid, so DMARC is not applied at all and the domain is unprotected",
+        "Receivers ignore the retired tag and apply `p=reject` to **every message that fails DMARC**, rather than the tenth you had been sampling",
+        "Receivers fall back to `p=none` because the record uses a tag they do not recognise",
+        "Nothing changes; `pct` is deprecated but receivers are required to keep honouring it"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "The record is not rejected as invalid. Receivers parse it, discard the unknown `pct`, and apply the policy to everything that fails DMARC rather than to a sample of it. If `pct=10` was the only thing keeping a misaligned sender delivering, that sender stops, and the change arrives without any deployment of yours. DMARCbis removed `pct` along with `rf` and `ri`. The replacement, `t=y`, is a testing flag rather than a percentage dial: it asks receivers to apply a policy one step softer, so `reject` behaves as `quarantine`. Receivers apply their own judgement on top of all of this in any case. The full list of changes is in [DMARCbis Is Here](/posts/dmarcbis-what-changed-new-dmarc).",
+      "hint": "The tag is gone. Ask what a parser does with a tag it does not recognise, then what is left."
+    },
+    {
+      "id": "np-tag",
+      "title": "Policy for Subdomains That Do Not Exist",
+      "description": "Which DMARCbis tag lets you set a policy for subdomains that were never created, separately from the real ones?",
+      "situation": "Your domain has a strict DMARC policy and no subdomain policy set. An attacker sends from billing.yourcompany.com, which has no DNS records at all because it has never existed. You want to say something about subdomains that were never created, without committing to a policy for the real subdomains your other teams use.",
+      "codeExample": "v=DMARC1; p=reject; rua=mailto:dmarc@example.com\n# note: no sp tag\n\n# Attacker uses:  From: ar@billing.yourcompany.com\n# That subdomain has no records of any kind.",
+      "options": [
+        "`adkim=s`, since strict alignment refuses any subdomain that cannot sign",
+        "`pct=100`, which extends the policy to cover every name under the domain",
+        "`np`, which applies only to non-existent subdomains and leaves real ones following `sp`, or `p` when `sp` is absent",
+        "`psd`, which declares the domain a public suffix and blocks unknown children"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Without `np`, a non-existent subdomain inherits `sp`, or `p` when `sp` is absent, so it is not unprotected. What `np` buys you is the ability to treat the two cases differently: reject anything from a subdomain that was never created, while keeping a softer policy for the real subdomains other teams are still fixing. The tag is not new to DMARCbis, it came from RFC 9091 and DMARCbis carries it forward. `psd` is for registry operators declaring a public suffix, `adkim` controls alignment strictness rather than which names are covered, and `pct` no longer exists. See [DMARCbis Is Here](/posts/dmarcbis-what-changed-new-dmarc).",
+      "hint": "Two of these tags are about subdomains. One distinguishes the ones that exist from the ones that do not."
+    },
+    {
+      "id": "bounce-hard-vs-soft",
+      "title": "Reading a Bounce Correctly",
+      "description": "A send returns `550 5.1.1 User unknown`. What should your system do with that address?",
+      "situation": "Your application sends a receipt and gets a rejection back immediately. The response code starts with 5. Another address in the same batch returned `452 4.2.2 Mailbox full`.",
+      "codeExample": "550 5.1.1 <nobody@example.com>: User unknown in virtual mailbox table\n452 4.2.2 <full@example.com>: Mailbox full, try again later",
+      "options": [
+        "Suppress both, because any bounce raises your complaint rate with the receiver",
+        "Retry the 550 once to confirm, then suppress if it repeats; discard the 452",
+        "Retry both with exponential backoff, since any bounce can be transient under load",
+        "Suppress the 550 permanently; the 452 is temporary and should be retried later"
+      ],
+      "correctAnswer": 3,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "The first digit carries the decision. A 5xx is a permanent failure for this attempt: retrying the same message unchanged will not help, and doing it repeatedly is how sender reputation is spent. A 4xx is temporary, a full mailbox or a greylist or a rate limit, and is meant to be retried until a deadline. Be careful about what a 5xx tells you. `5.1.1 User unknown` is about the address and justifies suppressing it. Other 5xx replies are about the message or your reputation, such as a rejected attachment or a blocked IP, and suppressing the recipient for those punishes the wrong thing. Read the enhanced status code, not just the first digit, before deciding an address is dead. Permanently suppressing a 4xx is its own bug: you quietly stop mailing a customer whose mailbox was briefly full.",
+      "hint": "Look only at the first digit of each code, and ask which one means never."
+    },
+    {
+      "id": "dmarc-rollout-order",
+      "title": "Where to Start With DMARC",
+      "description": "You are introducing DMARC to a domain that sends through six different services. What is the correct first record?",
+      "situation": "Marketing uses one platform, the product sends transactional mail through another, finance sends invoices from an ERP, and there are three more you only found last week. Nobody knows whether they all authenticate correctly.",
+      "codeExample": "# Candidate first records:\nv=DMARC1; p=reject;   rua=mailto:dmarc@example.com\nv=DMARC1; p=none;     rua=mailto:dmarc@example.com\nv=DMARC1; p=quarantine; rua=mailto:dmarc@example.com",
+      "options": [
+        "`p=none` with `rua`, which enforces nothing and starts the aggregate reports that tell you who is sending",
+        "No DMARC record until all six services are verified, since a wrong record is worse than none",
+        "`p=reject`, because anything weaker leaves the domain spoofable while you deliberate",
+        "`p=quarantine`, as a middle path that neither blocks legitimate mail nor allows forgeries"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "`p=none` is not a weak policy, it is an instrument. It changes nothing about delivery and it turns on the aggregate reports, which are the only way to discover the six services, plus the two nobody remembered. Going straight to `p=reject` on a domain you have not surveyed is how an invoice run silently stops arriving. The sequence that works is: `none` and read the reports, fix alignment for each legitimate sender, then `quarantine`, then `reject`. Under DMARCbis you move through that with the `t=y` testing flag rather than the removed `pct`. One caveat worth knowing before you commit to `reject`: it interacts badly with users who post to mailing lists, because the list rewrites the message and breaks the signature.",
+      "hint": "The first record's job is not to protect anything. It is to tell you something you do not currently know."
+    },
+    {
+      "id": "mail-from-subdomain",
+      "title": "Making SPF Align",
+      "description": "You need SPF alignment for DMARC while keeping your own address in the From line. What has to change?",
+      "situation": "Your DKIM is aligned and DMARC passes on that basis. You want SPF to align as well, for redundancy when a forwarder breaks one of them. The From address must stay hello@yourcompany.com, because it is what customers see, and the existing DKIM alignment must not be disturbed.",
+      "codeExample": "# Now\nFrom:      hello@yourcompany.com\nMAIL FROM: bounces@provider-infra.net    SPF aligns with the provider, not you\n\n# Wanted\nMAIL FROM: bounces@mail.yourcompany.com",
+      "options": [
+        "Add the provider to your SPF record with `include:`, which makes their sending IPs authorised for your domain",
+        "Ask the provider to sign with your DKIM key under their own `d=` domain",
+        "Set up a custom return path on a subdomain of yours, so the envelope domain becomes `mail.yourcompany.com` and aligns with the header `From:` under relaxed alignment",
+        "Set `aspf=r` so relaxed alignment accepts the provider's unrelated domain as close enough"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Alignment compares domains, not IP addresses. Adding `include:` authorises the provider's servers to send for your domain, which matters, but SPF is still evaluated against whatever is in `MAIL FROM`, and that is still the provider's own bounce domain. The fix is a custom return path: the provider gives you DNS records to publish on a subdomain of yours, and the envelope sender moves to it. Relaxed alignment, which is the default, counts a subdomain of your organisational domain as aligned; strict alignment would not. The exact records vary by provider, so follow theirs rather than assuming a CNAME. `aspf=r` is already the default and does not stretch to an unrelated domain. A worked setup, records and all, is in [From DNS to Delivery](/posts/from-dns-to-delivery-smtpfast).",
+      "hint": "Alignment compares two domains. Which one can you actually move, given the From address is fixed?"
+    },
+    {
+      "id": "open-relay",
+      "title": "The Setting That Makes You an Open Relay",
+      "description": "Which configuration turns a mail server into an open relay?",
+      "situation": "You stand up a mail server for an internal application. Within a day it is sending tens of thousands of messages you did not write, and your IP is on three blocklists.",
+      "codeExample": "# Which of these is the mistake?\nsmtpd_recipient_restrictions =\n    permit_mynetworks,\n    permit_sasl_authenticated,\n    ???",
+      "options": [
+        "Listening on port 25 rather than 587, which exposes the server to the public internet",
+        "Allowing plaintext AUTH before STARTTLS has been negotiated",
+        "Having no SPF record, which lets anyone claim to be your domain",
+        "Accepting mail from arbitrary untrusted clients and relaying it onward to arbitrary external destinations you are not responsible for"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "An open relay carries mail for strangers to strangers. The defining property is accepting a `RCPT TO` for a destination you are not responsible for, from a client you have no reason to trust. Spammers find these within hours. Note that relaying itself is not the problem: an authenticated user, or a trusted internal network, or a gateway relaying for a domain it is configured to accept, are all legitimate. The word that matters is unauthorised, not unauthenticated. The other options are real issues but none of them makes you carry someone else's mail: plaintext AUTH leaks credentials, and a missing SPF record hurts deliverability. Listening on port 25 is simply what a receiving MTA does. In Postfix the control is `smtpd_relay_restrictions` with `reject_unauth_destination`. The [SMTP Flow Simulator](/games/smtp-flow-simulator) lets you try the conversation an open relay would accept.",
+      "hint": "The name is the definition. What is being relayed, and for whom?"
+    },
+    {
+      "id": "smtp-587-vs-25",
+      "title": "Which Port for What",
+      "description": "Your application cannot send mail from a cloud VM on port 25. What is the right response?",
+      "situation": "Code that works on your laptop times out in production. The connection to port 25 never establishes. Nothing in the logs suggests authentication or TLS.",
+      "codeExample": "# laptop:  connect smtp.provider.com:25    ok\n# cloud VM: connect smtp.provider.com:25   timeout",
+      "options": [
+        "Use port 587 with authentication and STARTTLS. Many cloud providers block outbound 25 to limit abuse, and 25 is primarily for server-to-server transfer rather than submission",
+        "Use port 465, which is the modern replacement for both 25 and 587",
+        "Request that the provider unblock port 25, since it is the only port defined for SMTP",
+        "Route through a local relay on the VM listening on 25, which avoids the block"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "Port 25 is primarily for mail transfer between servers. Port 587 is the submission port: a client authenticates and hands a message to a provider to send on its behalf. Many cloud providers block outbound 25 by default, because an unrestricted VM fleet is a spam cannon, and will unblock it only with a reason. Port 465 is implicit-TLS submission and is equally valid, having been un-deprecated; the distractor is wrong because it claims to replace both, not because 465 is bad. A timeout on its own does not prove a block, so confirm with your provider rather than assuming, but this is a submission problem rather than a firewall argument to win. If you have never watched a submission conversation happen line by line, the [SMTP Flow Simulator](/games/smtp-flow-simulator) walks through it.",
+      "hint": "Two of these ports are for sending mail on behalf of a user. One is for servers talking to each other."
+    },
+    {
+      "id": "suppression-list",
+      "title": "Why the Suppression List Is Not Optional",
+      "description": "Why must a sending system refuse to send to an address that previously hard bounced?",
+      "situation": "A retry job re-queues everything that failed yesterday, including the addresses that came back `550 User unknown`. The volume is small, a few hundred messages.",
+      "options": [
+        "Each retry is billed as a new message, so the cost compounds",
+        "Receivers treat repeated delivery to addresses they have said do not exist as a sign of a list you do not maintain, and that feeds the reputation affecting where your good mail lands",
+        "The bounce webhook fires again, which double counts your metrics",
+        "SMTP forbids resending to an address that returned a 5xx, and the server will refuse the connection"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Sender reputation is largely a judgement about whether you know who your recipients are. Repeatedly mailing addresses a receiver has already said do not exist is clear evidence that you do not, and it feeds into the placement decisions applied to everything else you send. That is why suppression belongs in the send path rather than a cleanup job: it should be impossible to send to a suppressed address, not merely unusual. Suppression is not irreversible, and should not be: an address suppressed by mistake, or corrected later, needs a way back. Billing and duplicated metrics are real consequences too, but they are not the reason the list exists.",
+      "hint": "The cost is not paid on the retried message. It is paid on every message after it."
+    },
+    {
+      "id": "dkim-key-rotation",
+      "title": "Rotating a DKIM Key Without Breaking Mail",
+      "description": "How do you rotate a DKIM key so that no in-flight mail fails verification?",
+      "situation": "Your DKIM key has been in place for three years and you want to replace it. Messages you send today may sit in a queue, or be forwarded and re-verified by another hop, for some time after they leave you.",
+      "codeExample": "# Selectors let more than one key be live at once\nselector1._domainkey.example.com   TXT  v=DKIM1; k=rsa; p=<old>\nselector2._domainkey.example.com   TXT  v=DKIM1; k=rsa; p=<new>",
+      "options": [
+        "Replace the key in the existing selector record, since DNS propagation is fast enough that the gap is negligible",
+        "Publish both keys in the same selector record, and receivers will try each in turn",
+        "Rotate during a send freeze, so that no message is ever in flight with the old key",
+        "Publish the new key under a second selector, switch signing to it, and remove the old selector only after mail signed with it has aged out"
+      ],
+      "correctAnswer": 3,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "A DKIM signature names the selector it was signed with, so verification looks up that specific record. Publishing the new key under a second selector means both stay verifiable, and the changeover becomes a change in which key you sign with rather than a change to what receivers can check. Publish the new record first and confirm it resolves, allowing for DNS caching, then switch signing, then leave the old selector in place while mail signed with it is still in flight or being re-verified by forwarders. Verification normally happens when a message is received rather than when someone opens it, so the window is shorter than it sounds, but it is not zero. A single selector record cannot hold two keys, and a send freeze does not help because the problem is mail already sent.",
+      "hint": "The signature says which record to look up. What happens to a message signed an hour ago?"
+    },
+    {
+      "id": "tls-not-authentication",
+      "title": "What STARTTLS Does Not Give You",
+      "description": "Your SMTP connection uses STARTTLS. Which of these is still true?",
+      "situation": "A colleague argues that because all your mail is sent over TLS, the anti-spoofing records are redundant. The connection really is encrypted.",
+      "codeExample": "220 mail.example.com ESMTP\nEHLO client\n250-STARTTLS\nSTARTTLS\n220 Ready to start TLS\n# ...encrypted from here...",
+      "options": [
+        "Anyone can still claim to be any sender, because TLS protects the connection and says nothing about who wrote the message",
+        "Receivers will treat the message as authenticated and skip SPF",
+        "The message is signed, so DKIM becomes unnecessary",
+        "The header `From:` is now cryptographically bound to the connecting server"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "TLS protects the pipe. It can authenticate the server you connected to, and with client certificates the other direction too, and it stops someone on the path reading or altering the message in transit. What it does not do is say anything about who wrote the message: the party at the other end of a perfectly good encrypted connection can still put any address in the header `From:`. Opportunistic STARTTLS is also downgradeable unless something enforces it, whether MTA-STS, DANE, or a locally configured requirement. And the protection covers one hop, not the whole journey or the message at rest. Encryption and authentication answer different questions, which is why the SPF, DKIM and DMARC apparatus sits on top of connections that were already encrypted.",
+      "hint": "Encryption answers \"can anyone read this in transit\". The question here is a different one."
+    },
+    {
+      "id": "warmup-and-volume",
+      "title": "Sending Ten Thousand on Day One",
+      "description": "You move to a new sending domain and IP and send your full volume immediately. What is the likely outcome?",
+      "situation": "The migration is done, the records are correct, SPF and DKIM both align, DMARC passes. You have a list of 40,000 subscribers and you send to all of them on the first morning.",
+      "options": [
+        "The provider rate-limits you, but receiver reputation is unaffected because the records are correct",
+        "Large receivers throttle or reject the mail, because an unknown sender with sudden high volume matches the shape of a compromised or throwaway sender",
+        "Nothing, provided authentication passes; volume is not a reputation input",
+        "Delivery succeeds but every message lands in spam permanently, and the domain cannot recover"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Correct authentication shows that the sending domain authorised the message. It says nothing about whether the message is wanted. Reputation is built from history, and a new domain and IP have little or none, so a sudden large volume can resemble the pattern receivers most want to stop. The answer is a warm-up: start with small volumes to your most engaged recipients, where opens and replies are likeliest, and increase as the receivers' own signals allow rather than on a fixed schedule. It is recoverable rather than permanent, though recovery can take longer than the warm-up would have. Worth knowing too that a newly assigned IP is not necessarily a clean one: it may carry whatever the previous tenant left on it. What this looks like for a real list is in [What Sending a Developer Newsletter Actually Takes](/posts/what-sending-a-developer-newsletter-actually-takes).",
+      "hint": "Authentication answers who you are. What question have you not answered yet?"
+    }
+  ]
+}
