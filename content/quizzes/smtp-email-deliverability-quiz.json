@@ -3,6 +3,11 @@
   "title": "SMTP and Email Deliverability Quiz",
   "description": "Test yourself on the parts of email that actually break: envelope versus header senders, SPF and DKIM alignment, what DMARCbis changed, bounce handling, and why correct records are not the same as good deliverability",
   "category": "Networking",
+  "furtherReading": {
+    "text": "Most of what this quiz covers is work a sending provider does for you: signing every message, keeping the envelope aligned with the From header, and turning bounces into suppressions before they cost you reputation. If you would rather not run that yourself,",
+    "linkText": "SMTPfast handles it",
+    "href": "https://smtpfa.st"
+  },
   "icon": "Network",
   "totalPoints": 225,
   "theme": {
