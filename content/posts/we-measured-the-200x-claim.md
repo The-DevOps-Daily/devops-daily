@@ -30,7 +30,7 @@ The headline result is fine and slightly boring. The interesting part is that we
 ## TLDR
 
 - On our workload, end to end, the new model was **12x faster** at the median. Adjust for the fact that our old model also writes three paragraphs nobody reads and it is closer to **3x**, depending on how you do the adjusting.
-- It looked **7x cheaper**, but **83% of our current bill is output billing** and the new model's published tariff prices input only. That is not a like for like comparison, and we say so rather than quoting the 7x.
+- It is **7x cheaper** on our bill, but almost none of that is the token price. Per input token the two are **1.31x** apart. The gap is that **output is free** on the new one, and 83% of our current bill is output.
 - The result that mattered was not speed. It was **variance**: 38ms of spread against 2353ms, on a call a human sits and waits for.
 - Typed output removed a real defect. **Three replies in fifty** came back as prose our parser could not read, and on this route a parse failure is an error page.
 - **We got the method wrong twice.** Once by not reading how the API works, once by scoring a feature against accounts it had never seen. Both produced numbers that looked like findings.
@@ -163,13 +163,17 @@ At published prices, $0.055 per million input tokens and $0.85 per million outpu
 - existing model: **$0.52 per 1000 reviews**
 - Jev: **$0.07 per 1000 reviews**
 
-That is 7x, and it is the number we trust least in this post.
+That is 7x, and it is real, but not for the reason it looks like.
 
-Split our own bill and the reason is obvious: **$0.089 of input and $0.435 of output** per 1000 calls. Output is 83% of it, because output costs 15.5x input on that provider.
+Split our own bill: **$0.089 of input and $0.435 of output** per 1000 calls. Output is 83% of it, because output costs 15.5x input on that provider.
 
-Now the problem. The tariff we were given for Jev prices **input only**, and we could not find a published output price. So the comparison above charges one model for what it writes and the other not at all. Per input token, the side we can actually compare, the list prices are $0.055 and $0.042, which is **1.31x**. On this run the input spend came out 1.18x apart, because Jev's structured state used about 10% more input tokens than our rendered prompt did.
+Now compare the two tariffs. Per input token they are $0.055 and $0.042, which is **1.31x**. Nearly the same. On this run the input spend landed 1.18x apart, because Jev's structured state used about 10% more input tokens than our rendered prompt did.
 
-So the honest version is: on the part that is comparable they are close, and the 7x depends on an output price we do not have. If you are making a purchasing decision on this, get that number first.
+The whole of the rest is that **Jev does not charge for output at all**. Their usage dashboard says so in a footnote: "Estimated at $0.042/MTok input, free output".
+
+That is worth separating from "it is a cheaper model", because they are different claims with different lifespans. Per token of input, the two are within a third of each other. The 7x comes from a pricing decision, that output is free, and pricing decisions are the easiest thing for a company to change. The engineering difference is real and measurable. The billing difference is a choice someone made and can unmake.
+
+If you are budgeting on this, budget on the input price and treat free output as a discount that may not last.
 
 So it is cheaper because it says less. Any vendor comparison where one side is answering a different question is really a comparison of the questions.
 
@@ -208,10 +212,10 @@ The numbers are ours and they will not be yours. The method is transferable.
 
 **Check that your test population can actually occur.** This is the one we would have caught if we had asked a single question earlier: does this input ever reach the thing in production? Eight of our ten cases could not have.
 
-**Divide the headline by what is actually different.** 12x became about 3x once we accounted for output volume, and the 7x on cost fell apart once we noticed we were charging one model for its output and the other not at all. Neither of those makes the tool worse. They move the credit to the right place, and they tell you which number to go and get next.
+**Divide the headline by what is actually different.** 12x became about 3x once we accounted for output volume. The 7x on cost survived, but turned out to be a billing decision rather than a cheaper model: per input token the two are 1.31x apart, and the rest is that output is free. Neither of those makes the tool worse. They move the credit to the right place, which matters when you are guessing what will still be true next year.
 
 **Be suspicious of a result that flatters you.** Both of our wrong numbers were interesting. A 100% catch rate was interesting. "The feature is broken" was interesting. What survived checking is duller: about 3x once you adjust, a cost comparison we cannot complete, and no evidence either way about detection. Dull is not proof of correctness, but interesting is a reason to look twice.
 
 We published a checklist last week for reading other people's numbers. Most of it applies to your own, and your own are the ones you are most likely to believe.
 
-*Performance figures here are our measurements on one workload on 19 September 2026, run on the application host. TypeSafe AI's published claims are their own, measured differently, against different models. Our raw harness is in the repository that produced these numbers.*
+*Performance figures here are our measurements on one workload on 19 September 2026, run on the application host. Prices are as published on that date. TypeSafe AI's published claims are their own, measured differently, against different models. Our raw harness is in the repository that produced these numbers.*
