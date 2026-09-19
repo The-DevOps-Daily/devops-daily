@@ -104,6 +104,21 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
               <h1 className="mb-4 text-3xl font-bold">{quizConfig.title} - Quiz Overview</h1>
               <p className="mb-6 text-lg leading-relaxed">{quizConfig.description}</p>
 
+              {quizConfig.furtherReading && (
+                <p className="mb-6 text-base leading-relaxed text-muted-foreground">
+                  {quizConfig.furtherReading.text}{" "}
+                  <a
+                    href={quizConfig.furtherReading.href}
+                    className="font-medium underline underline-offset-4"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    {quizConfig.furtherReading.linkText}
+                  </a>
+                  .
+                </p>
+              )}
+
               {/* Quiz Stats */}
               <div className="grid grid-cols-1 gap-4 mb-8 md:grid-cols-3 not-prose">
                 <div className="p-4 border rounded-lg bg-card">

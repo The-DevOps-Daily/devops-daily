@@ -25,6 +25,17 @@ export interface QuizConfig {
   title: string;
   description: string;
   category: string;
+  /**
+   * Optional note under the overview, for a link the reader has earned by
+   * getting this far. Kept out of `description` on purpose: that string is
+   * rendered as plain text and reused as the page's meta description, so a
+   * markdown link in it would show its own brackets and pollute the tag.
+   */
+  furtherReading?: {
+    text: string;
+    linkText: string;
+    href: string;
+  };
   icon: string; // Icon name from lucide-react
   totalPoints: number;
   questions: QuizQuestion[];
