@@ -1,0 +1,253 @@
+{
+  "id": "email-authentication-spf-dkim-dmarc",
+  "title": "Email Authentication: Build SPF, DKIM and DMARC, Then Break Them",
+  "description": "Run a mail server on your laptop, send messages into it, and work out by hand why receivers accept or reject them. You sign a message with DKIM, change one character, and watch the signature fail. You separate the envelope sender from the From header the reader sees, which is the whole point of DMARC alignment. Then you send through a provider and compare its headers with the ones you built yourself.",
+  "category": {
+    "name": "Networking",
+    "slug": "networking"
+  },
+  "difficulty": "intermediate",
+  "estimatedTime": "80 minutes",
+  "technologies": ["SMTP", "DNS", "DKIM", "SPF", "DMARC", "Docker", "Python"],
+  "prerequisites": [
+    "Docker installed and running",
+    "Python 3.9 or newer",
+    "Comfortable reading DNS records with dig",
+    "A domain you control, for the last step only"
+  ],
+  "learningObjectives": [
+    "Tell the envelope sender apart from the From header, and explain why receivers check both",
+    "Read an SPF record and say which IPs it authorises",
+    "Sign a message with DKIM and verify the signature offline",
+    "Show that changing one byte of a signed message breaks its DKIM signature",
+    "Explain how DMARC alignment ties SPF and DKIM to the address the reader sees",
+    "Read the Authentication-Results header a real receiver writes"
+  ],
+  "environment": "container",
+  "icon": "Shield",
+  "publishedAt": "2026-09-19T09:00:00Z",
+  "author": {
+    "name": "DevOps Daily Team",
+    "slug": "devops-daily-team"
+  },
+  "tags": ["Email", "SMTP", "DNS", "Security", "Deliverability"],
+  "steps": [
+    {
+      "id": "catch-mail-locally",
+      "title": "Catch Mail on Your Own Machine",
+      "description": "Before you can reason about why a message is rejected, you need to see what is actually sent. Mailpit is a mail server that accepts anything on port 1025 and shows it in a web UI on port 8025. Nothing leaves your machine, so you can send whatever you like. swaks is the SMTP equivalent of curl: it speaks the protocol one command at a time and prints both sides of the conversation.",
+      "codeExample": "# Mailpit accepts SMTP on 1025 and serves its UI on 8025.\ndocker run -d --name mailpit -p 1025:1025 -p 8025:8025 axllent/mailpit\n\n# Send one message into it. --server points swaks at Mailpit\n# instead of a real MX.\nswaks \\\n  --server localhost:1025 \\\n  --from alice@lab.test \\\n  --to bob@example.test \\\n  --header 'Subject: First message'\n\n# swaks prints the whole SMTP dialogue. The lines starting with\n# -> are what your client said, <- is the server's answer.\n# Note MAIL FROM:<alice@lab.test>. That address is the envelope\n# sender, and it is not the same thing as the From header.",
+      "commands": [
+        "docker run -d --name mailpit -p 1025:1025 -p 8025:8025 axllent/mailpit",
+        "sudo apt install swaks   # or: brew install swaks",
+        "swaks --server localhost:1025 --from alice@lab.test --to bob@example.test --header 'Subject: First message'",
+        "open http://localhost:8025"
+      ],
+      "hints": [
+        "If swaks cannot connect, check the container is up with docker ps and that nothing else holds port 1025.",
+        "Mailpit accepts every message. A local send succeeding tells you nothing about whether a real receiver would accept it, which is what the rest of this lab is about.",
+        "In the Mailpit UI, the Source tab shows the raw message. Get used to reading it there."
+      ],
+      "validationCriteria": [
+        "The Mailpit UI at localhost:8025 lists your message",
+        "You can find MAIL FROM and RCPT TO in the swaks output",
+        "You can view the raw source of the message in Mailpit"
+      ]
+    },
+    {
+      "id": "envelope-versus-header",
+      "title": "Two Different From Addresses",
+      "description": "Every message carries two sender addresses. The envelope sender is given in the SMTP MAIL FROM command and is what bounces go back to. The From header is inside the message and is what the mail client shows the reader. Nothing in SMTP requires them to match. This gap is why email spoofing works at all, and every authentication standard that follows exists because of it.",
+      "codeExample": "# swaks --from sets the envelope. --h-From sets the header the\n# reader sees. Set them to different domains on purpose.\nswaks \\\n  --server localhost:1025 \\\n  --from bounces@lab.test \\\n  --h-From '\"Your Bank\" <security@yourbank.example>' \\\n  --to bob@example.test \\\n  --header 'Subject: Please confirm your details'\n\n# Open the message in Mailpit. It shows \"Your Bank\". The address\n# the reader trusts was never checked by anything.\n#\n# Now look at the Source tab and find these two:\n#   Return-Path: <bounces@lab.test>   <- the envelope\n#   From: \"Your Bank\" <security@yourbank.example>   <- the display\n#\n# SPF, coming next, checks the envelope domain. On its own it\n# would happily pass this message.",
+      "commands": [
+        "swaks --server localhost:1025 --from bounces@lab.test --h-From '\"Your Bank\" <security@yourbank.example>' --to bob@example.test --header 'Subject: Please confirm your details'"
+      ],
+      "hints": [
+        "Return-Path is written by the receiving server from the envelope sender, so it is the envelope value you can read later.",
+        "Legitimate senders use different envelope and header domains all the time, for example a mailing list that wants bounces. Mismatch is not the same as fraud, which is exactly why DMARC talks about alignment rather than equality.",
+        "If your mail client hides the sender address behind a display name, that is the attack surface this step is about."
+      ],
+      "validationCriteria": [
+        "The message in Mailpit shows a From address on a different domain from the envelope sender",
+        "You can point to Return-Path and From in the raw source and say which is which",
+        "You can explain in one sentence why checking only one of them is not enough"
+      ]
+    },
+    {
+      "id": "read-spf",
+      "title": "Read an SPF Record and Say What It Authorises",
+      "description": "SPF is a TXT record listing which IP addresses may send mail for a domain. The receiver takes the envelope sender's domain, looks up that record, and checks the IP that connected against it. It says nothing about the From header, and nothing about the message body. Reading real records is the fastest way to see the shape of it.",
+      "codeExample": "# Read the SPF record of a domain that sends a lot of mail.\ndig +short TXT github.com | grep spf1\ndig +short TXT google.com | grep spf1\n\n# The parts you will meet most:\n#   ip4:198.51.100.0/24   authorise this range directly\n#   include:_spf.example  also accept whatever that domain lists\n#   ~all                  softfail anything else (mark, do not reject)\n#   -all                  fail anything else (reject)\n#\n# include: is a lookup, not a copy. SPF allows at most 10 DNS\n# lookups for the whole evaluation, includes nested inside\n# includes counted. Go over and the result is permerror, which\n# receivers treat as a failure. Count yours:\ndig +short TXT _spf.google.com\n\n# The limitation worth remembering: SPF checks the connecting IP.\n# Forward a message and the forwarding server is now the sender,\n# so SPF fails for a message nobody tampered with. DKIM, next,\n# survives that.",
+      "commands": [
+        "dig +short TXT github.com | grep spf1",
+        "dig +short TXT _spf.google.com",
+        "dig +short TXT _dmarc.github.com"
+      ],
+      "hints": [
+        "A domain may publish only one SPF record. Two records is a permerror, and it is a common cause of mail that used to work quietly stopping.",
+        "~all and -all differ in what you are telling receivers to do about mail you did not authorise. Start at ~all while you are still finding your senders.",
+        "The 10 lookup limit is on lookups, not on characters. A short record full of include: can still exceed it."
+      ],
+      "validationCriteria": [
+        "You can read an SPF record and list which senders it authorises",
+        "You can say what ~all and -all each mean to a receiver",
+        "You can explain why forwarding breaks SPF"
+      ]
+    },
+    {
+      "id": "sign-with-dkim",
+      "title": "Sign a Message with DKIM",
+      "description": "DKIM signs chosen headers and the body with a private key. The receiver fetches the public key from DNS and checks the signature. Because it travels inside the message, it survives forwarding, and because it covers the body, it proves the content was not changed on the way. You will generate a key, sign a message, and verify it without any DNS at all.",
+      "codeExample": "python3 -m venv .venv && ./.venv/bin/pip install dkimpy\n\n# A key pair. The public half is what you publish in DNS.\nopenssl genrsa -out dkim.private 2048\nopenssl rsa -in dkim.private -pubout -out dkim.public\n\n# The TXT record you would publish at lab._domainkey.lab.test\necho \"v=DKIM1; k=rsa; p=$(grep -v '^-----' dkim.public | tr -d '\\n')\"\n\n# A message to sign. CRLF line endings matter: DKIM hashes the\n# bytes, and a bare newline gives a different hash.\nprintf 'From: Alice <alice@lab.test>\\r\\nTo: bob@example.test\\r\\nSubject: DKIM lab\\r\\nDate: Fri, 19 Sep 2026 09:00:00 +0000\\r\\n\\r\\nHello from the lab.\\r\\n' > msg.eml\n\n# sign.py\nimport dkim\nmsg = open(\"msg.eml\", \"rb\").read()\nsig = dkim.sign(\n    message=msg,\n    selector=b\"lab\",\n    domain=b\"lab.test\",\n    privkey=open(\"dkim.private\", \"rb\").read(),\n    include_headers=[b\"from\", b\"to\", b\"subject\", b\"date\"],\n)\nopen(\"signed.eml\", \"wb\").write(sig + msg)\n\n# verify.py\n# The public key normally comes from DNS. Handing it over directly\n# keeps the lab offline, so the check is about the signature rather\n# than about resolvers.\nimport dkim, sys\npub = \"\".join(l.strip() for l in open(\"dkim.public\") if not l.startswith(\"-----\"))\ndnsfunc = lambda name, timeout=5: \"v=DKIM1; k=rsa; p=\" + pub\nok = dkim.verify(open(sys.argv[1], \"rb\").read(), dnsfunc=dnsfunc)\nprint(\"DKIM signature valid:\", ok)\nsys.exit(0 if ok else 1)",
+      "commands": [
+        "python3 -m venv .venv && ./.venv/bin/pip install dkimpy",
+        "openssl genrsa -out dkim.private 2048",
+        "openssl rsa -in dkim.private -pubout -out dkim.public",
+        "./.venv/bin/python sign.py",
+        "./.venv/bin/python verify.py signed.eml",
+        "head -c 400 signed.eml"
+      ],
+      "hints": [
+        "Read the DKIM-Signature header you just produced. d= is the signing domain, s= is the selector, h= lists the signed headers and bh= is the body hash.",
+        "Only the headers named in h= are protected. A header left out can be added or changed by anyone in the path without breaking the signature.",
+        "Selectors let one domain hold several keys at once, which is how you rotate a key without an outage: publish the new one, switch signing, then remove the old."
+      ],
+      "validationCriteria": [
+        "verify.py prints True for the signed message",
+        "You can name what d=, s=, h= and bh= mean in the signature header",
+        "You can say why DKIM survives forwarding when SPF does not"
+      ]
+    },
+    {
+      "id": "break-the-signature",
+      "title": "Change One Character and Watch It Fail",
+      "description": "A signature you have never seen fail is a signature you are trusting on faith. Change a single character of the signed body and verify again. This is also the quickest way to understand a class of real incidents: anything in the delivery path that rewrites a message, such as a mailing list appending a footer or a gateway rewriting links, invalidates the signature in exactly this way.",
+      "codeExample": "# One character of the body. Nothing else.\nsed 's/Hello from the lab./Hello from the lab!/' signed.eml > tampered.eml\n\n./.venv/bin/python verify.py tampered.eml\n# DKIM signature valid: False\n\n# Now try a header that was signed. h= listed subject, so this\n# breaks too.\nsed 's/Subject: DKIM lab/Subject: DKIM lab (urgent)/' signed.eml > retitled.eml\n./.venv/bin/python verify.py retitled.eml\n\n# And a header that was not signed. include_headers did not list\n# x-priority, so adding one changes nothing.\n{ head -1 signed.eml; echo -e 'X-Priority: 1\\r'; tail -n +2 signed.eml; } > extra.eml\n./.venv/bin/python verify.py extra.eml\n\n# That last result is the point of choosing h= carefully. Sign the\n# headers you want to be able to trust later.",
+      "commands": [
+        "sed 's/Hello from the lab./Hello from the lab!/' signed.eml > tampered.eml",
+        "./.venv/bin/python verify.py tampered.eml",
+        "sed 's/Subject: DKIM lab/Subject: DKIM lab (urgent)/' signed.eml > retitled.eml",
+        "./.venv/bin/python verify.py retitled.eml"
+      ],
+      "hints": [
+        "The body hash bh= covers the body, so a body change fails before the header signature is even considered.",
+        "This is why mailing lists that add a footer break DKIM for their members, and why ARC exists to record that a trusted intermediary made the change.",
+        "Relaxed canonicalisation tolerates whitespace and header case differences. It does not tolerate a changed character."
+      ],
+      "validationCriteria": [
+        "Verification fails for the tampered body",
+        "Verification fails for a changed signed header",
+        "Verification still passes when you add a header that h= did not cover, and you can explain why"
+      ]
+    },
+    {
+      "id": "dmarc-alignment",
+      "title": "DMARC: Tying the Checks to the Address the Reader Sees",
+      "description": "SPF checks the envelope. DKIM checks a signing domain. Neither has anything to say about the From header, which is the only address most readers ever look at. DMARC closes that gap. It requires at least one of SPF or DKIM to pass and to be aligned with the From domain, and it tells receivers what to do when nothing is. Go back to the spoof you sent in step two and work out what DMARC would have done with it.",
+      "codeExample": "# Read real policies.\ndig +short TXT _dmarc.github.com\ndig +short TXT _dmarc.paypal.com\n\n# The fields that decide things:\n#   p=none        watch and report, change nothing\n#   p=quarantine  send failures to spam\n#   p=reject      refuse them outright\n#   rua=          where aggregate reports are sent\n#   aspf= adkim=  r for relaxed (default), s for strict\n#\n# Alignment, which is the part people miss:\n#   SPF aligns when the envelope sender domain matches the From\n#   domain. DKIM aligns when d= matches the From domain.\n#   Relaxed accepts the same organisational domain, so\n#   mail.example.com aligns with example.com. Strict does not.\n#\n# Apply it to the message from step two:\n#   envelope  bounces@lab.test\n#   From      security@yourbank.example\n#   SPF could pass for lab.test and still not align, because the\n#   reader was shown yourbank.example. With p=reject on\n#   yourbank.example, the message is refused. That is the whole\n#   mechanism.\n\n# Start any new domain at p=none with rua set, read the reports\n# until you recognise every sender, then raise the policy. Going\n# straight to p=reject is how a team discovers its invoicing system\n# was sending mail nobody remembered.",
+      "commands": [
+        "dig +short TXT _dmarc.github.com",
+        "dig +short TXT _dmarc.paypal.com",
+        "dig +short TXT _dmarc.gov.uk"
+      ],
+      "hints": [
+        "DMARC needs only one of SPF or DKIM to pass and align, not both. That is deliberate: forwarding breaks SPF, and DKIM carries the message through.",
+        "rua reports are XML, sent daily by receivers. They show you which IPs send as your domain, including the ones you forgot about.",
+        "A subdomain with no policy of its own inherits the parent's, or the parent's sp= if it sets one."
+      ],
+      "validationCriteria": [
+        "You can read a DMARC record and state its policy and where reports go",
+        "You can explain the difference between SPF passing and SPF aligning",
+        "You can say what DMARC would do to the spoofed message from step two"
+      ]
+    },
+    {
+      "id": "compare-with-a-provider",
+      "title": "Compare Your Headers with a Provider's",
+      "description": "You have now done by hand what a sending provider does for every message. The last step is to see the finished article. Send one message through a provider that handles SPF, DKIM and DMARC alignment for you, then read the Authentication-Results header the receiving side writes. That header is the receiver's verdict, and it is the thing to check first whenever mail is going missing.",
+      "codeExample": "# SMTPfast is one option with a free tier; any provider works for\n# this step. You verify a domain, it gives you the DNS records to\n# publish, and it signs on the way out.\n#\n# After the domain is verified, send one message:\ncurl -X POST https://smtpfa.st/api/v1/emails \\\n  -H \"Authorization: Bearer $SMTPFAST_API_KEY\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"from\": \"you@yourdomain.example\",\n    \"to\": [\"your-personal-inbox@gmail.com\"],\n    \"subject\": \"Authentication check\",\n    \"html\": \"<p>Reading the headers on this one.</p>\"\n  }'\n\n# In Gmail open the message, then the three dot menu, then\n# \"Show original\". Find the header the receiver wrote:\n#\n#   Authentication-Results: mx.google.com;\n#     dkim=pass header.i=@yourdomain.example;\n#     spf=pass smtp.mailfrom=...;\n#     dmarc=pass (p=NONE sp=NONE dis=NONE) header.from=yourdomain.example\n#\n# Three verdicts, one per standard. Read them against what you\n# built:\n#   - dkim=pass is the signature check from step four, with the\n#     public key fetched from DNS instead of handed over.\n#   - spf=pass is the envelope domain check from step three.\n#   - dmarc=pass means at least one of them aligned with\n#     header.from, which is step six.\n#\n# When mail goes missing, this header tells you which of the three\n# failed before you start guessing.",
+      "commands": [
+        "curl -X POST https://smtpfa.st/api/v1/emails -H \"Authorization: Bearer $SMTPFAST_API_KEY\" -H 'Content-Type: application/json' -d '{\"from\":\"you@yourdomain.example\",\"to\":[\"your-personal-inbox@gmail.com\"],\"subject\":\"Authentication check\",\"html\":\"<p>Reading the headers on this one.</p>\"}'"
+      ],
+      "hints": [
+        "Authentication-Results is written by the receiving server, so trust the one added by your own provider and ignore any that arrived inside the message.",
+        "header.i in the dkim result is the signing identity, header.from in the dmarc result is the address the reader sees. Comparing those two is alignment.",
+        "If dkim=pass but dmarc=fail, the signature was valid and signed by the wrong domain. That is nearly always a sending domain that was never verified."
+      ],
+      "validationCriteria": [
+        "You received a message sent through a provider and can view its raw source",
+        "You can find Authentication-Results and read all three verdicts",
+        "You can match each verdict to the step in this lab that built it"
+      ]
+    }
+  ],
+  "completionCriteria": [
+    "You can state the difference between the envelope sender and the From header, and why both matter",
+    "You signed a message with DKIM and verified it offline",
+    "You made a DKIM signature fail by changing one character, and can explain which real situations do the same",
+    "You can read SPF, DKIM and DMARC records and say what each one authorises or instructs",
+    "You can explain DMARC alignment without reaching for the documentation",
+    "You can read an Authentication-Results header and say which check failed"
+  ],
+  "resources": [
+    {
+      "title": "RFC 7208: Sender Policy Framework",
+      "url": "https://www.rfc-editor.org/rfc/rfc7208",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "RFC 6376: DomainKeys Identified Mail",
+      "url": "https://www.rfc-editor.org/rfc/rfc6376",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "RFC 7489: DMARC",
+      "url": "https://www.rfc-editor.org/rfc/rfc7489",
+      "type": "documentation",
+      "external": true
+    },
+    {
+      "title": "Mailpit",
+      "url": "https://mailpit.axllent.org/",
+      "type": "tool",
+      "external": true
+    },
+    {
+      "title": "swaks, the SMTP swiss army knife",
+      "url": "https://www.jetmore.org/john/code/swaks/",
+      "type": "tool",
+      "external": true
+    },
+    {
+      "title": "dkimpy",
+      "url": "https://pypi.org/project/dkimpy/",
+      "type": "tool",
+      "external": true
+    }
+  ],
+  "troubleshooting": [
+    {
+      "issue": "swaks cannot connect to localhost:1025",
+      "solution": "Check the container is running with docker ps. If the port is taken, map another one with -p 2525:1025 and pass --server localhost:2525."
+    },
+    {
+      "issue": "verify.py reports False for a message you have not touched",
+      "solution": "Line endings. DKIM hashes the exact bytes, and a message written with bare newlines instead of CRLF gives a different body hash. Re-create it with printf and \\r\\n, and check with file or od -c."
+    },
+    {
+      "issue": "dkim.sign raises an error about the private key",
+      "solution": "Pass the key file contents as bytes, not a path, and read it with open(path, 'rb'). An encrypted key will not work either, so generate an unencrypted one for the lab."
+    },
+    {
+      "issue": "Your own domain shows dmarc=fail while dkim=pass",
+      "solution": "The signature was valid but signed by a domain that does not align with the From header. Check that d= in the DKIM-Signature matches the From domain, or its organisational domain under relaxed alignment."
+    },
+    {
+      "issue": "SPF lookups return permerror",
+      "solution": "You are over the 10 DNS lookup limit, or the domain publishes two SPF records. Count the include, a, mx and redirect terms, following nested includes, and merge any duplicate records into one."
+    }
+  ],
+  "featured": false
+}
