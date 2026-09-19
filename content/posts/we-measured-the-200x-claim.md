@@ -4,9 +4,9 @@ excerpt: 'Last week we told you to measure a vendor claim on your own workload i
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-09-19'
-publishedAt: '2026-09-19T15:00:00Z'
-updatedAt: '2026-09-19T15:00:00Z'
+date: '2026-09-21'
+publishedAt: '2026-09-21T15:00:00Z'
+updatedAt: '2026-09-21T15:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
