@@ -1,19 +1,20 @@
 ---
 title: 'Your Tenant Isolation Is One Forgotten WHERE Clause Away'
-excerpt: 'Most multi-tenant apps enforce isolation in application code, which means every query is a chance to leak. Postgres row-level security moves the boundary into the database. Here is a working schema, the six things that quietly break it, and how to prove your tests would actually catch a breach.'
+excerpt: 'Most multi-tenant apps enforce isolation in application code, which means every query is a chance to leak. Postgres row-level security moves the boundary into the database. Here is a working schema, the things that quietly break it, and why the role in your Neon connection string reads every tenant no matter what your policies say.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-09-19'
 publishedAt: '2026-09-19T09:00:00Z'
-updatedAt: '2026-09-19T09:00:00Z'
-readingTime: '15 min read'
+updatedAt: '2026-09-21T09:00:00Z'
+readingTime: '18 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
 featured: false
 tags:
   - Postgres
+  - Neon
   - Security
   - Multi-tenancy
   - Database
@@ -44,15 +45,16 @@ https://github.com/The-DevOps-Daily/rls-multi-tenant-starter
 - **The application should not filter by tenant. It should say who it is**, and let the database decide what that identity can see.
 - `ENABLE ROW LEVEL SECURITY` **does not bind the table's owner**. You want `FORCE` as well, and migrations run as the owner.
 - **A superuser ignores all of it**, and so does any role with `BYPASSRLS`. One wrong connection string removes every guarantee.
+- **On Neon that wrong connection string is the one the console gives you.** `neondb_owner` holds `BYPASSRLS`. With a tenant set and `FORCE` on the table, it still read all four rows across both tenants.
 - **`SET` cannot take a bind parameter.** Use `set_config('app.tenant_id', $1, true)`, and the `true` is what stops a pooled connection leaking a tenant into the next request.
 - **Adding a second policy can undo the first.** Permissive policies combine with `OR`.
 - **A passing isolation test suite is weak evidence.** Break the schema on purpose and check the suite notices. Mine did not, twice, until I did exactly that.
 
 ## Prerequisites
 
-- A supported Postgres. Row-level security landed in 9.5, but run something still receiving fixes; the examples here are on 18.
+- A supported Postgres. Row-level security landed in 9.5, but run something still receiving fixes; everything here was run on Postgres 18.
 - A multi-tenant schema, or the intention to build one.
-- Docker, if you want to run the repository.
+- A Neon account, if you want to run the repository the way it was measured. Each run makes a branch, applies the schema to it and deletes it afterwards, so it costs nothing and touches nothing else. Docker works too, offline.
 
 ## The shape of the fix
 
@@ -199,7 +201,7 @@ Measured against the repository's two tenants, four documents, with Acme's ident
 
 The second row is the incident. The third is the fix: **restrictive policies combine with `AND`**, so no later permissive policy can talk its way past them.
 
-The fourth row is why you cannot simply mark the tenant policy restrictive and stop. A restrictive policy **cannot grant access**, only remove it, so something permissive has to allow the row first:
+The fourth row is why marking the tenant policy restrictive is not enough on its own. A restrictive policy **cannot grant access**, only remove it, so something permissive has to allow the row first:
 
 ```sql
 -- Permissive: allows rows at all.
@@ -229,6 +231,144 @@ FOREIGN KEY (tenant_id, document_id) REFERENCES documents (tenant_id, id)
 
 which is a second reason for the composite primary key.
 
+## What changes when it runs on Neon
+
+Everything above is plain Postgres and holds anywhere. Then I moved the repository onto Neon, which is where most people reading this will actually run it, and four things needed changing before the schema would even apply. Each one is a consequence of a managed Postgres having no superuser and a connection pooler in front of the compute. Together they are the difference between a policy that protects a tenant and a policy that decorates one.
+
+### The role in the connection string reads every tenant
+
+This is the one to act on.
+
+`neondb_owner` is the role in the connection string the Neon console shows you. It is the one that ends up in `DATABASE_URL`, because it is the one you were given. It holds `BYPASSRLS`:
+
+```sql
+SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname = current_user;
+--  neondb_owner | t
+```
+
+Same schema as above, `FORCE ROW LEVEL SECURITY` on the table, `app.tenant_id` set to Acme, same query. The only difference between these two lines is which role ran it:
+
+```text
+role=neondb_owner  bypassrls=true   rows=4  -> Acme Q3 revenue, Acme staff list, Globex Q3 revenue, Globex staff list
+role=app_user      bypassrls=false  rows=2  -> Acme Q3 revenue, Acme staff list
+```
+
+`FORCE` does not save you. `FORCE` binds the table's *owner*, and has nothing to say about a role that skips policy evaluation altogether. There is no policy you can write that this role will obey.
+
+This is not a Neon defect. `neondb_owner` is the administrative role for your project and wants to be able to see everything. It is a defect in the very reasonable assumption that the connection string you were handed is the one your application should use.
+
+:::warning
+If you are on Neon and you have row-level security, run this now:
+
+```sql
+SELECT rolname, rolbypassrls FROM pg_roles WHERE rolname = current_user;
+```
+
+If it says `t`, your policies are not enforcing anything on that connection.
+:::
+
+The fix is the same as the fix everywhere else: the application gets its own unprivileged role. The repository creates `app_user` and `app_owner` and uses neither the role Neon gave it nor the table owner for the application. On a Postgres you installed yourself this is advice. On Neon it is the difference between the feature working and not.
+
+### A session setting on the pooled endpoint reaches the next client
+
+Neon gives you two hosts for the same compute: the direct one, and the same name with `-pooler` in it. The pooled one is the right default for a serverless application, and it hands one server connection to many clients.
+
+So the third argument to `set_config` stops being a style preference.
+
+Measured on the pooled endpoint. Client A sets a session-scoped value and reads it back four times. Client B connects afterwards and never sets anything:
+
+```text
+client A query 1 -> setting=11111111  documents visible=2
+client A query 2 -> setting=11111111  documents visible=2
+client A query 3 -> setting=11111111  documents visible=2
+client A query 4 -> setting=11111111  documents visible=2
+client B (never set it) -> setting=11111111
+```
+
+Client B read client A's tenant identity. With `app.tenant_id` that is one customer's request adopting another customer's identity, decided by which pooled connection it happened to get.
+
+The same test with `set_config(..., true)`, after restarting the compute so nothing was left over from the run above:
+
+```text
+fresh connection, nothing set -> setting=null  visible=0
+inside the transaction        -> visible=2
+after the commit              -> setting=      visible=0
+another client                -> setting=
+```
+
+Gone at the commit, and invisible to the next client. The connection goes back to the pool carrying nothing. That is the entire difference between the two runs, and it is one boolean.
+
+Worth noticing the first line of that second block: a fresh connection with no tenant set sees **zero** documents, not all of them. The policy fails closed. That is the behaviour you want from a security boundary, and it is why an unset tenant returning `NULL` rather than raising is deliberate.
+
+### Creating a role gives you the admin option but not `SET ROLE`
+
+The remaining two are smaller, and they are why the schema file has lines in it that look superstitious.
+
+`ALTER TABLE ... OWNER TO app_owner` requires that the current user be able to `SET ROLE` to the new owner. Creating a role normally grants that implicitly. On Neon the membership comes back like this:
+
+```text
+role        granted_to      admin_option  inherit_option  set_option
+app_owner   neondb_owner    true          false           false
+```
+
+Admin yes, `SET ROLE` no. So the statement fails:
+
+```text
+ERROR:  must be able to SET ROLE "app_owner"
+```
+
+The admin option is there, so the role can hand itself the part it is missing:
+
+```sql
+GRANT app_owner TO CURRENT_USER WITH SET TRUE;
+```
+
+The same check appears again on the way out: `DROP OWNED BY app_user` fails with `permission denied to drop objects` until the same grant is made.
+
+### Two checks a local superuser skips
+
+`ALTER TABLE ... OWNER TO` also requires the *new owner* to hold `CREATE` on the schema. A superuser skips that check, which is why this never comes up on a local Docker Postgres and fails immediately on Neon:
+
+```text
+ERROR:  permission denied for schema public
+```
+
+One line fixes it:
+
+```sql
+GRANT CREATE ON SCHEMA public TO app_owner;
+```
+
+And the passwords have to be real ones. Neon validates them in its control plane, so a demo role fails the statement before Postgres sees it:
+
+```text
+ERROR:  Received HTTP code 400 from control plane:
+        {"error":"insecure password, try including more special characters,
+         using uppercase letters, using numbers or using a longer password"}
+```
+
+That is four changes to make a textbook schema apply to a managed database, and none of them are in the textbook. The repository carries all four, each as a comment on the line it explains, guarded so the Docker path is unaffected.
+
+### Why a branch is the right place to test this
+
+The repository tests on a Neon branch rather than a shared database, and for this particular subject the reason is more than convenience.
+
+A branch is a copy-on-write copy of its parent, so making one costs nothing and deleting it takes everything with it. This suite creates two login roles, rewrites table ownership and, in the verification script, deliberately disables row-level security on a table five times in a row. Doing that to a long-lived database means a window where the isolation you are demonstrating is switched off, and a cleanup step you have to get right. Doing it on a branch means the window is on a copy nobody is using, and cleanup is a delete.
+
+```bash
+export NEON_API_KEY=...
+export NEON_PROJECT_ID=...
+./run-on-neon.sh
+```
+
+```text
+==> creating branch rls-test-1789987162
+==> applying schema and seed
+==> running the suite
+22 passed in 13.89s
+==> deleting branch br-billowing-voice-b2pp3j4i
+```
+
 ## The part most guides skip: proving the tests work
 
 Here is the thing about an isolation test suite. This passes:
@@ -245,12 +385,12 @@ A test suite for a security boundary has to be checked, not trusted. So the repo
 
 ```terminal
 {
-  "title": "./verify-suite.sh",
+  "title": "./run-on-neon.sh verify",
   "prompt": "$",
   "steps": [
     { "comment": "expecting the suite to pass unmodified, and to fail for every mutation" },
-    { "cmd": "./verify-suite.sh",
-      "output": "  ok    baseline                             18 passed in 0.72s\n  ok    RLS disabled on documents            14 failed, 4 passed\n  ok    RLS disabled on tenants               2 failed, 16 passed\n  ok    FORCE removed, owner exempt again     2 failed, 16 passed\n  ok    WITH CHECK weakened to true           1 failed, 17 passed\n  ok    policy weakened to USING (true)      12 failed, 6 passed\n  ok    restored                             18 passed in 0.67s\n\nevery mutation was caught." }
+    { "cmd": "./run-on-neon.sh verify",
+      "output": "  ok    baseline                             22 passed in 13.89s\n  ok    RLS disabled on documents            16 failed, 6 passed\n  ok    RLS disabled on tenants               2 failed, 20 passed\n  ok    FORCE removed, owner exempt again     2 failed, 20 passed\n  ok    WITH CHECK weakened to true           1 failed, 21 passed\n  ok    policy weakened to USING (true)      14 failed, 8 passed\n  ok    restored                             22 passed in 11.78s\n\nevery mutation was caught." }
   ]
 }
 ```
@@ -267,11 +407,13 @@ Within that limit, the counts are still informative:
 
 ## Two things you will hit in production
 
-**PgBouncer in transaction mode.** This is the common deployment and it works, but only if the shape is right: begin a transaction, set the tenant on it, run every protected query on that same transaction, commit. PgBouncer holds the backend for the life of the transaction, which is exactly the guarantee `set_config(..., true)` needs.
+**Transaction pooling.** Neon's pooled endpoint, and PgBouncer in transaction mode generally, works with all of this, but only if the shape is right: begin a transaction, set the tenant on it, run every protected query on that same transaction, commit. The pooler holds one backend for the life of the transaction, which is exactly the guarantee `set_config(..., true)` needs.
 
 What does not work is setting the identity once per request, or in a connection-initialisation hook. A request that opens two transactions gets two different backends, and the second has no identity. A retried transaction has to set it again.
 
-And do not rely on the pool to tidy up after you: in transaction mode PgBouncer does not normally run `server_reset_query`. Session-level state persists because nothing removes it. That is the risk, rather than an inevitability, and it is why "never set a session-level tenant" is the rule that keeps the transaction-level one honest.
+And do not rely on the pool to tidy up after you. In transaction mode the pooler does not normally reset session state, so it persists because nothing removes it. That is not a theory: the measurement above is a second client reading the first client's tenant id on Neon's pooled host. "Never set a session-level tenant" is the rule that keeps the transaction-level one honest.
+
+If your framework sets session variables in a connection hook, which several do for exactly this pattern, that is the thing to go and look at first.
 
 **Migrations and backfills.** Once `FORCE` is on, the owner is inside the policy too, so a backfill that does not set a tenant updates **zero rows** and reports success. A loop over tenants, setting the identity for each, is the usual answer. Where a maintenance job genuinely needs to cross tenants, that is a deliberate, separately authorised thing, not a side effect of running as the owner.
 
@@ -291,6 +433,8 @@ It filters rows. It does not make another tenant's data unknowable, and it is wo
    SELECT rolname, rolsuper, rolbypassrls FROM pg_roles WHERE rolcanlogin;
    ```
 
+   On Neon, expect `neondb_owner` to come back with `rolbypassrls` set. If that is the role in your `DATABASE_URL`, make an unprivileged one and move the application to it before writing a single policy, because until you do, no policy you write is being enforced.
+
 2. **Pick one table and add a policy**, with `FORCE`. Not the whole schema. One table, and see what breaks in your test suite, because whatever breaks is a query that was relying on being able to see everything.
 
 3. **Write the negative test before the positive one.** "Tenant A sees its two rows" is comfortable. "Tenant A sees nothing when the tenant is unset" is the one that catches a real bug.
@@ -301,6 +445,8 @@ It filters rows. It does not make another tenant's data unknowable, and it is wo
 
 Row-level security moves tenant isolation from something every query has to remember into something the table guarantees. The mechanism is small: a setting, a function, two policies and a role that cannot escape them.
 
-The care is all in the details around it. The owner exemption, the superuser bypass, the pooling scope of a boolean, and the difference between a test suite that passes and one you have watched fail.
+The care is all in the details around it. The owner exemption, the bypass, the pooling scope of a boolean, and the difference between a test suite that passes and one you have watched fail.
+
+On a managed Postgres two of those stop being details. The role you were handed reads every tenant, and the pooled endpoint will carry a session setting into somebody else's request. Neither is exotic. Both are the default path, which is what makes them worth the paragraph.
 
 The repository runs in one command, and the second command tells you whether the first one means anything.
