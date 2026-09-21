@@ -43,7 +43,7 @@ The headline result is fine and slightly boring. The interesting part is that we
 
 ## What we were measuring
 
-The workload is real and small enough to describe completely. A transactional email service has an admin page with a button on it: review what this account has been sending. Pressing it gathers aggregate counts and short samples of an account's recent mail, hands them to a model, and gets back a classification from a fixed list, a confidence, and a few sentences of reasoning.
+The workload is real and small enough to describe completely. A transactional email service has an admin page with a button on it: review what this account has been sending. Pressing it gathers volume counters for the account, the domains it mails, the link hostnames in its messages and a dozen recent subject lines, hands them to a model, and gets back a classification from a fixed list, a confidence, and a few sentences of reasoning. Message bodies are not part of what the model sees.
 
 Two things make it a good test subject. It is a bounded decision, which is exactly the shape the new model class claims to be built for. And the button `await`s the model inside the request handler, so the admin sits there until it answers. Latency is not an abstraction, it is someone tapping a desk.
 
