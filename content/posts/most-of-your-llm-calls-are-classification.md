@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-09-18'
 publishedAt: '2026-09-18T15:00:00Z'
-updatedAt: '2026-09-18T15:00:00Z'
+updatedAt: '2026-09-21T15:00:00Z'
 readingTime: '10 min read'
 author:
   name: 'DevOps Daily Team'
@@ -202,4 +202,4 @@ That part is true regardless of who ends up selling the solution, and you can ac
 
 Then, when something really is 200x faster, you will be one of the few people able to tell.
 
-*All performance figures attributed to TypeSafe AI are their published claims. We have not tested Jev and had no access at the time of writing.*
+*All performance figures attributed to TypeSafe AI in this post are their published claims. We had no access to Jev when we wrote it. We have since measured it on a production workload of our own, and the result, along with the two mistakes we made getting there, is in [We measured the 200x claim, and got it wrong twice first](/posts/we-measured-the-200x-claim).*
