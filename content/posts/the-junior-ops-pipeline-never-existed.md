@@ -46,6 +46,33 @@ Here the raw text is available, so the question "does this posting want a junior
 
 **What this dataset is not** is a census. It is startups and small companies, skewed to the US and remote, and a company posting there is already unusual. A big bank hiring forty graduate operations engineers will never appear. What it is good for is a long series measured exactly the same way for fifteen years, which is what a claim about change over time needs.
 
+### The obvious objection, answered as far as it can be
+
+One board. Strong claim. Anybody can say we looked in the wrong place, and that is the right thing to say.
+
+Here is the honest position. **No public dataset we could find breaks job postings down by seniority**, which is the one thing this claim turns on. Indeed's Hiring Lab publishes a posting index by sector, and it is a real measure of the whole market rather than one forum, but it counts volume and has no junior or senior dimension at all. It cannot confirm or refute the number in this post.
+
+What it can do is test whether this board moves with the market it is supposed to represent. Comparing monthly posting volume here against Indeed's Software Development index, across the 80 months where both exist:
+
+```chart
+{
+  "type": "line",
+  "title": "Does the board track the wider market?",
+  "caption": "Indeed Software Development posting index against Hacker News monthly posting count. 80 overlapping months, correlation r = 0.69. Indeed Hiring Lab data, used with attribution.",
+  "x": ["2020-02", "2020-10", "2021-06", "2022-02", "2022-10", "2023-06", "2024-02", "2024-10", "2025-06", "2026-02"],
+  "series": [
+    { "name": "Indeed index", "data": [105, 93, 156, 234, 163, 98, 88, 79, 84, 84], "color": "#8b5cf6" },
+    { "name": "HN postings (tens)", "data": [58, 71, 94, 80, 46, 33, 34, 33, 36, 41], "color": "#10b981" }
+  ]
+}
+```
+
+**r = 0.69.** The board rose through 2021, peaked in early 2022 and fell hard through 2023, which is what the wider market did. It is not a detached community with its own weather.
+
+That makes the sample more credible. It does not make it representative on seniority, and we are not going to claim it does.
+
+**So here is what would falsify this post**, stated plainly: a dataset covering a different slice of the market, with a seniority field, showing junior operations roles at a materially higher rate than half a percent. If you have one, we would rather see it than be right.
+
 ```terminal
 {
   "title": "collecting the postings",
