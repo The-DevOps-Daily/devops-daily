@@ -1,14 +1,103 @@
+# Dependabot for devops-daily.
+#
+# The problem this config solves: ungrouped updates produced seven separate
+# pull requests for @radix-ui packages in one week, each one a version bump to
+# a package that is always released alongside its siblings. Seven reviews,
+# seven builds, one decision.
+#
+# So related packages are grouped, and the groups are split by semver range.
+# Patch and minor updates arrive as one pull request per group and are safe to
+# merge on a green build. Major updates stay ungrouped and arrive alone,
+# because a major is a decision and should not ride along with nine bumps
+# nobody looked at.
 version: 2
 updates:
- 
   - package-ecosystem: "npm"
-    directory: "/" 
+    directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 5 
-
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Sofia"
+    # Higher than the old 5 because grouping means far fewer, larger PRs.
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    groups:
+      # Released together, versioned together, reviewed together.
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+        update-types:
+          - "minor"
+          - "patch"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+        update-types:
+          - "minor"
+          - "patch"
+      next:
+        patterns:
+          - "next"
+          - "eslint-config-next"
+          - "@next/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Build and test tooling. A broken one fails CI loudly and affects
+      # nothing a reader sees, so these are the safest to take in bulk.
+      tooling:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+      # Everything else that ships to the browser, still only minor and patch.
+      production-minor:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Sofia"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(actions)"
+    groups:
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # The repository ships a Dockerfile and nothing was watching its base image.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Sofia"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore(docker)"
