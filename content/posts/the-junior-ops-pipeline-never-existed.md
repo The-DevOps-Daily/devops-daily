@@ -70,7 +70,34 @@ That restraint matters more than it sounds. Consider a real posting from the dat
 SendGrid | Sr. Software Engineers (Security, Platform, Test, and DevOps) and more!
 ```
 
-A naive search of the whole posting for "DevOps" and "senior" counts that as a senior ops role. It is four roles in a trench coat, and only part of one of them is operations. Reading the role field keeps that honest, and postings that do not follow the convention, 23 percent of them, are counted separately rather than guessed at.
+A naive search of the whole posting for "DevOps" and "senior" counts that as a senior ops role. It is four roles in a trench coat, and only part of one of them is operations. Reading the role field keeps that honest, and postings that do not follow the convention are counted separately rather than guessed at.
+
+How many that is depends entirely on the era, which matters for reading the charts:
+
+```text
+2011-2014    97% unparseable    the convention barely existed
+2015-2019    17% unparseable
+2020-2026     7% unparseable
+```
+
+That is why the charts start in 2015. Before that we are excluding almost everything and whatever is left is not a sample of anything.
+
+### Checking what the method throws away
+
+Two ways this could be wrong, both tested rather than assumed.
+
+**Does the regex miss junior ops roles that do not use the word?** A posting could want an entry level person and never say "junior". So we sampled 25 operations postings that did **not** match, and read their bodies for entry level language of any kind. One matched, and it read:
+
+```text
+This is not an entry-level DevOps position; this role requires
+senior-level skills
+```
+
+A true negative, found by looking for the opposite. Zero of 25 were missed junior roles.
+
+**Do the excluded postings hide them?** The ones that do not follow the convention have a higher junior ops rate, 1.73 percent against 0.50, which would matter a lot if it were spread evenly. It is not. Sixteen of the twenty one are from 2012 to 2014, when 97 percent of postings were unparseable and which the charts already exclude. From 2015 onward there are five, and reading them, three are the same company posting "hiring in many roles" and one lists a DevOps role and a junior role separately.
+
+So the exclusion could add roughly one junior ops posting to the modern period. Seventeen would become eighteen.
 
 ## The result
 
@@ -178,15 +205,19 @@ Senior Software Engineer, Senior DevOps Engineer, Software Engineering Intern
 
 That intern is not an operations intern. Counting it as one inflates the junior number by nearly half.
 
-Precision of the automated classifier: **52 percent**. Every number in this post is the hand checked count, and the rejected 16 are listed in the data with a reason each.
+Precision of the automated classifier on junior matches: **52 percent**. Every junior number in this post is the hand checked count, and the rejected 16 are listed in the data with a reason each.
+
+**The senior counts are not hand checked, and you should know that before comparing them.** We read the 63 senior matches from 2026 and found the same failure mode at a much lower rate, roughly 85 percent precision: a few are postings where the seniority word belongs to a different role in the list, like "Senior/Staff Fullstack Engineer, DevOps Engineer" where the DevOps role carries no level at all.
+
+So the comparison in this post is a verified junior number against an approximate senior one. Corrected, 2026 would read about 54 senior against 1 junior instead of 63 against 1. It does not change anything, and it is the kind of asymmetry a reader deserves to be told about rather than discover.
 
 If you take one methodological thing from this: a regex over job postings is right about half the time, and the half it gets wrong all points the same way.
 
 ## What to do with this
 
-**If you are trying to get into operations.** Stop looking for the junior opening. There are about two a year in this dataset and they are not the route. The route is the one everybody actually took: get hired to do something adjacent, be the person who fixes the pipeline, and let the title follow the work. That is not encouraging advice, but pretending the front door exists is worse.
+**If you are trying to get into operations.** Stop looking for the junior opening. There is about one a year in this dataset and it is not the route. The route is the one everybody actually took: get hired to do something adjacent, be the person who fixes the pipeline, and let the title follow the work. That is not encouraging advice, but pretending the front door exists is worse.
 
-**If you are hiring.** You are competing for the same senior people as everyone else, in a market where 63 postings this year wanted a senior operations engineer and one wanted a junior. The arithmetic does not improve by waiting. The teams that will have operations engineers in 2030 are the ones growing them now, out of the support and development people already on staff.
+**If you are hiring.** You are competing for the same senior people as everyone else, in a market where roughly 54 postings this year wanted a senior operations engineer and one wanted a junior. The arithmetic does not improve by waiting. The teams that will have operations engineers in 2030 are the ones growing them now, out of the support and development people already on staff.
 
 **If you are writing about the AI hiring story.** Check whether the thing you are describing actually changed. For operations it did not. The entry level was missing in 2016, missing at the peak of the boom in 2021, and missing now. A story about AI closing a door works much better when the door was open to begin with.
 
