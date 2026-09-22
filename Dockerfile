@@ -70,7 +70,7 @@ RUN pnpm run build:cf
 # Stage 4: Production runtime
 # Minimal nginx image serving static files
 # ===========================================================================
-FROM nginx:1.27-alpine AS production
+FROM nginx:1.31-alpine AS production
 
 RUN rm /etc/nginx/conf.d/default.conf
 
