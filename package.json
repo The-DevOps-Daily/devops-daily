@@ -113,7 +113,6 @@
     "openai": "^7.19.0",
     "react": "^19.3.0",
     "react-confetti": "^6.4.0",
-    "react-day-picker": "9.14.0",
     "react-dom": "^19.3.0",
     "react-hook-form": "^7.88.0",
     "react-resizable-panels": "^4.12.4",
@@ -149,7 +148,7 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",
-    "vite": "7.3.5",
+    "vite": "8.3.0",
     "vitest": "^5.0.1"
   },
   "pnpm": {
