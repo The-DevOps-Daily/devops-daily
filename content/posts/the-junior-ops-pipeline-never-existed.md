@@ -7,7 +7,7 @@ category:
 date: '2026-09-22'
 publishedAt: '2026-09-22T09:00:00Z'
 updatedAt: '2026-09-22T09:00:00Z'
-readingTime: '11 min read'
+readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -34,6 +34,7 @@ Do not do that. We counted, and operations has a different problem. A worse one,
 - The rate never rose above 1.1 percent in any year, including the 2021 hiring boom. It was **zero** in 2016, 2021, 2024 and 2025.
 - Operations demand is fine. Ops is 5.4 percent of all postings this year against 6.4 percent in 2019. **The jobs exist. The bottom rung does not, and never did.**
 - So "AI removed the entry level" cannot be the explanation here. The entry level was already missing when the boom was on and hiring managers were taking anyone with a pulse.
+- We checked the other side too: **36,202 candidate postings** from the matching "Who wants to be hired?" threads. **Eleven juniors asked for operations work in twelve years.** Nobody is offering, and almost nobody is asking.
 
 ## Where the data comes from
 
@@ -126,6 +127,31 @@ Operations is 5.4 percent of postings in 2026 against 6.4 percent in 2019. The b
 
 So the story is not "ops hiring collapsed". It is "hiring shrank, and ops shrank with it, while the junior end of ops stayed at the zero it has always been".
 
+## The other side of the board
+
+The employer threads answer "are there junior operations jobs". They cannot answer "is anybody asking for one", and those are different failures with different fixes. If juniors are applying and nobody hires them, that is a hiring problem. If nobody is applying either, the shortage starts further upstream.
+
+Hacker News runs the mirror thread, "Ask HN: Who wants to be hired?", in the same format on the same day. So we counted that too: **36,202 candidate postings** across 12 years.
+
+The classification here is weaker and it is worth saying why. A candidate posting has no role field, just prose and a list of technologies, so the patterns have to read the whole thing. The first attempt matched 224 postings and was **wrong most of the time**. Three failure modes did the damage:
+
+```text
+"fully self-taught"            a ten year veteran, not a junior
+"junior to CTO level"          describing people they mentored
+"Clojure (no professional      attached to one language, not to the person
+ experience)"
+```
+
+After tightening to first person claims and excluding mentoring language, 31 matches remained. We read all 31. **Eleven were genuinely a junior asking for operations work**, as opposed to a junior asking for something else while happening to list Docker.
+
+**Eleven people in twelve years.**
+
+Set that beside seventeen jobs in fifteen years and the picture is not the one we expected. This is not a market where frustrated juniors queue at doors that will not open. **Almost nobody is offering junior operations work, and almost nobody is asking for it.**
+
+Both sides behave as though the entry level operations job does not exist, which is consistent with it never having existed.
+
+One thing in the noise: nine of those eleven appear from 2023 onward. That could be juniors starting to ask for operations work as developer entry level roles disappear, which would be the first sign of the effect arriving. With eleven data points it could equally be nothing, and we are not going to pretend otherwise.
+
 ## Why operations never had a bottom rung
 
 The data says what happened. The reason is not in the data, so here it is as argument rather than evidence.
@@ -173,5 +199,7 @@ If you take one methodological thing from this: a regex over job postings is rig
 - Operations means SRE, site reliability, DevOps, platform engineer, infrastructure engineer, systems engineer, sysadmin, production engineer, cloud engineer.
 - Every junior match was reviewed by hand. 33 matched, 17 survived.
 - Years before 2015 are excluded from the charts: too few postings used the convention for the classification to mean anything.
+
+Candidate side: every "Ask HN: Who wants to be hired?" thread, 36,202 postings. There is no role field there, so the patterns read the whole posting, which makes it weaker evidence and it is treated as such. 31 matched after excluding mentoring language and self taught veterans, and 11 survived reading.
 
 The obvious weakness is the source. This is one job board, with one kind of company on it. If you have a dataset that covers the rest of the market, the same question is worth asking of it, and we would like to see the answer.
