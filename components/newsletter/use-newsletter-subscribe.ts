@@ -35,6 +35,10 @@ export function useNewsletterSubscribe() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), SUBMIT_TIMEOUT_MS);
 
+    // The page the signup came from. A cross-origin request only carries the
+    // site's origin in its Referer, so the path has to be sent explicitly.
+    formData.set('_sf_page', window.location.href);
+
     try {
       const res = await fetch(SUBMIT_URL, {
         method: 'POST',
