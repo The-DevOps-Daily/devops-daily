@@ -23,8 +23,10 @@ function replaceFence(
   lang: string,
   fn: (body: string) => string,
 ): string {
-  const pattern = new RegExp(`^\`\`\`${lang}[ \\t]*\\n([\\s\\S]*?)\\n\`\`\`[ \\t]*$`, 'gm');
-  return markdown.replace(pattern, (whole, body: string) => {
+  // Three or more backticks, closed by the same number. A block whose content
+  // has its own ``` (recorded model output, for one) is written with four.
+  const pattern = new RegExp(`^(\`{3,})${lang}[ \\t]*\\n([\\s\\S]*?)\\n\\1[ \\t]*$`, 'gm');
+  return markdown.replace(pattern, (_whole, _fence: string, body: string) => {
     try {
       return fn(body);
     } catch {
@@ -34,6 +36,12 @@ function replaceFence(
       return '';
     }
   });
+}
+
+/** A code fence longer than any run of backticks inside the code it wraps. */
+function fenceFor(code: string): string {
+  const longest = Math.max(0, ...(code.match(/`+/g) ?? []).map((run) => run.length));
+  return '`'.repeat(Math.max(3, longest + 1));
 }
 
 function asJson<T>(body: string): T {
@@ -243,7 +251,8 @@ function terminalToMarkdown(body: string): string {
 
   // A real code block rather than an animation. On another platform that is
   // arguably the more useful form, because the reader can copy it.
-  return [spec.title ? `**${spec.title}**` : '', '', '```bash', ...lines, '```']
+  const fence = fenceFor(lines.join('\n'));
+  return [spec.title ? `**${spec.title}**` : '', '', `${fence}bash`, ...lines, fence]
     .join('\n')
     .trim();
 }
@@ -262,7 +271,8 @@ function tabsToMarkdown(body: string): string {
   if (spec.title) out.push(`**${spec.title}**`, '');
   for (const tab of tabs) {
     out.push(`**${tab.label ?? ''}**`, '');
-    out.push('```' + (tab.lang ?? ''), tab.code ?? '', '```', '');
+    const fence = fenceFor(tab.code ?? '');
+    out.push(fence + (tab.lang ?? ''), tab.code ?? '', fence, '');
   }
   return out.join('\n').trim();
 }
