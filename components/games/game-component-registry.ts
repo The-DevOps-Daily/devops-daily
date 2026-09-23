@@ -26,6 +26,7 @@ import DockerTerminalSimulator from '@/components/games/docker-terminal-simulato
 import ForkBombSimulator from '@/components/games/fork-bomb-simulator';
 import GitQuiz from '@/components/games/git-command-quiz';
 import GitConceptsSimulator from '@/components/games/git-concepts-simulator';
+import GitMergeConflictSimulator from '@/components/games/git-merge-conflict-simulator';
 import GitOpsWorkflow from '@/components/games/gitops-workflow';
 import InfraTarot from '@/components/games/infra-tarot';
 import JavascriptPromisesAsyncSimulator from '@/components/games/javascript-promises-async-simulator';
@@ -75,6 +76,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'kubernetes-networking-cni-simulator': KubernetesNetworkingCniSimulator,
   'javascript-promises-async-await-simulator': JavascriptPromisesAsyncSimulator,
   'git-concepts-simulator': GitConceptsSimulator,
+  'git-merge-conflict-simulator': GitMergeConflictSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
   'heroku-style-name-generator': HerokuStyleNameGenerator,
   'log-aggregation-pipeline-simulator': LogAggregationPipelineSimulator,
