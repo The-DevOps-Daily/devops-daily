@@ -33,6 +33,20 @@ describe('toPortableMarkdown', () => {
     expect(out).not.toContain('```terminal');
   });
 
+  it('converts a four-backtick terminal whose output has its own fence', () => {
+    // Recorded model output can contain ```, so the post wraps it in ````.
+    const md = [
+      '````terminal',
+      '{ "steps": [ { "cmd": "npm run show", "output": "served    ```bash\\ngit reset --soft HEAD~1" } ] }',
+      '````',
+    ].join('\n');
+    const out = toPortableMarkdown(md);
+    expect(out).not.toContain('terminal');
+    // The code block is fenced longer than the ``` inside it, so it stays one block.
+    expect(out).toMatch(/^````bash$/m);
+    expect(out).toContain('git reset --soft HEAD~1');
+  });
+
   it('turns a diagram into a numbered list that keeps the captions', () => {
     const md = [
       '```diagram',
