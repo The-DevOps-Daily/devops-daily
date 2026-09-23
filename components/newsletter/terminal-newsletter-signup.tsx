@@ -1,6 +1,7 @@
 'use client';
 
 import { useNewsletterSubscribe } from './use-newsletter-subscribe';
+import { TurnstileWidget } from './turnstile-widget';
 
 /**
  * Terminal-styled newsletter signup used on the homepage hero. Mimics a
@@ -48,6 +49,7 @@ export function TerminalNewsletterSignup() {
           style={{ position: 'absolute', left: '-9999px' }}
         />
         <input type="hidden" name="source" value="homepage_hero" />
+        <TurnstileWidget />
         <button
           type="submit"
           disabled={status === 'submitting'}

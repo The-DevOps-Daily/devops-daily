@@ -3,6 +3,7 @@
 import { type ReactNode } from 'react';
 import { Mail, ArrowRight } from 'lucide-react';
 import { useNewsletterSubscribe } from '../newsletter/use-newsletter-subscribe';
+import { TurnstileWidget } from '../newsletter/turnstile-widget';
 
 interface Props {
   /** Renders without the wrapping card chrome (used inside hero / popup). */
@@ -71,6 +72,8 @@ export function NewsletterForm({ bare, headline, description, source }: Props = 
           />
 
           {source && <input type="hidden" name="source" value={source} />}
+
+          <TurnstileWidget />
 
           <button
             type="submit"

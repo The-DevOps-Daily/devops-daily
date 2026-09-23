@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { TURNSTILE_FIELD, resetTurnstileWidgets, waitForTurnstileToken } from './turnstile-widget';
 
 const FORM_ID = 'cmomznsaf0001utvb88nateg7';
 const SUBMIT_URL = `https://smtpfa.st/api/forms/${FORM_ID}/submit`;
@@ -31,6 +32,12 @@ export function useNewsletterSubscribe() {
     if (status === 'submitting') return false;
     setStatus('submitting');
     setErrorMsg(null);
+
+    // Someone quick can submit before the invisible challenge has finished.
+    if (!formData.get(TURNSTILE_FIELD)) {
+      const token = await waitForTurnstileToken(5_000);
+      if (token) formData.set(TURNSTILE_FIELD, token);
+    }
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), SUBMIT_TIMEOUT_MS);
@@ -69,6 +76,7 @@ export function useNewsletterSubscribe() {
       return false;
     } finally {
       clearTimeout(timeout);
+      resetTurnstileWidgets();
     }
   };
 
