@@ -4,9 +4,9 @@ excerpt: 'How to test Postgres migrations before production: branch production o
 category:
   name: 'CI/CD'
   slug: 'ci-cd'
-date: '2026-09-23'
-publishedAt: '2026-09-23T09:00:00Z'
-updatedAt: '2026-09-23T09:00:00Z'
+date: '2026-09-24'
+publishedAt: '2026-09-24T09:00:00Z'
+updatedAt: '2026-09-24T09:00:00Z'
 readingTime: '17 min read'
 author:
   name: 'DevOps Daily Team'
