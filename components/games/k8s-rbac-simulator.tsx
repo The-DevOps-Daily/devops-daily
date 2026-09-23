@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import {
   can,
   allowedVerbs,
+  isClusterScoped,
   SCENARIOS,
   NAMESPACES,
   RESOURCES,
@@ -292,7 +293,7 @@ export default function K8sRbacSimulator() {
                     setQuestion((q) => ({ ...q, namespace: e.target.value || undefined }))
                   }
                 >
-                  <option value="">(cluster scope)</option>
+                  <option value="">(cluster scope / all namespaces)</option>
                   {NAMESPACES.map((n) => (
                     <option key={n} value={n}>
                       {n}
@@ -337,7 +338,12 @@ export default function K8sRbacSimulator() {
             </div>
             <p className="rb-note">
               Every verb this subject has on {question.resource}
-              {question.namespace ? ` in ${question.namespace}` : ' at cluster scope'}. RBAC has no
+              {question.namespace
+                ? ` in ${question.namespace}`
+                : isClusterScoped(question.resource)
+                  ? ' at cluster scope'
+                  : ' across all namespaces'}
+              . RBAC has no
               deny rules, so this list only ever grows as bindings are added.
             </p>
 

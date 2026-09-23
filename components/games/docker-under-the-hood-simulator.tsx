@@ -126,7 +126,7 @@ function buildStages(imageLocal: boolean): Stage[] {
         lines: [
           '"process": { "args": ["nginx", "-g", "daemon off;"] },',
           '"linux": { "namespaces": [',
-          '  {"type":"pid"}, {"type":"net"}, {"type":"mnt"},',
+          '  {"type":"pid"}, {"type":"network"}, {"type":"mount"},',
           '  {"type":"uts"}, {"type":"ipc"} ] }',
         ],
       },
