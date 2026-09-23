@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useNewsletterSubscribe } from '@/components/newsletter/use-newsletter-subscribe';
+import { TurnstileWidget } from '@/components/newsletter/turnstile-widget';
 
 const chapters = [
   {
@@ -560,6 +561,8 @@ export function ClientContent() {
                       aria-hidden="true"
                       style={{ position: 'absolute', left: '-9999px' }}
                     />
+
+                    <TurnstileWidget />
 
                     <button
                       type="submit"

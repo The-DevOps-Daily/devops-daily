@@ -6,6 +6,7 @@ import { BookOpen, CheckCircle2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Confetti from 'react-confetti';
 import { useNewsletterSubscribe } from '@/components/newsletter/use-newsletter-subscribe';
+import { TurnstileWidget } from '@/components/newsletter/turnstile-widget';
 
 export function BookPromotionPopup() {
   const [isVisible, setIsVisible] = useState(false);
@@ -175,6 +176,8 @@ export function BookPromotionPopup() {
                           aria-hidden="true"
                           style={{ position: 'absolute', left: '-9999px' }}
                         />
+
+                        <TurnstileWidget />
 
                         <Button type="submit" className="w-full" disabled={status === 'submitting'}>
                           {status === 'submitting' ? 'Subscribing...' : 'Subscribe'}
