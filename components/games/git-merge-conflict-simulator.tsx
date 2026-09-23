@@ -31,8 +31,11 @@ import {
   TOTAL_STEPS,
   classifyLines,
   execute,
+  fileStatus,
   hasMarkers,
+  hasUnstagedChanges,
   saveFile,
+  type FileStatus,
   type Lesson,
   type LineSide,
   type LineType,
@@ -55,7 +58,7 @@ const LESSON_ICONS: Record<Lesson['icon'], ReactNode> = {
   bug: <Bug className="h-5 w-5" />,
 };
 
-const STATUS_STYLE: Record<RepoFile['status'], { label: string; className: string }> = {
+const STATUS_STYLE: Record<FileStatus, { label: string; className: string }> = {
   unmerged: {
     label: 'both modified',
     className: 'border-red-500/40 bg-red-500/10 text-red-600 dark:text-red-300',
@@ -66,10 +69,6 @@ const STATUS_STYLE: Record<RepoFile['status'], { label: string; className: strin
   },
   modified: {
     label: 'modified',
-    className: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  },
-  new: {
-    label: 'untracked',
     className: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
   },
   clean: { label: 'clean', className: 'border-border bg-muted/40 text-muted-foreground' },
@@ -87,7 +86,7 @@ const SIDE_STYLE: Record<LineSide, string> = {
 function sideLabels(repo: RepoState): { ours: string; theirs: string } {
   if (repo.op?.kind === 'rebase') {
     return {
-      ours: `ours: ${repo.op.onto} (HEAD)`,
+      ours: `ours: rebased side, ${repo.op.onto} (HEAD)`,
       theirs: `theirs: your commit ${repo.op.commitSha}`,
     };
   }
@@ -117,6 +116,8 @@ export default function GitMergeConflictSimulator() {
   const lineId = useRef(LESSONS[0].intro.length);
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
 
   const step = lesson.steps[stepIndex] as (typeof lesson.steps)[number] | undefined;
   const lessonDone = lesson.steps.every((_, i) => completed.has(`${lesson.id}-${i}`));
@@ -146,6 +147,7 @@ export default function GitMergeConflictSimulator() {
       setEditError(null);
       setShowHint(false);
       setInput('');
+      setHistoryIndex(-1);
     },
     [makeLines]
   );
@@ -154,11 +156,16 @@ export default function GitMergeConflictSimulator() {
     if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
   }, [terminal]);
 
+  /** Mark the current step, and any skipped steps up to `through`, as done. */
   const completeStep = useCallback(
-    (explanation: string) => {
-      setCompleted((prev) => new Set(prev).add(`${lesson.id}-${stepIndex}`));
+    (explanation: string, through = stepIndex) => {
+      setCompleted((prev) => {
+        const next = new Set(prev);
+        for (let i = stepIndex; i <= through; i++) next.add(`${lesson.id}-${i}`);
+        return next;
+      });
       setTerminal((prev) => [...prev, ...makeLines([{ type: 'success', content: explanation }])]);
-      setStepIndex((i) => Math.min(i + 1, lesson.steps.length));
+      setStepIndex(Math.min(through + 1, lesson.steps.length));
       setShowHint(false);
     },
     [lesson, makeLines, stepIndex]
@@ -184,14 +191,39 @@ export default function GitMergeConflictSimulator() {
           ...result.lines.filter((l) => l.content !== ''),
         ]),
       ]);
-      if (step?.kind === 'command' && step.done(cmd, repo, result.state))
-        completeStep(step.explanation);
+      // The command may satisfy the current step, or a later one if the user went ahead
+      // (say, committing before the status check). Edit steps are never skipped.
+      let matched = -1;
+      if (result.ok) {
+        for (let i = stepIndex; i < lesson.steps.length; i++) {
+          const candidate = lesson.steps[i];
+          if (candidate.kind === 'edit') break;
+          if (candidate.done(cmd, repo, result.state)) {
+            matched = i;
+            break;
+          }
+        }
+      }
+      if (matched >= 0) {
+        const done = lesson.steps[matched];
+        if (done.kind === 'command') completeStep(done.explanation, matched);
+      } else if (repo.op && !result.state.op && stepIndex < lesson.steps.length) {
+        setTerminal((prev) => [
+          ...prev,
+          ...makeLines([
+            {
+              type: 'note',
+              content: `The ${repo.op?.kind} is over, so this lesson cannot continue from here. Press Restart lesson to try again.`,
+            },
+          ]),
+        ]);
+      }
       // A command may rewrite the file on screen; leave the editor so it shows the new content.
       if (editing && result.state.files[activeFile]?.content !== repo.files[activeFile]?.content) {
         setEditing(false);
       }
     },
-    [activeFile, completeStep, editing, makeLines, repo, step]
+    [activeFile, completeStep, editing, lesson, makeLines, repo, stepIndex]
   );
 
   const handleSubmit = (event: FormEvent) => {
@@ -205,13 +237,13 @@ export default function GitMergeConflictSimulator() {
       const next = Math.min(historyIndex + 1, history.length - 1);
       if (next >= 0) {
         setHistoryIndex(next);
-        setInput(history[next]);
+        setInput(history[next] ?? '');
       }
     } else if (event.key === 'ArrowDown') {
       event.preventDefault();
       const next = Math.max(historyIndex - 1, -1);
       setHistoryIndex(next);
-      setInput(next >= 0 ? history[next] : '');
+      setInput(next >= 0 ? (history[next] ?? '') : '');
     }
   };
 
@@ -221,6 +253,7 @@ export default function GitMergeConflictSimulator() {
     setDraft(content ?? repo.files[editableFile].content);
     setEditError(null);
     setEditing(true);
+    requestAnimationFrame(() => textareaRef.current?.focus());
   };
 
   const save = () => {
@@ -228,6 +261,7 @@ export default function GitMergeConflictSimulator() {
     const next = saveFile(repo, editableFile, draft);
     setRepo(next);
     setEditing(false);
+    requestAnimationFrame(() => editButtonRef.current?.focus());
     const saved = next.files[editableFile].content;
     setTerminal((prev) => [
       ...prev,
@@ -249,12 +283,15 @@ export default function GitMergeConflictSimulator() {
   const resetLab = () => {
     setCompleted(new Set());
     setHistory([]);
+    setHistoryIndex(-1);
     openLesson(0);
   };
 
   const fileNames = useMemo(() => Object.keys(repo.files).sort(), [repo.files]);
-  const unmergedCount = Object.values(repo.files).filter((f) => f.status === 'unmerged').length;
-  const stagedCount = Object.values(repo.files).filter((f) => f.status === 'staged').length;
+  const unmergedCount = Object.values(repo.files).filter(
+    (f) => fileStatus(f) === 'unmerged'
+  ).length;
+  const stagedCount = Object.values(repo.files).filter((f) => fileStatus(f) === 'staged').length;
   const allDone = completed.size === TOTAL_STEPS;
   const opLabel =
     repo.op?.kind === 'merge'
@@ -291,7 +328,10 @@ export default function GitMergeConflictSimulator() {
                 {completed.size}/{TOTAL_STEPS}
               </span>
             </div>
-            <Progress value={(completed.size / TOTAL_STEPS) * 100} />
+            <Progress
+              value={(completed.size / TOTAL_STEPS) * 100}
+              aria-label={`Lab progress: ${completed.size} of ${TOTAL_STEPS} steps`}
+            />
             <div className="grid grid-cols-3 gap-2 text-center">
               <Metric label="Branch" value={repo.branch ?? 'detached'} />
               <Metric label="Unmerged" value={String(unmergedCount)} />
@@ -431,28 +471,27 @@ export default function GitMergeConflictSimulator() {
           <Card className="overflow-hidden border-border bg-[#171717]">
             <CardHeader className="border-b border-border/60 bg-[#262626] p-2.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex min-w-0 flex-wrap gap-1" role="tablist" aria-label="Files">
+                <div className="flex min-w-0 flex-wrap gap-1" role="group" aria-label="Files">
                   {fileNames.map((name) => {
-                    const f = repo.files[name];
+                    const unmerged = fileStatus(repo.files[name]) === 'unmerged';
                     return (
                       <button
                         key={name}
                         type="button"
-                        role="tab"
-                        aria-selected={name === file?.path}
-                        onClick={() => {
-                          if (!editing) setActiveFile(name);
-                        }}
+                        aria-pressed={name === file?.path}
+                        disabled={editing}
+                        onClick={() => setActiveFile(name)}
                         className={cn(
-                          'rounded px-2 py-1 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                          'rounded px-2 py-1 font-mono text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-60',
                           name === file?.path
                             ? 'bg-[#171717] text-slate-100'
                             : 'text-slate-400 hover:text-slate-200',
-                          f.status === 'unmerged' && 'text-red-300'
+                          unmerged && 'text-red-300'
                         )}
                       >
                         {name}
-                        {f.status === 'unmerged' ? ' !' : ''}
+                        {unmerged && <span className="sr-only"> (unmerged)</span>}
+                        {unmerged && <span aria-hidden="true"> !</span>}
                       </button>
                     );
                   })}
@@ -471,6 +510,7 @@ export default function GitMergeConflictSimulator() {
                     </>
                   ) : (
                     <Button
+                      ref={editButtonRef}
                       size="sm"
                       variant="secondary"
                       disabled={!editableFile || file?.path !== editableFile}
@@ -489,17 +529,23 @@ export default function GitMergeConflictSimulator() {
             <CardContent className="p-0">
               {editing ? (
                 <textarea
+                  ref={textareaRef}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   spellCheck={false}
                   aria-label={`Edit ${editableFile}`}
-                  className="block h-[280px] w-full resize-y bg-[#171717] p-4 font-mono text-sm leading-relaxed text-slate-100 caret-emerald-400 outline-none"
+                  aria-describedby={editError ? 'git-conflict-edit-error' : undefined}
+                  className="block h-[280px] w-full resize-y bg-[#171717] p-4 font-mono text-sm leading-relaxed text-slate-100 caret-emerald-400 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
                 />
               ) : (
                 <FileView file={file} labels={labels} />
               )}
               {editError && (
-                <p className="border-t border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300">
+                <p
+                  id="git-conflict-edit-error"
+                  role="alert"
+                  className="border-t border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300"
+                >
                   {editError}
                 </p>
               )}
@@ -529,7 +575,10 @@ export default function GitMergeConflictSimulator() {
             <CardContent className="p-0">
               <div
                 ref={terminalRef}
-                className="h-[340px] cursor-text overflow-y-auto p-4 font-mono text-sm leading-relaxed"
+                role="log"
+                aria-live="polite"
+                aria-label="Terminal output"
+                className="h-[340px] cursor-text overflow-y-auto p-4 font-mono text-sm leading-relaxed focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary/60"
                 onClick={() => inputRef.current?.focus()}
               >
                 {terminal.map((line) => (
@@ -629,7 +678,8 @@ export default function GitMergeConflictSimulator() {
               <ul className="space-y-1.5">
                 {fileNames.map((name) => {
                   const f = repo.files[name];
-                  const style = STATUS_STYLE[f.status];
+                  const status = fileStatus(f);
+                  const style = STATUS_STYLE[status];
                   return (
                     <li key={name} className="flex items-center justify-between gap-2">
                       <span className="truncate font-mono text-xs">{name}</span>
@@ -640,7 +690,10 @@ export default function GitMergeConflictSimulator() {
                         )}
                       >
                         {style.label}
-                        {f.status !== 'unmerged' && hasMarkers(f.content) ? ', markers!' : ''}
+                        {status === 'staged' && hasUnstagedChanges(f) ? ', edited since' : ''}
+                        {status !== 'unmerged' && !f.binary && hasMarkers(f.content)
+                          ? ', markers!'
+                          : ''}
                       </span>
                     </li>
                   );
@@ -668,7 +721,7 @@ export default function GitMergeConflictSimulator() {
               <SideRow
                 active={repo.op?.kind === 'rebase'}
                 title="During a rebase"
-                ours="the branch you are rebasing onto"
+                ours="the rebased result so far: the branch you rebase onto, plus your commits already replayed"
                 theirs="your commit being replayed"
               />
             </CardContent>
@@ -719,6 +772,17 @@ function FileView({
   labels: { ours: string; theirs: string };
 }) {
   if (!file) return <div className="h-[280px] p-4 font-mono text-sm text-slate-400">No file.</div>;
+  if (file.binary) {
+    return (
+      <div className="flex h-[280px] flex-col justify-center gap-2 p-6 text-sm text-slate-300">
+        <p className="font-mono text-slate-100">{file.content.trim()}</p>
+        <p className="text-slate-400">
+          Binary file. Git cannot merge it line by line, so it writes no markers: the working tree
+          keeps one version and the index holds the others.
+        </p>
+      </div>
+    );
+  }
   const lines = classifyLines(file.content.replace(/\n$/, ''));
   return (
     <div className="h-[280px] overflow-auto py-2 font-mono text-sm leading-relaxed">
@@ -749,14 +813,20 @@ function IndexStages({
   file: RepoFile | undefined;
   labels: { ours: string; theirs: string };
 }) {
-  const stages =
-    file && file.status === 'unmerged' && file.base !== undefined
-      ? [
-          { n: 1, name: 'base (common ancestor)', text: file.base, tone: 'border-slate-500/40' },
-          { n: 2, name: labels.ours, text: file.ours ?? '', tone: 'border-emerald-500/50' },
-          { n: 3, name: labels.theirs, text: file.theirs ?? '', tone: 'border-sky-500/50' },
-        ]
-      : null;
+  const stages = file?.stages
+    ? [
+        {
+          n: 1,
+          name: 'base (common ancestor)',
+          text: file.stages.base,
+          tone: 'border-slate-500/40',
+        },
+        { n: 2, name: labels.ours, text: file.stages.ours, tone: 'border-emerald-500/50' },
+        { n: 3, name: labels.theirs, text: file.stages.theirs, tone: 'border-sky-500/50' },
+      ].filter(
+        (s): s is { n: number; name: string; text: string; tone: string } => s.text !== undefined
+      )
+    : null;
   return (
     <Card>
       <CardHeader className="p-4 pb-2">
@@ -779,9 +849,9 @@ function IndexStages({
           ))
         ) : (
           <p className="text-muted-foreground">
-            {file?.status === 'staged'
-              ? 'Resolved: git add replaced the three stages with the one version you staged.'
-              : 'No conflict in this file. While a file is unmerged, the index holds three versions of it here.'}
+            {file?.undo
+              ? 'Resolved: git add replaced the conflict stages with the one version you staged.'
+              : 'No conflict in this file. While a path is unmerged, the index holds up to three versions of it here.'}
           </p>
         )}
       </CardContent>

@@ -12,7 +12,7 @@ const seoLearningPoints = [
   'Read Git conflict markers: <<<<<<< HEAD, ======= and >>>>>>>',
   'Inspect the base, ours and theirs versions with git show :1: :2: :3:',
   'Resolve a conflict by editing the file, then git add and git commit',
-  'Use git checkout --ours and --theirs, and regenerate lockfiles instead of editing them',
+  'Use git checkout --ours and --theirs to take a whole side, for example for a binary file',
   'Understand why ours and theirs swap during a git rebase',
   'Back out of a bad merge with git merge --abort',
   'Catch a semantic conflict: a clean merge that breaks the tests',
@@ -27,9 +27,9 @@ function GitMergeConflictEducational() {
           <h4 className="mb-3 text-sm font-semibold">What you&apos;ll learn</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>What the conflict markers delimit, and which side is which</li>
-            <li>The three index stages Git keeps for an unmerged file: base, ours and theirs</li>
+            <li>The index stages Git keeps for an unmerged file: base, ours and theirs</li>
             <li>That resolving means writing the file you want, not picking a side</li>
-            <li>When taking a whole side is right, and why lockfiles are regenerated</li>
+            <li>When taking a whole side is right, as with a binary file</li>
             <li>Why --ours and --theirs swap meaning during a rebase</li>
             <li>How to back out of a merge with git merge --abort</li>
             <li>Why a clean merge can still break the build</li>
@@ -77,8 +77,11 @@ function GitMergeConflictEducational() {
             </tr>
             <tr className="border-t">
               <td className="p-2 text-foreground">rebase</td>
-              <td className="p-2">the branch you are rebasing onto</td>
-              <td className="p-2">your commit being replayed</td>
+              <td className="p-2">
+                the rebased result so far: the branch you rebase onto, plus your commits already
+                replayed
+              </td>
+              <td className="p-2">the commit being replayed</td>
             </tr>
           </tbody>
         </table>
@@ -88,9 +91,9 @@ function GitMergeConflictEducational() {
         <h4 className="mb-2 text-sm font-semibold">The conflict Git cannot see</h4>
         <p className="text-sm text-muted-foreground">
           Git merges text. When two branches change different lines that depend on each other, the
-          merge is clean and the code is broken. Run your tests on the merge result, not only on
-          each branch: CI on merge commits, or a merge queue that tests the combined code before it
-          lands.
+          merge can be textually clean while the combined code is broken. Run your tests on the
+          merge result, not only on each branch: CI on merge commits, or a merge queue that tests
+          the combined code before it lands.
         </p>
       </div>
 

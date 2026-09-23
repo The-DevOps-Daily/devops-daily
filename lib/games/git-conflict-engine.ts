@@ -4,8 +4,10 @@
  * Each lesson is a small repository frozen at an interesting moment (a merge
  * or rebase stopped on a conflict, or a clean tree about to merge). The
  * engine runs a command against that state and returns the new state and the
- * terminal output, and decides whether a lesson step is done. No real Git
- * runs; the outputs follow what Git 2.4x prints for the same situation.
+ * terminal output, and each lesson step decides whether it is done. No real
+ * Git runs. Files keep HEAD, index and working-tree content separately, the
+ * way Git does, and the outputs follow what Git 2.4x prints (merge backend
+ * for rebase, default "merge" conflict style).
  */
 
 export type LineType = 'input' | 'output' | 'error' | 'success' | 'note';
@@ -15,21 +17,39 @@ export interface OutputLine {
   content: string;
 }
 
-export type FileStatus = 'clean' | 'unmerged' | 'modified' | 'staged' | 'new';
-
-export interface RepoFile {
-  path: string;
-  /** What the working tree holds now. */
-  content: string;
-  status: FileStatus;
-  /** Index stages while the file is unmerged: 1 base, 2 ours, 3 theirs. */
+export interface Stages {
   base?: string;
   ours?: string;
   theirs?: string;
-  /** The file as Git wrote it, markers included, so `checkout -m` can restore it. */
-  conflicted?: string;
-  /** Content in HEAD, for diffs of later edits. */
-  head?: string;
+}
+
+export interface RepoFile {
+  path: string;
+  binary?: boolean;
+  /** Content in HEAD, or null if the file is not in HEAD. */
+  head: string | null;
+  /** Stage 0 of the index; null while the path is unmerged. */
+  index: string | null;
+  /** The working tree. */
+  content: string;
+  /** Stages 1-3 while the path is unmerged. */
+  stages: Stages | null;
+  /** What `git checkout -m` needs to recreate the conflict after it was resolved. */
+  undo: { stages: Stages; conflicted: string } | null;
+}
+
+export type FileStatus = 'unmerged' | 'staged' | 'modified' | 'clean';
+
+export function fileStatus(f: RepoFile): FileStatus {
+  if (f.stages) return 'unmerged';
+  if (f.index !== f.head) return 'staged';
+  if (f.content !== f.index) return 'modified';
+  return 'clean';
+}
+
+/** Staged, and changed again in the working tree since. */
+export function hasUnstagedChanges(f: RepoFile): boolean {
+  return !f.stages && f.index !== null && f.content !== f.index;
 }
 
 export interface Commit {
@@ -47,22 +67,22 @@ export type Operation =
       ontoSha: string;
       commitSha: string;
       commitMessage: string;
+      /** The branch as it was before the rebase, for --abort. */
+      orig: { log: Commit[]; files: Record<string, string> };
     };
 
 export interface RepoState {
   lessonId: string;
   /** Branch HEAD points at, or null while a rebase has HEAD detached. */
   branch: string | null;
-  branches: string[];
   headSha: string;
   op: Operation | null;
   files: Record<string, RepoFile>;
   /** Newest first, as `git log --oneline` prints them. */
   log: Commit[];
-  /** Commits on the other side, shown by `git log --merge`. */
+  /** The other side's commits, reachable once a merge is committed. */
   otherLog: Commit[];
   tests: 'not-run' | 'failing' | 'passing' | null;
-  lockfileRegenerated: boolean;
   nextSha: number;
 }
 
@@ -107,6 +127,8 @@ export interface Lesson {
 export interface ExecuteResult {
   state: RepoState;
   lines: OutputLine[];
+  /** False when the command failed the way Git would fail it. */
+  ok: boolean;
   clear?: boolean;
 }
 
@@ -141,9 +163,17 @@ export function classifyLines(content: string): { text: string; side: LineSide }
 function clone(state: RepoState): RepoState {
   return {
     ...state,
-    branches: [...state.branches],
     op: state.op ? { ...state.op } : null,
-    files: Object.fromEntries(Object.entries(state.files).map(([k, v]) => [k, { ...v }])),
+    files: Object.fromEntries(
+      Object.entries(state.files).map(([k, v]) => [
+        k,
+        {
+          ...v,
+          stages: v.stages ? { ...v.stages } : null,
+          undo: v.undo ? { ...v.undo } : null,
+        },
+      ])
+    ),
     log: state.log.map((c) => ({ ...c })),
     otherLog: state.otherLog.map((c) => ({ ...c })),
   };
@@ -158,6 +188,66 @@ function newSha(state: RepoState): string {
 
 function withTrailingNewline(text: string): string {
   return text.endsWith('\n') ? text : `${text}\n`;
+}
+
+function splitLines(text: string): string[] {
+  return text.replace(/\n$/, '').split('\n');
+}
+
+function diffLines(before: string, after: string): string[] {
+  const a = splitLines(before);
+  const b = splitLines(after);
+  const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
+    new Array(b.length + 1).fill(0)
+  );
+  for (let i = a.length - 1; i >= 0; i--) {
+    for (let j = b.length - 1; j >= 0; j--) {
+      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+  const body: string[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) {
+      body.push(` ${a[i]}`);
+      i++;
+      j++;
+    } else if (j < b.length && (i >= a.length || dp[i][j + 1] >= dp[i + 1][j])) {
+      body.push(`+${b[j]}`);
+      j++;
+    } else {
+      body.push(`-${a[i]}`);
+      i++;
+    }
+  }
+  return body;
+}
+
+/** A plain unified diff of two versions, as one hunk. */
+export function unifiedDiff(path: string, before: string, after: string): string {
+  return [
+    `diff --git a/${path} b/${path}`,
+    `--- a/${path}`,
+    `+++ b/${path}`,
+    `@@ -1,${splitLines(before).length} +1,${splitLines(after).length} @@`,
+    ...diffLines(before, after),
+  ].join('\n');
+}
+
+function diffstat(before: string, after: string): { insertions: number; deletions: number } {
+  const body = diffLines(before, after);
+  return {
+    insertions: body.filter((l) => l.startsWith('+')).length,
+    deletions: body.filter((l) => l.startsWith('-')).length,
+  };
+}
+
+function statLine(files: number, insertions: number, deletions: number): string {
+  const parts = [`${files} file${files === 1 ? '' : 's'} changed`];
+  if (insertions) parts.push(`${insertions} insertion${insertions === 1 ? '' : 's'}(+)`);
+  if (deletions) parts.push(`${deletions} deletion${deletions === 1 ? '' : 's'}(-)`);
+  return ` ${parts.join(', ')}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -210,149 +300,41 @@ prometheus-client==0.20.0
 gunicorn==22.0.0
 `;
 
-const LOCK_BASE = `{
-  "name": "dashboard",
-  "lockfileVersion": 3,
-  "packages": {
-    "node_modules/react": {
-      "version": "18.3.1",
-      "integrity": "sha512-wS+hAgJShR0Kh..."
-    }
-  }
+const LOGO_BASE = '[PNG image, 512 x 512, 11.9 kB: the old blue logo]\n';
+const LOGO_OURS = '[PNG image, 512 x 512, 12.4 kB: blue logo with a sharper outline]\n';
+const LOGO_THEIRS = '[PNG image, 512 x 512, 14.1 kB: the new orange logo from the rebrand]\n';
+const BRAND_CSS_BEFORE = `:root {
+  --brand: #2563eb;
 }
 `;
-const LOCK_OURS = `{
-  "name": "dashboard",
-  "lockfileVersion": 3,
-  "packages": {
-    "node_modules/date-fns": {
-      "version": "3.6.0",
-      "integrity": "sha512-fRHTG8g/Gif+k..."
-    },
-    "node_modules/react": {
-      "version": "18.3.1",
-      "integrity": "sha512-wS+hAgJShR0Kh..."
-    }
-  }
-}
-`;
-const LOCK_THEIRS = `{
-  "name": "dashboard",
-  "lockfileVersion": 3,
-  "packages": {
-    "node_modules/chart.js": {
-      "version": "4.4.4",
-      "integrity": "sha512-emICKGBABnxh..."
-    },
-    "node_modules/react": {
-      "version": "18.3.1",
-      "integrity": "sha512-wS+hAgJShR0Kh..."
-    }
-  }
-}
-`;
-const LOCK_CONFLICTED = `{
-  "name": "dashboard",
-  "lockfileVersion": 3,
-  "packages": {
-<<<<<<< HEAD
-    "node_modules/date-fns": {
-      "version": "3.6.0",
-      "integrity": "sha512-fRHTG8g/Gif+k..."
-=======
-    "node_modules/chart.js": {
-      "version": "4.4.4",
-      "integrity": "sha512-emICKGBABnxh..."
->>>>>>> feature/charts
-    },
-    "node_modules/react": {
-      "version": "18.3.1",
-      "integrity": "sha512-wS+hAgJShR0Kh..."
-    }
-  }
-}
-`;
-const LOCK_REGENERATED = `{
-  "name": "dashboard",
-  "lockfileVersion": 3,
-  "packages": {
-    "node_modules/chart.js": {
-      "version": "4.4.4",
-      "integrity": "sha512-emICKGBABnxh..."
-    },
-    "node_modules/date-fns": {
-      "version": "3.6.0",
-      "integrity": "sha512-fRHTG8g/Gif+k..."
-    },
-    "node_modules/react": {
-      "version": "18.3.1",
-      "integrity": "sha512-wS+hAgJShR0Kh..."
-    }
-  }
-}
-`;
-const PACKAGE_JSON_MERGED = `{
-  "name": "dashboard",
-  "dependencies": {
-    "chart.js": "^4.4.4",
-    "date-fns": "^3.6.0",
-    "react": "^18.3.1"
-  }
+const BRAND_CSS_MERGED = `:root {
+  --brand: #f97316;
 }
 `;
 
-const APP_BASE = `from flask import Flask
+const LIMITS_BASE = `from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
-app = Flask(__name__)
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+limiter = Limiter(get_remote_address, default_limits=["100 per minute"])
 `;
-const APP_OURS = `from flask import Flask
+const LIMITS_OURS = `from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
-from app.version import VERSION
-
-app = Flask(__name__)
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok", "version": VERSION}
+limiter = Limiter(get_remote_address, default_limits=["200 per minute"])
 `;
-const APP_THEIRS = `from flask import Flask
+const LIMITS_THEIRS = `from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
-from app.limits import limiter
-
-app = Flask(__name__)
-
-
-@app.get("/health")
-@limiter.exempt
-def health():
-    return {"status": "ok"}
+limiter = Limiter(get_remote_address, default_limits=["10 per second"])
 `;
-const APP_CONFLICTED = `from flask import Flask
+const LIMITS_CONFLICTED = `from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 <<<<<<< HEAD
-from app.version import VERSION
+limiter = Limiter(get_remote_address, default_limits=["200 per minute"])
 =======
-from app.limits import limiter
->>>>>>> 7c1e2a9 (Exempt health check from rate limiting)
-
-app = Flask(__name__)
-
-
-@app.get("/health")
-<<<<<<< HEAD
-def health():
-    return {"status": "ok", "version": VERSION}
-=======
-@limiter.exempt
-def health():
-    return {"status": "ok"}
->>>>>>> 7c1e2a9 (Exempt health check from rate limiting)
+limiter = Limiter(get_remote_address, default_limits=["10 per second"])
+>>>>>>> 7c1e2a9 (Tighten the default rate limit)
 `;
 
 const RELEASE_FILES = [
@@ -387,8 +369,8 @@ const WORKER_FIXED = WORKER_THEIRS.replace(
   'settings.get_request_timeout()'
 );
 
-function file(path: string, content: string, status: FileStatus = 'clean'): RepoFile {
-  return { path, content, status, head: content };
+function file(path: string, content: string): RepoFile {
+  return { path, head: content, index: content, content, stages: null, undo: null };
 }
 
 function conflict(
@@ -396,17 +378,18 @@ function conflict(
   base: string,
   ours: string,
   theirs: string,
-  conflicted: string
+  conflicted: string,
+  binary = false
 ): RepoFile {
+  const stages = { base, ours, theirs };
   return {
     path,
-    content: conflicted,
-    status: 'unmerged',
-    base,
-    ours,
-    theirs,
-    conflicted,
+    binary,
     head: ours,
+    index: null,
+    content: conflicted,
+    stages,
+    undo: { stages, conflicted },
   };
 }
 
@@ -414,14 +397,12 @@ function baseState(lessonId: string, partial: Partial<RepoState>): RepoState {
   return {
     lessonId,
     branch: 'main',
-    branches: ['main'],
     headSha: 'e41c9d2',
     op: null,
     files: {},
     log: [],
     otherLog: [],
     tests: null,
-    lockfileRegenerated: false,
     nextSha: 0,
     ...partial,
   };
@@ -432,14 +413,14 @@ function baseState(lessonId: string, partial: Partial<RepoState>): RepoState {
 // ---------------------------------------------------------------------------
 
 const HELP = `Commands in this lab:
-  git status | git diff [--cached] | git log [--oneline] [--merge]
+  git status | git diff [--cached] | git log --oneline [--merge]
   git show :1:<file> | :2:<file> | :3:<file>     (base, ours, theirs)
-  git add <file> | git commit [-m "msg" | --no-edit]
-  git merge <branch> | git merge --abort | git merge --continue
+  git add <file> | git commit [-m "msg" | --no-edit | -a]
+  git merge --abort | git merge --continue
   git checkout --ours|--theirs <file>  (or git restore --ours|--theirs)
-  git checkout -m <file>               (put the conflict markers back)
-  git rebase --continue | --abort | --skip
-  cat <file> | ls | npm install | make test | clear
+  git checkout -m <file>               (recreate the conflict)
+  git rebase --continue | --abort
+  cat <file> | ls | make test | clear
 Edit files in the editor and press Save.`;
 
 function tokenize(cmd: string): string[] {
@@ -452,15 +433,18 @@ function tokenize(cmd: string): string[] {
 
 function statusOutput(state: RepoState): string {
   const files = Object.values(state.files);
-  const unmerged = files.filter((f) => f.status === 'unmerged');
-  const staged = files.filter((f) => f.status === 'staged');
-  const modified = files.filter((f) => f.status === 'modified');
-  const untracked = files.filter((f) => f.status === 'new');
+  const unmerged = files.filter((f) => f.stages);
+  const staged = files.filter((f) => !f.stages && f.index !== f.head);
+  const notStaged = files.filter(hasUnstagedChanges);
   const out: string[] = [];
+  const op = state.op;
 
-  if (state.op?.kind === 'rebase') {
-    out.push(`rebase in progress; onto ${state.op.ontoSha}`);
-    out.push(`You are currently rebasing branch '${state.op.branch}' on '${state.op.ontoSha}'.`);
+  if (op?.kind === 'rebase') {
+    out.push(`interactive rebase in progress; onto ${op.ontoSha}`);
+    out.push('Last command done (1 command done):');
+    out.push(`   pick ${op.commitSha} ${op.commitMessage}`);
+    out.push('No commands remaining.');
+    out.push(`You are currently rebasing branch '${op.branch}' on '${op.ontoSha}'.`);
     if (unmerged.length) {
       out.push('  (fix conflicts and then run "git rebase --continue")');
       out.push('  (use "git rebase --skip" to skip this patch)');
@@ -470,7 +454,7 @@ function statusOutput(state: RepoState): string {
     }
   } else {
     out.push(`On branch ${state.branch}`);
-    if (state.op?.kind === 'merge') {
+    if (op?.kind === 'merge') {
       if (unmerged.length) {
         out.push('You have unmerged paths.');
         out.push('  (fix conflicts and run "git commit")');
@@ -484,36 +468,36 @@ function statusOutput(state: RepoState): string {
 
   if (staged.length) {
     out.push('', 'Changes to be committed:');
+    if (op?.kind === 'rebase') out.push('  (use "git restore --staged <file>..." to unstage)');
     for (const f of staged) out.push(`\tmodified:   ${f.path}`);
   }
   if (unmerged.length) {
-    out.push('', 'Unmerged paths:', '  (use "git add <file>..." to mark resolution)');
+    out.push('', 'Unmerged paths:');
+    if (op?.kind === 'rebase') out.push('  (use "git restore --staged <file>..." to unstage)');
+    out.push('  (use "git add <file>..." to mark resolution)');
     for (const f of unmerged) out.push(`\tboth modified:   ${f.path}`);
   }
-  if (modified.length) {
-    out.push(
-      '',
-      'Changes not staged for commit:',
-      '  (use "git add <file>..." to update what will be committed)'
-    );
-    for (const f of modified) out.push(`\tmodified:   ${f.path}`);
+  if (notStaged.length) {
+    out.push('', 'Changes not staged for commit:');
+    out.push('  (use "git add <file>..." to update what will be committed)');
+    for (const f of notStaged) out.push(`\tmodified:   ${f.path}`);
   }
-  if (untracked.length) {
-    out.push('', 'Untracked files:');
-    for (const f of untracked) out.push(`\t${f.path}`);
-  }
-  if (!staged.length && !unmerged.length && !modified.length && !untracked.length && !state.op) {
-    out.push('nothing to commit, working tree clean');
-  } else if (unmerged.length && !staged.length) {
+  if (!staged.length && !unmerged.length && !notStaged.length) {
+    if (!op) out.push('nothing to commit, working tree clean');
+  } else if (!staged.length) {
     out.push('', 'no changes added to commit (use "git add" and/or "git commit -a")');
   }
   return out.join('\n');
 }
 
-/** Combined diff of a conflicted file: first column is ours, second is theirs. */
+/**
+ * Combined diff of a conflicted file as Git wrote it. The first column is
+ * against ours, the second against theirs. Only used while the working file
+ * is exactly the conflicted text, where each marked-up line comes from one side.
+ */
 function combinedDiff(f: RepoFile): string {
   const lines = classifyLines(f.content.replace(/\n$/, ''));
-  const count = (text?: string) => (text ? text.replace(/\n$/, '').split('\n').length : 0);
+  const count = (text?: string) => (text ? splitLines(text).length : 0);
   const body = lines.map(({ text, side }) => {
     if (side.startsWith('marker')) return `++${text}`;
     if (side === 'ours') return ` +${text}`;
@@ -522,165 +506,91 @@ function combinedDiff(f: RepoFile): string {
   });
   return [
     `diff --cc ${f.path}`,
-    `index 7d3e5b2,c41a9f0..0000000`,
+    'index 7d3e5b2,c41a9f0..0000000',
     `--- a/${f.path}`,
     `+++ b/${f.path}`,
-    `@@@ -1,${count(f.ours)} -1,${count(f.theirs)} +1,${lines.length} @@@`,
+    `@@@ -1,${count(f.stages?.ours)} -1,${count(f.stages?.theirs)} +1,${lines.length} @@@`,
     ...body,
   ].join('\n');
 }
 
-/** A plain unified diff of two versions, one hunk, from a line LCS. */
-export function unifiedDiff(path: string, before: string, after: string): string {
-  const a = before.replace(/\n$/, '').split('\n');
-  const b = after.replace(/\n$/, '').split('\n');
-  const dp: number[][] = Array.from({ length: a.length + 1 }, () =>
-    new Array(b.length + 1).fill(0)
-  );
-  for (let i = a.length - 1; i >= 0; i--) {
-    for (let j = b.length - 1; j >= 0; j--) {
-      dp[i][j] = a[i] === b[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
-    }
-  }
-  const body: string[] = [];
-  let i = 0;
-  let j = 0;
-  while (i < a.length || j < b.length) {
-    if (i < a.length && j < b.length && a[i] === b[j]) {
-      body.push(` ${a[i]}`);
-      i++;
-      j++;
-    } else if (j < b.length && (i >= a.length || dp[i][j + 1] >= dp[i + 1][j])) {
-      body.push(`+${b[j]}`);
-      j++;
-    } else {
-      body.push(`-${a[i]}`);
-      i++;
-    }
-  }
-  return [
-    `diff --git a/${path} b/${path}`,
-    `--- a/${path}`,
-    `+++ b/${path}`,
-    `@@ -1,${a.length} +1,${b.length} @@`,
-    ...body,
-  ].join('\n');
+/** `git checkout -m` recreates markers labelled "ours" and "theirs", not the original refs. */
+function relabel(conflicted: string): string {
+  return conflicted
+    .replace(/^<<<<<<< .*$/gm, '<<<<<<< ours')
+    .replace(/^>>>>>>> .*$/gm, '>>>>>>> theirs');
 }
 
 function logLine(c: Commit): string {
   return `${c.sha}${c.refs ? ` (${c.refs})` : ''} ${c.message}`;
 }
 
-function takeSide(state: RepoState, path: string, side: 'ours' | 'theirs'): OutputLine[] {
-  const f = state.files[path];
-  if (!f)
-    return [
-      {
-        type: 'error',
-        content: `error: pathspec '${path}' did not match any file(s) known to git`,
-      },
-    ];
-  if (f.ours === undefined || f.theirs === undefined) {
-    return [
-      {
-        type: 'error',
-        content: `error: path '${path}' does not have ${side === 'ours' ? 'our' : 'their'} version`,
-      },
-    ];
-  }
-  f.content = side === 'ours' ? f.ours : f.theirs;
-  if (f.status !== 'unmerged') f.status = 'modified';
-  const lines: OutputLine[] = [{ type: 'output', content: 'Updated 1 path from the index' }];
-  if (state.op?.kind === 'rebase') {
-    lines.push({
-      type: 'note',
-      content:
-        side === 'ours'
-          ? `That is ${state.op.onto}'s version. During a rebase, --ours is the branch you are replaying onto; your own commit is --theirs.`
-          : `That is your commit ${state.op.commitSha}'s version. During a rebase, your commit is --theirs.`,
-    });
-  } else if (state.op?.kind === 'merge') {
-    lines.push({
-      type: 'note',
-      content:
-        side === 'ours'
-          ? `That is ${state.branch}'s version, the branch you are on.`
-          : `That is ${state.op.other}'s version, the branch being merged in.`,
-    });
-  }
-  return lines;
-}
-
-function commit(state: RepoState, message: string | null): OutputLine[] {
+function commit(state: RepoState, message: string | null, noEdit: boolean): ExecuteResult {
   const files = Object.values(state.files);
-  if (files.some((f) => f.status === 'unmerged')) {
-    return [
-      {
-        type: 'error',
-        content:
-          "error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use 'git add/rm <file>'\nhint: as appropriate to mark resolution and make a commit.\nfatal: Exiting because of an unresolved conflict.",
-      },
-    ];
+  const fail = (content: string, type: LineType = 'error'): ExecuteResult => ({
+    state,
+    lines: [{ type, content }],
+    ok: false,
+  });
+  if (files.some((f) => f.stages)) {
+    return fail(
+      "error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use 'git add/rm <file>'\nhint: as appropriate to mark resolution and make a commit.\nfatal: Exiting because of an unresolved conflict."
+    );
   }
   if (state.op?.kind === 'rebase') {
-    return [
-      {
-        type: 'note',
-        content:
-          'You are in the middle of a rebase. Use git rebase --continue to commit this step.',
-      },
-    ];
-  }
-  const staged = files.filter((f) => f.status === 'staged');
-  if (state.op?.kind !== 'merge' && staged.length === 0) {
-    return [
-      {
-        type: 'output',
-        content: `On branch ${state.branch}\nnothing to commit, working tree clean`,
-      },
-    ];
+    return fail(
+      'You are in the middle of a rebase: run git rebase --continue to commit this step.',
+      'note'
+    );
   }
   const merging = state.op?.kind === 'merge' ? state.op : null;
+  const staged = files.filter((f) => f.index !== f.head);
+  if (!merging && staged.length === 0) {
+    return { state, lines: [{ type: 'output', content: statusOutput(state) }], ok: false };
+  }
   const msg = message ?? (merging ? `Merge branch '${merging.other}'` : null);
   if (!msg) {
-    return [
-      {
-        type: 'error',
-        content: 'Aborting commit due to empty commit message. (Use git commit -m "message".)',
-      },
-    ];
+    return fail('Aborting commit due to empty commit message. (Use git commit -m "message".)');
+  }
+  let insertions = 0;
+  let deletions = 0;
+  for (const f of staged) {
+    const s = diffstat(f.head ?? '', f.index ?? '');
+    insertions += s.insertions;
+    deletions += s.deletions;
   }
   const sha = newSha(state);
   for (const f of files) {
-    if (f.status === 'staged' || f.status === 'modified') {
-      if (f.status === 'staged') {
-        f.head = f.content;
-        f.status = 'clean';
-      }
-    }
-    delete f.base;
-    delete f.ours;
-    delete f.theirs;
-    delete f.conflicted;
+    f.head = f.index;
+    f.undo = null;
   }
+  const previous = state.log.map((c) => ({
+    ...c,
+    refs: c.refs?.replace(`HEAD -> ${state.branch}`, '').replace(/^, /, '') || undefined,
+  }));
   state.log = [
     { sha, message: msg, refs: `HEAD -> ${state.branch}` },
-    ...state.log.map((c) => ({
-      ...c,
-      refs: c.refs?.replace(`HEAD -> ${state.branch}`, '').replace(/^, /, '') || undefined,
-    })),
+    ...(merging ? state.otherLog : []),
+    ...previous,
   ];
+  state.otherLog = [];
   state.headSha = sha;
   state.op = null;
   const lines: OutputLine[] = [];
-  if (merging && message === null) {
+  if (merging && message === null && !noEdit) {
     lines.push({
       type: 'note',
-      content: 'Git would open your editor with the default merge message; the lab keeps it.',
+      content:
+        'Git would open your editor with the default merge message; the lab keeps it as it is.',
     });
   }
-  lines.push({ type: 'output', content: `[${state.branch} ${sha}] ${msg}` });
-  return lines;
+  lines.push({
+    type: 'output',
+    content: merging
+      ? `[${state.branch} ${sha}] ${msg}`
+      : `[${state.branch} ${sha}] ${msg}\n${statLine(staged.length, insertions, deletions)}`,
+  });
+  return { state, lines, ok: true };
 }
 
 export function execute(cmd: string, current: RepoState): ExecuteResult {
@@ -688,44 +598,32 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
   const t = tokenize(cmd.trim());
   const out = (content: string, type: LineType = 'output'): ExecuteResult => ({
     state,
-    lines: [{ type, content }],
+    lines: content ? [{ type, content }] : [],
+    ok: type !== 'error',
   });
-  if (t.length === 0) return { state, lines: [] };
+  if (t.length === 0) return { state, lines: [], ok: true };
 
   const [prog, sub, ...rest] = t;
 
-  if (prog === 'clear') return { state, lines: [], clear: true };
+  if (prog === 'clear') return { state, lines: [], ok: true, clear: true };
   if (prog === 'help') return out(HELP);
   if (prog === 'ls') {
-    return out(
-      Object.keys(state.files)
-        .filter((p) => !p.includes('/'))
-        .sort()
-        .join('  ') || '(empty)'
+    const top = new Set(
+      Object.keys(state.files).map((p) => (p.includes('/') ? `${p.split('/')[0]}/` : p))
     );
+    return out([...top].sort().join('  '));
   }
   if (prog === 'cat') {
     if (!sub) return out('usage: cat <file>', 'error');
     const f = state.files[sub];
     if (!f) return out(`cat: ${sub}: No such file or directory`, 'error');
+    if (f.binary) return out(`(binary data) ${f.content.trim()}`);
     return out(f.content.replace(/\n$/, ''));
   }
-  if (prog === 'npm' && (sub === 'install' || sub === 'i')) {
-    const lock = state.files['package-lock.json'];
-    if (!lock) return out('npm error code ENOENT: no package.json in this repository', 'error');
-    if (lock.status === 'unmerged' && hasMarkers(lock.content)) {
-      return out(
-        'npm error code EJSONPARSE\nnpm error JSON.parse Unexpected token "<" (0x3C) in JSON at position 94 while parsing near "...\\n  \\"packages\\": {\\n<<<<<<< HEAD..."\nnpm error JSON.parse Failed to parse JSON data.',
-        'error'
-      );
-    }
-    lock.content = LOCK_REGENERATED;
-    state.lockfileRegenerated = true;
-    return out('added 1 package, and audited 214 packages in 3s\n\nfound 0 vulnerabilities');
-  }
   if (prog === 'make' && sub === 'test') return runTests(state);
-  if (prog === 'pytest' || (prog === 'python' && sub === '-m' && rest[0] === 'pytest'))
+  if (prog === 'pytest' || (prog === 'python' && sub === '-m' && rest[0] === 'pytest')) {
     return runTests(state);
+  }
 
   if (prog !== 'git') {
     return out(`${prog}: command not found (type help for what this lab supports)`, 'error');
@@ -735,41 +633,57 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
     case 'status':
       return out(statusOutput(state));
 
-    case 'branch':
-      return out(
-        state.branch === null && state.op?.kind === 'rebase'
-          ? [
-              `* (no branch, rebasing ${state.op.branch})`,
-              ...state.branches.map((b) => `  ${b}`),
-            ].join('\n')
-          : state.branches.map((b) => `${b === state.branch ? '*' : ' '} ${b}`).join('\n')
-      );
-
     case 'log': {
       if (rest.includes('--merge')) {
-        if (state.op?.kind !== 'merge')
-          return out('fatal: --merge requires one of the pseudorefs MERGE_HEAD', 'error');
+        if (state.op?.kind !== 'merge') {
+          return out(
+            'fatal: --merge requires one of the pseudorefs MERGE_HEAD, CHERRY_PICK_HEAD, REVERT_HEAD or REBASE_HEAD',
+            'error'
+          );
+        }
+        if (!Object.values(state.files).some((f) => f.stages)) return out('');
         return out(
           [...state.log.slice(0, 1), ...state.otherLog.slice(0, 1)].map(logLine).join('\n')
         );
       }
-      return out(state.log.slice(0, 5).map(logLine).join('\n'));
+      const lines = state.log.slice(0, 5).map(logLine).join('\n');
+      if (!rest.includes('--oneline')) {
+        return {
+          state,
+          lines: [
+            { type: 'output', content: lines },
+            {
+              type: 'note',
+              content: 'The lab prints git log one line per commit, like --oneline.',
+            },
+          ],
+          ok: true,
+        };
+      }
+      return out(lines);
     }
 
     case 'show': {
       const m = rest[0]?.match(/^:([123]):(.+)$/);
       if (!m) return out('This lab supports git show :1:<file>, :2:<file> and :3:<file>.', 'note');
       const f = state.files[m[2]];
-      if (!f)
+      if (!f) {
         return out(
           `fatal: path '${m[2]}' does not exist (neither on disk nor in the index)`,
           'error'
         );
-      const stage = m[1] === '1' ? f.base : m[1] === '2' ? f.ours : f.theirs;
-      if (f.status !== 'unmerged' || stage === undefined) {
+      }
+      const stage = !f.stages
+        ? undefined
+        : m[1] === '1'
+          ? f.stages.base
+          : m[1] === '2'
+            ? f.stages.ours
+            : f.stages.theirs;
+      if (stage === undefined) {
         return out(`fatal: path '${m[2]}' is in the index, but not at stage ${m[1]}`, 'error');
       }
-      return out(stage.replace(/\n$/, ''));
+      return out(f.binary ? `(binary data) ${stage.trim()}` : stage.replace(/\n$/, ''));
     }
 
     case 'diff': {
@@ -777,26 +691,35 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
       const target = rest.find((r) => !r.startsWith('-'));
       const files = Object.values(state.files).filter((f) => !target || f.path === target);
       const parts: string[] = [];
+      const lines: OutputLine[] = [];
       for (const f of files) {
         if (cached) {
-          if (f.status === 'staged' && f.head !== undefined && f.head !== f.content) {
-            parts.push(unifiedDiff(f.path, f.head, f.content));
+          if (f.stages) parts.push(`* Unmerged path ${f.path}`);
+          else if (f.index !== f.head) parts.push(unifiedDiff(f.path, f.head ?? '', f.index ?? ''));
+        } else if (f.stages) {
+          if (f.binary) {
+            parts.push(`diff --cc ${f.path}\nindex 1f3e2d4,8a7b6c5..0000000\nBinary files differ`);
+          } else if (f.undo && f.content === f.undo.conflicted) {
+            parts.push(combinedDiff(f));
+          } else {
+            lines.push({
+              type: 'note',
+              content: `${f.path} is still unmerged. Git would print a combined diff of your edit against both sides; the lab only prints it for the file as Git wrote it.`,
+            });
           }
-        } else if (f.status === 'unmerged') {
-          parts.push(
-            hasMarkers(f.content) ? combinedDiff(f) : unifiedDiff(f.path, f.ours ?? '', f.content)
-          );
-        } else if ((f.status === 'modified' || f.status === 'new') && f.head !== f.content) {
-          parts.push(unifiedDiff(f.path, f.head ?? '', f.content));
+        } else if (f.index !== null && f.content !== f.index) {
+          parts.push(unifiedDiff(f.path, f.index, f.content));
         }
       }
-      return out(parts.join('\n'));
+      if (parts.length) lines.unshift({ type: 'output', content: parts.join('\n') });
+      return { state, lines, ok: true };
     }
 
     case 'add': {
       const targets = rest.includes('.') || rest.includes('-A') ? Object.keys(state.files) : rest;
       if (targets.length === 0) return out('Nothing specified, nothing added.', 'note');
       const lines: OutputLine[] = [];
+      let ok = true;
       for (const path of targets) {
         const f = state.files[path];
         if (!f) {
@@ -804,70 +727,73 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
             type: 'error',
             content: `fatal: pathspec '${path}' did not match any files`,
           });
+          ok = false;
           continue;
         }
-        if (f.status === 'unmerged' || f.status === 'modified' || f.status === 'new') {
-          if (hasMarkers(f.content)) {
-            lines.push({
-              type: 'note',
-              content: `Git staged ${path} with the conflict markers still in it. Git does not check. Fix the file and add it again, or run git checkout -m ${path} to start over.`,
-            });
-          }
-          f.status = 'staged';
+        if (f.stages && !f.binary && hasMarkers(f.content)) {
+          lines.push({
+            type: 'note',
+            content: `Git staged ${path} with the conflict markers still in it. Git does not check. Fix the file and add it again, or run git checkout -m ${path} to start over.`,
+          });
         }
+        f.index = f.content;
+        f.stages = null;
       }
-      return { state, lines };
+      return { state, lines, ok };
     }
 
     case 'commit': {
       if (rest.includes('-a') || rest.includes('-am')) {
-        for (const f of Object.values(state.files))
-          if (f.status === 'modified') f.status = 'staged';
+        for (const f of Object.values(state.files)) {
+          if (f.stages || hasUnstagedChanges(f)) {
+            f.index = f.content;
+            f.stages = null;
+          }
+        }
       }
       const mIndex = rest.findIndex((r) => r === '-m' || r === '-am');
       const message = mIndex >= 0 ? (rest[mIndex + 1] ?? '') : null;
       if (mIndex >= 0 && !message) return out("error: switch `m' requires a value", 'error');
-      const lines = commit(state, message);
-      return { state, lines };
+      return commit(state, message, rest.includes('--no-edit'));
     }
 
     case 'merge': {
       if (rest[0] === '--abort') {
-        if (state.op?.kind !== 'merge')
+        if (state.op?.kind !== 'merge') {
           return out('fatal: There is no merge to abort (MERGE_HEAD missing).', 'error');
+        }
         for (const f of Object.values(state.files)) {
-          if (f.head !== undefined) f.content = f.head;
-          f.status = 'clean';
-          delete f.base;
-          delete f.ours;
-          delete f.theirs;
-          delete f.conflicted;
+          f.content = f.head ?? '';
+          f.index = f.head;
+          f.stages = null;
+          f.undo = null;
         }
         state.op = null;
         state.otherLog = [];
-        return { state, lines: [] };
+        return { state, lines: [], ok: true };
       }
       if (rest[0] === '--continue') {
-        if (state.op?.kind !== 'merge')
+        if (state.op?.kind !== 'merge') {
           return out('fatal: There is no merge in progress (MERGE_HEAD missing).', 'error');
-        return { state, lines: commit(state, null) };
+        }
+        return commit(state, null, false);
       }
-      if (state.op)
-        return out('error: Merging is not possible because you have unmerged files.', 'error');
+      if (state.op) {
+        return out(
+          "error: Merging is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use 'git add/rm <file>'\nhint: as appropriate to mark resolution and make a commit.\nfatal: Exiting because of an unresolved conflict.",
+          'error'
+        );
+      }
       if (
         rest[0] === 'feature/worker' &&
         state.lessonId === 'semantic-conflict' &&
         !state.files['worker.py']
       ) {
-        state.files['worker.py'] = {
-          path: 'worker.py',
-          content: WORKER_THEIRS,
-          status: 'clean',
-          head: WORKER_THEIRS,
-        };
+        state.files['worker.py'] = file('worker.py', WORKER_THEIRS);
         const sha = newSha(state);
         state.log = [
           { sha, message: "Merge branch 'feature/worker'", refs: 'HEAD -> main' },
+          { sha: '3d2c1b0', message: 'Add a queue worker', refs: 'feature/worker' },
           ...state.log.map((c) => ({ ...c, refs: undefined })),
         ];
         state.headSha = sha;
@@ -876,12 +802,15 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
           "Merge made by the 'ort' strategy.\n worker.py | 11 +++++++++++\n 1 file changed, 11 insertions(+)\n create mode 100644 worker.py"
         );
       }
-      if (rest[0] && state.branches.includes(rest[0])) return out('Already up to date.');
-      return out(`merge: ${rest[0] ?? ''} - not something we can merge`, 'error');
+      return out(
+        'This lab only models the merge the lesson opened with. Press Restart lesson to run it again.',
+        'note'
+      );
     }
 
     case 'checkout':
     case 'restore': {
+      const quiet = sub === 'restore';
       const side = rest.includes('--ours') ? 'ours' : rest.includes('--theirs') ? 'theirs' : null;
       const remerge = rest.includes('-m') || rest.includes('--merge');
       const path = rest.filter((r) => !r.startsWith('-')).pop();
@@ -890,12 +819,48 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
       if (!f)
         return out(`error: pathspec '${path}' did not match any file(s) known to git`, 'error');
       if (remerge) {
-        if (!f.conflicted) return out(`error: path '${path}' has no conflict to recreate`, 'error');
-        f.content = f.conflicted;
-        f.status = 'unmerged';
-        return out(`Recreated 1 merge conflict`);
+        const undo = f.stages
+          ? { stages: f.stages, conflicted: f.undo?.conflicted ?? f.content }
+          : f.undo;
+        if (!undo)
+          return out(`error: path '${path}' does not have all necessary versions`, 'error');
+        f.stages = { ...undo.stages };
+        f.index = null;
+        f.content = f.binary ? (undo.stages.ours ?? f.content) : relabel(undo.conflicted);
+        return out(quiet ? '' : 'Recreated 1 merge conflict');
       }
-      if (side) return { state, lines: takeSide(state, path, side) };
+      if (side) {
+        // After git add the path has only stage 0, so --ours and --theirs have nothing to read.
+        const version = f.stages?.[side];
+        if (version === undefined) {
+          return out(
+            `error: path '${path}' does not have ${side === 'ours' ? 'our' : 'their'} version`,
+            'error'
+          );
+        }
+        f.content = version;
+        const lines: OutputLine[] = quiet
+          ? []
+          : [{ type: 'output', content: 'Updated 1 path from the index' }];
+        if (state.op?.kind === 'rebase') {
+          lines.push({
+            type: 'note',
+            content:
+              side === 'ours'
+                ? `That is the rebased side: ${state.op.onto} plus anything already replayed. During a rebase your own commit is --theirs.`
+                : `That is your commit ${state.op.commitSha}'s version. During a rebase, your commit is --theirs.`,
+          });
+        } else if (state.op?.kind === 'merge') {
+          lines.push({
+            type: 'note',
+            content:
+              side === 'ours'
+                ? `That is ${state.branch}'s whole file, the branch you are on.`
+                : `That is ${state.op.other}'s whole file, the branch being merged in.`,
+          });
+        }
+        return { state, lines, ok: true };
+      }
       return out(`This lab supports git ${sub} --ours, --theirs and -m.`, 'note');
     }
 
@@ -903,22 +868,34 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
       const op = state.op;
       if (rest[0] === '--continue') {
         if (op?.kind !== 'rebase') return out('fatal: No rebase in progress?', 'error');
-        const unmerged = Object.values(state.files).filter((f) => f.status === 'unmerged');
+        const files = Object.values(state.files);
+        const unmerged = files.filter((f) => f.stages);
         if (unmerged.length) {
           return out(
             `${unmerged.map((f) => `${f.path}: needs merge`).join('\n')}\nYou must edit all merge conflicts and then\nmark them as resolved using git add`,
             'error'
           );
         }
-        const sha = newSha(state);
-        for (const f of Object.values(state.files)) {
-          f.head = f.content;
-          f.status = 'clean';
-          delete f.base;
-          delete f.ours;
-          delete f.theirs;
-          delete f.conflicted;
+        if (files.some(hasUnstagedChanges)) {
+          return out(
+            'error: cannot rebase: You have unstaged changes.\nerror: Please commit or stash them.',
+            'error'
+          );
         }
+        let insertions = 0;
+        let deletions = 0;
+        let changed = 0;
+        for (const f of files) {
+          if (f.index !== f.head) {
+            const s = diffstat(f.head ?? '', f.index ?? '');
+            insertions += s.insertions;
+            deletions += s.deletions;
+            changed += 1;
+          }
+          f.head = f.index;
+          f.undo = null;
+        }
+        const sha = newSha(state);
         state.log = [
           { sha, message: op.commitMessage, refs: `HEAD -> ${op.branch}` },
           ...state.log.map((c) => ({ ...c, refs: c.refs?.replace(/^HEAD, /, '') })),
@@ -927,36 +904,45 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
         state.headSha = sha;
         state.op = null;
         return out(
-          `[detached HEAD ${sha}] ${op.commitMessage}\n 1 file changed, 3 insertions(+), 1 deletion(-)\nSuccessfully rebased and updated refs/heads/${op.branch}.`
+          `[detached HEAD ${sha}] ${op.commitMessage}\n${statLine(changed, insertions, deletions)}\nSuccessfully rebased and updated refs/heads/${op.branch}.`
         );
       }
       if (rest[0] === '--abort') {
         if (op?.kind !== 'rebase') return out('fatal: No rebase in progress?', 'error');
         for (const f of Object.values(state.files)) {
-          if (f.theirs !== undefined) f.content = f.theirs;
-          f.head = f.content;
-          f.status = 'clean';
-          delete f.base;
-          delete f.ours;
-          delete f.theirs;
-          delete f.conflicted;
+          const orig = op.orig.files[f.path] ?? f.head ?? '';
+          f.head = orig;
+          f.index = orig;
+          f.content = orig;
+          f.stages = null;
+          f.undo = null;
         }
         state.branch = op.branch;
+        state.headSha = op.commitSha;
+        state.log = op.orig.log.map((c) => ({ ...c }));
         state.op = null;
         return out('');
       }
       if (rest[0] === '--skip') {
         return out(
-          `Skipping would drop your commit ${op?.kind === 'rebase' ? op.commitSha : ''} from the branch. The lab stops here so you can resolve it instead.`,
+          `git rebase --skip would drop your commit${op?.kind === 'rebase' ? ` ${op.commitSha}` : ''} from the branch. The lab stops here so you can resolve it instead.`,
           'note'
         );
       }
-      return out('This lab supports git rebase --continue, --abort and --skip.', 'note');
+      return out('This lab supports git rebase --continue and --abort.', 'note');
     }
 
     default:
       return out(`git ${sub ?? ''} is not part of this lab. Type help.`, 'note');
   }
+}
+
+function sameCode(a: string, b: string): boolean {
+  const norm = (s: string) =>
+    splitLines(s)
+      .map((l) => l.replace(/\s+$/, ''))
+      .join('\n');
+  return norm(a) === norm(b);
 }
 
 function runTests(state: RepoState): ExecuteResult {
@@ -971,19 +957,24 @@ function runTests(state: RepoState): ExecuteResult {
             'python -m pytest -q\n...                                                                      [100%]\n3 passed in 0.31s',
         },
       ],
+      ok: true,
     };
   }
-  if (/get_timeout\(/.test(worker.content)) {
+  if (!sameCode(worker.content, WORKER_FIXED)) {
     state.tests = 'failing';
+    const reason = /get_timeout\(/.test(worker.content)
+      ? "AttributeError: module 'app.settings' has no attribute 'get_timeout'"
+      : 'AssertionError: poll_forever() did not pass the request timeout to queue.pop()';
     return {
       state,
       lines: [
         {
           type: 'error',
-          content:
-            "python -m pytest -q\n...F                                                                     [100%]\nFAILED tests/test_worker.py::test_poll_forever - AttributeError: module 'app.settings' has no attribute 'get_timeout'\n1 failed, 3 passed in 0.41s\nmake: *** [Makefile:4: test] Error 1",
+          content: `python -m pytest -q\n...F                                                                     [100%]\nFAILED tests/test_worker.py::test_poll_forever - ${reason}\n1 failed, 3 passed in 0.41s\nmake: *** [Makefile:4: test] Error 1`,
         },
       ],
+      // the command ran; a red test run is a result, not a refusal
+      ok: true,
     };
   }
   state.tests = 'passing';
@@ -996,21 +987,18 @@ function runTests(state: RepoState): ExecuteResult {
           'python -m pytest -q\n....                                                                     [100%]\n4 passed in 0.38s',
       },
     ],
+    ok: true,
   };
 }
 
-/** Write the editor's content to the working tree. */
+/** Write the editor's content to the working tree. The index is left alone, as in Git. */
 export function saveFile(current: RepoState, path: string, content: string): RepoState {
   const state = clone(current);
   const f = state.files[path];
   if (!f) return state;
-  f.content = withTrailingNewline(content);
-  if (f.status === 'clean' || f.status === 'staged') {
-    f.status = f.content === f.head ? 'clean' : 'modified';
-  }
-  if (f.status === 'modified' && state.lessonId === 'semantic-conflict' && path === 'worker.py') {
-    state.tests = state.tests === 'passing' ? 'not-run' : state.tests;
-  }
+  const next = withTrailingNewline(content);
+  if (next !== f.content && state.tests === 'passing') state.tests = 'not-run';
+  f.content = next;
   return state;
 }
 
@@ -1021,13 +1009,35 @@ export function saveFile(current: RepoState, path: string, content: string): Rep
 const isCmd = (cmd: string, ...forms: RegExp[]) => forms.some((re) => re.test(cmd.trim()));
 
 function requireLines(content: string, required: { line: string; from: string }[]): string | null {
-  if (hasMarkers(content))
+  if (hasMarkers(content)) {
     return 'The file still has conflict markers (<<<<<<<, =======, >>>>>>>). Remove them.';
+  }
   const lines = content.split('\n').map((l) => l.trim());
   for (const r of required) {
     if (!lines.includes(r.line)) return `${r.line} is missing. It came from ${r.from}.`;
   }
   return null;
+}
+
+const validateRequirements = (content: string) =>
+  requireLines(content, [
+    { line: 'flask==3.0.3', from: 'both sides' },
+    { line: 'redis==5.0.8', from: 'main (ours)' },
+    { line: 'prometheus-client==0.20.0', from: 'feature/metrics (theirs)' },
+    { line: 'gunicorn==22.0.0', from: 'both sides' },
+  ]);
+
+const validateWorker = (content: string) => {
+  if (hasMarkers(content)) return 'worker.py has conflict markers in it.';
+  if (/get_timeout\(/.test(content)) return 'worker.py still calls get_timeout().';
+  if (!sameCode(content, WORKER_FIXED)) {
+    return 'Change only the call: queue.pop(timeout=settings.get_request_timeout()). Leave the rest of the file as it was.';
+  }
+  return null;
+};
+
+function mergeCommitted(before: RepoState, after: RepoState): boolean {
+  return before.op?.kind === 'merge' && after.op === null && after.log.length > before.log.length;
 }
 
 export const LESSONS: Lesson[] = [
@@ -1047,7 +1057,6 @@ export const LESSONS: Lesson[] = [
     ],
     initial: () =>
       baseState('read-markers', {
-        branches: ['feature/retry', 'main'],
         op: { kind: 'merge', other: 'feature/retry', otherSha: '9b27c40' },
         files: {
           'config.yaml': conflict(
@@ -1079,7 +1088,7 @@ export const LESSONS: Lesson[] = [
         command: 'git status',
         explanation:
           'config.yaml is under "Unmerged paths" as both modified: main and feature/retry each changed the same line since the commit they share. The merge is paused, not failed.',
-        done: (cmd) => isCmd(cmd, /^git status$/),
+        done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'merge',
       },
       {
         kind: 'command',
@@ -1087,8 +1096,9 @@ export const LESSONS: Lesson[] = [
         hint: 'cat config.yaml',
         command: 'cat config.yaml',
         explanation:
-          '<<<<<<< HEAD opens your side: the branch you are on, main. ======= separates the two sides. >>>>>>> feature/retry closes the side being merged in. Lines outside the markers merged cleanly.',
-        done: (cmd) => isCmd(cmd, /^cat config\.yaml$/),
+          '<<<<<<< HEAD opens your side: the branch you are on, main. ======= separates the two sides. >>>>>>> feature/retry closes the side being merged in. Lines outside the markers merged cleanly. (That is the default conflict style; with merge.conflictStyle=diff3 Git also shows the base between ||||||| and =======.)',
+        done: (cmd, _b, after) =>
+          isCmd(cmd, /^cat config\.yaml$/) && hasMarkers(after.files['config.yaml'].content),
       },
       {
         kind: 'command',
@@ -1097,7 +1107,7 @@ export const LESSONS: Lesson[] = [
         hint: 'git show :1:config.yaml',
         command: 'git show :1:config.yaml',
         explanation:
-          'While a file is unmerged, the index holds three versions of it: stage 1 is the common ancestor, stage 2 is ours (HEAD), stage 3 is theirs. The base had timeout: 30, so main raised it to 45 and feature/retry to 60.',
+          'An unmerged path can have up to three index entries. This both-modified conflict has all three: stage 1 is the common ancestor, stage 2 is ours (HEAD), stage 3 is theirs. The base had timeout: 30, so main raised it to 45 and feature/retry to 60.',
         done: (cmd) => isCmd(cmd, /^git show :1:config\.yaml$/),
       },
       {
@@ -1106,7 +1116,7 @@ export const LESSONS: Lesson[] = [
         hint: 'git show :3:config.yaml',
         command: 'git show :3:config.yaml',
         explanation:
-          'Stage 3 is "theirs": the whole file as feature/retry has it. git show :2:config.yaml shows main\'s. The markers in the working file are just these versions written side by side.',
+          'Stage 3 is "theirs": the whole file as feature/retry has it. git show :2:config.yaml shows main\'s. The marked-up working file is built from these versions.',
         done: (cmd) => isCmd(cmd, /^git show :3:config\.yaml$/),
       },
       {
@@ -1115,8 +1125,15 @@ export const LESSONS: Lesson[] = [
         hint: 'git diff',
         command: 'git diff',
         explanation:
-          'During a conflict, git diff prints a combined diff with two columns of + and -. The first column compares with ours, the second with theirs. That is why every marker line starts with ++.',
-        done: (cmd) => isCmd(cmd, /^git diff( config\.yaml)?$/),
+          'During a conflict, git diff prints a combined diff with two columns of + and -. The first column compares with ours, the second with theirs, which is why the marker lines start with ++.',
+        done: (cmd, before) => {
+          const f = before.files['config.yaml'];
+          return (
+            isCmd(cmd, /^git diff( config\.yaml)?$/) &&
+            !!f.stages &&
+            f.content === f.undo?.conflicted
+          );
+        },
       },
     ],
   },
@@ -1137,7 +1154,6 @@ export const LESSONS: Lesson[] = [
     initial: () =>
       baseState('resolve-by-editing', {
         headSha: 'a07c3e5',
-        branches: ['feature/metrics', 'main'],
         op: { kind: 'merge', other: 'feature/metrics', otherSha: '2c9d1f4' },
         files: {
           'requirements.txt': conflict(
@@ -1162,18 +1178,12 @@ export const LESSONS: Lesson[] = [
         kind: 'edit',
         file: 'requirements.txt',
         instruction:
-          'main added redis and feature/metrics added prometheus-client, on the same line. The project needs both. Edit requirements.txt in the editor so it lists all four packages with no markers, then Save.',
+          'main added redis and feature/metrics added prometheus-client, at the same spot. The project needs both. Edit requirements.txt in the editor so it lists all four packages with no markers, then Save.',
         hint: 'Delete the three marker lines and keep both redis==5.0.8 and prometheus-client==0.20.0.',
         explanation:
           'Neither side alone was right. A resolution is whatever the file should be after the merge: here both additions, which neither --ours nor --theirs would give you.',
         solution: REQ_SOLUTION,
-        validate: (content) =>
-          requireLines(content, [
-            { line: 'flask==3.0.3', from: 'both sides' },
-            { line: 'redis==5.0.8', from: 'main (ours)' },
-            { line: 'prometheus-client==0.20.0', from: 'feature/metrics (theirs)' },
-            { line: 'gunicorn==22.0.0', from: 'both sides' },
-          ]),
+        validate: validateRequirements,
       },
       {
         kind: 'command',
@@ -1181,11 +1191,15 @@ export const LESSONS: Lesson[] = [
         hint: 'git add requirements.txt',
         command: 'git add requirements.txt',
         explanation:
-          'git add is how you tell Git a conflict is resolved: it replaces the three index stages with the one version you staged. Git does not check the content, so it would stage markers too.',
-        done: (cmd, _b, after) =>
-          isCmd(cmd, /^git add (requirements\.txt|\.|-A)$/) &&
-          after.files['requirements.txt'].status === 'staged' &&
-          !hasMarkers(after.files['requirements.txt'].content),
+          'git add is how you tell Git a conflict is resolved: it replaces the index stages with the one version you staged. Git does not look at the content, so it would stage markers too.',
+        done: (cmd, _b, after) => {
+          const f = after.files['requirements.txt'];
+          return (
+            isCmd(cmd, /^git add (requirements\.txt|\.|-A)$/) &&
+            !f.stages &&
+            validateRequirements(f.index ?? '') === null
+          );
+        },
       },
       {
         kind: 'command',
@@ -1194,7 +1208,7 @@ export const LESSONS: Lesson[] = [
         command: 'git status',
         explanation:
           '"All conflicts fixed but you are still merging": the merge is ready to be concluded with a commit.',
-        done: (cmd) => isCmd(cmd, /^git status$/),
+        done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'merge',
       },
       {
         kind: 'command',
@@ -1204,45 +1218,50 @@ export const LESSONS: Lesson[] = [
         explanation:
           'The merge commit has two parents, main and feature/metrics, and records your resolution. That is the whole job: edit, add, commit.',
         done: (_cmd, before, after) =>
-          before.op?.kind === 'merge' && after.op === null && after.log.length > before.log.length,
+          mergeCommitted(before, after) &&
+          validateRequirements(after.files['requirements.txt'].head ?? '') === null,
       },
     ],
   },
   {
     id: 'ours-theirs',
     title: 'Take a whole side',
-    description: 'git checkout --ours and --theirs, and why lockfiles are regenerated, not edited.',
+    description: 'git checkout --theirs, for a file nobody can merge by hand.',
     icon: 'side',
-    focusFile: 'package-lock.json',
+    focusFile: 'assets/logo.png',
     intro: [
-      { type: 'input', content: 'git merge feature/charts' },
+      { type: 'input', content: 'git merge feature/rebrand' },
       {
         type: 'output',
         content:
-          'Auto-merging package.json\nAuto-merging package-lock.json\nCONFLICT (content): Merge conflict in package-lock.json\nAutomatic merge failed; fix conflicts and then commit the result.',
+          'Auto-merging assets/brand.css\nwarning: Cannot merge binary files: assets/logo.png (HEAD vs. feature/rebrand)\nAuto-merging assets/logo.png\nCONFLICT (content): Merge conflict in assets/logo.png\nAutomatic merge failed; fix conflicts and then commit the result.',
       },
     ],
-    initial: () =>
-      baseState('ours-theirs', {
+    initial: () => {
+      const brand = file('assets/brand.css', BRAND_CSS_BEFORE);
+      brand.index = BRAND_CSS_MERGED;
+      brand.content = BRAND_CSS_MERGED;
+      return baseState('ours-theirs', {
         headSha: 'f3a8d61',
-        branches: ['feature/charts', 'main'],
-        op: { kind: 'merge', other: 'feature/charts', otherSha: '0d4be97' },
+        op: { kind: 'merge', other: 'feature/rebrand', otherSha: '0d4be97' },
         files: {
-          'package.json': { ...file('package.json', PACKAGE_JSON_MERGED), status: 'staged' },
-          'package-lock.json': conflict(
-            'package-lock.json',
-            LOCK_BASE,
-            LOCK_OURS,
-            LOCK_THEIRS,
-            LOCK_CONFLICTED
+          'assets/brand.css': brand,
+          'assets/logo.png': conflict(
+            'assets/logo.png',
+            LOGO_BASE,
+            LOGO_OURS,
+            LOGO_THEIRS,
+            LOGO_OURS,
+            true
           ),
         },
         log: [
-          { sha: 'f3a8d61', message: 'Format dates with date-fns', refs: 'HEAD -> main' },
-          { sha: '44e1c0a', message: 'Upgrade React to 18.3' },
+          { sha: 'f3a8d61', message: 'Sharpen the logo outline', refs: 'HEAD -> main' },
+          { sha: '44e1c0a', message: 'Add brand colours' },
         ],
-        otherLog: [{ sha: '0d4be97', message: 'Add usage charts', refs: 'feature/charts' }],
-      }),
+        otherLog: [{ sha: '0d4be97', message: 'Rebrand to orange', refs: 'feature/rebrand' }],
+      });
+    },
     steps: [
       {
         kind: 'command',
@@ -1250,89 +1269,98 @@ export const LESSONS: Lesson[] = [
         hint: 'git status',
         command: 'git status',
         explanation:
-          'package.json merged cleanly and is already staged, with both new dependencies. Only the lockfile conflicts. It is generated by npm, so hand-editing it is the wrong tool.',
-        done: (cmd) => isCmd(cmd, /^git status$/),
+          "brand.css merged cleanly and is already staged. logo.png is binary: Git cannot merge it line by line, so there are no markers. The working tree still holds main's logo, and the index has all three versions.",
+        done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'merge',
       },
       {
         kind: 'command',
         instruction:
-          "Replace the lockfile with feature/charts' version, the branch you are merging in.",
-        hint: 'In a merge, the branch you merge in is "theirs": git checkout --theirs package-lock.json',
-        command: 'git checkout --theirs package-lock.json',
+          "The rebrand is the point of this merge. Take feature/rebrand's logo, the branch you are merging in.",
+        hint: 'In a merge, the branch you merge in is "theirs": git checkout --theirs assets/logo.png',
+        command: 'git checkout --theirs assets/logo.png',
         explanation:
-          'During a merge, --ours is the branch you are on (main, stage 2) and --theirs is the branch being merged in (feature/charts, stage 3). --theirs copied stage 3 into the working tree, whole.',
+          "During a merge, --ours is the branch you are on (main, stage 2) and --theirs is the branch being merged in (feature/rebrand, stage 3). It copies that whole file, so main's sharper outline is gone: redo it on the new logo if it still matters.",
         done: (cmd, _b, after) =>
-          isCmd(cmd, /^git (checkout|restore) --theirs package-lock\.json$/) &&
-          after.files['package-lock.json'].content === LOCK_THEIRS,
+          isCmd(cmd, /^git (checkout|restore) --theirs assets\/logo\.png$/) &&
+          after.files['assets/logo.png'].content === LOGO_THEIRS,
       },
       {
         kind: 'command',
-        instruction:
-          "That lockfile is missing main's date-fns. Let npm rebuild it from the merged package.json.",
-        hint: 'npm install',
-        command: 'npm install',
-        explanation:
-          "npm rebuilds the lockfile from package.json, which already has both branches' dependencies. Taking one side and regenerating is the safe way to resolve any generated file.",
-        done: (_cmd, _b, after) => after.lockfileRegenerated,
-      },
-      {
-        kind: 'command',
-        instruction: 'Stage the regenerated lockfile.',
-        hint: 'git add package-lock.json',
-        command: 'git add package-lock.json',
-        explanation:
-          'Now the index holds one version of the lockfile, with chart.js and date-fns in it.',
-        done: (cmd, _b, after) =>
-          isCmd(cmd, /^git add (package-lock\.json|\.|-A)$/) &&
-          after.files['package-lock.json'].status === 'staged' &&
-          after.lockfileRegenerated,
+        instruction: 'Mark it as resolved.',
+        hint: 'git add assets/logo.png',
+        command: 'git add assets/logo.png',
+        explanation: 'The index now holds one version of the logo, the orange one.',
+        done: (cmd, _b, after) => {
+          const f = after.files['assets/logo.png'];
+          return (
+            isCmd(cmd, /^git add (assets\/logo\.png|\.|-A)$/) &&
+            !f.stages &&
+            f.index === LOGO_THEIRS
+          );
+        },
       },
       {
         kind: 'command',
         instruction: 'Conclude the merge.',
         hint: 'git commit --no-edit',
         command: 'git commit --no-edit',
-        explanation: 'Merged, with a lockfile that npm wrote rather than a person.',
+        explanation:
+          'Merged. Taking a whole side fits files nobody can merge by hand. Lockfiles have their own route: npm can merge package-lock.json conflicts itself once package.json is resolved (npm install --package-lock-only).',
         done: (_cmd, before, after) =>
-          before.op?.kind === 'merge' && after.op === null && after.log.length > before.log.length,
+          mergeCommitted(before, after) && after.files['assets/logo.png'].head === LOGO_THEIRS,
       },
     ],
   },
   {
     id: 'rebase-flip',
     title: 'Rebase flips ours and theirs',
-    description: 'During a rebase, --ours is the other branch and --theirs is your commit.',
+    description: 'During a rebase, --theirs is your own commit.',
     icon: 'rebase',
-    focusFile: 'app.py',
+    focusFile: 'limits.py',
     intro: [
       { type: 'input', content: 'git rebase main' },
       {
         type: 'output',
         content:
-          'Auto-merging app.py\nCONFLICT (content): Merge conflict in app.py\nerror: could not apply 7c1e2a9... Exempt health check from rate limiting\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: "git add/rm <conflicted_files>", then run "git rebase --continue".\nhint: You can instead skip this commit: run "git rebase --skip".\nhint: To abort and get back to the state before "git rebase", run "git rebase --abort".\nCould not apply 7c1e2a9... Exempt health check from rate limiting',
+          'Auto-merging limits.py\nCONFLICT (content): Merge conflict in limits.py\nerror: could not apply 7c1e2a9... Tighten the default rate limit\nhint: Resolve all conflicts manually, mark them as resolved with\nhint: "git add/rm <conflicted_files>", then run "git rebase --continue".\nhint: You can instead skip this commit: run "git rebase --skip".\nhint: To abort and get back to the state before "git rebase", run "git rebase --abort".\nCould not apply 7c1e2a9... Tighten the default rate limit',
       },
     ],
     initial: () =>
       baseState('rebase-flip', {
         branch: null,
         headSha: '1a2b3c4',
-        branches: ['feature/rate-limit', 'main'],
         op: {
           kind: 'rebase',
           branch: 'feature/rate-limit',
           onto: 'main',
           ontoSha: '1a2b3c4',
           commitSha: '7c1e2a9',
-          commitMessage: 'Exempt health check from rate limiting',
+          commitMessage: 'Tighten the default rate limit',
+          orig: {
+            log: [
+              {
+                sha: '7c1e2a9',
+                message: 'Tighten the default rate limit',
+                refs: 'HEAD -> feature/rate-limit',
+              },
+              { sha: '0f9e8d7', message: 'Add rate limiting' },
+            ],
+            files: { 'limits.py': LIMITS_THEIRS },
+          },
         },
         files: {
-          'app.py': conflict('app.py', APP_BASE, APP_OURS, APP_THEIRS, APP_CONFLICTED),
+          'limits.py': conflict(
+            'limits.py',
+            LIMITS_BASE,
+            LIMITS_OURS,
+            LIMITS_THEIRS,
+            LIMITS_CONFLICTED
+          ),
         },
         log: [
-          { sha: '1a2b3c4', message: 'Report version in health check', refs: 'HEAD, main' },
-          { sha: '0f9e8d7', message: 'Add health endpoint' },
+          { sha: '1a2b3c4', message: 'Allow 200 requests per minute', refs: 'HEAD, main' },
+          { sha: '0f9e8d7', message: 'Add rate limiting' },
         ],
-        otherLog: [],
       }),
     steps: [
       {
@@ -1343,39 +1371,42 @@ export const LESSONS: Lesson[] = [
         command: 'git status',
         explanation:
           "You are not on your branch any more. HEAD is detached at main's tip (1a2b3c4), and Git is replaying your commit 7c1e2a9 on top of it. That is why the sides swap.",
-        done: (cmd) => isCmd(cmd, /^git status$/),
+        done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'rebase',
       },
       {
         kind: 'command',
-        instruction: 'Print app.py and read the labels on each side.',
-        hint: 'cat app.py',
-        command: 'cat app.py',
+        instruction: 'Print limits.py and read the labels on each side.',
+        hint: 'cat limits.py',
+        command: 'cat limits.py',
         explanation:
-          "<<<<<<< HEAD is now main's code, because HEAD is main. The bottom side, >>>>>>> 7c1e2a9, is your own commit being replayed.",
-        done: (cmd) => isCmd(cmd, /^cat app\.py$/),
+          "<<<<<<< HEAD is main's line, because the detached HEAD points at main's tip. The bottom side, >>>>>>> 7c1e2a9, is your own commit being replayed.",
+        done: (cmd, _b, after) =>
+          isCmd(cmd, /^cat limits\.py$/) && hasMarkers(after.files['limits.py'].content),
       },
       {
         kind: 'command',
         instruction:
-          "You decide your commit's version of app.py is the one to keep for now. Take it with a single checkout.",
-        hint: 'Your commit is "theirs" during a rebase: git checkout --theirs app.py',
-        command: 'git checkout --theirs app.py',
+          "The team agreed your stricter limit wins. Take your commit's version of limits.py.",
+        hint: 'Your commit is "theirs" during a rebase: git checkout --theirs limits.py',
+        command: 'git checkout --theirs limits.py',
         explanation:
-          'In a merge, --ours is your branch. In a rebase, --ours is the branch you are rebasing onto and --theirs is your commit. If you typed --ours by reflex, you just threw your own change away.',
+          'In a merge, --ours is your branch. In a rebase, --ours is the rebased result so far (main plus any of your commits already replayed) and --theirs is the commit being replayed. If you typed --ours by reflex, you just threw your own change away.',
         done: (cmd, _b, after) =>
-          isCmd(cmd, /^git (checkout|restore) --theirs app\.py$/) &&
-          after.files['app.py'].content === APP_THEIRS,
+          isCmd(cmd, /^git (checkout|restore) --theirs limits\.py$/) &&
+          after.files['limits.py'].content === LIMITS_THEIRS,
       },
       {
         kind: 'command',
-        instruction: 'Mark app.py as resolved.',
-        hint: 'git add app.py',
-        command: 'git add app.py',
-        explanation: 'Staged. The rebase can move on to the next commit.',
-        done: (cmd, _b, after) =>
-          isCmd(cmd, /^git add (app\.py|\.|-A)$/) &&
-          after.files['app.py'].status === 'staged' &&
-          after.files['app.py'].content === APP_THEIRS,
+        instruction: 'Mark limits.py as resolved.',
+        hint: 'git add limits.py',
+        command: 'git add limits.py',
+        explanation: 'Staged. The rebase can move on.',
+        done: (cmd, _b, after) => {
+          const f = after.files['limits.py'];
+          return (
+            isCmd(cmd, /^git add (limits\.py|\.|-A)$/) && !f.stages && f.index === LIMITS_THEIRS
+          );
+        },
       },
       {
         kind: 'command',
@@ -1383,7 +1414,7 @@ export const LESSONS: Lesson[] = [
         hint: 'git rebase --continue',
         command: 'git rebase --continue',
         explanation:
-          'Your commit now sits on top of main with a new hash. A rebase is a series of small merges, one per commit, and each one can stop like this.',
+          'Your commit now sits on top of main with a new hash. A rebase replays one commit at a time, and each one can stop on a conflict like this.',
         done: (_cmd, before, after) =>
           before.op?.kind === 'rebase' && after.op === null && after.log.length > before.log.length,
       },
@@ -1392,7 +1423,7 @@ export const LESSONS: Lesson[] = [
   {
     id: 'abort',
     title: 'The escape hatch',
-    description: 'git merge --abort puts everything back the way it was.',
+    description: 'git merge --abort, for the merge you should not have started.',
     icon: 'abort',
     focusFile: 'Dockerfile',
     intro: [
@@ -1410,27 +1441,23 @@ export const LESSONS: Lesson[] = [
     initial: () => {
       const files: Record<string, RepoFile> = {};
       for (const path of RELEASE_FILES) {
-        const ours = `# ${path} on main\n`;
-        const theirs = `# ${path} on release/2025.12\n`;
         files[path] = conflict(
           path,
           `# ${path}\n`,
-          ours,
-          theirs,
+          `# ${path} on main\n`,
+          `# ${path} on release/2025.12\n`,
           `<<<<<<< HEAD\n# ${path} on main\n=======\n# ${path} on release/2025.12\n>>>>>>> release/2025.12\n`
         );
       }
-      files.Dockerfile.conflicted =
-        'FROM python:3.12-slim\n<<<<<<< HEAD\nRUN pip install --no-cache-dir -r requirements.txt\n=======\nRUN pip install -r requirements.txt && pip install gunicorn==21.2.0\n>>>>>>> release/2025.12\nCMD ["gunicorn", "app:app"]\n';
-      files.Dockerfile.content = files.Dockerfile.conflicted;
-      files.Dockerfile.ours =
-        'FROM python:3.12-slim\nRUN pip install --no-cache-dir -r requirements.txt\nCMD ["gunicorn", "app:app"]\n';
-      files.Dockerfile.head = files.Dockerfile.ours;
-      files.Dockerfile.theirs =
-        'FROM python:3.12-slim\nRUN pip install -r requirements.txt && pip install gunicorn==21.2.0\nCMD ["gunicorn", "app:app"]\n';
+      files.Dockerfile = conflict(
+        'Dockerfile',
+        'FROM python:3.12-slim\nRUN pip install -r requirements.txt\nCMD ["gunicorn", "app:app"]\n',
+        'FROM python:3.12-slim\nRUN pip install --no-cache-dir -r requirements.txt\nCMD ["gunicorn", "app:app"]\n',
+        'FROM python:3.12-slim\nRUN pip install -r requirements.txt && pip install gunicorn==21.2.0\nCMD ["gunicorn", "app:app"]\n',
+        'FROM python:3.12-slim\n<<<<<<< HEAD\nRUN pip install --no-cache-dir -r requirements.txt\n=======\nRUN pip install -r requirements.txt && pip install gunicorn==21.2.0\n>>>>>>> release/2025.12\nCMD ["gunicorn", "app:app"]\n'
+      );
       return baseState('abort', {
         headSha: 'c0ffee1',
-        branches: ['main', 'release/2025.12', 'release/2026.09'],
         op: { kind: 'merge', other: 'release/2025.12', otherSha: '8d7e6f5' },
         files,
         log: [
@@ -1444,20 +1471,20 @@ export const LESSONS: Lesson[] = [
       {
         kind: 'command',
         instruction:
-          'You meant to merge release/2026.09, not a release from last year. Look at the damage.',
+          "You meant to merge release/2026.09, not last year's release. Look at the damage.",
         hint: 'git status',
         command: 'git status',
         explanation:
           'Six conflicted files, all from merging the wrong branch. None of them is worth resolving.',
-        done: (cmd) => isCmd(cmd, /^git status$/),
+        done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'merge',
       },
       {
         kind: 'command',
-        instruction: 'Back out of the merge completely.',
+        instruction: 'Back out of the merge.',
         hint: 'git merge --abort',
         command: 'git merge --abort',
         explanation:
-          '--abort resets the index and working tree to where they were before git merge, and removes MERGE_HEAD. It works while the merge is still in progress. git rebase --abort does the same for a rebase.',
+          '--abort tries to put the index and working tree back to how they were before git merge, and removes MERGE_HEAD. It works while the merge is still in progress. git rebase --abort does the same for a rebase.',
         done: (_cmd, before, after) =>
           before.op?.kind === 'merge' &&
           after.op === null &&
@@ -1479,18 +1506,17 @@ export const LESSONS: Lesson[] = [
     title: 'Clean merge, broken code',
     description: 'The conflict Git cannot see, and the one that reaches production.',
     icon: 'bug',
-    focusFile: 'worker.py',
+    focusFile: 'settings.py',
     intro: [
       {
         type: 'note',
         content:
-          'main renamed settings.get_timeout() to get_request_timeout() and updated every caller. feature/worker, written last week, adds a new caller.',
+          'main renamed settings.get_timeout() to get_request_timeout() and updated every caller it had. feature/worker, written last week, adds a new caller.',
       },
     ],
     initial: () =>
       baseState('semantic-conflict', {
         headSha: '9e8f7a6',
-        branches: ['feature/worker', 'main'],
         files: {
           'settings.py': file('settings.py', SETTINGS_PY),
           'api.py': file(
@@ -1515,7 +1541,7 @@ export const LESSONS: Lesson[] = [
         hint: 'git merge feature/worker',
         command: 'git merge feature/worker',
         explanation:
-          'No conflict: the branches changed different files, so Git merged them without asking. Git merges text. It does not check that the code still makes sense.',
+          'No conflict: the branches changed different files, so Git merged them without asking. Git merges text; it does not check that the combined code still works.',
         done: (cmd, _b, after) =>
           isCmd(cmd, /^git merge feature\/worker$/) && !!after.files['worker.py'],
       },
@@ -1533,14 +1559,10 @@ export const LESSONS: Lesson[] = [
         file: 'worker.py',
         instruction: 'Fix worker.py in the editor so it calls the renamed function, then Save.',
         hint: 'Change settings.get_timeout() to settings.get_request_timeout().',
-        explanation: 'One line, but no tool would have flagged it before the tests did.',
+        explanation:
+          "One line. Git's textual merge could not see it; tests or static analysis can.",
         solution: WORKER_FIXED,
-        validate: (content) => {
-          if (/get_timeout\(/.test(content)) return 'worker.py still calls get_timeout().';
-          if (!/get_request_timeout\(/.test(content))
-            return 'worker.py should call settings.get_request_timeout().';
-          return null;
-        },
+        validate: validateWorker,
       },
       {
         kind: 'command',
@@ -1558,7 +1580,7 @@ export const LESSONS: Lesson[] = [
         explanation: 'Staged.',
         done: (cmd, _b, after) =>
           isCmd(cmd, /^git add (worker\.py|\.|-A)$/) &&
-          after.files['worker.py'].status === 'staged',
+          sameCode(after.files['worker.py'].index ?? '', WORKER_FIXED),
       },
       {
         kind: 'command',
@@ -1568,7 +1590,8 @@ export const LESSONS: Lesson[] = [
         explanation:
           'This is the conflict that reaches production: textually clean, semantically wrong. Test the merge result, not just each branch: run CI on merge commits, or use a merge queue that tests the combined code before it lands.',
         done: (_cmd, before, after) =>
-          after.log.length > before.log.length && after.files['worker.py'].status === 'clean',
+          after.log.length > before.log.length &&
+          sameCode(after.files['worker.py'].head ?? '', WORKER_FIXED),
       },
     ],
   },
