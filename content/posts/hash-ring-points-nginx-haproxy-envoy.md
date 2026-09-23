@@ -1,5 +1,5 @@
 ---
-title: 'Cloudflare Had Too Many Hash Ring Points. Your Proxy May Have Too Few'
+title: 'Cloudflare Freed 100 TB of RAM From Its Hash Rings. Your Proxy May Have the Opposite Problem'
 excerpt: 'Cloudflare got back 100 TB of RAM partly by cutting 90% of the points on its consistent hash rings. We measured the other end of the same curve: a million keys through nginx and HAProxy to 100 backends, and Envoy rebuilt from its source. The busiest server ranged from 1.05x to 2x its fair share, and the points per server explained most of it.'
 category:
   name: 'Networking'
