@@ -68,6 +68,8 @@ const FALSE_11 = new Set(["n", "N", "no", "No", "NO", "false", "False", "FALSE",
 const INT_12 = /^[-+]?[0-9]+$/;
 const INT_HEX = /^[-+]?0x[0-9a-fA-F]+$/;
 const INT_OCT_11 = /^[-+]?0[0-7]+$/; // 1.1 only: 08 is not this, and is not an int either
+// 1.1 has no decimal form with a leading zero, so 08 and 09 match nothing and stay strings.
+const LEADING_ZERO_11 = /^[-+]?0[0-9]+$/;
 const INT_OCT_12 = /^[-+]?0o[0-7]+$/;
 const FLOAT = /^[-+]?(\.[0-9]+|[0-9]+(\.[0-9]*)?)([eE][-+]?[0-9]+)?$/;
 
@@ -80,6 +82,7 @@ export function resolveScalar(raw: string, spec: Spec): Scalar {
     if (TRUE_11.has(t)) return { kind: "bool", value: true };
     if (FALSE_11.has(t)) return { kind: "bool", value: false };
     if (INT_OCT_11.test(t)) return { kind: "int", value: parseInt(t.replace("+", ""), 8) };
+    if (LEADING_ZERO_11.test(t)) return { kind: "string", value: t };
   } else {
     if (NULLS_12.has(t)) return { kind: "null", value: null };
     if (TRUE_12.has(t)) return { kind: "bool", value: true };
@@ -207,11 +210,16 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       const line = lines[i];
       const m = line.text.match(/^(.+?):(?:\s+(.*))?$/);
       if (!m) {
+        // `key:value` is a plain string, not a key. A real parser only notices when the
+        // next line arrives, so that is the line it blames.
+        const next = lines[i + 1];
         return {
           ok: false,
-          line: line.n,
-          message: `Expected "key: value" here.`,
-          hint: "A mapping entry needs a colon followed by a space. `key:value` without the space is read as one plain string.",
+          line: next ? next.n : line.n,
+          message: next ? "Mapping values are not allowed here." : `Expected "key: value" here.`,
+          hint: `The problem is on line ${line.n}: a mapping entry needs a colon followed by a space, and \`${line.text}\` has none, so it is read as one plain string.${
+            next ? ` The parser only notices on line ${next.n}.` : ""
+          }`,
         };
       }
       const key = unquote(m[1].trim());

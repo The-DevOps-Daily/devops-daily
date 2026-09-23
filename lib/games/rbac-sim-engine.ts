@@ -134,9 +134,10 @@ export function ruleCovers(rule: PolicyRule, q: Question): boolean {
   if (!matches(rule.apiGroups, group)) return false;
   if (!matches(rule.resources, q.resource)) return false;
   if (!rule.verbs.includes("*") && !rule.verbs.includes(q.verb)) return false;
-  // resourceNames narrows a rule to specific objects. A rule with them cannot
-  // answer a question about the collection, because `list` over a named subset
-  // is not something the API server can express.
+  // resourceNames narrows a rule to specific objects, so it cannot answer a
+  // question about the whole collection. A list or watch of one named object
+  // is allowed if the request carries a metadata.name field selector; asking
+  // about a named object here stands for that.
   if (rule.resourceNames && rule.resourceNames.length > 0) {
     if (!q.resourceName) return false;
     if (!rule.resourceNames.includes(q.resourceName)) return false;
@@ -213,6 +214,16 @@ export function can(cluster: Cluster, q: Question): Explanation {
       continue;
     }
 
+    // A namespaced resource asked about at cluster scope means every namespace at once
+    // (`kubectl get pods -A`), which no RoleBinding can grant.
+    if (!scope.clusterWide && q.namespace === undefined) {
+      nearMisses.push({
+        binding,
+        reason: `is a RoleBinding, so it only grants permissions inside ${binding.namespace}. A request across all namespaces needs a ClusterRoleBinding.`,
+      });
+      continue;
+    }
+
     if (!scope.clusterWide && q.namespace !== undefined && scope.namespace !== q.namespace) {
       const detail =
         role.kind === "ClusterRole"
@@ -265,7 +276,11 @@ function summarise(
   granted: Explanation["via"] | undefined,
   nearMisses: Explanation["nearMisses"],
 ): string {
-  const where = q.namespace ? ` in ${q.namespace}` : " at cluster scope";
+  const where = q.namespace
+    ? ` in ${q.namespace}`
+    : isClusterScoped(q.resource)
+      ? " at cluster scope"
+      : " across all namespaces";
   const what = `${q.verb} ${q.resource}${describeNamed(q)}${where}`;
 
   if (granted) {
@@ -286,13 +301,16 @@ function summarise(
  * when they try this by hand.
  */
 export function kubectlFor(q: Question): string {
-  const target = q.resourceName ? `${q.resource}/${q.resourceName}` : q.resource;
+  // The group qualifies the resource type, before the name: deployments.apps/web.
+  const type = q.apiGroup ? `${q.resource}.${q.apiGroup}` : q.resource;
+  const target = q.resourceName ? `${type}/${q.resourceName}` : type;
   const parts = ["kubectl auth can-i", q.verb, target];
 
-  if (q.apiGroup) parts[parts.length - 1] = `${target}.${q.apiGroup}`;
-  // No -n for a cluster-scoped question; kubectl defaults to the current
-  // namespace otherwise, which would silently answer a different question.
+  // Without -n, kubectl asks about the current namespace, which would silently
+  // answer a different question. A cluster-scoped resource takes no namespace;
+  // a namespaced one asked about at cluster scope means all namespaces.
   if (q.namespace) parts.push(`-n ${q.namespace}`);
+  else if (!isClusterScoped(q.resource)) parts.push("--all-namespaces");
 
   parts.push(
     q.subject.kind === "ServiceAccount"
@@ -391,7 +409,7 @@ export const SCENARIOS: Scenario[] = [
     id: "resource-names",
     label: "One secret, not the list",
     teaches:
-      "resourceNames narrows a rule to named objects. This grants get on that one secret and does not grant list on secrets, because the API server cannot express a filtered list. Switch the verb to list.",
+      "resourceNames narrows a rule to named objects. This grants get on that one secret and nothing on the collection: a plain list of secrets is denied. (List can be limited to a name too, with a metadata.name field selector, but only if the rule also has the list verb.) Switch the verb to list.",
     cluster: {
       roles: [
         {
