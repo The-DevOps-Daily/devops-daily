@@ -32,6 +32,7 @@ import {
   Mail,
   MessageSquare,
   GitBranch,
+  GitMerge,
   Webhook,
   LayoutGrid,
   Gamepad2,
@@ -66,6 +67,7 @@ const iconMap: Record<string, LucideIcon> = {
   Mail,
   MessageSquare,
   GitBranch,
+  GitMerge,
   Webhook,
 };
 
