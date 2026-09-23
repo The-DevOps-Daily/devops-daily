@@ -27,7 +27,9 @@ function GitMergeConflictEducational() {
           <h4 className="mb-3 text-sm font-semibold">What you&apos;ll learn</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>What the conflict markers delimit, and which side is which</li>
-            <li>The index stages Git keeps for an unmerged file: base, ours and theirs</li>
+            <li>
+              The index stages Git keeps for an unmerged file: up to three, base, ours and theirs
+            </li>
             <li>That resolving means writing the file you want, not picking a side</li>
             <li>When taking a whole side is right, as with a binary file</li>
             <li>Why --ours and --theirs swap meaning during a rebase</li>

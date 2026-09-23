@@ -156,15 +156,18 @@ export default function GitMergeConflictSimulator() {
     if (terminalRef.current) terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
   }, [terminal]);
 
-  /** Mark the current step, and any skipped steps up to `through`, as done. */
-  const completeStep = useCallback(
-    (explanation: string, through = stepIndex) => {
+  /** Mark steps from the current one up to `through` as done, with their explanations. */
+  const completeSteps = useCallback(
+    (explanations: string[], through = stepIndex) => {
       setCompleted((prev) => {
         const next = new Set(prev);
         for (let i = stepIndex; i <= through; i++) next.add(`${lesson.id}-${i}`);
         return next;
       });
-      setTerminal((prev) => [...prev, ...makeLines([{ type: 'success', content: explanation }])]);
+      setTerminal((prev) => [
+        ...prev,
+        ...makeLines(explanations.map((content) => ({ type: 'success' as const, content }))),
+      ]);
       setStepIndex(Math.min(through + 1, lesson.steps.length));
       setShowHint(false);
     },
@@ -191,22 +194,21 @@ export default function GitMergeConflictSimulator() {
           ...result.lines.filter((l) => l.content !== ''),
         ]),
       ]);
-      // The command may satisfy the current step, or a later one if the user went ahead
-      // (say, committing before the status check). Edit steps are never skipped.
-      let matched = -1;
-      if (result.ok) {
-        for (let i = stepIndex; i < lesson.steps.length; i++) {
-          const candidate = lesson.steps[i];
-          if (candidate.kind === 'edit') break;
-          if (candidate.done(cmd, repo, result.state)) {
-            matched = i;
-            break;
-          }
-        }
+      // A step is done when this command does it, or when the repository already is where the
+      // step leads (the user went ahead, say committing before the status check). Each step is
+      // checked in order, so nothing is credited that the repository does not show.
+      let next = stepIndex;
+      const explanations: string[] = [];
+      while (next < lesson.steps.length) {
+        const candidate = lesson.steps[next];
+        if (candidate.kind === 'edit') break;
+        const byCommand = result.ok && candidate.done(cmd, repo, result.state);
+        if (!byCommand && !candidate.goal?.(result.state)) break;
+        explanations.push(candidate.explanation);
+        next += 1;
       }
-      if (matched >= 0) {
-        const done = lesson.steps[matched];
-        if (done.kind === 'command') completeStep(done.explanation, matched);
+      if (next > stepIndex) {
+        completeSteps(explanations, next - 1);
       } else if (repo.op && !result.state.op && stepIndex < lesson.steps.length) {
         setTerminal((prev) => [
           ...prev,
@@ -223,7 +225,7 @@ export default function GitMergeConflictSimulator() {
         setEditing(false);
       }
     },
-    [activeFile, completeStep, editing, lesson, makeLines, repo, stepIndex]
+    [activeFile, completeSteps, editing, lesson, makeLines, repo, stepIndex]
   );
 
   const handleSubmit = (event: FormEvent) => {
@@ -273,7 +275,7 @@ export default function GitMergeConflictSimulator() {
         setEditError(problem);
       } else {
         setEditError(null);
-        completeStep(step.explanation);
+        completeSteps([step.explanation]);
       }
     } else {
       setEditError(null);
@@ -777,8 +779,9 @@ function FileView({
       <div className="flex h-[280px] flex-col justify-center gap-2 p-6 text-sm text-slate-300">
         <p className="font-mono text-slate-100">{file.content.trim()}</p>
         <p className="text-slate-400">
-          Binary file. Git cannot merge it line by line, so it writes no markers: the working tree
-          keeps one version and the index holds the others.
+          {file.stages
+            ? 'Binary file. Git cannot merge it line by line, so it writes no markers: the working tree keeps one version and the index holds the conflicting ones.'
+            : 'Binary file. The index holds one version of it.'}
         </p>
       </div>
     );

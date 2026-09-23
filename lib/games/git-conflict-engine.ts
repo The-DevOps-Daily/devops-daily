@@ -95,6 +95,11 @@ export interface CommandStep {
   /** Explanation shown when the step completes. */
   explanation: string;
   done: (cmd: string, before: RepoState, after: RepoState) => boolean;
+  /**
+   * The state this step leads to. If the user already got there another way
+   * (say, committed before the status check), the step counts as done.
+   */
+  goal?: (state: RepoState) => boolean;
 }
 
 export interface EditStep {
@@ -325,7 +330,7 @@ limiter = Limiter(get_remote_address, default_limits=["200 per minute"])
 const LIMITS_THEIRS = `from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
-limiter = Limiter(get_remote_address, default_limits=["10 per second"])
+limiter = Limiter(get_remote_address, default_limits=["30 per minute"])
 `;
 const LIMITS_CONFLICTED = `from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -333,7 +338,7 @@ from flask_limiter.util import get_remote_address
 <<<<<<< HEAD
 limiter = Limiter(get_remote_address, default_limits=["200 per minute"])
 =======
-limiter = Limiter(get_remote_address, default_limits=["10 per second"])
+limiter = Limiter(get_remote_address, default_limits=["30 per minute"])
 >>>>>>> 7c1e2a9 (Tighten the default rate limit)
 `;
 
@@ -521,6 +526,14 @@ function relabel(conflicted: string): string {
     .replace(/^>>>>>>> .*$/gm, '>>>>>>> theirs');
 }
 
+/** The working file is the conflict exactly as Git wrote it (first time or via checkout -m). */
+export function isAsWritten(f: RepoFile): boolean {
+  return !!f.undo && (f.content === f.undo.conflicted || f.content === relabel(f.undo.conflicted));
+}
+
+const BINARY_DIFF = (path: string) =>
+  `diff --git a/${path} b/${path}\nindex 1f3e2d4..8a7b6c5 100644\nBinary files a/${path} and b/${path} differ`;
+
 function logLine(c: Commit): string {
   return `${c.sha}${c.refs ? ` (${c.refs})` : ''} ${c.message}`;
 }
@@ -695,11 +708,15 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
       for (const f of files) {
         if (cached) {
           if (f.stages) parts.push(`* Unmerged path ${f.path}`);
-          else if (f.index !== f.head) parts.push(unifiedDiff(f.path, f.head ?? '', f.index ?? ''));
+          else if (f.index !== f.head) {
+            parts.push(
+              f.binary ? BINARY_DIFF(f.path) : unifiedDiff(f.path, f.head ?? '', f.index ?? '')
+            );
+          }
         } else if (f.stages) {
           if (f.binary) {
             parts.push(`diff --cc ${f.path}\nindex 1f3e2d4,8a7b6c5..0000000\nBinary files differ`);
-          } else if (f.undo && f.content === f.undo.conflicted) {
+          } else if (isAsWritten(f)) {
             parts.push(combinedDiff(f));
           } else {
             lines.push({
@@ -708,7 +725,7 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
             });
           }
         } else if (f.index !== null && f.content !== f.index) {
-          parts.push(unifiedDiff(f.path, f.index, f.content));
+          parts.push(f.binary ? BINARY_DIFF(f.path) : unifiedDiff(f.path, f.index, f.content));
         }
       }
       if (parts.length) lines.unshift({ type: 'output', content: parts.join('\n') });
@@ -830,8 +847,12 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
         return out(quiet ? '' : 'Recreated 1 merge conflict');
       }
       if (side) {
-        // After git add the path has only stage 0, so --ours and --theirs have nothing to read.
-        const version = f.stages?.[side];
+        if (!f.stages) {
+          // A resolved path has only stage 0; checkout reads that, whatever the flag.
+          f.content = f.index ?? f.content;
+          return out(quiet ? '' : 'Updated 1 path from the index');
+        }
+        const version = f.stages[side];
         if (version === undefined) {
           return out(
             `error: path '${path}' does not have ${side === 'ours' ? 'our' : 'their'} version`,
@@ -881,6 +902,28 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
             'error: cannot rebase: You have unstaged changes.\nerror: Please commit or stash them.',
             'error'
           );
+        }
+        if (files.every((f) => f.index === f.head)) {
+          for (const f of files) f.undo = null;
+          state.log = state.log.map((c) =>
+            c.refs === 'HEAD, main' ? { ...c, refs: `HEAD -> ${op.branch}, main` } : c
+          );
+          state.branch = op.branch;
+          state.op = null;
+          return {
+            state,
+            lines: [
+              {
+                type: 'output',
+                content: `Successfully rebased and updated refs/heads/${op.branch}.`,
+              },
+              {
+                type: 'note',
+                content: `Nothing was left to commit, so your commit ${op.commitSha} was dropped: the branch now has main's version, not yours.`,
+              },
+            ],
+            ok: true,
+          };
         }
         let insertions = 0;
         let deletions = 0;
@@ -1036,6 +1079,10 @@ const validateWorker = (content: string) => {
   return null;
 };
 
+const headOf = (state: RepoState, path: string) => state.files[path]?.head ?? null;
+const indexOf = (state: RepoState, path: string) =>
+  state.files[path]?.stages ? null : (state.files[path]?.index ?? null);
+
 function mergeCommitted(before: RepoState, after: RepoState): boolean {
   return before.op?.kind === 'merge' && after.op === null && after.log.length > before.log.length;
 }
@@ -1128,11 +1175,7 @@ export const LESSONS: Lesson[] = [
           'During a conflict, git diff prints a combined diff with two columns of + and -. The first column compares with ours, the second with theirs, which is why the marker lines start with ++.',
         done: (cmd, before) => {
           const f = before.files['config.yaml'];
-          return (
-            isCmd(cmd, /^git diff( config\.yaml)?$/) &&
-            !!f.stages &&
-            f.content === f.undo?.conflicted
-          );
+          return isCmd(cmd, /^git diff( config\.yaml)?$/) && !!f.stages && isAsWritten(f);
         },
       },
     ],
@@ -1200,6 +1243,7 @@ export const LESSONS: Lesson[] = [
             validateRequirements(f.index ?? '') === null
           );
         },
+        goal: (state) => validateRequirements(indexOf(state, 'requirements.txt') ?? '') === null,
       },
       {
         kind: 'command',
@@ -1208,7 +1252,13 @@ export const LESSONS: Lesson[] = [
         command: 'git status',
         explanation:
           '"All conflicts fixed but you are still merging": the merge is ready to be concluded with a commit.',
-        done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'merge',
+        done: (cmd, _b, after) =>
+          isCmd(cmd, /^git status$/) &&
+          after.op?.kind === 'merge' &&
+          !Object.values(after.files).some((f) => f.stages),
+        goal: (state) =>
+          state.op === null &&
+          validateRequirements(headOf(state, 'requirements.txt') ?? '') === null,
       },
       {
         kind: 'command',
@@ -1220,6 +1270,9 @@ export const LESSONS: Lesson[] = [
         done: (_cmd, before, after) =>
           mergeCommitted(before, after) &&
           validateRequirements(after.files['requirements.txt'].head ?? '') === null,
+        goal: (state) =>
+          state.op === null &&
+          validateRequirements(headOf(state, 'requirements.txt') ?? '') === null,
       },
     ],
   },
@@ -1271,6 +1324,7 @@ export const LESSONS: Lesson[] = [
         explanation:
           "brand.css merged cleanly and is already staged. logo.png is binary: Git cannot merge it line by line, so there are no markers. The working tree still holds main's logo, and the index has all three versions.",
         done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'merge',
+        goal: (state) => state.op === null && headOf(state, 'assets/logo.png') === LOGO_THEIRS,
       },
       {
         kind: 'command',
@@ -1283,6 +1337,9 @@ export const LESSONS: Lesson[] = [
         done: (cmd, _b, after) =>
           isCmd(cmd, /^git (checkout|restore) --theirs assets\/logo\.png$/) &&
           after.files['assets/logo.png'].content === LOGO_THEIRS,
+        goal: (state) =>
+          indexOf(state, 'assets/logo.png') === LOGO_THEIRS ||
+          (state.op === null && headOf(state, 'assets/logo.png') === LOGO_THEIRS),
       },
       {
         kind: 'command',
@@ -1298,6 +1355,7 @@ export const LESSONS: Lesson[] = [
             f.index === LOGO_THEIRS
           );
         },
+        goal: (state) => indexOf(state, 'assets/logo.png') === LOGO_THEIRS,
       },
       {
         kind: 'command',
@@ -1308,6 +1366,7 @@ export const LESSONS: Lesson[] = [
           'Merged. Taking a whole side fits files nobody can merge by hand. Lockfiles have their own route: npm can merge package-lock.json conflicts itself once package.json is resolved (npm install --package-lock-only).',
         done: (_cmd, before, after) =>
           mergeCommitted(before, after) && after.files['assets/logo.png'].head === LOGO_THEIRS,
+        goal: (state) => state.op === null && headOf(state, 'assets/logo.png') === LOGO_THEIRS,
       },
     ],
   },
@@ -1372,6 +1431,7 @@ export const LESSONS: Lesson[] = [
         explanation:
           "You are not on your branch any more. HEAD is detached at main's tip (1a2b3c4), and Git is replaying your commit 7c1e2a9 on top of it. That is why the sides swap.",
         done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'rebase',
+        goal: (state) => state.op === null && headOf(state, 'limits.py') === LIMITS_THEIRS,
       },
       {
         kind: 'command',
@@ -1382,6 +1442,7 @@ export const LESSONS: Lesson[] = [
           "<<<<<<< HEAD is main's line, because the detached HEAD points at main's tip. The bottom side, >>>>>>> 7c1e2a9, is your own commit being replayed.",
         done: (cmd, _b, after) =>
           isCmd(cmd, /^cat limits\.py$/) && hasMarkers(after.files['limits.py'].content),
+        goal: (state) => state.op === null && headOf(state, 'limits.py') === LIMITS_THEIRS,
       },
       {
         kind: 'command',
@@ -1394,6 +1455,9 @@ export const LESSONS: Lesson[] = [
         done: (cmd, _b, after) =>
           isCmd(cmd, /^git (checkout|restore) --theirs limits\.py$/) &&
           after.files['limits.py'].content === LIMITS_THEIRS,
+        goal: (state) =>
+          indexOf(state, 'limits.py') === LIMITS_THEIRS ||
+          (state.op === null && headOf(state, 'limits.py') === LIMITS_THEIRS),
       },
       {
         kind: 'command',
@@ -1407,6 +1471,7 @@ export const LESSONS: Lesson[] = [
             isCmd(cmd, /^git add (limits\.py|\.|-A)$/) && !f.stages && f.index === LIMITS_THEIRS
           );
         },
+        goal: (state) => indexOf(state, 'limits.py') === LIMITS_THEIRS,
       },
       {
         kind: 'command',
@@ -1416,7 +1481,11 @@ export const LESSONS: Lesson[] = [
         explanation:
           'Your commit now sits on top of main with a new hash. A rebase replays one commit at a time, and each one can stop on a conflict like this.',
         done: (_cmd, before, after) =>
-          before.op?.kind === 'rebase' && after.op === null && after.log.length > before.log.length,
+          before.op?.kind === 'rebase' &&
+          after.op === null &&
+          after.log.length > before.log.length &&
+          headOf(after, 'limits.py') === LIMITS_THEIRS,
+        goal: (state) => state.op === null && headOf(state, 'limits.py') === LIMITS_THEIRS,
       },
     ],
   },
@@ -1477,6 +1546,8 @@ export const LESSONS: Lesson[] = [
         explanation:
           'Six conflicted files, all from merging the wrong branch. None of them is worth resolving.',
         done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'merge',
+        goal: (state) =>
+          state.op === null && Object.values(state.files).every((f) => fileStatus(f) === 'clean'),
       },
       {
         kind: 'command',
@@ -1489,6 +1560,10 @@ export const LESSONS: Lesson[] = [
           before.op?.kind === 'merge' &&
           after.op === null &&
           after.log.length === before.log.length,
+        goal: (state) =>
+          state.op === null &&
+          state.headSha === 'c0ffee1' &&
+          Object.values(state.files).every((f) => fileStatus(f) === 'clean'),
       },
       {
         kind: 'command',
@@ -1571,6 +1646,7 @@ export const LESSONS: Lesson[] = [
         command: 'make test',
         explanation: 'Green. The merge result works now, not just the two branches.',
         done: (_cmd, _b, after) => after.tests === 'passing',
+        goal: (state) => state.tests === 'passing',
       },
       {
         kind: 'command',
@@ -1581,6 +1657,7 @@ export const LESSONS: Lesson[] = [
         done: (cmd, _b, after) =>
           isCmd(cmd, /^git add (worker\.py|\.|-A)$/) &&
           sameCode(after.files['worker.py'].index ?? '', WORKER_FIXED),
+        goal: (state) => sameCode(indexOf(state, 'worker.py') ?? '', WORKER_FIXED),
       },
       {
         kind: 'command',
@@ -1592,6 +1669,7 @@ export const LESSONS: Lesson[] = [
         done: (_cmd, before, after) =>
           after.log.length > before.log.length &&
           sameCode(after.files['worker.py'].head ?? '', WORKER_FIXED),
+        goal: (state) => sameCode(headOf(state, 'worker.py') ?? '', WORKER_FIXED),
       },
     ],
   },
