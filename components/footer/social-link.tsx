@@ -7,9 +7,11 @@ interface SocialLinkProps {
 
 export function SocialLink({ link }: SocialLinkProps) {
   const Icon = link.icon;
+  // A file such as /feed.xml is not a page: Link would prefetch it as one and 404.
+  const Anchor = /\.[a-z0-9]+$/i.test(link.href) ? 'a' : Link;
 
   return (
-    <Link
+    <Anchor
       href={link.href}
       className={`group p-3 bg-linear-to-br ${link.colorFrom} ${link.colorTo} ${link.colorFromHover} ${link.colorToHover} border ${link.borderColor} rounded-2xl transition-all duration-300 hover:shadow-lg hover:scale-110`}
       target="_blank"
@@ -17,6 +19,6 @@ export function SocialLink({ link }: SocialLinkProps) {
     >
       <Icon className={`h-5 w-5 ${link.iconColor} ${link.iconHoverColor}`} />
       <span className="sr-only">{link.name}</span>
-    </Link>
+    </Anchor>
   );
 }
