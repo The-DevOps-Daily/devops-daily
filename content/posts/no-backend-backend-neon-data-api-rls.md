@@ -22,11 +22,11 @@ tags:
   - JWT
 ---
 
-We built a multi-tenant team task board with no backend. The browser loads static files, signs in with Neon Auth, and reads and writes through the Neon Data API. There is no API server, no serverless function and no middleware. The only thing deciding which team sees which rows is a set of row-level security policies in Postgres.
+We built a multi-tenant team task board with no backend. The browser loads static files, signs in with Neon Auth, and reads and writes through the Neon Data API. There is no API server, no serverless function and no middleware. Who belongs to which team is Neon Auth's job; what a signed-in user may read or write is decided in Postgres, by row-level security policies, column grants and one carefully written function.
 
 Then we gave a second team's owner, eve, a valid account and a script, and had her try 25 ways into the first team, plus two tries from the wrong role inside it: crafted filters, embedded joins, aggregate counts, forged tokens, `alg: none`, a token signed with her own key, bulk updates, upserts over the other team's ids. **All 27 were refused.** We then broke the security layer four realistic ways, one at a time. Three of them let specific attacks through, and the suite caught each one. The fourth, a sloppy `WITH CHECK (true)`, did nothing on its own, because a second layer stopped it.
 
-The one thing the policies could not stop was time. **A member removed from a team kept reading its data for fifteen and a half minutes**, the life of the token they already held plus about thirty seconds. That one has a fix, and it costs nothing we could measure.
+The one thing the policies could not stop was time. **A member removed from a team kept reading its data for fifteen and a half minutes**, the life of the token they already held plus about thirty seconds. That one has a fix, and in our latency run it cost at most a few milliseconds per request.
 
 ```github
 The-DevOps-Daily/neon-data-api-rls
@@ -34,12 +34,12 @@ The-DevOps-Daily/neon-data-api-rls
 
 ## TLDR
 
-- **The architecture:** static React, Neon Auth organizations for teams, the Neon Data API for every query, row-level security as the only authorization layer. Zero server code.
+- **The architecture:** static React, Neon Auth organizations for teams, the Neon Data API for every query, and Postgres (policies, grants, one function) as the authorization layer. Zero server code.
 - **The tenant comes from a signed token.** Neon Auth puts the active organization in the JWT, and `auth.organization_id()` reads it inside Postgres. Every policy is `org_id = auth.organization_id()`.
-- **27 attacks, 27 refused.** Every write attempt was also checked against the real rows, so a "refusal" that quietly changed data would have failed.
+- **27 attacks, 27 refused.** Each attack has to return exactly the expected answer, and every column of the victim's rows is compared before and after, so a "refusal" that quietly changed data would have failed.
 - **Column grants are the second wall.** A policy with `WITH CHECK (true)` let nothing through, because the client is never granted the `org_id` column. Adding table-wide grants on top is what opened it.
-- **Removal is not instant.** A removed member's old token worked for 900 seconds plus 29. Checking Neon Auth's member table inside the policies closed it with no measurable cost.
-- **The Data API added about a millisecond.** A request took 42 ms at p50 over a network round trip that took 42 ms.
+- **Removal is not instant.** After being removed, a member's old token still read, wrote and called the RPC, for its full 900 seconds plus 28. Checking Neon Auth's member table inside the policies cut it off at once; reads and writes stayed within a millisecond, the RPC was 5 ms slower.
+- **Fast enough not to notice.** A Data API request took 41 to 44 ms at p50; a plain TCP connect to the same address took 40 ms.
 
 ## Prerequisites
 
@@ -92,7 +92,7 @@ So the whole authorization story fits in two SQL files. Everything below is abou
 
 ## The tenant is a signed claim
 
-A team is a Neon Auth organization. When a user picks one, Neon Auth issues a token that names it in an `o` claim, and it only does that for an organization the user belongs to. Asking to make someone else's team active returns `403 User is not a member of the organization`, which is attack T6 below.
+A team is a Neon Auth organization. When a user picks one, Neon Auth issues a token that names it in an `o` claim, and it only does that for an organization the user belongs to. Asking to make someone else's team active returns `403 User is not a member of the organization`, which is attack T7 below.
 
 Inside Postgres, `auth.organization_id()` returns that claim. The tables default their tenant column to it, and every policy compares against it:
 
@@ -140,7 +140,7 @@ grant delete on tasks to authenticated;
 revoke all on tasks, task_comments from anonymous;
 ```
 
-The client can insert a title and a done flag, and nothing else. It never sends `org_id` or `created_by`: the column defaults fill them from the token. An update cannot move a task to another team, whatever a policy says, because `org_id` is not an updatable column for this role.
+The migration revokes everything from `authenticated` on these tables first, so a table-wide grant made earlier cannot outlive the narrow ones. After that, the client can insert a title and a done flag, and nothing else. It never sends `org_id` or `created_by`: the column defaults fill them from the token. An update cannot move a task to another team, whatever a policy says, because `org_id` is not an updatable column for this role.
 
 That turned out to matter more than it looks, as the break section shows.
 
@@ -165,7 +165,7 @@ grant execute on function org_summary() to authenticated;
 
 The attack script signs in three users: alice owns Acme, bob is a member of Acme, and eve owns Evil Corp. Twenty-five of the attacks are eve's, all aimed at Acme; M1 and M2 are the wrong role inside Acme. The requests are raw HTTP, not a client library, because a library tidies up exactly the requests an attacker would not.
 
-Each attack states what must happen. Then the harness reads Acme's rows through the owner connection and compares them with a fingerprint taken just before. An attack that returned an error but still changed a row fails.
+Each attack states exactly what must come back, down to the status code; an error, a rate limit or an unexpected status counts as a failure, not a pass. Then the harness reads every column of every Acme row through the owner connection and compares it with a copy taken just before, so an attack that returned an error but still changed something fails too. It also refuses to run if Acme has nothing to steal.
 
 ```terminal
 {
@@ -175,7 +175,7 @@ Each attack states what must happen. Then the harness reads Acme's rows through 
   "steps": [
     {
       "cmd": "node scripts/attack.mjs --json",
-      "output": "id   attack                                         status rows result\nR1   list every task                                200    2    held\nR2   filter on Acme's org_id                        200    0    held\nR3   ask for Acme's task ids directly               200    0    held\nR4   OR the filter with her own org                 200    2    held\nR5   embed comments inside tasks                    200    2    held\nR6   read comments on an Acme task                  200    0    held\nR7   exact count of Acme's tasks                    200    0    held\nR8   aggregate count() over all tasks               200    1    held\nR9   the org_summary RPC                            200    1    held\nR10  Neon Auth's user table via Accept-Profile      404    -    held\nR11  Neon Auth's membership table                   404    -    held\nW1   insert a task with Acme's org_id               403    -    held\nW2   update every task in Acme                      200    0    held\nW3   move her task into Acme                        403    -    held\nW4   delete Acme's tasks                            200    0    held\nW5   upsert over an Acme task id                    403    -    held\nW6   comment on an Acme task                        409    -    held\nW7   comment as someone else                        403    -    held\nM1   bob (member) deletes an Acme task              200    0    held\nM2   alice (owner) edits bob's comment              200    0    held\nT1   no token at all                                400    -    held\nT2   no token, call the RPC                         400    -    held\nT3   her token with the org claim edited to Acme    400    -    held\nT4   alg none with the org claim set to Acme        400    -    held\nT5   signed by her own key, with the real kid       400    -    held\nT6   ask Neon Auth to make Acme her active org      403    -    held\nT7   ask Neon Auth to change her role claim         200    -    held\n\n27 of 27 held"
+      "output": "id   attack                                       status rows result\nR1   list every task                              200    2    held\nR2   filter on Acme's org_id                      200    0    held\nR3   ask for Acme's task ids directly             200    0    held\nR4   OR the filter with her own org               200    2    held\nR5   embed comments inside tasks                  200    2    held\nR6   read comments on an Acme task                200    0    held\nR7   exact count of Acme's tasks                  200    0    held\nR8   aggregate count() over all tasks             200    1    held\nR9   the org_summary RPC                          200    1    held\nR10  ask for the neon_auth schema by header       404    -    held\nW1   insert a task with Acme's org_id             403    -    held\nW2   update every task in Acme                    200    0    held\nW3   move her task into Acme                      403    -    held\nW4   delete Acme's tasks                          200    0    held\nW5   upsert over an Acme task id                  403    -    held\nW6   comment on an Acme task                      409    -    held\nW7   comment as someone else                      403    -    held\nM1   bob (member) deletes an Acme task            200    0    held\nM2   alice (owner) edits bob's comment            200    0    held\nT1   no token at all                              400    -    held\nT2   no token, call the RPC                       400    -    held\nT3   her token with the org claim edited to Acme  400    -    held\nT4   alg none, no key id                          400    -    held\nT5   alg none, with the real key id               400    -    held\nT6   signed by her own key, with the real key id  400    -    held\nT7   ask Neon Auth to make Acme her active org    403    -    held\nT8   ask Neon Auth to change her role claim       400    -    held\n\n27 of 27 held"
     }
   ]
 }
@@ -189,13 +189,15 @@ A few of these are worth reading closely.
 
 **W1, W3, W5 and W7 never reached a policy.** They tried to set `org_id`, `id` or `created_by`, and the column grants refused them with `403 permission denied for table`.
 
-**T1 to T5 never reached Postgres.** No token, an edited claim, `alg: none` and a token signed with eve's own key were all rejected at the Data API with `400`, as `missing authentication credentials`, `signature error` or `missing key id`. A request without a valid token never reached Postgres.
+**T1 to T6 never reached Postgres.** No token, an edited claim, `alg: none` with and without the real key id, and a token signed with eve's own key were all rejected at the Data API with `400`: `missing authentication credentials`, `signature error`, `missing key id` and `signature algorithm not supported`.
 
-**T7 asked Neon Auth to change her role claim.** The Data API picks the Postgres role from the token's `role` claim, so a user who could set it would pick their own database role. Neon Auth ignored the request: the stored role stayed `user` and the token still said `authenticated`.
+**T8 asked Neon Auth to change her role claim.** The Data API picks the Postgres role from the token's `role` claim, so a user who could set it would pick their own database role. Neon Auth refused the update with `400`; the stored role stayed `user` and her next token still said `authenticated`.
+
+**R10 is weaker than it looks.** It asks for the `neon_auth` schema with an `Accept-Profile` header. The Data API ignored the header and looked in `public`, where there is no `user` table, so it answered 404. That shows the Data API only serves `public` here; it does not test the permissions on Neon Auth's own tables.
 
 ## Four ways to break it
 
-A test suite that has only ever passed proves little. The break script applies one realistic mistake, runs all 27 attacks against it, and restores:
+A test suite that has only ever passed proves little. The break script applies one realistic mistake, runs all 27 attacks against it, checks that exactly the expected attacks got through, and restores:
 
 ```terminal
 {
@@ -236,13 +238,13 @@ The revocation script signs bob in, removes him from Acme through Neon Auth, and
     },
     {
       "cmd": "node scripts/revocation.mjs",
-      "output": "   1s bob's token: org Acme, expires in 900s\n   1s before removal, bob's token reads 3 Acme tasks\n   2s alice removes bob from Acme: 200\n   2s a new token for bob now carries org: none\n   2s right after removal, bob's OLD token reads 3 Acme tasks (HTTP 200)\n 931s the old token is refused (HTTP 400), 31s after its exp\n      the last request it served was 29s after its exp\n 933s bob invited back into Acme"
+      "output": "   2s bob's token: org Acme, expires in 900s\n   2s before removal, bob's token: tasks 3, comments 1, org_summary total 3, insert inserted\n   3s alice removes bob from Acme: HTTP 200\n   3s bob asks for a new token: HTTP 500, no token returned\n   3s right after removal, bob's OLD token: tasks 4, comments 1, org_summary total 4, insert inserted\n 932s the old token is refused (HTTP 400, 0 rows), 30s after its exp\n      the last request it served was 28s after its exp\n 933s cleaned up 2 probe task(s) the inserts above wrote\n 934s bob invited back into Acme"
     }
   ]
 }
 ```
 
-A new token for bob carries no team the moment he is removed. The old one keeps reading Acme's tasks for the rest of its 900-second life, and the Data API honoured it until 29 seconds past its `exp`, which is ordinary clock-skew leeway. If "removed from the team" has to mean "cannot read the team's data", fifteen and a half minutes is a long time.
+Right after the removal, bob's request for a new token fails with HTTP 500. The token he already holds does not notice: it still reads Acme's tasks and comments, calls the RPC, and writes a new task (the fourth task in the list is the probe it wrote a line earlier). It kept working for the rest of its 900-second life, and past it: the last request it served was 28 seconds after its `exp` by our client's clock, and the next check two seconds later was refused. That looks like leeway for clock skew; we did not measure the verifier's setting or the offset between the clocks. If "removed from the team" has to mean "cannot touch the team's data", fifteen and a half minutes is a long time.
 
 The fix is to ask a second question in every policy: is this user still a member right now? Neon Auth keeps memberships in `neon_auth.member`, which the `authenticated` role cannot read, so a `security definer` function looks it up:
 
@@ -258,9 +260,9 @@ alter policy tasks_read on tasks
   using (org_id = auth.organization_id() and (select current_org_role()) is not null);
 ```
 
-The `(select ...)` makes Postgres evaluate it once per statement instead of once per row. The delete policy uses the looked-up role too, so a demoted owner loses delete at once, not in fifteen minutes. The RPC needs the same condition in its `WHERE` clause, because policies do not apply inside it.
+Wrapping the call in `(select ...)` lets Postgres evaluate it once per statement instead of once per row; a statement that involves two policies still does two lookups. The delete policy reads the role from the table as well, though we did not test a demotion. The RPC needs the same condition in its `WHERE` clause, because policies do not apply inside it.
 
-With it on, the same test:
+With it on, the same test, every path refused the moment bob was removed:
 
 ```terminal
 {
@@ -274,59 +276,59 @@ With it on, the same test:
     },
     {
       "cmd": "node scripts/revocation.mjs",
-      "output": "   2s bob's token: org Acme, expires in 900s\n   2s before removal, bob's token reads 3 Acme tasks\n   2s alice removes bob from Acme: 200\n   2s a new token for bob now carries org: none\n   2s right after removal, bob's OLD token reads 0 Acme tasks (HTTP 200)\n   2s the old token got nothing after the removal (HTTP 200, 0 rows), 899s before its exp\n   2s bob invited back into Acme"
+      "output": "   1s bob's token: org Acme, expires in 900s\n   1s before removal, bob's token: tasks 3, comments 1, org_summary total 3, insert inserted\n   1s alice removes bob from Acme: HTTP 200\n   1s bob asks for a new token: HTTP 500, no token returned\n   1s right after removal, bob's OLD token: tasks 0, comments 0, org_summary total 0, insert HTTP 403 new row violates row-level security policy for table \"tasks\"\n   2s the old token got nothing after the removal (HTTP 200, 0 rows), 899s before its exp\n   2s cleaned up 1 probe task(s) the inserts above wrote\n   2s bob invited back into Acme"
     }
   ]
 }
 ```
 
-All 27 attacks still hold with it on, and it did not move the latency numbers:
+All 27 attacks still hold with it on. The cost, in one run of each:
 
 ```chart
 {
   "type": "bar",
   "title": "Request time at p50, token only against strict",
   "unit": "ms",
-  "caption": "100 sequential requests of each kind over a kept-alive connection, from a client 42 ms from the Data API endpoint. Strict adds a Neon Auth membership lookup to every policy. Differences are within run-to-run noise on these small tables.",
+  "caption": "100 requests of each kind, one at a time and interleaved, from a client about 40 ms from the Data API endpoint. Strict adds a Neon Auth membership lookup to every policy, and two to the RPC. One run of each, about 20 minutes apart, so network drift is part of the difference.",
   "rows": [
     {
       "label": "TCP connect",
-      "value": 41.9,
+      "value": 39.7,
       "series": "Token only"
     },
     {
       "label": "TCP connect",
-      "value": 40.5,
+      "value": 38.1,
       "series": "Strict"
     },
     {
       "label": "GET /tasks",
-      "value": 42.7,
+      "value": 41.4,
       "series": "Token only"
     },
     {
       "label": "GET /tasks",
-      "value": 42.3,
-      "series": "Strict"
-    },
-    {
-      "label": "RPC",
-      "value": 42.5,
-      "series": "Token only"
-    },
-    {
-      "label": "RPC",
-      "value": 42.6,
-      "series": "Strict"
-    },
-    {
-      "label": "PATCH",
       "value": 41.8,
+      "series": "Strict"
+    },
+    {
+      "label": "RPC",
+      "value": 41.3,
+      "series": "Token only"
+    },
+    {
+      "label": "RPC",
+      "value": 46.4,
+      "series": "Strict"
+    },
+    {
+      "label": "PATCH",
+      "value": 44.1,
       "series": "Token only"
     },
     {
       "label": "PATCH",
-      "value": 41.6,
+      "value": 45.0,
       "series": "Strict"
     }
   ],
@@ -343,31 +345,32 @@ All 27 attacks still hold with it on, and it did not move the latency numbers:
 }
 ```
 
-We would turn it on for anything where removal matters, which is most things. It lives in the repository as `db/optional/live_membership.sql`, applied with `npm run strict`.
+Reads and writes stayed within a millisecond of the token-only run. The RPC, which does two lookups, was 5 ms slower at p50. The two runs were twenty minutes apart, so some of that may be the network; we would not quote it as more than a few milliseconds. We would turn it on for anything where removal matters, which is most things. It lives in the repository as `db/optional/live_membership.sql`, applied with `npm run strict`.
 
 ## What it costs
 
-**Per request, about a millisecond.** 100 sequential requests of each kind over a kept-alive connection, from a client 42 ms from the endpoint:
+**Per request, about one network round trip.** 100 requests of each kind, one at a time and interleaved so they shared the same network conditions, from a client about 40 ms from the endpoint, with strict mode off:
 
 | | p50 | p95 |
 |---|---|---|
-| TCP connect (one network round trip) | 41.9 ms | 292.4 ms |
-| `GET /tasks` with embedded comment counts | 42.7 ms | 49.1 ms |
-| `POST /rpc/org_summary` | 42.5 ms | 48.8 ms |
-| `PATCH` one task | 41.8 ms | 47.2 ms |
+| TCP connect (one network round trip) | 39.7 ms | 42.8 ms |
+| `GET /tasks` with embedded comment counts | 41.4 ms | 46.0 ms |
+| `POST /rpc/org_summary` | 41.3 ms | 43.2 ms |
+| `PATCH` one task | 44.1 ms | 47.2 ms |
 
-A read with embedded counts, an RPC and a write all took the same time as a bare TCP connect to the same host. JWT verification, the policies and the query together fit inside run-to-run noise here. The tables are tiny, though: a policy that has to join or scan grows with the data, and this does not measure that.
+A read with embedded counts and an RPC took a millisecond or two more than a bare TCP connect to the same address; a write took about four. We did not isolate how much of that is JWT verification, the policies or the query, and the tables are tiny: a policy that has to join or scan grows with the data, and this does not measure that.
 
-**On the page, the SDK.** The built app is 600 KB of static files, 587 KB of it JavaScript, 161 KB gzipped. Most of that is `@neondatabase/neon-js`, which carries the auth client, the organization plugin and the PostgREST client.
+**On the page, one JavaScript file.** The production build is three files: 587 kB of JavaScript (161 kB gzipped), 11 kB of CSS and the HTML. It includes React, the Neon Auth client with its organization plugin, and the PostgREST client; we did not break down which part weighs what.
 
 **In operations, nothing to run.** There is no server to deploy, patch or scale. The trade is that your security review moves into SQL, and SQL is where the four breaks above live.
 
 ## Gotchas we hit
 
-- **`security invoker` functions cannot see the token.** The `auth` schema belongs to `cloud_admin`, and `authenticated` has no `USAGE` on it, which your owner role cannot grant: ours tried, and the grant had no effect. A `security invoker` function that calls `auth.user_id()` fails with `permission denied for schema auth`. Policies still work, because a policy stores the function itself rather than its name, and `security definer` functions work because they run as the owner.
+- **A `security invoker` function with a normal body cannot see the token.** The `auth` schema belongs to `cloud_admin`, and `authenticated` has no `USAGE` on it. Your owner role cannot grant it: ours tried and got `WARNING: no privileges were granted for "auth"`. So an invoker function whose body is a string (`as $$ select auth.user_id() $$`) fails with `permission denied for schema auth`, because Postgres resolves that name when the function runs, as the caller. The same function with a SQL-standard body (`return auth.user_id()`) works, because Postgres resolves it once, when the function is created. Policies work for the same reason, and `security definer` functions work because they run as the owner. `scripts/invoker-bodies.mjs` shows all three.
+- **After a removal, asking for a new token fails with HTTP 500.** Bob's `/token` call right after alice removed him returned `500` and no token, in each of our runs. It gives him nothing, so it is safe, but an app should treat it as "no longer in this team" rather than an outage.
 - **New functions need a schema refresh.** The Data API caches the schema. After adding a function, some requests returned `404` until we ran `neon data-api refresh-schema`.
 - **An empty result is the refusal.** A delete that RLS blocks returns `200` and zero rows, not an error. The app checks the returned rows and tells the user.
-- **Switching teams means a new token.** The client caches a token for up to a minute, and the old one names the old team. Our app reloads after switching.
+- **Switching teams means a new token.** The client caches the token until shortly before it expires, and the cached one names the old team. Our app reloads after switching.
 - **Scripts must look like a browser to Neon Auth.** Sign-in from Node fails with `Origin header is required` until you send one, and Neon Auth rate-limits sign-ins, so the test harness reuses sessions.
 - **Listing your own invitations returned 403 for our unverified test users.** In our app that call failed and, because we loaded it alongside the team list with `Promise.all`, took the team list down with it. Each call now fails on its own.
 
@@ -375,7 +378,8 @@ A read with embedded counts, an RPC and a write all took the same time as a bare
 
 - **Performance at scale.** Five tasks and one comment say nothing about how a policy with a subquery behaves over millions of rows. The latency numbers are about the request path, not the data.
 - **Whether fifteen minutes is fixed.** We measured the token lifetime we were given. We did not look for a way to shorten it, and a shorter one would narrow the gap without closing it.
-- **Anything about the anonymous role.** It has no grants here, so we tested that it gets nothing, not how to design public data safely.
+- **Demotion.** Strict mode reads the role from Neon Auth's table, so a demoted owner should lose delete at once. We did not test it.
+- **Anything about the anonymous role.** Requests without a token were rejected before they reached Postgres; we never exercised the `anonymous` role itself.
 - **The limits of Neon itself.** This tests an application's security layer through the Data API. It is not a penetration test of Neon Auth or the Data API.
 - **Browser behaviour beyond Chromium.** The session cookie is a partitioned third-party cookie. We drove the app in headless Chromium only, and did not test Firefox or Safari.
 
@@ -384,7 +388,7 @@ A read with embedded counts, an RPC and a write all took the same time as a bare
 1. **Take the tenant from the token and default the column to it.** `default auth.organization_id()` means the client never names a tenant, so it cannot name the wrong one.
 2. **Grant columns, not tables.** It is what turned our weakest policy into a non-event. Skip the table-wide default grants unless you are sure every `WITH CHECK` is right.
 3. **Treat every `security definer` function as a policy of its own.** Put the tenant filter in it, revoke it from `public`, and test it with a hostile token.
-4. **Check live membership in the policies.** One indexed lookup per statement closes a fifteen-minute gap.
-5. **Keep a hostile client in the repository.** Twenty-seven requests take seconds to run. The break script is what proves they would notice.
+4. **Check live membership in the policies.** A lookup in Neon Auth's member table, once per statement, closes a fifteen-minute gap.
+5. **Keep a hostile client in the repository.** Twenty-seven requests take seconds to run. The break script, which checks that each mistake opens exactly the attacks it should, is what shows they would notice.
 
 The schema, the attacks, the breaks and every recorded run are in the repository.
