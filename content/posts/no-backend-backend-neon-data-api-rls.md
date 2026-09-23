@@ -26,7 +26,7 @@ We built a multi-tenant team task board with no backend. The browser loads stati
 
 Then we gave a second team's owner, eve, a valid account and a script, and had her try 25 ways into the first team, plus two tries from the wrong role inside it: crafted filters, embedded joins, aggregate counts, forged tokens, `alg: none`, a token signed with her own key, bulk updates, upserts over the other team's ids. **All 27 were refused.** We then broke the security layer four realistic ways, one at a time. Three of them let specific attacks through, and the suite caught each one. The fourth, a sloppy `WITH CHECK (true)`, did nothing on its own, because a second layer stopped it.
 
-The one thing the policies could not stop was time. **A member removed from a team kept reading its data for fifteen and a half minutes**, the life of the token they already held plus about thirty seconds. That one has a fix, and in our latency run it cost at most a few milliseconds per request.
+The one thing the policies could not stop was time. **A member removed from a team kept reading its data for fifteen and a half minutes**, the life of the token they already held plus about thirty seconds. That one has a fix. In our latency run its median cost was under a millisecond for reads and writes and about 5 ms for the RPC.
 
 ```github
 The-DevOps-Daily/neon-data-api-rls
@@ -38,7 +38,7 @@ The-DevOps-Daily/neon-data-api-rls
 - **The tenant comes from a signed token.** Neon Auth puts the active organization in the JWT, and `auth.organization_id()` reads it inside Postgres. Every policy is `org_id = auth.organization_id()`.
 - **27 attacks, 27 refused.** Each attack has to return exactly the expected answer, and every column of the victim's rows is compared before and after, so a "refusal" that quietly changed data would have failed.
 - **Column grants are the second wall.** A policy with `WITH CHECK (true)` let nothing through, because the client is never granted the `org_id` column. Adding table-wide grants on top is what opened it.
-- **Removal is not instant.** After being removed, a member's old token still read, wrote and called the RPC, for its full 900 seconds plus 28. Checking Neon Auth's member table inside the policies cut it off at once; reads and writes stayed within a millisecond, the RPC was 5 ms slower.
+- **Removal is not instant.** Right after being removed, a member's old token still read, wrote and called the RPC, and it kept reading for its full 900 seconds plus 28. Checking Neon Auth's member table inside the policies cut it off at once; reads and writes stayed within a millisecond, the RPC was 5 ms slower.
 - **Fast enough not to notice.** A Data API request took 41 to 44 ms at p50; a plain TCP connect to the same address took 40 ms.
 
 ## Prerequisites
@@ -244,7 +244,7 @@ The revocation script signs bob in, removes him from Acme through Neon Auth, and
 }
 ```
 
-Right after the removal, bob's request for a new token fails with HTTP 500. The token he already holds does not notice: it still reads Acme's tasks and comments, calls the RPC, and writes a new task (the fourth task in the list is the probe it wrote a line earlier). It kept working for the rest of its 900-second life, and past it: the last request it served was 28 seconds after its `exp` by our client's clock, and the next check two seconds later was refused. That looks like leeway for clock skew; we did not measure the verifier's setting or the offset between the clocks. If "removed from the team" has to mean "cannot touch the team's data", fifteen and a half minutes is a long time.
+Right after the removal, bob's request for a new token fails with HTTP 500. The token he already holds does not notice: it still reads Acme's tasks and comments, calls the RPC, and writes a new task (the fourth task in the list is the probe it wrote a line earlier). We then followed task reads to the end: they kept working for the rest of its 900-second life, and past it. The last read it served was 28 seconds after its `exp` by our client's clock, and the next check two seconds later was refused. Writes and the RPC were checked right after the removal, not followed to the end. That looks like leeway for clock skew; we did not measure the verifier's setting or the offset between the clocks. If "removed from the team" has to mean "cannot touch the team's data", fifteen and a half minutes is a long time.
 
 The fix is to ask a second question in every policy: is this user still a member right now? Neon Auth keeps memberships in `neon_auth.member`, which the `authenticated` role cannot read, so a `security definer` function looks it up:
 
@@ -289,7 +289,7 @@ All 27 attacks still hold with it on. The cost, in one run of each:
   "type": "bar",
   "title": "Request time at p50, token only against strict",
   "unit": "ms",
-  "caption": "100 requests of each kind, one at a time and interleaved, from a client about 40 ms from the Data API endpoint. Strict adds a Neon Auth membership lookup to every policy, and two to the RPC. One run of each, about 20 minutes apart, so network drift is part of the difference.",
+  "caption": "100 requests of each kind, one at a time and interleaved, from a client about 40 ms from the Data API endpoint. Strict adds a Neon Auth membership lookup to every policy, and two to the RPC. One run of each, about 16 minutes apart, so network drift may be part of the difference.",
   "rows": [
     {
       "label": "TCP connect",
@@ -345,7 +345,7 @@ All 27 attacks still hold with it on. The cost, in one run of each:
 }
 ```
 
-Reads and writes stayed within a millisecond of the token-only run. The RPC, which does two lookups, was 5 ms slower at p50. The two runs were twenty minutes apart, so some of that may be the network; we would not quote it as more than a few milliseconds. We would turn it on for anything where removal matters, which is most things. It lives in the repository as `db/optional/live_membership.sql`, applied with `npm run strict`.
+Reads and writes stayed within a millisecond of the token-only run. The RPC, which does two lookups, was 5 ms slower at p50. The two runs were about sixteen minutes apart, so some of that may be the network; we would not quote it as more than a few milliseconds. We would turn it on for anything where removal matters, which is most things. It lives in the repository as `db/optional/live_membership.sql`, applied with `npm run strict`.
 
 ## What it costs
 
