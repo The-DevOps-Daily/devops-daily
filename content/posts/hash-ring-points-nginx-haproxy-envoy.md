@@ -301,15 +301,6 @@ A few notes on those:
 - **Envoy's `minimum_ring_size` is for the whole ring,** so it has to grow with the number of hosts. 16,384 gives about 164 per host at 100 equal-weight hosts, and 17 at 1,000. The maximum is 8,388,608.
 - **Maglev** fills a fixed table of 65,537 slots, with hosts taking turns, so equal-weight hosts end up with nearly the same number of slots. Equal slots are not equal traffic: hot keys still land where they land. It is what Envoy Gateway uses for consistent hashing. We did not measure it; its trade-off, per the [Maglev paper](https://research.google/pubs/maglev-a-fast-and-reliable-software-network-load-balancer/), is that a host change moves some keys between surviving hosts too.
 
-## What we could not conclude
-
-- **Envoy was not run.** Our Envoy numbers come from a port of its ring code. The same method was exact for nginx and HAProxy, but the Envoy port itself is checked only against XXH64 test vectors and the source (pinned in `data/sources.txt`). A run where Envoy starts would confirm or refute it key by key.
-- **Uniform keys are the easy case.** Every key here was requested once. Real traffic has hot keys, and one very hot key on one server outweighs any ring imbalance. The ring decides how the key space is split, not how much traffic each key brings.
-- **One ring per setup.** A ring's layout depends on server addresses and IDs. A different set of 100 backends would pick a different busiest server; the simulation shows how wide that range is (for 11 points, the busiest server was between 1.68x and 2.33x in 90% of rings).
-- **Versions.** HAProxy 2.6.12 and nginx 1.22.1 from Debian 12. The point counts, default placement and lookup rules are unchanged in their current source.
-- **We measured spread, not latency.** The Pi's request rate says nothing about how these proxies perform.
-- **Removal, not failure.** The removed-server runs mark the server down in the config. They say nothing about how quickly each proxy notices a real failure, or what it does in the meantime.
-
 ## Summary
 
 Cloudflare's post is about having too many points and paying for it in memory. The same formula says that most of us have the opposite problem, and pay for it in the busiest server. With 100 backends and the default point counts, the busiest server got 1.21x its share behind nginx, 1.42x behind HAProxy and, by our port of its code, 2.02x behind Envoy's ring hash, which Istio uses by default. HAProxy at weight 10 (160 points) measured 1.13x, and at weight 100 (1,600 points) 1.05x; the Envoy port at 160 points per host gives 1.22x. The memory for rings that size is measured in megabytes.
