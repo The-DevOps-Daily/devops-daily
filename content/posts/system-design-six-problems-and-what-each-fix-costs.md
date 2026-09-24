@@ -75,15 +75,13 @@ Reads are usually the first thing to hurt, because most applications read far mo
   "columns": [
     [{ "id": "app", "label": "App server", "icon": "server", "tone": "blue" }],
     [
-      { "id": "cache", "label": "Cache", "sub": "hot keys in memory", "icon": "cpu", "tone": "amber", "detail": "A hit never reaches the database. A miss reads the database and fills the cache." },
-      { "id": "primary", "label": "Primary", "sub": "all writes", "icon": "database", "tone": "violet", "detail": "Reads that must see the latest write go here." }
+      { "id": "cache", "label": "Cache", "sub": "hot keys in memory", "icon": "cpu", "tone": "amber", "detail": "Checked first. A hit never reaches a database." },
+      { "id": "r1", "label": "Replica 1", "sub": "serves reads", "icon": "database", "tone": "slate", "detail": "A copy that follows the primary's write-ahead log, so it is a little behind." },
+      { "id": "r2", "label": "Replica 2", "sub": "serves reads", "icon": "database", "tone": "slate", "detail": "Add replicas for read volume. They do nothing for write volume." }
     ],
-    [
-      { "id": "r1", "label": "Replica 1", "sub": "async copy", "icon": "database", "tone": "slate", "detail": "Behind the primary by the replication lag." },
-      { "id": "r2", "label": "Replica 2", "sub": "async copy", "icon": "database", "tone": "slate", "detail": "Add replicas for read volume, not for write volume." }
-    ]
+    [{ "id": "primary", "label": "Primary", "sub": "takes every write", "icon": "database", "tone": "violet", "detail": "All writes go here, and reads that must see the latest write." }]
   ],
-  "edges": [["app", "cache", "get"], ["app", "primary", "miss or write"], ["primary", "r1", "WAL"], ["primary", "r2", "WAL"]]
+  "edges": [["app", "cache", "1. get"], ["app", "r1", "2. on a miss"], ["app", "r2"], ["primary", "r1", "WAL"], ["primary", "r2", "WAL"]]
 }
 ```
 
@@ -203,7 +201,7 @@ Users expect to see changes without refreshing: a new message, a finished job, a
   "branch": [
     { "label": "Yes, both sides talk: WebSockets", "variant": "good" },
     { "label": "No, only the server pushes: SSE", "variant": "good" },
-    { "label": "Neither works through your network: long polling", "variant": "bad" }
+    { "label": "Neither works through your network: long polling", "variant": "soft" }
   ]
 }
 ```
@@ -223,7 +221,7 @@ Some work does not fit in a request: generating a report, sending a campaign, pr
   "type": "graph",
   "title": "Queue and worker pool",
   "columns": [
-    [{ "id": "api", "label": "API", "sub": "returns 202 + job id", "icon": "server", "tone": "blue" }],
+    [{ "id": "api", "label": "API", "sub": "202 + job id", "icon": "server", "tone": "blue" }],
     [{ "id": "q", "label": "Queue", "sub": "buffers the work", "icon": "queue", "tone": "amber", "detail": "Absorbs bursts: the API stays fast even when workers are busy." }],
     [
       { "id": "w1", "label": "Worker", "icon": "cpu", "tone": "green" },
