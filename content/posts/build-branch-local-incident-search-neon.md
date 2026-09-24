@@ -27,6 +27,10 @@ This tutorial deploys **Incident Atlas**, a small incident-response backend whos
 
 The React interface runs locally. The complete **backend**, not the frontend site, is what lives on Neon.
 
+```github
+The-DevOps-Daily/neon-incident-atlas
+```
+
 ## TL;DR
 
 After the one-time setup, the workflow is four commands:
@@ -324,21 +328,6 @@ The cleanup script refuses to proceed unless:
 It then deletes the child branch, polls until Neon reports it absent, removes the local state file, and prunes generated branch credentials from `.env.local`. Your project ID and API key remain for another run.
 
 Deleting the child removes its Function alongside its database state, Auth identity, stored objects, and AI Gateway host. The parent project and default branch are not deleted. [Neon Functions: backend logic next to your data](https://neon.com/blog/neon-functions-backend-logic-next-to-your-data) describes how Functions inherit branch identity and lifecycle.
-
-## What this demo intentionally leaves out
-
-Incident Atlas proves the backend lifecycle, but it is not a production incident-management service. A production version still needs:
-
-- invitation or organization controls around account creation;
-- rate limits for uploads, search, and model requests;
-- malware scanning and stricter content processing;
-- a durable workflow system for independent retries;
-- reconciliation for objects uploaded but never confirmed;
-- stricter validation and policy checks around model-generated output;
-- audit logs, retention policies, and structured observability;
-- recovery or reconciliation for every cross-service partial failure.
-
-`waitUntil()` is appropriate for this bounded demonstration. It is not a durable job queue: the request starts the work, and there is no independent retry schedule if the runtime disappears.
 
 ## Wrapping up
 
