@@ -682,7 +682,9 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
   const nodeRefs = useRef<Record<string, HTMLElement | null>>({});
   const flowRefs = useRef<Record<string, SVGPathElement | null>>({});
   const svgRef = useRef<SVGSVGElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [paths, setPaths] = useState<EdgePath[]>([]);
+  const [fade, setFade] = useState({ left: false, right: false });
   const [hovered, setHovered] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
   const active = pinned ?? hovered;
@@ -698,7 +700,9 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
   );
 
   // One arrowhead marker per diagram: several graphs can share a page.
-  const arrowId = 'pd-arrow-' + useId().replace(/:/g, '');
+  const uid = useId().replace(/:/g, '');
+  const arrowId = 'pd-arrow-' + uid;
+  const detailDomId = 'pd-detail-' + uid;
   // Each gap between two columns is widened to fit the longest label on the
   // edges that cross it, so a label never ends up underneath a node.
   const gapExtra = columns.map((_, ci) => {
@@ -777,17 +781,32 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
     setPaths(next);
   };
 
+  // Fade the edge a wide graph can still scroll towards, so a cut-off
+  // column reads as "more this way" and not as the end of the diagram.
+  const updateFade = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const left = el.scrollLeft > 2;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+    setFade((f) => (f.left === left && f.right === right ? f : { left, right }));
+  };
+
   useEffect(() => {
-    draw();
+    const redraw = () => {
+      draw();
+      updateFade();
+    };
+    redraw();
     const ro =
       typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => draw())
+        ? new ResizeObserver(redraw)
         : null;
     if (ro && wrapRef.current) ro.observe(wrapRef.current);
-    window.addEventListener('resize', draw);
+    if (ro && scrollRef.current) ro.observe(scrollRef.current);
+    window.addEventListener('resize', redraw);
     return () => {
       if (ro) ro.disconnect();
-      window.removeEventListener('resize', draw);
+      window.removeEventListener('resize', redraw);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -801,6 +820,7 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
     return set;
   };
   const hi = active ? connected(active) : null;
+  const detailIds = Object.keys(byId).filter((id) => byId[id].detail);
 
   const firePacket = (pathEl: SVGPathElement, delay: number) => {
     setTimeout(() => {
@@ -845,7 +865,11 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
           </button>
         )}
       </div>
-      <div className="pd-gscroll">
+      <div
+        className={'pd-gscroll' + (fade.left ? ' pd-fade-l' : '') + (fade.right ? ' pd-fade-r' : '')}
+        ref={scrollRef}
+        onScroll={updateFade}
+      >
       <div className={'pd-graph' + (active ? ' pd-dim' : '')} ref={wrapRef}>
         <svg className="pd-edges" ref={svgRef} aria-hidden="true">
           <defs>
@@ -903,6 +927,19 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
                   onMouseEnter={() => setHovered(id)}
                   onMouseLeave={() => setHovered(null)}
                   onClick={() => setPinned((p) => (p === id ? null : id))}
+                  {...(n.detail
+                    ? {
+                        tabIndex: 0,
+                        'aria-describedby': detailDomId,
+                        onFocus: () => setHovered(id),
+                        onBlur: () => setHovered(null),
+                        onKeyDown: (ev: React.KeyboardEvent) => {
+                          if (ev.key !== 'Enter' && ev.key !== ' ') return;
+                          ev.preventDefault();
+                          setPinned((p) => (p === id ? null : id));
+                        },
+                      }
+                    : {})}
                 >
                   {n.status && (
                     <>
@@ -922,9 +959,17 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
         ))}
       </div>
       </div>
-      {active && byId[active]?.detail && (
-        <div className="pd-detail">
-          <b>{byId[active].label}</b> {byId[active].detail}
+      {detailIds.length > 0 && (
+        <div className="pd-detail" id={detailDomId} aria-live="polite">
+          {detailIds.map((id) => (
+            <div key={id} className={'pd-detail-item' + (id === active ? ' is-on' : '')}>
+              <b>{byId[id].label}</b> {byId[id].detail}
+            </div>
+          ))}
+          <div className={'pd-detail-item pd-detail-hint' + (active && byId[active]?.detail ? '' : ' is-on')}>
+            <span className="pd-hint-hover">Hover over or tap a node to see what it does.</span>
+            <span className="pd-hint-touch">Tap a node to see what it does.</span>
+          </div>
         </div>
       )}
     </div>
@@ -1009,10 +1054,13 @@ const STYLES = `
 .pdiag .pd-btn{ font-family:var(--pd-mono); font-size:12.5px; color:var(--pd-ink); background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:9px; padding:7px 13px; cursor:pointer; transition:border-color .2s,color .2s; }
 .pdiag .pd-btn:hover{ border-color:var(--pd-accent); color:var(--pd-accent); }
 .pdiag .pd-btn:focus-visible{ outline:2px solid var(--pd-accent); outline-offset:2px; }
+.pdiag .pd-toolbar > .pd-btn:only-child{ margin-left:auto; }
 .pdiag .pd-goal{ font-family:var(--pd-mono); font-size:13px; background:var(--pd-soft-bg); border:1px solid var(--pd-line); border-radius:8px; padding:8px 14px; width:fit-content; max-width:100%; margin:0 auto 22px; text-align:center; }
 .pdiag .pd-toplabel{ text-align:center; font-size:13px; font-style:italic; color:var(--pd-muted); margin-bottom:8px; }
 .pdiag .pd-row{ display:flex; align-items:stretch; justify-content:center; flex-wrap:wrap; gap:4px; }
-.pdiag .pd-flow-row{ flex-wrap:nowrap; overflow-x:auto; justify-content:safe center; }
+/* Scroll boxes clip on both axes, so pad them (and pull the padding back with
+   a negative margin) to leave room for the hover lift and shadow. */
+.pdiag .pd-flow-row{ flex-wrap:nowrap; overflow-x:auto; justify-content:safe center; padding:10px 18px 28px; margin:-10px -18px -28px; }
 .pdiag .pd-flow-grid-wrap{ position:relative; }
 .pdiag .pd-flow-links{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }
 .pdiag .pd-flow-link{ fill:none; stroke:var(--pd-line2); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
@@ -1122,15 +1170,24 @@ const STYLES = `
 .pdiag .pd-graph.pd-dim .pd-edge:not(.hot),.pdiag .pd-graph.pd-dim .pd-edge-flow:not(.hot){ opacity:.1; }
 .pdiag .pd-node.pd-hot{ border-color:var(--pd-accent); box-shadow:0 0 0 2px rgba(224,121,43,.16); }
 .pdiag .pd-clickable{ cursor:pointer; }
+.pdiag .pd-graph .pd-node:focus-visible{ outline:2px solid var(--pd-accent); outline-offset:2px; }
 .pdiag .pd-dot{ position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; box-shadow:0 0 0 3px var(--pd-card); }
 .pdiag .pd-dot.s-ok{ background:var(--pd-green); }
 .pdiag .pd-dot.s-warn{ background:var(--pd-amber); }
 .pdiag .pd-dot.s-down{ background:var(--pd-red); }
-.pdiag .pd-detail{ margin-top:14px; font-size:13px; color:var(--pd-muted); background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:10px; padding:10px 14px; animation:pd-pop .2s ease; }
+.pdiag .pd-detail{ display:grid; align-items:center; margin-top:14px; font-size:13px; color:var(--pd-muted); background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:10px; padding:10px 14px; }
+.pdiag .pd-detail-item{ grid-area:1/1; visibility:hidden; }
+.pdiag .pd-detail-item.is-on{ visibility:visible; animation:pd-pop .2s ease; }
+.pdiag .pd-detail-hint{ font-style:italic; opacity:.8; }
+.pdiag .pd-hint-touch{ display:none; }
+@media (hover:none){ .pdiag .pd-hint-hover{ display:none; } .pdiag .pd-hint-touch{ display:inline; } }
 @keyframes pd-pop{ from{ opacity:0; transform:translateY(-3px); } }
 .pdiag .pd-detail b{ color:var(--pd-ink); font-weight:650; }
 .pdiag .pd-pkt{ fill:var(--pd-accent); }
-.pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; }
+.pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; padding:10px 18px 28px; margin:-10px -18px -28px; scroll-padding-inline:18px; }
+.pdiag .pd-gscroll.pd-fade-r{ -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 56px),transparent); mask-image:linear-gradient(to right,#000 calc(100% - 56px),transparent); }
+.pdiag .pd-gscroll.pd-fade-l{ -webkit-mask-image:linear-gradient(to left,#000 calc(100% - 56px),transparent); mask-image:linear-gradient(to left,#000 calc(100% - 56px),transparent); }
+.pdiag .pd-gscroll.pd-fade-l.pd-fade-r{ -webkit-mask-image:linear-gradient(to right,transparent,#000 56px,#000 calc(100% - 56px),transparent); mask-image:linear-gradient(to right,transparent,#000 56px,#000 calc(100% - 56px),transparent); }
 @container (max-width:760px){
   .pdiag .pd-loopscroll{ overflow:visible; }
   .pdiag .pd-loopwrap{ width:100%; max-width:100%; min-width:0; }
