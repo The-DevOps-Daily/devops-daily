@@ -21,9 +21,9 @@ tags:
   - incident-response
 ---
 
-A preview environment is only isolated if all of its state follows the preview. Giving a pull request its own application deployment and database branch does not help much when its writes still reach production identity, file, or model endpoints.
+A preview environment is only isolated if all of its state follows the preview. Giving a pull request its own application deployment and database branch does not help much when its writes still reach production identity, file, or model services.
 
-This tutorial deploys **Incident Atlas**, a small incident-response backend whose database, Auth state, stored reports, Function, and AI Gateway endpoint all belong to one disposable Neon branch. You will create the branch, exercise every service against a real postmortem, inspect the isolation boundaries, and delete the environment without touching the parent branch.
+This tutorial deploys **Incident Atlas**, a small incident-response backend whose Lakebase Postgres data, Auth state, stored reports, Function, and AI Gateway host all belong to one disposable branch on Neon. You will create the branch, exercise every service against a real postmortem, inspect the isolation boundaries, and delete the environment without touching the parent branch.
 
 The React interface runs locally. The complete **backend**, not the frontend site, is what lives on Neon.
 
@@ -41,28 +41,28 @@ npm run demo:down
 They exercise five Neon backend primitives:
 
 - **Lakebase Postgres** stores incident metadata and the search index.
-- **Neon Auth**, Neon's managed Better Auth service, signs the operator in.
+- **Neon Auth**, Neon's **Managed Better Auth** service, signs the operator in.
 - **Object Storage** keeps the original report in a private bucket.
 - A **Neon Function** named **Incident Atlas** exposes the backend API.
 - **Neon AI Gateway** gives the Function branch-scoped access to the configured model.
 
-The important feature is their shared lifecycle. After a branch is created, changes to its database, Auth records, stored objects, Function, and AI Gateway endpoint stay on that child. Deleting the child removes that environment; the parent project and its default branch remain.
+The important feature is their shared lifecycle. After a branch is created, changes to its Postgres data, Auth records, stored objects, Function, and AI Gateway host stay on that child. Deleting the child removes that environment; the parent project and its default branch remain.
 
-A Neon branch is not necessarily empty. A normal child starts as a copy-on-write snapshot of its parent: database rows and schema are present immediately, and existing Auth and Object Storage state branches with them. Later child writes do not change the parent. This tutorial assumes that the default branch belongs to a new, demo-safe project; use the schema-only option described in Neon's [database branching workflow primer](https://neon.com/docs/get-started-with-neon/workflow-primer) when a preview must not inherit sensitive rows.
+A branch on Neon is not necessarily empty. A normal child exposes the parent's database rows and schema immediately through copy-on-write storage, and existing Auth and Object Storage state branches with it. Later child writes do not change the parent. This tutorial assumes that the default branch belongs to a new, demo-safe project; use the schema-only option described in Neon's [database branching workflow primer](https://neon.com/docs/get-started-with-neon/workflow-primer) when a preview must not inherit sensitive rows.
 
 Object Storage, Functions, Neon Auth, and AI Gateway are generally available. The [Neon backend GA announcement](https://neon.com/blog/neon-backend-is-ga) describes the current product set and Free Plan allowances.
 
 ## Prerequisites
 
 - Node.js 24 LTS
-- A Neon project in a region that supports the complete Neon backend
+- A project on Neon in a region that supports the complete Neon backend
 - A project-scoped Neon API key
 - AI Gateway credits or an applicable account allowance
 - The [Incident Atlas companion repository](https://github.com/The-DevOps-Daily/neon-incident-atlas)
 
 This walkthrough was tested in AWS US East (Ohio), whose Neon region ID is `aws-us-east-2`. At publication time, Neon also supports the complete backend in AWS Europe (Frankfurt). Using Ohio reproduces the environment behind the commands in this article.
 
-“Hosted in AWS” does not mean that you install Neon in your AWS account. You choose the provider and region when creating the project in the Neon Console, and Neon operates the infrastructure. You do not supply credentials for your AWS account. Neon later generates `AWS_*` values for its S3-compatible Object Storage endpoint; those values belong to the disposable Neon branch.
+“Hosted in AWS” does not mean that you install Neon in your AWS account. You choose the provider and region when creating the project in the Neon Console, and Neon operates the infrastructure. You do not supply credentials for your AWS account. Neon later generates `AWS_*` values for its S3-compatible Object Storage service; those values belong to the disposable branch on Neon.
 
 From the companion repository, install dependencies and create the ignored environment file:
 
@@ -104,7 +104,7 @@ Neon Auth does not invoke the Function. The browser first creates an Auth sessio
 }
 ```
 
-For each protected API call, the React client sends a credentialed request to Neon Auth's `/token` endpoint to obtain a bearer token from the current session. The Function verifies the JWT signature and issuer against the branch's Auth JWKS before accessing user data.
+For each protected API call, the React client sends a credentialed request to Neon Auth's `/token` route to obtain a bearer token from the current session. The Function verifies the JWT signature and issuer against the branch's Auth JWKS before accessing user data.
 
 The Function has seven routes. `GET /health` is intentionally public so deployment automation can detect the running release; the other six require a valid JWT.
 
@@ -179,10 +179,10 @@ npm run demo:up
 
 The deployment performs four stages:
 
-1. It creates `incident-atlas-codex-<timestamp>` from the project's default branch and gives it a six-hour expiry.
+1. It creates `incident-atlas-demo-<timestamp>` from the project's default branch and gives it a six-hour expiry.
 2. It plans and deploys Neon Auth, the private bucket, the Incident Atlas Function, and AI Gateway.
 3. It allows localhost and registers `http://localhost:5173` as an Auth domain.
-4. It installs Lakebase Search's `lakebase_text` extension through the direct database connection, then creates the table and BM25 index. The migration explicitly uses `sslmode=verify-full`, so the PostgreSQL driver continues to verify the certificate and hostname when its defaults change.
+4. It installs Lakebase Search's `lakebase_text` extension through the direct database connection, then creates the table and BM25 index. The migration explicitly uses `sslmode=verify-full`, so the Postgres driver continues to verify the certificate and hostname when its defaults change.
 
 On the validated run, the CLI reported `+ bucket incident-files`, `+ function app`, and the unchanged service line `Utilized services: Postgres, Neon Auth, Object Storage, Functions, AI Gateway`. The helper ended with `Applied migrations/001_incident_atlas.sql` and `Incident Atlas is ready.`
 
@@ -317,13 +317,13 @@ npm run demo:down
 The cleanup script refuses to proceed unless:
 
 - the state file belongs to `NEON_PROJECT_ID`;
-- the branch name starts with `incident-atlas-codex-`;
+- the branch name starts with `incident-atlas-demo-`;
 - the remote branch ID, name, and parent match the recorded branch;
 - the branch is neither default nor protected.
 
 It then deletes the child branch, polls until Neon reports it absent, removes the local state file, and prunes generated branch credentials from `.env.local`. Your project ID and API key remain for another run.
 
-Deleting the child removes its Function alongside its database state, Auth identity, stored objects, and AI Gateway endpoint. The Neon project and default branch are not deleted. [Neon Functions: backend logic next to your data](https://neon.com/blog/neon-functions-backend-logic-next-to-your-data) describes how Functions inherit branch identity and lifecycle.
+Deleting the child removes its Function alongside its database state, Auth identity, stored objects, and AI Gateway host. The parent project and default branch are not deleted. [Neon Functions: backend logic next to your data](https://neon.com/blog/neon-functions-backend-logic-next-to-your-data) describes how Functions inherit branch identity and lifecycle.
 
 ## What this demo intentionally leaves out
 
