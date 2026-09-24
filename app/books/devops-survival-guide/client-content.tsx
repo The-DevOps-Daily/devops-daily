@@ -155,7 +155,7 @@ export function ClientContent() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isScrolled, setIsScrolled] = useState(false);
   const { status: subscribeStatus, errorMsg: subscribeError, submit: subscribeSubmit } =
-    useNewsletterSubscribe();
+    useNewsletterSubscribe('book_page');
 
   const handleSubscribe = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

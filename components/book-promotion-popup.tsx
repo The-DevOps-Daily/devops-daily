@@ -14,7 +14,7 @@ export function BookPromotionPopup() {
   const [email, setEmail] = useState('');
   const [showThankYou, setShowThankYou] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const { status, errorMsg, submit } = useNewsletterSubscribe();
+  const { status, errorMsg, submit } = useNewsletterSubscribe('book_popup');
 
   useEffect(() => {
     // Check if user has already dismissed or subscribed
