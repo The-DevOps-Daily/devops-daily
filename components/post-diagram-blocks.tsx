@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import {
   parseDiagramSpec,
@@ -653,6 +653,26 @@ interface EdgePath {
   label?: string;
   mx: number;
   my: number;
+  /** Both ends in one column: drawn as a short vertical link, label beside it. */
+  sameCol?: boolean;
+  /** The label split into lines that fit the gap the edge crosses. */
+  lines?: string[];
+}
+
+/** Greedy word wrap, so a long edge label fits the gap between two columns. */
+function wrapLabel(label: string, maxChars: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of label.split(' ')) {
+    if (line && (line + ' ' + word).length > maxChars) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = line ? line + ' ' + word : word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }
 
 function GraphDiagram({ spec }: { spec: DiagramSpec }) {
@@ -677,6 +697,30 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
     })
   );
 
+  // One arrowhead marker per diagram: several graphs can share a page.
+  const arrowId = 'pd-arrow-' + useId().replace(/:/g, '');
+  // Each gap between two columns is widened to fit the longest label on the
+  // edges that cross it, so a label never ends up underneath a node.
+  const gapExtra = columns.map((_, ci) => {
+    if (ci === 0) return 0;
+    const longest = Math.max(
+      0,
+      ...edges
+        .filter((e) => {
+          const a = layer[e[0]];
+          const b = layer[e[1]];
+          return Boolean(e[2]) && Math.min(a, b) === ci - 1 && Math.max(a, b) === ci;
+        })
+        .map((e) => String(e[2]).length)
+    );
+    // Capped: a longer label wraps instead of pushing the diagram wider.
+    return longest ? Math.min(48, Math.max(0, longest * 7 + 28 - 36)) : 0;
+  });
+  // Columns with an edge inside them get room for the link and its label.
+  const linkedCols = new Set(
+    edges.filter((e) => layer[e[0]] !== undefined && layer[e[0]] === layer[e[1]]).map((e) => layer[e[0]])
+  );
+
   const draw = () => {
     const wrap = wrapRef.current;
     if (!wrap) return;
@@ -688,18 +732,45 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
       if (!a || !b) return;
       const ar = a.getBoundingClientRect();
       const br = b.getBoundingClientRect();
-      const x1 = ar.right - gr.left;
+      const la = layer[e[0]] ?? 0;
+      const lb = layer[e[1]] ?? 0;
+      if (la === lb) {
+        // Same column: a short vertical link through the gap between the two
+        // nodes. A side-to-side curve here looped round the outside of the
+        // column and hid its label behind the nodes.
+        const x = ar.left + ar.width / 2 - gr.left;
+        const down = ar.top < br.top;
+        const y1 = (down ? ar.bottom : ar.top) - gr.top;
+        const y2 = (down ? br.top : br.bottom) - gr.top;
+        next.push({
+          id: 'e' + i,
+          from: e[0],
+          to: e[1],
+          label: e[2],
+          mx: x + 10,
+          my: (y1 + y2) / 2,
+          d: `M${x} ${y1} L ${x} ${y2}`,
+          sameCol: true,
+        });
+        return;
+      }
+      // Forward edges leave the right side; an edge back to an earlier
+      // column leaves the left side, so it never cuts through its own node.
+      const back = lb < la;
+      const x1 = (back ? ar.left : ar.right) - gr.left;
       const y1 = ar.top + ar.height / 2 - gr.top;
-      const x2 = br.left - gr.left;
+      const x2 = (back ? br.right : br.left) - gr.left;
       const y2 = br.top + br.height / 2 - gr.top;
-      const dx = Math.max(28, (x2 - x1) * 0.5);
+      const dx = (back ? -1 : 1) * Math.max(28, Math.abs(x2 - x1) * 0.5);
       next.push({
         id: 'e' + i,
         from: e[0],
         to: e[1],
         label: e[2],
+        lines: e[2] ? wrapLabel(String(e[2]), Math.max(6, Math.floor((Math.abs(x2 - x1) - 12) / 6.8))) : undefined,
         mx: (x1 + x2) / 2,
-        my: (y1 + y2) / 2,
+        // Just above the line, so the line does not show through the text.
+        my: (y1 + y2) / 2 - 10,
         d: `M${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`,
       });
     });
@@ -759,7 +830,8 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
     if (prefersReducedMotion()) return;
     paths.forEach((p) => {
       const el = flowRefs.current[p.id];
-      if (el) firePacket(el, (layer[p.from] ?? 0) * 520);
+      // A link inside a column starts once the packet before it has arrived.
+      if (el) firePacket(el, (layer[p.from] ?? 0) * 520 + (p.sameCol ? 640 : 0));
     });
   };
 
@@ -776,11 +848,16 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
       <div className="pd-gscroll">
       <div className={'pd-graph' + (active ? ' pd-dim' : '')} ref={wrapRef}>
         <svg className="pd-edges" ref={svgRef} aria-hidden="true">
+          <defs>
+            <marker id={arrowId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path className="pd-arrow" d="M0 1.5 L9 5 L0 8.5 z" />
+            </marker>
+          </defs>
           {paths.map((p) => {
             const hot = hi && (hi.has(p.from) && hi.has(p.to) && (p.from === hovered || p.to === hovered));
             return (
               <g key={p.id}>
-                <path className={'pd-edge' + (hot ? ' hot' : '')} d={p.d} />
+                <path className={'pd-edge' + (hot ? ' hot' : '')} d={p.d} markerEnd={`url(#${arrowId})`} />
                 <path
                   className={'pd-edge-flow' + (hot ? ' hot' : '')}
                   d={p.d}
@@ -789,8 +866,18 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
                   }}
                 />
                 {p.label && (
-                  <text className={'pd-edge-label' + (hot ? ' hot' : '')} x={p.mx} y={p.my}>
-                    {p.label}
+                  <text
+                    className={'pd-edge-label' + (hot ? ' hot' : '') + (p.sameCol ? ' pd-edge-label-side' : '')}
+                    x={p.mx}
+                    y={p.my - ((p.lines?.length ?? 1) - 1) * 13}
+                  >
+                    {p.lines && p.lines.length > 1
+                      ? p.lines.map((line, li) => (
+                          <tspan key={li} x={p.mx} dy={li === 0 ? 0 : 13}>
+                            {line}
+                          </tspan>
+                        ))
+                      : p.label}
                   </text>
                 )}
               </g>
@@ -798,7 +885,11 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
           })}
         </svg>
         {columns.map((col, ci) => (
-          <div className="pd-col" key={ci}>
+          <div
+            className={'pd-col' + (linkedCols.has(ci) ? ' pd-col-linked' : '')}
+            key={ci}
+            style={gapExtra[ci] ? { marginLeft: gapExtra[ci] } : undefined}
+          >
             {col.map((n, ni) => {
               const id = n.id ?? `c${ci}n${ni}`;
               const dim = hi && !hi.has(id);
@@ -1013,16 +1104,19 @@ const STYLES = `
 .pdiag .pd-nested{ display:flex; flex-wrap:wrap; gap:12px; }
 .pdiag .pd-nested .pd-group{ flex:1; min-width:210px; margin-top:0; }
 .pdiag .pd-group .pd-node{ opacity:1; transform:none; }
-.pdiag .pd-graph{ position:relative; display:flex; justify-content:space-between; align-items:center; gap:36px; padding:12px 4px; min-height:280px; }
+.pdiag .pd-graph{ position:relative; display:flex; justify-content:space-between; align-items:center; gap:36px; padding:12px 4px; min-height:200px; }
 .pdiag .pd-edges{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:visible; }
 .pdiag .pd-col{ display:flex; flex-direction:column; justify-content:center; gap:16px; z-index:1; }
+.pdiag .pd-col.pd-col-linked{ gap:52px; }
 .pdiag .pd-graph .pd-node{ min-width:132px; cursor:default; }
-.pdiag .pd-edge{ fill:none; stroke:var(--pd-line2); stroke-width:2; transition:stroke .2s,opacity .2s; }
+.pdiag .pd-edge{ fill:none; stroke:color-mix(in srgb,var(--pd-muted) 55%,transparent); stroke-width:2; transition:stroke .2s,opacity .2s; }
+.pdiag .pd-arrow{ fill:color-mix(in srgb,var(--pd-muted) 80%,transparent); }
 .pdiag .pd-edge-flow{ fill:none; stroke:color-mix(in srgb,var(--pd-accent) 55%,var(--pd-line2)); stroke-width:2; stroke-dasharray:3 11; opacity:.8; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-edge-flow{ animation:pd-dash 1.1s linear infinite; } }
 .pdiag .pd-edge.hot,.pdiag .pd-edge-flow.hot{ stroke:var(--pd-accent); opacity:1; }
 .pdiag .pd-edge-label{ font-family:var(--pd-mono); font-size:11px; fill:var(--pd-muted); text-anchor:middle; dominant-baseline:middle; paint-order:stroke; stroke:var(--pd-bg); stroke-width:5px; stroke-linejoin:round; }
 .pdiag .pd-edge-label.hot{ fill:var(--pd-accent); }
+.pdiag .pd-edge-label.pd-edge-label-side{ text-anchor:start; }
 .pdiag .pd-graph.pd-dim .pd-edge-label:not(.hot){ opacity:.1; }
 .pdiag .pd-graph.pd-dim .pd-node.pd-faded{ opacity:.34; }
 .pdiag .pd-graph.pd-dim .pd-edge:not(.hot),.pdiag .pd-graph.pd-dim .pd-edge-flow:not(.hot){ opacity:.1; }
