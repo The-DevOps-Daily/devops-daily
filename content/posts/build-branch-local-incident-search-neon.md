@@ -4,9 +4,9 @@ excerpt: 'Build and verify a disposable incident-search backend with Neon Auth, 
 category:
   name: 'DevOps'
   slug: 'devops'
-date: '2026-09-22'
-publishedAt: '2026-09-22T09:00:00Z'
-updatedAt: '2026-09-22T09:00:00Z'
+date: '2026-09-24'
+publishedAt: '2026-09-24T09:00:00Z'
+updatedAt: '2026-09-24T09:00:00Z'
 readingTime: '16 min read'
 author:
   name: 'DevOps Daily Team'
