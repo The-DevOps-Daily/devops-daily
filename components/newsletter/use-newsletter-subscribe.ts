@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { sendGAEvent } from '@next/third-parties/google';
 import { TURNSTILE_FIELD, resetTurnstileWidgets, waitForTurnstileToken } from './turnstile-widget';
 
 const FORM_ID = 'cmomznsaf0001utvb88nateg7';
@@ -24,7 +25,10 @@ const FRIENDLY_ERROR = 'Could not subscribe right now. Please try again in a min
  * Replaces the previous Mailchimp form-action redirects so the user
  * stays on devops-daily.com after submitting.
  */
-export function useNewsletterSubscribe() {
+/** Where a signup form sits, sent with the GA4 `newsletter_signup` event. */
+export type SignupLocation = 'footer' | 'homepage' | 'book_popup' | 'book_page';
+
+export function useNewsletterSubscribe(location: SignupLocation) {
   const [status, setStatus] = useState<SubscribeStatus>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -62,6 +66,14 @@ export function useNewsletterSubscribe() {
         throw new Error(apiError || FRIENDLY_ERROR);
       }
       setStatus('ok');
+      // A named GA4 event, so signups can be counted per landing page and
+      // marked as a key event. It counts accepted form submissions, before the
+      // double opt-in confirmation email is clicked.
+      try {
+        sendGAEvent('event', 'newsletter_signup', { form_location: location });
+      } catch {
+        // Analytics must never turn a successful signup into an error.
+      }
       return true;
     } catch (err) {
       setStatus('error');

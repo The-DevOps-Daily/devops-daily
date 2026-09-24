@@ -23,7 +23,7 @@ interface Props {
  * confirmation card on success.
  */
 export function NewsletterForm({ bare, headline, description, source }: Props = {}) {
-  const { status, errorMsg, submit } = useNewsletterSubscribe();
+  const { status, errorMsg, submit } = useNewsletterSubscribe('footer');
 
   const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

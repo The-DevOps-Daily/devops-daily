@@ -10,7 +10,7 @@ import { TurnstileWidget } from './turnstile-widget';
  * user stays on devops-daily.com after subscribing.
  */
 export function TerminalNewsletterSignup() {
-  const { status, errorMsg, submit } = useNewsletterSubscribe();
+  const { status, errorMsg, submit } = useNewsletterSubscribe('homepage');
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
