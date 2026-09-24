@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import {
   parseDiagramSpec,
@@ -653,6 +653,26 @@ interface EdgePath {
   label?: string;
   mx: number;
   my: number;
+  /** Both ends in one column: drawn as a short vertical link, label beside it. */
+  sameCol?: boolean;
+  /** The label split into lines that fit the gap the edge crosses. */
+  lines?: string[];
+}
+
+/** Greedy word wrap, so a long edge label fits the gap between two columns. */
+function wrapLabel(label: string, maxChars: number): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of label.split(' ')) {
+    if (line && (line + ' ' + word).length > maxChars) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = line ? line + ' ' + word : word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }
 
 function GraphDiagram({ spec }: { spec: DiagramSpec }) {
@@ -662,7 +682,9 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
   const nodeRefs = useRef<Record<string, HTMLElement | null>>({});
   const flowRefs = useRef<Record<string, SVGPathElement | null>>({});
   const svgRef = useRef<SVGSVGElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [paths, setPaths] = useState<EdgePath[]>([]);
+  const [fade, setFade] = useState({ left: false, right: false });
   const [hovered, setHovered] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
   const active = pinned ?? hovered;
@@ -677,6 +699,32 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
     })
   );
 
+  // One arrowhead marker per diagram: several graphs can share a page.
+  const uid = useId().replace(/:/g, '');
+  const arrowId = 'pd-arrow-' + uid;
+  const detailDomId = 'pd-detail-' + uid;
+  // Each gap between two columns is widened to fit the longest label on the
+  // edges that cross it, so a label never ends up underneath a node.
+  const gapExtra = columns.map((_, ci) => {
+    if (ci === 0) return 0;
+    const longest = Math.max(
+      0,
+      ...edges
+        .filter((e) => {
+          const a = layer[e[0]];
+          const b = layer[e[1]];
+          return Boolean(e[2]) && Math.min(a, b) === ci - 1 && Math.max(a, b) === ci;
+        })
+        .map((e) => String(e[2]).length)
+    );
+    // Capped: a longer label wraps instead of pushing the diagram wider.
+    return longest ? Math.min(48, Math.max(0, longest * 7 + 28 - 36)) : 0;
+  });
+  // Columns with an edge inside them get room for the link and its label.
+  const linkedCols = new Set(
+    edges.filter((e) => layer[e[0]] !== undefined && layer[e[0]] === layer[e[1]]).map((e) => layer[e[0]])
+  );
+
   const draw = () => {
     const wrap = wrapRef.current;
     if (!wrap) return;
@@ -688,35 +736,77 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
       if (!a || !b) return;
       const ar = a.getBoundingClientRect();
       const br = b.getBoundingClientRect();
-      const x1 = ar.right - gr.left;
+      const la = layer[e[0]] ?? 0;
+      const lb = layer[e[1]] ?? 0;
+      if (la === lb) {
+        // Same column: a short vertical link through the gap between the two
+        // nodes. A side-to-side curve here looped round the outside of the
+        // column and hid its label behind the nodes.
+        const x = ar.left + ar.width / 2 - gr.left;
+        const down = ar.top < br.top;
+        const y1 = (down ? ar.bottom : ar.top) - gr.top;
+        const y2 = (down ? br.top : br.bottom) - gr.top;
+        next.push({
+          id: 'e' + i,
+          from: e[0],
+          to: e[1],
+          label: e[2],
+          mx: x + 10,
+          my: (y1 + y2) / 2,
+          d: `M${x} ${y1} L ${x} ${y2}`,
+          sameCol: true,
+        });
+        return;
+      }
+      // Forward edges leave the right side; an edge back to an earlier
+      // column leaves the left side, so it never cuts through its own node.
+      const back = lb < la;
+      const x1 = (back ? ar.left : ar.right) - gr.left;
       const y1 = ar.top + ar.height / 2 - gr.top;
-      const x2 = br.left - gr.left;
+      const x2 = (back ? br.right : br.left) - gr.left;
       const y2 = br.top + br.height / 2 - gr.top;
-      const dx = Math.max(28, (x2 - x1) * 0.5);
+      const dx = (back ? -1 : 1) * Math.max(28, Math.abs(x2 - x1) * 0.5);
       next.push({
         id: 'e' + i,
         from: e[0],
         to: e[1],
         label: e[2],
+        lines: e[2] ? wrapLabel(String(e[2]), Math.max(6, Math.floor((Math.abs(x2 - x1) - 12) / 6.8))) : undefined,
         mx: (x1 + x2) / 2,
-        my: (y1 + y2) / 2,
+        // Just above the line, so the line does not show through the text.
+        my: (y1 + y2) / 2 - 10,
         d: `M${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`,
       });
     });
     setPaths(next);
   };
 
+  // Fade the edge a wide graph can still scroll towards, so a cut-off
+  // column reads as "more this way" and not as the end of the diagram.
+  const updateFade = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const left = el.scrollLeft > 2;
+    const right = el.scrollLeft + el.clientWidth < el.scrollWidth - 2;
+    setFade((f) => (f.left === left && f.right === right ? f : { left, right }));
+  };
+
   useEffect(() => {
-    draw();
+    const redraw = () => {
+      draw();
+      updateFade();
+    };
+    redraw();
     const ro =
       typeof ResizeObserver !== 'undefined'
-        ? new ResizeObserver(() => draw())
+        ? new ResizeObserver(redraw)
         : null;
     if (ro && wrapRef.current) ro.observe(wrapRef.current);
-    window.addEventListener('resize', draw);
+    if (ro && scrollRef.current) ro.observe(scrollRef.current);
+    window.addEventListener('resize', redraw);
     return () => {
       if (ro) ro.disconnect();
-      window.removeEventListener('resize', draw);
+      window.removeEventListener('resize', redraw);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -730,6 +820,7 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
     return set;
   };
   const hi = active ? connected(active) : null;
+  const detailIds = Object.keys(byId).filter((id) => byId[id].detail);
 
   const firePacket = (pathEl: SVGPathElement, delay: number) => {
     setTimeout(() => {
@@ -759,7 +850,8 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
     if (prefersReducedMotion()) return;
     paths.forEach((p) => {
       const el = flowRefs.current[p.id];
-      if (el) firePacket(el, (layer[p.from] ?? 0) * 520);
+      // A link inside a column starts once the packet before it has arrived.
+      if (el) firePacket(el, (layer[p.from] ?? 0) * 520 + (p.sameCol ? 640 : 0));
     });
   };
 
@@ -773,14 +865,23 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
           </button>
         )}
       </div>
-      <div className="pd-gscroll">
+      <div
+        className={'pd-gscroll' + (fade.left ? ' pd-fade-l' : '') + (fade.right ? ' pd-fade-r' : '')}
+        ref={scrollRef}
+        onScroll={updateFade}
+      >
       <div className={'pd-graph' + (active ? ' pd-dim' : '')} ref={wrapRef}>
         <svg className="pd-edges" ref={svgRef} aria-hidden="true">
+          <defs>
+            <marker id={arrowId} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path className="pd-arrow" d="M0 1.5 L9 5 L0 8.5 z" />
+            </marker>
+          </defs>
           {paths.map((p) => {
             const hot = hi && (hi.has(p.from) && hi.has(p.to) && (p.from === hovered || p.to === hovered));
             return (
               <g key={p.id}>
-                <path className={'pd-edge' + (hot ? ' hot' : '')} d={p.d} />
+                <path className={'pd-edge' + (hot ? ' hot' : '')} d={p.d} markerEnd={`url(#${arrowId})`} />
                 <path
                   className={'pd-edge-flow' + (hot ? ' hot' : '')}
                   d={p.d}
@@ -789,8 +890,18 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
                   }}
                 />
                 {p.label && (
-                  <text className={'pd-edge-label' + (hot ? ' hot' : '')} x={p.mx} y={p.my}>
-                    {p.label}
+                  <text
+                    className={'pd-edge-label' + (hot ? ' hot' : '') + (p.sameCol ? ' pd-edge-label-side' : '')}
+                    x={p.mx}
+                    y={p.my - ((p.lines?.length ?? 1) - 1) * 13}
+                  >
+                    {p.lines && p.lines.length > 1
+                      ? p.lines.map((line, li) => (
+                          <tspan key={li} x={p.mx} dy={li === 0 ? 0 : 13}>
+                            {line}
+                          </tspan>
+                        ))
+                      : p.label}
                   </text>
                 )}
               </g>
@@ -798,7 +909,11 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
           })}
         </svg>
         {columns.map((col, ci) => (
-          <div className="pd-col" key={ci}>
+          <div
+            className={'pd-col' + (linkedCols.has(ci) ? ' pd-col-linked' : '')}
+            key={ci}
+            style={gapExtra[ci] ? { marginLeft: gapExtra[ci] } : undefined}
+          >
             {col.map((n, ni) => {
               const id = n.id ?? `c${ci}n${ni}`;
               const dim = hi && !hi.has(id);
@@ -812,6 +927,19 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
                   onMouseEnter={() => setHovered(id)}
                   onMouseLeave={() => setHovered(null)}
                   onClick={() => setPinned((p) => (p === id ? null : id))}
+                  {...(n.detail
+                    ? {
+                        tabIndex: 0,
+                        'aria-describedby': detailDomId,
+                        onFocus: () => setHovered(id),
+                        onBlur: () => setHovered(null),
+                        onKeyDown: (ev: React.KeyboardEvent) => {
+                          if (ev.key !== 'Enter' && ev.key !== ' ') return;
+                          ev.preventDefault();
+                          setPinned((p) => (p === id ? null : id));
+                        },
+                      }
+                    : {})}
                 >
                   {n.status && (
                     <>
@@ -831,9 +959,17 @@ function GraphDiagram({ spec }: { spec: DiagramSpec }) {
         ))}
       </div>
       </div>
-      {active && byId[active]?.detail && (
-        <div className="pd-detail">
-          <b>{byId[active].label}</b> {byId[active].detail}
+      {detailIds.length > 0 && (
+        <div className="pd-detail" id={detailDomId} aria-live="polite">
+          {detailIds.map((id) => (
+            <div key={id} className={'pd-detail-item' + (id === active ? ' is-on' : '')}>
+              <b>{byId[id].label}</b> {byId[id].detail}
+            </div>
+          ))}
+          <div className={'pd-detail-item pd-detail-hint' + (active && byId[active]?.detail ? '' : ' is-on')}>
+            <span className="pd-hint-hover">Hover over or tap a node to see what it does.</span>
+            <span className="pd-hint-touch">Tap a node to see what it does.</span>
+          </div>
         </div>
       )}
     </div>
@@ -918,10 +1054,13 @@ const STYLES = `
 .pdiag .pd-btn{ font-family:var(--pd-mono); font-size:12.5px; color:var(--pd-ink); background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:9px; padding:7px 13px; cursor:pointer; transition:border-color .2s,color .2s; }
 .pdiag .pd-btn:hover{ border-color:var(--pd-accent); color:var(--pd-accent); }
 .pdiag .pd-btn:focus-visible{ outline:2px solid var(--pd-accent); outline-offset:2px; }
+.pdiag .pd-toolbar > .pd-btn:only-child{ margin-left:auto; }
 .pdiag .pd-goal{ font-family:var(--pd-mono); font-size:13px; background:var(--pd-soft-bg); border:1px solid var(--pd-line); border-radius:8px; padding:8px 14px; width:fit-content; max-width:100%; margin:0 auto 22px; text-align:center; }
 .pdiag .pd-toplabel{ text-align:center; font-size:13px; font-style:italic; color:var(--pd-muted); margin-bottom:8px; }
 .pdiag .pd-row{ display:flex; align-items:stretch; justify-content:center; flex-wrap:wrap; gap:4px; }
-.pdiag .pd-flow-row{ flex-wrap:nowrap; overflow-x:auto; justify-content:safe center; }
+/* Scroll boxes clip on both axes, so pad them (and pull the padding back with
+   a negative margin) to leave room for the hover lift and shadow. */
+.pdiag .pd-flow-row{ flex-wrap:nowrap; overflow-x:auto; justify-content:safe center; padding:10px 18px 28px; margin:-10px -18px -28px; }
 .pdiag .pd-flow-grid-wrap{ position:relative; }
 .pdiag .pd-flow-links{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; z-index:0; }
 .pdiag .pd-flow-link{ fill:none; stroke:var(--pd-line2); stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
@@ -1013,30 +1152,42 @@ const STYLES = `
 .pdiag .pd-nested{ display:flex; flex-wrap:wrap; gap:12px; }
 .pdiag .pd-nested .pd-group{ flex:1; min-width:210px; margin-top:0; }
 .pdiag .pd-group .pd-node{ opacity:1; transform:none; }
-.pdiag .pd-graph{ position:relative; display:flex; justify-content:space-between; align-items:center; gap:36px; padding:12px 4px; min-height:280px; }
+.pdiag .pd-graph{ position:relative; display:flex; justify-content:space-between; align-items:center; gap:36px; padding:12px 4px; min-height:200px; }
 .pdiag .pd-edges{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:visible; }
 .pdiag .pd-col{ display:flex; flex-direction:column; justify-content:center; gap:16px; z-index:1; }
+.pdiag .pd-col.pd-col-linked{ gap:52px; }
 .pdiag .pd-graph .pd-node{ min-width:132px; cursor:default; }
-.pdiag .pd-edge{ fill:none; stroke:var(--pd-line2); stroke-width:2; transition:stroke .2s,opacity .2s; }
+.pdiag .pd-edge{ fill:none; stroke:color-mix(in srgb,var(--pd-muted) 55%,transparent); stroke-width:2; transition:stroke .2s,opacity .2s; }
+.pdiag .pd-arrow{ fill:color-mix(in srgb,var(--pd-muted) 80%,transparent); }
 .pdiag .pd-edge-flow{ fill:none; stroke:color-mix(in srgb,var(--pd-accent) 55%,var(--pd-line2)); stroke-width:2; stroke-dasharray:3 11; opacity:.8; }
 @media (prefers-reduced-motion:no-preference){ .pdiag .pd-edge-flow{ animation:pd-dash 1.1s linear infinite; } }
 .pdiag .pd-edge.hot,.pdiag .pd-edge-flow.hot{ stroke:var(--pd-accent); opacity:1; }
 .pdiag .pd-edge-label{ font-family:var(--pd-mono); font-size:11px; fill:var(--pd-muted); text-anchor:middle; dominant-baseline:middle; paint-order:stroke; stroke:var(--pd-bg); stroke-width:5px; stroke-linejoin:round; }
 .pdiag .pd-edge-label.hot{ fill:var(--pd-accent); }
+.pdiag .pd-edge-label.pd-edge-label-side{ text-anchor:start; }
 .pdiag .pd-graph.pd-dim .pd-edge-label:not(.hot){ opacity:.1; }
 .pdiag .pd-graph.pd-dim .pd-node.pd-faded{ opacity:.34; }
 .pdiag .pd-graph.pd-dim .pd-edge:not(.hot),.pdiag .pd-graph.pd-dim .pd-edge-flow:not(.hot){ opacity:.1; }
 .pdiag .pd-node.pd-hot{ border-color:var(--pd-accent); box-shadow:0 0 0 2px rgba(224,121,43,.16); }
 .pdiag .pd-clickable{ cursor:pointer; }
+.pdiag .pd-graph .pd-node:focus-visible{ outline:2px solid var(--pd-accent); outline-offset:2px; }
 .pdiag .pd-dot{ position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; box-shadow:0 0 0 3px var(--pd-card); }
 .pdiag .pd-dot.s-ok{ background:var(--pd-green); }
 .pdiag .pd-dot.s-warn{ background:var(--pd-amber); }
 .pdiag .pd-dot.s-down{ background:var(--pd-red); }
-.pdiag .pd-detail{ margin-top:14px; font-size:13px; color:var(--pd-muted); background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:10px; padding:10px 14px; animation:pd-pop .2s ease; }
+.pdiag .pd-detail{ display:grid; align-items:center; margin-top:14px; font-size:13px; color:var(--pd-muted); background:var(--pd-card); border:1px solid var(--pd-line2); border-radius:10px; padding:10px 14px; }
+.pdiag .pd-detail-item{ grid-area:1/1; visibility:hidden; }
+.pdiag .pd-detail-item.is-on{ visibility:visible; animation:pd-pop .2s ease; }
+.pdiag .pd-detail-hint{ font-style:italic; opacity:.8; }
+.pdiag .pd-hint-touch{ display:none; }
+@media (hover:none){ .pdiag .pd-hint-hover{ display:none; } .pdiag .pd-hint-touch{ display:inline; } }
 @keyframes pd-pop{ from{ opacity:0; transform:translateY(-3px); } }
 .pdiag .pd-detail b{ color:var(--pd-ink); font-weight:650; }
 .pdiag .pd-pkt{ fill:var(--pd-accent); }
-.pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; }
+.pdiag .pd-gscroll{ overflow-x:auto; overflow-y:hidden; padding:10px 18px 28px; margin:-10px -18px -28px; scroll-padding-inline:18px; }
+.pdiag .pd-gscroll.pd-fade-r{ -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 56px),transparent); mask-image:linear-gradient(to right,#000 calc(100% - 56px),transparent); }
+.pdiag .pd-gscroll.pd-fade-l{ -webkit-mask-image:linear-gradient(to left,#000 calc(100% - 56px),transparent); mask-image:linear-gradient(to left,#000 calc(100% - 56px),transparent); }
+.pdiag .pd-gscroll.pd-fade-l.pd-fade-r{ -webkit-mask-image:linear-gradient(to right,transparent,#000 56px,#000 calc(100% - 56px),transparent); mask-image:linear-gradient(to right,transparent,#000 56px,#000 calc(100% - 56px),transparent); }
 @container (max-width:760px){
   .pdiag .pd-loopscroll{ overflow:visible; }
   .pdiag .pd-loopwrap{ width:100%; max-width:100%; min-width:0; }
