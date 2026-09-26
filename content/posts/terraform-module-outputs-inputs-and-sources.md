@@ -31,11 +31,11 @@ This post walks through the module questions that come up most in real projects:
 - Referencing `module.network.vpc_id` from another module creates the dependency automatically. No `depends_on` needed.
 - A module with `for_each` becomes a map of instances: `module.network["production"].vpc_id`, or a `for` expression to collect them all.
 - Git module sources take `?ref=` with a branch, tag or commit. Use tags or commits for anything shared, branches only while developing.
-- "Provider configuration not present" means a module that had its own `provider` block was removed while its resources still exist in state. Move provider blocks to the root, apply, then remove the module.
+- "Provider configuration not present" means Terraform needs a provider configuration that is gone, most often because a module with its own `provider` block was removed while its resources are still in state. Move provider blocks to the root, apply, then remove the module.
 
 ## Prerequisites
 
-- Terraform 1.x (the examples use 1.15; `for_each` on modules needs 0.13 or later)
+- Terraform 1.4 or later for the examples (they use the built-in `terraform_data` resource; we ran them on 1.15), and 1.7 or later for the `removed` block mentioned at the end
 - A root configuration with at least one local module, or the [Terraform terminal simulator](/games/terraform-terminal-simulator) to practice the basics first
 - For the Git source section, access to a Git repository that holds a module
 
@@ -169,7 +169,7 @@ module "app" {
 }
 ```
 
-You can even pass a whole resource object (`network = aws_vpc.main`) into a variable with a matching `object(...)` type, or `type = any`. The typed object is better: it documents exactly which attributes the module relies on, and the error messages are clearer when something does not fit.
+You can even pass a whole resource object into a variable, as long as the object type matches its attribute names. An `aws_vpc` has `id` and `cidr_block`, so the variable would be `object({ id = string, cidr_block = string })` and the caller writes `network = aws_vpc.main`; Terraform keeps the attributes the type names and discards the rest. `type = any` also works. The typed object is better: it documents exactly which attributes the module relies on, and the error messages are clearer when something does not fit.
 
 ## Chain modules: one module's output as another's input
 
@@ -222,7 +222,7 @@ Local paths are fine inside one repository. When several repositories share a mo
 
 ```hcl
 module "network" {
-  # a tag: stable, what production should use
+  # a release tag: what production should use (if your tags are never moved)
   source = "git::https://github.com/acme/terraform-modules.git//network?ref=v1.4.0"
 }
 
@@ -241,7 +241,8 @@ Details that trip people up:
 
 - **The double slash** (`.git//network`) selects a subdirectory of the repository. Without it, Terraform uses the repository root.
 - **Private repositories over SSH** use `git::ssh://git@github.com/acme/terraform-modules.git//network?ref=v1.4.0`, or the shorter `git@github.com:acme/terraform-modules.git//network?ref=v1.4.0`. The machine running Terraform (including CI) needs a key that can read the repository.
-- **Branch sources do not update on their own.** `terraform init` downloads the module once into `.terraform/modules`. To pick up new commits on the branch, run `terraform init -upgrade` (or `terraform get -update`). That is exactly why production should not point at a branch: two runs of the same commit of your root configuration can use different module code.
+- **Branch sources do not update on their own.** A repeat `terraform init` keeps the modules already in `.terraform/modules` as long as their `source` is unchanged. To pick up new commits on the branch, run `terraform get -update` (modules only) or `terraform init -upgrade` (modules, and it also reconsiders provider versions). A fresh checkout, like a CI runner, downloads whatever the branch points at right now. That is exactly why production should not point at a branch: two runs of the same commit of your root configuration can use different module code.
+- **Tags can move.** Git lets someone delete a tag and create it again on another commit. If nobody in your organisation re-tags releases, a tag is a good pin; if you cannot be sure, pin the full commit SHA.
 - **Version constraints (`version = "~> 1.4"`) only work with registry sources**, not with Git URLs. With Git, the `ref` is your version pin.
 
 ## "Provider configuration not present" when you refactor modules
