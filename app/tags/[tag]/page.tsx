@@ -29,6 +29,9 @@ export async function generateMetadata({ params }: TagPageProps): Promise<Metada
     alternates: {
       canonical: `/tags/${tag}`,
     },
+    // Tag listings are thin pages that Google crawled and chose not to index.
+    // Keep them for readers and for link discovery, but out of the index.
+    robots: { index: false, follow: true },
     openGraph: {
       title: `${tagName} - DevOps Articles and Tutorials`,
       description: `Browse all articles, tutorials, and guides about ${tagName}. Learn the latest DevOps practices and techniques.`,

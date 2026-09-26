@@ -12,6 +12,9 @@ export const metadata = {
   alternates: {
     canonical: '/news',
   },
+  // The digests are link lists with excerpts from other sites. Google does not
+  // index them, and a large block of copied excerpts weighs on the whole site.
+  robots: { index: false, follow: true },
   openGraph: {
     title: 'DevOps Weekly Digest',
     description:

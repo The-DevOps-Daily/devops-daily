@@ -40,16 +40,21 @@ export async function generateMetadata({
 
   const socialImage = getSocialImagePath(slug, 'news');
 
-  return detailPageMetadata({
-    path: `/news/${digest.slug}`,
-    title: digest.title,
-    description: digest.excerpt || digest.summary,
-    image: socialImage || digest.image || '/og-image.png',
-    article: {
-      publishedTime: digest.publishedAt || digest.date,
-      section: 'DevOps News',
-    },
-  });
+  return {
+    ...detailPageMetadata({
+      path: `/news/${digest.slug}`,
+      title: digest.title,
+      description: digest.excerpt || digest.summary,
+      image: socialImage || digest.image || '/og-image.png',
+      article: {
+        publishedTime: digest.publishedAt || digest.date,
+        section: 'DevOps News',
+      },
+    }),
+    // The digests are link lists with excerpts from other sites. Google does
+    // not index them, and a large block of copied excerpts weighs on the site.
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function NewsDigestPage({
