@@ -14,13 +14,23 @@ import { getAllComparisons } from '@/lib/comparisons';
 import { getAllNewsletters } from '@/lib/newsletters';
 import { getAllHacktoberfestDays } from '@/lib/hacktoberfest';
 import { TOOLS } from '@/lib/tools';
-import { getPagedTags } from '@/lib/tags';
 import { getAllExperts } from '@/lib/experts';
 
 export const dynamic = 'force-static';
 
 function withLastModified(date?: string | Date | null) {
   return date ? { lastModified: new Date(date) } : {};
+}
+
+// 355 posts carry updatedAt 2025-11-23, the day the content was imported, not
+// a day anyone edited them. Google stops trusting lastmod when many URLs share
+// one date that does not track real changes, so fall back to the publish date.
+const IMPORT_DATE = '2025-11-23';
+
+function postLastModified(post: { updatedAt?: string; date?: string; publishedAt?: string }) {
+  const updated =
+    post.updatedAt && !String(post.updatedAt).startsWith(IMPORT_DATE) ? post.updatedAt : undefined;
+  return updated || post.date || post.publishedAt;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -57,7 +67,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getAllHacktoberfestDays(),
   ]);
 
-  const latestPostDate = posts[0]?.updatedAt || posts[0]?.date || posts[0]?.publishedAt;
+  const latestPostDate = posts[0] ? postLastModified(posts[0]) : undefined;
   const latestGuideDate = guides[0]?.updatedAt || guides[0]?.publishedAt;
   const latestExerciseDate = exercises[0]?.updatedAt || exercises[0]?.publishedAt;
   const latestNewsDate = news[0]?.date || news[0]?.publishedAt;
@@ -96,12 +106,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/news`,
-      ...withLastModified(latestNewsDate),
-      changeFrequency: 'weekly' as const,
-      priority: 0.9,
-    },
-    {
       url: `${baseUrl}/categories`,
       ...withLastModified(latestPostDate || latestGuideDate),
       changeFrequency: 'weekly' as const,
@@ -132,7 +136,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Post routes
   const postRoutes = posts.map((post) => ({
     url: `${baseUrl}/posts/${post.slug}`,
-    ...withLastModified(post.updatedAt || post.date || post.publishedAt),
+    ...withLastModified(postLastModified(post)),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
   }));
@@ -177,14 +181,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...withLastModified(quiz.createdDate),
     changeFrequency: 'monthly' as const,
     priority: 0.7,
-  }));
-
-  // News routes
-  const newsRoutes = news.map((digest) => ({
-    url: `${baseUrl}/news/${digest.slug}`,
-    ...withLastModified(digest.date || digest.publishedAt),
-    changeFrequency: 'monthly' as const,
-    priority: 0.8,
   }));
 
   // Game routes (only active games, excludes coming soon)
@@ -294,17 +290,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  // Tag pages, expert pages and the interview tiers are indexable but were
-  // only discoverable by crawling.
-  const [pagedTags, experts] = await Promise.all([getPagedTags(), getAllExperts()]);
-  const tagRoutes = [
-    { url: `${baseUrl}/tags`, changeFrequency: 'weekly' as const, priority: 0.5 },
-    ...pagedTags.map((tag) => ({
-      url: `${baseUrl}/tags/${tag.slug}`,
-      changeFrequency: 'weekly' as const,
-      priority: 0.5,
-    })),
-  ];
+  // Expert pages and the interview tiers are indexable but were only
+  // discoverable by crawling. Tag and news pages are noindex, so they stay out.
+  const experts = await getAllExperts();
   const expertRoutes = experts.map((expert) => ({
     url: `${baseUrl}/experts/${expert.slug}`,
     changeFrequency: 'monthly' as const,
@@ -318,7 +306,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...routes,
-    ...tagRoutes,
     ...expertRoutes,
     ...tierRoutes,
     ...postRoutes,
@@ -327,7 +314,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...guidePartRoutes,
     ...exerciseRoutes,
     ...quizRoutes,
-    ...newsRoutes,
     ...gameRoutes,
     ...flashcardRoutes,
     ...checklistRoutes,

@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/tags',
   },
+  // Tag listings are thin pages that Google crawled and chose not to index.
+  // Keep them for readers and for link discovery, but out of the index.
+  robots: { index: false, follow: true },
   openGraph: {
     title: 'Tags - DevOps Topics and Technologies',
     description:
