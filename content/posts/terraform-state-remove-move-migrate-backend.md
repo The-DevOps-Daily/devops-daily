@@ -33,12 +33,12 @@ All the terminal output in this post comes from real runs on Terraform 1.15.8, u
 - To rename a resource, use a `moved` block (Terraform 1.1+). It shows up in `plan` and gets code review. `terraform state mv` still works for one-off fixes.
 - To move a resource to another project, remove it from the old one with a `removed` block and adopt it in the new one with an `import` block. Editing state files by hand is the fallback.
 - To bootstrap a remote backend, create the bucket with local state first, then add the `backend` block and run `terraform init -migrate-state`.
-- The S3 backend now locks with a lock file in the bucket (`use_lockfile = true`). Terraform 1.15 marks `dynamodb_table` as deprecated. That also works on S3-compatible storage like DigitalOcean Spaces.
+- The S3 backend can lock with a lock file in the bucket (`use_lockfile = true`, added in Terraform 1.10). DynamoDB locking has been deprecated since 1.11. Lock files also work on S3-compatible storage like DigitalOcean Spaces.
 - Never commit `.tfstate` to Git. Do commit `.terraform.lock.hcl`.
 
 ## Prerequisites
 
-- Terraform 1.7 or later for `removed` blocks (1.11 or later for S3 lock files)
+- Terraform 1.7 or later for `removed` blocks, and 1.11 or later for the S3 lock-file examples (the feature arrived in 1.10 as experimental)
 - A configuration with existing state to practice on, or the [Terraform terminal simulator](/games/terraform-terminal-simulator) if you want to try `terraform state list` in the browser first
 - Access to an object storage bucket (AWS S3 or DigitalOcean Spaces) for the backend sections
 
@@ -55,7 +55,7 @@ All the terminal output in this post comes from real runs on Terraform 1.15.8, u
 }
 ```
 
-Every `plan` compares three things: your configuration, the state file, and the real objects the provider can see. State is the link in the middle. It is keyed by **resource address** (`aws_instance.web`, `module.network.aws_vpc.main`), so almost every problem in this post comes down to one of two questions: which address points at which real object, and which state file holds that address.
+By default, every `plan` compares three things: your configuration, the state file, and the real objects the provider can see. State is the link in the middle. It is keyed by **resource address** (`aws_instance.web`, `module.network.aws_vpc.main`), so almost every problem in this post comes down to one of two questions: which address points at which real object, and which state file holds that address.
 
 You can see the addresses in your state at any time:
 
@@ -124,7 +124,7 @@ Now the removal is a normal change that goes through `plan`:
 The plan says exactly what will happen, your reviewer sees it, and there is no window where the configuration and the state disagree. Once the change is applied everywhere, you can delete the `removed` block. If you leave `destroy` out (it defaults to `true`), the block becomes a way to destroy a resource on purpose, which is also useful, just not here.
 
 :::tip
-Before any state change, take a copy: `terraform state pull > backup.tfstate`. It costs nothing and turns a bad afternoon into a two-minute restore. Plain `terraform state push backup.tfstate` refuses ("cannot import state with serial 3 over newer state with serial 4"), because the backup is older than the current state, so the restore is `terraform state push -force backup.tfstate`. Check twice before you use `-force`.
+Before any state change, take a copy: `terraform state pull > backup.tfstate`. It costs nothing and gives you a way back. Restoring it after another change is not a plain push: in our run `terraform state push backup.tfstate` refused with "cannot import state with serial 3 over newer state with serial 4". `terraform state push -force backup.tfstate` overwrites the current state and skips both the serial and the lineage checks, so treat it as an exception: take a fresh backup of the current state first, and remember it restores Terraform's records, not the infrastructure.
 :::
 
 ## Rename or move a resource inside a project
@@ -157,7 +157,7 @@ moved {
 
 No destroy, no create, just a move that anyone can read in the pull request. `moved` blocks also handle the moves that are painful by hand: pulling resources into a module (`from = aws_s3_bucket.logs`, `to = module.logging.aws_s3_bucket.this`), or switching from `count` to `for_each` (`from = aws_instance.web[0]`, `to = aws_instance.web["primary"]`).
 
-A `moved` block is cheap to keep. If other people or modules consume your code, leave it in for a release or two so their state catches up.
+A `moved` block is cheap to keep. In a reusable module, keep it for good: consumers can skip versions, and a removed `moved` block turns their upgrade into a destroy and recreate. In a root configuration you can delete it once every state that uses the configuration has applied the move.
 
 ### The old way: terraform state mv
 
@@ -173,7 +173,7 @@ A `moved` block is cheap to keep. If other people or modules consume your code, 
 }
 ```
 
-It works, and for a quick fix on your own sandbox it is fine. The problem is the same as `state rm`: it changes shared state immediately, outside review, and the code change that goes with it has to land separately. In a team, prefer `moved`.
+Here we undid the rename from the previous section: after applying the `moved` block, we renamed the block back to `web`, deleted the `moved` block, and moved the state to match. It works, and for a quick fix on your own sandbox it is fine. The problem is the same as `state rm`: it changes shared state immediately, outside review, and the code change that goes with it has to land separately. In a team, prefer `moved`. Both `state rm` and `state mv` accept `-dry-run` if you want to see what they would touch first.
 
 ## Move resources to another project
 
@@ -207,11 +207,11 @@ resource "aws_instance" "web" {
 }
 ```
 
-Apply the target first, then the source. The target's plan shows `1 to import`, and if your resource block does not match the real object, the plan shows the differences before anything changes. You can also run `terraform plan -generate-config-out=generated.tf` to have Terraform write a starting resource block from the real object. Both changes go through plan and review, and at no point does anyone edit a state file.
+Apply the source first, so the object is only ever managed by one project, then the target. Make sure nobody runs either project in between. The target's plan shows `1 to import`, and if your resource block does not match the real object, the plan shows the differences before anything changes. If you would rather not write the resource block by hand, leave it out, keep only the `import` block, and run `terraform plan -generate-config-out=generated.tf` (to a file that does not exist yet): Terraform writes a starting block from the real object. Both changes go through plan and review, and at no point does anyone edit a state file.
 
 ### The fallback: move between state files directly
 
-Some resources cannot be imported, and sometimes you need to move dozens at once. `terraform state mv` can write to a different state file. With a remote backend, pull both states to local files, move the resource, and push them back:
+Some resources cannot be imported, and sometimes you need to move dozens at once. `terraform state mv` can write to a different state file. It only moves state, so move the configuration in the same change: delete the resource block from the source, add it to the target, and fix any references. With a remote backend, pull both states to local files, move the resource, and push them back:
 
 ```bash
 # in the source project
@@ -243,11 +243,11 @@ Here is the core of it on two local projects:
 }
 ```
 
-Nobody else should run Terraform against either project while you do this, and you should keep the backups from the tip above. It works, but it is the one method in this post with no plan to check before the change happens.
+In this run the target configuration already contained the `terraform_data.web` block, which is why its plan shows no changes. Nobody else should run Terraform against either project while you do this, and you should keep the backups from the tip above. Like `state rm` and `state mv` inside one project, it changes state without a plan, so check both plans right after.
 
 ## Set up a remote backend, with Terraform itself
 
-State in a local `terraform.tfstate` file works for one person on one laptop. The moment a second person or a CI job runs Terraform, you need a **remote backend**: shared storage with locking, so two applies can never write the same state at once.
+State in a local `terraform.tfstate` file works for one person on one laptop. The moment a second person or a CI job runs Terraform, you need a **remote backend** with locking turned on for every writer, so two applies cannot write the same state at once. Not every backend locks, and on S3 it is opt-in, so check that yours does.
 
 The classic chicken-and-egg problem: you want Terraform to create the bucket that will hold Terraform's state. The answer is two steps.
 
@@ -325,7 +325,7 @@ For years, locking on the S3 backend meant a separate DynamoDB table with a `Loc
 }
 ```
 
-If you are migrating an existing backend, you can set both `use_lockfile = true` and `dynamodb_table` for a while, so older Terraform versions and newer ones take locks the other respects. Once everyone runs 1.11 or later, drop the table.
+If you are migrating an existing backend, you can set both `use_lockfile = true` and `dynamodb_table` for a while. A client with both settings takes both locks, so it excludes old clients that only know DynamoDB and new ones that only use the lock file. Retire the table only when every writer (people and CI jobs) has `use_lockfile` enabled, has permission to create and delete the `.tflock` object, and nothing depends on DynamoDB any more.
 
 ### The "all attributes must be indexed" error
 
@@ -389,9 +389,9 @@ For a lock table, the rule is short: one attribute, `LockID` of type `S`, as the
 
 No, for three reasons that each matter on their own:
 
-1. **State holds secrets in plain text.** Database passwords, generated keys, and anything marked `sensitive` are redacted in plan output but stored readable in state. A state file in Git is a credential in Git, forever, in every clone and every fork.
+1. **State can hold secrets in plain text.** Database passwords, generated keys, and values marked `sensitive` are redacted in plan output, but `sensitive` does not keep them out of state. (Newer ephemeral values and write-only arguments do, where a provider supports them.) A state file in Git is a credential in Git, forever, in every clone and every fork.
 2. **Git cannot lock.** Two people who run `apply` from their own checkouts each write a different state. The next merge picks one, and Terraform loses track of whatever the other one created.
-3. **State changes on every apply.** Committing it makes every infrastructure change a merge conflict waiting to happen.
+3. **State changes whenever an apply changes something.** Committing it makes every infrastructure change a merge conflict waiting to happen.
 
 What belongs where:
 
@@ -401,8 +401,11 @@ What belongs where:
 *.tfstate.*
 .terraform/
 crash.log
-# only if your .tfvars files hold secrets; commit a non-secret example instead
+# saved plans can contain sensitive values: save them as *.tfplan
+*.tfplan
+# only if your variable files hold secrets; commit a non-secret example instead
 *.tfvars
+*.tfvars.json
 ```
 
 Commit `.terraform.lock.hcl`, though. It pins the exact provider versions and checksums, so everyone and every CI run use the same provider build. And if state already made it into your history, rotating the secrets in it matters more than rewriting the history, because every existing clone still has the old file.
@@ -411,13 +414,13 @@ Where state should live is a bigger question than a backend block: who is allowe
 
 ## Summary
 
-| You want to | Use | Instead of |
-|---|---|---|
-| Stop managing a resource, keep it running | `removed` with `destroy = false` | `terraform state rm` |
-| Rename a resource or move it into a module | `moved` block | `terraform state mv` |
-| Move a resource to another project | `removed` in the source, `import` in the target | pulling, editing and pushing state files |
-| Start using a remote backend | bootstrap the bucket, then `terraform init -migrate-state` | copying state files by hand |
-| Lock state on S3 or Spaces | `use_lockfile = true` | a DynamoDB table |
-| Keep state safe | a private, versioned bucket | committing `.tfstate` to Git |
+| You want to                                | Use                                                        | Instead of                               |
+| ------------------------------------------ | ---------------------------------------------------------- | ---------------------------------------- |
+| Stop managing a resource, keep it running  | `removed` with `destroy = false`                           | `terraform state rm`                     |
+| Rename a resource or move it into a module | `moved` block                                              | `terraform state mv`                     |
+| Move a resource to another project         | `removed` in the source, `import` in the target            | pulling, editing and pushing state files |
+| Start using a remote backend               | bootstrap the bucket, then `terraform init -migrate-state` | copying state files by hand              |
+| Lock state on S3 or Spaces                 | `use_lockfile = true`                                      | a DynamoDB table                         |
+| Keep state safe                            | a private, versioned bucket                                | committing `.tfstate` to Git             |
 
 The pattern behind all of it: prefer changes that go through `plan`. The config blocks (`removed`, `moved`, `import`) turn state surgery into reviewable code, and the CLI commands are there for the rare case where that is not possible. If you want to go further with the language itself, [Terraform variables, loops and outputs](/posts/terraform-variables-loops-and-outputs) covers the rest, and the [Terraform terminal simulator](/games/terraform-terminal-simulator) lets you practice `init`, `plan`, `apply` and `state list` in the browser.
