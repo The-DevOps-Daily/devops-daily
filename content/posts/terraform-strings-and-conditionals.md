@@ -417,4 +417,4 @@ Almost every Terraform expression question reduces to one of these: interpolate 
 
 The two that save the most time in practice are `try()` for values that might not exist and `one()` for resources that might not exist. Both replace a conditional that would otherwise be wrong in some edge case.
 
-For more Terraform, we have written about [running Terraform for a specific resource only](/posts/i-would-like-to-run-terraform-only-for-a-specific-resource), [removing a resource from state](/posts/how-can-i-remove-a-resource-from-terraform-state) and [Terraform best practices](/posts/terraform-best-practices).
+For more Terraform, we have written about [running Terraform for a specific resource only](/posts/i-would-like-to-run-terraform-only-for-a-specific-resource), [removing a resource from state](/posts/terraform-state-remove-move-migrate-backend) and [Terraform best practices](/posts/terraform-best-practices).

@@ -39,3 +39,9 @@
 /posts/use-aws-account-id-variable /posts/terraform-variables-loops-and-outputs 301
 /roadmaps/junior /roadmap/junior 301
 /roadmaps/devsecops /roadmap/devsecops 301
+# Thin Terraform state posts consolidated into one post (Sep 2026)
+/posts/how-can-i-remove-a-resource-from-terraform-state /posts/terraform-state-remove-move-migrate-backend 301
+/posts/migrate-terraform-state /posts/terraform-state-remove-move-migrate-backend 301
+/posts/initial-setup-of-terraform-backend-using-terraform /posts/terraform-state-remove-move-migrate-backend 301
+/posts/should-i-commit-tfstate-files-to-git /posts/terraform-state-remove-move-migrate-backend 301
+/posts/terraform-dynamodb-all-attributes-must-be-indexed /posts/terraform-state-remove-move-migrate-backend 301

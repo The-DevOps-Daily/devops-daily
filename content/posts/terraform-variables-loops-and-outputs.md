@@ -267,7 +267,7 @@ The same pattern applies to [module](/posts/organize-terraform-modules-multiple-
 terraform output -json db_password | jq -r    # -json bypasses redaction
 ```
 
-Or, inside the configuration, wrap with `nonsensitive()` when you can justify that the derived value is safe. The redaction is a guardrail against accidental shoulder-surfing and CI logs, not encryption: anyone with state access can read the value, which is one more reason state files [do not belong in git](/posts/should-i-commit-tfstate-files-to-git).
+Or, inside the configuration, wrap with `nonsensitive()` when you can justify that the derived value is safe. The redaction is a guardrail against accidental shoulder-surfing and CI logs, not encryption: anyone with state access can read the value, which is one more reason state files [do not belong in git](/posts/terraform-state-remove-move-migrate-backend#should-tfstate-go-in-git).
 
 ## Two errors that are not about your syntax
 
