@@ -45,3 +45,11 @@
 /posts/initial-setup-of-terraform-backend-using-terraform /posts/terraform-state-remove-move-migrate-backend 301
 /posts/should-i-commit-tfstate-files-to-git /posts/terraform-state-remove-move-migrate-backend 301
 /posts/terraform-dynamodb-all-attributes-must-be-indexed /posts/terraform-state-remove-move-migrate-backend 301
+# Thin Terraform module posts consolidated into one post (Sep 2026)
+/posts/modules-output-from-for-each /posts/terraform-module-outputs-inputs-and-sources 301
+/posts/reference-resource-terraform-module /posts/terraform-module-outputs-inputs-and-sources 301
+/posts/resource-as-variable-in-module /posts/terraform-module-outputs-inputs-and-sources 301
+/posts/terraform-modules-git-branch /posts/terraform-module-outputs-inputs-and-sources 301
+/posts/refactoring-modules-error-provider-configuration-not-present /posts/terraform-module-outputs-inputs-and-sources 301
+/posts/terraform-module-output-as-input-another-module /posts/terraform-module-outputs-inputs-and-sources 301
+/posts/terraform-output-field-from-module /posts/terraform-module-outputs-inputs-and-sources 301
