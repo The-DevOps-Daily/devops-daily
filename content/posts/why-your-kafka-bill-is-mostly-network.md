@@ -219,7 +219,7 @@ Applying the levers that fit most production clusters (KIP-392 for the three con
   ],
   "series": [
     { "name": "Before", "color": "#f43f5e" },
-    { "name": "After", "color": "#10b981" }
+    { "name": "After", "color": "#38bdf8" }
   ]
 }
 ```

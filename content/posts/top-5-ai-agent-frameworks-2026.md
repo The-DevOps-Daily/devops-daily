@@ -84,7 +84,7 @@ Collected on 11 August 2026 from `api.github.com/repos/<owner>/<repo>` and `api.
   ],
   "series": [
     { "name": "ranked", "color": "#f59e0b" },
-    { "name": "not ranked", "color": "#52525b" }
+    { "name": "not ranked", "color": "#71717a" }
   ]
 }
 ```

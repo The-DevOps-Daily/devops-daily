@@ -233,3 +233,16 @@ export const CHART_COLORS = ['#10b981', '#38bdf8', '#f59e0b', '#f472b6', '#a78bf
 export function seriesColor(index: number): string {
   return CHART_COLORS[index % CHART_COLORS.length];
 }
+
+/**
+ * Bar colors by series name, in the order the series first appear in the
+ * rows. A color set in `spec.series` wins; the palette fills the rest.
+ */
+export function barSeriesColors(spec: ChartSpec): Map<string, string> {
+  const overrides = new Map<string, string>();
+  for (const s of (spec.series ?? []) as Array<{ name?: string; color?: string }>) {
+    if (s?.name && typeof s.color === 'string') overrides.set(s.name, s.color);
+  }
+  const names = [...new Set((spec.rows ?? []).map((r) => r.series).filter(Boolean))] as string[];
+  return new Map(names.map((name, i) => [name, overrides.get(name) ?? seriesColor(i)]));
+}

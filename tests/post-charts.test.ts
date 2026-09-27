@@ -11,6 +11,8 @@ import {
   wrapChartLabel,
   median,
   percentile,
+  barSeriesColors,
+  seriesColor,
 } from '@/lib/post-charts';
 
 const BAR_SPEC = {
@@ -186,6 +188,30 @@ describe('stricter spec validation (2026-08 upgrade)', () => {
         })
       )
     ).toBeNull();
+  });
+});
+
+describe('barSeriesColors', () => {
+  it('uses the colors set in spec.series and the palette for the rest', () => {
+    const spec = parseChartSpec(
+      JSON.stringify({
+        type: 'bar',
+        rows: [
+          { label: 'a', value: 1, series: 'Before' },
+          { label: 'b', value: 2, series: 'After' },
+          { label: 'c', value: 3, series: 'Other' },
+        ],
+        series: [
+          { name: 'After', color: '#38bdf8' },
+          { name: 'Before', color: '#f43f5e' },
+        ],
+      })
+    )!;
+    expect([...barSeriesColors(spec)]).toEqual([
+      ['Before', '#f43f5e'],
+      ['After', '#38bdf8'],
+      ['Other', seriesColor(2)],
+    ]);
   });
 });
 

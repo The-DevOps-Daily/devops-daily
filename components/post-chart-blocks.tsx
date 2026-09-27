@@ -20,6 +20,7 @@ import {
   median,
   percentile,
   seriesColor,
+  barSeriesColors,
 } from '@/lib/post-charts';
 
 /* ------------------------------------------------------------------ */
@@ -60,9 +61,8 @@ function BarChart({ spec }: { spec: ChartSpec }) {
   const zeroX = xPos(0);
   const hasNegative = rawValues.some((v) => v < 0);
 
-  const seriesNames = [...new Set(rows.map((r) => r.series).filter(Boolean))] as string[];
-  const colorFor = (row: BarRow) =>
-    row.series ? seriesColor(seriesNames.indexOf(row.series)) : seriesColor(0);
+  const colors = barSeriesColors(spec);
+  const colorFor = (row: BarRow) => (row.series && colors.get(row.series)) || seriesColor(0);
 
   return (
     <svg
@@ -393,8 +393,7 @@ function Legend({ spec }: { spec: ChartSpec }) {
   // them.
   let items: Array<{ name: string; color: string; dash?: string }> = [];
   if (spec.type === 'bar') {
-    const names = [...new Set((spec.rows ?? []).map((r) => r.series).filter(Boolean))] as string[];
-    items = names.map((name, i) => ({ name, color: seriesColor(i) }));
+    items = [...barSeriesColors(spec)].map(([name, color]) => ({ name, color }));
   } else if (spec.series) {
     const series = spec.series as Array<{ name?: string; color?: string; dash?: string }>;
     items = series

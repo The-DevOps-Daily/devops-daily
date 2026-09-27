@@ -95,7 +95,7 @@ Mostly, yes. Even after this increase, Hetzner remains dramatically cheaper than
   ],
   "series": [
     { "name": "Hetzner before", "color": "#9ca3af" },
-    { "name": "Hetzner now", "color": "#f59e0b" },
+    { "name": "Hetzner now", "color": "#ef4444" },
     { "name": "DigitalOcean", "color": "#0080ff" },
     { "name": "AWS", "color": "#ff9900" }
   ]
