@@ -1,12 +1,12 @@
 ---
 title: 'The No-Backend Backend: Neon Data API, RLS and 27 Attacks'
-excerpt: 'A team task board with no server code: static React, Neon Auth, and the Neon Data API with row-level security as the only guard. A signed-in attacker tried 27 ways in. What held, the four mistakes that would have let her through, and the 15-minute gap.'
+excerpt: 'A team task board with no server code: static React, Neon Auth, and the Neon Data API with row-level security as the only guard. A signed-in attacker tried 27 ways in. What held, the four mistakes we tried, and the 15-minute gap.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2026-09-25'
 publishedAt: '2026-09-25T09:00:00Z'
-updatedAt: '2026-09-25T09:00:00Z'
+updatedAt: '2026-09-27T09:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
@@ -26,7 +26,7 @@ We built a multi-tenant team task board with no backend. The browser loads stati
 
 Then we gave a second team's owner, eve, a valid account and a script, and had her try 25 ways into the first team, plus two tries from the wrong role inside it: crafted filters, embedded joins, aggregate counts, forged tokens, `alg: none`, a token signed with her own key, bulk updates, upserts over the other team's ids. **All 27 were refused.** We then broke the security layer four realistic ways, one at a time. Three of them let specific attacks through, and the suite caught each one. The fourth, a sloppy `WITH CHECK (true)`, did nothing on its own, because a second layer stopped it.
 
-The one thing the policies could not stop was time. **A member removed from a team kept reading its data for fifteen and a half minutes**, the life of the token they already held plus about thirty seconds. That one has a fix. In our latency run its median cost was under a millisecond for reads and writes and about 5 ms for the RPC.
+The one thing the policies could not stop was time. **A member removed from a team kept reading its data for fifteen and a half minutes**, the life of the token they already held plus about thirty seconds. That one has a fix.
 
 ```github
 The-DevOps-Daily/neon-data-api-rls
@@ -57,6 +57,7 @@ Here, three managed pieces replace it:
 ```diagram
 {
   "type": "flow",
+  "title": "One request, no server code",
   "nodes": [
     {
       "label": "Browser",
@@ -66,19 +67,19 @@ Here, three managed pieces replace it:
     },
     {
       "label": "Neon Auth",
-      "sub": "sign in, token with the team",
+      "sub": "signs the team token",
       "icon": "lock",
       "tone": "violet"
     },
     {
       "label": "Data API",
-      "sub": "verifies the token, runs as authenticated",
+      "sub": "checks the token",
       "icon": "net",
       "tone": "blue"
     },
     {
       "label": "Postgres",
-      "sub": "policies read auth.organization_id()",
+      "sub": "RLS picks the rows",
       "icon": "database",
       "tone": "green"
     }
@@ -123,9 +124,9 @@ create policy tasks_delete on tasks for delete
   );
 ```
 
-If you read the RLS starter post, this is the same shape as its `tenant_id = current_tenant()`. The difference is where the tenant comes from. There, the application server wrote it into a session setting before each query, and a bug in that server could set it wrong. Here there is no server; the tenant arrives in a token that Neon Auth signed and the Data API verified.
+If you read [our earlier RLS post](/posts/postgres-row-level-security-multi-tenant), this is the same shape as its `tenant_id = current_tenant()`. The difference is where the tenant comes from. There, the application server wrote it into a session setting before each query, and a bug in that server could set it wrong. Here there is no server; the tenant arrives in a token that Neon Auth signed and the Data API verified.
 
-The primary key is `(org_id, id)` for the reason the starter gives: with a globally unique id, a failed insert could tell eve that an id exists in another team. Scoped to the tenant, her copy of an id lands in her own team.
+The primary key is `(org_id, id)` for the reason that post gives: with a globally unique id, a failed insert could tell eve that an id exists in another team. Scoped to the tenant, her copy of an id lands in her own team.
 
 ## Grants are the wall behind the wall
 
@@ -213,7 +214,7 @@ A test suite that has only ever passed proves little. The break script applies o
 }
 ```
 
-**`WITH CHECK (true)` on its own let nothing through.** This is the mistake the RLS starter post warns about, and with a server in front it would let a client write into any tenant. Here the client cannot choose `org_id` at all, so the weak policy had nothing to wave through. The column grants caught it.
+**`WITH CHECK (true)` on its own let nothing through.** This is the mistake our earlier RLS post warns about, and with a server in front it would let a client write into any tenant. Here the client cannot choose `org_id` at all, so the weak policy had nothing to wave through. The column grants caught it.
 
 **The same policy plus table-wide grants opened it.** The Data API setup offers to grant `SELECT, INSERT, UPDATE, DELETE` on every table in `public` to `authenticated`. That is convenient, and it is exactly what turned a harmless mistake into eve inserting tasks into Acme. If you take the default grants, your policies are the only wall, and every `WITH CHECK` has to be right.
 
@@ -244,7 +245,7 @@ The revocation script signs bob in, removes him from Acme through Neon Auth, and
 }
 ```
 
-Right after the removal, bob's request for a new token fails with HTTP 500. The token he already holds does not notice: it still reads Acme's tasks and comments, calls the RPC, and writes a new task (the fourth task in the list is the probe it wrote a line earlier). We then followed task reads to the end: they kept working for the rest of its 900-second life, and past it. The last read it served was 28 seconds after its `exp` by our client's clock, and the next check two seconds later was refused. Writes and the RPC were checked right after the removal, not followed to the end. That looks like leeway for clock skew; we did not measure the verifier's setting or the offset between the clocks. If "removed from the team" has to mean "cannot touch the team's data", fifteen and a half minutes is a long time.
+Right after the removal, bob's request for a new token fails with HTTP 500. The token he already holds does not notice: it still reads Acme's tasks and comments, calls the RPC, and writes a new task (the fourth task in the list is the probe it wrote a line earlier). Task reads kept working for the rest of the token's 900-second life and 28 seconds past its `exp` by our client's clock; the next check, two seconds later, was refused. The extra seconds look like leeway for clock skew, but we did not measure the verifier's setting. We checked writes and the RPC right after the removal, not to the end. If "removed from the team" has to mean "cannot touch the team's data", fifteen and a half minutes is a long time.
 
 The fix is to ask a second question in every policy: is this user still a member right now? Neon Auth keeps memberships in `neon_auth.member`, which the `authenticated` role cannot read, so a `security definer` function looks it up:
 
@@ -260,7 +261,7 @@ alter policy tasks_read on tasks
   using (org_id = auth.organization_id() and (select current_org_role()) is not null);
 ```
 
-Wrapping the call in `(select ...)` lets Postgres evaluate it once per statement instead of once per row; a statement that involves two policies still does two lookups. The delete policy reads the role from the table as well, though we did not test a demotion. The RPC needs the same condition in its `WHERE` clause, because policies do not apply inside it.
+Wrapping the call in `(select ...)` lets Postgres evaluate it once per statement instead of once per row; a statement that involves two policies still does two lookups. The delete policy reads the role from the table as well. The RPC needs the same condition in its `WHERE` clause, because policies do not apply inside it.
 
 With it on, the same test, every path refused the moment bob was removed:
 
@@ -282,81 +283,20 @@ With it on, the same test, every path refused the moment bob was removed:
 }
 ```
 
-All 27 attacks still hold with it on. The cost, in one run of each:
+All 27 attacks still hold with it on.
 
-```chart
-{
-  "type": "bar",
-  "title": "Request time at p50, token only against strict",
-  "unit": "ms",
-  "caption": "100 requests of each kind, one at a time and interleaved, from a client about 40 ms from the Data API endpoint. Strict adds a Neon Auth membership lookup to every policy, and two to the RPC. One run of each, about 16 minutes apart, so network drift may be part of the difference.",
-  "rows": [
-    {
-      "label": "TCP connect",
-      "value": 39.7,
-      "series": "Token only"
-    },
-    {
-      "label": "TCP connect",
-      "value": 38.1,
-      "series": "Strict"
-    },
-    {
-      "label": "GET /tasks",
-      "value": 41.4,
-      "series": "Token only"
-    },
-    {
-      "label": "GET /tasks",
-      "value": 41.8,
-      "series": "Strict"
-    },
-    {
-      "label": "RPC",
-      "value": 41.3,
-      "series": "Token only"
-    },
-    {
-      "label": "RPC",
-      "value": 46.4,
-      "series": "Strict"
-    },
-    {
-      "label": "PATCH",
-      "value": 44.1,
-      "series": "Token only"
-    },
-    {
-      "label": "PATCH",
-      "value": 45.0,
-      "series": "Strict"
-    }
-  ],
-  "series": [
-    {
-      "name": "Token only",
-      "color": "#0080ff"
-    },
-    {
-      "name": "Strict",
-      "color": "#10b981"
-    }
-  ]
-}
-```
-
-Reads and writes stayed within a millisecond of the token-only run. The RPC, which does two lookups, was 5 ms slower at p50. The two runs were about sixteen minutes apart, so some of that may be the network; we would not quote it as more than a few milliseconds. We would turn it on for anything where removal matters, which is most things. It lives in the repository as `db/optional/live_membership.sql`, applied with `npm run strict`.
+Reads and writes stayed within a millisecond of the token-only run (the table under [What it costs](#h2-what-it-costs) has both runs). The RPC, which does two lookups, was 5 ms slower at p50. The two runs were about sixteen minutes apart, so some of that may be the network; we would not quote it as more than a few milliseconds. We would turn it on for anything where removal matters, which is most things. It lives in the repository as `db/optional/live_membership.sql`, applied with `npm run strict`.
 
 ## What it costs
 
-**Per request, about one network round trip.** 100 requests of each kind, one at a time and interleaved so they shared the same network conditions, from a client about 40 ms from the endpoint, with strict mode off:
+**Per request, about one network round trip.** 100 requests of each kind, one at a time and interleaved so they shared the same network conditions, from a client about 40 ms from the Data API. The plain p50 and p95 columns are token only; the strict columns are the same requests with strict mode on, in a run about sixteen minutes later:
 
-| | p50 | p95 |
-|---|---|---|
-| TCP connect (one network round trip) | 39.7 ms | 42.8 ms |
-| `GET /tasks` with embedded comment counts | 41.4 ms | 46.0 ms |
-| `POST /rpc/org_summary` | 41.3 ms | 43.2 ms |
-| `PATCH` one task | 44.1 ms | 47.2 ms |
+| Request, in ms                   | p50  | p50 strict | p95  | p95 strict |
+| -------------------------------- | ---- | ---------- | ---- | ---------- |
+| TCP connect (one round trip)     | 39.7 | 38.1       | 42.8 | 42.9       |
+| `GET /tasks` with comment counts | 41.4 | 41.8       | 46.0 | 46.1       |
+| `POST /rpc/org_summary`          | 41.3 | 46.4       | 43.2 | 50.6       |
+| `PATCH` one task                 | 44.1 | 45.0       | 47.2 | 48.4       |
 
 A read with embedded counts and an RPC took a millisecond or two more than a bare TCP connect to the same address; a write took about four. We did not isolate how much of that is JWT verification, the policies or the query, and the tables are tiny: a policy that has to join or scan grows with the data, and this does not measure that.
 
@@ -372,7 +312,6 @@ A read with embedded counts and an RPC took a millisecond or two more than a bar
 - **An empty result is the refusal.** A delete that RLS blocks returns `200` and zero rows, not an error. The app checks the returned rows and tells the user.
 - **Switching teams means a new token.** The client caches the token until shortly before it expires, and the cached one names the old team. Our app reloads after switching.
 - **Scripts must look like a browser to Neon Auth.** Sign-in from Node fails with `Origin header is required` until you send one, and Neon Auth rate-limits sign-ins, so the test harness reuses sessions.
-- **Listing your own invitations returned 403 for our unverified test users.** In our app that call failed and, because we loaded it alongside the team list with `Promise.all`, took the team list down with it. Each call now fails on its own.
 
 ## What we could not conclude
 
@@ -389,6 +328,6 @@ A read with embedded counts and an RPC took a millisecond or two more than a bar
 2. **Grant columns, not tables.** It is what turned our weakest policy into a non-event. Skip the table-wide default grants unless you are sure every `WITH CHECK` is right.
 3. **Treat every `security definer` function as a policy of its own.** Put the tenant filter in it, revoke it from `public`, and test it with a hostile token.
 4. **Check live membership in the policies.** A lookup in Neon Auth's member table, once per statement, closes a fifteen-minute gap.
-5. **Keep a hostile client in the repository.** Twenty-seven requests take seconds to run. The break script, which checks that each mistake opens exactly the attacks it should, is what shows they would notice.
+5. **Keep a hostile client in the repository.** Twenty-seven requests take seconds to run. The break script checks that each mistake opens exactly the attacks it should, which proves the suite catches real mistakes.
 
 The schema, the attacks, the breaks and every recorded run are in the repository.
