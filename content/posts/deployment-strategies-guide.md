@@ -1,12 +1,12 @@
 ---
-title: 'Deployment Strategies: Blue-Green, Canary, and Rolling Deployments Explained'
-excerpt: 'Learn how to deploy applications safely using blue-green, canary, and rolling deployment strategies. Understand the theory, trade-offs, and decision-making behind each approach.'
+title: 'Deployment Strategies: Blue-Green vs Canary vs Rolling'
+excerpt: 'Blue-green, canary and rolling deployments side by side: how each ships a release, how fast it rolls back, what it costs, and when to use which one.'
 category:
   name: 'DevOps'
   slug: 'devops'
 date: '2025-11-17'
 publishedAt: '2025-11-17T09:00:00Z'
-updatedAt: '2026-03-01T09:00:00Z'
+updatedAt: '2026-09-27T09:00:00Z'
 readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
@@ -28,6 +28,16 @@ Deploying a new version of your application shouldn't feel like jumping off a cl
 The way you deploy your application matters just as much as what you deploy. Different deployment strategies offer varying levels of risk, speed, and resource requirements. Some let you switch between versions instantly, while others gradually introduce changes to minimize impact. Understanding these strategies helps you choose the right approach for your specific needs.
 
 **TLDR**: This guide covers three core deployment strategies. Blue-green deployments run two identical environments and switch traffic between them for instant rollbacks. Canary deployments gradually roll out changes to a small subset of users before full deployment. Rolling deployments update instances one at a time to maintain availability throughout the process. Each strategy has distinct trade-offs in terms of cost, complexity, and risk mitigation.
+
+| Trade-off                   | Blue-green                                                         | Canary                                                                       | Rolling                                                |
+| --------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------ |
+| How a release ships         | Switch all traffic from the old environment to the new one at once | Send a small share of traffic to the new version, then raise it step by step | Replace instances with the new version a few at a time |
+| Rollback                    | Instant: switch traffic back                                       | Fast: route the canary share back to the stable version                      | Slow: roll the updated instances back the same way     |
+| Extra capacity              | Double, while both environments run                                | A few extra instances for the canary                                         | About one extra instance per batch                     |
+| Users a bad release reaches | Everyone, until you switch back                                    | Only the canary share                                                        | The share of traffic on updated instances              |
+| What it needs               | A traffic switch, and database changes both versions can use       | Traffic splitting and metrics split by version                               | Old and new versions that can run side by side         |
+
+To watch each strategy route traffic and roll back, try the [Deployment Strategies Simulator](/games/deployment-strategies).
 
 ## Why Deployment Strategy Matters
 
@@ -220,6 +230,7 @@ Many teams find rolling deployments too slow for their needs and move to blue-gr
 No single deployment strategy fits all situations. The right choice depends on your application characteristics, organizational constraints, and risk tolerance.
 
 Consider blue-green deployment when:
+
 - You need instant rollback capability
 - Regulatory or compliance requirements demand clear audit trails
 - Your application requires extensive integration testing before user exposure
@@ -227,6 +238,7 @@ Consider blue-green deployment when:
 - You have complex database migrations that benefit from testing against production data before cutover
 
 Consider canary deployment when:
+
 - You have high traffic volumes that provide quick statistical validation
 - Strong monitoring and observability infrastructure is in place
 - You need to validate changes with real production traffic
@@ -234,6 +246,7 @@ Consider canary deployment when:
 - Your team has experience with progressive delivery practices
 
 Consider rolling deployment when:
+
 - Resource efficiency is a priority
 - Your application handles backward compatibility well
 - You need a straightforward approach with good platform support
