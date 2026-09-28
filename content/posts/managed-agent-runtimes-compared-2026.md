@@ -6,7 +6,7 @@ category:
   slug: 'cloud'
 date: '2026-09-28'
 publishedAt: '2026-09-28T09:00:00Z'
-updatedAt: '2026-09-28T09:00:00Z'
+updatedAt: '2026-09-28T15:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
@@ -159,6 +159,8 @@ permissions:
     - tool: bash
       action: ask
 ```
+
+One catch from our hands-on run: `doctl` 1.175.0 still asks for a real Anthropic API key when you create a `claude-code` session, even with the inference fields above, and which models your DigitalOcean inference key may use depends on your account's tier. [Issue to Pull Request with DigitalOcean Managed Agents](/posts/issue-to-pull-request-digitalocean-managed-agents) walks through the setup we got working, with OpenCode and DeepSeek V4 Pro.
 
 **Price.** $0.044 per vCPU-hour and $0.0095 per GB-hour of peak memory, the lowest vCPU list price in this comparison. Action Gateway calls cost $0.10 per 1,000, and the Exa search tool $10.10 per 1,000.
 
