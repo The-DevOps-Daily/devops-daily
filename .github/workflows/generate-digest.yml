@@ -33,7 +33,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Generate digest
-        run: pnpm devops-daily:generate-news:no-ai
+        run: pnpm devops-daily:generate-news
 
       - name: Generate digest images
         run: pnpm images:all

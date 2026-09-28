@@ -10,8 +10,7 @@ import { normalizeItems } from './utils/normalize.js';
 import { deduplicate } from './utils/dedupe.js';
 import { applyLimits } from './utils/limit.js';
 import { isWithinLastDays, getIsoWeekAndYear } from './utils/date.js';
-import { classifyItems } from './ai/classify.js';
-import { summarizeItems } from './ai/summarize.js';
+import { classifyItems } from './pipeline/classify.js';
 import { assembleDigest } from './pipeline/assemble.js';
 import { generateMarkdown } from './pipeline/template.js';
 import { validateMarkdown, checkDuplicateUrls } from './pipeline/validate.js';
@@ -20,11 +19,6 @@ import { printStats } from './pipeline/assemble.js';
 async function main() {
   console.log('🚀 DevOps Daily Digest Generator\n');
 
-  // Check for --skip-ai flag
-  const skipAI = process.argv.includes('--skip-ai');
-  if (skipAI) {
-    console.log('ℹ️  Running with --skip-ai flag (using keyword-based classification)\n');
-  }
   // --force allows replacing a digest file that already exists
   const force = process.argv.includes('--force');
 
@@ -68,10 +62,8 @@ async function main() {
     }
 
     // 7. Classify items
-    console.log(
-      skipAI ? '🔤 Classifying items with keywords...' : '🤖 Classifying items with AI...'
-    );
-    allItems = await classifyItems(allItems, 10, skipAI);
+    console.log('🔤 Classifying items with keywords...');
+    allItems = classifyItems(allItems);
     console.log(`  ✓ Classified ${allItems.length} items\n`);
 
     // 8. Apply limits
@@ -79,15 +71,7 @@ async function main() {
     allItems = applyLimits(allItems, 4, 12);
     console.log(`  ✓ ${allItems.length} items after limits\n`);
 
-    // 9. Summarize items
-    if (skipAI) {
-      console.log('✍️  Using excerpts (skipping AI summarization)...');
-      console.log(`  ✓ ${allItems.length} items ready\n`);
-    } else {
-      console.log('✍️  Summarizing items with AI...');
-      allItems = await summarizeItems(allItems, 10);
-      console.log(`  ✓ Summarized ${allItems.length} items\n`);
-    }
+    // 9. Summaries are the item excerpts, set during classification
 
     // 10. Assemble digest
     console.log('📝 Assembling digest...');

@@ -8,7 +8,7 @@ This script automatically:
 
 - Crawls 250+ DevOps RSS feeds and web sources
 - Extracts, normalizes, and deduplicates content
-- Uses AI (OpenAI) to classify and summarize items
+- Classifies items by keyword and uses their excerpts as summaries
 - Groups content by category
 - Generates markdown digest files
 
@@ -24,11 +24,8 @@ scripts/devops-daily/
 │   ├── fetch.ts                   # HTTP fetching with retry
 │   ├── rss.ts                     # RSS feed crawler
 │   └── web.ts                     # Web scraper with RSS discovery
-├── ai/
-│   ├── openai.ts                  # OpenAI client wrapper
-│   ├── classify.ts                # Content classification
-│   └── summarize.ts               # Content summarization
 ├── pipeline/
+│   ├── classify.ts                # Keyword-based classification
 │   ├── assemble.ts                # Digest assembly
 │   ├── validate.ts                # Markdown validation
 │   └── template.ts                # Markdown generation
@@ -50,19 +47,11 @@ scripts/devops-daily/
 Dependencies are already installed in the main project. If you need to install them separately:
 
 ```bash
-pnpm add rss-parser axios js-yaml openai cheerio date-fns gray-matter
+pnpm add rss-parser axios js-yaml cheerio date-fns gray-matter
 pnpm add -D @types/js-yaml
 ```
 
 ## Configuration
-
-### Environment Variables
-
-For local development, create a `.env` file in the project root with:
-
-```bash
-OPENAI_API_KEY=sk-...              # Your OpenAI API key (required)
-```
 
 ### Sources Configuration
 
@@ -86,34 +75,23 @@ Generate a digest manually:
 ```bash
 # Make sure you have Node.js 20+ installed
 pnpm devops-daily:generate-news
-
-# Or skip AI and use keyword-based classification (faster, no OpenAI API needed)
-pnpm devops-daily:generate-news:no-ai
 ```
 
-**Standard mode (with AI):**
+The script will:
 
 1. Crawl all configured sources
 2. Process and filter items from the last 7 days
-3. Use OpenAI to classify and summarize
-4. Generate markdown file in `content/news/YYYY/week-N.md`
-5. Validate the generated file
-
-**No-AI mode (`--skip-ai` flag):**
-
-1. Crawl all configured sources
-2. Process and filter items from the last 7 days
-3. Use keyword-based classification (no API calls)
-4. Use original excerpts instead of AI summaries
+3. Classify items by keyword and drop event announcements
+4. Use each item's excerpt as its summary
 5. Generate markdown file in `content/news/YYYY/week-N.md`
 6. Validate the generated file
+
+It makes no AI or other paid API calls.
 
 The script **only generates the markdown file** - it does not commit or create PRs. You can then:
 
 - Manually commit and push the file
 - Or let the GitHub Action handle it automatically
-
-**Note:** Use `--skip-ai` mode if you encounter OpenAI API errors or want faster local development.
 
 ### Run via GitHub Actions
 
@@ -131,11 +109,7 @@ The GitHub Action will:
 
 ### Required GitHub Secrets
 
-Add this secret in your repository settings:
-
-- `OPENAI_API_KEY` - Your OpenAI API key
-
-The `GITHUB_TOKEN` is automatically provided by GitHub Actions.
+None beyond the `GITHUB_TOKEN` that GitHub Actions provides automatically.
 
 ## Output
 
@@ -195,7 +169,7 @@ To maintain quality:
 - Max 4 items per source
 - Max 12 items per category
 - Only items from last 7 days
-- AI filters out marketing content
+- Event announcements are filtered out
 
 ## Validation
 
@@ -212,25 +186,9 @@ GitHub Actions also run:
 - `markdownlint` - Markdown style checking
 - `link-check` - URL validation
 
-## AI Processing
+## Classification
 
-### Classification
-
-Uses gpt-5-nano-2025-08-07 to:
-
-- Determine if content is technical and actionable
-- Assign to appropriate category
-- Extract relevant tags
-- Generate initial summary
-
-### Summarization
-
-Uses gpt-5-nano-2025-08-07 to:
-
-- Create compact technical summaries
-- Explain what happened and why it matters
-- Highlight breaking changes for releases
-- Maximum 3 lines per item
+`pipeline/classify.ts` matches keywords in each item's title and excerpt to pick a category, drops event announcements, and uses the first 200 characters of the excerpt as the summary. Items that match no keyword keep the category from `sources.yaml`, or `Misc`.
 
 ## Workflow
 
@@ -268,17 +226,12 @@ Uses gpt-5-nano-2025-08-07 to:
          │
          ▼
 ┌─────────────────┐
-│ AI Classify     │
+│ Classify        │
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
 │ Apply Limits    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ AI Summarize    │
 └────────┬────────┘
          │
          ▼
@@ -324,14 +277,6 @@ After the script completes, GitHub Actions handles:
 
 ## Troubleshooting
 
-### API Rate Limits
-
-If you hit OpenAI rate limits:
-
-- Reduce batch size in `ai/classify.ts` and `ai/summarize.ts`
-- Increase delay between batches
-- Use a higher tier API key
-
 ### RSS Feed Errors
 
 If a feed fails:
@@ -344,7 +289,6 @@ If a feed fails:
 
 If the GitHub Action fails:
 
-- Check that `OPENAI_API_KEY` secret is set correctly
 - Verify the action has `contents: write` and `pull-requests: write` permissions
 - Check action logs for specific error messages
 
@@ -366,7 +310,7 @@ Edit `data/sources.yaml`:
 
 Update category list in:
 
-- `ai/classify.ts` - Classification prompt
+- `pipeline/classify.ts` - Category keywords
 - `pipeline/assemble.ts` - Category grouping
 - `data/news.schema.json` - Validation schema
 
@@ -379,10 +323,6 @@ Edit `pipeline/template.ts` to modify markdown output format.
 Run a test locally:
 
 ```bash
-# Set your OpenAI API key
-export OPENAI_API_KEY=sk-...
-
-# Run the script
 pnpm devops-daily:generate-news
 ```
 
