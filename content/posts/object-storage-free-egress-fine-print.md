@@ -1,6 +1,6 @@
 ---
 title: 'Free Egress Has Fine Print: S3 vs R2, B2, Wasabi and More'
-excerpt: 'Serving 50 TB a month costs $4,379 on S3 at list price and $62 on R2. But the cheapest number in our comparison breaks its provider's own terms. Nine storage offerings, four workloads, and the fine print that changes the answer, with a calculator you can run yourself.'
+excerpt: 'Serving 50 TB a month costs $4,379 on S3 at list price and $62 on R2. But the cheapest number in our comparison is outside the free-egress policy of the provider that offers it. Nine storage offerings, four workloads, and the fine print that changes the answer, with a calculator you can run yourself.'
 category:
   name: 'FinOps'
   slug: 'finops'
