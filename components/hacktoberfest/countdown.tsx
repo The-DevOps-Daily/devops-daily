@@ -25,7 +25,9 @@ export function HacktoberfestCountdown() {
     return (
       <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border bg-card text-sm">
         <Calendar className="w-4 h-4 text-muted-foreground" />
-        <span className="text-muted-foreground">Hacktoberfest 2026 has ended. See you next year!</span>
+        <span className="text-muted-foreground">
+          The 7-day challenge has ended. All tasks stay open, and PRs are welcome all year.
+        </span>
       </div>
     );
   }

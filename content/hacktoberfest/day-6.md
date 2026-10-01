@@ -42,10 +42,12 @@ Open the file and fix the issue. Keep your change focused - one fix per PR.
 
 ```bash
 git checkout -b hacktoberfest/fix-description
-git add .
+git add content/posts/the-file-you-fixed.md
 git commit -m "Fix: [brief description of what you fixed]"
 git push origin hacktoberfest/fix-description
 ```
+
+Use the path of the file you changed. Adding only that file keeps unrelated changes out of your PR.
 
 In your PR description, include:
 - What you found

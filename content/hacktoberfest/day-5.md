@@ -39,18 +39,22 @@ Open the markdown file and add a tip section. You can add it inline where it's r
 
 Or add a new section if your tip is more detailed:
 
-```markdown
+````markdown
 ## Common Gotcha: Volume Permissions
 
 If you're running containers as a non-root user, you might hit
-permission issues with mounted volumes. The fix is to set the
-user ID in your Dockerfile:
+permission issues with bind-mounted host folders. One fix is to
+create the user with the same UID that owns the folder on the host:
 
-\`\`\`dockerfile
+```dockerfile
 RUN useradd -u 1000 appuser
 USER appuser
-\`\`\`
 ```
+
+This only fixes the permissions when the host folder is owned by
+UID 1000. Run `ls -ln` on the host to see the owner's UID, and use
+that number instead if it is different.
+````
 
 ### 3. Preview locally
 

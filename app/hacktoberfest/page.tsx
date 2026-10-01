@@ -13,6 +13,7 @@ import {
   Clock,
   Award,
   Megaphone,
+  Terminal,
   type LucideIcon,
 } from 'lucide-react';
 import { Github } from '@/components/icons/social-icons';
@@ -69,7 +70,7 @@ interface ChallengeDay {
 const CHALLENGE_DAYS: ChallengeDay[] = [
   {
     day: 1,
-    title: 'Add Yourself',
+    title: 'Add Yourself to the Experts Directory',
     description:
       'Add your profile to the DevOps Experts directory. Get a profile page with a backlink to your site.',
     difficulty: 'Beginner',
@@ -78,7 +79,7 @@ const CHALLENGE_DAYS: ChallengeDay[] = [
   },
   {
     day: 2,
-    title: 'Add Your Favorite Tool',
+    title: 'Add Your Favorite DevOps Tool',
     description:
       'Add a DevOps tool you love to the Toolbox page. Name, description, link, and category.',
     difficulty: 'Beginner',
@@ -97,7 +98,8 @@ const CHALLENGE_DAYS: ChallengeDay[] = [
   {
     day: 4,
     title: 'Add a Flashcard',
-    description: 'Add 1-2 flashcards to an existing flashcard set. Front/back format in JSON.',
+    description:
+      'Add 1-2 flashcards to an existing flashcard set. Each card is a JSON object with an id, front, back, category, and tags.',
     difficulty: 'Beginner',
     time: '5 min',
     icon: BookOpen,
@@ -113,7 +115,7 @@ const CHALLENGE_DAYS: ChallengeDay[] = [
   },
   {
     day: 6,
-    title: 'Find & Fix Something',
+    title: 'Find and Fix Something',
     description:
       'Browse the site and fix a typo, broken link, outdated info, or formatting issue you spot.',
     difficulty: 'Intermediate',
@@ -124,14 +126,14 @@ const CHALLENGE_DAYS: ChallengeDay[] = [
     day: 7,
     title: 'Share Your Stack',
     description:
-      'Write a short profile of your DevOps setup. What tools you use, how they fit together, and why.',
+      'Add a My Stack section to your Day 1 expert profile. What tools you use, how they fit together, and why.',
     difficulty: 'Intermediate',
     time: '15 min',
     icon: Heart,
   },
   {
     day: 8,
-    title: 'Bonus: Build Something',
+    title: 'Build Something',
     description:
       'Go big! Create a new quiz, write a tool comparison, build a checklist, or contribute a game/simulator.',
     difficulty: 'Advanced',
@@ -145,26 +147,31 @@ const FAQ_ITEMS = [
   {
     question: 'Do I need to know React or Next.js to participate?',
     answer:
-      'No! Most contributions are JSON or Markdown files. You just need to know how to fork a repo and submit a pull request.',
+      'No. Most tasks are a small JSON or Markdown edit. You just need to know how to fork a repo and submit a pull request.',
   },
   {
     question: 'Do I have to complete all 7 days?',
     answer: 'No, you can pick whichever days interest you. Each day is an independent contribution.',
   },
   {
-    question: 'Do these PRs count toward Hacktoberfest?',
+    question: 'Do these PRs count toward Hacktoberfest 2026?',
     answer:
-      'Yes! As long as the PRs are accepted and the repo has the hacktoberfest topic, they count toward your Hacktoberfest total.',
+      'No. In 2026, pull requests no longer count toward Hacktoberfest rewards. You earn Hacktoberfest stickers at Fests, livestreams, and DEV Challenges instead. PRs to DevOps Daily are still real open source contributions, and they count toward the DevOps Daily rewards on this page.',
+  },
+  {
+    question: 'Is this an official Hacktoberfest event?',
+    answer:
+      'No. It is a DevOps Daily challenge that runs during Hacktoberfest. The official event is at hacktoberfest.com.',
   },
   {
     question: 'When does the challenge start?',
     answer:
-      'October 1, 2026. But you can start exploring the repo and setting up your environment anytime before that.',
+      'It started on October 1, 2026 and runs for 7 days. All tasks stay open after October 7, so you can start at any time.',
   },
   {
     question: 'What is the Experts Directory?',
     answer:
-      'A page on DevOps Daily where you can list yourself as a DevOps expert with your bio, skills, and links. It gives you a public profile with a backlink to your own site.',
+      'A page on DevOps Daily where you can list yourself as a DevOps expert with your bio, specialties, and a link to your website. It gives you a public profile with a backlink to your own site.',
   },
   {
     question: 'Can I contribute outside of the 7-day challenge?',
@@ -177,43 +184,51 @@ const TEMPLATES = [
   {
     day: 'Day 1',
     title: 'Expert Profile',
-    file: 'content/experts/your-name.json',
+    file: 'content/experts/your-name.md',
+    template: `---
+name: 'Your Name'
+slug: 'your-name'
+title: 'DevOps Engineer'
+bio: 'Short bio about yourself.'
+avatar: '/images/experts/your-name.jpg'
+specialties:
+  - Docker
+  - Kubernetes
+  - Terraform
+availability: 'Open to freelance work'
+location: 'City, Country'
+website: 'https://yoursite.com'
+---
+
+## About Me
+
+A few sentences about your work.`,
+  },
+  {
+    day: 'Day 3',
+    title: 'Quiz Question',
+    file: 'content/quizzes/<quiz-name>.json',
     template: `{
-  "name": "Your Name",
-  "title": "DevOps Engineer",
-  "bio": "Short bio about yourself...",
-  "avatar": "/images/experts/your-name.jpg",
-  "skills": ["Docker", "Kubernetes", "Terraform"],
-  "location": "City, Country",
-  "website": "https://yoursite.com",
-  "github": "your-github",
-  "linkedin": "your-linkedin",
-  "available": true
+  "id": "default-network-driver",
+  "title": "Default Network Driver",
+  "description": "Which network driver does Docker use when you do not pass --network?",
+  "options": ["bridge", "host", "overlay", "none"],
+  "correctAnswer": 0,
+  "explanation": "bridge is the default. It gives containers a private network on the host.",
+  "difficulty": "beginner",
+  "points": 10
 }`,
   },
   {
     day: 'Day 4',
-    title: 'Quiz Question',
-    file: 'content/quizzes/<quiz-name>.json',
-    template: `{
-  "question": "What command lists running containers?",
-  "options": [
-    "docker ps",
-    "docker list",
-    "docker show",
-    "docker containers"
-  ],
-  "correct": 0,
-  "explanation": "docker ps lists running containers. Add -a to see all."
-}`,
-  },
-  {
-    day: 'Day 5',
     title: 'Flashcard',
     file: 'content/flashcards/<set-name>.json',
     template: `{
-  "front": "What is a Kubernetes Pod?",
-  "back": "The smallest deployable unit in Kubernetes. A pod wraps one or more containers that share storage and network."
+  "id": "job-definition",
+  "front": "What is a Kubernetes Job?",
+  "back": "A Job runs Pods until a set number of them finish successfully. Use it for one-off tasks such as database migrations.",
+  "category": "Workloads",
+  "tags": ["job", "batch", "workloads"]
 }`,
   },
 ];
@@ -307,8 +322,8 @@ export default function HacktoberfestPage() {
             </h1>
 
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-              Contribute to open source in 7 days. No coding required, just JSON and Markdown.
-              Each day takes 5-15 minutes and earns you a Hacktoberfest PR.
+              Contribute to open source in 7 days. No coding required: most tasks are a small JSON
+              or Markdown edit. Each day takes 5-15 minutes and ends with a pull request.
             </p>
 
             <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-10 font-mono text-sm text-muted-foreground tabular-nums">
@@ -356,12 +371,32 @@ export default function HacktoberfestPage() {
       </div>
 
       <div className="container mx-auto px-4">
+        <aside className="max-w-3xl mx-auto rounded-md border border-amber-500/30 bg-amber-500/5 p-4">
+          <h2 className="mb-2 font-semibold text-sm">Hacktoberfest is different in 2026</h2>
+          <p className="text-sm text-muted-foreground">
+            Pull requests no longer count toward Hacktoberfest rewards. MLH and DEV run
+            Hacktoberfest 2026 with DigitalOcean, and you earn stickers at Fests, livestreams, and
+            DEV Challenges. This 7-day challenge is a separate DevOps Daily event. The PRs you open
+            here are real open source contributions, but they do not count toward Hacktoberfest
+            swag.{' '}
+            <a
+              href="https://hacktoberfest.com/questions/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              Read the Hacktoberfest FAQ
+            </a>
+            .
+          </p>
+        </aside>
+
         <SectionSeparator command="ls /hacktoberfest/requirements" />
 
         {/* What You'll Need */}
         <section className="my-12 max-w-3xl mx-auto">
           <SectionHeader label="what you need" title="What You Need" />
-          <div className="grid gap-px sm:grid-cols-3 bg-border border rounded-md overflow-hidden">
+          <div className="grid gap-px sm:grid-cols-2 bg-border border rounded-md overflow-hidden">
             <div className="bg-card p-5">
               <Github className="w-5 h-5 text-primary mb-3" strokeWidth={1.5} />
               <h3 className="font-semibold text-sm mb-1">GitHub Account</h3>
@@ -374,6 +409,13 @@ export default function HacktoberfestPage() {
               <h3 className="font-semibold text-sm mb-1">Text Editor</h3>
               <p className="text-xs text-muted-foreground">
                 VS Code, Vim, or any editor for JSON/Markdown
+              </p>
+            </div>
+            <div className="bg-card p-5">
+              <Terminal className="w-5 h-5 text-primary mb-3" strokeWidth={1.5} />
+              <h3 className="font-semibold text-sm mb-1">Node.js 22 + pnpm 10</h3>
+              <p className="text-xs text-muted-foreground">
+                Node.js 22.13.1 or newer (below 25) and pnpm 10, to preview the site locally
               </p>
             </div>
             <div className="bg-card p-5">
@@ -439,7 +481,7 @@ export default function HacktoberfestPage() {
           <SectionHeader
             label="challenges"
             title="The Challenge"
-            description="One task per day, each building on your familiarity with the project. All contributions are JSON or Markdown edits."
+            description="One task per day, each building on your familiarity with the project. Most tasks are a small JSON or Markdown edit."
           />
 
           {(() => {
@@ -541,9 +583,10 @@ export default function HacktoberfestPage() {
                 <GitPullRequest className="w-5 h-5 text-primary" strokeWidth={1.5} />
               </div>
               <div>
-                <h3 className="font-semibold text-sm mb-1">Hacktoberfest PRs</h3>
+                <h3 className="font-semibold text-sm mb-1">A Real Open Source PR</h3>
                 <p className="text-xs text-muted-foreground">
-                  Each day counts toward your Hacktoberfest badge or tree.
+                  Each merged PR shows on your GitHub profile. It does not count toward
+                  Hacktoberfest 2026 rewards.
                 </p>
               </div>
             </div>
@@ -695,7 +738,7 @@ It's beginner-friendly and takes just 5-15 minutes per day. Check it out: devops
           <SectionHeader
             label="templates"
             title="Contribution Templates"
-            description="Copy these templates to get started. Each one shows the exact JSON structure you need."
+            description="Copy these templates to get started. Each one shows the exact file structure you need."
           />
           <div className="grid gap-px md:grid-cols-3 bg-border border rounded-md overflow-hidden">
             {TEMPLATES.map((tmpl) => (
@@ -741,7 +784,7 @@ It's beginner-friendly and takes just 5-15 minutes per day. Check it out: devops
         <section className="my-16 max-w-2xl mx-auto text-center">
           <h2 className="text-2xl font-bold mb-4">Ready to contribute?</h2>
           <p className="text-muted-foreground mb-6">
-            Star the repo, fork it, and pick your first challenge. See you in October.
+            Star the repo, fork it, and pick your first challenge. All tasks stay open.
           </p>
           <Button asChild size="lg">
             <a
