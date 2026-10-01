@@ -19,25 +19,31 @@ Add yourself to the [DevOps Experts Directory](/experts). You'll get a public pr
 
 ### 1. Create your profile file
 
-Create a new JSON file at `content/experts/your-name.json`:
+Create a new Markdown file at `content/experts/your-name.md` with frontmatter:
 
-```json
-{
-  "name": "Your Name",
-  "slug": "your-name",
-  "title": "DevOps Engineer",
-  "bio": "A short bio about yourself and your experience...",
-  "avatar": "/images/experts/your-name.jpg",
-  "specialties": ["Docker", "Kubernetes", "Terraform", "CI/CD"],
-  "location": "City, Country",
-  "availableForHire": true,
-  "links": {
-    "website": "https://yoursite.com",
-    "github": "https://github.com/your-username",
-    "linkedin": "https://linkedin.com/in/your-profile",
-    "twitter": "https://x.com/your-handle"
-  }
-}
+```markdown
+---
+name: 'Your Name'
+slug: 'your-name'
+title: 'DevOps Engineer'
+bio: 'A short bio about yourself and your experience...'
+avatar: '/images/experts/your-name.jpg'
+specialties:
+  - Docker
+  - Kubernetes
+  - Terraform
+  - CI/CD
+location: 'City, Country'
+availableForHire: true
+website: 'https://yoursite.com'
+github: 'https://github.com/your-username'
+linkedin: 'https://linkedin.com/in/your-profile'
+twitter: 'https://x.com/your-handle'
+---
+
+## About Me
+
+Your bio content here...
 ```
 
 ### 2. Add your avatar
@@ -55,7 +61,7 @@ pnpm dev
 
 ```bash
 git checkout -b hacktoberfest/add-your-name
-git add content/experts/your-name.json public/images/experts/your-name.jpg
+git add content/experts/your-name.md public/images/experts/your-name.jpg
 git commit -m "Add [Your Name] to experts directory"
 git push origin hacktoberfest/add-your-name
 ```
