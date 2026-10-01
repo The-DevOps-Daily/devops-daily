@@ -6,7 +6,7 @@
   "icon": "Container",
   "difficulty": "beginner",
   "estimatedTime": "12 minutes",
-  "cardCount": 15,
+  "cardCount": 17,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-600",
@@ -117,6 +117,20 @@
       "back": "'docker exec' runs a command in a running container. Commonly used with -it flags to open an interactive shell for debugging or maintenance tasks.",
       "category": "Commands",
       "tags": ["exec", "cli", "debugging"]
+    },
+    {
+      "id": "dockerignore",
+      "front": "What is a .dockerignore file for?",
+      "back": "A .dockerignore file lists paths excluded from the build context sent to the Docker daemon. Ignoring things like .git, node_modules, and local .env files speeds up builds, keeps images smaller, and avoids leaking secrets into layers via COPY.",
+      "category": "Building Images",
+      "tags": ["dockerignore", "build-context", "dockerfile"]
+    },
+    {
+      "id": "docker-system-prune",
+      "front": "What does 'docker system prune' remove?",
+      "back": "It removes stopped containers, unused networks, dangling images, and unused build cache. Add -a to remove all unused images, and --volumes to also remove unused volumes (which can delete data, so use with care).",
+      "category": "Commands",
+      "tags": ["prune", "cleanup", "cli"]
     }
   ]
 }
