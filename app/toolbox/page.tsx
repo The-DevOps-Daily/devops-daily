@@ -433,6 +433,17 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'Lazydocker',
+    description: 'A simple terminal UI for both docker and docker-compose, written in Go.',
+    href: 'https://github.com/jesseduffield/lazydocker',
+    category: 'containers',
+    icon: Terminal,
+    badges: [
+      { text: 'Docker', variant: 'outline' },
+      { text: 'Open Source', variant: 'secondary' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
