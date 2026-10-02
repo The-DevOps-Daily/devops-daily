@@ -4,7 +4,7 @@
   "description": "Master the terminal through real-world system administration scenarios covering file management, process control, and troubleshooting",
   "category": "Linux",
   "icon": "Terminal",
-  "totalPoints": 187,
+  "totalPoints": 202,
   "theme": {
     "primaryColor": "gray",
     "gradientFrom": "from-gray-600",
@@ -14,7 +14,7 @@
     "estimatedTime": "25-30 minutes",
     "difficultyLevels": {
       "beginner": 4,
-      "intermediate": 5,
+      "intermediate": 6,
       "advanced": 3
     },
     "createdDate": "2024-08-01"
@@ -235,6 +235,21 @@
       "hint": "Production scripts need error handling, logging, and conditional logic. Which approach includes all these elements and follows scripting best practices?",
       "difficulty": "advanced",
       "points": 25
+    },
+    {
+      "id": "linux-check-listening-ports",
+      "title": "Checking Listening Ports",
+      "description": "Which command-line tool is commonly used on modern Linux distributions to inspect socket statistics and display active listening ports along with their corresponding process names?",
+      "options": [
+        "netstat -an",
+        "ss -tulpn",
+        "lsof -port",
+        "ps aux --ports"
+      ],
+      "correctAnswer": 1,
+      "explanation": "ss (socket statistics) is the modern, faster replacement for netstat. The flags -tulpn display TCP/UDP connections, listening sockets, and the numeric PIDs/program names holding them.",
+      "difficulty": "intermediate",
+      "points": 15
     }
   ]
 }
