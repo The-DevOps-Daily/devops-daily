@@ -433,6 +433,19 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'Task',
+    description: 'A modern task runner and simpler alternative to Makefiles, built in Go.',
+    href: 'https://taskfile.dev',
+    category: 'cicd',
+    icon: Workflow,
+    isPopular: false,
+    isAffiliate: false,
+    badges: [
+      { text: 'Automation', variant: 'outline' },
+      { text: 'CLI', variant: 'secondary' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
