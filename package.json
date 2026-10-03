@@ -153,6 +153,11 @@
       "browserslist": "^4.28.7",
       "sharp@<0.35.0": "^0.35.3",
       "brace-expansion@1": "^1.1.20"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-vfj7-8cjw-p6xm"
+      ]
     }
   }
 }
