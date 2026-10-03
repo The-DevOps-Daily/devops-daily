@@ -433,6 +433,19 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'FinOps Beacon',
+    description:
+      'Azure cost reviews, recommendations and decisions; scans do not change infrastructure. Sample demo. Plans from $49/month; 14-day Business trial, no card.',
+    href: 'https://finopsbeacon.com/azure',
+    category: 'cloud',
+    icon: CloudCog,
+    badges: [
+      { text: 'Azure', variant: 'outline' },
+      { text: 'FinOps', variant: 'secondary' },
+      { text: 'Paid SaaS', variant: 'default' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
