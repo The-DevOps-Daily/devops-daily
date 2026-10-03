@@ -1,6 +1,6 @@
 ---
 title: 'A Repo per Agent: What Cloudflare Artifacts Changes About Git'
-excerpt: 'Cloudflare Artifacts gives every agent, session or task its own Git repository. We measured why one shared branch falls apart as agents multiply, walked through the Workers API, and priced the pattern so you can decide where it fits.'
+excerpt: 'Cloudflare Artifacts gives every agent, session or task its own Git repository. We measured how push contention grows when agents share one branch, walked through the Workers API, and priced the pattern so you can decide where it fits.'
 category:
   name: 'Git'
   slug: 'git'
@@ -20,15 +20,15 @@ tags:
   - Platform Engineering
 ---
 
-Git was designed for a few hundred people working on one project. It assumes that most changes come from humans, arrive at human speed, and get reviewed by other humans. Coding agents break all three assumptions. A team that runs fifty agents in parallel does not have fifty developers; it has fifty processes that all want to write to the same branch in the same minute.
+Most Git workflows assume that changes come from people, arrive at human speed, and get reviewed by other people. Coding agents break all three assumptions. A team that runs fifty agents in parallel does not have fifty developers; it has fifty processes that may all want to land work in the same minute. When they all push to one branch, they spend much of that time fetching, rebasing and retrying.
 
-On October 1, 2026, Cloudflare put a product in front of that problem: **Artifacts**, a Git-compatible store that you drive from Cloudflare Workers, now in open beta. Its core idea is easy to say and has big consequences: stop sharing one repository between workers, and give each unit of work its own. This post explains what Artifacts is, measures why a shared branch stops working as agents multiply, shows the repo-per-agent pattern in code, and works out what it costs.
+On October 1, 2026, Cloudflare announced new capabilities for **Artifacts**, its Git-compatible store that you drive from Cloudflare Workers, together with a contest to build what comes next on top of it. Artifacts is in open beta on the Workers Paid plan. Its core idea is easy to say and has big consequences: stop sharing one repository between workers, and give each unit of work its own. This post explains what Artifacts is, measures why a shared branch stops working as agents multiply, shows the repo-per-agent pattern in code, and works out what it costs.
 
 ## TL;DR
 
 - Artifacts is a Git-compatible repository store you create and control from a Worker. Any Git client can clone and push with a short-lived bearer token.
 - Cloudflare's own guidance is one repo per unit of autonomous work: 10,000 agents, 10,000 repos. Repos are cheap to create and fork.
-- On a single shared branch, push collisions grow with the square of the agent count. In our test, 40 agents pushing at once produced about 700 rejected pushes.
+- In our local experiment, failed pushes grew roughly with the square of the number of agents sharing one branch: 40 agents produced about 700 failed push attempts.
 - A repo per agent removes the collisions but moves the hard part to merging the work back. Cloudflare left that layer open and is running a contest for it.
 - Pricing: 10,000 operations and 1 GB free per month, then $0.15 per 1,000 operations and $0.50 per GB-month. Each repo is capped at 1 GB.
 
@@ -41,7 +41,7 @@ To follow the code:
 - Git 2.x on the machine that clones and pushes
 - Basic familiarity with Workers bindings and `wrangler.toml`
 
-The push experiment below needs only Git and Bash.
+The push experiment below needs Git, Bash and standard Unix tools (`bc`, `paste`, `sort`).
 
 ## What Artifacts is
 
@@ -49,8 +49,10 @@ An Artifacts **namespace** holds repositories. Each **repository** is a real Git
 
 ```bash
 # Clone and push with a repo-scoped token; nothing is written to the remote URL
-git -c http.extraHeader="Authorization: Bearer $ARTIFACTS_TOKEN" clone "$ARTIFACTS_REMOTE"
-git -c http.extraHeader="Authorization: Bearer $ARTIFACTS_TOKEN" push -u origin main
+git -c http.extraHeader="Authorization: Bearer $ARTIFACTS_TOKEN" clone "$ARTIFACTS_REMOTE" work
+cd work
+# ...edit and commit...
+git -c http.extraHeader="Authorization: Bearer $ARTIFACTS_TOKEN" push origin main
 ```
 
 What makes it different from a hosted Git server is the control plane. A Worker gets a binding with methods to create, import, fork, list and delete repositories, mint read or write tokens with a lifetime in seconds, and read history and files without cloning:
@@ -66,7 +68,7 @@ What makes it different from a hosted Git server is the control plane. A Worker 
 
 A few more pieces make it a platform rather than storage:
 
-- **Workers Builds** can deploy a Worker from an Artifacts repo. Pushes to `main` run the deploy command, and pushes to other branches can produce preview URLs. Only `main` can be the production branch for now.
+- **Workers Builds** can deploy a Worker from an Artifacts repo. Pushes to `main` run the deploy command, and once you enable builds for preview branches, pushes to other branches produce preview URLs. Only `main` can be the production branch for now.
 - **Repository events** (creates, forks, pushes, clones and so on) can be delivered to Workers Queues, so a push can start a test run or a review agent.
 - **Jurisdictions** keep a namespace's data in the US or the EU.
 - **Metrics** per repository: operations, pulls, pushes and error rates.
@@ -97,7 +99,7 @@ Git protects a branch with a compare-and-swap. A push says "move `main` from com
 }
 ```
 
-Agent B now has to fetch, rebase and try again. That is fine for two humans. To see what happens with more writers, we ran a small experiment: N agents each commit one file (no two agents touch the same file, so every rebase succeeds) and push to `main` of one shared repository at the same moment, retrying with `git pull --rebase` until the push lands.
+Agent B now has to fetch, rebase and try again. That is fine for two humans. To see what happens with more writers, we ran a small experiment: N agents each commit one file (no two agents touch the same file, so the work never conflicts), are launched concurrently, and push to `main` of one shared repository, retrying immediately with `git pull --rebase` until the push lands.
 
 ```bash
 #!/usr/bin/env bash
@@ -126,7 +128,7 @@ echo "agents=$N failed_pushes=$total worst_agent_retries=$max commits_on_main=$c
 rm -rf "$W"
 ```
 
-We ran it three times for each size on a 4-core Raspberry Pi 4 with Git 2.39 and a bare repository on local disk:
+We ran it three times for each size on a 4-core Raspberry Pi 4 with Git 2.39 and a bare repository on local disk. The counter is failed push attempts; the script does not record why each one failed.
 
 ```terminal
 {
@@ -147,7 +149,7 @@ We ran it three times for each size on a 4-core Raspberry Pi 4 with Git 2.39 and
 ```chart
 {
   "type": "line",
-  "title": "Rejected pushes when N agents share one branch",
+  "title": "Failed push attempts when N agents share one branch",
   "x": ["5 agents", "10 agents", "20 agents", "40 agents"],
   "series": [
     { "name": "Measured (median of 3 runs)", "data": [10, 45, 190, 711], "color": "#f59e0b" },
@@ -157,11 +159,11 @@ We ran it three times for each size on a 4-core Raspberry Pi 4 with Git 2.39 and
 }
 ```
 
-The numbers follow N(N-1)/2 almost exactly: every push that lands invalidates every other agent's pending push, so the last agent retries N-1 times. At 40 agents it falls slightly below the formula because when several pushes land while an agent is rebasing, the agent catches up on all of them in one retry. Extrapolate to 1,000 agents and the worst case is about half a million rejected pushes for 1,000 commits.
+A simple model explains the shape. If the agents move in rounds and only one push wins each round, every other pending push fails, and the total is N(N-1)/2. Our results sit close to that model. They fall below it at 40 agents, which is what you expect when an agent fetches several new commits in one rebase and skips some rounds. The model gives 499,500 failed pushes at 1,000 agents; we did not measure that scale.
 
-This test is the best case. The repository was on local disk, so a retry cost milliseconds. Against a hosted server, every retry is a network round trip, and the API calls an agent fleet makes around Git count against limits too: GitHub documents a secondary limit of 80 content-generating REST requests per minute and 500 per hour, and 100 concurrent requests. And because no two agents touched the same file, nothing ever failed to rebase. Real agents editing the same code would add merge conflicts that a retry loop cannot fix.
+Keep the limits of this test in mind. It is a conflict-free workload on local disk with immediate retries; backoff and spread-out arrival times would lower the numbers, and a hosted server adds a network round trip to every attempt. Real agents editing the same code would also hit merge conflicts that a retry loop cannot fix. And the work around Git has its own budgets: GitHub generally allows up to 80 content-generating requests per minute and 500 per hour across its API and web interface, and REST and GraphQL share a limit of 100 concurrent requests. Those limits apply to things like creating branches, pull requests and comments, not to the Git pushes counted here.
 
-The usual answer is to give each agent its own branch in the shared repo. That removes the race on `main`, but the repository is still one shared object for permissions, rate limits, clone size and blast radius. A token that can push to the repo can usually push to every unprotected branch in it.
+The usual answer is to give each agent its own branch in the shared repo. That removes the race on `main`, but the repository is still one shared object for permissions, clone size and blast radius. A token that can push to the repo can usually push to every unprotected branch in it.
 
 ## The repo-per-agent pattern
 
@@ -195,7 +197,7 @@ binding = "ARTIFACTS"
 namespace = "agents"
 ```
 
-Then fork the baseline per session and return a scoped, short-lived token:
+Then fork the baseline per session and return a scoped, short-lived token. This assumes a repo named `baseline` already exists in the namespace with your reviewed code on `main` (create it with `create` and push, or `import` it from GitHub), and that you ran `wrangler types` so `Env` includes the binding and the secret:
 
 ```typescript
 // src/index.ts: one fork and one 15-minute write token per agent session
@@ -209,17 +211,28 @@ export default {
     }
     const { agent, session } = (await request.json()) as { agent: string; session: string };
 
-    // Name repos by agent and session so two sessions can never collide
-    const name = `${agent}-${session}`;
+    // Keep names readable but unique: validate the inputs and add a random suffix
+    if (!/^[a-z0-9]{1,24}$/.test(agent) || !/^[a-z0-9]{1,24}$/.test(session)) {
+      return new Response('agent and session must be lowercase letters and digits', {
+        status: 400,
+      });
+    }
+    const name = `${agent}-${session}-${crypto.randomUUID().slice(0, 8)}`;
 
     // `using` disposes the repo handle when the block ends, as the binding requires
     using baseline = await env.ARTIFACTS.get('baseline');
     const fork = await baseline.fork(name, { defaultBranchOnly: true });
 
     using repo = await env.ARTIFACTS.get(name);
-    const credentials = await repo.createToken('write', 900); // 900 s = 15 minutes
+    const token = await repo.createToken('write', 900); // 900 s = 15 minutes
 
-    return Response.json({ remote: fork.remote, credentials });
+    // plaintext is the Git token string; expiresAt tells the agent when to stop
+    return Response.json({
+      name,
+      remote: fork.remote,
+      token: token.plaintext,
+      expiresAt: token.expiresAt,
+    });
   },
 };
 ```
@@ -238,7 +251,7 @@ async function summarize(env: Env, name: string) {
 
 Cloudflare's best-practice notes add three habits worth copying:
 
-1. **Mint the narrowest token for the shortest time.** Read tokens for indexing and review, write tokens only for the agent doing the work.
+1. **Give each token the least it needs, for as little time as possible.** Read tokens for indexing and review, write tokens only for the agent doing the work.
 2. **Fork from a reviewed baseline** instead of copying files into each new repo, so every session starts from the same known state.
 3. **Keep run metadata out of the tree.** Attach prompts, model output and run IDs with `git notes`, so the commit holds the work and the notes hold the context.
 
@@ -259,7 +272,7 @@ None of these are new ideas. What changes is that the per-session repository, it
 
 ## What it costs
 
-Artifacts bills two things. The numbers below are from the pricing page, with billing starting on October 14, 2026:
+Artifacts bills two things. The numbers below are from the pricing page. It lists October 14, 2026 as the day billing starts; the announcement says October 15:
 
 | Dimension                                          | Included each month | Then               |
 | -------------------------------------------------- | ------------------- | ------------------ |
@@ -279,28 +292,28 @@ To size it, assume one agent session costs seven operations: a fork, a clone, th
     { "label": "10,000/day", "value": 313.5 },
     { "label": "100,000/day", "value": 3148.5 }
   ],
-  "caption": "Assumes 7 billable operations per session, 30 days, and the 10,000 free operations a month. Storage not included: with forks deleted after merge, it stays small."
+  "caption": "Assumes 7 billable operations per session, 30 days, and the 10,000 free operations a month. Excludes storage and other Cloudflare charges."
 }
 ```
 
-Storage depends on your repos and how quickly you delete forks. Cloudflare has not documented whether a fork shares objects with its parent or counts its full size, so measure that in the beta before you plan around hundreds of long-lived forks.
+Storage depends on your repos and how quickly you delete forks. It is billed on the average of each day's peak, so deleting a fork stops it from adding up over the month but does not remove that day's peak. Cloudflare has not documented whether a fork shares objects with its parent or counts its full size, so measure that in the beta before you plan around hundreds of long-lived forks.
 
 ## Limits and open questions
 
 Know these before you commit:
 
-- **1 GB per repository** and **32 MB per file**. Monorepos and repos with large binaries do not fit. Account storage is 1 TB by default and can be raised.
+- **1 GB per repository** and **32 MB per file or blob**. A repository above 1 GB, or one with a single file above 32 MB, does not fit. Account storage is 1 TB by default and can be raised.
 - **Rate limits** of 2,000 requests per 10 seconds per namespace for the control plane, and 2,000 Git requests per 10 seconds per repository. Split busy workloads across namespaces.
 - **Open beta.** The API and limits can still change, and it requires the Workers Paid plan.
 - **Production deploys from `main` only** in the Workers Builds integration.
-- **Undocumented so far:** how concurrent pushes to one ref are ordered, whether forks share storage, and the exact semantics of event delivery. Test them yourself before you rely on them.
+- **Undocumented so far:** how concurrent pushes to one ref are ordered, whether forks share storage, and what Artifacts guarantees about publishing events. Queues itself delivers at least once and without ordering guarantees, so make event handlers idempotent. Test the rest before you rely on it.
 
 :::note
-The contest runs until October 14, 2026. Entries need a 5 to 10 minute demo video, open source code under MIT, Apache or BSD, and instructions to run it. The top three teams are flown to Cloudflare Connect in San Francisco, and first place also gets $25,000 in Cloudflare credits. Details are on [Cloudflare's announcement](https://blog.cloudflare.com/next-git-platform-on-cloudflare/).
+The contest runs until October 14, 2026. Entries need a 5 to 10 minute demo video, open source code under MIT, Apache or BSD, and instructions to run it. Up to two members of each of the three winning teams are flown to Cloudflare Connect in San Francisco, and first place also gets $25,000 in Cloudflare credits. Details are on [Cloudflare's announcement](https://blog.cloudflare.com/next-git-platform-on-cloudflare/).
 :::
 
 ## Summary
 
-Shared branches assume few writers. Our experiment shows what happens when that assumption fails: rejected pushes grow with the square of the number of agents, before a single real conflict appears. The fix is not a faster retry loop. It is isolation, and Artifacts makes isolation an API call: fork a reviewed baseline per session, hand the agent a 15-minute token that works on nothing else, and read its work back without cloning.
+Shared branches assume few writers. Our small experiment shows what happens when that assumption fails: with immediate retries, failed pushes grew roughly with the square of the number of agents, before a single real conflict appeared. The fix is not a faster retry loop. It is isolation, and Artifacts makes isolation an API call: fork a reviewed baseline per session, hand the agent a 15-minute token that works on nothing else, and read its work back without cloning.
 
 What Artifacts does not give you is the decision about what merges. Plan that layer first. A single-writer merge queue plus tests is enough to start, and it is the part where your team's judgment matters most. If you want to start small, move one agent workflow, such as dependency updates or test generation, to forks of a baseline and watch the error rate and the bill for a month. The [Artifacts documentation](https://developers.cloudflare.com/artifacts/) covers the binding, tokens and Workers Builds setup.
