@@ -433,6 +433,17 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+  name: 'Supabase',
+  description: 'Open-source backend platform with a Postgres database, authentication, and APIs.',
+  href: 'https://supabase.com/',
+  category: 'database',
+  icon: Database,
+  badges: [
+    { text: 'Postgres', variant: 'outline' },
+    { text: 'Open Source', variant: 'secondary' },
+  ],
+  },
 ];
 
 // Helper to count tools by category
