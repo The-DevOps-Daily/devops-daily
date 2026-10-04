@@ -53,5 +53,23 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=8192
 
+      # Cloudflare Pages refuses a deployment with more than 20,000 files.
+      - name: Count deploy files
+        run: |
+          count=$(find out -type f | wc -l)
+          echo "out/ has $count files (Cloudflare Pages limit: 20,000)"
+          {
+            echo "### Deploy size: $count of 20,000 files"
+            echo '```'
+            find out -type f | awk -F/ '{print $2}' | sort | uniq -c | sort -rn | head -12
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$count" -ge 20000 ]; then
+            echo "::error title=Over the Cloudflare Pages file limit::out/ has $count files; Cloudflare Pages refuses more than 20,000."
+            exit 1
+          elif [ "$count" -ge 19000 ]; then
+            echo "::warning title=Near the Cloudflare Pages file limit::out/ has $count files; Cloudflare Pages refuses more than 20,000."
+          fi
+
       - name: Check for broken links
         run: pnpm check-links
