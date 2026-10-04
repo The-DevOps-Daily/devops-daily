@@ -161,8 +161,8 @@ export default async function HacktoberfestDayPage({ params }: { params: Promise
         <div className="mt-10">
           <NewsletterForm
             source="hacktoberfest_day"
-            headline="Get the weekly newsletter"
-            description="Challenge shoutouts, new guides and simulators, once a week."
+            headline="Liked this challenge?"
+            description="Get one email a week with new guides, simulators and DevOps news. Unsubscribe any time."
           />
         </div>
 

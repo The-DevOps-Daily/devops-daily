@@ -649,8 +649,8 @@ export default function HacktoberfestPage() {
         <section id="newsletter" className="my-12 max-w-2xl mx-auto scroll-mt-20">
           <NewsletterForm
             source="hacktoberfest"
-            headline="Get the shoutouts in your inbox"
-            description="The weekly DevOps Daily newsletter features challenge contributors, plus new guides, simulators and news. One email a week."
+            headline="Keep learning after the challenge"
+            description="One email a week from DevOps Daily: new guides, hands-on simulators and the week's DevOps news, picked for engineers. Unsubscribe any time."
           />
         </section>
 
