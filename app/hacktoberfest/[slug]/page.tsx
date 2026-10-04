@@ -6,6 +6,7 @@ import { BreadcrumbSchema } from '@/components/schema-markup';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Github } from '@/components/icons/social-icons';
+import { NewsletterForm } from '@/components/footer/newsletter-form';
 import { Calendar, Clock, ChevronLeft, ChevronRight, ArrowRight, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
@@ -155,6 +156,14 @@ export default async function HacktoberfestDayPage({ params }: { params: Promise
               Share on LinkedIn
             </a>
           </div>
+        </div>
+
+        <div className="mt-10">
+          <NewsletterForm
+            source="hacktoberfest_day"
+            headline="Get the weekly newsletter"
+            description="Challenge shoutouts, new guides and simulators, once a week."
+          />
         </div>
 
         {/* Navigation */}

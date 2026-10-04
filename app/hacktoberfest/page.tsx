@@ -24,6 +24,7 @@ import { InlineSponsors } from '@/components/inline-sponsors';
 import { HacktoberfestCountdown } from '@/components/hacktoberfest/countdown';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
+import { NewsletterForm } from '@/components/footer/newsletter-form';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -623,7 +624,10 @@ export default function HacktoberfestPage() {
               <div>
                 <h3 className="font-semibold text-sm mb-1">Newsletter Shoutout</h3>
                 <p className="text-xs text-muted-foreground">
-                  Contributors get featured in the DevOps Daily weekly newsletter.
+                  Contributors get featured in the DevOps Daily weekly newsletter.{' '}
+                  <Link href="#newsletter" className="text-primary hover:underline">
+                    Subscribe
+                  </Link>
                 </p>
               </div>
             </div>
@@ -640,6 +644,14 @@ export default function HacktoberfestPage() {
               </div>
             </div>
           </div>
+        </section>
+
+        <section id="newsletter" className="my-12 max-w-2xl mx-auto scroll-mt-20">
+          <NewsletterForm
+            source="hacktoberfest"
+            headline="Get the shoutouts in your inbox"
+            description="The weekly DevOps Daily newsletter features challenge contributors, plus new guides, simulators and news. One email a week."
+          />
         </section>
 
         <SectionSeparator command="cd /local-setup" />
