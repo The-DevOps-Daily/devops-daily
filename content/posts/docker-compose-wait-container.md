@@ -50,6 +50,8 @@ services:
 - **`timeout`**: Maximum time allowed for the health check.
 - **`retries`**: Number of retries before marking the container as unhealthy.
 
+> **Tip:** Add `-h localhost` to the check: `['CMD', 'pg_isready', '-h', 'localhost', '-U', 'postgres']`. On first start, the official Postgres image runs your init scripts against a temporary server that only listens on the Unix socket. A plain `pg_isready` connects over that socket, so it can report healthy before the real server is up, and `app` ends up connecting to a database that is about to restart. Forcing a TCP connection makes the check wait for the real server.
+
 ## Step 2: Use `depends_on`
 
 The `depends_on` option specifies the order in which containers start. For example:
