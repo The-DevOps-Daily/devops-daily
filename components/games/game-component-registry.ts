@@ -57,6 +57,7 @@ import SqlTerminalSimulator from '@/components/games/sql-terminal-simulator';
 import SslTlsHandshakeSimulator from '@/components/games/ssl-tls-handshake-simulator';
 import TcpVsUdpSimulator from '@/components/games/tcp-vs-udp';
 import TerraformTerminalSimulator from '@/components/games/terraform-terminal-simulator';
+import TerraformPuzzle from '@/components/games/terraform-puzzle';
 import UptimeDefender from '@/components/games/uptime-defender';
 import WebhookDeliverySimulator from '@/components/games/webhook-delivery-simulator';
 
@@ -81,6 +82,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'load-balancer-simulator': LoadBalancerSimulator,
   'heroku-style-name-generator': HerokuStyleNameGenerator,
   'incident-commander-simulator': IncidentCommanderSimulator,
+  'terraform-puzzle': TerraformPuzzle,
   'log-aggregation-pipeline-simulator': LogAggregationPipelineSimulator,
   'message-queue-simulator': MessageQueueSimulator,
   'oauth-oidc-flow-simulator': OAuthOidcFlowSimulator,

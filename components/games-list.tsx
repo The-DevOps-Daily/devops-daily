@@ -41,6 +41,7 @@ import {
   Siren,
   FileCode,
   Clock,
+  Puzzle,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -71,6 +72,7 @@ const iconMap: Record<string, LucideIcon> = {
   GitMerge,
   Webhook,
   Siren,
+  Puzzle,
 };
 
 // Serializable game type with icon component

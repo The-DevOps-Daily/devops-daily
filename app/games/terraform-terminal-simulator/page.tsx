@@ -112,6 +112,11 @@ function TerraformEducational() {
         <h4 className="mb-3 text-sm font-semibold">Keep learning</h4>
         <ul className="grid gap-2 text-sm sm:grid-cols-2">
           <li>
+            <Link href="/games/terraform-puzzle" className="text-primary hover:underline">
+              Next: fix broken state in the Terraform State Puzzle
+            </Link>
+          </li>
+          <li>
             <Link href="/guides/introduction-to-terraform" className="text-primary hover:underline">
               Introduction to Terraform guide
             </Link>
