@@ -127,22 +127,22 @@
     "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/typography": "0.5.20",
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/sanitize-html": "^2.16.1",
-    "@vitest/ui": "^5.0.1",
+    "@vitest/ui": "^5.0.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.3.8",
     "fast-glob": "^3.3.3",
     "postcss": "^8.5.28",
     "prettier": "^3.9.9",
-    "sharp": "^0.35.4",
+    "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vite": "8.3.1",
-    "vitest": "^5.0.1"
+    "vite": "8.3.2",
+    "vitest": "^5.0.3"
   },
   "pnpm": {
     "overrides": {
