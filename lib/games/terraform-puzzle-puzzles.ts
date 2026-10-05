@@ -705,6 +705,7 @@ resource "aws_cloudwatch_metric_alarm" "api_5xx" {
   threshold           = 50
   period              = 60
   evaluation_periods  = 2
+  dimensions          = { LoadBalancer = "app/api/50dc6c495c0c9188" }
   alarm_actions       = ["arn:aws:sns:eu-west-1:111122223333:oncall"]
 }
 
@@ -717,6 +718,7 @@ resource "aws_cloudwatch_metric_alarm" "queue_depth" {
   threshold           = 1000
   period              = 300
   evaluation_periods  = 1
+  dimensions          = { QueueName = "orders" }
   alarm_actions       = ["arn:aws:sns:eu-west-1:111122223333:oncall"]
 }
 `),
@@ -1170,8 +1172,8 @@ Successfully removed 1 resource instance(s).
     'Deleting a resource block means "destroy it". To stop managing something and keep it, use a removed block with destroy = false (Terraform 1.7 and later).',
   docs: [
     {
-      title: 'Remove a resource from state (removed block)',
-      href: 'https://developer.hashicorp.com/terraform/language/resources/syntax#removing-resources',
+      title: 'removed block reference',
+      href: 'https://developer.hashicorp.com/terraform/language/block/removed',
     },
     {
       title: 'terraform state rm',
@@ -1207,46 +1209,43 @@ again. For most commands, you can disable locking with the "-lock=false"
 flag, but this is not recommended.
 `);
 
-const CACHE_CREATE = L(`
-  # aws_elasticache_replication_group.sessions will be created
-  + resource "aws_elasticache_replication_group" "sessions" {
-      + arn                  = (known after apply)
-      + description          = "Session store"
-      + engine               = "valkey"
-      + id                   = (known after apply)
-      + node_type            = "cache.t4g.medium"
-      + num_cache_clusters   = 2
-      + replication_group_id = "sessions"
-      + subnet_group_name    = "sessions"
+const WORKER_CREATE = L(`
+  # aws_instance.worker will be created
+  + resource "aws_instance" "worker" {
+      + ami           = "ami-0c1f3e5a7b9d2e4f6"
+      + arn           = (known after apply)
+      + id            = (known after apply)
+      + instance_type = "t4g.medium"
+      + private_ip    = (known after apply)
     }
 `);
 
-const CACHE_PLAN = [
-  'aws_elasticache_subnet_group.sessions: Refreshing state... [id=sessions]',
+const SG_REFRESH = 'aws_security_group.worker: Refreshing state... [id=sg-0d4e5f6a7b8c9d0e1]';
+
+const WORKER_PLAN = [
+  SG_REFRESH,
   '',
   ...SYMBOLS,
   '  + create',
   '',
   'Terraform will perform the following actions:',
   '',
-  ...CACHE_CREATE,
+  ...WORKER_CREATE,
   '',
   'Plan: 1 to add, 0 to change, 0 to destroy.',
 ];
 
-const CACHE_TF = L(`
-resource "aws_elasticache_subnet_group" "sessions" {
-  name       = "sessions"
-  subnet_ids = var.private_subnet_ids
+const WORKER_TF = L(`
+resource "aws_security_group" "worker" {
+  name   = "queue-worker"
+  vpc_id = var.vpc_id
 }
 
-resource "aws_elasticache_replication_group" "sessions" {
-  replication_group_id = "sessions"
-  description          = "Session store"
-  engine               = "valkey"
-  node_type            = "cache.t4g.medium"
-  num_cache_clusters   = 2
-  subnet_group_name    = aws_elasticache_subnet_group.sessions.name
+resource "aws_instance" "worker" {
+  ami                    = "ami-0c1f3e5a7b9d2e4f6"
+  instance_type          = "t4g.medium"
+  subnet_id              = var.private_subnet_id
+  vpc_security_group_ids = [aws_security_group.worker.id]
 }
 `);
 
@@ -1255,7 +1254,7 @@ const staleLock: Puzzle = {
   title: 'The lock that will not go away',
   difficulty: 'Medium',
   story:
-    "Every terraform plan against production fails with a lock error. The state lives in GitLab-managed Terraform state, which is an HTTP backend. Pipeline #4812 was applying a new sessions cache when its runner's spot VM was reclaimed, about 40 minutes ago.",
+    "Every terraform plan against production fails with a lock error. The state lives in GitLab-managed Terraform state, which is an HTTP backend. Pipeline #4812 was adding a queue worker instance when its runner's spot VM was reclaimed, about 40 minutes ago.",
   goal: 'Clear the lock safely, so the team can plan and apply again.',
   files: [
     {
@@ -1272,7 +1271,7 @@ terraform {
 }
 `),
     },
-    { name: 'cache.tf', lines: CACHE_TF },
+    { name: 'worker.tf', lines: WORKER_TF },
   ],
   evidence: [{ id: 'plan', title: 'Plan', command: 'terraform plan', lines: LOCK_ERROR }],
   inspects: [
@@ -1284,7 +1283,7 @@ terraform {
         lines: [
           'Status: failed (runner system failure) at 13:24 UTC.',
           'Runner runner-xq7zk2m9 has been offline since 13:24 UTC: its spot VM was reclaimed.',
-          'Last log line: aws_elasticache_replication_group.sessions: Still creating... [02m10s elapsed]',
+          'Last log line: aws_instance.worker: Still creating... [00m20s elapsed]',
         ],
       },
     },
@@ -1310,9 +1309,9 @@ terraform {
       requires: ['job', 'running'],
       outcome: {
         verdict: 'best',
-        summary: 'The lock is gone. The next plan still wants to create the cache.',
+        summary: 'The lock is gone. The next plan still wants to create the worker.',
         explanation:
-          'force-unlock removes the lock record only; it does not touch the state or any infrastructure. It is safe once you know the holder is dead and nothing else is about to write. Use the exact ID from the error. Then plan before anything else: the killed apply was creating the cache, and the next puzzle is what that left behind.',
+          'force-unlock removes the lock record only; it does not touch the state or any infrastructure. It is safe once you know the holder is dead and nothing else is about to write. Use the exact ID from the error: with an HTTP backend Terraform does not check it, so it is no safety net. Then plan before anything else: the killed apply was creating the worker instance, and the next puzzle is what that left behind.',
         transcripts: [
           {
             id: 'force-unlock',
@@ -1332,7 +1331,7 @@ The state has been unlocked, and Terraform commands should now be able to
 obtain a new lock on the remote state.
 `),
           },
-          { id: 'after-plan', title: 'Plan after', command: 'terraform plan', lines: CACHE_PLAN },
+          { id: 'after-plan', title: 'Plan after', command: 'terraform plan', lines: WORKER_PLAN },
         ],
       },
       unchecked: {
@@ -1358,7 +1357,7 @@ obtain a new lock on the remote state.
             title: 'Apply without lock',
             command: 'terraform apply -lock=false',
             lines: [
-              ...CACHE_PLAN,
+              ...WORKER_PLAN,
               '',
               'Do you want to perform these actions?',
               '  Terraform will perform the actions described above.',
@@ -1422,10 +1421,10 @@ const killedApply: Puzzle = {
   difficulty: 'Medium',
   minVersion: '1.5',
   story:
-    'The lock is cleared. The plan says the sessions cache still has to be created, but the ElastiCache console shows a sessions replication group, created at 13:22 by the CI role. Pipeline #4812 started creating it, then its runner died before Terraform could record it in the state.',
-  goal: 'Bring the existing cache under Terraform without creating a second one.',
-  files: [{ name: 'cache.tf', lines: CACHE_TF }],
-  evidence: [{ id: 'plan', title: 'Plan', command: 'terraform plan', lines: CACHE_PLAN }],
+    'The lock is cleared. The plan says the worker instance still has to be created, but the EC2 console shows an instance that pipeline #4812 launched at 13:22. Its runner died before Terraform could record the instance in the state.',
+  goal: 'Bring the existing instance under Terraform without launching a second one.',
+  files: [{ name: 'worker.tf', lines: WORKER_TF }],
+  evidence: [{ id: 'plan', title: 'Plan', command: 'terraform plan', lines: WORKER_PLAN }],
   inspects: [
     {
       id: 'state-list',
@@ -1434,31 +1433,32 @@ const killedApply: Puzzle = {
         id: 'state-list',
         title: 'State',
         command: 'terraform state list',
-        lines: ['aws_elasticache_subnet_group.sessions'],
+        lines: ['aws_security_group.worker'],
       },
     },
     {
       id: 'console',
-      label: 'Look for the cache in AWS',
+      label: 'Look for the instance in AWS',
       note: {
-        source: 'AWS console: ElastiCache and CloudTrail',
+        source: 'AWS console: EC2 and CloudTrail',
         lines: [
-          'Replication group sessions: Valkey, cache.t4g.medium, 2 nodes, status available.',
-          'Created 2026-10-06 13:22 UTC. CloudTrail: CreateReplicationGroup by role gitlab-ci-terraform.',
+          'Instance i-0f3c9a7d2b1e4c5a6: t4g.medium, ami-0c1f3e5a7b9d2e4f6, security group queue-worker, running.',
+          'Launched 2026-10-06 13:22 UTC. CloudTrail: RunInstances by role gitlab-ci-terraform.',
+          'No other instance uses the queue-worker security group.',
         ],
       },
     },
   ],
   bindings: [
     {
-      code: 'aws_elasticache_replication_group.sessions',
-      object: 'sessions (exists, not in state)',
+      code: 'aws_instance.worker',
+      object: 'i-0f3c9a7d2b1e4c5a6 (running, not in state)',
       action: 'create',
     },
     {
-      code: 'aws_elasticache_subnet_group.sessions',
-      state: 'aws_elasticache_subnet_group.sessions',
-      object: 'sessions subnet group',
+      code: 'aws_security_group.worker',
+      state: 'aws_security_group.worker',
+      object: 'sg-0d4e5f6a7b8c9d0e1',
       action: 'none',
     },
   ],
@@ -1470,33 +1470,43 @@ const killedApply: Puzzle = {
       outcome: {
         verdict: 'unsafe',
         summary:
-          'Terraform tries to create the cache again. AWS rejects it because the ID sessions is taken.',
+          'Terraform launches a second worker. Both run and are billed, and only the new one is tracked.',
         explanation:
-          'Terraform only knows about objects in its state. Here the create fails because replication group IDs are unique. A resource without a unique name, such as an EC2 instance, would simply be created twice, and you would pay for both.',
+          'Terraform only knows about objects in its state, and nothing stops two EC2 instances with the same settings. The first worker keeps running outside Terraform, and two workers on one queue can also process the same work twice. A resource with a unique name, such as an ElastiCache replication group, would fail with an "already exists" error instead.',
         transcripts: [
           apply('apply', 'Plan: 1 to add, 0 to change, 0 to destroy.', [
-            'aws_elasticache_replication_group.sessions: Creating...',
+            'aws_instance.worker: Creating...',
           ]),
+        ],
+        bindings: [
+          {
+            code: 'aws_instance.worker',
+            state: 'aws_instance.worker',
+            object: 'a second instance',
+            action: 'create',
+          },
+          { object: 'i-0f3c9a7d2b1e4c5a6 (still running)', action: 'untracked' },
         ],
       },
     },
     {
       id: 'refresh-only',
-      label: 'Refresh the state so Terraform finds the cache',
+      label: 'Refresh the state so Terraform finds the instance',
       code: ['terraform apply -refresh-only'],
       outcome: {
         verdict: 'incomplete',
-        summary: 'No changes found. The next plan still wants to create the cache.',
+        summary: 'No changes found. The next plan still wants to create the instance.',
         explanation:
-          'A refresh re-reads the objects that are already in the state. It never searches AWS for objects the state does not know about, so it cannot find the cache.',
+          'A refresh re-reads the objects that are already in the state. It never searches AWS for objects the state does not know about, so it cannot find the instance.',
         transcripts: [
           {
             id: 'refresh-only',
             title: 'Refresh-only apply',
             command: 'terraform apply -refresh-only',
-            lines: L(`
-aws_elasticache_subnet_group.sessions: Refreshing state... [id=sessions]
-
+            lines: [
+              SG_REFRESH,
+              '',
+              ...L(`
 No changes. Your infrastructure still matches the configuration.
 
 Terraform has checked that the real remote objects still match the result of
@@ -1504,52 +1514,50 @@ your most recent changes, and found no differences.
 
 Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 `),
+            ],
           },
-          { id: 'refresh-plan', title: 'Next plan', command: 'terraform plan', lines: CACHE_PLAN },
+          { id: 'refresh-plan', title: 'Next plan', command: 'terraform plan', lines: WORKER_PLAN },
         ],
       },
     },
     {
       id: 'import',
       label: 'Adopt it with an import block',
-      code: [
-        'import {',
-        '  to = aws_elasticache_replication_group.sessions',
-        '  id = "sessions"',
-        '}',
-      ],
+      code: ['import {', '  to = aws_instance.worker', '  id = "i-0f3c9a7d2b1e4c5a6"', '}'],
       outcome: {
         verdict: 'best',
         summary: 'Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.',
         explanation:
-          'An import block adopts the existing object as part of a reviewed plan (Terraform 1.5 and later). Check that the plan shows only the import: if it shows an update or a replacement, make the code match the real cache first. After any killed apply, compare what the job was creating with what exists, and import anything the state is missing.',
+          'An import block adopts the existing object as part of a reviewed plan (Terraform 1.5 and later). Check that the plan shows only the import: if it shows an update or a replacement, make the code match the real instance first. After any killed apply, compare what the job was creating with what exists, and import anything the state is missing.',
         transcripts: [
           {
             id: 'import-plan',
             title: 'Plan with import',
             command: 'terraform plan',
-            lines: L(`
-aws_elasticache_replication_group.sessions: Preparing import... [id=sessions]
-aws_elasticache_replication_group.sessions: Refreshing state... [id=sessions]
-aws_elasticache_subnet_group.sessions: Refreshing state... [id=sessions]
+            lines: [
+              'aws_instance.worker: Preparing import... [id=i-0f3c9a7d2b1e4c5a6]',
+              'aws_instance.worker: Refreshing state... [id=i-0f3c9a7d2b1e4c5a6]',
+              SG_REFRESH,
+              ...L(`
 
 Terraform will perform the following actions:
 
-  # aws_elasticache_replication_group.sessions will be imported
-    resource "aws_elasticache_replication_group" "sessions" {
-        id                   = "sessions"
-        # (7 unchanged attributes hidden)
+  # aws_instance.worker will be imported
+    resource "aws_instance" "worker" {
+        id            = "i-0f3c9a7d2b1e4c5a6"
+        # (4 unchanged attributes hidden)
     }
 
 Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
 `),
+            ],
           },
         ],
         bindings: [
           {
-            code: 'aws_elasticache_replication_group.sessions',
-            state: 'aws_elasticache_replication_group.sessions',
-            object: 'sessions',
+            code: 'aws_instance.worker',
+            state: 'aws_instance.worker',
+            object: 'i-0f3c9a7d2b1e4c5a6',
             action: 'import',
           },
         ],
@@ -1557,26 +1565,22 @@ Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
     },
     {
       id: 'delete-block',
-      label: 'Delete the cache from the code',
-      code: ['# remove the aws_elasticache_replication_group.sessions block'],
+      label: 'Delete the worker from the code',
+      code: ['# remove the aws_instance.worker block'],
       outcome: {
         verdict: 'incomplete',
-        summary: 'No changes, but the cache keeps running, unmanaged and billed.',
+        summary: 'No changes, but the instance keeps running, unmanaged and billed.',
         explanation:
-          'Removing the block hides the problem. The cache still exists and costs money, no Terraform tracks it, and the feature that needed it is gone from the code.',
+          'Removing the block hides the problem. The instance still runs and costs money, no Terraform tracks it, and the change the team wanted is gone from the code.',
         transcripts: [
           {
             id: 'delete-plan',
             title: 'Plan',
             command: 'terraform plan',
-            lines: [
-              'aws_elasticache_subnet_group.sessions: Refreshing state... [id=sessions]',
-              '',
-              ...NO_CHANGES,
-            ],
+            lines: [SG_REFRESH, '', ...NO_CHANGES],
           },
         ],
-        bindings: [{ object: 'sessions (running, unmanaged)', action: 'untracked' }],
+        bindings: [{ object: 'i-0f3c9a7d2b1e4c5a6 (running, unmanaged)', action: 'untracked' }],
       },
     },
   ],

@@ -59,6 +59,7 @@ import {
 import { PUZZLES, TERRAFORM_VERSION } from '@/lib/games/terraform-puzzle-puzzles';
 
 type MobileTab = 'brief' | 'evidence' | 'fix';
+type Layout = 'desktop' | 'mobile';
 
 interface Result {
   optionId: string;
@@ -266,11 +267,13 @@ function EvidencePanel({
   items,
   activeKey,
   onSelect,
+  layout,
   scrollRef,
 }: {
   items: ViewItem[];
   activeKey: string;
   onSelect: (key: string) => void;
+  layout: Layout;
   scrollRef?: React.Ref<HTMLDivElement>;
 }) {
   const [wrap, setWrap] = useState(false);
@@ -325,7 +328,12 @@ function EvidencePanel({
           ))}
         </div>
       </CardHeader>
-      <CardContent ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto p-3 pt-0">
+      <CardContent
+        ref={scrollRef}
+        id={`tfp-${layout}-evidence`}
+        tabIndex={-1}
+        className="min-h-0 flex-1 overflow-y-auto p-3 pt-0 focus:outline-none"
+      >
         {active?.transcript && <TerminalView t={active.transcript} wrap={wrap} />}
         {active?.file && <FileView f={active.file} wrap={wrap} />}
         {active?.note && <NoteView n={active.note} />}
@@ -471,6 +479,7 @@ function ResultCard({
   result,
   solved,
   last,
+  layout,
   onNext,
   onShowOutput,
 }: {
@@ -478,6 +487,7 @@ function ResultCard({
   result: Result;
   solved: boolean;
   last: boolean;
+  layout: Layout;
   onNext: () => void;
   onShowOutput: () => void;
 }) {
@@ -485,7 +495,11 @@ function ResultCard({
   const option = getOption(p, result.optionId);
   return (
     <div className="space-y-3">
-      <div className={cn('rounded-lg border p-3', v.tone)}>
+      <div
+        id={`tfp-${layout}-result`}
+        tabIndex={-1}
+        className={cn('rounded-lg border p-3 focus:outline-none', v.tone)}
+      >
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold">
           <v.icon className="h-4 w-4" aria-hidden="true" />
           {v.label}
@@ -570,9 +584,11 @@ function FixPanel({
   onNext,
   onShowOutput,
   last,
+  layout,
 }: {
   p: Puzzle;
   prog: PuzzleProgress;
+  layout: Layout;
   result?: Result;
   selected: string | null;
   setSelected: (id: string | null) => void;
@@ -591,6 +607,7 @@ function FixPanel({
           result={result}
           solved={solved}
           last={last}
+          layout={layout}
           onNext={onNext}
           onShowOutput={onShowOutput}
         />
@@ -611,7 +628,6 @@ function FixPanel({
               return (
                 <li key={o.id}>
                   <button
-                    id={`tfp-option-${o.id}`}
                     onClick={() => setSelected(open ? null : o.id)}
                     aria-expanded={open}
                     className={cn(
@@ -825,9 +841,12 @@ export default function TerraformPuzzle() {
     setStarted(true);
     setGame((g) => inspect(g, p, id));
     setView(`in:${id}`);
-    if (mobileTab !== 'evidence') {
+    if (!window.matchMedia('(min-width: 1024px)').matches) {
       setMobileTab('evidence');
-      scrollToTabs();
+      requestAnimationFrame(() => {
+        scrollToTabs();
+        document.getElementById('tfp-mobile-evidence')?.focus({ preventScroll: true });
+      });
     }
     const ins = p.inspects.find((i) => i.id === id);
     setAnnounce(`${ins?.label ?? 'Check'}: the answer is in Evidence.`);
@@ -843,10 +862,13 @@ export default function TerraformPuzzle() {
     if (first) setView(`out:${id}:${first.id}`);
     setSelected(null);
     setUnseenEvidence(mobileTab !== 'evidence');
-    fixRef.current?.scrollTo({ top: 0 });
-    requestAnimationFrame(() =>
-      document.getElementById(`tfp-option-${id}`)?.focus({ preventScroll: true })
-    );
+    // Show the verdict where the player is looking, and move focus to it.
+    const layout: Layout = window.matchMedia('(min-width: 1024px)').matches ? 'desktop' : 'mobile';
+    requestAnimationFrame(() => {
+      if (layout === 'desktop') fixRef.current?.scrollTo({ top: 0 });
+      else scrollToTabs();
+      document.getElementById(`tfp-${layout}-result`)?.focus({ preventScroll: true });
+    });
     setAnnounce(`${VERDICT[outcome.verdict].label}. ${outcome.summary}`);
   };
 
@@ -882,8 +904,9 @@ export default function TerraformPuzzle() {
   }
 
   const brief = <BriefPanel p={p} prog={prog} onInspect={onInspect} />;
-  const fix = (
+  const fix = (layout: Layout) => (
     <FixPanel
+      layout={layout}
       p={p}
       prog={prog}
       result={result}
@@ -1035,8 +1058,8 @@ export default function TerraformPuzzle() {
       </p>
 
       <div
-        className="hidden min-h-[26rem] gap-3 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.7fr)_minmax(0,1fr)]"
-        style={{ height: `calc(100dvh - ${barHeight + 24}px)` }}
+        className="hidden min-h-[20rem] gap-3 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.7fr)_minmax(0,1fr)]"
+        style={{ height: `calc(100dvh - var(--site-header-h, 0px) - ${barHeight + 24}px)` }}
       >
         <div ref={briefRef} className="min-h-0 overflow-y-auto pr-1">
           {brief}
@@ -1046,11 +1069,12 @@ export default function TerraformPuzzle() {
             items={items}
             activeKey={activeKey}
             onSelect={setView}
+            layout="desktop"
             scrollRef={evidenceRef}
           />
         </div>
         <div ref={fixRef} className="min-h-0 overflow-y-auto pr-1">
-          {fix}
+          {fix('desktop')}
         </div>
       </div>
 
@@ -1088,10 +1112,10 @@ export default function TerraformPuzzle() {
           </Button>
         </TabsContent>
         <TabsContent value="evidence" className="mt-1">
-          <EvidencePanel items={items} activeKey={activeKey} onSelect={setView} />
+          <EvidencePanel items={items} activeKey={activeKey} onSelect={setView} layout="mobile" />
         </TabsContent>
         <TabsContent value="fix" className="mt-1">
-          {fix}
+          {fix('mobile')}
         </TabsContent>
       </Tabs>
 
