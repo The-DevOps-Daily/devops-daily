@@ -4,7 +4,7 @@
   "description": "Test your Docker knowledge with questions on containers, images, Dockerfile instructions, volumes, networks, Compose, and basic orchestration concepts.",
   "category": "Docker",
   "icon": "Code",
-  "totalPoints": 165,
+  "totalPoints": 175,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-500",
@@ -13,7 +13,7 @@
   "metadata": {
     "estimatedTime": "20-25 minutes",
     "difficultyLevels": {
-      "beginner": 11,
+      "beginner": 12,
       "intermediate": 2,
       "advanced": 1
     },
@@ -260,6 +260,24 @@
       "hint": "exec runs in an existing container; run makes a new one.",
       "difficulty": "beginner",
       "points": 10
+    },
+    {
+      "id": "docker-disk-cleanup",
+      "title": "Cleaning Up Unused Resources",
+      "description": "How do you remove all stopped containers, unused networks, and dangling images in a single command?",
+      "situation": "Your local disk space is running low because you have accumulated many stopped containers and unused images from old builds.",
+      "options": [
+        "docker rm --all && docker rmi --all",
+        "docker system prune",
+        "docker clean --full",
+        "docker purge --force"
+      ],
+      "correctAnswer": 1,
+      "explanation": "docker system prune is the standard built-in command to clean up unused data such as stopped containers, unused networks, and dangling images, freeing up disk space safely.",
+      "hint": "Think about system-wide maintenance commands in Docker.",
+      "difficulty": "beginner",
+      "points": 10
     }
   ]
 }
+
