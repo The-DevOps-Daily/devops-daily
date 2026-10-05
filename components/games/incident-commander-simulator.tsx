@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Activity,
@@ -39,6 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import {
   SUSTAIN_MINUTES,
@@ -52,6 +53,7 @@ import {
   dispatch,
   dispatchBlock,
   getAction,
+  healthyStreak,
   nextUpdateDue,
   ownerName,
   pad,
@@ -518,122 +520,121 @@ function Actions({
   setSelected: (id: string | null) => void;
   onDispatch: (id: string) => void;
 }) {
-  const list = s.actions.filter((a) => a.group === group);
   const sel = selected ? s.actions.find((a) => a.id === selected && a.group === group) : undefined;
   return (
     <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base">Decide</CardTitle>
-        <div
-          className="mt-2 grid grid-cols-3 gap-1 rounded-lg bg-muted p-1"
-          role="tablist"
-          aria-label="Action type"
-        >
+      <Tabs
+        value={group}
+        onValueChange={(v) => {
+          setGroup(v as ActionGroup);
+          setSelected(null);
+        }}
+      >
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Decide</CardTitle>
+          <TabsList className="mt-2 grid w-full grid-cols-3" aria-label="Action type">
+            {GROUPS.map((g) => (
+              <TabsTrigger key={g.id} value={g.id} className="gap-1.5 text-xs">
+                <g.icon className="h-3.5 w-3.5" aria-hidden="true" />
+                {g.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </CardHeader>
+        <CardContent>
           {GROUPS.map((g) => (
-            <button
-              key={g.id}
-              role="tab"
-              aria-selected={group === g.id}
-              onClick={() => {
-                setGroup(g.id);
-                setSelected(null);
-              }}
-              className={cn(
-                'inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                group === g.id
-                  ? 'bg-background shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              <g.icon className="h-3.5 w-3.5" aria-hidden="true" />
-              {g.label}
-            </button>
+            <TabsContent key={g.id} value={g.id} className="mt-0">
+              <ul className="space-y-1.5">
+                {s.actions
+                  .filter((a) => a.group === g.id)
+                  .map((a) => {
+                    const reason = blockReason(s, game, a);
+                    const active = sel?.id === a.id;
+                    return (
+                      <li key={a.id}>
+                        <button
+                          id={`ic-action-${a.id}`}
+                          onClick={() => setSelected(active ? null : a.id)}
+                          aria-expanded={active}
+                          className={cn(
+                            'w-full rounded-md border p-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            active ? 'border-primary bg-primary/5' : 'hover:bg-muted/60',
+                            reason && 'opacity-60'
+                          )}
+                        >
+                          <span className="block font-medium">{a.title}</span>
+                          <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                            <span>{ownerName(s, a.owner)}</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{a.minutes} min</span>
+                            {a.risk && (
+                              <Badge
+                                variant="outline"
+                                className={cn('px-1.5 py-0 text-[10px]', RISK_STYLES[a.risk])}
+                              >
+                                {a.risk} risk
+                              </Badge>
+                            )}
+                            {reason && (
+                              <span className="text-amber-700 dark:text-amber-400">{reason}</span>
+                            )}
+                          </span>
+                        </button>
+                        {active && (
+                          <div className="mt-1.5 space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
+                            <p>{a.detail}</p>
+                            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                              <dt className="text-muted-foreground">Who</dt>
+                              <dd>
+                                {a.owner === 'you'
+                                  ? 'You'
+                                  : `${s.responders[a.owner].name}, ${s.responders[a.owner].role}`}
+                              </dd>
+                              <dt className="text-muted-foreground">Takes</dt>
+                              <dd>
+                                {a.minutes} min (done at T+{pad(game.t + a.minutes)})
+                              </dd>
+                              {a.group === 'mitigate' && (
+                                <>
+                                  <dt className="text-muted-foreground">Undo</dt>
+                                  <dd>{a.reversible ? 'Reversible' : 'Not easily reversible'}</dd>
+                                </>
+                              )}
+                              {a.expected && (
+                                <>
+                                  <dt className="text-muted-foreground">Watch for</dt>
+                                  <dd>{a.expected}</dd>
+                                </>
+                              )}
+                            </dl>
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              disabled={!!reason}
+                              onClick={() => onDispatch(a.id)}
+                            >
+                              {a.owner === 'you' ? (
+                                <>
+                                  <Megaphone className="mr-1.5 h-4 w-4" aria-hidden="true" /> Post
+                                  it
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="mr-1.5 h-4 w-4" aria-hidden="true" /> Send to{' '}
+                                  {s.responders[a.owner].name}
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+              </ul>
+            </TabsContent>
           ))}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        <ul className="space-y-1.5">
-          {list.map((a) => {
-            const reason = blockReason(s, game, a);
-            const active = sel?.id === a.id;
-            return (
-              <li key={a.id}>
-                <button
-                  onClick={() => setSelected(active ? null : a.id)}
-                  aria-expanded={active}
-                  className={cn(
-                    'w-full rounded-md border p-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    active ? 'border-primary bg-primary/5' : 'hover:bg-muted/60',
-                    reason && 'opacity-60'
-                  )}
-                >
-                  <span className="block font-medium">{a.title}</span>
-                  <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                    <span>{ownerName(s, a.owner)}</span>
-                    <span aria-hidden="true">·</span>
-                    <span>{a.minutes} min</span>
-                    {a.risk && (
-                      <Badge
-                        variant="outline"
-                        className={cn('px-1.5 py-0 text-[10px]', RISK_STYLES[a.risk])}
-                      >
-                        {a.risk} risk
-                      </Badge>
-                    )}
-                    {reason && <span className="text-amber-700 dark:text-amber-400">{reason}</span>}
-                  </span>
-                </button>
-                {active && (
-                  <div className="mt-1.5 space-y-2 rounded-md border bg-muted/30 p-3 text-sm">
-                    <p>{a.detail}</p>
-                    <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-                      <dt className="text-muted-foreground">Who</dt>
-                      <dd>
-                        {a.owner === 'you'
-                          ? 'You'
-                          : `${s.responders[a.owner].name}, ${s.responders[a.owner].role}`}
-                      </dd>
-                      <dt className="text-muted-foreground">Takes</dt>
-                      <dd>
-                        {a.minutes} min (done at T+{pad(game.t + a.minutes)})
-                      </dd>
-                      {a.group === 'mitigate' && (
-                        <>
-                          <dt className="text-muted-foreground">Undo</dt>
-                          <dd>{a.reversible ? 'Reversible' : 'Not easily reversible'}</dd>
-                        </>
-                      )}
-                      {a.expected && (
-                        <>
-                          <dt className="text-muted-foreground">Watch for</dt>
-                          <dd>{a.expected}</dd>
-                        </>
-                      )}
-                    </dl>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      disabled={!!reason}
-                      onClick={() => onDispatch(a.id)}
-                    >
-                      {a.owner === 'you' ? (
-                        <>
-                          <Megaphone className="mr-1.5 h-4 w-4" aria-hidden="true" /> Post it
-                        </>
-                      ) : (
-                        <>
-                          <Send className="mr-1.5 h-4 w-4" aria-hidden="true" /> Send to{' '}
-                          {s.responders[a.owner].name}
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </CardContent>
+        </CardContent>
+      </Tabs>
     </Card>
   );
 }
@@ -654,7 +655,7 @@ function ClockControls({
   onResolve: () => void;
 }) {
   const due = nextUpdateDue(game) - game.t;
-  const monitoringFor = game.monitoringSince !== null ? game.t - game.monitoringSince : 0;
+  const streak = Math.min(healthyStreak(s, game), SUSTAIN_MINUTES);
   const canResolve = game.phase === 'monitoring' && sustainedHealthy(s, game);
   return (
     <Card>
@@ -686,7 +687,7 @@ function ClockControls({
           <p className="text-xs text-muted-foreground">
             {game.phase === 'responding'
               ? 'When the signals are back to normal, start monitoring.'
-              : `Monitoring for ${monitoringFor} min. Recovery must hold for ${SUSTAIN_MINUTES} min before you resolve.`}
+              : `Recovery has held for ${streak} of ${SUSTAIN_MINUTES} min. Resolve once it has held the full ${SUSTAIN_MINUTES}.`}
           </p>
           {game.phase === 'responding' ? (
             <Button
@@ -1009,6 +1010,15 @@ export default function IncidentCommanderSimulator() {
   const [seen, setSeen] = useState(0);
   const [advanced, setAdvanced] = useState(false);
   const [reviewing, setReviewing] = useState(false);
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const [announce, setAnnounce] = useState('');
+  const [notice, setNotice] = useState<FeedItem | null>(null);
+
+  useEffect(() => {
+    if (!focusId) return;
+    document.getElementById(`ic-action-${focusId}`)?.focus();
+    setFocusId(null);
+  }, [focusId]);
 
   const s = scenarioId ? getScenario(scenarioId) : null;
 
@@ -1022,6 +1032,7 @@ export default function IncidentCommanderSimulator() {
     setAdvanced(false);
     setReviewing(false);
     setMobileTab('situation');
+    setNotice(null);
   };
 
   if (!s || !game) {
@@ -1042,9 +1053,21 @@ export default function IncidentCommanderSimulator() {
     );
   }
 
-  const run = (a: string) => {
-    setGame(dispatch(s, game, a));
+  const run = (id: string) => {
+    const a = getAction(s, id);
+    setGame(dispatch(s, game, id));
     setSelected(null);
+    setFocusId(id);
+    setAnnounce(
+      a.owner === 'you' ? `Posting: ${a.title}` : `Sent to ${ownerName(s, a.owner)}: ${a.title}`
+    );
+  };
+  // Monitor, resolve and hints answer with a feed message; show it where the player is looking.
+  const act = (fn: (g: GameState) => GameState) => {
+    const next = fn(game);
+    const last = next.feed[next.feed.length - 1];
+    setNotice(next.feed.length > game.feed.length && last ? last : null);
+    setGame(next);
   };
   const requestDispatch = (id: string) => {
     const a = getAction(s, id);
@@ -1054,7 +1077,10 @@ export default function IncidentCommanderSimulator() {
   const step = (fn: (g: GameState) => GameState) => {
     setSeen(game.nextId - 1);
     setAdvanced(true);
-    setGame(fn(game));
+    setNotice(null);
+    const next = fn(game);
+    setGame(next);
+    setAnnounce(`Now T+${pad(next.t)}. ${next.feed.length - game.feed.length} new events.`);
   };
   const severities: Severity[] = ['SEV1', 'SEV2', 'SEV3'];
   const confirmAction = confirming ? getAction(s, confirming) : null;
@@ -1079,8 +1105,8 @@ export default function IncidentCommanderSimulator() {
         game={game}
         onAdvance={() => step((g) => advance(s, g, 1))}
         onNext={() => step((g) => advanceToNextEvent(s, g))}
-        onMonitor={() => setGame(startMonitoring(s, game))}
-        onResolve={() => setGame(resolveIncident(s, game))}
+        onMonitor={() => act((g) => startMonitoring(s, g))}
+        onResolve={() => act((g) => resolveIncident(s, g))}
       />
     </div>
   );
@@ -1141,7 +1167,7 @@ export default function IncidentCommanderSimulator() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setGame(takeHint(s, game))}
+            onClick={() => act((g) => takeHint(s, g))}
             disabled={game.hintLevel >= 3 || game.ended}
           >
             <Lightbulb className="mr-1.5 h-4 w-4" aria-hidden="true" /> Ask an experienced IC (
@@ -1179,28 +1205,39 @@ export default function IncidentCommanderSimulator() {
         </div>
       )}
 
-      <HealthStrip s={s} game={game} />
+      <p className="sr-only" aria-live="polite">
+        {announce}
+      </p>
 
-      <div
-        className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1 lg:hidden"
-        role="tablist"
-        aria-label="Panels"
-      >
-        {(['situation', 'actions', 'timeline'] as const).map((t) => (
+      {notice && (
+        <div
+          className={cn(
+            'flex items-start gap-3 rounded-lg border p-3 text-sm',
+            notice.kind === 'hint'
+              ? 'border-amber-500/40 bg-amber-500/5'
+              : 'border-primary/30 bg-primary/5'
+          )}
+          role="status"
+        >
+          {notice.kind === 'hint' ? (
+            <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+          ) : (
+            <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+          )}
+          <p className="flex-1">
+            {notice.who && <strong>{notice.who}: </strong>}
+            {notice.text}
+          </p>
           <button
-            key={t}
-            role="tab"
-            aria-selected={mobileTab === t}
-            onClick={() => setMobileTab(t)}
-            className={cn(
-              'rounded-md px-2 py-1.5 text-xs font-medium capitalize',
-              mobileTab === t ? 'bg-background shadow-sm' : 'text-muted-foreground'
-            )}
+            onClick={() => setNotice(null)}
+            className="text-xs text-muted-foreground hover:text-foreground"
           >
-            {t === 'actions' ? 'Decide' : t}
+            Dismiss
           </button>
-        ))}
-      </div>
+        </div>
+      )}
+
+      <HealthStrip s={s} game={game} />
 
       <div className="hidden gap-4 lg:grid lg:grid-cols-[3fr_2fr]">
         <div className="space-y-4">
@@ -1209,11 +1246,20 @@ export default function IncidentCommanderSimulator() {
         </div>
         {decide}
       </div>
-      <div className="space-y-4 lg:hidden">
-        {mobileTab === 'situation' && situation}
-        {mobileTab === 'actions' && decide}
-        {mobileTab === 'timeline' && timeline}
-      </div>
+      <Tabs
+        value={mobileTab}
+        onValueChange={(v) => setMobileTab(v as MobileTab)}
+        className="lg:hidden"
+      >
+        <TabsList className="grid w-full grid-cols-3" aria-label="Panels">
+          <TabsTrigger value="situation">Situation</TabsTrigger>
+          <TabsTrigger value="actions">Decide</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+        </TabsList>
+        <TabsContent value="situation">{situation}</TabsContent>
+        <TabsContent value="actions">{decide}</TabsContent>
+        <TabsContent value="timeline">{timeline}</TabsContent>
+      </Tabs>
 
       {!game.ended && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 backdrop-blur lg:hidden">

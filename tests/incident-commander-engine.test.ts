@@ -221,3 +221,47 @@ describe('debrief', () => {
     expect(buildDebrief(changes, st).revisit).toMatch(/Restarting checkout pods/);
   });
 });
+
+describe('regressions from review', () => {
+  it('a Resolved update after a held recovery is accurate', () => {
+    let st = run(changes, ['flagOff', 2]);
+    st = startMonitoring(changes, st);
+    st = advance(changes, st, 8);
+    st = dispatch(changes, st, 'post-resolved');
+    st = advance(changes, st, 1);
+    expect(st.updates[st.updates.length - 1]).toMatchObject({ kind: 'resolved', accurate: true });
+  });
+
+  it('scaling can be reversed: 10 pods, then 18 pods recovers', () => {
+    const st = run(launch, ['scale10', 3, 'scale18', 8]);
+    expect(launch.isHealthy(currentPoint(st))).toBe(true);
+  });
+
+  it('a late update still counts every deadline missed before it', () => {
+    let st = advance(changes, createGame(changes), 41);
+    st = advance(changes, dispatch(changes, st, 'post-investigating'), 9);
+    const d = buildDebrief(changes, st);
+    expect(d.updatesDue).toBe(3); // T+10, T+25, T+40 missed; the next is due at T+57
+    expect(d.updatesOnTime).toBe(0);
+  });
+
+  it('cannot resolve while a production change is still running', () => {
+    let st = run(changes, ['flagOff', 2]);
+    st = startMonitoring(changes, st);
+    st = advance(changes, st, 8);
+    st = dispatch(changes, st, 'rollback');
+    st = resolveIncident(changes, st);
+    expect(st.ended).toBe(false);
+  });
+
+  it('next event stops a minute before an update deadline', () => {
+    const st = advanceToNextEvent(changes, advance(changes, createGame(changes), 7));
+    expect(st.t).toBe(9);
+  });
+
+  it('database evidence follows a raised connection limit', () => {
+    const st = run(launch, ['maxconn', 6, 'db-load', 3]);
+    const last = st.feed.filter((f) => f.kind === 'result').pop();
+    expect(last?.evidence?.lines.join('\n')).toMatch(/\/ 400/);
+  });
+});

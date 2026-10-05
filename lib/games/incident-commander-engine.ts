@@ -382,6 +382,13 @@ export function sustainedHealthy(s: Scenario, state: GameState): boolean {
   return recent.length >= SUSTAIN_MINUTES && recent.every((p) => s.isHealthy(p));
 }
 
+/** Consecutive healthy minutes up to now. */
+export function healthyStreak(s: Scenario, state: GameState): number {
+  let n = 0;
+  for (let i = state.history.length - 1; i >= 0 && s.isHealthy(state.history[i]); i--) n++;
+  return n;
+}
+
 /** Update deadlines: the first is due at T+10, then every 15 minutes after the last update. */
 export function nextUpdateDue(state: GameState): number {
   const last = state.updates[state.updates.length - 1];
@@ -390,10 +397,13 @@ export function nextUpdateDue(state: GameState): number {
 
 function stepMinute(s: Scenario, state: GameState): GameState {
   let next: GameState = { ...state, t: state.t + 1 };
-  for (const task of next.tasks) {
-    if (task.status === 'running' && task.end <= next.t) next = completeTask(s, next, task);
-  }
+  const finished = next.tasks.filter((task) => task.status === 'running' && task.end <= next.t);
+  const isChange = (task: Task) => getAction(s, task.actionId).group === 'mitigate';
+  // Changes land first so this minute's metrics reflect them; investigations and
+  // status updates then read the metrics for the minute they complete in.
+  for (const task of finished.filter(isChange)) next = completeTask(s, next, task);
   next = { ...next, history: [...next.history, point(s, next.t, next.changes)] };
+  for (const task of finished.filter((task) => !isChange(task))) next = completeTask(s, next, task);
   s.events.forEach((e, i) => {
     if (e.t === next.t && !next.firedEvents.includes(i)) {
       const show = !e.when || e.when(next, makeContext(next.changes));
@@ -444,9 +454,13 @@ export function advance(s: Scenario, state: GameState, minutes = 1): GameState {
 
 /** Advance until the next task completes or event fires, at least 1 and at most 10 minutes. */
 export function advanceToNextEvent(s: Scenario, state: GameState): GameState {
+  const due = nextUpdateDue(state);
   const marks = [
     ...state.tasks.filter((x) => x.status === 'running').map((x) => x.end),
     ...s.events.map((e, i) => (state.firedEvents.includes(i) ? Infinity : e.t)),
+    // stop a minute early so there is time to post the update
+    due - 1,
+    due,
   ].filter((m) => m > state.t);
   const target = Math.min(state.t + 10, ...marks);
   return advance(s, state, Math.max(1, target - state.t));
@@ -482,6 +496,16 @@ export function startMonitoring(s: Scenario, state: GameState): GameState {
 
 export function resolveIncident(s: Scenario, state: GameState): GameState {
   if (state.ended) return state;
+  const pending = state.tasks.filter(
+    (x) => x.status === 'running' && getAction(s, x.actionId).group !== 'investigate'
+  );
+  if (pending.length) {
+    return pushFeed(state, {
+      t: state.t,
+      kind: 'system',
+      text: `Not yet: wait for "${getAction(s, pending[0].actionId).title}" to finish before you close the incident.`,
+    });
+  }
   const ok = state.phase === 'monitoring' && sustainedHealthy(s, state);
   let next: GameState = {
     ...state,
@@ -548,19 +572,17 @@ function updateCadence(state: GameState): { due: number; onTime: number } {
   let i = 0;
   while (deadline <= end) {
     due++;
-    const u = state.updates.slice(i).find((x) => x.t <= deadline);
-    if (u) {
+    const next = state.updates[i];
+    if (next && next.t <= deadline) {
       onTime++;
-      i = state.updates.indexOf(u) + 1;
-      deadline = u.t + UPDATE_INTERVAL;
+      i++;
+      deadline = next.t + UPDATE_INTERVAL;
+    } else if (next && next.t < deadline + UPDATE_INTERVAL) {
+      // missed, then posted late: the next deadline counts from the late post
+      i++;
+      deadline = next.t + UPDATE_INTERVAL;
     } else {
-      const late = state.updates.slice(i).find((x) => x.t > deadline);
-      if (late) {
-        i = state.updates.indexOf(late) + 1;
-        deadline = late.t + UPDATE_INTERVAL;
-      } else {
-        deadline += UPDATE_INTERVAL;
-      }
+      deadline += UPDATE_INTERVAL;
     }
   }
   return { due, onTime };

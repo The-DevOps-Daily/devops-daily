@@ -82,15 +82,32 @@ function launchDemand(t: number, ctx: ModelContext): number {
 }
 
 function launchPods(t: number, ctx: ModelContext): number {
-  const base = t >= -16 ? 30 : 10;
-  const scale = latest(ctx, ['scale18', 'scale10'], t);
-  if (!scale) return base;
-  const target = scale.id === 'scale18' ? 18 : 10;
-  const f = clamp((t - scale.at + 1) / 2, 0, 1);
-  return Math.round(base + (target - base) * f);
+  let pods = t >= -16 ? 30 : 10;
+  const scales = ctx.changes
+    .filter((c) => (c.id === 'scale18' || c.id === 'scale10') && c.at <= t)
+    .sort((a, b) => a.at - b.at);
+  for (const c of scales) {
+    const target = c.id === 'scale18' ? 18 : 10;
+    const f = clamp((t - c.at + 1) / 2, 0, 1);
+    pods = Math.round(pods + (target - pods) * f);
+  }
+  return pods;
 }
 
-function launchModel(t: number, ctx: ModelContext) {
+interface LaunchState {
+  demand: number;
+  pods: number;
+  pool: number;
+  pooler: boolean;
+  conns: number;
+  cap: number;
+  restarting: boolean;
+  failingOver: boolean;
+  refusal: number;
+  timeouts: number;
+}
+
+function launchState(t: number, ctx: ModelContext): LaunchState {
   const demand = launchDemand(t, ctx);
   const pods = launchPods(t, ctx);
   const poolAt = ctx.at('pool6', t);
@@ -99,25 +116,37 @@ function launchModel(t: number, ctx: ModelContext) {
   let conns = pods * pool * load;
   const poolerAt = ctx.at('pooler', t);
   if (poolerAt !== undefined) conns = t > poolerAt ? 60 : (conns + 60) / 2;
-
   const raisedAt = ctx.at('maxconn400', t);
   const failoverAt = ctx.at('failover', t);
-  const restartAt = ctx.at('restartPods', t);
-  const outage =
-    (raisedAt !== undefined && t < raisedAt + 3) ||
-    (failoverAt !== undefined && t < failoverAt + 2);
+  const restarting = raisedAt !== undefined && t < raisedAt + 3;
+  const failingOver = failoverAt !== undefined && t < failoverAt + 2;
   const cap = raisedAt !== undefined && t >= raisedAt + 3 ? DB_CAP_RAISED : DB_CAP;
-  const churn = restartAt !== undefined && t < restartAt + 3 ? 6 : 0;
+  return {
+    demand,
+    pods,
+    pool,
+    pooler: poolerAt !== undefined,
+    conns,
+    cap,
+    restarting,
+    failingOver,
+    refusal: Math.max(0, (conns - cap) / conns),
+    timeouts: Math.max(0, (demand - pods * POD_THROUGHPUT) / demand),
+  };
+}
 
-  const refusal = Math.max(0, (conns - cap) / conns);
-  const timeouts = Math.max(0, (demand - pods * POD_THROUGHPUT) / demand);
+function launchModel(t: number, ctx: ModelContext) {
+  const st = launchState(t, ctx);
+  const restartAt = ctx.at('restartPods', t);
+  const churn = restartAt !== undefined && t < restartAt + 3 ? 6 : 0;
+  const outage = st.restarting || st.failingOver;
   const failed = outage
     ? 100
-    : 0.25 + ctx.noise(t, 'f') * 0.08 + 100 * (refusal * 0.55 + timeouts) + churn;
+    : 0.25 + ctx.noise(t, 'f') * 0.08 + 100 * (st.refusal * 0.55 + st.timeouts) + churn;
   const constraint = outage
     ? 0
-    : clamp((Math.min(conns, cap) / cap) * 100 + ctx.noise(t, 'c') * 0.6, 0, 100);
-  return { demand, failed, success: 0, constraint };
+    : clamp((Math.min(st.conns, st.cap) / st.cap) * 100 + ctx.noise(t, 'c') * 0.6, 0, 100);
+  return { demand: st.demand, failed, success: 0, constraint };
 }
 
 export const connectionExhaustion: Scenario = {
@@ -167,9 +196,30 @@ export const connectionExhaustion: Scenario = {
       minutes: 2,
       repeatable: true,
       expected: 'Tells apart application exceptions from database errors.',
-      onDone: (state) => {
-        const p = state.history[state.history.length - 1];
-        if (p.failed >= 1 && p.constraint >= 97) {
+      onDone: (state, ctx) => {
+        const st = launchState(state.t, ctx);
+        if (st.restarting || st.failingOver) {
+          return {
+            evidence: {
+              kind: 'log',
+              title: 'api logs, failed POST /api/checkout',
+              lines: st.restarting
+                ? [
+                    'ERROR checkout 500 db.connect: FATAL: the database system is starting up',
+                    'ERROR checkout 500 db.connect: FATAL: the database system is starting up',
+                  ]
+                : [
+                    'ERROR checkout 500 db.connect: connection refused (checkout-db:5432)',
+                    'ERROR checkout 500 db.connect: connection refused (checkout-db:5432)',
+                  ],
+            },
+            interpretation: st.restarting
+              ? 'The database is restarting, so every checkout fails until it is back.'
+              : 'The database is switching to the new primary, so connections are refused until it is ready.',
+            findings: ['failure-type'],
+          };
+        }
+        if (st.refusal > 0.02) {
           return {
             evidence: {
               kind: 'log',
@@ -186,19 +236,19 @@ export const connectionExhaustion: Scenario = {
             findings: ['failure-type', 'slots-full'],
           };
         }
-        if (p.failed >= 1) {
+        if (st.timeouts > 0.02) {
           return {
             evidence: {
               kind: 'log',
               title: 'api logs, failed POST /api/checkout',
               lines: [
                 'ERROR checkout 504 upstream request timeout after 10000 ms',
-                'WARN  api pod CPU 100%, request queue 340',
+                `WARN  api pods: ${st.pods} running, CPU 100%, request queue growing`,
                 'ERROR checkout 504 upstream request timeout after 10000 ms',
               ],
             },
             interpretation:
-              'The failures are now timeouts: the API pods cannot keep up with the traffic. No connection errors.',
+              'The failures are now timeouts: there are too few API pods for the traffic. No connection errors.',
             findings: ['failure-type'],
           };
         }
@@ -223,28 +273,28 @@ export const connectionExhaustion: Scenario = {
       minutes: 2,
       repeatable: true,
       expected: 'Shows whether connection demand changed with the scale-up.',
-      onDone: (_state, ctx) => {
-        const t = _state.t;
-        const pods = launchPods(t, ctx);
-        const pool = ctx.at('pool6', t) !== undefined ? 6 : 10;
-        const pooler = ctx.at('pooler', t) !== undefined;
+      onDone: (state, ctx) => {
+        const st = launchState(state.t, ctx);
+        const pool = Math.round(st.pool);
+        const asks = st.pods * pool;
+        const limit = st.cap === DB_CAP ? '200 (197 for the app)' : '400 (397 for the app)';
         return {
           evidence: {
             kind: 'table',
             title: 'connection demand',
             lines: [
               '                     before launch   now',
-              `API pods             10              ${pods}`,
+              `API pods             10              ${st.pods}`,
               `pool max per pod     10              ${pool}`,
-              `max connections      100             ${pooler ? '60 (via PgBouncer)' : pods * pool}`,
-              'database limit       200 (197 for the app)',
+              `max connections      100             ${st.pooler ? '60 (through PgBouncer)' : asks}`,
+              `database limit       ${limit}`,
             ],
           },
-          interpretation: pooler
-            ? 'Through the pooler, checkout now uses 60 server connections, far below the limit.'
-            : pods * pool > DB_CAP
-              ? `The pods together can open ${pods * pool} connections and the database accepts 197. Under launch traffic the pools fill up and the rest are refused.`
-              : `The pods can open at most ${pods * pool} connections, under the 197 the database accepts.`,
+          interpretation: st.pooler
+            ? 'Through the pooler, checkout uses 60 server connections, far below the limit.'
+            : asks > st.cap
+              ? `The pods together can open ${asks} connections and the database accepts ${st.cap}. Under launch traffic the pools fill up and the rest are refused.`
+              : `The pods can open at most ${asks} connections, under the ${st.cap} the database accepts.`,
           findings: ['conn-demand'],
         };
       },
@@ -287,9 +337,27 @@ export const connectionExhaustion: Scenario = {
       minutes: 3,
       repeatable: true,
       expected: 'Shows whether the database is busy or blocked on something else.',
-      onDone: (state) => {
-        const p = state.history[state.history.length - 1];
-        const full = p.constraint >= 97;
+      onDone: (state, ctx) => {
+        const st = launchState(state.t, ctx);
+        if (st.restarting || st.failingOver) {
+          return {
+            evidence: {
+              kind: 'note',
+              title: 'checkout-db',
+              lines: [
+                st.restarting
+                  ? 'primary restarting (max_connections change)'
+                  : 'failover in progress, promoting the replica',
+              ],
+            },
+            interpretation:
+              'The database is not accepting connections right now. Check again in a minute or two.',
+            findings: [],
+          };
+        }
+        const used = Math.round(Math.min(st.conns, st.cap));
+        const full = st.refusal > 0.02;
+        const max = st.cap === DB_CAP ? 200 : 400;
         return {
           evidence: {
             kind: 'table',
@@ -297,14 +365,14 @@ export const connectionExhaustion: Scenario = {
             lines: [
               'CPU                22%',
               'memory             41%',
-              `connections        ${full ? '197 / 200 (3 reserved)' : `${Math.round((p.constraint / 100) * DB_CAP)} / 200`}`,
-              `  active           ${full ? 31 : 28}`,
-              `  idle             ${full ? 166 : Math.max(0, Math.round((p.constraint / 100) * DB_CAP) - 28)}`,
+              `connections        ${used} / ${max} (3 reserved for superusers)`,
+              `  active           ${Math.min(used, 31)}`,
+              `  idle             ${Math.max(0, used - 31)}`,
               'slow queries       none over 200 ms',
             ],
           },
           interpretation: full
-            ? 'The database is mostly idle: 166 of its connections are open but doing nothing. It is not out of CPU or memory; it is out of connection slots.'
+            ? `The database is mostly idle: ${used - 31} of its connections are open but doing nothing. It is not out of CPU or memory; it is out of connection slots.`
             : 'The database has free connection slots and low load.',
           findings: full ? ['db-not-busy', 'slots-full'] : ['db-not-busy'],
         };
@@ -392,6 +460,7 @@ export const connectionExhaustion: Scenario = {
       title: 'Scale the API from 30 to 18 pods',
       detail: '18 x 10 = 180 connections. 18 pods can serve about 1,980 checkouts a minute.',
       minutes: 2,
+      repeatable: true,
       risk: 'low',
       reversible: true,
       expected: 'Fewer connections, and enough capacity if traffic stays near today’s peak.',
@@ -404,6 +473,7 @@ export const connectionExhaustion: Scenario = {
       title: 'Scale the API back to 10 pods, as before the launch',
       detail: '10 x 10 = 100 connections. 10 pods can serve about 1,100 checkouts a minute.',
       minutes: 2,
+      repeatable: true,
       risk: 'medium',
       reversible: true,
       expected: 'Connections drop well under the limit; capacity drops too.',
@@ -719,7 +789,8 @@ export const threeChanges: Scenario = {
           title: 'node pool upgrade',
           lines: [
             'each drain moves about 6 checkout pods; each move gives a short blip, under 1% for a minute',
-            'the /api/pricing 500s started at 14:02, before the upgrade began at 14:04',
+            'a small rise in /api/pricing 500s began at 14:00, during the v2.14 rollout; the big jump came at 14:02',
+            'the upgrade began at 14:04, after both',
             'the 500s do not follow the drains',
           ],
         },
@@ -754,6 +825,7 @@ export const threeChanges: Scenario = {
       title: 'Set the new-pricing flag back to 10%',
       detail: 'Config push, effective in about a minute. Returns to last week’s rollout level.',
       minutes: 1,
+      repeatable: true,
       risk: 'low',
       reversible: true,
       expected: 'Errors drop if the new pricing code is involved.',
@@ -770,6 +842,7 @@ export const threeChanges: Scenario = {
       detail:
         'Everyone gets the old pricing code. The new pricing feature is paused for all users.',
       minutes: 1,
+      repeatable: true,
       risk: 'low',
       reversible: true,
       expected: 'Errors from the new pricing code stop within a minute.',
