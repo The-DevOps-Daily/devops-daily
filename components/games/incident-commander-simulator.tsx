@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Activity,
@@ -155,6 +155,7 @@ function SignalCard({
   baseline,
   delta,
   good,
+  compact,
   children,
 }: {
   label: string;
@@ -162,9 +163,54 @@ function SignalCard({
   baseline: string;
   delta: Trend;
   good: boolean;
+  compact?: boolean;
   children: React.ReactNode;
 }) {
   const TrendIcon = delta.dir === 'flat' ? null : delta.dir === 'down' ? TrendingDown : TrendingUp;
+  const pill = (
+    <span
+      className={cn(
+        'inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:text-[11px]',
+        good
+          ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+          : 'bg-red-500/10 text-red-700 dark:text-red-400'
+      )}
+    >
+      {good ? 'Normal' : 'Not normal'}
+    </span>
+  );
+  if (compact) {
+    return (
+      <div
+        className={cn(
+          'rounded-lg border bg-card p-2.5',
+          good ? 'border-emerald-500/30' : 'border-red-500/40'
+        )}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[11px] font-medium uppercase leading-tight tracking-wide text-muted-foreground">
+            {label}
+          </span>
+          {pill}
+        </div>
+        <div className="mt-1 flex items-end gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-xl font-semibold tabular-nums">{value}</span>
+              {TrendIcon && (
+                <TrendIcon
+                  className={cn('h-4 w-4', delta.better ? 'text-emerald-600' : 'text-red-600')}
+                  aria-label={delta.better ? 'improving' : 'getting worse'}
+                />
+              )}
+            </div>
+            <div className="text-[11px] leading-snug text-muted-foreground">{baseline}</div>
+          </div>
+          <div className="ml-auto w-20 shrink-0 xl:w-24">{children}</div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div
       className={cn(
@@ -176,16 +222,7 @@ function SignalCard({
         <span className="text-[10px] font-medium uppercase leading-tight tracking-wide text-muted-foreground sm:text-xs">
           {label}
         </span>
-        <span
-          className={cn(
-            'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:text-[11px]',
-            good
-              ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-              : 'bg-red-500/10 text-red-700 dark:text-red-400'
-          )}
-        >
-          {good ? 'Normal' : 'Not normal'}
-        </span>
+        {pill}
       </div>
       <div className="mt-1 flex items-baseline gap-2">
         <span className="font-mono text-lg font-semibold tabular-nums sm:text-2xl">{value}</span>
@@ -207,7 +244,7 @@ function SignalCard({
   );
 }
 
-function HealthStrip({ s, game }: { s: Scenario; game: GameState }) {
+function HealthStrip({ s, game, stacked }: { s: Scenario; game: GameState; stacked?: boolean }) {
   const hist = game.history;
   const now = currentPoint(game);
   const before = hist[Math.max(0, hist.length - 4)];
@@ -219,13 +256,14 @@ function HealthStrip({ s, game }: { s: Scenario; game: GameState }) {
   const successLow = now.success < now.demand * 0.99;
   const constraintOk = s.isHealthy({ ...now, failed: 0 });
   return (
-    <div className="grid grid-cols-3 gap-2 sm:gap-3">
+    <div className={cn('grid gap-2', stacked ? 'grid-cols-1' : 'grid-cols-3 sm:gap-3')}>
       <SignalCard
         label="Failed checkout requests"
         value={`${now.failed.toFixed(1)}%`}
         baseline={`Normal: ${base.failed.toFixed(1)}%`}
         delta={trend(now.failed, before.failed, true, Math.max(1, before.failed * 0.15))}
         good={now.failed < 1}
+        compact={stacked}
       >
         <Sparkline values={hist.map((p) => p.failed)} threshold={1} bad={now.failed >= 1} />
       </SignalCard>
@@ -235,6 +273,7 @@ function HealthStrip({ s, game }: { s: Scenario; game: GameState }) {
         baseline={`of ${fmtCount(now.demand)} attempted (${Math.round((now.success / now.demand) * 100)}%). Normally 99% or more succeed.`}
         delta={trend(now.success / now.demand, before.success / before.demand, false, 0.02)}
         good={!successLow}
+        compact={stacked}
       >
         <Sparkline
           values={hist.map((p) => (p.success / p.demand) * 100)}
@@ -248,6 +287,7 @@ function HealthStrip({ s, game }: { s: Scenario; game: GameState }) {
         baseline={`Normal: ${s.constraint.format(base.constraint)} (healthy: ${s.constraint.healthy})`}
         delta={trend(now.constraint, before.constraint, s.constraint.lowerIsBetter, 2)}
         good={constraintOk}
+        compact={stacked}
       >
         <Sparkline values={hist.map((p) => p.constraint)} bad={!constraintOk} max={100} />
       </SignalCard>
@@ -299,7 +339,7 @@ function FeedEntry({ item, isNew }: { item: FeedItem; isNew: boolean }) {
   );
 }
 
-function statusSentence(s: Scenario, game: GameState): string {
+function statusSentence(s: Scenario, game: GameState, withUpdate = true): string {
   const running = game.tasks.filter((t) => t.status === 'running');
   const changes = running.filter((t) => getAction(s, t.actionId).group === 'mitigate').length;
   const investigations = running.filter(
@@ -313,8 +353,11 @@ function statusSentence(s: Scenario, game: GameState): string {
     investigations
       ? `${investigations} investigation${investigations > 1 ? 's' : ''} running.`
       : 'Nobody is investigating.',
-    due >= 0 ? `Next status update due in ${due} min.` : `Status update overdue by ${-due} min.`,
   ];
+  if (withUpdate)
+    parts.push(
+      due >= 0 ? `Next status update due in ${due} min.` : `Status update overdue by ${-due} min.`
+    );
   return parts.join(' ');
 }
 
@@ -329,12 +372,12 @@ function Situation({ s, game, seen }: { s: Scenario; game: GameState; seen: numb
     .reverse();
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="p-4 pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
           <Activity className="h-4 w-4 text-primary" aria-hidden="true" /> Situation
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 text-sm">
+      <CardContent className="space-y-4 p-4 pt-0 text-sm">
         <p>
           Right now <strong className="tabular-nums">{now.failed.toFixed(1)}%</strong> of checkout
           requests fail, out of {fmtCount(now.demand)} attempts a minute.{' '}
@@ -416,7 +459,7 @@ function Timeline({ game, seen }: { game: GameState; seen: number }) {
   const items = [...game.feed].reverse();
   return (
     <Card>
-      <CardHeader className="pb-1">
+      <CardHeader className="rounded-t-lg bg-card p-4 pb-1 lg:sticky lg:top-0 lg:z-10">
         <CardTitle className="flex items-center gap-2 text-base">
           <Clock className="h-4 w-4 text-primary" aria-hidden="true" /> Activity
         </CardTitle>
@@ -424,7 +467,7 @@ function Timeline({ game, seen }: { game: GameState; seen: number }) {
           Newest first. Evidence from your team opens automatically when it arrives.
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 pt-0">
         <ol className="divide-y">
           {items.map((item) => (
             <FeedEntry key={item.id} item={item} isNew={item.id > seen} />
@@ -444,10 +487,10 @@ function ActiveWork({ s, game }: { s: Scenario; game: GameState }) {
   }));
   return (
     <Card>
-      <CardHeader className="pb-2">
+      <CardHeader className="p-4 pb-2">
         <CardTitle className="text-base">Active work</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm">
+      <CardContent className="space-y-3 p-4 pt-0 text-sm">
         {running.length === 0 && (
           <p className="text-muted-foreground">
             Nothing in progress. Send someone to investigate or change something.
@@ -534,18 +577,18 @@ function Actions({
           setSelected(null);
         }}
       >
-        <CardHeader className="pb-2">
+        <CardHeader className="rounded-t-lg bg-card p-4 pb-2 lg:sticky lg:top-0 lg:z-10">
           <CardTitle className="text-base">Decide</CardTitle>
           <TabsList className="mt-2 grid w-full grid-cols-3" aria-label="Action type">
             {GROUPS.map((g) => (
               <TabsTrigger key={g.id} value={g.id} className="gap-1.5 text-xs">
-                <g.icon className="h-3.5 w-3.5" aria-hidden="true" />
+                <g.icon className="hidden h-3.5 w-3.5 xl:block" aria-hidden="true" />
                 {g.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0">
           {GROUPS.map((g) => (
             <TabsContent key={g.id} value={g.id} className="mt-0">
               <ul className="space-y-1.5">
@@ -663,7 +706,7 @@ function ClockControls({
   const canResolve = game.phase === 'monitoring' && sustainedHealthy(s, game);
   return (
     <Card>
-      <CardContent className="space-y-3 pt-5">
+      <CardContent className="space-y-3 p-4">
         <div
           className={cn(
             'flex items-center gap-2 rounded-md px-3 py-2 text-sm',
@@ -1007,6 +1050,14 @@ function DebriefView({
   );
 }
 
+function updateChipClass(due: number): string {
+  return due < 0
+    ? 'bg-red-500/10 text-red-700 dark:text-red-400'
+    : due <= 3
+      ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
+      : 'bg-muted/60 text-muted-foreground';
+}
+
 export default function IncidentCommanderSimulator() {
   const [scenarioId, setScenarioId] = useState<string | null>(null);
   const [game, setGame] = useState<GameState | null>(null);
@@ -1017,20 +1068,44 @@ export default function IncidentCommanderSimulator() {
   const [seen, setSeen] = useState(0);
   const [advanced, setAdvanced] = useState(false);
   const [reviewing, setReviewing] = useState(false);
-  const [focusId, setFocusId] = useState<string | null>(null);
   const [announce, setAnnounce] = useState('');
   const [notice, setNotice] = useState<FeedItem | null>(null);
+  const [viewedId, setViewedId] = useState(0);
+  const [barHeight, setBarHeight] = useState(112);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const scrollPending = useRef(false);
 
+  // Bring the game into view after the player starts a scenario or opens the review.
   useEffect(() => {
-    if (!focusId) return;
-    document.getElementById(`ic-action-${focusId}`)?.focus();
-    setFocusId(null);
-  }, [focusId]);
+    if (!scrollPending.current) return;
+    scrollPending.current = false;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    rootRef.current?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  });
+
+  // The desktop workspace fills the screen under the sticky command bar.
+  const hasBar = !!game && !reviewing;
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setBarHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [hasBar]);
+
+  // Newest events are at the top of the feed; show them after the clock moves.
+  useEffect(() => {
+    feedRef.current?.scrollTo({ top: 0 });
+  }, [game?.t]);
 
   const s = scenarioId ? getScenario(scenarioId) : null;
 
   const start = (id: string) => {
     const sc = getScenario(id);
+    scrollPending.current = true;
     setScenarioId(id);
     setGame(createGame(sc));
     setGroup('investigate');
@@ -1040,23 +1115,30 @@ export default function IncidentCommanderSimulator() {
     setReviewing(false);
     setMobileTab('situation');
     setNotice(null);
+    setViewedId(0);
   };
 
   if (!s || !game) {
-    return <ScenarioPicker onStart={start} />;
+    return (
+      <div ref={rootRef} className="scroll-mt-4">
+        <ScenarioPicker onStart={start} />
+      </div>
+    );
   }
 
   if (reviewing) {
     return (
-      <DebriefView
-        s={s}
-        game={game}
-        onAgain={() => start(s.id)}
-        onPicker={() => {
-          const other = SCENARIOS.find((x) => x.id !== s.id);
-          if (other) start(other.id);
-        }}
-      />
+      <div ref={rootRef} className="scroll-mt-4">
+        <DebriefView
+          s={s}
+          game={game}
+          onAgain={() => start(s.id)}
+          onPicker={() => {
+            const other = SCENARIOS.find((x) => x.id !== s.id);
+            if (other) start(other.id);
+          }}
+        />
+      </div>
     );
   }
 
@@ -1064,7 +1146,8 @@ export default function IncidentCommanderSimulator() {
     const a = getAction(s, id);
     setGame(dispatch(s, game, id));
     setSelected(null);
-    setFocusId(id);
+    // Keep keyboard focus on the action that was just sent.
+    requestAnimationFrame(() => document.getElementById(`ic-action-${id}`)?.focus());
     setAnnounce(
       a.owner === 'you' ? `Posting: ${a.title}` : `Sent to ${ownerName(s, a.owner)}: ${a.title}`
     );
@@ -1087,16 +1170,35 @@ export default function IncidentCommanderSimulator() {
     setNotice(null);
     const next = fn(game);
     setGame(next);
+    if (mobileTab === 'timeline') setViewedId(next.nextId - 1);
     setAnnounce(`Now T+${pad(next.t)}. ${next.feed.length - game.feed.length} new events.`);
+  };
+  const openReview = () => {
+    scrollPending.current = true;
+    setReviewing(true);
+  };
+  const changeTab = (v: string) => {
+    setMobileTab(v as MobileTab);
+    if (v === 'timeline') setViewedId(game.nextId - 1);
+    // Start the new panel at its top instead of where the old one was scrolled to.
+    const top = tabsRef.current?.getBoundingClientRect().top ?? 0;
+    if (top < 0) {
+      const header = document.querySelector('header')?.offsetHeight ?? 0;
+      window.scrollBy({ top: top - header });
+    }
   };
   const severities: Severity[] = ['SEV1', 'SEV2', 'SEV3'];
   const confirmAction = confirming ? getAction(s, confirming) : null;
   const running = game.tasks.filter((t) => t.status === 'running').length;
+  const due = nextUpdateDue(game) - game.t;
+  const streak = Math.min(healthyStreak(s, game), SUSTAIN_MINUTES);
+  const canResolve = game.phase === 'monitoring' && sustainedHealthy(s, game);
+  const unseen = advanced ? game.feed.filter((f) => f.id > Math.max(seen, viewedId)).length : 0;
 
   const situation = <Situation s={s} game={game} seen={seen} />;
   const timeline = <Timeline game={game} seen={seen} />;
-  const decide = (
-    <div className="space-y-4">
+  const work = (
+    <>
       <ActiveWork s={s} game={game} />
       <Actions
         s={s}
@@ -1107,165 +1209,251 @@ export default function IncidentCommanderSimulator() {
         setSelected={setSelected}
         onDispatch={requestDispatch}
       />
-      <ClockControls
-        s={s}
-        game={game}
-        onAdvance={() => step((g) => advance(s, g, 1))}
-        onNext={() => step((g) => advanceToNextEvent(s, g))}
-        onMonitor={() => act((g) => startMonitoring(s, g))}
-        onResolve={() => act((g) => resolveIncident(s, g))}
-      />
-    </div>
+    </>
   );
+  const onAdvance = () => step((g) => advance(s, g, 1));
+  const onNext = () => step((g) => advanceToNextEvent(s, g));
+  const onMonitor = () => act((g) => startMonitoring(s, g));
+  const onResolve = () => act((g) => resolveIncident(s, g));
 
   return (
-    <div className="space-y-4 pb-20 lg:pb-0">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border bg-card p-3">
-        <button
-          onClick={() => {
-            setScenarioId(null);
-            setGame(null);
-          }}
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Scenarios
-        </button>
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
+    <div ref={rootRef} className="scroll-mt-4 space-y-3 pb-24 lg:pb-0">
+      <div
+        ref={barRef}
+        className="z-20 space-y-2 rounded-lg border bg-card p-2.5 shadow-sm lg:sticky lg:top-[var(--site-header-h,0px)] lg:transition-[top] lg:duration-200 motion-reduce:transition-none"
+      >
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <button
+            onClick={() => {
+              setScenarioId(null);
+              setGame(null);
+            }}
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            aria-label="Back to scenarios"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="hidden sm:inline">Scenarios</span>
+          </button>
+          <div className="flex min-w-0 items-center gap-2">
             <Siren
-              className={cn('h-4 w-4', game.ended ? 'text-muted-foreground' : 'text-red-600')}
+              className={cn(
+                'h-4 w-4 shrink-0',
+                game.ended ? 'text-muted-foreground' : 'text-red-600'
+              )}
               aria-hidden="true"
             />
-            <span className="font-semibold">{s.title}</span>
+            <span className="truncate font-semibold">{s.title}</span>
+          </div>
+          <Badge
+            variant={game.phase === 'monitoring' ? 'default' : 'outline'}
+            className="capitalize"
+          >
+            {game.phase}
+          </Badge>
+          <div className="flex items-center gap-1" role="group" aria-label="Severity">
+            {severities.map((sev) => (
+              <button
+                key={sev}
+                onClick={() => setGame(setSeverity(game, sev))}
+                aria-pressed={game.severity === sev}
+                className={cn(
+                  'rounded-md border px-2 py-0.5 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  game.severity === sev
+                    ? sev === 'SEV1'
+                      ? 'border-red-500 bg-red-500 text-white'
+                      : sev === 'SEV2'
+                        ? 'border-amber-500 bg-amber-500 text-white'
+                        : 'border-primary bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {sev}
+              </button>
+            ))}
+            {!game.severity && (
+              <span className="ml-1 text-xs text-amber-700 dark:text-amber-400">
+                set a severity
+              </span>
+            )}
+          </div>
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8"
+              onClick={() => act((g) => takeHint(s, g))}
+              disabled={game.hintLevel >= 3 || game.ended}
+            >
+              <Lightbulb className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              <span className="hidden xl:inline">Ask an experienced IC ({3 - game.hintLevel})</span>
+              <span className="xl:hidden">Hint ({3 - game.hintLevel})</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8"
+              onClick={() => start(s.id)}
+              aria-label="Restart this scenario"
+            >
+              <RotateCcw className="h-4 w-4" aria-hidden="true" />
+            </Button>
           </div>
         </div>
-        <div className="font-mono text-lg font-semibold tabular-nums" aria-live="polite">
-          T+{pad(game.t)}{' '}
-          <span className="text-sm font-normal text-muted-foreground">{clockAt(s, game.t)}</span>
-        </div>
-        <div className="flex items-center gap-1" role="group" aria-label="Severity">
-          {severities.map((sev) => (
-            <button
-              key={sev}
-              onClick={() => setGame(setSeverity(game, sev))}
-              aria-pressed={game.severity === sev}
-              className={cn(
-                'rounded-md border px-2 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                game.severity === sev
-                  ? sev === 'SEV1'
-                    ? 'border-red-500 bg-red-500 text-white'
-                    : sev === 'SEV2'
-                      ? 'border-amber-500 bg-amber-500 text-white'
-                      : 'border-primary bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {sev}
-            </button>
-          ))}
-          {!game.severity && (
-            <span className="ml-1 text-xs text-amber-700 dark:text-amber-400">set a severity</span>
-          )}
-        </div>
-        <Badge variant={game.phase === 'monitoring' ? 'default' : 'outline'} className="capitalize">
-          {game.phase}
-        </Badge>
-        <div className="ml-auto flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => act((g) => takeHint(s, g))}
-            disabled={game.hintLevel >= 3 || game.ended}
-          >
-            <Lightbulb className="mr-1.5 h-4 w-4" aria-hidden="true" /> Ask an experienced IC (
-            {3 - game.hintLevel})
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => start(s.id)}
-            aria-label="Restart this scenario"
-          >
-            <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </div>
-      </div>
 
-      {game.ended ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/5 p-4">
-          <p className="text-sm">
-            {game.endReason === 'resolved'
-              ? 'The incident is resolved. See how it went and what to try next time.'
-              : 'Time is up: the incident review starts now, resolved or not.'}
-          </p>
-          <Button onClick={() => setReviewing(true)}>See the incident review</Button>
-        </div>
-      ) : (
-        <div className="rounded-lg bg-muted/50 px-4 py-2.5 text-sm">
-          {!advanced && (
-            <p className="mb-1 font-medium">
-              {s.briefing} Reading never advances time: send work to your team, then advance the
-              clock to see results.
-            </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t pt-2">
+          <div className="font-mono text-lg font-semibold tabular-nums" aria-live="polite">
+            T+{pad(game.t)}{' '}
+            <span className="text-sm font-normal text-muted-foreground">{clockAt(s, game.t)}</span>
+          </div>
+          {game.ended ? (
+            <>
+              <p className="text-sm">
+                {game.endReason === 'resolved'
+                  ? 'The incident is resolved. See how it went and what to try next time.'
+                  : 'Time is up: the incident review starts now, resolved or not.'}
+              </p>
+              <Button size="sm" className="ml-auto" onClick={openReview}>
+                See the incident review
+              </Button>
+            </>
+          ) : (
+            <>
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium',
+                  updateChipClass(due)
+                )}
+              >
+                <Megaphone className="h-3.5 w-3.5" aria-hidden="true" />
+                {due >= 0 ? `Update due in ${due} min` : `Update overdue by ${-due} min`}
+              </span>
+              <span className="hidden text-xs text-muted-foreground xl:inline">
+                {statusSentence(s, game, false)}
+              </span>
+              <div className="ml-auto hidden items-center gap-2 lg:flex">
+                {game.phase === 'monitoring' && (
+                  <span className="text-xs tabular-nums text-muted-foreground">
+                    Recovery held {streak}/{SUSTAIN_MINUTES} min
+                  </span>
+                )}
+                <Button variant="outline" size="sm" onClick={onAdvance}>
+                  <Play className="mr-1.5 h-4 w-4" aria-hidden="true" /> Advance 1 min
+                </Button>
+                <Button variant="outline" size="sm" onClick={onNext}>
+                  <FastForward className="mr-1.5 h-4 w-4" aria-hidden="true" /> Next event
+                </Button>
+                {game.phase === 'responding' ? (
+                  <Button size="sm" variant="secondary" onClick={onMonitor}>
+                    <ShieldAlert className="mr-1.5 h-4 w-4" aria-hidden="true" /> Start monitoring
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant={canResolve ? 'default' : 'secondary'}
+                    onClick={onResolve}
+                  >
+                    <CircleCheck className="mr-1.5 h-4 w-4" aria-hidden="true" /> Resolve
+                  </Button>
+                )}
+              </div>
+            </>
           )}
-          <p className="text-muted-foreground">{statusSentence(s, game)}</p>
         </div>
-      )}
+
+        {!advanced && !game.ended && (
+          <p className="rounded-md bg-muted/50 px-3 py-2 text-sm font-medium">
+            {s.briefing} Reading never advances time: send work to your team, then advance the clock
+            to see results.
+          </p>
+        )}
+
+        {notice && (
+          <div
+            className={cn(
+              'fixed inset-x-3 bottom-20 z-30 flex items-start gap-3 rounded-lg border p-3 text-sm shadow-lg lg:static lg:shadow-none',
+              notice.kind === 'hint'
+                ? 'border-amber-500/40 bg-amber-50 dark:bg-amber-950'
+                : 'border-primary/30 bg-card'
+            )}
+            role="status"
+          >
+            {notice.kind === 'hint' ? (
+              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+            ) : (
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            )}
+            <p className="flex-1">
+              {notice.who && <strong>{notice.who}: </strong>}
+              {notice.text}
+            </p>
+            <button
+              onClick={() => setNotice(null)}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+      </div>
 
       <p className="sr-only" aria-live="polite">
         {announce}
       </p>
 
-      {notice && (
-        <div
-          className={cn(
-            'flex items-start gap-3 rounded-lg border p-3 text-sm',
-            notice.kind === 'hint'
-              ? 'border-amber-500/40 bg-amber-500/5'
-              : 'border-primary/30 bg-primary/5'
-          )}
-          role="status"
-        >
-          {notice.kind === 'hint' ? (
-            <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-          ) : (
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          )}
-          <p className="flex-1">
-            {notice.who && <strong>{notice.who}: </strong>}
-            {notice.text}
-          </p>
-          <button
-            onClick={() => setNotice(null)}
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
+      <div className="lg:hidden">
+        <HealthStrip s={s} game={game} />
+        {!game.ended && (
+          <p className="mt-2 text-xs text-muted-foreground">{statusSentence(s, game, false)}</p>
+        )}
+      </div>
 
-      <HealthStrip s={s} game={game} />
-
-      <div className="hidden gap-4 lg:grid lg:grid-cols-[3fr_2fr]">
-        <div className="space-y-4">
+      <div
+        className="hidden min-h-[24rem] gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)]"
+        style={{ height: `calc(100dvh - ${barHeight + 24}px)` }}
+      >
+        <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
+          <HealthStrip s={s} game={game} stacked />
           {situation}
+        </div>
+        <div ref={feedRef} className="min-h-0 overflow-y-auto pr-1">
           {timeline}
         </div>
-        {decide}
+        <div className="min-h-0 space-y-3 overflow-y-auto pr-1">{work}</div>
       </div>
-      <Tabs
-        value={mobileTab}
-        onValueChange={(v) => setMobileTab(v as MobileTab)}
-        className="lg:hidden"
-      >
-        <TabsList className="grid w-full grid-cols-3" aria-label="Panels">
-          <TabsTrigger value="situation">Situation</TabsTrigger>
-          <TabsTrigger value="actions">Decide</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-        </TabsList>
-        <TabsContent value="situation">{situation}</TabsContent>
-        <TabsContent value="actions">{decide}</TabsContent>
-        <TabsContent value="timeline">{timeline}</TabsContent>
+
+      <div ref={tabsRef} aria-hidden="true" className="lg:hidden" />
+      <Tabs value={mobileTab} onValueChange={changeTab} className="lg:hidden">
+        <div className="sticky top-[var(--site-header-h,0px)] z-20 -mx-1 scroll-mt-0 bg-background px-1 py-2 transition-[top] duration-200 motion-reduce:transition-none">
+          <TabsList className="grid w-full grid-cols-3" aria-label="Panels">
+            <TabsTrigger value="situation">Situation</TabsTrigger>
+            <TabsTrigger value="actions">Decide</TabsTrigger>
+            <TabsTrigger value="timeline" className="gap-1.5">
+              Timeline
+              {unseen > 0 && mobileTab !== 'timeline' && (
+                <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-4 text-primary-foreground">
+                  {unseen} new
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="situation" className="mt-1">
+          {situation}
+        </TabsContent>
+        <TabsContent value="actions" className="mt-1 space-y-3">
+          {work}
+          <ClockControls
+            s={s}
+            game={game}
+            onAdvance={onAdvance}
+            onNext={onNext}
+            onMonitor={onMonitor}
+            onResolve={onResolve}
+          />
+        </TabsContent>
+        <TabsContent value="timeline" className="mt-1">
+          {timeline}
+        </TabsContent>
       </Tabs>
 
       {!game.ended && (
@@ -1274,10 +1462,10 @@ export default function IncidentCommanderSimulator() {
             <span className="mr-auto text-xs text-muted-foreground">
               T+{pad(game.t)} · {running} task{running === 1 ? '' : 's'} running
             </span>
-            <Button size="sm" variant="outline" onClick={() => step((g) => advance(s, g, 1))}>
+            <Button size="sm" variant="outline" onClick={onAdvance}>
               <Play className="mr-1 h-4 w-4" aria-hidden="true" /> 1 min
             </Button>
-            <Button size="sm" onClick={() => step((g) => advanceToNextEvent(s, g))}>
+            <Button size="sm" onClick={onNext}>
               <FastForward className="mr-1 h-4 w-4" aria-hidden="true" /> Next event
             </Button>
           </div>
