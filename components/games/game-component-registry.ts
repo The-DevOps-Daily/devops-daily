@@ -4,6 +4,7 @@ import YamlParsingSimulator from '@/components/games/yaml-parsing-simulator';
 import CronExpressionSimulator from '@/components/games/cron-expression-simulator';
 import K8sRbacSimulator from '@/components/games/k8s-rbac-simulator';
 import HerokuStyleNameGenerator from '@/components/games/heroku-style-name-generator';
+import IncidentCommanderSimulator from '@/components/games/incident-commander-simulator';
 import BinaryByteSimulator from '@/components/games/binary-byte-simulator';
 import BounceTriageSimulator from '@/components/games/bounce-triage-simulator';
 import AwsVpcSimulator from '@/components/games/aws-vpc-simulator';
@@ -79,6 +80,7 @@ export const GAME_COMPONENTS: Record<string, ComponentType> = {
   'git-merge-conflict-simulator': GitMergeConflictSimulator,
   'load-balancer-simulator': LoadBalancerSimulator,
   'heroku-style-name-generator': HerokuStyleNameGenerator,
+  'incident-commander-simulator': IncidentCommanderSimulator,
   'log-aggregation-pipeline-simulator': LogAggregationPipelineSimulator,
   'message-queue-simulator': MessageQueueSimulator,
   'oauth-oidc-flow-simulator': OAuthOidcFlowSimulator,
