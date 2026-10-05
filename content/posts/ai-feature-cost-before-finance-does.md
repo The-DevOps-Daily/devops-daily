@@ -133,7 +133,7 @@ This does not mean agent loops are cheap. It means the step count decides, and t
 
 ## The one-word answer that cost the most
 
-The classifier is the feature nobody worries about. The prompt is roughly 50 to 90 tokens and the answer is one word. On DeepSeek V4.1 Flash with default settings it cost $0.48 per 1,000 labels. On Kimi K2.6 it cost $2.42.
+The classifier is the feature nobody worries about. The prompt is roughly 50 to 90 tokens and the answer is one word. At list price, it cost $0.48 per 1,000 labels on DeepSeek V4.1 Flash with default settings, and $2.45 on Kimi K2.6.
 
 Almost all of that is reasoning. The answer was 2 to 4 tokens every time. The reasoning was not:
 
@@ -152,7 +152,7 @@ Almost all of that is reasoning. The answer was 2 to 4 tokens every time. The re
 }
 ```
 
-The tail is where the money goes. A DNS failure rate of 14 percent for three minutes drew 1,783 reasoning tokens from DeepSeek before it said `ticket`. A node memory-pressure alert drew 1,218. Most alerts took between 50 and 250. Nothing in the request tells you in advance which call will be the expensive one.
+The tail is where the money goes. A DNS failure rate of 14 percent for three minutes drew 1,783 reasoning tokens from DeepSeek before it said `ticket`. A node memory-pressure alert drew 1,218. On DeepSeek at default settings, 14 of the 20 alerts used between 50 and 250. Nothing in the request tells you in advance which call will be the expensive one.
 
 Put next to the incident assistant, this is the number that changes priorities. Comparing mean costs, **one label cost 32 to 48 percent of a full agent investigation**: 32 percent on DeepSeek at list price, 48 percent on Kimi with the cache discounts both features got. A feature that runs on every alert is billed at a third to a half of a feature that runs when an engineer is paged.
 
@@ -177,11 +177,11 @@ Both models accept a `reasoning_effort` parameter on this endpoint, but not the 
   "type": "bar",
   "title": "Cost per 1,000 alert labels",
   "unit": "$",
-  "caption": "Mean cost of 20 real calls per setting, scaled to 1,000, at DigitalOcean list prices on 5 Oct 2026. Source: data/report.json.",
+  "caption": "Mean cost of 20 real calls per setting, scaled to 1,000, at DigitalOcean list prices on 5 Oct 2026 with no cache discount (costPer1000NoCache). Source: data/report.json.",
   "rows": [
-    { "label": "Kimi K2.6, default", "value": 2.4195, "series": "Kimi K2.6" },
-    { "label": "Kimi K2.6, effort=none", "value": 0.0381, "series": "Kimi K2.6" },
-    { "label": "DeepSeek V4.1 Flash, default", "value": 0.4802, "series": "DeepSeek V4.1 Flash" },
+    { "label": "Kimi K2.6, default", "value": 2.4451, "series": "Kimi K2.6" },
+    { "label": "Kimi K2.6, effort=none", "value": 0.06, "series": "Kimi K2.6" },
+    { "label": "DeepSeek V4.1 Flash, default", "value": 0.4812, "series": "DeepSeek V4.1 Flash" },
     { "label": "DeepSeek V4.1 Flash, effort=low", "value": 0.2671, "series": "DeepSeek V4.1 Flash" }
   ]
 }
