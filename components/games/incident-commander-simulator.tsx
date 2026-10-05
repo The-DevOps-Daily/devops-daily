@@ -168,17 +168,17 @@ function SignalCard({
   return (
     <div
       className={cn(
-        'rounded-lg border bg-card p-3',
+        'min-w-0 rounded-lg border bg-card p-2 sm:p-3',
         good ? 'border-emerald-500/30' : 'border-red-500/40'
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <div className="flex flex-col-reverse items-start gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+        <span className="text-[10px] font-medium uppercase leading-tight tracking-wide text-muted-foreground sm:text-xs">
           {label}
         </span>
         <span
           className={cn(
-            'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold',
+            'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:text-[11px]',
             good
               ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
               : 'bg-red-500/10 text-red-700 dark:text-red-400'
@@ -188,11 +188,11 @@ function SignalCard({
         </span>
       </div>
       <div className="mt-1 flex items-baseline gap-2">
-        <span className="font-mono text-2xl font-semibold tabular-nums">{value}</span>
+        <span className="font-mono text-lg font-semibold tabular-nums sm:text-2xl">{value}</span>
         {TrendIcon && (
           <span
             className={cn(
-              'inline-flex items-center gap-0.5 text-xs',
+              'hidden items-center gap-0.5 text-xs sm:inline-flex',
               delta.better ? 'text-emerald-600' : 'text-red-600'
             )}
           >
@@ -201,8 +201,8 @@ function SignalCard({
           </span>
         )}
       </div>
-      <div className="text-xs text-muted-foreground">Normal: {baseline}</div>
-      <div className="mt-2">{children}</div>
+      <div className="hidden text-xs text-muted-foreground sm:block">{baseline}</div>
+      <div className="mt-2 hidden sm:block">{children}</div>
     </div>
   );
 }
@@ -219,12 +219,12 @@ function HealthStrip({ s, game }: { s: Scenario; game: GameState }) {
   const successLow = now.success < now.demand * 0.99;
   const constraintOk = s.isHealthy({ ...now, failed: 0 });
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-3 gap-2 sm:gap-3">
       <SignalCard
         label="Failed checkout requests"
         value={`${now.failed.toFixed(1)}%`}
-        baseline={`${base.failed.toFixed(1)}%`}
-        delta={trend(now.failed, before.failed, true, 0.3)}
+        baseline={`Normal: ${base.failed.toFixed(1)}%`}
+        delta={trend(now.failed, before.failed, true, Math.max(1, before.failed * 0.15))}
         good={now.failed < 1}
       >
         <Sparkline values={hist.map((p) => p.failed)} threshold={1} bad={now.failed >= 1} />
@@ -232,17 +232,21 @@ function HealthStrip({ s, game }: { s: Scenario; game: GameState }) {
       <SignalCard
         label={s.successLabel}
         value={fmtCount(now.success)}
-        baseline={`${fmtCount(base.success)} (demand now ${fmtCount(now.demand)})`}
-        delta={trend(now.success, before.success, false, now.demand * 0.01)}
+        baseline={`of ${fmtCount(now.demand)} attempted (${Math.round((now.success / now.demand) * 100)}%). Normally 99% or more succeed.`}
+        delta={trend(now.success / now.demand, before.success / before.demand, false, 0.02)}
         good={!successLow}
       >
-        <Sparkline values={hist.map((p) => p.success)} bad={successLow} />
+        <Sparkline
+          values={hist.map((p) => (p.success / p.demand) * 100)}
+          bad={successLow}
+          max={100}
+        />
       </SignalCard>
       <SignalCard
         label={s.constraint.label}
         value={s.constraint.format(now.constraint)}
-        baseline={`${s.constraint.format(base.constraint)} (healthy: ${s.constraint.healthy})`}
-        delta={trend(now.constraint, before.constraint, s.constraint.lowerIsBetter, 0.5)}
+        baseline={`Normal: ${s.constraint.format(base.constraint)} (healthy: ${s.constraint.healthy})`}
+        delta={trend(now.constraint, before.constraint, s.constraint.lowerIsBetter, 2)}
         good={constraintOk}
       >
         <Sparkline values={hist.map((p) => p.constraint)} bad={!constraintOk} max={100} />
@@ -868,6 +872,9 @@ function DebriefView({
                     ? `First status update at T+${pad(d.firstUpdateAt)}.`
                     : 'No status update was posted.'}
                 </li>
+                {d.missedDeadlines.map((m) => (
+                  <li key={`missed-${m}`}>The update due at T+{pad(m)} was not posted in time.</li>
+                ))}
                 {d.inaccurateUpdates.map((u) => (
                   <li key={u.t + u.kind}>
                     T+{pad(u.t)}: {u.note}

@@ -555,6 +555,7 @@ export interface Debrief {
   firstUpdateAt: number | null;
   updatesOnTime: number;
   updatesDue: number;
+  missedDeadlines: number[];
   inaccurateUpdates: UpdateRecord[];
   severityNote: string;
   coordination: string[];
@@ -564,10 +565,11 @@ export interface Debrief {
 }
 
 /** Deadlines that fell inside the incident, and whether each was met in time. */
-function updateCadence(state: GameState): { due: number; onTime: number } {
+function updateCadence(state: GameState): { due: number; onTime: number; missed: number[] } {
   const end = state.t;
   let due = 0;
   let onTime = 0;
+  const missed: number[] = [];
   let deadline = FIRST_UPDATE_DUE;
   let i = 0;
   while (deadline <= end) {
@@ -578,14 +580,16 @@ function updateCadence(state: GameState): { due: number; onTime: number } {
       i++;
       deadline = next.t + UPDATE_INTERVAL;
     } else if (next && next.t < deadline + UPDATE_INTERVAL) {
+      missed.push(deadline);
       // missed, then posted late: the next deadline counts from the late post
       i++;
       deadline = next.t + UPDATE_INTERVAL;
     } else {
+      missed.push(deadline);
       deadline += UPDATE_INTERVAL;
     }
   }
-  return { due, onTime };
+  return { due, onTime, missed };
 }
 
 export function mitigatedAt(s: Scenario, state: GameState): number | null {
@@ -651,6 +655,7 @@ export function buildDebrief(s: Scenario, state: GameState): Debrief {
     firstUpdateAt: state.updates[0]?.t ?? null,
     updatesOnTime: cadence.onTime,
     updatesDue: cadence.due,
+    missedDeadlines: cadence.missed,
     inaccurateUpdates: state.updates.filter((u) => !u.accurate),
     severityNote,
     coordination,
