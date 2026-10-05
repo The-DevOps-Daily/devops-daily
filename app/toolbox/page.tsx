@@ -433,6 +433,17 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'k9s',
+    description: 'Terminal UI for browsing and managing Kubernetes clusters.',
+    href: 'https://k9scli.io/',
+    category: 'containers',
+    icon: Terminal,
+    badges: [
+      { text: 'Kubernetes', variant: 'outline' },
+      { text: 'Open Source', variant: 'secondary' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
