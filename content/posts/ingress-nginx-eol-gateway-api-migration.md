@@ -174,11 +174,11 @@ If a snippet does something that has no clean replacement, this is the moment to
 
 **`auth-url`, `auth-signin`, `auth-tls-secret`, `auth-response-headers`**. External auth (the classic "redirect to your OIDC proxy" pattern). Envoy Gateway has [`SecurityPolicy.extAuth`](https://gateway.envoyproxy.io/docs/tasks/security/ext-auth/) which is the closest one-to-one mapping. kgateway has equivalent functionality in `TrafficPolicy`. Istio Gateway has `AuthorizationPolicy` with `CUSTOM` action. None of these are auto-translated; you have to write the new resource by hand. The good news is the replacement is typed and reviewable, unlike the original annotation.
 
-**`session-cookie-name` and sticky sessions**. Gateway API core does not have a sticky-session knob. Every controller has its own vendor extension: Envoy Gateway's [`BackendTrafficPolicy.sessionPersistence`](https://gateway.envoyproxy.io/contributions/design/session-persistence/), kgateway's session affinity in `TrafficPolicy`, Istio's `DestinationRule` with `consistentHash`.
+**`session-cookie-name` and sticky sessions**. Gateway API core does not have a sticky-session knob. Every controller has its own vendor extension: Envoy Gateway's [`BackendTrafficPolicy.sessionPersistence`](https://gateway.envoyproxy.io/docs/tasks/traffic/session-persistence/), kgateway's session affinity in `TrafficPolicy`, Istio's `DestinationRule` with `consistentHash`.
 
 **`load-balance` and `upstream-hash-by`**. Same story. Core Gateway API picks a controller-defined algorithm by default (Envoy: weighted round-robin). To force a specific algorithm or consistent hash on a header, use the controller's `BackendTrafficPolicy` or equivalent.
 
-**`mirror-target`**. Gateway API has a [`RequestMirror`](https://gateway-api.sigs.k8s.io/reference/spec/#httprequestmirrorfilter) filter type that does exactly this, but `ingress2gateway` does not auto-translate to it. Write it manually as an `HTTPRoute.filter` of type `RequestMirror`.
+**`mirror-target`**. Gateway API has a [`RequestMirror`](https://gateway-api.sigs.k8s.io/reference/api-spec/#httprequestmirrorfilter) filter type that does exactly this, but `ingress2gateway` does not auto-translate to it. Write it manually as an `HTTPRoute.filter` of type `RequestMirror`.
 
 The pattern across all of these: figure out which Gateway API extension type the target controller uses, then write the resource alongside the auto-translated `HTTPRoute`. None of this is fast, but all of it is mechanical once you have the inventory from step 1.
 
