@@ -1,4 +1,4 @@
-import simpleGit, { SimpleGit } from 'simple-git';
+import { simpleGit, type SimpleGit } from 'simple-git';
 
 /**
  * Create a new git branch
