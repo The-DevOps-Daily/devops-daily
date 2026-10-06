@@ -1411,14 +1411,19 @@ export default function IncidentCommanderSimulator() {
         className="hidden min-h-[24rem] gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.1fr)]"
         style={{ height: `calc(100dvh - ${barHeight + 24}px)` }}
       >
-        <div className="min-h-0 space-y-3 overflow-y-auto pr-1">
+        <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
           <HealthStrip s={s} game={game} stacked />
           {situation}
         </div>
-        <div ref={feedRef} className="min-h-0 overflow-y-auto pr-1">
+        <div
+          ref={feedRef}
+          className="min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
+        >
           {timeline}
         </div>
-        <div className="min-h-0 space-y-3 overflow-y-auto pr-1">{work}</div>
+        <div className="min-h-0 space-y-3 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]">
+          {work}
+        </div>
       </div>
 
       <div ref={tabsRef} aria-hidden="true" className="lg:hidden" />
