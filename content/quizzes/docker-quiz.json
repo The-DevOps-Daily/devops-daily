@@ -4,7 +4,7 @@
   "description": "Test your Docker knowledge with questions on containers, images, Dockerfile instructions, volumes, networks, Compose, and basic orchestration concepts.",
   "category": "Docker",
   "icon": "Code",
-  "totalPoints": 165,
+  "totalPoints": 175,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-500",
@@ -13,7 +13,7 @@
   "metadata": {
     "estimatedTime": "20-25 minutes",
     "difficultyLevels": {
-      "beginner": 11,
+      "beginner": 12,
       "intermediate": 2,
       "advanced": 1
     },
@@ -258,6 +258,23 @@
       "correctAnswer": 3,
       "explanation": "docker exec runs a new command in an already-running container, and -it gives you an interactive terminal. docker run would start a brand new container instead, and docker attach connects to the main process rather than opening a new shell.",
       "hint": "exec runs in an existing container; run makes a new one.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "dockerignore-build-context",
+      "title": "Keeping the Build Context Small",
+      "description": "Which change stops node_modules and .git from being sent to the builder when you run docker build?",
+      "situation": "Running `docker build .` in your Node.js project prints \"transferring context: 480MB\", even though your app source is only a few megabytes. The project folder contains node_modules/, .git/, and a local .env file.",
+      "options": [
+        "Add a .dockerignore file listing node_modules, .git, and .env",
+        "Add a RUN rm -rf node_modules .git .env step at the end of the Dockerfile",
+        "Add those paths to .gitignore",
+        "Replace COPY . . with ADD . ."
+      ],
+      "correctAnswer": 0,
+      "explanation": "Docker sends the whole build context to the builder before it runs any instruction. A .dockerignore file in the context root excludes matching paths, so the transfer is smaller, builds are faster, cache busts are rarer, and secrets like .env stay out of the image. A RUN rm step runs after the files are already copied, so they remain in earlier layers. Docker ignores .gitignore, and ADD copies the same files COPY does.",
+      "hint": "The fix has to apply before the context is sent, not after the files are inside the image.",
       "difficulty": "beginner",
       "points": 10
     }
