@@ -332,7 +332,7 @@ function EvidencePanel({
         ref={scrollRef}
         id={`tfp-${layout}-evidence`}
         tabIndex={-1}
-        className="min-h-0 flex-1 overflow-y-auto p-3 pt-0 focus:outline-none"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 pt-0 [scrollbar-width:thin] focus:outline-none"
       >
         {active?.transcript && <TerminalView t={active.transcript} wrap={wrap} />}
         {active?.file && <FileView f={active.file} wrap={wrap} />}
@@ -404,17 +404,22 @@ function BriefPanel({
 
       {p.bindings.length > 0 && (
         <Card>
-          <CardHeader className="p-3 pb-2">
-            <CardTitle className="text-sm">What the plan does now</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Terraform links an address in the code to an entry in the state, and the state entry
-              to a real object.
-              {p.stateLabel ? ` ${p.stateLabel}.` : ''}
-            </p>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <BindingList rows={p.bindings} stateLabel={p.stateLabel} />
-          </CardContent>
+          <details>
+            <summary className="flex cursor-pointer select-none items-center justify-between gap-2 p-3 text-sm font-semibold">
+              What the plan does now
+              <span className="text-xs font-normal text-muted-foreground">
+                {p.bindings.length} {p.bindings.length === 1 ? 'resource' : 'resources'}
+              </span>
+            </summary>
+            <div className="space-y-2 p-3 pt-0">
+              <p className="text-xs text-muted-foreground">
+                Terraform links an address in the code to an entry in the state, and the state entry
+                to a real object.
+                {p.stateLabel ? ` ${p.stateLabel}.` : ''}
+              </p>
+              <BindingList rows={p.bindings} stateLabel={p.stateLabel} />
+            </div>
+          </details>
         </Card>
       )}
 
@@ -513,7 +518,7 @@ function ResultCard({
         <p className="mt-2 text-sm font-medium text-foreground">{result.outcome.summary}</p>
         <p className="mt-1 text-sm text-foreground/90">{result.outcome.explanation}</p>
         {result.outcome.bindings && (
-          <details className="mt-2 text-foreground" open>
+          <details className="mt-2 text-foreground">
             <summary className="cursor-pointer select-none text-xs font-semibold">
               What it does to code, state and AWS
             </summary>
@@ -1061,7 +1066,10 @@ export default function TerraformPuzzle() {
         className="hidden min-h-[20rem] gap-3 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.7fr)_minmax(0,1fr)]"
         style={{ height: `calc(100dvh - var(--site-header-h, 0px) - ${barHeight + 24}px)` }}
       >
-        <div ref={briefRef} className="min-h-0 overflow-y-auto pr-1">
+        <div
+          ref={briefRef}
+          className="min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
+        >
           {brief}
         </div>
         <div className="min-h-0">
@@ -1073,7 +1081,10 @@ export default function TerraformPuzzle() {
             scrollRef={evidenceRef}
           />
         </div>
-        <div ref={fixRef} className="min-h-0 overflow-y-auto pr-1">
+        <div
+          ref={fixRef}
+          className="min-h-0 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
+        >
           {fix('desktop')}
         </div>
       </div>
