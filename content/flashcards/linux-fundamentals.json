@@ -6,7 +6,7 @@
   "icon": "Terminal",
   "difficulty": "beginner",
   "estimatedTime": "20 minutes",
-  "cardCount": 20,
+  "cardCount": 22,
   "theme": {
     "primaryColor": "green",
     "gradientFrom": "from-green-500",
@@ -152,6 +152,20 @@
       "back": "Symbolic (soft) links are pointers to files/directories. Create with ln -s target linkname. If target deleted, link breaks. Hard links (ln target link) reference same inode, both must be deleted to remove file. Symlinks can cross filesystems.",
       "category": "File System",
       "tags": ["symlink", "links", "filesystem"]
+    },
+    {
+      "id": "linux-check-listening-ports",
+      "front": "How do you inspect active listening ports and their processes on modern Linux?",
+      "back": "Use the ss command with flags -tulpn (ss -tulpn). It is the modern, faster replacement for netstat, displaying TCP/UDP connections, listening sockets, and the numeric PIDs/program names holding them.",
+      "category": "Networking",
+      "tags": ["ss", "ports", "networking", "troubleshooting"]
+    },
+    {
+      "id": "journalctl-systemd-logs",
+      "front": "How do you query and follow systemd logs using journalctl?",
+      "back": "journalctl -u service-name views logs for a specific service. Add -f to follow live output (like tail -f), -n 50 for the last 50 lines, and --since today for recent logs. It reads binary journal logs maintained by systemd.",
+      "category": "Monitoring",
+      "tags": ["journalctl", "systemd", "logs", "troubleshooting"]
     }
   ]
 }
