@@ -4,7 +4,7 @@
   "description": "Test your Docker knowledge with questions on containers, images, Dockerfile instructions, volumes, networks, Compose, and basic orchestration concepts.",
   "category": "Docker",
   "icon": "Code",
-  "totalPoints": 165,
+  "totalPoints": 175,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-500",
@@ -13,7 +13,7 @@
   "metadata": {
     "estimatedTime": "20-25 minutes",
     "difficultyLevels": {
-      "beginner": 11,
+      "beginner": 12,
       "intermediate": 2,
       "advanced": 1
     },
@@ -258,6 +258,23 @@
       "correctAnswer": 3,
       "explanation": "docker exec runs a new command in an already-running container, and -it gives you an interactive terminal. docker run would start a brand new container instead, and docker attach connects to the main process rather than opening a new shell.",
       "hint": "exec runs in an existing container; run makes a new one.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "dockerignore-build-context",
+      "title": "Build Context Optimization",
+      "description": "How do you prevent local build artifacts and node_modules from being sent to the Docker daemon during a build?",
+      "situation": "Your docker build command takes a long time before compilation starts because it transfers hundreds of megabytes of build context (including .git and node_modules) to the Docker daemon.",
+      "options": [
+        "Pass the --exclude flag to docker build specifying the folders to omit",
+        "Run docker prune context before executing docker build",
+        "Add patterns for unwanted files and directories to a .dockerignore file in the build context root",
+        "Set the DOCKER_IGNORE_CONTEXT environment variable in your shell"
+      ],
+      "correctAnswer": 2,
+      "explanation": "A .dockerignore file works like .gitignore. It tells Docker which files and directories to exclude when sending the build context to the Docker daemon, reducing build time and image size.",
+      "hint": "Think about how Git ignores unwanted files from being tracked in a repository.",
       "difficulty": "beginner",
       "points": 10
     }
