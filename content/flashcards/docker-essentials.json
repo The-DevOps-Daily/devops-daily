@@ -6,7 +6,7 @@
   "icon": "Container",
   "difficulty": "beginner",
   "estimatedTime": "12 minutes",
-  "cardCount": 15,
+  "cardCount": 17,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-600",
@@ -117,6 +117,20 @@
       "back": "'docker exec' runs a command in a running container. Commonly used with -it flags to open an interactive shell for debugging or maintenance tasks.",
       "category": "Commands",
       "tags": ["exec", "cli", "debugging"]
+    },
+    {
+      "id": "restart-policy",
+      "front": "What is a Docker restart policy?",
+      "back": "A restart policy tells Docker whether to restart a container when it exits. Options are no (the default), on-failure (only on a non-zero exit code), always, and unless-stopped (like always, but not after you stop it manually). Example: docker run -d --restart unless-stopped nginx.",
+      "category": "Commands",
+      "tags": ["restart", "cli", "reliability"]
+    },
+    {
+      "id": "image-tag-vs-digest",
+      "front": "What's the difference between an image tag and an image digest?",
+      "back": "A tag such as nginx:1.27 is a movable label, so it can point to a different image after someone pushes again. A digest such as nginx@sha256:... is a hash of the image content, so it always refers to the exact same image. Pin by digest when you need reproducible deploys.",
+      "category": "Distribution",
+      "tags": ["tags", "digest", "registry"]
     }
   ]
 }
