@@ -281,7 +281,7 @@ function getQuizTip(category: string): string {
     Kubernetes:
       'Kubernetes can seem complex, but every concept builds on the previous one. Start with understanding pods (the atomic unit), then services (networking), deployments (scaling), and gradually work your way up to advanced topics. The key is understanding the "why" behind each design decision - Kubernetes was built to solve real problems at scale.',
     Docker:
-      'Docker is all about understanding layers and optimization. Every command in your Dockerfile creates a new layer, so order matters for caching. Start with the least frequently changing files first (like package.json), then add your code. Always think about the final image size and security - smaller and more secure is better.',
+      'Docker images contain filesystem layers and configuration metadata. Instructions such as RUN and COPY can add filesystem layers, while CMD and LABEL set metadata. For better cache reuse, copy dependency manifests and install dependencies before copying frequently changing application code.',
     Terraform:
       'Infrastructure as Code is about thinking declaratively. Instead of "how do I create this?", think "what should the end state look like?". Terraform will figure out the steps. Always plan before apply, use modules for reusability, and remember that state is everything - protect it!',
     Git: 'Git is fundamentally about understanding the commit graph and how references move. Learn branching strategies, learn to rewrite history safely (when appropriate), and remember that Git is a tool for collaboration - clear commit messages and logical commits help your teammates understand your changes.',
