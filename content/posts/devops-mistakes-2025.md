@@ -72,7 +72,7 @@ You deploy. Something breaks. And there's no plan B.
 - Automate rollbacks on failure.
 - Always have a `rollback.sh` or previous image ready.
 
-![](https://media1.tenor.com/m/_naabXNYkNgAAAAd/pressing-button-nick-zetta.gif)
+![A man nervously pressing a big red button](https://media1.tenor.com/m/_naabXNYkNgAAAAd/pressing-button-nick-zetta.gif)
 
 ---
 
@@ -85,7 +85,7 @@ Monitoring isn't just about uptime. You can't fix what you can't see.
 - Add metrics, logs, and traces from day one.
 - Use tools like Prometheus, Grafana, and OpenTelemetry.
 
-![](https://media1.tenor.com/m/1SDTHgTkXP4AAAAd/vae.gif)
+![The confused math lady meme, surrounded by floating geometry formulas](https://media1.tenor.com/m/1SDTHgTkXP4AAAAd/vae.gif)
 
 ---
 
@@ -98,7 +98,7 @@ Your stack has 25 tools. None of them talk to each other. And your alert fatigue
 - Consolidate tools where possible.
 - Favor tools that integrate well with your existing stack.
 
-![](https://media1.tenor.com/m/F-tesxQoJqAAAAAd/too-many-counting.gif)
+![Seth Meyers counting on his fingers and running out of fingers](https://media1.tenor.com/m/F-tesxQoJqAAAAAd/too-many-counting.gif)
 
 ---
 
@@ -125,7 +125,7 @@ A typo fix shouldn't need a 3-person review and a Slack war.
 - Use tools like Backstage, Docusaurus, or just plain Markdown.
 - Encourage a culture of async knowledge sharing.
 
-![](https://media1.tenor.com/m/qSAwTMlTw4YAAAAC/confused-john-travolta.gif)
+![Confused John Travolta looking around an empty room, captioned "Where is everyone"](https://media1.tenor.com/m/qSAwTMlTw4YAAAAC/confused-john-travolta.gif)
 
 ---
 
@@ -138,7 +138,7 @@ You test app code, but deploy infra changes directly to prod? Bold.
 - Use staging or preview environments.
 - Test IaC with `checkov`, `terratest`, or `kitchen`.
 
-![](https://media1.tenor.com/m/xwVqrLrU8H0AAAAC/funny-frozen.gif)
+![A man cannonballs into a garden pond and lands flat on the frozen surface](https://media1.tenor.com/m/xwVqrLrU8H0AAAAC/funny-frozen.gif)
 
 ---
 
@@ -151,7 +151,7 @@ If your pipeline can deploy to prod, attackers might be able to as well.
 - Use least privilege for pipeline credentials.
 - Run security checks like `trivy`, `semgrep`, and `snyk`.
 
-![](https://i.imgflip.com/a0o3d6.jpg)
+![Trojan horse meme: "Me" welcomes a "Random GitHub Action" into "My Pipeline" while soldiers labeled "Backdoor" hide inside](https://i.imgflip.com/a0o3d6.jpg)
 
 ---
 
