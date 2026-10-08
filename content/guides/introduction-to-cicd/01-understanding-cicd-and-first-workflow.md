@@ -57,9 +57,9 @@ Your automated CI system becomes a safety net that catches problems before they 
 
 ## Continuous Deployment in Practice
 
-Continuous Deployment takes CI further by automatically releasing code that passes all quality checks. This doesn't mean every code change immediately goes to users - it means your code is always in a deployable state, and you can choose when to release features.
+Continuous Deployment takes CI further by automatically releasing code that passes all required quality checks. In a continuous deployment setup, changes that successfully pass the pipeline are automatically deployed to production without requiring a manual release step.
 
-Many teams practice Continuous Delivery instead, which maintains the same automated deployment capabilities but requires manual approval for production releases. The key is having reliable, automated deployment processes that remove human error and make releases predictable.
+Many teams practice Continuous Delivery instead, which keeps the deployment process automated but requires a manual approval or release decision before production deployment. The key difference is whether production releases happen automatically or require human intervention.
 
 ## Creating Your First GitHub Actions Workflow
 
@@ -104,7 +104,7 @@ jobs:
 
 This workflow introduces the essential building blocks. The `name` gives your workflow a descriptive title that appears in GitHub's interface. The `on` section defines triggers - events that cause GitHub to execute your workflow.
 
-The `jobs` section contains the actual work. Each job runs on its own virtual machine, which means jobs can run in parallel by default. The `runs-on` field specifies the operating system - Ubuntu provides a Linux environment with common development tools pre-installed.
+The `jobs` section contains the actual work. Each job runs on its own virtual machine, which means jobs can run in parallel by default. The `runs-on` field specifies the runner environment. In this example, `ubuntu-latest` uses a GitHub-hosted Ubuntu runner with a set of commonly used development tools available.
 
 Within each job, `steps` define what happens sequentially. You can use pre-built actions (like `actions/checkout`) or run shell commands directly. The checkout action is essential because it downloads your repository's files into the otherwise empty virtual machine.
 
