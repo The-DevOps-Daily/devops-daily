@@ -72,7 +72,7 @@ You deploy. Something breaks. And there's no plan B.
 - Automate rollbacks on failure.
 - Always have a `rollback.sh` or previous image ready.
 
-![](https://media1.tenor.com/m/_naabXNYkNgAAAAd/pressing-button-nick-zetta.gif)
+![Reaction GIF illustrating the lack of a rollback plan](https://media1.tenor.com/m/_naabXNYkNgAAAAd/pressing-button-nick-zetta.gif)
 
 ---
 
@@ -85,7 +85,7 @@ Monitoring isn't just about uptime. You can't fix what you can't see.
 - Add metrics, logs, and traces from day one.
 - Use tools like Prometheus, Grafana, and OpenTelemetry.
 
-![](https://media1.tenor.com/m/1SDTHgTkXP4AAAAd/vae.gif)
+![Reaction GIF about the consequences of ignoring observability](https://media1.tenor.com/m/1SDTHgTkXP4AAAAd/vae.gif)
 
 ---
 
@@ -98,7 +98,7 @@ Your stack has 25 tools. None of them talk to each other. And your alert fatigue
 - Consolidate tools where possible.
 - Favor tools that integrate well with your existing stack.
 
-![](https://media1.tenor.com/m/F-tesxQoJqAAAAAd/too-many-counting.gif)
+![Reaction GIF about having too many disconnected tools](https://media1.tenor.com/m/F-tesxQoJqAAAAAd/too-many-counting.gif)
 
 ---
 
@@ -125,7 +125,7 @@ A typo fix shouldn't need a 3-person review and a Slack war.
 - Use tools like Backstage, Docusaurus, or just plain Markdown.
 - Encourage a culture of async knowledge sharing.
 
-![](https://media1.tenor.com/m/qSAwTMlTw4YAAAAC/confused-john-travolta.gif)
+![Confused reaction GIF about relying on undocumented knowledge](https://media1.tenor.com/m/qSAwTMlTw4YAAAAC/confused-john-travolta.gif)
 
 ---
 
@@ -138,7 +138,7 @@ You test app code, but deploy infra changes directly to prod? Bold.
 - Use staging or preview environments.
 - Test IaC with `checkov`, `terratest`, or `kitchen`.
 
-![](https://media1.tenor.com/m/xwVqrLrU8H0AAAAC/funny-frozen.gif)
+![Reaction GIF about skipping tests for infrastructure changes](https://media1.tenor.com/m/xwVqrLrU8H0AAAAC/funny-frozen.gif)
 
 ---
 
@@ -151,7 +151,7 @@ If your pipeline can deploy to prod, attackers might be able to as well.
 - Use least privilege for pipeline credentials.
 - Run security checks like `trivy`, `semgrep`, and `snyk`.
 
-![](https://i.imgflip.com/a0o3d6.jpg)
+![Reaction image about forgetting security in deployment pipelines](https://i.imgflip.com/a0o3d6.jpg)
 
 ---
 
