@@ -53,6 +53,12 @@ The original four sheets are approved and establish their faces, observed skin c
 | Sam, 27, software engineer | Messy auburn hair, mustard sweatshirt, jeans and sneakers; open gestures, energetic forward lean | Curious, talented, optimistic; understands customer-facing code and spots useful connections | Confuses code diff size with operational risk; becomes a strong collaborator without losing enthusiasm |
 | Chris, 43, engineering manager | Salt-and-pepper hair, rust cardigan, neutral shirt and casual business trousers; usually a mug | Brief, practical, well-intentioned; understands delivery, cost and reliability tensions | Asks contradictory things under pressure; grows better at explicitly choosing tradeoffs |
 
+### Management and technical leadership
+
+Chris is the engineering manager: he balances delivery, reliability and cost, handles stakeholder expectations and gives the team room to investigate. He understands engineering and can challenge or support a technical decision without being the person who writes every fix.
+
+Alex acts as the technical lead during reliability incidents. Maya leads platform/infrastructure design, Sam brings application expertise, Nora leads database changes and Eli leads cost/ownership analysis. These are contextual responsibilities, not an additional reporting hierarchy. Volume 1 does not need a separate tech lead character; leadership can rotate with the problem while the original four remain the leads.
+
 ### Consistency contract
 
 Each Phase 2 sheet must include full-body front, three-quarter and side views; neutral, pleased, skeptical, worried, concentrated and relieved expressions; clothing swatches; accessories and close details. Preserve adult anatomy and distinguish both mug-carrying characters by silhouette, mug shape and posture. Alex's curls/beard, Maya's bob/glasses, Sam's auburn hair and Chris's salt-and-pepper hair must remain readable in silhouette and reduced thumbnails.

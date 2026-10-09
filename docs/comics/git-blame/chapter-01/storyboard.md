@@ -8,6 +8,12 @@ All six character designs are approved. Chapter 1 features the original four lea
 
 The title is a playful misdirection: the old application stops too early, while its responsibility to an in-flight request persists. Do not depict an immortal process or a pod ignoring SIGKILL. Sam brings useful request evidence, Maya coordinates investigation, Alex owns an old assumption and Chris shares the decision to defer another feature.
 
+## Leadership roles in this chapter
+
+Chris is ShipIt’s engineering manager. He coordinates delivery expectations and customer-impact communication, protects time for diagnosis, and shares the decision to defer another non-urgent feature. He is technically literate rather than a clueless boss.
+
+Alex, the senior SRE, acts as the incident’s technical lead. Maya leads the platform/routing investigation; Sam leads the application/request evidence and participates in the fix. These are contextual technical-lead responsibilities, not new people-management titles. Nora and Eli lead their own areas when later chapters call for their expertise. No separate tech lead character is introduced in Volume 1.
+
 ## Review and production conventions
 
 The [structured storyboard](storyboard.json) is the source for dialogue order, provisional bubble coordinates, reference paths and scene metadata. Coordinates are normalized to the complete image: x/y give a bubble’s top-left corner and width is a fraction of image width. The tail target is an image-space anchor. These are composition targets, not verified layout coordinates; adjust them against the real proof image. Dialogue always reads in the array order. On narrow screens or at text zoom, it flows below the uncropped artwork with speaker names.
@@ -446,4 +452,3 @@ No Chapter 1 sponsor is confirmed. Its optional sponsorship field is empty. An o
 Review the seven-scene pacing, dialogue, the causal explanation, the deliberate first corrected cutover and the sponsorship approach. Approval authorizes **Phase 4 only**: generate one complete text-free scene using approved references, build a minimal responsive dialogue-overlay proof and check desktop/mobile reading. The recommended proof is Scene 1 because it tests two recognizable characters, office identity, portrait composition, humor and editable bubbles at once. Technical diagram behavior still needs review before the remaining art is produced.
 
 **Stop here.** No proof illustration, remaining chapter scenes, website implementation or deployment is authorized by completion of this document. Phase 4 itself stops for approval before remaining scene generation.
-
