@@ -31,11 +31,11 @@ So all three brokers can be both. We wanted to know what that means in practice,
 - more consumers than partitions
 - the order of events after a retry
 
-Two settings explained every result, whatever the broker: does the storage keep a message after it is handled, and does the consumer acknowledge each message or keep an offset?
+Two settings explained most of the results, whatever the broker: does the storage keep a message after it is handled, and does the consumer acknowledge each message or keep an offset? How many messages a consumer may hold at once explained the rest.
 
 Two results surprised us:
 
-- **RabbitMQ:** since RabbitMQ 4.3, a quorum queue's delivery limit ignores `basic.nack`. With `x-delivery-limit` set to 5 and a dead letter queue, a poison message was retried more than 6,000 times in 45 seconds. The same code on RabbitMQ 4.2.9 dead-lettered it after 6 deliveries. If your consumers nack, upgrading to 4.3 turns off your poison message handling.
+- **RabbitMQ:** since RabbitMQ 4.3, a quorum queue's delivery limit ignores `basic.nack(requeue=True)`. With `x-delivery-limit` set to 5 and a dead letter queue, a poison message was retried more than 6,000 times in 45 seconds. The same code on RabbitMQ 4.2.9 dead-lettered it after 6 deliveries. If your consumers requeue failed messages with a nack and rely on the delivery limit, upgrading to 4.3 turns off your poison message handling.
 - **Kafka:** a share group with six consumers gave work to only three of them, because each consumer takes whole producer batches.
 
 ## TLDR
@@ -52,7 +52,7 @@ Two results surprised us:
   - Each consumer of a RabbitMQ stream read all 120 messages.
 - **Order after a retry:**
   - The offset readers kept per-key order in 5 of 5 runs.
-  - The per-message-ack setups lost it whenever more than one message was in flight.
+  - The per-message-ack setups lost it in every run where a consumer held several messages at once (prefetch 10, a fetch of 10, a share group batch), and kept it with one message in flight.
   - The Kafka share group lost it even with `max.poll.records=1`.
 
 ## Prerequisites
@@ -82,14 +82,14 @@ A "queue" and a "log" each bundle two separate decisions. Pull them apart and th
 
 **Consumption** decides what a consumer remembers. An offset reader remembers a single position: everything before it is done. A per-message reader remembers each message's state, so one message can fail while the next one succeeds.
 
-The fourth combination, storage that deletes handled messages read with an offset, does not exist. Kafka offers two of the three useful combinations, RabbitMQ offers two through its two queue types, and NATS offers all three: its ordered consumers read without acknowledgements, like an offset reader, but we did not test them.
+The fourth combination, storage that deletes handled messages read with an offset, does not exist. Kafka offers two of the three useful combinations, and RabbitMQ offers two through its two queue types. NATS also has [ordered consumers](https://docs.nats.io/using-nats/developer/develop_jetstream/consumers), which read without acknowledgements and keep their own position, but we did not test them.
 
-On a failure, each setup used its own mechanism, set up the way its documentation recommends:
+On a failure, each setup used its standard failure path:
 
 - The share group released the record.
 - The quorum queue got a `basic.nack`, and in a second run a `basic.reject`.
 - NATS got a `nak`.
-- The two offset readers went back to the failed offset and tried again. An offset reader has no broker-side way to set one message aside: if it moves past a message, that message counts as done.
+- The two offset readers went back to the failed offset and tried again. An offset reader has no broker-side way to set one message aside: if it commits past a message, the message stays on disk, but the reader counts it as done. An application can do more, for example keep reading ahead and track failed offsets itself, but then it builds its own retry bookkeeping. We kept to the plain retry.
 
 The brokers ran as single nodes on a Raspberry Pi 4. The results describe behaviour, not throughput, and every number comes from the JSON files in the repository's `runs/` directory.
 
@@ -112,14 +112,14 @@ Share groups need no extra setup on Kafka 4.3: `share.version` is finalized at l
 
 The scenario is common. A consumer shipped with a bug and handled 1,000 messages wrong, so after the fix you want those 1,000 messages again. Each setup handled 1,000 messages and acknowledged them all. Then we tried to read them a second time, in whatever way the setup allows.
 
-| Setup                  | How we tried to read again                                                   | Messages read again |
-| ---------------------- | ---------------------------------------------------------------------------- | ------------------- |
-| Kafka consumer group   | `kafka-consumer-groups.sh --reset-offsets --to-earliest`                     | 1,000               |
-| Kafka share group      | same group again, then `kafka-share-groups.sh --reset-offsets --to-earliest` | 0, then 1,000       |
-| RabbitMQ quorum queue  | consume again                                                                | 0                   |
-| RabbitMQ stream        | a new consumer with `x-stream-offset: first`                                 | 1,000               |
-| NATS work-queue stream | a new consumer (the stream held 0 messages)                                  | 0                   |
-| NATS limits stream     | a new durable consumer with `deliver_policy: all`                            | 1,000               |
+| Setup                  | How we tried to read again                                                             | Messages read again |
+| ---------------------- | -------------------------------------------------------------------------------------- | ------------------- |
+| Kafka consumer group   | `kafka-consumer-groups.sh --reset-offsets --to-earliest --execute`                     | 1,000               |
+| Kafka share group      | same group again, then `kafka-share-groups.sh --reset-offsets --to-earliest --execute` | 0, then 1,000       |
+| RabbitMQ quorum queue  | consume again                                                                          | 0                   |
+| RabbitMQ stream        | a new consumer with `x-stream-offset: first`                                           | 1,000               |
+| NATS work-queue stream | nothing to read: the stream held 0 messages after the first pass                       | 0                   |
+| NATS limits stream     | a new durable consumer with `deliver_policy: all`                                      | 1,000               |
 
 Replay followed storage, not consumption. The share group and the NATS limits stream hand out work one message at a time, like a queue, and both replayed all 1,000, because the messages were still on disk. The quorum queue and the work-queue stream deleted each message when it was acknowledged, so after the first pass there was nothing to replay.
 
@@ -140,9 +140,9 @@ One message out of 100, number 10, made the handler fail every time. Each setup 
 | NATS work-queue stream, `max_deliver` 5                           | 99                             | 5                              | left in the stream                        |
 | NATS limits stream, `max_deliver` 5                               | 99                             | 5                              | left in the stream                        |
 
-The two offset readers handled messages 0 to 9 and then stopped. Nothing behind the poison message moved for the rest of the 45 seconds, while the reader retried it 89 times (Kafka) and 928 times (RabbitMQ stream). This is not a broker bug. An offset reader has exactly two options: retry in place and block the partition, or skip the message and lose it unless your code writes it somewhere first. Kafka's dead letter topics today, such as the ones in Kafka Connect and Spring Kafka, are client or framework code making that second choice.
+The two offset readers handled messages 0 to 9 and then stopped. Nothing behind the poison message moved for the rest of the 45 seconds, while the reader retried it 89 times (Kafka) and 928 times (RabbitMQ stream). This is not a broker bug. Without extra bookkeeping in your code, an offset reader has two options: retry in place and block the partition, or commit past the message, which leaves it on disk but out of sight unless your code copies it somewhere first. Kafka's dead letter topics today, such as the ones in [Kafka Connect](https://kafka.apache.org/43/configuration/kafka-connect-configs/) and [Spring Kafka](https://docs.spring.io/spring-kafka/reference/kafka/annotation-error-handling.html#dead-letters), are client or framework code making that second choice.
 
-The share group did what a queue should do. It delivered the poison message 5 times, which is the default `share.delivery.count.limit`, then archived it and handled the other 99. Archived means no member of that share group gets it again. The record is not deleted: after the run, a plain consumer read offset 10 and got the poison message back. Kafka 4.3 does not copy it anywhere for you, though. [KIP-1191](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1191:+Dead-letter+queues+for+share+groups), accepted in January, adds a dead-letter topic for share groups and is planned for Kafka 4.4, which was in release candidates when we ran these tests.
+The share group did what a queue should do. It delivered the poison message 5 times, which is the default `share.delivery.count.limit`, then archived it and handled the other 99. Archived means no member of that share group gets it again. The record is not deleted: after the run, a plain consumer read offset 10 and got the poison message back. Kafka 4.3 does not copy it anywhere for you, though. [KIP-1191](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1191:+Dead-letter+queues+for+share+groups), which the Kafka project has accepted, adds a dead-letter topic for share groups. It is not in 4.3.
 
 NATS behaved the same way. After 5 deliveries, the consumer stopped delivering the message and the server published one `$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES` advisory, which we caught by subscribing during the run. The message stayed in the stream in both cases: in the work-queue stream it was the only one left, and in the limits stream all 100 remained.
 
@@ -170,7 +170,7 @@ We ran the same test, limit 5 and a dead letter queue, on both versions:
 | 4.2.9    | dead-lettered after 6 attempts                   | dead-lettered after 6 attempts |
 | 4.3.6    | 3,839 attempts in 30 seconds, still in the queue | dead-lettered after 6 attempts |
 
-So a consumer that nacks failed messages, which is common because only `basic.nack` can return several messages at once, handled poison messages correctly on 4.2 and loops on them after an upgrade to 4.3. Check which call your consumer or framework makes:
+So a consumer that requeues failed messages with `basic.nack(requeue=True)` and relies on the delivery limit handled poison messages correctly on 4.2, and loops on them after an upgrade to 4.3. Nacking is a common choice, because only `basic.nack` can return several messages at once. A nack with `requeue=False` is different: it dead-letters the message straight away, on both versions. Check which call your consumer or framework makes:
 
 ```python
 # Counts towards x-delivery-limit, so the message is dead-lettered
@@ -183,7 +183,7 @@ channel.basic_nack(delivery_tag, requeue=True)
 ```
 
 :::warning
-A consumer that nacks a poison message in a loop holds a CPU core and floods your logs with errors, but the queue depth looks normal. The messages behind it still flow, so throughput graphs look healthy too. Watch the redelivery rate as well as the queue depth.
+In our run, the loop retried the poison message about 135 times a second, as fast as the consumer could fail it. The queue depth stayed at one message and the other 99 flowed normally, so neither metric showed a problem. On a real consumer, each failure may also log an error or call a downstream service. Watch the redelivery rate as well as the queue depth.
 :::
 
 ## Experiment 3: more consumers than partitions
@@ -211,28 +211,28 @@ A consumer that nacks a poison message in a loop holds a CPU core and floods you
 }
 ```
 
-| Setup                                            | Messages per consumer  | First to last handle |
-| ------------------------------------------------ | ---------------------- | -------------------- |
-| Kafka consumer group                             | 0, 0, 40, 40, 40, 0    | 2.1 s                |
-| Kafka share group, defaults                      | 40, 40, 0, 0, 0, 40    | 6.0 s                |
-| Kafka share group, `max.poll.records=1`          | 0, 40, 0, 0, 40, 40    | 7.1 s                |
-| Kafka share group, one record per producer batch | 21, 19, 20, 19, 20, 21 | 1.3 s                |
-| RabbitMQ quorum queue, prefetch 1                | 20 each                | 1.1 s                |
-| RabbitMQ stream                                  | 120 each (720 handles) | 6.1 s                |
-| NATS work-queue stream                           | 20 each                | 1.1 s                |
-| NATS limits stream                               | 20 each                | 1.1 s                |
+| Setup                                                                  | Messages per consumer  | First to last handle |
+| ---------------------------------------------------------------------- | ---------------------- | -------------------- |
+| Kafka consumer group                                                   | 0, 0, 40, 40, 40, 0    | 2.1 s                |
+| Kafka share group, defaults                                            | 40, 40, 0, 0, 0, 40    | 6.0 s                |
+| Kafka share group, `max.poll.records=1`                                | 0, 40, 0, 0, 40, 40    | 7.1 s                |
+| Kafka share group, one record per producer batch, `max.poll.records=1` | 21, 19, 20, 19, 20, 21 | 1.3 s                |
+| RabbitMQ quorum queue, prefetch 1                                      | 20 each                | 1.1 s                |
+| RabbitMQ stream                                                        | 120 each (720 handles) | 6.1 s                |
+| NATS work-queue stream                                                 | 20 each                | 1.1 s                |
+| NATS limits stream                                                     | 20 each                | 1.1 s                |
 
 The consumer group result is the one everybody knows: one partition goes to one member, so three of the six members sat idle.
 
 The share group result is the surprise. Share groups exist so that more consumers than partitions can share the work, and here they did not. Three members got all 40 records of a partition each, and three got nothing. Setting `max.poll.records` to 1 changed nothing.
 
-The cause is how a share group hands out records. In the default acquire mode, `batch_optimized`, a member acquires whole producer batches, and `max.poll.records` is only a soft cap. Our producer batched records the way producers normally do, so each partition's 40 records sat in a single batch, and whichever member fetched first took the lot. When we produced every record as its own batch, the six members split the work almost evenly: 19 to 21 each, done in 1.3 seconds.
+The cause is how a share group hands out records. In the default acquire mode, `batch_optimized`, a member acquires whole producer batches, and `max.poll.records` is only a soft cap. Our producer batched records the way producers normally do, so each partition's 40 records sat in a single batch, and whichever member fetched first took the lot. When we produced every record as its own batch, and kept `max.poll.records` at 1, the six members split the work almost evenly: 19 to 21 each, done in 1.3 seconds. We did not record the producer batch boundaries directly; the even split once every record was its own batch is the evidence.
 
 Jack Vanlightly's [series on share group parallelism](https://jack-vanlightly.com/blog/2026/5/27/kafka-share-groups-and-parallelizing-consumption-part-2-producer-batches-and-shareacquiremode) explains this in depth, along with the other acquire mode, `record_limit` ([KIP-1206](https://cwiki.apache.org/confluence/display/KAFKA/KIP-1206:+Strict+max+fetch+records+in+share+fetch)). That mode makes `max.poll.records` a strict cap. We could not test it: librdkafka 2.15, which the Python client uses, refuses `share.acquire.mode` with "No such configuration property". His follow-up post also warns about [fetch waits with record_limit](https://jack-vanlightly.com/blog/2026/6/24/kafka-share-groups-pathological-fetch-waits-with-recordlimit). The practical lesson: with small backlogs and normal producer batching, a share group spreads work much less evenly than its name suggests.
 
-The RabbitMQ stream result is a different thing again. Every consumer of a stream reads every message, the way each Kafka consumer group gets its own copy of a topic. Six consumers meant 720 handles of 120 messages. To split a stream's work you need super streams, which are partitioned streams with a single active consumer per partition, and we did not test those.
+The RabbitMQ stream result is a different thing again. Every consumer of a stream reads every message, the way each Kafka consumer group gets its own copy of a topic. Six consumers meant 720 handles of 120 messages. To split a stream's work across consumers, RabbitMQ has [super streams](https://www.rabbitmq.com/docs/streams#super-streams), which partition a stream and work with single active consumer, and we did not test those.
 
-The quorum queue and both NATS setups spread the work evenly with no tuning: 20 messages per consumer, done in about 1.1 seconds.
+The quorum queue, with prefetch 1, and both NATS setups, fetching one message at a time, spread the work evenly: 20 messages per consumer, done in about 1.1 seconds.
 
 ## Experiment 4: order after a retry
 
@@ -250,9 +250,11 @@ Ten events for one account, `e1` to `e10`, which must apply in order, like balan
 | NATS (both stream types), fetch 1, `max_ack_pending` 1000 | 2 of 5        | a race: `e3` after `e4` in 3 runs |
 | NATS (both stream types), fetch 1, `max_ack_pending` 1    | 5 of 5        | `e3` came straight back           |
 
-The offset readers kept order every time, because they cannot do anything else: they retry the failed event before they read the next one.
+The offset readers kept order every time, because our readers retried the failed event before reading the next one. That is the simple way to use an offset, though not the only one.
 
-The per-message-ack setups lost order whenever more than one message was in flight. The failed event went back to the broker while the consumer already held the next seven, so `e3` was applied after `e10`. They kept order only when exactly one message could be in flight: prefetch 1 on RabbitMQ, or `max_ack_pending` 1 on NATS. NATS with one message per fetch but many allowed in flight was a race. Redeliveries usually go out before new messages, but not always: in 3 of 5 runs, `e4` got in first.
+When a consumer held several messages at once, the per-message-ack setups lost order in every run. The failed event went back to the broker while the consumer already held the next seven, so `e3` was applied after `e10`. With exactly one message in flight, prefetch 1 on RabbitMQ or `max_ack_pending` 1 on NATS, they kept order in all five runs. NATS with one message per fetch but many allowed in flight was a race: `e3` came back first in 2 runs, and `e4` got in ahead of it in 3.
+
+That result also corrects the claim we wrote before running the tests, which said per-message acknowledgements break order after a retry. They do not have to: limit the consumer to one message in flight and order survives. Several in flight permits reordering, and in our runs it happened every time the consumer held more than one.
 
 The share group lost order even with `max.poll.records=1`, for the same reason as in experiment 3: the member acquired all ten records as one producer batch. With `e3` released back to the group, the member had already accepted `e4` to `e10`.
 
@@ -272,11 +274,23 @@ For the broker-by-broker settings:
 
 ```tabs
 {
-  "title": "Poison message settings that worked in our runs",
+  "title": "Poison message settings, based on our runs",
   "tabs": [
-    { "label": "RabbitMQ", "lang": "python", "code": "# Quorum queue with a delivery limit and a dead letter queue\nchannel.queue_declare('orders', durable=True, arguments={\n    'x-queue-type': 'quorum',\n    'x-delivery-limit': 5,\n    'x-dead-letter-exchange': '',\n    'x-dead-letter-routing-key': 'orders.dead',\n})\n\n# On failure: reject, not nack, so the delivery counts\nchannel.basic_reject(method.delivery_tag, requeue=True)" },
-    { "label": "Kafka share group", "lang": "bash", "code": "# Delivery attempts before a record is archived (default 5)\nkafka-configs.sh --bootstrap-server localhost:9092 --alter \\\n  --entity-type groups --entity-name orders-workers \\\n  --add-config share.delivery.count.limit=5\n\n# In the consumer: release to retry, reject to give up now\n# consumer.acknowledge(msg, AcknowledgeType.RELEASE)\n# consumer.acknowledge(msg, AcknowledgeType.REJECT)" },
-    { "label": "NATS JetStream", "lang": "python", "code": "# Pull consumer that gives up after 5 deliveries\nawait js.add_consumer('ORDERS', ConsumerConfig(\n    durable_name='workers',\n    ack_policy=AckPolicy.EXPLICIT,\n    max_deliver=5,\n    ack_wait=30,\n))\n\n# Then subscribe to the advisory to collect what was given up on:\n# $JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.ORDERS.workers" }
+    {
+      "label": "RabbitMQ",
+      "lang": "python",
+      "code": "# A dead letter queue, then a quorum queue with a delivery limit\nchannel.queue_declare('orders.dead', durable=True, arguments={'x-queue-type': 'quorum'})\nchannel.queue_declare('orders', durable=True, arguments={\n    'x-queue-type': 'quorum',\n    'x-delivery-limit': 5,\n    'x-dead-letter-exchange': '',\n    'x-dead-letter-routing-key': 'orders.dead',\n})\n\n# On failure: reject, not nack, so the delivery counts on RabbitMQ 4.3+\nchannel.basic_reject(method.delivery_tag, requeue=True)"
+    },
+    {
+      "label": "Kafka share group",
+      "lang": "python",
+      "code": "# Group setting, once: delivery attempts before a record is archived (default 5)\n#   kafka-configs.sh --bootstrap-server localhost:9092 --alter \\\n#     --entity-type groups --entity-name orders-workers \\\n#     --add-config share.delivery.count.limit=5\n\nfrom confluent_kafka import AcknowledgeType, ShareConsumer\n\nconsumer = ShareConsumer({\n    'bootstrap.servers': 'localhost:9092',\n    'group.id': 'orders-workers',\n    'share.acknowledgement.mode': 'explicit',\n})\nconsumer.subscribe(['orders'])\nwhile True:\n    for msg in consumer.poll(1.0):\n        if msg.error():\n            continue\n        try:\n            handle(msg)\n            consumer.acknowledge(msg, AcknowledgeType.ACCEPT)\n        except Exception:\n            # RELEASE retries it; REJECT would give up on it now\n            consumer.acknowledge(msg, AcknowledgeType.RELEASE)\n    consumer.commit_sync()"
+    },
+    {
+      "label": "NATS JetStream",
+      "lang": "python",
+      "code": "# Pull consumer that gives up after 5 deliveries\nawait js.add_consumer('ORDERS', ConsumerConfig(\n    durable_name='workers',\n    ack_policy=AckPolicy.EXPLICIT,\n    max_deliver=5,\n    ack_wait=30,  # seconds; our test runs used 2\n))\n\n# Then subscribe to the advisory to collect what was given up on:\n# $JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.ORDERS.workers"
+    }
   ]
 }
 ```
@@ -290,6 +304,6 @@ For the broker-by-broker settings:
 
 ## Summary
 
-The broker you run no longer decides whether you have a queue or a log. Each of these three does both. What decides the behaviour is a pair of settings that teams rarely write down: whether storage keeps a handled message, and whether consumers acknowledge messages one by one or keep an offset. Replay follows the first. Poison handling, parallelism and ordering follow the second.
+The broker you run no longer decides whether you have a queue or a log. Each of these three does both. What decides the behaviour is a pair of settings that teams rarely write down: whether storage keeps a handled message, and whether consumers acknowledge messages one by one or keep an offset. Replay follows the first. Poison handling, parallelism and ordering follow the second, together with how many messages a consumer may hold at once.
 
 Before you pick, write down which of the four failures you can live with. Then test the two settings that surprised us: since RabbitMQ 4.3, `basic.nack` does not count towards the delivery limit, and a Kafka share group hands out batches, not records. The scripts are in [the repository](https://github.com/The-DevOps-Daily/queue-or-log), and each experiment runs in a few minutes against your own versions. For what happens when a worker dies halfway through a job, see [running a background job that must not be lost](/posts/running-a-background-job-that-must-not-be-lost). For when Kafka itself is the wrong tool, see [6 Apache Kafka use cases](/posts/kafka-use-cases).
