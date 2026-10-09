@@ -22,7 +22,7 @@ export default function ComicProofPage() {
           <h1 id="chapter-title">The Pod That Wouldn&apos;t Die</h1>
           <p>A tiny Friday deployment turns green. Checkout has other ideas.</p>
         </header>
-        <ComicScene scene={openingScene} />
+        <ComicScene scene={openingScene} priority />
         <p className={styles.endnote}>An opening scene from Volume 1: Everything Is Fine.</p>
       </div>
     </article>

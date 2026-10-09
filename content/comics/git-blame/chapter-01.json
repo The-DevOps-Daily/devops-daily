@@ -1,0 +1,455 @@
+{
+  "id": "chapter-01",
+  "status": "complete-draft-awaiting-chapter-approval",
+  "title": "The Pod That Wouldn't Die",
+  "description": "A tiny Friday deployment turns green. Checkout has other ideas.",
+  "volume": "Everything Is Fine",
+  "sponsorship": null,
+  "scenes": [
+    {
+      "id": "scene-01",
+      "label": "Scene 1: Two lines",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+      "artwork": {
+        "src": "/comics/git-blame/chapter-01/scene-01.jpg",
+        "sources": [
+          {
+            "src": "/comics/git-blame/chapter-01/scene-01-480.webp",
+            "width": 480
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-01-960.webp",
+            "width": 960
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-01-1122.webp",
+            "width": 1122
+          }
+        ],
+        "width": 1122,
+        "height": 1402,
+        "alt": "Sam turns from his laptop toward Maya in the warm office; Maya raises an eyebrow."
+      },
+      "dialogue": [
+        {
+          "id": "s01-sam",
+          "speaker": "Sam",
+          "text": "It's literally a two-line change.",
+          "position": {
+            "x": 0.075,
+            "y": 0.12,
+            "width": 0.4
+          },
+          "tailTo": {
+            "x": 0.355,
+            "y": 0.335
+          }
+        },
+        {
+          "id": "s01-maya",
+          "speaker": "Maya",
+          "text": "That's what you said last Friday.",
+          "position": {
+            "x": 0.525,
+            "y": 0.205,
+            "width": 0.4
+          },
+          "tailTo": {
+            "x": 0.785,
+            "y": 0.385
+          }
+        }
+      ],
+      "caption": "Friday, 4:57 PM."
+    },
+    {
+      "id": "scene-02",
+      "label": "Scene 2: Half a deployment",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-02-v1.png",
+      "artwork": {
+        "src": "/comics/git-blame/chapter-01/scene-02.jpg",
+        "sources": [
+          {
+            "src": "/comics/git-blame/chapter-01/scene-02-480.webp",
+            "width": 480
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-02-960.webp",
+            "width": 960
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-02-1122.webp",
+            "width": 1122
+          }
+        ],
+        "width": 1122,
+        "height": 1402,
+        "alt": "Sam looks pleased with the rollout status while Alex watches over his shoulder, holding a cream mug."
+      },
+      "dialogue": [
+        {
+          "id": "s02-sam",
+          "speaker": "Sam",
+          "text": "New pods are healthy. We're done.",
+          "position": {
+            "x": 0.06,
+            "y": 0.055,
+            "width": 0.4
+          },
+          "tailTo": {
+            "x": 0.355,
+            "y": 0.345
+          }
+        },
+        {
+          "id": "s02-alex",
+          "speaker": "Alex",
+          "text": "That's half a deployment.",
+          "position": {
+            "x": 0.535,
+            "y": 0.065,
+            "width": 0.4
+          },
+          "tailTo": {
+            "x": 0.655,
+            "y": 0.19
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene-03",
+      "label": "Scene 3: Checkout disagrees",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-03-v1.png",
+      "artwork": {
+        "src": "/comics/git-blame/chapter-01/scene-03.jpg",
+        "sources": [
+          {
+            "src": "/comics/git-blame/chapter-01/scene-03-480.webp",
+            "width": 480
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-03-960.webp",
+            "width": 960
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-03-1122.webp",
+            "width": 1122
+          }
+        ],
+        "width": 1122,
+        "height": 1402,
+        "alt": "Chris shows the team a checkout failure; Maya reaches for the rollout controls while Sam examines a request."
+      },
+      "dialogue": [
+        {
+          "id": "s03-chris",
+          "speaker": "Chris",
+          "text": "Checkout's failing for some customers.",
+          "position": {
+            "x": 0.05,
+            "y": 0.12,
+            "width": 0.43
+          },
+          "tailTo": {
+            "x": 0.32,
+            "y": 0.295
+          }
+        },
+        {
+          "id": "s03-maya",
+          "speaker": "Maya",
+          "text": "Pause the rollout. Let's trace one failed request.",
+          "position": {
+            "x": 0.51,
+            "y": 0.235,
+            "width": 0.43
+          },
+          "tailTo": {
+            "x": 0.78,
+            "y": 0.41
+          }
+        }
+      ]
+    },
+    {
+      "id": "scene-04",
+      "label": "Scene 4: Mid-sentence",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-04-v2.png",
+      "artwork": {
+        "src": "/comics/git-blame/chapter-01/scene-04.jpg",
+        "sources": [
+          {
+            "src": "/comics/git-blame/chapter-01/scene-04-480.webp",
+            "width": 480
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-04-960.webp",
+            "width": 960
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-04-1448.webp",
+            "width": 1448
+          }
+        ],
+        "width": 1448,
+        "height": 1086,
+        "alt": "Sam, Maya and Alex compare a failed request with the old process’s exit; a clear inset explains the interrupted response."
+      },
+      "dialogue": [
+        {
+          "id": "s04-sam",
+          "speaker": "Sam",
+          "text": "This request went to an old pod.",
+          "position": {
+            "x": 0.04,
+            "y": 0.025,
+            "width": 0.29
+          },
+          "tailTo": {
+            "x": 0.27,
+            "y": 0.31
+          }
+        },
+        {
+          "id": "s04-maya",
+          "speaker": "Maya",
+          "text": "It exited before the reply.",
+          "position": {
+            "x": 0.355,
+            "y": 0.025,
+            "width": 0.29
+          },
+          "tailTo": {
+            "x": 0.525,
+            "y": 0.37
+          }
+        },
+        {
+          "id": "s04-alex",
+          "speaker": "Alex",
+          "text": "We hung up mid-sentence.",
+          "position": {
+            "x": 0.67,
+            "y": 0.025,
+            "width": 0.29
+          },
+          "tailTo": {
+            "x": 0.8,
+            "y": 0.33
+          }
+        }
+      ],
+      "diagram": "shutdown-request"
+    },
+    {
+      "id": "scene-05",
+      "label": "Scene 5: The old goodbye",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-05-v1.png",
+      "artwork": {
+        "src": "/comics/git-blame/chapter-01/scene-05.jpg",
+        "sources": [
+          {
+            "src": "/comics/git-blame/chapter-01/scene-05-480.webp",
+            "width": 480
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-05-960.webp",
+            "width": 960
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-05-1448.webp",
+            "width": 1448
+          }
+        ],
+        "width": 1448,
+        "height": 1086,
+        "alt": "Alex acknowledges an old shutdown handler as Sam and Maya work with him on a safer handoff."
+      },
+      "dialogue": [
+        {
+          "id": "s05-sam",
+          "speaker": "Sam",
+          "text": "Codex traced it: we exit on SIGTERM.",
+          "position": {
+            "x": 0.04,
+            "y": 0.04,
+            "width": 0.29
+          },
+          "tailTo": {
+            "x": 0.235,
+            "y": 0.38
+          }
+        },
+        {
+          "id": "s05-alex",
+          "speaker": "Alex",
+          "text": "That's my old handler. Let's fix it.",
+          "position": {
+            "x": 0.355,
+            "y": 0.08,
+            "width": 0.29
+          },
+          "tailTo": {
+            "x": 0.485,
+            "y": 0.345
+          }
+        },
+        {
+          "id": "s05-maya",
+          "speaker": "Maya",
+          "text": "Claude Code can draft the test. We run it.",
+          "position": {
+            "x": 0.67,
+            "y": 0.04,
+            "width": 0.29
+          },
+          "tailTo": {
+            "x": 0.83,
+            "y": 0.39
+          }
+        }
+      ],
+      "caption": "The two-line change gets a slightly larger companion."
+    },
+    {
+      "id": "scene-06",
+      "label": "Scene 6: Boring graphs",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-06-v1.png",
+      "artwork": {
+        "src": "/comics/git-blame/chapter-01/scene-06.jpg",
+        "sources": [
+          {
+            "src": "/comics/git-blame/chapter-01/scene-06-480.webp",
+            "width": 480
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-06-960.webp",
+            "width": 960
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-06-1122.webp",
+            "width": 1122
+          }
+        ],
+        "width": 1122,
+        "height": 1402,
+        "alt": "Sam smiles with relief as a deliberately slow test request completes; Alex and Maya check the rollout results."
+      },
+      "dialogue": [
+        {
+          "id": "s06-sam",
+          "speaker": "Sam",
+          "text": "Even the slow request finished.",
+          "position": {
+            "x": 0.05,
+            "y": 0.09,
+            "width": 0.42
+          },
+          "tailTo": {
+            "x": 0.335,
+            "y": 0.35
+          }
+        },
+        {
+          "id": "s06-alex",
+          "speaker": "Alex",
+          "text": "Excellent. Boring graphs.",
+          "position": {
+            "x": 0.53,
+            "y": 0.09,
+            "width": 0.4
+          },
+          "tailTo": {
+            "x": 0.855,
+            "y": 0.375
+          }
+        }
+      ],
+      "caption": "Test environment first. A watched production rollout afterward."
+    },
+    {
+      "id": "scene-07",
+      "label": "Scene 7: Monday",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-07-v1.png",
+      "artwork": {
+        "src": "/comics/git-blame/chapter-01/scene-07.jpg",
+        "sources": [
+          {
+            "src": "/comics/git-blame/chapter-01/scene-07-480.webp",
+            "width": 480
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-07-960.webp",
+            "width": 960
+          },
+          {
+            "src": "/comics/git-blame/chapter-01/scene-07-1122.webp",
+            "width": 1122
+          }
+        ],
+        "width": 1122,
+        "height": 1402,
+        "alt": "Alex, Maya and Sam quietly close their laptops. Chris notices, smiles and closes his own as well."
+      },
+      "dialogue": [
+        {
+          "id": "s07-chris-ask",
+          "speaker": "Chris",
+          "text": "One more tiny change before we go?",
+          "position": {
+            "x": 0.5,
+            "y": 0.055,
+            "width": 0.44
+          }
+        },
+        {
+          "id": "s07-chris-answer",
+          "speaker": "Chris",
+          "text": "Monday.",
+          "position": {
+            "x": 0.675,
+            "y": 0.24,
+            "width": 0.265
+          },
+          "tailTo": {
+            "x": 0.875,
+            "y": 0.345
+          }
+        }
+      ]
+    }
+  ],
+  "technicalNotes": {
+    "lead": "The new pods were healthy. The failed request was still waiting for an old pod to reply.",
+    "paragraphs": [
+      "During the rollout, the old checkout app received SIGTERM and exited immediately. Its connection closed before the response finished, and the load balancer returned a 502. A replacement pod cannot take over a request already running elsewhere.",
+      "The team made shutdown a handoff: allow traffic withdrawal, stop accepting new connections, finish accepted requests, close dependencies, then exit within a bounded deadline. They tested requests overlapping retirement, including a deliberately slow request. For the first corrected release, they used healthy parallel replicas and kept old processes alive until routing had moved and their in-flight work finished. New code did not repair old running pods."
+    ],
+    "caveats": [
+      "Readiness affects admission of traffic; it does not finish accepted work or instantly update every load balancer. Replacement readiness and departure draining are separate checks.",
+      "A preStop hook normally runs before the container’s stop signal and consumes the same terminationGracePeriodSeconds budget. A measured delay can allow propagation; sleeping alone does not drain requests.",
+      "In this Node.js 22 HTTP/1.1 example, server.close() stops accepting new connections while active requests finish. Closing active connections forcefully is not the normal first step, and detached work or database transactions need their own handling.",
+      "The load-balancer allowance, application deadline and pod grace budget must fit real request bounds. Kubernetes can forcibly kill remaining processes when grace expires. Other frameworks, signals, proxies and protocols require their own review."
+    ],
+    "footer": "A lost checkout response does not prove the order failed to commit. Safe retries of writes require an appropriate idempotency design. ShipIt and its successful rollouts are fictional; a 502 has several possible causes, so correlate evidence before choosing a fix.",
+    "links": [
+      {
+        "label": "DevOps Daily: Deployments and ReplicaSets",
+        "href": "/guides/introduction-to-kubernetes/04-deployments-and-replicasets"
+      },
+      {
+        "label": "DevOps Daily: Services and Networking",
+        "href": "/guides/introduction-to-kubernetes/05-services-and-networking"
+      },
+      {
+        "label": "Kubernetes: Pod termination",
+        "href": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination-flow"
+      },
+      {
+        "label": "AWS: ALB 502 troubleshooting",
+        "href": "https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-troubleshooting.html#http-502-issues"
+      }
+    ]
+  }
+}

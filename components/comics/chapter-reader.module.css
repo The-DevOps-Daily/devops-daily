@@ -1,0 +1,102 @@
+.chapter {
+  color: #273746;
+  background: #f6f0df;
+  padding: 3rem 1rem;
+}
+
+.reader {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+.header {
+  margin-bottom: 2rem;
+}
+.publisher {
+  font-size: 0.875rem;
+  color: #40554a;
+  font-weight: 600;
+}
+.series {
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1.2;
+  margin: 0.5rem 0;
+}
+.tagline {
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+.volume {
+  color: #40554a;
+  font-weight: 600;
+  margin-top: 2rem;
+}
+.header h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0.5rem 0 1rem;
+}
+.header p:last-child {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.scenes {
+  display: grid;
+  gap: 3rem;
+}
+.end {
+  margin: 2rem 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #40554a;
+}
+.notes {
+  background: #fffdf5;
+  border: 1px solid #27374640;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.notes summary {
+  padding: 1.25rem;
+  cursor: pointer;
+}
+.notes summary:focus-visible {
+  outline: 3px solid #56856c;
+  outline-offset: 3px;
+}
+.notes h2 {
+  display: inline;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+.notes h3 {
+  font-weight: 700;
+  margin-top: 1.25rem;
+}
+.notesBody {
+  padding: 0 1.25rem 1.25rem;
+  overflow-wrap: anywhere;
+}
+.notesBody p + p,
+.notesBody ul {
+  margin-top: 1rem;
+}
+.notesBody ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.notesBody li + li {
+  margin-top: 0.75rem;
+}
+.notesBody a {
+  color: #40554a;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.notesBody a:focus-visible {
+  outline: 3px solid #56856c;
+  outline-offset: 3px;
+}

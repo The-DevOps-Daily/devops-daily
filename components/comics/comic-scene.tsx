@@ -1,14 +1,28 @@
 import Image from 'next/image';
 import type { ComicSceneContent } from './types';
 import { SpeechBubble } from './speech-bubble';
+import { ShutdownRequestDiagram } from './shutdown-request-diagram';
 import styles from './comic-scene.module.css';
 
-export function ComicScene({ scene }: { scene: ComicSceneContent }) {
+export function ComicScene({
+  scene,
+  priority = false,
+}: {
+  scene: ComicSceneContent;
+  priority?: boolean;
+}) {
   return (
-    <figure className={styles.scene} aria-labelledby={`${scene.id}-caption`}>
-      <figcaption id={`${scene.id}-caption`} className={styles.caption}>
-        {scene.caption}
-      </figcaption>
+    <figure
+      className={styles.scene}
+      aria-labelledby={scene.caption ? `${scene.id}-caption` : undefined}
+      aria-label={scene.caption ? undefined : scene.label}
+      data-comic-scene={scene.id}
+    >
+      {scene.caption && (
+        <figcaption id={`${scene.id}-caption`} className={styles.caption}>
+          {scene.caption}
+        </figcaption>
+      )}
       <div className={styles.canvas} data-comic-canvas>
         <picture>
           <source
@@ -26,8 +40,8 @@ export function ComicScene({ scene }: { scene: ComicSceneContent }) {
             width={scene.artwork.width}
             height={scene.artwork.height}
             unoptimized
-            loading="eager"
-            fetchPriority="high"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : undefined}
           />
         </picture>
         <ol className={styles.dialogue} aria-label="Scene dialogue" data-comic-dialogue>
@@ -35,6 +49,7 @@ export function ComicScene({ scene }: { scene: ComicSceneContent }) {
             <SpeechBubble key={dialogue.id} dialogue={dialogue} />
           ))}
         </ol>
+        {scene.diagram === 'shutdown-request' && <ShutdownRequestDiagram id={scene.id} />}
       </div>
     </figure>
   );

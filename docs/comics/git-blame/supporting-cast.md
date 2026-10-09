@@ -2,7 +2,7 @@
 
 9 October 2026 · **Nora and Eli designs approved**
 
-The original four remain everyday anchors; Nora, Eli and Sophia widen the stories when their expertise affects a decision. Usually feature two to four characters per chapter, with focused scenes of two or three speakers. The user approved a seven-person recurring cast and Sophia's name/security role on 9 October 2026. Nora and Eli's sheets are approved; Sophia's new sheet awaits visual approval. Sheets use approved Alex v2 and Maya v1 references; actual PNGs, exact prompts, dimensions and hashes are saved in the asset manifest.
+The original four remain everyday anchors; Nora, Eli and Sophia widen the stories when their expertise affects a decision. Usually feature two to four characters per chapter, with focused scenes of two or three speakers. The user approved a seven-person recurring cast and Sophia's name/security role on 9 October 2026. All seven designs are approved; Sophia v2 implements the requested blue eyes. Sheets use approved Alex v2 and Maya v1 references; actual PNGs, exact prompts, dimensions and hashes are saved in the asset manifest.
 
 ## Nora — database engineer
 
@@ -22,7 +22,7 @@ Her humor is practical rather than prohibitive. A recurring beat: someone promis
 
 ## Eli — FinOps engineer
 
-**Approximately 40.** Shaved head, warm tan skin, rounded angular face and neatly trimmed short dark facial hair. Dusty slate-blue chore jacket over ivory crewneck T-shirt, brown trousers and off-white sneakers. The generated facial hair is fuller around the chin than the prompt's initial small-goatee description; the visible sheet is the proposed design to approve and reuse, not an invitation to change beard shape between scenes.
+**Approximately 40.** Shaved head, warm tan skin, rounded angular face and neatly trimmed short dark facial hair. Dusty slate-blue chore jacket over ivory crewneck T-shirt, brown trousers and off-white sneakers. The generated facial hair is fuller around the chin than the prompt's initial small-goatee description; the approved visible sheet is the design to reuse, not an invitation to change beard shape between scenes.
 
 [View Eli's sheet](../../../assets/comics/git-blame/characters/eli-v1.png).
 
@@ -38,7 +38,7 @@ His blind spot is an attractive savings forecast based on too little history. He
 
 ## Sophia — application security engineer
 
-**Approximately 34.** Shoulder-length wavy golden-blonde hair, slightly off-center part and one ear tucked, warm fair skin, oval adult face, no glasses. Dusty-coral open overshirt with rolled sleeves over a navy crewneck, charcoal straight-leg jeans and cream sneakers. Small silver ear studs and a sage-green notebook are optional reference details. Blonde hair must remain distinct from Sam's auburn and Chris's gray. Her new [reference sheet](../../../assets/comics/git-blame/characters/sophia-v1.png) is a proposal awaiting visual approval; the approved name is not permission to treat the artwork as approved.
+**Approximately 34.** Shoulder-length wavy golden-blonde hair, slightly off-center part and one ear tucked, warm fair skin, oval adult face, blue eyes (#597FAA), no glasses. Dusty-coral open overshirt with rolled sleeves over a navy crewneck, charcoal straight-leg jeans and cream sneakers. Small silver ear studs and a sage-green notebook are optional reference details. Blonde hair must remain distinct from Sam's auburn and Chris's gray. Her approved [reference sheet](../../../assets/comics/git-blame/characters/sophia-v2.png) applies the requested blue eyes; reuse it for every future appearance.
 
 Sophia is curious, approachable and hands-on. She enjoys discovering unexpected behavior and helps build a workable solution. Her questions connect permissions and data boundaries to real people; she does not appear simply to veto delivery. Recurring line: someone says “It's internal”; she asks, “Internal to whom?” Use it sparingly, and let her sometimes be the person who assumed the wrong boundary.
 
@@ -46,7 +46,7 @@ Her blind spot is concentrating on one plausible misuse while missing a simpler 
 
 **Introduction:** a later chapter, outside Chapter 1. A short appearance in Chapter 2 can connect deployed configuration and service permissions; do not turn that chapter into a second security lesson. A later AI-agent/security story can give her the central role: scoped credentials, reviewable changes and a meaningful human decision. Agents remain supervised tools, not magical fixes or automatically culpable villains.
 
-**Consistency:** same adult face, warm blonde waves, coral overshirt, navy top and charcoal jeans; no glasses, hacker costume or symbolic shield. Match the approved ink/wash style. The actual sheet, once approved, will establish exact rendered details and relative stature still needs a shared-scene check.
+**Consistency:** same adult face, blue eyes, warm blonde waves, coral overshirt, navy top and charcoal jeans; no glasses, hacker costume or symbolic shield. Match the approved ink/wash style. The approved v2 sheet establishes rendered details; relative stature still needs a shared-scene check.
 
 ## Ensemble rules
 
@@ -61,7 +61,7 @@ Her blind spot is concentrating on one plausible misuse while missing a simpler 
 
 Both new PNGs are 1536 × 1024, with three full-body views, six expressions, detail studies and swatches. Their identities, attire, framing and shared drawing treatment were visually checked in tool output; no obvious extra limbs or unwanted lettering were observed at sheet scale. Future scene-specific hands, lighting and height relationships still require their own review.
 
-Character sources remain outside deployed `public/`. Nora and Eli's supporting-cast checkpoint is cleared, and Chapter 1's Phase 3 storyboard is approved. **Sophia's role and name are approved; her new sheet awaits visual approval. Phase 4 produces one Chapter 1 scene and its reader proof, then stops.**
+Character sources remain outside deployed `public/`. Nora and Eli's supporting-cast checkpoint is cleared, and Chapter 1's Phase 3 storyboard is approved. **All seven designs and the Phase 4 opening proof are approved. The complete Phase 5 chapter awaits approval before Phase 6 integration.**
 
 
 Nora’s artwork was approved on 9 October 2026. The user requested a different name; Nora is the updated proposed name. The original generation prompt retains the earlier name Noor as provenance. Renaming the saved PNG did not change its image bytes or checksum.

@@ -9,9 +9,10 @@
     "assets/comics/git-blame/characters/sam-v1.png",
     "assets/comics/git-blame/characters/chris-v1.png",
     "assets/comics/git-blame/characters/nora-v1.png",
-    "assets/comics/git-blame/characters/eli-v1.png"
+    "assets/comics/git-blame/characters/eli-v1.png",
+    "assets/comics/git-blame/characters/sophia-v2.png"
   ],
-  "note": "Six designs are approved: Alex v2, Maya v1, Sam v1, Chris v1, Nora v1 and Eli v1. The seven-character ensemble and Sophia’s name/security role are approved; Sophia v1 is awaiting visual approval and is not an approved generation reference. Nora was originally generated as Noor; her historical prompt retains that name. Book photographs informed general visual traits only.",
+  "note": "Seven recurring character designs are approved. Sophia v2 implements the user’s requested blue eyes; Sophia v1 is superseded. Nora’s historical prompt retains the original name Noor. Book photographs informed general visual traits only.",
   "assets": [
     {
       "character": "alex",
@@ -130,7 +131,7 @@
       "dimensions": [1536, 1024],
       "bytes": 2522573,
       "sha256": "8d7c25f727632a1abf862c4bff9876b5215f8a735fcee4542f79e0a8493a5a93",
-      "status": "awaiting-user-approval",
+      "status": "superseded-by-requested-blue-eye-revision",
       "prompt": "docs/comics/git-blame/prompts/sophia-v1.txt",
       "reference_images": [
         "assets/comics/git-blame/characters/alex-v2.png",
@@ -138,6 +139,21 @@
       ],
       "transparent_background": false,
       "created_date": "2026-10-09"
+    },
+    {
+      "character": "sophia",
+      "version": "v2",
+      "path": "assets/comics/git-blame/characters/sophia-v2.png",
+      "source_filename": "exec-54d2ce8d-2a31-4f6f-95f1-3aad16517f03.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2305013,
+      "sha256": "d9c2ac1e36cd2ed3108b6f72ceef86ff76a09a54027568a16c4fe495566e5e94",
+      "status": "approved-with-requested-eye-color-correction",
+      "prompt": "docs/comics/git-blame/prompts/sophia-v2-blue-eyes.txt",
+      "reference_images": ["assets/comics/git-blame/characters/sophia-v1.png"],
+      "transparent_background": false,
+      "created_date": "2026-10-09",
+      "approval_note": "User approved the work and requested continuation with Sophia’s eyes changed to blue. Exact requested edit was visually checked across all views; preserve this corrected design."
     }
   ]
 }

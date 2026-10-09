@@ -20,8 +20,9 @@ export const openingScene: ComicSceneContent = {
       id: 's01-sam',
       speaker: 'Sam',
       text: "It's literally a two-line change.",
-      position: { x: 0.075, y: 0.065, width: 0.4 },
+      position: { x: 0.075, y: 0.12, width: 0.4 },
       tailDirection: 'down-right',
+      tailTo: { x: 0.355, y: 0.335 },
     },
     {
       id: 's01-maya',
@@ -29,6 +30,7 @@ export const openingScene: ComicSceneContent = {
       text: "That's what you said last Friday.",
       position: { x: 0.525, y: 0.205, width: 0.4 },
       tailDirection: 'down-left',
+      tailTo: { x: 0.785, y: 0.385 },
     },
   ],
 };

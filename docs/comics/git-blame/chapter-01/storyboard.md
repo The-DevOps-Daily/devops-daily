@@ -1,10 +1,10 @@
 # Chapter 1: The Pod That Wouldn’t Die
 
-Phase 3 storyboard · 9 October 2026 · **Approved; Phase 4 one-scene proof authorized**
+Phase 3 storyboard · 9 October 2026 · **Approved; Phase 4 cleared; Phase 5 complete chapter in review**
 
 **A tiny Friday deployment turns green. Checkout has other ideas.**
 
-Six character designs are approved; the seven-person ensemble includes Sophia, whose new visual sheet awaits approval. Chapter 1 features the original four leads; Nora, Eli and Sophia enter later stories. Seven scenes separate the investigation, corrective work and validation so the resolution feels earned. The Phase 4 opening-scene proof is now being prepared; the remaining six scenes have not been generated.
+All seven character designs are approved, including Sophia with requested blue eyes. Chapter 1 features the original four leads; Nora, Eli and Sophia enter later stories. Seven scenes separate the investigation, corrective work and validation so the resolution feels earned. The Phase 4 opening-scene proof is approved; all seven narrative scenes are now generated. Final runtime placements and delivery assets live in `content/comics/git-blame/chapter-01.json`; the composition notes below preserve the approved storyboard.
 
 The title is a playful misdirection: the old application stops too early, while its responsibility to an in-flight request persists. Do not depict an immortal process or a pod ignoring SIGKILL. Sam brings useful request evidence, Maya coordinates investigation, Alex owns an old assumption and Chris shares the decision to defer another feature.
 
@@ -426,13 +426,13 @@ Portrait 4:5, slightly elevated view of the established warm office. The origina
 
 The lower reserved paper area receives an accessible, controlled diagram, with “Load balancer,” “Old pod: app exits” and “New pod: healthy.” The earlier request to the old pod is labeled “Already in flight”; its response path is interrupted. A separate request succeeds through the replacement. Never imply that the failed request teleports, retries itself or is reprocessed safely by the new pod.
 
-Use legible concise labels and distinct line styles as well as color. On mobile, place the same diagram in normal flow below the scene dialogue so it remains readable rather than squeezing microtext onto a narrow image. It is not generated art, and it is not implemented in this phase. The JSON describes its intended nodes, edge meanings and accessible summary.
+Use legible concise labels and distinct line styles as well as color. On mobile, place the same diagram in normal flow below the scene dialogue so it remains readable rather than squeezing microtext onto a narrow image. It is authored SVG on desktop and semantic text on phones/enlarged text, implemented in Phase 5. The JSON preserves intended nodes, edge meanings and accessible summary.
 
 ## Technical explanation and validation status
 
 The optional end-of-chapter [Under the Hood draft](under-the-hood.md) explains the specific failure, signal/hook/grace relationship, traffic draining and caveats. The [engineering review](technical-notes.md) records the fixed scenario, first corrected-release cutover and source audit.
 
-The fictional successful rollouts in scene 6 are scripted story events, not tests run here. Current Kubernetes, official controller and Node.js documentation were inspected. Live AWS documentation was blocked by the environment proxy; an explicitly archived official AWS source supported the ALB notes. The audit records that limit and the live recheck needed before artwork-proof approval or publication.
+The fictional successful rollouts in scene 6 are scripted story events, not tests run here. Current Kubernetes, official controller and Node.js documentation were inspected. Live AWS documentation was blocked during Phase 3, when an explicitly archived official source supported the ALB notes. Both canonical live pages have since been fetched and checked in Phase 5; the audit records that resolved limitation.
 
 ## AI agents as everyday tools
 
@@ -455,6 +455,4 @@ No Chapter 1 sponsor is confirmed. Its optional sponsorship field is empty. An o
 
 ## Approval checkpoint
 
-The user approved Phase 3 on 9 October 2026, with AI-agent mentions added to Scene 5. This authorizes **Phase 4 only**: generate one complete text-free scene using approved references, build a minimal responsive dialogue-overlay proof and check desktop/mobile reading. The recommended proof is Scene 1 because it tests two recognizable characters, office identity, portrait composition, humor and editable bubbles at once. Technical diagram behavior still needs review before the remaining art is produced.
-
-Phase 4 may generate Scene 1 and build its minimal responsive reader proof. It must stop for approval before generating remaining scenes or implementing the complete reader. Deployment requires separate approval.
+Phase 3 and the Phase 4 opening proof are approved. Phase 5 has produced all seven illustrations and the complete chapter draft, including editable dialogue and the request diagram. Review [the complete chapter](production-review/README.md) before Phase 6 site integration begins. Publishing requires separate approval.

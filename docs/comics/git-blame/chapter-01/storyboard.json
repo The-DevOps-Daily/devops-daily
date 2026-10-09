@@ -488,12 +488,12 @@
   ],
   "diagram": {
     "scene": "scene-04",
-    "status": "authored_overlay_planned_not_implemented",
+    "status": "implemented-phase-5-authored-svg-with-semantic-mobile-fallback",
     "imageBox": {
-      "x": 0.08,
-      "y": 0.57,
-      "width": 0.84,
-      "height": 0.35
+      "x": 0.12,
+      "y": 0.745,
+      "width": 0.76,
+      "height": 0.179
     },
     "mobilePlacement": "Normal flow below art, before dialogue only if it preserves scene reading order; default after scene dialogue.",
     "nodes": [
@@ -542,7 +542,10 @@
     "disclosure": "Editorial references to tools used by fictional engineers. Neither is a confirmed chapter sponsor."
   },
   "artworkStatus": {
-    "scene-01": "phase-4-proof-awaiting-approval",
-    "remainingScenes": "not-generated"
-  }
+    "scene-01": "approved-phase-4-proof",
+    "remainingScenes": "generated-awaiting-complete-chapter-approval"
+  },
+  "proofApprovedDate": "2026-10-09",
+  "runtimeContent": "content/comics/git-blame/chapter-01.json",
+  "chapterReview": "docs/comics/git-blame/chapter-01/production-review/README.md"
 }

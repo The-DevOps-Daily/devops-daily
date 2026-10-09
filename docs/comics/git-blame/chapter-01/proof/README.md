@@ -1,10 +1,12 @@
 # Chapter 1 — Phase 4 opening-scene proof
 
-9 October 2026 · **Awaiting approval before the remaining six scenes**
+9 October 2026 · **Checkpoint cleared. Historical Phase 4 evidence; see the [current complete chapter review](../production-review/README.md).**
 
-The user approved the Phase 3 storyboard, requested ordinary supervised Codex/Claude Code mentions (now in Scene 5), and approved adding Sophia to the seven-person ensemble. This checkpoint contains one complete Chapter 1 illustration and its responsive reader proof. Sophia's separate reference-sheet proposal also awaits visual approval; she does not enter Chapter 1.
+The user approved the Phase 3 storyboard, requested ordinary supervised Codex/Claude Code mentions (now in Scene 5), and approved adding Sophia to the seven-person ensemble. This checkpoint contains one complete Chapter 1 illustration and its responsive reader proof. Sophia’s design was subsequently approved with a blue-eye correction; she does not enter Chapter 1.
 
-## Review images
+These original screenshots preserve the Phase 4 review. Phase 5 replaces the detached chevron tails with continuous curved outlines and validates normal Google font loading after the environment network change. Live AWS documentation is now checked.
+
+## Historical review images
 
 ![Opening scene on desktop: two HTML speech bubbles in the reserved wall area, with Sam and Maya below.](desktop-chromium.png)
 
@@ -34,4 +36,4 @@ The prototype route is `/comics/git-blame/proof`, unlinked, `noindex, nofollow`,
 - The existing global desktop header overflows when root text doubles at 1280px. The comic itself switches to normal dialogue flow and stays within its container. This is recorded in Phase 6's acceptance criteria; page overflow must not be hidden as a workaround.
 - Live AWS documentation remains blocked by the proxy. The technical audit distinguishes checked current Kubernetes/controller/Node sources from archived AWS material. Recheck the live ALB documentation before remaining technical artwork/final publication; Scene 1 contains no technical diagram or behavioral claim.
 
-Review the drawing, character consistency, amount of dialogue space, desktop bubbles, phone fallback and Sophia's design. **Stop here for approval.** The remaining Chapter 1 artwork, complete chapter production and Phase 6 integration have not begun. Production deployment requires separate explicit approval.
+The user cleared this checkpoint. Current chapter evidence and the next checkpoint are in the complete chapter review. Phase 6 remains pending and production deployment requires separate explicit approval.

@@ -1,20 +1,20 @@
 # Under the Hood
 
-Draft reader copy for Chapter 1. Editorial and technical review pending; this describes ShipIt’s fictional incident.
+Phase 5 reader copy, mirrored from `content/comics/git-blame/chapter-01.json`. Describes ShipIt’s fictional incident.
 
-The new pods were healthy. The request that failed was still waiting for an **old** pod to reply.
+The new pods were healthy. The failed request was still waiting for an old pod to reply.
 
-During a rolling deployment, Kubernetes starts shutting down old pods while the surrounding traffic system updates its view of them. That coordination takes time. In ShipIt’s case, the checkout app handled SIGTERM—the normal stop signal in its container configuration—by exiting immediately. The load balancer was still waiting for a response from that process. The connection closed instead, and the customer saw a 502. A replacement pod cannot take over a request already running somewhere else.
+During the rollout, the old checkout app received SIGTERM and exited immediately. Its connection closed before the response finished, and the load balancer returned a 502. A replacement pod cannot take over a request already running elsewhere.
 
-The team made shutdown a proper handoff. They allowed for traffic withdrawal, kept the application alive during that phase, and made it finish accepted requests before closing dependencies and exiting. They tested the sequence with requests overlapping a rollout, including a deliberately slow request. For the first corrected production release, they kept the original processes alive until traffic had moved and their in-flight work had finished; the new code did not retroactively fix old pods.
+The team made shutdown a handoff: allow traffic withdrawal, stop accepting new connections, finish accepted requests, close dependencies, then exit within a bounded deadline. They tested requests overlapping retirement, including a deliberately slow request. For the first corrected release, they used healthy parallel replicas and kept old processes alive until routing had moved and their in-flight work finished. New code did not repair old running pods.
 
 A few details matter:
 
-- A readiness check tells a routing system whether a pod should receive traffic. It does not finish work already accepted, and its effects do not reach every load balancer instantly.
-- A `preStop` hook normally runs before the container’s stop signal. Its execution uses the same `terminationGracePeriodSeconds` budget as the application’s shutdown work. A sleep can provide a tested allowance for propagation; sleeping alone is not graceful shutdown.
-- The load balancer’s draining allowance, the application deadline and the total pod grace period must fit the actual traffic and request bounds. If the grace period runs out, remaining processes can be forcibly killed.
-- ShipIt uses ALB IP targets and Node.js HTTP/1.1. Other proxies, frameworks, signals and protocols can require different handling. A 502 has several possible causes; correlate evidence before choosing a fix.
+- Readiness affects admission of traffic; it does not finish accepted work or instantly update every load balancer. Replacement readiness and departure draining are separate checks.
+- A preStop hook normally runs before the container’s stop signal and consumes the same terminationGracePeriodSeconds budget. A measured delay can allow propagation; sleeping alone does not drain requests.
+- In this Node.js 22 HTTP/1.1 example, server.close() stops accepting new connections while active requests finish. Closing active connections forcefully is not the normal first step, and detached work or database transactions need their own handling.
+- The load-balancer allowance, application deadline and pod grace budget must fit real request bounds. Kubernetes can forcibly kill remaining processes when grace expires. Other frameworks, signals, proxies and protocols require their own review.
 
-An interrupted checkout response also does not prove that the order failed to commit. Retrying writes safely requires an appropriate idempotency design.
+A lost checkout response does not prove the order failed to commit. Safe retries of writes require an appropriate idempotency design. ShipIt and its successful rollouts are fictional; a 502 has several possible causes, so correlate evidence before choosing a fix.
 
-For background reading, see DevOps Daily’s [Deployments and ReplicaSets](/guides/introduction-to-kubernetes/04-deployments-and-replicasets) and [Services and Networking](/guides/introduction-to-kubernetes/05-services-and-networking). For precise lifecycle behavior, consult the [Kubernetes termination documentation](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination-flow) and [ALB troubleshooting documentation](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-troubleshooting.html#http-502-issues).
+[DevOps Daily: Deployments and ReplicaSets](/guides/introduction-to-kubernetes/04-deployments-and-replicasets) · [DevOps Daily: Services and Networking](/guides/introduction-to-kubernetes/05-services-and-networking) · [Kubernetes: Pod termination](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-termination-flow) · [AWS: ALB 502 troubleshooting](https://docs.aws.amazon.com/elasticloadbalancing/latest/application/load-balancer-troubleshooting.html#http-502-issues)

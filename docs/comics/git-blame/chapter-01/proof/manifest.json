@@ -1,6 +1,6 @@
 {
   "scene": "scene-01",
-  "status": "awaiting-user-approval",
+  "status": "approved-phase-4-proof",
   "createdDate": "2026-10-09",
   "tool": "image_gen.imagegen",
   "sourceFilename": "exec-f04ba704-0814-401f-bd55-df17264d4f43.png",
@@ -44,5 +44,6 @@
       "bytes": 255573,
       "sha256": "2bcbe5e94acd113de7d6a44fcc8c9d57669eec0244f0cb40931a7c6f661fdcdb"
     }
-  ]
+  ],
+  "approvedDate": "2026-10-09"
 }

@@ -1,6 +1,6 @@
 # Phase 2 — character design review
 
-Updated 9 October 2026 · **All six character designs approved; Phase 3 storyboard awaiting approval**
+Updated 9 October 2026 · **Historical six-character review; all seven designs, storyboard and opening proof now approved.**
 
 The user approved proceeding and supplied all eight zoo-book reference photographs. All were viewed; the [reference review](reference-review.md) describes the general traits used to refine the creative bible. The photographs were not copied into final assets or supplied to the generation tool. This production set uses original designs and our own revised Alex sheet as a visual reference.
 
@@ -52,3 +52,5 @@ No website routes/components, chapter scenes, final storyboard or production dep
 ## Supporting-cast expansion
 
 Nora v1 (database engineer) and Eli v1 (FinOps engineer) were generated on 9 October 2026 using the approved Alex v2 and Maya v1 sheets as image references. They use the same three full-body views, six expressions and accessory/swatch format, at 1536 × 1024. Both outputs were visually inspected for style, framing, identity and obvious anatomy/text defects; both decoded and have checksums in the manifest. Their exact prompts are saved. Both supporting designs are approved. The original core four stay approved. Seven output PNGs now exist in total, including the superseded Alex v1.
+
+Current Sophia v2 with blue eyes appears in [the seven-character reference index](../../../assets/comics/git-blame/characters/README.md). The complete Chapter 1 draft is ready in [the Phase 5 review](chapter-01/production-review/README.md).

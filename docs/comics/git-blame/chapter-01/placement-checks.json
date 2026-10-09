@@ -1,0 +1,160 @@
+{
+  "note": "Manually reviewed approximate face rectangles from actual source art; browser tests check bubble bodies against these. They are review guards, not a runtime editor or automatic face detection.",
+  "scenes": [
+    {
+      "scene": "scene-01",
+      "protectedFaces": [
+        {
+          "x": 0.2,
+          "y": 0.34,
+          "width": 0.26,
+          "height": 0.22
+        },
+        {
+          "x": 0.65,
+          "y": 0.4,
+          "width": 0.25,
+          "height": 0.19
+        }
+      ]
+    },
+    {
+      "scene": "scene-02",
+      "protectedFaces": [
+        {
+          "x": 0.23,
+          "y": 0.36,
+          "width": 0.28,
+          "height": 0.22
+        },
+        {
+          "x": 0.55,
+          "y": 0.2,
+          "width": 0.23,
+          "height": 0.2
+        }
+      ]
+    },
+    {
+      "scene": "scene-03",
+      "protectedFaces": [
+        {
+          "x": 0.23,
+          "y": 0.3,
+          "width": 0.18,
+          "height": 0.22
+        },
+        {
+          "x": 0.39,
+          "y": 0.46,
+          "width": 0.21,
+          "height": 0.19
+        },
+        {
+          "x": 0.65,
+          "y": 0.42,
+          "width": 0.22,
+          "height": 0.2
+        }
+      ]
+    },
+    {
+      "scene": "scene-04",
+      "protectedFaces": [
+        {
+          "x": 0.19,
+          "y": 0.32,
+          "width": 0.14,
+          "height": 0.19
+        },
+        {
+          "x": 0.45,
+          "y": 0.38,
+          "width": 0.15,
+          "height": 0.17
+        },
+        {
+          "x": 0.73,
+          "y": 0.34,
+          "width": 0.14,
+          "height": 0.2
+        }
+      ]
+    },
+    {
+      "scene": "scene-05",
+      "protectedFaces": [
+        {
+          "x": 0.135,
+          "y": 0.395,
+          "width": 0.18,
+          "height": 0.24
+        },
+        {
+          "x": 0.4,
+          "y": 0.36,
+          "width": 0.18,
+          "height": 0.25
+        },
+        {
+          "x": 0.735,
+          "y": 0.4,
+          "width": 0.2,
+          "height": 0.25
+        }
+      ]
+    },
+    {
+      "scene": "scene-06",
+      "protectedFaces": [
+        {
+          "x": 0.235,
+          "y": 0.36,
+          "width": 0.205,
+          "height": 0.225
+        },
+        {
+          "x": 0.55,
+          "y": 0.27,
+          "width": 0.17,
+          "height": 0.21
+        },
+        {
+          "x": 0.73,
+          "y": 0.39,
+          "width": 0.185,
+          "height": 0.2
+        }
+      ]
+    },
+    {
+      "scene": "scene-07",
+      "protectedFaces": [
+        {
+          "x": 0.02,
+          "y": 0.4,
+          "width": 0.19,
+          "height": 0.22
+        },
+        {
+          "x": 0.21,
+          "y": 0.31,
+          "width": 0.14,
+          "height": 0.21
+        },
+        {
+          "x": 0.5,
+          "y": 0.29,
+          "width": 0.15,
+          "height": 0.21
+        },
+        {
+          "x": 0.84,
+          "y": 0.36,
+          "width": 0.125,
+          "height": 0.24
+        }
+      ]
+    }
+  ]
+}

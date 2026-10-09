@@ -1,6 +1,6 @@
 # git blame — character sheets for review
 
-**Six designs are approved; Sophia's new sheet awaits visual approval.** The seven-character ensemble and Sophia's name/security role are approved. Open this file in GitHub's rendered view to inspect each sheet. Each image is 1536 × 1024 and includes front, three-quarter and side views, six expressions, clothing/accessory details and color swatches.
+**All seven character designs are approved. Sophia v2 applies the requested blue eyes.** The seven-character ensemble and Sophia's name/security role are approved. Open this file in GitHub's rendered view to inspect each sheet. Each image is 1536 × 1024 and includes front, three-quarter and side views, six expressions, clothing/accessory details and color swatches.
 
 ## Alex
 
@@ -38,16 +38,12 @@ Shaved head, short facial hair, slate-blue chore jacket and ochre tablet folio.
 
 ![Eli character reference: three full-body views, six expressions, slate-blue jacket details, off-white sneakers and tablet folio.](eli-v1.png)
 
-## Sophia — application security engineer (new design for review)
+## Sophia — application security engineer
 
 Golden-blonde waves, coral overshirt, navy top, charcoal jeans and sage notebook. Curious, practical and hands-on; joins a later story, not Chapter 1.
 
-![Sophia character reference: three full-body views, six expressions, golden-blonde hair, coral overshirt, cream sneakers and sage notebook.](sophia-v1.png)
+![Sophia character reference: three full-body views, six expressions, golden-blonde hair, blue eyes, coral overshirt, cream sneakers and sage notebook.](sophia-v2.png)
 
 ## Review checkpoint
 
-The original six designs remain approved. Sophia's new visual design needs approval before use in a generated scene. Chapter 1's storyboard is approved and the one-scene Phase 4 proof has its own checkpoint. The original four anchor everyday stories; the specialists recur when their expertise matters. Deployment has a separate explicit approval.
-
-See the [supporting cast profiles](../../../../docs/comics/git-blame/supporting-cast.md), [design review](../../../../docs/comics/git-blame/character-design-review.md), [creative bible](../../../../docs/comics/git-blame/creative-bible.md), [reference observations](../../../../docs/comics/git-blame/reference-review.md) and [asset manifest](../../../../docs/comics/git-blame/character-assets.json). Exact generation prompts are saved with the documentation. `alex-v1.png` is retained only as a superseded record.
-
-Review the [Chapter 1 storyboard](../../../../docs/comics/git-blame/chapter-01/storyboard.md).
+All seven designs are approved; Sophia v1 is retained as superseded provenance. Use Sophia v2 with blue eyes for future scenes. Chapter 1’s opening-scene proof and storyboard checkpoints are cleared. The complete seven-scene chapter now awaits approval before Phase 6 site integration. Deployment has a separate explicit approval.
