@@ -1,5 +1,5 @@
 ---
-title: 'OpenSSH 10.6 Refuses DOMAIN\user on the Command Line and Weakens ssh -C. We Measured Both'
+title: 'OpenSSH 10.6 Refuses DOMAIN\user and Weakens ssh -C. We Measured Both'
 excerpt: 'OpenSSH 10.6 came out on October 6. It refuses usernames with a backslash or a dollar sign before it connects, which breaks ssh, scp, rsync, git and Ansible logins written as CORP\alice. It also cuts ssh -C to Huffman coding only, so a 32 MiB log now compresses to 21 MiB instead of 3.7 MiB. We built 10.5 and 10.6 side by side and tested 13 ways of passing a username, 4 kinds of data and 8 SSH clients.'
 category:
   name: 'Linux'
