@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Clock, Sparkles, ExternalLink } from 'lucide-react';
 import { CarbonAds } from '@/components/carbon-ads';
-import { sponsors } from '@/lib/sponsors';
+import { sponsorHref, sponsors } from '@/lib/sponsors';
 import { NewsletterForm } from '@/components/footer/newsletter-form';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
@@ -44,7 +44,7 @@ export function SponsorSidebar({ className, relatedPosts = [] }: SponsorSidebarP
             {sponsors.map((sponsor) => (
               <Link
                 key={sponsor.name}
-                href={sponsor.url}
+                href={sponsorHref(sponsor, 'sidebar')}
                 target="_blank"
                 rel="noopener noreferrer sponsored"
                 title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}

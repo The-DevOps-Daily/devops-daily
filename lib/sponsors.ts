@@ -19,6 +19,24 @@ export interface Sponsor {
   featured?: boolean;
   /** Border and background tint for a featured sponsor, in its own brand color. */
   accentClassName?: string;
+  /**
+   * Slug on go.devops-daily.com, our click tracker. When set, sponsor
+   * placements link through it so we can count clicks per placement. The slug
+   * must exist in the sponsor-links worker first, or the link returns 404.
+   */
+  goSlug?: string;
+}
+
+export const GO_LINKS_ORIGIN = 'https://go.devops-daily.com';
+
+/**
+ * The link a placement should use for a sponsor. `placement` names where the
+ * link sits (sidebar, inline, simulator, readme); GoLinkPageTag adds the page
+ * path when a reader clicks it.
+ */
+export function sponsorHref(sponsor: Sponsor, placement: string): string {
+  if (!sponsor.goSlug) return sponsor.url;
+  return `${GO_LINKS_ORIGIN}/${sponsor.goSlug}?p=${encodeURIComponent(placement)}`;
 }
 
 export const sponsors: Sponsor[] = [
@@ -27,6 +45,7 @@ export const sponsors: Sponsor[] = [
     logo: '/svix-brand.svg',
     darkLogo: '/svix-brand-light.svg',
     url: 'https://link.svix.com/devopsdaily',
+    goSlug: 'svix',
     tagline: 'Webhooks as a service',
     description:
       'Svix Dispatch sends your webhooks for you: retries with exponential backoff, signed payloads, idempotency keys, and a delivery log your customers can see.',
@@ -38,6 +57,7 @@ export const sponsors: Sponsor[] = [
     logo: '/atomsized.svg',
     darkLogo: '/atomsized-light.svg',
     url: 'https://atomsized.com/',
+    goSlug: 'atomsized',
     tagline: 'AWS platform engineering and GitOps',
     description:
       'Design and automation for reliable AWS and Kubernetes platforms, safer delivery workflows, and preview and UAT environments your engineers can understand and own.',
@@ -46,6 +66,7 @@ export const sponsors: Sponsor[] = [
     name: 'DigitalOcean',
     logo: 'https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg',
     url: 'https://m.do.co/c/2a9bba940f39',
+    goSlug: 'digitalocean',
     tagline: 'Cloud infrastructure for developers',
     description: 'Simple, reliable cloud computing designed for developers',
   },
@@ -53,6 +74,7 @@ export const sponsors: Sponsor[] = [
     name: 'DevDojo',
     logo: '/devdojo.svg?height=60&width=120',
     url: 'https://devdojo.com',
+    goSlug: 'devdojo',
     tagline: 'Developer community & tools',
     description: 'Join a community of developers sharing knowledge and tools',
     className: 'fill-current text-red-500',
@@ -61,6 +83,7 @@ export const sponsors: Sponsor[] = [
     name: 'SMTPfast',
     logo: '/smtpfast.svg',
     url: 'https://smtpfa.st',
+    goSlug: 'smtpfast',
     tagline: 'Developer-first email API',
     description:
       'Send transactional and marketing email through a clean REST API. Detailed logs, webhooks, and embeddable signup forms in one dashboard.',
@@ -70,6 +93,7 @@ export const sponsors: Sponsor[] = [
     name: 'QuizAPI',
     logo: '/quizapi.svg',
     url: 'https://quizapi.io?ref=devops-daily',
+    goSlug: 'quizapi',
     tagline: 'Developer-first quiz platform',
     description:
       'Build, generate, and embed quizzes with a powerful REST API. AI-powered question generation and live multiplayer.',

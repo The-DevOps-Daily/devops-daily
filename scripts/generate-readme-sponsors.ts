@@ -14,7 +14,7 @@
  *   pnpm generate:readme-sponsors --check  fail if it is out of date (CI)
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { sponsors, type Sponsor } from "../lib/sponsors";
+import { sponsorHref, sponsors, type Sponsor } from "../lib/sponsors";
 
 const README = "README.md";
 const START = "<!-- sponsors:start -->";
@@ -66,9 +66,9 @@ function render(): string {
 
   for (const s of featured) {
     lines.push(
-      `### [${s.name}](${s.url})`,
+      `### [${s.name}](${sponsorHref(s, "readme")})`,
       "",
-      `<a href="${s.url}">${logoTag(s, 44)}</a>`,
+      `<a href="${sponsorHref(s, "readme")}">${logoTag(s, 44)}</a>`,
       "",
       s.description ?? s.tagline ?? "",
       "",
@@ -80,17 +80,17 @@ function render(): string {
     // A single row keeps the logos on one line on a wide screen and wraps
     // sensibly on a narrow one.
     lines.push(
-      "| " + rest.map((s) => `[${s.name}](${s.url})`).join(" | ") + " |",
+      "| " + rest.map((s) => `[${s.name}](${sponsorHref(s, "readme")})`).join(" | ") + " |",
       "|" + rest.map(() => ":--:").join("|") + "|",
       "| " +
         rest
-          .map((s) => `<a href="${s.url}">${logoTag(s, 28)}</a>`)
+          .map((s) => `<a href="${sponsorHref(s, "readme")}">${logoTag(s, 28)}</a>`)
           .join(" | ") +
         " |",
       "",
     );
     for (const s of rest) {
-      if (s.tagline) lines.push(`- **[${s.name}](${s.url})**: ${s.tagline}`);
+      if (s.tagline) lines.push(`- **[${s.name}](${sponsorHref(s, "readme")})**: ${s.tagline}`);
     }
     lines.push("");
   }

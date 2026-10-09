@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Sparkles, ExternalLink, Heart } from 'lucide-react';
-import { sponsors } from '@/lib/sponsors';
+import { sponsorHref, sponsors } from '@/lib/sponsors';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface InlineSponsorsProps {
@@ -43,7 +43,7 @@ export function InlineSponsors({
               {sponsors.map((sponsor) => (
                 <Link
                   key={sponsor.name}
-                  href={sponsor.url}
+                  href={sponsorHref(sponsor, 'inline')}
                   target="_blank"
                   rel="noopener noreferrer sponsored"
                   className={cn(
@@ -105,7 +105,7 @@ export function InlineSponsors({
           {sponsors.map((sponsor) => (
             <Link
               key={sponsor.name}
-              href={sponsor.url}
+              href={sponsorHref(sponsor, 'inline')}
               target="_blank"
               rel="noopener noreferrer sponsored"
               className="group inline-flex items-center justify-center px-4 py-2 rounded-md hover:bg-muted/50 transition-colors"
@@ -149,7 +149,7 @@ export function InlineSponsors({
             {sponsors.map((sponsor) => (
               <Link
                 key={sponsor.name}
-                href={sponsor.url}
+                href={sponsorHref(sponsor, 'inline')}
                 target="_blank"
                 rel="noopener noreferrer sponsored"
                 className="group relative"

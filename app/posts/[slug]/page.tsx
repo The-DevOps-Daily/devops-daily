@@ -84,6 +84,8 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     // without an entry here a post could lose its disclosure banner purely
     // by switching to the link the sponsor asked us to use.
     'link\\.svix\\.com',
+    // Our own click tracker, which all sponsor placements link through.
+    'go\\.devops-daily\\.com',
   ];
   const hasAffiliateLinks = affiliatePatterns.some((pattern) =>
     new RegExp(pattern).test(post.content)
