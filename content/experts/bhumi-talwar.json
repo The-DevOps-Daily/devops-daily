@@ -1,0 +1,16 @@
+{
+  "name": "Bhumi Talwar",
+  "slug": "bhumi-talwar",
+  "title": "DevOps Engineer",
+  "bio": "A short bio about yourself and your experience...",
+  "avatar": "/images/experts/bhumi-talwar.jpg",
+  "specialties": ["Docker", "Kubernetes", "Terraform", "CI/CD"],
+  "location": "Lucknow, India",
+  "availableForHire": true,
+  "links": {
+    "website": "https://yoursite.com",
+    "github": "https://github.com/BhumiTalwar",
+    "linkedin": "https://linkedin.com/in/your-profile",
+    "twitter": "https://x.com/your-handle"
+  }
+}
