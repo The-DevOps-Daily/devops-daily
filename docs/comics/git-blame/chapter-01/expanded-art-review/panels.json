@@ -1,0 +1,222 @@
+{
+  "status": "generated-candidates-awaiting-art-review",
+  "panels": [
+    {
+      "panel": 2,
+      "id": "panel-02-release",
+      "title": "One click before the weekend",
+      "artwork": "assets/comics/git-blame/chapter-01/panel-02-release-v1.png",
+      "alt": "Sam's mustard-cuffed, freckled hand clicks his laptop trackpad. A navy bag is half zipped beside a simple release screen. Key faces are unlettered; worn wood, fabric and the hinge are closely drawn.",
+      "caption": "Sam starts the checkout-api rollout. His bag is already packed.",
+      "labelsMeaning": "Release screen and action",
+      "labels": [
+        {
+          "title": "checkout-api",
+          "ink": "light",
+          "position": {
+            "x": 0.16,
+            "y": 0.12,
+            "width": 0.4
+          },
+          "rotation": -5
+        },
+        {
+          "title": "Deploy",
+          "tone": "success",
+          "position": {
+            "x": 0.445,
+            "y": 0.31,
+            "width": 0.155
+          },
+          "rotation": -5,
+          "align": "center"
+        }
+      ],
+      "technicalNote": "An approved release and green action button do not establish production safety. The small receipt wording change exposes an existing shutdown defect; the release does not create the defective handler."
+    },
+    {
+      "panel": 4,
+      "id": "panel-04-replicas",
+      "title": "Green replacements, unfinished departure",
+      "artwork": "assets/comics/git-blame/chapter-01/panel-04-replicas-v2.png",
+      "alt": "Ink-and-watercolor logical deployment schematic. A slate load-balancer sits outside a dashed cluster boundary. Three direct arrows enter three separate pod capsules: one amber old pod and two green ready replacements. Each pod contains one square app symbol; no arrow joins pods.",
+      "caption": "Two ready replacement replicas do not tell us whether the old pod's accepted work has finished.",
+      "labelsMeaning": "Logical deployment nodes and replica state",
+      "labels": [
+        {
+          "title": "ALB",
+          "position": {
+            "x": 0.055,
+            "y": 0.425,
+            "width": 0.17
+          },
+          "align": "center"
+        },
+        {
+          "title": "EKS · checkout-api",
+          "position": {
+            "x": 0.39,
+            "y": 0.17,
+            "width": 0.3
+          }
+        },
+        {
+          "title": "Old pod · terminating",
+          "detail": "Old work may still be active.",
+          "tone": "warning",
+          "position": {
+            "x": 0.36,
+            "y": 0.76,
+            "width": 0.32
+          },
+          "align": "center"
+        },
+        {
+          "title": "New pods · ready",
+          "detail": "2/2 replicas",
+          "tone": "success",
+          "position": {
+            "x": 0.73,
+            "y": 0.75,
+            "width": 0.23
+          },
+          "align": "center"
+        }
+      ],
+      "technicalNote": "Logical, not physical infrastructure. In ShipIt's fictional ALB IP-target topology the ALB targets app pods directly. Exactly three app-pod symbols, one app container each and three direct outbound routing relationships. Terminating describes deletion/display state, not a Kubernetes Pod phase. 2/2 counts replacement replicas, not containers. Readiness and endpoint withdrawal do not prove accepted requests completed; routes do not claim every terminating target always accepts new work."
+    },
+    {
+      "panel": 5,
+      "id": "panel-05-customer",
+      "title": "Meanwhile, at checkout",
+      "artwork": "assets/comics/git-blame/chapter-01/panel-05-customer-v2.png",
+      "alt": "Overhead view of an unnamed customer's two hands at a kitchen laptop. A ceramic bowl thumbnail and simple checkout warning appear on screen, with a tea cup, reused parcel and blue fabric nearby. The right hand pauses above the trackpad.",
+      "caption": "Some customers get a 502 instead of a checkout reply. That does not tell us whether the order committed.",
+      "labelsMeaning": "Customer-facing checkout message",
+      "labels": [
+        {
+          "title": "We couldn't confirm checkout.",
+          "tone": "error",
+          "position": {
+            "x": 0.49,
+            "y": 0.352,
+            "width": 0.245
+          },
+          "rotation": 4,
+          "align": "center"
+        }
+      ],
+      "technicalNote": "The error message conveys uncertainty, not a proven lost order. No automatic retry button is offered. Retrying writes needs appropriate idempotency and outcome checks. HTTP 502 is an engineering caption, not necessarily text displayed by the customer's browser."
+    },
+    {
+      "panel": 9,
+      "id": "panel-09-handler",
+      "title": "Alex recognizes the goodbye handler",
+      "artwork": "assets/comics/git-blame/chapter-01/panel-09-handler-v1.png",
+      "alt": "Close view over Alex's navy shoulder and dark curls at a laptop. His hand points just below a blank amber code region; his cream navy-rim mug is clear of the screen. His short beard and focused profile match the approved character.",
+      "caption": "Alex recognizes his old SIGTERM handler. It exits immediately, even when a request is still running.",
+      "labelsMeaning": "Defective old shutdown handler, not recommended code",
+      "labels": [
+        {
+          "code": "process.on('SIGTERM', () => {\n  process.exit(0);\n});",
+          "position": {
+            "x": 0.445,
+            "y": 0.35,
+            "width": 0.36
+          },
+          "rotation": 5
+        }
+      ],
+      "technicalNote": "Fictional old Node.js handler deliberately illustrates the defect. process.exit does not wait for pending HTTP work. The later fix stops admission and drains tracked accepted work within a deadline; merely adding a sleep to preStop is insufficient. This fragment is not a production-ready implementation."
+    },
+    {
+      "panel": 11,
+      "id": "panel-11-overlap",
+      "title": "Make the slow request overlap shutdown",
+      "artwork": "assets/comics/git-blame/chapter-01/panel-11-overlap-v1.png",
+      "alt": "Sam's mustard-cuffed hand starts a test on a laptop while Maya's green-cuffed hand points to completion. An upper request timeline stays continuous across an amber shutdown marker and finishes green. The lower shutdown timeline exits afterward. There are exactly two tracks.",
+      "caption": "SIGTERM starts shutdown at the amber marker. The accepted request completes before the process exits. Test environment first.",
+      "labelsMeaning": "Fictional shutdown-overlap test",
+      "labels": [
+        {
+          "title": "In test",
+          "position": {
+            "x": 0.174,
+            "y": 0.113,
+            "width": 0.15
+          }
+        },
+        {
+          "title": "Accepted request completes",
+          "tone": "success",
+          "position": {
+            "x": 0.24,
+            "y": 0.194,
+            "width": 0.48
+          }
+        },
+        {
+          "title": "Shutdown waits, then exits",
+          "position": {
+            "x": 0.24,
+            "y": 0.493,
+            "width": 0.48
+          }
+        }
+      ],
+      "technicalNote": "An authored fictional test view, not a test run against real infrastructure in this environment. An already accepted request remains in the same process and completes within the configured deadline. Node 22 server.close stops admission and permits active HTTP work to complete; detached work, dependencies, jobs and long-lived connections require their own tracking and deadlines. The grace timer is shared with preStop, and SIGKILL remains possible if it expires. The continuous request track does not depict a request transferring between pods."
+    },
+    {
+      "panel": 13,
+      "id": "panel-13-handoff",
+      "title": "One watched production handoff",
+      "artwork": "assets/comics/git-blame/chapter-01/panel-13-handoff-v2.png",
+      "alt": "Maya carefully checks the fourth and final box in a paper notebook. Alex's navy sleeve and incident mug remain beside her. A supporting deployment screen shows corrected replacement pods separately from the old pod, with no transfer arrow.",
+      "caption": "The first corrected release gets a watched handoff. Healthy new code cannot repair an old running process.",
+      "labelsMeaning": "Ordered production handoff checks",
+      "labels": [
+        {
+          "title": "Corrected replicas healthy",
+          "position": {
+            "x": 0.27,
+            "y": 0.48,
+            "width": 0.19
+          },
+          "small": true,
+          "rotation": -3
+        },
+        {
+          "title": "New traffic shifted",
+          "position": {
+            "x": 0.27,
+            "y": 0.56,
+            "width": 0.19
+          },
+          "small": true,
+          "rotation": -3
+        },
+        {
+          "title": "Old accepted work complete",
+          "position": {
+            "x": 0.27,
+            "y": 0.645,
+            "width": 0.19
+          },
+          "small": true,
+          "rotation": -3
+        },
+        {
+          "title": "Old processes retired",
+          "position": {
+            "x": 0.27,
+            "y": 0.73,
+            "width": 0.19
+          },
+          "small": true,
+          "rotation": -3
+        }
+      ],
+      "technicalNote": "A controlled first-release handoff: check corrected parallel replicas, shift new traffic, keep defective old processes alive until observed withdrawal and accepted work completion, then retire them. New code is not injected into old processes. Future rolling updates use the tested handler. Success is fictional story content; this environment has not executed a real production cutover."
+    }
+  ]
+}

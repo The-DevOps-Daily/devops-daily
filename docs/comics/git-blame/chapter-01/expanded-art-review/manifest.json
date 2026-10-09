@@ -1,0 +1,445 @@
+{
+  "createdDate": "2026-10-10",
+  "dateTimezone": "Europe/Sofia",
+  "chapter": "chapter-01",
+  "status": "expanded-artwork-candidates-awaiting-user-review",
+  "generationCalls": 9,
+  "selectedNewIllustrations": 6,
+  "supersededDrafts": 3,
+  "proposedReadingPanels": 14,
+  "priorTraceProof": "docs/comics/git-blame/chapter-01/technical-proof/manifest.json",
+  "runtimeIntegration": "Not interleaved. Website reader and downloadable PDF retain seven illustrations.",
+  "encoding": {
+    "jpeg": {
+      "quality": 90,
+      "mozjpeg": true
+    },
+    "screenshots": {
+      "jpegQuality": 92
+    },
+    "crop": false,
+    "upscale": false
+  },
+  "lettering": {
+    "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panels.json",
+    "sha256": "8596d42887edea613ebd6db937f6d771859a32bce625b4c90343c6becafbd431"
+  },
+  "reviewHtml": {
+    "path": "docs/comics/git-blame/chapter-01/expanded-art-review/review.html",
+    "sha256": "6de4de675d3e53580fb75f190ba91713544c3846f271332abf1646022c2b9add"
+  },
+  "browserChecks": {
+    "path": "docs/comics/git-blame/chapter-01/expanded-art-review/browser-checks.json",
+    "sha256": "ae3fa3f1890a88d90de5964c11875149e7aa65ee177f85fbc84a63205443df63",
+    "panelLayoutChecks": 24
+  },
+  "generations": [
+    {
+      "status": "selected-candidate-awaiting-user-review",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-199bcae2-0b2f-4870-8ef6-cb100806a9b9.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-02-release-v1.txt",
+      "promptSha256": "15a07e6457162d6c4cb59ccc7a02b8781921b59b18f53d95fe57d3854d1bd1a5",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/characters/sam-v1.png",
+          "sha256": "d5eeef6a2aab87770790bd3dd9e0c3d2a89333d37cae6fc38bd5a697546a15ff"
+        },
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+          "sha256": "23aada97f352d5b8569eb6d63763394877642387eac721f1cd488cddc85a1572"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-02-release-v1.png",
+        "dimensions": [1536, 1024],
+        "bytes": 2758214,
+        "sha256": "b0574cb4c0f4c30585298dd14b6381a5e908510954d8285a911c207c1a362e9e"
+      }
+    },
+    {
+      "status": "superseded",
+      "reason": "Superseded: physical hut/crate treatment obscured the logical nature of the deployment.",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-9bdfa97d-5642-4842-9bbb-3d8625b00c28.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-04-replicas-v1.txt",
+      "promptSha256": "836c12a38a9ecd037351b8ea9f652156ef4586fdde969ab72adb98cf0d463d1b",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+          "sha256": "23aada97f352d5b8569eb6d63763394877642387eac721f1cd488cddc85a1572"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-04-replicas-v1.png",
+        "dimensions": [1536, 1024],
+        "bytes": 2765335,
+        "sha256": "d7ae1861d0fda4af6204985ca27b486e5e5abf29f2455dc889c1790672746321"
+      }
+    },
+    {
+      "status": "selected-candidate-awaiting-user-review",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-c16bc0ab-48bf-48e3-a628-680efb7cad3b.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-04-replicas-v2.txt",
+      "promptSha256": "4696ec615e94127ae55c8a15e05c55e8eba2c87049ee95ac399800c5ada88d00",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/panel-04-replicas-v1.png",
+          "sha256": "d7ae1861d0fda4af6204985ca27b486e5e5abf29f2455dc889c1790672746321"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-04-replicas-v2.png",
+        "dimensions": [1536, 1024],
+        "bytes": 2187610,
+        "sha256": "43a00af7e3ecefc18ba5462af727fe1a742a9154e2d4eaa6fbb848575ffcf23c"
+      }
+    },
+    {
+      "status": "superseded",
+      "reason": "Superseded: keyboard glyphs and error placeholder strokes needed removal.",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-cf00eee0-1da2-436d-9ec4-d3a1a4c2de98.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-05-customer-v1.txt",
+      "promptSha256": "7b775d39a62cac73d06e1b4d1e7d35a86e8785cebe08b5f7995c2ad7dd4b6d35",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+          "sha256": "23aada97f352d5b8569eb6d63763394877642387eac721f1cd488cddc85a1572"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-05-customer-v1.png",
+        "dimensions": [1254, 1254],
+        "bytes": 2847451,
+        "sha256": "c0a345d0e90b6e1951c047b4ef5baea9381029a7f90ac210faf5e9c80555a7db"
+      }
+    },
+    {
+      "status": "selected-candidate-awaiting-user-review",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-03504eb7-22c0-41da-a63c-477ef4bd3163.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-05-customer-v2.txt",
+      "promptSha256": "95c10fb9bd3fe4d0aef38ec9a4b4047bb90a14703dbbc13193e7131af537cbe8",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/panel-05-customer-v1.png",
+          "sha256": "c0a345d0e90b6e1951c047b4ef5baea9381029a7f90ac210faf5e9c80555a7db"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-05-customer-v2.png",
+        "dimensions": [1254, 1254],
+        "bytes": 2633960,
+        "sha256": "ca4e8b0e34852d018e8260a3ad5a9cf59a8d8829c9fdd2f5d4e34c0dfd61adc6"
+      }
+    },
+    {
+      "status": "selected-candidate-awaiting-user-review",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-d980c491-5ea0-48cc-ab0b-1a74dea14baa.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-09-handler-v1.txt",
+      "promptSha256": "5d2ef45709d0f540726bc311bc4d14fdda787cd81881e22d534a33a40c2d28c3",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/characters/alex-v2.png",
+          "sha256": "85e5787a195ee28ed5a026c0fe6cab8348a802dea9d0ab524b01a2f7f24c62f6"
+        },
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+          "sha256": "23aada97f352d5b8569eb6d63763394877642387eac721f1cd488cddc85a1572"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-09-handler-v1.png",
+        "dimensions": [1536, 1024],
+        "bytes": 2657658,
+        "sha256": "7909faa3519671a11ff70218b03f928702c0df08b84fc5df19705c3748325b4a"
+      }
+    },
+    {
+      "status": "selected-candidate-awaiting-user-review",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-e47c3eaa-2fec-4235-87c6-34c565bcff31.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-11-overlap-v1.txt",
+      "promptSha256": "7fbac8e2de2c0fc18ff087e4ca6cd7655cbb020dc1efcadbf3ffdd1ead78091e",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/characters/sam-v1.png",
+          "sha256": "d5eeef6a2aab87770790bd3dd9e0c3d2a89333d37cae6fc38bd5a697546a15ff"
+        },
+        {
+          "path": "assets/comics/git-blame/characters/maya-v1.png",
+          "sha256": "67dde32e7cac46b4fe58c8b7bcd04634a95bde6fd9c8bfcff1f16533c828ba4e"
+        },
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+          "sha256": "23aada97f352d5b8569eb6d63763394877642387eac721f1cd488cddc85a1572"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-11-overlap-v1.png",
+        "dimensions": [1448, 1086],
+        "bytes": 2643131,
+        "sha256": "f005ea5ecde57431a6de32424f0dbb2bf2db40010306ad7daad862f2a041bdb2"
+      }
+    },
+    {
+      "status": "superseded",
+      "reason": "Superseded: server-tower groups replaced with two corrected app-pod symbols and one old symbol; notebook strokes removed and pen hand moved for lettering.",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-9db21df6-feac-49ca-8741-2b77c275bde3.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-13-handoff-v1.txt",
+      "promptSha256": "1db91c8fa5f50d041422680a99e785bcd2653088d1d6c09fa8707e5c5e862a1f",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/characters/maya-v1.png",
+          "sha256": "67dde32e7cac46b4fe58c8b7bcd04634a95bde6fd9c8bfcff1f16533c828ba4e"
+        },
+        {
+          "path": "assets/comics/git-blame/characters/alex-v2.png",
+          "sha256": "85e5787a195ee28ed5a026c0fe6cab8348a802dea9d0ab524b01a2f7f24c62f6"
+        },
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+          "sha256": "23aada97f352d5b8569eb6d63763394877642387eac721f1cd488cddc85a1572"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v1.png",
+        "dimensions": [1448, 1086],
+        "bytes": 2548245,
+        "sha256": "fecaa24a2824ec09b94357539c80531b698b6cda395b744ecf1150650f740274"
+      }
+    },
+    {
+      "status": "selected-candidate-awaiting-user-review",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-cdd28830-5991-48cf-9e9b-772d0a473871.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-13-handoff-v2.txt",
+      "promptSha256": "e9676e05c08417fb991317f1e6586acdbd2b3b9fd2fd9522846d3da82878018f",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v1.png",
+          "sha256": "fecaa24a2824ec09b94357539c80531b698b6cda395b744ecf1150650f740274"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v2.png",
+        "dimensions": [1448, 1086],
+        "bytes": 2407373,
+        "sha256": "5d18a95c69083ebf3cb22b1c3d71eed2ef058a6d8d3d536d451a2862d737ecf8"
+      }
+    }
+  ],
+  "reviewImages": [
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-02-release-desktop.jpg",
+      "dimensions": [1024, 823],
+      "bytes": 241125,
+      "sha256": "5a04b133eb27168ae19db695d2298ff58844ab80a591869cf4f1ca5ac8587798"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-02-release-enlarged-text.jpg",
+      "dimensions": [1024, 1089],
+      "bytes": 277163,
+      "sha256": "f1a23e796763354e34fb0fcddab71d7c9b370fa44ec668ab49c2cf081837045b"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-02-release-narrow-phone.jpg",
+      "dimensions": [296, 530],
+      "bytes": 46406,
+      "sha256": "9ddab2d626962398800a3d6553b153f5b130b2e0025a2fbeb3e5989e75eac1af"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-02-release-phone.jpg",
+      "dimensions": [369, 527],
+      "bytes": 54957,
+      "sha256": "afe235377c27e923e14d96bd374578c14b6e69a23f8a655c8abbce2294b3a2d8"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-02-release-source.jpg",
+      "dimensions": [1536, 1024],
+      "bytes": 339302,
+      "sha256": "3290a4fef29ed077e8c7e2e4e1867b50318855a074782967f6a2bfaff9e1ffdb"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-04-replicas-desktop.jpg",
+      "dimensions": [1024, 822],
+      "bytes": 155694,
+      "sha256": "f19bf951d9c2de9d6e36cc216600adac4a87eb458c315ee3c731ca19428b9f28"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-04-replicas-enlarged-text.jpg",
+      "dimensions": [1024, 1470],
+      "bytes": 226157,
+      "sha256": "d037543db19ffb85768e55857127159d467f96bf6d0152074599e0978279be1b"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-04-replicas-narrow-phone.jpg",
+      "dimensions": [296, 707],
+      "bytes": 51093,
+      "sha256": "be47b0dd8f990129577481b90da59b716077f8d97f3e16c70cbd83abfceef3a0"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-04-replicas-phone.jpg",
+      "dimensions": [369, 732],
+      "bytes": 55025,
+      "sha256": "5fa01586f1c3af45eecad774b43ab451332e99159d42aa49e58a3e3b9e9a610d"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-04-replicas-source.jpg",
+      "dimensions": [1536, 1024],
+      "bytes": 174983,
+      "sha256": "e5279055aafdf51bb28eecc831bcbb4b6dcec79b9642c4c38a4bb9e3b4084a99"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-05-customer-desktop.jpg",
+      "dimensions": [1024, 1164],
+      "bytes": 347844,
+      "sha256": "4c7eed6465d08d859eac8a59a136d684d3d0e0e7be46c03686c189d8326a24be"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-05-customer-enlarged-text.jpg",
+      "dimensions": [1024, 1409],
+      "bytes": 385343,
+      "sha256": "3154239635dfc109428cf32936cf1d1a41c6121c1c9d9d29a3ae9d723a177419"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-05-customer-narrow-phone.jpg",
+      "dimensions": [296, 611],
+      "bytes": 65159,
+      "sha256": "4fb0b9d1797178c76eb2e0f3efb5ad0c50563c3e4b793cef571f7fe5673cc4f2"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-05-customer-phone.jpg",
+      "dimensions": [369, 631],
+      "bytes": 88459,
+      "sha256": "bb85e98a43a4f01a90edcaa94a47cf42fd3dd5052847ce7f9048f42ad776fb2d"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-05-customer-source.jpg",
+      "dimensions": [1254, 1254],
+      "bytes": 373373,
+      "sha256": "f36435e3977c5c2979d0b3a35f6843ad05a23a55bb648be236e0dc54f22d7d53"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-09-handler-desktop.jpg",
+      "dimensions": [1024, 823],
+      "bytes": 245710,
+      "sha256": "e08d744e708ea534877f39b2a7defd2ce18a2a66317681a4c2d44490de1efcbc"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-09-handler-enlarged-text.jpg",
+      "dimensions": [1024, 1179],
+      "bytes": 293327,
+      "sha256": "eb33f4aca21511a73df247c43c11ce1a33c64a15f68cfa3a5f6a4546fef9267e"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-09-handler-narrow-phone.jpg",
+      "dimensions": [296, 598],
+      "bytes": 53736,
+      "sha256": "dfaf01f487c17a26a81a0ac32fe8dc085eafe857e575dafbd5bbec47bcbc678e"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-09-handler-phone.jpg",
+      "dimensions": [369, 624],
+      "bytes": 64258,
+      "sha256": "1c3d410e787c9d00d029fb63049313119eb5f438bd8d89369a93a1799512f04f"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-09-handler-source.jpg",
+      "dimensions": [1536, 1024],
+      "bytes": 326543,
+      "sha256": "6c6ad541b4d232a249a71166f8a9f3d3f14b920ae316272090e72c5a88fc4183"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-11-overlap-desktop.jpg",
+      "dimensions": [1024, 934],
+      "bytes": 260989,
+      "sha256": "44e56a5da63211a2fcfa7923c767702c8613257c2d5902ddebb67adb1b0f4035"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-11-overlap-enlarged-text.jpg",
+      "dimensions": [1024, 1420],
+      "bytes": 327830,
+      "sha256": "e7d3a42d3f43480ac479dadec62c907f8d500583de844ecabc1683c15723c70c"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-11-overlap-narrow-phone.jpg",
+      "dimensions": [296, 711],
+      "bytes": 62197,
+      "sha256": "e5101ded89c42cdff2c09ae80f01d35852a0d09ac7676066d8f86fb415bab5cf"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-11-overlap-phone.jpg",
+      "dimensions": [369, 684],
+      "bytes": 77928,
+      "sha256": "273bc0188c1cb8913f52652035a889dda419e7a80ea0b313916250bb6d4fbdac"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-11-overlap-source.jpg",
+      "dimensions": [1448, 1086],
+      "bytes": 320753,
+      "sha256": "c92f4073f22a865e9c290abcd24a8b6e2c88279f67a9068415946310a6aea80d"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-desktop.jpg",
+      "dimensions": [1024, 907],
+      "bytes": 245145,
+      "sha256": "d111e5b9b0532df0c013aee84b3ff524e162552c2042c529279242acfae6a2e2"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-enlarged-text.jpg",
+      "dimensions": [1024, 1374],
+      "bytes": 313706,
+      "sha256": "f085e77cacb5bb9398c42f91f415abe6035bd8d48be988d267b8475b7830d3ca"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-narrow-phone.jpg",
+      "dimensions": [296, 755],
+      "bytes": 62661,
+      "sha256": "688f8ee2f51f640c615954eb9fb5c7c932afc1dc07c979b67e27f0efa172ebb7"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-phone.jpg",
+      "dimensions": [369, 703],
+      "bytes": 78990,
+      "sha256": "bb5da570013f757836fcdfaeb7189a4c94f2f034cf07b869b89e011ae99ee976"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-source.jpg",
+      "dimensions": [1448, 1086],
+      "bytes": 297087,
+      "sha256": "3789fd66ba0a16eb0df284e9219668c59a1a2ea93b37568ade319070b93c7782"
+    }
+  ]
+}

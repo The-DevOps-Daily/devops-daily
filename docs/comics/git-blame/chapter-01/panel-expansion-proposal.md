@@ -1,6 +1,6 @@
 # Chapter 1 — fourteen-panel story proposal
 
-9 October 2026 · Proposed revision. The user directed work toward images; [Panel 7's first technical proof](technical-proof/README.md) is now generated for review. **The current reader and PDF still have seven illustrations; the fourteen-panel sequence is not yet integrated.**
+10 October 2026 · Generated artwork revision. The user requested better images, more images and a PR update after the first trace proof. All seven new inserts are now available: the [six-image batch review](expanded-art-review/README.md) and [earlier Panel 7 proof](technical-proof/README.md). [Read fourteen panels in order](expanded-art-review/reading-sequence.md). **The current reader and PDF still have seven illustrations; this sequence is an art review and is not yet integrated.**
 
 The current chapter repeats smiling engineers, warm window light and broad empty walls. Physical movement improved, but the images still tell too little of the incident themselves. This revision keeps the short, technically accurate story and approved cast; it gives the customer, evidence and fix their own visual moments. A reader should be able to follow what changes with the dialogue hidden.
 
@@ -110,4 +110,6 @@ Reference the approved character sheets for the exact human identity; vary frami
 
 The user directed work toward images after receiving this sequence. Panel 7 has been generated and rendered with its real trace labels at desktop and phone sizes. It tests whether the technical detail is both attractive and accurate without repeating the desk-conversation formula. Its source remains text-free; editable labels, captures and source provenance are in the [technical proof review](technical-proof/README.md).
 
-After that proof is approved, generate the remaining inserts, interleave the retained/restaged human moments and review the full sequence. Only then update the runtime chapter, navigation/panel counts, Under the Hood where necessary, source manifests, OG selection and PDF pagination. The current seven-panel reader and PDF remain truthful review editions in the meantime.
+The user's subsequent request authorized more generation and a PR update. Six further inserts have now been generated and reviewed with editable lettering. Three needed refinements for technical symbols or writing clearance. The full fourteen-panel sequence is available as a repository art review. The original briefs above remain the planned compositions; [the batch data](expanded-art-review/panels.json) and source prompts record actual reviewed geometry, including handoff labels on the notebook's clear left page.
+
+After final art review, integrate the chosen sequence and update runtime counts, Under the Hood where necessary, social selection and PDF pagination together. The current seven-panel reader and PDF remain truthful review editions in the meantime. Further website design was outside this generation update.

@@ -31,9 +31,9 @@ The user found the old chapter hero and end navigation unsuitable, especially in
 
 [Phone opening](reader-cover-dark-mobile-chromium.jpg) · [Phone end navigation](reader-completion-dark-mobile-chromium.jpg) · [Light-mode opening](reader-cover-light-desktop-chromium.jpg) · [Light-mode end navigation](reader-completion-light-desktop-chromium.jpg)
 
-## Artwork direction and first technical proof
+## Expanded artwork review
 
-The user requested less generic art and more visible engineering, then directed work toward images. The current runtime still has seven illustrations. The [fourteen-panel proposal](../chapter-01/panel-expansion-proposal.md) adds customer impact, rollout state, correlated evidence, the old shutdown handler, a deliberate overlap test and the controlled handoff. [Panel 7's first technical proof](../chapter-01/technical-proof/README.md) is now generated, with a text-free master and editable lettering reviewed at desktop and phone sizes. It is awaiting art review before the remaining batch; this proof has not been interleaved into the reader or PDF.
+The user requested less generic art and more visible engineering, then authorized more generation and a PR update. The [six new inserts](../chapter-01/expanded-art-review/README.md) and [earlier trace proof](../chapter-01/technical-proof/README.md) now form a [fourteen-panel art reading sequence](../chapter-01/expanded-art-review/reading-sequence.md) with the existing human moments. They show the release action, customer impact, deployment state, evidence, old handler, overlap test and controlled handoff. Editable wording and source provenance are saved; twenty-four additional panel/layout checks cover the six-image batch. **The runtime and PDF still contain seven illustrations.** The expanded sequence has not been interleaved into the application; no further site design was included in this artwork update.
 
 ## Site views
 

@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>git blame — expanded chapter artwork review</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        color: #273746;
+        background: #f6f0df;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 1rem;
+        line-height: 1.45;
+      }
+      main {
+        max-width: 1024px;
+        margin: auto;
+      }
+      h1 {
+        font-size: 2rem;
+      }
+      h2 {
+        font-size: 1.75rem;
+        margin: 4px 0 18px;
+        line-height: 1.2;
+      }
+      header p {
+        margin: 0;
+        color: #486456;
+      }
+      section {
+        margin: 0 0 60px;
+        padding: 0 0 18px;
+      }
+      figure {
+        margin: 0;
+        container-type: inline-size;
+      }
+      .art {
+        position: relative;
+      }
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      ol {
+        margin: 0;
+        padding: 18px 28px 18px 50px;
+        background: #fffcf2;
+      }
+      .label {
+        padding: 8px 0;
+        font-size: 1.125rem;
+      }
+      .label strong,
+      .label span {
+        display: block;
+      }
+      .label strong {
+        font-size: 1.25rem;
+      }
+      .label span {
+        margin-top: 4px;
+      }
+      pre {
+        margin: 0;
+      }
+      code {
+        display: block;
+        font:
+          1.125rem/1.5 ui-monospace,
+          SFMono-Regular,
+          Consolas,
+          monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        margin-top: 8px;
+      }
+      .warning strong {
+        color: #765323;
+      }
+      .error strong {
+        color: #923f36;
+      }
+      .success strong {
+        color: #355e49;
+      }
+      figcaption {
+        font-size: 1.125rem;
+        margin: 16px 0 0;
+      }
+      @container (min-width:46em) {
+        ol {
+          position: absolute;
+          inset: 0;
+          list-style: none;
+          padding: 0;
+          background: none;
+        }
+        .label {
+          position: absolute;
+          left: var(--x);
+          top: var(--y);
+          width: var(--width);
+          padding: 0;
+          font-size: clamp(1.125rem, 1.9cqi, 1.25rem);
+          line-height: 1.35;
+          transform: rotate(var(--rotation));
+          transform-origin: top left;
+          text-align: var(--align);
+        }
+        .label strong {
+          font-size: clamp(1.25rem, 2.3cqi, 1.5rem);
+        }
+        .label.small strong {
+          font-size: clamp(1.125rem, 1.8cqi, 1.25rem);
+        }
+        .label span {
+          margin-top: 5px;
+        }
+        code {
+          font-size: clamp(1rem, 2cqi, 1.3125rem);
+          line-height: 1.45;
+        }
+        .label[data-ink='light'] {
+          color: #fffbed;
+        }
+        .label[data-ink='light'] strong {
+          color: inherit;
+        }
+      }
+      @media (max-width: 480px) {
+        body {
+          padding: 12px;
+        }
+        h2 {
+          font-size: 1.5rem;
+        }
+        ol {
+          padding: 15px 18px 15px 38px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Chapter 1: six new visual moments</h1>
+      <p>
+        Generated illustration candidates. All screen, code and checklist wording remains editable.
+        This review has not changed the website reader or PDF.
+      </p>
+      <section id="panel-02-release" data-panel="2" data-ratio="1.5" data-master-width="1536">
+        <header>
+          <p>git blame · Chapter 1 · Panel 2 · Artwork review</p>
+          <h2>One click before the weekend</h2>
+        </header>
+        <figure>
+          <div class="art">
+            <img
+              src="panel-02-release-source.jpg"
+              width="1536"
+              height="1024"
+              alt="Sam's mustard-cuffed, freckled hand clicks his laptop trackpad. A navy bag is half zipped beside a simple release screen. Key faces are unlettered; worn wood, fabric and the hinge are closely drawn."
+            />
+            <ol aria-label="Release screen and action">
+              <li
+                class="label"
+                data-ink="light"
+                style="--x: 16%; --y: 12%; --width: 40%; --rotation: -5deg; --align: left"
+              >
+                <strong>checkout-api</strong>
+              </li>
+              <li
+                class="label success"
+                data-ink="dark"
+                style="--x: 44.5%; --y: 31%; --width: 15.5%; --rotation: -5deg; --align: center"
+              >
+                <strong>Deploy</strong>
+              </li>
+            </ol>
+          </div>
+          <figcaption>Sam starts the checkout-api rollout. His bag is already packed.</figcaption>
+        </figure>
+      </section>
+      <section id="panel-04-replicas" data-panel="4" data-ratio="1.5" data-master-width="1536">
+        <header>
+          <p>git blame · Chapter 1 · Panel 4 · Artwork review</p>
+          <h2>Green replacements, unfinished departure</h2>
+        </header>
+        <figure>
+          <div class="art">
+            <img
+              src="panel-04-replicas-source.jpg"
+              width="1536"
+              height="1024"
+              alt="Ink-and-watercolor logical deployment schematic. A slate load-balancer sits outside a dashed cluster boundary. Three direct arrows enter three separate pod capsules: one amber old pod and two green ready replacements. Each pod contains one square app symbol; no arrow joins pods."
+            />
+            <ol aria-label="Logical deployment nodes and replica state">
+              <li
+                class="label"
+                data-ink="dark"
+                style="--x: 5.5%; --y: 42.5%; --width: 17%; --rotation: 0deg; --align: center"
+              >
+                <strong>ALB</strong>
+              </li>
+              <li
+                class="label"
+                data-ink="dark"
+                style="--x: 39%; --y: 17%; --width: 30%; --rotation: 0deg; --align: left"
+              >
+                <strong>EKS · checkout-api</strong>
+              </li>
+              <li
+                class="label warning"
+                data-ink="dark"
+                style="--x: 36%; --y: 76%; --width: 32%; --rotation: 0deg; --align: center"
+              >
+                <strong>Old pod · terminating</strong>
+                <span>Old work may still be active.</span>
+              </li>
+              <li
+                class="label success"
+                data-ink="dark"
+                style="--x: 73%; --y: 75%; --width: 23%; --rotation: 0deg; --align: center"
+              >
+                <strong>New pods · ready</strong>
+                <span>2/2 replicas</span>
+              </li>
+            </ol>
+          </div>
+          <figcaption>
+            Two ready replacement replicas do not tell us whether the old pod's accepted work has
+            finished.
+          </figcaption>
+        </figure>
+      </section>
+      <section id="panel-05-customer" data-panel="5" data-ratio="1" data-master-width="1254">
+        <header>
+          <p>git blame · Chapter 1 · Panel 5 · Artwork review</p>
+          <h2>Meanwhile, at checkout</h2>
+        </header>
+        <figure>
+          <div class="art">
+            <img
+              src="panel-05-customer-source.jpg"
+              width="1254"
+              height="1254"
+              alt="Overhead view of an unnamed customer's two hands at a kitchen laptop. A ceramic bowl thumbnail and simple checkout warning appear on screen, with a tea cup, reused parcel and blue fabric nearby. The right hand pauses above the trackpad."
+            />
+            <ol aria-label="Customer-facing checkout message">
+              <li
+                class="label error"
+                data-ink="dark"
+                style="
+                  --x: 49%;
+                  --y: 35.199999999999996%;
+                  --width: 24.5%;
+                  --rotation: 4deg;
+                  --align: center;
+                "
+              >
+                <strong>We couldn't confirm checkout.</strong>
+              </li>
+            </ol>
+          </div>
+          <figcaption>
+            Some customers get a 502 instead of a checkout reply. That does not tell us whether the
+            order committed.
+          </figcaption>
+        </figure>
+      </section>
+      <section id="panel-09-handler" data-panel="9" data-ratio="1.5" data-master-width="1536">
+        <header>
+          <p>git blame · Chapter 1 · Panel 9 · Artwork review</p>
+          <h2>Alex recognizes the goodbye handler</h2>
+        </header>
+        <figure>
+          <div class="art">
+            <img
+              src="panel-09-handler-source.jpg"
+              width="1536"
+              height="1024"
+              alt="Close view over Alex's navy shoulder and dark curls at a laptop. His hand points just below a blank amber code region; his cream navy-rim mug is clear of the screen. His short beard and focused profile match the approved character."
+            />
+            <ol aria-label="Defective old shutdown handler, not recommended code">
+              <li
+                class="label"
+                data-ink="dark"
+                style="--x: 44.5%; --y: 35%; --width: 36%; --rotation: 5deg; --align: left"
+              >
+                <pre><code>process.on('SIGTERM', () =&gt; {
+  process.exit(0);
+});</code></pre>
+              </li>
+            </ol>
+          </div>
+          <figcaption>
+            Alex recognizes his old SIGTERM handler. It exits immediately, even when a request is
+            still running.
+          </figcaption>
+        </figure>
+      </section>
+      <section
+        id="panel-11-overlap"
+        data-panel="11"
+        data-ratio="1.3333333333333333"
+        data-master-width="1448"
+      >
+        <header>
+          <p>git blame · Chapter 1 · Panel 11 · Artwork review</p>
+          <h2>Make the slow request overlap shutdown</h2>
+        </header>
+        <figure>
+          <div class="art">
+            <img
+              src="panel-11-overlap-source.jpg"
+              width="1448"
+              height="1086"
+              alt="Sam's mustard-cuffed hand starts a test on a laptop while Maya's green-cuffed hand points to completion. An upper request timeline stays continuous across an amber shutdown marker and finishes green. The lower shutdown timeline exits afterward. There are exactly two tracks."
+            />
+            <ol aria-label="Fictional shutdown-overlap test">
+              <li
+                class="label"
+                data-ink="dark"
+                style="--x: 17.4%; --y: 11.3%; --width: 15%; --rotation: 0deg; --align: left"
+              >
+                <strong>In test</strong>
+              </li>
+              <li
+                class="label success"
+                data-ink="dark"
+                style="
+                  --x: 24%;
+                  --y: 19.400000000000002%;
+                  --width: 48%;
+                  --rotation: 0deg;
+                  --align: left;
+                "
+              >
+                <strong>Accepted request completes</strong>
+              </li>
+              <li
+                class="label"
+                data-ink="dark"
+                style="--x: 24%; --y: 49.3%; --width: 48%; --rotation: 0deg; --align: left"
+              >
+                <strong>Shutdown waits, then exits</strong>
+              </li>
+            </ol>
+          </div>
+          <figcaption>
+            SIGTERM starts shutdown at the amber marker. The accepted request completes before the
+            process exits. Test environment first.
+          </figcaption>
+        </figure>
+      </section>
+      <section
+        id="panel-13-handoff"
+        data-panel="13"
+        data-ratio="1.3333333333333333"
+        data-master-width="1448"
+      >
+        <header>
+          <p>git blame · Chapter 1 · Panel 13 · Artwork review</p>
+          <h2>One watched production handoff</h2>
+        </header>
+        <figure>
+          <div class="art">
+            <img
+              src="panel-13-handoff-source.jpg"
+              width="1448"
+              height="1086"
+              alt="Maya carefully checks the fourth and final box in a paper notebook. Alex's navy sleeve and incident mug remain beside her. A supporting deployment screen shows corrected replacement pods separately from the old pod, with no transfer arrow."
+            />
+            <ol aria-label="Ordered production handoff checks">
+              <li
+                class="label small"
+                data-ink="dark"
+                style="--x: 27%; --y: 48%; --width: 19%; --rotation: -3deg; --align: left"
+              >
+                <strong>Corrected replicas healthy</strong>
+              </li>
+              <li
+                class="label small"
+                data-ink="dark"
+                style="
+                  --x: 27%;
+                  --y: 56.00000000000001%;
+                  --width: 19%;
+                  --rotation: -3deg;
+                  --align: left;
+                "
+              >
+                <strong>New traffic shifted</strong>
+              </li>
+              <li
+                class="label small"
+                data-ink="dark"
+                style="--x: 27%; --y: 64.5%; --width: 19%; --rotation: -3deg; --align: left"
+              >
+                <strong>Old accepted work complete</strong>
+              </li>
+              <li
+                class="label small"
+                data-ink="dark"
+                style="--x: 27%; --y: 73%; --width: 19%; --rotation: -3deg; --align: left"
+              >
+                <strong>Old processes retired</strong>
+              </li>
+            </ol>
+          </div>
+          <figcaption>
+            The first corrected release gets a watched handoff. Healthy new code cannot repair an
+            old running process.
+          </figcaption>
+        </figure>
+      </section>
+    </main>
+  </body>
+</html>

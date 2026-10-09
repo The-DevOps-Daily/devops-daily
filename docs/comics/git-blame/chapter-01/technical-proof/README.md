@@ -1,6 +1,6 @@
 # Chapter 1 — first technical artwork proof
 
-9 October 2026 · Panel 7 of the fourteen-panel revision · **Generated, awaiting art review.**
+9 October 2026 · Panel 7 of the fourteen-panel revision · **Generated candidate.** The user subsequently authorized more images; see the [10 October six-image batch](../expanded-art-review/README.md) and [full reading sequence](../expanded-art-review/reading-sequence.md).
 
 The user asked to focus on images and leave further site design to their other agent. This proof concentrates on the investigation: Maya's hand follows one failed request, with a tight camera, recognizable clothing/profile, textured physical materials and cooler screen colors. It replaces another broad office conversation with visible evidence.
 
@@ -30,4 +30,4 @@ To regenerate the review HTML from its JSON, run `node docs/comics/git-blame/cha
 
 Four Chromium layouts passed: desktop, 393px phone, 320px phone and doubled root text. All loaded the actual illustration, retained 4:3 proportions, exposed exactly three complete ordered labels without horizontal overflow, and worked with JavaScript disabled. Desktop annotations did not overlap. [Recorded bounds](browser-checks.json) and the captures above come from this proof, not a mockup of the final chapter. Source, desktop, phone and enlarged-text output were visually inspected.
 
-The next proposed inserts show the deployment's retiring/healthy replicas, the customer's interrupted checkout, the abrupt shutdown handler, an overlapping slow-request test and the controlled production handoff. Review this first proof's illustration treatment before producing that batch, following the first-scene review checkpoint in the original brief. The existing reader and downloadable PDF still contain seven illustrations. No new scene count, final publication or infrastructure-test claim is implied by this proof.
+The subsequent inserts show the deployment's retiring/healthy replicas, the customer's interrupted checkout, the abrupt shutdown handler, an overlapping slow-request test and the controlled production handoff. They have now been generated following the user's request for more images and a PR update. The existing reader and downloadable PDF still contain seven illustrations; the fourteen-panel sequence is a repository art review. No final publication or infrastructure-test claim is implied by this proof.
