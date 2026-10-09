@@ -31,9 +31,9 @@ The user found the old chapter hero and end navigation unsuitable, especially in
 
 [Phone opening](reader-cover-dark-mobile-chromium.jpg) · [Phone end navigation](reader-completion-dark-mobile-chromium.jpg) · [Light-mode opening](reader-cover-light-desktop-chromium.jpg) · [Light-mode end navigation](reader-completion-light-desktop-chromium.jpg)
 
-## Artwork direction awaiting storyboard review
+## Artwork direction and first technical proof
 
-The user requested less generic art and more visible engineering. The current runtime still has seven illustrations. The [fourteen-panel proposal](../chapter-01/panel-expansion-proposal.md) adds customer impact, rollout state, correlated evidence, the old shutdown handler, a deliberate overlap test and the controlled handoff. It includes concrete new-art briefs and prompts. New generation waits for storyboard review under the user's original phase checkpoint; the proposed first proof is the failed-request trace.
+The user requested less generic art and more visible engineering, then directed work toward images. The current runtime still has seven illustrations. The [fourteen-panel proposal](../chapter-01/panel-expansion-proposal.md) adds customer impact, rollout state, correlated evidence, the old shutdown handler, a deliberate overlap test and the controlled handoff. [Panel 7's first technical proof](../chapter-01/technical-proof/README.md) is now generated, with a text-free master and editable lettering reviewed at desktop and phone sizes. It is awaiting art review before the remaining batch; this proof has not been interleaved into the reader or PDF.
 
 ## Site views
 

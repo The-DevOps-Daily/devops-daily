@@ -1,6 +1,6 @@
 # Chapter 1 — fourteen-panel story proposal
 
-9 October 2026 · Proposed revision for storyboard review. **No new artwork has been generated for this proposal, and the current reader still has seven illustrations.**
+9 October 2026 · Proposed revision. The user directed work toward images; [Panel 7's first technical proof](technical-proof/README.md) is now generated for review. **The current reader and PDF still have seven illustrations; the fourteen-panel sequence is not yet integrated.**
 
 The current chapter repeats smiling engineers, warm window light and broad empty walls. Physical movement improved, but the images still tell too little of the incident themselves. This revision keeps the short, technically accurate story and approved cast; it gives the customer, evidence and fix their own visual moments. A reader should be able to follow what changes with the dialogue hidden.
 
@@ -108,6 +108,6 @@ Reference the approved character sheets for the exact human identity; vary frami
 
 ## Production order and checkpoint
 
-Following the user's original storyboard-before-artwork checkpoint, review this concrete sequence before generating a new batch. The proposed first proof is Panel 7, rendered with its real trace labels at desktop and phone sizes. It tests whether the technical detail is both attractive and accurate without repeating the desk-conversation formula.
+The user directed work toward images after receiving this sequence. Panel 7 has been generated and rendered with its real trace labels at desktop and phone sizes. It tests whether the technical detail is both attractive and accurate without repeating the desk-conversation formula. Its source remains text-free; editable labels, captures and source provenance are in the [technical proof review](technical-proof/README.md).
 
 After that proof is approved, generate the remaining inserts, interleave the retained/restaged human moments and review the full sequence. Only then update the runtime chapter, navigation/panel counts, Under the Hood where necessary, source manifests, OG selection and PDF pagination. The current seven-panel reader and PDF remain truthful review editions in the meantime.
