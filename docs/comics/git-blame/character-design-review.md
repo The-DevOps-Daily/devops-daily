@@ -1,6 +1,6 @@
 # Phase 2 — character design review
 
-Updated 9 October 2026 · **Core four approved; supporting cast awaiting approval**
+Updated 9 October 2026 · **Core four and Nora approved; Eli awaiting approval**
 
 The user approved proceeding and supplied all eight zoo-book reference photographs. All were viewed; the [reference review](reference-review.md) describes the general traits used to refine the creative bible. The photographs were not copied into final assets or supplied to the generation tool. This production set uses original designs and our own revised Alex sheet as a visual reference.
 
@@ -46,9 +46,9 @@ Clothing folds retain more detail than the small people in the book panoramas. T
 
 No website routes/components, chapter scenes, final storyboard or production deployment were created. Source sheets remain under `assets/`, outside deployed `public/`. At these measured sizes the small candidate set is stored locally in the repository; no LFS or external storage was introduced. This does not settle storage for a future volume of large masters.
 
-**The original four sheets are approved.** Two additional recurring supporting characters have now been requested; see [supporting cast review](supporting-cast.md). Stop for approval of those new sheets before moving to Phase 3: the complete Chapter 1 storyboard, with compositions, dialogue, bubble positions, technical notes and scene prompts. That phase must stop for review before any chapter illustration is generated.
+**The original four sheets are approved.** Two additional recurring supporting characters have now been requested; see [supporting cast review](supporting-cast.md). Nora’s design is now approved; stop for Eli’s approval before moving to Phase 3: the complete Chapter 1 storyboard, with compositions, dialogue, bubble positions, technical notes and scene prompts. That phase must stop for review before any chapter illustration is generated.
 
 
 ## Supporting-cast expansion
 
-Noor v1 (database engineer) and Eli v1 (FinOps engineer) were generated on 9 October 2026 using the approved Alex v2 and Maya v1 sheets as image references. They use the same three full-body views, six expressions and accessory/swatch format, at 1536 × 1024. Both outputs were visually inspected for style, framing, identity and obvious anatomy/text defects; both decoded and have checksums in the manifest. Their exact prompts are saved. They remain pending user approval, independently of the approved core four. Seven output PNGs now exist in total, including the superseded Alex v1.
+Nora v1 (database engineer) and Eli v1 (FinOps engineer) were generated on 9 October 2026 using the approved Alex v2 and Maya v1 sheets as image references. They use the same three full-body views, six expressions and accessory/swatch format, at 1536 × 1024. Both outputs were visually inspected for style, framing, identity and obvious anatomy/text defects; both decoded and have checksums in the manifest. Their exact prompts are saved. Nora’s design is approved; Eli remains pending user approval. The original core four stay approved. Seven output PNGs now exist in total, including the superseded Alex v1.

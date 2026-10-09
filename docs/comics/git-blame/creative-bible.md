@@ -6,7 +6,7 @@ Phase 1 direction and core cast approved; supporting designs pending · 8 Octobe
 
 ## Status and evidence
 
-The user approved the run on 8 October 2026 and supplied eight visual-reference photographs. The original four character sheets were approved on 9 October 2026. Two requested supporting-character sheets now require review before Phase 3. No website implementation is authorized at this checkpoint.
+The user approved the run on 8 October 2026 and supplied eight visual-reference photographs. The original four character sheets were approved on 9 October 2026. Nora’s added design is approved; Eli’s supporting-character sheet requires review before Phase 3. No website implementation is authorized at this checkpoint.
 
 Repository inspected: `The-DevOps-Daily/devops-daily`, local HEAD `5534807445dec7e5e2f31e057700b71813bb3fc5`. Reviewed repository agent instructions, package and lockfile presence, routing, layout, styles, content loaders, metadata and image helpers, sitemap, image-generation scripts, testing configuration and CI.
 
@@ -63,7 +63,7 @@ Review sheets together before approval, then compare every scene against the sam
 
 ### Recurring supporting cast
 
-The four approved characters remain the narrative leads. Noor (database engineer, approximately 36) and Eli (FinOps engineer, approximately 40) recur when their expertise matters. Their proposed designs, voices, fallibility and continuity rules are documented in [supporting-cast.md](supporting-cast.md); the two added sheets are pending approval. Noor contributes to the mixed-version migration story, and Eli to the cost-and-ownership story. Neither joins every incident or replaces another engineer's judgment.
+The four approved characters remain the narrative leads. Nora (database engineer, approximately 36) and Eli (FinOps engineer, approximately 40) recur when their expertise matters. Their proposed designs, voices, fallibility and continuity rules are documented in [supporting-cast.md](supporting-cast.md); Nora’s design is approved and Eli’s sheet is pending approval. Nora contributes to the mixed-version migration story, and Eli to the cost-and-ownership story. Neither joins every incident or replaces another engineer's judgment.
 
 ## ShipIt and its world
 
@@ -235,6 +235,6 @@ Approve or revise:
 3. The six-chapter arc and the shutdown/draining investigation rather than a literal immortal pod.
 4. File-backed JSON, static React reader, editable HTML dialogue and mobile dialogue beneath uncropped art.
 
-The eight zoo-book reference photographs have now been inspected; the reference review refines the visual direction. The user approved proceeding with Phase 2; its original four character sheets are now approved. The additional Noor and Eli designs require approval. Core character skin tones and face geometry are fixed by the approved sheets; the supporting designs and shared-scene height relationships still require review. Source-asset storage needs a size-based decision when actual masters exist; character-generation success is now verified, and supporting-character approval remains pending. Scene-generation quality is still untested.
+The eight zoo-book reference photographs have now been inspected; the reference review refines the visual direction. The user approved proceeding with Phase 2; its original four character sheets are now approved. Nora’s design is approved and Eli’s additional design requires approval. Core character skin tones and face geometry are fixed by the approved sheets; Eli’s supporting design and shared-scene height relationships still require review. Source-asset storage needs a size-based decision when actual masters exist; character-generation success is now verified, and supporting-character approval remains pending. Scene-generation quality is still untested.
 
-**Phase 1 checkpoint cleared.** Phase 2 has saved and received approval for the four leads. It has added two requested supporting sheets and pauses for their approval. Phase 3 finalizes the six-scene script and stops. Phase 4 generates one scene and a responsive overlay proof and stops. Phase 5 completes Chapter 1 only after proof approval. Publishing remains a separate explicit approval.
+**Phase 1 checkpoint cleared.** Phase 2 has saved and received approval for the four leads. It has added two requested supporting sheets; Nora’s design is approved, and work pauses for Eli’s approval. Phase 3 finalizes the six-scene script and stops. Phase 4 generates one scene and a responsive overlay proof and stops. Phase 5 completes Chapter 1 only after proof approval. Publishing remains a separate explicit approval.

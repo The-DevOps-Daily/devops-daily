@@ -7,9 +7,10 @@
     "assets/comics/git-blame/characters/alex-v2.png",
     "assets/comics/git-blame/characters/maya-v1.png",
     "assets/comics/git-blame/characters/sam-v1.png",
-    "assets/comics/git-blame/characters/chris-v1.png"
+    "assets/comics/git-blame/characters/chris-v1.png",
+    "assets/comics/git-blame/characters/nora-v1.png"
   ],
-  "note": "Alex v2, Maya v1, Sam v1 and Chris v1 were approved by the user on 9 October 2026. Additional supporting-character sheets require their own approval. Book reference photographs were inspected for general visual traits; no book spread was used as a generated-image input.",
+  "note": "Alex v2, Maya v1, Sam v1, Chris v1 and Nora v1 designs were approved on 9 October 2026. Eli requires approval. Nora was originally generated under the name Noor; her exact prompt retains that name. Book reference photographs were inspected for general traits, not used as image-generation inputs.",
   "assets": [
     {
       "character": "alex",
@@ -104,9 +105,9 @@
       "approved_date": "2026-10-09"
     },
     {
-      "character": "noor",
+      "character": "nora",
       "version": "v1",
-      "path": "assets/comics/git-blame/characters/noor-v1.png",
+      "path": "assets/comics/git-blame/characters/nora-v1.png",
       "source_filename": "exec-bfaa0d21-1b01-4633-b41f-0ed210c522fe.png",
       "dimensions": [
         1536,
@@ -114,14 +115,17 @@
       ],
       "bytes": 2517439,
       "sha256": "4af039578a097e65566599ef01f70b10d24faa8f1cd96004706c77b521e68504",
-      "status": "pending_user_approval",
+      "status": "approved",
       "created_date": "2026-10-09",
       "prompt": "docs/comics/git-blame/prompts/noor-v1.txt",
       "reference_images": [
         "assets/comics/git-blame/characters/alex-v2.png",
         "assets/comics/git-blame/characters/maya-v1.png"
       ],
-      "transparent_background": false
+      "transparent_background": false,
+      "generation_name": "Noor",
+      "approved_date": "2026-10-09",
+      "name_note": "Artwork approved; proposed name changed to Nora after user feedback. Original prompt preserves generation name."
     },
     {
       "character": "eli",
