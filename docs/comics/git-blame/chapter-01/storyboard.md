@@ -1,10 +1,10 @@
 # Chapter 1: The Pod That Wouldn’t Die
 
-Phase 3 storyboard · 9 October 2026 · **Awaiting approval before Phase 4**
+Phase 3 storyboard · 9 October 2026 · **Approved; Phase 4 one-scene proof authorized**
 
 **A tiny Friday deployment turns green. Checkout has other ideas.**
 
-All six character designs are approved. Chapter 1 features the original four leads; Nora and Eli retain their planned introductions in later chapters. Seven scenes separate the investigation, corrective work and validation so the resolution feels earned. No chapter illustrations or website components have been created.
+Six character designs are approved; the seven-person ensemble includes Sophia, whose new visual sheet awaits approval. Chapter 1 features the original four leads; Nora, Eli and Sophia enter later stories. Seven scenes separate the investigation, corrective work and validation so the resolution feels earned. The Phase 4 opening-scene proof is now being prepared; the remaining six scenes have not been generated.
 
 The title is a playful misdirection: the old application stops too early, while its responsibility to an in-flight request persists. Do not depict an immortal process or a pod ignoring SIGKILL. Sam brings useful request evidence, Maya coordinates investigation, Alex owns an old assumption and Chris shares the decision to defer another feature.
 
@@ -33,7 +33,7 @@ Every prompt below is saved as a complete production prompt in the linked file. 
 
 **Camera:** Slightly elevated three-quarter medium-wide view, focused on adjacent desks.
 
-**Composition:** Sam sits left/center at a laptop, turning toward Maya at the right-hand desk. Their faces sit below the upper third. Keep the upper-left and upper-right wall quiet for two short bubbles. Window and plant shelf remain on the left; the whiteboard belongs to the right side of the established office. Do not show all six characters.
+**Composition:** Sam sits left/center at a laptop, turning toward Maya at the right-hand desk. Their faces sit below the upper third. Keep the upper-left and upper-right wall quiet for two short bubbles. Window and plant shelf remain on the left; the whiteboard belongs to the right side of the established office. Keep the scene focused on Sam and Maya.
 
 
 **External caption:** Friday, 4:57 PM.
@@ -272,11 +272,11 @@ Landscape 4:3, same original storybook style. Three engineers gathered around a 
 | Order | Speaker | Dialogue | x / y / width | Tail target |
 | --- | --- | --- | --- | --- |
 
-| 1 | Sam | It just exits on SIGTERM. | 0.040 / 0.05 / 0.29 | 0.27, 0.39 |
+| 1 | Sam | Codex traced it: we exit on SIGTERM. | 0.040 / 0.05 / 0.29 | 0.27, 0.39 |
 
 | 2 | Alex | That's my old handler. Let's fix it. | 0.355 / 0.13 / 0.29 | 0.52, 0.44 |
 
-| 3 | Maya | And test the part after green. | 0.670 / 0.05 / 0.29 | 0.77, 0.46 |
+| 3 | Maya | Claude Code can draft the test. We run it. | 0.670 / 0.05 / 0.29 | 0.77, 0.46 |
 
 
 **Reserved overlay spaces:**
@@ -434,6 +434,12 @@ The optional end-of-chapter [Under the Hood draft](under-the-hood.md) explains t
 
 The fictional successful rollouts in scene 6 are scripted story events, not tests run here. Current Kubernetes, official controller and Node.js documentation were inspected. Live AWS documentation was blocked by the environment proxy; an explicitly archived official AWS source supported the ALB notes. The audit records that limit and the live recheck needed before artwork-proof approval or publication.
 
+## AI agents as everyday tools
+
+In Scene 5, Sam uses Codex to inspect the shutdown path; Maya uses Claude Code to help draft a regression test. The team has already correlated request and process evidence. They review code, run the tests and own the production decision. Agent output is a useful hypothesis or draft, never an unverified declaration that the rollout is safe. The tools are neutral editorial mentions, not confirmed sponsors or new illustrated mascots.
+
+This is an ordinary part of ShipIt’s 2026 development workflow. Keep the dialogue casual and the tool role bounded. Add tool names as editable text, not generated logos or screenshots. Neither agent caused the existing defect or rescues an incompetent team.
+
 ## Sponsorship fit
 
 No Chapter 1 sponsor is confirmed. Its optional sponsorship field is empty. An observability or platform sponsor could earn a bounded role in request correlation or rollout validation, subject to the [series sponsorship plan](../sponsor-integration.md), technical verification and storyboard review. Neon’s proposed role belongs to Chapter 5’s migration rehearsal, not to this shutdown fix. Disclose support before a sponsored story and put its contextual link after the punchline.
@@ -449,6 +455,6 @@ No Chapter 1 sponsor is confirmed. Its optional sponsorship field is empty. An o
 
 ## Approval checkpoint
 
-Review the seven-scene pacing, dialogue, the causal explanation, the deliberate first corrected cutover and the sponsorship approach. Approval authorizes **Phase 4 only**: generate one complete text-free scene using approved references, build a minimal responsive dialogue-overlay proof and check desktop/mobile reading. The recommended proof is Scene 1 because it tests two recognizable characters, office identity, portrait composition, humor and editable bubbles at once. Technical diagram behavior still needs review before the remaining art is produced.
+The user approved Phase 3 on 9 October 2026, with AI-agent mentions added to Scene 5. This authorizes **Phase 4 only**: generate one complete text-free scene using approved references, build a minimal responsive dialogue-overlay proof and check desktop/mobile reading. The recommended proof is Scene 1 because it tests two recognizable characters, office identity, portrait composition, humor and editable bubbles at once. Technical diagram behavior still needs review before the remaining art is produced.
 
-**Stop here.** No proof illustration, remaining chapter scenes, website implementation or deployment is authorized by completion of this document. Phase 4 itself stops for approval before remaining scene generation.
+Phase 4 may generate Scene 1 and build its minimal responsive reader proof. It must stop for approval before generating remaining scenes or implementing the complete reader. Deployment requires separate approval.

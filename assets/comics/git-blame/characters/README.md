@@ -1,6 +1,6 @@
 # git blame — character sheets for review
 
-**All six character designs are approved.** Open this file in GitHub's rendered view to inspect each sheet. Each image is 1536 × 1024 and includes front, three-quarter and side views, six expressions, clothing/accessory details and color swatches.
+**Six designs are approved; Sophia's new sheet awaits visual approval.** The seven-character ensemble and Sophia's name/security role are approved. Open this file in GitHub's rendered view to inspect each sheet. Each image is 1536 × 1024 and includes front, three-quarter and side views, six expressions, clothing/accessory details and color swatches.
 
 ## Alex
 
@@ -38,9 +38,15 @@ Shaved head, short facial hair, slate-blue chore jacket and ochre tablet folio.
 
 ![Eli character reference: three full-body views, six expressions, slate-blue jacket details, off-white sneakers and tablet folio.](eli-v1.png)
 
+## Sophia — application security engineer (new design for review)
+
+Golden-blonde waves, coral overshirt, navy top, charcoal jeans and sage notebook. Curious, practical and hands-on; joins a later story, not Chapter 1.
+
+![Sophia character reference: three full-body views, six expressions, golden-blonde hair, coral overshirt, cream sneakers and sage notebook.](sophia-v1.png)
+
 ## Review checkpoint
 
-Nora's name and Eli's design are now approved. The next review is the Chapter 1 storyboard. The original four remain approved leads; these two recur when their expertise matters. The expanded character-design checkpoint is cleared; the Chapter 1 storyboard has its own approval checkpoint. Chapter artwork and deployment have separate checkpoints.
+The original six designs remain approved. Sophia's new visual design needs approval before use in a generated scene. Chapter 1's storyboard is approved and the one-scene Phase 4 proof has its own checkpoint. The original four anchor everyday stories; the specialists recur when their expertise matters. Deployment has a separate explicit approval.
 
 See the [supporting cast profiles](../../../../docs/comics/git-blame/supporting-cast.md), [design review](../../../../docs/comics/git-blame/character-design-review.md), [creative bible](../../../../docs/comics/git-blame/creative-bible.md), [reference observations](../../../../docs/comics/git-blame/reference-review.md) and [asset manifest](../../../../docs/comics/git-blame/character-assets.json). Exact generation prompts are saved with the documentation. `alex-v1.png` is retained only as a superseded record.
 

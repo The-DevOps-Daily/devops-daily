@@ -1,0 +1,57 @@
+.proof {
+  background: #f6f0df;
+  color: #273746;
+  padding: 3rem 1rem;
+}
+
+.reader {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.publisher {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #40554a;
+}
+
+.series {
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1.2;
+  margin: 0.5rem 0;
+}
+
+.tagline {
+  font-size: 1.125rem;
+  line-height: 1.5;
+}
+
+.chapter {
+  color: #40554a;
+  font-weight: 600;
+  margin-top: 2rem;
+}
+
+.header h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0.5rem 0 1rem;
+}
+
+.header p:last-child,
+.endnote {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.endnote {
+  margin: 1.5rem 0 0;
+  color: #40554a;
+}

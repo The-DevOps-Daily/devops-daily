@@ -1,8 +1,8 @@
-# Supporting cast — Phase 2 expansion
+# Supporting cast — seven-person ensemble
 
 9 October 2026 · **Nora and Eli designs approved**
 
-The user approved Alex, Maya, Sam and Chris and requested a few additional characters. Add two recurring specialists to widen the stories without crowding the main team. The original four remain the leads. Both new sheets were generated with the approved Alex v2 and Maya v1 images as references; actual PNGs, exact prompts, dimensions and hashes are saved in the asset manifest.
+The original four remain everyday anchors; Nora, Eli and Sophia widen the stories when their expertise affects a decision. Usually feature two to four characters per chapter, with focused scenes of two or three speakers. The user approved a seven-person recurring cast and Sophia's name/security role on 9 October 2026. Nora and Eli's sheets are approved; Sophia's new sheet awaits visual approval. Sheets use approved Alex v2 and Maya v1 references; actual PNGs, exact prompts, dimensions and hashes are saved in the asset manifest.
 
 ## Nora — database engineer
 
@@ -36,11 +36,23 @@ His blind spot is an attractive savings forecast based on too little history. He
 
 **Consistency:** bald silhouette, fixed facial-hair pattern, slate-blue jacket, ivory crewneck and brown trousers. Suggested stature close to Alex, broad comfortable adult build; verify relative heights when they share an illustration.
 
+## Sophia — application security engineer
+
+**Approximately 34.** Shoulder-length wavy golden-blonde hair, slightly off-center part and one ear tucked, warm fair skin, oval adult face, no glasses. Dusty-coral open overshirt with rolled sleeves over a navy crewneck, charcoal straight-leg jeans and cream sneakers. Small silver ear studs and a sage-green notebook are optional reference details. Blonde hair must remain distinct from Sam's auburn and Chris's gray. Her new [reference sheet](../../../assets/comics/git-blame/characters/sophia-v1.png) is a proposal awaiting visual approval; the approved name is not permission to treat the artwork as approved.
+
+Sophia is curious, approachable and hands-on. She enjoys discovering unexpected behavior and helps build a workable solution. Her questions connect permissions and data boundaries to real people; she does not appear simply to veto delivery. Recurring line: someone says “It's internal”; she asks, “Internal to whom?” Use it sparingly, and let her sometimes be the person who assumed the wrong boundary.
+
+Her blind spot is concentrating on one plausible misuse while missing a simpler operational constraint. Maya can help simplify her plan; Sam can contribute application context. She retains humor and fallibility, never becomes the infallible security oracle, and does not judge people for mistakes.
+
+**Introduction:** a later chapter, outside Chapter 1. A short appearance in Chapter 2 can connect deployed configuration and service permissions; do not turn that chapter into a second security lesson. A later AI-agent/security story can give her the central role: scoped credentials, reviewable changes and a meaningful human decision. Agents remain supervised tools, not magical fixes or automatically culpable villains.
+
+**Consistency:** same adult face, warm blonde waves, coral overshirt, navy top and charcoal jeans; no glasses, hacker costume or symbolic shield. Match the approved ink/wash style. The actual sheet, once approved, will establish exact rendered details and relative stature still needs a shared-scene check.
+
 ## Ensemble rules
 
 - Most scenes feature two or three speaking characters. A supporting character enters because they affect the decision, not because a full cast must appear.
 - Keep Sam's useful discoveries and Chris's engineering judgment. Supporting expertise complements the original four.
-- Nora and Eli can be wrong, learn and help others. Neither is an infallible specialist or a source of stereotyped jokes.
+- Nora, Eli and Sophia can be wrong, learn and help others. None is an infallible specialist or a source of stereotyped jokes.
 - Chapter 1 keeps its original core cast. First substantive introductions belong in the cloud-bill and migration stories.
 - Use short dialogue rather than job-title exposition. Establish roles through observations and choices.
 - Both added sheets are approved and may be used as scene-generation references when their characters enter a story. The original four approvals remain recorded independently.
@@ -49,7 +61,7 @@ His blind spot is an attractive savings forecast based on too little history. He
 
 Both new PNGs are 1536 × 1024, with three full-body views, six expressions, detail studies and swatches. Their identities, attire, framing and shared drawing treatment were visually checked in tool output; no obvious extra limbs or unwanted lettering were observed at sheet scale. Future scene-specific hands, lighting and height relationships still require their own review.
 
-All sources remain outside deployed `public/`. No chapter artwork, storyboard or reader code was created in this expansion. The sheets and profiles are added to the existing draft PR for review. **The supporting-cast checkpoint is cleared. Phase 3 now prepares the Chapter 1 storyboard and stops for its approval.**
+Character sources remain outside deployed `public/`. Nora and Eli's supporting-cast checkpoint is cleared, and Chapter 1's Phase 3 storyboard is approved. **Sophia's role and name are approved; her new sheet awaits visual approval. Phase 4 produces one Chapter 1 scene and its reader proof, then stops.**
 
 
 Nora’s artwork was approved on 9 October 2026. The user requested a different name; Nora is the updated proposed name. The original generation prompt retains the earlier name Noor as provenance. Renaming the saved PNG did not change its image bytes or checksum.
