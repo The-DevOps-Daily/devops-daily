@@ -8,9 +8,10 @@
     "assets/comics/git-blame/characters/maya-v1.png",
     "assets/comics/git-blame/characters/sam-v1.png",
     "assets/comics/git-blame/characters/chris-v1.png",
-    "assets/comics/git-blame/characters/nora-v1.png"
+    "assets/comics/git-blame/characters/nora-v1.png",
+    "assets/comics/git-blame/characters/eli-v1.png"
   ],
-  "note": "Alex v2, Maya v1, Sam v1, Chris v1 and Nora v1 designs were approved on 9 October 2026. Eli requires approval. Nora was originally generated under the name Noor; her exact prompt retains that name. Book reference photographs were inspected for general traits, not used as image-generation inputs.",
+  "note": "All six character designs are approved as of 9 October 2026: Alex v2, Maya v1, Sam v1, Chris v1, Nora v1 and Eli v1. Nora was originally generated as Noor; the exact historical prompt retains that name. Book photographs informed general visual traits only.",
   "assets": [
     {
       "character": "alex",
@@ -138,14 +139,15 @@
       ],
       "bytes": 2307956,
       "sha256": "cb6b5f93afdd9f38adc13adfd65380ca8792159f7fc6a6411b87b9539d0aa704",
-      "status": "pending_user_approval",
+      "status": "approved",
       "created_date": "2026-10-09",
       "prompt": "docs/comics/git-blame/prompts/eli-v1.txt",
       "reference_images": [
         "assets/comics/git-blame/characters/alex-v2.png",
         "assets/comics/git-blame/characters/maya-v1.png"
       ],
-      "transparent_background": false
+      "transparent_background": false,
+      "approved_date": "2026-10-09"
     }
   ]
 }

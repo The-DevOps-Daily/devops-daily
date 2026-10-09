@@ -1,12 +1,12 @@
 # git blame — creative bible and implementation proposal
 
-Phase 1 direction and core cast approved; supporting designs pending · 8 October 2026 · Published by DevOps Daily
+Creative direction and all six designs approved; Phase 3 storyboard pending · updated 9 October 2026 · Published by DevOps Daily
 
 **Production is down. Everyone has a theory.**
 
 ## Status and evidence
 
-The user approved the run on 8 October 2026 and supplied eight visual-reference photographs. The original four character sheets were approved on 9 October 2026. Nora’s added design is approved; Eli’s supporting-character sheet requires review before Phase 3. No website implementation is authorized at this checkpoint.
+The user approved the run on 8 October 2026 and supplied eight visual-reference photographs. The original four character sheets were approved on 9 October 2026. All six character designs and Nora’s updated name are approved; Phase 3 is authorized and its storyboard requires review before Phase 4. No website implementation is authorized at this checkpoint.
 
 Repository inspected: `The-DevOps-Daily/devops-daily`, local HEAD `5534807445dec7e5e2f31e057700b71813bb3fc5`. Reviewed repository agent instructions, package and lockfile presence, routing, layout, styles, content loaders, metadata and image helpers, sitemap, image-generation scripts, testing configuration and CI.
 
@@ -63,7 +63,7 @@ Review sheets together before approval, then compare every scene against the sam
 
 ### Recurring supporting cast
 
-The four approved characters remain the narrative leads. Nora (database engineer, approximately 36) and Eli (FinOps engineer, approximately 40) recur when their expertise matters. Their proposed designs, voices, fallibility and continuity rules are documented in [supporting-cast.md](supporting-cast.md); Nora’s design is approved and Eli’s sheet is pending approval. Nora contributes to the mixed-version migration story, and Eli to the cost-and-ownership story. Neither joins every incident or replaces another engineer's judgment.
+The four approved characters remain the narrative leads. Nora (database engineer, approximately 36) and Eli (FinOps engineer, approximately 40) recur when their expertise matters. Their proposed designs, voices, fallibility and continuity rules are documented in [supporting-cast.md](supporting-cast.md); both supporting designs are approved. Nora contributes to the mixed-version migration story, and Eli to the cost-and-ownership story. Neither joins every incident or replaces another engineer's judgment.
 
 ## ShipIt and its world
 
@@ -110,7 +110,7 @@ Running jokes should change meaning: Sam's “small change” becomes a question
 
 Connected arc: invisible assumptions become observable responsibilities. Improvements survive into later chapters, but they do not eliminate every new problem. Each installment remains readable independently.
 
-## Chapter 1 narrative approach — not the final storyboard
+## Chapter 1 narrative approach — initial sketch; superseded by the Phase 3 storyboard
 
 The title deliberately suggests a stubborn pod, while the actual failure is an application that exits before its traffic path has finished draining. The mystery resolves when the team compares failed requests with terminating old targets. Do not show a pod surviving SIGKILL or endlessly routing because Kubernetes forgot it.
 
@@ -121,7 +121,7 @@ The title deliberately suggests a stubborn pod, while the actual failure is an a
 5. **A tested handoff.** Team fixes signal handling and budgets draining time, then tests a controlled rollout under representative traffic. Maya: “Wait for traffic. Finish the work. Then stop.” Sam: “And test the part after green.” No universal magic duration in dialogue.
 6. **The earned silence.** Successful rollout, error rate returns to baseline. Chris: “One more small change?” Everyone closes their laptop. Chris closes his too: “Monday.” Leave an understated mug callback for the reader to discover.
 
-These are tonal sketches for approval. Phase 3 will specify complete scene compositions, bubble coordinates, exact dialogue, technical notes and prompts.
+These are initial tonal sketches. The seven-scene [Phase 3 storyboard](chapter-01/storyboard.md) now supplies the proposed final dialogue, compositions, bubble coordinates, technical notes and prompts for approval. Seven scenes separate the fix from its validation.
 
 ### Engineering guardrails for the final script
 
@@ -235,6 +235,13 @@ Approve or revise:
 3. The six-chapter arc and the shutdown/draining investigation rather than a literal immortal pod.
 4. File-backed JSON, static React reader, editable HTML dialogue and mobile dialogue beneath uncropped art.
 
-The eight zoo-book reference photographs have now been inspected; the reference review refines the visual direction. The user approved proceeding with Phase 2; its original four character sheets are now approved. Nora’s design is approved and Eli’s additional design requires approval. Core character skin tones and face geometry are fixed by the approved sheets; Eli’s supporting design and shared-scene height relationships still require review. Source-asset storage needs a size-based decision when actual masters exist; character-generation success is now verified, and supporting-character approval remains pending. Scene-generation quality is still untested.
+The eight zoo-book reference photographs have now been inspected; the reference review refines the visual direction. The user approved proceeding with Phase 2; its original four character sheets are now approved. Both supporting designs and Nora’s updated name are approved. Core character skin tones and face geometry are fixed by the approved sheets; shared-scene height relationships still require review in the artwork proof. Source-asset storage needs a size-based decision when actual masters exist; character-generation success is now verified, and all six character designs are approved. Scene-generation quality is still untested.
 
-**Phase 1 checkpoint cleared.** Phase 2 has saved and received approval for the four leads. It has added two requested supporting sheets; Nora’s design is approved, and work pauses for Eli’s approval. Phase 3 finalizes the six-scene script and stops. Phase 4 generates one scene and a responsive overlay proof and stops. Phase 5 completes Chapter 1 only after proof approval. Publishing remains a separate explicit approval.
+**Phase 1 checkpoint cleared.** Phase 2 has saved and received approval for the four leads. Its two supporting sheets and Nora’s updated name are also approved. Phase 3 is now authorized and the [Chapter 1 storyboard](chapter-01/storyboard.md) awaits review. Phase 3 finalizes the six-scene script and stops. Phase 4 generates one scene and a responsive overlay proof and stops. Phase 5 completes Chapter 1 only after proof approval. Publishing remains a separate explicit approval.
+
+
+## Sponsorship as part of series planning
+
+Chapters may naturally feature a sponsor’s product where it helps the team perform a plausible engineering task. Sponsor funding is disclosed before the story, with a restrained contextual link after the punchline. Characters retain normal voices and engineering responsibility. No sponsor is confirmed by this proposal.
+
+See [sponsor integration plan](sponsor-integration.md) for chapter opportunities, the hypothetical Neon migration-rehearsal example, content metadata and verification rules. ShipIt’s production architecture changes only through explicit continuity decisions. Chapter 1 remains the shutdown/draining story; its sponsorship metadata is currently empty.

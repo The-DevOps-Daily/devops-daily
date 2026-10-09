@@ -1,6 +1,6 @@
 # Supporting cast — Phase 2 expansion
 
-9 October 2026 · **Nora design approved; Eli design pending user approval**
+9 October 2026 · **Nora and Eli designs approved**
 
 The user approved Alex, Maya, Sam and Chris and requested a few additional characters. Add two recurring specialists to widen the stories without crowding the main team. The original four remain the leads. Both new sheets were generated with the approved Alex v2 and Maya v1 images as references; actual PNGs, exact prompts, dimensions and hashes are saved in the asset manifest.
 
@@ -43,13 +43,15 @@ His blind spot is an attractive savings forecast based on too little history. He
 - Nora and Eli can be wrong, learn and help others. Neither is an infallible specialist or a source of stereotyped jokes.
 - Chapter 1 keeps its original core cast. First substantive introductions belong in the cloud-bill and migration stories.
 - Use short dialogue rather than job-title exposition. Establish roles through observations and choices.
-- Approve each added sheet before using it as a scene-generation reference. The original four approvals remain recorded independently.
+- Both added sheets are approved and may be used as scene-generation references when their characters enter a story. The original four approvals remain recorded independently.
 
 ## Review evidence and checkpoint
 
 Both new PNGs are 1536 × 1024, with three full-body views, six expressions, detail studies and swatches. Their identities, attire, framing and shared drawing treatment were visually checked in tool output; no obvious extra limbs or unwanted lettering were observed at sheet scale. Future scene-specific hands, lighting and height relationships still require their own review.
 
-All sources remain outside deployed `public/`. No chapter artwork, storyboard or reader code was created in this expansion. The sheets and profiles are added to the existing draft PR for review. **Nora’s design is approved; stop here for Eli approval before Phase 3.**
+All sources remain outside deployed `public/`. No chapter artwork, storyboard or reader code was created in this expansion. The sheets and profiles are added to the existing draft PR for review. **The supporting-cast checkpoint is cleared. Phase 3 now prepares the Chapter 1 storyboard and stops for its approval.**
 
 
 Nora’s artwork was approved on 9 October 2026. The user requested a different name; Nora is the updated proposed name. The original generation prompt retains the earlier name Noor as provenance. Renaming the saved PNG did not change its image bytes or checksum.
+
+Eli’s design and Nora’s updated name were approved on 9 October 2026 when the user confirmed the cast was good and requested continuation.
