@@ -1,12 +1,12 @@
 # git blame — creative bible and implementation proposal
 
-Phase 1 direction approved; Phase 2 designs pending · 8 October 2026 · Published by DevOps Daily
+Phase 1 direction and core cast approved; supporting designs pending · 8 October 2026 · Published by DevOps Daily
 
 **Production is down. Everyone has a theory.**
 
 ## Status and evidence
 
-The user approved the run on 8 October 2026 and supplied eight visual-reference photographs. Phase 2 character design is now authorized; character sheets still require review before Phase 3. No website implementation is authorized at this checkpoint.
+The user approved the run on 8 October 2026 and supplied eight visual-reference photographs. The original four character sheets were approved on 9 October 2026. Two requested supporting-character sheets now require review before Phase 3. No website implementation is authorized at this checkpoint.
 
 Repository inspected: `The-DevOps-Daily/devops-daily`, local HEAD `5534807445dec7e5e2f31e057700b71813bb3fc5`. Reviewed repository agent instructions, package and lockfile presence, routing, layout, styles, content loaders, metadata and image helpers, sitemap, image-generation scripts, testing configuration and CI.
 
@@ -44,7 +44,7 @@ Reject glossy rendering, neon, chibi proportions, anime styling, superhero poses
 
 ## Character bible
 
-All descriptions below are proposed design constraints. Skin tones and exact face shapes remain to be settled in the approved sheets; choose coherent, distinct designs and lock them afterward rather than allowing generation to decide anew each scene.
+The original four sheets are approved and establish their faces, observed skin colors and attire. Preserve those exact visual identities across scenes. Relative heights still require validation in a shared scene.
 
 | Character | Appearance and silhouette | Voice and strengths | Fallibility and growth |
 | --- | --- | --- | --- |
@@ -60,6 +60,10 @@ Each Phase 2 sheet must include full-body front, three-quarter and side views; n
 Lock face shape, skin tone, height relationships, build, hairline, glasses geometry, clothing cut, footwear and canonical colors when approved. No age, hair, beard or outfit changes without a continuity entry. Lighting may change observed colors, not design identity. Keep a reference version and approval status per character. Use approved image files as references for every relevant generated scene; prompts alone cannot guarantee consistency.
 
 Review sheets together before approval, then compare every scene against the same sheets. Inspect hands, eyelines, anatomy, glasses, mugs and accessories. Regenerate or edit inconsistencies before producing derivatives. Exact expressions and poses can vary; distinctive anatomy cannot.
+
+### Recurring supporting cast
+
+The four approved characters remain the narrative leads. Noor (database engineer, approximately 36) and Eli (FinOps engineer, approximately 40) recur when their expertise matters. Their proposed designs, voices, fallibility and continuity rules are documented in [supporting-cast.md](supporting-cast.md); the two added sheets are pending approval. Noor contributes to the mixed-version migration story, and Eli to the cost-and-ownership story. Neither joins every incident or replaces another engineer's judgment.
 
 ## ShipIt and its world
 
@@ -136,7 +140,7 @@ Under the Hood should be an optional short ending: what failed, why signals and 
 
 ## Image-generation capability and asset workflow
 
-The environment exposes `image_gen.imagegen`, supporting new generation and edits with local `referenced_image_paths`, or recent conversation images. It supports transparent output when needed. No separate image-generation skill is listed; the onboarding skill is the only available cloud skill. The tool is callable without a user-supplied API key in its schema. During authorized Phase 2 it successfully produced five local PNGs at 1536 × 1024, including one superseded Alex pass; see [character design review](character-design-review.md). No additional credential was requested. Scene-generation quality and mobile reading remain to be tested in Phase 4.
+The environment exposes `image_gen.imagegen`, supporting new generation and edits with local `referenced_image_paths`, or recent conversation images. It supports transparent output when needed. No separate image-generation skill is listed; the onboarding skill is the only available cloud skill. The tool is callable without a user-supplied API key in its schema. During authorized Phase 2 it successfully produced seven local PNGs at 1536 × 1024, including one superseded Alex pass; see [character design review](character-design-review.md). No additional credential was requested. Scene-generation quality and mobile reading remain to be tested in Phase 4.
 
 The tool does not expose explicit model, seed, dimension or quality controls in its current schema. Request portrait 4:5 and the highest practical source quality in the prompt, then inspect the actual dimensions. Do not promise a particular pixel size or deterministic regeneration. Prefer local paths for approved references, inspect them before edits and keep the reference set small and relevant.
 
@@ -231,6 +235,6 @@ Approve or revise:
 3. The six-chapter arc and the shutdown/draining investigation rather than a literal immortal pod.
 4. File-backed JSON, static React reader, editable HTML dialogue and mobile dialogue beneath uncropped art.
 
-The eight zoo-book reference photographs have now been inspected; the reference review refines the visual direction. The user approved proceeding with Phase 2; its character artwork will still require approval. Character skin tones, face geometry and height relationships will be made explicit during Phase 2 and approved with the sheets. Source-asset storage needs a size-based decision when actual masters exist; character-generation success is now verified, and character-design approval remains pending. Scene-generation quality is still untested.
+The eight zoo-book reference photographs have now been inspected; the reference review refines the visual direction. The user approved proceeding with Phase 2; its original four character sheets are now approved. The additional Noor and Eli designs require approval. Core character skin tones and face geometry are fixed by the approved sheets; the supporting designs and shared-scene height relationships still require review. Source-asset storage needs a size-based decision when actual masters exist; character-generation success is now verified, and supporting-character approval remains pending. Scene-generation quality is still untested.
 
-**Phase 1 checkpoint cleared.** Phase 2 creates character sheets and saves actual prompts/artwork, then stops for approval. Phase 3 finalizes the six-scene script and stops. Phase 4 generates one scene and a responsive overlay proof and stops. Phase 5 completes Chapter 1 only after proof approval. Publishing remains a separate explicit approval.
+**Phase 1 checkpoint cleared.** Phase 2 has saved and received approval for the four leads. It has added two requested supporting sheets and pauses for their approval. Phase 3 finalizes the six-scene script and stops. Phase 4 generates one scene and a responsive overlay proof and stops. Phase 5 completes Chapter 1 only after proof approval. Publishing remains a separate explicit approval.

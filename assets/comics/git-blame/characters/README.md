@@ -1,6 +1,6 @@
 # git blame — character sheets for review
 
-These are **Phase 2 review candidates**, not approved production designs. Open this file in GitHub's rendered view to inspect each sheet. Each image is 1536 × 1024 and includes front, three-quarter and side views, six expressions, clothing/accessory details and color swatches.
+**Alex, Maya, Sam and Chris are approved. Noor and Eli are new Phase 2 review candidates.** Open this file in GitHub's rendered view to inspect each sheet. Each image is 1536 × 1024 and includes front, three-quarter and side views, six expressions, clothing/accessory details and color swatches.
 
 ## Alex
 
@@ -26,8 +26,20 @@ Salt-and-pepper hair, rust cardigan, taupe chinos and green coffee mug.
 
 ![Chris character reference: three full-body views, six expressions, rust cardigan details, brown shoes and green mug.](chris-v1.png)
 
+## Noor — database engineer (pending approval)
+
+Low curly bun, plum knit vest, ivory blouse and ochre notebook.
+
+![Noor character reference: three full-body views, six expressions, plum vest details, low curly bun and notebook.](noor-v1.png)
+
+## Eli — FinOps engineer (pending approval)
+
+Shaved head, short facial hair, slate-blue chore jacket and ochre tablet folio.
+
+![Eli character reference: three full-body views, six expressions, slate-blue jacket details, off-white sneakers and tablet folio.](eli-v1.png)
+
 ## Review checkpoint
 
-Please assess the overall drawing style, apparent ages, recognizable faces, clothing and expression range. Character approval unlocks the Chapter 1 storyboard; it does not authorize chapter artwork or deployment.
+Please assess Noor and Eli's designs and roles. The original four remain approved leads; these two recur when their expertise matters. Approval of the added sheets clears the expanded character-design checkpoint before the Chapter 1 storyboard. Chapter artwork and deployment have separate checkpoints.
 
-See the [design review](../../../../docs/comics/git-blame/character-design-review.md), [creative bible](../../../../docs/comics/git-blame/creative-bible.md), [reference observations](../../../../docs/comics/git-blame/reference-review.md) and [asset manifest](../../../../docs/comics/git-blame/character-assets.json). Exact generation prompts are saved with the documentation. `alex-v1.png` is retained only as a superseded record.
+See the [supporting cast profiles](../../../../docs/comics/git-blame/supporting-cast.md), [design review](../../../../docs/comics/git-blame/character-design-review.md), [creative bible](../../../../docs/comics/git-blame/creative-bible.md), [reference observations](../../../../docs/comics/git-blame/reference-review.md) and [asset manifest](../../../../docs/comics/git-blame/character-assets.json). Exact generation prompts are saved with the documentation. `alex-v1.png` is retained only as a superseded record.

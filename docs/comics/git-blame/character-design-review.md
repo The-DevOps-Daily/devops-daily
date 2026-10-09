@@ -1,10 +1,10 @@
 # Phase 2 — character design review
 
-8 October 2026 · **Awaiting user approval before Phase 3**
+Updated 9 October 2026 · **Core four approved; supporting cast awaiting approval**
 
 The user approved proceeding and supplied all eight zoo-book reference photographs. All were viewed; the [reference review](reference-review.md) describes the general traits used to refine the creative bible. The photographs were not copied into final assets or supplied to the generation tool. This production set uses original designs and our own revised Alex sheet as a visual reference.
 
-## Review candidates
+## Approved core cast
 
 | Character | Source sheet | Distinctive design |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ Each sheet contains front, three-quarter and side full-body views, six expressio
 
 ## Generation and review evidence
 
-Five actual PNGs were produced by `image_gen.imagegen`: Alex v1, its revised v2, and one sheet each for Maya, Sam and Chris. Every output measures **1536 × 1024** pixels; no resolution was invented or upscaled. All five files were copied into the repository from tool-produced output paths, leaving the original files in place. Every saved PNG decoded successfully and has a SHA-256 checksum in [character-assets.json](character-assets.json).
+The initial core-cast pass produced five actual PNGs through `image_gen.imagegen`: Alex v1, its revised v2, and one sheet each for Maya, Sam and Chris. Every output measures **1536 × 1024** pixels; no resolution was invented or upscaled. All five files were copied into the repository from tool-produced output paths, leaving the original files in place. Every saved PNG decoded successfully and has a SHA-256 checksum in [character-assets.json](character-assets.json).
 
 Exact prompts are saved in [prompts/](prompts/), with reference paths, versions, tool name and approval statuses in the manifest. Alex v1 is retained as a superseded generation record and must not be used as the active visual reference: its facial rendering and shading were too realistic. Alex v2 simplifies facial marks, keeps stronger ink boundaries and reduces tonal modeling. Maya, Sam and Chris were generated with Alex v2 supplied as a local image reference, not from unrelated text prompts alone.
 
@@ -25,16 +25,16 @@ Visual inspection of each tool output checked the turnarounds, recognizable face
 
 Across this set, warm paper, descriptive ink, muted textured fills and simplified expressions are coherent. Figures have adult body proportions rather than oversized chibi heads. The sheets are cleaner and less densely populated than the reference spreads by design. The eventual narrative environments should add the books' observational richness without repeating their compositions.
 
-## Proposed design locks after approval
+## Approved core design locks
 
 - Preserve each sheet's actual face geometry, observed skin color, hairstyle, clothing cuts and footwear; prompt color codes are approximate intentions, not exact rendered-pixel matches.
 - Alex's hoodie has a pouch, drawstrings and ribbed edges. Chris has a cardigan with buttons and pockets. Sam has neither hood nor cardigan. Maya's glasses remain round and her overshirt retains the ivory layer beneath it.
 - Chris's mug is muted green; Alex's is cream with navy rim. Incident inscriptions are later authored overlays rather than generated letters.
 - Maya's notebook is a useful reference prop, not a requirement to carry it in every scene. Sam's closed laptop in the detail column is also optional.
 - Suggested relative height order: Sam slightly taller than Alex, then Chris, then Maya. Standalone sheets are not a scale chart and do not yet validate these relationships; specify and check them when characters first share a scene.
-- References will be marked approved only after the user approves the corresponding designs. Future scenes must use those approved file versions, with a matching approval record and continuity notes.
+- Alex v2, Maya v1, Sam v1 and Chris v1 were approved by the user on 9 October 2026. The manifest records those exact approved files. Future scenes must use those approved versions with matching continuity notes.
 
-## Items for the user to assess
+## Review considerations for future scene proofs
 
 1. Does this cleaner storybook drawing treatment fit the desired aesthetic? It is less densely detailed than the book environments; scenery belongs in the later scene proof.
 2. Do the faces, proposed skin tones, silhouettes and clothing feel right for the cast? In particular, assess whether Sam reads approximately 27 and Chris approximately 43.
@@ -46,4 +46,9 @@ Clothing folds retain more detail than the small people in the book panoramas. T
 
 No website routes/components, chapter scenes, final storyboard or production deployment were created. Source sheets remain under `assets/`, outside deployed `public/`. At these measured sizes the small candidate set is stored locally in the repository; no LFS or external storage was introduced. This does not settle storage for a future volume of large masters.
 
-**Stop at the Phase 2 checkpoint.** The next authorized step after character approval is Phase 3: the complete Chapter 1 storyboard, with compositions, dialogue, bubble positions, technical notes and scene prompts. That phase must stop for review before any chapter illustration is generated.
+**The original four sheets are approved.** Two additional recurring supporting characters have now been requested; see [supporting cast review](supporting-cast.md). Stop for approval of those new sheets before moving to Phase 3: the complete Chapter 1 storyboard, with compositions, dialogue, bubble positions, technical notes and scene prompts. That phase must stop for review before any chapter illustration is generated.
+
+
+## Supporting-cast expansion
+
+Noor v1 (database engineer) and Eli v1 (FinOps engineer) were generated on 9 October 2026 using the approved Alex v2 and Maya v1 sheets as image references. They use the same three full-body views, six expressions and accessory/swatch format, at 1536 × 1024. Both outputs were visually inspected for style, framing, identity and obvious anatomy/text defects; both decoded and have checksums in the manifest. Their exact prompts are saved. They remain pending user approval, independently of the approved core four. Seven output PNGs now exist in total, including the superseded Alex v1.
