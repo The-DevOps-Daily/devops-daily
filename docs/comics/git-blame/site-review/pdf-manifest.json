@@ -1,6 +1,6 @@
 {
-  "fingerprint": "775d06e4223984ad6bbf0a043985ba8a617089730739aad657dd8ca1667c9acb",
-  "renderFingerprint": "6ac8494a0049b64a3617997871829ee9845ee393aeb5bc51431807b14c5372ec",
+  "fingerprint": "017c4365174fa86c12804197c4fd84c726fa59a1598ea023405c2e40eb8199d8",
+  "renderFingerprint": "2a88916d2c802097d01b0e467f708f18070c152a7203b6d03a4a8b5e26986c87",
   "inputs": [
     {
       "path": "content/comics/git-blame/chapter-01.json",
@@ -64,7 +64,7 @@
     },
     {
       "path": "components/comics/chapter-reader.module.css",
-      "sha256": "2bbda6ce30a1423b3b81f6ac101a88a96e8321f6566b4b6ac34e30814893c1ef"
+      "sha256": "86d76f9982799fefe7295f1d28d099d15c957ec1a95d41703db0aefcab3475df"
     },
     {
       "path": "public/fonts/Inter-Regular.ttf",
@@ -141,7 +141,7 @@
   ],
   "edition": "chapter-01-preview",
   "bytes": 2822465,
-  "pdfSha256": "3a76959248539ee41be836f4a297ab49aecd91a151fea4ab153f5b85ff0d225b",
+  "pdfSha256": "2e00c988d47d66ecfcbe3bc9681afe4d3d59600fb8b442e62f8525153c305bbf",
   "validation": {
     "sceneCount": 7,
     "dialogueCount": 16,

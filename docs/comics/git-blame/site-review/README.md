@@ -17,9 +17,23 @@ The approved opening remains; Scenes 2–7 use new reference-based artwork with 
 
 These paths exist in the branch's running/static build; they are not claimed to be live on devops-daily.com. The reader's header scrolls away. Library/series navigation retains the normal site behavior. A font-relative navigation container switches to the mobile menu before enlarged labels overflow; a visible, named logo/home link remains available. Reading routes omit floating promotional extras.
 
-The pages reuse the existing PageHero, breadcrumbs, buttons, brand tokens and navigation configuration. Comics appears in More → Explore Content and a compact homepage discovery card. Upcoming chapters are plain Coming soon cards, with no dead links. The reader has series contents, first/next chapter states, a real download and keyboard-accessible technical notes.
+Library and series pages reuse the existing PageHero and site primitives. The chapter reader now has a dedicated book-style masthead and chapter opening, with paper/ink controls and an end-of-chapter navigation layout; these stay coherent in both site themes. Comics appears in More → Explore Content and a compact homepage discovery card. Upcoming chapters are plain Coming soon cards, with no dead links. The reader has series contents, first/next chapter states, a real download and keyboard-accessible technical notes.
 
 Canonical URLs, descriptions, OG/Twitter images and appropriate series/chapter structured data are in place. Three real static 1200 × 630 social cards use local artwork and authored lettering. Preview editions remain noindex and are excluded from sitemap, search and feeds until publication approval. No publication dates or sponsors are invented.
+
+## Current reader UI
+
+The user found the old chapter hero and end navigation unsuitable, especially in dark mode. Those components have now been replaced: a compact series masthead, a large book-style title, clear reading/download actions, and a warm end card with contents/re-read links and an honest upcoming-chapter state. Under the Hood appears before the final navigation. The generic site hero is no longer used inside the paper reader.
+
+![Chapter opening in dark site mode.](reader-cover-dark-desktop-chromium.jpg)
+
+![End navigation in dark site mode.](reader-completion-dark-desktop-chromium.jpg)
+
+[Phone opening](reader-cover-dark-mobile-chromium.jpg) · [Phone end navigation](reader-completion-dark-mobile-chromium.jpg) · [Light-mode opening](reader-cover-light-desktop-chromium.jpg) · [Light-mode end navigation](reader-completion-light-desktop-chromium.jpg)
+
+## Artwork direction awaiting storyboard review
+
+The user requested less generic art and more visible engineering. The current runtime still has seven illustrations. The [fourteen-panel proposal](../chapter-01/panel-expansion-proposal.md) adds customer impact, rollout state, correlated evidence, the old shutdown handler, a deliberate overlap test and the controlled handoff. It includes concrete new-art briefs and prompts. New generation waits for storyboard review under the user's original phase checkpoint; the proposed first proof is the failed-request trace.
 
 ## Site views
 
@@ -84,7 +98,7 @@ At smaller widths and doubled text, the full, uncropped artwork is followed by o
 ## Verification
 
 - Static export and combined PDF generation passed using pinned pnpm 10.34.5 and Node 24.19.0; 1,478 routes exported. Normal Google font loading succeeded.
-- Thirty-four relevant Chromium browser checks passed against the export: seven complete scenes, original proof, diagram semantics, actual download, metadata/social dimensions, desktop/tablet face clearance, 320px and doubled root text, keyboard navigation, dark theme, no JavaScript and representative existing site pages.
+- Thirty-six relevant Chromium browser checks passed against the export: seven complete scenes, original proof, diagram semantics, actual download, cover/end-navigation contrast in both themes, metadata/social dimensions, desktop/tablet face clearance, 320px and doubled root text, keyboard navigation, dark theme, no JavaScript and representative existing site pages.
 - Scoped comic TypeScript, changed-code ESLint and scoped formatting checks passed. The repository already has unrelated TypeScript diagnostics, and its existing Next build skips type checking; this is not a whole-repository clean type-check claim.
 - PDF page count, embedded fonts, all sixteen dialogue texts in raw-order extraction (joining wrapped compound words), actual page rendering, layout bounds and download signature were inspected. The source fingerprint also detected a stale export after a dialogue adjustment, and regeneration resolved it.
 - Actual illustrations, reader captures, library/series views and the PDF whiteboard page were visually reviewed. Safari and a manual screen-reader audit remain outside this Chromium verification; final editorial approval belongs to the user.

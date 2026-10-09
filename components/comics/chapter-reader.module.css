@@ -9,49 +9,216 @@
   margin: 0 auto;
   padding: 2.5rem 1rem 3rem;
 }
-.header {
+/* The reader is an illustrated paper edition in either site theme. */
+.cover {
+  color: #273746;
+  background: #f6f0df;
+  border-top: 3px solid #d7a35f;
+  border-bottom: 1px solid #27374626;
+}
+.coverInner {
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2.5rem;
+}
+.breadcrumbs {
+  font-size: 0.8125rem;
+  color: #40554a;
   margin-bottom: 2rem;
 }
+.breadcrumbs ol,
+.breadcrumbs li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.625rem;
+}
+.breadcrumbs a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #27374640;
+}
+.seriesMark {
+  font-family: var(--font-geist-mono, ui-monospace), monospace;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.065em;
+}
 .publisher {
-  font-size: 0.875rem;
   color: #40554a;
-  font-weight: 600;
+  font-size: 0.8125rem;
 }
-.series {
-  font-size: clamp(2.5rem, 8vw, 4rem);
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  line-height: 1.2;
-  margin: 0.5rem 0;
+.coverMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: #40554a;
+  font-size: 0.8125rem;
 }
-.tagline {
-  font-size: 1.125rem;
+.preview,
+.comingSoon {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid #40554a40;
+  border-radius: 999px;
+  color: #40554a;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
-.volume {
+.chapterNumber {
+  margin: 2rem 0 0.75rem;
   color: #40554a;
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-top: 2rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
-.header h1 {
-  font-size: clamp(1.5rem, 4vw, 2rem);
+.title {
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
   font-weight: 700;
-  line-height: 1.3;
-  margin: 0.5rem 0 1rem;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  max-width: 43rem;
+  text-wrap: balance;
 }
-.header p:last-child {
-  font-size: 1rem;
+.description {
+  max-width: 34rem;
+  margin-top: 1.25rem;
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: #40554a;
+}
+.coverActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  max-width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid #273746;
+  border-radius: 0.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.primaryAction {
+  background: #273746;
+  color: #fffdf5;
+}
+.primaryAction:hover {
+  background: #40554a;
+}
+.secondaryAction {
+  background: #fffdf5;
+  color: #273746;
+  border-color: #27374640;
+}
+.secondaryAction:hover {
+  border-color: #273746;
+}
+.coverActions svg,
+.completionLinks svg {
+  flex: none;
+}
+.cover a:focus-visible,
+.completion a:focus-visible {
+  outline: 3px solid #56856c;
+  outline-offset: 4px;
+}
+.completion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: 2rem;
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid #27374640;
+  color: #273746;
+  background: #f6f0df;
+}
+.completionMain,
+.nextChapter {
+  min-width: 0;
+}
+.completion .chapterNumber {
+  margin-top: 0;
+}
+.completionTitle,
+.nextTitle {
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.completionTitle {
+  font-size: 1.75rem;
+}
+.completionLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin-top: 1.25rem;
+}
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  max-width: 100%;
+  color: #273746;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+  text-decoration-color: #27374660;
+}
+.textLink:hover {
+  text-decoration-color: #273746;
+}
+.nextChapter {
+  padding: 1.25rem;
+  background: #fffdf5;
+  border: 1px solid #27374626;
+  border-radius: 0.5rem;
+}
+.nextLabel {
+  color: #40554a;
+  font-size: 0.75rem;
+}
+.nextTitle {
+  margin: 0.5rem 0 0.875rem;
+  font-size: 1.375rem;
+}
+.nextTitle .textLink {
+  font: inherit;
+}
+.nextDescription {
+  color: #40554a;
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 .scenes {
   display: grid;
   gap: 3rem;
-}
-.end {
-  margin: 2rem 0;
-  text-align: center;
-  font-size: 0.875rem;
-  color: #40554a;
 }
 .notes {
   background: #fffdf5;

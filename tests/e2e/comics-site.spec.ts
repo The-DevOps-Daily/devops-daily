@@ -107,3 +107,67 @@ test('chapter download is a real PDF and the reader retains keyboard access to n
   await page.keyboard.press('Enter');
   await expect(page.locator('details')).toHaveAttribute('open', '');
 });
+
+test('chapter cover and end navigation keep readable paper styling in either theme', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/comics/git-blame/chapter-01');
+  await page.evaluate(() => document.fonts.ready);
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((value) => {
+      document.documentElement.classList.toggle('dark', value === 'dark');
+    }, theme);
+    const cover = page.locator('[data-comic-cover]');
+    const completion = page.getByRole('navigation', { name: 'Chapter navigation' });
+    for (const surface of [cover, completion]) {
+      await expect(surface).toHaveCSS('background-color', 'rgb(246, 240, 223)');
+      await expect(surface).toHaveCSS('color', 'rgb(39, 55, 70)');
+      const ratios = await surface.locator('h1, h2, h3, p, a, span').evaluateAll((elements) => {
+        const luminance = (color: string) => {
+          const channels = color
+            .match(/[\d.]+/g)!
+            .slice(0, 3)
+            .map(Number)
+            .map((v) => v / 255);
+          const linear = channels.map((v) =>
+            v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+          );
+          return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+        };
+        return elements
+          .filter((element) => !element.hasAttribute('aria-hidden'))
+          .map((element) => {
+            let ancestor: Element | null = element;
+            while (ancestor && getComputedStyle(ancestor).backgroundColor === 'rgba(0, 0, 0, 0)')
+              ancestor = ancestor.parentElement;
+            const background = luminance(getComputedStyle(ancestor!).backgroundColor);
+            const foreground = luminance(getComputedStyle(element).color);
+            return (
+              (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05)
+            );
+          });
+      });
+      expect(Math.min(...ratios)).toBeGreaterThanOrEqual(4.5);
+    }
+    await expect(completion.getByRole('link', { name: /It Worked on My Machine/ })).toHaveCount(0);
+    if (process.env.COMIC_UI_SCREENSHOTS) {
+      for (const [label, surface] of [
+        ['cover', cover],
+        ['completion', completion],
+      ] as const) {
+        await surface.screenshot({
+          path: `${process.env.COMIC_UI_SCREENSHOTS}/reader-${label}-${theme}-${testInfo.project.name}.jpg`,
+          type: 'jpeg',
+          quality: 90,
+        });
+      }
+    }
+  }
+  await page.getByRole('link', { name: 'Start reading', exact: true }).click();
+  await expect(page).toHaveURL(/#story$/);
+  await page
+    .getByRole('navigation', { name: 'Chapter navigation' })
+    .getByRole('link', { name: 'Read again', exact: true })
+    .click();
+  await expect(page).toHaveURL(/#chapter-title$/);
+});

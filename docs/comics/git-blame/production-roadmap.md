@@ -17,6 +17,12 @@ The user requested stronger visual storytelling, then explicitly approved site i
 
 The library, series, chapter, proof and paginated print routes exist in this PR branch. Preview metadata is deliberately noindex, and previews stay out of sitemap, search and feeds until publication. See [site review](site-review/README.md) for routes, screenshots, PDF and checks. This is a review edition, not a production deployment.
 
+### Latest reader and artwork feedback
+
+The user found the revised artwork still too generic and requested more technical moments, plus a better chapter hero and bottom navigation. The reader now uses a book-style opening and paper-colored completion navigation in both site themes. See the current [UI review](site-review/README.md).
+
+The next artwork revision is a [fourteen-panel storyboard proposal](chapter-01/panel-expansion-proposal.md), including customer impact, an illustrated Kubernetes cutaway, correlated request evidence, the shutdown handler, an overlap test and a watched handoff. It has not been generated or placed in the runtime reader. Review this storyboard under the user's original checkpoint, then produce one technical proof before the remaining inserts. The current seven illustrations remain review assets rather than approved final art.
+
 ## Phase 6 scope
 
 - `/comics`: a focused library with the series cover, title, premise and clear entry point. One series needs no elaborate filters or empty categories.
