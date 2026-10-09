@@ -1,0 +1,98 @@
+{
+  "series": "git-blame",
+  "phase": 2,
+  "created_date": "2026-10-08",
+  "tool": "image_gen.imagegen",
+  "approved_assets": [],
+  "note": "Candidate sheets only. No character design is user-approved yet. Book reference photographs were inspected for general visual traits; no book spread was used as a generated-image input.",
+  "assets": [
+    {
+      "character": "alex",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/alex-v1.png",
+      "source_filename": "exec-d981c7d2-a575-4336-836b-949fefa7e927.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "bytes": 2545758,
+      "sha256": "aa24df3be70f8cc325b89d0940c6e9ba0139f18d74298545da0cd1d542803b5f",
+      "status": "superseded",
+      "prompt": "docs/comics/git-blame/prompts/alex-v1.txt",
+      "reference_images": [],
+      "transparent_background": false
+    },
+    {
+      "character": "alex",
+      "version": "v2",
+      "path": "assets/comics/git-blame/characters/alex-v2.png",
+      "source_filename": "exec-60af8530-46e1-4758-aa28-a7534915b4da.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "bytes": 2463522,
+      "sha256": "85e5787a195ee28ed5a026c0fe6cab8348a802dea9d0ab524b01a2f7f24c62f6",
+      "status": "pending_user_approval",
+      "prompt": "docs/comics/git-blame/prompts/alex-v2.txt",
+      "reference_images": [
+        "/workspace/generated_images/exec-d981c7d2-a575-4336-836b-949fefa7e927.png"
+      ],
+      "transparent_background": false
+    },
+    {
+      "character": "maya",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/maya-v1.png",
+      "source_filename": "exec-c304f5b3-0508-403a-be35-6f643797e5a8.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "bytes": 2434874,
+      "sha256": "67dde32e7cac46b4fe58c8b7bcd04634a95bde6fd9c8bfcff1f16533c828ba4e",
+      "status": "pending_user_approval",
+      "prompt": "docs/comics/git-blame/prompts/maya-v1.txt",
+      "reference_images": [
+        "assets/comics/git-blame/characters/alex-v2.png"
+      ],
+      "transparent_background": false
+    },
+    {
+      "character": "sam",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/sam-v1.png",
+      "source_filename": "exec-4e3622e6-45a7-429e-869f-a03fd0820102.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "bytes": 2448036,
+      "sha256": "d5eeef6a2aab87770790bd3dd9e0c3d2a89333d37cae6fc38bd5a697546a15ff",
+      "status": "pending_user_approval",
+      "prompt": "docs/comics/git-blame/prompts/sam-v1.txt",
+      "reference_images": [
+        "assets/comics/git-blame/characters/alex-v2.png"
+      ],
+      "transparent_background": false
+    },
+    {
+      "character": "chris",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/chris-v1.png",
+      "source_filename": "exec-dc7384d8-4c98-4409-9469-92146c5e7b12.png",
+      "dimensions": [
+        1536,
+        1024
+      ],
+      "bytes": 2440457,
+      "sha256": "c6d8bea160daa105643724fd41147b752856342df28f2a9d644daa30b2001d51",
+      "status": "pending_user_approval",
+      "prompt": "docs/comics/git-blame/prompts/chris-v1.txt",
+      "reference_images": [
+        "assets/comics/git-blame/characters/alex-v2.png"
+      ],
+      "transparent_background": false
+    }
+  ]
+}
