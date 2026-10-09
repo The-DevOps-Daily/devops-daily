@@ -65,7 +65,7 @@
     {
       "id": "scene-02",
       "label": "Scene 2: Half a deployment",
-      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-02-v1.png",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-02-v2.png",
       "artwork": {
         "src": "/comics/git-blame/chapter-01/scene-02.jpg",
         "sources": [
@@ -84,7 +84,7 @@
         ],
         "width": 1122,
         "height": 1402,
-        "alt": "Sam looks pleased with the rollout status while Alex watches over his shoulder, holding a cream mug."
+        "alt": "Sam has his bag and jacket ready to leave; Alex intercepts him in the doorway with a raised eyebrow and coffee mug."
       },
       "dialogue": [
         {
@@ -93,12 +93,12 @@
           "text": "New pods are healthy. We're done.",
           "position": {
             "x": 0.06,
-            "y": 0.055,
+            "y": 0.02,
             "width": 0.4
           },
           "tailTo": {
-            "x": 0.355,
-            "y": 0.345
+            "x": 0.32,
+            "y": 0.225
           }
         },
         {
@@ -107,12 +107,12 @@
           "text": "That's half a deployment.",
           "position": {
             "x": 0.535,
-            "y": 0.065,
+            "y": 0.02,
             "width": 0.4
           },
           "tailTo": {
-            "x": 0.655,
-            "y": 0.19
+            "x": 0.83,
+            "y": 0.215
           }
         }
       ]
@@ -120,7 +120,7 @@
     {
       "id": "scene-03",
       "label": "Scene 3: Checkout disagrees",
-      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-03-v1.png",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-03-v2.png",
       "artwork": {
         "src": "/comics/git-blame/chapter-01/scene-03.jpg",
         "sources": [
@@ -139,7 +139,7 @@
         ],
         "width": 1122,
         "height": 1402,
-        "alt": "Chris shows the team a checkout failure; Maya reaches for the rollout controls while Sam examines a request."
+        "alt": "Chris interrupts the team leaving: coat over his arm and customer report on his phone. Sam stops packing his laptop bag; Maya turns her chair back to investigate."
       },
       "dialogue": [
         {
@@ -147,13 +147,13 @@
           "speaker": "Chris",
           "text": "Checkout's failing for some customers.",
           "position": {
-            "x": 0.05,
-            "y": 0.12,
+            "x": 0.07,
+            "y": 0.015,
             "width": 0.43
           },
           "tailTo": {
-            "x": 0.32,
-            "y": 0.295
+            "x": 0.28,
+            "y": 0.15
           }
         },
         {
@@ -161,13 +161,13 @@
           "speaker": "Maya",
           "text": "Pause the rollout. Let's trace one failed request.",
           "position": {
-            "x": 0.51,
-            "y": 0.235,
-            "width": 0.43
+            "x": 0.54,
+            "y": 0.075,
+            "width": 0.42
           },
           "tailTo": {
-            "x": 0.78,
-            "y": 0.41
+            "x": 0.79,
+            "y": 0.325
           }
         }
       ]
@@ -175,7 +175,7 @@
     {
       "id": "scene-04",
       "label": "Scene 4: Mid-sentence",
-      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-04-v2.png",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-04-v4.png",
       "artwork": {
         "src": "/comics/git-blame/chapter-01/scene-04.jpg",
         "sources": [
@@ -194,7 +194,7 @@
         ],
         "width": 1448,
         "height": 1086,
-        "alt": "Sam, Maya and Alex compare a failed request with the old process’s exit; a clear inset explains the interrupted response."
+        "alt": "Standing at Maya’s easel whiteboard, Sam, Maya and Alex trace the interrupted reply. Hand-drawn arrows link the load balancer separately to the old and new pods; no arrow connects the pods."
       },
       "dialogue": [
         {
@@ -207,8 +207,8 @@
             "width": 0.29
           },
           "tailTo": {
-            "x": 0.27,
-            "y": 0.31
+            "x": 0.26,
+            "y": 0.375
           }
         },
         {
@@ -222,7 +222,7 @@
           },
           "tailTo": {
             "x": 0.525,
-            "y": 0.37
+            "y": 0.405
           }
         },
         {
@@ -235,8 +235,8 @@
             "width": 0.29
           },
           "tailTo": {
-            "x": 0.8,
-            "y": 0.33
+            "x": 0.81,
+            "y": 0.35
           }
         }
       ],
@@ -245,7 +245,7 @@
     {
       "id": "scene-05",
       "label": "Scene 5: The old goodbye",
-      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-05-v1.png",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-05-v3.png",
       "artwork": {
         "src": "/comics/git-blame/chapter-01/scene-05.jpg",
         "sources": [
@@ -264,7 +264,7 @@
         ],
         "width": 1448,
         "height": 1086,
-        "alt": "Alex acknowledges an old shutdown handler as Sam and Maya work with him on a safer handoff."
+        "alt": "Sam works at the shared laptop as Alex leans in to review his old handler; Maya opens a notebook to prepare the test."
       },
       "dialogue": [
         {
@@ -273,12 +273,12 @@
           "text": "Codex traced it: we exit on SIGTERM.",
           "position": {
             "x": 0.04,
-            "y": 0.04,
+            "y": 0.01,
             "width": 0.29
           },
           "tailTo": {
-            "x": 0.235,
-            "y": 0.38
+            "x": 0.32,
+            "y": 0.52
           }
         },
         {
@@ -286,13 +286,13 @@
           "speaker": "Alex",
           "text": "That's my old handler. Let's fix it.",
           "position": {
-            "x": 0.355,
-            "y": 0.08,
+            "x": 0.345,
+            "y": 0.01,
             "width": 0.29
           },
           "tailTo": {
-            "x": 0.485,
-            "y": 0.345
+            "x": 0.48,
+            "y": 0.435
           }
         },
         {
@@ -300,13 +300,13 @@
           "speaker": "Maya",
           "text": "Claude Code can draft the test. We run it.",
           "position": {
-            "x": 0.67,
-            "y": 0.04,
-            "width": 0.29
+            "x": 0.65,
+            "y": 0.01,
+            "width": 0.325
           },
           "tailTo": {
-            "x": 0.83,
-            "y": 0.39
+            "x": 0.78,
+            "y": 0.475
           }
         }
       ],
@@ -315,7 +315,7 @@
     {
       "id": "scene-06",
       "label": "Scene 6: Boring graphs",
-      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-06-v1.png",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-06-v2.png",
       "artwork": {
         "src": "/comics/git-blame/chapter-01/scene-06.jpg",
         "sources": [
@@ -334,7 +334,7 @@
         ],
         "width": 1122,
         "height": 1402,
-        "alt": "Sam smiles with relief as a deliberately slow test request completes; Alex and Maya check the rollout results."
+        "alt": "Alex pauses with his mug raised as the deliberately slow test request finishes; Sam leans over the chair back with relief."
       },
       "dialogue": [
         {
@@ -343,12 +343,12 @@
           "text": "Even the slow request finished.",
           "position": {
             "x": 0.05,
-            "y": 0.09,
+            "y": 0.025,
             "width": 0.42
           },
           "tailTo": {
-            "x": 0.335,
-            "y": 0.35
+            "x": 0.325,
+            "y": 0.28
           }
         },
         {
@@ -357,12 +357,12 @@
           "text": "Excellent. Boring graphs.",
           "position": {
             "x": 0.53,
-            "y": 0.09,
+            "y": 0.18,
             "width": 0.4
           },
           "tailTo": {
-            "x": 0.855,
-            "y": 0.375
+            "x": 0.66,
+            "y": 0.39
           }
         }
       ],
@@ -371,7 +371,7 @@
     {
       "id": "scene-07",
       "label": "Scene 7: Monday",
-      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-07-v1.png",
+      "sourceMaster": "assets/comics/git-blame/chapter-01/scene-07-v2.png",
       "artwork": {
         "src": "/comics/git-blame/chapter-01/scene-07.jpg",
         "sources": [
@@ -390,7 +390,7 @@
         ],
         "width": 1122,
         "height": 1402,
-        "alt": "Alex, Maya and Sam quietly close their laptops. Chris notices, smiles and closes his own as well."
+        "alt": "Bags packed and laptops closed, Sam, Maya and Alex head for the open door. Chris smiles, takes his coat and joins them."
       },
       "dialogue": [
         {
@@ -399,7 +399,7 @@
           "text": "One more tiny change before we go?",
           "position": {
             "x": 0.5,
-            "y": 0.055,
+            "y": 0.005,
             "width": 0.44
           }
         },
@@ -409,12 +409,12 @@
           "text": "Monday.",
           "position": {
             "x": 0.675,
-            "y": 0.24,
+            "y": 0.14,
             "width": 0.265
           },
           "tailTo": {
-            "x": 0.875,
-            "y": 0.345
+            "x": 0.82,
+            "y": 0.255
           }
         }
       ]

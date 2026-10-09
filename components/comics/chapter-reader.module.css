@@ -1,12 +1,13 @@
 .chapter {
   color: #273746;
   background: #f6f0df;
-  padding: 3rem 1rem;
+  overflow-wrap: anywhere;
 }
 
 .reader {
-  max-width: 48rem;
+  max-width: 50rem;
   margin: 0 auto;
+  padding: 2.5rem 1rem 3rem;
 }
 .header {
   margin-bottom: 2rem;

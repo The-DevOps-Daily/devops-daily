@@ -1,0 +1,154 @@
+{
+  "fingerprint": "775d06e4223984ad6bbf0a043985ba8a617089730739aad657dd8ca1667c9acb",
+  "renderFingerprint": "6ac8494a0049b64a3617997871829ee9845ee393aeb5bc51431807b14c5372ec",
+  "inputs": [
+    {
+      "path": "content/comics/git-blame/chapter-01.json",
+      "sha256": "bdc98af02be24d7e68ec03bfe4a50bbd2149ee5bf62f8d9bb05d8b9c95ee8c6b"
+    },
+    {
+      "path": "content/comics/git-blame/series.ts",
+      "sha256": "cd94b6a6c8fc57cc4d6209544dc1a2db38a5b0cde2129bc513728723c3736a2f"
+    },
+    {
+      "path": "app/layout.tsx",
+      "sha256": "e7d557e20d24aa8f9e8052ba7c8d716761deb71ac7086f77abc580609161013f"
+    },
+    {
+      "path": "app/globals.css",
+      "sha256": "9f60a7298de5c0950a8b03aef0070bcc3df116e319fe969f17d9e6c85ce474f5"
+    },
+    {
+      "path": "lib/comic-metadata.ts",
+      "sha256": "53dcffaa27a369f3a8b007f2abd5f89ecae3948bd95e70c71cda6f38180bee2d"
+    },
+    {
+      "path": "package.json",
+      "sha256": "8f61e8f4e5d4a26507eab15af93384b7c229d2da01ef273c8052fc82640ba0cf"
+    },
+    {
+      "path": "next.config.mjs",
+      "sha256": "a9261d8f205e4e93fc9088f357991393b673cf488137358a17618331d923ecb6"
+    },
+    {
+      "path": "app/comics/git-blame/print/page.tsx",
+      "sha256": "999630d1aa7a5e382466667df7a9a958e9a4f27ef47143c4b5303cc280a46779"
+    },
+    {
+      "path": "components/comics/print-edition.tsx",
+      "sha256": "0d5ab923bbb28f39796556517ac13c9cccd97cdd4909810dbd0d70fcc61b66a1"
+    },
+    {
+      "path": "components/comics/print-edition.module.css",
+      "sha256": "5ccce4516bbc1d2395208f2dacca78c7d3ac8feb1c4454d6f27a7d544a8d77e9"
+    },
+    {
+      "path": "components/comics/comic-scene.tsx",
+      "sha256": "61dea87521ba26a35245f1661dabd34b1b0106e445237ed7c3d82a2ba28df4c5"
+    },
+    {
+      "path": "components/comics/comic-scene.module.css",
+      "sha256": "aebbc52d4b46fb9983ef5ba04eeeb91fcef983a38b0926dc48074e4e6ab2bdcc"
+    },
+    {
+      "path": "components/comics/speech-bubble.tsx",
+      "sha256": "93a5f2c5729c099572af6de2de5ed0f1b72121f2d6763a8ac523766881ad9d05"
+    },
+    {
+      "path": "components/comics/shutdown-request-diagram.tsx",
+      "sha256": "2e9860878252eba63b263ec8e9d2dfcde101b7c4f19b915200f35fbc4d608467"
+    },
+    {
+      "path": "components/comics/technical-notes.tsx",
+      "sha256": "a8354a913e4b21b198f1e159f5f5edb6ec945809c80108b34d411c7ea0015b36"
+    },
+    {
+      "path": "components/comics/chapter-reader.module.css",
+      "sha256": "2bbda6ce30a1423b3b81f6ac101a88a96e8321f6566b4b6ac34e30814893c1ef"
+    },
+    {
+      "path": "public/fonts/Inter-Regular.ttf",
+      "sha256": "3e5f90a0138b38de4cf4d779ad78391974ea1df776b9164842bdcbb60ce383c5"
+    },
+    {
+      "path": "public/fonts/Inter-Bold.ttf",
+      "sha256": "2c74025a3dab9cbd36b720b287009befa95016d5a14c10edb6a992839530e0b0"
+    },
+    {
+      "path": "scripts/comics/export-pdf.mjs",
+      "sha256": "2b19529413fb0afc011262a2e8e3b5f8796881c8e2edb592c4c849be4e4c6f43"
+    },
+    {
+      "path": "scripts/comics/pdf-inputs.mjs",
+      "sha256": "65f462d6bed9fc257fa741e570de18c0f66fb6869f1aa3cc9dbfb01e92273df2"
+    },
+    {
+      "path": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+      "sha256": "23aada97f352d5b8569eb6d63763394877642387eac721f1cd488cddc85a1572"
+    },
+    {
+      "path": "public/comics/git-blame/chapter-01/scene-01.jpg",
+      "sha256": "2bcbe5e94acd113de7d6a44fcc8c9d57669eec0244f0cb40931a7c6f661fdcdb"
+    },
+    {
+      "path": "assets/comics/git-blame/chapter-01/scene-02-v2.png",
+      "sha256": "15e2c7aeb96280f3f3a6099e3b714a41b4caf258aa89df3519495807ec4ddeb7"
+    },
+    {
+      "path": "public/comics/git-blame/chapter-01/scene-02.jpg",
+      "sha256": "32fa0fce414622d458bfd660d4997a6e6ec7b95fb850b58752d4cf568b32ca92"
+    },
+    {
+      "path": "assets/comics/git-blame/chapter-01/scene-03-v2.png",
+      "sha256": "3d233b34a9c9edfc84b23ecb15e4e66599a250b973becb35cf4ced22af51514a"
+    },
+    {
+      "path": "public/comics/git-blame/chapter-01/scene-03.jpg",
+      "sha256": "039410354804d10074123783a599f1420b965cd2fa9ea9c291324b5bd0ad09b7"
+    },
+    {
+      "path": "assets/comics/git-blame/chapter-01/scene-04-v4.png",
+      "sha256": "b5675ff8864f4ed088df17c96b368c101845d788a2c957768ce9133bbeafa814"
+    },
+    {
+      "path": "public/comics/git-blame/chapter-01/scene-04.jpg",
+      "sha256": "61581befb0c0e8e402b1eca252649d54847cf3d227eaea79f90f11c1f9883acc"
+    },
+    {
+      "path": "assets/comics/git-blame/chapter-01/scene-05-v3.png",
+      "sha256": "d2cd073396dbb8756d3469a2c7f8ce032bf5b1f7e663537b6dea3bac93eef067"
+    },
+    {
+      "path": "public/comics/git-blame/chapter-01/scene-05.jpg",
+      "sha256": "a2c92ec88ec6faed82759479271f137ea1b4e1c11086395112d581ace42cdead"
+    },
+    {
+      "path": "assets/comics/git-blame/chapter-01/scene-06-v2.png",
+      "sha256": "5c850ad177e2eae871814bc5026bc1197acab1ee53b68e6e8966640ff5a6d0ff"
+    },
+    {
+      "path": "public/comics/git-blame/chapter-01/scene-06.jpg",
+      "sha256": "818fbb797e5960371e9700e94fd9c49a9418c689a16f4450bc647f82e8f2bd27"
+    },
+    {
+      "path": "assets/comics/git-blame/chapter-01/scene-07-v2.png",
+      "sha256": "82de247283809f1c8cb5a9c82274f103ede5f782492a1a3394cb6633d83e0bd3"
+    },
+    {
+      "path": "public/comics/git-blame/chapter-01/scene-07.jpg",
+      "sha256": "99c9c5d0f8dff6871365964dbd534666929b62baf32b4ce97ab28f435fe71b43"
+    }
+  ],
+  "edition": "chapter-01-preview",
+  "bytes": 2822465,
+  "pdfSha256": "3a76959248539ee41be836f4a297ab49aecd91a151fea4ab153f5b85ff0d225b",
+  "validation": {
+    "sceneCount": 7,
+    "dialogueCount": 16,
+    "fontStatus": "loaded",
+    "oversizedScenes": 0,
+    "clippedText": 0
+  },
+  "tagged": true,
+  "generator": "Playwright Chromium from local static export"
+}

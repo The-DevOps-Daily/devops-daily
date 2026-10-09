@@ -49,7 +49,7 @@ export function ComicScene({
             <SpeechBubble key={dialogue.id} dialogue={dialogue} />
           ))}
         </ol>
-        {scene.diagram === 'shutdown-request' && <ShutdownRequestDiagram id={scene.id} />}
+        {scene.diagram === 'shutdown-request' && <ShutdownRequestDiagram />}
       </div>
     </figure>
   );

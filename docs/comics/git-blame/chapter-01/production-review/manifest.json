@@ -1,8 +1,8 @@
 {
-  "phase": 5,
+  "phase": 6,
   "createdDate": "2026-10-09",
   "chapter": "chapter-01",
-  "status": "complete-draft-awaiting-chapter-approval",
+  "status": "revised-draft-awaiting-user-review",
   "runtimeContent": "content/comics/git-blame/chapter-01.json",
   "optimizer": "scripts/comics/optimize-chapter.mjs",
   "encoding": {
@@ -18,7 +18,10 @@
   },
   "diagram": {
     "component": "components/comics/shutdown-request-diagram.tsx",
-    "generated": false
+    "generated": true,
+    "sourceMaster": "assets/comics/git-blame/chapter-01/scene-04-v4.png",
+    "labels": "editable HTML, separate from artwork",
+    "review": "Exactly three nodes and three directed paths; separate requests, no pod-to-pod transfer."
   },
   "scenes": [
     {
@@ -64,14 +67,15 @@
           "bytes": 179406,
           "sha256": "347f1eb327849967f6f29907ac2e793c8a156c17d7653070a4f461f7db69e2de"
         }
-      ]
+      ],
+      "promptSha256": "1ef837e441547c53258247ae6686c4b7afc6efafe461ffeee249ce1970af2c92"
     },
     {
       "scene": "scene-02",
-      "status": "awaiting-complete-chapter-approval",
+      "status": "revised-draft-awaiting-user-review",
       "tool": "image_gen.imagegen",
-      "sourceFilename": "exec-5e0f917d-f9e4-4314-a4eb-a4f6dcfd76a3.png",
-      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-02-v1.txt",
+      "sourceFilename": "exec-0d501b77-4b4c-4086-b8a9-fc61df5879b6.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-02-v2-release.txt",
       "referenceImages": [
         "assets/comics/git-blame/characters/sam-v1.png",
         "assets/comics/git-blame/characters/alex-v2.png",
@@ -79,228 +83,227 @@
       ],
       "transparentBackground": false,
       "dialogueBakedIntoArtwork": false,
+      "promptSha256": "d981db15a1b17721a0cd40ea81c0981f5f038e7038f68b3514bf517a38b3aabb",
       "files": [
         {
-          "path": "assets/comics/git-blame/chapter-01/scene-02-v1.png",
+          "path": "assets/comics/git-blame/chapter-01/scene-02-v2.png",
           "dimensions": [1122, 1402],
-          "bytes": 2426789,
-          "sha256": "002287e2ab9eacf465d999c4b277f5f2f4b45330f7f58f9f5adcb503b3e55655"
+          "bytes": 2414056,
+          "sha256": "15e2c7aeb96280f3f3a6099e3b714a41b4caf258aa89df3519495807ec4ddeb7"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-02.jpg",
           "dimensions": [1122, 1402],
-          "bytes": 258909,
-          "sha256": "1cb50fb144c2daffcfc6fde22456707616158b8123f4e5fbbfb2f519b883df92"
+          "bytes": 274423,
+          "sha256": "32fa0fce414622d458bfd660d4997a6e6ec7b95fb850b58752d4cf568b32ca92"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-02-480.webp",
           "dimensions": [480, 600],
-          "bytes": 49052,
-          "sha256": "2b59d95882d391045b1c45e1ea9519e95b003803ed1039b13862fc435b1cb6e6"
+          "bytes": 56070,
+          "sha256": "268b35051bb1fa128d5680dce59c4f9aeb021237e5ad3060524ba24473628e87"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-02-960.webp",
           "dimensions": [960, 1200],
-          "bytes": 146542,
-          "sha256": "b57c4132dfb6fc09b9f9352c503338307f4aaaad50ae67d6520d77951bdbe89c"
+          "bytes": 155468,
+          "sha256": "91509fd5a99e3f13eed20ed4b3941f7c78d605f1b25680c8104cfd21ee11d329"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-02-1122.webp",
           "dimensions": [1122, 1402],
-          "bytes": 184144,
-          "sha256": "bef9625bb98895397b7ad08f7587bc049af60bd830dfddc04f536abe2f2f2039"
+          "bytes": 195626,
+          "sha256": "7bd9180ff161fe120a58fcb67b381f41beea698a4f9160403d5b75b92220cc83"
         }
       ]
     },
     {
       "scene": "scene-03",
-      "status": "awaiting-complete-chapter-approval",
+      "status": "revised-draft-awaiting-user-review",
       "tool": "image_gen.imagegen",
-      "sourceFilename": "exec-59fa0e88-c7c0-442d-9158-e36a4f7526ec.png",
-      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-03-v1.txt",
+      "sourceFilename": "exec-001a1aa0-5796-4da8-969c-c8ef8534ea6d.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-03-v2-doorway.txt",
       "referenceImages": [
         "assets/comics/git-blame/characters/chris-v1.png",
-        "assets/comics/git-blame/characters/sam-v1.png",
         "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/characters/sam-v1.png",
         "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
       ],
       "transparentBackground": false,
       "dialogueBakedIntoArtwork": false,
+      "promptSha256": "be6abaf1088ea89a50aab694607f2954d30877348c77a5a418b94ea6faaa5812",
       "files": [
         {
-          "path": "assets/comics/git-blame/chapter-01/scene-03-v1.png",
+          "path": "assets/comics/git-blame/chapter-01/scene-03-v2.png",
           "dimensions": [1122, 1402],
-          "bytes": 2422800,
-          "sha256": "f060b07c62d16b17b9f9572e84a849a699bf2f2a3c641bc368ba6a26c4eb04b1"
+          "bytes": 2715209,
+          "sha256": "3d233b34a9c9edfc84b23ecb15e4e66599a250b973becb35cf4ced22af51514a"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-03.jpg",
           "dimensions": [1122, 1402],
-          "bytes": 267262,
-          "sha256": "2b451d489656e80c6bd3cf49e48df0cc550a8d7e422cae458a2d43168722891f"
+          "bytes": 337635,
+          "sha256": "039410354804d10074123783a599f1420b965cd2fa9ea9c291324b5bd0ad09b7"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-03-480.webp",
           "dimensions": [480, 600],
-          "bytes": 50636,
-          "sha256": "203b748504a4b17f4900b949162e2b78e936c67a7b810dc6d4d0e587a1f66746"
+          "bytes": 67790,
+          "sha256": "94ca9f35e71ac7a73ca8d6007850f8f4d1cd485a8cfcf620adb54cdeb49f0aad"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-03-960.webp",
           "dimensions": [960, 1200],
-          "bytes": 153136,
-          "sha256": "2d1f844e7150537b4ce6ec988e47ab7d5864b0800829aa3b56374d16c581ce53"
+          "bytes": 201310,
+          "sha256": "069d1dc080bc00f9c27943ab67ebd17d7914c4969fe07ee228d4614aae322b49"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-03-1122.webp",
           "dimensions": [1122, 1402],
-          "bytes": 191032,
-          "sha256": "6e8335a14d7921afbf869cbfe6b5b08a357f022dccbd4b47a0ca93d527d03cbc"
+          "bytes": 253862,
+          "sha256": "500aff9fcdab98a9350fd7a27d9ced34d0fb772aef6c243523314334ac015bb3"
         }
       ]
     },
     {
       "scene": "scene-04",
-      "status": "awaiting-complete-chapter-approval",
+      "status": "revised-draft-awaiting-user-review",
       "tool": "image_gen.imagegen",
-      "sourceFilename": "exec-9a4196ee-e04a-4bdf-a30c-1f5fd9e8d953.png",
-      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-04-v2.txt",
-      "referenceImages": ["assets/comics/git-blame/chapter-01/scene-04-v1.png"],
+      "sourceFilename": "exec-e1e0202d-4b85-4fe3-93e2-9944abbc4f30.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-04-v4-dialogue-space.txt",
+      "referenceImages": ["assets/comics/git-blame/chapter-01/scene-04-v3.png"],
       "transparentBackground": false,
       "dialogueBakedIntoArtwork": false,
+      "promptSha256": "f194e9d183eae61f9d79e8fa8837582e9a233b1d1db5ca98955d4e803853b79a",
       "files": [
         {
-          "path": "assets/comics/git-blame/chapter-01/scene-04-v2.png",
+          "path": "assets/comics/git-blame/chapter-01/scene-04-v4.png",
           "dimensions": [1448, 1086],
-          "bytes": 2363835,
-          "sha256": "ae4502936d0fe091c9626c1cabd266c0e40137ea5dcf5b277dcd86a539a46150"
+          "bytes": 2245783,
+          "sha256": "b5675ff8864f4ed088df17c96b368c101845d788a2c957768ce9133bbeafa814"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-04.jpg",
           "dimensions": [1448, 1086],
-          "bytes": 253127,
-          "sha256": "51ae9b2346bffbd28448121dc1adfb6467547c38d810318ab4aeace783f5e71f"
+          "bytes": 233722,
+          "sha256": "61581befb0c0e8e402b1eca252649d54847cf3d227eaea79f90f11c1f9883acc"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-04-480.webp",
           "dimensions": [480, 360],
-          "bytes": 28592,
-          "sha256": "1c639c62f65aca07774ff462e4a192dd85746c898d75351fd76f1e5508bd0aa9"
+          "bytes": 29212,
+          "sha256": "cf4bfa576b99ba1f65a132fc475e75521cef027948954ef10790857a385887ca"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-04-960.webp",
           "dimensions": [960, 720],
-          "bytes": 93620,
-          "sha256": "cf8f41192534ff58e091b3666e2d3329ca5ad6f2e0d3dd03401d001dab0f5cee"
+          "bytes": 86266,
+          "sha256": "d49e6452173e3b2c87418e315953f34709849a89418b452087a9cc491dc2c20f"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-04-1448.webp",
           "dimensions": [1448, 1086],
-          "bytes": 180052,
-          "sha256": "3832ae339ea69e018a0a8e09b0ca54ab961eada1c2a39de90ad507bcecf2a9a9"
+          "bytes": 160432,
+          "sha256": "7ef51a79381b0945a3e5e0a2bda3ff112d9a941df3415b6586616bd651339760"
         }
       ]
     },
     {
       "scene": "scene-05",
-      "status": "awaiting-complete-chapter-approval",
+      "status": "revised-draft-awaiting-user-review",
       "tool": "image_gen.imagegen",
-      "sourceFilename": "exec-896236a5-28f8-4456-b2e6-c4a73fa88e00.png",
-      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-05-v1.txt",
-      "referenceImages": [
-        "assets/comics/git-blame/characters/sam-v1.png",
-        "assets/comics/git-blame/characters/alex-v2.png",
-        "assets/comics/git-blame/characters/maya-v1.png",
-        "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
-      ],
+      "sourceFilename": "exec-fcfd8ce7-e9ab-4572-85a1-cbe9ea1b7a86.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-05-v3-dialogue-space.txt",
+      "referenceImages": ["assets/comics/git-blame/chapter-01/scene-05-v2.png"],
       "transparentBackground": false,
       "dialogueBakedIntoArtwork": false,
+      "promptSha256": "aa2ade2d27bb6c7db160e960657aebc69ffe680ee3da137795d9de4b9aefb66c",
       "files": [
         {
-          "path": "assets/comics/git-blame/chapter-01/scene-05-v1.png",
+          "path": "assets/comics/git-blame/chapter-01/scene-05-v3.png",
           "dimensions": [1448, 1086],
-          "bytes": 2410552,
-          "sha256": "6bb364067470e08281cdf655d6408da6715d3878c56487447a8401f9fc225cea"
+          "bytes": 2379197,
+          "sha256": "d2cd073396dbb8756d3469a2c7f8ce032bf5b1f7e663537b6dea3bac93eef067"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-05.jpg",
           "dimensions": [1448, 1086],
-          "bytes": 257496,
-          "sha256": "95b1185f7e6d3e2405cd89979d630a7e658de3d9cc2e44a8d3827a9828c3353f"
+          "bytes": 260120,
+          "sha256": "a2c92ec88ec6faed82759479271f137ea1b4e1c11086395112d581ace42cdead"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-05-480.webp",
           "dimensions": [480, 360],
-          "bytes": 31830,
-          "sha256": "bafdd74a7aa25fc2a80d586945e80ad977103d59095b90009c599cce1545ae83"
+          "bytes": 33552,
+          "sha256": "38b568bdbd7d89098cff229f7debc01f00360304dc07e5423501da4db980eec1"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-05-960.webp",
           "dimensions": [960, 720],
-          "bytes": 99160,
-          "sha256": "23f3e1961f1fc80e02d530f4d0b5653b7a2c486ef2307c5de261e63fd3fb53a2"
+          "bytes": 100908,
+          "sha256": "a78a4cd32ebf630b4c00094425ba70aeeaccca01fad881aab1e0e887d0bb936f"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-05-1448.webp",
           "dimensions": [1448, 1086],
-          "bytes": 181322,
-          "sha256": "0631c439868040b0d146f97957734970dc071a37f8e030f84fe2c42e14f17ae7"
+          "bytes": 183852,
+          "sha256": "aecc12c6d5bcd15e179e5fa635e205c680c5f63ecaed51295c228fa1f24d0bc3"
         }
       ]
     },
     {
       "scene": "scene-06",
-      "status": "awaiting-complete-chapter-approval",
+      "status": "revised-draft-awaiting-user-review",
       "tool": "image_gen.imagegen",
-      "sourceFilename": "exec-7675d73a-7b60-478c-be6d-6d10b81110da.png",
-      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-06-v1.txt",
+      "sourceFilename": "exec-20b45116-3db1-40fe-8489-1fa90b0d8eb5.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-06-v2-waiting.txt",
       "referenceImages": [
         "assets/comics/git-blame/characters/sam-v1.png",
         "assets/comics/git-blame/characters/alex-v2.png",
-        "assets/comics/git-blame/characters/maya-v1.png",
         "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
       ],
       "transparentBackground": false,
       "dialogueBakedIntoArtwork": false,
+      "promptSha256": "18e08e34e164de3c4de2143c6d8aca8001c1aae9aa5a8ac000da40b8cc9e1c04",
       "files": [
         {
-          "path": "assets/comics/git-blame/chapter-01/scene-06-v1.png",
+          "path": "assets/comics/git-blame/chapter-01/scene-06-v2.png",
           "dimensions": [1122, 1402],
-          "bytes": 2379436,
-          "sha256": "99ad5faa85dfebd711104b8fe5ca53be65f71a28a4409a259f325f742af667cb"
+          "bytes": 2413990,
+          "sha256": "5c850ad177e2eae871814bc5026bc1197acab1ee53b68e6e8966640ff5a6d0ff"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-06.jpg",
           "dimensions": [1122, 1402],
-          "bytes": 255189,
-          "sha256": "cc7c83e69dd8de2bfbb39ec5dada89a842254431472d7b5ab83ab474bd473443"
+          "bytes": 259318,
+          "sha256": "818fbb797e5960371e9700e94fd9c49a9418c689a16f4450bc647f82e8f2bd27"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-06-480.webp",
           "dimensions": [480, 600],
-          "bytes": 48792,
-          "sha256": "091f8978d5341315225afeb97a636053bb483b09281bcad10cf82e6da47496e1"
+          "bytes": 50912,
+          "sha256": "28abb53648ebc423e27f74ab3300f1564e0657b4b86d5f36d4ca5de9df00462a"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-06-960.webp",
           "dimensions": [960, 1200],
-          "bytes": 145088,
-          "sha256": "f395d1d643b5c3d9cdf53016d4c3b9000d5e471d35f0231ecc281dc4341bd3af"
+          "bytes": 146424,
+          "sha256": "eaf193a9ded612451e52c26a412e9cbff88a77a7dc47c9497eaf3482c0c5a710"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-06-1122.webp",
           "dimensions": [1122, 1402],
-          "bytes": 180618,
-          "sha256": "35321c35e0d38888aef855278f8ad079f8498487c25c5144b1f145d48e6a2916"
+          "bytes": 182434,
+          "sha256": "86e18920958c346ad5a99141f7b6bdd32672b2c3906fa33c8596e9d75b985f3a"
         }
       ]
     },
     {
       "scene": "scene-07",
-      "status": "awaiting-complete-chapter-approval",
+      "status": "revised-draft-awaiting-user-review",
       "tool": "image_gen.imagegen",
-      "sourceFilename": "exec-98e0d9c8-9219-43c2-a007-aec88583c369.png",
-      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-07-v1.txt",
+      "sourceFilename": "exec-265bc5d0-66a7-4072-901a-31286567ad76.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-07-v2-departure.txt",
       "referenceImages": [
         "assets/comics/git-blame/characters/chris-v1.png",
         "assets/comics/git-blame/characters/sam-v1.png",
@@ -310,36 +313,37 @@
       ],
       "transparentBackground": false,
       "dialogueBakedIntoArtwork": false,
+      "promptSha256": "7acd52cf3eb8a2ca86bff0e8c1f43201083fc294f17bda5fcf28a5124b66b066",
       "files": [
         {
-          "path": "assets/comics/git-blame/chapter-01/scene-07-v1.png",
+          "path": "assets/comics/git-blame/chapter-01/scene-07-v2.png",
           "dimensions": [1122, 1402],
-          "bytes": 2576618,
-          "sha256": "8697f873f62fbcbf30891e69da444cd92a14674513153d8980e9656f9ace4b61"
+          "bytes": 2856238,
+          "sha256": "82de247283809f1c8cb5a9c82274f103ede5f782492a1a3394cb6633d83e0bd3"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-07.jpg",
           "dimensions": [1122, 1402],
-          "bytes": 298397,
-          "sha256": "86a4dba6e309f600bddc0d65b8c5bcd1ef82aff2730606cd18608eb7051a889c"
+          "bytes": 376178,
+          "sha256": "99c9c5d0f8dff6871365964dbd534666929b62baf32b4ce97ab28f435fe71b43"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-07-480.webp",
           "dimensions": [480, 600],
-          "bytes": 58380,
-          "sha256": "3e38590d87871518d42f56d0fe5d91cb81a7ab43581b2d09317e6b0898255d47"
+          "bytes": 74944,
+          "sha256": "2f5f96cdf2c92e5cdae54b8636da6495fa9b2b18ae91cd090bdda00e1610081b"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-07-960.webp",
           "dimensions": [960, 1200],
-          "bytes": 174242,
-          "sha256": "edc6063f2860476c5f5d7b1c154c19a19aadc12afba3a49a32e452ae94ac3e6a"
+          "bytes": 240054,
+          "sha256": "88dfc4c0130df41c51a60b42968a1d07dcaaa50a8d0d79c2e0a2b9585926be84"
         },
         {
           "path": "public/comics/git-blame/chapter-01/scene-07-1122.webp",
           "dimensions": [1122, 1402],
-          "bytes": 214146,
-          "sha256": "f6240ad6ec16e0143b45f8d8b3d02cc8c0e5a5b8d4c91477b2bd33eeffe14b4e"
+          "bytes": 302018,
+          "sha256": "831b3ba1d7a07f21eb86f6e4ae4767231f341ff5e97f91a768314d79ceb8d16d"
         }
       ]
     }
@@ -363,6 +367,181 @@
           "dimensions": [1448, 1086],
           "bytes": 2456476,
           "sha256": "929c60dffc684b3eca3dae4b116e37d1e16563f9fb868c7e074b041d85180396"
+        }
+      ]
+    },
+    {
+      "scene": "scene-02",
+      "status": "superseded-visual-pacing",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-5e0f917d-f9e4-4314-a4eb-a4f6dcfd76a3.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-02-v1.txt",
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "files": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-02-v1.png",
+          "dimensions": [1122, 1402],
+          "bytes": 2426789,
+          "sha256": "002287e2ab9eacf465d999c4b277f5f2f4b45330f7f58f9f5adcb503b3e55655"
+        }
+      ]
+    },
+    {
+      "scene": "scene-03",
+      "status": "superseded-visual-pacing",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-59fa0e88-c7c0-442d-9158-e36a4f7526ec.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-03-v1.txt",
+      "referenceImages": [
+        "assets/comics/git-blame/characters/chris-v1.png",
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "files": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-03-v1.png",
+          "dimensions": [1122, 1402],
+          "bytes": 2422800,
+          "sha256": "f060b07c62d16b17b9f9572e84a849a699bf2f2a3c641bc368ba6a26c4eb04b1"
+        }
+      ]
+    },
+    {
+      "scene": "scene-04",
+      "status": "superseded-visual-pacing",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-9a4196ee-e04a-4bdf-a30c-1f5fd9e8d953.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-04-v2.txt",
+      "referenceImages": ["assets/comics/git-blame/chapter-01/scene-04-v1.png"],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "files": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-04-v2.png",
+          "dimensions": [1448, 1086],
+          "bytes": 2363835,
+          "sha256": "ae4502936d0fe091c9626c1cabd266c0e40137ea5dcf5b277dcd86a539a46150"
+        }
+      ]
+    },
+    {
+      "scene": "scene-05",
+      "status": "superseded-visual-pacing",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-896236a5-28f8-4456-b2e6-c4a73fa88e00.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-05-v1.txt",
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "files": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-05-v1.png",
+          "dimensions": [1448, 1086],
+          "bytes": 2410552,
+          "sha256": "6bb364067470e08281cdf655d6408da6715d3878c56487447a8401f9fc225cea"
+        }
+      ]
+    },
+    {
+      "scene": "scene-06",
+      "status": "superseded-visual-pacing",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-7675d73a-7b60-478c-be6d-6d10b81110da.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-06-v1.txt",
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "files": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-06-v1.png",
+          "dimensions": [1122, 1402],
+          "bytes": 2379436,
+          "sha256": "99ad5faa85dfebd711104b8fe5ca53be65f71a28a4409a259f325f742af667cb"
+        }
+      ]
+    },
+    {
+      "scene": "scene-07",
+      "status": "superseded-visual-pacing",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-98e0d9c8-9219-43c2-a007-aec88583c369.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-07-v1.txt",
+      "referenceImages": [
+        "assets/comics/git-blame/characters/chris-v1.png",
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "files": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-07-v1.png",
+          "dimensions": [1122, 1402],
+          "bytes": 2576618,
+          "sha256": "8697f873f62fbcbf30891e69da444cd92a14674513153d8980e9656f9ace4b61"
+        }
+      ]
+    },
+    {
+      "scene": "scene-04",
+      "status": "superseded-dialogue-space-refinement",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-f88e5db1-5eb9-4497-9c74-cbde34cdfea7.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-04-v3-whiteboard.txt",
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
+      ],
+      "files": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-04-v3.png",
+          "dimensions": [1448, 1086],
+          "bytes": 2501538,
+          "sha256": "e52f1af7bbd334da2c2146c983d4957f795e6597970f71a034918d82cf825b2e"
+        }
+      ]
+    },
+    {
+      "scene": "scene-05",
+      "status": "superseded-dialogue-space-refinement",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-4f193e7b-c6d3-412f-b6c8-2059efd64837.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/scene-05-v2-pairing.txt",
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png"
+      ],
+      "files": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/scene-05-v2.png",
+          "dimensions": [1448, 1086],
+          "bytes": 2601337,
+          "sha256": "ee93055fa8c7b81ab3299e5613bdb4aedf36d1a749b52b91613e17782c453ed2"
         }
       ]
     }

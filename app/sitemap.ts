@@ -15,6 +15,7 @@ import { getAllNewsletters } from '@/lib/newsletters';
 import { getAllHacktoberfestDays } from '@/lib/hacktoberfest';
 import { TOOLS } from '@/lib/tools';
 import { getAllExperts } from '@/lib/experts';
+import { gitBlame } from '@/content/comics/git-blame/series';
 
 export const dynamic = 'force-static';
 
@@ -304,8 +305,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Review editions stay out of the published sitemap.
+  const comicRoutes = gitBlame.preview
+    ? []
+    : [
+        '/comics',
+        '/comics/git-blame',
+        ...gitBlame.chapters
+          .filter((chapter) => chapter.available)
+          .map((chapter) => `/comics/git-blame/${chapter.slug}`),
+      ].map((path) => ({
+        url: `${baseUrl}${path}`,
+        changeFrequency: 'monthly' as const,
+        priority: 0.6,
+      }));
+
   return [
     ...routes,
+    ...comicRoutes,
     ...expertRoutes,
     ...tierRoutes,
     ...postRoutes,

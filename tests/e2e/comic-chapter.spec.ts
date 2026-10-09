@@ -119,12 +119,9 @@ test('desktop bubbles avoid faces; phone dialogue and diagram stay in readable f
       /separate request.*No request is transferred/
     );
     const textScale = await diagram
-      .locator('svg text')
+      .locator('[role="img"] span')
       .first()
-      .evaluate((el: SVGTextElement) => {
-        const matrix = el.getScreenCTM()!;
-        return parseFloat(getComputedStyle(el).fontSize) * Math.hypot(matrix.a, matrix.b);
-      });
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
     expect(textScale).toBeGreaterThanOrEqual(14);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

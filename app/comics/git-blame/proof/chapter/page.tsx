@@ -1,13 +1,14 @@
-import type { Metadata } from 'next';
+import { comicMetadata } from '@/lib/comic-metadata';
 import { ChapterReader } from '@/components/comics/chapter-reader';
 import { chapterOne } from '@/content/comics/git-blame/chapter-01';
 
-export const metadata: Metadata = {
-  title: `${chapterOne.title} — git blame chapter draft`,
-  description: chapterOne.description,
-  alternates: { canonical: '/comics/git-blame/proof/chapter' },
-  robots: { index: false, follow: false, googleBot: { index: false, follow: false } },
-};
+export const metadata = comicMetadata(
+  `${chapterOne.title} — git blame chapter draft`,
+  chapterOne.description,
+  '/comics/git-blame/proof/chapter',
+  '/comics/og/chapter-01.png',
+  true
+);
 
 export default function ChapterDraftPage() {
   return <ChapterReader chapter={chapterOne} />;

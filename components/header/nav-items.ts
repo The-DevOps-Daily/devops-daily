@@ -176,15 +176,15 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
           description: 'Browse all learning paths',
           icon: Map,
         },
-       {
-         label: 'Flashcards',
-         href: '/flashcards',
-         description: 'Study DevOps concepts',
-         icon: Layers,
-       },
-       {
-         label: 'Quizzes & Tests',
-         href: '/quizzes',
+        {
+          label: 'Flashcards',
+          href: '/flashcards',
+          description: 'Study DevOps concepts',
+          icon: Layers,
+        },
+        {
+          label: 'Quizzes & Tests',
+          href: '/quizzes',
           description: 'Test your DevOps knowledge',
           icon: Trophy,
         },
@@ -211,6 +211,12 @@ export const dropdownNavigation: Record<string, NavSection[]> = {
       description: 'Discover by topic and author',
       color: 'purple',
       items: [
+        {
+          label: 'Comics',
+          href: '/comics',
+          description: 'Illustrated stories from life in engineering',
+          icon: BookOpen,
+        },
         {
           label: 'News',
           href: '/news',

@@ -24,6 +24,7 @@ export type ComicSceneContent = {
 };
 
 export type ComicChapterContent = {
+  id: string;
   title: string;
   description: string;
   volume: string;

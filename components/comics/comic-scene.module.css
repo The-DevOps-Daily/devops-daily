@@ -70,10 +70,41 @@
   padding: 0 1.25rem 1.25rem;
 }
 
-.diagramSvg {
+.diagramLabels {
   display: none;
-  width: 100%;
-  height: auto;
+}
+
+.diagramLabels span {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 17%;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.loadBalancer {
+  left: 34%;
+  top: 79%;
+}
+.oldPod {
+  left: 64.5%;
+  top: 74%;
+}
+.newPod {
+  left: 65%;
+  top: 85.5%;
+}
+.diagramLabels .interruptedReply {
+  left: 48%;
+  top: 70.7%;
+  width: auto;
+  padding: 0.1rem 0.25rem;
+  color: #9a4238;
+  background: #f6f0df;
+  border-radius: 0.3rem;
+  font-size: clamp(14px, 1.9cqi, 1rem);
 }
 
 .diagramText {
@@ -119,14 +150,15 @@
 
   .diagram {
     position: absolute;
-    left: 12%;
-    top: 74.5%;
-    width: 76%;
+    inset: 0;
     padding: 0;
+    pointer-events: none;
   }
 
-  .diagramSvg {
+  .diagramLabels {
     display: block;
+    position: absolute;
+    inset: 0;
   }
 
   .diagramText {
