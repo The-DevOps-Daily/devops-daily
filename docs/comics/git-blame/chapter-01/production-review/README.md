@@ -1,8 +1,10 @@
 # The Pod That Wouldn’t Die — complete chapter review
 
-Phase 5 · 9 October 2026 · **Ready for chapter approval before Phase 6 site integration.**
+Phase 5 · 9 October 2026 · **Draft assembled; visual pacing revision requested before Phase 6 site integration.**
 
 All seven narrative illustrations are generated. The original opening scene is approved; the remaining six and their final chapter pacing are presented here for approval. Sophia’s approved design now has the requested blue eyes in [her v2 sheet](../../../../../assets/comics/git-blame/characters/sophia-v2.png). She enters a later story, not this incident.
+
+The user requested more varied staging and camera work. See the [revised visual plan](../visual-pacing-revision.md); the images below document the current draft and have not been replaced.
 
 ## Read the chapter
 
