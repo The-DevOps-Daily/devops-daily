@@ -1821,7 +1821,9 @@ export default function PacketJourney() {
                 <div>
                   <strong>DNS Caching:</strong> The browser, the OS and the resolver all cache DNS answers.
                   The OS and resolver keep one for the record&apos;s TTL; Chrome holds an answer from the OS
-                  for about a minute. A cached answer skips the DNS step entirely.
+                  for about a minute. A browser or OS cache hit skips the network entirely; a resolver
+                  cache hit still costs one round trip to the resolver, but skips the root, TLD and
+                  authoritative servers.
                 </div>
                 <div>
                   <strong>HTTP/3:</strong> The latest HTTP protocol uses QUIC (UDP-based) to establish

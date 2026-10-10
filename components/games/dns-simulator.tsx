@@ -270,60 +270,6 @@ export default function DnsSimulator() {
   const [isComplete, setIsComplete] = useState(false);
   const [stats, setStats] = useState({ queries: 0, cacheHits: 0, totalTime: 0 });
 
-  // Keyboard navigation handler
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable
-      ) {
-        return;
-      }
-
-      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
-      if (e.metaKey || e.ctrlKey) return;
-
-      // Space to start lookup
-      if (e.key === ' ' && !isRunning && currentStepIndex === -1) {
-        e.preventDefault();
-        runLookup();
-        return;
-      }
-
-      // Arrow keys for step navigation
-      if (e.key === 'ArrowRight' && isRunning && currentStepIndex < steps.length) {
-        e.preventDefault();
-        handleStepForward();
-      }
-      if (e.key === 'ArrowLeft' && isRunning && currentStepIndex > 0) {
-        e.preventDefault();
-        handleStepBack();
-      }
-
-      // R to reset
-      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        handleReset();
-      }
-
-      // Escape to reset
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        handleReset();
-      }
-    },
-    [isRunning, currentStepIndex, steps.length]
-  );
-
-  // Add keyboard event listener
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
-
   const runLookup = useCallback(() => {
     const newSteps = generateSteps(domain, recordType, browserCache, osCache, resolverCache);
     setSteps(newSteps);
@@ -405,6 +351,56 @@ export default function DnsSimulator() {
       setCurrentStepIndex((prev) => prev - 1);
     }
   };
+
+  // Keyboard navigation. Re-subscribed on every render so the handler always
+  // sees the current caches and actions, never a stale closure.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Don't intercept browser shortcuts (CMD+R, CTRL+R, etc.)
+      if (e.metaKey || e.ctrlKey) return;
+
+      // Space to start lookup
+      if (e.key === ' ' && !isRunning && currentStepIndex === -1) {
+        e.preventDefault();
+        runLookup();
+        return;
+      }
+
+      // Arrow keys for step navigation
+      if (e.key === 'ArrowRight' && isRunning && currentStepIndex < steps.length) {
+        e.preventDefault();
+        handleStepForward();
+      }
+      if (e.key === 'ArrowLeft' && isRunning && currentStepIndex > 0) {
+        e.preventDefault();
+        handleStepBack();
+      }
+
+      // R to reset
+      if ((e.key === 'r' || e.key === 'R') && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        handleReset();
+      }
+
+      // Escape to reset
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleReset();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
 
   const record = DNS_DATABASE[domain]?.[recordType];
   const currentStep = steps[currentStepIndex];
