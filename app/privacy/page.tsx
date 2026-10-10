@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div className="container px-4 py-8 mx-auto">
-      <PageHeader title="Privacy Policy" description="Last updated: March 20, 2026" />
+      <PageHeader title="Privacy Policy" description="Last updated: October 10, 2026" />
 
       <div className="max-w-4xl mx-auto prose dark:prose-invert">
         <h2>Introduction</h2>
@@ -97,6 +97,16 @@ export default function PrivacyPage() {
             <strong>Preference Cookies:</strong> Remember your settings and preferences
           </li>
         </ul>
+
+        <h2>Sponsor Link Clicks</h2>
+        <p>
+          Links to our sponsors go through go.devops-daily.com, so that we can tell sponsors how many
+          people clicked each placement. When you click one, we record the link, where it was placed,
+          the page it was on, the time, your country, the referring website and whether the click
+          looks automated. We do not store your IP address and we set no cookies. To count each
+          visitor once per day, we keep a one-way hash of your IP address and browser that uses a
+          different key every day, and we delete each day&apos;s key the next day.
+        </p>
 
         <h2>Third-Party Services</h2>
         <p>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { sponsors } from '@/lib/sponsors';
+import { sponsorHref, sponsors } from '@/lib/sponsors';
 import { SponsorLogo } from '@/components/sponsor-logo';
 
 interface GameSponsorsProps {
@@ -31,7 +31,7 @@ export function GameSponsors({ className }: GameSponsorsProps) {
           {sponsors.map((sponsor) => (
             <Link
               key={sponsor.name}
-              href={sponsor.url}
+              href={sponsorHref(sponsor, 'simulator')}
               target="_blank"
               rel="noopener noreferrer sponsored"
               title={sponsor.tagline ? `${sponsor.name} — ${sponsor.tagline}` : sponsor.name}

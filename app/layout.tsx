@@ -10,6 +10,7 @@ import { CookieBanner } from '@/components/cookie-banner';
 import { SkipToContent } from '@/components/skip-to-content';
 import { SiteAnalytics } from '@/components/site-analytics';
 import { DeferredSiteExtras } from '@/components/deferred-site-extras';
+import { GoLinkPageTag } from '@/components/go-link-page-tag';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -145,6 +146,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <CookieBanner />
           <SiteAnalytics />
           <DeferredSiteExtras />
+          <GoLinkPageTag />
         </ThemeProvider>
       </body>
     </html>
