@@ -449,13 +449,22 @@ function statusOutput(state: RepoState): string {
     out.push('Last command done (1 command done):');
     out.push(`   pick ${op.commitSha} ${op.commitMessage}`);
     out.push('No commands remaining.');
-    out.push(`You are currently rebasing branch '${op.branch}' on '${op.ontoSha}'.`);
-    if (unmerged.length) {
-      out.push('  (fix conflicts and then run "git rebase --continue")');
-      out.push('  (use "git rebase --skip" to skip this patch)');
-      out.push('  (use "git rebase --abort" to check out the original branch)');
+    if (!unmerged.length && state.headSha !== op.ontoSha) {
+      // The resolution was committed with git commit
+      out.push(
+        `You are currently editing a commit while rebasing branch '${op.branch}' on '${op.ontoSha}'.`
+      );
+      out.push('  (use "git commit --amend" to amend the current commit)');
+      out.push('  (use "git rebase --continue" once you are satisfied with your changes)');
     } else {
-      out.push('  (all conflicts fixed: run "git rebase --continue")');
+      out.push(`You are currently rebasing branch '${op.branch}' on '${op.ontoSha}'.`);
+      if (unmerged.length) {
+        out.push('  (fix conflicts and then run "git rebase --continue")');
+        out.push('  (use "git rebase --skip" to skip this patch)');
+        out.push('  (use "git rebase --abort" to check out the original branch)');
+      } else {
+        out.push('  (all conflicts fixed: run "git rebase --continue")');
+      }
     }
   } else {
     out.push(`On branch ${state.branch}`);
@@ -550,18 +559,17 @@ function commit(state: RepoState, message: string | null, noEdit: boolean): Exec
       "error: Committing is not possible because you have unmerged files.\nhint: Fix them up in the work tree, and then use 'git add/rm <file>'\nhint: as appropriate to mark resolution and make a commit.\nfatal: Exiting because of an unresolved conflict."
     );
   }
-  if (state.op?.kind === 'rebase') {
-    return fail(
-      'You are in the middle of a rebase: run git rebase --continue to commit this step.',
-      'note'
-    );
-  }
   const merging = state.op?.kind === 'merge' ? state.op : null;
+  // Mid-rebase, git commit records the resolution on the detached HEAD, with the replayed
+  // commit's message as the default. git rebase --continue then has nothing left to commit.
+  const rebasing = state.op?.kind === 'rebase' ? state.op : null;
   const staged = files.filter((f) => f.index !== f.head);
   if (!merging && staged.length === 0) {
     return { state, lines: [{ type: 'output', content: statusOutput(state) }], ok: false };
   }
-  const msg = message ?? (merging ? `Merge branch '${merging.other}'` : null);
+  const msg =
+    message ??
+    (merging ? `Merge branch '${merging.other}'` : rebasing ? rebasing.commitMessage : null);
   if (!msg) {
     return fail('Aborting commit due to empty commit message. (Use git commit -m "message".)');
   }
@@ -579,29 +587,33 @@ function commit(state: RepoState, message: string | null, noEdit: boolean): Exec
   }
   const previous = state.log.map((c) => ({
     ...c,
-    refs: c.refs?.replace(`HEAD -> ${state.branch}`, '').replace(/^, /, '') || undefined,
+    refs:
+      (rebasing
+        ? c.refs?.replace(/^HEAD(, |$)/, '')
+        : c.refs?.replace(`HEAD -> ${state.branch}`, '').replace(/^, /, '')) || undefined,
   }));
   state.log = [
-    { sha, message: msg, refs: `HEAD -> ${state.branch}` },
+    { sha, message: msg, refs: rebasing ? 'HEAD' : `HEAD -> ${state.branch}` },
     ...(merging ? state.otherLog : []),
     ...previous,
   ];
   state.otherLog = [];
   state.headSha = sha;
-  state.op = null;
+  if (!rebasing) state.op = null;
   const lines: OutputLine[] = [];
-  if (merging && message === null && !noEdit) {
+  if ((merging || rebasing) && message === null && !noEdit) {
     lines.push({
       type: 'note',
-      content:
-        'Git would open your editor with the default merge message; the lab keeps it as it is.',
+      content: merging
+        ? 'Git would open your editor with the default merge message; the lab keeps it as it is.'
+        : "Git would open your editor with the replayed commit's message; the lab keeps it as it is.",
     });
   }
   lines.push({
     type: 'output',
     content: merging
       ? `[${state.branch} ${sha}] ${msg}`
-      : `[${state.branch} ${sha}] ${msg}\n${statLine(staged.length, insertions, deletions)}`,
+      : `[${state.branch ?? 'detached HEAD'} ${sha}] ${msg}\n${statLine(staged.length, insertions, deletions)}`,
   });
   return { state, lines, ok: true };
 }
@@ -648,16 +660,19 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
 
     case 'log': {
       if (rest.includes('--merge')) {
-        if (state.op?.kind !== 'merge') {
+        if (!state.op) {
           return out(
             'fatal: --merge requires one of the pseudorefs MERGE_HEAD, CHERRY_PICK_HEAD, REVERT_HEAD or REBASE_HEAD',
             'error'
           );
         }
         if (!Object.values(state.files).some((f) => f.stages)) return out('');
-        return out(
-          [...state.log.slice(0, 1), ...state.otherLog.slice(0, 1)].map(logLine).join('\n')
-        );
+        // Since Git 2.45 a rebase stop uses REBASE_HEAD, the commit being replayed
+        const other =
+          state.op.kind === 'merge'
+            ? state.otherLog.slice(0, 1)
+            : [{ sha: state.op.commitSha, message: state.op.commitMessage, refs: state.op.branch }];
+        return out([...state.log.slice(0, 1), ...other].map(logLine).join('\n'));
       }
       const lines = state.log.slice(0, 5).map(logLine).join('\n');
       if (!rest.includes('--oneline')) {
@@ -902,6 +917,15 @@ export function execute(cmd: string, current: RepoState): ExecuteResult {
             'error: cannot rebase: You have unstaged changes.\nerror: Please commit or stash them.',
             'error'
           );
+        }
+        if (state.headSha !== op.ontoSha && files.every((f) => f.index === f.head)) {
+          // HEAD moved since the stop: git commit already recorded the resolution
+          state.log = state.log.map((c) =>
+            c.refs === 'HEAD' ? { ...c, refs: `HEAD -> ${op.branch}` } : c
+          );
+          state.branch = op.branch;
+          state.op = null;
+          return out(`Successfully rebased and updated refs/heads/${op.branch}.`);
         }
         if (files.every((f) => f.index === f.head)) {
           for (const f of files) f.undo = null;
@@ -1287,7 +1311,7 @@ export const LESSONS: Lesson[] = [
       {
         type: 'output',
         content:
-          'Auto-merging assets/brand.css\nwarning: Cannot merge binary files: assets/logo.png (HEAD vs. feature/rebrand)\nAuto-merging assets/logo.png\nCONFLICT (content): Merge conflict in assets/logo.png\nAutomatic merge failed; fix conflicts and then commit the result.',
+          'warning: Cannot merge binary files: assets/logo.png (HEAD vs. feature/rebrand)\nAuto-merging assets/logo.png\nCONFLICT (content): Merge conflict in assets/logo.png\nAutomatic merge failed; fix conflicts and then commit the result.',
       },
     ],
     initial: () => {
@@ -1322,7 +1346,7 @@ export const LESSONS: Lesson[] = [
         hint: 'git status',
         command: 'git status',
         explanation:
-          "brand.css merged cleanly and is already staged. logo.png is binary: Git cannot merge it line by line, so there are no markers. The working tree still holds main's logo, and the index has all three versions.",
+          "brand.css changed only on feature/rebrand, so Git took that version and staged it, with no Auto-merging line. logo.png is binary: Git cannot merge it line by line, so there are no markers. The working tree still holds main's logo, and the index has all three versions.",
         done: (cmd, _b, after) => isCmd(cmd, /^git status$/) && after.op?.kind === 'merge',
         goal: (state) => state.op === null && headOf(state, 'assets/logo.png') === LOGO_THEIRS,
       },

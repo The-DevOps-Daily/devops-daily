@@ -116,6 +116,7 @@ const INITIAL_LEVELS: LevelSpec[] = [
         id: 'db',
         name: 'db',
         request: { cpu: 1500, memory: 2048 },
+        limit: { cpu: 1500, memory: 2048 },
         qos: 'Guaranteed',
         labels: { app: 'db' },
       },
@@ -181,6 +182,7 @@ const INITIAL_LEVELS: LevelSpec[] = [
         id: 'db',
         name: 'db',
         request: { cpu: 1500, memory: 2048 },
+        limit: { cpu: 1500, memory: 2048 },
         qos: 'Guaranteed',
         labels: { app: 'db' },
         nodeSelector: { role: 'database' },
@@ -268,7 +270,7 @@ const INITIAL_LEVELS: LevelSpec[] = [
         id: 'worker',
         name: 'worker',
         request: { cpu: 1000, memory: 512 },
-        qos: 'BestEffort',
+        qos: 'Burstable',
         labels: { app: 'worker' },
       },
     ],
@@ -439,24 +441,22 @@ function validatePlacement(
     }
   }
 
-  // Topology spread (zone)
+  // Topology spread (zone): count only pods matching the selector (the pod's own labels),
+  // then require matching pods in this zone + 1 - global minimum <= maxSkew
   if (pod.topologySpread) {
     const zones = new Map<string, number>();
     for (const n of specs.nodes) zones.set(n.zone || 'unknown', 0);
     for (const place of currentPlacements) {
       const n = specs.nodes.find((nn) => nn.id === place.nodeId);
-      if (!n) continue;
+      const other = specs.pods.find((pp) => pp.id === place.podId);
+      if (!n || !other || !labelsMatch(pod.labels, other.labels)) continue;
       const z = n.zone || 'unknown';
       zones.set(z, (zones.get(z) || 0) + 1);
     }
-    const zoneCounts = Array.from(zones.values());
-    const min = Math.min(...zoneCounts);
+    const globalMin = Math.min(...Array.from(zones.values()));
     const z = node.zone || 'unknown';
-    const nextCount = (zones.get(z) || 0) + 1;
     const maxSkew = pod.topologySpread.maxSkew;
-    const newMax = Math.max(nextCount, ...zoneCounts);
-    const newMin = Math.min(min, nextCount);
-    if (newMax - newMin > maxSkew) {
+    if ((zones.get(z) || 0) + 1 - globalMin > maxSkew) {
       errors.push(`Topology spread skew > ${maxSkew}`);
     }
   }
@@ -701,6 +701,11 @@ export default function K8sScheduler() {
                     <div className="mt-1 text-xs text-muted-foreground">
                       Requests: {pod.request.cpu}m CPU, {pod.request.memory}Mi Mem
                     </div>
+                    <div className="text-xs text-muted-foreground">
+                      {pod.limit
+                        ? `Limits: ${pod.limit.cpu}m CPU, ${pod.limit.memory}Mi Mem`
+                        : 'Limits: none'}
+                    </div>
                     {(pod.nodeSelector || pod.tolerations || pod.affinity || pod.antiAffinity) && (
                       <div className="mt-2 flex flex-wrap gap-2 text-xs">
                         {pod.nodeSelector && (
@@ -745,8 +750,22 @@ export default function K8sScheduler() {
                 .filter((p) => p.nodeId === node.id)
                 .map((p) => level.pods.find((pp) => pp.id === p.podId))
                 .filter((p): p is PodSpec => Boolean(p));
+              const selectedPod = unplacedPods.find((p) => p.id === selectedPodId);
+              const fit = selectedPod
+                ? validatePlacement(selectedPod, node, placements, {
+                    pods: level.pods,
+                    nodes: level.nodes,
+                  })
+                : null;
               return (
-                <Card key={node.id} className="p-4">
+                <Card
+                  key={node.id}
+                  className={cn(
+                    'p-4 transition-colors',
+                    fit?.ok && 'border-emerald-500/60 dark:border-emerald-400/50',
+                    fit && !fit.ok && 'border-red-500/60 dark:border-red-400/50'
+                  )}
+                >
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-semibold">{node.name}</div>

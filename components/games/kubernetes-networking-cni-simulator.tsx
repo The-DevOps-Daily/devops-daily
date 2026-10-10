@@ -277,7 +277,7 @@ const SCENARIOS: Scenario[] = [
     title: 'Ingress to Pod',
     subtitle: 'North-south traffic path',
     lesson:
-      'Ingress is HTTP routing at the edge. It normally points at Services, and Services point at endpoint Pods.',
+      'Ingress is HTTP routing at the edge. Rules name a Service, but controllers such as ingress-nginx read the EndpointSlices of that Service and send traffic straight to Pod IPs.',
     icon: Globe,
     steps: [
       {
@@ -293,23 +293,23 @@ const SCENARIOS: Scenario[] = [
         title: 'Ingress applies HTTP routing',
         packet: 'Host: shop.example.com, Path: /checkout',
         explanation:
-          'The ingress controller matches host and path rules, then forwards to the configured Service backend.',
+          'The ingress controller matches host and path rules to find the configured Service backend.',
         mutation: 'L7 routing chooses the payments Service.',
         highlights: ['ingress', 'service'],
         tone: 'external',
       },
       {
-        title: 'Service chooses a backend Pod',
-        packet: 'Service VIP -> endpoint 10.244.2.21:8443',
+        title: 'Controller picks an endpoint Pod',
+        packet: 'ingress-nginx -> endpoint 10.244.2.21:8443',
         explanation:
-          'The Service still does endpoint selection. The ingress controller is not hard-coding individual Pod IPs.',
+          'ingress-nginx watches the Service EndpointSlices and proxies straight to a ready Pod IP. The ClusterIP and kube-proxy are not in this path unless the service-upstream annotation is set.',
         mutation: 'Destination becomes the selected endpoint Pod.',
-        highlights: ['service', 'kube-proxy', 'pod-payments'],
+        highlights: ['ingress', 'endpoint-slice', 'pod-payments'],
         tone: 'translated',
       },
       {
         title: 'Response returns through the edge',
-        packet: 'pod -> service path -> ingress -> client',
+        packet: 'pod -> ingress -> client',
         explanation:
           'Source IP preservation depends on the load balancer, proxy mode, and externalTrafficPolicy settings.',
         mutation: 'The user receives the response from the public edge, not from a Pod IP.',
@@ -345,12 +345,12 @@ const SCENARIOS: Scenario[] = [
         tone: 'external',
       },
       {
-        title: 'NodePort maps into the Service',
-        packet: 'node-a:30443 -> Service 10.96.12.40:443',
+        title: 'NodePort maps to a Service endpoint',
+        packet: 'node-a:30443 -> endpoint 10.244.2.21:8443',
         explanation:
-          'The node datapath treats the NodePort as an entry point for the Service, then applies the normal Service endpoint selection path.',
-        mutation: 'NodePort traffic is translated into Service backend traffic.',
-        highlights: ['node-a', 'nodeport', 'service', 'kube-proxy'],
+          'kube-proxy rules for the NodePort pick one of the Service endpoints and rewrite the destination straight to that Pod IP and port. The packet does not go through the ClusterIP; NodePort and ClusterIP rules share the same endpoint list.',
+        mutation: 'Destination changes from node IP plus NodePort to a Pod endpoint.',
+        highlights: ['node-a', 'nodeport', 'kube-proxy', 'pod-payments'],
         tone: 'translated',
       },
       {
@@ -425,22 +425,21 @@ const SCENARIOS: Scenario[] = [
         tone: 'external',
       },
       {
-        title: 'Node prepares internet egress',
+        title: 'Egress policy checks the destination',
+        packet: 'allow 140.82.112.0/20:443, deny all other egress -> verdict: allow',
+        explanation:
+          'A policy-capable CNI checks egress rules while the packet still carries the Pod IP, so the decision can use workload identity. 140.82.112.6 is inside the allowed GitHub range on port 443, so the packet continues.',
+        mutation: 'Policy decision happens before SNAT. A packet to any other destination would be dropped here.',
+        highlights: ['policy', 'pod-frontend', 'internet'],
+      },
+      {
+        title: 'Node SNATs for internet egress',
         packet: 'SNAT 10.244.1.12 -> node-a primary IP',
         explanation:
           'Most clusters translate Pod source IPs to a node or gateway IP before sending traffic to the internet.',
         mutation: 'Source address changes so the external network has a return route.',
         highlights: ['node-a', 'cni-a', 'internet'],
         tone: 'translated',
-      },
-      {
-        title: 'Egress policy can restrict destinations',
-        packet: 'allow *.github.com:443, deny 0.0.0.0/0 otherwise',
-        explanation:
-          'Some CNIs can enforce egress policy before SNAT, preserving workload identity for policy decisions.',
-        mutation: 'Policy decision happens before the packet leaves the cluster.',
-        highlights: ['policy', 'pod-frontend', 'internet'],
-        tone: 'blocked',
       },
       {
         title: 'Reply is tracked back to the Pod',

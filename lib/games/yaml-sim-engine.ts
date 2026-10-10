@@ -5,7 +5,8 @@
  * It is not a complete YAML implementation and does not try to be. It covers
  * block mappings, block sequences, inline flow collections, quoting and block
  * scalars, because those are what a CI file or a Kubernetes manifest is made
- * of, and it resolves untagged scalars under both YAML 1.1 and YAML 1.2.
+ * of, and it resolves untagged scalars (plain keys included) under both YAML
+ * 1.1 and YAML 1.2.
  *
  * The two specs disagree, and that disagreement is the entire reason for the
  * famous surprises. YAML 1.1 treats `no`, `off` and `y` as booleans. YAML 1.2
@@ -23,7 +24,10 @@ export type Scalar =
   | { kind: "bool"; value: boolean }
   | { kind: "null"; value: null };
 
-export type Node = Scalar | { kind: "map"; entries: Array<[string, Node]> } | { kind: "seq"; items: Node[] };
+/** A mapping key's type, kept only when it resolved to something other than a string. */
+export type KeyKind = Exclude<Scalar["kind"], "string">;
+export type MapEntry = [key: string, value: Node, keyKind?: KeyKind];
+export type Node = Scalar | { kind: "map"; entries: MapEntry[] } | { kind: "seq"; items: Node[] };
 
 export interface ParseOk {
   ok: true;
@@ -67,35 +71,61 @@ const FALSE_11 = new Set(["n", "N", "no", "No", "NO", "false", "False", "FALSE",
 // without quotes therefore means two different numbers depending on the parser.
 const INT_12 = /^[-+]?[0-9]+$/;
 const INT_HEX = /^[-+]?0x[0-9a-fA-F]+$/;
-const INT_OCT_11 = /^[-+]?0[0-7]+$/; // 1.1 only: 08 is not this, and is not an int either
-// 1.1 has no decimal form with a leading zero, so 08 and 09 match nothing and stay strings.
-const LEADING_ZERO_11 = /^[-+]?0[0-9]+$/;
 const INT_OCT_12 = /^[-+]?0o[0-7]+$/;
 const FLOAT = /^[-+]?(\.[0-9]+|[0-9]+(\.[0-9]*)?)([eE][-+]?[0-9]+)?$/;
+
+// YAML 1.1 ints, as PyYAML reads them: binary, octal with a leading zero, decimal,
+// hex and base 60, so `22:22` is 1342. Underscores are ignored, so `1_000` is 1000.
+// 1.1 has no decimal form with a leading zero, so 08 and 09 match nothing and stay strings.
+const INT_11 = /^[-+]?(0b[01_]+|0[0-7_]+|0|[1-9][0-9_]*|0x[0-9a-fA-F_]+|[1-9][0-9_]*(:[0-5]?[0-9])+)$/;
+// YAML 1.1 floats need a dot, and an exponent needs a sign: `1e3` and `1.0e3` stay strings,
+// `1.0e+3` is 1000. The spec allows a sign before a leading dot, so `-.5` is -0.5.
+const FLOAT_11 = /^([-+]?[0-9][0-9_]*\.[0-9_]*([eE][-+][0-9]+)?|[-+]?\.[0-9][0-9_]*([eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(:[0-5]?[0-9])+\.[0-9_]*)$/;
+// Infinity and not-a-number are floats in both specs.
+const INF = /^[-+]?\.(inf|Inf|INF)$/;
+const NAN = /^\.(nan|NaN|NAN)$/;
 
 /** Resolve an unquoted scalar the way the given spec would. */
 export function resolveScalar(raw: string, spec: Spec): Scalar {
   const t = raw.trim();
 
+  if (INF.test(t)) return { kind: "float", value: t.startsWith("-") ? -Infinity : Infinity };
+  if (NAN.test(t)) return { kind: "float", value: NaN };
+
   if (spec === "1.1") {
     if (t === "" || t === "~" || NULLS_12.has(t)) return { kind: "null", value: null };
     if (TRUE_11.has(t)) return { kind: "bool", value: true };
     if (FALSE_11.has(t)) return { kind: "bool", value: false };
-    if (INT_OCT_11.test(t)) return { kind: "int", value: parseInt(t.replace("+", ""), 8) };
-    if (LEADING_ZERO_11.test(t)) return { kind: "string", value: t };
-  } else {
-    if (NULLS_12.has(t)) return { kind: "null", value: null };
-    if (TRUE_12.has(t)) return { kind: "bool", value: true };
-    if (FALSE_12.has(t)) return { kind: "bool", value: false };
-    if (INT_OCT_12.test(t)) return { kind: "int", value: parseInt(t.replace(/0o/, ""), 8) };
+    if (INT_11.test(t)) return { kind: "int", value: sexagesimal(t, int11) };
+    // A trailing zero is where `version: 1.10` quietly becomes 1.1.
+    if (FLOAT_11.test(t)) return { kind: "float", value: sexagesimal(t, parseFloat) };
+    return { kind: "string", value: t };
   }
 
+  if (NULLS_12.has(t)) return { kind: "null", value: null };
+  if (TRUE_12.has(t)) return { kind: "bool", value: true };
+  if (FALSE_12.has(t)) return { kind: "bool", value: false };
+  if (INT_OCT_12.test(t)) return { kind: "int", value: parseInt(t.replace(/0o/, ""), 8) };
   if (INT_HEX.test(t)) return { kind: "int", value: parseInt(t, 16) };
   if (INT_12.test(t)) return { kind: "int", value: parseInt(t, 10) };
-  // A trailing zero is where `version: 1.10` quietly becomes 1.1.
   if (FLOAT.test(t)) return { kind: "float", value: parseFloat(t) };
 
   return { kind: "string", value: t };
+}
+
+/** Apply the sign, drop underscores, and read `a:b:c` as base 60 (each part is decimal). */
+function sexagesimal(t: string, single: (s: string) => number): number {
+  const sign = t.startsWith("-") ? -1 : 1;
+  const parts = t.replace(/^[-+]/, "").replace(/_/g, "").split(":");
+  if (parts.length === 1) return sign * single(parts[0]);
+  return sign * parts.reduce((acc, part) => acc * 60 + parseFloat(part), 0);
+}
+
+function int11(s: string): number {
+  if (s.startsWith("0b")) return parseInt(s.slice(2) || "0", 2);
+  if (s.startsWith("0x")) return parseInt(s.slice(2) || "0", 16);
+  if (s.length > 1 && s.startsWith("0")) return parseInt(s, 8);
+  return parseInt(s, 10);
 }
 
 /* ------------------------------------------------------------------- lexing */
@@ -205,7 +235,7 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       return { kind: "seq", items };
     }
 
-    const entries: Array<[string, Node]> = [];
+    const entries: MapEntry[] = [];
     while (i < lines.length && lines[i].indent === indent) {
       const line = lines[i];
       const m = line.text.match(/^(.+?):(?:\s+(.*))?$/);
@@ -222,13 +252,13 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
           }`,
         };
       }
-      const key = unquote(m[1].trim());
+      const rawKey = unquote(m[1].trim());
+      const childPath = path ? `${path}.${rawKey}` : rawKey;
+      const key = resolveKey(m[1].trim(), childPath, coercions, spec);
       const inline = (m[2] ?? "").trim();
-      const childPath = path ? `${path}.${key}` : key;
       i++;
 
-      const already = entries.findIndex(([k]) => k === key);
-      if (already !== -1) duplicates.push(key);
+      if (entries.some((e) => sameKey(e, key))) duplicates.push(key.text);
 
       // `key: &name` anchors the block that follows. `key: *name` is an alias
       // to it, and `<<: *name` merges that block's keys into this one. CI files
@@ -236,11 +266,13 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       const anchorOnly = inline.match(/^&([A-Za-z0-9_-]+)$/);
       const aliasOnly = inline.match(/^\*([A-Za-z0-9_-]+)$/);
 
-      if (key === "<<" && aliasOnly) {
+      if (key.text === "<<" && !key.kind && aliasOnly) {
         const target = anchorStore.get(aliasOnly[1]);
         if (target && target.kind === "map") {
           // A merge key does not overwrite what the mapping already has.
-          for (const [k, v] of target.entries) if (!entries.some(([e]) => e === k)) entries.push([k, v]);
+          for (const t of target.entries) {
+            if (!entries.some((e) => sameKey(e, { text: t[0], kind: t[2] }))) entries.push(t);
+          }
         }
         continue;
       }
@@ -296,19 +328,21 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
   function parseInlineMapStart(rest: string, line: Line, childIndent: number, path: string): Node | ParseErr {
     const m = rest.match(/^(.+?):(?:\s+(.*))?$/);
     if (!m) return { ok: false, line: line.n, message: "Expected a key after the dash." };
-    const key = unquote(m[1].trim());
+    const rawKey = unquote(m[1].trim());
     const inline = (m[2] ?? "").trim();
-    const entries: Array<[string, Node]> = [];
-    const p = path ? `${path}.${key}` : key;
-    entries.push([key, inline === "" ? { kind: "null", value: null } : scalarFrom(inline, p, coercions, spec)]);
+    const entries: MapEntry[] = [];
+    const p = path ? `${path}.${rawKey}` : rawKey;
+    const key = resolveKey(m[1].trim(), p, coercions, spec);
+    entries.push(entryOf(key, inline === "" ? { kind: "null", value: null } : scalarFrom(inline, p, coercions, spec)));
     while (i < lines.length && lines[i].indent === childIndent) {
       const l = lines[i];
       const mm = l.text.match(/^(.+?):(?:\s+(.*))?$/);
       if (!mm) break;
-      const k = unquote(mm[1].trim());
+      const kp = `${path}.${unquote(mm[1].trim())}`;
+      const k = resolveKey(mm[1].trim(), kp, coercions, spec);
       const v = (mm[2] ?? "").trim();
       i++;
-      entries.push([k, v === "" ? { kind: "null", value: null } : scalarFrom(v, `${path}.${k}`, coercions, spec)]);
+      entries.push(entryOf(k, v === "" ? { kind: "null", value: null } : scalarFrom(v, kp, coercions, spec)));
     }
     return { kind: "map", entries };
   }
@@ -349,10 +383,24 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
  * error, but most parsers in use quietly keep the last, which is why a
  * copy-pasted block can silently replace a setting fifty lines above it.
  */
-function push(entries: Array<[string, Node]>, key: string, value: Node): void {
-  const at = entries.findIndex(([k]) => k === key);
-  if (at === -1) entries.push([key, value]);
-  else entries[at] = [key, value];
+function push(entries: MapEntry[], key: Key, value: Node): void {
+  const at = entries.findIndex((e) => sameKey(e, key));
+  if (at === -1) entries.push(entryOf(key, value));
+  else entries[at] = entryOf(key, value);
+}
+
+/** A resolved key: `true` the boolean and "true" the string are different keys. */
+interface Key {
+  text: string;
+  kind?: KeyKind;
+}
+
+function sameKey(entry: MapEntry, key: Key): boolean {
+  return entry[0] === key.text && entry[2] === key.kind;
+}
+
+function entryOf(key: Key, value: Node): MapEntry {
+  return key.kind ? [key.text, value, key.kind] : [key.text, value];
 }
 
 function isErr(n: Node | ParseErr): n is ParseErr {
@@ -395,15 +443,16 @@ function parseFlow(src: string, path: string, coercions: Coercion[], spec: Spec)
       }),
     };
   }
-  const entries: Array<[string, Node]> = [];
+  const entries: MapEntry[] = [];
   for (const part of parts) {
     const at = splitFlowKey(part);
     if (!at) continue;
-    const k = stripQuotes(at[0].trim());
+    const rawKey = stripQuotes(at[0].trim());
     const vRaw = at[1].trim();
-    const p = path ? `${path}.${k}` : k;
+    const p = path ? `${path}.${rawKey}` : rawKey;
+    const k = resolveKey(at[0].trim(), p, coercions, spec);
     const nested = parseFlow(vRaw, p, coercions, spec);
-    entries.push([k, nested ?? scalarFrom(vRaw, p, coercions, spec)]);
+    entries.push(entryOf(k, nested ?? scalarFrom(vRaw, p, coercions, spec)));
   }
   return { kind: "map", entries };
 }
@@ -450,6 +499,19 @@ function splitFlowKey(s: string): [string, string] | null {
   return null;
 }
 
+/**
+ * Plain keys resolve like values. Under 1.1, the `on:` of a GitHub Actions
+ * workflow is the boolean key true, which is what PyYAML hands back. Quoted keys
+ * stay strings. Paths keep the key as written, so both specs report the same paths.
+ */
+function resolveKey(raw: string, path: string, coercions: Coercion[], spec: Spec): Key {
+  if (raw.startsWith('"') || raw.startsWith("'")) return { text: stripQuotes(raw) };
+  const s = resolveScalar(raw, spec);
+  if (s.kind === "string") return { text: raw };
+  coercions.push({ path: `${path} (key)`, raw, kind: s.kind, value: String(s.value) });
+  return { text: String(s.value), kind: s.kind };
+}
+
 function scalarFrom(raw: string, path: string, coercions: Coercion[], spec: Spec): Scalar {
   // Quoting is the escape hatch: a quoted scalar is always a string, whatever
   // it looks like. This is the fix for every surprise this engine demonstrates.
@@ -494,11 +556,13 @@ export function render(node: Node, indent = 0): string {
   if (node.kind === "map") {
     if (node.entries.length === 0) return "{}";
     return node.entries
-      .map(([k, v]) =>
-        v.kind === "map" || v.kind === "seq"
-          ? `${pad}${k}:\n${render(v, indent + 2)}`
-          : `${pad}${k}: ${renderScalar(v)}`,
-      )
+      .map(([k, v, keyKind]) => {
+        // A string key that reads like another type is quoted, so "true" and true differ.
+        const key = keyKind || (resolveScalar(k, "1.1").kind === "string" && resolveScalar(k, "1.2").kind === "string") ? k : JSON.stringify(k);
+        return v.kind === "map" || v.kind === "seq"
+          ? `${pad}${key}:\n${render(v, indent + 2)}`
+          : `${pad}${key}: ${renderScalar(v)}`;
+      })
       .join("\n");
   }
   if (node.kind === "seq") {
