@@ -25,6 +25,8 @@ export type Post = {
   image?: string;
   tags?: string[];
   featured?: boolean;
+  /** Campaign id on go.devops-daily.com for a post written for a sponsor. Counts views in the sponsor report. */
+  sponsorCampaign?: string;
 };
 
 /** A post without its body, for list pages rendered by client components. */

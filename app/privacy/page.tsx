@@ -98,7 +98,7 @@ export default function PrivacyPage() {
           </li>
         </ul>
 
-        <h2>Sponsor Link Clicks</h2>
+        <h2>Sponsor Link Clicks and Impressions</h2>
         <p>
           Links to our sponsors go through go.devops-daily.com, so that we can tell sponsors how many
           people clicked each placement. When you click one, we record the link, where it was placed,
@@ -106,6 +106,14 @@ export default function PrivacyPage() {
           looks automated. We do not store your IP address and we set no cookies. To count each
           visitor once per day, we keep a one-way hash of your IP address and browser that uses a
           different key every day, and we delete each day&apos;s key the next day.
+        </p>
+        <p>
+          We also count how often each sponsor link is on screen. When at least half of a sponsor
+          link is visible for one second, the page counts it once. When you leave or hide the page,
+          it sends one small report to go.devops-daily.com with the sponsor links it counted and the
+          part of the site you were on. These counts are totals only and are not linked to you. On
+          pages written for a sponsor, the report also counts a view, with the same daily hash as
+          clicks, so that we can count readers once per day.
         </p>
 
         <h2>Third-Party Services</h2>

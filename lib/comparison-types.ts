@@ -62,4 +62,6 @@ export interface Comparison {
   decisionMatrix: DecisionMatrixItem[];
   verdict: Verdict;
   relatedTags: string[];
+  /** Campaign id on go.devops-daily.com for a comparison written for a sponsor. Counts views in the sponsor report. */
+  sponsorCampaign?: string;
 }

@@ -41,7 +41,7 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
   ];
 
   return (
-    <div className="container px-4 py-8 mx-auto">
+    <div className="container px-4 py-8 mx-auto" data-sponsor-campaign={comparison.sponsorCampaign}>
       <Breadcrumb items={breadcrumbItems} />
 
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-12">
