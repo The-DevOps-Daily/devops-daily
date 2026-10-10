@@ -170,8 +170,8 @@
       "panel": 13,
       "id": "panel-13-handoff",
       "title": "One watched production handoff",
-      "artwork": "assets/comics/git-blame/chapter-01/panel-13-handoff-v2.png",
-      "alt": "Maya carefully checks the fourth and final box in a paper notebook. Alex's navy sleeve and incident mug remain beside her. A supporting deployment screen shows corrected replacement pods separately from the old pod, with no transfer arrow.",
+      "artwork": "assets/comics/git-blame/chapter-01/panel-13-handoff-v5.png",
+      "alt": "Maya reviews a completed four-step handoff checklist. A single straight green coloured pencil rests on the notebook's right page, clear of all four checks. Alex's navy sleeve and incident mug remain beside her; the supporting screen shows two corrected pods separate from one old pod.",
       "caption": "The first corrected release gets a watched handoff. Healthy new code cannot repair an old running process.",
       "labelsMeaning": "Ordered production handoff checks",
       "labels": [

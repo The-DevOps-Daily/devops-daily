@@ -3,9 +3,9 @@
   "dateTimezone": "Europe/Sofia",
   "chapter": "chapter-01",
   "status": "expanded-artwork-candidates-awaiting-user-review",
-  "generationCalls": 9,
+  "generationCalls": 12,
   "selectedNewIllustrations": 6,
-  "supersededDrafts": 3,
+  "supersededDrafts": 6,
   "proposedReadingPanels": 14,
   "priorTraceProof": "docs/comics/git-blame/chapter-01/technical-proof/manifest.json",
   "runtimeIntegration": "Not interleaved. Website reader and downloadable PDF retain seven illustrations.",
@@ -22,15 +22,15 @@
   },
   "lettering": {
     "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panels.json",
-    "sha256": "8596d42887edea613ebd6db937f6d771859a32bce625b4c90343c6becafbd431"
+    "sha256": "322898962c3ec065d17ee3ded8c670b3bf08d468ef10fc2d929dd5e1a03008bc"
   },
   "reviewHtml": {
     "path": "docs/comics/git-blame/chapter-01/expanded-art-review/review.html",
-    "sha256": "6de4de675d3e53580fb75f190ba91713544c3846f271332abf1646022c2b9add"
+    "sha256": "f2a00d6e4b9534b96b61dcf1b6ea66f477b5d77344b6e637948942cf811937f7"
   },
   "browserChecks": {
     "path": "docs/comics/git-blame/chapter-01/expanded-art-review/browser-checks.json",
-    "sha256": "ae3fa3f1890a88d90de5964c11875149e7aa65ee177f85fbc84a63205443df63",
+    "sha256": "0da3cd878aed94b4cb7c2ffc306eb40de7f802680b89fdca687de32e50a9ce98",
     "panelLayoutChecks": 24
   },
   "generations": [
@@ -238,7 +238,7 @@
       }
     },
     {
-      "status": "selected-candidate-awaiting-user-review",
+      "status": "superseded",
       "tool": "image_gen.imagegen",
       "sourceFilename": "exec-cdd28830-5991-48cf-9e9b-772d0a473871.png",
       "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-13-handoff-v2.txt",
@@ -257,6 +257,75 @@
         "dimensions": [1448, 1086],
         "bytes": 2407373,
         "sha256": "5d18a95c69083ebf3cb22b1c3d71eed2ef058a6d8d3d536d451a2862d737ecf8"
+      },
+      "reason": "User caught writing-tool/action defect: point met checkbox border while tick was already complete."
+    },
+    {
+      "status": "superseded",
+      "reason": "Simpler pencil, but the point still missed the drawn mark.",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-4a412294-55ee-4cbd-8b1d-a63fb313bd08.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-13-handoff-v3.txt",
+      "promptSha256": "954b955604f92b1ed82b6c8ee1b654a304f5a3d4d4b7eb0dc2d1299f81c1e363",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v2.png",
+          "sha256": "5d18a95c69083ebf3cb22b1c3d71eed2ef058a6d8d3d536d451a2862d737ecf8"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v3.png",
+        "dimensions": [1448, 1086],
+        "bytes": 2213319,
+        "sha256": "8efdd1f96a51a6c375350ca9ec5c41314035b4e67d0fc63faa07b86754ea48d7"
+      }
+    },
+    {
+      "status": "superseded",
+      "reason": "Point-to-mark contact remained unconvincing in close review.",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-7f89ffa3-a479-4a16-b455-605f1d5d629b.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-13-handoff-v4.txt",
+      "promptSha256": "6952e13dc3af510d54e5012085bb4315860ff33a4dd17f569798d06bb5b53153",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v3.png",
+          "sha256": "8efdd1f96a51a6c375350ca9ec5c41314035b4e67d0fc63faa07b86754ea48d7"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v4.png",
+        "dimensions": [1448, 1086],
+        "bytes": 2091423,
+        "sha256": "40859e6e49725dbe4240d07e44449133fe2ff87c48e45464c2b02881f48be8a4"
+      }
+    },
+    {
+      "status": "selected-candidate-awaiting-user-review",
+      "tool": "image_gen.imagegen",
+      "sourceFilename": "exec-be4ee6e9-c435-4786-8297-81b9c4bacaf5.png",
+      "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-13-handoff-v5.txt",
+      "promptSha256": "458f37e0d20b6c5c0b151f78b335ff6840cb30a8556474ae48010156d25a3836",
+      "referenceImages": [
+        {
+          "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v4.png",
+          "sha256": "40859e6e49725dbe4240d07e44449133fe2ff87c48e45464c2b02881f48be8a4"
+        }
+      ],
+      "transparentBackground": false,
+      "dialogueBakedIntoArtwork": false,
+      "codeStatusAndChecklistWordingBakedIntoArtwork": false,
+      "master": {
+        "path": "assets/comics/git-blame/chapter-01/panel-13-handoff-v5.png",
+        "dimensions": [1448, 1086],
+        "bytes": 2139479,
+        "sha256": "32e0df387ff2d522cd6666196b0e0c18d933782e94258962edd929c09a18bf81"
       }
     }
   ],
@@ -414,32 +483,57 @@
     {
       "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-desktop.jpg",
       "dimensions": [1024, 907],
-      "bytes": 245145,
-      "sha256": "d111e5b9b0532df0c013aee84b3ff524e162552c2042c529279242acfae6a2e2"
+      "bytes": 226157,
+      "sha256": "deeca595eba942d2aef9784bd0953eef775d4b4d12bed1afafb56aa7ce1e9212"
     },
     {
       "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-enlarged-text.jpg",
       "dimensions": [1024, 1374],
-      "bytes": 313706,
-      "sha256": "f085e77cacb5bb9398c42f91f415abe6035bd8d48be988d267b8475b7830d3ca"
+      "bytes": 294655,
+      "sha256": "a820e0129fd879f77a05d762358f1c9c7c244f74311cde7ab15652643738e3c1"
     },
     {
       "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-narrow-phone.jpg",
       "dimensions": [296, 755],
-      "bytes": 62661,
-      "sha256": "688f8ee2f51f640c615954eb9fb5c7c932afc1dc07c979b67e27f0efa172ebb7"
+      "bytes": 62573,
+      "sha256": "feb36684b9eee68d030e84ac403ff26b0215fdde045c29e28a6030f1e1b47fe8"
     },
     {
       "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-phone.jpg",
       "dimensions": [369, 703],
-      "bytes": 78990,
-      "sha256": "bb5da570013f757836fcdfaeb7189a4c94f2f034cf07b869b89e011ae99ee976"
+      "bytes": 77827,
+      "sha256": "035e26364e6272689a32e7e5996d29aa96c7c8c395ab7cadce1b8adf19d6689a"
     },
     {
       "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-handoff-source.jpg",
       "dimensions": [1448, 1086],
-      "bytes": 297087,
-      "sha256": "3789fd66ba0a16eb0df284e9219668c59a1a2ea93b37568ade319070b93c7782"
+      "bytes": 264504,
+      "sha256": "f63d17a386da0ca8a68ddd0eb1500bc30c8354b6473e899aa8de2e1de33aafbf"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-pencil-detail.jpg",
+      "dimensions": [580, 560],
+      "bytes": 92414,
+      "sha256": "671743b56988c786b823e99f4fbdfc68338a3563aa4f846bf1107e2ac91ace34"
     }
-  ]
+  ],
+  "generationCapability": {
+    "tool": "image_gen.imagegen",
+    "modelIdentifier": null,
+    "modelIdentifierAvailability": "Not exposed by the tool interface",
+    "modelSelectionParameter": false
+  },
+  "detailReview": {
+    "path": "docs/comics/git-blame/chapter-01/expanded-art-review/panel-13-pencil-detail.jpg",
+    "type": "Browser inspection crop; source master is uncropped",
+    "source": "assets/comics/git-blame/chapter-01/panel-13-handoff-v5.png",
+    "sourceRect": {
+      "x": 760,
+      "y": 460,
+      "width": 580,
+      "height": 560
+    },
+    "scale": 1,
+    "review": "Single straight sharpened wooden pencil resting on paper beside completed checks; no active writing gesture or point-to-mark contact implied."
+  }
 }

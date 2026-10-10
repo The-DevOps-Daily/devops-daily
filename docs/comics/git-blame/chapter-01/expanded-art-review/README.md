@@ -46,19 +46,29 @@ Exactly two tracks. The accepted request stays continuous across the amber shutd
 
 ## 13. One watched production handoff
 
-![Maya completes the last check of the watched handoff.](panel-13-handoff-desktop.jpg)
+![Maya reviews the completed watched handoff.](panel-13-handoff-desktop.jpg)
 
 [Source art](panel-13-handoff-source.jpg) · [Phone](panel-13-handoff-phone.jpg) · [320px phone](panel-13-handoff-narrow-phone.jpg) · [Enlarged text](panel-13-handoff-enlarged-text.jpg)
 
 Four ordered checks: corrected replicas healthy; new traffic shifted; old accepted work complete; old processes retired. A corrected release cannot inject a new shutdown handler into an old process. The first handoff keeps old processes alive until withdrawal and accepted-work completion; later rollouts use the tested handler.
 
+### Writing-tool correction
+
+The user caught a defect missed in the original visual review: the ornate pen's point met the checkbox border while its tick was already complete. Two local edits simplified the pencil but failed to make point-to-mark contact convincing. Those masters are retained as superseded. The selected revision stages the handoff just finished: a straight sharpened green coloured pencil rests on the paper beside four completed checks. The left-page lettering and technical sequence remain separate source data.
+
+![Native-scale detail of the revised pencil and completed checklist.](panel-13-pencil-detail.jpg)
+
+This is a browser-captured detail crop for visual inspection, not a cropped or retouched source master. The full source retains its original dimensions. Layout checks do not assess drawing quality; the close-up is an additional manual review of the object and its staging.
+
 ## Source records and reuse
 
 [panels.json](panels.json) contains source paths, editable status/code/checklist wording, actual reviewed label positions, image descriptions and technical caveats. Your frontend agent can consume these when interleaving the revised chapter. The image model drew every depicted hand, object, routing path and timeline; HTML supplies only exact lettering. On phones and enlarged text, it becomes ordered text below uncropped art. No new dependency or website component was added.
 
-[manifest.json](manifest.json) records all nine generation calls: six initial images and three refinements, resulting in six selected candidate masters. Earlier versions remain marked as superseded. Each record includes the exact prompt, actual tool output filename, reference chain, dimensions and SHA-256. Masters retain the model's actual resolution without upscaling; JPEGs are full-image quality-90 review encodings. The approved character sheets remain the identity anchors. These candidates are not declared final or approved.
+[manifest.json](manifest.json) records twelve generation calls: six initial images and six refinements, resulting in six selected candidate masters. Earlier versions remain marked as superseded. Each record includes the exact prompt, actual tool output filename, reference chain, dimensions and SHA-256. Masters retain the model's actual resolution without upscaling; JPEGs are full-image quality-90 review encodings. The approved character sheets remain the identity anchors. These candidates are not declared final or approved.
 
-The refinements removed the cutaway's physical hut treatment, cleaned the customer's error/keyboard lettering, and corrected the handoff's replica symbols and writing clearance. The final handoff lettering uses the notebook's clear left page opposite its four checks, away from the pen and hand. Manual review covered natural hands, recognizable cuffs/profile/props, diagrams, actual code and final desktop composition.
+The refinements removed the cutaway's physical hut treatment, cleaned the customer's error/keyboard lettering, and corrected the handoff's replica symbols, writing clearance and tool staging. The final handoff lettering uses the notebook's clear left page opposite its four checks, clear of the resting pencil. Manual review covers recognizable cuffs/profile/props, diagrams, exact code and final composition; the missed writing-tool defect above records the limit of that earlier pass.
+
+Generation uses OpenAI's built-in `image_gen.imagegen` tool. Its exposed arguments support prompts and image references but provide no model selector or underlying model identifier. No specific model/version is asserted in the source records. Switching or naming a particular model is not a capability of this tool interface.
 
 ## Verification and reproducing the review
 
