@@ -41,18 +41,6 @@ export function sponsorHref(sponsor: Sponsor, placement: string): string {
 
 export const sponsors: Sponsor[] = [
   {
-    name: 'Svix',
-    logo: '/svix-brand.svg',
-    darkLogo: '/svix-brand-light.svg',
-    url: 'https://link.svix.com/devopsdaily',
-    goSlug: 'svix',
-    tagline: 'Webhooks as a service',
-    description:
-      'Svix Dispatch sends your webhooks for you: retries with exponential backoff, signed payloads, idempotency keys, and a delivery log your customers can see.',
-    featured: true,
-    accentClassName: 'border-[#2c70ff]/40 bg-[#2c70ff]/[0.06] hover:border-[#2c70ff]/70',
-  },
-  {
     name: 'Atomsized',
     logo: '/atomsized.svg',
     darkLogo: '/atomsized-light.svg',
