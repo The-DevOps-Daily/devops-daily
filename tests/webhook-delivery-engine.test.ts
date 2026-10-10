@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createHmac } from 'node:crypto';
 import {
+  ATTEMPT_TIMEOUT_SECONDS,
   MAX_ATTEMPTS,
   RETRY_GAPS_SECONDS,
   SAMPLE_EVENTS,
@@ -58,8 +59,14 @@ describe('response classification', () => {
     expect(classifyResponse(null).retryable).toBe(true);
   });
 
-  it('does not retry client errors that a retry cannot fix', () => {
-    for (const status of [400, 401, 403, 404, 410, 422]) {
+  it('retries client errors and redirects too, since Svix retries any non-2xx', () => {
+    for (const status of [301, 302, 400, 401, 403, 404, 410, 422]) {
+      expect(classifyResponse(status).retryable, String(status)).toBe(true);
+    }
+  });
+
+  it('only treats 2xx as delivered', () => {
+    for (const status of [200, 201, 204]) {
       expect(classifyResponse(status).retryable, String(status)).toBe(false);
     }
   });
@@ -77,10 +84,11 @@ describe('delivery simulation', () => {
     expect(attempts[0].result).toBe('delivered');
   });
 
-  it('drops a 400 immediately instead of burning the schedule', () => {
+  it('retries a 400 through the whole schedule, like any non-2xx', () => {
     const attempts = simulateDelivery('http_400');
-    expect(attempts).toHaveLength(1);
-    expect(attempts[0].result).toBe('dropped');
+    expect(attempts).toHaveLength(MAX_ATTEMPTS);
+    expect(attempts.every((a) => a.status === 400)).toBe(true);
+    expect(attempts.at(-1)!.result).toBe('exhausted');
   });
 
   it('runs the full schedule on a permanent 500 and then exhausts', () => {
@@ -104,6 +112,11 @@ describe('delivery simulation', () => {
     const attempts = simulateDelivery('timeout');
     expect(attempts).toHaveLength(MAX_ATTEMPTS);
     expect(attempts[0].status).toBeNull();
+  });
+
+  it('times out after 15 seconds, the Svix limit', () => {
+    expect(ATTEMPT_TIMEOUT_SECONDS).toBe(15);
+    expect(simulateDelivery('timeout')[0].durationMs).toBe(15000);
   });
 
   it('respects a shortened schedule', () => {

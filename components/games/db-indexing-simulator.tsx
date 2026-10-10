@@ -219,28 +219,33 @@ export default function DbIndexingSimulator() {
 
   const canUseIndexForQuery = useCallback(
     (queryColumns: string[]) => {
-      // Check for exact composite index match
-      if (hasCompositeIndex(queryColumns)) return { usable: true, type: 'composite-exact' as const };
-      
-      // Check if any composite index has the right leading column(s)
+      // ANDed equality predicates have no order, so the WHERE clause order is
+      // ignored. What matters is the leftmost prefix: an index helps only if
+      // its first column is filtered, and it narrows further for each next
+      // index column that is also filtered.
+      let best: { columns: string[]; prefix: number } | null = null;
       for (const idx of indexes) {
-        if (idx.columns.length > 1) {
-          // Composite index can be used if query columns match the leading columns
-          const leadingMatch = queryColumns.every(
-            (col, i) => idx.columns[i] === col
-          );
-          if (leadingMatch && queryColumns.length <= idx.columns.length) {
-            return { usable: true, type: 'composite-partial' as const, indexColumns: idx.columns };
-          }
-        }
+        let prefix = 0;
+        while (prefix < idx.columns.length && queryColumns.includes(idx.columns[prefix])) prefix++;
+        if (prefix > 0 && (!best || prefix > best.prefix)) best = { columns: idx.columns, prefix };
       }
-      
-      // Check for single column index on the first query column
-      if (hasIndex(queryColumns[0])) return { usable: true, type: 'single' as const };
-      
-      return { usable: false, type: 'none' as const };
+      if (!best) return { usable: false, type: 'none' as const };
+
+      const indexColumns = best.columns;
+      if (best.prefix < queryColumns.length) {
+        return { usable: true, type: 'filtered' as const, indexColumns, prefix: best.prefix };
+      }
+      if (indexColumns.length > 1) {
+        return {
+          usable: true,
+          type: queryColumns.length > 1 ? ('composite-exact' as const) : ('composite-partial' as const),
+          indexColumns,
+          prefix: best.prefix,
+        };
+      }
+      return { usable: true, type: 'single' as const, indexColumns, prefix: best.prefix };
     },
-    [indexes, hasIndex, hasCompositeIndex]
+    [indexes]
   );
 
   const addIndex = useCallback((column: IndexableColumn) => {
@@ -322,11 +327,7 @@ export default function DbIndexingSimulator() {
    const variance = usesIndex ? Math.random() * 10 : Math.random() * 30;
    const timeMs = Math.round(baseTime + variance);
 
-    const indexName = usesIndex
-      ? indexResult.type === 'composite-exact' || indexResult.type === 'composite-partial'
-        ? `idx_${query.columns.join('_')}`
-        : `idx_${query.columns[0]}`
-      : undefined;
+    const indexName = indexResult.type !== 'none' ? `idx_${indexResult.indexColumns.join('_')}` : undefined;
 
     const explainPlan: ExplainStep[] = usesIndex
       ? [
@@ -361,10 +362,12 @@ export default function DbIndexingSimulator() {
       indexName,
      explanation: usesIndex
         ? indexResult.type === 'composite-exact'
-          ? `Composite index seek on ${indexName} - efficiently matched both columns`
+          ? `Composite index seek on ${indexName} - matched both columns. The order in the WHERE clause does not matter`
           : indexResult.type === 'composite-partial'
             ? `Partial composite index on ${indexName} - used leading column(s)`
-            : `Index seek on ${indexName} - jumped directly to matching rows`
+            : indexResult.type === 'filtered'
+              ? `Index seek on ${indexName} using ${indexResult.indexColumns.slice(0, indexResult.prefix).join(', ')}, then filtered the other condition`
+              : `Index seek on ${indexName} - jumped directly to matching rows`
        : `Full table scan - checked every row in the table`,
       explainPlan,
    };
@@ -624,7 +627,7 @@ export default function DbIndexingSimulator() {
                {COMPOSITE_INDEX_OPTIONS.map((columns) => {
                  const indexed = hasCompositeIndex(columns);
                  const label = columns.join(' + ');
-                  const tooltipText = `Creates one B-tree index ordered by ${columns[0]}, then ${columns[1]}. Best for queries that filter on ${columns[0]} first.`;
+                  const tooltipText = `Creates one B-tree index ordered by ${columns[0]}, then ${columns[1]}. Serves queries that filter on ${columns[0]}, alone or with ${columns[1]} in either order.`;
                  return (
                    <div
                      key={label}
@@ -955,6 +958,7 @@ export default function DbIndexingSimulator() {
                 <ul className="mt-1 text-slate-500 dark:text-slate-400">
                   <li>• WHERE age = 28</li>
                   <li>• WHERE age = 28 AND city = &apos;NYC&apos;</li>
+                  <li>• WHERE city = &apos;NYC&apos; AND age = 28 (WHERE order does not matter)</li>
                 </ul>
               </div>
               <div className="rounded bg-yellow-500/10 p-2">

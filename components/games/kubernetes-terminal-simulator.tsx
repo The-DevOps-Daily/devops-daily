@@ -149,8 +149,8 @@ const LESSONS: Lesson[] = [
     commands: [
       {
         instruction: 'Start by checking the kubectl client and cluster version.',
-        hint: 'Use "kubectl version --short".',
-        expectedCommand: ['kubectl version --short', 'kubectl version'],
+        hint: 'Use "kubectl version". The old --short flag was removed in kubectl 1.28.',
+        expectedCommand: 'kubectl version',
         explanation:
           'kubectl talks to the Kubernetes API server. Version checks confirm the client can reach the cluster.',
       },
@@ -292,7 +292,7 @@ const LESSONS: Lesson[] = [
         hint: 'Use "kubectl rollout history deployment/web".',
         expectedCommand: 'kubectl rollout history deployment/web',
         explanation:
-          'Rollout history helps you see revisions and gives you a rollback target when a release fails.',
+          'Rollout history helps you see revisions and gives you a rollback target when a release fails. CHANGE-CAUSE stays <none> unless you set the kubernetes.io/change-cause annotation.',
       },
     ],
   },
@@ -933,7 +933,13 @@ Pod Template:
 
       switch (command) {
         case 'version':
+          // --short was removed in kubectl 1.28; the short output is now the default.
+          if (rest.includes('--short')) {
+            return `error: unknown flag: --short
+See 'kubectl version --help' for usage.`;
+          }
           return `Client Version: v1.32.4
+Kustomize Version: v5.5.0
 Server Version: v1.32.4`;
 
         case 'config':
@@ -983,10 +989,15 @@ CoreDNS is running at https://devops-lab.example:6443/api/v1/namespaces/kube-sys
 deployment "${deployment.name}" successfully rolled out`;
           }
           if (action === 'history') {
+            // CHANGE-CAUSE comes from the kubernetes.io/change-cause annotation,
+            // which nothing in this lab sets, so every revision shows <none>.
+            const revisions = Array.from(
+              { length: deployment.generation },
+              (_, index) => `${String(index + 1).padEnd(10)}<none>`
+            );
             return `deployment.apps/${deployment.name}
 REVISION  CHANGE-CAUSE
-1         kubectl create deployment ${deployment.name} --image=nginx:1.27
-${deployment.generation > 1 ? `${deployment.generation}         kubectl set image deployment/${deployment.name} nginx=${deployment.image}` : ''}`.trim();
+${revisions.join('\n')}`;
           }
           return 'Usage: kubectl rollout [status|history] deployment/NAME';
         }
@@ -1062,7 +1073,7 @@ NGINX_VERSION=${pod.image.replace('nginx:', '')}`;
 
       if (command === 'help') {
         output = `Available commands:
-  kubectl version --short
+  kubectl version
   kubectl config current-context
   kubectl cluster-info
   kubectl get nodes|pods|deployments|svc|events|all

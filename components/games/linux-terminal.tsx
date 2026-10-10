@@ -754,7 +754,7 @@ export default function LinuxTerminal() {
         if (!node) return `head: cannot open '${file}': No such file or directory`;
         if (node.type === 'directory') return `head: error reading '${file}': Is a directory`;
 
-        const content = node.content || '';
+        const content = (node.content || '').replace(/\n$/, '');
         return content.split('\n').slice(0, lines).join('\n');
       }
 
@@ -770,13 +770,13 @@ export default function LinuxTerminal() {
         if (!node) return `tail: cannot open '${file}': No such file or directory`;
         if (node.type === 'directory') return `tail: error reading '${file}': Is a directory`;
 
-        const content = node.content || '';
+        const content = (node.content || '').replace(/\n$/, '');
         return content.split('\n').slice(-lines).join('\n');
       }
 
       case 'grep': {
-        const pattern = args[0];
-        const file = args[1];
+        const ignoreCase = args.includes('-i');
+        const [pattern, file] = args.filter(a => !a.startsWith('-'));
 
         if (!pattern) return 'grep: missing pattern';
         if (!file) return 'grep: missing file operand';
@@ -787,9 +787,11 @@ export default function LinuxTerminal() {
         if (!node) return `grep: ${file}: No such file or directory`;
         if (node.type === 'directory') return `grep: ${file}: Is a directory`;
 
+        // grep is case sensitive unless -i is given.
+        const needle = pattern.replace(/"/g, '');
         const content = node.content || '';
         const matches = content.split('\n').filter(line =>
-          line.toLowerCase().includes(pattern.replace(/"/g, '').toLowerCase())
+          ignoreCase ? line.toLowerCase().includes(needle.toLowerCase()) : line.includes(needle)
         );
         return matches.join('\n') || '';
       }
@@ -807,7 +809,8 @@ export default function LinuxTerminal() {
         if (node.type === 'directory') return `wc: ${file}: Is a directory`;
 
         const content = node.content || '';
-        const lines = content.split('\n').length;
+        // wc -l counts newline characters, so a last line without one is not counted.
+        const lines = (content.match(/\n/g) || []).length;
         const words = content.split(/\s+/).filter(Boolean).length;
         const chars = content.length;
 
@@ -971,7 +974,7 @@ Swap:       2097152           0     2097152`;
               for (const part of parts) {
                 parent = parent.children[part];
               }
-              parent.children[fName!].content = (parent.children[fName!].content || '') + '\n' + content;
+              parent.children[fName!].content = (parent.children[fName!].content || '') + content + '\n';
               parent.children[fName!].size = parent.children[fName!].content.length;
               return newFs;
             });
@@ -992,10 +995,10 @@ Swap:       2097152           0     2097152`;
             parent.children[fileName] = {
               type: 'file',
               name: fileName,
-              content: content,
+              content: content + '\n',
               permissions: '-rw-r--r--',
               owner: 'user',
-              size: content.length,
+              size: content.length + 1,
             };
             return newFs;
           });
@@ -1045,6 +1048,10 @@ Swap:       2097152           0     2097152`;
 
       if (i === 0) {
         output = executeCommand(pipeCmd);
+        // ls prints one name per line when its output goes to a pipe.
+        if (/^ls(\s|$)/.test(pipeCmd) && !/\s-\w*l/.test(pipeCmd)) {
+          output = output.split('  ').join('\n');
+        }
       } else {
         // For piped commands, we simulate by parsing the output
         const parts = pipeCmd.split(/\s+/);
@@ -1053,10 +1060,11 @@ Swap:       2097152           0     2097152`;
 
         switch (pipedCommand) {
           case 'grep': {
-            const pattern = pipedArgs[0]?.replace(/"/g, '').toLowerCase();
+            const ignoreCase = pipedArgs.includes('-i');
+            const pattern = pipedArgs.find(a => !a.startsWith('-'))?.replace(/"/g, '');
             if (pattern) {
               output = output.split('\n').filter(line =>
-                line.toLowerCase().includes(pattern)
+                ignoreCase ? line.toLowerCase().includes(pattern.toLowerCase()) : line.includes(pattern)
               ).join('\n');
             }
             break;

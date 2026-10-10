@@ -20,11 +20,9 @@ export type EndpointBehavior =
 export type AttemptResult =
   /** 2xx: the chain ends here, successfully. */
   | 'delivered'
-  /** Retryable failure, and attempts remain. */
+  /** Failure, and attempts remain. */
   | 'retrying'
-  /** Non-retryable failure: no point trying again. */
-  | 'dropped'
-  /** Retryable failure, but the schedule ran out. */
+  /** Failure, but the schedule ran out. */
   | 'exhausted';
 
 /**
@@ -37,6 +35,9 @@ export type AttemptResult =
 export const RETRY_GAPS_SECONDS = [0, 5, 5 * 60, 30 * 60, 2 * 3600, 5 * 3600, 10 * 3600, 10 * 3600];
 
 export const MAX_ATTEMPTS = RETRY_GAPS_SECONDS.length;
+
+/** Svix gives an endpoint 15 seconds to answer before it counts as a failure. */
+export const ATTEMPT_TIMEOUT_SECONDS = 15;
 
 /** Seconds from the first attempt to attempt `n` (1-based). */
 export function cumulativeDelaySeconds(attempt: number): number {
@@ -65,12 +66,16 @@ export interface Classification {
 }
 
 /**
- * Decide whether a response is worth another attempt.
+ * Decide whether a response gets another attempt. Like Svix, anything outside
+ * 200-299 is a failure and is retried, 3xx and 4xx included: the sender cannot
+ * tell a permanent rejection from a receiver that is broken for a minute.
  *
  * `null` means the request timed out, which is the genuinely ambiguous case:
  * the receiver may well have processed it and simply failed to answer in time.
  * Retrying is the safer choice, and it is exactly why the receiving side needs
  * to deduplicate.
+ *
+ * @see https://docs.svix.com/retries
  */
 export function classifyResponse(status: number | null): Classification {
   if (status === null) {
@@ -78,11 +83,11 @@ export function classifyResponse(status: number | null): Classification {
       retryable: true,
       label: 'Timeout',
       reason:
-        'No response before the timeout. The receiver may have processed this anyway, so a retry can produce a duplicate. Retrying is still right; the receiver has to be safe to run twice.',
+        `No response within ${ATTEMPT_TIMEOUT_SECONDS}s. The receiver may have processed this anyway, so a retry can produce a duplicate. Retrying is still right; the receiver has to be safe to run twice.`,
     };
   }
   if (status >= 200 && status < 300) {
-    return { retryable: true, label: `${status} OK`, reason: 'Delivered. The chain ends here.' };
+    return { retryable: false, label: `${status} OK`, reason: 'Delivered. The chain ends here.' };
   }
   if (status === 429) {
     return {
@@ -109,29 +114,36 @@ export function classifyResponse(status: number | null): Classification {
   }
   if (status === 401 || status === 403) {
     return {
-      retryable: false,
+      retryable: true,
       label: `${status} Auth failure`,
       reason:
-        'Their credentials are wrong. No number of retries fixes a misconfiguration, so this stops here.',
+        'The receiver rejected the credentials or signature. It is still a non-2xx, so it is retried, but every attempt fails the same way until the receiver fixes its configuration.',
     };
   }
   if (status === 404 || status === 410) {
     return {
-      retryable: false,
-      label: `${status} Gone`,
+      retryable: true,
+      label: `${status} Not found`,
       reason:
-        'The URL does not exist. 410 in particular is an explicit "stop sending", so treat it as final.',
+        'The URL does not exist. Svix retries this like any other failure; if the endpoint stays gone, it is disabled after 5 days of failed attempts.',
     };
   }
   if (status >= 400) {
     return {
-      retryable: false,
+      retryable: true,
       label: `${status} Bad request`,
       reason:
-        'The endpoint rejected the payload itself. Ten identical retries are ten identical rejections, so this drops immediately instead of burning the schedule.',
+        'The endpoint rejected the payload itself. Svix still retries it, because the receiver may ship a fix, but until it does every attempt is the same rejection and the schedule runs out.',
     };
   }
-  return { retryable: true, label: `${status}`, reason: 'Unexpected status. Treated as retryable.' };
+  if (status >= 300) {
+    return {
+      retryable: true,
+      label: `${status} Redirect`,
+      reason: 'Redirects are not followed. Only a 2xx counts as delivered, so this is retried.',
+    };
+  }
+  return { retryable: true, label: `${status}`, reason: 'Not a 2xx, so it counts as a failure and is retried.' };
 }
 
 export interface Attempt {
@@ -159,8 +171,12 @@ function respond(
     case 'success':
       return { status: 200, body: 'ok', durationMs: 42 };
     case 'timeout':
-      // No response at all. 30s is a common sender-side timeout.
-      return { status: null, body: '(no response, connection held open)', durationMs: 30000 };
+      // No response before Svix's 15s limit.
+      return {
+        status: null,
+        body: '(no response, connection held open)',
+        durationMs: ATTEMPT_TIMEOUT_SECONDS * 1000,
+      };
     case 'http_400':
       return {
         status: 400,
@@ -200,7 +216,6 @@ export function simulateDelivery(
 
     let result: AttemptResult;
     if (delivered) result = 'delivered';
-    else if (!cls.retryable) result = 'dropped';
     else if (n >= maxAttempts) result = 'exhausted';
     else result = 'retrying';
 

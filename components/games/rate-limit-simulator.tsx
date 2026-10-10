@@ -57,10 +57,14 @@ interface ChartData {
 const RATE_LIMIT_PRESETS: Record<string, RateLimitConfig> = {
   github: { limit: 5000, windowMs: 3600000, windowLabel: 'hour' },
   twitter: { limit: 300, windowMs: 900000, windowLabel: '15 minutes' },
-  stripe: { limit: 100, windowMs: 60000, windowLabel: 'minute' },
+  stripe: { limit: 100, windowMs: 1000, windowLabel: 'second' }, // live mode global limit
   openai: { limit: 3, windowMs: 60000, windowLabel: 'minute' },
   demo: { limit: 20, windowMs: 30000, windowLabel: '30 seconds' }, // Better for demo
 };
+
+// Each throttled request is retried up to this many times. With exponential
+// backoff that is 1s, 2s, 4s, 8s, 16s, then the 30s cap.
+const MAX_RETRIES = 6;
 
 const BACKOFF_STRATEGIES = {
   none: { name: 'No Backoff', description: 'Keep retrying immediately' },
@@ -192,8 +196,8 @@ export default function RateLimitSimulator() {
         } else {
           setThrottledRequests((t) => t + 1);
 
-          // Handle retry with backoff
-          if (strategy !== 'none' && attempt <= 3) {
+          // Handle retry with backoff. "none" still retries, just with no delay.
+          if (attempt <= MAX_RETRIES) {
             const delay = calculateBackoffDelay(attempt);
             requestData.retryAfter = delay;
 
@@ -471,7 +475,7 @@ export default function RateLimitSimulator() {
                     <SelectItem value="demo">Demo (20/30sec)</SelectItem>
                     <SelectItem value="github">GitHub API (5000/hour)</SelectItem>
                     <SelectItem value="twitter">Twitter API (300/15min)</SelectItem>
-                    <SelectItem value="stripe">Stripe API (100/min)</SelectItem>
+                    <SelectItem value="stripe">Stripe API (100/sec, live mode)</SelectItem>
                     <SelectItem value="openai">OpenAI API (3/min)</SelectItem>
                   </Select>
                 </div>
@@ -639,20 +643,21 @@ export default function RateLimitSimulator() {
           </Card>
 
           {/* Strategy Info */}
-          {strategy !== 'none' && (
-            <Alert>
-              <Zap className="h-4 w-4" />
-              <AlertDescription>
-                <strong>
-                  {BACKOFF_STRATEGIES[strategy as keyof typeof BACKOFF_STRATEGIES]?.name}:
-                </strong>{' '}
-                {BACKOFF_STRATEGIES[strategy as keyof typeof BACKOFF_STRATEGIES]?.description}
-                {strategy === 'exponential' &&
-                  ' - Delays grow: 1s → 2s → 4s → 8s → 16s → 30s (max)'}
-                {strategy === 'fixed' && ' - Always waits 1 second between retries'}
-              </AlertDescription>
-            </Alert>
-          )}
+          <Alert>
+            <Zap className="h-4 w-4" />
+            <AlertDescription>
+              <strong>
+                {BACKOFF_STRATEGIES[strategy as keyof typeof BACKOFF_STRATEGIES]?.name}:
+              </strong>{' '}
+              {BACKOFF_STRATEGIES[strategy as keyof typeof BACKOFF_STRATEGIES]?.description}
+              {strategy === 'exponential' &&
+                ' - Delays grow: 1s → 2s → 4s → 8s → 16s → 30s (max)'}
+              {strategy === 'fixed' && ' - Always waits 1 second between retries'}
+              {strategy === 'none' &&
+                ' - Every retry is another request against the limit, so a throttled client only makes it worse'}
+              {` (up to ${MAX_RETRIES} retries per request)`}
+            </AlertDescription>
+          </Alert>
         </div>
       )}
 
@@ -744,9 +749,11 @@ export default function RateLimitSimulator() {
                         {request.success ? 'HTTP 200 OK' : 'HTTP 429 Too Many Requests'}
                       </span>
                       <span className="text-muted-foreground">Remaining: {request.remaining}</span>
-                      {request.retryAfter && (
+                      {request.retryAfter !== undefined && (
                         <Badge variant="outline" className="ml-auto">
-                          Retry in {(request.retryAfter / 1000).toFixed(1)}s
+                          {request.retryAfter === 0
+                            ? 'Retry now'
+                            : `Retry in ${(request.retryAfter / 1000).toFixed(1)}s`}
                         </Badge>
                       )}
                     </motion.div>

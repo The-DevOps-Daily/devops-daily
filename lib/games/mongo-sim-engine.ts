@@ -15,7 +15,8 @@
  *  - db.coll.aggregate([ $match, $group, $sort, $skip, $limit, $project, $count ])
  *
  * Query operators: implicit equality, $eq, $ne, $gt, $gte, $lt, $lte, $in,
- * $nin, $exists, $regex, plus $and / $or / $nor. Dot-notation field paths work.
+ * $nin, $exists, $regex, plus $and / $or / $nor. Dot-notation field paths work
+ * and reach into arrays, so { "items.productId": 3 } matches any line item.
  *
  * The module is pure (no React) so it can be unit tested with plain Node.
  */
@@ -341,6 +342,25 @@ function getPath(doc: Doc, path: string): unknown {
   }, doc);
 }
 
+/**
+ * Every value a dot path reaches, the way a MongoDB query sees it: a path
+ * through an array visits each element, so { "items.productId": 3 } matches
+ * when any line item has productId 3. A numeric key ("items.0") indexes in.
+ * An array at the end of the path counts as itself and as each element.
+ */
+function getPathValues(value: unknown, keys: string[]): unknown[] {
+  if (keys.length === 0) return Array.isArray(value) ? [value, ...value] : [value];
+  const [key, ...rest] = keys;
+  if (Array.isArray(value)) {
+    if (/^\d+$/.test(key)) return getPathValues(value[Number(key)], rest);
+    return value.flatMap((item) => getPathValues(item, keys));
+  }
+  if (value && typeof value === 'object' && key in (value as Doc)) {
+    return getPathValues((value as Doc)[key], rest);
+  }
+  return [undefined];
+}
+
 function compare(a: unknown, b: unknown): number {
   if (typeof a === 'number' && typeof b === 'number') return a - b;
   const as = String(a);
@@ -350,31 +370,35 @@ function compare(a: unknown, b: unknown): number {
   return 0;
 }
 
-function matchOperators(value: unknown, ops: Doc): boolean {
+// A condition matches when any reachable value satisfies it. $ne, $nin and
+// $exists: false are negations, so they need every value to pass.
+function matchOperators(values: unknown[], ops: Doc): boolean {
+  const scalars = values.filter((value) => value !== undefined && !Array.isArray(value));
   return Object.entries(ops).every(([op, operand]) => {
     switch (op) {
       case '$eq':
-        return value === operand;
+        return values.includes(operand);
       case '$ne':
-        return value !== operand;
+        return !values.includes(operand);
       case '$gt':
-        return value !== undefined && compare(value, operand) > 0;
+        return scalars.some((value) => compare(value, operand) > 0);
       case '$gte':
-        return value !== undefined && compare(value, operand) >= 0;
+        return scalars.some((value) => compare(value, operand) >= 0);
       case '$lt':
-        return value !== undefined && compare(value, operand) < 0;
+        return scalars.some((value) => compare(value, operand) < 0);
       case '$lte':
-        return value !== undefined && compare(value, operand) <= 0;
+        return scalars.some((value) => compare(value, operand) <= 0);
       case '$in':
-        return Array.isArray(operand) && operand.includes(value);
+        return Array.isArray(operand) && values.some((value) => operand.includes(value));
       case '$nin':
-        return Array.isArray(operand) && !operand.includes(value);
+        return Array.isArray(operand) && !values.some((value) => operand.includes(value));
       case '$exists':
-        return operand ? value !== undefined : value === undefined;
+        return operand ? values.some((value) => value !== undefined) : values.every((value) => value === undefined);
       case '$regex': {
         const flags = typeof ops.$options === 'string' ? ops.$options : '';
         try {
-          return new RegExp(String(operand), flags).test(String(value ?? ''));
+          const re = new RegExp(String(operand), flags);
+          return values.some((value) => !Array.isArray(value) && re.test(String(value ?? '')));
         } catch {
           return false;
         }
@@ -398,15 +422,14 @@ function matchDoc(doc: Doc, filter: Doc): boolean {
     if (key === '$nor') {
       return Array.isArray(condition) && !condition.some((sub) => matchDoc(doc, sub as Doc));
     }
-    const value = getPath(doc, key);
+    const values = getPathValues(doc, key.split('.'));
     if (condition && typeof condition === 'object' && !Array.isArray(condition)) {
       const keys = Object.keys(condition as Doc);
       if (keys.some((k) => k.startsWith('$'))) {
-        return matchOperators(value, condition as Doc);
+        return matchOperators(values, condition as Doc);
       }
     }
-    if (Array.isArray(value)) return value.includes(condition);
-    return value === condition;
+    return values.includes(condition);
   });
 }
 

@@ -365,10 +365,12 @@ function ShardingModePanel() {
   const [query, setQuery] = useState(querySamples[0]);
 
   const distribution = useMemo(() => {
+    // Hashing spreads any high-cardinality key evenly, timestamps included.
+    // Only few distinct values (region) or one huge tenant stay skewed.
     const skewByKey: Record<ShardKey, number[]> = {
       user_id: [1.04, 0.98, 1.01, 0.97, 1.02, 1.0],
       region: [1.75, 0.82, 0.7, 0.58, 0.5, 0.43],
-      created_at: [0.35, 0.5, 0.72, 1.08, 1.58, 2.1],
+      created_at: [0.98, 1.03, 0.99, 1.02, 0.97, 1.01],
       tenant_id: [2.15, 0.62, 0.55, 0.5, 0.46, 0.42],
     };
     const base = Array.from({ length: shards }, (_, index) => {
@@ -379,6 +381,13 @@ function ShardingModePanel() {
     const total = base.reduce((sum, value) => sum + value, 0);
     return base.map((value) => Math.max(4, Math.round((value / total) * rows)));
   }, [partitioning, rows, shardKey, shards]);
+
+  const queryColumn = query.split(' ')[0] as ShardKey;
+  const isRangeQuery = query.includes('>');
+  // The router can only target one shard when the query filters on the shard
+  // key. A range filter on a hashed key still fans out, because hashing
+  // scatters nearby values across shards.
+  const fansOut = queryColumn !== shardKey || (isRangeQuery && partitioning === 'hash');
 
   const shardLoads = useMemo(() => {
     const max = Math.max(...distribution);
@@ -414,18 +423,22 @@ function ShardingModePanel() {
           <div className="rounded-xl border bg-linear-to-br from-zinc-950 via-neutral-950 to-stone-950 p-4 text-slate-100">
             <div className="mb-5 flex flex-wrap items-center gap-3">
               <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
-                Router hashes <span className="text-primary">{shardKeyLabels[shardKey]}</span>
+                {partitioning === 'hash' ? 'Router hashes' : 'Router finds the range for'}{' '}
+                <span className="text-primary">{shardKeyLabels[shardKey]}</span>
               </div>
               <ArrowRight className="h-4 w-4 text-slate-500" />
               <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">
-                Query sent to <span className="text-primary">shard {shardLoads.queryIndex + 1}</span>
+                Query sent to{' '}
+                <span className="text-primary">
+                  {fansOut ? `all ${shards} shards` : `shard ${shardLoads.queryIndex + 1}`}
+                </span>
               </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {distribution.map((count, index) => {
                 const load = (count / shardLoads.max) * 100;
-                const isQueryShard = index === shardLoads.queryIndex;
+                const isQueryShard = fansOut || index === shardLoads.queryIndex;
                 const isHot = count / shardLoads.avg > 1.35;
                 return (
                   <div
@@ -557,9 +570,9 @@ function ShardingModePanel() {
           />
           <SimulatorMetricCard
             label="Query fanout"
-            value={query.includes('created_at') && partitioning === 'hash' ? `${shards} shards` : '1 shard'}
+            value={fansOut ? `${shards} shards` : '1 shard'}
             icon={Network}
-            tone={query.includes('created_at') && partitioning === 'hash' ? 'warn' : 'good'}
+            tone={fansOut ? 'warn' : 'good'}
             detail="scatter/gather queries add latency"
           />
         </div>
@@ -567,9 +580,11 @@ function ShardingModePanel() {
         <SimulatorAdvisorCard title="Routing readout" icon={Route} tone={hotSpotTone === 'bad' ? 'bad' : hotSpotTone === 'warn' ? 'warn' : 'primary'}>
           {hotSpotTone === 'bad'
             ? 'The shard key is concentrating data. Pick a higher-cardinality key or add a routing layer that can split hot tenants.'
-            : query.includes('created_at') && partitioning === 'hash'
-              ? 'This query fans out under hash partitioning. A time-range index or secondary lookup table would keep it cheaper.'
-              : 'The router can target a single shard, so this query shape stays predictable as the dataset grows.'}
+            : queryColumn !== shardKey
+              ? `This query filters on ${queryColumn}, not the shard key ${shardKey}, so the router must ask every shard and merge the results. A secondary lookup table or a different shard key would keep it on one shard.`
+              : fansOut
+                ? 'Hash partitioning scatters nearby created_at values across shards, so a time-range query fans out to all of them. Range partitioning keeps a time window on one shard, but sends every new write to the newest shard.'
+                : 'The router can target a single shard, so this query shape stays predictable as the dataset grows.'}
         </SimulatorAdvisorCard>
       </div>
     </div>
