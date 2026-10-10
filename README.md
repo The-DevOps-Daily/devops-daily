@@ -36,14 +36,6 @@ DevOps Daily is a community-driven platform dedicated to providing high-quality 
 DevOps Daily is kept free by its sponsors. If your company wants to reach
 engineers who choose tools, [see the sponsorship page](https://devops-daily.com/sponsorship).
 
-### [Svix](https://go.devops-daily.com/svix?p=readme)
-
-<a href="https://go.devops-daily.com/svix?p=readme"><picture><source media="(prefers-color-scheme: dark)" srcset="https://devops-daily.com/svix-brand-light.svg"><img src="https://devops-daily.com/svix-brand.svg" alt="Svix" height="44"></picture></a>
-
-Svix Dispatch sends your webhooks for you: retries with exponential backoff, signed payloads, idempotency keys, and a delivery log your customers can see.
-
-### Also sponsored by
-
 | [Atomsized](https://go.devops-daily.com/atomsized?p=readme) | [DigitalOcean](https://go.devops-daily.com/digitalocean?p=readme) | [DevDojo](https://go.devops-daily.com/devdojo?p=readme) | [SMTPfast](https://go.devops-daily.com/smtpfast?p=readme) | [QuizAPI](https://go.devops-daily.com/quizapi?p=readme) |
 |:--:|:--:|:--:|:--:|:--:|
 | <a href="https://go.devops-daily.com/atomsized?p=readme"><picture><source media="(prefers-color-scheme: dark)" srcset="https://devops-daily.com/atomsized-light.svg"><img src="https://devops-daily.com/atomsized.svg" alt="Atomsized" height="28"></picture></a> | <a href="https://go.devops-daily.com/digitalocean?p=readme"><img src="https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%202.svg" alt="DigitalOcean" height="28"></a> | <a href="https://go.devops-daily.com/devdojo?p=readme"><img src="https://devops-daily.com/devdojo.svg" alt="DevDojo" height="28"></a> | <a href="https://go.devops-daily.com/smtpfast?p=readme"><img src="https://devops-daily.com/smtpfast.svg" alt="SMTPfast" height="28"></a> | <a href="https://go.devops-daily.com/quizapi?p=readme"><img src="https://devops-daily.com/quizapi.svg" alt="QuizAPI" height="28"></a> |
