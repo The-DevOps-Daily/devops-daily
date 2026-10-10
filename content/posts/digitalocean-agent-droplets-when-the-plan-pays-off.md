@@ -43,11 +43,11 @@ The $50 Agent Droplets plan is cheaper than paying as you go only when you would
 
 Managed Agents runs coding agents such as Claude Code, Codex and OpenCode in microVMs, and bills for the parts separately: compute, memory, storage, tool calls, egress and model tokens. Agent Droplets does not change any of that. It adds a monthly fee that funds a balance, and your usage draws from that balance at a discount.
 
-| Plan | Monthly fee | Discount | Usage covered at list price |
-| --- | --- | --- | --- |
-| Free trial | $5 credit | none | $5 |
-| Pro | $50 | 15% | $58.82 |
-| Team | $200 | 20% | $250.00 |
+| Plan       | Monthly fee | Discount | Usage covered at list price |
+| ---------- | ----------- | -------- | --------------------------- |
+| Free trial | $5 credit   | none     | $5                          |
+| Pro        | $50         | 15%      | $58.82                      |
+| Team       | $200        | 20%      | $250.00                     |
 
 The figures come from DigitalOcean's [Harness Runtime pricing page](https://docs.digitalocean.com/products/managed-agents/agent-harness-runtime/details/pricing/) and the [Agent Droplets pricing page](https://www.digitalocean.com/pricing/agent-droplets), both read on 10 October 2026.
 
@@ -110,14 +110,14 @@ https://github.com/The-DevOps-Daily/agent-droplets-break-even
 
 These are the five recorded runs, matched to their invoice sessions by the session name in each run's log:
 
-| Run | Outcome | Input / output / cache-read tokens | Exact list price | Billed |
-| --- | --- | --- | --- | --- |
-| Issue #1 | Merged | 8,989 / 1,028 / 61,696 | $0.0407 | $0.05 |
-| Issue #2, first try | Closed in review | 15,136 / 1,852 / 105,472 | $0.0695 | $0.08 |
-| Issue #2, second try | Push refused | 15,184 / 2,272 / 82,176 | $0.0629 | $0.07 |
-| Issue #2, third try | Merged | 14,984 / 1,609 / 57,344 | $0.0516 | $0.06 |
-| Issue #3 | Merged | 9,514 / 2,113 / 72,192 | $0.0490 | $0.06 |
-| **Total** | 3 merged | | **$0.274** | **$0.32** |
+| Run                  | Outcome          | Input / output / cache-read tokens | Exact list price | Billed    |
+| -------------------- | ---------------- | ---------------------------------- | ---------------- | --------- |
+| Issue #1             | Merged           | 8,989 / 1,028 / 61,696             | $0.0407          | $0.05     |
+| Issue #2, first try  | Closed in review | 15,136 / 1,852 / 105,472           | $0.0695          | $0.08     |
+| Issue #2, second try | Push refused     | 15,184 / 2,272 / 82,176            | $0.0629          | $0.07     |
+| Issue #2, third try  | Merged           | 14,984 / 1,609 / 57,344            | $0.0516          | $0.06     |
+| Issue #3             | Merged           | 9,514 / 2,113 / 72,192             | $0.0490          | $0.06     |
+| **Total**            | 3 merged         |                                    | **$0.274**       | **$0.32** |
 
 Two things stand out.
 
