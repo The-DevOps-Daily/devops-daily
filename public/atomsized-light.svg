@@ -8,5 +8,5 @@
     <circle cx="54.08" cy="25.96" r="4" fill="#f3c84b"/>
     <circle cx="32" cy="34" r="3.2" fill="#4d91d7" stroke="#f8fafc" stroke-width="1.5"/>
   </g>
-  <text x="58" y="32" font-family="Inter, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" font-weight="600" letter-spacing="-.5" fill="#edf3f9">atomsized</text>
+  <text x="58" y="32" textLength="106" lengthAdjust="spacingAndGlyphs" font-family="Inter, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" font-weight="600" letter-spacing="-.5" fill="#edf3f9">atomsized</text>
 </svg>
