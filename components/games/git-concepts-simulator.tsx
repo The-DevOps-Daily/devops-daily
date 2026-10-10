@@ -636,24 +636,40 @@ export default function GitConceptsSimulator() {
           const targetHead = repo.remoteBranches[target] || repo.branches[target];
           if (!targetHead) return { output: `fatal: invalid upstream '${target || ''}'`, type: 'error' };
           if (repo.currentBranch === 'main') return { output: 'Current branch main is already the integration branch in this lab.', type: 'output' };
-          if (repo.head === targetHead) return { output: 'Current branch is up to date.', type: 'output' };
-          const current = headCommit(repo);
+          if (isAncestor(repo, targetHead, repo.head)) return { output: 'Current branch is up to date.', type: 'output' };
           const targetCommit = findCommit(repo, targetHead);
           if (!targetCommit) return { output: `fatal: invalid upstream '${target}'`, type: 'error' };
-          const id = nextCommitId(repo.nextCommitNumber);
-          const commit: Commit = {
-            id,
-            message: current.message,
-            parents: [targetHead],
-            files: { ...targetCommit.files, ...changedFilesAgainstFirstParent(repo, current) },
-            rebasedFrom: current.id,
-          };
+          // Replay every commit on this branch that the target does not have,
+          // oldest first, the way git does. Replaying only the tip would drop
+          // earlier unpushed commits (such as "Update Alice") without a word.
+          const toReplay: Commit[] = [];
+          for (
+            let c: Commit | undefined = headCommit(repo);
+            c && !isAncestor(repo, c.id, targetHead);
+            c = c.parents[0] ? findCommit(repo, c.parents[0]) : undefined
+          ) {
+            toReplay.unshift(c);
+          }
+          let base: Commit = targetCommit;
+          let number = repo.nextCommitNumber;
+          const replayed: Commit[] = [];
+          for (const original of toReplay) {
+            const commit: Commit = {
+              id: nextCommitId(number++),
+              message: original.message,
+              parents: [base.id],
+              files: { ...base.files, ...changedFilesAgainstFirstParent(repo, original) },
+              rebasedFrom: original.id,
+            };
+            replayed.push(commit);
+            base = commit;
+          }
           setRepo((prev) => ({
             ...prev,
-            commits: [...prev.commits, commit],
-            head: id,
-            branches: { ...prev.branches, [prev.currentBranch]: id },
-            nextCommitNumber: prev.nextCommitNumber + 1,
+            commits: [...prev.commits, ...replayed],
+            head: base.id,
+            branches: { ...prev.branches, [prev.currentBranch]: base.id },
+            nextCommitNumber: number,
           }));
           return { output: `Successfully rebased and updated refs/heads/${repo.currentBranch}.`, type: 'output' };
         }

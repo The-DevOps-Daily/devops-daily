@@ -40,9 +40,11 @@ interface LogEntry {
   type: 'fork' | 'error' | 'info';
 }
 
-type SimState = 'idle' | 'running' | 'crashed' | 'protected';
+type SimState = 'idle' | 'running' | 'paused' | 'crashed' | 'protected';
 
 const MAX_PID_LIMIT = 512;
+// Every protection card sets a per-user limit of 100 processes.
+const PROTECTION_LIMIT = 100;
 const MEMORY_PER_PROCESS = 0.4;
 const TOTAL_MEMORY = 256;
 const CPU_PER_PROCESS = 0.3;
@@ -66,18 +68,21 @@ const PROTECTION_METHODS = [
     name: 'ulimit -u',
     description: 'Limit max user processes',
     command: 'ulimit -u 100',
+    limitLog: 'bash: fork: retry: Resource temporarily unavailable (ulimit -u 100 reached) - fork bomb contained',
   },
   {
     id: 'cgroup',
     name: 'cgroups',
     description: 'Kernel-level process limits',
-    command: 'echo 100 > /sys/fs/cgroup/pids/user/pids.max',
+    command: 'echo 100 > /sys/fs/cgroup/user.slice/user-1000.slice/pids.max',
+    limitLog: 'cgroup: fork rejected, pids.max (100) reached - fork bomb contained',
   },
   {
     id: 'systemd',
     name: 'systemd',
     description: 'TasksMax in unit files',
     command: 'TasksMax=100 in [Service]',
+    limitLog: 'systemd: TasksMax=100 reached for the unit - fork bomb contained',
   },
 ];
 
@@ -274,7 +279,10 @@ export default function ForkBombSimulator() {
   const nextPid = useRef(1);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const effectiveLimit = protection ? 100 : pidLimit;
+  // A protection only helps if its limit is below the system-wide PID limit;
+  // otherwise the system runs out first.
+  const contained = protection !== null && PROTECTION_LIMIT < pidLimit;
+  const effectiveLimit = contained ? PROTECTION_LIMIT : pidLimit;
 
   const activeCount = useMemo(() => processes.filter((p) => !p.dead).length, [processes]);
   const memoryUsed = activeCount * MEMORY_PER_PROCESS;
@@ -340,11 +348,12 @@ export default function ForkBombSimulator() {
           const alive = prev.filter((p) => !p.dead);
 
           if (alive.length >= effectiveLimit) {
-            if (protection) {
+            if (contained) {
               setState('protected');
+              const method = PROTECTION_METHODS.find((m) => m.id === protection);
               setLogs((l) => [
                 ...l.slice(-50),
-                { tick: newTick, text: `ulimit: max processes (${effectiveLimit}) reached - fork bomb contained`, type: 'info' },
+                { tick: newTick, text: method?.limitLog ?? 'process limit reached - fork bomb contained', type: 'info' },
               ]);
             } else {
               setState('crashed');
@@ -360,20 +369,20 @@ export default function ForkBombSimulator() {
             return prev;
           }
 
+          // Each copy forks twice (the two sides of the pipe) and then exits,
+          // so the live count doubles every generation until the limit stops it.
           const newProcesses: Process[] = [];
-          const maxNewPerTick = Math.min(alive.length * 2, effectiveLimit - alive.length);
-          let spawned = 0;
-
+          const exited = new Set<number>();
+          let liveCount = alive.length;
           for (const proc of alive) {
-            if (spawned >= maxNewPerTick) break;
+            if (liveCount >= effectiveLimit) break;
             newProcesses.push(spawnProcess(proc.id, proc.x, proc.y, proc.depth + 1, newTick));
-            spawned++;
-            if (spawned >= maxNewPerTick) break;
             newProcesses.push(spawnProcess(proc.id, proc.x, proc.y, proc.depth + 1, newTick));
-            spawned++;
+            exited.add(proc.id);
+            liveCount += 1;
           }
 
-          const total = [...prev, ...newProcesses];
+          const total = [...prev.map((p) => (exited.has(p.id) ? { ...p, dead: true } : p)), ...newProcesses];
           const aliveCount = total.filter((p) => !p.dead).length;
           setPeakProcesses((peak) => Math.max(peak, aliveCount));
 
@@ -403,7 +412,7 @@ export default function ForkBombSimulator() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [state, speed, effectiveLimit, protection, spawnProcess]);
+  }, [state, speed, effectiveLimit, contained, protection, spawnProcess]);
 
   const timeElapsed = (tick * (300 / speed) / 1000).toFixed(1);
 
@@ -558,7 +567,7 @@ export default function ForkBombSimulator() {
                       </motion.div>
                       <p className="text-emerald-400 font-bold text-xl mt-4">SYSTEM PROTECTED</p>
                       <p className="text-emerald-400/70 text-sm mt-1">
-                        Process limit enforced at 100 - system remains stable
+                        Process limit enforced at {PROTECTION_LIMIT} - system remains stable
                       </p>
                       <p className="text-emerald-400/50 text-xs mt-1">Fork bomb contained after {timeElapsed}s</p>
                     </motion.div>
@@ -578,7 +587,7 @@ export default function ForkBombSimulator() {
                 )}
 
                 {/* Color legend */}
-                {(state === 'running' || state === 'idle') && processes.length > 0 && (
+                {(state === 'running' || state === 'paused' || state === 'idle') && processes.length > 0 && (
                   <div className="absolute bottom-2 right-2 flex items-center gap-2 bg-background/80 backdrop-blur-sm rounded px-2 py-1">
                     <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                       <span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> root
@@ -624,7 +633,12 @@ export default function ForkBombSimulator() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
-                {state === 'idle' || state === 'crashed' || state === 'protected' ? (
+                {state === 'paused' ? (
+                  <Button onClick={() => setState('running')} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
+                    <Play className="w-4 h-4 mr-1" />
+                    Resume
+                  </Button>
+                ) : state === 'idle' || state === 'crashed' || state === 'protected' ? (
                   <Button onClick={startSimulation} className="flex-1 bg-red-600 hover:bg-red-700 text-white">
                     <Play className="w-4 h-4 mr-1" />
                     {state === 'idle' ? 'Start' : 'Restart'}
@@ -632,7 +646,7 @@ export default function ForkBombSimulator() {
                 ) : (
                   <Button
                     onClick={() => {
-                      setState('idle');
+                      setState('paused');
                       if (intervalRef.current) clearInterval(intervalRef.current);
                     }}
                     variant="outline"
@@ -657,7 +671,7 @@ export default function ForkBombSimulator() {
                   value={speed}
                   onChange={(e) => setSpeed(Number(e.target.value))}
                   className="w-full accent-red-500"
-                  disabled={state === 'running'}
+                  disabled={state === 'running' || state === 'paused'}
                 />
               </div>
 
@@ -671,7 +685,7 @@ export default function ForkBombSimulator() {
                   value={pidLimit}
                   onChange={(e) => setPidLimit(Number(e.target.value))}
                   className="w-full accent-red-500"
-                  disabled={state === 'running'}
+                  disabled={state === 'running' || state === 'paused'}
                 />
               </div>
 
@@ -715,13 +729,13 @@ export default function ForkBombSimulator() {
                 <button
                   key={method.id}
                   onClick={() => setProtection(protection === method.id ? null : method.id)}
-                  disabled={state === 'running'}
+                  disabled={state === 'running' || state === 'paused'}
                   className={cn(
                     'w-full text-left p-2 rounded-lg border text-xs transition-all',
                     protection === method.id
                       ? 'border-emerald-500 bg-emerald-500/10'
                       : 'border-border hover:border-emerald-500/50',
-                    state === 'running' && 'opacity-50 cursor-not-allowed'
+                    (state === 'running' || state === 'paused') && 'opacity-50 cursor-not-allowed'
                   )}
                 >
                   <div className="font-semibold">{method.name}</div>
@@ -729,9 +743,14 @@ export default function ForkBombSimulator() {
                   <code className="text-[10px] text-emerald-500 mt-1 block">{method.command}</code>
                 </button>
               ))}
-              {protection && (
+              {protection && contained && (
                 <p className="text-[10px] text-emerald-500/70 text-center">
-                  Process limit capped at 100 - fork bomb will be contained
+                  Process limit capped at {PROTECTION_LIMIT} - fork bomb will be contained
+                </p>
+              )}
+              {protection && !contained && (
+                <p className="text-[10px] text-amber-500/80 text-center">
+                  The {PROTECTION_LIMIT}-process limit is not below the system PID limit ({pidLimit}), so the system runs out first
                 </p>
               )}
             </CardContent>

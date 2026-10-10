@@ -124,7 +124,7 @@ function buildStages(imageLocal: boolean): Stage[] {
       artifact: {
         label: 'config.json (excerpt)',
         lines: [
-          '"process": { "args": ["nginx", "-g", "daemon off;"] },',
+          '"process": { "args": ["/docker-entrypoint.sh", "nginx", "-g", "daemon off;"] },',
           '"linux": { "namespaces": [',
           '  {"type":"pid"}, {"type":"network"}, {"type":"mount"},',
           '  {"type":"uts"}, {"type":"ipc"} ] }',
@@ -139,8 +139,8 @@ function buildStages(imageLocal: boolean): Stage[] {
       tag: 'namespaces + cgroups, then exec',
       detail:
         'containerd calls runc, the low-level OCI runtime. runc reads config.json, creates the namespaces and the cgroup, pivots the root into rootfs, drops capabilities, then execs nginx as PID 1 inside the container. runc exits; a shim keeps it attached to containerd.',
-      cmd: 'sudo runc list',
-      cmdNote: 'The containers runc is managing, by ID.',
+      cmd: 'sudo runc --root /run/containerd/runc/moby list',
+      cmdNote: "The containers runc is managing, by ID. Docker keeps runc's state under containerd's moby namespace, so a plain runc list shows nothing on a Docker host.",
     },
     {
       key: 'container',
