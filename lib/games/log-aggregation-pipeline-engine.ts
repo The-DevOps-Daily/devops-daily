@@ -389,15 +389,19 @@ export function getPipelineHealth(state: PipelineState): {
         'A bounded queue overflowed. Reduce input, add capacity, or restore the slow stage.',
     };
   }
+  // The counters only grow, so backpressure is checked on its own and named
+  // next to parser rejects instead of hiding behind them.
+  const backpressure = bufferRatio >= 0.65 || state.sourceQueue >= scenario.collectorCapacity;
   if (state.parseFailed > 0) {
     return {
       tone: 'critical',
-      label: 'Parser rejects detected',
-      explanation:
-        'Valid-looking events are failing before indexing. Compare the parser with the new log format.',
+      label: backpressure ? 'Parser rejects and backpressure' : 'Parser rejects detected',
+      explanation: backpressure
+        ? 'Events are failing to parse, and an upstream queue is growing toward its limit. Fix the parser, then restore capacity before the buffer fills.'
+        : 'Valid-looking events are failing before indexing. Compare the parser with the new log format.',
     };
   }
-  if (bufferRatio >= 0.65 || state.sourceQueue >= scenario.collectorCapacity) {
+  if (backpressure) {
     return {
       tone: 'warning',
       label: 'Backpressure is building',

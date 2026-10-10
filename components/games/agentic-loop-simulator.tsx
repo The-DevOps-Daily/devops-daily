@@ -38,13 +38,13 @@ function buildSteps(separateJudge: boolean): Step[] {
       { role: 'build', it: 1, tool: 'Edit routes/signup.ts', tokens: 11, ctx: ['signup.ts'], cap: 'Builder: writes routes/signup.ts with a basic handler that inserts the user.' },
       { role: 'judge', it: 1, tool: 'npm test', tokens: 9, test: 'fail', cap: 'Judge: runs the tests. The route works, but the password is stored in plain text. Rejected.' },
       { role: 'decision', it: 1, met: false, cap: 'The judge sends it back to the planner with the reason. Loop again.' },
-      { role: 'plan', it: 2, tokens: 6, ctx: ['plan: hash the password'], cap: 'Planner: add password hashing before the insert.' },
-      { role: 'build', it: 2, tool: 'Edit routes/signup.ts', tokens: 12, ctx: ['edit: bcrypt hash'], cap: 'Builder: adds bcrypt hashing in the handler.' },
-      { role: 'judge', it: 2, tool: 'npm test', tokens: 9, test: 'pass', met: false, cap: 'Judge: tests pass now, but the endpoint returns 200 and the spec says 201. Tests green is not the same as goal met. Rejected.' },
+      { role: 'plan', it: 2, tokens: 8, ctx: ['plan: hash the password'], cap: 'Planner: add password hashing before the insert.' },
+      { role: 'build', it: 2, tool: 'Edit routes/signup.ts', tokens: 13, ctx: ['edit: bcrypt hash'], cap: 'Builder: adds bcrypt hashing in the handler.' },
+      { role: 'judge', it: 2, tool: 'npm test', tokens: 10, test: 'pass', met: false, cap: 'Judge: tests pass now, but the endpoint returns 200 and the spec says 201. Tests green is not the same as goal met. Rejected.' },
       { role: 'decision', it: 2, met: false, cap: 'The judge checks the spec, not just the tests. Back to the planner.' },
-      { role: 'plan', it: 3, tokens: 5, ctx: ['plan: return 201'], cap: 'Planner: change the response status to 201 Created.' },
-      { role: 'build', it: 3, tool: 'Edit routes/signup.ts', tokens: 8, ctx: ['edit: 201'], cap: 'Builder: returns 201 Created.' },
-      { role: 'judge', it: 3, tool: 'npm test', tokens: 9, test: 'pass', met: true, cap: 'Judge: hashes the password, returns 201, all tests pass, matches the spec. Approved.' },
+      { role: 'plan', it: 3, tokens: 9, ctx: ['plan: return 201'], cap: 'Planner: change the response status to 201 Created.' },
+      { role: 'build', it: 3, tool: 'Edit routes/signup.ts', tokens: 12, ctx: ['edit: 201'], cap: 'Builder: returns 201 Created.' },
+      { role: 'judge', it: 3, tool: 'npm test', tokens: 12, test: 'pass', met: true, cap: 'Judge: hashes the password, returns 201, all tests pass, matches the spec. Approved.' },
       { role: 'decision', it: 3, met: true, cap: 'The judge approves. The loop stops here, correct and complete.' },
       { role: 'done', ok: true, cap: 'Three loops, checked each time by a separate judge. Safe to ship.' },
     ];
@@ -54,9 +54,9 @@ function buildSteps(separateJudge: boolean): Step[] {
     { role: 'build', it: 1, tool: 'Edit routes/signup.ts', tokens: 11, ctx: ['signup.ts'], cap: 'Builder: writes the handler that inserts the user.' },
     { role: 'judge', it: 1, tool: 'npm test', tokens: 8, test: 'fail', cap: 'Builder self-check: tests fail, the password is plain text. Keep going.' },
     { role: 'decision', it: 1, met: false, cap: 'Not done by its own check. Loop again.' },
-    { role: 'plan', it: 2, tokens: 6, ctx: ['plan: hash the password'], cap: 'Planner: add password hashing.' },
-    { role: 'build', it: 2, tool: 'Edit routes/signup.ts', tokens: 12, ctx: ['edit: bcrypt hash'], cap: 'Builder: adds bcrypt hashing.' },
-    { role: 'judge', it: 2, tool: 'npm test', tokens: 8, test: 'pass', met: true, cap: 'Builder self-check: tests pass. Looks done, ship it.' },
+    { role: 'plan', it: 2, tokens: 8, ctx: ['plan: hash the password'], cap: 'Planner: add password hashing.' },
+    { role: 'build', it: 2, tool: 'Edit routes/signup.ts', tokens: 13, ctx: ['edit: bcrypt hash'], cap: 'Builder: adds bcrypt hashing.' },
+    { role: 'judge', it: 2, tool: 'npm test', tokens: 9, test: 'pass', cap: 'Builder self-check: tests pass. Looks done, ship it.' },
     { role: 'decision', it: 2, met: true, cap: 'The builder graded its own work and called it done as soon as the tests went green.' },
     { role: 'done', ok: false, cap: 'No separate judge. It stopped the moment tests passed.' },
     { role: 'bug', cap: 'But it returns 200, not the 201 the spec requires, and nobody checked the spec. A separate judge would have caught it. It shipped a confident bug.' },
@@ -110,10 +110,13 @@ function computeView(steps: Step[], idx: number): View {
   let gate: View['gate'] = { state: 'idle', text: 'the judge decides: loop or stop' };
   let looping = false;
   let result: View['result'] = null;
-  let goalMet = met === true && st.role !== 'decision';
+  // Without a separate judge the builder only believes it is done; the real
+  // goal (hashed password and a 201) is never met in that script.
+  const selfGraded = steps.some((s) => s.role === 'bug');
+  let goalMet = met === true && !selfGraded;
 
   if (st.role === 'decision') {
-    if (st.met) gate = { state: 'yes', text: 'goal met  ✓  stop' };
+    if (st.met) gate = { state: 'yes', text: selfGraded ? 'self-check says done  ✓  stop' : 'goal met  ✓  stop' };
     else { gate = { state: 'no', text: 'goal not met  ✗  loop back to plan' }; looping = true; }
   }
   if (st.role === 'done') {
@@ -150,6 +153,7 @@ export default function AgenticLoopSimulator() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const steps = useMemo(() => buildSteps(separateJudge), [separateJudge]);
+  const totalLoops = useMemo(() => Math.max(...steps.map((s) => s.it ?? 0)), [steps]);
   const view = computeView(steps, idx);
   const atEnd = idx >= steps.length - 1;
 
@@ -210,7 +214,7 @@ export default function AgenticLoopSimulator() {
           <div key={c.role} style={{ display: 'contents' }}>
             <div className={`als-card${view.role === c.role ? ' als-active' : ''}`} style={{ ['--c' as string]: ROLE_COLOR[c.role] }}>
               <div className="als-cardtop"><div className="als-n">{c.n}</div><div className="als-role">{c.title}</div></div>
-              <div className="als-agent">{c.agent}</div>
+              <div className="als-agent">{c.role === 'judge' && !separateJudge ? 'builder grades itself' : c.agent}</div>
               <p className="als-p">{c.desc}</p>
               <div className="als-tool"><span className="als-blink" /><span>{view.role === c.role ? (steps[idx]?.tool || `${c.title.toLowerCase()}...`) : 'idle'}</span></div>
             </div>
@@ -238,10 +242,10 @@ export default function AgenticLoopSimulator() {
       <div className="als-panels">
         <div className="als-panel">
           <h4 className="als-h4">Loop state</h4>
-          <div className="als-row"><span className="als-k">Iteration</span><span className="als-v"><b style={{ color: 'var(--als-accent)' }}>{view.iter}</b> <span style={{ color: 'var(--als-faint)' }}>/ loops</span></span></div>
+          <div className="als-row"><span className="als-k">Iteration</span><span className="als-v"><b style={{ color: 'var(--als-accent)' }}>{view.iter}</b> <span style={{ color: 'var(--als-faint)' }}>/ {totalLoops} loops</span></span></div>
           <div className="als-row"><span className="als-k">Tokens this run</span><span className="als-v">{view.tokens}k</span></div>
           <div className="als-row"><div className="als-meter"><i style={{ width: `${tokPct}%` }} /></div></div>
-          <div className="als-hint">The whole context is re-sent every loop, so cost climbs as it grows.</div>
+          <div className="als-hint">The whole context is re-sent every loop, so each loop costs more than the one before.</div>
           <div className="als-row" style={{ marginTop: 12 }}><span className="als-k">Goal: hashed pw + 201</span><span className={`als-v${view.goalMet ? ' als-met' : ''}`}>{view.goalMet ? 'met' : 'not met'}</span></div>
           <div className="als-row"><span className="als-k">Test suite</span><span className={`als-badge${view.test === 'pass' ? ' als-pass' : view.test === 'fail' ? ' als-fail' : ''}`}>{view.test === 'pass' ? 'passing' : view.test === 'fail' ? 'failing' : 'not run'}</span></div>
         </div>

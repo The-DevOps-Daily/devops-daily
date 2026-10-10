@@ -190,7 +190,7 @@ export function can(cluster: Cluster, q: Question): Explanation {
     if (!role) {
       nearMisses.push({
         binding,
-        reason: `refers to ${binding.roleRef.kind}/${binding.roleRef.name}, which does not exist. Kubernetes accepts this: a dangling roleRef grants nothing and raises no error.`,
+        reason: `refers to ${binding.roleRef.kind}/${binding.roleRef.name}, which does not exist. The binding still saves (if you are allowed to create it) and grants nothing. The Forbidden error and kubectl auth can-i name the missing role, so read them.`,
       });
       continue;
     }
@@ -307,10 +307,13 @@ export function kubectlFor(q: Question): string {
   const parts = ["kubectl auth can-i", q.verb, target];
 
   // Without -n, kubectl asks about the current namespace, which would silently
-  // answer a different question. A cluster-scoped resource takes no namespace;
-  // a namespaced one asked about at cluster scope means all namespaces.
-  if (q.namespace) parts.push(`-n ${q.namespace}`);
-  else if (!isClusterScoped(q.resource)) parts.push("--all-namespaces");
+  // answer a different question. A cluster-scoped resource is asked about with
+  // --all-namespaces: given -n (or the current namespace), a RoleBinding in that
+  // namespace can make can-i print yes for nodes while kubectl get nodes is
+  // Forbidden. A namespaced resource asked about at cluster scope means all
+  // namespaces too.
+  if (isClusterScoped(q.resource) || !q.namespace) parts.push("--all-namespaces");
+  else parts.push(`-n ${q.namespace}`);
 
   parts.push(
     q.subject.kind === "ServiceAccount"
@@ -446,9 +449,9 @@ export const SCENARIOS: Scenario[] = [
   },
   {
     id: "typo",
-    label: "The silent typo",
+    label: "The typo in roleRef",
     teaches:
-      "The binding refers to a role that does not exist. Kubernetes accepts it, raises no error, and grants nothing. There is no event and no warning; the only symptom is a permission that never works.",
+      "The binding refers to a role that does not exist. If you are allowed to create the binding, Kubernetes saves it and it grants nothing. No event fires, but the clue is in the error: the Forbidden message and kubectl auth can-i both end with the missing role's name.",
     cluster: {
       roles: [{ kind: "Role", name: "pod-reader", namespace: "dev", rules: [READ_PODS] }],
       bindings: [

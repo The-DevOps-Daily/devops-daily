@@ -304,7 +304,7 @@ export default function LogAggregationPipelineSimulator() {
           <div className="min-w-0">
             <p className="text-sm font-medium">Next: {nextStage.title}</p>
             <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-              {state.lastEvent}
+              Last step: {state.lastEvent}
             </p>
           </div>
         </div>
