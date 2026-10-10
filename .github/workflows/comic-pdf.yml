@@ -1,0 +1,35 @@
+name: Comic PDF
+on:
+  pull_request:
+    paths:
+      - 'app/comics/**'
+      - 'components/comics/**'
+      - 'content/comics/**'
+      - 'assets/comics/**'
+      - 'public/comics/**'
+      - 'scripts/comics/**'
+      - '.github/workflows/comic-pdf.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6.1.0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm build:comics
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+      - uses: actions/upload-artifact@v4
+        with:
+          name: git-blame-chapter-01-preview
+          path: out/comics/git-blame/downloads/chapter-01.pdf
+          if-no-files-found: error

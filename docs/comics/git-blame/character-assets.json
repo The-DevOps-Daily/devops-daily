@@ -1,0 +1,159 @@
+{
+  "series": "git-blame",
+  "phase": 2,
+  "created_date": "2026-10-08",
+  "tool": "image_gen.imagegen",
+  "approved_assets": [
+    "assets/comics/git-blame/characters/alex-v2.png",
+    "assets/comics/git-blame/characters/maya-v1.png",
+    "assets/comics/git-blame/characters/sam-v1.png",
+    "assets/comics/git-blame/characters/chris-v1.png",
+    "assets/comics/git-blame/characters/nora-v1.png",
+    "assets/comics/git-blame/characters/eli-v1.png",
+    "assets/comics/git-blame/characters/sophia-v2.png"
+  ],
+  "note": "Seven recurring character designs are approved. Sophia v2 implements the user’s requested blue eyes; Sophia v1 is superseded. Nora’s historical prompt retains the original name Noor. Book photographs informed general visual traits only.",
+  "assets": [
+    {
+      "character": "alex",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/alex-v1.png",
+      "source_filename": "exec-d981c7d2-a575-4336-836b-949fefa7e927.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2545758,
+      "sha256": "aa24df3be70f8cc325b89d0940c6e9ba0139f18d74298545da0cd1d542803b5f",
+      "status": "superseded",
+      "prompt": "docs/comics/git-blame/prompts/alex-v1.txt",
+      "reference_images": [],
+      "transparent_background": false
+    },
+    {
+      "character": "alex",
+      "version": "v2",
+      "path": "assets/comics/git-blame/characters/alex-v2.png",
+      "source_filename": "exec-60af8530-46e1-4758-aa28-a7534915b4da.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2463522,
+      "sha256": "85e5787a195ee28ed5a026c0fe6cab8348a802dea9d0ab524b01a2f7f24c62f6",
+      "status": "approved",
+      "prompt": "docs/comics/git-blame/prompts/alex-v2.txt",
+      "reference_images": [
+        "/workspace/generated_images/exec-d981c7d2-a575-4336-836b-949fefa7e927.png"
+      ],
+      "transparent_background": false,
+      "approved_date": "2026-10-09"
+    },
+    {
+      "character": "maya",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/maya-v1.png",
+      "source_filename": "exec-c304f5b3-0508-403a-be35-6f643797e5a8.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2434874,
+      "sha256": "67dde32e7cac46b4fe58c8b7bcd04634a95bde6fd9c8bfcff1f16533c828ba4e",
+      "status": "approved",
+      "prompt": "docs/comics/git-blame/prompts/maya-v1.txt",
+      "reference_images": ["assets/comics/git-blame/characters/alex-v2.png"],
+      "transparent_background": false,
+      "approved_date": "2026-10-09"
+    },
+    {
+      "character": "sam",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/sam-v1.png",
+      "source_filename": "exec-4e3622e6-45a7-429e-869f-a03fd0820102.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2448036,
+      "sha256": "d5eeef6a2aab87770790bd3dd9e0c3d2a89333d37cae6fc38bd5a697546a15ff",
+      "status": "approved",
+      "prompt": "docs/comics/git-blame/prompts/sam-v1.txt",
+      "reference_images": ["assets/comics/git-blame/characters/alex-v2.png"],
+      "transparent_background": false,
+      "approved_date": "2026-10-09"
+    },
+    {
+      "character": "chris",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/chris-v1.png",
+      "source_filename": "exec-dc7384d8-4c98-4409-9469-92146c5e7b12.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2440457,
+      "sha256": "c6d8bea160daa105643724fd41147b752856342df28f2a9d644daa30b2001d51",
+      "status": "approved",
+      "prompt": "docs/comics/git-blame/prompts/chris-v1.txt",
+      "reference_images": ["assets/comics/git-blame/characters/alex-v2.png"],
+      "transparent_background": false,
+      "approved_date": "2026-10-09"
+    },
+    {
+      "character": "nora",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/nora-v1.png",
+      "source_filename": "exec-bfaa0d21-1b01-4633-b41f-0ed210c522fe.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2517439,
+      "sha256": "4af039578a097e65566599ef01f70b10d24faa8f1cd96004706c77b521e68504",
+      "status": "approved",
+      "created_date": "2026-10-09",
+      "prompt": "docs/comics/git-blame/prompts/noor-v1.txt",
+      "reference_images": [
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/characters/maya-v1.png"
+      ],
+      "transparent_background": false,
+      "generation_name": "Noor",
+      "approved_date": "2026-10-09",
+      "name_note": "Artwork approved; proposed name changed to Nora after user feedback. Original prompt preserves generation name."
+    },
+    {
+      "character": "eli",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/eli-v1.png",
+      "source_filename": "exec-19b73283-284f-43d0-9764-b5f303309516.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2307956,
+      "sha256": "cb6b5f93afdd9f38adc13adfd65380ca8792159f7fc6a6411b87b9539d0aa704",
+      "status": "approved",
+      "created_date": "2026-10-09",
+      "prompt": "docs/comics/git-blame/prompts/eli-v1.txt",
+      "reference_images": [
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/characters/maya-v1.png"
+      ],
+      "transparent_background": false,
+      "approved_date": "2026-10-09"
+    },
+    {
+      "character": "sophia",
+      "version": "v1",
+      "path": "assets/comics/git-blame/characters/sophia-v1.png",
+      "source_filename": "exec-f32f3dc1-62c7-4e87-bd8f-a6ef810e403d.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2522573,
+      "sha256": "8d7c25f727632a1abf862c4bff9876b5215f8a735fcee4542f79e0a8493a5a93",
+      "status": "superseded-by-requested-blue-eye-revision",
+      "prompt": "docs/comics/git-blame/prompts/sophia-v1.txt",
+      "reference_images": [
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/characters/maya-v1.png"
+      ],
+      "transparent_background": false,
+      "created_date": "2026-10-09"
+    },
+    {
+      "character": "sophia",
+      "version": "v2",
+      "path": "assets/comics/git-blame/characters/sophia-v2.png",
+      "source_filename": "exec-54d2ce8d-2a31-4f6f-95f1-3aad16517f03.png",
+      "dimensions": [1536, 1024],
+      "bytes": 2305013,
+      "sha256": "d9c2ac1e36cd2ed3108b6f72ceef86ff76a09a54027568a16c4fe495566e5e94",
+      "status": "approved-with-requested-eye-color-correction",
+      "prompt": "docs/comics/git-blame/prompts/sophia-v2-blue-eyes.txt",
+      "reference_images": ["assets/comics/git-blame/characters/sophia-v1.png"],
+      "transparent_background": false,
+      "created_date": "2026-10-09",
+      "approval_note": "User approved the work and requested continuation with Sophia’s eyes changed to blue. Exact requested edit was visually checked across all views; preserve this corrected design."
+    }
+  ]
+}

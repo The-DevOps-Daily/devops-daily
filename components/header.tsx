@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { Menu, Search } from 'lucide-react';
 import { DesktopNavigation } from './header/desktop-navigation';
 import { MobileMenu } from './header/mobile-menu';
+import { isComicReaderPath } from '@/lib/comic-routes';
+import styles from './header/header.module.css';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,6 +19,7 @@ export function Header() {
   // On a simulator page the header scrolls away with the page instead of sticking,
   // so it never covers or shifts the game.
   const onSimulator = /^\/games\/[^/]+/.test(pathname ?? '');
+  const scrollingHeader = onSimulator || isComicReaderPath(pathname);
 
   // Sticky elements below the header read its height from --site-header-h.
   useEffect(() => {
@@ -24,12 +27,12 @@ export function Header() {
     if (!el) return;
     const root = document.documentElement;
     const update = () =>
-      root.style.setProperty('--site-header-h', onSimulator ? '0px' : `${el.offsetHeight}px`);
+      root.style.setProperty('--site-header-h', scrollingHeader ? '0px' : `${el.offsetHeight}px`);
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [onSimulator]);
+  }, [scrollingHeader]);
 
   // Close mobile menu on escape key
   useEffect(() => {
@@ -54,17 +57,22 @@ export function Header() {
       ref={headerRef}
       className={cn(
         'z-40 bg-background/95 print:hidden',
-        onSimulator ? 'relative' : 'sticky top-0'
+        scrollingHeader ? 'relative' : 'sticky top-0'
       )}
     >
-      <nav className="container flex items-center justify-between p-4 mx-auto lg:px-8">
+      <nav
+        className={cn(
+          'container flex items-center justify-between p-4 mx-auto lg:px-8',
+          styles.navigation
+        )}
+      >
         {/* Logo */}
         <div className="flex lg:flex-1">
-          <Logo size={55} href="/" showText />
+          <Logo size={55} href="/" showText textClassName={styles.wordmark} />
         </div>
 
         {/* Mobile menu button */}
-        <div className="flex lg:hidden">
+        <div className={styles.mobile}>
           <Link
             href="/search"
             className="p-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -79,7 +87,9 @@ export function Header() {
         </div>
 
         {/* Desktop Navigation */}
-        <DesktopNavigation />
+        <div className={styles.desktop}>
+          <DesktopNavigation />
+        </div>
       </nav>
 
       {/* Mobile Menu */}

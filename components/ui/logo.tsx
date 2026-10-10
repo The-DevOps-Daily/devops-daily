@@ -78,7 +78,7 @@ export function Logo({ className, size = 40, href, showText = false, textClassNa
 
   if (href) {
     return (
-      <Link href={href} className="block">
+      <Link href={href} className="block" aria-label="DevOps Daily home">
         {logo}
       </Link>
     );

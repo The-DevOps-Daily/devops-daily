@@ -1,0 +1,1014 @@
+{
+  "browser": "Chromium",
+  "generated": "2026-10-10T05:12:46.224Z",
+  "checks": [
+    {
+      "panel": 2,
+      "layout": "desktop",
+      "javascript": "disabled",
+      "overlay": true,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500022888532845,
+      "art": {
+        "width": 1024,
+        "height": 682.65625
+      },
+      "labels": [
+        {
+          "text": "checkout-api",
+          "x": 163.828125,
+          "y": 46.207794189453125,
+          "width": 410.8050537109375,
+          "height": 67.3587646484375,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "Deploy",
+          "x": 455.671875,
+          "y": 197.776123046875,
+          "width": 160.88470458984375,
+          "height": 45.493560791015625,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 4,
+      "layout": "desktop",
+      "javascript": "disabled",
+      "overlay": true,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500022888532845,
+      "art": {
+        "width": 1024,
+        "height": 682.65625
+      },
+      "labels": [
+        {
+          "text": "ALB",
+          "x": 56.3125,
+          "y": 290.125,
+          "width": 174.078125,
+          "height": 31.78125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "EKS · checkout-api",
+          "x": 399.359375,
+          "y": 116.046875,
+          "width": 307.1875,
+          "height": 31.78125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "Old pod · terminating\n                Old work may still be active.",
+          "x": 368.625,
+          "y": 518.8125,
+          "width": 327.671875,
+          "height": 63.03125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "New pods · ready\n                2/2 replicas",
+          "x": 747.515625,
+          "y": 511.984375,
+          "width": 235.515625,
+          "height": 63.03125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 5,
+      "layout": "desktop",
+      "javascript": "disabled",
+      "overlay": true,
+      "naturalWidth": 1254,
+      "masterWidth": 1254,
+      "expectedRatio": 1,
+      "ratio": 1,
+      "art": {
+        "width": 1024,
+        "height": 1024
+      },
+      "labels": [
+        {
+          "text": "We couldn't confirm checkout.",
+          "x": 497.31610107421875,
+          "y": 360.4375,
+          "width": 254.69775390625,
+          "height": 80.9078369140625,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 9,
+      "layout": "desktop",
+      "javascript": "disabled",
+      "overlay": true,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500022888532845,
+      "art": {
+        "width": 1024,
+        "height": 682.65625
+      },
+      "labels": [
+        {
+          "text": "process.on('SIGTERM', () => {\n  process.exit(0);\n});",
+          "x": 447.2122802734375,
+          "y": 238.921875,
+          "width": 375.681884765625,
+          "height": 128.8209228515625,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 11,
+      "layout": "desktop",
+      "javascript": "disabled",
+      "overlay": true,
+      "naturalWidth": 1448,
+      "masterWidth": 1448,
+      "expectedRatio": 1.3333333333333333,
+      "ratio": 1.3333333333333333,
+      "art": {
+        "width": 1024,
+        "height": 768
+      },
+      "labels": [
+        {
+          "text": "In test",
+          "x": 178.171875,
+          "y": 86.78125,
+          "width": 153.59375,
+          "height": 31.78125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "Accepted request completes",
+          "x": 245.75,
+          "y": 148.984375,
+          "width": 491.515625,
+          "height": 31.78125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "Shutdown waits, then exits",
+          "x": 245.75,
+          "y": 378.609375,
+          "width": 491.515625,
+          "height": 31.78125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 13,
+      "layout": "desktop",
+      "javascript": "disabled",
+      "overlay": true,
+      "naturalWidth": 1448,
+      "masterWidth": 1448,
+      "expectedRatio": 1.3333333333333333,
+      "ratio": 1.3333333333333333,
+      "art": {
+        "width": 1024,
+        "height": 768
+      },
+      "labels": [
+        {
+          "text": "Corrected replicas healthy",
+          "x": 276.46875,
+          "y": 358.4432373046875,
+          "width": 196.8856201171875,
+          "height": 59.894775390625,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "New traffic shifted",
+          "x": 276.46875,
+          "y": 419.8963623046875,
+          "width": 195.5828857421875,
+          "height": 35.0382080078125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "Old accepted work complete",
+          "x": 276.46875,
+          "y": 485.1776123046875,
+          "width": 196.8856201171875,
+          "height": 59.894775390625,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        },
+        {
+          "text": "Old processes retired",
+          "x": 276.46875,
+          "y": 550.443115234375,
+          "width": 195.5828857421875,
+          "height": 35.038330078125,
+          "fontSize": 19.456,
+          "fits": true,
+          "withinArt": true
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 2,
+      "layout": "phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.5,
+      "art": {
+        "width": 369,
+        "height": 246
+      },
+      "labels": [
+        {
+          "text": "checkout-api",
+          "x": 38,
+          "y": 261,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Deploy",
+          "x": 38,
+          "y": 306,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 4,
+      "layout": "phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.5,
+      "art": {
+        "width": 369,
+        "height": 246
+      },
+      "labels": [
+        {
+          "text": "ALB",
+          "x": 38,
+          "y": 261,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "EKS · checkout-api",
+          "x": 38,
+          "y": 306,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old pod · terminating\n                Old work may still be active.",
+          "x": 38,
+          "y": 351,
+          "width": 313,
+          "height": 75.09375,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "New pods · ready\n                2/2 replicas",
+          "x": 38,
+          "y": 426.09375,
+          "width": 313,
+          "height": 75.09375,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 5,
+      "layout": "phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1254,
+      "masterWidth": 1254,
+      "expectedRatio": 1,
+      "ratio": 1,
+      "art": {
+        "width": 369,
+        "height": 369
+      },
+      "labels": [
+        {
+          "text": "We couldn't confirm checkout.",
+          "x": 38,
+          "y": 384,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 9,
+      "layout": "phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.5,
+      "art": {
+        "width": 369,
+        "height": 246
+      },
+      "labels": [
+        {
+          "text": "process.on('SIGTERM', () => {\n  process.exit(0);\n});",
+          "x": 38,
+          "y": 261,
+          "width": 313,
+          "height": 132,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 11,
+      "layout": "phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1448,
+      "masterWidth": 1448,
+      "expectedRatio": 1.3333333333333333,
+      "ratio": 1.3333333333333333,
+      "art": {
+        "width": 369,
+        "height": 276.75
+      },
+      "labels": [
+        {
+          "text": "In test",
+          "x": 38,
+          "y": 291.75,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Accepted request completes",
+          "x": 38,
+          "y": 336.75,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Shutdown waits, then exits",
+          "x": 38,
+          "y": 381.75,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 13,
+      "layout": "phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1448,
+      "masterWidth": 1448,
+      "expectedRatio": 1.3333333333333333,
+      "ratio": 1.3333333333333333,
+      "art": {
+        "width": 369,
+        "height": 276.75
+      },
+      "labels": [
+        {
+          "text": "Corrected replicas healthy",
+          "x": 38,
+          "y": 291.75,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "New traffic shifted",
+          "x": 38,
+          "y": 336.75,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old accepted work complete",
+          "x": 38,
+          "y": 381.75,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old processes retired",
+          "x": 38,
+          "y": 426.75,
+          "width": 313,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 2,
+      "layout": "narrow-phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500039591416581,
+      "art": {
+        "width": 296,
+        "height": 197.328125
+      },
+      "labels": [
+        {
+          "text": "checkout-api",
+          "x": 38,
+          "y": 212.328125,
+          "width": 240,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Deploy",
+          "x": 38,
+          "y": 257.328125,
+          "width": 240,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 4,
+      "layout": "narrow-phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500039591416581,
+      "art": {
+        "width": 296,
+        "height": 197.328125
+      },
+      "labels": [
+        {
+          "text": "ALB",
+          "x": 38,
+          "y": 212.328125,
+          "width": 240,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "EKS · checkout-api",
+          "x": 38,
+          "y": 257.328125,
+          "width": 240,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old pod · terminating\n                Old work may still be active.",
+          "x": 38,
+          "y": 302.328125,
+          "width": 240,
+          "height": 75.09375,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "New pods · ready\n                2/2 replicas",
+          "x": 38,
+          "y": 377.421875,
+          "width": 240,
+          "height": 75.09375,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 5,
+      "layout": "narrow-phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1254,
+      "masterWidth": 1254,
+      "expectedRatio": 1,
+      "ratio": 1,
+      "art": {
+        "width": 296,
+        "height": 296
+      },
+      "labels": [
+        {
+          "text": "We couldn't confirm checkout.",
+          "x": 38,
+          "y": 311,
+          "width": 240,
+          "height": 74,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 9,
+      "layout": "narrow-phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500039591416581,
+      "art": {
+        "width": 296,
+        "height": 197.328125
+      },
+      "labels": [
+        {
+          "text": "process.on('SIGTERM', () => {\n  process.exit(0);\n});",
+          "x": 38,
+          "y": 212.328125,
+          "width": 240,
+          "height": 132,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 11,
+      "layout": "narrow-phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1448,
+      "masterWidth": 1448,
+      "expectedRatio": 1.3333333333333333,
+      "ratio": 1.3333333333333333,
+      "art": {
+        "width": 296,
+        "height": 222
+      },
+      "labels": [
+        {
+          "text": "In test",
+          "x": 38,
+          "y": 237,
+          "width": 240,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Accepted request completes",
+          "x": 38,
+          "y": 282,
+          "width": 240,
+          "height": 74,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Shutdown waits, then exits",
+          "x": 38,
+          "y": 356,
+          "width": 240,
+          "height": 74,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 13,
+      "layout": "narrow-phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1448,
+      "masterWidth": 1448,
+      "expectedRatio": 1.3333333333333333,
+      "ratio": 1.3333333333333333,
+      "art": {
+        "width": 296,
+        "height": 222
+      },
+      "labels": [
+        {
+          "text": "Corrected replicas healthy",
+          "x": 38,
+          "y": 237,
+          "width": 240,
+          "height": 74,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "New traffic shifted",
+          "x": 38,
+          "y": 311,
+          "width": 240,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old accepted work complete",
+          "x": 38,
+          "y": 356,
+          "width": 240,
+          "height": 74,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old processes retired",
+          "x": 38,
+          "y": 430,
+          "width": 240,
+          "height": 45,
+          "fontSize": 18,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 2,
+      "layout": "enlarged-text",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500022888532845,
+      "art": {
+        "width": 1024,
+        "height": 682.65625
+      },
+      "labels": [
+        {
+          "text": "checkout-api",
+          "x": 50,
+          "y": 700.65625,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Deploy",
+          "x": 50,
+          "y": 774.65625,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 4,
+      "layout": "enlarged-text",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500022888532845,
+      "art": {
+        "width": 1024,
+        "height": 682.65625
+      },
+      "labels": [
+        {
+          "text": "ALB",
+          "x": 50,
+          "y": 700.65625,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "EKS · checkout-api",
+          "x": 50,
+          "y": 774.65625,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old pod · terminating\n                Old work may still be active.",
+          "x": 50,
+          "y": 848.65625,
+          "width": 946,
+          "height": 130.1875,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "New pods · ready\n                2/2 replicas",
+          "x": 50,
+          "y": 978.84375,
+          "width": 946,
+          "height": 130.1875,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 5,
+      "layout": "enlarged-text",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1254,
+      "masterWidth": 1254,
+      "expectedRatio": 1,
+      "ratio": 1,
+      "art": {
+        "width": 1024,
+        "height": 1024
+      },
+      "labels": [
+        {
+          "text": "We couldn't confirm checkout.",
+          "x": 50,
+          "y": 1042,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 9,
+      "layout": "enlarged-text",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1536,
+      "masterWidth": 1536,
+      "expectedRatio": 1.5,
+      "ratio": 1.500022888532845,
+      "art": {
+        "width": 1024,
+        "height": 682.65625
+      },
+      "labels": [
+        {
+          "text": "process.on('SIGTERM', () => {\n  process.exit(0);\n});",
+          "x": 50,
+          "y": 700.65625,
+          "width": 946,
+          "height": 186,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 11,
+      "layout": "enlarged-text",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1448,
+      "masterWidth": 1448,
+      "expectedRatio": 1.3333333333333333,
+      "ratio": 1.3333333333333333,
+      "art": {
+        "width": 1024,
+        "height": 768
+      },
+      "labels": [
+        {
+          "text": "In test",
+          "x": 50,
+          "y": 786,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Accepted request completes",
+          "x": 50,
+          "y": 860,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Shutdown waits, then exits",
+          "x": 50,
+          "y": 934,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "panel": 13,
+      "layout": "enlarged-text",
+      "javascript": "disabled",
+      "overlay": false,
+      "naturalWidth": 1448,
+      "masterWidth": 1448,
+      "expectedRatio": 1.3333333333333333,
+      "ratio": 1.3333333333333333,
+      "art": {
+        "width": 1024,
+        "height": 768
+      },
+      "labels": [
+        {
+          "text": "Corrected replicas healthy",
+          "x": 50,
+          "y": 786,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "New traffic shifted",
+          "x": 50,
+          "y": 860,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old accepted work complete",
+          "x": 50,
+          "y": 934,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        },
+        {
+          "text": "Old processes retired",
+          "x": 50,
+          "y": 1008,
+          "width": 946,
+          "height": 74,
+          "fontSize": 36,
+          "fits": true,
+          "withinArt": false
+        }
+      ],
+      "overflow": false
+    }
+  ]
+}

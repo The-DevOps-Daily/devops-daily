@@ -1,0 +1,167 @@
+.scene {
+  margin: 0;
+  color: #273746;
+}
+
+.caption {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.canvas {
+  position: relative;
+  container: comic-scene / inline-size;
+  background: #f6f0df;
+  border: 1px solid #27374626;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 2rem #2737460d;
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.dialogue {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  margin: 0;
+  list-style: none;
+}
+
+.bubble {
+  padding: 0.875rem 1.125rem;
+  border: 2px solid #273746;
+  border-radius: 1.5rem 1.9rem 1.6rem 1.3rem;
+  background: #fffdf5;
+  font-size: 1.125rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.bubble p {
+  margin: 0;
+}
+
+.outline {
+  display: none;
+  position: absolute;
+  inset: -2px;
+  width: calc(100% + 4px);
+  height: calc(100% + 4px);
+  overflow: visible;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.speaker {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.75em;
+  font-weight: 700;
+  color: #40554a;
+}
+
+.diagram {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.diagramLabels {
+  display: none;
+}
+
+.diagramLabels span {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 17%;
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.loadBalancer {
+  left: 34%;
+  top: 79%;
+}
+.oldPod {
+  left: 64.5%;
+  top: 74%;
+}
+.newPod {
+  left: 65%;
+  top: 85.5%;
+}
+.diagramLabels .interruptedReply {
+  left: 48%;
+  top: 70.7%;
+  width: auto;
+  padding: 0.1rem 0.25rem;
+  color: #9a4238;
+  background: #f6f0df;
+  border-radius: 0.3rem;
+  font-size: clamp(14px, 1.9cqi, 1rem);
+}
+
+.diagramText {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1rem 1rem 2.25rem;
+  background: #fffdf5;
+  border: 1px solid #27374640;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* Font-relative container width also returns enlarged text to normal flow. */
+@container comic-scene (min-width: 46em) {
+  .dialogue {
+    display: block;
+    position: absolute;
+    inset: 0;
+    padding: 0;
+  }
+
+  .bubble {
+    position: absolute;
+    left: var(--bubble-x);
+    top: var(--bubble-y);
+    width: var(--bubble-width);
+    font-size: 1.25rem;
+    isolation: isolate;
+  }
+
+  .bubble[data-outline='true'] {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  .outline {
+    display: block;
+  }
+
+  .diagram {
+    position: absolute;
+    inset: 0;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .diagramLabels {
+    display: block;
+    position: absolute;
+    inset: 0;
+  }
+
+  .diagramText {
+    display: none;
+  }
+}

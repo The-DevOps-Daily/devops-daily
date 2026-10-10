@@ -1,3 +1,4 @@
+import { ComicDiscoveryCard } from '@/components/comics/discovery-card';
 import { CategoryGrid } from '@/components/category-grid';
 import { Hero } from '@/components/hero';
 import LatestPosts from '@/components/latest-posts';
@@ -107,6 +108,15 @@ export default async function Home() {
       </div>
 
       <div className="container px-4 mx-auto">
+        <section className="my-12" aria-label="DevOps Daily comics">
+          <SectionHeader
+            label="stories"
+            title="Life in engineering, illustrated"
+            viewAllHref="/comics"
+          />
+          <ComicDiscoveryCard />
+        </section>
+
         <SectionSeparator command="ls /simulators" />
 
         {/* Featured Simulators */}

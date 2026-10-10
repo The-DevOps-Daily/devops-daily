@@ -8,6 +8,7 @@ interface BreadcrumbItem {
 
 interface PageHeroProps {
   title: string;
+  titleId?: string;
   /** Word to highlight in the title with accent color + underline */
   accentWord?: string;
   description: string;
@@ -27,6 +28,7 @@ interface PageHeroProps {
 
 export function PageHero({
   title,
+  titleId,
   accentWord,
   description,
   icon: Icon,
@@ -140,8 +142,8 @@ export function PageHero({
                 </div>
               </div>
             )}
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground leading-tight">
+            <div className="min-w-0 [overflow-wrap:anywhere]">
+              <h1 id={titleId} className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground leading-tight">
                 {renderTitle()}
               </h1>
               <p className="mt-3 text-muted-foreground text-lg leading-relaxed max-w-2xl">
