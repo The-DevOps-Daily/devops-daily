@@ -295,18 +295,18 @@ export default function SponsorshipPage() {
 
       <div className="container mx-auto px-4">
         {/* Brands we have worked with */}
-        <section className="my-10 max-w-5xl mx-auto" aria-labelledby="past-sponsors">
-          <p id="past-sponsors" className="mb-5 text-center text-sm text-muted-foreground">
+        <section className="mx-auto my-14 max-w-5xl" aria-labelledby="past-sponsors">
+          <p id="past-sponsors" className="mb-10 text-center text-[13px] tracking-[0.01em] text-muted-foreground">
             Brands that have sponsored DevOps Daily
           </p>
-          <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+          <ul className="mx-auto grid grid-cols-3 items-center gap-x-8 gap-y-10 sm:gap-x-12 lg:grid-cols-6">
             {sponsorHistory.map((brand) => (
-              <li key={brand.name} className="flex h-10 items-center">
+              <li key={brand.name} className="flex h-12 items-center justify-center">
                 <SponsorLogo
                   sponsor={{ ...brand, url: '' }}
-                  width={140}
+                  width={160}
                   height={40}
-                  className="h-8 w-auto max-w-[140px] object-contain opacity-80"
+                  className="w-auto max-w-full object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 dark:opacity-60"
                 />
               </li>
             ))}

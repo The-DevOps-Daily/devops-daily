@@ -111,11 +111,42 @@ export function getSponsors(): Sponsor[] {
  * "brands we have worked with" row on the sponsorship page. Add a sponsor
  * here once a deal has actually run, and keep them after it ends.
  */
-export const sponsorHistory: Pick<Sponsor, 'name' | 'logo' | 'darkLogo'>[] = [
-  { name: 'Bitrise', logo: '/bitrise-brand.svg', darkLogo: '/bitrise-brand-light.svg' },
-  { name: 'Neon', logo: '/neon-brand.svg', darkLogo: '/neon-brand-light.svg' },
-  { name: 'Svix', logo: '/svix-brand.svg', darkLogo: '/svix-brand-light.svg' },
-  { name: 'Pluralsight', logo: '/pluralsight-logo.svg', darkLogo: '/pluralsight-logo-light.svg' },
-  { name: 'Acronis', logo: '/acronis.svg', darkLogo: '/acronis-light.svg' },
-  { name: 'Atomsized', logo: '/atomsized.svg', darkLogo: '/atomsized-light.svg' },
+export const sponsorHistory: Pick<Sponsor, 'name' | 'logo' | 'darkLogo' | 'className'>[] = [
+  // className sets each logo's height so the wordmarks look the same size.
+  {
+    name: 'Bitrise',
+    logo: '/bitrise-brand.svg',
+    darkLogo: '/bitrise-brand-light.svg',
+    className: 'h-[30px]',
+  },
+  {
+    name: 'Neon',
+    logo: '/neon-brand.svg',
+    darkLogo: '/neon-brand-light.svg',
+    className: 'h-[29px]',
+  },
+  {
+    name: 'Svix',
+    logo: '/svix-brand.svg',
+    darkLogo: '/svix-brand-light.svg',
+    className: 'h-[30px]',
+  },
+  {
+    name: 'Pluralsight',
+    logo: '/pluralsight-brand.svg',
+    darkLogo: '/pluralsight-brand-light.svg',
+    className: 'h-[30px]',
+  },
+  {
+    name: 'Acronis',
+    logo: '/acronis-wordmark.svg',
+    darkLogo: '/acronis-wordmark-light.svg',
+    className: 'h-[21px]',
+  },
+  {
+    name: 'Atomsized',
+    logo: '/atomsized.svg',
+    darkLogo: '/atomsized-light.svg',
+    className: 'h-[29px]',
+  },
 ];
