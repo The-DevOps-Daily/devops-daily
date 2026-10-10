@@ -200,14 +200,14 @@ const PIPELINE_STEPS: Array<{
     title: 'Build container image',
     detail: 'GitHub Actions packages the PR change',
     duration: 5000,
-    command: 'docker build --tag checkout:SHA .',
+    command: 'docker build --tag registry.example.dev/store:SHA .',
   },
   {
     id: 'push',
     title: 'Push image to registry',
     detail: 'The immutable commit image becomes available',
     duration: 5000,
-    command: 'docker push registry.example.dev/checkout:SHA',
+    command: 'docker push registry.example.dev/store:SHA',
   },
 ];
 
@@ -1206,7 +1206,7 @@ function GitHubActionsScene({
                   ? 'The same labeled event also queued this GitHub Actions workflow.'
                   : phase === 'running'
                     ? 'The workflow now advances automatically through its two jobs.'
-                    : `Artifact ready: store:${pullRequest.commit}. The PR comment is waiting for Argo.`}
+                    : `Artifact ready: registry.example.dev/store:${pullRequest.commit}. The PR comment is waiting for Argo.`}
               </div>
               {phase === 'idle' && (
                 <Button size="sm" className="cursor-pointer" onClick={onRun}>
@@ -1341,6 +1341,8 @@ function ArgoControlPlaneScene({
   const syncLabel = ready ? 'Synced' : phase === 'running' ? 'Syncing' : 'OutOfSync';
   const healthLabel = ready ? 'Healthy' : 'Progressing';
   const lastSyncLabel = ready ? 'Sync OK' : phase === 'running' ? 'Running' : 'Not synced';
+  // Resources in the tree below the Application: one deployment per service plus six shared
+  const resourceCount = state.config.services.length + 6;
   const toolbarButton =
     'inline-flex min-h-7 items-center gap-1 rounded-full bg-[#738792] px-2.5 text-[9px] font-semibold uppercase text-white';
   return (
@@ -1398,17 +1400,21 @@ function ArgoControlPlaneScene({
             <div className="mt-4 space-y-2 text-[9px] text-[#91a8b2]">
               <strong className="block uppercase">Sync status</strong>
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#18b99a]" /> Synced {ready ? 9 : 0}
+                <span className="size-2.5 rounded-full bg-[#18b99a]" /> Synced{' '}
+                {ready ? resourceCount : 0}
               </div>
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#f0ae2c]" /> OutOfSync {ready ? 0 : 9}
+                <span className="size-2.5 rounded-full bg-[#f0ae2c]" /> OutOfSync{' '}
+                {ready ? 0 : resourceCount}
               </div>
               <strong className="block pt-2 uppercase">Health status</strong>
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#18b99a]" /> Healthy {ready ? 9 : 0}
+                <span className="size-2.5 rounded-full bg-[#18b99a]" /> Healthy{' '}
+                {ready ? resourceCount : 0}
               </div>
               <div className="flex items-center gap-2">
-                <span className="size-2.5 rounded-full bg-[#13a8db]" /> Progressing {ready ? 0 : 9}
+                <span className="size-2.5 rounded-full bg-[#13a8db]" /> Progressing{' '}
+                {ready ? 0 : resourceCount}
               </div>
             </div>
             <a
@@ -1558,12 +1564,15 @@ function ArgoControlPlaneScene({
                     status={provision}
                     icon={Boxes}
                   />
-                  <ArgoResourceNode
-                    kind="deployment"
-                    name={`${pullRequest.id}-web`}
-                    status={provision}
-                    icon={ServerCog}
-                  />
+                  {state.config.services.map((service) => (
+                    <ArgoResourceNode
+                      key={service}
+                      kind="deployment"
+                      name={`${pullRequest.id}-${service}`}
+                      status={provision}
+                      icon={ServerCog}
+                    />
+                  ))}
                   <ArgoResourceNode
                     kind="service"
                     name={`${pullRequest.id}-entrypoint`}
@@ -1619,7 +1628,7 @@ function ArgoControlPlaneScene({
                       : `Sync completed · preview-pr-${pullRequest.number} is Healthy`}
                 </span>
                 <span className="hidden font-mono text-[#81949d] sm:inline">
-                  store:{pullRequest.commit}
+                  registry.example.dev/store:{pullRequest.commit}
                 </span>
               </div>
               <div className="mt-1 h-1 bg-[#c7d4d9]">

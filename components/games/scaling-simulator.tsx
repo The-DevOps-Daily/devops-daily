@@ -79,6 +79,9 @@ const PRICING = {
   autoScaling: 10,
 };
 
+// Every added server starts as 2 cores, 4 GB RAM, SSD, 1 Gbps
+const NEW_SERVER_COST = PRICING.cpu[2] + PRICING.ram[4] + PRICING.disk.SSD + PRICING.network[1];
+
 // Scenarios
 const SCENARIOS: Scenario[] = [
   {
@@ -221,7 +224,7 @@ export default function ScalingSimulator() {
     };
     setServers((prev) => [...prev, newServer]);
 
-    // Server startup time (30 seconds simulation)
+    // Server startup time (3 simulated seconds)
     if (servers.length > 0) {
       setTimeout(() => {
         setServers((prev) =>
@@ -291,48 +294,50 @@ export default function ScalingSimulator() {
       const currentTraffic = scenario.trafficPattern(time);
       setTrafficHistory((prev) => [...prev.slice(-60), currentTraffic]);
 
-      // Distribute load across healthy servers
-      const healthyServers = servers.filter((s) => s.status === 'healthy');
+      // Distribute load across running servers. Overloaded servers keep serving,
+      // so they go back to healthy when their load drops
+      const healthyServers = servers.filter(
+        (s) => s.status === 'healthy' || s.status === 'overloaded'
+      );
       if (healthyServers.length === 0) {
-        setMetrics((prev) => ({
-          ...prev,
-          failedRequests: prev.failedRequests + currentTraffic,
-          totalRequests: prev.totalRequests + currentTraffic,
-          currentRPS: currentTraffic,
-          uptime: Math.max(0, prev.uptime - 5),
-        }));
+        setMetrics((prev) => {
+          const newTotal = prev.totalRequests + currentTraffic;
+          return {
+            ...prev,
+            failedRequests: prev.failedRequests + currentTraffic,
+            totalRequests: newTotal,
+            currentRPS: currentTraffic,
+            uptime: newTotal > 0 ? (prev.successfulRequests / newTotal) * 100 : 100,
+          };
+        });
         return;
       }
 
-      const totalCapacity = healthyServers.reduce(
-        (sum, s) => sum + calculateServerCapacity(s),
-        0
-      );
-      const overallLoad = currentTraffic / totalCapacity;
+      // Without a load balancer, all traffic goes to the first server
+      const trafficFor = (index: number) =>
+        hasLoadBalancer ? currentTraffic / healthyServers.length : index === 0 ? currentTraffic : 0;
+      const usableCapacity = hasLoadBalancer
+        ? healthyServers.reduce((sum, s) => sum + calculateServerCapacity(s), 0)
+        : calculateServerCapacity(healthyServers[0]);
 
       // Calculate what the new server loads will be
-      const newServerLoads = healthyServers.map((s) => {
-        const serverCapacity = calculateServerCapacity(s);
-        return hasLoadBalancer
-          ? currentTraffic / healthyServers.length / serverCapacity
-          : currentTraffic / serverCapacity;
-      });
-      const avgLoad = newServerLoads.length > 0 
-        ? newServerLoads.reduce((sum, load) => sum + load, 0) / newServerLoads.length 
-        : 0;
+      const newServerLoads = healthyServers.map(
+        (s, index) => trafficFor(index) / calculateServerCapacity(s)
+      );
+      const avgLoad = hasLoadBalancer
+        ? newServerLoads.reduce((sum, load) => sum + load, 0) / newServerLoads.length
+        : newServerLoads[0];
 
       // Update server loads in state
       setServers((prev) =>
         prev.map((s) => {
-          if (s.status !== 'healthy') return s;
-          const serverCapacity = calculateServerCapacity(s);
-          const serverLoad = hasLoadBalancer
-            ? currentTraffic / healthyServers.length / serverCapacity
-            : currentTraffic / serverCapacity;
+          const index = healthyServers.findIndex((h) => h.id === s.id);
+          if (index === -1 || (s.status !== 'healthy' && s.status !== 'overloaded')) return s;
+          const serverLoad = newServerLoads[index];
           return {
             ...s,
             currentLoad: Math.min(serverLoad, 2),
-            requestsHandled: s.requestsHandled + Math.floor(currentTraffic / healthyServers.length),
+            requestsHandled: s.requestsHandled + Math.floor(trafficFor(index)),
             status: serverLoad > 1.5 ? 'overloaded' : 'healthy',
           };
         })
@@ -342,8 +347,8 @@ export default function ScalingSimulator() {
       const responseTime = calculateResponseTime(avgLoad);
       setResponseTimeHistory((prev) => [...prev.slice(-60), responseTime]);
 
-      const failedThisSecond =
-        overallLoad > 1 ? Math.floor((overallLoad - 1) * currentTraffic) : 0;
+      // Only the requests above usable capacity fail
+      const failedThisSecond = Math.max(0, Math.floor(currentTraffic - usableCapacity));
       const successfulThisSecond = currentTraffic - failedThisSecond;
 
       setMetrics((prev) => {
@@ -414,7 +419,9 @@ export default function ScalingSimulator() {
   useEffect(() => {
     if (!scalingConfig.autoScalingEnabled || !hasLoadBalancer) return;
     
-    const healthyServers = servers.filter((s) => s.status === 'healthy' || s.status === 'starting');
+    const healthyServers = servers.filter(
+      (s) => s.status === 'healthy' || s.status === 'overloaded' || s.status === 'starting'
+    );
     
     // Scale up if below minimum
     if (healthyServers.length < scalingConfig.minInstances) {
@@ -724,7 +731,8 @@ export default function ScalingSimulator() {
 
             <TabsContent value="vertical" className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Upgrade individual server specs. Note: Upgrades require ~30s downtime.
+                Upgrade individual server specs. Note: each upgrade takes the server down for
+                about 3 simulated seconds.
               </p>
 
               {/* Pricing Reference */}
@@ -1012,7 +1020,7 @@ export default function ScalingSimulator() {
                 <Badge variant="secondary" className="ml-2">
                    {servers.length >= scalingConfig.maxInstances
                      ? `Max ${scalingConfig.maxInstances}`
-                     : '+$20/mo'}
+                     : `+$${NEW_SERVER_COST}/mo`}
                 </Badge>
               </Button>
                 {servers.length > 1 && (
@@ -1024,7 +1032,7 @@ export default function ScalingSimulator() {
                     <Minus className="h-6 w-6 mr-2" />
                     Remove Server
                     <Badge variant="secondary" className="ml-2 bg-red-500/20 text-red-600">
-                      -$20/mo
+                      -${calculateServerCost(servers[servers.length - 1])}/mo
                     </Badge>
                   </Button>
                 )}

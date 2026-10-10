@@ -83,7 +83,7 @@ const SCENARIOS: Scenario[] = [
     problem:
       'Networks are unreliable. Random failures happen. Your users see errors even though the service is working.',
     solution:
-      'The sidecar automatically retries failed requests with smart backoff. Your users never see temporary network blips!',
+      'The sidecar automatically retries failed requests with backoff, up to a set limit. Most short network blips never reach your users, but retries are bounded: at a 50% failure rate with 2 retries, about 1 in 8 requests still fails.',
     visual: 'retry',
     difficulty: 'advanced',
   },

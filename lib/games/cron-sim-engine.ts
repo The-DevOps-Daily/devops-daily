@@ -11,7 +11,8 @@
  *   * Day-of-month and day-of-week are OR'd, not AND'd, whenever both are
  *     restricted. `0 0 1 * MON` is the 1st AND every Monday, not Mondays that
  *     fall on the 1st. This is POSIX behaviour and the source of many
- *     accidental daily jobs.
+ *     accidental daily jobs. A day field that starts with `*`, such as `*\/2`,
+ *     counts as unrestricted, the way cronie and Vixie cron read it.
  *
  *   * Fire times are computed on the wall clock, so daylight saving is not
  *     smoothed over. A local time that does not exist on a spring-forward day
@@ -50,7 +51,7 @@ export interface ParsedCron {
   macro?: string;
   fields?: Record<FieldName, FieldSpec>;
   errors: CronError[];
-  /** True when dom and dow are both restricted, which triggers the OR rule. */
+  /** True when dom and dow are both restricted (neither starts with `*`), which triggers the OR rule. */
   dayOr: boolean;
 }
 
@@ -410,8 +411,16 @@ export function parseCron(input: string): ParsedCron {
     macro,
     fields,
     errors,
-    dayOr: !fields.dom.wildcard && !fields.dow.wildcard,
+    dayOr: !startsWithStar(fields.dom) && !startsWithStar(fields.dow),
   };
+}
+
+/**
+ * cronie and Vixie cron set DOM_STAR / DOW_STAR when the field's first character
+ * is `*`, so `*\/2` counts as unrestricted for the OR rule even though it skips days.
+ */
+function startsWithStar(spec: FieldSpec): boolean {
+  return spec.raw.startsWith('*') || spec.raw === '?';
 }
 
 // ---------------------------------------------------------------------------
@@ -740,6 +749,16 @@ export function observations(parsed: ParsedCron, schedule: ScheduleResult, tz: s
         `Both day fields are restricted, so this fires ${f.dom.describe} and also ${f.dow.describe}. ` +
         'It does not mean "only when they line up". This is the most expensive cron mistake there is, ' +
         'because a job you meant to run monthly quietly runs weekly as well.',
+    });
+  } else if (!f.dom.wildcard && !f.dow.wildcard) {
+    const star = f.dom.raw.startsWith('*') ? f.dom : f.dow;
+    out.push({
+      kind: 'or',
+      title: `\`${star.raw}\` starts with \`*\`, so the OR rule is off`,
+      body:
+        `cronie and Vixie cron treat a day field that starts with \`*\` as unrestricted, even with a step. ` +
+        `Both day fields must match: this fires ${f.dom.describe}, but only ${f.dow.describe}. ` +
+        'Start the field with a number instead (for example `1-31/2` for odd days) if you wanted the OR rule.',
     });
   }
 

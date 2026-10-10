@@ -65,7 +65,7 @@ const SCENARIOS: Record<ScenarioId, ScenarioConfig> = {
     subtitle: 'Most requests cluster tightly. P90, P95, and P99 are close together.',
     baseMs: 78,
     jitterMs: 16,
-    tailMultiplier: 2.1,
+    tailMultiplier: 0.4,
     tailShape: 0.9,
     color: 'from-emerald-500 to-cyan-600',
     icon: CheckCircle2,

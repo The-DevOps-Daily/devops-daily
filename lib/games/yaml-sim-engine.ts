@@ -5,7 +5,8 @@
  * It is not a complete YAML implementation and does not try to be. It covers
  * block mappings, block sequences, inline flow collections, quoting and block
  * scalars, because those are what a CI file or a Kubernetes manifest is made
- * of, and it resolves untagged scalars under both YAML 1.1 and YAML 1.2.
+ * of, and it resolves untagged scalars (plain keys included) under both YAML
+ * 1.1 and YAML 1.2.
  *
  * The two specs disagree, and that disagreement is the entire reason for the
  * famous surprises. YAML 1.1 treats `no`, `off` and `y` as booleans. YAML 1.2
@@ -67,35 +68,61 @@ const FALSE_11 = new Set(["n", "N", "no", "No", "NO", "false", "False", "FALSE",
 // without quotes therefore means two different numbers depending on the parser.
 const INT_12 = /^[-+]?[0-9]+$/;
 const INT_HEX = /^[-+]?0x[0-9a-fA-F]+$/;
-const INT_OCT_11 = /^[-+]?0[0-7]+$/; // 1.1 only: 08 is not this, and is not an int either
-// 1.1 has no decimal form with a leading zero, so 08 and 09 match nothing and stay strings.
-const LEADING_ZERO_11 = /^[-+]?0[0-9]+$/;
 const INT_OCT_12 = /^[-+]?0o[0-7]+$/;
 const FLOAT = /^[-+]?(\.[0-9]+|[0-9]+(\.[0-9]*)?)([eE][-+]?[0-9]+)?$/;
+
+// YAML 1.1 ints, as PyYAML reads them: binary, octal with a leading zero, decimal,
+// hex and base 60, so `22:22` is 1342. Underscores are ignored, so `1_000` is 1000.
+// 1.1 has no decimal form with a leading zero, so 08 and 09 match nothing and stay strings.
+const INT_11 = /^[-+]?(0b[01_]+|0[0-7_]+|0|[1-9][0-9_]*|0x[0-9a-fA-F_]+|[1-9][0-9_]*(:[0-5]?[0-9])+)$/;
+// YAML 1.1 floats need a dot, and an exponent needs a sign: `1e3` and `1.0e3` stay strings,
+// `1.0e+3` is 1000.
+const FLOAT_11 = /^([-+]?[0-9][0-9_]*\.[0-9_]*([eE][-+][0-9]+)?|\.[0-9][0-9_]*([eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(:[0-5]?[0-9])+\.[0-9_]*)$/;
+// Infinity and not-a-number are floats in both specs.
+const INF = /^[-+]?\.(inf|Inf|INF)$/;
+const NAN = /^\.(nan|NaN|NAN)$/;
 
 /** Resolve an unquoted scalar the way the given spec would. */
 export function resolveScalar(raw: string, spec: Spec): Scalar {
   const t = raw.trim();
 
+  if (INF.test(t)) return { kind: "float", value: t.startsWith("-") ? -Infinity : Infinity };
+  if (NAN.test(t)) return { kind: "float", value: NaN };
+
   if (spec === "1.1") {
     if (t === "" || t === "~" || NULLS_12.has(t)) return { kind: "null", value: null };
     if (TRUE_11.has(t)) return { kind: "bool", value: true };
     if (FALSE_11.has(t)) return { kind: "bool", value: false };
-    if (INT_OCT_11.test(t)) return { kind: "int", value: parseInt(t.replace("+", ""), 8) };
-    if (LEADING_ZERO_11.test(t)) return { kind: "string", value: t };
-  } else {
-    if (NULLS_12.has(t)) return { kind: "null", value: null };
-    if (TRUE_12.has(t)) return { kind: "bool", value: true };
-    if (FALSE_12.has(t)) return { kind: "bool", value: false };
-    if (INT_OCT_12.test(t)) return { kind: "int", value: parseInt(t.replace(/0o/, ""), 8) };
+    if (INT_11.test(t)) return { kind: "int", value: sexagesimal(t, int11) };
+    // A trailing zero is where `version: 1.10` quietly becomes 1.1.
+    if (FLOAT_11.test(t)) return { kind: "float", value: sexagesimal(t, parseFloat) };
+    return { kind: "string", value: t };
   }
 
+  if (NULLS_12.has(t)) return { kind: "null", value: null };
+  if (TRUE_12.has(t)) return { kind: "bool", value: true };
+  if (FALSE_12.has(t)) return { kind: "bool", value: false };
+  if (INT_OCT_12.test(t)) return { kind: "int", value: parseInt(t.replace(/0o/, ""), 8) };
   if (INT_HEX.test(t)) return { kind: "int", value: parseInt(t, 16) };
   if (INT_12.test(t)) return { kind: "int", value: parseInt(t, 10) };
-  // A trailing zero is where `version: 1.10` quietly becomes 1.1.
   if (FLOAT.test(t)) return { kind: "float", value: parseFloat(t) };
 
   return { kind: "string", value: t };
+}
+
+/** Apply the sign, drop underscores, and read `a:b:c` as base 60 (each part is decimal). */
+function sexagesimal(t: string, single: (s: string) => number): number {
+  const sign = t.startsWith("-") ? -1 : 1;
+  const parts = t.replace(/^[-+]/, "").replace(/_/g, "").split(":");
+  if (parts.length === 1) return sign * single(parts[0]);
+  return sign * parts.reduce((acc, part) => acc * 60 + parseFloat(part), 0);
+}
+
+function int11(s: string): number {
+  if (s.startsWith("0b")) return parseInt(s.slice(2) || "0", 2);
+  if (s.startsWith("0x")) return parseInt(s.slice(2) || "0", 16);
+  if (s.length > 1 && s.startsWith("0")) return parseInt(s, 8);
+  return parseInt(s, 10);
 }
 
 /* ------------------------------------------------------------------- lexing */
@@ -222,9 +249,10 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
           }`,
         };
       }
-      const key = unquote(m[1].trim());
+      const rawKey = unquote(m[1].trim());
+      const childPath = path ? `${path}.${rawKey}` : rawKey;
+      const key = resolveKey(m[1].trim(), childPath, coercions, spec);
       const inline = (m[2] ?? "").trim();
-      const childPath = path ? `${path}.${key}` : key;
       i++;
 
       const already = entries.findIndex(([k]) => k === key);
@@ -296,19 +324,21 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
   function parseInlineMapStart(rest: string, line: Line, childIndent: number, path: string): Node | ParseErr {
     const m = rest.match(/^(.+?):(?:\s+(.*))?$/);
     if (!m) return { ok: false, line: line.n, message: "Expected a key after the dash." };
-    const key = unquote(m[1].trim());
+    const rawKey = unquote(m[1].trim());
     const inline = (m[2] ?? "").trim();
     const entries: Array<[string, Node]> = [];
-    const p = path ? `${path}.${key}` : key;
+    const p = path ? `${path}.${rawKey}` : rawKey;
+    const key = resolveKey(m[1].trim(), p, coercions, spec);
     entries.push([key, inline === "" ? { kind: "null", value: null } : scalarFrom(inline, p, coercions, spec)]);
     while (i < lines.length && lines[i].indent === childIndent) {
       const l = lines[i];
       const mm = l.text.match(/^(.+?):(?:\s+(.*))?$/);
       if (!mm) break;
-      const k = unquote(mm[1].trim());
+      const kp = `${path}.${unquote(mm[1].trim())}`;
+      const k = resolveKey(mm[1].trim(), kp, coercions, spec);
       const v = (mm[2] ?? "").trim();
       i++;
-      entries.push([k, v === "" ? { kind: "null", value: null } : scalarFrom(v, `${path}.${k}`, coercions, spec)]);
+      entries.push([k, v === "" ? { kind: "null", value: null } : scalarFrom(v, kp, coercions, spec)]);
     }
     return { kind: "map", entries };
   }
@@ -399,9 +429,10 @@ function parseFlow(src: string, path: string, coercions: Coercion[], spec: Spec)
   for (const part of parts) {
     const at = splitFlowKey(part);
     if (!at) continue;
-    const k = stripQuotes(at[0].trim());
+    const rawKey = stripQuotes(at[0].trim());
     const vRaw = at[1].trim();
-    const p = path ? `${path}.${k}` : k;
+    const p = path ? `${path}.${rawKey}` : rawKey;
+    const k = resolveKey(at[0].trim(), p, coercions, spec);
     const nested = parseFlow(vRaw, p, coercions, spec);
     entries.push([k, nested ?? scalarFrom(vRaw, p, coercions, spec)]);
   }
@@ -448,6 +479,19 @@ function splitFlowKey(s: string): [string, string] | null {
     else if (c === ":" && depth === 0) return [s.slice(0, i), s.slice(i + 1)];
   }
   return null;
+}
+
+/**
+ * Plain keys resolve like values. Under 1.1, the `on:` of a GitHub Actions
+ * workflow is the boolean key true, which is what PyYAML hands back. Quoted keys
+ * stay strings. Paths keep the key as written, so both specs report the same paths.
+ */
+function resolveKey(raw: string, path: string, coercions: Coercion[], spec: Spec): string {
+  if (raw.startsWith('"') || raw.startsWith("'")) return stripQuotes(raw);
+  const s = resolveScalar(raw, spec);
+  if (s.kind === "string") return raw;
+  coercions.push({ path: `${path} (key)`, raw, kind: s.kind, value: String(s.value) });
+  return String(s.value);
 }
 
 function scalarFrom(raw: string, path: string, coercions: Coercion[], spec: Spec): Scalar {

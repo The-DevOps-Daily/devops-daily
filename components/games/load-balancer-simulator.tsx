@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, RotateCcw, Users, Server, XCircle, Keyboard } from 'lucide-react';
@@ -40,11 +40,13 @@ const ALGORITHMS: Record<AlgorithmType, { name: string; description: string }> =
   },
   'least-connections': {
     name: 'Least Connections',
-    description: 'Always sends to the server handling the fewest requests right now',
+    description:
+      'Always sends to the server handling the fewest requests right now. Ties take turns.',
   },
   'ip-hash': {
     name: 'IP Hash',
-    description: 'Same user always goes to the same server (sticky sessions)',
+    description:
+      'Same user always goes to the same server (sticky sessions). If that server is offline, the user moves to another healthy server.',
   },
   random: {
     name: 'Random',
@@ -81,6 +83,7 @@ export default function LoadBalancerSimulator() {
     { id: 2, name: 'Server 2', requests: 0, active: 0, healthy: true },
     { id: 3, name: 'Server 3', requests: 0, active: 0, healthy: true },
   ]);
+  const serversRef = useRef(servers);
   const [packets, setPackets] = useState<RequestPacket[]>([]);
   const [roundRobinIndex, setRoundRobinIndex] = useState(0);
   const [clientIndex, setClientIndex] = useState(0);
@@ -139,15 +142,27 @@ export default function LoadBalancerSimulator() {
         return healthyServers[0]?.id ?? null;
       }
       case 'least-connections': {
-        const sorted = [...healthyServers].sort((a, b) => a.active - b.active);
-        return sorted[0].id;
+        // Ties between equally loaded servers go round robin, like nginx least_conn
+        const fewest = Math.min(...healthyServers.map((s) => s.active));
+        for (let i = 0; i < 3; i++) {
+          const target = ((roundRobinIndex + i) % 3) + 1;
+          if (healthyServers.find((s) => s.id === target)?.active === fewest) {
+            setRoundRobinIndex(roundRobinIndex + i + 1);
+            return target;
+          }
+        }
+        return healthyServers[0].id;
       }
       case 'ip-hash': {
-        // Rotate through simulated clients - each client always maps to same server
+        // Rotate through simulated clients - each client always maps to same server.
+        // If that server is offline, rehash to the next healthy one, like nginx ip_hash
         const client = clients[clientIndex % clients.length];
         setClientIndex((prev) => prev + 1);
-        const targetId = client.serverHash + 1;
-        return servers.find((s) => s.id === targetId)?.healthy ? targetId : null;
+        for (let i = 0; i < 3; i++) {
+          const targetId = ((client.serverHash + i) % 3) + 1;
+          if (servers.find((s) => s.id === targetId)?.healthy) return targetId;
+        }
+        return null;
       }
       case 'random':
         return healthyServers[Math.floor(Math.random() * healthyServers.length)].id;
@@ -173,7 +188,7 @@ export default function LoadBalancerSimulator() {
       return;
     }
 
-    const sendPacket = (serverId: number, retryAttempt = 0) => {
+    const sendPacket = (serverId: number, retryAttempt = 0, tried: number[] = []) => {
       const newPacketId = retryAttempt > 0 ? `${packetId}-retry${retryAttempt}` : packetId;
       setPackets((prev) => [
         ...prev,
@@ -218,11 +233,19 @@ export default function LoadBalancerSimulator() {
             setPackets((prev) => prev.filter((p) => p.id !== newPacketId));
 
             if (enableRetry && retryAttempt < MAX_RETRY_ATTEMPTS) {
-              // Retry with a different server
-              const nextServer = getTargetServer();
-              if (nextServer && nextServer !== serverId) {
+              // Retry on the next healthy server this request has not tried yet,
+              // like nginx proxy_next_upstream
+              const usedServers = [...tried, serverId];
+              const nextServer = [1, 2]
+                .map((offset) => ((serverId - 1 + offset) % 3) + 1)
+                .find(
+                  (id) =>
+                    !usedServers.includes(id) &&
+                    serversRef.current.find((s) => s.id === id)?.healthy
+                );
+              if (nextServer) {
                 setRetriedRequests((prev) => prev + 1);
-                sendPacket(nextServer, retryAttempt + 1);
+                sendPacket(nextServer, retryAttempt + 1, usedServers);
               } else {
                 setFailedRequests((prev) => prev + 1);
               }
@@ -246,6 +269,10 @@ export default function LoadBalancerSimulator() {
 
     sendPacket(targetServer);
   }, [getTargetServer, failureRate, enableRetry]);
+
+  useEffect(() => {
+    serversRef.current = servers;
+  }, [servers]);
 
   useEffect(() => {
     if (!isRunning) return;
