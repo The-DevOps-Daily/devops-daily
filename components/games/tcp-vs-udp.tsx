@@ -40,6 +40,28 @@ const CONNECTION_STATES = {
   CONNECTED: 'CONNECTED'                // Data flow
 };
 
+const TCP_WINDOW = 3; // Unacknowledged DATA packets allowed in flight
+const LOST_TICKS = 30; // TCP: retransmission timeout. UDP: how long the X stays
+
+type Packet = {
+  id: number;
+  x: number;
+  y: number;
+  type: string; // DATA, ACK, SYN, SYN-ACK
+  status: string; // inflight, lost
+  mode: string;
+  progress: number;
+  retransmitted: boolean;
+  dropAt: number | null;
+  lostTicks: number;
+};
+
+type LogEntry = { id: number; text: string; type: string };
+
+// Loss is decided once per packet: null, or the point on the wire where it drops
+const rollDrop = (lossPercent: number) =>
+  Math.random() * 100 < lossPercent ? 20 + Math.random() * 60 : null;
+
 // --- Helper Components ---
 
 const Tooltip = ({ children, text }: { children: React.ReactNode; text: string }) => (
@@ -69,20 +91,24 @@ export default function TcpVsUdpSimulator() {
   // State
   const [mode, setMode] = useState(MODES.TCP);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [packets, setPackets] = useState([]);
-  const [stats, setStats] = useState({ sent: 0, received: 0, lost: 0, retransmits: 0 });
-  const [logs, setLogs] = useState([]);
+  const [packets, setPackets] = useState<Packet[]>([]);
+  const [stats, setStats] = useState({ sent: 0, received: 0, lost: 0, retransmits: 0, onWire: 0 });
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [connState, setConnState] = useState(CONNECTION_STATES.DISCONNECTED);
   const [educationalMessage, setEducationalMessage] = useState("");
   
   // Simulation Controls
   const [speed, setSpeed] = useState(50); // Speed of simulation tick
-  const [packetLossChance, setPacketLossChance] = useState(0); // 0 to 100%
+  const [packetLossChance, setPacketLossChance] = useState(0); // % of packets dropped
   const [jitter, setJitter] = useState(0); // Random movement noise
   
   // Refs
-  const requestRef = useRef();
+  const requestRef = useRef(0);
   const packetIdCounter = useRef(0);
+  // The simulation reads and writes packets through this ref, outside React
+  // updaters, so its side effects (counters, logs, timers) run exactly once.
+  const packetsRef = useRef<Packet[]>([]);
+  const handshakeTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const tcpWindow = useRef(new Set()); // IDs of packets in flight for TCP
   const lastSpawnTime = useRef(0);
   const containerRef = useRef(null);
@@ -120,31 +146,35 @@ export default function TcpVsUdpSimulator() {
             setEducationalMessage("Step 3/3: Client sends final ACK. Connection is established!");
             break;
         case CONNECTION_STATES.CONNECTED:
-            setEducationalMessage("Connection Established. Reliable Data Transfer in progress. Note the return receipts (ACKs).");
+            setEducationalMessage(`Connection Established. Reliable Data Transfer in progress. Note the return receipts (ACKs). At most ${TCP_WINDOW} packets wait for an ACK at once; unacknowledged data is retransmitted after a timeout, whether the data or its ACK was lost.`);
             break;
         default:
             break;
     }
   }, [connState, mode, isPlaying]);
 
+  const commitPackets = useCallback((next: Packet[]) => {
+    packetsRef.current = next;
+    setPackets(next);
+  }, []);
+
   const spawnPacket = useCallback((typeOverride: string | null = null, statusOverride = "inflight") => {
     // Limits
-    if (packets.length > 30) return; // Prevent overcrowding
+    if (packetsRef.current.length > 30) return; // Prevent overcrowding
 
-    // TCP Window Control (Simple Stop-and-Wait / Small Window simulation)
-    // Only apply window logic to DATA packets, not Handshake
-    if (mode === MODES.TCP && !typeOverride && tcpWindow.current.size >= 3) return;
+    let type = typeOverride || 'DATA';
+
+    // TCP Window Control: only DATA packets count, not the handshake
+    if (mode === MODES.TCP && type === 'DATA' && tcpWindow.current.size >= TCP_WINDOW) return;
 
     packetIdCounter.current += 1;
     const id = packetIdCounter.current;
-    
-    let type = typeOverride || 'DATA';
-    
+
     if (mode === MODES.TCP && type === 'DATA') {
       tcpWindow.current.add(id);
     }
 
-    const newPacket = {
+    const newPacket: Packet = {
       id,
       x: 10, // Start Left
       y: 50, // Center Y
@@ -152,14 +182,17 @@ export default function TcpVsUdpSimulator() {
       status: statusOverride, 
       mode: mode,
       progress: type === 'SYN-ACK' ? 90 : 10, // SYN-ACK starts at right side
-      retransmitted: false
+      retransmitted: false,
+      // Handshake packets are immune to loss in this basic educational demo to avoid frustration
+      dropAt: type === 'DATA' ? rollDrop(packetLossChance) : null,
+      lostTicks: 0
     };
 
-    setPackets(prev => [...prev, newPacket]);
+    commitPackets([...packetsRef.current, newPacket]);
     if (type === 'DATA') {
-        setStats(prev => ({ ...prev, sent: prev.sent + 1 }));
+        setStats(prev => ({ ...prev, sent: prev.sent + 1, onWire: prev.onWire + 1 }));
     }
-  }, [mode, packets.length]);
+  }, [mode, packetLossChance, commitPackets]);
 
   const handleStartStop = () => {
       if (isPlaying) {
@@ -186,17 +219,17 @@ export default function TcpVsUdpSimulator() {
   const updateSimulation = useCallback(() => {
     if (!isPlaying) return;
 
-    setPackets(prevPackets => {
-      let nextPackets = prevPackets.map(p => {
-        // 1. Check for Loss (Random Event mid-flight)
-        // Handshake packets are immune to loss in this basic educational demo to avoid frustration
-        const isHandshake = ['SYN', 'SYN-ACK'].includes(p.type);
-        
-        if (!isHandshake && p.status === 'inflight' && p.progress > 20 && p.progress < 80) {
-          const roll = Math.random() * 1000;
-          if (roll < packetLossChance) {
-             return { ...p, status: 'lost', progress: p.progress }; // Stop moving
-          }
+    const delta = { lost: 0, retransmits: 0, onWire: 0 };
+
+      let nextPackets = packetsRef.current.map((p): Packet | null => {
+        // 1. Lost packets: TCP's timer resends the DATA (whether the DATA or its ACK was lost); UDP forgets it
+        if (p.status === 'lost') {
+          if (p.lostTicks < LOST_TICKS) return { ...p, lostTicks: p.lostTicks + 1 };
+          if (p.mode !== MODES.TCP) return null;
+          logMessage(`Packet #${p.id} timed out. Retransmitting...`, 'error');
+          delta.retransmits += 1;
+          delta.onWire += 1;
+          return { ...p, type: 'DATA', status: 'inflight', progress: 10, y: 50, retransmitted: true, lostTicks: 0, dropAt: rollDrop(packetLossChance) };
         }
 
         // 2. Movement Logic
@@ -221,6 +254,12 @@ export default function TcpVsUdpSimulator() {
         let newProgress = p.progress + (moveSpeed * direction);
         let newY = p.y + noiseY;
 
+        // Drop the packet where its loss roll said it would go
+        if (p.status === 'inflight' && p.dropAt !== null && (direction === 1 ? newProgress >= p.dropAt : newProgress <= p.dropAt)) {
+            delta.lost += 1;
+            return { ...p, status: 'lost', progress: p.dropAt, y: newY, lostTicks: 0 };
+        }
+
         // Clamp Y
         if (newY < 30) newY = 30;
         if (newY > 70) newY = 70;
@@ -234,10 +273,10 @@ export default function TcpVsUdpSimulator() {
                 logMessage("Server received SYN", 'syn');
                 setConnState(CONNECTION_STATES.HANDSHAKE_SYN_ACK);
                 // Trigger Server Response next tick (handled in effect or here? Let's do next tick via state)
-                setTimeout(() => {
+                handshakeTimers.current.push(setTimeout(() => {
                     spawnPacket('SYN-ACK');
                     logMessage("Server sent SYN-ACK", 'syn');
-                }, 500);
+                }, 500));
                 return null;
             }
             else if (p.type === 'ACK' && connState === CONNECTION_STATES.HANDSHAKE_ACK) {
@@ -247,13 +286,15 @@ export default function TcpVsUdpSimulator() {
             }
             else if (p.type === 'DATA') {
                 if (p.mode === MODES.TCP) {
-                    // TCP: Convert to ACK (Return receipt)
+                    // TCP: Convert to ACK (Return receipt), which can be lost too
+                    delta.onWire += 1;
                     return { 
                     ...p, 
                     type: 'ACK', 
                     progress: 90, 
                     status: 'inflight',
-                    y: newY 
+                    y: newY,
+                    dropAt: rollDrop(packetLossChance)
                     };
                 } else {
                     // UDP: Done
@@ -269,10 +310,10 @@ export default function TcpVsUdpSimulator() {
             if (p.type === 'SYN-ACK') {
                 logMessage("Client received SYN-ACK", 'syn');
                 setConnState(CONNECTION_STATES.HANDSHAKE_ACK);
-                setTimeout(() => {
+                handshakeTimers.current.push(setTimeout(() => {
                     spawnPacket('ACK'); // Final handshake ACK
                     logMessage("Client sent ACK", 'syn');
-                }, 500);
+                }, 500));
                 return null;
             }
             else if (p.type === 'ACK') {
@@ -283,26 +324,28 @@ export default function TcpVsUdpSimulator() {
             }
         }
 
-        // Remove lost packets
-        if (p.status === 'lost') {
-            if (Math.random() > 0.95) return null;
-            return p;
-        }
-
         return { ...p, progress: newProgress, y: newY };
 
-      }).filter(Boolean);
+      }).filter((p): p is Packet => p !== null);
 
-      return nextPackets;
-    });
+      if (delta.lost || delta.retransmits || delta.onWire) {
+        setStats(s => ({
+          ...s,
+          lost: s.lost + delta.lost,
+          retransmits: s.retransmits + delta.retransmits,
+          onWire: s.onWire + delta.onWire
+        }));
+      }
 
-  }, [isPlaying, packetLossChance, speed, jitter, connState, mode, spawnPacket, logMessage]);
+      commitPackets(nextPackets);
+
+  }, [isPlaying, packetLossChance, speed, jitter, connState, mode, spawnPacket, logMessage, commitPackets]);
 
   // Game Loop
   useEffect(() => {
     let lastTime = performance.now();
     
-    const animate = (time) => {
+    const animate = (time: number) => {
       const delta = time - lastTime;
       
       if (delta > 20) { 
@@ -316,30 +359,6 @@ export default function TcpVsUdpSimulator() {
                spawnPacket('DATA');
                lastSpawnTime.current = time;
              }
-        }
-
-        // TCP Retransmission Watcher (Simplified)
-        if (mode === MODES.TCP && isPlaying && connState === CONNECTION_STATES.CONNECTED) {
-             setPackets(prev => {
-                 const lostPackets = prev.filter(p => p.status === 'lost' && !p.retransmitted && p.type === 'DATA');
-                 if (lostPackets.length > 0) {
-                     const lostP = lostPackets[0];
-                     if (Math.random() > 0.92) { // Slightly slower retransmit check
-                        logMessage(`Packet #${lostP.id} Lost. Retrying...`, 'error');
-                        setStats(s => ({ ...s, retransmits: s.retransmits + 1 }));
-                        
-                        const remaining = prev.filter(p => p !== lostP);
-                        return [...remaining, {
-                             ...lostP,
-                             status: 'inflight',
-                             progress: 10,
-                             retransmitted: true,
-                             y: 50 
-                        }];
-                     }
-                 }
-                 return prev;
-             })
         }
 
         lastTime = time;
@@ -356,15 +375,19 @@ export default function TcpVsUdpSimulator() {
 
   // Reset
   const handleReset = () => {
-    setPackets([]);
-    setStats({ sent: 0, received: 0, lost: 0, retransmits: 0 });
+    handshakeTimers.current.forEach(clearTimeout);
+    handshakeTimers.current = [];
+    commitPackets([]);
+    setStats({ sent: 0, received: 0, lost: 0, retransmits: 0, onWire: 0 });
     tcpWindow.current.clear();
     setLogs([]);
     setConnState(CONNECTION_STATES.DISCONNECTED);
     setIsPlaying(false);
   };
 
-  const handleModeChange = (newMode) => {
+  useEffect(() => () => handshakeTimers.current.forEach(clearTimeout), []);
+
+  const handleModeChange = (newMode: string) => {
     setMode(newMode);
     handleReset();
     logMessage(`Switched to ${newMode} Protocol`);
@@ -483,7 +506,7 @@ export default function TcpVsUdpSimulator() {
           />
           <StatCard 
             label="Loss Rate" 
-            value={`${stats.sent > 0 ? ((stats.lost / stats.sent) * 100).toFixed(1) : 0}%`} 
+            value={`${stats.onWire > 0 ? ((stats.lost / stats.onWire) * 100).toFixed(1) : 0}%`} 
             color={COLORS.loss} 
             icon={WifiOff} 
           />
@@ -664,11 +687,11 @@ export default function TcpVsUdpSimulator() {
                     {/* Loss Slider */}
                     <div>
                          <div className="flex justify-between text-xs mb-1">
-                            <span className="flex items-center gap-1">Packet Loss <Tooltip text="Randomly destroys packets in transit."><Info size={12} className="text-slate-500"/></Tooltip></span>
-                            <span className="text-red-400">{packetLossChance / 10}%</span>
+                            <span className="flex items-center gap-1">Packet Loss <Tooltip text="Share of packets destroyed in transit. In TCP mode, ACKs can be lost too."><Info size={12} className="text-slate-500"/></Tooltip></span>
+                            <span className="text-red-400">{packetLossChance}%</span>
                         </div>
                         <input 
-                            type="range" min="0" max="50" value={packetLossChance} 
+                            type="range" min="0" max="30" value={packetLossChance} 
                             onChange={(e) => setPacketLossChance(Number(e.target.value))}
                             className="w-full h-2 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500"
                         />

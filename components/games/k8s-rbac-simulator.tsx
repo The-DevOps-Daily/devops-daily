@@ -24,9 +24,8 @@ import {
  * what it will not tell you is which binding granted it, or why the binding
  * you were sure about did not apply.
  *
- * The engine is real and has no Kubernetes in it, so a cluster you assemble
- * here is evaluated by the same rules as the shipped scenarios. See
- * lib/games/rbac-sim-engine.ts and its 28 tests.
+ * The engine is real and has no Kubernetes in it: every scenario is evaluated
+ * by the rules in lib/games/rbac-sim-engine.ts, which its tests pin down.
  *
  * Styling is scoped under `.rbacsim` (classes prefixed `rb-`) so it does not
  * collide with the site's global Tailwind layer.

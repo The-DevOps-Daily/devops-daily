@@ -340,7 +340,10 @@ export default function LogAggregationPipelineSimulator() {
                     <label htmlFor="parser-mode" className="text-sm font-medium">
                       Parser
                     </label>
-                    <p className="text-xs text-muted-foreground">Changes require a fresh run.</p>
+                    <p className="text-xs text-muted-foreground">
+                      Grok runs a regex on every line, so the processor handles fewer logs per
+                      cycle. Changes require a fresh run.
+                    </p>
                   </div>
                   <select
                     id="parser-mode"

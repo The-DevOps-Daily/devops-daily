@@ -60,7 +60,8 @@ export const PIPELINE_STAGES: PipelineStage[] = [
     shortLabel: 'Index',
     title: 'Search cluster',
     role: 'Elasticsearch-style shards index the accepted, structured events.',
-    watches: 'Uneven or saturated shards increase indexing and query latency.',
+    watches:
+      'Routing by document id keeps the shards evenly loaded. When indexing falls behind, the buffer upstream grows.',
   },
   {
     id: 'query',
@@ -212,19 +213,42 @@ function nextStage(state: PipelineState, changes: Partial<PipelineState>): Pipel
   };
 }
 
+// Grok runs a regex over every line, which costs more CPU than decoding JSON,
+// so the same processor handles fewer logs per cycle.
+export const GROK_THROUGHPUT = 0.8;
+
+export function processorCapacity(state: Pick<PipelineState, 'scenarioId' | 'parserMode'>): number {
+  const base = LOG_SCENARIOS[state.scenarioId].processorCapacity;
+  return state.parserMode === 'grok' ? Math.floor(base * GROK_THROUGHPUT) : base;
+}
+
 function deterministicLoss(amount: number, rate: number): number {
   if (amount === 0 || rate === 0) return 0;
   return Math.max(1, Math.floor(amount * rate));
 }
 
-const SAMPLE_LOGS: Array<Pick<IndexedLog, 'level' | 'service' | 'message'>> = [
+type SampleLog = Pick<IndexedLog, 'level' | 'service' | 'message'>;
+
+const CALM_LOGS: SampleLog[] = [
   { level: 'INFO', service: 'api', message: 'request completed status=200 latency=42ms' },
   { level: 'WARN', service: 'worker', message: 'job retry scheduled attempt=2' },
-  { level: 'ERROR', service: 'checkout', message: 'payment provider timeout after=3s' },
   { level: 'INFO', service: 'checkout', message: 'cart converted order_id=ord_1042' },
-  { level: 'WARN', service: 'api', message: 'rate limit at 82 percent capacity' },
   { level: 'INFO', service: 'worker', message: 'queue batch processed count=24' },
 ];
+
+// The indexed sample should look like the incident: only the spike is a bad
+// time for the application itself. The other scenarios break the pipeline.
+const SAMPLE_LOGS: Record<LogScenarioId, SampleLog[]> = {
+  healthy: CALM_LOGS,
+  spike: [
+    { level: 'INFO', service: 'api', message: 'request completed status=200 latency=380ms' },
+    { level: 'WARN', service: 'api', message: 'rate limit at 97 percent capacity' },
+    { level: 'ERROR', service: 'checkout', message: 'payment provider timeout after=3s' },
+    { level: 'WARN', service: 'worker', message: 'job retry scheduled attempt=3' },
+  ],
+  'parse-failure': CALM_LOGS,
+  'slow-index': CALM_LOGS,
+};
 
 function makeIndexedLogs(
   state: PipelineState,
@@ -237,7 +261,8 @@ function makeIndexedLogs(
   const sampleCount = Math.min(4, count);
   const added = Array.from({ length: sampleCount }, (_, offset) => {
     const sequence = state.indexed + offset;
-    const sample = SAMPLE_LOGS[sequence % SAMPLE_LOGS.length];
+    const samples = SAMPLE_LOGS[state.scenarioId];
+    const sample = samples[sequence % samples.length];
     const shard = sequence % shardLoads.length;
     return {
       ...sample,
@@ -281,14 +306,10 @@ export function advancePipeline(state: PipelineState): PipelineState {
   }
 
   if (stage === 'processor') {
-    const moved = Math.min(state.processQueue, scenario.processorCapacity);
+    const moved = Math.min(state.processQueue, processorCapacity(state));
     const filtered = state.filterNoise ? deterministicLoss(moved, scenario.noiseRate) : 0;
     const parseCandidates = moved - filtered;
-    const parserPenalty = state.parserMode === 'grok' ? 0.08 : 0;
-    const parseFailed = deterministicLoss(
-      parseCandidates,
-      Math.min(0.9, scenario.parseFailureRate + parserPenalty)
-    );
+    const parseFailed = deterministicLoss(parseCandidates, scenario.parseFailureRate);
     const accepted = parseCandidates - parseFailed;
     const details = [
       `${accepted} accepted`,
@@ -391,7 +412,10 @@ export function getPipelineHealth(state: PipelineState): {
   }
   // The counters only grow, so backpressure is checked on its own and named
   // next to parser rejects instead of hiding behind them.
-  const backpressure = bufferRatio >= 0.65 || state.sourceQueue >= scenario.collectorCapacity;
+  const backpressure =
+    bufferRatio >= 0.65 ||
+    state.sourceQueue >= scenario.collectorCapacity ||
+    state.processQueue > processorCapacity(state);
   if (state.parseFailed > 0) {
     return {
       tone: 'critical',
