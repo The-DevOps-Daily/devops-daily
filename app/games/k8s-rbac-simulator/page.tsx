@@ -13,7 +13,7 @@ const seoLearningPoints = [
   'Why a namespaced binding can never grant access to nodes or other cluster-scoped resources',
   'Why `resourceNames` lets you `get` an object but never `list` the collection',
   'That RBAC has no deny rules, so permissions only ever add',
-  'Why a typo in a `roleRef` fails silently, with no error and no event',
+  'Why a typo in a `roleRef` grants nothing, and where the error names the missing role',
   'How a ServiceAccount is identified, and why its namespace is part of its name',
   'What an empty `apiGroups: [""]` means, and when you need `apps` instead',
   'How to ask the same question of a real cluster with `kubectl auth can-i`',
