@@ -4,7 +4,7 @@
   "description": "Learn Kubernetes concepts through practical scenarios covering pods, services, deployments, and troubleshooting",
   "category": "Kubernetes",
   "icon": "Code",
-  "totalPoints": 115,
+  "totalPoints": 128,
   "theme": {
     "primaryColor": "purple",
     "gradientFrom": "from-purple-500",
@@ -14,7 +14,7 @@
     "estimatedTime": "18-22 minutes",
     "difficultyLevels": {
       "beginner": 4,
-      "intermediate": 3,
+      "intermediate": 4,
       "advanced": 2
     },
     "createdDate": "2024-07-20"
@@ -178,6 +178,23 @@
       "hint": "What Kubernetes resource is specifically designed for controlling network traffic between pods?",
       "difficulty": "advanced",
       "points": 19
+    },
+    {
+      "id": "liveness-readiness-probes",
+      "title": "Liveness vs Readiness Probes",
+      "description": "Your pod keeps getting restarted even though the app eventually starts fine. Which probe should you tune?",
+      "situation": "You deployed an app with a 60-second startup time. Kubernetes keeps killing and restarting the pod before it finishes starting.",
+      "options": [
+        "livenessProbe: add a startupProbe or raise initialDelaySeconds",
+        "readinessProbe: increase periodSeconds",
+        "Add a preStop hook with a sleep command",
+        "Set restartPolicy to OnFailure in the pod spec"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Only the liveness probe can trigger a container restart: when it fails, the kubelet kills the container. For slow-starting apps the fix is a startupProbe (which gates the liveness probe until the app is up) or a generous initialDelaySeconds on the liveness probe. The readiness probe only controls whether the pod receives traffic - it never restarts anything.",
+      "hint": "Only one of these probes can cause a container to be restarted.",
+      "difficulty": "intermediate",
+      "points": 13
     }
   ]
 }
