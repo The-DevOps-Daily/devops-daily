@@ -41,6 +41,16 @@ export function sponsorHref(sponsor: Sponsor, placement: string): string {
 
 export const sponsors: Sponsor[] = [
   {
+    name: 'Bitrise',
+    logo: '/bitrise-brand.svg',
+    darkLogo: '/bitrise-brand-light.svg',
+    url: 'https://bitrise.io/platform/build-hub',
+    goSlug: 'bitrise',
+    tagline: 'Managed runners for GitHub Actions',
+    description:
+      'Bitrise Build Hub runs your GitHub Actions jobs on M4 Macs and AMD Linux machines. Change runs-on and keep your workflows, secrets and logs on GitHub.',
+  },
+  {
     name: 'Atomsized',
     logo: '/atomsized.svg',
     darkLogo: '/atomsized-light.svg',
@@ -95,3 +105,17 @@ export const sponsors: Sponsor[] = [
 export function getSponsors(): Sponsor[] {
   return sponsors;
 }
+
+/**
+ * Every brand that has sponsored DevOps Daily, current and past, for the
+ * "brands we have worked with" row on the sponsorship page. Add a sponsor
+ * here once a deal has actually run, and keep them after it ends.
+ */
+export const sponsorHistory: Pick<Sponsor, 'name' | 'logo' | 'darkLogo'>[] = [
+  { name: 'Bitrise', logo: '/bitrise-brand.svg', darkLogo: '/bitrise-brand-light.svg' },
+  { name: 'Neon', logo: '/neon-brand.svg', darkLogo: '/neon-brand-light.svg' },
+  { name: 'Svix', logo: '/svix-brand.svg', darkLogo: '/svix-brand-light.svg' },
+  { name: 'Pluralsight', logo: '/pluralsight-logo.svg', darkLogo: '/pluralsight-logo-light.svg' },
+  { name: 'Acronis', logo: '/acronis.svg', darkLogo: '/acronis-light.svg' },
+  { name: 'Atomsized', logo: '/atomsized.svg', darkLogo: '/atomsized-light.svg' },
+];

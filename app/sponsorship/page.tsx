@@ -17,6 +17,8 @@ import {
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
 import { BreadcrumbSchema } from '@/components/schema-markup';
+import { SponsorLogo } from '@/components/sponsor-logo';
+import { sponsorHistory } from '@/lib/sponsors';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -292,6 +294,25 @@ export default function SponsorshipPage() {
       </div>
 
       <div className="container mx-auto px-4">
+        {/* Brands we have worked with */}
+        <section className="my-10 max-w-5xl mx-auto" aria-labelledby="past-sponsors">
+          <p id="past-sponsors" className="mb-5 text-center text-sm text-muted-foreground">
+            Brands that have sponsored DevOps Daily
+          </p>
+          <ul className="flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+            {sponsorHistory.map((brand) => (
+              <li key={brand.name} className="flex h-10 items-center">
+                <SponsorLogo
+                  sponsor={{ ...brand, url: '' }}
+                  width={140}
+                  height={40}
+                  className="h-8 w-auto max-w-[140px] object-contain opacity-80"
+                />
+              </li>
+            ))}
+          </ul>
+        </section>
+
         <SectionSeparator command="cat audience.csv" />
 
         {/* Stats */}
