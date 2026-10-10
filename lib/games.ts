@@ -795,9 +795,9 @@ const games: Game[] = [
     id: 'smtp-flow-simulator',
     type: 'simulator',
     title: 'SMTP Flow Simulator',
-    seoTitle: 'SMTP Flow Simulator: Visualize Email Delivery, Auth, Retries and Bounces',
+    seoTitle: 'SMTP Flow Simulator: Visualize Email Delivery, Auth Failures and Retries',
     description:
-      'Visualize how SMTP email delivery works from app submission through EHLO, STARTTLS, AUTH, MAIL FROM, RCPT TO, DATA, SPF, DKIM, DMARC, recipient MX relay, retries, bounces, and inbox placement. Sponsored by SMTPfast.',
+      'Visualize how SMTP email delivery works from app submission through EHLO, STARTTLS, AUTH, MAIL FROM, RCPT TO, DATA, SPF, DKIM, DMARC, recipient MX relay, temporary failures and retries, auth failures, and inbox placement. Sponsored by SMTPfast.',
     iconName: 'Mail',
     badgeText: 'New',
     color: 'from-primary to-blue-600',

@@ -12,7 +12,7 @@ import {
 } from '@/lib/games/bounce-scenarios';
 
 const KINDS: BounceKind[] = ['hard', 'soft', 'block', 'complaint'];
-const ACTIONS: BounceAction[] = ['suppress', 'retry', 'fix-content', 'slow-down'];
+const ACTIONS: BounceAction[] = ['suppress', 'retry', 'fix-content', 'slow-down', 'stop-investigate'];
 
 interface Answer {
   kind: BounceKind | null;
@@ -30,6 +30,9 @@ export default function BounceTriageSimulator() {
   const [answer, setAnswer] = useState<Answer>({ kind: null, action: null });
   const [revealed, setRevealed] = useState(false);
   const [results, setResults] = useState<boolean[]>([]);
+  // The score screen waits for a click, so the last bounce's explanation is
+  // shown like every other one.
+  const [showSummary, setShowSummary] = useState(false);
 
   const scenario = BOUNCE_SCENARIOS[index];
   const isLast = index === BOUNCE_SCENARIOS.length - 1;
@@ -60,9 +63,10 @@ export default function BounceTriageSimulator() {
     setAnswer({ kind: null, action: null });
     setRevealed(false);
     setResults([]);
+    setShowSummary(false);
   }
 
-  if (finished && revealed && isLast) {
+  if (finished && showSummary) {
     return (
       <div className="mx-auto max-w-3xl">
         <div className="rounded-lg border border-border bg-card p-8 text-center">
@@ -253,7 +257,15 @@ export default function BounceTriageSimulator() {
           >
             Next bounce
           </button>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowSummary(true)}
+            className="rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            See your score
+          </button>
+        )}
       </div>
     </div>
   );

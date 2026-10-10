@@ -9,7 +9,7 @@
  */
 
 export type BounceKind = 'hard' | 'soft' | 'block' | 'complaint';
-export type BounceAction = 'suppress' | 'retry' | 'fix-content' | 'slow-down';
+export type BounceAction = 'suppress' | 'retry' | 'fix-content' | 'slow-down' | 'stop-investigate';
 
 export interface BounceScenario {
   id: string;
@@ -46,6 +46,7 @@ export const ACTION_LABELS: Record<BounceAction, string> = {
   retry: 'Retry with backoff',
   'fix-content': 'Fix the message, then retry',
   'slow-down': 'Slow down, then retry',
+  'stop-investigate': 'Stop sending and fix the cause',
 };
 
 export const BOUNCE_SCENARIOS: BounceScenario[] = [
@@ -63,7 +64,7 @@ export const BOUNCE_SCENARIOS: BounceScenario[] = [
   },
   {
     id: 'mailbox-full',
-    response: '452 4.2.2 The email account that you tried to reach is over quota',
+    response: "452 4.2.2 The recipient's inbox is out of storage space.",
     recipient: 'sarah@company.com',
     provider: 'Gmail',
     kind: 'soft',
@@ -151,7 +152,7 @@ export const BOUNCE_SCENARIOS: BounceScenario[] = [
     recipient: 'recipient@partner.com',
     provider: 'Postfix',
     kind: 'block',
-    action: 'fix-content',
+    action: 'stop-investigate',
     explanation:
       'The receiving server does not consider itself responsible for that domain, so it refuses to relay. Usually a stale MX record pointing at a server that no longer hosts the domain, or a misrouted internal address.',
     consequence:
@@ -175,7 +176,7 @@ export const BOUNCE_SCENARIOS: BounceScenario[] = [
     recipient: 'anyone@anywhere.com',
     provider: 'Generic MTA',
     kind: 'block',
-    action: 'slow-down',
+    action: 'stop-investigate',
     explanation:
       'Your sending IP is on a public blocklist. Nothing about this recipient is wrong, and it will affect everything you send until it is resolved.',
     consequence:
@@ -183,13 +184,13 @@ export const BOUNCE_SCENARIOS: BounceScenario[] = [
   },
   {
     id: 'disabled-mailbox',
-    response: '550 5.2.1 The email account that you tried to reach is disabled.',
+    response: '550 5.2.1 The email account that you tried to reach is inactive.',
     recipient: 'former.employee@company.com',
     provider: 'Gmail',
     kind: 'hard',
     action: 'suppress',
     explanation:
-      '5.2.1 means the mailbox exists but has been switched off, which is what happens to a work address after someone leaves. It will not come back.',
+      '5.2.1 here means the mailbox exists but is inactive or switched off, which is what happens to a work address after someone leaves. It will not come back.',
     consequence:
       'Suppress it. This is also worth surfacing to the customer, since a B2B list quietly fills with departed employees and the bounce rate creeps up until it starts costing deliverability.',
   },
