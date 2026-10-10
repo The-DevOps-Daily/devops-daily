@@ -1,0 +1,241 @@
+{
+  "id": "dns-operations-quiz",
+  "title": "DNS Operations Quiz",
+  "description": "Practice diagnosing and operating DNS in production, from record types and recursive resolution to delegation, DNSSEC, migrations, and traffic distribution.",
+  "category": "Networking",
+  "icon": "Network",
+  "totalPoints": 175,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "18-22 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 7,
+      "advanced": 2
+    },
+    "createdDate": "2026-10-10",
+    "tags": ["dns", "networking", "troubleshooting", "operations"]
+  },
+  "questions": [
+    {
+      "id": "address-record-purpose",
+      "title": "Pointing a hostname to an IP",
+      "description": "A service is reachable at an IPv4 address. Which DNS record maps its hostname directly to that address?",
+      "situation": "You are adding `api.example.com` to a DNS zone so clients can resolve it to the service's IPv4 endpoint.",
+      "codeExample": "api.example.com.  300  IN  A  203.0.113.20",
+      "options": [
+        "An A record publishes the hostname's IPv4 destination",
+        "An AAAA record publishes a 128-bit IPv6 destination for the hostname",
+        "A CNAME aliases the hostname to another DNS name for later lookup",
+        "An NS record names the authoritative servers responsible for a zone"
+      ],
+      "correctAnswer": 0,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "An A record maps a DNS name to an IPv4 address. AAAA serves the same purpose for IPv6. A CNAME maps one name to another name, which is resolved separately, and an NS record identifies authoritative name servers for a zone or delegation.",
+      "hint": "The record type is named for the address family used by the destination."
+    },
+    {
+      "id": "recursive-resolver-role",
+      "title": "Who looks up the answer?",
+      "description": "A laptop asks its configured resolver for `shop.example.net`. What is the recursive resolver generally responsible for doing?",
+      "situation": "Users do not contact root and authoritative name servers directly for every lookup. Their configured resolver handles the lookup process on their behalf.",
+      "codeExample": "$ dig @192.0.2.53 shop.example.net A\n;; SERVER: 192.0.2.53#53(192.0.2.53)",
+      "options": [
+        "It edits the authoritative zone file whenever a client asks for an unknown name",
+        "It queries DNS hierarchy servers as needed, caches results, and returns an answer to the client",
+        "It translates the DNS name into an HTTP request and forwards it to the web server",
+        "It signs every response with the domain's private DNSSEC key before returning it"
+      ],
+      "correctAnswer": 1,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "A recursive resolver accepts the client's request and obtains the answer, often by consulting cached data or querying root, TLD, and authoritative servers. It does not modify zone data, proxy the resulting application request, or normally hold the domain's DNSSEC signing key. Authoritative servers publish a zone's records; the recursive resolver finds and returns them.",
+      "hint": "The client delegates the lookup work to its configured DNS service."
+    },
+    {
+      "id": "ttl-and-caching",
+      "title": "What a TTL controls",
+      "description": "An A record has a TTL of 900 seconds. What does this value primarily tell caching resolvers?",
+      "situation": "You are reviewing a DNS change and need to set expectations about how long previously cached answers can remain in use.",
+      "codeExample": "$ dig app.example.com A +noall +answer\napp.example.com.  900  IN  A  203.0.113.20",
+      "options": [
+        "The DNS record is automatically deleted from the zone after 900 seconds",
+        "The authoritative server must answer each query within 900 milliseconds",
+        "A cached answer can be reused for up to 900 seconds before it should be queried again",
+        "The recursive resolver must retry the same server exactly 900 times"
+      ],
+      "correctAnswer": 2,
+      "points": 10,
+      "difficulty": "beginner",
+      "explanation": "TTL means time to live and is the cache lifetime for the DNS record, expressed in seconds. A resolver can reuse the cached answer while its TTL remains, then it needs to refresh it. TTL is not a query timeout, record expiration from the authoritative zone, or retry count. A zone's record remains published until it is changed or removed.",
+      "hint": "Think about how long a resolver can reuse an answer it already has."
+    },
+    {
+      "id": "cname-at-zone-apex",
+      "title": "Why the zone apex rejects a CNAME",
+      "description": "A DNS provider rejects a CNAME for `example.com`, the zone apex. What is the standards-based reason?",
+      "situation": "You want the bare domain to point to a hosted service by aliasing it to the provider's hostname, but the zone also needs its normal apex records.",
+      "codeExample": "example.com.      IN  CNAME  tenant.hosting.example.net.\nexample.com.      IN  SOA    ns1.dns.example. hostmaster.example.com. (...)\nexample.com.      IN  NS     ns1.dns.example.",
+      "options": [
+        "A CNAME target must be hosted by the same DNS provider as the zone",
+        "Only subdomains can be aliases; the zone root is not a valid DNS owner name",
+        "A CNAME target must be an IP address rather than another hostname",
+        "The zone apex must also publish SOA and NS data, which a CNAME owner cannot coexist with"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "A CNAME makes its owner name an alias and, under DNS rules, that owner cannot have other record data. The zone apex must have SOA and NS records, so a conventional CNAME there conflicts with required records. CNAME targets are names and can be in another zone; providers sometimes offer ALIAS/ANAME-like flattening as a provider-specific alternative, but those are not ordinary CNAME records.",
+      "hint": "Consider which records every DNS zone must publish at its own name."
+    },
+    {
+      "id": "mx-priority-order",
+      "title": "Choosing the preferred mail exchanger",
+      "description": "Which MX target should a sending mail server try first?",
+      "situation": "Your team has a primary and a backup mail gateway. Both MX records are published, and the primary should be preferred.",
+      "codeExample": "example.org.  3600  IN  MX  10 mail-primary.example.org.\nexample.org.  3600  IN  MX  50 mail-backup.example.org.",
+      "options": [
+        "mail-primary.example.org. (preference 10)",
+        "mail-backup.example.org., because its hostname marks it as the default choice",
+        "Whichever server appears first in the DNS response, since preference numbers are informational",
+        "Both targets at once; SMTP requires parallel connection attempts for every listed exchanger"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "MX preference values are ordered with lower numbers indicating higher preference, so a sender normally tries the record with preference 10 before preference 50. The higher-numbered record is a fallback when the preferred server is unavailable. The values are not ignored, and hostname length does not affect selection.",
+      "hint": "In MX records, preference numbers work in the opposite direction many people first expect."
+    },
+    {
+      "id": "nxdomain-versus-servfail",
+      "title": "Distinguishing missing names from lookup failures",
+      "description": "A DNS query returns `SERVFAIL` rather than `NXDOMAIN`. What should you infer first?",
+      "situation": "An application reports that it cannot resolve a newly deployed internal service. You run a direct DNS query and need to choose the right next diagnostic step.",
+      "codeExample": "$ dig api.internal.example A\n;; ->>HEADER<<- opcode: QUERY, status: SERVFAIL, id: 4821\n\n$ dig old-name.internal.example A\n;; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 4822",
+      "options": [
+        "SERVFAIL confirms the name does not exist; NXDOMAIN means the authoritative server is temporarily busy",
+        "The resolver failed to complete the SERVFAIL lookup; NXDOMAIN says the queried name does not exist",
+        "SERVFAIL means the query was answered from cache; NXDOMAIN means the client lacks network access",
+        "The two responses are interchangeable and both prove that the application port is closed"
+      ],
+      "correctAnswer": 1,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "NXDOMAIN is a negative answer that says the queried name does not exist in the relevant DNS namespace. SERVFAIL means the server failed to complete processing the query, which can arise from unreachable authoritative servers, broken delegation, DNSSEC validation failure, or other resolver problems. Investigate the resolution path and server logs rather than treating SERVFAIL as proof that the name is absent.",
+      "hint": "One response describes the name; the other describes the resolver's attempt to answer."
+    },
+    {
+      "id": "delegation-and-glue",
+      "title": "Keeping child-zone delegation reachable",
+      "description": "A parent zone delegates `child.example.com` to `ns1.child.example.com`. Why might the parent also need to publish a glue A record?",
+      "situation": "A newly delegated child zone is unreachable from some resolvers. Its only name server is named inside the child zone, so resolution appears to depend on resolving that server's name first.",
+      "codeExample": "; In the parent zone example.com:\nchild.example.com.       IN  NS  ns1.child.example.com.\nns1.child.example.com.   IN  A   192.0.2.53",
+      "options": [
+        "The glue address replaces the NS record and tells resolvers that the child zone has no authoritative servers",
+        "The glue record signs the delegation so recursive resolvers trust the child zone automatically",
+        "The parent supplies this address so resolvers can reach the in-bailiwick server without first querying the child zone",
+        "The glue record forces every resolver to skip caching and query the child server on every request"
+      ],
+      "correctAnswer": 2,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "When a delegated name server is in-bailiwick—inside the child zone being delegated—a resolver could otherwise need to look up the server's address using the child zone before it can contact that server. Parent-side glue provides the address needed to reach the authoritative server and break that circular dependency. Glue is address information accompanying delegation, not a signature or replacement for the NS record.",
+      "hint": "The server name is inside the very zone the resolver is trying to reach."
+    },
+    {
+      "id": "split-horizon-dns",
+      "title": "Different answers on different networks",
+      "description": "Employees resolve `api.example.com` to a private address on the corporate network and a public address from the internet. What DNS design most directly explains this?",
+      "situation": "The service is intentionally private for internal clients but publicly reachable through a gateway for external users. Both groups use different DNS resolver paths.",
+      "codeExample": "# Corporate resolver\n$ dig @10.0.0.53 api.example.com +short\n10.20.4.18\n\n# Public resolver\n$ dig @1.1.1.1 api.example.com +short\n198.51.100.40",
+      "options": [
+        "DNS round robin randomly changes the same record between private and public addresses",
+        "DNSSEC returns private addresses only to clients with valid signatures",
+        "The TTL automatically converts the public address into a private address on corporate networks",
+        "Split-horizon DNS serves different views of a name based on the resolver or client network"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "Split-horizon (or split-view) DNS deliberately serves different zone data depending on which resolver or network asks. That lets internal clients use private endpoints while external clients receive public records. Round robin may return multiple published addresses, but it does not inherently distinguish networks; DNSSEC authenticates data rather than selecting private answers, and TTL controls caching rather than address translation.",
+      "hint": "Compare which resolvers were queried, not only the hostname."
+    },
+    {
+      "id": "dnssec-purpose",
+      "title": "What DNSSEC protects",
+      "description": "A resolver validates DNSSEC signatures for a domain. Which security property is DNSSEC primarily intended to provide?",
+      "situation": "Your security team is evaluating whether enabling DNSSEC will protect users from forged DNS answers while they look up the company's domain.",
+      "codeExample": "example.com. IN DNSKEY 257 3 13 <public-key-material>\nwww.example.com. IN RRSIG A 13 2 300 <signature-data>",
+      "options": [
+        "It lets validating resolvers verify DNS data authenticity and integrity across the signed chain",
+        "It hides the authoritative server's IP addresses from recursive resolvers",
+        "It guarantees a DNS name resolves to a server that is free of application vulnerabilities",
+        "It encrypts DNS queries so network observers cannot see requested domain names"
+      ],
+      "correctAnswer": 0,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "DNSSEC adds cryptographic signatures so validating resolvers can authenticate DNS data and detect modification along the chain of trust. It does not encrypt queries—protocols such as DoT or DoH address transport privacy—and it does not hide authoritative server addresses or assess the security of the service behind an IP. DNSSEC validation failures can cause validating resolvers to return SERVFAIL.",
+      "hint": "Authentication and confidentiality are different security properties."
+    },
+    {
+      "id": "dns-migration-ttl-planning",
+      "title": "Preparing a low-risk DNS migration",
+      "description": "You need to move a heavily cached service record to a new IP with minimal stale traffic. What is the safest TTL strategy?",
+      "situation": "The existing record has a one-day TTL. The cutover is scheduled for tomorrow, and clients must start using the new address as predictably as possible.",
+      "codeExample": "# Current record, one day before cutover\napp.example.com.  86400  IN  A  203.0.113.20\n\n# Proposed preparation change\napp.example.com.  300    IN  A  203.0.113.20",
+      "options": [
+        "Change the address at cutover and lower the TTL in the same update so all existing caches refresh immediately",
+        "Lower the TTL well before cutover, wait at least the old TTL for prior caches to expire, then change the address",
+        "Raise the TTL before cutover so recursive resolvers notice the new address more quickly",
+        "Delete the record briefly at cutover because NXDOMAIN responses are never cached"
+      ],
+      "correctAnswer": 1,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "Resolvers that cached the old answer before the TTL change can continue using it for up to the old TTL, because lowering the published TTL does not retroactively shorten existing cache lifetimes. Lower the TTL sufficiently in advance, wait out the prior 86400-second cache window, then change the address; afterwards, restore a suitable TTL when the migration is stable. Changing the TTL simultaneously with the address or deleting the name does not invalidate existing positive or negative caches.",
+      "hint": "A TTL update affects future cache entries, not copies that resolvers already stored."
+    },
+    {
+      "id": "dnssec-servfail-troubleshooting",
+      "title": "A signed zone fails only on validating resolvers",
+      "description": "A recently changed signed domain resolves through a non-validating resolver but returns `SERVFAIL` through validating public resolvers. What is the most likely issue to investigate?",
+      "situation": "A DNS provider migration completed, and some clients can resolve the site while others report intermittent name-resolution failures. The zone uses DNSSEC, and the registrar still contains delegation metadata from the old provider.",
+      "codeExample": "$ dig @8.8.8.8 www.example.com A\n;; ->>HEADER<<- status: SERVFAIL\n\n$ dig @8.8.8.8 www.example.com A +dnssec +cd\n;; ->>HEADER<<- status: NOERROR\nwww.example.com. 300 IN A 198.51.100.22",
+      "options": [
+        "The authoritative server has a low TTL, which causes DNSSEC signatures to be rejected",
+        "The A record is private, and validating resolvers cannot return private IPv4 addresses",
+        "A stale or mismatched DS record at the parent may break DNSSEC chain validation",
+        "The DNS resolver is refusing the query because DNSSEC prevents using the A record type"
+      ],
+      "correctAnswer": 2,
+      "points": 20,
+      "difficulty": "advanced",
+      "explanation": "If disabling checking with `+cd` returns data while normal validation fails, DNSSEC validation is a strong suspect. After a provider or key change, the parent DS record can refer to an old key or otherwise fail to match the child's DNSKEY and signatures, breaking the chain of trust. Verify the current DS at the parent and the zone's DNSKEY/RRSIG data, then correct the delegation or signing configuration. A low TTL or use of an A record does not inherently make validation fail.",
+      "hint": "The query succeeds when the resolver is asked not to reject data for failed validation."
+    },
+    {
+      "id": "dns-round-robin-caching",
+      "title": "Why DNS weights do not balance every request",
+      "description": "A team publishes two weighted DNS answers but sees uneven traffic between the endpoints. Which explanation is most accurate?",
+      "situation": "The service uses DNS-based traffic distribution, and operators expect a 50/50 weight to split every individual user request evenly. Instead, one endpoint receives substantially more requests during a busy period.",
+      "codeExample": "api.example.com.  300  IN  A  198.51.100.10\napi.example.com.  300  IN  A  198.51.100.20\n\n# Many requests may reuse a resolver or client cache during this TTL.",
+      "options": [
+        "Resolvers ignore all but the first A record unless the zone also publishes an MX record",
+        "DNS weights are applied by the authoritative server to every TCP request after a connection is established",
+        "A 50/50 DNS weight guarantees equal request counts once both records have the same TTL",
+        "Resolver and client caches reuse answers, so weighted DNS lookups cannot balance every application request"
+      ],
+      "correctAnswer": 3,
+      "points": 15,
+      "difficulty": "intermediate",
+      "explanation": "DNS-based policies select or return answers at lookup time, while recursive resolvers and clients may cache those answers and reuse them for many connections. Clients can also have very different request volumes, connection reuse patterns, and cache behavior, so equal weighting of DNS responses does not guarantee equal application request counts. DNS is not a per-request load balancer once a connection is established; use an appropriate proxy or load balancer when per-request distribution or health-aware control is required.",
+      "hint": "Ask what a client does after it has already resolved and cached the name."
+    }
+  ]
+}
