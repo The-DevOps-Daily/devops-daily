@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2026-09-28'
 publishedAt: '2026-09-28T09:00:00Z'
-updatedAt: '2026-09-28T09:00:00Z'
+updatedAt: '2026-10-12T09:00:00Z'
 readingTime: '15 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,7 +23,7 @@ tags:
 
 We gave an agent three real GitHub issues and a microVM of its own, and kept every credential that could change the repository outside that microVM. The agent ran as OpenCode inside [DigitalOcean Managed Agents](https://docs.digitalocean.com/products/managed-agents/), on DeepSeek V4 Pro served by DigitalOcean's own serverless inference, so the only secret it ever held was a DigitalOcean model key.
 
-It produced three pull requests that we merged, each for about two cents of model tokens. It also produced one that passed the test suite and was still wrong, which is the most useful part of this post. Below is the whole setup, the recorded runs, the check we added after the wrong one, what the permission rules did and did not stop, and the gotchas that cost us time.
+Across five recorded attempts, it produced three merged pull requests for $0.32 in usage charges on the September invoice, about 11 cents per merged pull request. It also produced one that passed the test suite and was still wrong, which is the most useful part of this post. Below is the whole setup, the recorded runs, the check we added after the wrong one, what the permission rules did and did not stop, and the gotchas that cost us time.
 
 ```github
 The-DevOps-Daily/do-agent-issue-to-pr
@@ -271,6 +271,10 @@ The `file.write` rule for `/workspace/**` did not cover OpenCode's `edit` and `w
 DigitalOcean's docs warn about exactly this: "Rules match literally ... A denied action doesn't block the goal behind it." If `bash` is allowed, the agent can do anything `bash` can do inside the sandbox, whatever the other rules say. Treat tool rules as a way to shape the agent's behaviour, and treat the microVM, the missing credentials and the egress allowlist as the security boundary.
 
 ## What it cost
+
+:::note
+**Update, 12 October 2026:** the September invoice has arrived, and the figures in this table were too low. They count only the input and output tokens that the agent reported. The invoice also bills cache-read tokens, 57,000 to 105,000 per run at $0.348 per million, and every token line on the invoice was rounded to the cent, with a one-cent minimum. The five runs were billed $0.05 to $0.08 each, $0.32 in total, which is about 11 cents per merged pull request. Compute came to $0.00. The full breakdown is in [DigitalOcean Agent Droplets: when the $50 plan pays off](/posts/digitalocean-agent-droplets-when-the-plan-pays-off).
+:::
 
 Token counts come from the `prompt` command's JSON output; the price is DigitalOcean's list price for DeepSeek V4 Pro, $1.74 per million input tokens and $3.48 per million output tokens.
 
