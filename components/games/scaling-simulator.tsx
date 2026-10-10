@@ -128,7 +128,9 @@ const SCENARIOS: Scenario[] = [
       if (time < 40) return 100 + (time - 20) * 245;
       return 5000;
     },
-    budget: 500,
+    // The cheapest setup that meets both targets: a load balancer plus three
+    // 16-core/4 GB/NVMe servers and one 16-core/4 GB/SSD server
+    budget: 650,
     targetResponseTime: 300,
     duration: 180,
   },
@@ -182,6 +184,7 @@ export default function ScalingSimulator() {
     uptime: 100,
   });
   const [budget, setBudget] = useState(0);
+  const [peakCost, setPeakCost] = useState(0);
   const [trafficHistory, setTrafficHistory] = useState<number[]>([]);
   const [responseTimeHistory, setResponseTimeHistory] = useState<number[]>([]);
   const [showEducation, setShowEducation] = useState(false);
@@ -276,19 +279,23 @@ export default function ScalingSimulator() {
     if (!isRunning) return;
 
     const interval = setInterval(() => {
-      setTime((t) => {
-        const newTime = t + 1;
-        if (newTime >= scenario.duration) {
+      // Spending counts at its peak, so downsizing before the end does not hide it
+      const peak = Math.max(peakCost, totalCost());
+      setPeakCost(peak);
+
+      // Record this tick, then judge the run on the completed tick's numbers
+      const finishTick = (next: Metrics) => {
+        setMetrics(next);
+        setTime(time + 1);
+        if (time + 1 >= scenario.duration) {
           setIsRunning(false);
-          // Check win condition
-          if (metrics.uptime >= 95 && totalCost() <= scenario.budget) {
-            setGameResult('won');
-          } else {
-            setGameResult('lost');
-          }
+          const won =
+            next.uptime >= 95 &&
+            next.avgResponseTime <= scenario.targetResponseTime &&
+            peak <= scenario.budget;
+          setGameResult(won ? 'won' : 'lost');
         }
-        return newTime;
-      });
+      };
 
       // Calculate current traffic
       const currentTraffic = scenario.trafficPattern(time);
@@ -300,25 +307,21 @@ export default function ScalingSimulator() {
         (s) => s.status === 'healthy' || s.status === 'overloaded'
       );
       if (healthyServers.length === 0) {
-        setMetrics((prev) => {
-          const newTotal = prev.totalRequests + currentTraffic;
-          return {
-            ...prev,
-            failedRequests: prev.failedRequests + currentTraffic,
-            totalRequests: newTotal,
-            currentRPS: currentTraffic,
-            uptime: newTotal > 0 ? (prev.successfulRequests / newTotal) * 100 : 100,
-          };
+        const newTotal = metrics.totalRequests + currentTraffic;
+        finishTick({
+          ...metrics,
+          failedRequests: metrics.failedRequests + currentTraffic,
+          totalRequests: newTotal,
+          currentRPS: currentTraffic,
+          uptime: newTotal > 0 ? (metrics.successfulRequests / newTotal) * 100 : 100,
         });
         return;
       }
 
-      // Without a load balancer, all traffic goes to the first server
+      // The load balancer splits traffic equally (round robin). Without one, all
+      // traffic goes to the first server
       const trafficFor = (index: number) =>
         hasLoadBalancer ? currentTraffic / healthyServers.length : index === 0 ? currentTraffic : 0;
-      const usableCapacity = hasLoadBalancer
-        ? healthyServers.reduce((sum, s) => sum + calculateServerCapacity(s), 0)
-        : calculateServerCapacity(healthyServers[0]);
 
       // Calculate what the new server loads will be
       const newServerLoads = healthyServers.map(
@@ -347,25 +350,27 @@ export default function ScalingSimulator() {
       const responseTime = calculateResponseTime(avgLoad);
       setResponseTimeHistory((prev) => [...prev.slice(-60), responseTime]);
 
-      // Only the requests above usable capacity fail
-      const failedThisSecond = Math.max(0, Math.floor(currentTraffic - usableCapacity));
+      // Each server fails whatever it is sent beyond its own capacity
+      const failedThisSecond = Math.floor(
+        healthyServers.reduce(
+          (sum, s, index) => sum + Math.max(0, trafficFor(index) - calculateServerCapacity(s)),
+          0
+        )
+      );
       const successfulThisSecond = currentTraffic - failedThisSecond;
 
-      setMetrics((prev) => {
-        const newTotal = prev.totalRequests + currentTraffic;
-        const newSuccessful = prev.successfulRequests + successfulThisSecond;
-        const newFailed = prev.failedRequests + failedThisSecond;
-        return {
-          totalRequests: newTotal,
-          successfulRequests: newSuccessful,
-          failedRequests: newFailed,
-          avgResponseTime: Math.round(
-            (prev.avgResponseTime * prev.totalRequests + responseTime * currentTraffic) /
-              newTotal
-          ),
-          currentRPS: currentTraffic,
-          uptime: newTotal > 0 ? (newSuccessful / newTotal) * 100 : 100,
-        };
+      const newTotal = metrics.totalRequests + currentTraffic;
+      const newSuccessful = metrics.successfulRequests + successfulThisSecond;
+      finishTick({
+        totalRequests: newTotal,
+        successfulRequests: newSuccessful,
+        failedRequests: metrics.failedRequests + failedThisSecond,
+        avgResponseTime: Math.round(
+          (metrics.avgResponseTime * metrics.totalRequests + responseTime * currentTraffic) /
+            newTotal
+        ),
+        currentRPS: currentTraffic,
+        uptime: newTotal > 0 ? (newSuccessful / newTotal) * 100 : 100,
       });
 
       // Auto-scaling logic
@@ -413,7 +418,7 @@ export default function ScalingSimulator() {
     }, 1000 / speed);
 
     return () => clearInterval(interval);
-  }, [isRunning, time, scenario, servers, hasLoadBalancer, scalingConfig, speed, addServer, removeServer, metrics, totalCost]);
+  }, [isRunning, time, scenario, servers, hasLoadBalancer, scalingConfig, speed, addServer, removeServer, metrics, totalCost, peakCost]);
 
   // Immediately scale to minInstances when auto-scaling is enabled
   useEffect(() => {
@@ -457,6 +462,7 @@ export default function ScalingSimulator() {
     setTrafficHistory([]);
     setResponseTimeHistory([]);
     setGameResult('playing');
+    setPeakCost(0);
     // Add initial server after reset
     setTimeout(() => {
       setServers([{
@@ -634,8 +640,8 @@ export default function ScalingSimulator() {
               </div>
               <p className="text-sm mt-2 text-muted-foreground">
                 {gameResult === 'won'
-                  ? `You maintained ${metrics.uptime.toFixed(1)}% uptime within budget ($${currentCost}/$${scenario.budget})`
-                  : `Uptime: ${metrics.uptime.toFixed(1)}% (target: 95%) | Cost: $${currentCost}/$${scenario.budget}`}
+                  ? `You kept ${metrics.uptime.toFixed(1)}% uptime at ${metrics.avgResponseTime}ms average response time, and spending peaked at $${peakCost} of your $${scenario.budget} budget`
+                  : `Uptime: ${metrics.uptime.toFixed(1)}% (target: 95%) | Avg response: ${metrics.avgResponseTime}ms (target: ${scenario.targetResponseTime}ms or less) | Peak cost: $${peakCost}/$${scenario.budget}`}
               </p>
             </div>
           )}
@@ -693,7 +699,10 @@ export default function ScalingSimulator() {
               >
                 ${currentCost}
               </div>
-              <div className="text-xs text-muted-foreground">Budget: ${scenario.budget}</div>
+              <div className="text-xs text-muted-foreground">
+                Budget: ${scenario.budget}
+                {peakCost > 0 && ` (peak this run: $${peakCost})`}
+              </div>
             </div>
           </div>
 

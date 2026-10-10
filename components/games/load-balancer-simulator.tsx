@@ -46,7 +46,7 @@ const ALGORITHMS: Record<AlgorithmType, { name: string; description: string }> =
   'ip-hash': {
     name: 'IP Hash',
     description:
-      'Same user always goes to the same server (sticky sessions). If that server is offline, the user moves to another healthy server.',
+      'Same user always goes to the same server (sticky sessions). nginx hashes the first three parts of the IP, so a whole /24 shares a server. If that server is offline, the user moves to another healthy server.',
   },
   random: {
     name: 'Random',
@@ -72,6 +72,21 @@ const FAILURE_RATES = [
 
 const MAX_RETRY_ATTEMPTS = 3;
 
+// nginx ip_hash hashes only the first three octets of an IPv4 address, so a whole /24
+// shares one server. If that server is down, nginx keeps hashing from where it stopped,
+// so the client lands on the same fallback every time. After 20 misses nginx falls back
+// to round robin; here that is the first healthy server.
+function ipHashServer(ip: string, isUp: (id: number) => boolean): number | null {
+  const octets = ip.split('.').slice(0, 3).map(Number);
+  let hash = 89;
+  for (let tries = 0; tries < 20; tries++) {
+    for (const octet of octets) hash = (hash * 113 + octet) % 6271;
+    const id = (hash % 3) + 1;
+    if (isUp(id)) return id;
+  }
+  return null;
+}
+
 export default function LoadBalancerSimulator() {
   const [algorithm, setAlgorithm] = useState<AlgorithmType>('round-robin');
   const [isRunning, setIsRunning] = useState(false);
@@ -84,6 +99,7 @@ export default function LoadBalancerSimulator() {
     { id: 3, name: 'Server 3', requests: 0, active: 0, healthy: true },
   ]);
   const serversRef = useRef(servers);
+  const generationRef = useRef(0);
   const [packets, setPackets] = useState<RequestPacket[]>([]);
   const [roundRobinIndex, setRoundRobinIndex] = useState(0);
   const [clientIndex, setClientIndex] = useState(0);
@@ -91,15 +107,15 @@ export default function LoadBalancerSimulator() {
   const [crashedRequests, setCrashedRequests] = useState(0);
   const [retriedRequests, setRetriedRequests] = useState(0);
 
-  // Simulated clients for IP Hash - each client consistently maps to a server
+  // Simulated clients for IP Hash, each in a different /24 so they spread across servers
   const clients = useMemo(
     () => [
-      { id: 1, ip: '192.168.1.10', serverHash: 0 },
-      { id: 2, ip: '192.168.1.25', serverHash: 1 },
-      { id: 3, ip: '192.168.1.42', serverHash: 2 },
-      { id: 4, ip: '10.0.0.15', serverHash: 0 },
-      { id: 5, ip: '10.0.0.88', serverHash: 1 },
-      { id: 6, ip: '172.16.0.33', serverHash: 2 },
+      { id: 1, ip: '10.0.0.15' },
+      { id: 2, ip: '192.168.1.10' },
+      { id: 3, ip: '172.16.0.33' },
+      { id: 4, ip: '203.0.113.7' },
+      { id: 5, ip: '10.0.1.15' },
+      { id: 6, ip: '192.168.2.10' },
     ],
     []
   );
@@ -154,15 +170,13 @@ export default function LoadBalancerSimulator() {
         return healthyServers[0].id;
       }
       case 'ip-hash': {
-        // Rotate through simulated clients - each client always maps to same server.
-        // If that server is offline, rehash to the next healthy one, like nginx ip_hash
+        // Rotate through simulated clients - each client always maps to same server
         const client = clients[clientIndex % clients.length];
         setClientIndex((prev) => prev + 1);
-        for (let i = 0; i < 3; i++) {
-          const targetId = ((client.serverHash + i) % 3) + 1;
-          if (servers.find((s) => s.id === targetId)?.healthy) return targetId;
-        }
-        return null;
+        return (
+          ipHashServer(client.ip, (id) => !!servers.find((s) => s.id === id)?.healthy) ??
+          healthyServers[0].id
+        );
       }
       case 'random':
         return healthyServers[Math.floor(Math.random() * healthyServers.length)].id;
@@ -174,14 +188,20 @@ export default function LoadBalancerSimulator() {
   const sendRequest = useCallback(() => {
     const targetServer = getTargetServer();
     const packetId = `req-${Date.now()}-${Math.random()}`;
+    // Reset bumps the generation, so steps of requests sent before it do nothing
+    const generation = generationRef.current;
+    const later = (step: () => void, ms: number) =>
+      window.setTimeout(() => {
+        if (generation === generationRef.current) step();
+      }, ms);
 
     if (targetServer === null) {
       // No healthy servers - show failed request
       setPackets((prev) => [...prev, { id: packetId, targetServer: 0, phase: 'to-lb' }]);
-      setTimeout(() => {
+      later(() => {
         setPackets((prev) => prev.map((p) => (p.id === packetId ? { ...p, phase: 'failed' } : p)));
       }, 350);
-      setTimeout(() => {
+      later(() => {
         setPackets((prev) => prev.filter((p) => p.id !== packetId));
         setFailedRequests((prev) => prev + 1);
       }, 700);
@@ -196,14 +216,14 @@ export default function LoadBalancerSimulator() {
       ]);
 
       // Phase 1 complete: arrived at LB center, now exit horizontally to line start
-      setTimeout(() => {
+      later(() => {
         setPackets((prev) =>
           prev.map((p) => (p.id === newPacketId ? { ...p, phase: 'exit-lb' } : p))
         );
       }, 350);
 
       // Phase 2: at line start point (58%), now follow angled line to server
-      setTimeout(() => {
+      later(() => {
         setPackets((prev) =>
           prev.map((p) => (p.id === newPacketId ? { ...p, phase: 'to-server' } : p))
         );
@@ -213,7 +233,7 @@ export default function LoadBalancerSimulator() {
       }, 450);
 
       // Phase 3: Server may crash or successfully complete request
-      setTimeout(() => {
+      later(() => {
         const willCrash = Math.random() < failureRate;
 
         if (willCrash) {
@@ -229,7 +249,7 @@ export default function LoadBalancerSimulator() {
           );
 
           // Show crash animation, then retry or fail
-          setTimeout(() => {
+          later(() => {
             setPackets((prev) => prev.filter((p) => p.id !== newPacketId));
 
             if (enableRetry && retryAttempt < MAX_RETRY_ATTEMPTS) {
@@ -281,6 +301,7 @@ export default function LoadBalancerSimulator() {
   }, [isRunning, trafficRate, sendRequest]);
 
   const reset = () => {
+    generationRef.current += 1;
     setIsRunning(false);
     setServers([
       { id: 1, name: 'Server 1', requests: 0, active: 0, healthy: true },

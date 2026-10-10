@@ -24,7 +24,10 @@ export type Scalar =
   | { kind: "bool"; value: boolean }
   | { kind: "null"; value: null };
 
-export type Node = Scalar | { kind: "map"; entries: Array<[string, Node]> } | { kind: "seq"; items: Node[] };
+/** A mapping key's type, kept only when it resolved to something other than a string. */
+export type KeyKind = Exclude<Scalar["kind"], "string">;
+export type MapEntry = [key: string, value: Node, keyKind?: KeyKind];
+export type Node = Scalar | { kind: "map"; entries: MapEntry[] } | { kind: "seq"; items: Node[] };
 
 export interface ParseOk {
   ok: true;
@@ -76,8 +79,8 @@ const FLOAT = /^[-+]?(\.[0-9]+|[0-9]+(\.[0-9]*)?)([eE][-+]?[0-9]+)?$/;
 // 1.1 has no decimal form with a leading zero, so 08 and 09 match nothing and stay strings.
 const INT_11 = /^[-+]?(0b[01_]+|0[0-7_]+|0|[1-9][0-9_]*|0x[0-9a-fA-F_]+|[1-9][0-9_]*(:[0-5]?[0-9])+)$/;
 // YAML 1.1 floats need a dot, and an exponent needs a sign: `1e3` and `1.0e3` stay strings,
-// `1.0e+3` is 1000.
-const FLOAT_11 = /^([-+]?[0-9][0-9_]*\.[0-9_]*([eE][-+][0-9]+)?|\.[0-9][0-9_]*([eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(:[0-5]?[0-9])+\.[0-9_]*)$/;
+// `1.0e+3` is 1000. The spec allows a sign before a leading dot, so `-.5` is -0.5.
+const FLOAT_11 = /^([-+]?[0-9][0-9_]*\.[0-9_]*([eE][-+][0-9]+)?|[-+]?\.[0-9][0-9_]*([eE][-+][0-9]+)?|[-+]?[0-9][0-9_]*(:[0-5]?[0-9])+\.[0-9_]*)$/;
 // Infinity and not-a-number are floats in both specs.
 const INF = /^[-+]?\.(inf|Inf|INF)$/;
 const NAN = /^\.(nan|NaN|NAN)$/;
@@ -232,7 +235,7 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       return { kind: "seq", items };
     }
 
-    const entries: Array<[string, Node]> = [];
+    const entries: MapEntry[] = [];
     while (i < lines.length && lines[i].indent === indent) {
       const line = lines[i];
       const m = line.text.match(/^(.+?):(?:\s+(.*))?$/);
@@ -255,8 +258,7 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       const inline = (m[2] ?? "").trim();
       i++;
 
-      const already = entries.findIndex(([k]) => k === key);
-      if (already !== -1) duplicates.push(key);
+      if (entries.some((e) => sameKey(e, key))) duplicates.push(key.text);
 
       // `key: &name` anchors the block that follows. `key: *name` is an alias
       // to it, and `<<: *name` merges that block's keys into this one. CI files
@@ -264,11 +266,13 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       const anchorOnly = inline.match(/^&([A-Za-z0-9_-]+)$/);
       const aliasOnly = inline.match(/^\*([A-Za-z0-9_-]+)$/);
 
-      if (key === "<<" && aliasOnly) {
+      if (key.text === "<<" && !key.kind && aliasOnly) {
         const target = anchorStore.get(aliasOnly[1]);
         if (target && target.kind === "map") {
           // A merge key does not overwrite what the mapping already has.
-          for (const [k, v] of target.entries) if (!entries.some(([e]) => e === k)) entries.push([k, v]);
+          for (const t of target.entries) {
+            if (!entries.some((e) => sameKey(e, { text: t[0], kind: t[2] }))) entries.push(t);
+          }
         }
         continue;
       }
@@ -326,10 +330,10 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
     if (!m) return { ok: false, line: line.n, message: "Expected a key after the dash." };
     const rawKey = unquote(m[1].trim());
     const inline = (m[2] ?? "").trim();
-    const entries: Array<[string, Node]> = [];
+    const entries: MapEntry[] = [];
     const p = path ? `${path}.${rawKey}` : rawKey;
     const key = resolveKey(m[1].trim(), p, coercions, spec);
-    entries.push([key, inline === "" ? { kind: "null", value: null } : scalarFrom(inline, p, coercions, spec)]);
+    entries.push(entryOf(key, inline === "" ? { kind: "null", value: null } : scalarFrom(inline, p, coercions, spec)));
     while (i < lines.length && lines[i].indent === childIndent) {
       const l = lines[i];
       const mm = l.text.match(/^(.+?):(?:\s+(.*))?$/);
@@ -338,7 +342,7 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
       const k = resolveKey(mm[1].trim(), kp, coercions, spec);
       const v = (mm[2] ?? "").trim();
       i++;
-      entries.push([k, v === "" ? { kind: "null", value: null } : scalarFrom(v, kp, coercions, spec)]);
+      entries.push(entryOf(k, v === "" ? { kind: "null", value: null } : scalarFrom(v, kp, coercions, spec)));
     }
     return { kind: "map", entries };
   }
@@ -379,10 +383,24 @@ export function parseYaml(src: string, spec: Spec): ParseResult {
  * error, but most parsers in use quietly keep the last, which is why a
  * copy-pasted block can silently replace a setting fifty lines above it.
  */
-function push(entries: Array<[string, Node]>, key: string, value: Node): void {
-  const at = entries.findIndex(([k]) => k === key);
-  if (at === -1) entries.push([key, value]);
-  else entries[at] = [key, value];
+function push(entries: MapEntry[], key: Key, value: Node): void {
+  const at = entries.findIndex((e) => sameKey(e, key));
+  if (at === -1) entries.push(entryOf(key, value));
+  else entries[at] = entryOf(key, value);
+}
+
+/** A resolved key: `true` the boolean and "true" the string are different keys. */
+interface Key {
+  text: string;
+  kind?: KeyKind;
+}
+
+function sameKey(entry: MapEntry, key: Key): boolean {
+  return entry[0] === key.text && entry[2] === key.kind;
+}
+
+function entryOf(key: Key, value: Node): MapEntry {
+  return key.kind ? [key.text, value, key.kind] : [key.text, value];
 }
 
 function isErr(n: Node | ParseErr): n is ParseErr {
@@ -425,7 +443,7 @@ function parseFlow(src: string, path: string, coercions: Coercion[], spec: Spec)
       }),
     };
   }
-  const entries: Array<[string, Node]> = [];
+  const entries: MapEntry[] = [];
   for (const part of parts) {
     const at = splitFlowKey(part);
     if (!at) continue;
@@ -434,7 +452,7 @@ function parseFlow(src: string, path: string, coercions: Coercion[], spec: Spec)
     const p = path ? `${path}.${rawKey}` : rawKey;
     const k = resolveKey(at[0].trim(), p, coercions, spec);
     const nested = parseFlow(vRaw, p, coercions, spec);
-    entries.push([k, nested ?? scalarFrom(vRaw, p, coercions, spec)]);
+    entries.push(entryOf(k, nested ?? scalarFrom(vRaw, p, coercions, spec)));
   }
   return { kind: "map", entries };
 }
@@ -486,12 +504,12 @@ function splitFlowKey(s: string): [string, string] | null {
  * workflow is the boolean key true, which is what PyYAML hands back. Quoted keys
  * stay strings. Paths keep the key as written, so both specs report the same paths.
  */
-function resolveKey(raw: string, path: string, coercions: Coercion[], spec: Spec): string {
-  if (raw.startsWith('"') || raw.startsWith("'")) return stripQuotes(raw);
+function resolveKey(raw: string, path: string, coercions: Coercion[], spec: Spec): Key {
+  if (raw.startsWith('"') || raw.startsWith("'")) return { text: stripQuotes(raw) };
   const s = resolveScalar(raw, spec);
-  if (s.kind === "string") return raw;
+  if (s.kind === "string") return { text: raw };
   coercions.push({ path: `${path} (key)`, raw, kind: s.kind, value: String(s.value) });
-  return String(s.value);
+  return { text: String(s.value), kind: s.kind };
 }
 
 function scalarFrom(raw: string, path: string, coercions: Coercion[], spec: Spec): Scalar {
@@ -538,11 +556,13 @@ export function render(node: Node, indent = 0): string {
   if (node.kind === "map") {
     if (node.entries.length === 0) return "{}";
     return node.entries
-      .map(([k, v]) =>
-        v.kind === "map" || v.kind === "seq"
-          ? `${pad}${k}:\n${render(v, indent + 2)}`
-          : `${pad}${k}: ${renderScalar(v)}`,
-      )
+      .map(([k, v, keyKind]) => {
+        // A string key that reads like another type is quoted, so "true" and true differ.
+        const key = keyKind || (resolveScalar(k, "1.1").kind === "string" && resolveScalar(k, "1.2").kind === "string") ? k : JSON.stringify(k);
+        return v.kind === "map" || v.kind === "seq"
+          ? `${pad}${key}:\n${render(v, indent + 2)}`
+          : `${pad}${key}: ${renderScalar(v)}`;
+      })
       .join("\n");
   }
   if (node.kind === "seq") {
