@@ -52,3 +52,47 @@ describe('dot paths through arrays', () => {
     expect(ids(runMongo('db.customers.find({ nickname: { $exists: false } })'))).toHaveLength(8);
   });
 });
+
+describe('BSON equality', () => {
+  it('compares arrays and embedded documents by value', () => {
+    expect(ids(runMongo('db.orders.find({ items: [{ productId: 3, quantity: 2 }] })'))).toEqual([
+      1006,
+    ]);
+    expect(ids(runMongo('db.orders.find({ items: { productId: 3, quantity: 2 } })'))).toEqual([
+      1006,
+    ]);
+    const notThatArray = ids(
+      runMongo('db.orders.find({ items: { $ne: [{ productId: 3, quantity: 2 }] } })')
+    );
+    expect(notThatArray).toHaveLength(11);
+    expect(notThatArray).not.toContain(1006);
+    expect(
+      ids(runMongo('db.orders.find({ items: { $nin: [[{ productId: 5, quantity: 1 }]] } })'))
+    ).not.toContain(1005);
+    expect(
+      ids(runMongo('db.orders.find({ items: { $in: [[{ productId: 5, quantity: 1 }]] } })'))
+    ).toEqual([1005, 1009]);
+  });
+
+  it('requires embedded document fields in the same order', () => {
+    expect(ids(runMongo('db.orders.find({ items: { quantity: 2, productId: 3 } })'))).toEqual([]);
+  });
+
+  it('only compares values of the same type with range operators', () => {
+    expect(ids(runMongo('db.orders.find({ items: { $gt: 5 } })'))).toEqual([]);
+  });
+});
+
+describe('null and missing fields', () => {
+  it('matches a missing field with null', () => {
+    expect(ids(runMongo('db.customers.find({ nickname: null })'))).toHaveLength(8);
+    expect(ids(runMongo('db.orders.find({ "items.missing": { $eq: null } })'))).toHaveLength(12);
+    expect(ids(runMongo('db.orders.find({ "items.missing": { $in: [null] } })'))).toHaveLength(12);
+  });
+
+  it('excludes a missing field from $ne null and $nin [null]', () => {
+    expect(ids(runMongo('db.orders.find({ "items.missing": { $ne: null } })'))).toEqual([]);
+    expect(ids(runMongo('db.orders.find({ "items.missing": { $nin: [null] } })'))).toEqual([]);
+    expect(ids(runMongo('db.customers.find({ country: { $ne: null } })'))).toHaveLength(8);
+  });
+});

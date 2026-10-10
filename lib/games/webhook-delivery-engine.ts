@@ -39,17 +39,21 @@ export const MAX_ATTEMPTS = RETRY_GAPS_SECONDS.length;
 /** Svix gives an endpoint 15 seconds to answer before it counts as a failure. */
 export const ATTEMPT_TIMEOUT_SECONDS = 15;
 
-/** Seconds from the first attempt to attempt `n` (1-based). */
+/**
+ * Seconds from the first attempt to attempt `n` (1-based), counting only the
+ * schedule gaps, as if every attempt failed instantly.
+ */
 export function cumulativeDelaySeconds(attempt: number): number {
   return RETRY_GAPS_SECONDS.slice(0, Math.max(0, attempt)).reduce((a, b) => a + b, 0);
 }
 
 /** "immediately", "5s", "5m", "2h 5m" and so on. Used in the timeline. */
 export function formatDelay(seconds: number): string {
-  if (seconds <= 0) return 'immediately';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
+  const total = Math.round(seconds);
+  if (total <= 0) return 'immediately';
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
   const parts: string[] = [];
   if (h) parts.push(`${h}h`);
   if (m) parts.push(`${m}m`);
@@ -152,7 +156,7 @@ export interface Attempt {
   /** null for a timeout. */
   status: number | null;
   result: AttemptResult;
-  /** Seconds from the first attempt to this one. */
+  /** Seconds from the start of the first attempt to the start of this one. */
   atSeconds: number;
   /** What the endpoint sent back. */
   responseBody: string;
@@ -208,6 +212,9 @@ export function simulateDelivery(
   maxAttempts: number = MAX_ATTEMPTS,
 ): Attempt[] {
   const attempts: Attempt[] = [];
+  // Each gap starts when the previous attempt has failed, so a slow failure
+  // (a 15s timeout above all) pushes every later attempt back.
+  let startMs = 0;
 
   for (let n = 1; n <= maxAttempts; n++) {
     const { status, body, durationMs } = respond(behavior, n);
@@ -230,13 +237,14 @@ export function simulateDelivery(
       attempt: n,
       status,
       result,
-      atSeconds: cumulativeDelaySeconds(n),
+      atSeconds: startMs / 1000,
       responseBody: body,
       durationMs,
       explanation,
     });
 
     if (result !== 'retrying') break;
+    startMs += durationMs + (RETRY_GAPS_SECONDS[n] ?? 0) * 1000;
   }
 
   return attempts;

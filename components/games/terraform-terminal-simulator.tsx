@@ -27,6 +27,8 @@ interface ManagedResource {
   type: string;
   name: string;
   attributes: Record<string, string>;
+  /** Attributes the provider only learns once the resource exists, shown as (known after apply). */
+  computed: string[];
 }
 
 interface TerminalLine {
@@ -240,6 +242,7 @@ function parseConfig(files: Record<FileName, string>): ParsedConfig {
     const address = `${type}.${name}`;
 
     let attributes: Record<string, string>;
+    let computed = ['id'];
     if (type === 'aws_instance') {
       const ami = readAssign(body, 'ami', vars) ?? 'ami-unknown';
       // A new AMI means a new instance, so the id and IP change with it.
@@ -249,44 +252,39 @@ function parseConfig(files: Record<FileName, string>): ParsedConfig {
         ami,
         public_ip: ipFor(name + ami),
       };
+      computed = ['id', 'public_ip'];
     } else if (type === 'aws_s3_bucket') {
       const bucket = readAssign(body, 'bucket', vars) ?? `${name}-bucket`;
       attributes = { id: bucket, bucket, region: vars.region ?? 'us-east-1' };
     } else if (type === 'aws_security_group') {
       const groupName = readAssign(body, 'name', vars) ?? name;
+      const description = readAssign(body, 'description', vars) ?? 'Managed by Terraform';
+      // Without vpc_id the group lands in the default VPC, which AWS picks.
+      const vpcId = readAssign(body, 'vpc_id', vars);
       attributes = {
-        id: idFor('sg-0', name + groupName),
+        id: idFor('sg-0', name + groupName + description + (vpcId ?? '')),
         name: groupName,
-        vpc_id: 'vpc-04e9f2a1',
+        description,
+        vpc_id: vpcId ?? 'vpc-04e9f2a1',
       };
+      if (vpcId === undefined) computed = ['id', 'vpc_id'];
     } else {
       attributes = { id: `${type.replace(/^aws_/, '')}-${fnv(name).slice(0, 8)}` };
     }
 
-    resources.push({ address, type, name, attributes });
+    resources.push({ address, type, name, attributes, computed });
   }
 
   return { resources, errors };
 }
-
-// Attributes the provider only learns once the resource exists, so a plan
-// shows them as (known after apply).
-const COMPUTED_ATTRIBUTES: Record<string, string[]> = {
-  aws_instance: ['id', 'public_ip'],
-  aws_security_group: ['id', 'vpc_id'],
-};
 
 // Arguments that cannot change on an existing resource. Changing one makes
 // Terraform destroy and recreate the resource, shown as -/+ in the plan.
 const FORCES_REPLACEMENT: Record<string, string[]> = {
   aws_instance: ['ami'],
   aws_s3_bucket: ['bucket'],
-  aws_security_group: ['name'],
+  aws_security_group: ['name', 'description', 'vpc_id'],
 };
-
-function computedAttributes(type: string): string[] {
-  return COMPUTED_ATTRIBUTES[type] ?? ['id'];
-}
 
 function diffPlan(desired: ManagedResource[], current: ManagedResource[]): PlanResult {
   const currentByAddress = new Map(current.map((resource) => [resource.address, resource]));
@@ -303,7 +301,7 @@ function diffPlan(desired: ManagedResource[], current: ManagedResource[]): PlanR
       creates.push(resource);
       continue;
     }
-    const computed = computedAttributes(resource.type);
+    const computed = resource.computed;
     const forcesReplacement = FORCES_REPLACEMENT[resource.type] ?? [];
     const changes: string[] = [];
     let replace = false;
@@ -565,7 +563,7 @@ export default function TerraformTerminalSimulator() {
     lines.push(out('Terraform will perform the following actions:'));
     lines.push(out(''));
     plan.creates.forEach((resource) => {
-      const computed = computedAttributes(resource.type);
+      const computed = resource.computed;
       lines.push(out(`  # ${resource.address} will be created`));
       lines.push(out(`  + resource "${resource.type}" "${resource.name}" {`));
       Object.entries(resource.attributes).forEach(([key, value]) => {

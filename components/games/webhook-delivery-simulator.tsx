@@ -341,9 +341,10 @@ export default function WebhookDeliverySimulator() {
   const selectedNextAttempt = active?.attempts[currentAttemptIndex + 1];
   const lastVisibleAttempt = active?.attempts[Math.max(0, active.revealed - 1)];
   const nextScheduledAttempt = active?.attempts[active.revealed];
+  // The retry gap runs from the moment the attempt failed, not from when it started.
   const selectedRetryDelay =
     currentAttempt && selectedNextAttempt
-      ? selectedNextAttempt.atSeconds - currentAttempt.atSeconds
+      ? selectedNextAttempt.atSeconds - currentAttempt.atSeconds - currentAttempt.durationMs / 1000
       : null;
   const timeWarpDelay =
     revealing && lastVisibleAttempt && nextScheduledAttempt

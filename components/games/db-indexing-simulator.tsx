@@ -229,7 +229,14 @@ export default function DbIndexingSimulator() {
         while (prefix < idx.columns.length && queryColumns.includes(idx.columns[prefix])) prefix++;
         if (prefix > 0 && (!best || prefix > best.prefix)) best = { columns: idx.columns, prefix };
       }
-      if (!best) return { usable: false, type: 'none' as const };
+      if (!best) {
+        // An index that holds the column, just not first, is still eligible:
+        // the planner could read all of it. It cannot seek, so it loses on cost.
+        const nonLeading = indexes.find((idx) => idx.columns.some((col) => queryColumns.includes(col)));
+        return nonLeading
+          ? { usable: false, type: 'non-leading' as const, indexColumns: nonLeading.columns, prefix: 0 }
+          : { usable: false, type: 'none' as const };
+      }
 
       const indexColumns = best.columns;
       if (best.prefix < queryColumns.length) {
@@ -296,8 +303,34 @@ export default function DbIndexingSimulator() {
      }
    });
 
+    // An index scan reads every row that matches its leading columns, then
+    // filters out rows that fail the rest of the WHERE clause.
+    const expectedValue = (column: string) =>
+      column === query.columns[0]
+        ? ('value' in query ? query.value : undefined)
+        : ('secondValue' in query ? query.secondValue : undefined);
+    const conditionFor = (column: string) => {
+      if (query.type === 'range') return `${column} BETWEEN ${query.valueMin} AND ${query.valueMax}`;
+      const value = expectedValue(column);
+      return `${column} = ${typeof value === 'string' ? `'${value}'` : value}`;
+    };
+    const rowsMatching = (columns: string[]) =>
+      SAMPLE_DATA.flatMap((row, idx) =>
+        columns.every((column) => {
+          const value = row[column as keyof TableRow];
+          if (query.type === 'range') return (value as number) >= query.valueMin && (value as number) <= query.valueMax;
+          return value === expectedValue(column);
+        })
+          ? [idx]
+          : []
+      );
+    const seekColumns =
+      usesIndex && indexResult.type !== 'none' ? indexResult.indexColumns.slice(0, indexResult.prefix) : [];
+    const residualColumns = query.columns.filter((column) => !seekColumns.includes(column));
+    const indexRows = usesIndex ? rowsMatching(seekColumns) : [];
+
     const totalRows = SAMPLE_DATA.length;
-    const scanRows = usesIndex ? Math.min(matchingRows.length + 1, 3) : totalRows;
+    const scanRows = usesIndex ? Math.max(indexRows.length, 1) : totalRows;
 
     setAnimation({
       type: usesIndex ? 'index-seek' : 'full-scan',
@@ -327,16 +360,29 @@ export default function DbIndexingSimulator() {
    const variance = usesIndex ? Math.random() * 10 : Math.random() * 30;
    const timeMs = Math.round(baseTime + variance);
 
-    const indexName = indexResult.type !== 'none' ? `idx_${indexResult.indexColumns.join('_')}` : undefined;
+    const indexName =
+      indexResult.type !== 'none' && indexResult.type !== 'non-leading'
+        ? `idx_${indexResult.indexColumns.join('_')}`
+        : undefined;
 
     const explainPlan: ExplainStep[] = usesIndex
       ? [
           {
             operation: 'Index Scan',
             detail: `using ${indexName} on users`,
-            cost: 1.0 + matchingRows.length * 0.01,
-            rows: matchingRows.length,
+            cost: 1.0 + indexRows.length * 0.01,
+            rows: indexRows.length,
           },
+          ...(residualColumns.length > 0
+            ? [
+                {
+                  operation: 'Filter',
+                  detail: `${residualColumns.map(conditionFor).join(' AND ')} (removed ${indexRows.length - matchingRows.length})`,
+                  cost: indexRows.length * 0.01,
+                  rows: matchingRows.length,
+                },
+              ]
+            : []),
         ]
       : [
           {
@@ -355,7 +401,7 @@ export default function DbIndexingSimulator() {
 
    const result: QueryResult = {
      query: query.sql,
-     rowsScanned: usesIndex ? matchingRows.length : totalRows,
+     rowsScanned: usesIndex ? indexRows.length : totalRows,
      rowsReturned: matchingRows.length,
      timeMs,
      usedIndex: usesIndex,
@@ -366,9 +412,11 @@ export default function DbIndexingSimulator() {
           : indexResult.type === 'composite-partial'
             ? `Partial composite index on ${indexName} - used leading column(s)`
             : indexResult.type === 'filtered'
-              ? `Index seek on ${indexName} using ${indexResult.indexColumns.slice(0, indexResult.prefix).join(', ')}, then filtered the other condition`
+              ? `Index seek on ${indexName} read the ${indexRows.length} rows that match ${seekColumns.join(', ')}, then the filter on ${residualColumns.join(', ')} removed ${indexRows.length - matchingRows.length} of them`
               : `Index seek on ${indexName} - jumped directly to matching rows`
-       : `Full table scan - checked every row in the table`,
+        : indexResult.type === 'non-leading'
+          ? `Seq scan chosen by cost. idx_${indexResult.indexColumns.join('_')} holds ${query.columns.join(', ')}, but not as its first column, so it cannot jump to matching rows. Postgres could still read the whole index (PostgreSQL 18 can also skip scan through each ${indexResult.indexColumns[0]} value), but on a table this small reading every row costs less.`
+          : `Full table scan - checked every row in the table`,
       explainPlan,
    };
 
@@ -962,10 +1010,11 @@ export default function DbIndexingSimulator() {
                 </ul>
               </div>
               <div className="rounded bg-yellow-500/10 p-2">
-                <p className="font-medium text-yellow-600 dark:text-yellow-400">✗ Cannot use (age, city) index:</p>
+                <p className="font-medium text-yellow-600 dark:text-yellow-400">✗ Cannot seek with (age, city) index:</p>
                 <ul className="mt-1 text-slate-500 dark:text-slate-400">
-                  <li>• WHERE city = &apos;NYC&apos; (needs city first)</li>
-                  <li>• Need (city, age) index instead</li>
+                  <li>• WHERE city = &apos;NYC&apos; (the index is sorted by age first)</li>
+                  <li>• Postgres may still read the whole index, or skip scan in PG 18, but often a seq scan costs less</li>
+                  <li>• A (city, age) index serves it directly</li>
                 </ul>
               </div>
             </div>

@@ -154,23 +154,41 @@ export default function RateLimitSimulator() {
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chartUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const windowResetIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Staggered burst requests and scheduled retries, so Stop and Reset can cancel them
+  const pendingTimeoutsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+  // Retries read the strategy when they fire, so a change applies to them at once
+  const strategyRef = useRef(strategy);
+
+  useEffect(() => {
+    strategyRef.current = strategy;
+  }, [strategy]);
+
+  const schedule = useCallback((callback: () => void, delay: number) => {
+    const timeout = setTimeout(() => {
+      pendingTimeoutsRef.current.delete(timeout);
+      callback();
+    }, delay);
+    pendingTimeoutsRef.current.add(timeout);
+  }, []);
+
+  const clearPending = useCallback(() => {
+    pendingTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout));
+    pendingTimeoutsRef.current.clear();
+  }, []);
 
   // Calculate backoff delay
-  const calculateBackoffDelay = useCallback(
-    (attempt: number): number => {
-      switch (strategy) {
-        case 'none':
-          return 0;
-        case 'fixed':
-          return 1000;
-        case 'exponential':
-          return Math.min(1000 * Math.pow(2, attempt - 1), 30000);
-        default:
-          return 0;
-      }
-    },
-    [strategy]
-  );
+  const calculateBackoffDelay = useCallback((attempt: number): number => {
+    switch (strategyRef.current) {
+      case 'none':
+        return 0;
+      case 'fixed':
+        return 1000;
+      case 'exponential':
+        return Math.min(1000 * Math.pow(2, attempt - 1), 30000);
+      default:
+        return 0;
+    }
+  }, []);
 
   // Make a single request with atomic rate limiting
   const makeRequest = useCallback(
@@ -201,7 +219,7 @@ export default function RateLimitSimulator() {
             const delay = calculateBackoffDelay(attempt);
             requestData.retryAfter = delay;
 
-            setTimeout(() => {
+            schedule(() => {
               makeRequest(true, attempt + 1);
             }, delay);
           }
@@ -213,34 +231,42 @@ export default function RateLimitSimulator() {
         return newRemaining;
       });
     },
-    [strategy, calculateBackoffDelay]
+    [calculateBackoffDelay, schedule]
   );
+
+  const runBurst = useCallback(() => {
+    for (let i = 0; i < burstSize; i++) {
+      // Stagger requests slightly to avoid all hitting at exactly the same time
+      schedule(() => makeRequest(), i * 100);
+    }
+  }, [burstSize, makeRequest, schedule]);
 
   // Start simulation
   const startSimulation = useCallback(() => {
     if (simulationIntervalRef.current) return;
-
-    const runBurst = () => {
-      for (let i = 0; i < burstSize; i++) {
-        // Stagger requests slightly to avoid all hitting at exactly the same time
-        setTimeout(() => makeRequest(), i * 100);
-      }
-    };
 
     // Run first burst immediately
     runBurst();
 
     // Set up recurring bursts
     simulationIntervalRef.current = setInterval(runBurst, burstInterval);
-  }, [burstSize, burstInterval, makeRequest]);
+  }, [burstInterval, runBurst]);
 
-  // Stop simulation
+  // A running simulation picks up a new burst size or interval straight away
+  useEffect(() => {
+    if (!simulationIntervalRef.current) return;
+    clearInterval(simulationIntervalRef.current);
+    simulationIntervalRef.current = setInterval(runBurst, burstInterval);
+  }, [burstInterval, runBurst]);
+
+  // Stop simulation, including bursts and retries that are still scheduled
   const stopSimulation = useCallback(() => {
     if (simulationIntervalRef.current) {
       clearInterval(simulationIntervalRef.current);
       simulationIntervalRef.current = null;
     }
-  }, []);
+    clearPending();
+  }, [clearPending]);
 
   // Reset all data
   const resetSimulation = useCallback(() => {

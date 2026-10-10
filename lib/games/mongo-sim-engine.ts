@@ -370,28 +370,64 @@ function compare(a: unknown, b: unknown): number {
   return 0;
 }
 
+/**
+ * BSON equality: arrays and embedded documents compare by value, and an
+ * embedded document must have the same fields in the same order.
+ */
+function bsonEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return (
+      Array.isArray(a) &&
+      Array.isArray(b) &&
+      a.length === b.length &&
+      a.every((item, index) => bsonEqual(item, b[index]))
+    );
+  }
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    const aKeys = Object.keys(a as Doc);
+    const bKeys = Object.keys(b as Doc);
+    return (
+      aKeys.length === bKeys.length &&
+      aKeys.every((key, index) => key === bKeys[index] && bsonEqual((a as Doc)[key], (b as Doc)[key]))
+    );
+  }
+  return false;
+}
+
+/** Equality as a query sees it: null also matches a missing field. */
+function valueMatches(value: unknown, query: unknown): boolean {
+  if (query === null) return value === null || value === undefined;
+  return bsonEqual(value, query);
+}
+
 // A condition matches when any reachable value satisfies it. $ne, $nin and
-// $exists: false are negations, so they need every value to pass.
+// $exists: false are negations, so they need every value to pass. Range
+// operators only compare values of the same type, like BSON type brackets.
 function matchOperators(values: unknown[], ops: Doc): boolean {
-  const scalars = values.filter((value) => value !== undefined && !Array.isArray(value));
+  const comparable = (operand: unknown) =>
+    values.filter(
+      (value) => (typeof value === 'number' || typeof value === 'string') && typeof value === typeof operand,
+    );
+  const matchesAny = (operand: unknown) => values.some((value) => valueMatches(value, operand));
   return Object.entries(ops).every(([op, operand]) => {
     switch (op) {
       case '$eq':
-        return values.includes(operand);
+        return matchesAny(operand);
       case '$ne':
-        return !values.includes(operand);
+        return !matchesAny(operand);
       case '$gt':
-        return scalars.some((value) => compare(value, operand) > 0);
+        return comparable(operand).some((value) => compare(value, operand) > 0);
       case '$gte':
-        return scalars.some((value) => compare(value, operand) >= 0);
+        return comparable(operand).some((value) => compare(value, operand) >= 0);
       case '$lt':
-        return scalars.some((value) => compare(value, operand) < 0);
+        return comparable(operand).some((value) => compare(value, operand) < 0);
       case '$lte':
-        return scalars.some((value) => compare(value, operand) <= 0);
+        return comparable(operand).some((value) => compare(value, operand) <= 0);
       case '$in':
-        return Array.isArray(operand) && values.some((value) => operand.includes(value));
+        return Array.isArray(operand) && operand.some(matchesAny);
       case '$nin':
-        return Array.isArray(operand) && !values.some((value) => operand.includes(value));
+        return Array.isArray(operand) && !operand.some(matchesAny);
       case '$exists':
         return operand ? values.some((value) => value !== undefined) : values.every((value) => value === undefined);
       case '$regex': {
@@ -429,7 +465,7 @@ function matchDoc(doc: Doc, filter: Doc): boolean {
         return matchOperators(values, condition as Doc);
       }
     }
-    return values.includes(condition);
+    return values.some((value) => valueMatches(value, condition));
   });
 }
 

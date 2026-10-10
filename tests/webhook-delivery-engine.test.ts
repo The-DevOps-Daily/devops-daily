@@ -48,6 +48,8 @@ describe('retry schedule', () => {
     expect(formatDelay(300)).toBe('5m');
     expect(formatDelay(7200)).toBe('2h');
     expect(formatDelay(36000)).toBe('10h');
+    expect(formatDelay(5.087)).toBe('5s');
+    expect(formatDelay(0.042)).toBe('immediately');
   });
 });
 
@@ -104,8 +106,10 @@ describe('delivery simulation', () => {
     const attempts = simulateDelivery('intermittent');
     expect(attempts).toHaveLength(3);
     expect(attempts.map((a) => a.result)).toEqual(['retrying', 'retrying', 'delivered']);
-    // Recovery lands 5m5s in, which is why trying fast twice is worth it.
-    expect(attempts[2].atSeconds).toBe(305);
+    // Recovery lands 5m5s in (plus the two 64ms failures), which is why
+    // trying fast twice is worth it.
+    expect(attempts[2].atSeconds).toBeCloseTo(305.128, 6);
+    expect(formatDelay(attempts[2].atSeconds)).toBe('5m 5s');
   });
 
   it('retries a timeout, since the outcome is unknown', () => {
@@ -125,9 +129,15 @@ describe('delivery simulation', () => {
     expect(attempts.at(-1)!.result).toBe('exhausted');
   });
 
-  it('records cumulative timing, not per-attempt gaps', () => {
+  it('records cumulative timing: each gap starts after the previous attempt fails', () => {
     const attempts = simulateDelivery('http_500');
-    expect(attempts.map((a) => a.atSeconds)).toEqual([0, 5, 305, 2105, 9305, 27305, 63305, 99305]);
+    const expected = [0, 5.087, 305.174, 2105.261, 9305.348, 27305.435, 63305.522, 99305.609];
+    attempts.forEach((a, i) => expect(a.atSeconds).toBeCloseTo(expected[i], 6));
+  });
+
+  it('starts the next attempt only after a timeout has run its 15 seconds', () => {
+    const attempts = simulateDelivery('timeout');
+    expect(attempts.map((a) => a.atSeconds)).toEqual([0, 20, 335, 2150, 9365, 27380, 63395, 99410]);
   });
 });
 
