@@ -253,6 +253,14 @@ git checkout main
 git merge feature-branch
 ```
 
+> **Tip:** If you find yourself aborting and re-attempting the same merge, enable `git rerere` (reuse recorded resolution) before you start:
+>
+> ```bash
+> git config --global rerere.enabled true
+> ```
+>
+> Git then records how you resolve each conflict hunk. The next time the same conflict appears - after an abort, a rebase, or a cherry-pick - Git replays your previous resolution automatically and you only need to confirm with `git add`. It turns the abort-and-retry loop from painful to nearly free. I wish I had known about this before re-resolving the same conflicts three times in one afternoon.
+
 ## Aborting During Rebase
 
 Rebases can also have conflicts. To abort a rebase:
