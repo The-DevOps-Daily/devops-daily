@@ -10,7 +10,7 @@ export async function generateMetadata(): Promise<Metadata> {
 const seoLearningPoints = [
   'Why a webhook delivery is a durable state machine rather than a single HTTP POST',
   'How exponential backoff spreads eight retry attempts across roughly 27 hours',
-  'Which HTTP responses are worth retrying and which should be dropped immediately',
+  'Why every non-2xx response is retried, 4xx included, and what each status tells you',
   'Why a timeout is the ambiguous case that makes idempotency mandatory',
   'How HMAC-SHA256 webhook signatures are built over the id, timestamp and raw body',
   'Why verifying a re-serialized JSON body always fails, and what to do instead',
@@ -26,8 +26,8 @@ function WebhookDeliveryEducational() {
         <div>
           <h4 className="mb-2 text-sm font-semibold">1. Persist and retry</h4>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            A delivery must survive a restart. Retry timeouts, 429s, and server errors with backoff;
-            drop malformed requests that another attempt cannot fix.
+            A delivery must survive a restart. Retry every timeout and every non-2xx response with
+            backoff. A 4xx keeps failing until the receiver is fixed, so it runs out the schedule.
           </p>
         </div>
         <div>
@@ -59,17 +59,16 @@ function WebhookDeliveryEducational() {
           turns this flow into a typed sender and receiver you can build from. This simulator uses
           the published{' '}
           <a
-            href="https://link.svix.com/devopsdaily"
+            href="https://docs.svix.com/retries"
             className="font-medium text-primary underline underline-offset-2"
             target="_blank"
-            rel="noopener noreferrer sponsored"
+            rel="noopener noreferrer"
           >
-            Svix Dispatch
+            Svix retry rules
           </a>{' '}
-          retry schedule and genuine Standard Webhooks signatures. Dispatch adds the durable queue,
-          endpoint controls, attempt history, replay, and customer portal that turn these mechanics
-          into a complete delivery product. For the underlying queue and throttling concepts, try
-          the{' '}
+          (eight attempts over about 27 hours, a 15 second timeout, and a retry for any non-2xx
+          response) and genuine Standard Webhooks signatures. For the underlying queue and
+          throttling concepts, try the{' '}
           <a
             href="/games/message-queue-simulator"
             className="font-medium text-primary underline underline-offset-2"

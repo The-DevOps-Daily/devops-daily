@@ -27,6 +27,8 @@ interface ManagedResource {
   type: string;
   name: string;
   attributes: Record<string, string>;
+  /** Attributes the provider only learns once the resource exists, shown as (known after apply). */
+  computed: string[];
 }
 
 interface TerminalLine {
@@ -38,7 +40,15 @@ interface TerminalLine {
 interface PlanResult {
   creates: ManagedResource[];
   updates: { resource: ManagedResource; changes: string[] }[];
+  replaces: { resource: ManagedResource; previous: ManagedResource; changes: string[] }[];
   deletes: ManagedResource[];
+}
+
+interface PendingConfirm {
+  kind: 'apply' | 'destroy';
+  command: string;
+  plan: PlanResult;
+  resources: ManagedResource[];
 }
 
 interface LessonCommand {
@@ -232,38 +242,57 @@ function parseConfig(files: Record<FileName, string>): ParsedConfig {
     const address = `${type}.${name}`;
 
     let attributes: Record<string, string>;
+    let computed = ['id'];
     if (type === 'aws_instance') {
+      const ami = readAssign(body, 'ami', vars) ?? 'ami-unknown';
+      // A new AMI means a new instance, so the id and IP change with it.
       attributes = {
-        id: idFor('i-0', name),
+        id: idFor('i-0', name + ami),
         instance_type: readAssign(body, 'instance_type', vars) ?? 't3.micro',
-        ami: readAssign(body, 'ami', vars) ?? 'ami-unknown',
-        public_ip: ipFor(name),
+        ami,
+        public_ip: ipFor(name + ami),
       };
+      computed = ['id', 'public_ip'];
     } else if (type === 'aws_s3_bucket') {
       const bucket = readAssign(body, 'bucket', vars) ?? `${name}-bucket`;
       attributes = { id: bucket, bucket, region: vars.region ?? 'us-east-1' };
     } else if (type === 'aws_security_group') {
+      const groupName = readAssign(body, 'name', vars) ?? name;
+      const description = readAssign(body, 'description', vars) ?? 'Managed by Terraform';
+      // Without vpc_id the group lands in the default VPC, which AWS picks.
+      const vpcId = readAssign(body, 'vpc_id', vars);
       attributes = {
-        id: idFor('sg-0', name),
-        name: readAssign(body, 'name', vars) ?? name,
-        vpc_id: 'vpc-04e9f2a1',
+        id: idFor('sg-0', name + groupName + description + (vpcId ?? '')),
+        name: groupName,
+        description,
+        vpc_id: vpcId ?? 'vpc-04e9f2a1',
       };
+      if (vpcId === undefined) computed = ['id', 'vpc_id'];
     } else {
       attributes = { id: `${type.replace(/^aws_/, '')}-${fnv(name).slice(0, 8)}` };
     }
 
-    resources.push({ address, type, name, attributes });
+    resources.push({ address, type, name, attributes, computed });
   }
 
   return { resources, errors };
 }
+
+// Arguments that cannot change on an existing resource. Changing one makes
+// Terraform destroy and recreate the resource, shown as -/+ in the plan.
+const FORCES_REPLACEMENT: Record<string, string[]> = {
+  aws_instance: ['ami'],
+  aws_s3_bucket: ['bucket'],
+  aws_security_group: ['name', 'description', 'vpc_id'],
+};
 
 function diffPlan(desired: ManagedResource[], current: ManagedResource[]): PlanResult {
   const currentByAddress = new Map(current.map((resource) => [resource.address, resource]));
   const desiredByAddress = new Map(desired.map((resource) => [resource.address, resource]));
 
   const creates: ManagedResource[] = [];
-  const updates: { resource: ManagedResource; changes: string[] }[] = [];
+  const updates: PlanResult['updates'] = [];
+  const replaces: PlanResult['replaces'] = [];
   const deletes: ManagedResource[] = [];
 
   for (const resource of desired) {
@@ -272,14 +301,26 @@ function diffPlan(desired: ManagedResource[], current: ManagedResource[]): PlanR
       creates.push(resource);
       continue;
     }
+    const computed = resource.computed;
+    const forcesReplacement = FORCES_REPLACEMENT[resource.type] ?? [];
     const changes: string[] = [];
+    let replace = false;
     for (const [key, value] of Object.entries(resource.attributes)) {
-      if (key === 'id' || key === 'public_ip') continue;
+      if (computed.includes(key)) continue;
       if (existing.attributes[key] !== value) {
-        changes.push(`${key}: "${existing.attributes[key] ?? ''}" => "${value}"`);
+        const forces = forcesReplacement.includes(key);
+        replace = replace || forces;
+        changes.push(
+          `${key} = "${existing.attributes[key] ?? ''}" -> "${value}"${forces ? ' # forces replacement' : ''}`
+        );
       }
     }
-    if (changes.length > 0) {
+    if (replace) {
+      computed.forEach((key) =>
+        changes.push(`${key} = "${existing.attributes[key] ?? ''}" -> (known after apply)`)
+      );
+      replaces.push({ resource, previous: existing, changes });
+    } else if (changes.length > 0) {
       updates.push({ resource, changes });
     }
   }
@@ -290,7 +331,21 @@ function diffPlan(desired: ManagedResource[], current: ManagedResource[]): PlanR
     }
   }
 
-  return { creates, updates, deletes };
+  return { creates, updates, replaces, deletes };
+}
+
+/** A replacement counts once as an add and once as a destroy, like the real summary. */
+function planCounts(plan: PlanResult) {
+  return {
+    add: plan.creates.length + plan.replaces.length,
+    change: plan.updates.length,
+    destroy: plan.deletes.length + plan.replaces.length,
+  };
+}
+
+function planIsEmpty(plan: PlanResult): boolean {
+  const counts = planCounts(plan);
+  return counts.add + counts.change + counts.destroy === 0;
 }
 
 const LESSONS: Lesson[] = [
@@ -327,7 +382,7 @@ const LESSONS: Lesson[] = [
         hint: 'Run terraform plan.',
         expectedCommand: ['terraform plan'],
         explanation:
-          'terraform plan compares your configuration against state and prints the actions it would take. The + symbol means create, ~ means change in place, and - means destroy. Nothing is applied yet.',
+          'terraform plan compares your configuration against state and prints the actions it would take. The + symbol means create, ~ means change in place, - means destroy, and -/+ means destroy and recreate. Values like the instance id show as (known after apply). Nothing is applied yet.',
       },
     ],
   },
@@ -342,7 +397,7 @@ const LESSONS: Lesson[] = [
         hint: 'Run terraform apply -auto-approve.',
         expectedCommand: ['terraform apply -auto-approve', 'terraform apply'],
         explanation:
-          'terraform apply creates the resources and records them in state. In real projects you review the plan before approving. -auto-approve skips the interactive prompt, which is common in CI.',
+          'terraform apply prints the plan and waits until you type yes, then creates the resources and records them in state. -auto-approve skips that prompt, which is common in CI.',
       },
     ],
   },
@@ -365,7 +420,7 @@ const LESSONS: Lesson[] = [
         hint: 'Run terraform apply -auto-approve.',
         expectedCommand: ['terraform apply -auto-approve', 'terraform apply'],
         explanation:
-          'Apply reconciles state with your configuration. Many resources update in place; some force a replacement, which a real plan would mark with -/+.',
+          'Apply reconciles state with your configuration. Many arguments update in place; some, like ami on an instance, force a replacement, which plan marks with -/+ and # forces replacement. Try changing the ami to see it.',
       },
     ],
   },
@@ -442,6 +497,7 @@ export default function TerraformTerminalSimulator() {
   const [state, setState] = useState<ManagedResource[]>([]);
   const [hasApplied, setHasApplied] = useState(false);
   const [lastPlan, setLastPlan] = useState<PlanResult | null>(null);
+  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
   const [completedCommands, setCompletedCommands] = useState<Set<string>>(new Set());
   const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
@@ -500,23 +556,30 @@ export default function TerraformTerminalSimulator() {
 
   const planToLines = (plan: PlanResult): TerminalLine[] => {
     const lines: TerminalLine[] = [];
-    if (plan.creates.length === 0 && plan.updates.length === 0 && plan.deletes.length === 0) {
+    if (planIsEmpty(plan)) {
       lines.push(out('No changes. Your infrastructure matches the configuration.'));
       return lines;
     }
     lines.push(out('Terraform will perform the following actions:'));
     lines.push(out(''));
     plan.creates.forEach((resource) => {
+      const computed = resource.computed;
       lines.push(out(`  # ${resource.address} will be created`));
       lines.push(out(`  + resource "${resource.type}" "${resource.name}" {`));
       Object.entries(resource.attributes).forEach(([key, value]) => {
-        lines.push(out(`      + ${key} = "${value}"`));
+        lines.push(out(`      + ${key} = ${computed.includes(key) ? '(known after apply)' : `"${value}"`}`));
       });
       lines.push(out('    }'));
     });
     plan.updates.forEach(({ resource, changes }) => {
-      lines.push(out(`  # ${resource.address} will be updated in place`));
+      lines.push(out(`  # ${resource.address} will be updated in-place`));
       lines.push(out(`  ~ resource "${resource.type}" "${resource.name}" {`));
+      changes.forEach((change) => lines.push(out(`      ~ ${change}`)));
+      lines.push(out('    }'));
+    });
+    plan.replaces.forEach(({ resource, changes }) => {
+      lines.push(out(`  # ${resource.address} must be replaced`));
+      lines.push(out(`-/+ resource "${resource.type}" "${resource.name}" {`));
       changes.forEach((change) => lines.push(out(`      ~ ${change}`)));
       lines.push(out('    }'));
     });
@@ -525,10 +588,9 @@ export default function TerraformTerminalSimulator() {
       lines.push(out(`  - resource "${resource.type}" "${resource.name}"`));
     });
     lines.push(out(''));
+    const counts = planCounts(plan);
     lines.push(
-      ok(
-        `Plan: ${plan.creates.length} to add, ${plan.updates.length} to change, ${plan.deletes.length} to destroy.`
-      )
+      ok(`Plan: ${counts.add} to add, ${counts.change} to change, ${counts.destroy} to destroy.`)
     );
     return lines;
   };
@@ -536,6 +598,71 @@ export default function TerraformTerminalSimulator() {
   const runCommand = useCallback(
     (raw: string) => {
       const command = normalize(raw);
+
+      const applyChanges = ({ command: applied, plan, resources }: PendingConfirm) => {
+        const lines: TerminalLine[] = [];
+        plan.replaces.forEach(({ previous }) => {
+          lines.push(out(`${previous.address}: Destroying... [id=${previous.attributes.id}]`));
+          lines.push(out(`${previous.address}: Destruction complete`));
+        });
+        [...plan.creates, ...plan.replaces.map(({ resource }) => resource)].forEach((resource) => {
+          lines.push(out(`${resource.address}: Creating...`));
+          lines.push(out(`${resource.address}: Creation complete [id=${resource.attributes.id}]`));
+        });
+        plan.updates.forEach(({ resource }) => {
+          lines.push(out(`${resource.address}: Modifying... [id=${resource.attributes.id}]`));
+          lines.push(out(`${resource.address}: Modifications complete`));
+        });
+        plan.deletes.forEach((resource) => {
+          lines.push(out(`${resource.address}: Destroying... [id=${resource.attributes.id}]`));
+          lines.push(out(`${resource.address}: Destruction complete`));
+        });
+        lines.push(out(''));
+        const counts = planCounts(plan);
+        lines.push(
+          ok(
+            `Apply complete! Resources: ${counts.add} added, ${counts.change} changed, ${counts.destroy} destroyed.`
+          )
+        );
+        const outputs = computeOutputs(resources);
+        if (Object.keys(outputs).length > 0) {
+          lines.push(out(''));
+          lines.push(out('Outputs:'));
+          Object.entries(outputs).forEach(([key, value]) => lines.push(out(`${key} = "${value}"`)));
+        }
+        setState(resources);
+        setHasApplied(true);
+        setLastPlan(null);
+        pushLines(lines);
+        advanceLesson(applied);
+      };
+
+      const destroyAll = ({ command: destroyed, plan }: PendingConfirm) => {
+        const lines = plan.deletes
+          .slice()
+          .reverse()
+          .map((resource) => out(`${resource.address}: Destroying... [id=${resource.attributes.id}]`));
+        lines.push(out(''));
+        lines.push(ok(`Destroy complete! Resources: ${plan.deletes.length} destroyed.`));
+        setState([]);
+        setLastPlan(null);
+        pushLines(lines);
+        advanceLesson(destroyed);
+      };
+
+      // apply and destroy wait at "Enter a value:" and only go ahead on "yes".
+      if (pendingConfirm) {
+        setPendingConfirm(null);
+        pushLines([out(`  Enter a value: ${raw.trim()}`), out('')]);
+        if (command !== 'yes') {
+          pushLines([err(pendingConfirm.kind === 'apply' ? 'Apply cancelled.' : 'Destroy cancelled.')]);
+          return;
+        }
+        if (pendingConfirm.kind === 'apply') applyChanges(pendingConfirm);
+        else destroyAll(pendingConfirm);
+        return;
+      }
+
       if (!command) return;
 
       pushLines([{ type: 'input', content: raw.trim(), timestamp: new Date() }]);
@@ -553,11 +680,12 @@ export default function TerraformTerminalSimulator() {
           out('  terraform fmt                  Format the configuration files'),
           out('  terraform providers            Show the providers the config requires'),
           out('  terraform plan                 Preview changes without applying'),
-          out('  terraform apply -auto-approve  Create or update resources'),
+          out('  terraform apply                Show the plan, then type yes to apply'),
+          out('  terraform apply -auto-approve  Apply without the yes prompt'),
           out('  terraform state list           List resources in state'),
           out('  terraform state show <addr>    Show one resource in detail'),
           out('  terraform output [name]        Print output values'),
-          out('  terraform destroy -auto-approve  Destroy all resources'),
+          out('  terraform destroy              Destroy all resources (asks for yes)'),
           out('  clear                          Clear the terminal'),
           out('Tip: edit the .tf files, then run plan to see the diff.'),
         ]);
@@ -645,7 +773,7 @@ export default function TerraformTerminalSimulator() {
           return;
         }
         const plan = diffPlan(parsed.resources, state);
-        if (plan.creates.length === 0 && plan.updates.length === 0 && plan.deletes.length === 0) {
+        if (planIsEmpty(plan)) {
           pushLines([
             out('No changes. Your infrastructure matches the configuration.'),
             ok('Apply complete! Resources: 0 added, 0 changed, 0 destroyed.'),
@@ -653,37 +781,21 @@ export default function TerraformTerminalSimulator() {
           advanceLesson(command);
           return;
         }
-        const lines: TerminalLine[] = [];
-        plan.creates.forEach((resource) => {
-          lines.push(out(`${resource.address}: Creating...`));
-          lines.push(out(`${resource.address}: Creation complete [id=${resource.attributes.id}]`));
-        });
-        plan.updates.forEach(({ resource }) => {
-          lines.push(out(`${resource.address}: Modifying... [id=${resource.attributes.id}]`));
-          lines.push(out(`${resource.address}: Modifications complete`));
-        });
-        plan.deletes.forEach((resource) => {
-          lines.push(out(`${resource.address}: Destroying... [id=${resource.attributes.id}]`));
-          lines.push(out(`${resource.address}: Destruction complete`));
-        });
-        lines.push(out(''));
-        lines.push(
-          ok(
-            `Apply complete! Resources: ${plan.creates.length} added, ${plan.updates.length} changed, ${plan.deletes.length} destroyed.`
-          )
-        );
-        const newState = parsed.resources;
-        const outputs = computeOutputs(newState);
-        if (Object.keys(outputs).length > 0) {
-          lines.push(out(''));
-          lines.push(out('Outputs:'));
-          Object.entries(outputs).forEach(([key, value]) => lines.push(out(`${key} = "${value}"`)));
+        const pending: PendingConfirm = { kind: 'apply', command, plan, resources: parsed.resources };
+        setLastPlan(plan);
+        pushLines(planToLines(plan));
+        if (args.includes('-auto-approve')) {
+          pushLines([out('')]);
+          applyChanges(pending);
+          return;
         }
-        setState(newState);
-        setHasApplied(true);
-        setLastPlan(null);
-        pushLines(lines);
-        advanceLesson(command);
+        pushLines([
+          out(''),
+          out('Do you want to perform these actions?'),
+          out('  Terraform will perform the actions described above.'),
+          out("  Only 'yes' will be accepted to approve."),
+        ]);
+        setPendingConfirm(pending);
         return;
       }
 
@@ -695,17 +807,21 @@ export default function TerraformTerminalSimulator() {
           ]);
           return;
         }
-        const count = state.length;
-        const lines = state
-          .slice()
-          .reverse()
-          .map((resource) => out(`${resource.address}: Destroying... [id=${resource.attributes.id}]`));
-        lines.push(out(''));
-        lines.push(ok(`Destroy complete! Resources: ${count} destroyed.`));
-        setState([]);
-        setLastPlan(null);
-        pushLines(lines);
-        advanceLesson(command);
+        const plan = diffPlan([], state);
+        const pending: PendingConfirm = { kind: 'destroy', command, plan, resources: [] };
+        pushLines(planToLines(plan));
+        if (args.includes('-auto-approve')) {
+          pushLines([out('')]);
+          destroyAll(pending);
+          return;
+        }
+        pushLines([
+          out(''),
+          out('Do you really want to destroy all resources?'),
+          out('  Terraform will destroy all your managed infrastructure, as shown above.'),
+          out("  There is no undo. Only 'yes' will be accepted to confirm."),
+        ]);
+        setPendingConfirm(pending);
         return;
       }
 
@@ -758,7 +874,7 @@ export default function TerraformTerminalSimulator() {
 
       pushLines([err(`Terraform has no command named "${sub ?? ''}". Run "help" for the list.`)]);
     },
-    [advanceLesson, files, hasApplied, initialized, pushLines, state]
+    [advanceLesson, files, hasApplied, initialized, pendingConfirm, pushLines, state]
   );
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -807,6 +923,7 @@ export default function TerraformTerminalSimulator() {
     setState([]);
     setHasApplied(false);
     setLastPlan(null);
+    setPendingConfirm(null);
     setCompletedCommands(new Set());
     setCurrentLessonIndex(0);
     setCurrentCommandIndex(0);
@@ -815,10 +932,11 @@ export default function TerraformTerminalSimulator() {
 
   const planSummary = useMemo(() => {
     if (lastPlan) {
+      const counts = planCounts(lastPlan);
       return {
-        adds: lastPlan.creates.length,
-        changes: lastPlan.updates.length,
-        destroys: lastPlan.deletes.length,
+        adds: counts.add,
+        changes: counts.change,
+        destroys: counts.destroy,
         label: 'last plan',
       };
     }
@@ -1013,7 +1131,9 @@ export default function TerraformTerminalSimulator() {
               ))}
 
               <form onSubmit={handleSubmit} className="flex items-center">
-                <span className="text-green-400">$ </span>
+                <span className="whitespace-pre text-green-400">
+                  {pendingConfirm ? '  Enter a value: ' : '$ '}
+                </span>
                 <input
                   ref={inputRef}
                   type="text"
@@ -1024,7 +1144,7 @@ export default function TerraformTerminalSimulator() {
                   spellCheck={false}
                   autoComplete="off"
                   autoCapitalize="off"
-                  placeholder="terraform init"
+                  placeholder={pendingConfirm ? 'yes' : 'terraform init'}
                   aria-label="Terraform command input"
                 />
               </form>

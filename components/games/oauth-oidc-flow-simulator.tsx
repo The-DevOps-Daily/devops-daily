@@ -329,7 +329,7 @@ const TOKEN_COPY: Record<TokenKind, { title: string; description: string; claims
   access: {
     title: 'Access Token',
     description: 'For APIs. Carries authorization context.',
-    claims: ['aud=https://api.example', 'scope=api:read:deployments', 'exp=5m', 'cnf=pkce-bound'],
+    claims: ['aud=https://api.example', 'scope=api:read:deployments', 'exp=5m', 'sub=user_123'],
   },
   refresh: {
     title: 'Refresh Token',

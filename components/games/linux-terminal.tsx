@@ -22,6 +22,7 @@ import {
   Cpu,
   ChevronRight,
 } from 'lucide-react';
+import { grepText, parseLineCount, takeLines, unquote, wcCounts } from '@/lib/games/shell-text';
 import {
   useTerminalSimulator,
   type ExecuteResult,
@@ -83,15 +84,15 @@ const createInitialFileSystem = (): FileSystemNode => ({
                 'readme.txt': {
                   type: 'file',
                   name: 'readme.txt',
-                  content: 'Welcome to the Linux Terminal Tutorial!\nThis is a sample text file.',
+                  content: 'Welcome to the Linux Terminal Tutorial!\nThis is a sample text file.\n',
                   permissions: '-rw-r--r--',
                   owner: 'user',
-                  size: 72,
+                  size: 68,
                 },
                 'notes.md': {
                   type: 'file',
                   name: 'notes.md',
-                  content: '# My Notes\n\n- Learn Linux basics\n- Practice commands\n- Have fun!',
+                  content: '# My Notes\n\n- Learn Linux basics\n- Practice commands\n- Have fun!\n',
                   permissions: '-rw-r--r--',
                   owner: 'user',
                   size: 65,
@@ -110,33 +111,33 @@ const createInitialFileSystem = (): FileSystemNode => ({
                   content: '#!/usr/bin/env python3\n\nprint("Hello, Linux!")\n',
                   permissions: '-rwxr-xr-x',
                   owner: 'user',
-                  size: 52,
+                  size: 47,
                 },
                 'config.json': {
                   type: 'file',
                   name: 'config.json',
-                  content: '{\n  "name": "myapp",\n  "version": "1.0.0"\n}',
+                  content: '{\n  "name": "myapp",\n  "version": "1.0.0"\n}\n',
                   permissions: '-rw-r--r--',
                   owner: 'user',
-                  size: 48,
+                  size: 44,
                 },
               },
             },
             '.bashrc': {
               type: 'file',
               name: '.bashrc',
-              content: '# Bash configuration\nexport PATH=$PATH:/usr/local/bin\nalias ll="ls -la"',
+              content: '# Bash configuration\nexport PATH=$PATH:/usr/local/bin\nalias ll="ls -la"\n',
               permissions: '-rw-r--r--',
               owner: 'user',
-              size: 78,
+              size: 72,
             },
             '.hidden_secret': {
               type: 'file',
               name: '.hidden_secret',
-              content: 'You found the hidden file! Great job exploring.',
+              content: 'You found the hidden file! Great job exploring.\n',
               permissions: '-rw-------',
               owner: 'user',
-              size: 47,
+              size: 48,
             },
           },
         },
@@ -151,18 +152,18 @@ const createInitialFileSystem = (): FileSystemNode => ({
         'hostname': {
           type: 'file',
           name: 'hostname',
-          content: 'linux-tutorial',
+          content: 'linux-tutorial\n',
           permissions: '-rw-r--r--',
           owner: 'root',
-          size: 14,
+          size: 15,
         },
         'passwd': {
           type: 'file',
           name: 'passwd',
-          content: 'root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:User:/home/user:/bin/bash',
+          content: 'root:x:0:0:root:/root:/bin/bash\nuser:x:1000:1000:User:/home/user:/bin/bash\n',
           permissions: '-rw-r--r--',
           owner: 'root',
-          size: 76,
+          size: 75,
         },
       },
     },
@@ -181,10 +182,10 @@ const createInitialFileSystem = (): FileSystemNode => ({
             'syslog': {
               type: 'file',
               name: 'syslog',
-              content: 'Jan 18 10:00:00 linux-tutorial kernel: System initialized\nJan 18 10:00:01 linux-tutorial systemd: Started Linux Tutorial',
+              content: 'Jan 18 10:00:00 linux-tutorial kernel: System initialized\nJan 18 10:00:01 linux-tutorial systemd: Started Linux Tutorial\n',
               permissions: '-rw-r-----',
               owner: 'root',
-              size: 120,
+              size: 121,
             },
           },
         },
@@ -578,7 +579,8 @@ export default function LinuxTerminal() {
         if (!node) return `cat: ${args[0]}: No such file or directory`;
         if (node.type === 'directory') return `cat: ${args[0]}: Is a directory`;
 
-        return node.content || '';
+        // The prompt starts on the next line, so the file's final newline is not shown.
+        return (node.content || '').replace(/\n$/, '');
       }
 
       case 'touch': {
@@ -742,41 +744,26 @@ export default function LinuxTerminal() {
         return '';
       }
 
-      case 'head': {
-        const nFlag = args.find(a => a.startsWith('-n') || a.startsWith('-'));
-        const lines = nFlag ? parseInt(nFlag.replace('-n', '').replace('-', '')) || 10 : 10;
-        const file = args.find(a => !a.startsWith('-'));
-
-        if (!file) return 'head: missing file operand';
-        const resolved = resolvePath(file);
-        const node = getNode(resolved);
-
-        if (!node) return `head: cannot open '${file}': No such file or directory`;
-        if (node.type === 'directory') return `head: error reading '${file}': Is a directory`;
-
-        const content = node.content || '';
-        return content.split('\n').slice(0, lines).join('\n');
-      }
-
+      case 'head':
       case 'tail': {
-        const nFlag = args.find(a => a.startsWith('-n') || a.startsWith('-'));
-        const lines = nFlag ? parseInt(nFlag.replace('-n', '').replace('-', '')) || 10 : 10;
-        const file = args.find(a => !a.startsWith('-'));
+        // -n 5, -n5 and -5 all set the line count.
+        const { count, operands, invalid } = parseLineCount(args);
+        if (invalid !== undefined) return `${command}: invalid number of lines: '${invalid}'`;
+        const file = operands[0];
 
-        if (!file) return 'tail: missing file operand';
+        if (!file) return `${command}: missing file operand`;
         const resolved = resolvePath(file);
         const node = getNode(resolved);
 
-        if (!node) return `tail: cannot open '${file}': No such file or directory`;
-        if (node.type === 'directory') return `tail: error reading '${file}': Is a directory`;
+        if (!node) return `${command}: cannot open '${file}': No such file or directory`;
+        if (node.type === 'directory') return `${command}: error reading '${file}': Is a directory`;
 
-        const content = node.content || '';
-        return content.split('\n').slice(-lines).join('\n');
+        return takeLines(node.content || '', count, command === 'tail').replace(/\n$/, '');
       }
 
       case 'grep': {
-        const pattern = args[0];
-        const file = args[1];
+        const ignoreCase = args.includes('-i');
+        const [pattern, file] = args.filter(a => !a.startsWith('-')).map(unquote);
 
         if (!pattern) return 'grep: missing pattern';
         if (!file) return 'grep: missing file operand';
@@ -787,17 +774,20 @@ export default function LinuxTerminal() {
         if (!node) return `grep: ${file}: No such file or directory`;
         if (node.type === 'directory') return `grep: ${file}: Is a directory`;
 
-        const content = node.content || '';
-        const matches = content.split('\n').filter(line =>
-          line.toLowerCase().includes(pattern.replace(/"/g, '').toLowerCase())
-        );
-        return matches.join('\n') || '';
+        // A basic regular expression, case sensitive unless -i is given.
+        try {
+          return grepText(node.content || '', pattern, ignoreCase).replace(/\n$/, '');
+        } catch (error) {
+          return `grep: ${(error as Error).message}`;
+        }
       }
 
       case 'wc': {
         const countLines = args.includes('-l') || args.includes('--lines');
         const countWords = args.includes('-w') || args.includes('--words');
-        const file = args.find(a => !a.startsWith('-'));
+        // With < the shell opens the file, so wc reads stdin and prints no name.
+        const fromStdin = args.includes('<');
+        const file = fromStdin ? args[args.indexOf('<') + 1] : args.find(a => !a.startsWith('-'));
 
         if (!file) return 'wc: missing file operand';
         const resolved = resolvePath(file);
@@ -806,14 +796,13 @@ export default function LinuxTerminal() {
         if (!node) return `wc: ${file}: No such file or directory`;
         if (node.type === 'directory') return `wc: ${file}: Is a directory`;
 
-        const content = node.content || '';
-        const lines = content.split('\n').length;
-        const words = content.split(/\s+/).filter(Boolean).length;
-        const chars = content.length;
+        // wc -l counts newline characters, so a last line without one is not counted.
+        const { lines, words, chars } = wcCounts(node.content || '');
+        const name = fromStdin ? '' : ` ${file}`;
 
-        if (countLines) return `${lines} ${file}`;
-        if (countWords) return `${words} ${file}`;
-        return `${lines} ${words} ${chars} ${file}`;
+        if (countLines) return `${lines}${name}`;
+        if (countWords) return `${words}${name}`;
+        return `${lines} ${words} ${chars}${name}`;
       }
 
       case 'find': {
@@ -971,7 +960,7 @@ Swap:       2097152           0     2097152`;
               for (const part of parts) {
                 parent = parent.children[part];
               }
-              parent.children[fName!].content = (parent.children[fName!].content || '') + '\n' + content;
+              parent.children[fName!].content = (parent.children[fName!].content || '') + content + '\n';
               parent.children[fName!].size = parent.children[fName!].content.length;
               return newFs;
             });
@@ -992,10 +981,10 @@ Swap:       2097152           0     2097152`;
             parent.children[fileName] = {
               type: 'file',
               name: fileName,
-              content: content,
+              content: content + '\n',
               permissions: '-rw-r--r--',
               owner: 'user',
-              size: content.length,
+              size: content.length + 1,
             };
             return newFs;
           });
@@ -1035,65 +1024,67 @@ Swap:       2097152           0     2097152`;
     }
   }, [currentPath, fileSystem, getNode, resolvePath]);
 
-  // Handle pipe commands
+  // Handle pipe commands. Text moves between commands as real bytes: every
+  // output line ends in a newline, and cat passes the file through unchanged.
   const executePipedCommand = useCallback((cmd: string): string => {
     const pipes = cmd.split('|').map(c => c.trim());
 
     let output = '';
     for (let i = 0; i < pipes.length; i++) {
       const pipeCmd = pipes[i];
+      const parts = pipeCmd.split(/\s+/);
+      const pipedCommand = parts[0];
+      const pipedArgs = parts.slice(1);
 
       if (i === 0) {
-        output = executeCommand(pipeCmd);
-      } else {
-        // For piped commands, we simulate by parsing the output
-        const parts = pipeCmd.split(/\s+/);
-        const pipedCommand = parts[0];
-        const pipedArgs = parts.slice(1);
-
-        switch (pipedCommand) {
-          case 'grep': {
-            const pattern = pipedArgs[0]?.replace(/"/g, '').toLowerCase();
-            if (pattern) {
-              output = output.split('\n').filter(line =>
-                line.toLowerCase().includes(pattern)
-              ).join('\n');
-            }
-            break;
+        const node = pipedCommand === 'cat' && pipedArgs[0] ? getNode(resolvePath(pipedArgs[0])) : null;
+        if (node?.type === 'file') {
+          output = node.content || '';
+        } else {
+          output = executeCommand(pipeCmd);
+          // ls prints one name per line when its output goes to a pipe.
+          if (pipedCommand === 'ls' && !/\s-\w*l/.test(pipeCmd)) {
+            output = output.split('  ').join('\n');
           }
-          case 'wc': {
-            if (pipedArgs.includes('-l')) {
-              output = String(output.split('\n').filter(Boolean).length);
-            } else if (pipedArgs.includes('-w')) {
-              output = String(output.split(/\s+/).filter(Boolean).length);
-            } else {
-              const lines = output.split('\n').length;
-              const words = output.split(/\s+/).filter(Boolean).length;
-              const chars = output.length;
-              output = `${lines} ${words} ${chars}`;
-            }
-            break;
-          }
-          case 'head': {
-            const nFlag = pipedArgs.find(a => a.startsWith('-n') || a.startsWith('-'));
-            const lines = nFlag ? parseInt(nFlag.replace('-n', '').replace('-', '')) || 10 : 10;
-            output = output.split('\n').slice(0, lines).join('\n');
-            break;
-          }
-          case 'tail': {
-            const nFlag = pipedArgs.find(a => a.startsWith('-n') || a.startsWith('-'));
-            const lines = nFlag ? parseInt(nFlag.replace('-n', '').replace('-', '')) || 10 : 10;
-            output = output.split('\n').slice(-lines).join('\n');
-            break;
-          }
-          default:
-            break;
+          if (output && !output.endsWith('\n')) output += '\n';
         }
+        continue;
+      }
+
+      switch (pipedCommand) {
+        case 'grep': {
+          const ignoreCase = pipedArgs.includes('-i');
+          const pattern = pipedArgs.find(a => !a.startsWith('-'));
+          if (pattern) {
+            try {
+              output = grepText(output, unquote(pattern), ignoreCase);
+            } catch (error) {
+              return `grep: ${(error as Error).message}`;
+            }
+          }
+          break;
+        }
+        case 'wc': {
+          const { lines, words, chars } = wcCounts(output);
+          if (pipedArgs.includes('-l')) output = `${lines}\n`;
+          else if (pipedArgs.includes('-w')) output = `${words}\n`;
+          else output = `${lines} ${words} ${chars}\n`;
+          break;
+        }
+        case 'head':
+        case 'tail': {
+          const { count, invalid } = parseLineCount(pipedArgs);
+          if (invalid !== undefined) return `${pipedCommand}: invalid number of lines: '${invalid}'`;
+          output = takeLines(output, count, pipedCommand === 'tail');
+          break;
+        }
+        default:
+          break;
       }
     }
 
-    return output;
-  }, [executeCommand]);
+    return output.replace(/\n$/, '');
+  }, [executeCommand, getNode, resolvePath]);
 
   // Run a command through the shared simulator hook; `clear` is signalled
   // via the clear flag, piped input goes through executePipedCommand.

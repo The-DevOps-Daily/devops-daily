@@ -19,7 +19,7 @@
   "toolA": {
     "name": "Svix",
     "icon": "Send",
-    "website": "https://link.svix.com/devopsdaily",
+    "website": "https://www.svix.com",
     "description": "Svix Dispatch sends webhooks for API providers: apps, endpoints, event types, retries with exponential backoff, Standard Webhooks signatures, an embeddable App Portal, transformations, and connectors to queues and warehouses. Svix Ingest receives webhooks from third parties with verification, retries, throttling, filtering, transformations, routing, and fan-out. The open-source server is MIT licensed.",
     "color": "#3B82F6",
     "pros": [

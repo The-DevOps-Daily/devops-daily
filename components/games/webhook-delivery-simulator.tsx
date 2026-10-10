@@ -49,7 +49,7 @@ const BEHAVIORS: Array<{ id: EndpointBehavior; label: string; hint: string }> = 
   { id: 'http_500', label: '500 error', hint: 'Retries until exhausted' },
   { id: 'timeout', label: 'Timeout', hint: 'Outcome is unknown' },
   { id: 'http_429', label: '429 rate limited', hint: 'Back off and retry' },
-  { id: 'http_400', label: '400 bad request', hint: 'Drop without retrying' },
+  { id: 'http_400', label: '400 bad request', hint: 'Retried like any non-2xx' },
 ];
 
 type Tamper = 'none' | 'body' | 'secret' | 'stale';
@@ -78,14 +78,12 @@ interface Delivery {
 const RESULT_STYLES: Record<Attempt['result'], string> = {
   delivered: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
   retrying: 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300',
-  dropped: 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300',
   exhausted: 'border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300',
 };
 
 const RESULT_LABELS: Record<Attempt['result'], string> = {
   delivered: 'Delivered',
   retrying: 'Retry scheduled',
-  dropped: 'Dropped',
   exhausted: 'Exhausted',
 };
 
@@ -343,9 +341,10 @@ export default function WebhookDeliverySimulator() {
   const selectedNextAttempt = active?.attempts[currentAttemptIndex + 1];
   const lastVisibleAttempt = active?.attempts[Math.max(0, active.revealed - 1)];
   const nextScheduledAttempt = active?.attempts[active.revealed];
+  // The retry gap runs from the moment the attempt failed, not from when it started.
   const selectedRetryDelay =
     currentAttempt && selectedNextAttempt
-      ? selectedNextAttempt.atSeconds - currentAttempt.atSeconds
+      ? selectedNextAttempt.atSeconds - currentAttempt.atSeconds - currentAttempt.durationMs / 1000
       : null;
   const timeWarpDelay =
     revealing && lastVisibleAttempt && nextScheduledAttempt
@@ -865,25 +864,6 @@ svix-signature: ${signatureHeader || 'computing...'}`}
         </details>
       )}
 
-      <div className="flex flex-col gap-3 border-t border-[#2c70ff]/25 bg-[#2c70ff]/[0.05] p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold">Put this delivery path into production</p>
-          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-muted-foreground">
-            Svix Dispatch provides the durable queue, automatic retries, signed requests, rate
-            limits, searchable attempt logs, replay, and a customer-facing endpoint portal behind
-            one API.
-          </p>
-        </div>
-        <a
-          href="https://link.svix.com/devopsdaily"
-          target="_blank"
-          rel="noopener noreferrer sponsored"
-          className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-primary hover:underline"
-        >
-          Explore Svix Dispatch
-          <ArrowRight className="h-4 w-4" />
-        </a>
-      </div>
       <style jsx global>{`
         @keyframes webhook-packet-x {
           from {

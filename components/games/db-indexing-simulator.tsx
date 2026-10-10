@@ -219,28 +219,40 @@ export default function DbIndexingSimulator() {
 
   const canUseIndexForQuery = useCallback(
     (queryColumns: string[]) => {
-      // Check for exact composite index match
-      if (hasCompositeIndex(queryColumns)) return { usable: true, type: 'composite-exact' as const };
-      
-      // Check if any composite index has the right leading column(s)
+      // ANDed equality predicates have no order, so the WHERE clause order is
+      // ignored. What matters is the leftmost prefix: an index helps only if
+      // its first column is filtered, and it narrows further for each next
+      // index column that is also filtered.
+      let best: { columns: string[]; prefix: number } | null = null;
       for (const idx of indexes) {
-        if (idx.columns.length > 1) {
-          // Composite index can be used if query columns match the leading columns
-          const leadingMatch = queryColumns.every(
-            (col, i) => idx.columns[i] === col
-          );
-          if (leadingMatch && queryColumns.length <= idx.columns.length) {
-            return { usable: true, type: 'composite-partial' as const, indexColumns: idx.columns };
-          }
-        }
+        let prefix = 0;
+        while (prefix < idx.columns.length && queryColumns.includes(idx.columns[prefix])) prefix++;
+        if (prefix > 0 && (!best || prefix > best.prefix)) best = { columns: idx.columns, prefix };
       }
-      
-      // Check for single column index on the first query column
-      if (hasIndex(queryColumns[0])) return { usable: true, type: 'single' as const };
-      
-      return { usable: false, type: 'none' as const };
+      if (!best) {
+        // An index that holds the column, just not first, is still eligible:
+        // the planner could read all of it. It cannot seek, so it loses on cost.
+        const nonLeading = indexes.find((idx) => idx.columns.some((col) => queryColumns.includes(col)));
+        return nonLeading
+          ? { usable: false, type: 'non-leading' as const, indexColumns: nonLeading.columns, prefix: 0 }
+          : { usable: false, type: 'none' as const };
+      }
+
+      const indexColumns = best.columns;
+      if (best.prefix < queryColumns.length) {
+        return { usable: true, type: 'filtered' as const, indexColumns, prefix: best.prefix };
+      }
+      if (indexColumns.length > 1) {
+        return {
+          usable: true,
+          type: queryColumns.length > 1 ? ('composite-exact' as const) : ('composite-partial' as const),
+          indexColumns,
+          prefix: best.prefix,
+        };
+      }
+      return { usable: true, type: 'single' as const, indexColumns, prefix: best.prefix };
     },
-    [indexes, hasIndex, hasCompositeIndex]
+    [indexes]
   );
 
   const addIndex = useCallback((column: IndexableColumn) => {
@@ -291,8 +303,34 @@ export default function DbIndexingSimulator() {
      }
    });
 
+    // An index scan reads every row that matches its leading columns, then
+    // filters out rows that fail the rest of the WHERE clause.
+    const expectedValue = (column: string) =>
+      column === query.columns[0]
+        ? ('value' in query ? query.value : undefined)
+        : ('secondValue' in query ? query.secondValue : undefined);
+    const conditionFor = (column: string) => {
+      if (query.type === 'range') return `${column} BETWEEN ${query.valueMin} AND ${query.valueMax}`;
+      const value = expectedValue(column);
+      return `${column} = ${typeof value === 'string' ? `'${value}'` : value}`;
+    };
+    const rowsMatching = (columns: string[]) =>
+      SAMPLE_DATA.flatMap((row, idx) =>
+        columns.every((column) => {
+          const value = row[column as keyof TableRow];
+          if (query.type === 'range') return (value as number) >= query.valueMin && (value as number) <= query.valueMax;
+          return value === expectedValue(column);
+        })
+          ? [idx]
+          : []
+      );
+    const seekColumns =
+      usesIndex && indexResult.type !== 'none' ? indexResult.indexColumns.slice(0, indexResult.prefix) : [];
+    const residualColumns = query.columns.filter((column) => !seekColumns.includes(column));
+    const indexRows = usesIndex ? rowsMatching(seekColumns) : [];
+
     const totalRows = SAMPLE_DATA.length;
-    const scanRows = usesIndex ? Math.min(matchingRows.length + 1, 3) : totalRows;
+    const scanRows = usesIndex ? Math.max(indexRows.length, 1) : totalRows;
 
     setAnimation({
       type: usesIndex ? 'index-seek' : 'full-scan',
@@ -322,20 +360,29 @@ export default function DbIndexingSimulator() {
    const variance = usesIndex ? Math.random() * 10 : Math.random() * 30;
    const timeMs = Math.round(baseTime + variance);
 
-    const indexName = usesIndex
-      ? indexResult.type === 'composite-exact' || indexResult.type === 'composite-partial'
-        ? `idx_${query.columns.join('_')}`
-        : `idx_${query.columns[0]}`
-      : undefined;
+    const indexName =
+      indexResult.type !== 'none' && indexResult.type !== 'non-leading'
+        ? `idx_${indexResult.indexColumns.join('_')}`
+        : undefined;
 
     const explainPlan: ExplainStep[] = usesIndex
       ? [
           {
             operation: 'Index Scan',
             detail: `using ${indexName} on users`,
-            cost: 1.0 + matchingRows.length * 0.01,
-            rows: matchingRows.length,
+            cost: 1.0 + indexRows.length * 0.01,
+            rows: indexRows.length,
           },
+          ...(residualColumns.length > 0
+            ? [
+                {
+                  operation: 'Filter',
+                  detail: `${residualColumns.map(conditionFor).join(' AND ')} (removed ${indexRows.length - matchingRows.length})`,
+                  cost: indexRows.length * 0.01,
+                  rows: matchingRows.length,
+                },
+              ]
+            : []),
         ]
       : [
           {
@@ -354,18 +401,22 @@ export default function DbIndexingSimulator() {
 
    const result: QueryResult = {
      query: query.sql,
-     rowsScanned: usesIndex ? matchingRows.length : totalRows,
+     rowsScanned: usesIndex ? indexRows.length : totalRows,
      rowsReturned: matchingRows.length,
      timeMs,
      usedIndex: usesIndex,
       indexName,
      explanation: usesIndex
         ? indexResult.type === 'composite-exact'
-          ? `Composite index seek on ${indexName} - efficiently matched both columns`
+          ? `Composite index seek on ${indexName} - matched both columns. The order in the WHERE clause does not matter`
           : indexResult.type === 'composite-partial'
             ? `Partial composite index on ${indexName} - used leading column(s)`
-            : `Index seek on ${indexName} - jumped directly to matching rows`
-       : `Full table scan - checked every row in the table`,
+            : indexResult.type === 'filtered'
+              ? `Index seek on ${indexName} read the ${indexRows.length} rows that match ${seekColumns.join(', ')}, then the filter on ${residualColumns.join(', ')} removed ${indexRows.length - matchingRows.length} of them`
+              : `Index seek on ${indexName} - jumped directly to matching rows`
+        : indexResult.type === 'non-leading'
+          ? `Seq scan chosen by cost. idx_${indexResult.indexColumns.join('_')} holds ${query.columns.join(', ')}, but not as its first column, so it cannot jump to matching rows. Postgres could still read the whole index (PostgreSQL 18 can also skip scan through each ${indexResult.indexColumns[0]} value), but on a table this small reading every row costs less.`
+          : `Full table scan - checked every row in the table`,
       explainPlan,
    };
 
@@ -624,7 +675,7 @@ export default function DbIndexingSimulator() {
                {COMPOSITE_INDEX_OPTIONS.map((columns) => {
                  const indexed = hasCompositeIndex(columns);
                  const label = columns.join(' + ');
-                  const tooltipText = `Creates one B-tree index ordered by ${columns[0]}, then ${columns[1]}. Best for queries that filter on ${columns[0]} first.`;
+                  const tooltipText = `Creates one B-tree index ordered by ${columns[0]}, then ${columns[1]}. Serves queries that filter on ${columns[0]}, alone or with ${columns[1]} in either order.`;
                  return (
                    <div
                      key={label}
@@ -955,13 +1006,15 @@ export default function DbIndexingSimulator() {
                 <ul className="mt-1 text-slate-500 dark:text-slate-400">
                   <li>• WHERE age = 28</li>
                   <li>• WHERE age = 28 AND city = &apos;NYC&apos;</li>
+                  <li>• WHERE city = &apos;NYC&apos; AND age = 28 (WHERE order does not matter)</li>
                 </ul>
               </div>
               <div className="rounded bg-yellow-500/10 p-2">
-                <p className="font-medium text-yellow-600 dark:text-yellow-400">✗ Cannot use (age, city) index:</p>
+                <p className="font-medium text-yellow-600 dark:text-yellow-400">✗ Cannot seek with (age, city) index:</p>
                 <ul className="mt-1 text-slate-500 dark:text-slate-400">
-                  <li>• WHERE city = &apos;NYC&apos; (needs city first)</li>
-                  <li>• Need (city, age) index instead</li>
+                  <li>• WHERE city = &apos;NYC&apos; (the index is sorted by age first)</li>
+                  <li>• Postgres may still read the whole index, or skip scan in PG 18, but often a seq scan costs less</li>
+                  <li>• A (city, age) index serves it directly</li>
                 </ul>
               </div>
             </div>

@@ -200,7 +200,12 @@ export default function MessageQueueSimulator() {
   const [state, setState] = useState<SimulatorState>(() => createState(scenario));
 
   const backlog = Math.max(state.produced - state.processed - state.dlq, 0);
-  const capacity = state.consumers * scenario.consumerRate;
+  // A Kafka partition goes to one consumer in the group, so consumers beyond
+  // the partition count get nothing and sit idle. RabbitMQ consumers compete
+  // on the same queue, so each one adds capacity.
+  const activeConsumers = mode === 'kafka' ? Math.min(state.consumers, state.partitions) : state.consumers;
+  const idleConsumers = state.consumers - activeConsumers;
+  const capacity = activeConsumers * scenario.consumerRate;
   const lagSeverity = Math.min(100, Math.round((backlog / Math.max(state.produced, 1)) * 100));
   const throughput = Math.min(capacity, scenario.produceRate + Math.max(0, backlog - 4));
   const health =
@@ -257,7 +262,8 @@ export default function MessageQueueSimulator() {
   const step = useCallback(() => {
     setState((current) => {
       const currentBacklog = Math.max(current.produced - current.processed - current.dlq, 0);
-      const maxProcessed = Math.min(currentBacklog, current.consumers * scenario.consumerRate);
+      const active = mode === 'kafka' ? Math.min(current.consumers, current.partitions) : current.consumers;
+      const maxProcessed = Math.min(currentBacklog, active * scenario.consumerRate);
       const shouldFail =
         scenario.failureEvery !== undefined && current.tick % scenario.failureEvery === 0 && maxProcessed > 0;
       const failures = shouldFail ? 1 : 0;
@@ -285,12 +291,16 @@ export default function MessageQueueSimulator() {
   }, [appendLog, mode, scenario.consumerRate, scenario.failureEvery, scenario.id, scenario.produceRate]);
 
   const addConsumer = useCallback(() => {
-    setState((current) => ({
-      ...current,
-      consumers: Math.min(5, current.consumers + 1),
-      log: appendLog(current, `consumer-${Math.min(5, current.consumers + 1)} joined group`),
-    }));
-  }, [appendLog]);
+    setState((current) => {
+      const consumers = Math.min(5, current.consumers + 1);
+      const idle = mode === 'kafka' && consumers > current.partitions;
+      return {
+        ...current,
+        consumers,
+        log: appendLog(current, `consumer-${consumers} joined group${idle ? ', idle: no free partition' : ''}`),
+      };
+    });
+  }, [appendLog, mode]);
 
   const removeConsumer = useCallback(() => {
     setState((current) => ({
@@ -476,21 +486,27 @@ export default function MessageQueueSimulator() {
                 <FlowNode
                   title="Consumers"
                   icon={<Users className="h-5 w-5" />}
-                  subtitle={`${state.consumers} active`}
+                  subtitle={`${activeConsumers} active${idleConsumers > 0 ? `, ${idleConsumers} idle` : ''}`}
                   tone="emerald"
                 >
                   <div className="grid gap-2">
-                    {Array.from({ length: state.consumers }, (_, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between rounded-md border bg-background/70 p-2"
-                      >
-                        <span className="text-sm font-medium">consumer-{index + 1}</span>
-                        <Badge variant="secondary" className="text-[10px]">
-                          {mode === 'kafka' ? 'offset commit' : 'manual ack'}
-                        </Badge>
-                      </div>
-                    ))}
+                    {Array.from({ length: state.consumers }, (_, index) => {
+                      const idle = index >= activeConsumers;
+                      return (
+                        <div
+                          key={index}
+                          className={cn(
+                            'flex items-center justify-between rounded-md border bg-background/70 p-2',
+                            idle && 'border-dashed opacity-60'
+                          )}
+                        >
+                          <span className="text-sm font-medium">consumer-{index + 1}</span>
+                          <Badge variant={idle ? 'outline' : 'secondary'} className="text-[10px]">
+                            {idle ? 'idle, no partition' : mode === 'kafka' ? 'offset commit' : 'manual ack'}
+                          </Badge>
+                        </div>
+                      );
+                    })}
                   </div>
                 </FlowNode>
 
