@@ -55,19 +55,19 @@ interface DnsStep {
 // CONSTANTS
 // ============================================================================
 
-const DNS_DATABASE: Record<string, Record<RecordType, DnsRecord>> = {
+// Every sample name is a zone apex, so none has a CNAME: the apex already holds
+// SOA and NS records, and a CNAME cannot sit next to other data (RFC 1034).
+const DNS_DATABASE: Record<string, Partial<Record<RecordType, DnsRecord>>> = {
   'example.com': {
-    A: { type: 'A', value: '93.184.216.34', ttl: 3600 },
-    AAAA: { type: 'AAAA', value: '2606:2800:220:1:248:1893:25c8:1946', ttl: 3600 },
-    CNAME: { type: 'CNAME', value: 'www.example.com', ttl: 3600 },
-    MX: { type: 'MX', value: 'mail.example.com (priority: 10)', ttl: 3600 },
-    TXT: { type: 'TXT', value: 'v=spf1 include:_spf.example.com ~all', ttl: 3600 },
-    NS: { type: 'NS', value: 'ns1.example.com, ns2.example.com', ttl: 86400 },
+    A: { type: 'A', value: '104.20.23.154, 172.66.147.243', ttl: 300 },
+    AAAA: { type: 'AAAA', value: '2606:4700:10::6814:179a, 2606:4700:10::ac42:93f3', ttl: 300 },
+    MX: { type: 'MX', value: '. (priority: 0, a null MX: this domain takes no mail)', ttl: 300 },
+    TXT: { type: 'TXT', value: 'v=spf1 -all', ttl: 300 },
+    NS: { type: 'NS', value: 'elliott.ns.cloudflare.com, hera.ns.cloudflare.com', ttl: 86400 },
   },
   'google.com': {
     A: { type: 'A', value: '142.250.80.46', ttl: 300 },
     AAAA: { type: 'AAAA', value: '2607:f8b0:4004:800::200e', ttl: 300 },
-    CNAME: { type: 'CNAME', value: 'www.google.com', ttl: 300 },
     MX: { type: 'MX', value: 'smtp.google.com (priority: 5)', ttl: 300 },
     TXT: { type: 'TXT', value: 'v=spf1 include:_spf.google.com ~all', ttl: 300 },
     NS: { type: 'NS', value: 'ns1.google.com, ns2.google.com', ttl: 21600 },
@@ -75,7 +75,6 @@ const DNS_DATABASE: Record<string, Record<RecordType, DnsRecord>> = {
   'github.com': {
     A: { type: 'A', value: '140.82.121.4', ttl: 60 },
     AAAA: { type: 'AAAA', value: '2606:50c0:8000::64', ttl: 60 },
-    CNAME: { type: 'CNAME', value: 'github.github.io', ttl: 3600 },
     MX: { type: 'MX', value: 'alt1.aspmx.l.google.com (priority: 5)', ttl: 60 },
     TXT: { type: 'TXT', value: 'v=spf1 include:_spf.google.com ~all', ttl: 60 },
     NS: { type: 'NS', value: 'dns1.p08.nsone.net, dns2.p08.nsone.net', ttl: 900 },
@@ -83,7 +82,6 @@ const DNS_DATABASE: Record<string, Record<RecordType, DnsRecord>> = {
   'cloudflare.com': {
     A: { type: 'A', value: '104.16.132.229', ttl: 300 },
     AAAA: { type: 'AAAA', value: '2606:4700::6810:84e5', ttl: 300 },
-    CNAME: { type: 'CNAME', value: 'www.cloudflare.com', ttl: 300 },
     MX: { type: 'MX', value: 'mailstream-east.mxrecord.io (priority: 10)', ttl: 300 },
     TXT: { type: 'TXT', value: 'v=spf1 include:_spf.cloudflare.com ~all', ttl: 300 },
     NS: { type: 'NS', value: 'ns3.cloudflare.com, ns4.cloudflare.com', ttl: 86400 },
@@ -100,6 +98,10 @@ const RECORD_TYPES: { type: RecordType; label: string; description: string }[] =
 ];
 
 const SAMPLE_DOMAINS = Object.keys(DNS_DATABASE);
+
+// Chrome keeps an answer from the system resolver for one minute, because
+// getaddrinfo returns no TTL. The OS cache and the resolver honour the TTL.
+const BROWSER_CACHE_MAX_SECONDS = 60;
 
 const LOCATIONS_INFO: Record<
   DnsStep['location'],
@@ -242,7 +244,9 @@ function generateSteps(
     location: 'authoritative',
     explanation: record
       ? `Found it! The authoritative server has the actual ${recordType} record: ${record.value}`
-      : `The authoritative server doesn't have a ${recordType} record for ${domain}.`,
+      : recordType === 'CNAME'
+        ? `No CNAME for ${domain}. A zone apex already has SOA and NS records, and a CNAME cannot sit next to other records, so aliases live on names like www.${domain}.`
+        : `The authoritative server doesn't have a ${recordType} record for ${domain}.`,
     isCacheCheck: false,
     latency: 20,
   });
@@ -342,22 +346,38 @@ export default function DnsSimulator() {
       totalTime: prev.totalTime + totalLatency,
     }));
 
-    // Cache the result
-    if (!wasCacheHit) {
-      const cacheKey = `${domain}:${recordType}`;
+    // Each layer stores the answer on its way back, so the layers above the
+    // one that answered are filled. A cached answer keeps its remaining TTL.
+    const cacheKey = `${domain}:${recordType}`;
+    const answeredBy = steps.find((s) => s.cacheHit)?.location;
+    if (answeredBy === 'browser') return;
+    const now = Date.now();
+    let entry: CacheEntry | undefined;
+    if (answeredBy === 'os') entry = osCache.get(cacheKey);
+    else if (answeredBy === 'resolver') entry = resolverCache.get(cacheKey);
+    else {
       const record = DNS_DATABASE[domain]?.[recordType];
-      if (record) {
-        const entry: CacheEntry = {
-          value: record.value,
-          ttl: record.ttl,
-          expiresAt: Date.now() + record.ttl * 1000,
-        };
-        setBrowserCache((prev) => new Map(prev).set(cacheKey, entry));
-        setOsCache((prev) => new Map(prev).set(cacheKey, entry));
-        setResolverCache((prev) => new Map(prev).set(cacheKey, entry));
-      }
+      if (record) entry = { value: record.value, ttl: record.ttl, expiresAt: now + record.ttl * 1000 };
     }
-  }, [steps, domain, recordType]);
+    if (!entry) return;
+    const fresh = entry;
+    setBrowserCache((prev) =>
+      new Map(prev).set(cacheKey, {
+        ...fresh,
+        expiresAt: Math.min(fresh.expiresAt, now + BROWSER_CACHE_MAX_SECONDS * 1000),
+      })
+    );
+    if (answeredBy !== 'os') setOsCache((prev) => new Map(prev).set(cacheKey, fresh));
+    if (!answeredBy) setResolverCache((prev) => new Map(prev).set(cacheKey, fresh));
+  }, [steps, domain, recordType, osCache, resolverCache]);
+
+  // Start a new query but keep what the caches have learned.
+  const handleNewLookup = () => {
+    setSteps([]);
+    setCurrentStepIndex(-1);
+    setIsRunning(false);
+    setIsComplete(false);
+  };
 
   const handleReset = () => {
     setSteps([]);
@@ -674,7 +694,7 @@ export default function DnsSimulator() {
                       </span>
                     )}
                   </div>
-                  <Button onClick={handleReset} variant="outline" className="mt-4">
+                  <Button onClick={handleNewLookup} variant="outline" className="mt-4">
                     <RotateCcw className="mr-2 h-4 w-4" />
                     New Lookup
                   </Button>
@@ -693,22 +713,32 @@ export default function DnsSimulator() {
               <Database className="h-4 w-4 text-purple-500" />
               DNS Caches
               <span className="hidden text-xs font-normal text-muted-foreground sm:inline">
-                (run the same query again to see a cache hit!)
+                (run the same query again to see a cache hit, or flush a layer to see the next one answer)
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="mb-2 text-xs text-muted-foreground sm:hidden">
-              Run the same query again to see a cache hit!
+              Run the same query again to see a cache hit, or flush a layer to see the next one answer.
             </p>
             <div className="grid grid-cols-3 gap-2 text-xs sm:text-sm">
               {[
-                { name: 'Browser', cache: browserCache, color: 'blue' },
-                { name: 'OS', cache: osCache, color: 'purple' },
-                { name: 'Resolver', cache: resolverCache, color: 'indigo' },
-              ].map(({ name, cache }) => (
+                { name: 'Browser', cache: browserCache, flush: setBrowserCache },
+                { name: 'OS', cache: osCache, flush: setOsCache },
+                { name: 'Resolver', cache: resolverCache, flush: setResolverCache },
+              ].map(({ name, cache, flush }) => (
                 <div key={name} className="rounded-lg border bg-muted/30 p-1.5 sm:p-2">
-                  <div className="mb-1 text-[10px] font-medium sm:text-xs">{name}</div>
+                  <div className="mb-1 flex items-center justify-between gap-1 text-[10px] font-medium sm:text-xs">
+                    <span>{name}</span>
+                    <button
+                      type="button"
+                      onClick={() => flush(new Map())}
+                      disabled={isRunning || cache.size === 0}
+                      className="rounded px-1 text-[10px] font-normal text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      Flush
+                    </button>
+                  </div>
                   {cache.size === 0 ? (
                     <span className="text-[10px] text-muted-foreground sm:text-xs">Empty</span>
                   ) : (
@@ -762,7 +792,8 @@ export default function DnsSimulator() {
             </li>
             <li>
               <strong className="text-foreground">TTL controls freshness:</strong> Records expire
-              after their TTL. Lower TTL = fresher data, but more lookups.
+              after their TTL. Lower TTL = fresher data, but more lookups. Browsers often keep it for
+              less: Chrome holds an answer from the OS resolver for one minute.
             </li>
           </ul>
         </CardContent>

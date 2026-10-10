@@ -4,6 +4,8 @@ import {
   advancePipeline,
   createPipelineState,
   getAccountedLogCount,
+  getPipelineHealth,
+  processorCapacity,
   updatePipelineSettings,
   type PipelineState,
 } from '@/lib/games/log-aggregation-pipeline-engine';
@@ -97,5 +99,37 @@ describe('log aggregation pipeline', () => {
     expect(reset.filterNoise).toBe(false);
     expect(reset.generated).toBe(0);
     expect(reset.stageIndex).toBe(0);
+  });
+
+  it('keeps a healthy pipeline healthy with the slower grok parser', () => {
+    let state = createPipelineState({ parserMode: 'grok', filterNoise: false });
+    expect(processorCapacity(state)).toBeLessThan(processorCapacity(createPipelineState()));
+    for (let i = 0; i < PIPELINE_STAGES.length * 5; i += 1) {
+      state = advancePipeline(state);
+      expect(getPipelineHealth(state).tone).toBe('healthy');
+    }
+    expect(state.parseFailed).toBe(0);
+    expectConservation(state);
+  });
+
+  it('warns when logs wait at the processor for more than a cycle', () => {
+    const state = createPipelineState({ scenarioId: 'healthy' });
+    const backlog = {
+      ...state,
+      processQueue: processorCapacity(state) + 1,
+      generated: processorCapacity(state) + 1,
+    };
+    expect(getPipelineHealth(backlog).tone).toBe('warning');
+  });
+
+  it('only shows application errors in the search sample during the spike', () => {
+    const healthy = runSteps(createPipelineState(), PIPELINE_STAGES.length * 4);
+    const spike = runSteps(
+      createPipelineState({ scenarioId: 'spike' }),
+      PIPELINE_STAGES.length * 4
+    );
+
+    expect(healthy.indexedLogs.some((log) => log.level === 'ERROR')).toBe(false);
+    expect(spike.indexedLogs.some((log) => log.level === 'ERROR')).toBe(true);
   });
 });

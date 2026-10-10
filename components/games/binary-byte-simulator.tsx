@@ -849,12 +849,12 @@ const CSS = `
 .bytesim .bs-predict.bs-wrong { border-color: #e0894a; background: #e0894a0f; }
 .bytesim .bs-bigval.bs-hidden { opacity: .35; letter-spacing: .05em; }
 .bytesim .bs-guessrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
-.bytesim .bs-guesslabel { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--bs-dim); }
-.bytesim .bs-guess { width: 6.5em; padding: 7px 10px; font: 600 16px/1.2 var(--bs-mono, ui-monospace, SFMono-Regular, Menlo, monospace); color: var(--bs-fg); background: var(--bs-bg); border: 1px solid var(--bs-line); border-radius: 8px; }
+.bytesim .bs-guesslabel { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--bs-muted); }
+.bytesim .bs-guess { width: 6.5em; padding: 7px 10px; font: 600 16px/1.2 var(--bs-mono, ui-monospace, SFMono-Regular, Menlo, monospace); color: var(--bs-ink); background: var(--bs-ground); border: 1px solid var(--bs-line); border-radius: 8px; }
 .bytesim .bs-guess:focus-visible { outline: 2px solid var(--bs-accent); outline-offset: 1px; }
 .bytesim .bs-btn[disabled] { opacity: .45; cursor: not-allowed; }
 .bytesim .bs-sums, .bytesim .bs-diffs { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 3px; }
-.bytesim .bs-sums li { font-family: var(--bs-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 13px; color: var(--bs-dim); }
+.bytesim .bs-sums li { font-family: var(--bs-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: 13px; color: var(--bs-muted); }
 .bytesim .bs-diffs li { font-size: 13px; }
 .bytesim .bs-diffs li.bs-miss { color: var(--bs-good); }
 .bytesim .bs-diffs li.bs-extra { color: #e0894a; }

@@ -67,6 +67,28 @@ interface Packet {
   data: string;
 }
 
+// Connection setup happens once, on the way out. The response travels back
+// over the open connection, so it does not repeat these stages.
+const SETUP_STAGE_IDS = new Set(['dns', 'tcp', 'tls']);
+
+// The deepest stage does its work once; every other stage that is not setup
+// is passed again on the way back.
+function roundTripMs(stages: Array<{ id: string; duration: number }>): number {
+  const oneWay = stages.reduce((sum, s) => sum + s.duration, 0);
+  const back = stages
+    .slice(0, -1)
+    .filter((s) => !SETUP_STAGE_IDS.has(s.id))
+    .reduce((sum, s) => sum + s.duration, 0);
+  return oneWay + back;
+}
+
+// The stage the response reaches next on its way back to the browser.
+function prevReturnIndex(stages: Array<{ id: string }>, from: number): number {
+  let i = from - 1;
+  while (i > 0 && SETUP_STAGE_IDS.has(stages[i].id)) i--;
+  return i;
+}
+
 // Scenario types
 type ScenarioType = 'http' | 'https' | 'https-cdn' | 'https-cdn-cache';
 
@@ -145,10 +167,10 @@ const allStages: Record<string, Omit<JourneyStage, 'x' | 'y'>> = {
     color: '#10b981',
     duration: 100,
     details: [
-      'ClientHello: Supported ciphers',
-      'ServerHello: Certificate chain',
-      'Verify certificate validity',
-      'Exchange keys, establish session',
+      'ClientHello: versions, ciphers, key share',
+      'ServerHello: chosen cipher and key share',
+      'Certificate chain (encrypted in TLS 1.3)',
+      'Verify the certificate, derive session keys',
     ],
   },
   cdn: {
@@ -238,7 +260,6 @@ export default function PacketJourney() {
   const [isPaused, setIsPaused] = useState(false);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [stageProgress, setStageProgress] = useState(0);
-  const [totalTime, setTotalTime] = useState(0);
   const [showDetails, setShowDetails] = useState<string | null>(null);
   const [journeyComplete, setJourneyComplete] = useState(false);
   const [speedMultiplier, setSpeedMultiplier] = useState(1);
@@ -252,9 +273,8 @@ export default function PacketJourney() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showStagesPanel, setShowStagesPanel] = useState(true); // Collapsible on mobile
 
-  const animationFrameRef = useRef<number>();
+  const animationFrameRef = useRef<number>(0);
   const lastFrameTime = useRef<number>(Date.now());
-  const journeyStartTime = useRef<number>(0);
   const stageTimes = useRef<Array<{ stage: string; duration: number }>>([]);
 
   // Build current journey stages - VERTICAL LAYOUT
@@ -272,6 +292,7 @@ export default function PacketJourney() {
 
   // Calculate total journey time
   const totalJourneyTime = journeyStages.reduce((sum, stage) => sum + stage.duration, 0);
+  const roundTripTime = roundTripMs(journeyStages);
 
   // Start journey
   const startJourney = useCallback(() => {
@@ -279,14 +300,17 @@ export default function PacketJourney() {
     setIsPaused(false);
     setCurrentStageIndex(0);
     setStageProgress(manualMode ? 1 : 0); // In manual mode, start at 100% of first stage
-    setTotalTime(0);
     setJourneyComplete(false);
     setFailureOccurred(false);
     setIsReturning(false);
-    journeyStartTime.current = Date.now();
     stageTimes.current = [];
     lastFrameTime.current = Date.now();
-  }, [manualMode]);
+    // Step mode jumps straight to each stage, so an injected failure fires on arrival.
+    if (manualMode && injectFailure && journeyStages[0]?.id === injectFailure) {
+      setFailureOccurred(true);
+      setIsRunning(false);
+    }
+  }, [manualMode, injectFailure, journeyStages]);
 
   // Manual advance to next stage
   const nextStage = useCallback(() => {
@@ -312,31 +336,33 @@ export default function PacketJourney() {
       if (currentStageIndex < journeyStages.length - 1) {
         setCurrentStageIndex((prev) => prev + 1);
         setStageProgress(1); // Manual mode always at 100%
+        if (injectFailure && journeyStages[currentStageIndex + 1].id === injectFailure) {
+          setFailureOccurred(true);
+          setIsRunning(false);
+        }
       } else {
         // Reached the end, start return journey
         setIsReturning(true);
         if (journeyStages.length > 1) {
-          setCurrentStageIndex((prev) => prev - 1);
+          setCurrentStageIndex(prevReturnIndex(journeyStages, currentStageIndex));
           setStageProgress(1);
         } else {
           setJourneyComplete(true);
           setIsRunning(false);
-          setTotalTime(Date.now() - journeyStartTime.current);
         }
       }
     } else {
       // Going backward (return journey)
       if (currentStageIndex > 0) {
-        setCurrentStageIndex((prev) => prev - 1);
+        setCurrentStageIndex(prevReturnIndex(journeyStages, currentStageIndex));
         setStageProgress(1);
       } else {
         // Reached the beginning, journey complete
         setJourneyComplete(true);
         setIsRunning(false);
-        setTotalTime(Date.now() - journeyStartTime.current);
       }
     }
-  }, [isRunning, currentStageIndex, journeyStages, isReturning, startJourney]);
+  }, [isRunning, currentStageIndex, journeyStages, isReturning, startJourney, injectFailure]);
 
   // Pause/Resume
   const togglePause = useCallback(() => {
@@ -349,7 +375,6 @@ export default function PacketJourney() {
     setIsPaused(false);
     setCurrentStageIndex(0);
     setStageProgress(0);
-    setTotalTime(0);
     setJourneyComplete(false);
     setFailureOccurred(false);
     setIsReturning(false);
@@ -414,23 +439,21 @@ export default function PacketJourney() {
             // Only one stage, complete immediately
             setJourneyComplete(true);
             setIsRunning(false);
-            setTotalTime(Date.now() - journeyStartTime.current);
             return;
           }
-          // For multiple stages, stay at last stage and animate back
+          setCurrentStageIndex(prevReturnIndex(journeyStages, currentStageIndex));
           setStageProgress(0);
         }
       } else {
           // Going backward (return journey)
           if (currentStageIndex > 0) {
             // Move to previous stage
-            setCurrentStageIndex((prev) => prev - 1);
+            setCurrentStageIndex(prevReturnIndex(journeyStages, currentStageIndex));
             setStageProgress(0);
           } else {
             // Reached the beginning, journey complete
             setJourneyComplete(true);
             setIsRunning(false);
-            setTotalTime(Date.now() - journeyStartTime.current);
             return;
           }
         }
@@ -900,7 +923,7 @@ export default function PacketJourney() {
                   {journeyComplete && (
                     <Badge variant="outline" className="bg-blue-500/20 border-blue-400">
                       <CheckCircle2 className="w-3 h-3 mr-1" />
-                      {totalTime.toFixed(0)}ms
+                      {roundTripTime}ms
                     </Badge>
                   )}
                   {/* Mobile toggle for stages panel */}
@@ -926,13 +949,13 @@ export default function PacketJourney() {
                 <div className="mt-3 space-y-1.5">
                   <div className="flex items-center justify-between text-xs text-slate-400">
                     <span>Journey Progress</span>
-                    <span>{Math.round(((currentStageIndex + (isReturning ? journeyStages.length : 0)) / (journeyStages.length * 2)) * 100)}%</span>
+                    <span>{Math.round(((isReturning ? journeyStages.length * 2 - 1 - currentStageIndex : currentStageIndex) / (journeyStages.length * 2)) * 100)}%</span>
                   </div>
                   <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full bg-primary"
                       initial={{ width: 0 }}
-                      animate={{ width: `${((currentStageIndex + (isReturning ? journeyStages.length : 0)) / (journeyStages.length * 2)) * 100}%` }}
+                      animate={{ width: `${((isReturning ? journeyStages.length * 2 - 1 - currentStageIndex : currentStageIndex) / (journeyStages.length * 2)) * 100}%` }}
                       transition={{ duration: 0.3 }}
                     />
                   </div>
@@ -1330,8 +1353,8 @@ export default function PacketJourney() {
                       <div>
                         <h3 className="font-bold text-lg">Journey Complete!</h3>
                         <p className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-700")}>
-                          Round-trip completed in <strong>{totalTime.toFixed(0)}ms</strong>
-                          {' '}({(totalJourneyTime * 2).toFixed(0)}ms simulated)
+                          Simulated round trip: <strong>{roundTripTime}ms</strong>. DNS, TCP and TLS run
+                          once on the way out; the response comes back over the open connection.
                         </p>
                         <p className="text-xs text-slate-400 mt-1">
                           Real-world timing varies based on network conditions, server load, and geographic distance
@@ -1641,7 +1664,7 @@ export default function PacketJourney() {
                   <span className="text-2xl font-bold text-blue-400">{totalJourneyTime}ms</span>
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  Round-trip (request + response): {totalJourneyTime * 2}ms
+                  Round-trip (request + response): {roundTripTime}ms
                 </p>
               </div>
             </CardContent>
@@ -1679,7 +1702,7 @@ export default function PacketJourney() {
               <div className="flex items-center gap-3">
                 <TrendingUp className="w-8 h-8 text-green-500" />
                 <div>
-                  <div className="text-2xl font-bold">{(totalJourneyTime * 2).toFixed(0)}ms</div>
+                  <div className="text-2xl font-bold">{roundTripTime}ms</div>
                   <div className={cn("text-sm", isDark ? "text-slate-300" : "text-gray-600")}>Round-Trip Time</div>
                 </div>
               </div>
@@ -1717,7 +1740,7 @@ export default function PacketJourney() {
                   {(Object.keys(scenarios) as ScenarioType[]).map((key) => {
                     const stages = scenarios[key].stages.map((id) => allStages[id]);
                     const oneWay = stages.reduce((sum, s) => sum + s.duration, 0);
-                    const roundTrip = oneWay * 2;
+                    const roundTrip = roundTripMs(stages);
                     const isCurrent = scenario === key;
 
                     return (
@@ -1796,8 +1819,9 @@ export default function PacketJourney() {
                   reducing latency from 200ms+ to under 20ms!
                 </div>
                 <div>
-                  <strong>DNS Caching:</strong> Your browser caches DNS lookups for hours, so subsequent
-                  requests to the same domain skip the DNS resolution step entirely!
+                  <strong>DNS Caching:</strong> The browser, the OS and the resolver all cache DNS answers.
+                  The OS and resolver keep one for the record&apos;s TTL; Chrome holds an answer from the OS
+                  for about a minute. A cached answer skips the DNS step entirely.
                 </div>
                 <div>
                   <strong>HTTP/3:</strong> The latest HTTP protocol uses QUIC (UDP-based) to establish
