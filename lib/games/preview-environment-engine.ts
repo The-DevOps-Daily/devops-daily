@@ -182,14 +182,15 @@ export const PREVIEW_FAILURES: Record<PreviewFailureId, PreviewFailure> = {
   'quota-exceeded': {
     id: 'quota-exceeded',
     label: 'Namespace quota exceeded',
-    summary: 'The production-like profile requests more CPU than the preview pool can schedule.',
+    summary: 'The production-like profile requests more CPU than the namespace quota allows.',
     stage: 'provision',
-    signal: 'Pods remain Pending: exceeded quota preview-cpu, requested 6 cores, available 4.',
+    signal:
+      'ReplicaSet cannot create pods: forbidden: exceeded quota: preview-quota, requested: requests.cpu=6, limited: requests.cpu=4.',
     remediationOptions: [
       {
         id: 'increase-replicas',
         label: 'Increase replicas',
-        explanation: 'More replicas increase the unschedulable request.',
+        explanation: 'More replicas ask for even more CPU against the same quota.',
       },
       {
         id: 'right-size-preview',
@@ -199,7 +200,7 @@ export const PREVIEW_FAILURES: Record<PreviewFailureId, PreviewFailure> = {
       {
         id: 'delete-readiness',
         label: 'Remove readiness probes',
-        explanation: 'The scheduler rejects the pods before probes can run.',
+        explanation: 'The quota rejects the pods before they exist, so there are no probes to run.',
       },
     ],
     correctRemediationId: 'right-size-preview',
@@ -504,8 +505,13 @@ export function applyPreviewRemediation(
     };
   }
 
+  // Some fixes change the environment itself, not only the failure state.
+  const config =
+    remediationId === 'right-size-preview' ? { ...state.config, resourceProfile: 'balanced' as const } : state.config;
+
   return {
     ...state,
+    config,
     status: 'running',
     activeFailure: null,
     resolvedFailures: [...state.resolvedFailures, failure.id],

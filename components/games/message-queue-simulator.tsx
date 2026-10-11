@@ -190,7 +190,8 @@ export default function MessageQueueSimulator() {
   const idleConsumers = state.consumers - activeConsumers;
   const capacity = activeConsumers * scenario.consumerRate;
   const lagSeverity = Math.min(100, Math.round((backlog / Math.max(state.produced, 1)) * 100));
-  const throughput = Math.min(capacity, scenario.produceRate + Math.max(0, backlog - 4));
+  // Nothing is consumed while a Kafka group rebalances.
+  const throughput = rebalancing ? 0 : Math.min(capacity, scenario.produceRate + Math.max(0, backlog - 4));
   const health =
     backlog > capacity * 4 || state.dlq > 2
       ? 'degraded'
@@ -448,7 +449,9 @@ export default function MessageQueueSimulator() {
                   icon={<Inbox className="h-5 w-5" />}
                   subtitle={
                     state.poison
-                      ? `${state.dlq} dead-lettered, ${state.poison.id} retrying (${state.poison.attempts}/${MAX_DELIVERY_ATTEMPTS})`
+                      ? state.poison.attempts === 0
+                        ? `${state.dlq} dead-lettered, ${state.poison.id} waiting for delivery`
+                        : `${state.dlq} dead-lettered, ${state.poison.id} retrying (${state.poison.attempts}/${MAX_DELIVERY_ATTEMPTS})`
                       : `${state.dlq} dead-lettered`
                   }
                   tone={state.dlq > 0 ? 'red' : 'muted'}

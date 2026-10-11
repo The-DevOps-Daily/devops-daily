@@ -58,18 +58,31 @@ describe('message queue engine', () => {
     expect(s.log[0]).toMatch(/rebalance started/);
   });
 
-  it(`retries a poison message ${MAX_DELIVERY_ATTEMPTS} times before it goes to the DLQ`, () => {
+  it(`gives a poison message ${MAX_DELIVERY_ATTEMPTS} delivery attempts before the DLQ`, () => {
     let s = injectPoison(createQueueState(normal));
-    expect(s.poison?.attempts).toBe(1);
-    expect(s.dlq).toBe(0);
-    s = stepQueue(s, normal, 'kafka');
-    expect(s.poison?.attempts).toBe(2);
-    expect(s.dlq).toBe(0);
+    expect(s.poison?.attempts).toBe(0);
+    expect(s.failed).toBe(0);
+    for (let attempt = 1; attempt < MAX_DELIVERY_ATTEMPTS; attempt++) {
+      s = stepQueue(s, normal, 'kafka');
+      expect(s.poison?.attempts).toBe(attempt);
+      expect(s.dlq).toBe(0);
+    }
     s = stepQueue(s, normal, 'kafka');
     expect(s.poison).toBeNull();
     expect(s.dlq).toBe(1);
     expect(s.failed).toBe(MAX_DELIVERY_ATTEMPTS);
     expect(s.log[0]).toMatch(/moved to DLQ/);
+  });
+
+  it('a poison message published during a rebalance waits until consumption resumes', () => {
+    let s = injectPoison(addConsumer(createQueueState(normal), 'kafka'));
+    for (let i = 0; i < REBALANCE_TICKS; i++) {
+      s = stepQueue(s, normal, 'kafka');
+      expect(s.poison?.attempts).toBe(0);
+      expect(s.failed).toBe(0);
+    }
+    s = stepQueue(s, normal, 'kafka');
+    expect(s.poison?.attempts).toBe(1);
   });
 
   it('the DLQ scenario starts poison messages on its own and retries them first', () => {
@@ -81,7 +94,7 @@ describe('message queue engine', () => {
 
   it('does not start a second poison message while one is being retried', () => {
     const s = injectPoison(injectPoison(createQueueState(normal)));
-    expect(s.failed).toBe(1);
+    expect(s.poison?.attempts).toBe(0);
     expect(s.log[0]).toMatch(/still being retried/);
   });
 });

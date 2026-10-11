@@ -15,6 +15,7 @@ export interface QueueScenario {
 
 export interface PoisonMessage {
   id: string;
+  /** Delivery attempts so far; 0 while it waits for its first delivery. */
   attempts: number;
 }
 
@@ -113,7 +114,9 @@ export function stepQueue(
         poison = null;
       } else {
         notes.push(
-          `${poison.id} failed again (attempt ${attempts}/${MAX_DELIVERY_ATTEMPTS}), will retry`
+          attempts === 1
+            ? `${poison.id} failed (attempt 1/${MAX_DELIVERY_ATTEMPTS}), will retry`
+            : `${poison.id} failed again (attempt ${attempts}/${MAX_DELIVERY_ATTEMPTS}), will retry`
         );
         poison = { ...poison, attempts };
       }
@@ -206,7 +209,7 @@ export function removeConsumer(current: QueueState, mode: QueueMode): QueueState
   };
 }
 
-/** Inject a message that will fail every delivery. */
+/** Publish a message that fails every delivery. It fails on the next tick that consumes. */
 export function injectPoison(current: QueueState): QueueState {
   if (current.poison) {
     return { ...current, log: withLog(current, `${current.poison.id} is still being retried`) };
@@ -214,8 +217,7 @@ export function injectPoison(current: QueueState): QueueState {
   const id = shortId(current.processed + 1);
   return {
     ...current,
-    failed: current.failed + 1,
-    poison: { id, attempts: 1 },
-    log: withLog(current, `${id} failed (attempt 1/${MAX_DELIVERY_ATTEMPTS}), will retry`),
+    poison: { id, attempts: 0 },
+    log: withLog(current, `published ${id}, a message that fails on every delivery`),
   };
 }
