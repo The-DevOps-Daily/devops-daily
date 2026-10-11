@@ -14,7 +14,7 @@ const seoLearningPoints = [
   'How a Neon database branch gives each preview environment isolated test data',
   'How single-service previews differ from coordinated full-stack UAT environments',
   'How data strategy, resource sizing, access policy, and TTL affect cost and isolation',
-  'How to diagnose branch mismatches, quota failures, missing secrets, DNS issues, and revision drift',
+  'How to diagnose branch mismatches, quota failures, missing secrets, DNS issues, failed readiness gates and revision drift',
   'Which health, test, revision, configuration, and cost evidence should return to a pull request',
   'Why teardown must be automatic, observable, and driven through the same control path as creation',
 ];

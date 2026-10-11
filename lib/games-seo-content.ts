@@ -22,7 +22,7 @@ export interface SimulatorExplainerContent {
 const explainers: Record<string, SimulatorExplainerContent> = {
   'preview-environment-simulator': {
     summary:
-      'A preview environment is a short-lived copy of your application that exists for one pull request. This simulator follows that copy through its whole life: a label on the pull request triggers a webhook, CI builds and pushes an image, an Argo CD ApplicationSet notices the labeled pull request and creates a namespace, and the environment gets data, DNS and TLS before reviewers see a private URL. When the pull request closes, the same flow runs in reverse and removes the review URL, the workloads, their dependencies and the namespace. With "Practice a failure" turned on, it injects failures teams actually hit, depending on the pull request you pick: a missing branch override, an unavailable preview secret or a deployed revision that drifted, and asks you to pick a fix. Some of the offered fixes make the symptom disappear while creating a new risk, like copying a production secret or turning off a health gate. The point is to see why a preview environment is a GitOps workflow with guardrails, not just a deploy script with a random URL.',
+      'A preview environment is a short-lived copy of your application that exists for one pull request. This simulator follows that copy through its whole life: a label on the pull request triggers a webhook, CI builds and pushes an image, an Argo CD ApplicationSet notices the labeled pull request and creates a namespace, and the environment gets data, DNS and TLS before reviewers see a private URL. When the pull request closes, the same flow runs in reverse and removes the review URL, the workloads, their dependencies and the namespace. With "Practice a failure" turned on, it injects a failure teams actually hit, one per pull request: a missing branch override, an unavailable preview secret, a deployed revision that drifted, a namespace quota that blocks scheduling, a certificate stuck on the wrong DNS zone or a readiness gate failing on a migration, and asks you to pick a fix. Some of the offered fixes make the symptom disappear while creating a new risk, like copying a production secret or turning off a health gate. The point is to see why a preview environment is a GitOps workflow with guardrails, not just a deploy script with a random URL.',
     teaches: [
       'Preview environments per pull request',
       'GitOps with Argo CD ApplicationSets',
@@ -1043,7 +1043,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'message-queue-simulator': {
     summary:
-      'A message queue lets producers and consumers work at different speeds, but Kafka and RabbitMQ do it in different ways. This simulator lets you switch between a Kafka topic and a RabbitMQ exchange and run the same scenarios on both. In normal operation producers publish, the broker stores and routes, and consumers keep up. In consumer lag the consumers fall behind and the backlog grows, which is the number to watch in production. Rebalancing shows partitions being reassigned between the consumers of a Kafka group, which in a real cluster can pause processing while it happens. Ordering guarantees shows that Kafka keeps order only within a partition, so messages for the same key must go to the same partition. Dead letter handling shows failed messages being moved aside into a dead letter queue so they stop blocking everything behind them. Backpressure shows what happens when the broker or consumers cannot accept more. Seeing both systems handle the same situations makes the trade-off clear: Kafka is a replayable log split into partitions, while RabbitMQ routes messages to queues through exchanges and bindings.',
+      'A message queue lets producers and consumers work at different speeds, but Kafka and RabbitMQ do it in different ways. This simulator lets you switch between a Kafka topic and a RabbitMQ exchange and run the same scenarios on both. In normal operation producers publish, the broker stores and routes, and consumers keep up. In consumer lag the consumers fall behind and the backlog grows, which is the number to watch in production. Rebalancing restarts a consumer every few ticks: in Kafka the group rebalances and stops consuming while partitions change owner, while RabbitMQ consumers keep going. Ordering guarantees shows that Kafka keeps order only within a partition, so messages for the same key must go to the same partition. Dead letter handling sends poison messages that fail every delivery; each one is retried three times before it moves to a dead letter queue, so it stops blocking everything behind it. Backpressure shows what happens when the broker or consumers cannot accept more. Seeing both systems handle the same situations makes the trade-off clear: Kafka is a replayable log split into partitions, while RabbitMQ routes messages to queues through exchanges and bindings.',
     teaches: [
       'Producers, brokers and consumers',
       'Kafka partitions and consumer groups',
@@ -1055,7 +1055,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     tryThis: [
       'Run "Consumer lag" in Kafka mode and watch the backlog grow when consumers fall behind.',
       'Open "Ordering guarantees" to see why ordering holds only within a single Kafka partition.',
-      'Switch to RabbitMQ mode and run "Dead letter handling" to watch failed messages move to the dead letter queue.',
+      'Run "Dead letter handling" and watch a poison message fail its retries, attempt 1, 2 and 3, before it lands in the dead letter queue.',
     ],
     faq: [
       {
@@ -1386,18 +1386,19 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'tcp-vs-udp': {
     summary:
-      'TCP and UDP both carry data over IP, but they make opposite promises. This simulator sends packets between two hosts so you can watch the difference. In TCP mode the connection starts with the three-way handshake, SYN, SYN-ACK and ACK, then every data packet is acknowledged and anything lost is sent again, so all data arrives in order at the cost of extra round trips. In UDP mode packets are simply sent, with no handshake, no acknowledgements and no retransmission, so whatever is lost stays lost. You can change the simulation speed, add packet loss and add visual jitter to the packets, and the counters show packets sent, received, lost and retransmitted. With loss turned up, TCP slows down as it retransmits, while UDP keeps sending at the same rate and drops data. That is why TCP is used where every byte matters, such as web pages, APIs and file transfers, and UDP where fresh data matters more than complete data, such as DNS queries, video calls, games and QUIC, which builds its own reliability on top of UDP.',
+      'TCP and UDP both carry data over IP, but they make opposite promises. This simulator sends packets between two hosts so you can watch the difference. In TCP mode the connection starts with the three-way handshake, SYN, SYN-ACK and ACK, then every data packet is acknowledged and anything lost is sent again, so all data arrives in order at the cost of extra round trips. In UDP mode packets are simply sent, with no handshake, no acknowledgements and no retransmission, so whatever is lost stays lost. You can change the simulation speed, add packet loss and add jitter, which gives each packet its own delay so later packets can overtake earlier ones. UDP hands them over out of order, while TCP holds an early packet until the gap before it is filled, and the counters show packets sent, received, lost, retransmitted and out of order. With loss turned up, TCP slows down as it retransmits, while UDP keeps sending at the same rate and drops data. That is why TCP is used where every byte matters, such as web pages, APIs and file transfers, and UDP where fresh data matters more than complete data, such as DNS queries, video calls, games and QUIC, which builds its own reliability on top of UDP.',
     teaches: [
       'TCP three-way handshake',
       'Acknowledgements and retransmission',
       'UDP datagrams',
       'Packet loss and retransmission',
+      'Jitter, packet reordering and head-of-line blocking',
     ],
     level: 'Beginner',
     tryThis: [
       'Start in TCP mode and watch the three-way handshake before any data is sent.',
       'Raise packet loss and compare the retransmit counter in TCP mode with the lost counter in UDP mode.',
-      'Set packet loss to zero and compare the TCP log, with its SYN, SYN-ACK and ACK lines, against UDP mode, which sends without a handshake or acknowledgements.',
+      'Turn jitter up to 100% and compare the out-of-order counter in UDP mode with the held count in TCP mode, where early packets wait for the missing one.',
     ],
     faq: [
       {
@@ -1420,18 +1421,19 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'microservices-simulator': {
     summary:
-      'A microservices architecture splits an application into small services that each own one job and talk over the network. This simulator models a small shop built that way: an API gateway in front of user, product, cart and order services. When you start the simulation, calls travel between the services, and each service shows its CPU, memory, latency and status, healthy, degraded or down. A degraded or down service lowers the success rate of the calls that involve it, and the failures add up in the overall request counters, which makes the main cost of microservices visible: every network call is a new way to fail. Clicking a service opens its details, where you can change its instance count. A short tutorial guides you through selecting a service, starting the simulation and scaling, and the notes below cover when microservices are worth it and when a well-structured monolith is the better choice.',
+      'A microservices architecture splits an application into small services that each own one job and talk over the network. This simulator models a small shop built that way: an API gateway in front of user, product, cart and order services. When you start the simulation, calls travel between the services, and each service shows its CPU, memory, latency and status, healthy, degraded or down. A degraded or down service lowers the success rate of the calls that involve it, and the failures add up in the overall request counters, which makes the main cost of microservices visible: every network call is a new way to fail. Each service gets a fixed share of the traffic and each instance handles a set amount, so clicking a service shows its load as a share of capacity. The user service starts overloaded, with high CPU, slow responses and failing calls; scaling it up spreads the same load over more instances until it recovers, and scaling a busy service down does the opposite. A short tutorial walks you through it, and the notes below cover when a modular monolith is the better choice.',
     teaches: [
       'Microservices architecture',
       'API gateways',
       'Service-to-service calls',
       'Service health and failure propagation',
+      'Horizontal scaling and capacity',
     ],
     level: 'Beginner',
     tryThis: [
       'Follow the tutorial: select a service, start the simulation and scale the service.',
       'Start the simulation and watch the overall request totals as calls travel between the services.',
-      'Select the order service and use scale up and scale down to change its instance count.',
+      'Select the user service, which starts overloaded, and scale it up until its load drops below capacity and the success rate recovers.',
     ],
     faq: [
       {

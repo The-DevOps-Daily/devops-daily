@@ -20,6 +20,7 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CAPACITY_PER_INSTANCE, SERVICE_DEMAND, callSuccessChance, serviceMetrics } from '@/lib/games/microservices-load';
 
 // Service types
 type ServiceType = 'api-gateway' | 'user' | 'product' | 'cart' | 'order';
@@ -62,22 +63,12 @@ const SERVICE_CALL_ANIMATION_MIN_MS = 300; // Min latency for visual animation
 const SERVICE_CALL_ANIMATION_MAX_MS = 500; // Max latency for visual animation
 const MIN_INSTANCES = 1;
 const MAX_INSTANCES = 10;
-const SUCCESS_RATE_HEALTHY = 0.95; // 95% success rate for healthy services
-const SUCCESS_RATE_DEGRADED = 0.7; // 70% success rate for degraded services
-const SUCCESS_RATE_DOWN = 0.1; // 10% success rate for down services
 
 // Tutorial constants
 const TUTORIAL_COMPLETE_DELAY_MS = 3000; // Delay before exiting tutorial mode
 const CALL_CLEANUP_DELAY_MS = 1000; // Delay before removing completed service calls
 
 // Metrics calculation constants
-const CPU_BASE_MIN = 10;
-const CPU_BASE_MAX = 100;
-const CPU_DOWN_MIN = 90;
-const CPU_DOWN_RANGE = 10;
-const CPU_DEGRADED_MIN = 60;
-const CPU_DEGRADED_RANGE = 20;
-const CPU_VARIATION = 7;
 
 const MEMORY_BASE_MIN = 20;
 const MEMORY_BASE_MAX = 100;
@@ -87,12 +78,6 @@ const MEMORY_DEGRADED_MIN = 55;
 const MEMORY_DEGRADED_RANGE = 25;
 const MEMORY_VARIATION = 4;
 
-const LATENCY_DOWN_BASE = 800;
-const LATENCY_DOWN_RANGE = 400;
-const LATENCY_DEGRADED_BASE = 400;
-const LATENCY_DEGRADED_RANGE = 300;
-const LATENCY_HEALTHY_MIN = 120;
-const LATENCY_HEALTHY_RANGE = 180;
 
 const HEALTH_MULTIPLIER_DOWN = 0.2; // Success rate multiplier for down services
 const HEALTH_MULTIPLIER_DEGRADED = 0.8; // Success rate multiplier for degraded services
@@ -118,7 +103,7 @@ export default function MicroservicesSimulator() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showAdvancedServices, setShowAdvancedServices] = useState(false);
 
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | undefined>(undefined);
   const lastCallTimeRef = useRef<number>(0);
   const lastMetricsUpdateRef = useRef<number>(0);
   const servicesRef = useRef<Service[]>([]);
@@ -184,7 +169,13 @@ export default function MicroservicesSimulator() {
         position: { x: 300, y: 300 },
       },
     ];
-    setServices(initialServices);
+    // Start each service with the CPU and latency its load implies.
+    setServices(
+      initialServices.map((service) => {
+        const { cpu, latency } = serviceMetrics(service.type, service.instances, service.status);
+        return { ...service, cpu, latency };
+      })
+    );
   };
 
   const addAdvancedServices = () => {
@@ -307,22 +298,21 @@ export default function MicroservicesSimulator() {
       // Update service metrics
       if (now - lastMetricsUpdateRef.current > METRICS_UPDATE_INTERVAL_MS) {
         setServices((prev) =>
-          prev.map((service) => ({
-            ...service,
-            cpu: Math.min(CPU_BASE_MAX, Math.max(CPU_BASE_MIN, 
-              service.status === 'down' ? CPU_DOWN_MIN + Math.random() * CPU_DOWN_RANGE :
-              service.status === 'degraded' ? CPU_DEGRADED_MIN + Math.random() * CPU_DEGRADED_RANGE :
-              service.cpu + (Math.random() - 0.5) * CPU_VARIATION
-            )),
-            memory: Math.min(MEMORY_BASE_MAX, Math.max(MEMORY_BASE_MIN, 
-              service.status === 'down' ? MEMORY_DOWN_MIN + Math.random() * MEMORY_DOWN_RANGE :
-              service.status === 'degraded' ? MEMORY_DEGRADED_MIN + Math.random() * MEMORY_DEGRADED_RANGE :
-              service.memory + (Math.random() - 0.5) * MEMORY_VARIATION
-            )),
-            latency: service.status === 'down' ? LATENCY_DOWN_BASE + Math.random() * LATENCY_DOWN_RANGE :
-              service.status === 'degraded' ? LATENCY_DEGRADED_BASE + Math.random() * LATENCY_DEGRADED_RANGE :
-              LATENCY_HEALTHY_MIN + Math.random() * LATENCY_HEALTHY_RANGE,
-          }))
+          prev.map((service) => {
+            // CPU and latency follow the load on each instance: the same
+            // demand spread over more instances means less load on each.
+            const metrics = serviceMetrics(service.type, service.instances, service.status, Math.random() * 2 - 1);
+            return {
+              ...service,
+              cpu: metrics.cpu,
+              memory: Math.min(MEMORY_BASE_MAX, Math.max(MEMORY_BASE_MIN,
+                service.status === 'down' ? MEMORY_DOWN_MIN + Math.random() * MEMORY_DOWN_RANGE :
+                service.status === 'degraded' ? MEMORY_DEGRADED_MIN + Math.random() * MEMORY_DEGRADED_RANGE :
+                service.memory + (Math.random() - 0.5) * MEMORY_VARIATION
+              )),
+              latency: metrics.latency,
+            };
+          })
         );
         lastMetricsUpdateRef.current = now;
       }
@@ -343,10 +333,9 @@ export default function MicroservicesSimulator() {
 
     const toService = availableTargets[Math.floor(Math.random() * availableTargets.length)];
 
-    // Factor in service health for success rate
-    let successChance = SUCCESS_RATE_HEALTHY;
-    if (toService.status === 'degraded') successChance = SUCCESS_RATE_DEGRADED;
-    if (toService.status === 'down') successChance = SUCCESS_RATE_DOWN;
+    // The target's health and its load per instance decide the success rate:
+    // an overloaded service starts timing out until you add instances.
+    let successChance = callSuccessChance(toService.type, toService.instances, toService.status);
 
     // Also factor in fromService health
     if (fromService.status === 'down') successChance *= HEALTH_MULTIPLIER_DOWN;
@@ -812,7 +801,7 @@ export default function MicroservicesSimulator() {
                                 ⬆️ Scale the User Service
                               </h4>
                               <p className="text-xs text-blue-700 dark:text-blue-200">
-                                Click the User Service, then press "Scale Up" to add more instances and handle increased load.
+                                Click the User Service, then press "Scale Up" to add more instances. It is overloaded, so watch its CPU, latency and the success rate improve as you add capacity.
                               </p>
                             </>
                           )}
@@ -864,6 +853,22 @@ export default function MicroservicesSimulator() {
                         </Badge>
                         <Badge variant="secondary">{selectedService.instances} instances</Badge>
                       </div>
+                      {(() => {
+                        const demand = SERVICE_DEMAND[selectedService.type];
+                        const capacity = selectedService.instances * CAPACITY_PER_INSTANCE;
+                        const load = Math.round((demand / capacity) * 100);
+                        return (
+                          <p
+                            className={cn(
+                              'text-xs mt-2',
+                              load > 100 ? 'text-red-500' : load > 85 ? 'text-yellow-500' : 'text-muted-foreground'
+                            )}
+                          >
+                            Load: {demand} units on {selectedService.instances} x {CAPACITY_PER_INSTANCE} = {load}% of capacity
+                            {load > 85 ? '. Add instances to bring latency and errors down.' : '.'}
+                          </p>
+                        );
+                      })()}
                     </div>
                     <Button onClick={() => setSelectedService(null)} variant="ghost" size="sm">
                       ×

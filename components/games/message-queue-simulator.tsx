@@ -32,10 +32,22 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-
-type QueueMode = 'kafka' | 'rabbitmq';
-type ScenarioId = 'normal' | 'lag' | 'rebalance' | 'ordering' | 'dlq' | 'backpressure';
-
+import {
+  MAX_DELIVERY_ATTEMPTS,
+  REBALANCE_TICKS,
+  activeConsumers as countActiveConsumers,
+  addConsumer as addConsumerToState,
+  backlogOf,
+  createQueueState,
+  injectPoison,
+  produceMessages,
+  removeConsumer as removeConsumerFromState,
+  shortId,
+  stepQueue,
+  type QueueMode,
+  type QueueState,
+  type ScenarioId,
+} from '@/lib/games/message-queue-engine';
 interface Scenario {
   id: ScenarioId;
   title: string;
@@ -49,17 +61,7 @@ interface Scenario {
   note: string;
 }
 
-interface SimulatorState {
-  produced: number;
-  processed: number;
-  failed: number;
-  dlq: number;
-  tick: number;
-  consumers: number;
-  partitions: number;
-  isPlaying: boolean;
-  log: string[];
-}
+type SimulatorState = QueueState;
 
 const scenarios: Scenario[] = [
   {
@@ -93,7 +95,7 @@ const scenarios: Scenario[] = [
     consumerRate: 3,
     defaultConsumers: 2,
     defaultPartitions: 4,
-    note: 'Rebalancing increases capacity, but it can pause processing while ownership changes.',
+    note: `In Kafka, a consumer joining or leaving makes the group rebalance: partitions change owner and the group stops consuming for a moment. Here a rebalance pauses the whole group for ${REBALANCE_TICKS} ticks, like the classic eager protocol. RabbitMQ consumers attach and leave without pausing the others.`,
   },
   {
     id: 'ordering',
@@ -110,7 +112,7 @@ const scenarios: Scenario[] = [
     id: 'dlq',
     title: 'Dead letter handling',
     badge: 'poison',
-    description: 'Poison messages fail retries and move to a dead letter queue for inspection.',
+    description: `A poison message fails every delivery; after ${MAX_DELIVERY_ATTEMPTS} attempts it moves to a dead letter queue for inspection.`,
     produceRate: 6,
     consumerRate: 3,
     defaultConsumers: 2,
@@ -162,29 +164,10 @@ const modeCopy: Record<
 
 const messageKeys = ['orders', 'billing', 'email', 'audit', 'metrics', 'alerts'];
 
-function createState(scenario: Scenario): SimulatorState {
-  return {
-    produced: scenario.produceRate * 2,
-    processed: scenario.consumerRate,
-    failed: 0,
-    dlq: 0,
-    tick: 1,
-    consumers: scenario.defaultConsumers,
-    partitions: scenario.defaultPartitions,
-    isPlaying: false,
-    log: [
-      `producer published ${scenario.produceRate * 2} messages`,
-      `consumer group started with ${scenario.defaultConsumers} consumers`,
-    ],
-  };
-}
+const createState = (scenario: Scenario): SimulatorState => createQueueState(scenario);
 
 function getScenario(id: ScenarioId) {
   return scenarios.find((scenario) => scenario.id === id) ?? scenarios[0];
-}
-
-function shortId(value: number) {
-  return `m-${String(value).padStart(3, '0')}`;
 }
 
 function getStatusColor(value: number, warning: number, danger: number) {
@@ -199,19 +182,19 @@ export default function MessageQueueSimulator() {
   const scenario = useMemo(() => getScenario(scenarioId), [scenarioId]);
   const [state, setState] = useState<SimulatorState>(() => createState(scenario));
 
-  const backlog = Math.max(state.produced - state.processed - state.dlq, 0);
-  // A Kafka partition goes to one consumer in the group, so consumers beyond
-  // the partition count get nothing and sit idle. RabbitMQ consumers compete
-  // on the same queue, so each one adds capacity.
-  const activeConsumers = mode === 'kafka' ? Math.min(state.consumers, state.partitions) : state.consumers;
+  const backlog = backlogOf(state);
+  // Kafka consumers beyond the partition count sit idle; RabbitMQ consumers
+  // compete on the same queue, so each one adds capacity.
+  const activeConsumers = countActiveConsumers(state, mode);
+  const rebalancing = state.rebalanceTicksLeft > 0;
   const idleConsumers = state.consumers - activeConsumers;
   const capacity = activeConsumers * scenario.consumerRate;
   const lagSeverity = Math.min(100, Math.round((backlog / Math.max(state.produced, 1)) * 100));
   const throughput = Math.min(capacity, scenario.produceRate + Math.max(0, backlog - 4));
   const health =
-    backlog > capacity * 4 || state.failed > 4
+    backlog > capacity * 4 || state.dlq > 2
       ? 'degraded'
-      : backlog > capacity * 2 || state.failed > 0
+      : backlog > capacity * 2 || state.dlq > 0 || state.poison !== null || rebalancing
         ? 'watch'
         : 'healthy';
 
@@ -247,77 +230,25 @@ export default function MessageQueueSimulator() {
     setState(createState(scenario));
   }, [scenario]);
 
-  const appendLog = useCallback((current: SimulatorState, entry: string) => {
-    return [entry, ...current.log].slice(0, 7);
-  }, []);
-
   const produce = useCallback(() => {
-    setState((current) => ({
-      ...current,
-      produced: current.produced + scenario.produceRate,
-      log: appendLog(current, `produced ${scenario.produceRate} messages to ${modeCopy[mode].broker}`),
-    }));
-  }, [appendLog, mode, scenario.produceRate]);
+    setState((current) => produceMessages(current, scenario, modeCopy[mode].broker));
+  }, [mode, scenario]);
 
   const step = useCallback(() => {
-    setState((current) => {
-      const currentBacklog = Math.max(current.produced - current.processed - current.dlq, 0);
-      const active = mode === 'kafka' ? Math.min(current.consumers, current.partitions) : current.consumers;
-      const maxProcessed = Math.min(currentBacklog, active * scenario.consumerRate);
-      const shouldFail =
-        scenario.failureEvery !== undefined && current.tick % scenario.failureEvery === 0 && maxProcessed > 0;
-      const failures = shouldFail ? 1 : 0;
-      const processed = Math.max(0, maxProcessed - failures);
-      const nextProduced =
-        scenario.id === 'backpressure' || scenario.id === 'lag'
-          ? current.produced + scenario.produceRate
-          : current.produced + Math.ceil(scenario.produceRate / 2);
-      const rebalanceNote =
-        scenario.id === 'rebalance' && current.tick % 3 === 0
-          ? `rebalance assigned ${current.partitions} ${mode === 'kafka' ? 'partitions' : 'queues'}`
-          : `processed ${processed}, backlog ${Math.max(currentBacklog - processed - failures, 0)}`;
-      const failureNote = failures > 0 ? `moved ${failures} poison message to DLQ` : rebalanceNote;
-
-      return {
-        ...current,
-        produced: nextProduced,
-        processed: current.processed + processed,
-        failed: current.failed + failures,
-        dlq: current.dlq + failures,
-        tick: current.tick + 1,
-        log: appendLog(current, failureNote),
-      };
-    });
-  }, [appendLog, mode, scenario.consumerRate, scenario.failureEvery, scenario.id, scenario.produceRate]);
+    setState((current) => stepQueue(current, scenario, mode));
+  }, [mode, scenario]);
 
   const addConsumer = useCallback(() => {
-    setState((current) => {
-      const consumers = Math.min(5, current.consumers + 1);
-      const idle = mode === 'kafka' && consumers > current.partitions;
-      return {
-        ...current,
-        consumers,
-        log: appendLog(current, `consumer-${consumers} joined group${idle ? ', idle: no free partition' : ''}`),
-      };
-    });
-  }, [appendLog, mode]);
+    setState((current) => addConsumerToState(current, mode));
+  }, [mode]);
 
   const removeConsumer = useCallback(() => {
-    setState((current) => ({
-      ...current,
-      consumers: Math.max(1, current.consumers - 1),
-      log: appendLog(current, `consumer left; ${Math.max(1, current.consumers - 1)} remain`),
-    }));
-  }, [appendLog]);
+    setState((current) => removeConsumerFromState(current, mode));
+  }, [mode]);
 
   const triggerFailure = useCallback(() => {
-    setState((current) => ({
-      ...current,
-      failed: current.failed + 1,
-      dlq: current.dlq + 1,
-      log: appendLog(current, 'poison message retried and sent to DLQ'),
-    }));
-  }, [appendLog]);
+    setState((current) => injectPoison(current));
+  }, []);
 
   useEffect(() => {
     setState(createState(scenario));
@@ -502,7 +433,7 @@ export default function MessageQueueSimulator() {
                         >
                           <span className="text-sm font-medium">consumer-{index + 1}</span>
                           <Badge variant={idle ? 'outline' : 'secondary'} className="text-[10px]">
-                            {idle ? 'idle, no partition' : mode === 'kafka' ? 'offset commit' : 'manual ack'}
+                            {idle ? 'idle, no partition' : rebalancing ? 'paused, rebalancing' : mode === 'kafka' ? 'offset commit' : 'manual ack'}
                           </Badge>
                         </div>
                       );
@@ -515,7 +446,11 @@ export default function MessageQueueSimulator() {
                 <FlowNode
                   title="DLQ"
                   icon={<Inbox className="h-5 w-5" />}
-                  subtitle={`${state.dlq} failed`}
+                  subtitle={
+                    state.poison
+                      ? `${state.dlq} dead-lettered, ${state.poison.id} retrying (${state.poison.attempts}/${MAX_DELIVERY_ATTEMPTS})`
+                      : `${state.dlq} dead-lettered`
+                  }
                   tone={state.dlq > 0 ? 'red' : 'muted'}
                 >
                   {state.dlq > 0 ? (
@@ -523,7 +458,11 @@ export default function MessageQueueSimulator() {
                       .slice(0, Math.min(3, state.dlq))
                       .map((message) => <MessagePill key={message.id} id={message.id} label="poison" failed />)
                   ) : (
-                    <p className="text-xs text-muted-foreground">No poison messages yet.</p>
+                    <p className="text-xs text-muted-foreground">
+                      {state.poison
+                        ? `${state.poison.id} goes here if it fails ${MAX_DELIVERY_ATTEMPTS} times.`
+                        : 'No poison messages yet.'}
+                    </p>
                   )}
                 </FlowNode>
               </div>

@@ -12,9 +12,9 @@ export default function DbmsSimulatorPage() {
     <SimulatorShell
       slug="dbms-simulator"
       seoLearningPoints={[
-        'Write and execute SQL queries',
-        'Understand database transactions and ACID properties',
-        'Learn indexing strategies for performance',
+        'Compare relational, document, key-value, column-family, graph and time-series databases',
+        'See how each type models and queries data, and its CAP trade-offs',
+        'Use a decision playground and a scenario quiz to pick a database for a workload',
       ]}
     >
       <DbmsSimulator />

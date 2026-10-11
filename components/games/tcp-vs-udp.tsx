@@ -54,6 +54,7 @@ type Packet = {
   retransmitted: boolean;
   dropAt: number | null;
   lostTicks: number;
+  speedFactor: number; // 1 = on time; jitter makes some packets slower or faster
 };
 
 type LogEntry = { id: number; text: string; type: string };
@@ -61,6 +62,11 @@ type LogEntry = { id: number; text: string; type: string };
 // Loss is decided once per packet: null, or the point on the wire where it drops
 const rollDrop = (lossPercent: number) =>
   Math.random() * 100 < lossPercent ? 20 + Math.random() * 60 : null;
+
+// Jitter is variation in delay: each DATA packet gets its own speed, so a later
+// packet can overtake an earlier one and arrive first.
+const rollSpeedFactor = (jitterPercent: number) =>
+  Math.max(0.35, 1 + (Math.random() * 2 - 1) * (jitterPercent / 100) * 0.65);
 
 // --- Helper Components ---
 
@@ -92,7 +98,7 @@ export default function TcpVsUdpSimulator() {
   const [mode, setMode] = useState(MODES.TCP);
   const [isPlaying, setIsPlaying] = useState(false);
   const [packets, setPackets] = useState<Packet[]>([]);
-  const [stats, setStats] = useState({ sent: 0, received: 0, lost: 0, retransmits: 0, onWire: 0 });
+  const [stats, setStats] = useState({ sent: 0, received: 0, lost: 0, retransmits: 0, onWire: 0, outOfOrder: 0, held: 0 });
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [connState, setConnState] = useState(CONNECTION_STATES.DISCONNECTED);
   const [educationalMessage, setEducationalMessage] = useState("");
@@ -110,6 +116,12 @@ export default function TcpVsUdpSimulator() {
   const packetsRef = useRef<Packet[]>([]);
   const handshakeTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const tcpWindow = useRef(new Set()); // IDs of packets in flight for TCP
+  // Receiver side, for ordering: the DATA ids in the order they were sent,
+  // which of them have arrived, and how many the app has been given in order.
+  const dataOrder = useRef<number[]>([]);
+  const arrived = useRef(new Set<number>());
+  const deliveredInOrder = useRef(0);
+  const udpHighestArrived = useRef(-1);
   const lastSpawnTime = useRef(0);
   const containerRef = useRef(null);
 
@@ -185,14 +197,16 @@ export default function TcpVsUdpSimulator() {
       retransmitted: false,
       // Handshake packets are immune to loss in this basic educational demo to avoid frustration
       dropAt: type === 'DATA' ? rollDrop(packetLossChance) : null,
-      lostTicks: 0
+      lostTicks: 0,
+      speedFactor: type === 'DATA' ? rollSpeedFactor(jitter) : 1
     };
+    if (type === 'DATA') dataOrder.current.push(id);
 
     commitPackets([...packetsRef.current, newPacket]);
     if (type === 'DATA') {
         setStats(prev => ({ ...prev, sent: prev.sent + 1, onWire: prev.onWire + 1 }));
     }
-  }, [mode, packetLossChance, commitPackets]);
+  }, [mode, packetLossChance, jitter, commitPackets]);
 
   const handleStartStop = () => {
       if (isPlaying) {
@@ -219,7 +233,7 @@ export default function TcpVsUdpSimulator() {
   const updateSimulation = useCallback(() => {
     if (!isPlaying) return;
 
-    const delta = { lost: 0, retransmits: 0, onWire: 0 };
+    const delta = { lost: 0, retransmits: 0, onWire: 0, outOfOrder: 0 };
 
       let nextPackets = packetsRef.current.map((p): Packet | null => {
         // 1. Lost packets: TCP's timer resends the DATA (whether the DATA or its ACK was lost); UDP forgets it
@@ -229,11 +243,11 @@ export default function TcpVsUdpSimulator() {
           logMessage(`Packet #${p.id} timed out. Retransmitting...`, 'error');
           delta.retransmits += 1;
           delta.onWire += 1;
-          return { ...p, type: 'DATA', status: 'inflight', progress: 10, y: 50, retransmitted: true, lostTicks: 0, dropAt: rollDrop(packetLossChance) };
+          return { ...p, type: 'DATA', status: 'inflight', progress: 10, y: 50, retransmitted: true, lostTicks: 0, dropAt: rollDrop(packetLossChance), speedFactor: rollSpeedFactor(jitter) };
         }
 
         // 2. Movement Logic
-        let moveSpeed = 0.5 + (speed / 100); 
+        let moveSpeed = (0.5 + (speed / 100)) * (p.speedFactor ?? 1);
         if (p.type === 'SYN' || p.type === 'SYN-ACK') moveSpeed *= 0.7; // Slow down handshake for visibility
 
         // Jitter
@@ -286,6 +300,21 @@ export default function TcpVsUdpSimulator() {
             }
             else if (p.type === 'DATA') {
                 if (p.mode === MODES.TCP) {
+                    // The receiver hands data to the app in order. A packet that
+                    // arrives before an earlier one waits in the buffer: that
+                    // wait is head-of-line blocking.
+                    const expected = dataOrder.current[deliveredInOrder.current];
+                    if (arrived.current.has(p.id)) {
+                        // A retransmit after a lost ACK: the data is already here
+                        logMessage(`Packet #${p.id} arrived again. TCP drops the copy and resends the ACK.`, 'info');
+                    } else {
+                        arrived.current.add(p.id);
+                        if (p.id !== expected) {
+                            delta.outOfOrder += 1;
+                            logMessage(`Packet #${p.id} arrived before #${expected}. TCP holds it until #${expected} arrives.`, 'warning');
+                        }
+                        while (arrived.current.has(dataOrder.current[deliveredInOrder.current])) deliveredInOrder.current += 1;
+                    }
                     // TCP: Convert to ACK (Return receipt), which can be lost too
                     delta.onWire += 1;
                     return { 
@@ -297,7 +326,13 @@ export default function TcpVsUdpSimulator() {
                     dropAt: rollDrop(packetLossChance)
                     };
                 } else {
-                    // UDP: Done
+                    // UDP: handed to the app at once, in whatever order it came
+                    if (p.id < udpHighestArrived.current) {
+                        delta.outOfOrder += 1;
+                        logMessage(`Packet #${p.id} arrived after #${udpHighestArrived.current}. UDP delivers it out of order.`, 'warning');
+                    } else {
+                        udpHighestArrived.current = p.id;
+                    }
                     setStats(s => ({ ...s, received: s.received + 1 }));
                     return null; 
                 }
@@ -328,18 +363,21 @@ export default function TcpVsUdpSimulator() {
 
       }).filter((p): p is Packet => p !== null);
 
-      if (delta.lost || delta.retransmits || delta.onWire) {
+      const held = arrived.current.size - deliveredInOrder.current;
+      if (delta.lost || delta.retransmits || delta.onWire || delta.outOfOrder || held !== stats.held) {
         setStats(s => ({
           ...s,
           lost: s.lost + delta.lost,
           retransmits: s.retransmits + delta.retransmits,
-          onWire: s.onWire + delta.onWire
+          onWire: s.onWire + delta.onWire,
+          outOfOrder: s.outOfOrder + delta.outOfOrder,
+          held
         }));
       }
 
       commitPackets(nextPackets);
 
-  }, [isPlaying, packetLossChance, speed, jitter, connState, mode, spawnPacket, logMessage, commitPackets]);
+  }, [isPlaying, packetLossChance, speed, jitter, connState, mode, spawnPacket, logMessage, commitPackets, stats.held]);
 
   // Game Loop
   useEffect(() => {
@@ -378,8 +416,12 @@ export default function TcpVsUdpSimulator() {
     handshakeTimers.current.forEach(clearTimeout);
     handshakeTimers.current = [];
     commitPackets([]);
-    setStats({ sent: 0, received: 0, lost: 0, retransmits: 0, onWire: 0 });
+    setStats({ sent: 0, received: 0, lost: 0, retransmits: 0, onWire: 0, outOfOrder: 0, held: 0 });
     tcpWindow.current.clear();
+    dataOrder.current = [];
+    arrived.current = new Set();
+    deliveredInOrder.current = 0;
+    udpHighestArrived.current = -1;
     setLogs([]);
     setConnState(CONNECTION_STATES.DISCONNECTED);
     setIsPlaying(false);
@@ -509,6 +551,13 @@ export default function TcpVsUdpSimulator() {
             value={`${stats.onWire > 0 ? ((stats.lost / stats.onWire) * 100).toFixed(1) : 0}%`} 
             color={COLORS.loss} 
             icon={WifiOff} 
+          />
+          <StatCard 
+            label="Out of Order" 
+            value={stats.outOfOrder} 
+            color={COLORS.ack} 
+            icon={ArrowRightLeft} 
+            subtext={mode === MODES.TCP ? `Held: ${stats.held}` : 'Delivered as is'}
           />
           {mode === MODES.TCP && (
             <StatCard 
@@ -700,7 +749,7 @@ export default function TcpVsUdpSimulator() {
                     {/* Jitter Slider */}
                     <div>
                         <div className="flex justify-between text-xs mb-1">
-                            <span className="flex items-center gap-1">Jitter (Instability) <Tooltip text="Adds random variance to packet timing and path."><Info size={12} className="text-slate-500"/></Tooltip></span>
+                            <span className="flex items-center gap-1">Jitter (Instability) <Tooltip text="Variation in delay. Each packet travels at its own speed, so later packets can overtake earlier ones. UDP delivers them out of order; TCP holds them until the gap is filled."><Info size={12} className="text-slate-500"/></Tooltip></span>
                             <span className="text-amber-400">{jitter}%</span>
                         </div>
                         <input 
@@ -722,7 +771,7 @@ export default function TcpVsUdpSimulator() {
              <div className="flex flex-col-reverse gap-1">
                 {logs.length === 0 && <span className="text-slate-700 italic">Waiting for traffic...</span>}
                 {logs.map(log => (
-                    <div key={log.id} className={`${log.type === 'error' ? 'text-red-400' : log.type === 'syn' ? 'text-fuchsia-400' : 'text-slate-300'} animate-in fade-in slide-in-from-left-4`}>
+                    <div key={log.id} className={`${log.type === 'error' ? 'text-red-400' : log.type === 'syn' ? 'text-fuchsia-400' : log.type === 'warning' ? 'text-amber-400' : 'text-slate-300'} animate-in fade-in slide-in-from-left-4`}>
                         <span className="text-slate-600 mr-2">[{new Date(log.id).toLocaleTimeString().split(' ')[0]}]</span>
                         {log.text}
                     </div>

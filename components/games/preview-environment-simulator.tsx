@@ -165,6 +165,90 @@ const PULL_REQUESTS: PullRequestScenario[] = [
     },
     failure: 'revision-drift',
   },
+  {
+    id: 'search',
+    number: 181,
+    title: 'feat: reindex product search every night',
+    author: 'mila-dev',
+    branch: 'search-reindex',
+    commit: '3d90b7e',
+    opened: '3 hours ago',
+    comments: 2,
+    commits: 3,
+    changedFiles: 9,
+    additions: 311,
+    deletions: 58,
+    summary:
+      'Adds a nightly search reindex to the API. The author asked for production-sized resources to test it under realistic load.',
+    labels: ['backend', 'api'],
+    config: {
+      mode: 'single-service',
+      services: ['api'],
+      dataStrategy: 'synthetic',
+      resourceProfile: 'production-like',
+      reviewerAccess: 'team-sso',
+      ttlHours: 6,
+      revisionGate: true,
+      injectedFailure: 'none',
+    },
+    failure: 'quota-exceeded',
+  },
+  {
+    id: 'pricing',
+    number: 180,
+    title: 'feat: new pricing page',
+    author: 'ivan-dev',
+    branch: 'pricing-page',
+    commit: 'a51f0c8',
+    opened: '5 hours ago',
+    comments: 4,
+    commits: 2,
+    changedFiles: 6,
+    additions: 187,
+    deletions: 42,
+    summary:
+      'Replaces the pricing page. Marketing wants to click through it on a real review URL before it ships.',
+    labels: ['frontend'],
+    config: {
+      mode: 'single-service',
+      services: ['web'],
+      dataStrategy: 'synthetic',
+      resourceProfile: 'lean',
+      reviewerAccess: 'team-sso',
+      ttlHours: 8,
+      revisionGate: true,
+      injectedFailure: 'none',
+    },
+    failure: 'dns-pending',
+  },
+  {
+    id: 'checkout-state',
+    number: 179,
+    title: 'feat: store checkout state in the database',
+    author: 'elena-dev',
+    branch: 'checkout-state',
+    commit: 'e07c4d2',
+    opened: '1 day ago',
+    comments: 6,
+    commits: 5,
+    changedFiles: 14,
+    additions: 402,
+    deletions: 77,
+    summary:
+      'Moves checkout state from memory into the database and adds the migration that creates its table.',
+    labels: ['backend', 'api'],
+    config: {
+      mode: 'single-service',
+      services: ['api'],
+      dataStrategy: 'masked-snapshot',
+      resourceProfile: 'balanced',
+      reviewerAccess: 'team-sso',
+      ttlHours: 12,
+      revisionGate: true,
+      injectedFailure: 'none',
+    },
+    failure: 'readiness-failure',
+  },
 ];
 
 const PIPELINE_STEPS: Array<{
@@ -385,7 +469,7 @@ function PullRequestList({ onOpen }: { onOpen: (pullRequest: PullRequestScenario
         <div className="overflow-hidden rounded-md border border-[#30363d]">
           <div className="flex items-center gap-5 border-b border-[#30363d] bg-[#161b22] px-4 py-3 text-xs">
             <span className="flex items-center gap-2 font-semibold">
-              <GitPullRequest className="size-4 text-[#3fb950]" aria-hidden="true" />3 Open
+              <GitPullRequest className="size-4 text-[#3fb950]" aria-hidden="true" />{PULL_REQUESTS.length} Open
             </span>
             <UnavailableControl className="text-[#8b949e]">
               <span>18 Closed</span>
