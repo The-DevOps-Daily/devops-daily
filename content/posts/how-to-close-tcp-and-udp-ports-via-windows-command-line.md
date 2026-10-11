@@ -1,12 +1,12 @@
 ---
 title: 'Close a Port on Windows from the Command Line'
-excerpt: 'Find the process with netstat -ano | findstr :PORT, then end it with taskkill /PID <pid> /F. To block the port instead, add a netsh advfirewall rule.'
+excerpt: 'Find the PID with netstat -ano | findstr :PORT, checking the Local Address column, then end it with taskkill /PID <pid> /F, or block the port with netsh.'
 category:
   name: 'Networking'
   slug: 'networking'
 date: '2025-03-28'
 publishedAt: '2025-03-28T13:00:00Z'
-updatedAt: '2026-03-01T09:00:00Z'
+updatedAt: '2026-10-11T09:00:00Z'
 readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'
@@ -21,7 +21,7 @@ tags:
 
 ## TLDR
 
-Find the process using a port with `netstat -ano | findstr :PORT`, then kill it with `taskkill /PID <pid> /F`. To block a port with Windows Firewall, use `netsh advfirewall firewall add rule` to create a blocking rule. For services, use `net stop` or `sc stop` to stop the service listening on the port.
+Find the process using a port with `netstat -ano | findstr :PORT`, and check that the match is in the Local Address column (`:80` also matches `:8080` and remote port 80). Then kill it with `taskkill /PID <pid> /F`. To block a port with Windows Firewall, use `netsh advfirewall firewall add rule` to create a blocking rule. For services, use `net stop` or `sc stop` to stop the service listening on the port.
 
 When a port is in use on Windows, you might need to close it to free it for another application, resolve conflicts, or improve security. Unlike Linux where you can directly kill processes bound to ports, Windows requires identifying the process first, then either stopping it or blocking the port via firewall rules.
 

@@ -1,6 +1,6 @@
 ---
 title: 'Git Fetch a Remote Branch and Check It Out Locally'
-excerpt: 'Run git fetch origin branch-name, then git switch branch-name to get a local branch that tracks origin/branch-name. git fetch origin gets every branch.'
+excerpt: 'Run git fetch origin branch-name, then git switch branch-name for a local branch that tracks origin/branch-name, or git switch --track origin/branch-name.'
 category:
   name: 'Git'
   slug: 'git'

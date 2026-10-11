@@ -1,6 +1,6 @@
 ---
 title: "Docker: Connect to the Host's localhost from a Container"
-excerpt: 'Use host.docker.internal instead of localhost. Docker Desktop resolves it by default; on Linux, add --add-host=host.docker.internal:host-gateway.'
+excerpt: 'Use host.docker.internal, not localhost. Docker Desktop resolves it; on Linux add --add-host=host.docker.internal:host-gateway or use --network host.'
 category:
   name: 'Docker'
   slug: 'docker'
@@ -14,7 +14,7 @@ author:
 tags: ['docker', 'networking', 'containers', 'localhost']
 ---
 
-Inside a container, `localhost` means the container itself, so use `host.docker.internal` instead to reach a service on your machine. Docker Desktop resolves that name by default. With Docker Engine on Linux, start the container with `--add-host=host.docker.internal:host-gateway`, or use `--network host`.
+Inside a container, `localhost` means the container itself, so use `host.docker.internal` instead to reach a service on your machine. Docker Desktop resolves that name by default. With Docker Engine on Linux, start the container with `--add-host=host.docker.internal:host-gateway`, and make sure the service listens on an address the container can reach, such as `0.0.0.0`, not only `127.0.0.1`. For a service bound to `127.0.0.1` only, run the container with `--network host` and connect to `localhost`.
 
 When working with Docker containers, you'll often need to connect to services running on your host machine. This guide explains the different approaches to accessing your host machine's localhost from inside a container and helps you choose the right method for your use case.
 

@@ -1,6 +1,6 @@
 ---
 title: 'Git File History: See Every Change Made to a File'
-excerpt: 'Run git log --follow -p -- path/to/file to see every commit that changed a file, with its diff, even across renames. git blame shows who changed each line.'
+excerpt: 'Run git log --follow -p -- path/to/file to list the commits that changed a file, with patches, across renames. git blame shows who last changed each line.'
 category:
   name: 'Git'
   slug: 'git'

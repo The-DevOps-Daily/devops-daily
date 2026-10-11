@@ -6,7 +6,7 @@ category:
   slug: 'git'
 date: '2024-12-28'
 publishedAt: '2024-12-28T10:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
+updatedAt: '2026-10-11T09:00:00Z'
 readingTime: '6 min read'
 author:
   name: 'DevOps Daily Team'
@@ -19,7 +19,7 @@ tags:
   - Version Control
 ---
 
-**TLDR:** To see differences between branches, use `git diff branch1..branch2` to show file changes, `git log branch1..branch2` to show commit differences, or `git diff --name-only branch1 branch2` to list changed filenames. The two-dot syntax (`..`) shows differences, while three-dot (`...`) shows changes since the branches diverged.
+**TLDR:** To see differences between branches, use `git diff branch1..branch2` to show file changes, `git log branch1..branch2` to show commit differences, or `git diff --name-only branch1 branch2` to list changed filenames. With `git diff`, `main...feature` shows only what changed on feature since it split from main; with `git log`, `main...feature` lists the commits on either side that the other lacks.
 
 Before merging a feature branch, reviewing a pull request, or understanding what changed between releases, you need to see what differs between two branches. Git provides several commands to compare branches at different levels of detail.
 
