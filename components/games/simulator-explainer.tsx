@@ -1,16 +1,10 @@
 import type { SimulatorExplainerContent } from '@/lib/games-seo-content';
 
-export function SimulatorExplainer({
-  title,
-  explainer,
-}: {
-  title: string;
-  explainer: SimulatorExplainerContent;
-}) {
+export function SimulatorExplainer({ explainer }: { explainer: SimulatorExplainerContent }) {
   return (
     <section className="w-full my-10 max-w-3xl" aria-labelledby="simulator-explainer">
       <h2 id="simulator-explainer" className="text-lg font-semibold mb-3">
-        What the {title} teaches
+        Overview
       </h2>
       <p className="text-sm leading-relaxed text-muted-foreground">{explainer.summary}</p>
 

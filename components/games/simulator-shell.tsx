@@ -149,7 +149,7 @@ export async function SimulatorShell({
           {/* Crawlable explainer: the simulator itself is a client app, so this
               is the text search engines can read. Its FAQ matches the
               FAQPage schema above word for word. */}
-          {explainer && <SimulatorExplainer title={title} explainer={explainer} />}
+          {explainer && <SimulatorExplainer explainer={explainer} />}
 
           {/* Try next - related games. Server-rendered so each game has
               real internal inlinks from at least 3 sibling games (was 1

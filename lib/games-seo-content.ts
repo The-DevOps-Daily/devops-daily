@@ -22,7 +22,7 @@ export interface SimulatorExplainerContent {
 const explainers: Record<string, SimulatorExplainerContent> = {
   'preview-environment-simulator': {
     summary:
-      'A preview environment is a short-lived copy of your application that exists for one pull request. This simulator follows that copy through its whole life: a label on the pull request triggers a webhook, CI builds and pushes an image, an Argo CD ApplicationSet notices the labeled pull request and creates a namespace, and the environment gets data, DNS and TLS before reviewers see a private URL. When the pull request closes, the same flow runs in reverse and removes the review URL, the workloads, their dependencies and the namespace. Along the way it injects the failures teams actually hit, such as a missing branch override, an exhausted namespace quota, an unavailable secret or a certificate that is still pending, and asks you to pick a fix. Some of the offered fixes make the symptom disappear while creating a new risk, like copying a production secret or turning off a health gate. The point is to see why a preview environment is a GitOps workflow with guardrails, not just a deploy script with a random URL.',
+      'A preview environment is a short-lived copy of your application that exists for one pull request. This simulator follows that copy through its whole life: a label on the pull request triggers a webhook, CI builds and pushes an image, an Argo CD ApplicationSet notices the labeled pull request and creates a namespace, and the environment gets data, DNS and TLS before reviewers see a private URL. When the pull request closes, the same flow runs in reverse and removes the review URL, the workloads, their dependencies and the namespace. With "Practice a failure" turned on, it injects failures teams actually hit, depending on the pull request you pick: a missing branch override, an unavailable preview secret or a deployed revision that drifted, and asks you to pick a fix. Some of the offered fixes make the symptom disappear while creating a new risk, like copying a production secret or turning off a health gate. The point is to see why a preview environment is a GitOps workflow with guardrails, not just a deploy script with a random URL.',
     teaches: [
       'Preview environments per pull request',
       'GitOps with Argo CD ApplicationSets',
@@ -33,8 +33,8 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     level: 'Intermediate',
     tryThis: [
       'Add the preview label to the pull request and follow the event through the webhook, GitHub Actions and the Argo CD console until the preview URL appears.',
-      'When a failure such as "Namespace quota exceeded" or "Preview secret unavailable" appears, choose the tempting shortcut first and read why it is the wrong fix.',
-      'Close the pull request and watch the teardown remove the review URL, workloads, dependencies and namespace in order.',
+      'Turn on "Practice a failure", open the order status pull request and, when "Preview secret unavailable" appears, try the production-secret shortcut first to read why it is the wrong fix.',
+      'Record a review decision, then click "Close PR & clean up" and watch the environment move to its removed state.',
     ],
     faq: [
       {
@@ -80,7 +80,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'Why put a buffer between the collector and the search cluster?',
         answer:
-          'A durable buffer, such as Kafka or a disk-backed queue, absorbs bursts and slow indexing so logs wait instead of being lost. It only delays loss: when the buffer is full, data is dropped.',
+          'A durable buffer, such as Kafka or a disk-backed queue, absorbs bursts and slow indexing so logs wait instead of being lost. When it fills up, the pipeline has to pause upstream ingestion, reject new events or drop events, depending on its overflow policy.',
       },
       {
         question: 'Why do logs disappear after a deployment?',
@@ -108,7 +108,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     level: 'Intermediate',
     tryThis: [
       'Press play and let the walkthrough step from the docker run command down to the shared kernel, then step back with the previous button to any layer.',
-      'Stop at the runtime bundle stage and read the config.json excerpt to see how namespaces and limits are described for runc.',
+      'Stop at the runtime bundle stage and read the config.json excerpt to see the process arguments and namespaces handed to runc.',
       'Copy the real command shown at a stage and run it on a Linux host to see the same layer on a live system.',
     ],
     faq: [
@@ -132,7 +132,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'webhook-delivery-simulator': {
     summary:
-      'A webhook is an HTTP request your system sends to someone else when an event happens, and delivering it reliably is harder than sending it once. This simulator sends real events, such as invoice.paid or deployment.succeeded, to an endpoint whose behavior you choose: it can answer 200, fail intermittently, return a 500, time out, rate limit you with a 429 or reject the request with a 400. You can watch which responses are retried with growing delays and which are treated as permanent failures. The payloads are signed with real HMAC-SHA256, and you can tamper with a delivery by editing the body, using the wrong secret or replaying it later, then see verification catch each case. Together these show the three habits of a dependable webhook system: persist the event and retry with backoff, verify the signature over the raw bytes before parsing, and deduplicate on the receiving side because retries mean the same event can arrive more than once.',
+      'A webhook is an HTTP request your system sends to someone else when an event happens, and delivering it reliably is harder than sending it once. This simulator models the delivery of sample events, such as invoice.paid or deployment.succeeded, to an endpoint whose behavior you choose: it can answer 200, fail intermittently, return a 500, time out, rate limit you with a 429 or reject the request with a 400. You can watch failed deliveries retry on a growing schedule until a 2xx response arrives or the attempts run out, the way Svix does it. The payloads are signed with real HMAC-SHA256, and you can tamper with a delivery by editing the body, using the wrong secret or replaying it later, then see verification catch each case. Together these show the three habits of a dependable webhook system: persist the event and retry with backoff, verify the signature over the raw bytes before parsing, and deduplicate on the receiving side because retries mean the same event can arrive more than once.',
     teaches: [
       'Webhook retries with exponential backoff',
       'HTTP status codes and retry decisions',
@@ -142,7 +142,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     ],
     level: 'Intermediate',
     tryThis: [
-      'Set the endpoint to "Intermittent" or "500 error" and watch the delivery retry with longer delays, then set it to "400 bad request" and see that it is not retried.',
+      'Compare "Intermittent", which succeeds after a couple of failures, with "500 error" and "400 bad request", which keep retrying until the attempts are exhausted.',
       'Switch the tampering option to "Edit body" or "Wrong secret" and watch signature verification reject the delivery.',
       'Try "Replay later" to see why a timestamp check matters even when the signature itself is valid.',
     ],
@@ -150,7 +150,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'Which webhook responses should be retried?',
         answer:
-          'Timeouts, connection errors, 5xx responses and 429 rate limits are usually temporary and worth retrying with backoff. Most other 4xx responses, such as 400, mean the request itself is wrong and retrying will not help.',
+          'Timeouts, connection errors, 5xx responses and 429 rate limits are usually temporary and always worth retrying with backoff. Senders differ on other 4xx codes: services such as Svix retry every non-2xx response until the attempts run out, while some treat a 400 as permanent.',
       },
       {
         question: 'How do webhook signatures work?',
@@ -270,7 +270,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'k8s-rbac-simulator': {
     summary:
-      'Kubernetes RBAC answers one question: can this subject perform this verb on this resource in this namespace? kubectl auth can-i gives a yes or a no, but it does not tell you which binding granted the permission or why the binding you were sure about did not apply. This simulator answers the why. You pick a subject, a verb, a resource and a namespace, and it evaluates the Roles, ClusterRoles, RoleBindings and ClusterRoleBindings in the scenario and shows the rule that matched or the reason nothing did. The scenarios cover the behaviors that confuse people most. A ClusterRole bound with a RoleBinding only grants access inside that RoleBinding namespace. Nodes are not namespaced, so a RoleBinding can never grant them. A rule limited by resourceNames allows getting one secret but not listing them all. A typo in a roleRef silently grants nothing. And there are no deny rules in RBAC: permissions only add up, so an unwanted permission is always explained by some rule that allows it.',
+      'Kubernetes RBAC answers one question: can this subject perform this verb on this resource in this namespace? kubectl auth can-i gives a yes or a no, but it does not tell you which binding granted the permission or why the binding you were sure about did not apply. This simulator answers the why. You pick a subject, a verb, a resource and a namespace, and it evaluates the Roles, ClusterRoles, RoleBindings and ClusterRoleBindings in the scenario and shows the rule that matched or the reason nothing did. The scenarios cover the behaviors that confuse people most. A ClusterRole bound with a RoleBinding only grants access inside that RoleBinding namespace. Nodes are not namespaced, so a RoleBinding can never grant them. A rule limited by resourceNames allows getting one secret but not listing them all. A roleRef that points to a role that does not exist grants nothing, and the simulator names the missing role. And there are no deny rules in RBAC: permissions only add up, so an unwanted permission is always explained by some rule that allows it.',
     teaches: [
       'Kubernetes RBAC',
       'Roles and ClusterRoles',
@@ -379,7 +379,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'sql-terminal-simulator': {
     summary:
-      'This SQL simulator is a guided playground for learning queries on a small e-commerce schema with customers, products, orders and order items. The lessons build up in the order most people need them: SELECT basics, filtering with WHERE, sorting and limiting, DISTINCT, counting rows, GROUP BY, HAVING with averages, joining tables, revenue across joins, subqueries and window functions, LEFT JOIN, INSERT, UPDATE and DELETE, and common table expressions. Single-table SELECT queries run live in your browser against the sample data, so you can change a filter or a sort order and see the result immediately. The guided join, subquery and window function lessons return output captured from a real PostgreSQL instance, so their results match what Postgres actually returns. Nothing is sent to a server, so a typo or an unexpected result costs nothing, and each lesson has a challenge, so you write the query yourself instead of only reading one. The same data also appears as documents in the MongoDB simulator, which makes it easy to compare the two models.',
+      'This SQL simulator is a guided playground for learning queries on a small e-commerce schema with customers, products, orders and order items. The lessons build up in the order most people need them: SELECT basics, filtering with WHERE, sorting and limiting, DISTINCT, counting rows, GROUP BY, HAVING with averages, joining tables, revenue across joins, subqueries and window functions, LEFT JOIN, INSERT, UPDATE and DELETE, and common table expressions. Single-table SELECT queries run live in your browser against the sample data, so you can change a filter or a sort order and see the result immediately. The guided join, subquery and window function lessons return output captured from a real PostgreSQL instance, so their results match what Postgres actually returns. Nothing is sent to a server, so a typo or an unexpected result costs nothing, and a separate challenges mode has eight exercises where you write the queries yourself. The same data also appears as documents in the MongoDB simulator, which makes it easy to compare the two models.',
     teaches: [
       'SQL SELECT queries',
       'Filtering, sorting and aggregation',
@@ -391,7 +391,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     tryThis: [
       'Start with "SELECT basics" and change the WHERE clause on the customers table to see the result update in the browser.',
       'Work through "GROUP BY" and "HAVING and averages" to see the difference between filtering rows and filtering groups.',
-      'Open "LEFT JOIN" and compare it with the inner join lesson to see which customers disappear without orders.',
+      'Open "LEFT JOIN" and see how customers without pending orders stay in the result with NULL order fields.',
     ],
     faq: [
       {
@@ -414,7 +414,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'postgres-terminal-simulator': {
     summary:
-      'PostgreSQL has its own command-line client, psql, with meta-commands such as \\dt and \\l that are not SQL at all, and its own query planner that decides how each query runs. This simulator lets you practice both in a psql-style terminal. The database models a small e-commerce schema plus a 200,000-row big_events table, and every listing, query result and EXPLAIN plan is reproduced from real PostgreSQL output. The guided steps walk you from exploring the database and running a query to listing indexes, reading the EXPLAIN plan for a filter on the big table, creating an index and running EXPLAIN again. The estimated cost drops from 3971 to 145 once the index exists, which is exactly what Postgres reports. EXPLAIN ANALYZE then shows actual timing instead of estimates, and a transactions step shows how BEGIN and ROLLBACK undo a DELETE. Nothing connects to a server, so it is safe to experiment, and the intuition you build carries straight over to a real database.',
+      'PostgreSQL has its own command-line client, psql, with meta-commands such as \\dt and \\l that are not SQL at all, and its own query planner that decides how each query runs. This simulator lets you practice both in a psql-style terminal. The database models a small e-commerce schema plus a 200,000-row big_events table, and every listing, query result and EXPLAIN plan is reproduced from real PostgreSQL output. The guided steps walk you from exploring the database and running a query to listing indexes, reading the EXPLAIN plan for a filter on the big table, creating an index and running EXPLAIN again. The estimated cost drops from 3971 to 145 once the index exists, which is exactly what Postgres reports. EXPLAIN ANALYZE then shows the actual rows and scan work next to the estimates, and a transactions step shows how BEGIN and ROLLBACK undo a DELETE. Nothing connects to a server, so it is safe to experiment, and the intuition you build carries straight over to a real database.',
     teaches: [
       'psql meta-commands',
       'PostgreSQL indexes',
@@ -426,7 +426,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     tryThis: [
       'Run \\dt to list the tables, then \\d customers to see its columns and the primary key index Postgres created for it.',
       'Follow "EXPLAIN a filter", "Create an index" and "EXPLAIN again" to watch the plan switch from a sequential scan and the cost drop.',
-      'Run the "EXPLAIN ANALYZE" step and compare actual timings with the estimates from plain EXPLAIN.',
+      'Run the "EXPLAIN ANALYZE" step and compare the actual row counts with the estimated rows and costs from plain EXPLAIN.',
     ],
     faq: [
       {
@@ -442,14 +442,14 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'How do I list tables in psql?',
         answer:
-          'Use \\dt for tables in the current schema, \\d table_name to describe one table, and \\l to list databases. These are psql meta-commands, so they end without a semicolon.',
+          'Use \\dt for tables visible through the current search path, \\d table_name to describe one table, and \\l to list databases. These are psql meta-commands, so they end without a semicolon.',
       },
     ],
   },
 
   'mongodb-terminal-simulator': {
     summary:
-      'MongoDB stores documents instead of rows, and you query it with JavaScript-style calls in the mongo shell rather than with SQL. This simulator runs a subset of that shell in your browser against three small collections, customers, products and orders, which hold the same e-commerce data as the SQL simulator so you can compare the two models directly. The lessons cover find() basics, projections that choose which fields come back, query operators such as $gt and $in, sorting and limiting, paging with skip, counting documents, inserting, updating and deleting documents, and the aggregation pipeline with $match and $group. Every command is evaluated live by a small query and aggregation engine, so a filter you invent behaves like the examples. Orders hold their line items inside the document, which shows the main design difference from a relational schema: data that is read together is often stored together. Each lesson ends with a challenge, and nothing is sent to a server, so you can experiment freely.',
+      'MongoDB stores documents instead of rows, and you query it with JavaScript-style calls in the mongo shell rather than with SQL. This simulator runs a subset of that shell in your browser against three small collections, customers, products and orders, which hold the same e-commerce data as the SQL simulator so you can compare the two models directly. The lessons cover find() basics, projections that choose which fields come back, query operators such as $gt and $in, sorting and limiting, paging with skip, counting documents, inserting, updating and deleting documents, and the aggregation pipeline with $match and $group. Every command is evaluated live by a small query and aggregation engine, so a filter you invent behaves like the examples. Orders hold their line items inside the document, which shows the main design difference from a relational schema: data that is read together is often stored together. A separate challenges mode adds query exercises, and nothing is sent to a server, so you can experiment freely.',
     teaches: [
       'MongoDB find queries',
       'Projections and query operators',
@@ -461,7 +461,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     tryThis: [
       'Run db.customers.find() and then add a projection so only the name and country fields come back.',
       'Open "Matching a set with $in" and filter products by several categories at once.',
-      'Work through "Aggregation: $match + $group" to total orders per customer, then compare it with GROUP BY in the SQL simulator.',
+      'Work through "Aggregation: $match + $group" to filter products by price and count them per category with an average price, then compare it with GROUP BY in the SQL simulator.',
     ],
     faq: [
       {
@@ -546,7 +546,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'Can instances in a private subnet reach the internet?',
         answer:
-          'Only outbound, through a NAT gateway or NAT instance, or through VPC endpoints for AWS services. Inbound connections from the internet cannot reach them directly.',
+          'Only outbound: through a NAT gateway or NAT instance for IPv4, or an egress-only internet gateway for IPv6. Inbound connections from the internet cannot reach them directly. VPC endpoints are separate and give private access to supported AWS services.',
       },
     ],
   },
@@ -611,7 +611,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'What is the leftmost prefix rule?',
         answer:
-          'A composite index on (a, b) can be used for filters on a, or on a and b, but not for a filter on b alone, because the index is sorted by a first.',
+          'A composite index on (a, b) is sorted by a first, so it can seek directly for filters on a, or on a and b. A filter on b alone cannot seek into it; the database may still read the whole index or, in some engines, use a skip scan, but usually far less efficiently.',
       },
       {
         question: 'Why not index every column?',
@@ -623,7 +623,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'database-replication-sharding-scaling': {
     summary:
-      'When one database server is no longer enough, there are three directions to grow: copy the data to more servers, split it across servers, or make the one server bigger. This simulator has a tab for each. In the replication tab you choose a single-leader, multi-leader or leaderless topology, switch between synchronous and asynchronous replication, add replicas, change the load and the share of writes, and watch replication lag, latency, stale-read risk and availability respond. You can also take the primary down and see how each topology copes. In the sharding tab you choose hash or range partitioning and a shard key such as user_id, region, created_at or tenant_id, then watch how rows spread and whether a sample query reaches one shard or all of them. Range partitioning on a timestamp, for example, sends all new writes to the same shard. In the scaling tab you combine a bigger server, replicas, shards and connection pooling against a given load. The point is that replication scales reads and availability, while only sharding scales writes, at the price of more complexity.',
+      'When one database server is no longer enough, there are three directions to grow: copy the data to more servers, split it across servers, or make the one server bigger. This simulator has a tab for each. In the replication tab you choose a single-leader, multi-leader or leaderless topology, switch between synchronous and asynchronous replication, add replicas, change the load and the share of writes, and watch replication lag, latency, stale-read risk and availability respond. You can also take the primary down and see how each topology copes. In the sharding tab you choose hash or range partitioning and a shard key such as user_id, region, created_at or tenant_id, then watch how rows spread and whether a sample query reaches one shard or all of them. Range partitioning on a timestamp, for example, sends all new writes to the same shard. In the scaling tab you combine a bigger server, replicas, shards and connection pooling against a given load. The point is that replicas scale reads and availability, while write capacity grows only with a bigger primary or with more shards, and sharding adds the most complexity.',
     teaches: [
       'Database replication',
       'Synchronous versus asynchronous replication',
@@ -799,7 +799,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'latency-percentiles-simulator': {
     summary:
-      'Latency percentiles answer a question averages cannot: how slow are the slowest requests? P90, P95 and P99 are cutoffs in a sorted list of request times. P99 is the time that 99 percent of requests are faster than, so one request in a hundred is slower. This simulator plots a latency distribution and marks the average, P50, P90, P95 and P99 on it, so you can see how a long tail moves the high percentiles while the average and median barely change. Five scenarios show common shapes: a healthy API where the percentiles sit close together, cache churn where misses add a visible upper band, a noisy neighbor whose CPU and disk contention stretch the tail, cold starts where a few very slow requests dominate P99, and a rolling deploy where warmup, image pulls and connection churn create a fat tail. The takeaway is practical: an average can look fine while one user in a hundred waits seconds, so SLOs and alerts should be written against high percentiles, and the metric has to match the experience you are promising.',
+      'Latency percentiles answer a question averages cannot: how slow are the slowest requests? P90, P95 and P99 are cutoffs in a sorted list of request times. P99 is the time that 99 percent of requests are faster than, so one request in a hundred is slower. This simulator plots a latency distribution with P90, P95 and P99 markers and shows the average and P50 in separate metric cards, so you can see how a long tail moves the high percentiles while the average and median barely change. Five scenarios show common shapes: a healthy API where the percentiles sit close together, cache churn where misses add a visible upper band, a noisy neighbor whose CPU and disk contention stretch the tail, cold starts where a few very slow requests dominate P99, and a rolling deploy where warmup, image pulls and connection churn create a fat tail. The takeaway is practical: an average can look fine while one user in a hundred waits seconds, so SLOs and alerts should be written against high percentiles, and the metric has to match the experience you are promising.',
     teaches: [
       'Latency percentiles: P50, P90, P95, P99',
       'Average versus median versus percentile',
@@ -808,7 +808,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     ],
     level: 'Beginner',
     tryThis: [
-      'Start with "Healthy API" and note how close the average, P50 and P99 markers are.',
+      'Start with "Healthy API" and compare the average, P50 and P99 values in the metric cards.',
       'Switch to "Cold Starts" and watch P99 jump while the median hardly moves.',
       'Compare "Cache Churn" and "Noisy Neighbor" to see two different reasons a tail can grow.',
     ],
@@ -896,7 +896,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'How do I cancel a merge with conflicts?',
         answer:
-          'Run git merge --abort, or git rebase --abort during a rebase. Git restores the branch and working tree to their state before the operation started.',
+          'Run git merge --abort, or git rebase --abort during a rebase. Git returns the branch to where it was before the operation; if you had uncommitted changes when the merge started, merge --abort may not be able to restore them, so commit or stash first.',
       },
     ],
   },
@@ -931,7 +931,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'Should I merge or rebase?',
         answer:
-          'Merging keeps the history exactly as it happened, with a merge commit. Rebasing rewrites your commits on top of the target for a straight history. Avoid rebasing commits that others have already pulled.',
+          'Merging keeps the existing commits: a merge of diverged branches creates a merge commit, and a fast-forward just moves the branch pointer. Rebasing rewrites your commits on top of the target for a straight history. Avoid rebasing commits that others have already pulled.',
       },
     ],
   },
@@ -1031,7 +1031,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'What do SPF, DKIM and DMARC do?',
         answer:
-          'SPF lists the servers allowed to send for a domain, DKIM adds a cryptographic signature to each message, and DMARC tells receivers what to do when SPF or DKIM do not align with the visible From domain.',
+          'SPF lists the servers allowed to send for a domain, DKIM adds a cryptographic signature to each message, and DMARC tells receivers what to do when neither SPF nor DKIM passes in alignment with the visible From domain.',
       },
       {
         question: 'What is greylisting?',
@@ -1043,7 +1043,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'message-queue-simulator': {
     summary:
-      'A message queue lets producers and consumers work at different speeds, but Kafka and RabbitMQ do it in different ways. This simulator lets you switch between a Kafka topic and a RabbitMQ exchange and run the same scenarios on both. In normal operation producers publish, the broker stores and routes, and consumers keep up. In consumer lag the consumers fall behind and the backlog grows, which is the number to watch in production. Rebalancing shows a Kafka consumer group pausing while partitions are reassigned to consumers. Ordering guarantees shows that Kafka keeps order only within a partition, so messages for the same key must go to the same partition. Dead letter handling shows a poison message that fails repeatedly being moved aside to a dead letter queue so it stops blocking everything behind it. Backpressure shows what happens when the broker or consumers cannot accept more. Seeing both systems handle the same situations makes the trade-off clear: Kafka is a replayable log split into partitions, while RabbitMQ routes messages to queues through exchanges and bindings.',
+      'A message queue lets producers and consumers work at different speeds, but Kafka and RabbitMQ do it in different ways. This simulator lets you switch between a Kafka topic and a RabbitMQ exchange and run the same scenarios on both. In normal operation producers publish, the broker stores and routes, and consumers keep up. In consumer lag the consumers fall behind and the backlog grows, which is the number to watch in production. Rebalancing shows partitions being reassigned between the consumers of a Kafka group, which in a real cluster can pause processing while it happens. Ordering guarantees shows that Kafka keeps order only within a partition, so messages for the same key must go to the same partition. Dead letter handling shows failed messages being moved aside into a dead letter queue so they stop blocking everything behind them. Backpressure shows what happens when the broker or consumers cannot accept more. Seeing both systems handle the same situations makes the trade-off clear: Kafka is a replayable log split into partitions, while RabbitMQ routes messages to queues through exchanges and bindings.',
     teaches: [
       'Producers, brokers and consumers',
       'Kafka partitions and consumer groups',
@@ -1055,7 +1055,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     tryThis: [
       'Run "Consumer lag" in Kafka mode and watch the backlog grow when consumers fall behind.',
       'Open "Ordering guarantees" to see why ordering holds only within a single Kafka partition.',
-      'Switch to RabbitMQ mode and run "Dead letter handling" to watch a poison message move to the dead letter queue.',
+      'Switch to RabbitMQ mode and run "Dead letter handling" to watch failed messages move to the dead letter queue.',
     ],
     faq: [
       {
@@ -1088,7 +1088,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     level: 'Beginner',
     tryThis: [
       'With the LRU policy, request five different items and watch which one is evicted when the cache is full.',
-      'Request the same item several times, switch to LFU, then request new items and see which entries survive.',
+      'Select LFU first, request the same item several times, then request enough different items to fill the cache and see which entries survive.',
       'Compare the hit rate and the time saved after the same sequence of requests under LRU, FIFO and LFU.',
     ],
     faq: [
@@ -1192,7 +1192,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
     tryThis: [
       'Run "Sudden Spike" with one server and no load balancer, then try again after upgrading the server to see the downtime vertical scaling causes.',
       'Add a load balancer and more servers, then compare failed requests and cost with the vertical approach.',
-      'Turn on autoscaling for "Black Friday" and tune the CPU threshold and scale-up delay to stay within budget.',
+      'Add a load balancer, turn on autoscaling for "Black Friday" and tune the CPU threshold and the minimum and maximum instances to stay within budget.',
     ],
     faq: [
       {
@@ -1232,7 +1232,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'What is the difference between RPO and RTO?',
         answer:
-          'RPO is the maximum acceptable data loss, measured in time before the failure, and it is set by how often you back up or replicate. RTO is the maximum acceptable downtime, measured from the failure until service is restored.',
+          'RPO is the maximum acceptable data loss, measured in time before the failure, and the business sets it; backup frequency and replication are then chosen to meet it. RTO is the maximum acceptable downtime, measured from the failure until service is restored.',
       },
       {
         question: 'What is the difference between hot, warm and cold disaster recovery sites?',
@@ -1386,18 +1386,18 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'tcp-vs-udp': {
     summary:
-      'TCP and UDP both carry data over IP, but they make opposite promises. This simulator sends packets between two hosts so you can watch the difference. In TCP mode the connection starts with the three-way handshake, SYN, SYN-ACK and ACK, then every data packet is acknowledged and anything lost is sent again, so all data arrives in order at the cost of extra round trips. In UDP mode packets are simply sent, with no handshake, no acknowledgements and no retransmission, so whatever is lost stays lost. You can change the simulation speed, add packet loss and add jitter, and the counters show packets sent, received, lost and retransmitted. With loss turned up, TCP slows down as it retransmits, while UDP keeps sending at the same rate and drops data. That is why TCP is used where every byte matters, such as web pages, APIs and file transfers, and UDP where fresh data matters more than complete data, such as DNS queries, video calls, games and QUIC, which builds its own reliability on top of UDP.',
+      'TCP and UDP both carry data over IP, but they make opposite promises. This simulator sends packets between two hosts so you can watch the difference. In TCP mode the connection starts with the three-way handshake, SYN, SYN-ACK and ACK, then every data packet is acknowledged and anything lost is sent again, so all data arrives in order at the cost of extra round trips. In UDP mode packets are simply sent, with no handshake, no acknowledgements and no retransmission, so whatever is lost stays lost. You can change the simulation speed, add packet loss and add visual jitter to the packets, and the counters show packets sent, received, lost and retransmitted. With loss turned up, TCP slows down as it retransmits, while UDP keeps sending at the same rate and drops data. That is why TCP is used where every byte matters, such as web pages, APIs and file transfers, and UDP where fresh data matters more than complete data, such as DNS queries, video calls, games and QUIC, which builds its own reliability on top of UDP.',
     teaches: [
       'TCP three-way handshake',
       'Acknowledgements and retransmission',
       'UDP datagrams',
-      'Packet loss and jitter',
+      'Packet loss and retransmission',
     ],
     level: 'Beginner',
     tryThis: [
       'Start in TCP mode and watch the three-way handshake before any data is sent.',
       'Raise packet loss and compare the retransmit counter in TCP mode with the lost counter in UDP mode.',
-      'Add jitter with no packet loss to see packets arrive unevenly even though none are lost.',
+      'Set packet loss to zero and compare the TCP log, with its SYN, SYN-ACK and ACK lines, against UDP mode, which sends without a handshake or acknowledgements.',
     ],
     faq: [
       {
@@ -1420,18 +1420,18 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'microservices-simulator': {
     summary:
-      'A microservices architecture splits an application into small services that each own one job and talk over the network. This simulator models a small shop built that way: an API gateway in front of user, product, cart and order services. When you start the simulation, requests flow through the gateway to the services, and each service shows its CPU, memory, latency and status, healthy, degraded or down. Clicking a service opens its details, and you can scale it by changing its number of instances, then watch how that changes its load and response times. Because one user request can touch several services, a slow or failing service shows up as failed requests at the gateway, which makes the main cost of microservices visible: every network call is a new way to fail. A short tutorial guides you through selecting a service, starting the simulation and scaling, and the notes below cover when microservices are worth it and when a well-structured monolith is the better choice.',
+      'A microservices architecture splits an application into small services that each own one job and talk over the network. This simulator models a small shop built that way: an API gateway in front of user, product, cart and order services. When you start the simulation, calls travel between the services, and each service shows its CPU, memory, latency and status, healthy, degraded or down. A degraded or down service lowers the success rate of the calls that involve it, and the failures add up in the overall request counters, which makes the main cost of microservices visible: every network call is a new way to fail. Clicking a service opens its details, where you can change its instance count. A short tutorial guides you through selecting a service, starting the simulation and scaling, and the notes below cover when microservices are worth it and when a well-structured monolith is the better choice.',
     teaches: [
       'Microservices architecture',
       'API gateways',
-      'Scaling individual services',
+      'Service-to-service calls',
       'Service health and failure propagation',
     ],
     level: 'Beginner',
     tryThis: [
       'Follow the tutorial: select a service, start the simulation and scale the service.',
-      'Start the simulation and watch the request totals at the gateway as calls flow through the services.',
-      'Scale the order service up and down and compare its latency and the success rate.',
+      'Start the simulation and watch the overall request totals as calls travel between the services.',
+      'Select the order service and use scale up and scale down to change its instance count.',
     ],
     faq: [
       {
@@ -1523,7 +1523,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
 
   'ddos-simulator': {
     summary:
-      'A distributed denial of service attack tries to make a service unavailable by flooding it with more traffic than it can handle. This simulator puts you in charge of defending a server against waves of attack traffic of increasing intensity. You can choose the attack type: an HTTP flood that sends application requests, a SYN flood that opens TCP connections and never completes them, or a UDP flood that saturates bandwidth with datagrams. As the attack runs, the server health drops with the load and the counters show requests per second, total requests and how many were blocked. You defend with layers: a firewall that filters traffic, a load balancer that spreads it, and automatic rate limiting that throttles clients sending too much. Each layer blocks part of the attack, and survival time, waves and achievements reward a setup that holds. The point is that no single control stops every kind of flood, so real protection combines filtering, rate limiting, spare capacity and, for large attacks, an upstream mitigation service or CDN.',
+      'A distributed denial of service attack tries to make a service unavailable by flooding it with more traffic than it can handle. This simulator puts you in charge of defending a server against waves of attack traffic of increasing intensity. You can choose the attack type: an HTTP flood that sends application requests, a SYN flood that opens TCP connections and never completes them, or a UDP flood that saturates bandwidth with datagrams. As the attack runs, the server health drops with the load and the counters show requests per second, total requests and how many were blocked. You defend with layers: a firewall that filters traffic, a load balancer that spreads it, and automatic rate limiting that throttles clients sending too much. The firewall and the rate limiter block part of the attack, the load balancer reduces the damage from what gets through, and survival time, waves and achievements reward a setup that holds. The point is that no single control stops every kind of flood, so real protection combines filtering, rate limiting, spare capacity and, for large attacks, an upstream mitigation service or CDN.',
     teaches: [
       'DDoS attack types',
       'HTTP, SYN and UDP floods',
@@ -1584,7 +1584,7 @@ const explainers: Record<string, SimulatorExplainerContent> = {
       {
         question: 'Why is HTTPS slower to connect than HTTP?',
         answer:
-          'The TLS handshake adds at least one extra round trip before the request is sent. TLS 1.3 and connection reuse keep that cost small.',
+          'A new TLS connection adds a handshake before the request can be sent: one round trip with TLS 1.3, two with TLS 1.2. Connection reuse and TLS 1.3 resumption keep that cost small.',
       },
     ],
   },
