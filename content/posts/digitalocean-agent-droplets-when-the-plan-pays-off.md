@@ -234,11 +234,11 @@ At $0.78 a session, the break-even comes much sooner:
 }
 ```
 
-Pro is cheaper from **65 sessions like this a month**, about three every working day for one person. Team is cheaper than Pro from **268**, which is about 13 people each running one such session every working day. This is one session on one model, so treat $0.78 as an example, not a rate: a longer conversation reads more cache, and a model like Kimi K3 costs two to three times more per token.
+Pro is cheaper from **65 sessions like this a month**, about three every working day for one person. Team is cheaper than Pro from **268**, which is about 13 people each running one such session every working day. This is one session on one model, so treat $0.78 as an example, not a rate. A longer conversation reads more cache, and the same token counts on Kimi K3 would list at about $1.91, 2.6 times as much.
 
 ## Where the plan makes sense
 
-- **Agents that run for hours.** Long interactive sessions use far more tokens than our short runs, and a busy agent keeps the CPU working. Our 39-minute session cost 12 times as much as a short run, so those workloads reach the $50 and $208.82 lines much faster.
+- **Agents that run for hours.** Long interactive sessions use far more tokens than our short runs, and a busy agent keeps the CPU working. Our one recorded 39-minute session cost 12 times as much as a short run, and sessions like it reach the $50 and $208.82 lines much faster.
 - **Agents on DigitalOcean-hosted models.** GLM-5.3 at $1.40 / $4.40 per million input / output tokens and Kimi K3 at $3 / $15 are discounted. Claude Sonnet 5.5 at $2 / $10 is not, even though it is billed through the same account.
 - **Many people sharing one account.** Every plan includes unlimited seats and agents, so the whole team's usage counts toward one balance. With short runs like ours, ten people would need about 11 runs each per day to pass $208.82; with long sessions, far fewer.
 
@@ -282,4 +282,4 @@ To price your own invoice instead, run stage 1 with a billing-read token and you
 
 ## Summary
 
-Agent Droplets is a commitment discount, not a cheaper server. It pays off only once your discounted usage reliably passes $50 a month, and even then it saves at most $8.82 on Pro and $50 on Team. Our short issue-to-PR runs cost six cents each on the bill, so a team would need about 780 of them a month before Pro is worth it. Long interactive sessions reach it much sooner: our 39-minute session on GLM-5.3 cost $0.78, so about 65 of them a month pass the Pro line. Whichever you run, read your invoice before you subscribe: it showed us cache-read tokens and a rounding rule that the token counts alone did not.
+Agent Droplets is a commitment discount, not a cheaper server. It pays off only once your discounted usage reliably passes $50 a month, and even then it saves at most $8.82 on Pro and $50 on Team. Our short issue-to-PR runs cost six cents each on the bill, so a team would need about 780 of them a month before Pro is worth it. Sessions like our recorded long one reach it much sooner: that 39-minute session on GLM-5.3 cost $0.78, so about 65 of them a month pass the Pro line. Whichever you run, read your invoice before you subscribe: it showed us cache-read tokens and a rounding rule that the token counts alone did not.
