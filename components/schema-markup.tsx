@@ -311,12 +311,16 @@ export function SoftwareApplicationSchema({
   url,
   category,
   keywords,
+  teaches,
+  educationalLevel,
 }: {
   name: string;
   description: string;
   url: string;
   category?: string;
   keywords?: string[];
+  teaches?: string[];
+  educationalLevel?: string;
 }) {
   const schema = {
     '@context': 'https://schema.org',
@@ -342,6 +346,8 @@ export function SoftwareApplicationSchema({
       '@id': ORGANIZATION_ID,
     },
     ...(keywords && keywords.length > 0 ? { keywords: keywords.join(', ') } : {}),
+    ...(teaches && teaches.length > 0 ? { teaches } : {}),
+    ...(educationalLevel ? { educationalLevel } : {}),
   };
 
   return (

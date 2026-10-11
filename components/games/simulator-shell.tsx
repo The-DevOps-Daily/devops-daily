@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { Facebook, Linkedin, Twitter } from '@/components/icons/social-icons';
 import { ArrowLeft } from 'lucide-react';
 import { Breadcrumb } from '@/components/breadcrumb';
-import { BreadcrumbSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
+import { BreadcrumbSchema, FAQSchema, SoftwareApplicationSchema } from '@/components/schema-markup';
 import { GameActions } from '@/components/games/game-actions';
 import { GameSponsors } from '@/components/games/game-sponsors';
 import { GameSeoContent } from '@/components/games/game-seo-content';
+import { SimulatorExplainer } from '@/components/games/simulator-explainer';
+import { getSimulatorExplainer } from '@/lib/games-seo-content';
 import { CarbonAds } from '@/components/carbon-ads';
 import { getGameById, getActiveGames } from '@/lib/games';
 import { cn } from '@/lib/utils';
@@ -56,6 +58,7 @@ export async function SimulatorShell({
   className,
 }: SimulatorShellProps) {
   const game = await getGameById(slug);
+  const explainer = getSimulatorExplainer(slug);
   const title = game?.title ?? fallbackTitle ?? 'Simulator';
   const description = game?.description ?? fallbackDescription ?? '';
   const href = game?.href ?? `/games/${slug}`;
@@ -106,8 +109,11 @@ export async function SimulatorShell({
           url={href}
           category={category}
           keywords={tags}
+          teaches={explainer?.teaches}
+          educationalLevel={explainer?.level}
         />
       )}
+      {explainer && <FAQSchema questions={explainer.faq} />}
 
       <div className={cn('container px-4 py-8 mx-auto', className)}>
         {/* Breadcrumb + actions */}
@@ -139,6 +145,11 @@ export async function SimulatorShell({
               {educational}
             </section>
           )}
+
+          {/* Crawlable explainer: the simulator itself is a client app, so this
+              is the text search engines can read. Its FAQ matches the
+              FAQPage schema above word for word. */}
+          {explainer && <SimulatorExplainer title={title} explainer={explainer} />}
 
           {/* Try next - related games. Server-rendered so each game has
               real internal inlinks from at least 3 sibling games (was 1
