@@ -4,9 +4,9 @@ excerpt: 'Agent Droplets is a prepaid discount on DigitalOcean Managed Agents, n
 category:
   name: 'FinOps'
   slug: 'finops'
-date: '2026-10-12'
-publishedAt: '2026-10-12T09:00:00Z'
-updatedAt: '2026-10-12T09:00:00Z'
+date: '2026-10-11'
+publishedAt: '2026-10-11T09:00:00Z'
+updatedAt: '2026-10-11T09:00:00Z'
 readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
