@@ -1,5 +1,5 @@
 ---
-title: 'Git File History: See Every Change Made to a File'
+title: 'Git File History: View the Changes Made to a File'
 excerpt: 'Run git log --follow -p -- path/to/file to list the commits that changed a file, with patches, across renames. git blame shows who last changed each line.'
 category:
   name: 'Git'
