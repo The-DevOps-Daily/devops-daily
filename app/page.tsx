@@ -5,6 +5,7 @@ import LatestGuides from '@/components/latest-guides';
 import FeaturedExercises from '@/components/featured-exercises';
 import FeaturedQuizzes from '@/components/featured-quizzes';
 import { FeaturedTools } from '@/components/featured-tools';
+import { HomeSponsors } from '@/components/home-sponsors';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
 import { ArrowRight, Globe, Anchor, Scale, GitBranch, Database, Shield } from 'lucide-react';
@@ -213,6 +214,10 @@ export default async function Home() {
             </div>
           </dl>
         </section>
+
+        <SectionSeparator command="cat /sponsors" />
+
+        <HomeSponsors className="my-16" />
 
         {/* Newsletter CTA - terminal style */}
         <section className="my-20 max-w-3xl mx-auto">
