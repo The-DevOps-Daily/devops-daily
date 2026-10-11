@@ -7,7 +7,7 @@ category:
 date: '2026-10-12'
 publishedAt: '2026-10-12T09:00:00Z'
 updatedAt: '2026-10-12T09:00:00Z'
-readingTime: '12 min read'
+readingTime: '14 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -30,6 +30,7 @@ The $50 Agent Droplets plan is cheaper than paying as you go only when you would
 - Pro beats pay as you go above **$50 a month** of discounted usage and saves at most **$8.82**. Team beats Pro above **$208.82** and saves at most **$50**.
 - The discount covers compute, memory, storage, tools, egress and DigitalOcean-hosted models such as GLM-5.3 and Kimi K3. **Claude and GPT are not discounted.**
 - Our five recorded issue-to-PR runs were billed **$0.064 per run**, $0.107 per merged pull request. At that rate, Pro is cheaper from about **782 runs a month**.
+- One 39-minute interactive session on GLM-5.3 was billed **$0.78**, almost all of it tokens. At that rate, Pro is cheaper from **65 sessions a month**.
 - On our invoice, every token line of every session matched **max(1 cent, amount rounded to the cent)**. That added 17% to our five runs and 25% to all 13 sessions on the invoice. Compute for sessions of about a minute was billed at **$0.00**.
 - DigitalOcean's docs do not say whether unused plan balance rolls over. Check that before you subscribe.
 
@@ -172,11 +173,72 @@ Stage 3 finds the first monthly volume at which each plan is cheaper. These are 
 
 782 runs a month is about 26 runs a day, every day. A team that points an agent at every new issue in a busy repository might get there. A team that uses it a few times a day will not, and pays $50 for less than $50 of usage.
 
-LONG_SESSION_SECTION
+## One long session: $0.78 for 39 minutes
+
+Short runs are the worst case for the rounding rule. To see the other end, stage 4 of the repo ran one longer session the way a person works with a coding agent: six prompts, one after another, in the same 2 vCPU / 4 GB session, on GLM-5.3, a DigitalOcean-hosted model that the plans discount. The prompts asked the agent to read a small Python package, add ISO 8601 duration parsing, add a command-line entry point, rewrite the error messages, add type hints and documentation, and then review its own changes. The session ran for 39 minutes, changed five files with 346 added lines, and finished with 45 tests passing. Nothing was pushed.
+
+It appeared on the invoice preview the next morning:
+
+```terminal
+{
+  "title": "long session",
+  "steps": [
+    {
+      "cmd": "node scripts/01-invoice-lines.mjs preview",
+      "output": "data/invoice-2026-10.json: 4 Managed Agents lines { 'Harness Runtime Serverless Inference': 0.74, 'OHS Compute': 0.04 }"
+    },
+    {
+      "cmd": "node scripts/02-price-sessions.mjs data/invoice-2026-10.json",
+      "output": "all sessions: { exactModelCost: 0.7417, billedModelCost: 0.74 } invoice says: { 'Harness Runtime Serverless Inference': 0.74, 'OHS Compute': 0.04 }\nrounding rule: {\n  rule: 'max(0.01, round(exact, 2)) per token line',\n  lines: 3,\n  matches: 3\n}"
+    }
+  ]
+}
+```
+
+```chart
+{
+  "type": "bar",
+  "title": "What the 39-minute session was billed",
+  "unit": "$",
+  "caption": "Invoice preview lines for one GLM-5.3 session in a 2 vCPU / 4 GB microVM, October 2026. List prices on the invoice: $1.40 input, $4.40 output and $0.26 cache read per million tokens.",
+  "rows": [
+    { "label": "Output tokens (102,865)", "value": 0.45 },
+    { "label": "Cache-read tokens (971,520)", "value": 0.25 },
+    { "label": "Input tokens (26,087)", "value": 0.04 },
+    { "label": "Compute (2,318 s)", "value": 0.04 }
+  ]
+}
+```
+
+Three things changed from the short runs:
+
+- **The rounding rule stops mattering.** The three token lines match the same rule, but on $0.74 of tokens it moved the bill by less than a cent.
+- **Cache reads are a third of the bill.** Each prompt sends the whole conversation so far. The cache makes that cheap per token, but the session read 971,520 cached tokens, 37 times its 26,087 fresh input tokens, and paid $0.25 for them. A long session pays for its own history.
+- **Compute is still small.** $0.04 for 2,318 seconds. At full use, 2 vCPU and 4 GB would list at about $0.08 for that time, so the session was billed for roughly half, which fits billing for the CPU actually used. Tokens were 95% of the bill.
+
+At $0.78 a session, the break-even comes much sooner:
+
+```terminal
+{
+  "title": "calc",
+  "steps": [
+    {
+      "cmd": "node calc.mjs --runs 65 --cost 0.78",
+      "output": "Discount-eligible usage at list price: $50.70 a month\n  Pay as you go  $50.70\n  Pro            $50.00\n  Team           $200.00\nCheapest: Pro."
+    },
+    {
+      "cmd": "node calc.mjs --runs 268 --cost 0.78",
+      "output": "Discount-eligible usage at list price: $209.04 a month\n  Pay as you go  $209.04\n  Pro            $200.22\n  Team           $200.00\nCheapest: Team."
+    }
+  ]
+}
+```
+
+Pro is cheaper from **65 sessions like this a month**, about three every working day for one person. Team is cheaper than Pro from **268**, which is about 13 people each running one such session every working day. This is one session on one model, so treat $0.78 as an example, not a rate: a longer conversation reads more cache, and a model like Kimi K3 costs two to three times more per token.
 
 ## Where the plan makes sense
 
-- **Agents that run for hours.** Long interactive sessions use far more tokens than our short runs, and a busy agent keeps the CPU working. Those workloads reach the $50 and $208.82 lines much faster.
+- **Agents that run for hours.** Long interactive sessions use far more tokens than our short runs, and a busy agent keeps the CPU working. Our 39-minute session cost 12 times as much as a short run, so those workloads reach the $50 and $208.82 lines much faster.
 - **Agents on DigitalOcean-hosted models.** GLM-5.3 at $1.40 / $4.40 per million input / output tokens and Kimi K3 at $3 / $15 are discounted. Claude Sonnet 5.5 at $2 / $10 is not, even though it is billed through the same account.
 - **Many people sharing one account.** Every plan includes unlimited seats and agents, so the whole team's usage counts toward one balance. With short runs like ours, ten people would need about 11 runs each per day to pass $208.82; with long sessions, far fewer.
 
@@ -214,9 +276,10 @@ To price your own invoice instead, run stage 1 with a billing-read token and you
 
 - **How a plan invoice looks.** We stayed on pay as you go. We do not know whether the 15% discount is applied before or after the one-cent rounding, which matters for short runs.
 - **Rollover.** As above, the docs do not say.
+- **A typical long session.** We priced one. Its cost depends on the model, the length of the conversation and how much the agent reads back, so your sessions can cost a lot more or less than $0.78.
 - **Speed.** Managed Agents is in preview, and DigitalOcean's preview terms treat benchmark results as confidential, so this post prices usage only.
 - **Prices after the preview.** Plan terms and list prices can change before general availability. The repo keeps every price in one file with its source and the date we read it.
 
 ## Summary
 
-Agent Droplets is a commitment discount, not a cheaper server. It pays off only once your discounted usage reliably passes $50 a month, and even then it saves at most $8.82 on Pro and $50 on Team. Our short issue-to-PR runs cost six cents each on the bill, so a team would need about 780 of them a month before Pro is worth it. Long, all-day sessions on DigitalOcean's own models reach the break-even much sooner. Whichever you run, read your invoice before you subscribe: it showed us cache-read tokens and a rounding rule that the token counts alone did not.
+Agent Droplets is a commitment discount, not a cheaper server. It pays off only once your discounted usage reliably passes $50 a month, and even then it saves at most $8.82 on Pro and $50 on Team. Our short issue-to-PR runs cost six cents each on the bill, so a team would need about 780 of them a month before Pro is worth it. Long interactive sessions reach it much sooner: our 39-minute session on GLM-5.3 cost $0.78, so about 65 of them a month pass the Pro line. Whichever you run, read your invoice before you subscribe: it showed us cache-read tokens and a rounding rule that the token counts alone did not.
