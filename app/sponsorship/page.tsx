@@ -18,7 +18,7 @@ import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
 import { BreadcrumbSchema } from '@/components/schema-markup';
 import { SponsorLogo } from '@/components/sponsor-logo';
-import { sponsorHistory } from '@/lib/sponsors';
+import { sponsorHistory, sponsorHref } from '@/lib/sponsors';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -299,15 +299,23 @@ export default function SponsorshipPage() {
           <p id="past-sponsors" className="mb-10 text-center text-[13px] tracking-[0.01em] text-muted-foreground">
             Brands that have sponsored DevOps Daily
           </p>
-          <ul className="mx-auto grid grid-cols-3 items-center gap-x-8 gap-y-10 sm:gap-x-12 lg:grid-cols-6">
+          <ul className="mx-auto grid grid-cols-3 items-center gap-x-8 gap-y-10 sm:gap-x-12 lg:flex lg:flex-wrap lg:justify-center lg:gap-x-14">
             {sponsorHistory.map((brand) => (
-              <li key={brand.name} className="flex h-12 items-center justify-center">
-                <SponsorLogo
-                  sponsor={{ ...brand, url: '' }}
-                  width={160}
-                  height={40}
-                  className="w-auto max-w-full object-contain opacity-50 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0 dark:opacity-60"
-                />
+              <li key={brand.name} className="flex h-12 items-center justify-center lg:w-40">
+                <a
+                  href={sponsorHref(brand, 'sponsorship')}
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  aria-label={brand.name}
+                  className="group flex h-full max-w-full items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+                >
+                  <SponsorLogo
+                    sponsor={brand}
+                    width={160}
+                    height={40}
+                    className="w-auto max-w-full object-contain opacity-50 grayscale transition duration-300 group-hover:opacity-100 group-hover:grayscale-0 group-focus-visible:opacity-100 group-focus-visible:grayscale-0 dark:opacity-60"
+                  />
+                </a>
               </li>
             ))}
           </ul>

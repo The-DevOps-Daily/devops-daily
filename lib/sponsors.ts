@@ -111,42 +111,77 @@ export function getSponsors(): Sponsor[] {
  * "brands we have worked with" row on the sponsorship page. Add a sponsor
  * here once a deal has actually run, and keep them after it ends.
  */
-export const sponsorHistory: Pick<Sponsor, 'name' | 'logo' | 'darkLogo' | 'className'>[] = [
+export const sponsorHistory: Pick<
+  Sponsor,
+  'name' | 'logo' | 'darkLogo' | 'className' | 'url' | 'goSlug'
+>[] = [
   // className sets each logo's height so the wordmarks look the same size.
   {
     name: 'Bitrise',
     logo: '/bitrise-brand.svg',
     darkLogo: '/bitrise-brand-light.svg',
     className: 'h-[30px]',
+    url: 'https://bitrise.io/platform/build-hub',
+    goSlug: 'bitrise',
+  },
+  {
+    name: 'DigitalOcean',
+    logo: '/digitalocean-brand.svg',
+    darkLogo: '/digitalocean-brand-light.svg',
+    className: 'h-[23px]',
+    url: 'https://m.do.co/c/2a9bba940f39',
+    goSlug: 'digitalocean',
   },
   {
     name: 'Neon',
     logo: '/neon-brand.svg',
     darkLogo: '/neon-brand-light.svg',
     className: 'h-[29px]',
+    url: 'https://neon.com/',
   },
   {
     name: 'Svix',
     logo: '/svix-brand.svg',
     darkLogo: '/svix-brand-light.svg',
     className: 'h-[30px]',
+    url: 'https://www.svix.com/',
   },
   {
     name: 'Pluralsight',
     logo: '/pluralsight-brand.svg',
     darkLogo: '/pluralsight-brand-light.svg',
     className: 'h-[30px]',
+    url: 'https://www.pluralsight.com/',
   },
   {
     name: 'Acronis',
     logo: '/acronis-wordmark.svg',
     darkLogo: '/acronis-wordmark-light.svg',
     className: 'h-[21px]',
+    url: 'https://www.acronis.com/',
   },
   {
     name: 'Atomsized',
     logo: '/atomsized.svg',
     darkLogo: '/atomsized-light.svg',
     className: 'h-[29px]',
+    url: 'https://atomsized.com/',
+    goSlug: 'atomsized',
+  },
+  {
+    name: 'DevDojo',
+    logo: '/devdojo-brand.svg',
+    darkLogo: '/devdojo-brand-light.svg',
+    className: 'h-[24px]',
+    url: 'https://devdojo.com',
+    goSlug: 'devdojo',
+  },
+  {
+    name: 'SMTPfast',
+    logo: '/smtpfast-brand.svg',
+    darkLogo: '/smtpfast-brand-light.svg',
+    className: 'h-[26px]',
+    url: 'https://smtpfa.st',
+    goSlug: 'smtpfast',
   },
 ];
