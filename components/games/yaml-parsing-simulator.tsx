@@ -91,7 +91,7 @@ folded: >
       'The pipe keeps line breaks, which is what you want for a script. The angle bracket folds them into spaces, which is what you want for prose and what silently breaks a shell script.',
   },
   {
-    title: 'A duplicate key is silent',
+    title: 'A duplicate key can be silent',
     blurb: 'A config where a block was pasted in twice.',
     yaml: `replicas: 3
 image: myapp:v2
@@ -99,7 +99,7 @@ resources:
   cpu: 500m
 replicas: 1`,
     point:
-      'The spec calls a repeated key an error. Most parsers in use quietly keep the last one, so replicas is 1 and the 3 you read at the top of the file never applied. Nothing warns you.',
+      'The spec calls a repeated key an error, and some parsers enforce that: js-yaml, for example, refuses the file. Others, such as PyYAML, quietly keep the last one, so replicas is 1 and the 3 you read at the top of the file never applied, with no warning.',
   },
   {
     title: 'Anchors and merge keys',
@@ -266,7 +266,7 @@ export default function YamlParsingSimulator() {
           {as12.duplicates.length > 0 && (
             <div>
               <strong>Repeated {as12.duplicates.length === 1 ? 'key' : 'keys'}:</strong>{' '}
-              {as12.duplicates.join(', ')}. The last value won. Most parsers do this without warning.
+              {as12.duplicates.join(', ')}. The last value won. Some parsers, PyYAML among them, do this without warning; others, like js-yaml, reject the file.
             </div>
           )}
           {as12.documents > 1 && (
