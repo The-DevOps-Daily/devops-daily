@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Breadcrumb } from '@/components/breadcrumb';
@@ -121,6 +122,20 @@ export function ComparisonPageClient({ comparison, allComparisons }: ComparisonP
                 </p>
               ))}
             </div>
+            {comparison.relatedLinks && comparison.relatedLinks.length > 0 && (
+              <div className="mt-2 rounded-md border bg-card p-4">
+                <p className="text-sm font-medium text-foreground mb-2">Related on DevOps Daily</p>
+                <ul className="space-y-1 text-sm">
+                  {comparison.relatedLinks.map((link) => (
+                    <li key={link.href}>
+                      <Link href={link.href} className="text-primary hover:underline">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
 
           {/* Section 4: Feature Comparison Table */}

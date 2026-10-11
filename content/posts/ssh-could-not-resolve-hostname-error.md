@@ -6,7 +6,7 @@ category:
   slug: 'networking'
 date: '2025-01-18'
 publishedAt: '2025-01-18T09:30:00Z'
-updatedAt: '2026-03-01T09:00:00Z'
+updatedAt: '2026-10-11T09:00:00Z'
 readingTime: '6 min read'
 author:
   name: 'DevOps Daily Team'
@@ -284,6 +284,10 @@ The verbose output shows you exactly what hostname SSH is trying to resolve and 
 
 ## Testing Name Resolution
 
+:::tip
+To see every step a lookup takes, from your resolver to the authoritative name server, try the [DNS simulator](/games/dns-simulator). SSH needs that whole chain to work before it can connect.
+:::
+
 Here's a systematic way to test name resolution:
 
 ```bash
@@ -355,3 +359,5 @@ dig example.server AAAA   # IPv6
 ```
 
 The most reliable fix for "Could not resolve hostname" is to verify the hostname is correct, test DNS resolution independently, and use IP addresses or the hosts file as a fallback. Most issues stem from typos, DNS misconfigurations, or trying to reach internal hostnames from the wrong network.
+
+If the name resolves but logins started failing after an upgrade, check [what OpenSSH 10.6 changed](/posts/openssh-10-6-domain-usernames-and-compression). To check all of a domain's DNS records at once, see how [DNS Detective](/posts/dns-detective-digitalocean-inference) probes a domain.

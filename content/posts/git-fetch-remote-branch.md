@@ -1,12 +1,12 @@
 ---
-title: 'How to Fetch a Remote Branch in Git'
-excerpt: 'Need to get a branch from the remote repository? Learn how to fetch remote branches and access them locally without merging or checking out.'
+title: 'Git Fetch a Remote Branch and Check It Out Locally'
+excerpt: 'Run git fetch origin branch-name, then git switch branch-name to get a local branch that tracks origin/branch-name. git fetch origin gets every branch.'
 category:
   name: 'Git'
   slug: 'git'
 date: '2024-10-20'
 publishedAt: '2024-10-20T13:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
+updatedAt: '2026-10-11T09:00:00Z'
 readingTime: '5 min read'
 author:
   name: 'DevOps Daily Team'
@@ -19,9 +19,9 @@ tags:
   - Workflows
 ---
 
-Someone pushed a new branch to the remote repository and you want to get it locally. Or you need to update your local copy of remote branches without merging them into your work. Fetching lets you download branches without affecting your working directory.
+**TLDR:** To fetch all remote branches, use `git fetch origin`. To fetch a specific branch, use `git fetch origin branch-name`. After fetching, create a local tracking branch with `git switch branch-name` (or `git checkout branch-name` on Git older than 2.23) or view the remote branch with `git log origin/branch-name`. Fetching downloads the branches but does not merge them into your current work.
 
-**TLDR:** To fetch all remote branches, use `git fetch origin`. To fetch a specific branch, use `git fetch origin branch-name`. After fetching, create a local branch with `git checkout branch-name` or view the remote branch with `git log origin/branch-name`. Fetching downloads the branches but does not merge them into your current work.
+Someone pushed a new branch to the remote repository and you want to get it locally. Or you need to update your local copy of remote branches without merging them into your work. Fetching lets you download branches without affecting your working directory.
 
 In this guide, you'll learn how to fetch and work with remote branches.
 

@@ -1,12 +1,12 @@
 ---
-title: 'How to Get docker-compose to Always Re-create Containers from Fresh Images'
-excerpt: 'Want to make sure docker-compose always uses the latest image and re-creates containers? Learn the right flags, workflow, and best practices to avoid stale containers in development and CI.'
+title: 'docker compose: Always Recreate Containers from Fresh Images'
+excerpt: 'Run docker compose up -d --pull always --build --force-recreate to pull newer images, rebuild local ones and replace containers instead of reusing them.'
 category:
   name: 'Docker'
   slug: 'docker'
 date: '2025-05-01'
 publishedAt: '2025-05-01T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
+updatedAt: '2026-10-11T09:00:00Z'
 readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'
@@ -20,7 +20,7 @@ tags:
 
 ## TLDR
 
-To make docker-compose always re-create containers from fresh images, use `docker-compose pull` to get the latest images, then run `docker-compose up --force-recreate --build`. This ensures containers are rebuilt or replaced, not reused from cache.
+Run `docker compose up -d --pull always --build --force-recreate`. `--pull always` pulls newer images, `--build` rebuilds images from your Dockerfiles, and `--force-recreate` replaces every container instead of reusing it. With the older `docker-compose` v1 tool, run `docker-compose pull` first, then `docker-compose up --force-recreate --build`.
 
 ## Why Containers Might Not Be Re-created
 

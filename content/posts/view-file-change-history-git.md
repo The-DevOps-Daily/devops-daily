@@ -1,6 +1,6 @@
 ---
-title: 'How to View the Change History of a File in Git'
-excerpt: 'Need to see how a file evolved over time? Learn how to view the complete change history of a file using Git log, diff, and blame commands.'
+title: 'Git File History: See Every Change Made to a File'
+excerpt: 'Run git log --follow -p -- path/to/file to see every commit that changed a file, with its diff, even across renames. git blame shows who changed each line.'
 category:
   name: 'Git'
   slug: 'git'
@@ -19,9 +19,9 @@ tags:
   - Development
 ---
 
-When debugging or understanding how code evolved, you need to see the complete history of a specific file. Git provides several commands to view when a file changed, who changed it, and what those changes were.
-
 **TLDR:** To view a file's change history, use `git log filename` to see commits that modified it, `git log -p filename` to see the actual changes in each commit, or `git blame filename` to see who last modified each line. For visual history, use `git log --follow --all -p filename` to track the file even through renames.
+
+When debugging or understanding how code evolved, you need to see the complete history of a specific file. Git provides several commands to view when a file changed, who changed it, and what those changes were.
 
 In this guide, you'll learn how to explore file history using Git's various viewing commands.
 

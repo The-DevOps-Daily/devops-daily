@@ -306,6 +306,20 @@
     "toolBScore": 4.2,
     "recommendation": "Choose GitHub for open-source projects, AI-assisted development, and the widest integration ecosystem. Choose GitLab for self-hosted requirements, built-in security scanning, and a unified DevOps lifecycle platform."
   },
+  "relatedLinks": [
+    {
+      "label": "Bitbucket vs GitHub: which Git platform to use",
+      "href": "/comparisons/bitbucket-vs-github"
+    },
+    {
+      "label": "Stacked pull requests on GitHub: what they actually fix",
+      "href": "/posts/github-stacked-pull-requests-public-preview"
+    },
+    {
+      "label": "Practice resolving conflicts in the Git merge conflict simulator",
+      "href": "/games/git-merge-conflict-simulator"
+    }
+  ],
   "relatedTags": [
     "GitHub",
     "GitLab",

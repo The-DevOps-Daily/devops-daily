@@ -1,6 +1,6 @@
 ---
-title: 'Ping Response: Request Timed Out vs Destination Host Unreachable'
-excerpt: "Understand the difference between ping timeout and destination unreachable errors, what they mean for network troubleshooting, and how to diagnose connectivity issues."
+title: 'Ping: Request Timed Out vs Destination Host Unreachable'
+excerpt: '"Request timed out" means no reply came back. "Destination host unreachable" means a router, or your own machine on the LAN, says it cannot reach the host.'
 category:
   name: 'Networking'
   slug: 'networking'

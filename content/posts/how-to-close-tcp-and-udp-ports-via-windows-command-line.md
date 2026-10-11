@@ -1,6 +1,6 @@
 ---
-title: 'How to Close TCP and UDP Ports via Windows Command Line'
-excerpt: 'Learn how to close open ports on Windows using command-line tools. Find and terminate processes listening on ports, manage Windows Firewall rules, and stop services to free up ports.'
+title: 'Close a Port on Windows from the Command Line'
+excerpt: 'Find the process with netstat -ano | findstr :PORT, then end it with taskkill /PID <pid> /F. To block the port instead, add a netsh advfirewall rule.'
 category:
   name: 'Networking'
   slug: 'networking'
@@ -19,13 +19,13 @@ tags:
   - Troubleshooting
 ---
 
-When a port is in use on Windows, you might need to close it to free it for another application, resolve conflicts, or improve security. Unlike Linux where you can directly kill processes bound to ports, Windows requires identifying the process first, then either stopping it or blocking the port via firewall rules.
-
-This guide shows you how to find what's using a port and close it using Windows command-line tools.
-
 ## TLDR
 
 Find the process using a port with `netstat -ano | findstr :PORT`, then kill it with `taskkill /PID <pid> /F`. To block a port with Windows Firewall, use `netsh advfirewall firewall add rule` to create a blocking rule. For services, use `net stop` or `sc stop` to stop the service listening on the port.
+
+When a port is in use on Windows, you might need to close it to free it for another application, resolve conflicts, or improve security. Unlike Linux where you can directly kill processes bound to ports, Windows requires identifying the process first, then either stopping it or blocking the port via firewall rules.
+
+This guide shows you how to find what's using a port and close it using Windows command-line tools.
 
 ## Prerequisites
 

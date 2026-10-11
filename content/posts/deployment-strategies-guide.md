@@ -6,7 +6,7 @@ category:
   slug: 'devops'
 date: '2025-11-17'
 publishedAt: '2025-11-17T09:00:00Z'
-updatedAt: '2026-09-27T09:00:00Z'
+updatedAt: '2026-10-11T09:00:00Z'
 readingTime: '12 min read'
 author:
   name: 'DevOps Daily Team'
@@ -23,11 +23,7 @@ tags:
   - Docker
 ---
 
-Deploying a new version of your application shouldn't feel like jumping off a cliff. Yet for many teams, every deployment brings anxiety: Will the new version work? What if users encounter bugs? How quickly can we roll back if something goes wrong?
-
-The way you deploy your application matters just as much as what you deploy. Different deployment strategies offer varying levels of risk, speed, and resource requirements. Some let you switch between versions instantly, while others gradually introduce changes to minimize impact. Understanding these strategies helps you choose the right approach for your specific needs.
-
-**TLDR**: This guide covers three core deployment strategies. Blue-green deployments run two identical environments and switch traffic between them for instant rollbacks. Canary deployments gradually roll out changes to a small subset of users before full deployment. Rolling deployments update instances one at a time to maintain availability throughout the process. Each strategy has distinct trade-offs in terms of cost, complexity, and risk mitigation.
+The three main deployment strategies are **blue-green**, **canary** and **rolling**. Blue-green runs two identical environments and switches all traffic at once, so rollback is instant. Canary sends a small share of traffic to the new version first and raises it step by step. Rolling replaces instances a few at a time. They differ in rollback speed, extra capacity and how many users a bad release reaches:
 
 | Trade-off                   | Blue-green                                                         | Canary                                                                       | Rolling                                                |
 | --------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------ |
@@ -37,7 +33,15 @@ The way you deploy your application matters just as much as what you deploy. Dif
 | Users a bad release reaches | Everyone, until you switch back                                    | Only the canary share                                                        | The share of traffic on updated instances              |
 | What it needs               | A traffic switch, and database changes both versions can use       | Traffic splitting and metrics split by version                               | Old and new versions that can run side by side         |
 
-To watch each strategy route traffic and roll back, try the [Deployment Strategies Simulator](/games/deployment-strategies).
+:::tip
+Try it in the simulator: the [Deployment Strategies Simulator](/games/deployment-strategies) routes traffic with each strategy and lets you roll back a bad release.
+:::
+
+Deploying a new version of your application shouldn't feel like jumping off a cliff. Yet for many teams, every deployment brings anxiety: Will the new version work? What if users encounter bugs? How quickly can we roll back if something goes wrong?
+
+The way you deploy your application matters just as much as what you deploy. Different deployment strategies offer varying levels of risk, speed, and resource requirements. Some let you switch between versions instantly, while others gradually introduce changes to minimize impact. Understanding these strategies helps you choose the right approach for your specific needs.
+
+For a head-to-head on the two most common choices, see [blue-green vs canary deployments](/comparisons/blue-green-vs-canary-deployments). To decouple releasing a feature from deploying it, see [progressive delivery with feature flags](/posts/how-to-implement-progressive-delivery-with-feature-flags), and to practice explaining a rollback plan in an interview, try [this rollback strategy question](/interview-questions/senior/progressive-delivery-rollback-strategy).
 
 ## Why Deployment Strategy Matters
 

@@ -1,6 +1,6 @@
 ---
-title: 'How to Clone a Specific Git Branch'
-excerpt: 'Need to clone just one branch instead of the entire repository? Learn how to clone a specific Git branch directly and save time and disk space.'
+title: 'Git Clone a Specific Branch with --single-branch'
+excerpt: 'Clone only one branch with git clone -b branch-name --single-branch <repo-url>. Add --depth 1 to download just the latest commit and save more space.'
 category:
   name: 'Git'
   slug: 'git'
@@ -19,9 +19,9 @@ tags:
   - Workflows
 ---
 
-When cloning a repository, Git downloads all branches by default, even though you only see the default branch checked out. For large repositories with many branches, this wastes time and disk space. If you only need to work with a specific branch, you can clone just that branch.
-
 **TLDR:** To clone a specific branch, use `git clone -b branch-name --single-branch repository-url`. This downloads only the specified branch and its history. For shallow clones with limited history, add `--depth 1` to the command.
+
+When cloning a repository, Git downloads all branches by default, even though you only see the default branch checked out. For large repositories with many branches, this wastes time and disk space. If you only need to work with a specific branch, you can clone just that branch.
 
 In this guide, you'll learn how to clone specific branches efficiently and when to use different cloning strategies.
 

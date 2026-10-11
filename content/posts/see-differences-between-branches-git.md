@@ -1,6 +1,6 @@
 ---
-title: 'How to See the Differences Between Two Branches in Git'
-excerpt: 'Need to compare branches before merging? Learn how to view differences between Git branches using diff, log, and other comparison commands.'
+title: 'Git Diff Between Two Branches: Files, Commits and Stats'
+excerpt: 'git diff main..feature shows changed lines, git log main..feature lists commits main does not have, and git diff --stat main feature sums it up per file.'
 category:
   name: 'Git'
   slug: 'git'
@@ -19,9 +19,9 @@ tags:
   - Version Control
 ---
 
-Before merging a feature branch, reviewing a pull request, or understanding what changed between releases, you need to see what differs between two branches. Git provides several commands to compare branches at different levels of detail.
-
 **TLDR:** To see differences between branches, use `git diff branch1..branch2` to show file changes, `git log branch1..branch2` to show commit differences, or `git diff --name-only branch1 branch2` to list changed filenames. The two-dot syntax (`..`) shows differences, while three-dot (`...`) shows changes since the branches diverged.
+
+Before merging a feature branch, reviewing a pull request, or understanding what changed between releases, you need to see what differs between two branches. Git provides several commands to compare branches at different levels of detail.
 
 In this guide, you'll learn how to compare branches effectively in Git.
 

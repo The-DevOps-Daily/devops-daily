@@ -6,7 +6,7 @@ category:
   slug: 'networking'
 date: '2024-08-12'
 publishedAt: '2024-08-12T09:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
+updatedAt: '2026-10-11T09:00:00Z'
 readingTime: '5 min read'
 author:
   name: 'DevOps Daily Team'
@@ -31,6 +31,10 @@ You'll need:
 ## Step 1: Check Listening Ports with netstat
 
 The `netstat` command shows open connections and listening ports.
+
+:::tip
+Not sure why netstat lists some ports under TCP and others under UDP? The [TCP vs UDP simulator](/games/tcp-vs-udp) sends packets both ways so you can see the difference.
+:::
 
 Run this from an elevated Command Prompt:
 
@@ -111,3 +115,5 @@ This view shows which ports are open and which processes are using them.
 ---
 
 That's it, now you can quickly find out what's occupying a port in Windows using either the terminal or the GUI. This comes in handy when diagnosing port conflicts or service issues.
+
+Once you know the process, you can [close the port from the Windows command line](/posts/how-to-close-tcp-and-udp-ports-via-windows-command-line). On Linux, see [how to close a specific port](/posts/close-specific-port-linux), and for the difference between a port and the connection using it, see [port vs socket](/posts/difference-between-port-and-socket).

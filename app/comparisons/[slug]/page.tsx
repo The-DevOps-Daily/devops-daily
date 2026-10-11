@@ -30,7 +30,9 @@ export async function generateMetadata({
 
   return detailPageMetadata({
     path: `/comparisons/${comparison.slug}`,
-    title: `${comparison.toolA.name} vs ${comparison.toolB.name}: Feature Comparison, Pros/Cons, and Verdict`,
+    title:
+      comparison.seoTitle ??
+      `${comparison.toolA.name} vs ${comparison.toolB.name}: Feature Comparison, Pros/Cons, and Verdict`,
     description: truncateMetaDescription(comparison.description),
     image: `/images/comparisons/${comparison.slug}-og.png`,
     imageAlt: `${comparison.toolA.name} vs ${comparison.toolB.name}`,

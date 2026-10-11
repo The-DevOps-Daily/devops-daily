@@ -1,6 +1,6 @@
 ---
-title: 'How to Delete a Commit from a Git Branch'
-excerpt: 'Need to remove a specific commit from your Git branch? Learn how to delete commits using reset, rebase, and revert while preserving your repository history.'
+title: 'Delete a Commit from a Git Branch: Reset, Rebase or Revert'
+excerpt: 'Remove the last commit with git reset --hard HEAD~1, drop an older one with git rebase -i, or undo a pushed commit safely with git revert <commit-hash>.'
 category:
   name: 'Git'
   slug: 'git'
@@ -19,9 +19,9 @@ tags:
   - Development
 ---
 
-You've made a commit that needs to be removed from your branch. Maybe it contains sensitive information, introduces a bug, or simply does not belong in the history. Git provides several ways to delete commits depending on your situation.
-
 **TLDR:** To delete the most recent commit, use `git reset --hard HEAD~1`. To delete a specific commit from history, use `git rebase -i HEAD~n` (where n is the number of commits to go back), then mark the commit as "drop". If the commit is already pushed and shared, use `git revert <commit-hash>` instead to safely undo it.
+
+You've made a commit that needs to be removed from your branch. Maybe it contains sensitive information, introduces a bug, or simply does not belong in the history. Git provides several ways to delete commits depending on your situation.
 
 In this guide, you'll learn different methods to delete commits and when to use each approach.
 

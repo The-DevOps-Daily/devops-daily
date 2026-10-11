@@ -47,6 +47,8 @@ export interface Comparison {
   id: string;
   slug: string;
   title: string;
+  /** Search result title, when it should differ from the default "A vs B: Feature Comparison..." one. */
+  seoTitle?: string;
   description: string;
   category: string;
   tags: string[];
@@ -62,6 +64,8 @@ export interface Comparison {
   decisionMatrix: DecisionMatrixItem[];
   verdict: Verdict;
   relatedTags: string[];
+  /** Hand-picked links to related posts and simulators, shown after the introduction. */
+  relatedLinks?: { label: string; href: string }[];
   /** Campaign id on go.devops-daily.com for a comparison written for a sponsor. Counts views in the sponsor report. */
   sponsorCampaign?: string;
 }

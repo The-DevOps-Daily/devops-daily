@@ -1,6 +1,6 @@
 ---
-title: 'How to Make an Existing Git Branch Track a Remote Branch'
-excerpt: 'Need to set up tracking between a local branch and a remote branch? Learn how to configure branch tracking for easier push and pull operations in Git.'
+title: 'Make an Existing Git Branch Track a Remote Branch'
+excerpt: 'Run git branch --set-upstream-to=origin/branch-name (short: git branch -u origin/branch-name). Not on the remote yet? Run git push -u origin branch-name.'
 category:
   name: 'Git'
   slug: 'git'
@@ -19,9 +19,9 @@ tags:
   - Workflows
 ---
 
-You created a local branch and pushed it to a remote repository, but now when you run `git pull` or `git push`, Git asks you to specify which remote branch to use. This happens because your local branch is not configured to track the remote branch.
-
 **TLDR:** To make your current branch track a remote branch, use `git branch --set-upstream-to=origin/branch-name` or `git push -u origin branch-name`. The `-u` flag sets up tracking automatically when pushing. Once configured, you can use `git pull` and `git push` without specifying the remote branch.
+
+You created a local branch and pushed it to a remote repository, but now when you run `git pull` or `git push`, Git asks you to specify which remote branch to use. This happens because your local branch is not configured to track the remote branch.
 
 In this guide, you'll learn how to set up branch tracking and understand what it does.
 
