@@ -89,7 +89,7 @@ export async function Hero() {
 
           {/* Social proof */}
           <p className="mt-4 text-sm text-muted-foreground">
-            Join <span className="font-mono tabular-nums">5,000+</span> DevOps engineers learning
+            Join <span className="font-mono tabular-nums">1,500+</span> DevOps engineers learning
             every week
           </p>
         </div>

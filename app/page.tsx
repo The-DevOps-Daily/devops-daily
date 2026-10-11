@@ -202,7 +202,7 @@ export default async function Home() {
               <dt className="text-[11px] uppercase tracking-wider text-muted-foreground">
                 Subscribers
               </dt>
-              <dd className="text-lg tabular-nums font-semibold mt-1">5,000+</dd>
+              <dd className="text-lg tabular-nums font-semibold mt-1">1,500+</dd>
               <dd className="text-xs text-muted-foreground/80 mt-0.5">engineers</dd>
             </div>
             <div className="bg-card p-4">
@@ -252,7 +252,7 @@ export default async function Home() {
             </div>
           </div>
           <p className="text-xs text-muted-foreground text-center mt-4 font-mono tabular-nums">
-            5,000+ engineers subscribed
+            1,500+ engineers subscribed
           </p>
         </section>
       </div>
