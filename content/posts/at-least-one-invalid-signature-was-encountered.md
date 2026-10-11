@@ -16,6 +16,7 @@ tags:
   - Troubleshooting
   - Security
   - DevOps
+noindex: true
 ---
 
 ## Introduction

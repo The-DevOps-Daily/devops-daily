@@ -17,6 +17,7 @@ tags:
   - Arguments
   - CLI
   - Parameters
+noindex: true
 ---
 
 Command line argument parsing is essential for creating flexible and user-friendly Bash scripts. Whether you're building simple utilities or complex automation tools, proper argument handling makes your scripts more professional and easier to use.

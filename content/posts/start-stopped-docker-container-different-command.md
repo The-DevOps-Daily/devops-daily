@@ -16,6 +16,7 @@ tags:
   - Containers
   - Entrypoint
   - DevOps
+noindex: true
 ---
 
 ## TLDR

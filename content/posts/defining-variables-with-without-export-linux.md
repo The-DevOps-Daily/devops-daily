@@ -17,6 +17,7 @@ tags:
   - environment variables
   - shell scripting
   - export command
+noindex: true
 ---
 
 Understanding the difference between regular shell variables and exported environment variables matters for effective Linux shell scripting and system administration. The `export` command controls whether variables are available to child processes and external programs.

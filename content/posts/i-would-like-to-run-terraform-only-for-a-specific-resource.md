@@ -16,6 +16,7 @@ tags:
   - Infrastructure as Code
   - DevOps
   - Resource Management
+noindex: true
 ---
 
 When working with Terraform, there are times when you want to apply changes to a specific resource without affecting the rest of your infrastructure. This can save time and reduce the risk of unintended changes.

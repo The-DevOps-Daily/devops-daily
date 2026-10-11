@@ -17,6 +17,7 @@ tags:
   - File Management
   - Terminal
   - Development Tools
+noindex: true
 ---
 
 Counting lines of code is essential for project analysis, code reviews, and understanding codebase complexity. Whether you're tracking development progress or preparing project documentation, knowing how to accurately count code lines across directory structures is a valuable skill.

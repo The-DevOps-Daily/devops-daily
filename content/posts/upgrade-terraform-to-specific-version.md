@@ -16,6 +16,7 @@ tags:
   - Upgrades
   - DevOps
   - Infrastructure as Code
+noindex: true
 ---
 
 Upgrading Terraform to a specific version is a common task, especially when working with infrastructure that requires a particular version for compatibility. This guide will walk you through the process of upgrading Terraform on your system.

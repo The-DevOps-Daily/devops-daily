@@ -17,6 +17,7 @@ tags:
   - Networking
   - Requests
   - CLI
+noindex: true
 ---
 
 When you're working with Python, sometimes you just want to grab the contents of a URL with as little friction as possible. Whether you're debugging an API, scraping data, or automating some monitoring script, knowing how to quickly perform an HTTP GET request is a must.

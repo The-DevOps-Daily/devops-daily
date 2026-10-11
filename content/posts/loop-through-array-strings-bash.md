@@ -17,6 +17,7 @@ tags:
   - Arrays
   - Loops
   - Strings
+noindex: true
 ---
 
 Arrays are powerful data structures in Bash that allow you to store and process multiple strings efficiently. Whether you're processing file lists, configuration values, or user inputs, knowing how to loop through arrays is essential for effective Bash scripting.

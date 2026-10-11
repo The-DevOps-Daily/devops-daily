@@ -16,6 +16,7 @@ tags:
   - AWS Lambda
   - Scheduled Events
   - DevOps
+noindex: true
 ---
 
 AWS Lambda functions can be triggered by scheduled events, such as cron jobs, using Amazon EventBridge (formerly CloudWatch Events). Terraform makes it easy to set up this integration.

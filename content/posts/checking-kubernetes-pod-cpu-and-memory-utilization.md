@@ -16,6 +16,7 @@ tags:
   - Monitoring
   - Metrics
   - DevOps
+noindex: true
 ---
 
 ## Introduction

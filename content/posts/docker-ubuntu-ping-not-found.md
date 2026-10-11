@@ -16,6 +16,7 @@ tags:
   - Ubuntu
   - Networking
   - DevOps
+noindex: true
 ---
 
 ## TLDR

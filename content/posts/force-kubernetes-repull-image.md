@@ -16,6 +16,7 @@ tags:
   - Pods
   - Images
   - DevOps
+noindex: true
 ---
 
 Sometimes, you may need Kubernetes to re-pull a container image to ensure your Pods are using the latest version. This can happen if you've updated the image but Kubernetes is still using a cached version.

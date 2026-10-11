@@ -16,6 +16,7 @@ tags:
   - Images
   - Cleanup
   - DevOps
+noindex: true
 ---
 
 ## TLDR

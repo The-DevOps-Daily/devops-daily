@@ -16,6 +16,7 @@ tags:
   - Namespaces
   - Services
   - DevOps
+noindex: true
 ---
 
 ## Introduction

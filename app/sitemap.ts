@@ -134,7 +134,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // Post routes
-  const postRoutes = posts.map((post) => ({
+  // noindex posts stay online but are kept out of the sitemap.
+  const postRoutes = posts.filter((post) => !post.noindex).map((post) => ({
     url: `${baseUrl}/posts/${post.slug}`,
     ...withLastModified(postLastModified(post)),
     changeFrequency: 'monthly' as const,

@@ -16,6 +16,7 @@ tags:
   - AWS
   - S3
   - DevOps
+noindex: true
 ---
 
 ## TLDR

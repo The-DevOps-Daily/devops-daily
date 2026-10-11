@@ -16,6 +16,7 @@ tags:
   - ConfigMap
   - Pods
   - DevOps
+noindex: true
 ---
 
 ## Introduction

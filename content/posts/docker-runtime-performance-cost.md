@@ -16,6 +16,7 @@ tags:
   - Performance
   - Containers
   - DevOps
+noindex: true
 ---
 
 ## TLDR

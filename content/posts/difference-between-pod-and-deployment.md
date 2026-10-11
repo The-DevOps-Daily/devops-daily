@@ -17,6 +17,7 @@ tags:
   - Deployments
   - Container Orchestration
   - DevOps
+noindex: true
 ---
 
 When working with Kubernetes, you'll often encounter two fundamental concepts: Pods and Deployments. While they are closely related, they serve different purposes in the Kubernetes ecosystem. Understanding the difference between them is key to managing containerized applications effectively.

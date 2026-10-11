@@ -16,6 +16,7 @@ tags:
   - Resources
   - Cleanup
   - DevOps
+noindex: true
 ---
 
 ## Introduction

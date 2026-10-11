@@ -49,7 +49,7 @@ export async function generateMetadata({
   // post.excerpt is shown in full on the page itself, but Google clips
   // descriptions over ~160 chars. Trim at the last sentence boundary so
   // the meta tag stays in range without dropping keywords.
-  return detailPageMetadata({
+  const metadata = detailPageMetadata({
     path: `/posts/${post.slug}`,
     title: post.title,
     description: truncateMetaDescription(post.excerpt),
@@ -61,6 +61,7 @@ export async function generateMetadata({
       tags: post.tags,
     },
   });
+  return post.noindex ? { ...metadata, robots: { index: false, follow: true } } : metadata;
 }
 
 export default async function PostPage({ params }: { params: Promise<{ slug: string }> }) {

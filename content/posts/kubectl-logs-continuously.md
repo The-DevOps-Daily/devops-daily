@@ -16,6 +16,7 @@ tags:
   - Logs
   - Monitoring
   - DevOps
+noindex: true
 ---
 
 ## Introduction

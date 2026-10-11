@@ -16,6 +16,7 @@ tags:
   - Data Sources
   - Infrastructure as Code
   - DevOps
+noindex: true
 ---
 
 Data sources in Terraform allow you to fetch information about existing resources in your infrastructure. This is useful when you need to reference resources that are not managed by your Terraform configuration.

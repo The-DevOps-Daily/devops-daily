@@ -16,6 +16,7 @@ tags:
   - Troubleshooting
   - Containers
   - DevOps
+noindex: true
 ---
 
 ## TLDR

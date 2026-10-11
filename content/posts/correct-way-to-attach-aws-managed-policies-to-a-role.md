@@ -16,6 +16,7 @@ tags:
   - IAM
   - Policies
   - DevOps
+noindex: true
 ---
 
 Attaching AWS managed policies to an IAM role is a common task when setting up permissions for your AWS resources. Managed policies simplify permission management by providing pre-defined sets of permissions for common use cases.

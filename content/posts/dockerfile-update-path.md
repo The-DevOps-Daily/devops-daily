@@ -16,6 +16,7 @@ tags:
   - Dockerfile
   - PATH
   - DevOps
+noindex: true
 ---
 
 ## TLDR

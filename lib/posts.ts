@@ -27,6 +27,12 @@ export type Post = {
   featured?: boolean;
   /** Campaign id on go.devops-daily.com for a post written for a sponsor. Counts views in the sponsor report. */
   sponsorCampaign?: string;
+  /**
+   * Keep the page online but out of search indexes and the sitemap. Used for
+   * short posts that no search engine showed in 90 days, so they stop
+   * counting against the site's quality while links to them still work.
+   */
+  noindex?: boolean;
 };
 
 /** A post without its body, for list pages rendered by client components. */

@@ -16,6 +16,7 @@ tags:
   - API Gateway
   - Variables
   - DevOps
+noindex: true
 ---
 
 ## TLDR

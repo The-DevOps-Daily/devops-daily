@@ -17,6 +17,7 @@ tags:
   - DevOps
   - Staging
   - Production
+noindex: true
 ---
 
 Managing multiple environments is a common requirement for teams running applications on Kubernetes. Whether you're supporting development, QA, staging, or production, keeping these environments isolated and consistent helps you catch issues early and deploy with confidence. In this guide, you'll learn how to structure your Kubernetes setup to support multiple environments, avoid common pitfalls, and simplify your deployment process.

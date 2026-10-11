@@ -17,6 +17,7 @@ tags:
   - Upgrades
   - DevOps
   - Tutorials
+noindex: true
 ---
 
 ## TLDR

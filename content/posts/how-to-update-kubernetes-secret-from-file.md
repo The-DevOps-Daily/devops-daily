@@ -17,6 +17,7 @@ tags:
   - kubectl
   - DevOps
   - Security
+noindex: true
 ---
 
 Kubernetes secrets are often created from files, such as certificates, keys, or configuration files. When the underlying file changes, you'll need to update the secret in your cluster to keep your workloads running smoothly.

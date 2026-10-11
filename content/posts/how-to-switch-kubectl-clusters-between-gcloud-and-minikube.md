@@ -16,6 +16,7 @@ tags:
   - kubectl
   - gcloud
   - minikube
+noindex: true
 ---
 
 ## Introduction

@@ -17,6 +17,7 @@ tags:
   - Terraform
   - EC2
   - Security
+noindex: true
 ---
 
 ## TLDR

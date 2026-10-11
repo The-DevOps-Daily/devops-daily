@@ -16,6 +16,7 @@ tags:
   - Pods
   - Files
   - DevOps
+noindex: true
 ---
 
 ## Introduction

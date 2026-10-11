@@ -16,6 +16,7 @@ tags:
   - IAM
   - AWS
   - Troubleshooting
+noindex: true
 ---
 
 ## TLDR

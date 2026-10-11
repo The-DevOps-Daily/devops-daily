@@ -17,6 +17,7 @@ tags:
   - string manipulation
   - Linux
   - text processing
+noindex: true
 ---
 
 String substring checking is a fundamental operation in Bash scripting. Whether you're validating input, parsing log files, or filtering data, knowing how to efficiently check if one string contains another is essential. Bash provides several methods for substring detection, each with different capabilities and performance characteristics.

@@ -16,6 +16,7 @@ tags:
   - Deployments
   - Images
   - DevOps
+noindex: true
 ---
 
 ## Introduction

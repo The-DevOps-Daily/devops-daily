@@ -17,6 +17,7 @@ tags:
   - Loops
   - Variables
   - Shell
+noindex: true
 ---
 
 Iterating over a range of numbers is a fundamental task in Bash scripting. When the range boundaries are stored in variables rather than hardcoded values, you need specific techniques to make the loop work correctly.

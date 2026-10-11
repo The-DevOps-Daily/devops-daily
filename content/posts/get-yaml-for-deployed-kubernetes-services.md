@@ -16,6 +16,7 @@ tags:
   - YAML
   - Services
   - DevOps
+noindex: true
 ---
 
 ## Introduction

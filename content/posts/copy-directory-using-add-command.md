@@ -15,6 +15,7 @@ tags:
   - Docker
   - ADD Command
   - Tutorials
+noindex: true
 ---
 
 ## TLDR

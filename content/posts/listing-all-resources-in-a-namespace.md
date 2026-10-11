@@ -16,6 +16,7 @@ tags:
   - Resources
   - Namespaces
   - DevOps
+noindex: true
 ---
 
 ## Introduction

@@ -16,6 +16,7 @@ tags:
   - Docker Compose
   - Interactive Shell
   - Tutorials
+noindex: true
 ---
 
 ## TLDR

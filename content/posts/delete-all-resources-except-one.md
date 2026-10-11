@@ -15,6 +15,7 @@ tags:
   - Terraform
   - Resource Management
   - DevOps
+noindex: true
 ---
 
 ## TLDR
