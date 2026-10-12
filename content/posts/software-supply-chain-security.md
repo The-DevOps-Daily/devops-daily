@@ -72,6 +72,8 @@ syft ghcr.io/myorg/myapp:v1.0.0 -o cyclonedx-json > sbom.json
 syft dir:. -o spdx-json > sbom-spdx.json
 ```
 
+> **Tip:** `curl ... | sh` installers can leave more behind than the binary. Download the script and read it first, then check what it actually changed. I once ran an installer with its `--no-auto-update` flag, and its post-install health check still registered a daily systemd user timer that re-ran the remote script. After any piped install, run `systemctl --user list-timers`, `crontab -l`, and `git diff` on your shell rc files (if you track them). An auto-updater that re-downloads a script every day is itself a supply chain risk.
+
 ### Scanning SBOMs for Vulnerabilities
 
 Pair Syft with Grype to scan your SBOM for known vulnerabilities:
