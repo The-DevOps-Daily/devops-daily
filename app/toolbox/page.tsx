@@ -433,6 +433,18 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'Trivy',
+    description:
+      'Open source scanner for vulnerabilities, misconfigurations, secrets, and SBOMs in container images, filesystems, and infrastructure as code.',
+    href: 'https://trivy.dev/',
+    category: 'security',
+    icon: Shield,
+    badges: [
+      { text: 'Security', variant: 'outline' },
+      { text: 'Open Source', variant: 'secondary' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
