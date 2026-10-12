@@ -6,7 +6,7 @@
   "icon": "Target",
   "difficulty": "intermediate",
   "estimatedTime": "20 minutes",
-  "cardCount": 16,
+  "cardCount": 17,
   "theme": {
     "primaryColor": "amber",
     "gradientFrom": "from-amber-500",
@@ -124,6 +124,13 @@
       "back": "1. Setting SLOs based on infrastructure metrics instead of user experience\n2. Targeting 100% reliability (impossible and blocks all change)\n3. Having too many SLOs per service (aim for 2-4)\n4. No error budget policy, making SLOs purely informational\n5. Not involving product owners in setting targets\n6. Measuring at the wrong layer (server-side only)\n7. Never revising SLOs after initial setup\n8. Using SLOs to blame teams instead of driving improvement",
       "category": "Process",
       "tags": ["sre", "slos", "anti-patterns"]
-    }
+    },
+    {
+  "id": "cuj-definition",
+  "front": "What is a Critical User Journey (CUJ)?",
+  "back": "A CUJ is a key task a user needs to accomplish using your system, such as 'completing checkout' or 'searching for a product'. SLIs and SLOs should be anchored to CUJs rather than individual backend microservices to ensure metrics reflect actual user impact.",
+  "category": "Core Concepts",
+  "tags": ["sre", "slos", "best-practices"]
+}
   ]
 }

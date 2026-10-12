@@ -191,3 +191,34 @@ One command puts a port on the internet with a valid certificate and no account,
 The internet did not immediately find it. In fourteen hours, two requests, both harmless looking, the first after 74 minutes. The scare story about scanners racing certificate transparency logs to your laptop did not happen.
 
 The risk that is real is duller and worse. The URL is the only thing standing between the internet and your process, it has no password, and you are about to paste it into Slack.
+
+
+## Pro Tips & Gotchas for Cloudflared Quick Tunnels
+
+### 1. Useful Flag: Exposing Metrics (`--metrics`)
+While the post highlights the basic command, `cloudflared` can expose a Prometheus metrics endpoint locally using the `--metrics` flag to monitor traffic health and active connections:
+```bash
+cloudflared tunnel --metrics localhost:8081 --url http://localhost:3000
+```
+
+### 2. Common Mistake: Binding to All Interfaces
+A common mistake when starting a local server for tunneling is binding to `0.0.0.0` (all interfaces) rather than `127.0.0.1` (loopback). If your machine is on an untrusted network (like public Wi-Fi), binding to `0.0.0.0` exposes your port locally to other users on the same network before the tunnel even routes traffic. Always bind local dev servers strictly to `127.0.0.1` or `localhost`.
+
+### 3. Production Gotcha: Rate Limits and Terms of Service
+> **Warning:** Quick tunnels (`trycloudflare.com`) are explicitly designed for local development, debugging, and testing. Relying on them for production workloads or heavy continuous traffic can lead to rate-limiting, dropped connections, or violations of Cloudflare's terms of service. For production use cases, always provision a named, authenticated tunnel backed by a custom domain and Cloudflare Access policies.
+
+### 4. A Better Alternative for Long-Lived Workflows
+Instead of regenerating a brand-new random URL every time you restart your development server, you can set up a persistent named tunnel with a custom subdomain using a free Cloudflare account:
+```bash
+cloudflared tunnel create my-dev-tunnel
+cloudflared tunnel route dns my-dev-tunnel dev.yourdomain.com
+cloudflared tunnel run --url http://localhost:3000 my-dev-tunnel
+```
+This gives you a stable URL that doesn't change on restart, while still keeping your local machine behind a secure outbound-only connection.
+
+## Pro Tips & Gotchas
+
+- **Useful Flag (`--metrics`)**: Run `cloudflared tunnel --metrics localhost:8081 --url http://localhost:3000` to monitor traffic and connection health locally.
+- **Common Mistake (Binding to `0.0.0.0`)**: Always bind your local dev server to `127.0.0.1` (loopback) rather than all interfaces to prevent exposing your port to other users on an untrusted network.
+- **Production Gotcha**: Quick tunnels (`trycloudflare.com`) are strictly for local testing and debugging. Heavy continuous production traffic can lead to rate-limiting or service disruption; use named, authenticated tunnels for production.
+- **Better Alternative**: For long-lived workflows, use a named persistent tunnel with a custom subdomain instead of an ephemeral quick tunnel that changes on every restart.
