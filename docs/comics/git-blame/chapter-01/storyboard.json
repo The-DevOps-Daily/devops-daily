@@ -1,0 +1,551 @@
+{
+  "series": "git-blame",
+  "volume": "Everything Is Fine",
+  "chapter": "chapter-01",
+  "title": "The Pod That Wouldn't Die",
+  "description": "A tiny Friday deployment turns green. Checkout has other ideas.",
+  "phase": 3,
+  "status": "approved",
+  "createdDate": "2026-10-09",
+  "sceneCount": 7,
+  "artworkGenerated": true,
+  "coordinateConvention": "Normalized top-left x/y, width in image coordinates. TailTo is an image-space target. All placements are storyboard proposals; adjust against proof artwork. Below a tested breakpoint or at text zoom, dialogue flows beneath uncropped art in its array order.",
+  "technicalScenario": {
+    "traffic": "AWS ALB IP targets directly to checkout-api Pods; HTTP/1.1 to Node.js 22; AWS Load Balancer Controller manages targets.",
+    "application": "Single Node HTTP process, bounded requests, no protocol upgrades or sidecars in the depicted example.",
+    "failure": "Immediate SIGTERM process exit closes an already-in-flight ALB backend request before its response completes.",
+    "admission": "Replacement Pod/ALB target readiness checked separately.",
+    "trigger": "Ordinary receipt wording edit starts a rollout; it does not introduce the existing shutdown defect.",
+    "fictionalResults": "Test outcomes in scene 6 are narrative fiction, not tests executed in this repository.",
+    "correctiveCutover": "For the first corrected production release, use a temporary parallel fixed Deployment and controller-managed ALB target group. Verify its readiness and health, move new traffic to it, retain old targets/processes until observed withdrawal and in-flight completion, then retire old replicas. The new handler cannot repair old running Pods. Subsequent tests exercise normal rolling updates of the corrected version."
+  },
+  "scenes": [
+    {
+      "id": "scene-01",
+      "title": "Two lines",
+      "aspectRatio": "4:5",
+      "caption": "Friday, 4:57 PM.",
+      "narrativePurpose": "Establish the warm office, Sam’s optimism and the recurring small-change joke. Unit tests passed; the line count is not a risk estimate.",
+      "characters": ["sam", "maya"],
+      "backgroundCharacters": [],
+      "cameraAngle": "Slightly elevated three-quarter medium-wide view, focused on adjacent desks.",
+      "composition": "Sam sits left/center at a laptop, turning toward Maya at the right-hand desk. Their faces sit below the upper third. Keep the upper-left and upper-right wall quiet for two short bubbles. Window and plant shelf remain on the left; the whiteboard belongs to the right side of the established office. Keep the scene focused on Sam and Maya.",
+      "backgroundDetails": [
+        "One plant by the left window, its production-db label added later as optional authored text.",
+        "One old switch on the rear shelf; no second background joke.",
+        "A blank small clock face or leave clock out: the time belongs in the external caption."
+      ],
+      "dialogue": [
+        {
+          "id": "s01-sam",
+          "speaker": "sam",
+          "text": "It's literally a two-line change.",
+          "position": {
+            "x": 0.06,
+            "y": 0.06,
+            "width": 0.4
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.32,
+            "y": 0.37
+          }
+        },
+        {
+          "id": "s01-maya",
+          "speaker": "maya",
+          "text": "That's what you said last Friday.",
+          "position": {
+            "x": 0.53,
+            "y": 0.17,
+            "width": 0.4
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.72,
+            "y": 0.4
+          }
+        }
+      ],
+      "altText": "Sam turns from his laptop toward Maya in the warm office; Maya raises an eyebrow.",
+      "overlayReservations": [
+        "Quiet upper third for dialogue; no essential faces, hands or objects beneath bubbles."
+      ],
+      "accuracyNotes": [
+        "The two lines adjust receipt wording in an ordinary successful checkout response; this change does not introduce the termination defect.",
+        "Existing unit tests pass. A production rollout exposes a pre-existing abrupt-exit handler under real request timing. Avoid identifying Sam as the cause simply because he deployed."
+      ],
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/maya-v1.png"
+      ],
+      "promptFile": "prompts/scene-01.txt"
+    },
+    {
+      "id": "scene-02",
+      "title": "Half a deployment",
+      "aspectRatio": "4:5",
+      "caption": null,
+      "narrativePurpose": "Make the reassuring green result real, then point attention toward the old instances. Alex asks a useful question rather than mocking Sam.",
+      "characters": ["sam", "alex"],
+      "backgroundCharacters": [],
+      "cameraAngle": "Eye-level medium two-shot from the side of Sam’s desk.",
+      "composition": "Sam left, Alex right holding his cream mug; a laptop occupies the lower-middle area. Reserve two calm dialogue spaces above their heads. Screen remains a blank dark rectangle for later small authored target-status cards, not a generated dashboard.",
+      "backgroundDetails": [
+        "Alex’s navy-rim cream mug is unlettered; an incident inscription may be added later.",
+        "One cable neatly escaping a desk clip; no hardware cascade."
+      ],
+      "dialogue": [
+        {
+          "id": "s02-sam",
+          "speaker": "sam",
+          "text": "New pods are healthy. We're done.",
+          "position": {
+            "x": 0.06,
+            "y": 0.06,
+            "width": 0.4
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.33,
+            "y": 0.38
+          }
+        },
+        {
+          "id": "s02-alex",
+          "speaker": "alex",
+          "text": "That's half a deployment.",
+          "position": {
+            "x": 0.54,
+            "y": 0.18,
+            "width": 0.38
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.74,
+            "y": 0.42
+          }
+        }
+      ],
+      "altText": "Sam looks pleased with the rollout status while Alex watches over his shoulder, holding a cream mug.",
+      "overlayReservations": [
+        "Upper-third bubbles; an optional compact status panel on the lower laptop screen."
+      ],
+      "accuracyNotes": [
+        "Replacement containers are ready and their ALB target health has been checked. ShipIt already uses ALB IP-target readiness gates for replacement admission; this chapter diagnoses departure, not new-target registration.",
+        "Pod Ready alone is not proof of ALB registration or successful user traffic. Never label an uncompleted rollout as globally healthy.",
+        "An optional screen overlay says “new targets: healthy / old targets: retiring,” with explicit words rather than green color alone."
+      ],
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png"
+      ],
+      "promptFile": "prompts/scene-02.txt"
+    },
+    {
+      "id": "scene-03",
+      "title": "Checkout disagrees",
+      "aspectRatio": "4:5",
+      "caption": null,
+      "narrativePurpose": "Introduce a concrete customer impact and show immediate incident containment. The team investigates while preserving healthy capacity.",
+      "characters": ["chris", "maya", "sam"],
+      "backgroundCharacters": [],
+      "cameraAngle": "Medium-wide eye-level view from the meeting nook toward the desks.",
+      "composition": "Chris enters at left holding his green mug and a phone, Maya at right reaches toward her laptop, Sam sits lower/center comparing request evidence. Two upper dialogue zones. Concern is focused, not panicked. A small phone error overlay can be authored after artwork; it cannot cover his hand.",
+      "backgroundDetails": [
+        "Availability whiteboard visible but blank for an optional small later text overlay.",
+        "Keep production-db off frame here; do not repeat every office prop."
+      ],
+      "dialogue": [
+        {
+          "id": "s03-chris",
+          "speaker": "chris",
+          "text": "Checkout's failing for some customers.",
+          "position": {
+            "x": 0.05,
+            "y": 0.06,
+            "width": 0.43
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.27,
+            "y": 0.39
+          }
+        },
+        {
+          "id": "s03-maya",
+          "speaker": "maya",
+          "text": "Pause the rollout. Let's trace one failed request.",
+          "position": {
+            "x": 0.51,
+            "y": 0.18,
+            "width": 0.43
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.73,
+            "y": 0.41
+          }
+        }
+      ],
+      "altText": "Chris shows the team a checkout failure; Maya reaches for the rollout controls while Sam examines a request.",
+      "overlayReservations": ["Two upper bubbles; optional small phone status “checkout: 502”."],
+      "accuracyNotes": [
+        "Failures are intermittent and concentrated around old-pod termination. Attribute the visible 502 to the ALB only after correlated evidence.",
+        "Pausing the Deployment’s rollout stops further rollout progression; it does not resurrect a terminated pod or instantly cancel an already-started termination. Keep healthy replacements serving and verify service recovery.",
+        "Do not add blind checkout retries. This chapter does not establish safe retry behavior for a possibly committed order."
+      ],
+      "referenceImages": [
+        "assets/comics/git-blame/characters/chris-v1.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/characters/sam-v1.png"
+      ],
+      "promptFile": "prompts/scene-03.txt"
+    },
+    {
+      "id": "scene-04",
+      "title": "Mid-sentence",
+      "aspectRatio": "4:3",
+      "caption": null,
+      "narrativePurpose": "Reveal the actual failure with Sam supplying the request evidence and Maya correlating process lifetime. Let one clear diagram support the scene without turning it into a lesson.",
+      "characters": ["sam", "maya", "alex"],
+      "backgroundCharacters": [],
+      "cameraAngle": "Slightly elevated landscape view across the shared incident table.",
+      "composition": "Sam left, Maya center, Alex right, faces in the upper-middle band. Sam points toward one request record, Maya toward its exit timestamp; Alex has set his mug down. Reserve upper band for three short bubbles and a wide empty physical paper/board area across the lower third for a controlled technical inset. No generated arrows, pods or diagram nodes.",
+      "backgroundDetails": [
+        "Maya’s slate notebook beside her keyboard.",
+        "Only Alex’s mug in this frame; Chris and his green mug are off frame."
+      ],
+      "dialogue": [
+        {
+          "id": "s04-sam",
+          "speaker": "sam",
+          "text": "This request went to an old pod.",
+          "position": {
+            "x": 0.04,
+            "y": 0.04,
+            "width": 0.29
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.23,
+            "y": 0.33
+          }
+        },
+        {
+          "id": "s04-maya",
+          "speaker": "maya",
+          "text": "It exited before the reply.",
+          "position": {
+            "x": 0.355,
+            "y": 0.06,
+            "width": 0.29
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.52,
+            "y": 0.35
+          }
+        },
+        {
+          "id": "s04-alex",
+          "speaker": "alex",
+          "text": "We hung up mid-sentence.",
+          "position": {
+            "x": 0.67,
+            "y": 0.09,
+            "width": 0.29
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.81,
+            "y": 0.36
+          }
+        }
+      ],
+      "altText": "Sam, Maya and Alex compare a failed request with the old process’s exit; a clear inset explains the interrupted response.",
+      "overlayReservations": [
+        "Top band for three short utterances; heads below it.",
+        "Blank lower paper area: x .08, y .57, width .84, height .35. The diagram is separate structured content on mobile."
+      ],
+      "accuracyNotes": [
+        "Selected request was already in flight before termination. ALB awaited its response; the old Node process exited immediately on SIGTERM, closing the backend connection before a complete response. A replacement cannot take over this live request.",
+        "ALB deregistration stops routing new requests when effective; control-plane propagation before that point is asynchronous. Do not depict ALB routinely selecting an already-deregistered target for brand-new requests.",
+        "The inset’s replacement branch is a different request, not a replay or automatic transfer of the interrupted checkout."
+      ],
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png"
+      ],
+      "promptFile": "prompts/scene-04.txt"
+    },
+    {
+      "id": "scene-05",
+      "title": "The old goodbye",
+      "aspectRatio": "4:5",
+      "caption": "The two-line change gets a slightly larger companion.",
+      "narrativePurpose": "Own the pre-existing bug without blame. Show the fix as coordinated application and infrastructure work, not a magic sleep.",
+      "characters": ["sam", "alex", "maya"],
+      "backgroundCharacters": [],
+      "cameraAngle": "Closer three-quarter view of the three engineers at the table, emphasizing faces and hands.",
+      "composition": "Sam left looking at the old shutdown handler; Alex center acknowledging it with a small rueful smile; Maya right with a plain note card. Three staggered quiet bubble zones above the heads. Their hands rest naturally; nobody delivers a presentation.",
+      "backgroundDetails": [
+        "A small hardware shelf at far rear with one blank sticky note; “Temporary fix, 2021” may be authored later.",
+        "Alex’s mug on table, not held in every frame."
+      ],
+      "dialogue": [
+        {
+          "id": "s05-sam",
+          "speaker": "sam",
+          "text": "Codex traced it: we exit on SIGTERM.",
+          "position": {
+            "x": 0.04,
+            "y": 0.05,
+            "width": 0.29
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.27,
+            "y": 0.39
+          }
+        },
+        {
+          "id": "s05-alex",
+          "speaker": "alex",
+          "text": "That's my old handler. Let's fix it.",
+          "position": {
+            "x": 0.355,
+            "y": 0.13,
+            "width": 0.29
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.52,
+            "y": 0.44
+          }
+        },
+        {
+          "id": "s05-maya",
+          "speaker": "maya",
+          "text": "Claude Code can draft the test. We run it.",
+          "position": {
+            "x": 0.67,
+            "y": 0.05,
+            "width": 0.29
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.77,
+            "y": 0.46
+          }
+        }
+      ],
+      "altText": "Alex acknowledges an old shutdown handler as Sam and Maya work with him on a safer handoff.",
+      "overlayReservations": [
+        "Staggered upper dialogue band to .36; heads and essential gestures remain below .39.",
+        "No live code listing in the illustration."
+      ],
+      "accuracyNotes": [
+        "Remove abrupt process.exit on SIGTERM; make shutdown idempotent and bounded. Keep the app capable of serving residual traffic during the measured withdrawal phase, then stop accepting connections and finish active responses before resource cleanup.",
+        "A supported preStop phase may cover measured propagation while the app remains alive; it runs before the normal stop signal and consumes the same Pod grace budget. Sleeping alone is not request draining.",
+        "Verify signal delivery to the actual Node process. Align request bounds, ALB deregistration allowance, application shutdown deadline and total Pod grace budget.",
+        "This is a separate deliberate corrective change, tested before release, not an unreviewed Friday hot edit.",
+        "Coding agents assist with source inspection and regression-test drafting. The humans correlate production evidence, review the patch, run the tests and own the rollout; neither agent independently declares production safe."
+      ],
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/characters/maya-v1.png"
+      ],
+      "promptFile": "prompts/scene-05.txt"
+    },
+    {
+      "id": "scene-06",
+      "title": "Boring graphs",
+      "aspectRatio": "4:5",
+      "caption": "Test environment first. A watched production rollout afterward.",
+      "narrativePurpose": "Give validation its own beat. Completion of in-flight work, not merely replacement health, makes the resolution credible.",
+      "characters": ["sam", "alex", "maya"],
+      "backgroundCharacters": [],
+      "cameraAngle": "Eye-level medium-wide two-speaker view, Maya visible quietly at the right.",
+      "composition": "Sam left has a small relieved smile; Alex center/right glances at a quiet monitor; Maya further right checks a final request record without speaking. Keep screens clean for a compact later test-environment label and completion markers. Two upper bubbles, hands resting naturally.",
+      "backgroundDetails": [
+        "Afternoon light slightly warmer; weather, desk positions and clothing unchanged.",
+        "Plant may be barely visible at far left, not a new joke."
+      ],
+      "dialogue": [
+        {
+          "id": "s06-sam",
+          "speaker": "sam",
+          "text": "Even the slow request finished.",
+          "position": {
+            "x": 0.05,
+            "y": 0.06,
+            "width": 0.42
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.29,
+            "y": 0.4
+          }
+        },
+        {
+          "id": "s06-alex",
+          "speaker": "alex",
+          "text": "Excellent. Boring graphs.",
+          "position": {
+            "x": 0.53,
+            "y": 0.19,
+            "width": 0.39
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.66,
+            "y": 0.42
+          }
+        }
+      ],
+      "altText": "Sam smiles with relief as a deliberately slow test request completes; Alex and Maya check the rollout results.",
+      "overlayReservations": [
+        "Upper bubbles; a simple separate authored test summary rather than a screenshot full of microtext."
+      ],
+      "accuracyNotes": [
+        "Story action: repeat representative staging rollouts with overlapping HTTP requests, including a bounded slow request and connection reuse; correlate request IDs, Pod termination and ALB target state.",
+        "Also test the forced-timeout path and readiness/startup behavior separately. A bounded grace period does not promise all arbitrarily long requests will finish.",
+        "The first corrective production cutover keeps existing old processes alive until routing is withdrawn and in-flight work is observed complete. A parallel fixed deployment/target group supplies healthy capacity; the new handler is not assumed to exist in old replicas. Both versions use compatible unchanged database schema/configuration. Controller-owned changes avoid a conflicting manual ALB edit.",
+        "Then observe a limited production rollout with stable capacity and mitigation ready. Show “no shutdown-related failures observed in these tests,” not an absolute zero-downtime guarantee.",
+        "These are fictional story results. No actual ShipIt rollout or application test has been executed in this repository."
+      ],
+      "referenceImages": [
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png",
+        "assets/comics/git-blame/characters/maya-v1.png"
+      ],
+      "promptFile": "prompts/scene-06.txt"
+    },
+    {
+      "id": "scene-07",
+      "title": "Monday",
+      "aspectRatio": "4:5",
+      "caption": null,
+      "narrativePurpose": "Deliver the silent laptop-close punchline and let Chris share the decision. Finish on the people, not on a checklist.",
+      "characters": ["chris", "sam", "maya", "alex"],
+      "backgroundCharacters": [],
+      "cameraAngle": "Slightly elevated wide portrait view of the team desks and meeting nook.",
+      "composition": "Chris upper-right/middle catches the hint with an amused half-smile as the other three gently close their laptops. His own lid is halfway down too. Keep heads and laptop-closing hands distinct. First bubble above Chris; short “Monday” bubble in a second quiet area with tail to the same speaker. The image captures the response to the first utterance; bubbles establish a brief pause, not simultaneous speech.",
+      "backgroundDetails": [
+        "A discreet mug on Alex’s desk, no newly materialized souvenir.",
+        "Plant by original window; no appearance by Nora or Eli."
+      ],
+      "dialogue": [
+        {
+          "id": "s07-chris-ask",
+          "speaker": "chris",
+          "text": "One more tiny change before we go?",
+          "position": {
+            "x": 0.5,
+            "y": 0.04,
+            "width": 0.44
+          },
+          "tailDirection": null,
+          "tailTo": null
+        },
+        {
+          "id": "s07-chris-answer",
+          "speaker": "chris",
+          "text": "Monday.",
+          "position": {
+            "x": 0.65,
+            "y": 0.2,
+            "width": 0.28
+          },
+          "tailDirection": "down",
+          "tailTo": {
+            "x": 0.73,
+            "y": 0.43
+          }
+        }
+      ],
+      "altText": "Alex, Maya and Sam quietly close their laptops. Chris notices, smiles and closes his own as well.",
+      "overlayReservations": [
+        "Two ordered bubble areas above Chris at the right: question first, then Monday; only the final bubble has a tail.",
+        "Protect laptop-closing hands and all four faces; final anchors must be adjusted after artwork."
+      ],
+      "accuracyNotes": [
+        "The team has confirmed customer recovery and ownership of monitoring before packing up. No one abandons an active incident for a joke.",
+        "The decision defers another non-urgent feature; Friday is not presented as inherently unsafe for all deployments.",
+        "Alex’s new incident mug appears only in a later chapter after it could have been made; this scene keeps the existing mug."
+      ],
+      "referenceImages": [
+        "assets/comics/git-blame/characters/chris-v1.png",
+        "assets/comics/git-blame/characters/sam-v1.png",
+        "assets/comics/git-blame/characters/maya-v1.png",
+        "assets/comics/git-blame/characters/alex-v2.png"
+      ],
+      "promptFile": "prompts/scene-07.txt"
+    }
+  ],
+  "diagram": {
+    "scene": "scene-04",
+    "status": "implemented-phase-5-authored-svg-with-semantic-mobile-fallback",
+    "imageBox": {
+      "x": 0.12,
+      "y": 0.745,
+      "width": 0.76,
+      "height": 0.179
+    },
+    "mobilePlacement": "Normal flow below art, before dialogue only if it preserves scene reading order; default after scene dialogue.",
+    "nodes": [
+      {
+        "id": "alb",
+        "label": "Load balancer"
+      },
+      {
+        "id": "old",
+        "label": "Old pod: app exits"
+      },
+      {
+        "id": "new",
+        "label": "New pod: healthy"
+      }
+    ],
+    "edges": [
+      {
+        "from": "alb",
+        "to": "old",
+        "label": "Already in flight",
+        "meaning": "Sent before withdrawal became effective."
+      },
+      {
+        "from": "old",
+        "to": "alb",
+        "label": "Response interrupted",
+        "meaning": "Connection closed before a complete reply; ALB returns 502 to this client."
+      },
+      {
+        "from": "alb",
+        "to": "new",
+        "label": "Another request",
+        "meaning": "Separate healthy request, not transfer or replay of failed checkout."
+      }
+    ],
+    "accessibleSummary": "An earlier request is still awaiting an old pod’s response when its application exits. The load balancer returns a 502 for that request. A different request succeeds through a healthy replacement."
+  },
+  "sponsorship": null,
+  "sponsorshipNote": "No chapter sponsor is confirmed. Follow ../sponsor-integration.md; introduce a product only if it supports the actual shutdown investigation, with verified claims and visible disclosure.",
+  "approvedDate": "2026-10-09",
+  "aiAssistance": {
+    "role": "Everyday supervised development tools, not production dependencies or autonomous incident commanders.",
+    "tools": ["Codex", "Claude Code"],
+    "scenes": ["scene-05"],
+    "disclosure": "Editorial references to tools used by fictional engineers. Neither is a confirmed chapter sponsor."
+  },
+  "artworkStatus": {
+    "scene-01": "approved-phase-4-proof",
+    "remainingScenes": "generated-awaiting-complete-chapter-approval"
+  },
+  "proofApprovedDate": "2026-10-09",
+  "runtimeContent": "content/comics/git-blame/chapter-01.json",
+  "chapterReview": "docs/comics/git-blame/chapter-01/production-review/README.md"
+}

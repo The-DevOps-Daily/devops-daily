@@ -1,0 +1,82 @@
+{
+  "createdDate": "2026-10-09",
+  "chapter": "chapter-01",
+  "proposedPanel": 7,
+  "status": "first-technical-proof-awaiting-user-review",
+  "tool": "image_gen.imagegen",
+  "sourceFilename": "exec-b82816ea-8888-4605-a41a-c700e981dd27.png",
+  "prompt": "docs/comics/git-blame/chapter-01/prompts/panel-07-trace-v1.txt",
+  "promptSha256": "770b31d0714147bd674afc45a0cbda521080cd40e103b090db637c782f3dec3f",
+  "referenceImages": [
+    {
+      "path": "assets/comics/git-blame/characters/maya-v1.png",
+      "sha256": "67dde32e7cac46b4fe58c8b7bcd04634a95bde6fd9c8bfcff1f16533c828ba4e"
+    },
+    {
+      "path": "assets/comics/git-blame/chapter-01/scene-01-proof-v1.png",
+      "sha256": "23aada97f352d5b8569eb6d63763394877642387eac721f1cd488cddc85a1572"
+    }
+  ],
+  "transparentBackground": false,
+  "letteringBakedIntoArtwork": false,
+  "generatedArtworkCount": 1,
+  "crop": false,
+  "upscale": false,
+  "encoding": {
+    "jpeg": {
+      "quality": 90,
+      "mozjpeg": true
+    },
+    "screenshots": {
+      "jpegQuality": 92
+    }
+  },
+  "lettering": {
+    "path": "docs/comics/git-blame/chapter-01/technical-proof/lettering.json",
+    "sha256": "8ea8cd0c878eee8777cee7b8110695b30beadb963f66d9c122e5d7e42a669634"
+  },
+  "reviewHtml": {
+    "path": "docs/comics/git-blame/chapter-01/technical-proof/review.html",
+    "sha256": "784f705db13b82d6a71d4aabdc0c8bde2644ff0325de52c305aa16a34df3904c"
+  },
+  "browserChecks": "docs/comics/git-blame/chapter-01/technical-proof/browser-checks.json",
+  "files": [
+    {
+      "path": "assets/comics/git-blame/chapter-01/panel-07-trace-v1.png",
+      "dimensions": [1448, 1086],
+      "bytes": 2692406,
+      "sha256": "3c985195e6edb36eb2395aa8e17d453e284b410b5ab4efff446ebf1388cb1a56"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/technical-proof/panel-07-trace-source.jpg",
+      "dimensions": [1448, 1086],
+      "bytes": 312695,
+      "sha256": "e100df17a9d228514ff80a54c67b8520330dac6e4105975983048f3fa547177f"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/technical-proof/panel-07-trace-desktop.jpg",
+      "dimensions": [1280, 1100],
+      "bytes": 261902,
+      "sha256": "d002f975ea5138c21afb20ce496fc19882cde96e489326c21556527d4ea81912"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/technical-proof/panel-07-trace-phone.jpg",
+      "dimensions": [393, 851],
+      "bytes": 83225,
+      "sha256": "3f4e2775bcf4a810239bbe4275719049431eec5fbd60fd5b069df5bbc1ad604e"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/technical-proof/panel-07-trace-narrow-phone.jpg",
+      "dimensions": [320, 851],
+      "bytes": 68726,
+      "sha256": "ed967df5181cac0e3dd6f1ad945e18bcc867c5016c55040d42bbb76b3179ecd1"
+    },
+    {
+      "path": "docs/comics/git-blame/chapter-01/technical-proof/panel-07-trace-enlarged-text.jpg",
+      "dimensions": [1280, 1605],
+      "bytes": 343788,
+      "sha256": "589023c0d9adb44f1eb6a12a1e5409a7ccfab4af2c0c832165075369f96baab5"
+    }
+  ],
+  "runtimeIntegration": "Not interleaved: existing reader and PDF retain seven illustrations."
+}

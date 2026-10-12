@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>git blame — One failed request — artwork proof</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        color: #273746;
+        background: #f6f0df;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 1rem;
+        line-height: 1.45;
+      }
+      main {
+        max-width: 1024px;
+        margin: auto;
+      }
+      header {
+        margin-bottom: 18px;
+      }
+      header p {
+        margin: 0;
+        color: #486456;
+        font-size: 1rem;
+      }
+      h1 {
+        font-size: 1.75rem;
+        line-height: 1.2;
+        margin: 5px 0 0;
+      }
+      figure {
+        margin: 0;
+        container-type: inline-size;
+      }
+      .art {
+        position: relative;
+      }
+      img {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      ol {
+        margin: 0;
+        padding: 20px 28px 20px 50px;
+        background: #fffcf2;
+      }
+      li {
+        padding: 8px 0;
+        font-size: 1.125rem;
+      }
+      li strong,
+      li span {
+        display: block;
+      }
+      li strong {
+        font-size: 1.25rem;
+      }
+      li span {
+        margin-top: 4px;
+      }
+      .warning strong {
+        color: #765323;
+      }
+      .error strong {
+        color: #923f36;
+      }
+      figcaption {
+        font-size: 1.125rem;
+        margin: 18px 0 0;
+      }
+      .note {
+        font-size: 0.9375rem;
+        color: #486456;
+        margin: 12px 0 0;
+      }
+      @container (min-width:46em) {
+        ol {
+          position: absolute;
+          inset: 0;
+          list-style: none;
+          padding: 0;
+          background: none;
+        }
+        li {
+          position: absolute;
+          left: var(--x);
+          top: var(--y);
+          width: var(--width);
+          padding: 0;
+          font-size: clamp(1.125rem, 2cqi, 1.3125rem);
+          line-height: 1.4;
+        }
+        li strong {
+          font-size: clamp(1.3125rem, 2.5cqi, 1.625rem);
+        }
+        li span {
+          margin-top: 5px;
+        }
+      }
+      @media (max-width: 480px) {
+        body {
+          padding: 12px;
+        }
+        h1 {
+          font-size: 1.5rem;
+        }
+        ol {
+          padding: 15px 18px 15px 38px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p>git blame · Chapter 1 · Panel 7 · Artwork proof</p>
+        <h1>One failed request</h1>
+      </header>
+      <figure>
+        <div class="art">
+          <img
+            src="panel-07-trace-source.jpg"
+            width="1448"
+            height="1086"
+            alt="Close view past Maya's dark bob and round glasses. Her green-sleeved hand points at a monitor containing three illustrated evidence tracks: an accepted request, an interrupted response and an error. Slate screen light contrasts with the warm wooden desk."
+          />
+          <ol aria-label="Evidence in chronological order">
+            <li class="neutral" style="--x: 57.49999999999999%; --y: 17%; --width: 38%">
+              <strong>r-17 · Accepted</strong><span>Old target; response pending.</span>
+            </li>
+            <li class="warning" style="--x: 57.49999999999999%; --y: 36%; --width: 38%">
+              <strong>Old app exits</strong><span>SIGTERM handler ends the process.</span>
+            </li>
+            <li
+              class="error"
+              style="--x: 57.49999999999999%; --y: 55.00000000000001%; --width: 38%"
+            >
+              <strong>ALB returns 502</strong><span>The same request loses its reply.</span>
+            </li>
+          </ol>
+        </div>
+        <figcaption>
+          Maya matches the request trace. The old process exited before it finished replying.
+        </figcaption>
+      </figure>
+      <p class="note">
+        Fictional evidence, assembled from app and load-balancer records. r-17 is a short display
+        alias.
+      </p>
+    </main>
+  </body>
+</html>

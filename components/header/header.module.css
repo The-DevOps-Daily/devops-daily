@@ -1,0 +1,28 @@
+.navigation {
+  container: site-navigation / inline-size;
+}
+.mobile {
+  display: flex;
+}
+.desktop {
+  display: none;
+}
+.wordmark {
+  display: none;
+}
+@container site-navigation (min-width: 40em) {
+  .wordmark {
+    display: inline;
+  }
+}
+/* Font-relative width prevents enlarged navigation text from overflowing. */
+@container site-navigation (min-width: 68em) {
+  .mobile {
+    display: none;
+  }
+  .desktop {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "panel": 7,
+  "title": "One failed request",
+  "caption": "Maya matches the request trace. The old process exited before it finished replying.",
+  "artwork": "assets/comics/git-blame/chapter-01/panel-07-trace-v1.png",
+  "alt": "Close view past Maya's dark bob and round glasses. Her green-sleeved hand points at a monitor containing three illustrated evidence tracks: an accepted request, an interrupted response and an error. Slate screen light contrasts with the warm wooden desk.",
+  "labels": [
+    {
+      "title": "r-17 · Accepted",
+      "detail": "Old target; response pending.",
+      "position": { "x": 0.575, "y": 0.17, "width": 0.38 },
+      "tone": "neutral"
+    },
+    {
+      "title": "Old app exits",
+      "detail": "SIGTERM handler ends the process.",
+      "position": { "x": 0.575, "y": 0.36, "width": 0.38 },
+      "tone": "warning"
+    },
+    {
+      "title": "ALB returns 502",
+      "detail": "The same request loses its reply.",
+      "position": { "x": 0.575, "y": 0.55, "width": 0.38 },
+      "tone": "error"
+    }
+  ],
+  "technicalNote": "Fictional stitched investigation view, not native output from any tool. r-17 is a display alias for a trace matched between the ALB record and application logging of X-Amzn-Trace-Id. The old target address, request timing, process lifetime and known immediate-exit handler explain the interrupted response. SIGTERM is process-level, not a per-request Kubernetes event. A healthy new pod does not take over an already accepted request. A 502 does not establish whether the order committed."
+}

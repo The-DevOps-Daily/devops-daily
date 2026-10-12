@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
+import { isComicReaderPath } from '@/lib/comic-routes';
 
 const BookPromotionPopup = dynamic(
   () => import('@/components/book-promotion-popup').then((module) => module.BookPromotionPopup),
@@ -21,6 +23,7 @@ const BackToTop = dynamic(
 );
 
 export function DeferredSiteExtras() {
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export function DeferredSiteExtras() {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  if (!ready) return null;
+  if (!ready || isComicReaderPath(pathname)) return null;
 
   return (
     <>

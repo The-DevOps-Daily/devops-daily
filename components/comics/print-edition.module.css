@@ -1,0 +1,83 @@
+:global(html:has([data-comic-print])) {
+  font-size: 14px;
+  color-scheme: light;
+}
+:global(body:has([data-comic-print])) {
+  background: #f6f0df;
+  color: #273746;
+}
+:global(body:has([data-comic-print]) > div),
+:global(body:has([data-comic-print]) header:not(article header)),
+:global(body:has([data-comic-print]) footer),
+:global(body:has([data-comic-print]) button),
+:global(body:has([data-comic-print]) [role='dialog']),
+:global(body:has([data-comic-print]) a[href='#main-content']) {
+  display: none;
+}
+.edition {
+  width: 186mm;
+  margin: 0 auto;
+  color: #273746;
+  background: #f6f0df;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.cover {
+  text-align: center;
+  padding-top: 10mm;
+  break-after: page;
+}
+.series {
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+.cover h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 1rem 0;
+}
+.cover img {
+  display: block;
+  width: 105mm;
+  height: auto;
+  margin: 1rem auto;
+}
+.page {
+  min-height: 265mm;
+  display: flex;
+  flex-direction: column;
+  break-after: page;
+  break-inside: avoid;
+}
+.page > figure {
+  margin: auto 0;
+}
+.folio {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 1rem 0;
+}
+.afterword {
+  line-height: 1.65;
+}
+.afterword h2 {
+  display: block;
+}
+.afterword li {
+  break-inside: avoid;
+}
+.credit {
+  font-size: 0.85rem;
+  margin: 1.25rem 0;
+}
+@page {
+  size: A4 portrait;
+  margin: 12mm;
+}
+@media print {
+  .edition {
+    margin: 0;
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "browser": "Chromium",
+  "generated": "2026-10-09T15:25:09.080Z",
+  "checks": [
+    {
+      "name": "desktop",
+      "javascript": "disabled",
+      "overlay": true,
+      "art": {
+        "width": 1024,
+        "height": 768
+      },
+      "labels": [
+        {
+          "text": "\n              r-17 · AcceptedOld target; response pending.\n            ",
+          "x": 716.796875,
+          "y": 234.328125,
+          "width": 389.109375,
+          "height": 69.5,
+          "fontSize": 20.48,
+          "fits": true
+        },
+        {
+          "text": "\n              Old app exitsSIGTERM handler ends the process.\n            ",
+          "x": 716.796875,
+          "y": 380.25,
+          "width": 389.109375,
+          "height": 69.5,
+          "fontSize": 20.48,
+          "fits": true
+        },
+        {
+          "text": "\n              ALB returns 502The same request loses its reply.\n            ",
+          "x": 716.796875,
+          "y": 526.171875,
+          "width": 389.109375,
+          "height": 69.5,
+          "fontSize": 20.48,
+          "fits": true
+        }
+      ],
+      "overflow": false,
+      "naturalWidth": 1448
+    },
+    {
+      "name": "phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "art": {
+        "width": 369,
+        "height": 276.75
+      },
+      "labels": [
+        {
+          "text": "\n              r-17 · AcceptedOld target; response pending.\n            ",
+          "x": 50,
+          "y": 378.734375,
+          "width": 313,
+          "height": 75.09375,
+          "fontSize": 18,
+          "fits": true
+        },
+        {
+          "text": "\n              Old app exitsSIGTERM handler ends the process.\n            ",
+          "x": 50,
+          "y": 453.828125,
+          "width": 313,
+          "height": 75.09375,
+          "fontSize": 18,
+          "fits": true
+        },
+        {
+          "text": "\n              ALB returns 502The same request loses its reply.\n            ",
+          "x": 50,
+          "y": 528.921875,
+          "width": 313,
+          "height": 75.09375,
+          "fontSize": 18,
+          "fits": true
+        }
+      ],
+      "overflow": false,
+      "naturalWidth": 1448
+    },
+    {
+      "name": "narrow-phone",
+      "javascript": "disabled",
+      "overlay": false,
+      "art": {
+        "width": 296,
+        "height": 222
+      },
+      "labels": [
+        {
+          "text": "\n              r-17 · AcceptedOld target; response pending.\n            ",
+          "x": 50,
+          "y": 347.171875,
+          "width": 240,
+          "height": 75.09375,
+          "fontSize": 18,
+          "fits": true
+        },
+        {
+          "text": "\n              Old app exitsSIGTERM handler ends the process.\n            ",
+          "x": 50,
+          "y": 422.265625,
+          "width": 240,
+          "height": 101.1875,
+          "fontSize": 18,
+          "fits": true
+        },
+        {
+          "text": "\n              ALB returns 502The same request loses its reply.\n            ",
+          "x": 50,
+          "y": 523.453125,
+          "width": 240,
+          "height": 101.1875,
+          "fontSize": 18,
+          "fits": true
+        }
+      ],
+      "overflow": false,
+      "naturalWidth": 1448
+    },
+    {
+      "name": "enlarged-text",
+      "javascript": "disabled",
+      "overlay": false,
+      "art": {
+        "width": 1024,
+        "height": 768
+      },
+      "labels": [
+        {
+          "text": "\n              r-17 · AcceptedOld target; response pending.\n            ",
+          "x": 178,
+          "y": 948.578125,
+          "width": 946,
+          "height": 130.1875,
+          "fontSize": 36,
+          "fits": true
+        },
+        {
+          "text": "\n              Old app exitsSIGTERM handler ends the process.\n            ",
+          "x": 178,
+          "y": 1078.765625,
+          "width": 946,
+          "height": 130.1875,
+          "fontSize": 36,
+          "fits": true
+        },
+        {
+          "text": "\n              ALB returns 502The same request loses its reply.\n            ",
+          "x": 178,
+          "y": 1208.953125,
+          "width": 946,
+          "height": 130.1875,
+          "fontSize": 36,
+          "fits": true
+        }
+      ],
+      "overflow": false,
+      "naturalWidth": 1448
+    }
+  ]
+}
