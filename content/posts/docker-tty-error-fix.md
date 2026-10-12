@@ -362,5 +362,5 @@ Start with the simple solutions and progress to more advanced techniques only wh
 
 - [Enter a Docker Container with a New TTY](/posts/enter-docker-container-new-tty): attach to running containers
 - [How to Access Docker Container Shell](/posts/how-to-access-docker-container-shell): shell access methods
-- [Interactive Shell in Docker Compose](/posts/interactive-shell-docker-compose): Compose shell access
+- [Interactive Shell in Docker Compose](/posts/rebuild-docker-container-compose#h2-how-do-i-open-an-interactive-shell-in-a-compose-service): Compose shell access
 - [Introduction to Docker Guide](/guides/introduction-to-docker): Docker fundamentals

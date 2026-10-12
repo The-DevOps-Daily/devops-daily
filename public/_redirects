@@ -53,3 +53,7 @@
 /posts/refactoring-modules-error-provider-configuration-not-present /posts/terraform-module-outputs-inputs-and-sources 301
 /posts/terraform-module-output-as-input-another-module /posts/terraform-module-outputs-inputs-and-sources 301
 /posts/terraform-output-field-from-module /posts/terraform-module-outputs-inputs-and-sources 301
+# Thin Docker Compose posts merged into the rebuild post (Oct 2026)
+/posts/restart-single-container-docker-compose /posts/rebuild-docker-container-compose 301
+/posts/upgrade-docker-container-image-changed /posts/rebuild-docker-container-compose 301
+/posts/interactive-shell-docker-compose /posts/rebuild-docker-container-compose 301
