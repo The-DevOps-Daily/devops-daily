@@ -123,7 +123,7 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0",
+    "@playwright/test": "1.64.0",
     "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/typography": "0.5.20",
@@ -135,13 +135,13 @@
     "eslint": "^9.39.2",
     "eslint-config-next": "16.3.8",
     "fast-glob": "^3.3.3",
-    "postcss": "^8.5.28",
+    "postcss": "^8.5.29",
     "prettier": "^3.9.9",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vite": "8.3.2",
+    "vite": "8.3.4",
     "vitest": "^5.0.3"
   },
   "pnpm": {
