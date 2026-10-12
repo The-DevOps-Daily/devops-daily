@@ -1,0 +1,203 @@
+{
+  "id": "dns-troubleshooting-quiz",
+  "title": "DNS Troubleshooting Quiz",
+  "description": "Real DNS incidents and how to debug them: TTLs and caching, CNAMEs at the apex, NODATA versus NXDOMAIN, negative caching, Kubernetes ndots, TCP fallback, nameserver migrations, DNSSEC and why dig disagrees with your application",
+  "category": "Networking",
+  "icon": "Network",
+  "totalPoints": 153,
+  "theme": {
+    "primaryColor": "blue",
+    "gradientFrom": "from-blue-500",
+    "gradientTo": "to-cyan-600"
+  },
+  "metadata": {
+    "estimatedTime": "15-20 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 4,
+      "advanced": 3
+    },
+    "createdDate": "2026-10-03"
+  },
+  "questions": [
+    {
+      "id": "ttl-old-ip",
+      "title": "Moved the Server, Users Still Hit the Old One",
+      "description": "Explain why some users keep reaching the old IP after an A record change.",
+      "situation": "You changed the A record for app.example.com from 203.0.113.10 to 198.51.100.20 an hour ago. Your laptop resolves the new IP, but some customers are still reaching the old server.",
+      "codeExample": "$ dig app.example.com A +noall +answer\napp.example.com.  86400  IN  A  203.0.113.10",
+      "options": [
+        "Recursive resolvers cached the old record and will keep serving it until its TTL (86400 seconds, one day) expires",
+        "The change has not reached the authoritative nameserver yet; DNS changes are pushed out to every server in batches",
+        "Browsers pin the first IP they ever saw for a domain until the user clears their cache",
+        "The old server is still announcing the IP via BGP, so traffic is routed there"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Resolvers cache answers for the record's TTL. With a one-day TTL, a resolver that looked the name up just before your change can keep returning the old IP for up to 24 hours. Before a planned migration, lower the TTL (for example to 300 seconds) at least one old-TTL period in advance, make the change, then raise it again. DNS has no push mechanism; caches only expire.",
+      "hint": "Look at the second column of the dig answer.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "cname-at-apex",
+      "title": "CNAME on the Root Domain",
+      "description": "Point a bare domain at a hosting provider that only gives you a hostname.",
+      "situation": "Your hosting provider says: point your domain at myapp.hostingco.net using a CNAME. It works for www.example.com, but your DNS provider refuses a CNAME on example.com itself.",
+      "codeExample": "example.com.  CNAME  myapp.hostingco.net.   ; rejected\nwww.example.com.  CNAME  myapp.hostingco.net.   ; accepted",
+      "options": [
+        "Bare domains can only have A records, so ask the host for a static IP; there is no other option",
+        "A CNAME cannot coexist with other records, and the zone apex must have SOA and NS records. Use your provider's ALIAS/ANAME or CNAME-flattening record, or a redirect from the apex to www",
+        "The CNAME needs a trailing dot removed to be valid at the apex",
+        "CNAMEs at the apex are only allowed when DNSSEC is enabled"
+      ],
+      "correctAnswer": 1,
+      "explanation": "RFC 1034 says a name with a CNAME can have no other data. The apex always has SOA and NS records, so a CNAME there is invalid. Many DNS providers offer a non-standard ALIAS/ANAME record (or 'CNAME flattening') that resolves the target and serves A/AAAA records at the apex. Alternatively, serve the apex with A records and redirect it to www.",
+      "hint": "What records must every zone apex already have?",
+      "difficulty": "beginner",
+      "points": 11
+    },
+    {
+      "id": "query-specific-resolver",
+      "title": "Is It My Resolver or the Internet?",
+      "description": "Check what a specific public resolver returns for a name.",
+      "situation": "A teammate says the new record works for them but not for you. You want to see exactly what Google's public resolver (8.8.8.8) returns, bypassing your company resolver.",
+      "options": [
+        "nslookup example.com --resolver=google",
+        "dig example.com A +trace",
+        "dig @8.8.8.8 example.com A",
+        "host -r 8.8.8.8 example.com"
+      ],
+      "correctAnswer": 2,
+      "explanation": "dig @server sends the query directly to that server, so `dig @8.8.8.8 example.com A` shows what Google's resolver currently has (including its remaining TTL). `+trace` walks the delegation from the root and skips recursive caches entirely, which is useful but answers a different question. The other options are not valid syntax for this.",
+      "hint": "dig lets you name the server to ask.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "nodata-vs-nxdomain",
+      "title": "NOERROR With No Answer",
+      "description": "Interpret an empty but successful DNS response.",
+      "situation": "An IPv6-only test client cannot reach api.example.com. You query for AAAA and get a strange result: no error, but no answer either.",
+      "codeExample": "$ dig api.example.com AAAA\n;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 4122\n;; flags: qr rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1",
+      "options": [
+        "The name does not exist at all; NOERROR with zero answers is the same as NXDOMAIN",
+        "The resolver timed out and returned an empty placeholder response",
+        "The AAAA record exists but is hidden until DNSSEC validation finishes",
+        "The name exists but has no AAAA record (a NODATA response). It probably only has an A record, so add an AAAA record for IPv6 clients"
+      ],
+      "correctAnswer": 3,
+      "explanation": "NXDOMAIN means the name does not exist. NOERROR with an empty answer section (often called NODATA) means the name exists but has no records of the requested type. Here api.example.com likely has only an A record. The authority section usually contains the SOA, which also sets how long this negative answer is cached.",
+      "hint": "Compare the status code with the ANSWER count.",
+      "difficulty": "intermediate",
+      "points": 14
+    },
+    {
+      "id": "negative-caching",
+      "title": "New Record, Still NXDOMAIN",
+      "description": "Explain why a freshly created record is not visible everywhere.",
+      "situation": "Someone tried new.example.com before it existed and got NXDOMAIN. You created the record ten minutes ago with a TTL of 60 seconds, yet the office resolver still returns NXDOMAIN.",
+      "codeExample": "example.com.  3600  IN  SOA  ns1.example.com. hostmaster.example.com. 2026100301 7200 900 1209600 3600",
+      "options": [
+        "The 60-second TTL applies only after the first successful lookup, so the resolver is waiting for the record to propagate",
+        "Resolvers also cache negative answers (RFC 2308), for the smaller of the SOA record's TTL and its MINIMUM field, here 3600 seconds, so the earlier NXDOMAIN can persist for up to an hour",
+        "New records always take 24-48 hours to propagate worldwide",
+        "NXDOMAIN responses are cached until the zone's serial number changes"
+      ],
+      "correctAnswer": 1,
+      "explanation": "Negative answers are cached too. The negative TTL comes from the zone's SOA record: the minimum of the SOA's own TTL and its MINIMUM field (the last number), here 3600 seconds. The new record's 60-second TTL is irrelevant until the cached NXDOMAIN expires. If you know you'll create names on the fly, keep the SOA minimum low or avoid querying names before they exist.",
+      "hint": "The answer is in the SOA record, not in the new record.",
+      "difficulty": "intermediate",
+      "points": 15
+    },
+    {
+      "id": "k8s-ndots",
+      "title": "Slow External Lookups in Kubernetes",
+      "description": "Find why pods send several DNS queries for one external hostname.",
+      "situation": "Pods that call api.stripe.com show high DNS latency, and CoreDNS logs show several NXDOMAIN queries for each call before the real one succeeds.",
+      "codeExample": "# /etc/resolv.conf inside the pod\nsearch payments.svc.cluster.local svc.cluster.local cluster.local\noptions ndots:5\n\n# CoreDNS log\napi.stripe.com.payments.svc.cluster.local. A NXDOMAIN\napi.stripe.com.svc.cluster.local. A NXDOMAIN\napi.stripe.com.cluster.local. A NXDOMAIN\napi.stripe.com. A NOERROR",
+      "options": [
+        "CoreDNS is misconfigured and must forward all queries to 8.8.8.8 first",
+        "The pod's DNS cache is disabled; set enableServiceLinks: false",
+        "With ndots:5, a name with fewer than five dots is tried with every search domain first. Use fully qualified names with a trailing dot (api.stripe.com.) or lower ndots in the pod's dnsConfig",
+        "Kubernetes blocks external DNS by default until a NetworkPolicy allows it"
+      ],
+      "correctAnswer": 2,
+      "explanation": "api.stripe.com has two dots, fewer than ndots:5, so the resolver appends each search domain before trying the name as-is, which adds three NXDOMAIN round trips (often doubled for A and AAAA). Writing the name as an FQDN with a trailing dot skips the search list, or you can set dnsConfig.options ndots to a lower value (for example 2) for pods that mostly call external services.",
+      "hint": "Count the dots in api.stripe.com and compare with ndots.",
+      "difficulty": "intermediate",
+      "points": 16
+    },
+    {
+      "id": "tcp-53-truncation",
+      "title": "Big Responses Fail Behind the Firewall",
+      "description": "Diagnose failures that only happen for names with many records.",
+      "situation": "Lookups for most names work, but a name with many TXT records (SPF, verification tokens) fails from inside the datacenter with timeouts. From home it works.",
+      "codeExample": "$ dig big.example.com TXT\n;; Truncated, retrying in TCP mode.\n;; communications error to 10.0.0.2#53: timed out",
+      "options": [
+        "The response is too large for UDP, so the server sets the TC (truncated) bit and the client retries over TCP port 53, which the datacenter firewall blocks. Allow TCP 53 to and from your resolvers",
+        "TXT records over 255 characters are invalid and the resolver refuses them",
+        "The resolver rate-limits TXT queries; raise its query limit",
+        "dig does not support TXT records over UDP; use nslookup instead"
+      ],
+      "correctAnswer": 0,
+      "explanation": "When a response doesn't fit in the UDP payload size, the server sets the TC flag and the client must retry over TCP. DNS over TCP on port 53 is a normal, required part of DNS (RFC 7766), but firewalls are often configured for UDP 53 only. Allow TCP 53 as well.",
+      "hint": "Read the first line of the dig output.",
+      "difficulty": "intermediate",
+      "points": 15
+    },
+    {
+      "id": "ns-change-parent-ttl",
+      "title": "Switched DNS Providers, Old One Still Answers",
+      "description": "Understand why a nameserver change takes so long.",
+      "situation": "You moved example.com from Provider A to Provider B and updated the nameservers at your registrar yesterday. Some resolvers still query Provider A, where you already deleted the zone, so those users get SERVFAIL or stale answers.",
+      "codeExample": "$ dig com. NS +short | head -1\na.gtld-servers.net.\n$ dig @a.gtld-servers.net example.com NS +noall +authority\nexample.com.  172800  IN  NS  ns1.provider-b.net.",
+      "options": [
+        "Registrars apply nameserver changes only at midnight UTC",
+        "Provider A is still announcing your zone and must be asked to stop",
+        "Deleting the zone at Provider A immediately redirects resolvers to Provider B",
+        "The parent (.com) delegation NS records have a 172800-second (48-hour) TTL, so resolvers can keep using the old nameservers for up to two days. Keep the zone live and identical at both providers until that window passes"
+      ],
+      "correctAnswer": 3,
+      "explanation": "Resolvers cache the delegation from the parent zone, and .com serves NS records with a 48-hour TTL. During that window some resolvers still ask the old provider. The safe migration is to copy the zone to the new provider, switch the delegation, and keep the old zone running unchanged for at least the parent's NS TTL (plus your own NS TTL) before deleting it.",
+      "hint": "Look at the TTL the .com servers return.",
+      "difficulty": "advanced",
+      "points": 20
+    },
+    {
+      "id": "dnssec-stale-ds",
+      "title": "SERVFAIL Only on Some Networks After Migration",
+      "description": "Debug a DNSSEC failure after changing providers.",
+      "situation": "After moving to a new DNS provider that has not enabled DNSSEC, users of validating resolvers (like 1.1.1.1) get SERVFAIL, while dig with checking disabled works.",
+      "codeExample": "$ dig @1.1.1.1 example.com A\n;; status: SERVFAIL\n$ dig @1.1.1.1 example.com A +cd\n;; status: NOERROR\nexample.com.  300  IN  A  198.51.100.20\n$ dig example.com DS +short\n12345 13 2 3F1A...",
+      "options": [
+        "The A record TTL is too low for DNSSEC; raise it to at least 3600",
+        "The parent zone still publishes a DS record for the old provider's signing key, so validating resolvers expect signatures the new provider doesn't serve. Remove or update the DS record at the registrar (ideally before migrating)",
+        "1.1.1.1 is blocking the domain; ask Cloudflare to unblock it",
+        "+cd forces TCP, which proves the issue is a UDP firewall rule"
+      ],
+      "correctAnswer": 1,
+      "explanation": "+cd (checking disabled) tells the resolver to skip DNSSEC validation. If that works but normal queries SERVFAIL, validation is failing. The DS record at the parent still says the zone is signed with the old key, but the new provider serves unsigned (or differently signed) data, so validating resolvers treat it as bogus. Remove the DS record (and wait out its TTL) before moving to an unsigned provider, or set up the new provider's DNSSEC and publish its DS first.",
+      "hint": "What does +cd turn off?",
+      "difficulty": "advanced",
+      "points": 22
+    },
+    {
+      "id": "dig-vs-getent",
+      "title": "dig Says New IP, curl Hits the Old One",
+      "description": "Find why an application resolves a name differently from dig.",
+      "situation": "On one server, dig returns the new IP for api.internal.example.com, but curl and your application still connect to the old address.",
+      "codeExample": "$ dig api.internal.example.com +short\n10.20.0.15\n$ curl -sv https://api.internal.example.com 2>&1 | grep Connected\n* Connected to api.internal.example.com (10.20.0.9) port 443",
+      "options": [
+        "dig queries DNS servers directly, but applications use the system resolver (glibc via /etc/nsswitch.conf), which may check /etc/hosts or a local cache first. Compare with getent hosts api.internal.example.com and check /etc/hosts",
+        "curl caches DNS answers on disk between runs; delete ~/.curlrc",
+        "dig always queries IPv6 first while curl uses IPv4, so they see different records",
+        "The TLS certificate pins the old IP address"
+      ],
+      "correctAnswer": 0,
+      "explanation": "dig talks straight to a DNS server and ignores /etc/hosts, nsswitch.conf and local caches such as nscd or systemd-resolved. Applications use getaddrinfo(), which follows nsswitch.conf and typically checks /etc/hosts before DNS. `getent hosts <name>` resolves the name the same way applications do, so it's the right tool to compare. A leftover /etc/hosts entry is the classic cause.",
+      "hint": "Which tool resolves names the same way your application does?",
+      "difficulty": "advanced",
+      "points": 20
+    }
+  ]
+}
