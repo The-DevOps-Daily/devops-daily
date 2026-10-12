@@ -188,6 +188,12 @@ jobs:
 
 Workflows should have the minimum permissions necessary to complete their tasks. GitHub provides granular permission controls that you should use to limit potential damage from compromised workflows.
 
+> **Gotcha:** If your GitHub Actions workflow fails with a "403 Forbidden"
+> error when trying to push commits or update repository files, check the
+> `GITHUB_TOKEN` permissions. Repositories can use read-only defaults for
+> the token. If the workflow needs to write repository contents, explicitly
+> grant the required permission, such as `contents: write`, in the workflow.
+
 ```yaml
 name: Least Privilege Workflow
 
