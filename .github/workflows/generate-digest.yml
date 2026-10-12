@@ -3,8 +3,8 @@ name: Generate DevOps Weekly Digest
 on:
   workflow_dispatch:
   schedule:
-    # Run every Monday at 9:00 AM UTC
-    - cron: '0 9 * * 1'
+    # Every Monday at 06:17 UTC: off the hour, and early because GitHub has started scheduled runs hours late
+    - cron: '17 6 * * 1'
 
 concurrency:
   group: generate-devops-weekly-digest
