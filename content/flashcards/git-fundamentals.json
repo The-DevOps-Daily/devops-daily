@@ -6,7 +6,7 @@
   "icon": "GitBranch",
   "difficulty": "beginner",
   "estimatedTime": "15 min",
-  "cardCount": 18,
+  "cardCount": 20,
   "theme": {
     "primaryColor": "#F05032",
     "gradientFrom": "#F05032",
@@ -138,6 +138,20 @@
       "back": "git tag -a v1.0 -m 'message' - Creates a tag with metadata (author, date, message). Push with git push --tags.",
       "category": "Tagging",
       "tags": ["tag", "release"]
+    },
+    {
+      "id": "git-19",
+      "front": "How do you stage only part of a file's changes?",
+      "back": "git add -p (patch mode) - Walks you through each hunk of a file so you can stage, skip, or split hunks individually. Great for splitting unrelated changes into clean, reviewable commits.",
+      "category": "Staging",
+      "tags": ["staging", "add", "commits"]
+    },
+    {
+      "id": "git-20",
+      "front": "What does git bisect do?",
+      "back": "git bisect performs a binary search through commit history to find the commit that introduced a bug. Mark a known-bad commit (git bisect bad) and a known-good one (git bisect good); Git checks out the middle commit and you test, repeating until the culprit is found. End with git bisect reset.",
+      "category": "Advanced",
+      "tags": ["bisect", "debugging", "history"]
     }
   ]
 }
