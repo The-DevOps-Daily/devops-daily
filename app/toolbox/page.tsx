@@ -433,6 +433,19 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'act',
+    description:
+      'Run your GitHub Actions workflows locally for fast feedback before pushing. Uses Docker to execute jobs the same way GitHub-hosted runners do.',
+    href: 'https://github.com/nektos/act',
+    category: 'cicd',
+    icon: Workflow,
+    isNew: true,
+    badges: [
+      { text: 'GitHub Actions', variant: 'outline' },
+      { text: 'Open Source', variant: 'secondary' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
