@@ -4,7 +4,7 @@
   "description": "Master the terminal through real-world system administration scenarios covering file management, process control, and troubleshooting",
   "category": "Linux",
   "icon": "Terminal",
-  "totalPoints": 187,
+  "totalPoints": 202,
   "theme": {
     "primaryColor": "gray",
     "gradientFrom": "from-gray-600",
@@ -14,7 +14,7 @@
     "estimatedTime": "25-30 minutes",
     "difficultyLevels": {
       "beginner": 4,
-      "intermediate": 5,
+      "intermediate": 6,
       "advanced": 3
     },
     "createdDate": "2024-08-01"
@@ -235,6 +235,24 @@
       "hint": "Production scripts need error handling, logging, and conditional logic. Which approach includes all these elements and follows scripting best practices?",
       "difficulty": "advanced",
       "points": 25
+    },
+    {
+      "id": "deleted-files-held-open",
+      "title": "Disk Full, But Nothing Is There",
+      "description": "Find where the space went when df and du disagree after log files were deleted.",
+      "situation": "df -h reports /var at 100% on a 50G filesystem, but du -sh /var only accounts for 18G. A log rotation job ran last night and deleted several very large log files while the application was still running.",
+      "codeExample": "$ df -h /var\nFilesystem      Size  Used Avail Use% Mounted on\n/dev/sdb1        50G   50G     0 100% /var\n\n$ du -sh /var\n18G     /var",
+      "options": [
+        "Deleted files are still held open by a running process; find them with `lsof +L1`, then restart or signal that process to release the space",
+        "The filesystem has run out of inodes; run `df -i` and delete small files until inode usage drops",
+        "The 5% reserved-blocks setting is hiding space; run `tune2fs -m 0 /dev/sdb1` to reclaim it",
+        "The filesystem is corrupted; unmount /var and run `fsck -f` to recover the missing space"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Deleting a file only removes its directory entry. While a process still has the file open, the kernel keeps the data and the blocks stay allocated, so df counts them but du (which walks directory entries) cannot see them. `lsof +L1` lists open files with a link count below one, i.e. deleted but still open. Restarting the process, or truncating the file via /proc/<pid>/fd/<n>, frees the space. Running out of inodes would not explain df showing blocks at 100%, and reserved blocks only account for a few percent.",
+      "hint": "df asks the filesystem how many blocks are allocated. du adds up the files it can reach by walking directories. What could be allocated but unreachable?",
+      "difficulty": "intermediate",
+      "points": 15
     }
   ]
 }
