@@ -6,7 +6,7 @@
   "icon": "GitBranch",
   "difficulty": "beginner",
   "estimatedTime": "15 min",
-  "cardCount": 18,
+  "cardCount": 20,
   "theme": {
     "primaryColor": "#F05032",
     "gradientFrom": "#F05032",
@@ -138,6 +138,20 @@
       "back": "git tag -a v1.0 -m 'message' - Creates a tag with metadata (author, date, message). Push with git push --tags.",
       "category": "Tagging",
       "tags": ["tag", "release"]
+    },
+    {
+      "id": "git-19",
+      "front": "What does 'git remote -v' show?",
+      "back": "It lists the configured remote repositories and their URLs, useful for verifying where git push and git pull send data.",
+      "category": "Remote Operations",
+      "tags": ["remote", "url"]
+    },
+    {
+      "id": "git-20",
+      "front": "What is HEAD in Git?",
+      "back": "HEAD is a symbolic reference to the current branch tip or the current commit you are checked out on.",
+      "category": "Basics",
+      "tags": ["head", "commit"]
     }
   ]
 }
