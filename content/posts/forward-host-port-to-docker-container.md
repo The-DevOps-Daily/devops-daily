@@ -6,7 +6,7 @@ category:
   slug: 'docker'
 date: '2025-06-24'
 publishedAt: '2025-06-24T14:00:00Z'
-updatedAt: '2025-11-23T09:00:00Z'
+updatedAt: '2026-10-06T09:00:00Z'
 readingTime: '7 min read'
 author:
   name: 'DevOps Daily Team'
@@ -396,6 +396,22 @@ sudo ufw allow 8080/tcp
 sudo firewall-cmd --permanent --add-port=8080/tcp
 sudo firewall-cmd --reload
 ```
+
+:::warning
+**Gotcha: UFW does not protect published Docker ports.** Docker writes its own iptables NAT rules, so traffic to a published port is forwarded to the container through the `FORWARD` chain and never reaches the `INPUT` chain where UFW rules live. A container started with `-p 5432:5432` is reachable from the internet even when `sudo ufw status` shows port 5432 as denied, and `ufw allow` makes no difference either way.
+
+Check what is really exposed with `sudo ss -tlnp` (look for `0.0.0.0:5432` or `[::]:5432`) and test from a different machine, not from the host itself. To lock it down:
+
+- Bind the port to localhost (`-p 127.0.0.1:5432:5432`) and put a reverse proxy or SSH tunnel in front of it.
+- Or, with Docker's default iptables backend, add your own rules to the `DOCKER-USER` chain, which Docker evaluates before its own rules. The packet has already been rewritten to the container port by then, so match the original host port with conntrack:
+
+```bash
+# Drop external traffic to host port 5432 unless it comes from 203.0.113.10
+sudo iptables -I DOCKER-USER -i eth0 -p tcp -m conntrack --ctorigdstport 5432 --ctdir ORIGINAL ! -s 203.0.113.10 -j DROP
+```
+
+Rules in `DOCKER-USER` are not persistent, so save them with `iptables-persistent` or your configuration management tool.
+:::
 
 ## Docker Networks and Port Forwarding
 
