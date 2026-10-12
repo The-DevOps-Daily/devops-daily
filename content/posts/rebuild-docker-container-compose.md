@@ -170,78 +170,6 @@ docker compose up -d web
 
 A `build` on its own never touches the running container. The next `up` picks up the new image. The test run left out that `up` after its `--no-cache` build, which shows up in the upgrade section below. [How to force a clean Docker build](/posts/force-docker-clean-build) covers the cache in more detail.
 
-### Force a new container when nothing changed
-
-`up -d` leaves a container alone when its image and config match. `--force-recreate` replaces it anyway:
-
-```terminal
-{
-  "title": "--force-recreate",
-  "prompt": "$",
-  "autoplay": false,
-  "steps": [
-    {
-      "cmd": "docker compose up -d",
-      "output": "Container shop-cache-1 Running\nContainer shop-web-1 Running"
-    },
-    {
-      "comment": "web container before: f3d199d66fa0, after up -d: f3d199d66fa0"
-    },
-    {
-      "cmd": "docker compose up -d --force-recreate web",
-      "output": "Container shop-cache-1 Running\nContainer shop-web-1 Recreate\nContainer shop-web-1 Recreated\nContainer shop-web-1 Starting\nContainer shop-web-1 Started"
-    },
-    {
-      "comment": "web container before: f3d199d66fa0, after --force-recreate: 424bff50a255"
-    }
-  ]
-}
-```
-
-That is useful when a fix needs a clean writable layer, for example after someone edited files inside the container by hand. A `restart` keeps those edits. [Docker Compose: always recreate containers](/posts/docker-compose-always-recreate-containers) shows how to make this the default.
-
-### Rebuild one service without touching its dependencies
-
-`up web` also starts the services that `web` lists under `depends_on` if they are stopped. `--no-deps` starts `web` only:
-
-```terminal
-{
-  "title": "depends_on and --no-deps",
-  "prompt": "$",
-  "autoplay": false,
-  "steps": [
-    {
-      "cmd": "docker compose stop cache web",
-      "output": "Container shop-web-1 Stopping\nContainer shop-web-1 Stopped\nContainer shop-cache-1 Stopping\nContainer shop-cache-1 Stopped"
-    },
-    {
-      "cmd": "docker compose up -d web",
-      "output": "Container shop-cache-1 Starting\nContainer shop-cache-1 Started\nContainer shop-web-1 Starting\nContainer shop-web-1 Started"
-    },
-    {
-      "cmd": "docker compose ps --format 'table {{.Service}}\\t{{.Status}}'",
-      "output": "SERVICE   STATUS\ncache     Up Less than a second\nweb       Up Less than a second"
-    },
-    {
-      "cmd": "docker compose stop cache web",
-      "output": "Container shop-web-1 Stopping\nContainer shop-web-1 Stopped\nContainer shop-cache-1 Stopping\nContainer shop-cache-1 Stopped"
-    },
-    {
-      "cmd": "docker compose up -d --no-deps web",
-      "output": "Container shop-web-1 Starting\nContainer shop-web-1 Started"
-    },
-    {
-      "cmd": "docker compose ps -a --format 'table {{.Service}}\\t{{.Status}}'",
-      "output": "SERVICE   STATUS\ncache     Exited (0) Less than a second ago\nweb       Up Less than a second"
-    },
-    {
-      "cmd": "docker compose up -d",
-      "output": "Container shop-web-1 Running\nContainer shop-cache-1 Starting\nContainer shop-cache-1 Started"
-    }
-  ]
-}
-```
-
 ## How do I restart a single container with Docker Compose?
 
 ```bash
@@ -282,6 +210,80 @@ It is the wrong tool for changes in `compose.yaml`. Docker's [`compose restart` 
 ```
 
 `restart` kept the old value. `up -d` saw the changed environment, recreated `web` and left `cache` running. For one service, `docker compose up -d web` does the same, and `docker compose stop web` with `docker compose start web` behaves like `restart`. To start only some services in the first place, see [docker compose up for certain containers](/posts/docker-compose-up-only-certain-containers).
+
+## Force a new container, or leave dependencies alone
+
+### Force a new container when nothing changed
+
+`up -d` leaves a container alone when its image and config match. `--force-recreate` replaces it anyway:
+
+```terminal
+{
+  "title": "--force-recreate",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker compose up -d",
+      "output": "Container shop-cache-1 Running\nContainer shop-web-1 Running"
+    },
+    {
+      "comment": "web container before: f3d199d66fa0, after up -d: f3d199d66fa0"
+    },
+    {
+      "cmd": "docker compose up -d --force-recreate web",
+      "output": "Container shop-cache-1 Running\nContainer shop-web-1 Recreate\nContainer shop-web-1 Recreated\nContainer shop-web-1 Starting\nContainer shop-web-1 Started"
+    },
+    {
+      "comment": "web container before: f3d199d66fa0, after --force-recreate: 424bff50a255"
+    }
+  ]
+}
+```
+
+That is useful when a fix needs a clean writable layer, for example after someone edited files inside the container by hand. A `restart` keeps those edits. [Docker Compose: always recreate containers](/posts/docker-compose-always-recreate-containers) shows how to make this the default.
+
+### Start one service without its dependencies
+
+`up web` also starts the services that `web` lists under `depends_on` if they are stopped. `--no-deps` starts `web` only:
+
+```terminal
+{
+  "title": "depends_on and --no-deps",
+  "prompt": "$",
+  "autoplay": false,
+  "steps": [
+    {
+      "cmd": "docker compose stop cache web",
+      "output": "Container shop-web-1 Stopping\nContainer shop-web-1 Stopped\nContainer shop-cache-1 Stopping\nContainer shop-cache-1 Stopped"
+    },
+    {
+      "cmd": "docker compose up -d web",
+      "output": "Container shop-cache-1 Starting\nContainer shop-cache-1 Started\nContainer shop-web-1 Starting\nContainer shop-web-1 Started"
+    },
+    {
+      "cmd": "docker compose ps --format 'table {{.Service}}\\t{{.Status}}'",
+      "output": "SERVICE   STATUS\ncache     Up Less than a second\nweb       Up Less than a second"
+    },
+    {
+      "cmd": "docker compose stop cache web",
+      "output": "Container shop-web-1 Stopping\nContainer shop-web-1 Stopped\nContainer shop-cache-1 Stopping\nContainer shop-cache-1 Stopped"
+    },
+    {
+      "cmd": "docker compose up -d --no-deps web",
+      "output": "Container shop-web-1 Starting\nContainer shop-web-1 Started"
+    },
+    {
+      "cmd": "docker compose ps -a --format 'table {{.Service}}\\t{{.Status}}'",
+      "output": "SERVICE   STATUS\ncache     Exited (0) Less than a second ago\nweb       Up Less than a second"
+    },
+    {
+      "cmd": "docker compose up -d",
+      "output": "Container shop-web-1 Running\nContainer shop-cache-1 Starting\nContainer shop-cache-1 Started"
+    }
+  ]
+}
+```
 
 ## How do I upgrade a container after its image changed?
 
