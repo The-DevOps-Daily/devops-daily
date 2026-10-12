@@ -684,6 +684,43 @@ For data science projects:
 - Create hooks to prevent committing sensitive data or large untracked files
 - Use branch naming conventions that reflect experiments (e.g., `experiment/feature-selection-1`)
 
+## Working with Git Worktrees
+
+Git worktrees let you check out multiple branches from the same repository
+into separate directories. This is useful when you need to review a change or
+work on a fix without switching branches or disturbing uncommitted work in your
+current directory.
+
+Create a worktree for a new branch based on `main`:
+
+```bash
+git worktree add -b hotfix ../project-hotfix main
+```
+
+Git creates the `hotfix` branch and checks it out in `../project-hotfix`. To
+create a worktree for a branch that already exists, omit `-b` and the start
+point:
+
+```bash
+git worktree add ../project-review review-branch
+```
+
+List the worktrees associated with the repository:
+
+```bash
+git worktree list
+```
+
+When you are finished, remove a worktree by naming its directory:
+
+```bash
+git worktree remove ../project-hotfix
+```
+
+Each branch can be checked out in only one worktree at a time. Removing a
+worktree does not delete its branch; delete the branch separately if it is no
+longer needed.
+
 ## Conclusion
 
 These advanced Git techniques provide powerful tools for handling complex scenarios and optimizing your workflow. While you may not need all of these features immediately, understanding them will help you solve challenging version control problems as they arise.
