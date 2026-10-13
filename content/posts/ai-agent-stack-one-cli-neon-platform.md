@@ -18,6 +18,7 @@ tags:
   - serverless
   - postgres
   - platform-engineering
+sponsorCampaign: 'neon'
 ---
 
 A working AI agent has an unglamorous shopping list. It needs a database to remember things, somewhere to run that can stream tokens without timing out, object storage for whatever it produces, and access to a model. Assembled the usual way, that is four separate signups: a Postgres host, a compute platform, an S3 bucket, and an OpenAI or Anthropic account, each with its own credential to provision, inject, and rotate per environment.

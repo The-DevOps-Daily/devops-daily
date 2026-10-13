@@ -18,6 +18,7 @@ tags:
   - Agents
   - TypeScript
   - Python
+sponsorCampaign: 'neon'
 ---
 
 Every framework in this list can call a model in a loop and hand it some tools. That part stopped being interesting a while ago.

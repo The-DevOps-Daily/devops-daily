@@ -19,6 +19,7 @@ tags:
   - S3
   - DigitalOcean
   - DevOps
+sponsorCampaign: 'digitalocean'
 ---
 
 Terraform state is the file that maps every resource in your configuration to a real object somewhere: an instance ID, a bucket name, a DNS record. Most days you never look at it. Then someone renames a resource, splits a repository, or needs Terraform to let go of a database without deleting it, and suddenly the state file is the only thing that matters.

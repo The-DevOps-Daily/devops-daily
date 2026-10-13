@@ -18,6 +18,7 @@ tags:
   - Neon
   - Performance
   - Databases
+sponsorCampaign: 'neon'
 ---
 
 A connection pool is one of those things you set up once and stop thinking about. Ten connections, reused forever, and the cost of opening one disappears into the noise because it happened at boot and never again.

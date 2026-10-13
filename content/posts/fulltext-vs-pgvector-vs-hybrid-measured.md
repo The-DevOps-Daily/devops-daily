@@ -19,6 +19,7 @@ tags:
   - pgvector
   - Benchmarking
   - DevOps
+sponsorCampaign: 'neon'
 ---
 
 Somebody on your team wants to add search. There are three obvious answers and a lot of confident writing about which one is right.

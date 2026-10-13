@@ -20,6 +20,7 @@ tags:
   - serverless
   - benchmarks
   - sre
+sponsorCampaign: 'neon'
 ---
 
 Free tiers are where you evaluate a database. Paid tiers are where you operate one, and operating means the unglamorous verbs: resize the compute because traffic doubled, add a read replica because the dashboard queries are hurting, branch the database for a preview environment, restore because someone ran the wrong migration. Vendor documentation describes these operations. It rarely tells you how long they take, and it almost never tells you what they cost in downtime.

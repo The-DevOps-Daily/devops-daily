@@ -19,6 +19,7 @@ tags:
   - databases
   - serverless
   - benchmarks
+sponsorCampaign: 'neon'
 ---
 
 Pick any "Neon vs Supabase" thread on the internet and you will find the same spec-sheet ping pong: one side quotes storage limits, the other quotes monthly active users, and nobody has actually timed anything. Both platforms hand out free Postgres, both claim to be fast, and both free tiers have sharp edges that only show up when you run real operations against them.

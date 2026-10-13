@@ -18,6 +18,7 @@ tags:
   - Debugging
   - Databases
   - Data Quality
+sponsorCampaign: 'neon'
 ---
 
 Somebody notices the revenue number is wrong. Not catastrophically wrong, which would have been easier, just wrong enough that the finance export does not reconcile. Nobody knows when it started.

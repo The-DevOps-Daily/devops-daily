@@ -19,6 +19,7 @@ tags:
   - finops
   - ci-cd
   - platform-engineering
+sponsorCampaign: 'neon'
 ---
 
 If your app stores files and you want real preview environments, you eventually hit the same wall: each preview needs its own storage, so you start provisioning a bucket per environment. That sounds cheap until you write it down. For every ephemeral environment you create a bucket, attach a policy, mint an IAM role or access keys, set CORS, add a lifecycle rule so it eventually cleans up, wire the credentials into the preview's config, and register a teardown step for when the PR closes. Then you find the orphaned buckets the teardown missed, months later, still billing.

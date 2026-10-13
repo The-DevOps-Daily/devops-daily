@@ -19,6 +19,7 @@ tags:
   - CI/CD
   - GitHub Actions
   - Database Branching
+sponsorCampaign: 'neon'
 ---
 
 We wrote six ordinary Postgres migrations: a new column, a unique index, a reporting index, a wider integer, a `NOT NULL`, and a job that archives old orders. We ran them the way many CI pipelines do, against a database with the production schema and a handful of clean test rows. **All six passed.**

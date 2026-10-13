@@ -19,6 +19,7 @@ tags:
   - finops
   - serverless
   - functions
+sponsorCampaign: 'neon'
 ---
 
 Picking a model usually feels like a decision you have to live with. You install that provider's SDK, wire in its key, learn its quirks, and the choice is baked into your code. Switching later is a small migration, so most teams pick one model and stick with it even when a cheaper or better one would suit a given task.

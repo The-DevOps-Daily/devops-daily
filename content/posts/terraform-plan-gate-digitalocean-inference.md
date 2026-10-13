@@ -19,6 +19,7 @@ tags:
   - Security
   - GitHub Actions
   - Infrastructure as Code
+sponsorCampaign: 'digitalocean'
 ---
 
 The summary line at the bottom of a Terraform plan carries very little. `Plan: 3 to add, 1 to change, 1 to destroy.` The one to destroy might be a null resource nobody needs, or the production database. Those two plans produce the same summary line, and the difference only appears if someone opens the full output and reads it, on a pull request whose main subject is usually the application code above it.

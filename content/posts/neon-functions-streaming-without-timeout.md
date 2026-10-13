@@ -17,6 +17,7 @@ tags:
   - ai-agents
   - streaming
   - functions
+sponsorCampaign: 'neon'
 ---
 
 An AI agent and a serverless function want different things. The agent wants to think, call a tool, stream some tokens, call another tool, and keep the connection open the whole time, which can be tens of seconds or more. A lot of serverless tiers want the opposite: do your work quickly and return, because the invocation has an execution cap. Put them together and you get the failure everyone who has shipped an agent has seen at least once: the response is still streaming when the platform decides time is up and closes the socket.

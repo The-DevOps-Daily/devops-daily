@@ -18,6 +18,7 @@ tags:
   - DigitalOcean
   - Agents
   - Networking
+sponsorCampaign: 'digitalocean'
 ---
 
 Ask an LLM "why does mail to my domain bounce?" and you get a plausible list of everything that has ever caused a bounce. Ask an engineer, and they do something different: they run `dig`, look at the answer, and let the evidence pick the next question. The difference is not knowledge; it is that the engineer is allowed to touch the network.

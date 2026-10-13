@@ -19,6 +19,7 @@ tags:
   - AI Evaluation
   - Python
   - FastAPI
+sponsorCampaign: 'digitalocean'
 ---
 
 An LLM can explain one stack trace perfectly and still be the wrong model for your application. The next error may be ambiguous, contain a secret, or include a line such as “ignore previous instructions” inside a log message. A polished answer to one hand-picked example proves almost nothing.

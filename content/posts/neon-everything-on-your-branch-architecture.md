@@ -19,6 +19,7 @@ tags:
   - preview-environments
   - storage
   - platform-engineering
+sponsorCampaign: 'neon'
 ---
 
 Database branching is one of the best ideas serverless Postgres brought to the mainstream. Fork the database at a point in time, get an isolated copy with all the data, run something risky against it, throw it away. It made preview databases and safe migrations feel routine.

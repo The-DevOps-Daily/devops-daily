@@ -19,6 +19,7 @@ tags:
   - FastAPI
   - Terraform
   - App Platform
+sponsorCampaign: 'digitalocean'
 ---
 
 Using a hosted model does not need to begin with GPU setup, model weights, or a large application. With DigitalOcean Serverless Inference, the model is already running. Your application chooses a model, sends an API request, and receives a response.

@@ -19,6 +19,7 @@ tags:
   - functions
   - ai-agents
   - serverless
+sponsorCampaign: 'neon'
 ---
 
 The Model Context Protocol is how an AI agent gets tools. You stand up an MCP server, it advertises a set of tools with typed inputs, and the agent calls them. For a huge number of real MCP servers, those tools are thin wrappers around a database: search these records, create this row, update that field. The server is mostly a translator between JSON-RPC and SQL.

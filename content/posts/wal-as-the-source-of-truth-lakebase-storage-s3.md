@@ -19,6 +19,7 @@ tags:
   - storage
   - branching
   - architecture
+sponsorCampaign: 'neon'
 ---
 
 Every Postgres you have ever run keeps two copies of the truth: the data files, and the write-ahead log that describes how the data files got that way. The log exists so the database can survive a crash, and it moonlights as the feed for replication and point-in-time backups. But in the classic design it is a means to an end: the data files are the database; the log protects them.

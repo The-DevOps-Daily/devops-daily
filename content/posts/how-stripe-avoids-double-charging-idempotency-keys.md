@@ -19,6 +19,7 @@ tags:
   - APIs
   - Node.js
   - DevOps
+sponsorCampaign: 'neon'
 ---
 
 Take Stripe's own classic example: a service sends `POST /v1/charges` and the socket dies before a response arrives. There are three possible worlds: the request never reached the payment provider, the provider charged the card and the response was lost, or the provider is still working on it. Your code cannot tell them apart, and the customer is waiting. Retry, and you might charge twice. Give up, and you might have taken money without recording an order.

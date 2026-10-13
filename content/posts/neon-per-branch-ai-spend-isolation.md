@@ -19,6 +19,7 @@ tags:
   - preview-environments
   - ci-cd
   - llm
+sponsorCampaign: 'neon'
 ---
 
 AI spend is hard to see. In most setups the same gateway credential is used by production, every preview environment, CI, and whatever load test someone ran on Friday. All of that lands in one undifferentiated number. You cannot answer "what did that preview cost," you cannot cap a specific environment, and you find out a CI job went into a retry loop against an expensive model when the monthly invoice arrives, not when it happens.

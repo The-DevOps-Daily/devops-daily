@@ -19,6 +19,7 @@ tags:
   - Embeddings
   - DigitalOcean
   - LLM
+sponsorCampaign: 'digitalocean'
 ---
 
 We replayed 288 questions to an ops assistant through a semantic cache. At a similarity threshold of 0.80 with `bge-m3`, the cache answered **32 percent** of them from memory and cut the average response time from 8.7 seconds to 6.6. It also answered **about one hit in three with the answer to a different question**.

@@ -19,6 +19,7 @@ tags:
   - functions
   - aws-sdk
   - uploads
+sponsorCampaign: 'neon'
 ---
 
 The naive way to accept file uploads is to POST them to your API, let the server read the bytes, and write them to object storage. It works until the files get large or the traffic gets real. Now every upload crosses your infrastructure twice, once from the client to your server and once from your server to storage, and your server holds the whole file in memory or on disk while it does. On a serverless function it is worse, because functions have request-size and duration limits that a big upload runs straight into.

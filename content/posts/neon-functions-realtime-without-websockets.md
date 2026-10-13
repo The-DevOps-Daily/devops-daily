@@ -19,6 +19,7 @@ tags:
   - realtime
   - sse
   - serverless
+sponsorCampaign: 'neon'
 ---
 
 The moment a feature needs to update live, a live counter, a presence indicator, a "new message" badge, an activity feed, the reflex is to reach for a websocket service. Pusher, Ably, a Socket.IO server, a stateful Node process parked next to your stateless app. That is one more thing to deploy, scale, secure, and pay for, and it exists mostly to move small events from one place to a bunch of connected browsers.

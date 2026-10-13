@@ -18,6 +18,7 @@ tags:
   - Scale
   - Cassandra
   - ScyllaDB
+sponsorCampaign: 'neon'
 ---
 
 Some engineering stories are worth studying because the numbers are absurd, and some because the lessons transfer. Discord's message-storage story, told across their own engineering posts ([2017](https://discord.com/blog/how-discord-stores-billions-of-messages), [2023](https://discord.com/blog/how-discord-stores-trillions-of-messages)), is both: trillions of stored messages, migrated live in nine days, by a team small enough to fit around one table. All numbers below come from those two posts.

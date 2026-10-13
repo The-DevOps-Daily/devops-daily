@@ -19,6 +19,7 @@ tags:
   - TypeScript
   - SRE
   - incident-response
+sponsorCampaign: 'neon'
 ---
 
 Every article about agent frameworks agrees that durable execution is the feature that matters. Almost none of them kill the process to find out what durable actually means.

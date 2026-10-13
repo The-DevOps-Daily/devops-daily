@@ -19,6 +19,7 @@ tags:
   - migration
   - s3
   - serverless
+sponsorCampaign: 'neon'
 ---
 
 If your files already live in Amazon S3, the pitch for storage that branches with your database is appealing but the word "migration" makes it sound like a project. It mostly is not. Neon's object storage speaks the S3 API, so the code you already wrote, the AWS SDK calls and presigned URLs, keeps working. What changes is how you point the client and where the bucket comes from, and that is a small, mechanical diff. The actual data move is a copy loop you can run once. The one thing to do up front is confirm the object operations your app actually relies on: the demo here exercises `PutObject`, `GetObject`, listing, and presigned URLs, and I flag the S3 features you should check for yourself further down.

@@ -19,6 +19,7 @@ tags:
   - realtime
   - nextjs
   - serverless
+sponsorCampaign: 'neon'
 ---
 
 Realtime and auth are each straightforward on their own. Put them together and you hit a wall almost immediately: a browser cannot set an `Authorization` header on a WebSocket. The `WebSocket` constructor takes a URL and, optionally, a subprotocol, and that is it. So the moment you want a socket that only authenticated users can open, you have to answer a question that a normal HTTP request never asks: how does the server know who is on the other end of this connection, before it accepts it?

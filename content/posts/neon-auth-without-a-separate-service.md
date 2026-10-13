@@ -19,6 +19,7 @@ tags:
   - jwt
   - serverless
   - devops
+sponsorCampaign: 'neon'
 ---
 
 Adding authentication to an app usually means running a second system. You already have Postgres for your data, and now you stand up an auth service next to it: a hosted one like Auth0, Clerk, or Cognito, or a self-hosted stack like Keycloak or Ory. Either way you now have two sources of truth. The auth service knows who your users are; your database knows what they own. And you spend a surprising amount of engineering keeping those two pictures in agreement: a webhook to copy new users into your `users` table, a nightly job to catch the webhooks that failed, a foreign key that points at an id living in someone else's system.

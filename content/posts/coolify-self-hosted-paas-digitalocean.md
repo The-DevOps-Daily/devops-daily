@@ -19,6 +19,7 @@ tags:
   - Self-Hosted
   - Deployment
   - DigitalOcean
+sponsorCampaign: 'digitalocean'
 ---
 
 Managed platforms like Vercel, Heroku, and Netlify make deployment easy. But once your project grows, the bills grow faster. A Next.js app that costs $0 on the hobby tier suddenly costs $20/seat/month when you add a teammate. A database that was free at 500MB now costs $25/month. You end up paying $100-300/month for infrastructure you could run on a $24 VPS.

@@ -18,6 +18,7 @@ tags:
   - AI
   - Streaming
   - TypeScript
+sponsorCampaign: 'digitalocean'
 ---
 
 Here is a bug that never shows up in your error tracker. You wire an LLM into a Next.js app, it works, you ship it, and users think the feature is broken because nothing happens for fifteen seconds. Nothing failed. The response is simply not arriving until it is complete.

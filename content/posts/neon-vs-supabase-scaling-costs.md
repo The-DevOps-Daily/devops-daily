@@ -19,6 +19,7 @@ tags:
   - databases
   - pricing
   - finops
+sponsorCampaign: 'neon'
 ---
 
 Pricing pages answer the question "what does a unit cost". They are conspicuously silent on the question you actually have: "what will my application cost in a year, when it has real users?" The honest answer depends on workload shape, and workload shape changes as you grow, which is why the same two platforms can each be the cheap option at different points in the same product's life.

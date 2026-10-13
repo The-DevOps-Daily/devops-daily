@@ -18,6 +18,7 @@ tags:
   - llm
   - inference
   - tutorial
+sponsorCampaign: 'digitalocean'
 ---
 
 Most "get started with AI" guides assume you want to stand up a GPU, pick a serving framework, and babysit it. For a lot of real work you do not. You want to send a prompt and get a completion back, pay for the tokens you used, and move on. That is what DigitalOcean's **Inference Engine** (part of its AI-Native Cloud) gives you: an OpenAI-compatible endpoint, a catalog of hosted models, pay-per-token billing, and no GPU to provision or scale.

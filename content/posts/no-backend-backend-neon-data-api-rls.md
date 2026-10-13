@@ -20,6 +20,7 @@ tags:
   - Data API
   - Multi-tenancy
   - JWT
+sponsorCampaign: 'neon'
 ---
 
 We built a multi-tenant team task board with no backend. The browser loads static files, signs in with Neon Auth, and reads and writes through the Neon Data API. There is no API server, no serverless function and no middleware. Who belongs to which team is Neon Auth's job; what a signed-in user may read or write is decided in Postgres, by row-level security policies, column grants and one carefully written function.

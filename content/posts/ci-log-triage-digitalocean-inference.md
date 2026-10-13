@@ -18,6 +18,7 @@ tags:
   - AI
   - DigitalOcean
   - DevOps
+sponsorCampaign: 'digitalocean'
 ---
 
 A CI job fails. You open the run, scroll past four hundred lines of dependency resolution, past the tests that passed, past the warnings you have been ignoring for a year, and somewhere near the bottom you find the twelve lines that actually matter.

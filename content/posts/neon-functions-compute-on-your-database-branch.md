@@ -18,6 +18,7 @@ tags:
   - postgres
   - functions
   - platform-engineering
+sponsorCampaign: 'neon'
 ---
 
 Ask where your backend code runs relative to your database and the answer is often "somewhere else." Your function is in one provider's `us-east-1`, your Postgres is in another region entirely, and every query crosses that gap. Most of the time you don't see it, because one query is fast enough to ignore. Then a request makes eight queries in sequence, each pays the round trip, and suddenly an endpoint that should take milliseconds takes most of a second.

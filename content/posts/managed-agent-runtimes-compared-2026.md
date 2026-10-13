@@ -20,6 +20,7 @@ tags:
   - AWS
   - Sandboxes
   - MCP
+sponsorCampaign: 'digitalocean'
 ---
 
 An agent that only runs while your laptop is open is a demo. The moment it has to work through a backlog overnight, react to a webhook, or run for fifty users at once, it needs somewhere else to live: a sandbox it cannot escape, state that survives a pause, a way to reach tools without holding every credential, and a bill that does not surprise you.

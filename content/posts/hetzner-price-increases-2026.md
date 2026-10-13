@@ -19,6 +19,7 @@ tags:
   - DigitalOcean
   - Cost Optimization
   - Infrastructure
+sponsorCampaign: 'digitalocean'
 ---
 
 Hetzner has announced another pricing change, effective June 15, 2026. For many teams, the headline is not just "prices are going up." It is that this feels like the third Hetzner pricing shock in roughly three months, with the newest announcement landing before customers can see the final price table.

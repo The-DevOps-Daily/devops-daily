@@ -20,6 +20,7 @@ tags:
   - DigitalOcean
   - Cloud Economics
   - DevOps
+sponsorCampaign: 'digitalocean'
 ---
 
 ## TLDR

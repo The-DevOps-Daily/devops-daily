@@ -18,6 +18,7 @@ tags:
   - Kafka
   - Architecture
   - Streaming
+sponsorCampaign: 'neon'
 ---
 
 Somewhere in your codebase there is probably a function that does two things: saves a row to Postgres, then publishes an event about it to Kafka, RabbitMQ, or a webhook. It works in the demo, it works for months, and then a deploy restarts the process between the two calls, and now your database says the order exists while your event stream says it never happened. Every downstream consumer is now wrong, and nothing corrects it until a human writes a reconciliation job.

@@ -19,6 +19,7 @@ tags:
   - Next.js
   - Architecture
   - AI
+sponsorCampaign: 'neon'
 ---
 
 Teaching Postgres by showing someone a code block is a waste of everybody's time. They need a database they can break.

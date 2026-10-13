@@ -19,6 +19,7 @@ tags:
   - Object Storage
   - Cloudflare R2
   - Egress
+sponsorCampaign: 'digitalocean'
 ---
 
 Serving 50 TB a month out of an S3 bucket in us-east-1 costs about $4,379 at list price, almost all of it data transfer. The same month on Cloudflare R2 costs about $62. That gap is why "zero egress" object storage is a whole product category now: Cloudflare R2, Backblaze B2, Wasabi, Tigris, and bundles from DigitalOcean, Hetzner and others.

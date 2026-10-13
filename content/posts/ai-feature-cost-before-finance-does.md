@@ -20,6 +20,7 @@ tags:
   - Cost Allocation
   - DigitalOcean
   - Observability
+sponsorCampaign: 'digitalocean'
 ---
 
 The invoice for your model provider arrives with one line per model. Finance reads it and asks a fair question: which feature spent that? If three features share one API key, the invoice cannot tell you, and neither can the provider dashboard. You find out the hard way, when one of them grows.

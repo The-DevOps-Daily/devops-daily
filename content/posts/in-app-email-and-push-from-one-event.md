@@ -20,6 +20,7 @@ tags:
   - PostgreSQL
   - APIs
   - DevOps
+sponsorCampaign: 'neon'
 ---
 
 The first notification in a product is one line: the order ships, so call the email provider. The second is a push. Then support asks for an in-app inbox so people stop emailing to ask what happened, a customer asks for a webhook so their warehouse system can react, and someone in marketing wants a weekly summary instead of forty emails. By then the handler that started as one line is a hundred, every channel has its own retry logic, and a retried event sends the customer the same email twice while their muted push channel keeps ringing.

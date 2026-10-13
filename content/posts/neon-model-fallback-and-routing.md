@@ -19,6 +19,7 @@ tags:
   - resilience
   - serverless
   - functions
+sponsorCampaign: 'neon'
 ---
 
 Model providers go down. They rate-limit you, they have capacity blips, a specific model gets deprecated, and sometimes a request just fails. If a model call is on a path your users care about, you want a fallback: if the first model errors, try another, ideally from a different provider so a single vendor's bad day does not become yours.

@@ -18,6 +18,7 @@ tags:
   - Real-time
   - Distributed Systems
   - Databases
+sponsorCampaign: 'neon'
 ---
 
 There is a moment in every multiplayer feature where the demo stops being impressive. Two cursors arrive on the same object at the same time. One person drags it left, the other drags it right, and now you have to decide what the document says.

@@ -21,6 +21,7 @@ tags:
   - Managed Database
   - DevOps
   - Infrastructure
+sponsorCampaign: 'digitalocean'
 ---
 
 ## TLDR

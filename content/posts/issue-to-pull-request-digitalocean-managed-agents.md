@@ -19,6 +19,7 @@ tags:
   - GitHub
   - Sandboxes
   - Security
+sponsorCampaign: 'digitalocean'
 ---
 
 We gave an agent three real GitHub issues and a microVM of its own, and kept every credential that could change the repository outside that microVM. The agent ran as OpenCode inside [DigitalOcean Managed Agents](https://docs.digitalocean.com/products/managed-agents/), on DeepSeek V4 Pro served by DigitalOcean's own serverless inference, so the only secret it ever held was a DigitalOcean model key.

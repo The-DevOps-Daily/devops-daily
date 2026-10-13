@@ -19,6 +19,7 @@ tags:
   - serverless
   - functions
   - ai-agents
+sponsorCampaign: 'neon'
 ---
 
 The moment an app talks to more than one model provider, the plumbing multiplies. OpenAI wants its key and its SDK. Anthropic wants a different key and a different SDK. Google wants a third of each. Now you have three secrets to store and rotate, three client libraries to keep updated, three billing relationships to reconcile, and conditional code that picks the right one. None of that is your product; it is the cost of wanting a choice of models.

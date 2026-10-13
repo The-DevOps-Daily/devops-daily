@@ -19,6 +19,7 @@ tags:
   - Agents
   - DigitalOcean
   - Prompt Injection
+sponsorCampaign: 'digitalocean'
 ---
 
 We gave an on-call agent three read tools and four that change things, then hid instructions in the logs and tickets it reads. With no defence, it tried to follow **35 percent** of them: restarting services, rotating credentials, posting to the status page, and sending data to an outside address.

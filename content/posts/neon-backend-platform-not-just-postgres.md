@@ -18,6 +18,7 @@ tags:
   - serverless
   - platform-engineering
   - architecture
+sponsorCampaign: 'neon'
 ---
 
 For most of its life, Neon had a one-sentence pitch: serverless Postgres that branches like Git. You got a database that scaled to zero, forked in milliseconds, and charged you for what you used. Everything else (your compute, your file storage, your AI calls, your auth) you wired up somewhere else and pointed at the connection string.
