@@ -13,6 +13,7 @@ import {
   Rocket,
   ArrowRight,
   Heart,
+  Bot,
 } from 'lucide-react';
 import { SectionHeader } from '@/components/section-header';
 import { SectionSeparator } from '@/components/section-separator';
@@ -118,6 +119,12 @@ const WHY = [
     icon: Target,
   },
   {
+    title: 'Read by AI assistants',
+    description:
+      'ChatGPT, Claude, Perplexity and other AI assistants read our posts every day. Sponsored pieces get the same reach, and your report shows how often AI crawlers read each page we wrote for you.',
+    icon: Bot,
+  },
+  {
     title: 'Measurable lift',
     description:
       'A private live report, updated every day: clicks, logo impressions, page views and newsletter numbers, with bots and email scanners left out.',
@@ -199,6 +206,7 @@ const REPORT_POINTS = [
   'Logo impressions that were on screen for at least 1 second, and the click rate',
   'Page views and readers on the pages we write for you',
   'Newsletter recipients, opens and clicks for every issue',
+  'AI crawler requests on your pages: how often AI assistants read them',
   'No cookies and no stored IP addresses',
 ];
 
@@ -206,6 +214,10 @@ const FAQ = [
   {
     q: 'How do you count page views?',
     a: 'From Cloudflare, at the edge, which counts visitors an on-page script never sees because they block trackers. We count only requests that returned an HTML page, so assets and API calls are out, and we exclude declared crawlers and any request claiming a browser version nobody runs any more. The figure above is what is left. It is page views, not people; ask and we will send the daily breakdown behind it.',
+  },
+  {
+    q: 'Will our content show up in AI answers?',
+    a: 'Nobody can promise a spot in an AI answer. What we do: write pages AI assistants like to cite (clear structure, measured numbers, sources), and show you how often their crawlers read each one.',
   },
   {
     q: 'Who reads DevOps Daily?',
@@ -440,10 +452,12 @@ export default function SponsorshipPage() {
         <section className="my-12 max-w-4xl mx-auto">
           <SectionHeader label="why sponsor" title="Why sponsor DevOps Daily" />
           <div className="grid gap-px sm:grid-cols-2 bg-border border rounded-md overflow-hidden">
-            {WHY.map((w) => {
+            {WHY.map((w, i) => {
               const Icon = w.icon;
+              // An odd last card spans both columns, so the grid has no empty cell.
+              const wide = WHY.length % 2 === 1 && i === WHY.length - 1;
               return (
-                <div key={w.title} className="bg-card p-5">
+                <div key={w.title} className={`bg-card p-5${wide ? ' sm:col-span-2' : ''}`}>
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0 w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center">
                       <Icon className="w-5 h-5 text-primary" strokeWidth={1.5} />
