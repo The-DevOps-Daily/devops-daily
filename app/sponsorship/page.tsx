@@ -120,7 +120,7 @@ const WHY = [
   {
     title: 'Measurable lift',
     description:
-      'UTM tracking, click reports, share-of-voice against the relevant article, shared monthly with you.',
+      'A private live report, updated every day: clicks, logo impressions, page views and newsletter numbers, with bots and email scanners left out.',
     icon: BarChart,
   },
 ];
@@ -136,7 +136,7 @@ const PACKAGES = [
       'Logo + tagline in the GitHub README (1k+ stars)',
       'One newsletter mention / month',
       'Social shoutout at start of sponsorship',
-      'Monthly report (impressions, clicks)',
+      'Live report (impressions, clicks), updated daily',
     ],
     popular: false,
   },
@@ -144,7 +144,7 @@ const PACKAGES = [
     name: 'Professional',
     price: '$1,500',
     cadence: '/month',
-    description: 'Our most popular — prominent reach',
+    description: 'Our most popular: prominent reach',
     features: [
       'Everything in Starter',
       'Featured slot at the top of the GitHub README',
@@ -173,6 +173,35 @@ const PACKAGES = [
   },
 ];
 
+const STEPS = [
+  {
+    title: 'Pick a package',
+    description: 'Tell us about your product and who you want to reach. We suggest the package and the content that fit.',
+  },
+  {
+    title: 'Check your kickoff page',
+    description:
+      'One private page with everything we need, already filled in from your website. It takes about 3 minutes.',
+  },
+  {
+    title: 'Review before it goes live',
+    description:
+      'Every article, comparison and newsletter feature goes to you on a preview link first. Measured posts include the method and the raw results.',
+  },
+  {
+    title: 'Watch the numbers',
+    description: 'Your live report starts on day one and updates every day, for as long as the content keeps working.',
+  },
+];
+
+const REPORT_POINTS = [
+  'Clicks per placement and per day, with bots and email scanners left out',
+  'Logo impressions that were on screen for at least 1 second, and the click rate',
+  'Page views and readers on the pages we write for you',
+  'Newsletter recipients, opens and clicks for every issue',
+  'No cookies and no stored IP addresses',
+];
+
 const FAQ = [
   {
     q: 'How do you count page views?',
@@ -188,7 +217,15 @@ const FAQ = [
   },
   {
     q: "What kind of copy / creative do you need?",
-    a: 'For newsletter: 1-2 short paragraphs + a CTA link. For site placements: logo + tagline. For sponsored posts: we can write it based on your brief, or you provide the draft and we edit for house voice.',
+    a: 'Very little. Your logo (SVG), a sign-up URL, and for the newsletter an optional banner of about 1200 x 630 px. We can write the newsletter copy and the sponsored posts from your brief, or edit your draft for house voice. Your kickoff page is filled in from your website, so most of it is a check, not a form.',
+  },
+  {
+    q: 'What is in the report?',
+    a: 'Clicks on your links per placement and per day, logo impressions (on screen for at least 1 second) with the click rate, page views and readers on the pages we write for you, newsletter recipients, opens and clicks per issue, and every piece we published with its numbers on DevOps Daily, dev.to and daily.dev. It updates every day, and you can download the data as CSV.',
+  },
+  {
+    q: 'How do you handle bots and email scanners?',
+    a: 'Every click is checked. Bot user agents, link checkers, browser prefetches and requests from cloud networks, where email security scanners run, are counted apart and left out of your numbers. We set no cookies and never store IP addresses.',
   },
   {
     q: 'Is there a minimum commitment?',
@@ -206,7 +243,8 @@ const FAQ = [
           info@devops-daily.com
         </a>{' '}
         with a sentence about your product and the audience you want to reach. We respond within
-        24h and send a media kit + available slots.
+        24h and send a media kit + available slots. Once you pick a package, you get your kickoff
+        page and your live report link.
       </>
     ),
   },
@@ -496,8 +534,68 @@ export default function SponsorshipPage() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground text-center mt-6 font-mono">
-            All packages include monthly reporting with impressions, clicks, and top-referring content.
+            All packages include a private live report, updated every day: clicks, logo impressions, page views and newsletter numbers.
           </p>
+        </section>
+
+        <SectionSeparator command="cat how-it-works.md" />
+
+        {/* How it works: the real sequence from yes to the first numbers. */}
+        <section className="my-12 max-w-5xl mx-auto">
+          <SectionHeader
+            label="how it works"
+            title="From yes to live numbers"
+            description="Little work on your side, and you see every number we see."
+          />
+          <ol className="grid gap-px overflow-hidden rounded-md border bg-border sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="bg-card p-5">
+                <p className="mb-2 font-mono text-xs text-primary tabular-nums">{String(i + 1).padStart(2, '0')}</p>
+                <h3 className="mb-1 font-semibold">{s.title}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{s.description}</p>
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-8 grid items-center gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+            <div>
+              <p className="mb-1 font-mono text-xs text-muted-foreground">{'// your live report'}</p>
+              <h3 className="mb-3 text-xl font-bold tracking-tight">Numbers you can check yourself</h3>
+              <ul className="space-y-2.5">
+                {REPORT_POINTS.map((p) => (
+                  <li key={p} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={1.5} />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <figure className="m-0">
+              <div className="overflow-hidden rounded-md border shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/sponsorship/report-example-light.webp"
+                  alt="A DevOps Daily sponsor report: logo impressions, click rate, page views, readers and visitors, with a chart of impressions per day"
+                  width={1280}
+                  height={860}
+                  loading="lazy"
+                  className="block h-auto w-full dark:hidden"
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/sponsorship/report-example-dark.webp"
+                  alt="A DevOps Daily sponsor report: logo impressions, click rate, page views, readers and visitors, with a chart of impressions per day"
+                  width={1280}
+                  height={860}
+                  loading="lazy"
+                  className="hidden h-auto w-full dark:block"
+                />
+              </div>
+              <figcaption className="mt-2 text-center font-mono text-xs text-muted-foreground">
+                Example report with sample numbers
+              </figcaption>
+            </figure>
+          </div>
         </section>
 
         <SectionSeparator command="cat faq.md" />
