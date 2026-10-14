@@ -30,7 +30,7 @@ So on this test the cheap model was good enough. That is not the whole answer. D
 
 - With a clear written policy, DeepSeek V4 Flash, Qwen3.8-Max and `router:general` made the policy's call on all 600 alert runs. `gpt-oss-120b` got 599 (one empty reply). Qwen3.8-Max costs about ten times as much per alert as DeepSeek V4 Flash, and it answered about three times faster.
 - `router:general` sent 571 of 600 calls to Qwen3.8-Max, so it cost almost what Qwen3.8-Max costs. `router:software-engineering` sent most calls to DeepSeek V4 Flash and got 4 wrong, all 4 from a model it reported as `deepseek-4-flash`.
-- Llama 4 Maverick failed to page on 2 different page-level alerts (3 times in all) and `gpt-oss-20b` on 3 (once each). Ministral 3 14B missed 4.7 page-level alerts per run out of 50 and often answered twice with two different decisions.
+- Llama 4 Maverick failed to page on 2 different page-level alerts (3 times in all) and `gpt-oss-20b` on 3 (once each). Ministral 3 14B missed 4.7 page-level alerts per run out of 50, and 17 of its 600 replies contained two different decisions.
 - DeepSeek V4 Flash spends most of its output on reasoning: p95 latency of 10.7 seconds, 33 calls over 10 seconds and one at 60.6 seconds.
 - At 10,000 alerts a month, the token cost is about $1.57 for the cheap model and $16.40 for the expensive one. Choose on missed pages and latency, not on price.
 
@@ -61,7 +61,8 @@ Page    production, and customer impact now or within 1 hour:
         confirmed unauthorized access
 Ticket  a real problem with no customer impact within the hour:
         tier 2 problems, tier 1 problems below the page thresholds,
-        capacity gone in 1 hour to 7 days, certs expiring in 1 to 14 days,
+        capacity gone in more than 1 hour but less than 7 days,
+        certs expiring in 1 to 14 days,
         one pod or node failing while the service is fine,
         failed backups and jobs, staging problems that block a release
 Ignore  non-production (unless it blocks a release),
@@ -110,17 +111,17 @@ To check that the text carries what the labels assume, we gave one AI second rea
 
 Eight configurations, three runs each, 4,800 calls. The six direct models are open-weight models. Our account's key returned `403 this model is not available for your subscription tier` for the GPT-5 and Claude models we tried, so they are not in this test (the check is saved in the repo). The two routers are DigitalOcean's Inference Router, in public preview, which picks a model per request and reports which one it used.
 
-| Configuration | Correct (of 600) | Page-level alerts missed in any run (of 50) | False pages per run | $ per 1,000 alerts | p50 | p95 |
-|---|---|---|---|---|---|---|
-| DeepSeek V4 Flash | 600 | 0 | 0 | 0.157 | 4.4 s | 10.7 s |
-| Qwen3.8-Max | 600 | 0 | 0 | 1.640 | 1.3 s | 2.6 s |
-| `router:general` | 600 | 0 | 0 | 1.565 | 1.8 s | 3.5 s |
-| `gpt-oss-120b` | 599 | 0 | 0 | 0.194 | 3.1 s | 5.1 s |
-| Llama 4 Maverick | 597 | 2 | 0 | 0.189 | 1.9 s | 3.3 s |
-| `router:software-engineering` | 596 | 0 | 0.7 | 0.305 | 4.2 s | 8.9 s |
-| `gpt-oss-20b` | 595 | 3 | 0 | 0.144 | 2.4 s | 5.3 s |
-| Ministral 3 14B | 532 | 8 | 6.0 | 0.149 | 0.8 s | 1.8 s |
-| Severity label, no model | 102 of 200 | 14 | 39 | 0 | | |
+| Configuration                 | Correct (of 600) | Page-level alerts missed in any run (of 50) | False pages per run | $ per 1,000 alerts | p50   | p95    |
+| ----------------------------- | ---------------- | ------------------------------------------- | ------------------- | ------------------ | ----- | ------ |
+| DeepSeek V4 Flash             | 600              | 0                                           | 0                   | 0.157              | 4.4 s | 10.7 s |
+| Qwen3.8-Max                   | 600              | 0                                           | 0                   | 1.640              | 1.3 s | 2.6 s  |
+| `router:general`              | 600              | 0                                           | 0                   | 1.565              | 1.8 s | 3.5 s  |
+| `gpt-oss-120b`                | 599              | 0                                           | 0                   | 0.194              | 3.1 s | 5.1 s  |
+| Llama 4 Maverick              | 597              | 2                                           | 0                   | 0.189              | 1.9 s | 3.3 s  |
+| `router:software-engineering` | 596              | 0                                           | 0.7                 | 0.305              | 4.2 s | 8.9 s  |
+| `gpt-oss-20b`                 | 595              | 3                                           | 0                   | 0.144              | 2.4 s | 5.3 s  |
+| Ministral 3 14B               | 532              | 8                                           | 6.0                 | 0.149              | 0.8 s | 1.8 s  |
+| Severity label, no model      | 102 of 200       | 14                                          | 39                  | 0                  |       |        |
 
 Costs are estimates: recorded token usage times DigitalOcean's list prices on 2026-10-14. One model the router reported, `deepseek-4-flash`, is not on the price page under that name, and we priced it as DeepSeek V4 Flash.
 
@@ -234,7 +235,7 @@ llama-4-maverick:
 {"decision": "ignore", "reason": "service is in an active maintenance window"}
 ```
 
-Across the two broken alerts and three runs, Qwen3.8-Max, `gpt-oss-120b` and both routers paged all 6 times. Llama 4 Maverick and Ministral 3 14B trusted the word "active" all 6 times. DeepSeek V4 Flash paged three times, ignored twice and once used up its 2,000-token allowance on reasoning without giving a decision. `gpt-oss-20b` paged four times and ignored twice. The second reader that "agreed on all 200" had trusted the word too.
+Across the two broken alerts and three runs, Qwen3.8-Max, `gpt-oss-120b` and both routers paged all 6 times. Llama 4 Maverick and Ministral 3 14B trusted the word "active" all 6 times. DeepSeek V4 Flash paged three times, ignored twice and once used up its 2,000-token allowance on reasoning without giving a decision. `gpt-oss-20b` paged four times and ignored twice. The second reader that "agreed on all 200" had trusted the word too. After the fix, it labelled the two corrected alerts ignore, which matches their labels.
 
 Three lessons from that:
 
@@ -248,13 +249,13 @@ We fixed the inputs, not the labels: the generator now keeps maintenance alerts 
 
 Perfect scores on 200 alerts do not mean a perfect model. Alerts are the unit here (three runs of one alert are not three independent samples), so we count the alerts a model got wrong in at least one run and compute a one-sided 95 percent upper confidence limit on that share. These limits assume the alerts are a random sample, and they are not: they come from 31 templates. Read them as a sense of scale, not as a bound on production error rates:
 
-| Configuration | Alerts wrong in any run (of 200) | Upper 95% limit | Page-level alerts missed in any run (of 50) | Upper 95% limit |
-|---|---|---|---|---|
-| DeepSeek V4 Flash, Qwen3.8-Max, `router:general` | 0 | 1.5% | 0 | 5.8% |
-| `gpt-oss-120b` | 1 | 2.3% | 0 | 5.8% |
-| Llama 4 Maverick | 2 | 3.1% | 2 | 12.1% |
-| `gpt-oss-20b` | 5 | 5.2% | 3 | 14.8% |
-| Ministral 3 14B | 42 | 26.3% | 8 | 27.0% |
+| Configuration                                    | Alerts wrong in any run (of 200) | Upper 95% limit | Page-level alerts missed in any run (of 50) | Upper 95% limit |
+| ------------------------------------------------ | -------------------------------- | --------------- | ------------------------------------------- | --------------- |
+| DeepSeek V4 Flash, Qwen3.8-Max, `router:general` | 0                                | 1.5%            | 0                                           | 5.8%            |
+| `gpt-oss-120b`                                   | 1                                | 2.3%            | 0                                           | 5.8%            |
+| Llama 4 Maverick                                 | 2                                | 3.1%            | 2                                           | 12.1%           |
+| `gpt-oss-20b`                                    | 5                                | 5.2%            | 3                                           | 14.8%           |
+| Ministral 3 14B                                  | 42                               | 26.3%           | 8                                           | 27.0%           |
 
 So "missed no pages" means "missed none of these 50", which is still consistent with missing about one in seventeen. Compared with Qwen3.8-Max, the other configurations except Ministral 3 14B were between 0 and 0.83 percentage points less accurate. A paired bootstrap over alerts puts `router:software-engineering` at -0.67 (95% interval -1.33 to -0.17) and `gpt-oss-20b` at -0.83 (-1.67 to -0.17), while the intervals for `gpt-oss-120b` and Llama 4 Maverick reach zero. When two models made identical calls, the bootstrap has nothing to resample, and that is not evidence that they are equivalent. We cannot rank DeepSeek V4 Flash, Qwen3.8-Max and `router:general` against each other from this data.
 
@@ -268,7 +269,7 @@ There is also what this test does not cover:
 
 Each call used about 720 input tokens and a median of 20 to 200 output tokens, depending on the model. At 10,000 alerts a month, which is a busy on-call rotation, the estimated token cost is $1.57 for DeepSeek V4 Flash and $16.40 for Qwen3.8-Max. The whole test, 4,800 scored calls plus 48 reruns, came to an estimated $2.63.
 
-That changes the question. Neither bill matters next to a single missed page, so price should be the last thing you choose on. One model makes all three decisions, so you cannot send the pages to one model and the tickets to another: you do not know which is which until a model has decided. On this test, DeepSeek V4 Flash and Qwen3.8-Max made the same calls. Qwen3.8-Max answered in 1.3 seconds at the median and never took more than 6.6. DeepSeek V4 Flash cost a tenth as much and sometimes took ten seconds or more. If a few extra seconds before a page are acceptable to you, the cheap model is the better buy. Either way, test it on your own alerts first.
+That changes the question. Neither bill matters next to a single missed page, so price should be the last thing you choose on. We tested each configuration on all three decisions, not a cascade where cheap rules or a cheap model sort alerts first and only some go to a second model. On this test, DeepSeek V4 Flash and Qwen3.8-Max made the same calls. Qwen3.8-Max answered in 1.3 seconds at the median and never took more than 6.6. DeepSeek V4 Flash cost a tenth as much and sometimes took ten seconds or more. If a few extra seconds before a page are acceptable to you, the cheap model is the better buy. Either way, test it on your own alerts first.
 
 ## Run it on your own alerts
 
