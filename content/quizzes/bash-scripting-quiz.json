@@ -1,0 +1,204 @@
+{
+  "id": "bash-scripting-quiz",
+  "title": "Bash Scripting Quiz",
+  "description": "Write safer shell scripts: strict mode, quoting, exit codes, functions, traps, arrays, and process substitution through real-world DevOps scenarios",
+  "category": "Linux",
+  "icon": "Terminal",
+  "totalPoints": 127,
+  "theme": {
+    "primaryColor": "gray",
+    "gradientFrom": "from-gray-600",
+    "gradientTo": "to-slate-700"
+  },
+  "metadata": {
+    "estimatedTime": "20-25 minutes",
+    "difficultyLevels": {
+      "beginner": 3,
+      "intermediate": 5,
+      "advanced": 2
+    },
+    "createdDate": "2026-10-10"
+  },
+  "questions": [
+    {
+      "id": "strict-mode",
+      "title": "Strict Mode",
+      "description": "What does `set -euo pipefail` at the top of a bash script do?",
+      "situation": "You're writing a deploy script and want it to fail fast instead of silently continuing after an error.",
+      "codeExample": "#!/usr/bin/env bash\nset -euo pipefail\n\n./build.sh\n./deploy.sh   # should NOT run if build.sh fails",
+      "options": [
+        "Enables strict mode: exit on any error, treat unset variables as errors, and fail a pipeline if any command in it fails",
+        "Turns on debug tracing so every command is printed before it runs",
+        "Runs the script with elevated (root) privileges",
+        "Forces the script to use UTF-8 encoding for all string operations"
+      ],
+      "correctAnswer": 0,
+      "explanation": "`set -euo pipefail` combines three safeguards: `-e` exits immediately if a command fails, `-u` errors on unset variables (catching typos like $SEREVR), and `-o pipefail` makes a pipeline return the first failing command's status instead of only the last one's. Together they turn silent failures into loud, early ones.",
+      "hint": "Each letter is a separate shell option. Think about what -e, -u, and pipefail each guard against.",
+      "difficulty": "beginner",
+      "points": 10
+    },
+    {
+      "id": "quoting-variables",
+      "title": "Quoting Variables",
+      "description": "Why should you write `\"$filename\"` instead of `$filename`?",
+      "situation": "Your backup script works fine until someone creates a file named \"my report.txt\" - then it breaks.",
+      "codeExample": "filename=\"my report.txt\"\ncp $filename /backup/   # breaks!",
+      "options": [
+        "Unquoted variables are split on whitespace and expanded as globs, so \"my report.txt\" becomes two arguments",
+        "Quoted variables run faster because bash skips parsing them",
+        "Unquoted variables are treated as integers by cp",
+        "There is no difference; quoting is just a style preference"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Without quotes, bash performs word splitting (on spaces, tabs, newlines) and pathname expansion (globbing with * and ?) on the variable's value. `\"my report.txt\"` unquoted becomes two arguments (`my` and `report.txt`), and a value like `*.log` would expand to matching filenames. Double quotes suppress both, passing the value through exactly.",
+      "hint": "Think about what bash does to unquoted text before the command ever sees it.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "exit-codes",
+      "title": "Checking Success",
+      "description": "How do you check whether the previous command succeeded?",
+      "situation": "Your script runs a database migration and must stop if the migration fails.",
+      "codeExample": "./migrate.sh\n# did it work?",
+      "options": [
+        "Test `$?` - it holds the previous command's exit status, and 0 means success",
+        "Test `$#` - it holds the previous command's exit status",
+        "Test `$!` - it holds the previous command's exit status",
+        "Check `$0` - it is set to \"success\" or \"failure\""
+      ],
+      "correctAnswer": 0,
+      "explanation": "`$?` expands to the exit status of the most recently executed command. By convention 0 means success and anything else (1-255) signals an error. `$#` is the argument count, `$!` is the last background PID, and `$0` is the script name - none of them carry status info.",
+      "hint": "One of these special variables is documented as 'the exit status of the most recently executed foreground pipeline'.",
+      "difficulty": "beginner",
+      "points": 8
+    },
+    {
+      "id": "double-bracket-test",
+      "title": "Test Brackets",
+      "description": "What is the practical advantage of `[[ ]]` over `[ ]` in conditionals?",
+      "situation": "You need to check whether a filename matches a pattern like `*.tar.gz` inside an if statement.",
+      "codeExample": "if [[ \"$file\" == *.tar.gz ]]; then\n  echo \"archive detected\"\nfi",
+      "options": [
+        "[[ ]] supports pattern matching with ==, prevents word splitting, and allows && / || inside the test",
+        "[[ ]] runs the test in a subshell so it is faster",
+        "[[ ]] works in sh (POSIX shell) while [ ] is bash-only",
+        "There is no difference; [[ ]] is just newer syntax for the same test command"
+      ],
+      "correctAnswer": 0,
+      "explanation": "`[[ ]]` is a bash keyword (not the external `[`/`test` command), so it gets special parsing: `==` does glob pattern matching, variables aren't word-split inside it, and you can use `&&`/`||` directly. It's actually the reverse of option 2: `[[ ]]` is bash/ksh/zsh-only, while `[ ]` is the POSIX-portable form.",
+      "hint": "One of these is parsed specially by the shell itself rather than run as a command.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "local-variables",
+      "title": "Function Scope",
+      "description": "Why should you declare variables as `local` inside bash functions?",
+      "situation": "Two functions in your script both use a variable named `count`, and values are leaking between them.",
+      "codeExample": "count_files() {\n  local count=$(ls | wc -l)\n  echo \"$count files\"\n}",
+      "options": [
+        "Without local, every variable in bash is global - assignments inside functions overwrite same-named variables everywhere",
+        "local makes the variable read-only so functions can't change it",
+        "local variables are stored in a faster memory region",
+        "local is required for the function to return a value with echo"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Bash has no block scope and function variables default to global scope. An assignment like `count=5` inside a function silently overwrites any global `count`. Declaring `local count` confines the variable to the function (and its children), preventing spooky action-at-a-distance bugs when functions share common names like `i`, `file`, or `count`.",
+      "hint": "Bash functions don't get their own scope unless you ask for it.",
+      "difficulty": "intermediate",
+      "points": 12
+    },
+    {
+      "id": "trap-cleanup",
+      "title": "Cleanup on Exit",
+      "description": "How do you guarantee a temp file is removed even if your script errors out halfway?",
+      "situation": "Your script creates /tmp/work.$$ files. When it fails, the temp files pile up on the server.",
+      "codeExample": "tmp=$(mktemp)\ntrap 'rm -f \"$tmp\"' EXIT\n# ... rest of script ...",
+      "options": [
+        "Register a trap on EXIT - bash runs it whenever the shell exits, for any reason",
+        "Add `rm -f \"$tmp\"` as the very last line of the script",
+        "Run the script with `bash --clean-tmp`",
+        "Temp files in /tmp are always auto-deleted when a script exits"
+      ],
+      "correctAnswer": 0,
+      "explanation": "`trap 'cmd' EXIT` registers a handler that bash executes on any shell exit - normal completion, an error under `set -e`, or a signal like SIGINT/SIGTERM. A `rm` on the last line never runs if the script dies early, there is no `--clean-tmp` flag, and /tmp cleanup is the OS's job on its own schedule, not the script's.",
+      "hint": "You need something that runs no matter HOW the script ends.",
+      "difficulty": "intermediate",
+      "points": 13
+    },
+    {
+      "id": "parameter-expansion-defaults",
+      "title": "Default Values",
+      "description": "What is the difference between `${PORT-default}` and `${PORT:-default}`?",
+      "situation": "Your script reads an optional PORT env var. It should fall back to 8080 when PORT is unset OR empty.",
+      "codeExample": "PORT=\"\"   # explicitly empty\n echo \"${PORT:-8080}\"   # prints 8080\n echo \"${PORT-8080}\"    # prints (empty)",
+      "options": [
+        "The colon form also treats an empty string as missing; without the colon only a truly unset variable triggers the default",
+        "The colon form is slower but more portable across shells",
+        "Without the colon, the default is only a warning and PORT stays empty",
+        "There is no difference; the colon is optional decoration"
+      ],
+      "correctAnswer": 0,
+      "explanation": "In `${var-word}` the default applies only when `var` is unset. In `${var:-word}` (with colon) it applies when `var` is unset OR null (empty). Since `PORT=\"\"` is set-but-empty, only the colon form falls back to 8080. This distinction matters whenever an env var might be explicitly emptied, which is common in CI environments.",
+      "hint": "One form cares about empty strings, the other only about unset variables.",
+      "difficulty": "intermediate",
+      "points": 13
+    },
+    {
+      "id": "array-expansion",
+      "title": "Array Expansion",
+      "description": "Why should you expand bash arrays as `\"${files[@]}\"` and not `$files` or `${files[*]}`?",
+      "situation": "You're looping over filenames that may contain spaces, stored in an array.",
+      "codeExample": "files=(\"a.txt\" \"my report.txt\")\nfor f in \"${files[@]}\"; do\n  echo \"processing: $f\"\ndone",
+      "options": [
+        "\"${files[@]}\" expands to each element as a separate quoted word; $files gives only the first element and ${files[*]} joins everything into one string",
+        "\"${files[@]}\" sorts the array alphabetically before expanding",
+        "There is no difference once the array is quoted",
+        "${files[*]} is the correct form; [@] is deprecated"
+      ],
+      "correctAnswer": 0,
+      "explanation": "`$files` (or `${files}`) is shorthand for `${files[0]}` - just the first element. `\"${files[*]}\"` joins all elements into a single word (with the first char of IFS), breaking on spaces. Only `\"${files[@]}\"` expands to N separately-quoted words, preserving elements that contain spaces. This is the single most common bash array bug.",
+      "hint": "Try each form with an element that contains a space and count the resulting words.",
+      "difficulty": "intermediate",
+      "points": 14
+    },
+    {
+      "id": "process-substitution",
+      "title": "Process Substitution",
+      "description": "When is `<(command)` (process substitution) the right tool?",
+      "situation": "You need to diff the sorted contents of two files without creating intermediate temp files.",
+      "codeExample": "diff <(sort old.txt) <(sort new.txt)",
+      "options": [
+        "When a command needs filenames but you want to feed it command output - bash substitutes a /dev/fd path carrying the live output",
+        "When you want to run a command in the background and continue immediately",
+        "It is identical to $(command); the angle bracket is just an alias",
+        "When you need to redirect a command's stderr to a log file"
+      ],
+      "correctAnswer": 0,
+      "explanation": "`<(cmd)` runs the command with its output attached to a file descriptor (like /dev/fd/63), and that path is substituted into the command line. Tools like `diff` that insist on file arguments - not stdin - can then read live command output as if it were a file. `$( )` captures output as a string instead, which can't stream and breaks on large/binary data.",
+      "hint": "diff wants files, not strings. How do you give it 'files' that are actually command output?",
+      "difficulty": "advanced",
+      "points": 18
+    },
+    {
+      "id": "pipestatus",
+      "title": "Pipeline Failures",
+      "description": "In `false | true`, `$?` is 0. How do you detect that the FIRST command failed?",
+      "situation": "Your CI step runs `generate-report | upload-report`. Uploads succeed but reports are empty - the generator is failing silently.",
+      "codeExample": "set -o pipefail\ngenerate-report | upload-report\necho \"generator: ${PIPESTATUS[0]}, uploader: ${PIPESTATUS[1]}\"",
+      "options": [
+        "Use the PIPESTATUS array - it holds each pipeline command's exit code; also enable `set -o pipefail` so the pipeline itself reports failure",
+        "Use `$?` twice in a row - the second read gives the first command's status",
+        "Pipelines always report the first failure, so `$?` is enough",
+        "Store the output in a variable first, then check `$?`"
+      ],
+      "correctAnswer": 0,
+      "explanation": "A pipeline's `$?` is only the LAST command's status, so `false | true` looks successful. `${PIPESTATUS[0]}` gives the first command's code (bash sets this array after every pipeline). And `set -o pipefail` makes the pipeline return the rightmost non-zero status, so `set -e` scripts actually stop on mid-pipeline failures instead of sailing past them.",
+      "hint": "The shell remembers every command's status in a pipeline - just not in $?.",
+      "difficulty": "advanced",
+      "points": 19
+    }
+  ]
+}
