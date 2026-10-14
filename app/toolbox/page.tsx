@@ -433,6 +433,20 @@ const tools: Tool[] = [
       { text: 'New', variant: 'default' },
     ],
   },
+  {
+    name: 'Argo CD',
+    description:
+      'Declarative, GitOps continuous delivery tool for Kubernetes that synchronizes application state with Git repositories.',
+    href: 'https://argo-cd.readthedocs.io/',
+    category: 'cicd',
+    icon: GitBranch,
+    isPopular: true,
+    badges: [
+      { text: 'GitOps', variant: 'outline' },
+      { text: 'Kubernetes', variant: 'secondary' },
+      { text: 'Open Source', variant: 'default' },
+    ],
+  },
 ];
 
 // Helper to count tools by category
