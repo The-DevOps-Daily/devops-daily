@@ -1,0 +1,96 @@
+{
+  "id": "mlflow-kubernetes-model-release",
+  "slug": "mlflow-kubernetes-model-release",
+  "title": "Release an MLflow Model on Kubernetes",
+  "description": "A release review for CPU inference services and model sidecars: connect MLflow evaluation evidence to a reproducible Kubernetes deployment, require approval, and rehearse rollback. This assumes a model is already trained and registered; it does not replace the serving runtime or deployment pipeline.",
+  "category": "MLOps",
+  "difficulty": "advanced",
+  "estimatedTime": "1-2 hours for review; benchmarks and rollout vary",
+  "tags": ["mlflow", "kubernetes", "mlops", "model-serving", "cpu-inference"],
+  "items": [
+    {
+      "id": "pin-model-and-runtime",
+      "title": "Resolve aliases once and record the exact release inputs",
+      "description": "Resolve candidate and champion aliases to numbered model versions when the evaluation begins. Store those versions, their source run IDs, the serving image digest, and the deployment configuration revision in a release record. An alias is mutable: resolving it again after approval could deploy a different model from the one evaluated. Record an artifact checksum too if your artifact storage permits overwrites.",
+      "critical": true,
+      "links": [
+        {
+          "title": "MLflow model aliases and registry workflows",
+          "url": "https://mlflow.org/docs/latest/ml/model-registry/workflow/"
+        }
+      ]
+    },
+    {
+      "id": "verify-serving-contract",
+      "title": "Test the model through the actual serving interface",
+      "description": "Exercise the model signature, input validation, preprocessing, and postprocessing through the container endpoint. For vision models, include image decoding, resize and normalization, class mapping, confidence thresholds, and output coordinates. Include malformed input and representative edge cases. A successful artifact load is not evidence that the caller and sidecar agree on the request and response contract.",
+      "critical": true
+    },
+    {
+      "id": "compare-quality-evidence",
+      "title": "Compare candidate and champion on the same evaluation dataset",
+      "description": "Record the dataset version or digest and the evaluation code revision. Choose task-specific quality metrics and important data slices, then set both an absolute acceptance floor and an allowed regression before examining candidate results. Evaluate both versions under that protocol. Block the release when required measurements are missing, non-finite, or incomparable; a missing champion needs a separately approved first-release baseline.",
+      "critical": true
+    },
+    {
+      "id": "benchmark-cpu-service",
+      "title": "Benchmark CPU inference under the intended resource limits",
+      "description": "Use the same CPU architecture, runtime, thread settings, batch size, concurrency, and request mix for both models. Record warm-up, sample count, p50/p95 latency, throughput, peak memory, and cold-start time. Measure the full service path if that is what the SLO covers. Run with the planned container limits, watch CPU throttling, and distinguish process RSS from container memory measurements. For a sidecar, include contention from the application container.",
+      "critical": true
+    },
+    {
+      "id": "verify-artifact-access",
+      "title": "Prove a new Pod can fetch the pinned artifact",
+      "description": "Test from a fresh Pod using the workload's own identity, network policy, and mounted secrets. Verify access to the artifact store as well as the MLflow API; registry connectivity alone is insufficient. Give inference workloads only the access they need and keep registry promotion credentials in the release pipeline. Confirm an unavailable artifact or invalid checksum prevents readiness rather than silently loading another model.",
+      "critical": true
+    },
+    {
+      "id": "approve-evaluated-release",
+      "title": "Approve the release record, not a moving alias",
+      "description": "Publish the pinned inputs, evaluation and benchmark runs, acceptance thresholds, rejected checks, and rollback target for review. Capture the approver and decision. Invalidate the approval if the model, runtime image, or relevant configuration changes. Keep promotion and deployment as explicit pipeline steps: changing a registry alias does not by itself restart existing inference containers or prove that they loaded new weights.",
+      "critical": true
+    },
+    {
+      "id": "configure-model-probes",
+      "title": "Make readiness mean the intended model can serve requests",
+      "description": "Allow model download and warm-up time with a startup probe. Make readiness fail until the pinned model and required preprocessing are loaded. Keep liveness focused on whether the process can recover without a restart; do not tie it to every transient dependency failure. For a sidecar, verify the application handles inference unavailability and that the Pod becomes ready only when the required containers are ready.",
+      "critical": true,
+      "links": [
+        {
+          "title": "Kubernetes startup, readiness, and liveness probes",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/"
+        }
+      ]
+    },
+    {
+      "id": "plan-capacity-and-canary",
+      "title": "Check rollout capacity and define an actual canary route",
+      "description": "Budget for both old and new Pods during a rolling update, including the model's startup CPU and memory. Set the allowed surge and unavailability for the service. If using a canary, define how traffic reaches the candidate and how it is isolated from the champion; a Deployment rolling update alone does not provide controlled percentage-based traffic routing. Set an observation window and explicit abort conditions.",
+      "critical": true
+    },
+    {
+      "id": "verify-loaded-version",
+      "title": "Verify the loaded version after deployment",
+      "description": "Expose the loaded model version and serving image identity in an internal status endpoint or structured startup event. Verify them on the new Pods, then run a known-input smoke test through the caller's normal path. Check error rate, latency, throughput, restarts, throttling, and memory against the champion. Use bounded version labels in metrics and keep request IDs and raw model inputs out of metric labels.",
+      "critical": true
+    },
+    {
+      "id": "rehearse-rollback",
+      "title": "Rehearse restoring the previous model and image together",
+      "description": "Retain the previous numbered model version, artifact, image digest, and compatible configuration. Rehearse a pipeline or GitOps revert that restores that complete release. Kubernetes rollout undo restores the Pod template; it cannot restore an external artifact that was overwritten or an alias resolved dynamically at startup. Confirm the previous version is actually loaded and healthy after rollback, and reconcile registry metadata with the serving state.",
+      "critical": true,
+      "links": [
+        {
+          "title": "Kubernetes Deployment rollout history and rollback",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"
+        }
+      ]
+    },
+    {
+      "id": "monitor-quality-and-retraining",
+      "title": "Assign ownership for delayed quality checks and retraining",
+      "description": "Name an owner for the model and its service alerts. Record how production labels or reviewed samples will be collected, how often quality is reassessed, and which drift signals trigger investigation. Drift alone is not proof of worse predictions. Route retrained models back through registration, evaluation, approval, and deployment rather than allowing a training job to replace the live release directly.",
+      "critical": false
+    }
+  ]
+}
