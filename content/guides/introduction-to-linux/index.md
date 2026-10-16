@@ -27,15 +27,15 @@ By the end of this guide, you'll have a solid foundation in Linux and be comfort
 This guide consists of the following parts:
 
 1. Understanding Linux Basics
-2. Getting Started with Linu
-3. The Linux Command Line Interfac
-4. Linux File System Hierarch
-5. Package Managemen
-6. User and Group Managemen
-7. Process Managemen
-8. Networking in Linu
-9. Shell Scripting Basic
-10. Linux System Administration Basic
+2. Getting Started with Linux
+3. The Linux Command Line Interface
+4. Linux File System Hierarchy
+5. Package Management
+6. User and Group Management
+7. Process Management
+8. Networking in Linux
+9. Shell Scripting Basics
+10. Linux System Administration Basics
 
 ## Who This Guide Is For
 
