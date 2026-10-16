@@ -6,7 +6,7 @@
   "icon": "Container",
   "difficulty": "beginner",
   "estimatedTime": "12 minutes",
-  "cardCount": 15,
+  "cardCount": 17,
   "theme": {
     "primaryColor": "blue",
     "gradientFrom": "from-blue-600",
@@ -117,6 +117,20 @@
       "back": "'docker exec' runs a command in a running container. Commonly used with -it flags to open an interactive shell for debugging or maintenance tasks.",
       "category": "Commands",
       "tags": ["exec", "cli", "debugging"]
+    },
+    {
+      "id": "dockerignore",
+      "front": "What does a .dockerignore file do?",
+      "back": "It lists paths the Docker CLI leaves out of the build context sent to the builder, like .git, node_modules or local .env files. A smaller context makes builds faster, stops unrelated file changes from busting the cache on COPY . ., and keeps secrets out of the image.",
+      "category": "Building Images",
+      "tags": ["dockerignore", "build-context", "security"]
+    },
+    {
+      "id": "restart-policy",
+      "front": "What do Docker restart policies do?",
+      "back": "--restart decides what happens when a container exits: no (default), on-failure[:max-retries], always, or unless-stopped. always and unless-stopped both restart on crashes, but a container you stopped by hand with unless-stopped stays stopped after the Docker daemon restarts. Example: docker run -d --restart unless-stopped nginx",
+      "category": "Commands",
+      "tags": ["restart", "reliability", "cli"]
     }
   ]
 }
