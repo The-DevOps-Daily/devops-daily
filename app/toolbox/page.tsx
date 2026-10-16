@@ -30,6 +30,7 @@ import {
   Webhook,
   Shield,
   Calculator,
+  ScrollText,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -431,6 +432,18 @@ const tools: Tool[] = [
       { text: 'Security', variant: 'outline' },
       { text: 'Vulnerability Scanning', variant: 'secondary' },
       { text: 'New', variant: 'default' },
+    ],
+  },
+  {
+    name: 'Grafana Loki',
+    description:
+      'Log aggregation system that indexes labels instead of full log text, queried with LogQL in Grafana.',
+    href: 'https://grafana.com/oss/loki/',
+    category: 'monitoring',
+    icon: ScrollText,
+    badges: [
+      { text: 'Logging', variant: 'outline' },
+      { text: 'Open Source', variant: 'secondary' },
     ],
   },
 ];
