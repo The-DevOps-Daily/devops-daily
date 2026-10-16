@@ -7,7 +7,7 @@ category:
 date: '2026-10-16'
 publishedAt: '2026-10-16T09:00:00Z'
 updatedAt: '2026-10-16T09:00:00Z'
-readingTime: '22 min read'
+readingTime: '24 min read'
 author:
   name: 'DevOps Daily Team'
   slug: 'devops-daily-team'
@@ -27,11 +27,11 @@ In July we built realtime for a Neon app by hand: a Neon Function holding one se
 
 [Neon Realtime](https://neon.com/docs/realtime/overview), in public beta since October 15, replaces all of that with a SQL query you subscribe to. We rebuilt the idea as a live order board on Drizzle and measured it on a real Neon project in `aws-eu-central-1`, from a client about 32 ms away.
 
-**A plain live query kept pace with the write itself.** Across 16,200 writes at 1, 10 and 100 per second, the update reached the subscriber 35 to 43 ms (p50) after the write was issued, while the write's own commit took 34 to 40 ms to come back. Joins and aggregates were live too. All 48,600 writes in the matrix reached the subscriber, and every update held exactly the rows the writes implied, with the right row count and aggregate totals that added up. (We checked row identity and counts, not every column value.)
+**A plain live query kept pace with the write itself.** Across 16,200 writes at 1, 10 and 100 per second, the update reached the subscriber 35 to 43 ms (p50) after the write was issued, while the write's own commit took 34 to 40 ms to come back. Joins and aggregates were live too. All 48,600 writes in the matrix reached the subscriber, and every check we ran on the updates passed (which rows each one added, how many it removed, the size of every full result, the aggregate's total order count). We did not check every column value.
 
 **But in this beta, most of the joins we tried, every aggregate and any `ORDER BY` were re-sent in full on every write.** The three-table join we first wrote for the board pulled 27 KB per write on a 200-row result, 52 times what the plain query used, and the cost grows with the result: 134 KB per write at 1,000 rows. At 100 writes per second, Neon kept up with those full results in our two complete raw-protocol runs. The Realtime SDK on our client needed about 9.4 ms of CPU for each one, and in one of our two SDK runs it fell about two seconds behind within a minute.
 
-An open subscription let the compute scale to zero under it, and kept working when the next write woke it. The board did too, once its API stopped querying Postgres on every renewal. None of 12 tampered, forged, expired or cross-branch attempts disclosed a victim row; a copied valid one kept working until it expired, which is how Neon documents it.
+An open subscription let the compute scale to zero under it, and kept working when the next write woke it. The board did too, once its API stopped querying Postgres on every renewal. None of 11 tampered, forged or cross-branch attempts disclosed a victim row, an expired capability was refused, and a copied valid one kept working until it expired, which is how Neon documents it.
 
 ```github
 The-DevOps-Daily/neon-realtime-measured
@@ -43,16 +43,15 @@ Realtime is in public beta, and Neon publishes no benchmarks for it yet: its own
 
 ## TLDR
 
-- **Setup is one deploy.** `preview: { realtime: ... }` in `neon.ts` and `neon deploy` enabled it on the branch, with Neon Auth, in about 19 seconds. There was no waitlist. It switched the branch's `wal_level` to `logical` and added nothing else we could see on the primary.
-- **A plain live query is about as fast as the write.** p50 35 to 43 ms from write issued to update applied, from a client 32 ms away, within 4 ms of the write's own acknowledgement. p99 53 to 85 ms.
-- **Every write arrived, with the right rows.** 48,600 writes across 18 runs, none missing. Every update held exactly the rows and the row count the writes implied, and every aggregate total added up. We did not check every column value.
-- **In the query forms we tried, most joins, all aggregates and any `ORDER BY` or `LIMIT` were re-sent in full on every relevant write.** About 134 bytes per row for our join's columns: 27 KB per write for a 200-row join, 134 KB at 1,000 rows. A single-table filter and a join to a membership table pinned to one row stayed incremental.
-- **At 100 writes per second the client is the limit.** Neon kept up with 100 full 200-row results a second. The SDK on our client needed 9.4 ms of CPU for each one, and in one of two runs fell two seconds behind.
-- **The server ended sessions now and then.** Eleven times in an hour of subscriptions; the SDK was live again in about 1.2 s each time, with a complete fresh result.
-- **A reconnect delivers the current result, not the missed changes.** After a 75-second cut the result matched the database exactly, but the SDK's backoff took 33 to 48 seconds to try again after the network returned.
-- **Open subscriptions do not keep the compute awake**, and survive it waking up. Starting one from a suspended compute took 1 to 1.8 s. But a renew path that queries Postgres does: with a membership lookup on every seal, our board kept the compute awake for the whole 300 s we watched.
-- **Sealed queries held.** None of 12 tampered, forged, expired or cross-branch attempts disclosed a victim row; a copied valid one works until it expires, within 60 s. Put the access check in the query: a removed member's result was empty 8 ms after the removal was acknowledged, against 56 s of leaked orders with a check at seal time only.
-- **Budget the bytes.** Neon's docs say Realtime's network transfer is billed as usual, even though the project's transfer meter showed far less than our test received.
+- **Setup is one deploy.** `neon deploy` with `preview: { realtime }` in `neon.ts` turned it on in about 19 seconds, with no waitlist. The primary's `wal_level` became `logical`; nothing else changed there that we could see.
+- **A plain live query is about as fast as the write.** p50 35 to 43 ms from write issued to update applied, within 4 ms of the write's own acknowledgement, from a client 32 ms away. p99 53 to 85 ms.
+- **All 48,600 writes arrived**, and every check on the updates passed: rows added, rows removed, result sizes and aggregate totals.
+- **Most query forms we tried are re-sent whole on every write:** a join to `customers`, `EXISTS`, `IN`, aggregates, `ORDER BY` and `LIMIT`. That is about 134 bytes per row each time, 27 KB per write at 200 rows. Single-table filters and a membership join pinned to one row stay incremental.
+- **At 100 full results a second, our client was the limit.** Two complete raw-protocol runs kept up. The SDK on our client needs about 9.4 ms of CPU per 200-row result, and one of two SDK runs fell two seconds behind.
+- **Sessions end now and then, and a reconnect brings back the current result.** The server ended a session 11 times in an hour, and the SDK recovered in about 1.2 s each time. After a 75-second network cut, its backoff took 33 to 48 s to reconnect, and the result then held the same rows as the database.
+- **Open subscriptions let the compute scale to zero**, unless the renew path queries Postgres: a membership lookup on every seal kept ours awake for the whole 300 s we watched.
+- **Sealed queries held, and the access rule belongs in the query.** No tampered, forged or cross-branch attempt disclosed a victim row. A removed member's result was empty 8 ms after the removal, against 56 s of leaked orders with a check at seal time only.
+- **Budget the bytes.** Neon's docs say network transfer is billed as usual, even though the project's meter showed far less than our test received.
 
 ## Prerequisites
 
@@ -180,7 +179,7 @@ Everything ran from one client machine against the project in `aws-eu-central-1`
 
 **Matching updates to writes.** The subscriber runs the browser client (`createRealtimeClient`, with the `ws` package as its WebSocket) in a separate process on the same machine, and both processes stamp events from the same clock. An incremental update carries the ids of the transactions it covers, so it matches directly. A full result carries no ids, but the wire protocol opens each new result with the Postgres snapshot it was read at (`xmin`, `xmax`, `xip`), and the scorer applies Postgres's own visibility rule to work out which writes it includes. Latency runs from the moment the writer issued a statement to the moment the SDK handed over the first update that included it.
 
-**Checking answers, not only timing.** Every update is checked against the writes. An incremental batch must upsert exactly the rows its transactions inserted. A full result must contain exactly the rows the visible writes leave in the window. An aggregate's counts must add up. A self-test corrupts copies of recorded runs (a dropped update, a wrong row, a missing row, an aggregate off by one, a stall, a line from another run) and checks that the scorer reports each one.
+**Checking answers, not only timing.** Every update is checked against the writes. An incremental batch must add exactly the rows its transactions inserted (by the sequence number each write stamps on its row) and remove one row for each write that deleted one. A full result must hold every stamped row the visible writes leave in the window, and exactly as many rows as the window should have. An aggregate's order counts must add up to the window. These checks do not cover which seed or deleted rows were involved, per-status counts, revenue or other column values. A self-test corrupts copies of recorded runs (a dropped update, a wrong row, a missing row, an aggregate off by one, a stall, a line from another run) and checks that the scorer reports each one.
 
 **Separating our own client.** In our first recording of the matrix, other jobs on the client machine pushed it into swap, and our recorder processes froze for up to 11 seconds at a time. A frozen recorder looks exactly like a slow server in the timestamps. So the recorders now log every gap of more than 60 ms in their own event loops, the scorer sets apart writes whose window overlaps one, and the first recording stays in the repo marked as superseded. Each configuration ran twice, in two rounds with the shape order rotated.
 
@@ -406,7 +405,7 @@ A full result has to be decoded and applied by the client. For the 200-row join 
 }
 ```
 
-To find out which side was falling behind, we wrote a second recorder that speaks the wire protocol directly and never decodes the rows. With it, at the same rate, the join held a p50 of 44 to 49 ms and a p99 of 73 to 114 ms over two complete runs of 6,000 writes, with no backlog. A third raw run started badly: 220 writes in its first five seconds were delayed by up to 957 ms while our client was idle, and a session loss then cut it off 16 seconds in, because the raw recorder does not reconnect. So Neon can keep up at this rate, though not every run was clean on its side either.
+To find out which side was falling behind, we wrote a second recorder that speaks the wire protocol directly and never decodes the rows. With it, at the same rate, the join held a p50 of 44 to 49 ms and a p99 of 73 to 114 ms over two complete runs of 6,000 writes, with no backlog. A third raw run started badly: 220 writes in its first five seconds were delayed by up to 957 ms, with no recorded client stall overlapping those delays, and a session loss then cut it off 16 seconds in, because the raw recorder does not reconnect. The two complete runs kept up; the third had update-path delays we cannot explain before the server ended its session.
 
 The SDK client is the slow part, on our machine. In a separate benchmark at 20 updates a second, with a materialized subscription, it used 2.1 ms of CPU per update for the plain query, 2.0 ms for the aggregate and 9.4 ms for each 200-row join result. If that cost held at 100 a second, it would take about 94% of one core. In one of our two SDK runs at that rate it fell behind and never caught up (p50 1.8 s in the last five seconds); in the other it held on, with stalls of up to 470 ms. We did not measure other hardware. Either way, the work grows with result size times write rate, on every subscriber.
 
@@ -445,7 +444,7 @@ The wait after the long cut is the part to plan for. The SDK reconnects with jit
 
 ## Sealed queries: what we could and could not forge
 
-A sealed query is an AES-256-GCM encrypted capability (a compact JWE) that holds the SQL, its parameters and the database name, and expires after 60 seconds. The browser holds it but cannot read it, and the Live SQL API checks it without calling your server. We tried to get rows we were not sealed for. The attacker holds a valid sealed query for their own store, as any signed-in user of the board would, and wants another store's orders. The script speaks the wire protocol directly, because an attacker is not bound to use the SDK. Each attempt has one expected outcome, and anything else (another error, a timeout, a single row from the victim's store) counts as a failure. The control, the stolen-query case and the renewal attack each include a write during the attempt, so incremental changes are checked for leaks as well as first results:
+A sealed query is an AES-256-GCM encrypted capability (a compact JWE) that holds the SQL, its parameters and the database name, and expires after 60 seconds. The browser holds it but cannot read it, and the Live SQL API checks it without calling your server. We tried to get rows we were not sealed for. The attacker holds a valid sealed query for their own store, as any signed-in user of the board would, and wants another store's orders. The script speaks the wire protocol directly, because an attacker is not bound to use the SDK. Each attempt has one expected outcome, and anything else (another error or a timeout) counts as a failure, as does a single row from the victim's store, except in the documented stolen-query case. The control, the stolen-query case and the renewal attack each include a write during the attempt, so incremental changes are checked for leaks as well as first results:
 
 | Attempt                                                                                                           | Result                                                           |
 | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
@@ -462,13 +461,13 @@ A sealed query is an AES-256-GCM encrypted capability (a compact JWE) that holds
 | The attacker's own sealed query, 65 seconds after sealing                                                         | `authorization_expired`                                          |
 | The victim's real sealed query, copied, then an order in the victim's store                                       | **delivered: all 30 victim rows, then the new order**            |
 
-All 14 outcomes were as expected, in a first run and again in this stricter one after review. No tampered, forged, expired or cross-branch attempt disclosed a victim row or change. A child branch got its own Realtime URL and its own secret, so a preview branch's capabilities do not open production. To check that the harness could fail, a self-test swaps one attack's payload for the victim's real sealed query; the checks then report that attack as a leak.
+All 14 outcomes were as expected, in a first run and again in this stricter one after review. No tampered, forged or cross-branch attempt disclosed a victim row or change, and the expired capability was refused. A child branch got its own Realtime URL and its own secret, so a preview branch's capabilities do not open production. To check that the harness could fail, a self-test swaps one attack's payload for the victim's real sealed query; the checks then report that attack as a leak.
 
 The last row is the documented catch: **a sealed query is a bearer token.** Anyone who holds one can subscribe until it expires. Expiry closes that window within 60 seconds of sealing; it does not take back rows already received. Keep sealed queries out of URLs, logs and persistent browser storage, as Neon's docs say.
 
 ## Scoping per user without row-level security
 
-Realtime has no row-level security yet. Neon's guidance is to authorize in the request handler and put the authorization inside the query: take the user id from a verified token, and join through the membership table so the query itself only matches rows that user may see. We tested that against two weaker designs, through the board's API, with real Neon Auth users:
+Realtime has no row-level security yet. Neon's guidance is to authorize in the request handler and put the authorization inside the query: take the user id from a verified token, and join through the membership table so the query itself only matches rows that user may see. We tested that against two weaker designs, through the board's API, with real Neon Auth users. These runs used a version of the API that also looked the user up in `store_members` before sealing, which is why renewals were refused after a removal; the board in the repo now skips that lookup (see the next two sections) and seals a query whose membership join simply returns nothing for a non-member:
 
 | Design                                                                    | After the user lost access                                                                                                                                           |
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -544,7 +543,7 @@ So an open subscription costs no compute while nothing writes, and it survives t
 | Looks the user up in `store_members` on every seal        | Never suspended in 300 s. 18 renewals, each one a database query. |
 | Seals without touching Postgres (the version in the repo) | Suspended 75 s after the board opened.                            |
 
-The membership lookup looks harmless, and it cost scale to zero entirely: three subscriptions renewing about every 50 seconds is a query every 17 seconds or so, forever, per open tab. Keep the renew path free of database calls. Signing in, and refreshing the Neon Auth token (it lasts about 15 minutes), go through Neon Auth, which keeps its tables in the same database; we did not measure whether a token refresh wakes the compute.
+The membership lookup looks harmless, and it cost scale to zero entirely: with it, each open tab made three database queries roughly every 50 seconds while its renewals succeeded, one every 17 seconds on average, and that kept the compute awake for the whole 300 seconds we watched. Keep the renew path free of database calls. Signing in, and refreshing the Neon Auth token (it lasts about 15 minutes), go through Neon Auth, which keeps its tables in the same database; we did not measure whether a token refresh wakes the compute.
 
 ## Writes on the primary, with and without 100 live queries
 
@@ -557,7 +556,7 @@ Neon's FAQ says Realtime has "zero impact on the write-latency, write-throughput
 | Write latency on the client, p99 (all blocks)                              | 47.6 ms              | 42.5 ms             |
 | Writes                                                                     | 3,603                | 3,603               |
 
-On the server, the write's own execution time did not move. On the client, writes were about 2.5 ms faster with the live queries on, in every block, which is the opposite of a slowdown. We think that is our client and not Neon: it is on Wi-Fi with power saving on, and the extra incoming traffic keeps the radio awake. We did not test that explanation. A first version of this test let the CPU clock follow the load, tagged some switching time to the wrong block, and lacked an index that keeps the write's `DELETE` cheap (its execution time jumped from 0.3 to 3.2 ms partway through). It showed the same direction and is kept in the repo as superseded. Both versions ran with Realtime enabled throughout, so neither measures what turning Realtime on (`wal_level = logical`) costs.
+On the server, the write's own execution time did not move. On the client, the pooled median write was about 2.5 ms faster with the live queries on, and each on block had a lower median than the off block before it, which is the opposite of a slowdown. We think that is our client and not Neon: it is on Wi-Fi with power saving on, and the extra incoming traffic keeps the radio awake. We did not test that explanation. A first version of this test let the CPU clock follow the load, tagged some switching time to the wrong block, and lacked an index that keeps the write's `DELETE` cheap (its execution time jumped from 0.3 to 3.2 ms partway through). It showed the same direction and is kept in the repo as superseded. Both versions ran with Realtime enabled throughout, so neither measures what turning Realtime on (`wal_level = logical`) costs.
 
 So under this workload we saw no slowdown of writes on the primary with 100 subscriptions open, which matches Neon's claim. `pg_stat_statements` does not include commit time, though, and our client's own noise is larger than a millisecond, so "no slowdown we could measure" is as far as this goes.
 
