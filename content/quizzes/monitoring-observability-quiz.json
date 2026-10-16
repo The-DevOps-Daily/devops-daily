@@ -4,7 +4,7 @@
   "description": "Master application monitoring, metrics collection, logging, and observability best practices",
   "category": "Monitoring",
   "icon": "Code",
-  "totalPoints": 126,
+  "totalPoints": 140,
   "theme": {
     "primaryColor": "amber",
     "gradientFrom": "from-amber-500",
@@ -14,7 +14,7 @@
     "estimatedTime": "18-23 minutes",
     "difficultyLevels": {
       "beginner": 3,
-      "intermediate": 4,
+      "intermediate": 5,
       "advanced": 2
     },
     "createdDate": "2024-08-15"
@@ -178,6 +178,24 @@
       "hint": "What's the cost-effective way to handle detailed per-request data without creating billions of time series?",
       "difficulty": "advanced",
       "points": 20
+    },
+    {
+      "id": "slow-logql-query",
+      "title": "Speeding Up a Slow LogQL Query",
+      "description": "This Loki query takes over a minute for the last 24 hours. What's the best first fix?",
+      "situation": "Every service in prod ships logs to Loki with the labels env and app. You're hunting for 500s from the checkout service.",
+      "codeExample": "{env=\"prod\"} | json | status=\"500\"",
+      "options": [
+        "Raise the query timeout and max_query_parallelism so the query has time to finish",
+        "Swap | json for | logfmt, since logfmt parsing is cheaper",
+        "Narrow the selector to {env=\"prod\", app=\"checkout\"} and add a line filter like |= \"500\" before | json",
+        "Enable full-text indexing of log lines in the Loki config"
+      ],
+      "correctAnswer": 2,
+      "explanation": "Loki only indexes labels, so the stream selector decides how much data gets pulled, and everything after it runs line by line. {env=\"prod\"} reads every prod service's logs, then parses each line as JSON. Adding app=\"checkout\" cuts the streams, and a cheap |= line filter before | json drops most lines before the parser runs. More timeout only hides the cost, logfmt won't parse JSON logs, and Loki has no full-text index by design.",
+      "hint": "What does Loki actually index, and which stage of the query is cheapest?",
+      "difficulty": "intermediate",
+      "points": 14
     }
   ]
 }
