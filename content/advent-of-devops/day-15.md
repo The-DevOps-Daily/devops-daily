@@ -4,7 +4,7 @@ day: 15
 excerpt: 'Write a practical bash script to automate common DevOps tasks like deployments, backups, and health checks.'
 description: 'Master bash scripting fundamentals by creating robust automation scripts with error handling, logging, and best practices.'
 publishedAt: '2025-12-15T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Automation'
 tags:
@@ -40,7 +40,7 @@ Write a bash script to automate application deployment.
 - ✅ Rollback on failure
 - ✅ Help documentation
 
-## Sample App
+## Solution
 
 ### Deployment Script
 
@@ -263,8 +263,11 @@ deploy_to_k8s() {
     # Update deployment with new image
     kubectl set image deployment/myapp \
         myapp="${DOCKER_REGISTRY}/${IMAGE_NAME}:${version}" \
-        -n "$namespace" \
-        --record
+        -n "$namespace"
+
+    # Record the change cause in the rollout history
+    kubectl annotate deployment/myapp -n "$namespace" \
+        kubernetes.io/change-cause="Deploy version ${version}" --overwrite
 
     # Wait for rollout
     log INFO "Waiting for rollout to complete..."
