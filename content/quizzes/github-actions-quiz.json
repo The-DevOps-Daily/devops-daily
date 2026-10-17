@@ -32,7 +32,7 @@
         "trigger_manual",
         "manual_dispatch"
       ],
-      "correctAnswer": 3,
+      "correctAnswer": 0,
       "explanation": "The `workflow_dispatch` event allows manual workflow execution from the GitHub Actions UI. It can accept input parameters for customization.",
       "hint": "The keyword includes 'dispatch' for sending workflows on demand."
     },
