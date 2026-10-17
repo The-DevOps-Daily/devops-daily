@@ -10,7 +10,7 @@ schema: 'day16'
 answerHash: 'c24ff2cb62e9c504a28e7bd0b8d739aae1a6177267282234e67a394bb4f4488e'
 answerFormat: 'An error code, for example E404'
 starter: 'select code, count(*) from errors group by code order by 2 desc;'
-hint: 'mode() WITHIN GROUP (ORDER BY code) gives the most common code per group, and picks the code that sorts first on a tie. Group by date_trunc(''hour'', occurred_at, ''UTC'') first, then count the winners.'
+hint: "mode() WITHIN GROUP (ORDER BY code) gives the most common code per group, and picks the code that sorts first on a tie. Group by date_trunc('hour', occurred_at, 'UTC') first, then count the winners."
 publishedAt: '2026-12-16T00:00:00Z'
 ---
 
