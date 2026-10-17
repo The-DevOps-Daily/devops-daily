@@ -7,6 +7,7 @@ import {
   answerMatches,
   claimLink,
   claimState,
+  connectOwnDatabase,
   createDatabase,
   loadDatabase,
   loadSolved,
@@ -46,6 +47,8 @@ export function PostgresWorkbench({ day, schema, answerHash, answerFormat, start
   const [claim, setClaim] = useState<{ url: string; userCode: string } | null>(null);
   const [showConn, setShowConn] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [askConn, setAskConn] = useState(false);
+  const [connInput, setConnInput] = useState('');
 
   // Read the browser's saved state after mount; the page is statically rendered.
   useEffect(() => {
@@ -102,6 +105,24 @@ export function PostgresWorkbench({ day, schema, answerHash, answerFormat, start
     } catch (e) {
       setResult(null);
       setError(e as Error);
+      if (/password authentication failed|authentication/i.test((e as Error).message))
+        setAskConn(true);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveConnection(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      setBusy('Checking the connection');
+      const next = await connectOwnDatabase(connInput, db);
+      setDb(next);
+      setAskConn(false);
+      setConnInput('');
+    } catch (err) {
+      setError(err as Error);
     } finally {
       setBusy(null);
     }
@@ -144,11 +165,13 @@ export function PostgresWorkbench({ day, schema, answerHash, answerFormat, start
       tries++;
       try {
         const state = await claimState(db);
-        if (state === 'claimed') {
+        if (state === 'accepted' || state === 'reconciled') {
+          // The project is in the reader's Neon account now, and Neon reset its password.
           const kept = { ...db, claimed: true };
           saveDatabase(kept);
           setDb(kept);
           setClaim(null);
+          setAskConn(true);
         }
       } catch {
         // keep polling; the claim page may still be open
@@ -220,11 +243,19 @@ export function PostgresWorkbench({ day, schema, answerHash, answerFormat, start
               <Button size="sm" variant="ghost" onClick={reset} disabled={!!busy}>
                 <RotateCcw /> Reset today&apos;s data
               </Button>
+              <Button size="sm" variant="ghost" onClick={() => setAskConn((v) => !v)}>
+                Use another connection string
+              </Button>
             </>
           ) : (
-            <Button size="sm" onClick={start} disabled={!!busy}>
-              <Database /> Create my free database
-            </Button>
+            <>
+              <Button size="sm" variant="ghost" onClick={() => setAskConn((v) => !v)}>
+                I already have one
+              </Button>
+              <Button size="sm" onClick={start} disabled={!!busy}>
+                <Database /> Create my free database
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -233,11 +264,35 @@ export function PostgresWorkbench({ day, schema, answerHash, answerFormat, start
         <p className="border-b border-border bg-primary/5 px-4 py-3 text-sm">
           A Neon page opened in a new tab. Sign in or create a free account and enter the code{' '}
           <code className="font-mono font-semibold">{claim.userCode}</code> if it asks. The code
-          works for 15 minutes.{' '}
+          works for 15 minutes. Neon resets the database password when the project moves to your
+          account, so this page then asks for the new connection string.{' '}
           <a className="underline" href={claim.url} target="_blank" rel="noopener noreferrer">
             Open it again
           </a>
         </p>
+      )}
+
+      {askConn && (
+        <form onSubmit={saveConnection} className="border-b border-border px-4 py-3 text-sm">
+          <label htmlFor={`conn-${schema}`} className="mb-2 block text-muted-foreground">
+            {db?.claimed
+              ? 'Your database is in your Neon account now. Open the project in the Neon Console, copy its connection string, and paste it here.'
+              : 'Paste the connection string of your Advent of Postgres database on Neon, for example from another device or from the Neon Console.'}
+          </label>
+          <div className="flex gap-2">
+            <input
+              id={`conn-${schema}`}
+              value={connInput}
+              onChange={(e) => setConnInput(e.target.value)}
+              placeholder="postgresql://..."
+              spellCheck={false}
+              className="h-9 flex-1 rounded-md border border-input bg-background px-3 font-mono text-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <Button size="sm" type="submit" disabled={!!busy || !connInput.trim()}>
+              Use it
+            </Button>
+          </div>
+        </form>
       )}
 
       {db && showConn && (

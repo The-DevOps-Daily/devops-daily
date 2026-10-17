@@ -97,6 +97,7 @@ export async function claimLink(db: ReaderDatabase): Promise<{ url: string; user
   return api('/v1/claim', { projectId: db.projectId, assertion: db.assertion });
 }
 
+/** pending, then accepted (the project moved to the reader's account), then reconciled. */
 export async function claimState(db: ReaderDatabase): Promise<string> {
   const r = await api<{ state: string }>('/v1/claim-status', {
     projectId: db.projectId,
@@ -151,6 +152,46 @@ export async function resetDay(db: ReaderDatabase, schema: string): Promise<Read
   if (!/^day\d{2}$/.test(schema)) throw new Error('Unknown day');
   await transaction(db.databaseUrl, [`drop schema if exists ${schema} cascade`]);
   return seedDay({ ...db, seeded: db.seeded.filter((s) => s !== schema) }, schema);
+}
+
+/**
+ * Switch to a connection string the reader pastes: after a claim (Neon resets the password
+ * when the project moves to the reader's account) or to use a database from another device.
+ * Only Neon works, because the page talks to Neon's SQL-over-HTTP endpoint.
+ */
+export async function connectOwnDatabase(
+  raw: string,
+  previous: ReaderDatabase | null
+): Promise<ReaderDatabase> {
+  const databaseUrl = raw
+    .trim()
+    .replace(/^psql\s+/, '')
+    .replace(/^['"]|['"]$/g, '');
+  let host: string;
+  try {
+    const u = new URL(databaseUrl);
+    if (!/^postgres(ql)?:$/.test(u.protocol)) throw new Error();
+    host = u.hostname;
+  } catch {
+    throw new Error('That does not look like a connection string. It starts with postgresql://');
+  }
+  if (!host.endsWith('.neon.tech'))
+    throw new Error('Use a Neon connection string. The page sends queries to Neon over HTTPS.');
+  const res = await transaction(databaseUrl, [
+    "select nspname::text from pg_namespace where nspname ~ '^day[0-9]{2}$' order by 1",
+  ]);
+  const schemas = res[0].rows.map((r) => String(r[0]));
+  const db: ReaderDatabase = {
+    projectId: previous?.projectId ?? host.split('.')[0],
+    region: previous?.region ?? `${host.split('.').slice(-3)[0]}-${host.split('.').slice(-4)[0]}`,
+    expiresAt: '2099-01-01T00:00:00Z',
+    databaseUrl,
+    assertion: '',
+    seeded: schemas,
+    claimed: true,
+  };
+  saveDatabase(db);
+  return db;
 }
 
 const MAX_ROWS = 500;
