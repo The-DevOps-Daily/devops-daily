@@ -4,7 +4,7 @@ day: 4
 excerpt: 'Optimize a slow GitHub Actions workflow by adding intelligent caching for dependencies. Achieve 40% faster run times.'
 description: 'Learn GitHub Actions caching strategies to dramatically reduce CI/CD pipeline execution times.'
 publishedAt: '2025-12-04T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'CI/CD'
 tags:
@@ -43,12 +43,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20.x'
+          node-version: '24.x'
 
       # No caching - downloads every time!
       - name: Install dependencies
@@ -75,29 +75,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20.x'
+          node-version: '24.x'
           cache: 'npm'  # Built-in npm caching
 
       - name: Cache node modules
-        uses: actions/cache@v3
+        id: cache-node-modules
+        uses: actions/cache@v6
         with:
-          path: |
-            ~/.npm
-            node_modules
+          path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
 
       - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci  # Faster than npm install
 
       - name: Cache build output
-        uses: actions/cache@v3
+        uses: actions/cache@v6
         with:
           path: |
             dist
@@ -113,6 +111,8 @@ jobs:
         run: npm run build
 ```
 
+`npm ci` deletes `node_modules` before it installs. For this reason, the workflow skips `npm ci` when the `node_modules` cache has an exact hit. On a miss, `npm ci` runs, and the cache step saves the new `node_modules` at the end of the job. Do not add `restore-keys` to this step: a partial match restores an old `node_modules` that `npm ci` then deletes.
+
 ## Explanation
 
 ### Cache Strategy
@@ -120,7 +120,7 @@ jobs:
 #### 1. Package Manager Cache
 
 ```yaml
-- uses: actions/setup-node@v4
+- uses: actions/setup-node@v7
   with:
     cache: 'npm'
 ```
@@ -133,7 +133,7 @@ jobs:
 #### 2. Node Modules Cache
 
 ```yaml
-- uses: actions/cache@v3
+- uses: actions/cache@v6
   with:
     path: node_modules
     key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -147,7 +147,7 @@ jobs:
 #### 3. Build Output Cache
 
 ```yaml
-- uses: actions/cache@v3
+- uses: actions/cache@v6
   with:
     path: dist
     key: ${{ runner.os }}-build-${{ hashFiles('src/**') }}
@@ -233,14 +233,14 @@ gh run view <run-id> --log | grep "Total time"
 
 ```yaml
 # Stage 1: Dependencies
-- uses: actions/cache@v3
+- uses: actions/cache@v6
   id: cache-deps
   with:
     path: node_modules
     key: deps-${{ hashFiles('package-lock.json') }}
 
 # Stage 2: Build (depends on source)
-- uses: actions/cache@v3
+- uses: actions/cache@v6
   id: cache-build
   if: steps.cache-deps.outputs.cache-hit == 'true'
   with:
@@ -258,7 +258,7 @@ gh run view <run-id> --log | grep "Total time"
 #### Python (pip)
 
 ```yaml
-- uses: actions/setup-python@v4
+- uses: actions/setup-python@v7
   with:
     python-version: '3.11'
     cache: 'pip'
@@ -267,16 +267,19 @@ gh run view <run-id> --log | grep "Total time"
 #### Go
 
 ```yaml
-- uses: actions/setup-go@v4
+- uses: actions/setup-go@v7
   with:
-    go-version: '1.21'
+    go-version: '1.27'
     cache: true
 ```
 
 #### Docker Layers
 
 ```yaml
-- uses: docker/build-push-action@v5
+# The gha cache backend needs a Buildx builder
+- uses: docker/setup-buildx-action@v4
+
+- uses: docker/build-push-action@v7
   with:
     cache-from: type=gha
     cache-to: type=gha,mode=max
@@ -314,9 +317,9 @@ gh run view <run-id> --log | grep "Total time"
 ## Links
 
 - [GitHub Actions Cache](https://github.com/actions/cache)
-- [Caching Dependencies](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows)
+- [Caching Dependencies](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching)
 - [Cache Action Examples](https://github.com/actions/cache/blob/main/examples.md)
-- [Cache Limits](https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows#usage-limits-and-eviction-policy)
+- [Cache Limits](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#usage-limits-and-eviction-policy)
 
 ## Share Your Success
 

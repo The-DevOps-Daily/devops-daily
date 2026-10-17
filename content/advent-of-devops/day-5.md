@@ -4,7 +4,7 @@ day: 5
 excerpt: 'Troubleshoot and fix a container that fails to start. Learn essential debugging techniques for containerized applications.'
 description: 'Master Docker debugging skills by diagnosing and fixing common container issues including crashes, networking problems, and misconfiguration.'
 publishedAt: '2025-12-05T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Docker'
 tags:
@@ -40,7 +40,7 @@ Debug and fix a broken Docker container that crashes on startup.
 ### Broken Dockerfile
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
@@ -148,7 +148,10 @@ npm list                       # Check installed packages
 ### Fixed Dockerfile
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:24-alpine
+
+# Small init process that passes signals to node
+RUN apk add --no-cache tini
 
 WORKDIR /app
 
@@ -156,7 +159,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy application code
 COPY . .
@@ -168,15 +171,16 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Use npm start for better signal handling
-CMD ["npm", "start"]
+# Run node through tini so that SIGTERM reaches the app
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "server.js"]
 ```
+
+`npm ci` needs a `package-lock.json`. If you only have `package.json`, run `npm install` once on your machine to create the lock file, then build the image.
 
 ### docker-compose.yml (for easier testing)
 
 ```yaml
-version: '3.8'
-
 services:
   app:
     build: .
@@ -208,7 +212,7 @@ RUN npm install  # Before copying package.json
 **Solution:**
 ```dockerfile
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 ```
 
 **Why it matters:** Layer ordering is crucial. Dependencies must be defined before installation.
@@ -234,17 +238,16 @@ ENV PORT=3000
 CMD ["node", "server.js"]  # Doesn't handle SIGTERM
 ```
 
-**Solution:**
-```dockerfile
-CMD ["npm", "start"]  # Better signal propagation
-```
+Node.js runs as PID 1 in the container and does not respond to `SIGTERM` by default. `docker stop` then waits 10 seconds and kills the process.
 
-Or use tini:
+**Solution:** run node behind a small init process such as tini:
 ```dockerfile
 RUN apk add --no-cache tini
 ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "server.js"]
 ```
+
+Or start the container with `docker run --init`. Do not use `CMD ["npm", "start"]` as the fix: npm does not pass `SIGTERM` to the node process.
 
 ### Debugging Toolkit
 
@@ -353,7 +356,7 @@ docker restart my-app && sleep 5 && curl http://localhost:3000
 
 ```dockerfile
 # Debug stage
-FROM node:18-alpine AS debug
+FROM node:24-alpine AS debug
 WORKDIR /app
 COPY package*.json ./
 RUN npm install  # Include dev dependencies
@@ -361,12 +364,12 @@ COPY . .
 CMD ["npm", "run", "dev"]
 
 # Production stage
-FROM node:18-alpine AS production
+FROM node:24-alpine AS production
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 COPY . .
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
 ```
 
 Build debug version:
@@ -418,11 +421,11 @@ docker stats resource-limited
 
 ## Links
 
-- [Docker Debugging Guide](https://docs.docker.com/config/containers/logging/)
-- [Dockerfile Best Practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
-- [Docker Health Checks](https://docs.docker.com/engine/reference/builder/#healthcheck)
-- [Container Troubleshooting](https://docs.docker.com/config/containers/troubleshoot/)
-- [Docker CLI Reference](https://docs.docker.com/engine/reference/commandline/cli/)
+- [View Container Logs](https://docs.docker.com/engine/logging/)
+- [Dockerfile Best Practices](https://docs.docker.com/build/building/best-practices/)
+- [Docker Health Checks](https://docs.docker.com/reference/dockerfile/#healthcheck)
+- [Troubleshoot the Docker Daemon](https://docs.docker.com/engine/daemon/troubleshoot/)
+- [Docker CLI Reference](https://docs.docker.com/reference/cli/docker/)
 
 ## Share Your Success
 

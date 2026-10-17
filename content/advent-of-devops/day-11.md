@@ -4,7 +4,7 @@ day: 11
 excerpt: 'Set up monitoring and logging for your Kubernetes application with Prometheus and Grafana.'
 description: 'Implement observability fundamentals: metrics collection with Prometheus, visualization with Grafana, and centralized logging.'
 publishedAt: '2025-12-11T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Observability'
 tags:
@@ -214,51 +214,49 @@ metadata:
 data:
   demo-app.json: |
     {
-      "dashboard": {
-        "title": "Demo App Metrics",
-        "panels": [
-          {
-            "title": "HTTP Request Rate",
-            "targets": [
-              {
-                "expr": "rate(http_requests_total{namespace=\"demo-app\"}[5m])",
-                "legendFormat": "{{method}} {{route}}"
-              }
-            ],
-            "type": "graph"
-          },
-          {
-            "title": "Request Duration (p95)",
-            "targets": [
-              {
-                "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace=\"demo-app\"}[5m]))",
-                "legendFormat": "{{route}}"
-              }
-            ],
-            "type": "graph"
-          },
-          {
-            "title": "Active Connections",
-            "targets": [
-              {
-                "expr": "active_connections{namespace=\"demo-app\"}",
-                "legendFormat": "{{pod}}"
-              }
-            ],
-            "type": "graph"
-          },
-          {
-            "title": "Error Rate",
-            "targets": [
-              {
-                "expr": "rate(http_requests_total{namespace=\"demo-app\",status_code=~\"5..\"}[5m])",
-                "legendFormat": "5xx errors"
-              }
-            ],
-            "type": "graph"
-          }
-        ]
-      }
+      "title": "Demo App Metrics",
+      "panels": [
+        {
+          "title": "HTTP Request Rate",
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{namespace=\"demo-app\"}[5m])",
+              "legendFormat": "{{method}} {{route}}"
+            }
+          ],
+          "type": "timeseries"
+        },
+        {
+          "title": "Request Duration (p95)",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace=\"demo-app\"}[5m]))",
+              "legendFormat": "{{route}}"
+            }
+          ],
+          "type": "timeseries"
+        },
+        {
+          "title": "Active Connections",
+          "targets": [
+            {
+              "expr": "active_connections{namespace=\"demo-app\"}",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "type": "timeseries"
+        },
+        {
+          "title": "Error Rate",
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{namespace=\"demo-app\",status_code=~\"5..\"}[5m])",
+              "legendFormat": "5xx errors"
+            }
+          ],
+          "type": "timeseries"
+        }
+      ]
     }
 ```
 
@@ -277,6 +275,8 @@ helm install loki grafana/loki-stack \
   --set grafana.enabled=false \
   --set promtail.enabled=true
 ```
+
+> **Note:** The `loki-stack` chart is deprecated, and [Promtail reached end of life on March 2, 2026](https://grafana.com/docs/loki/latest/send-data/promtail/). The chart still installs, so it is fine for a short lab. For a new setup, install Loki with the [monolithic Helm chart](https://grafana.com/docs/loki/latest/setup/install/helm/install-monolithic/) and collect logs with [Grafana Alloy](https://grafana.com/docs/alloy/latest/).
 
 ### 5. PrometheusRule for Alerts
 

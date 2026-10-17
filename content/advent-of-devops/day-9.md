@@ -4,7 +4,7 @@ day: 9
 excerpt: 'Debug and fix a Kubernetes pod that crashes on startup. Master essential troubleshooting techniques.'
 description: 'Learn systematic Kubernetes debugging by diagnosing and fixing common pod failures including CrashLoopBackOff, ImagePullBackOff, and configuration errors.'
 publishedAt: '2025-12-09T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Kubernetes'
 tags:
@@ -201,7 +201,7 @@ Events:
 ```yaml
 containers:
 - name: app
-  image: nginx:1.25-alpine  # Correct tag
+  image: nginx:1.30-alpine  # Correct tag
   imagePullPolicy: IfNotPresent
 ```
 
@@ -298,7 +298,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: nginx:1.25-alpine  # Valid image
+        image: nginx:1.30-alpine  # Valid image
         ports:
         - containerPort: 80
           name: http
@@ -495,8 +495,8 @@ kubectl run test --rm -it --image=curlimages/curl -- curl http://fixed-app.broke
 # Add debug container to running pod (K8s 1.23+)
 kubectl debug -it broken-app-xxx -n broken-app --image=busybox --target=app
 
-# Debug with different image
-kubectl debug broken-app-xxx -n broken-app --image=ubuntu --share-processes
+# Debug a copy of the pod with a different image and a shared process namespace
+kubectl debug -it broken-app-xxx -n broken-app --image=ubuntu --copy-to=broken-app-debug --share-processes
 ```
 
 ### Debug Node Issues
@@ -546,7 +546,7 @@ traceroute fixed-app.broken-app.svc.cluster.local
 - [Kubernetes Debugging](https://kubernetes.io/docs/tasks/debug/)
 - [Debug Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/)
 - [Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/)
-- [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)
+- [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/quick-reference/)
 - [Troubleshooting Applications](https://kubernetes.io/docs/tasks/debug/debug-application/)
 
 ## Share Your Success

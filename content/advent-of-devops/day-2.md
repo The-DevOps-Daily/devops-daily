@@ -4,7 +4,7 @@ day: 2
 excerpt: 'Debug and optimize a poorly written Dockerfile to reduce build time by at least 50%. Learn layer caching, build optimization, and best practices.'
 description: 'Improve Docker build performance through layer caching, dependency optimization, and efficient Dockerfile practices.'
 publishedAt: '2025-12-02T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Docker'
 tags:
@@ -39,7 +39,7 @@ Rewrite the Dockerfile so the build time is reduced by at least 50%.
 ### Slow Dockerfile (Before)
 
 ```dockerfile
-FROM node:20
+FROM node:24
 
 # Install everything first (breaks cache on any file change)
 WORKDIR /app
@@ -52,7 +52,7 @@ RUN npm install
 RUN npm run build
 
 # Install production dependencies
-RUN npm prune --production
+RUN npm prune --omit=dev
 
 EXPOSE 3000
 
@@ -74,7 +74,7 @@ CMD ["node", "dist/index.js"]
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
-    "@types/node": "^20.0.0",
+    "@types/node": "^24.0.0",
     "typescript": "^5.0.0"
   }
 }
@@ -85,7 +85,7 @@ CMD ["node", "dist/index.js"]
 ### Optimized Dockerfile (After)
 
 ```dockerfile
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -93,7 +93,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including dev deps for build)
-RUN npm ci --only=production=false
+RUN npm ci
 
 # Copy source code
 COPY tsconfig.json ./
@@ -103,7 +103,7 @@ COPY src ./src
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
@@ -111,7 +111,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
@@ -127,6 +127,8 @@ EXPOSE 3000
 
 CMD ["node", "dist/index.js"]
 ```
+
+`npm ci` needs a `package-lock.json`. If the project does not have one, run `npm install` once and commit the lock file.
 
 ### .dockerignore
 
@@ -178,12 +180,12 @@ COPY . .
 
 ```dockerfile
 # Build stage has dev dependencies
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 RUN npm ci
 
 # Production stage only has runtime dependencies
-FROM node:20-alpine
-RUN npm ci --only=production
+FROM node:24-alpine
+RUN npm ci --omit=dev
 ```
 
 #### 3. Using npm ci Instead of npm install
@@ -247,7 +249,7 @@ docker build -t advent-day2:latest . \
 ### BuildKit Features
 
 ```dockerfile
-# syntax=docker/dockerfile:1.4
+# syntax=docker/dockerfile:1
 
 # Use build cache mounts
 RUN --mount=type=cache,target=/root/.npm \
@@ -273,8 +275,8 @@ RUN npm run build
 
 - [Docker Build Cache](https://docs.docker.com/build/cache/)
 - [Multi-Stage Builds](https://docs.docker.com/build/building/multi-stage/)
-- [.dockerignore](https://docs.docker.com/engine/reference/builder/#dockerignore-file)
-- [npm ci Documentation](https://docs.npmjs.com/cli/v9/commands/npm-ci)
+- [.dockerignore](https://docs.docker.com/build/concepts/context/#dockerignore-files)
+- [npm ci Documentation](https://docs.npmjs.com/cli/commands/npm-ci/)
 - [BuildKit](https://docs.docker.com/build/buildkit/)
 
 ## Share Your Success

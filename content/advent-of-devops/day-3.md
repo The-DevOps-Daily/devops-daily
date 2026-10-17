@@ -4,7 +4,7 @@ day: 3
 excerpt: 'Set up continuous integration for a repository without automation. Create a GitHub Actions workflow that runs tests on every push.'
 description: 'Learn to create GitHub Actions workflows for continuous integration, automated testing, and quality checks.'
 publishedAt: '2025-12-03T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Beginner'
 category: 'CI/CD'
 tags:
@@ -100,14 +100,14 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [22.x, 24.x]
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
@@ -116,12 +116,13 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: npm test
+        run: npm test -- --coverage
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-        if: matrix.node-version == '20.x'
+        uses: codecov/codecov-action@v7
+        if: matrix.node-version == '24.x'
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/coverage-final.json
           fail_ci_if_error: false
 
@@ -130,12 +131,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20.x'
+          node-version: '24.x'
           cache: 'npm'
 
       - name: Install dependencies
@@ -145,6 +146,10 @@ jobs:
         run: npm run lint
         continue-on-error: false
 ```
+
+The workflow needs a `package-lock.json` in the repository. Both `npm ci` and the npm cache in `setup-node` use it. Run `npm install` once and commit the lock file.
+
+The `lint` job runs `npm run lint`. The sample `package.json` has no `lint` script, so add one first (for example with ESLint), or remove the job. Without the script, the job fails.
 
 ## Explanation
 
@@ -169,7 +174,7 @@ on:
 ```yaml
 strategy:
   matrix:
-    node-version: [18.x, 20.x]
+    node-version: [22.x, 24.x]
 ```
 
 - Tests against multiple Node.js versions
@@ -180,14 +185,14 @@ strategy:
 
 **Checkout Code**
 ```yaml
-- uses: actions/checkout@v4
+- uses: actions/checkout@v7
 ```
 - Fetches repository code
 - Required as first step
 
 **Setup Node.js**
 ```yaml
-- uses: actions/setup-node@v4
+- uses: actions/setup-node@v7
   with:
     node-version: ${{ matrix.node-version }}
     cache: 'npm'
@@ -223,9 +228,9 @@ After setup, you'll see:
 ### GitHub UI Shows:
 
 ```
-✓ CI / Run Tests (18.x) — 1m 23s
-✓ CI / Run Tests (20.x) — 1m 19s
-✓ CI / Lint Code — 45s
+✓ CI / Run Tests (22.x) - 1m 23s
+✓ CI / Run Tests (24.x) - 1m 19s
+✓ CI / Lint Code - 45s
 ```
 
 ## Validation
@@ -267,14 +272,16 @@ gh run view --log
   run: npm test -- --coverage
 
 - name: Upload to Codecov
-  uses: codecov/codecov-action@v3
+  uses: codecov/codecov-action@v7
+  with:
+    token: ${{ secrets.CODECOV_TOKEN }}
 ```
 
 ### Add Build Caching
 
 ```yaml
 - name: Cache build output
-  uses: actions/cache@v3
+  uses: actions/cache@v6
   with:
     path: |
       ~/.npm
@@ -293,7 +300,7 @@ gh run view --log
 ## Links
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Workflow Syntax](https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions)
+- [Workflow Syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
 - [GitHub Actions Marketplace](https://github.com/marketplace?type=actions)
 - [actions/checkout](https://github.com/actions/checkout)
 - [actions/setup-node](https://github.com/actions/setup-node)

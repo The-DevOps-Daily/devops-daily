@@ -4,7 +4,7 @@ day: 1
 excerpt: 'Learn to create the smallest possible Docker image for a Go application. Optimize for size, security, and performance using static compilation.'
 description: 'Create a minimal Docker image under 25MB using Go, multi-stage builds, Alpine Linux, and best practices for containerization.'
 publishedAt: '2025-12-01T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Beginner'
 category: 'Docker'
 tags:
@@ -68,7 +68,7 @@ func main() {
 
 ```dockerfile
 # Multi-stage build
-FROM golang:1.23-alpine AS builder
+FROM golang:1.27-alpine AS builder
 
 WORKDIR /usr/src/app
 
@@ -76,7 +76,7 @@ WORKDIR /usr/src/app
 COPY main.go .
 
 # Build static binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-s -w' -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-s -w' -o main main.go
 
 # Final stage
 FROM alpine:latest
@@ -106,13 +106,13 @@ For an even smaller image (under 10MB), you can use a `scratch` base:
 
 ```dockerfile
 # Multi-stage build
-FROM golang:1.23-alpine AS builder
+FROM golang:1.27-alpine AS builder
 
 WORKDIR /usr/src/app
 COPY main.go .
 
 # Build static binary with all dependencies embedded
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-s -w -extldflags "-static"' -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-s -w -extldflags "-static"' -o main main.go
 
 # Use scratch (empty) base image
 FROM scratch
@@ -193,12 +193,12 @@ GOOS=linux             # Target Linux OS
 
 | Approach | Image Size | Notes |
 |----------|-----------|--------------------------------------------|
-| golang:1.23 | ~800MB | Full Debian-based image with Go toolchain |
-| golang:1.23-alpine | ~300MB | Alpine with Go toolchain |
+| golang:1.27 | ~800MB | Full Debian-based image with Go toolchain |
+| golang:1.27-alpine | ~300MB | Alpine with Go toolchain |
 | Alpine + Go binary | **~15MB** | Multi-stage with Alpine base |
 | Scratch + Go binary | **~7MB** | Only the compiled binary, no OS |
 | python:3.12-alpine | ~60MB | Python interpreter required |
-| node:20-alpine | ~70MB | Node.js runtime required |
+| node:24-alpine | ~70MB | Node.js runtime required |
 
 ## Result
 
@@ -275,7 +275,7 @@ if __name__ == '__main__':
 ### Node.js (Realistic: ~70MB)
 
 ```dockerfile
-FROM node:20-alpine
+FROM node:24-alpine
 
 RUN addgroup -g 1001 appgroup && \
     adduser -D -u 1001 -G appgroup appuser
@@ -309,10 +309,10 @@ server.listen(8000, '0.0.0.0', () => {
 
 - [Docker Multi-Stage Builds](https://docs.docker.com/build/building/multi-stage/)
 - [Alpine Linux Docker Images](https://hub.docker.com/_/alpine)
-- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
+- [Docker Best Practices](https://docs.docker.com/build/building/best-practices/)
 - [Go Docker Official Images](https://hub.docker.com/_/golang)
 - [Building Minimal Go Docker Images](https://chemidy.medium.com/create-the-smallest-and-secured-golang-docker-image-based-on-scratch-4752223b7324)
-- [Scratch Base Images](https://docs.docker.com/develop/develop-images/baseimages/#create-a-simple-parent-image-using-scratch)
+- [Scratch Base Images](https://docs.docker.com/build/building/base-images/#create-a-minimal-base-image-using-scratch)
 
 ## Share Your Success
 

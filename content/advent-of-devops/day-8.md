@@ -4,7 +4,7 @@ day: 8
 excerpt: 'Deploy your first application to Kubernetes using Deployments, Services, and ConfigMaps. Learn the fundamentals of K8s.'
 description: 'Master Kubernetes basics by deploying a containerized application with proper configuration, service discovery, and health checks.'
 publishedAt: '2025-12-08T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Kubernetes'
 tags:
@@ -51,7 +51,7 @@ const appName = process.env.APP_NAME || 'MyApp';
 const version = process.env.VERSION || '1.0.0';
 
 let healthy = true;
-let ready = true;
+let ready = false;
 
 // Simulate startup time
 setTimeout(() => {
@@ -99,12 +99,12 @@ app.listen(port, () => {
 #### Dockerfile
 
 ```dockerfile
-FROM node:18-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 COPY . .
 
@@ -507,7 +507,8 @@ kubectl describe pod demo-app-xxx -n demo-app
 
 # Test probe failure
 POD=$(kubectl get pod -n demo-app -l app=demo-app -o jsonpath='{.items[0].metadata.name}')
-kubectl exec -n demo-app $POD -- curl -X POST localhost:3000/health/toggle
+# node:alpine images have BusyBox wget, not curl
+kubectl exec -n demo-app $POD -- wget -qO- --post-data='' http://localhost:3000/health/toggle
 
 # Watch pod restart
 kubectl get pods -n demo-app -w
@@ -571,9 +572,8 @@ kind: Ingress
 metadata:
   name: demo-app
   namespace: demo-app
-  annotations:
-    kubernetes.io/ingress.class: nginx
 spec:
+  ingressClassName: nginx
   rules:
   - host: demo.example.com
     http:

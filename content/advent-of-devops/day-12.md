@@ -4,7 +4,7 @@ day: 12
 excerpt: 'Parse and analyze application logs to extract meaningful insights and debug production issues.'
 description: 'Learn log parsing techniques using tools like jq, grep, awk, and LogQL to troubleshoot applications and extract valuable metrics from logs.'
 publishedAt: '2025-12-12T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Intermediate'
 category: 'Observability'
 tags:
@@ -540,11 +540,11 @@ jq "select(.userId == 123)" application-json.log
 
 ## Links
 
-- [jq Manual](https://stedolan.github.io/jq/manual/)
+- [jq Manual](https://jqlang.org/manual/)
 - [awk Tutorial](https://www.gnu.org/software/gawk/manual/)
 - [grep Documentation](https://www.gnu.org/software/grep/manual/)
-- [LogQL Documentation](https://grafana.com/docs/loki/latest/logql/)
-- [Structured Logging Best Practices](https://www.loggly.com/ultimate-guide/structuring-logs/)
+- [LogQL Documentation](https://grafana.com/docs/loki/latest/query/)
+- [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
 
 ## Share Your Success
 

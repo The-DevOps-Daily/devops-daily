@@ -4,7 +4,7 @@ day: 7
 excerpt: 'Enhance your Terraform module with advanced features like testing, documentation, and CI/CD integration.'
 description: 'Level up your Terraform module with comprehensive documentation, automated testing, and publishing to the Terraform Registry.'
 publishedAt: '2025-12-07T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 difficulty: 'Advanced'
 category: 'Infrastructure as Code'
 tags:
@@ -93,7 +93,7 @@ module "bucket" {
   source = "git::https://github.com/yourorg/terraform-aws-s3-bucket.git?ref=v1.0.0"
 
   bucket_name = "my-application-data"
-  environment = "production"
+  environment = "prod"
 
   tags = {
     Project = "MyApp"
@@ -108,7 +108,7 @@ module "bucket_with_lifecycle" {
   source = "git::https://github.com/yourorg/terraform-aws-s3-bucket.git?ref=v1.0.0"
 
   bucket_name = "my-app-logs"
-  environment = "production"
+  environment = "prod"
 
   lifecycle_rules = [
     {
@@ -226,12 +226,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
-          terraform_version: 1.6.0
+          terraform_version: 1.16.6
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
@@ -248,9 +248,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
-      - uses: terraform-linters/setup-tflint@v4
+      - uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: latest
 
@@ -266,10 +266,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run Checkov
-        uses: bridgecrewio/checkov-action@master
+        uses: bridgecrewio/checkov-action@v12
         with:
           directory: .
           framework: terraform
@@ -282,12 +282,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Generate Terraform docs
-        uses: terraform-docs/gh-actions@v1.0.0
+        uses: terraform-docs/gh-actions@v1.4.1
         with:
           working-dir: .
           output-file: README.md
@@ -303,10 +303,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       - name: Init Example
         run: terraform init -backend=false
@@ -324,7 +324,7 @@ jobs:
 ```yaml
 repos:
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.83.5
+    rev: v1.109.2
     hooks:
       - id: terraform_fmt
         name: Terraform format
@@ -354,7 +354,7 @@ repos:
           - --args=--framework terraform
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -433,12 +433,12 @@ settings:
 ```hcl
 plugin "aws" {
   enabled = true
-  version = "0.28.0"
+  version = "0.49.0"
   source  = "github.com/terraform-linters/tflint-ruleset-aws"
 }
 
 config {
-  module = true
+  call_module_type = "all"
   force = false
 }
 
@@ -608,7 +608,7 @@ on: [push, pull_request]  # Automatic validation
 **Automated docs stay current:**
 ```yaml
 - name: Generate Terraform docs
-  uses: terraform-docs/gh-actions@v1.0.0
+  uses: terraform-docs/gh-actions@v1.4.1
 ```
 
 Always reflects actual code.
@@ -630,7 +630,7 @@ Ensures quality at source.
 **Checkov finds security issues:**
 ```yaml
 - name: Run Checkov
-  uses: bridgecrewio/checkov-action@master
+  uses: bridgecrewio/checkov-action@v12
 ```
 
 Prevents misconfigurations.
@@ -746,7 +746,7 @@ terraform fmt -check -recursive
 - [TFLint](https://github.com/terraform-linters/tflint)
 - [Checkov](https://www.checkov.io/)
 - [Terraform Registry Publishing](https://developer.hashicorp.com/terraform/registry/modules/publish)
-- [Module Testing](https://developer.hashicorp.com/terraform/tutorials/modules/automate-terraform)
+- [Module Testing](https://developer.hashicorp.com/terraform/tutorials/configuration-language/test)
 
 ## Share Your Success
 
