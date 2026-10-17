@@ -13,12 +13,12 @@
     "estimatedTime": "20-25 minutes",
     "difficultyLevels": {
       "beginner": 4,
-      "intermediate": 8,
+      "intermediate": 9,
       "advanced": 3
     },
     "createdDate": "2024-05-15"
   },
-  "totalPoints": 218,
+  "totalPoints": 232,
   "questions": [
     {
       "id": 1,
@@ -259,6 +259,22 @@
       "correctAnswer": 1,
       "explanation": "Composite actions let you bundle multiple workflow steps into a single action using YAML, without writing JavaScript or building Docker images. They're simpler to create and maintain.",
       "hint": "Composite actions are defined purely in YAML, combining existing steps."
+    },
+    {
+      "id": 16,
+      "title": "Workflow Concurrency Control",
+      "description": "Which configuration key automatically cancels pending or in-progress workflow runs for the same branch or pull request when a newer commit is pushed?",
+      "difficulty": "intermediate",
+      "points": 14,
+      "options": [
+        "concurrency with cancel-in-progress: true",
+        "jobs.<job_id>.strategy.max-parallel: 1",
+        "workflow_dispatch.auto_cancel: true",
+        "cancel_previous_runs: true"
+      ],
+      "correctAnswer": 0,
+      "explanation": "Using the top-level `concurrency` block with `cancel-in-progress: true` groups runs by a dynamic key (like branch name or PR ref) and terminates earlier redundant runs whenever new commits arrive.",
+      "hint": "Look for the concurrency setting designed to save runner minutes on redundant runs."
     }
   ]
 }
