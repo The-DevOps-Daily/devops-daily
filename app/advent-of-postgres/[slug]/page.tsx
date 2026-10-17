@@ -86,6 +86,12 @@ export default async function AdventOfPostgresDay({
 
       <PostgresDayGate publishedAt={day.publishedAt} day={day.day}>
         <MarkdownContent content={day.content} />
+        {day.hint && (
+          <details className="mt-6 rounded-md border border-border px-4 py-3 text-sm">
+            <summary className="cursor-pointer font-medium">Stuck? Show a hint</summary>
+            <p className="mt-2 text-muted-foreground">{day.hint}</p>
+          </details>
+        )}
         <PostgresWorkbench
           day={day.day}
           schema={day.schema}

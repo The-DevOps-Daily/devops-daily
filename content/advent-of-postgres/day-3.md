@@ -10,6 +10,7 @@ schema: 'day03'
 answerHash: '244262037dcecbc02576fcc61e6a2e7e22e096c168cace13fd4073bbee032d6a'
 answerFormat: 'An elf name, for example alabaster'
 starter: 'select * from oncall order by lower(shift);'
+hint: 'A range has an operator that checks if it contains a timestamp, and it respects the [ ) bounds. BETWEEN does not.'
 publishedAt: '2026-12-03T00:00:00Z'
 ---
 

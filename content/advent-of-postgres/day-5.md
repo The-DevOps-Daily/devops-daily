@@ -10,6 +10,7 @@ schema: 'day05'
 answerHash: '81da5be904ce4036060ee3c3f637a1d86cc72902fe12870984a732c47e6b392b'
 answerFormat: 'A service name, for example sleigh-api'
 starter: 'select service, count(*), avg(latency_ms) from requests group by service;'
+hint: 'percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms) gives the 95th percentile. Compare it with avg() to see the trap.'
 publishedAt: '2026-12-05T00:00:00Z'
 ---
 

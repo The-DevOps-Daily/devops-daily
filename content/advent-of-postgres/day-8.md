@@ -10,6 +10,7 @@ schema: 'day08'
 answerHash: '17f8c724031f7830951651911fd0502fcc248c23386b1572087afab7a4f19469'
 answerFormat: 'A region, for example us-east'
 starter: 'select id, ts, jsonb_pretty(body) from logs limit 5;'
+hint: "->> returns text, and #>> takes a path like '{ctx,user,tier}'. Lines without a user block return NULL there."
 publishedAt: '2026-12-08T00:00:00Z'
 ---
 

@@ -14,6 +14,7 @@ export type PostgresAdventDay = {
   answerHash: string;
   answerFormat?: string;
   starter?: string;
+  hint?: string;
   publishedAt: string;
   content: string;
 };

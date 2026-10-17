@@ -10,6 +10,7 @@ schema: 'day07'
 answerHash: '6d90e409673803778775c361abf4d2a39f4d57d73b94f834e3ac5abe85562078'
 answerFormat: 'A number, for example 120000'
 starter: 'select * from order_events order by order_id, received_at limit 20;'
+hint: 'DISTINCT ON keeps the first row of each group in the ORDER BY order, so order the newest event first.'
 publishedAt: '2026-12-07T00:00:00Z'
 ---
 

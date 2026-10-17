@@ -10,6 +10,7 @@ schema: 'day01'
 answerHash: '62984a62b17384404b9a421353c9a5a6dff361ada380fbdfb0c2be5bca3f22cf'
 answerFormat: 'A service name, for example sleigh-api'
 starter: 'select * from deploys limit 10;'
+hint: 'Look at every distinct value in the status column before you filter on it.'
 publishedAt: '2026-12-01T00:00:00Z'
 ---
 

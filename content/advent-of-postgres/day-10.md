@@ -10,6 +10,7 @@ schema: 'day10'
 answerHash: 'b608f7d7e89d3084bb1d64194a6031747820961dac2405783cefa1e29c8ef154'
 answerFormat: 'A number, for example 30'
 starter: 'select * from maintenance order by lower(window_) limit 20;'
+hint: '&& is the overlap operator for ranges. Join the table to itself and keep each pair once.'
 publishedAt: '2026-12-10T00:00:00Z'
 ---
 

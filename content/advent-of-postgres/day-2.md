@@ -11,6 +11,7 @@ schema: 'day02'
 answerHash: '786b2a31707640d6b59eadd0e287f64962d2dfa6f50c2042d5d89228e3b312fd'
 answerFormat: 'A service name, for example sleigh-api'
 starter: 'select * from request_stats limit 10;'
+hint: 'Integer divided by integer is an integer in Postgres. And check what the 10,000-request floor removes.'
 publishedAt: '2026-12-02T00:00:00Z'
 ---
 

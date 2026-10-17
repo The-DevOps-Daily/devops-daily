@@ -10,6 +10,7 @@ schema: 'day06'
 answerHash: 'f4dc1612c3778d0075f86fc7788051bc31cb78c3ddce3ca276f6ed7ce2dc7c73'
 answerFormat: 'A number, for example 7'
 starter: 'select * from releases order by service, released_at limit 20;'
+hint: 'lag(version, 2) and lag(released_at) need a window that is partitioned by service.'
 publishedAt: '2026-12-06T00:00:00Z'
 ---
 

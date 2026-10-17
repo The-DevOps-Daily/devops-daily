@@ -10,6 +10,7 @@ schema: 'day09'
 answerHash: '5fa0e48ce9240ac3554b616f763ab7743bbbadd2aaed3d8afe70494b8c257783'
 answerFormat: 'A number, for example 5'
 starter: 'select * from dependencies order by service;'
+hint: 'A recursive CTE with UNION, not UNION ALL, stops when it finds no new rows. That is what keeps the loop from running forever.'
 publishedAt: '2026-12-09T00:00:00Z'
 ---
 

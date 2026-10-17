@@ -10,6 +10,7 @@ schema: 'day04'
 answerHash: '40e89e08eb072211373c4b0c551d130308b4eb8d9e422211964a2a4859bda4b5'
 answerFormat: 'A number of minutes, for example 12'
 starter: 'select * from health_checks order by service, checked_at limit 20;'
+hint: 'Number the checks per service, and number them again per service and ok value. The difference stays the same inside a run.'
 publishedAt: '2026-12-04T00:00:00Z'
 ---
 
