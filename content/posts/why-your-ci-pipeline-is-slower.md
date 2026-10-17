@@ -189,6 +189,20 @@ fi
 - Save and reuse build artifacts across jobs.
 - Run targeted tests when possible, full suites on protected branches or merges.
 
+## Common Gotcha: Wasting Minutes on Redundant Runs
+
+When developers push several commits in rapid succession or update a pull request with new tweaks, previous in-progress CI runs continue executing until completion, consuming runner concurrency and billing minutes.
+
+Add a top-level `concurrency` block with `cancel-in-progress: true` in your workflow YAML to automatically abort stale runs:
+
+```yaml
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+```
+
+> **Tip:** Grouping by `github.head_ref || github.ref` ensures that new pushes to the same pull request cancel previous outdated test suites immediately, while distinct pull requests and branches continue running independently without blocking each other.
+
 ## Conclusion
 
 Most pipeline speed problems are fixable with configuration and small investments. Start with parallel jobs and caching. Then add artifact reuse and selective testing. You will see faster feedback and higher team throughput.
