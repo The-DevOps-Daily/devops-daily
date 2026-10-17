@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { ADVENT_DAYS } from '@/lib/advent-schedule';
 
 interface AdventProgress {
   completedDays: number[];
@@ -12,6 +13,7 @@ interface AdventProgressContextType {
   isCompleted: (day: number) => boolean;
   markComplete: (day: number) => void;
   markIncomplete: (day: number) => void;
+  resetProgress: () => void;
   totalCompleted: number;
   progressPercentage: number;
 }
@@ -20,32 +22,43 @@ const AdventProgressContext = createContext<AdventProgressContextType | undefine
 
 const STORAGE_KEY = 'advent-of-devops-progress';
 
+function readStoredDays(): number[] {
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (!stored) return [];
+    const data: Partial<AdventProgress> = JSON.parse(stored);
+    if (!Array.isArray(data.completedDays)) return [];
+    const valid = data.completedDays.filter(
+      (day): day is number => Number.isInteger(day) && day >= 1 && day <= ADVENT_DAYS
+    );
+    return Array.from(new Set(valid)).sort((a, b) => a - b);
+  } catch {
+    // Unreadable storage (private mode, corrupted JSON): start empty
+    return [];
+  }
+}
+
 export function AdventProgressProvider({ children }: { children: ReactNode }) {
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const data: AdventProgress = JSON.parse(stored);
-        setCompletedDays(data.completedDays || []);
-      } catch (error) {
-        console.error('Failed to load advent progress:', error);
-      }
-    }
+    setCompletedDays(readStoredDays());
     setIsLoaded(true);
   }, []);
 
   // Save to localStorage whenever completedDays changes
   useEffect(() => {
-    if (isLoaded) {
+    if (!isLoaded) return;
+    try {
       const data: AdventProgress = {
         completedDays,
         lastUpdated: new Date().toISOString(),
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // Storage full or unavailable: progress still works for this visit
     }
   }, [completedDays, isLoaded]);
 
@@ -62,8 +75,10 @@ export function AdventProgressProvider({ children }: { children: ReactNode }) {
     setCompletedDays((prev) => prev.filter((d) => d !== day));
   };
 
+  const resetProgress = () => setCompletedDays([]);
+
   const totalCompleted = completedDays.length;
-  const progressPercentage = Math.round((totalCompleted / 25) * 100);
+  const progressPercentage = Math.round((totalCompleted / ADVENT_DAYS) * 100);
 
   return (
     <AdventProgressContext.Provider
@@ -72,6 +87,7 @@ export function AdventProgressProvider({ children }: { children: ReactNode }) {
         isCompleted,
         markComplete,
         markIncomplete,
+        resetProgress,
         totalCompleted,
         progressPercentage,
       }}

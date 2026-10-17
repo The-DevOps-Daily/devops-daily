@@ -35,7 +35,7 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {days.map((day, index) => {
+      {days.map((day) => {
         const isUnlocked = day.day <= currentDay;
         const completed = isCompleted(day.day);
         const difficultyColor =
@@ -43,29 +43,14 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
           difficultyColors.Intermediate;
         const categoryIcon = categoryIcons[day.category || ''] || '🎯';
 
-        const CardWrapper = isUnlocked ? Link : 'div';
-        const cardProps = isUnlocked ? { href: `/advent-of-devops/${day.slug}` } : {};
+        const cardClassName = `group relative block rounded-md border transition-colors overflow-hidden ${
+          isUnlocked
+            ? 'border-border hover:border-primary/40 hover:bg-muted/30 cursor-pointer'
+            : 'border-border/50 opacity-60 cursor-not-allowed pointer-events-none'
+        } ${completed ? 'ring-2 ring-green-500/50' : ''}`;
 
-        return (
-          <CardWrapper
-            key={day.slug}
-            {...cardProps}
-            className={`group relative block rounded-md border transition-colors overflow-hidden ${
-              isUnlocked
-                ? 'border-border hover:border-primary/40 hover:bg-muted/30 cursor-pointer'
-                : 'border-border/50 opacity-60 cursor-not-allowed pointer-events-none'
-            } ${completed ? 'ring-2 ring-green-500/50' : ''}`}
-            style={{
-              animationDelay: `${index * 50}ms`,
-            }}
-          >
-            {/* Completion Badge */}
-            {completed && (
-              <div className="absolute top-2 right-2 z-20 p-2 rounded-full bg-green-500 shadow-lg">
-                <CheckCircle2 className="h-5 w-5 text-white" />
-              </div>
-            )}
-
+        const cardBody = (
+          <>
             {/* Card Background Gradient */}
             <div className="absolute inset-0 bg-linear-to-br from-card via-card to-primary/5 opacity-90" />
 
@@ -73,10 +58,8 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
             {!isUnlocked && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
                 <div className="text-center">
-                  <div className="text-4xl mb-2">🔒</div>
-                  <div className="text-sm font-medium text-muted-foreground">
-                    Unlocks Dec {day.day}
-                  </div>
+                  <Lock className="mx-auto mb-2 h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
+                  <div className="text-sm font-mono text-muted-foreground">Opens Dec {day.day}</div>
                 </div>
               </div>
             )}
@@ -96,13 +79,18 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
                   </div>
                   <div className="text-3xl">{categoryIcon}</div>
                 </div>
-                {day.difficulty && (
-                  <div
-                    className={`px-2 py-1 rounded-md text-xs font-medium border bg-linear-to-br ${difficultyColor}`}
-                  >
-                    {day.difficulty}
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  {completed && (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" aria-label="Completed" />
+                  )}
+                  {day.difficulty && (
+                    <div
+                      className={`px-2 py-1 rounded-md text-xs font-medium border bg-linear-to-br ${difficultyColor}`}
+                    >
+                      {day.difficulty}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Title */}
@@ -131,7 +119,17 @@ export function AdventCalendarGrid({ days, currentDay }: AdventCalendarGridProps
                 )}
               </div>
             </div>
-          </CardWrapper>
+          </>
+        );
+
+        return isUnlocked ? (
+          <Link key={day.slug} href={`/advent-of-devops/${day.slug}`} className={cardClassName}>
+            {cardBody}
+          </Link>
+        ) : (
+          <div key={day.slug} aria-disabled="true" className={cardClassName}>
+            {cardBody}
+          </div>
         );
       })}
     </div>

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { AdventProgressProvider } from './advent-progress-provider';
 import { AdventProgressStats } from './advent-progress-stats';
 import { AdventCalendarGrid } from './advent-calendar-grid';
+import { useOpenAdventDays } from '@/hooks/use-open-advent-days';
 import type { AdventDay } from '@/lib/advent';
 
 interface AdventLandingClientProps {
@@ -11,15 +11,7 @@ interface AdventLandingClientProps {
 }
 
 export function AdventLandingClient({ days }: AdventLandingClientProps) {
-  // Calculate current day on client side to avoid static build issues
-  const [currentDay, setCurrentDay] = useState(25);
-
-  useEffect(() => {
-    const today = new Date();
-    const isDecember = today.getMonth() === 11; // December is month 11
-    const calculatedDay = isDecember ? Math.min(today.getDate(), 25) : 25;
-    setCurrentDay(calculatedDay);
-  }, []);
+  const currentDay = useOpenAdventDays();
 
   return (
     <AdventProgressProvider>
@@ -40,7 +32,7 @@ export function AdventLandingClient({ days }: AdventLandingClientProps) {
           </div>
 
           {/* Sidebar with stats */}
-          <aside className="lg:col-span-3">
+          <aside className="order-first lg:order-none lg:col-span-3">
             <div className="lg:sticky lg:top-8">
               <AdventProgressStats />
             </div>

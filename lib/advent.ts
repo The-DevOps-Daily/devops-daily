@@ -49,10 +49,7 @@ function mapAdventDay(data: Partial<AdventDay>, content: string, filename: strin
 }
 
 const loadAdventDays = createCachedLoader(async () => {
-  const days = await readMarkdownFiles<AdventDay, Partial<AdventDay>>(
-    ADVENT_DIR,
-    mapAdventDay
-  );
+  const days = await readMarkdownFiles<AdventDay, Partial<AdventDay>>(ADVENT_DIR, mapAdventDay);
 
   return days.filter((day) => day.slug.startsWith('day-')).sort((a, b) => a.day - b.day);
 });
@@ -117,23 +114,4 @@ export async function getNextAdventDay(currentDay: number): Promise<AdventDay | 
 export async function getPreviousAdventDay(currentDay: number): Promise<AdventDay | null> {
   if (currentDay <= 1) return null;
   return getAdventDayByNumber(currentDay - 1);
-}
-
-export async function getAdventProgress(): Promise<{
-  totalDays: number;
-  completedDays: number;
-  percentComplete: number;
-}> {
-  const days = await getAllAdventDays();
-  const today = new Date();
-  const december = today.getMonth() === 11; // December is month 11
-  const dayOfMonth = today.getDate();
-
-  const completedDays = december && dayOfMonth <= 25 ? dayOfMonth : 25;
-
-  return {
-    totalDays: 25,
-    completedDays,
-    percentComplete: (completedDays / 25) * 100,
-  };
 }

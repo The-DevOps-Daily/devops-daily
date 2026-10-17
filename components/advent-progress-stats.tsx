@@ -1,10 +1,22 @@
 'use client';
 
-import { Trophy, Target, Zap, Award } from 'lucide-react';
+import { Trophy, Target, Zap, Award, RotateCcw } from 'lucide-react';
 import { useAdventProgress } from './advent-progress-provider';
 
 export function AdventProgressStats() {
-  const { totalCompleted, progressPercentage } = useAdventProgress();
+  const { totalCompleted, progressPercentage, resetProgress } = useAdventProgress();
+
+  const handleReset = () => {
+    if (
+      window.confirm(
+        `Reset your Advent of DevOps progress? This clears ${totalCompleted} completed ${
+          totalCompleted === 1 ? 'day' : 'days'
+        } in this browser.`
+      )
+    ) {
+      resetProgress();
+    }
+  };
 
   const milestones = [
     { threshold: 5, label: 'Getting Started', icon: Zap, color: 'text-blue-500' },
@@ -34,9 +46,7 @@ export function AdventProgressStats() {
       <div className="mb-4">
         <div className="flex items-center justify-between text-sm mb-2">
           <span className="text-muted-foreground">Challenges Completed</span>
-          <span className="font-semibold text-primary">
-            {totalCompleted} / 25
-          </span>
+          <span className="font-semibold text-primary">{totalCompleted} / 25</span>
         </div>
         <div className="h-3 bg-muted border border-border rounded-full overflow-hidden">
           <div
@@ -76,9 +86,25 @@ export function AdventProgressStats() {
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            You've completed all 25 Advent of DevOps challenges! Share your achievement with the
-            community!
+            You&apos;ve completed all 25 Advent of DevOps challenges! Share your achievement with
+            the community!
           </p>
+        </div>
+      )}
+
+      {totalCompleted > 0 && (
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+          <span className="text-xs font-mono text-muted-foreground">
+            {'// saved in this browser'}
+          </span>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="inline-flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-red-500 transition-colors"
+          >
+            <RotateCcw className="h-3.5 w-3.5" strokeWidth={1.5} />
+            reset progress
+          </button>
         </div>
       )}
     </div>
