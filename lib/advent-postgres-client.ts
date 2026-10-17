@@ -140,8 +140,12 @@ export async function seedDay(db: ReaderDatabase, schema: string): Promise<Reade
   if (db.seeded.includes(schema)) return db;
   const res = await fetch(`/advent-of-postgres/seeds/${schema}.json`);
   if (!res.ok) throw new Error(`Could not load the data for ${schema}`);
-  const { statements } = (await res.json()) as { statements: string[] };
-  await transaction(db.databaseUrl, statements);
+  // Most days load in one transaction. A day can also commit in steps (day 21 loads data,
+  // waits, then deletes some of it, so readers can recover it from Neon's history).
+  const seed = (await res.json()) as { statements?: string[]; transactions?: string[][] };
+  for (const step of seed.transactions ?? [seed.statements ?? []]) {
+    await transaction(db.databaseUrl, step);
+  }
   const next = { ...db, seeded: [...db.seeded, schema] };
   saveDatabase(next);
   return next;
