@@ -5,20 +5,23 @@ import { AdventLandingClient } from '@/components/advent-landing-client';
 import { AdventHeroProgress } from '@/components/advent-hero-progress';
 import { SectionSeparator } from '@/components/section-separator';
 import { Github } from '@/components/icons/social-icons';
+import { BreadcrumbSchema } from '@/components/schema-markup';
+import { ADVENT_YEAR } from '@/lib/advent-schedule';
 import { Calendar, Trophy, Target, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+const PAGE_TITLE = `Advent of DevOps ${ADVENT_YEAR} - 25 Day Challenge`;
+
 export const metadata: Metadata = {
-  title: 'Advent of DevOps 2026 - 25 Day Challenge',
-  description:
-    'Join the Advent of DevOps 2026 challenge! 25 days of hands-on DevOps tasks covering Docker, Kubernetes, CI/CD, security, monitoring, and more. Level up your DevOps skills this December.',
+  title: PAGE_TITLE,
+  description: `Advent of DevOps ${ADVENT_YEAR}: 25 hands-on challenges for Docker, Kubernetes, CI/CD, Terraform, security and monitoring. Free, with a solution for each day.`,
   alternates: {
     canonical: '/advent-of-devops',
   },
   openGraph: {
     type: 'website',
-    title: 'Advent of DevOps 2026 - 25 Day Challenge',
+    title: PAGE_TITLE,
     description:
       'Join 25 days of hands-on DevOps challenges covering Docker, Kubernetes, CI/CD, and more.',
     url: '/advent-of-devops',
@@ -27,13 +30,13 @@ export const metadata: Metadata = {
         url: '/images/advent/advent-of-devops.png',
         width: 1200,
         height: 630,
-        alt: 'Advent of DevOps 2026 - 25 Day Challenge',
+        alt: PAGE_TITLE,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Advent of DevOps 2026 - 25 Day Challenge',
+    title: PAGE_TITLE,
     description:
       'Join 25 days of hands-on DevOps challenges covering Docker, Kubernetes, CI/CD, and more.',
     images: ['/images/advent/advent-of-devops.png'],
@@ -46,6 +49,13 @@ export default async function AdventOfDevOpsPage() {
 
   return (
     <>
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', url: '/' },
+          { name: 'Advent of DevOps', url: '/advent-of-devops' },
+        ]}
+      />
+
       {/* Hero */}
       <div className="relative overflow-hidden">
         <div
@@ -66,13 +76,13 @@ export default async function AdventOfDevOpsPage() {
 
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md border border-primary/20 bg-primary/5 text-xs font-mono text-primary mb-6 tabular-nums">
               <Calendar className="w-3.5 h-3.5" strokeWidth={1.5} />
-              December 1-25, 2026
+              December 1-25, {ADVENT_YEAR}
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
               Advent of DevOps{' '}
               <span className="text-primary relative inline-block">
-                2026
+                {ADVENT_YEAR}
                 <svg
                   className="absolute -bottom-2 left-0 w-full h-3 text-primary/40"
                   viewBox="0 0 120 12"

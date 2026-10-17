@@ -1,10 +1,10 @@
 ---
 title: 'Advent of DevOps 2026 - 25 Day Challenge'
 excerpt: 'Join us for 25 days of hands-on DevOps challenges. From Docker optimization to Kubernetes deployment, each day brings a new practical challenge to level up your DevOps skills.'
-description: 'A comprehensive 25-day DevOps challenge covering Docker, CI/CD, Kubernetes, Infrastructure as Code, security, monitoring, and more. Perfect for beginners and experienced practitioners.'
+description: 'A comprehensive 25-day DevOps challenge covering Docker, CI/CD, Kubernetes, Infrastructure as Code, security, monitoring, and more. Perfect for beginners and experienced engineers.'
 featured: true
 publishedAt: '2025-12-01T00:00:00Z'
-updatedAt: '2026-04-19T00:00:00Z'
+updatedAt: '2026-10-17T00:00:00Z'
 tags:
   - DevOps
   - Docker
@@ -14,8 +14,6 @@ tags:
   - Monitoring
   - Security
 ---
-
-# Advent of DevOps 2026 - 25 Day Challenge
 
 Welcome to the Advent of DevOps! This is a hands-on, practical challenge designed to help you level up your DevOps skills through 25 days of real-world scenarios and tasks.
 
@@ -58,7 +56,7 @@ Each daily challenge includes:
 
 ## Community
 
-Join thousands of DevOps practitioners taking the challenge! Share your progress, solutions, and learnings:
+Join other DevOps engineers who take the challenge! Share your progress, solutions, and learnings:
 
 - Tag [@thedevopsdaily](https://x.com/thedevopsdaily) on X (Twitter)
 - Share on LinkedIn with #AdventOfDevOps

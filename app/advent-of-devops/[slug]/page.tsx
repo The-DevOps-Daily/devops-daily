@@ -3,7 +3,12 @@ import { SponsorSidebar } from '@/components/sponsor-sidebar';
 import { InlineSponsors } from '@/components/inline-sponsors';
 import { OptimizedImage } from '@/components/optimized-image';
 import { AdventDayClient } from '@/components/advent-day-client';
-import { getAdventDayBySlug, getAllAdventDays, getNextAdventDay, getPreviousAdventDay } from '@/lib/advent';
+import {
+  getAdventDayBySlug,
+  getAllAdventDays,
+  getNextAdventDay,
+  getPreviousAdventDay,
+} from '@/lib/advent';
 import { notFound } from 'next/navigation';
 import { ArticleSchema, BreadcrumbSchema } from '@/components/schema-markup';
 import { ReadingProgressBar } from '@/components/reading-progress-bar';
@@ -71,11 +76,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function AdventDayPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function AdventDayPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const day = await getAdventDayBySlug(slug);
 
@@ -93,7 +94,8 @@ export default async function AdventDayPage({
   ];
 
   const shareUrl = `https://devops-daily.com/advent-of-devops/${day.slug}`;
-  const shareText = `I just completed ${day.title} from Advent of DevOps! 🎄`;
+  const shareText = `I completed Day ${day.day} of Advent of DevOps: ${day.title.replace(/^Day \d+ - /, '')}`;
+  const shownDate = day.updatedAt || day.publishedAt;
 
   return (
     <>
@@ -103,7 +105,6 @@ export default async function AdventDayPage({
         publishedDate={day.publishedAt}
         modifiedDate={day.updatedAt || day.publishedAt}
         imageUrl={day.image || '/og-image.png'}
-        authorName="DevOps Daily"
         url={`/advent-of-devops/${day.slug}`}
         articleSection={day.category || 'Advent of DevOps'}
         keywords={day.tags}
@@ -114,12 +115,12 @@ export default async function AdventDayPage({
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Content */}
-          <main className="lg:col-span-9">
+          <div className="lg:col-span-9">
             <article className="max-w-4xl">
               {/* Header */}
               <header className="mb-8">
                 {/* Day Badge */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex flex-wrap items-center gap-3 mb-4">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold bg-linear-to-r from-red-500 to-green-500 text-white">
                     <Calendar className="h-4 w-4" />
                     Day {day.day} of 25
@@ -148,20 +149,20 @@ export default async function AdventDayPage({
                   {day.title}
                 </h1>
 
-                {day.excerpt && (
-                  <p className="text-xl text-muted-foreground mb-6">{day.excerpt}</p>
-                )}
+                {day.excerpt && <p className="text-xl text-muted-foreground mb-6">{day.excerpt}</p>}
 
                 {/* Meta Info */}
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  {day.publishedAt && (
+                  {shownDate && (
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      <time dateTime={day.publishedAt}>
-                        {new Date(day.publishedAt).toLocaleDateString('en-US', {
+                      {day.updatedAt ? 'Updated ' : ''}
+                      <time dateTime={shownDate}>
+                        {new Date(shownDate).toLocaleDateString('en-US', {
                           month: 'long',
                           day: 'numeric',
                           year: 'numeric',
+                          timeZone: 'UTC',
                         })}
                       </time>
                     </div>
@@ -218,10 +219,10 @@ export default async function AdventDayPage({
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <a
-                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}&hashtags=AdventOfDevOps,DevOps,Day${day.day}`}
+                        href={`https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}&hashtags=AdventOfDevOps,DevOps`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium transition-colors"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-colors"
                       >
                         Share on X
                       </a>
@@ -291,7 +292,7 @@ export default async function AdventDayPage({
                 </div>
               </div>
             </article>
-          </main>
+          </div>
 
           {/* Sidebar */}
           <aside className="lg:col-span-3">
