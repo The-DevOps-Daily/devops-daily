@@ -13,7 +13,7 @@ starter: 'select * from deploys limit 10;'
 publishedAt: '2026-12-01T00:00:00Z'
 ---
 
-It is 1 December, and the North Pole platform team has three weeks until the busiest night of the year. Alabaster, who runs the team, wants a change freeze for the riskiest service first. "Show me which service breaks most often when we ship it," she says, and points you at the deploy log.
+The North Pole platform team is getting ready for the busiest night of the year. Alabaster, who runs the team, wants to start the change freeze with the riskiest service. "Show me which service breaks most often when we ship it," she says, and points you at the deploy log.
 
 The log is in the `deploys` table:
 

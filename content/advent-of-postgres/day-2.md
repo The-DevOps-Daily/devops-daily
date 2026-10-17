@@ -25,7 +25,7 @@ Every service writes one row per minute to `request_stats`:
 | `requests` | `int`         | Requests served in that minute           |
 | `errors`   | `int`         | How many of them returned a 5xx          |
 
-Some minutes had no traffic at all. One service is a nightly export job that serves a handful of requests a day.
+Some minutes had no traffic at all. One service is a small export job that serves only a few thousand requests a day.
 
 ## Your task
 
